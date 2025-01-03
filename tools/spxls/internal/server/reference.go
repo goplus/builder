@@ -20,7 +20,7 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 		return nil, nil
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if obj == nil {
 		return nil, nil
 	}
@@ -35,7 +35,7 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 	}
 
 	if params.Context.IncludeDeclaration {
-		defIdent := result.defIdentOf(obj)
+		defIdent := result.defIdentFor(obj)
 		if defIdent != nil {
 			locations = append(locations, s.createLocationFromIdent(result.fset, defIdent))
 		}
@@ -46,7 +46,7 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 
 // findReferenceLocations returns all locations where the given object is referenced.
 func (s *Server) findReferenceLocations(result *compileResult, obj types.Object) []Location {
-	refIdents := result.refIdentsOf(obj)
+	refIdents := result.refIdentsFor(obj)
 	if len(refIdents) == 0 {
 		return nil
 	}

@@ -22,7 +22,7 @@ func (s *Server) workspaceDiagnostic(params *WorkspaceDiagnosticParams) (*Worksp
 		return nil, err
 	}
 
-	var items []WorkspaceDocumentDiagnosticReport
+	items := make([]WorkspaceDocumentDiagnosticReport, 0, len(result.diagnostics))
 	for file, fileDiags := range result.diagnostics {
 		items = append(items, WorkspaceDocumentDiagnosticReport{
 			Value: WorkspaceFullDocumentDiagnosticReport{

@@ -20,9 +20,10 @@ type GetFileMapFunc func() map[string]MapFile
 
 // MapFS implements [fs.ReadDirFS] using a map of files.
 type MapFS struct {
-	getFileMap GetFileMapFunc
-	fileMode   fs.FileMode
-	dirMode    fs.FileMode
+	getFileMap    GetFileMapFunc
+	fileMode      fs.FileMode
+	dirMode       fs.FileMode
+	snapshottedAt time.Time
 }
 
 // NewMapFS creates a new map file system.
@@ -32,6 +33,26 @@ func NewMapFS(getFileMap GetFileMapFunc) *MapFS {
 		fileMode:   0444,
 		dirMode:    0444 | fs.ModeDir,
 	}
+}
+
+// Snapshot returns a snapshot of the map file system. It returns the same
+// instance if it is already a snapshot.
+func (mfs *MapFS) Snapshot() *MapFS {
+	if !mfs.snapshottedAt.IsZero() {
+		return mfs
+	}
+	fileMap := mfs.getFileMap()
+	mapFS := NewMapFS(func() map[string]MapFile {
+		return fileMap
+	})
+	mapFS.snapshottedAt = time.Now()
+	return mapFS
+}
+
+// SnapshottedAt returns the time when the map file system was snapshotted, or
+// zero if it is not a snapshot.
+func (mfs *MapFS) SnapshottedAt() time.Time {
+	return mfs.snapshottedAt
 }
 
 // Open implements [fs.ReadDirFS].

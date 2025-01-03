@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/pkgdata"
+	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 	"github.com/goplus/builder/tools/spxls/internal/util"
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
@@ -47,7 +48,11 @@ func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionI
 		fileScope:      result.typeInfo.Scopes[astFile],
 	}
 	ctx.analyzeCompletionContext()
-	return ctx.collectCompletionItems()
+	itemSet, err := ctx.collectCompletionItems()
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect completion items: %w", err)
+	}
+	return itemSet.sortedItems(), nil
 }
 
 // completionKind represents different kinds of completion contexts.
@@ -117,11 +122,11 @@ func (ctx *completionContext) analyzeCompletionContext() {
 		case *gopast.ReturnStmt:
 			sig := ctx.enclosingFunction(path[i+1:])
 			if sig == nil {
-				break
+				continue
 			}
 			results := sig.Results()
 			if results.Len() == 0 {
-				break
+				continue
 			}
 			ctx.returnIndex = ctx.findReturnValueIndex(n)
 			if ctx.returnIndex >= 0 && ctx.returnIndex < results.Len() {
@@ -129,7 +134,7 @@ func (ctx *completionContext) analyzeCompletionContext() {
 			}
 		case *gopast.AssignStmt:
 			if n.Tok != goptoken.ASSIGN && n.Tok != goptoken.DEFINE {
-				break
+				continue
 			}
 			for j, rhs := range n.Rhs {
 				if rhs.Pos() > ctx.pos || ctx.pos > rhs.End() {
@@ -146,14 +151,14 @@ func (ctx *completionContext) analyzeCompletionContext() {
 		case *gopast.CompositeLit:
 			tv, ok := ctx.result.typeInfo.Types[n]
 			if !ok {
-				break
+				continue
 			}
-			typ, ok := tv.Type.Underlying().(*types.Struct)
+			st, ok := tv.Type.Underlying().(*types.Struct)
 			if !ok {
-				break
+				continue
 			}
 			ctx.kind = completionKindStructLiteral
-			ctx.inStruct = typ
+			ctx.inStruct = st
 		case *gopast.SwitchStmt:
 			ctx.kind = completionKindSwitchCase
 			ctx.inSwitch = n
@@ -201,82 +206,40 @@ func (ctx *completionContext) enclosingFunction(path []gopast.Node) *types.Signa
 }
 
 // collectCompletionItems collects completion items based on the completion context.
-func (ctx *completionContext) collectCompletionItems() ([]CompletionItem, error) {
-	var (
-		items []CompletionItem
-		err   error
-	)
+func (ctx *completionContext) collectCompletionItems() (completionItemSet, error) {
 	switch ctx.kind {
 	case completionKindImport:
-		items, err = ctx.collectImportCompletions()
+		return ctx.collectImportCompletions()
 	case completionKindDot:
-		items, err = ctx.collectDotCompletions()
+		return ctx.collectDotCompletions()
 	case completionKindCall:
-		items, err = ctx.collectCallCompletions()
+		return ctx.collectCallCompletions()
 	case completionKindStructLiteral:
-		items, err = ctx.collectStructLiteralCompletions()
+		return ctx.collectStructLiteralCompletions()
 	case completionKindAssignment:
-		items, err = ctx.collectTypeSpecificCompletions()
+		return ctx.collectTypeSpecificCompletions()
 	case completionKindSwitchCase:
-		items, err = ctx.collectSwitchCaseCompletions()
+		return ctx.collectSwitchCaseCompletions()
 	case completionKindSelect:
-		items, err = ctx.collectSelectCompletions()
-	default:
-		items, err = ctx.collectGeneralCompletions()
+		return ctx.collectSelectCompletions()
 	}
-	if err != nil {
-		return nil, err
-	}
-	sortCompletionItems(items)
-	return items, nil
+	return ctx.collectGeneralCompletions()
 }
 
 // collectGeneralCompletions collects general completions.
-func (ctx *completionContext) collectGeneralCompletions() ([]CompletionItem, error) {
-	var items []CompletionItem
-	seenDefIDs := make(map[string]struct{})
-	addItems := func(defs ...SpxDefinition) {
-		for _, def := range defs {
-			if _, ok := seenDefIDs[def.ID.String()]; ok {
-				continue
-			}
-			seenDefIDs[def.ID.String()] = struct{}{}
-			items = append(items, def.CompletionItem())
-		}
-	}
+func (ctx *completionContext) collectGeneralCompletions() (completionItemSet, error) {
+	var itemSet completionItemSet
 
-	// Add built-in definitions.
-	addItems(GetSpxBuiltinDefinitions()...)
-
-	// Add general definitions.
-	addItems(SpxGeneralDefinitions...)
-
-	// Add file scope definitions if in file scope.
-	if ctx.innermostScope == ctx.fileScope {
-		addItems(SpxFileScopeDefinitions...)
-	}
-
-	// Add all visible objects in the scope.
+	// Add local definitions from innermost scope and its parents.
 	for scope := ctx.innermostScope; scope != nil; scope = scope.Parent() {
 		isInMainScope := ctx.innermostScope == ctx.fileScope && scope == ctx.result.mainPkg.Scope()
 		for _, name := range scope.Names() {
 			obj := scope.Lookup(name)
-			if obj == nil || !obj.Exported() && obj.Pkg() != ctx.result.mainPkg {
+			if !isExportedOrMainPkgObject(obj) {
 				continue
 			}
 
-			switch obj := obj.(type) {
-			case *types.Var:
-				addItems(NewSpxDefinitionForVar(ctx.result, obj, ""))
-			case *types.Const:
-				addItems(NewSpxDefinitionForConst(ctx.result, obj))
-			case *types.TypeName:
-				addItems(NewSpxDefinitionForType(ctx.result, obj))
-			case *types.Func:
-				addItems(NewSpxDefinitionsForFunc(ctx.result, obj, "")...)
-			case *types.PkgName:
-				addItems(NewSpxDefinitionForPkg(ctx.result, obj))
-			}
+			itemSet.addSpxDefs(ctx.result.spxDefinitionsFor(obj, "")...)
 
 			isThis := name == "this"
 			isSpxFileMatch := ctx.spxFile == name+".spx" || (ctx.spxFile == ctx.result.mainSpxFile && name == "Game")
@@ -284,77 +247,39 @@ func (ctx *completionContext) collectGeneralCompletions() ([]CompletionItem, err
 			if !isThis && !isMainScopeObj {
 				continue
 			}
-
-			typ := unwrapPointerType(obj.Type())
-			if _, ok := typ.Underlying().(*types.Struct); !ok {
+			named, ok := unwrapPointerType(obj.Type()).(*types.Named)
+			if !ok || !isNamedStructType(named) {
 				continue
 			}
-			walkStruct(typ, func(named *types.Named, namedParents []*types.Named, member types.Object) {
-				memberPkgPath := member.Pkg().Path()
-				if !member.Exported() && memberPkgPath != "main" {
-					return
-				}
 
-				switch member := member.(type) {
-				case *types.Var:
-					addItems(NewSpxDefinitionForVar(ctx.result, member, ""))
-				case *types.Func:
-					recvTypeName := named.Obj().Name()
-					if memberPkgPath == spxPkgPath {
-						if recvTypeName != "SpriteImpl" && recvTypeName != "Game" {
-							for _, namedParent := range namedParents {
-								if namedParent.Obj().Pkg().Path() != spxPkgPath {
-									continue
-								}
-								namedParentName := namedParent.Obj().Name()
-								if namedParentName == "SpriteImpl" || namedParentName == "Game" {
-									recvTypeName = namedParentName
-									break
-								}
-							}
-						}
-						if recvTypeName == "SpriteImpl" {
-							recvTypeName = "Sprite"
-						}
-					}
-					addItems(NewSpxDefinitionsForFunc(ctx.result, member, recvTypeName)...)
-				}
-			})
+			itemSet.addSpxDefs(ctx.result.spxDefinitionsForNamedStruct(named)...)
 		}
 	}
 
-	// Add other spx definitions.
-	for _, name := range ctx.result.spxPkg.Scope().Names() {
-		if obj := ctx.result.spxPkg.Scope().Lookup(name); obj != nil && obj.Exported() {
-			switch obj := obj.(type) {
-			case *types.Var:
-				addItems(NewSpxDefinitionForVar(ctx.result, obj, ""))
-			case *types.Const:
-				addItems(NewSpxDefinitionForConst(ctx.result, obj))
-			case *types.TypeName:
-				addItems(NewSpxDefinitionForType(ctx.result, obj))
-			case *types.Func:
-				addItems(NewSpxDefinitionsForFunc(ctx.result, obj, "")...)
-			}
-		}
+	// Add other definitions.
+	itemSet.addSpxDefs(GetSpxPkgDefinitions()...)
+	itemSet.addSpxDefs(GetSpxBuiltinDefinitions()...)
+	itemSet.addSpxDefs(SpxGeneralDefinitions...)
+	if ctx.innermostScope == ctx.fileScope {
+		itemSet.addSpxDefs(SpxFileScopeDefinitions...)
 	}
 
-	return items, nil
+	return itemSet, nil
 }
 
 // collectImportCompletions collects import completions.
-func (ctx *completionContext) collectImportCompletions() ([]CompletionItem, error) {
-	var items []CompletionItem
+func (ctx *completionContext) collectImportCompletions() (completionItemSet, error) {
+	var itemSet completionItemSet
 	pkgs, err := pkgdata.ListPkgs()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list packages: %w", err)
+		return completionItemSet{}, fmt.Errorf("failed to list packages: %w", err)
 	}
 	for _, pkgPath := range pkgs {
 		pkgDoc, err := pkgdata.GetPkgDoc(pkgPath)
 		if err != nil {
 			continue
 		}
-		items = append(items, SpxDefinition{
+		itemSet.add(SpxDefinition{
 			ID: SpxDefinitionIdentifier{
 				Package: &pkgPath,
 			},
@@ -367,82 +292,57 @@ func (ctx *completionContext) collectImportCompletions() ([]CompletionItem, erro
 			CompletionItemInsertTextFormat: PlainTextTextFormat,
 		}.CompletionItem())
 	}
-	return items, nil
+	return itemSet, nil
 }
 
 // collectDotCompletions collects dot completions for member access.
-func (ctx *completionContext) collectDotCompletions() ([]CompletionItem, error) {
+func (ctx *completionContext) collectDotCompletions() (completionItemSet, error) {
 	if ctx.path == nil {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 	tv, ok := ctx.result.typeInfo.Types[ctx.path.X]
 	if !ok {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 	typ := unwrapPointerType(tv.Type)
-	if named, ok := typ.(*types.Named); ok && named.Obj().Pkg().Path() == spxPkgPath && named.Obj().Name() == "Sprite" {
-		typ = ctx.result.spxPkg.Scope().Lookup("SpriteImpl").Type()
+	if named, ok := typ.(*types.Named); ok && isSpxPkgObject(named.Obj()) && named.Obj().Name() == "Sprite" {
+		typ = GetSpxSpriteImplType()
 	}
 
-	var items []CompletionItem
-	seenDefIDs := make(map[string]struct{})
-	addItems := func(defs ...SpxDefinition) {
-		for _, def := range defs {
-			if _, ok := seenDefIDs[def.ID.String()]; ok {
-				continue
-			}
-			seenDefIDs[def.ID.String()] = struct{}{}
-			items = append(items, def.CompletionItem())
-		}
-	}
-
+	var itemSet completionItemSet
 	if iface, ok := typ.Underlying().(*types.Interface); ok {
 		for i := 0; i < iface.NumMethods(); i++ {
 			method := iface.Method(i)
-			if !method.Exported() && method.Pkg() != ctx.result.mainPkg {
+			if !isExportedOrMainPkgObject(method) {
 				continue
 			}
 
-			addItems(NewSpxDefinitionsForFunc(ctx.result, method, "")...)
+			recvTypeName := ctx.result.selectorTypeNameForIdent(ctx.result.defIdentFor(method))
+			itemSet.addSpxDefs(NewSpxDefinitionsForFunc(method, recvTypeName, ctx.result.mainPkgDoc)...)
 		}
-		return items, nil
+	} else if named, ok := typ.(*types.Named); ok && isNamedStructType(named) {
+		itemSet.addSpxDefs(ctx.result.spxDefinitionsForNamedStruct(named)...)
 	}
-
-	if _, ok := typ.Underlying().(*types.Struct); ok {
-		walkStruct(typ, func(named *types.Named, namedParents []*types.Named, member types.Object) {
-			if !member.Exported() && member.Pkg() != ctx.result.mainPkg {
-				return
-			}
-
-			switch member := member.(type) {
-			case *types.Var:
-				addItems(NewSpxDefinitionForVar(ctx.result, member, ""))
-			case *types.Func:
-				addItems(NewSpxDefinitionsForFunc(ctx.result, member, named.Obj().Name())...)
-			}
-		})
-	}
-
-	return items, nil
+	return itemSet, nil
 }
 
 // collectCallCompletions collects function call completions.
-func (ctx *completionContext) collectCallCompletions() ([]CompletionItem, error) {
+func (ctx *completionContext) collectCallCompletions() (completionItemSet, error) {
 	callExpr, ok := ctx.enclosing.(*gopast.CallExpr)
 	if !ok {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 	tv, ok := ctx.result.typeInfo.Types[callExpr.Fun]
 	if !ok {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 	sig, ok := tv.Type.(*types.Signature)
 	if !ok {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 	argIndex := ctx.getCurrentArgIndex(callExpr)
 	if argIndex < 0 {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 
 	var expectedType types.Type
@@ -472,12 +372,12 @@ func (ctx *completionContext) getCurrentArgIndex(callExpr *gopast.CallExpr) int 
 }
 
 // collectStructLiteralCompletions collects struct literal completions.
-func (ctx *completionContext) collectStructLiteralCompletions() ([]CompletionItem, error) {
+func (ctx *completionContext) collectStructLiteralCompletions() (completionItemSet, error) {
 	if ctx.inStruct == nil {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 
-	var items []CompletionItem
+	var itemSet completionItemSet
 	seenFields := make(map[string]struct{})
 
 	// Collect already used fields.
@@ -494,61 +394,42 @@ func (ctx *completionContext) collectStructLiteralCompletions() ([]CompletionIte
 	// Add unused fields.
 	for i := 0; i < ctx.inStruct.NumFields(); i++ {
 		field := ctx.inStruct.Field(i)
-		if !field.Exported() && field.Pkg() != ctx.result.mainPkg {
+		if !isExportedOrMainPkgObject(field) {
 			continue
 		}
 		if _, ok := seenFields[field.Name()]; ok {
 			continue
 		}
 
-		def := NewSpxDefinitionForVar(ctx.result, field, "")
-		def.CompletionItemInsertText = field.Name() + ": ${1:}"
-		def.CompletionItemInsertTextFormat = SnippetTextFormat
-		items = append(items, def.CompletionItem())
+		selectorTypeName := ctx.result.selectorTypeNameForIdent(ctx.result.defIdentFor(field))
+		forceVar := ctx.result.isDefinedInFirstVarBlock(field)
+		spxDef := NewSpxDefinitionForVar(field, selectorTypeName, forceVar, ctx.result.mainPkgDoc)
+		spxDef.CompletionItemInsertText = field.Name() + ": ${1:}"
+		spxDef.CompletionItemInsertTextFormat = SnippetTextFormat
+		itemSet.add(spxDef.CompletionItem())
 	}
 
-	return items, nil
+	return itemSet, nil
 }
 
 // collectTypeSpecificCompletions collects type-specific completions.
-func (ctx *completionContext) collectTypeSpecificCompletions() ([]CompletionItem, error) {
+func (ctx *completionContext) collectTypeSpecificCompletions() (completionItemSet, error) {
 	if ctx.expectedType == nil {
 		return ctx.collectGeneralCompletions()
 	}
 
-	var items []CompletionItem
-	seenDefIDs := make(map[string]struct{})
-	addItems := func(defs ...SpxDefinition) {
-		for _, def := range defs {
-			if _, ok := seenDefIDs[def.ID.String()]; ok {
-				continue
-			}
-			seenDefIDs[def.ID.String()] = struct{}{}
-			items = append(items, def.CompletionItem())
-		}
-	}
-
+	var itemSet completionItemSet
 	for scope := ctx.innermostScope; scope != nil; scope = scope.Parent() {
 		for _, name := range scope.Names() {
 			obj := scope.Lookup(name)
-			if obj == nil || !obj.Exported() && obj.Pkg() != ctx.result.mainPkg {
-				continue
-			}
-			if !isTypeCompatible(obj.Type(), ctx.expectedType) {
+			if !isExportedOrMainPkgObject(obj) || !isTypeCompatible(obj.Type(), ctx.expectedType) {
 				continue
 			}
 
-			switch obj := obj.(type) {
-			case *types.Var:
-				addItems(NewSpxDefinitionForVar(ctx.result, obj, ""))
-			case *types.Const:
-				addItems(NewSpxDefinitionForConst(ctx.result, obj))
-			case *types.Func:
-				addItems(NewSpxDefinitionsForFunc(ctx.result, obj, "")...)
-			}
+			itemSet.addSpxDefs(ctx.result.spxDefinitionsFor(obj, "")...)
 		}
 	}
-	return items, nil
+	return itemSet, nil
 }
 
 // isTypeCompatible checks if two types are compatible.
@@ -586,38 +467,35 @@ func isTypeCompatible(got, want types.Type) bool {
 }
 
 // collectSwitchCaseCompletions collects switch/case completions.
-func (ctx *completionContext) collectSwitchCaseCompletions() ([]CompletionItem, error) {
+func (ctx *completionContext) collectSwitchCaseCompletions() (completionItemSet, error) {
 	if ctx.inSwitch == nil {
-		return nil, nil
+		return completionItemSet{}, nil
 	}
 
-	var items []CompletionItem
-	seenDefIDs := make(map[string]struct{})
-	addItem := func(def SpxDefinition) {
-		if _, ok := seenDefIDs[def.ID.String()]; ok {
-			return
-		}
-		seenDefIDs[def.ID.String()] = struct{}{}
-		items = append(items, def.CompletionItem())
-	}
-
-	var switchType types.Type
-	if ctx.inSwitch.Tag != nil {
-		if tv, ok := ctx.result.typeInfo.Types[ctx.inSwitch.Tag]; ok {
-			switchType = tv.Type
-		}
-	}
-
+	var (
+		itemSet    completionItemSet
+		switchType types.Type
+	)
 	if ctx.inSwitch.Tag == nil {
 		for _, typ := range []string{"int", "string", "bool", "error"} {
-			addItem(GetSpxBuiltinDefinition(typ))
+			itemSet.addSpxDefs(GetSpxBuiltinDefinition(typ))
 		}
-		return items, nil
+		return itemSet, nil
 	}
-
+	if tv, ok := ctx.result.typeInfo.Types[ctx.inSwitch.Tag]; ok {
+		switchType = tv.Type
+	}
 	if named, ok := switchType.(*types.Named); ok {
-		if named.Obj().Pkg() != nil {
-			scope := named.Obj().Pkg().Scope()
+		pkg := named.Obj().Pkg()
+		if pkg != nil {
+			var pkgDoc *pkgdoc.PkgDoc
+			if pkg.Path() == "main" {
+				pkgDoc = ctx.result.mainPkgDoc
+			} else {
+				pkgDoc, _ = pkgdata.GetPkgDoc(pkg.Path())
+			}
+
+			scope := pkg.Scope()
 			for _, name := range scope.Names() {
 				obj := scope.Lookup(name)
 				c, ok := obj.(*types.Const)
@@ -626,31 +504,59 @@ func (ctx *completionContext) collectSwitchCaseCompletions() ([]CompletionItem, 
 				}
 
 				if types.Identical(c.Type(), switchType) {
-					addItem(NewSpxDefinitionForConst(ctx.result, c))
+					itemSet.addSpxDefs(NewSpxDefinitionForConst(c, pkgDoc))
 				}
 			}
 		}
 	}
-
-	return items, nil
+	return itemSet, nil
 }
 
 // collectSelectCompletions collects select statement completions.
-func (ctx *completionContext) collectSelectCompletions() ([]CompletionItem, error) {
-	var items []CompletionItem
-	items = append(items, CompletionItem{
-		Label:            "case",
-		Kind:             KeywordCompletion,
-		InsertText:       "case ${1:ch} <- ${2:value}:$0",
-		InsertTextFormat: util.ToPtr(SnippetTextFormat),
-	})
-	items = append(items, CompletionItem{
-		Label:            "default",
-		Kind:             KeywordCompletion,
-		InsertText:       "default:$0",
-		InsertTextFormat: util.ToPtr(SnippetTextFormat),
-	})
-	return items, nil
+func (ctx *completionContext) collectSelectCompletions() (completionItemSet, error) {
+	var itemSet completionItemSet
+	itemSet.add(
+		CompletionItem{
+			Label:            "case",
+			Kind:             KeywordCompletion,
+			InsertText:       "case ${1:ch} <- ${2:value}:$0",
+			InsertTextFormat: util.ToPtr(SnippetTextFormat),
+		},
+		CompletionItem{
+			Label:            "default",
+			Kind:             KeywordCompletion,
+			InsertText:       "default:$0",
+			InsertTextFormat: util.ToPtr(SnippetTextFormat),
+		},
+	)
+	return itemSet, nil
+}
+
+// completionItemSet is a set of completion items.
+type completionItemSet struct {
+	items       []CompletionItem
+	seenSpxDefs map[string]struct{}
+}
+
+// add adds items to the set.
+func (s *completionItemSet) add(items ...CompletionItem) {
+	s.items = append(s.items, items...)
+}
+
+// addSpxDefs adds spx definitions to the set.
+func (s *completionItemSet) addSpxDefs(spxDefs ...SpxDefinition) {
+	if s.seenSpxDefs == nil {
+		s.seenSpxDefs = make(map[string]struct{})
+	}
+	for _, spxDef := range spxDefs {
+		spxDefIDKey := spxDef.ID.String() + "," + spxDef.Overview
+		if _, ok := s.seenSpxDefs[spxDefIDKey]; ok {
+			continue
+		}
+		s.seenSpxDefs[spxDefIDKey] = struct{}{}
+
+		s.add(spxDef.CompletionItem())
+	}
 }
 
 // completionItemKindPriority is the priority order for different completion
@@ -667,12 +573,13 @@ var completionItemKindPriority = map[CompletionItemKind]int{
 	KeywordCompletion:   9,
 }
 
-// sortCompletionItems sorts completion items.
-func sortCompletionItems(items []CompletionItem) {
-	slices.SortStableFunc(items, func(a, b CompletionItem) int {
+// sortedItems returns the sorted items.
+func (s *completionItemSet) sortedItems() []CompletionItem {
+	slices.SortStableFunc(s.items, func(a, b CompletionItem) int {
 		if p1, p2 := completionItemKindPriority[a.Kind], completionItemKindPriority[b.Kind]; p1 != p2 {
 			return p1 - p2
 		}
 		return strings.Compare(a.Label, b.Label)
 	})
+	return s.items
 }

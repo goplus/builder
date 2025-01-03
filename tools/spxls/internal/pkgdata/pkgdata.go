@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"strings"
+	"sync"
 
 	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 )
@@ -53,8 +54,20 @@ func OpenExport(pkgPath string) (io.ReadCloser, error) {
 	return nil, fmt.Errorf("failed to find export file for package %q: %w", pkgPath, fs.ErrNotExist)
 }
 
+// pkgDocCache is a cache for package documentation.
+var pkgDocCache sync.Map // map[string]*pkgdoc.PkgDoc
+
 // GetPkgDoc gets the documentation for a package.
-func GetPkgDoc(pkgPath string) (*pkgdoc.PkgDoc, error) {
+func GetPkgDoc(pkgPath string) (pkgDoc *pkgdoc.PkgDoc, err error) {
+	if pkgDocIface, ok := pkgDocCache.Load(pkgPath); ok {
+		return pkgDocIface.(*pkgdoc.PkgDoc), nil
+	}
+	defer func() {
+		if err == nil {
+			pkgDocCache.Store(pkgPath, pkgDoc)
+		}
+	}()
+
 	zr, err := zip.NewReader(bytes.NewReader(pkgdataZip), int64(len(pkgdataZip)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create zip reader: %w", err)

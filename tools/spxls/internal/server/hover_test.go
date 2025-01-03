@@ -62,6 +62,7 @@ onStart => {
 	imagePoint.X = 100
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
 			"assets/sounds/MySound/index.json":   []byte(`{}`),
 		}), nil)
@@ -115,7 +116,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-item def-id=\"gop:main?count\" overview=\"var count int\">\ncount is a variable.\n</definition-item>\n",
+				Value: "<definition-item def-id=\"gop:main?Game.count\" overview=\"var count int\">\ncount is a variable.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 11, Character: 1},

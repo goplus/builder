@@ -24,6 +24,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -165,7 +166,7 @@ var (
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr("main"),
-			Name:    util.ToPtr("MySprite"),
+			Name:    util.ToPtr("Game.MySprite"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr(spxPkgPath),
@@ -193,6 +194,7 @@ onStart => {
 
 
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 

@@ -3,13 +3,11 @@ package server
 import (
 	"errors"
 	"fmt"
-	"go/types"
-	"io/fs"
 	"strings"
 	"sync"
 
-	"github.com/goplus/builder/tools/spxls/internal"
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
+	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
 )
@@ -27,21 +25,18 @@ type MessageReplier interface {
 // Server is the core language server implementation that handles LSP messages
 type Server struct {
 	workspaceRootURI   DocumentURI
-	workspaceRootFS    fs.ReadDirFS
-	spxResourceRootDir string
+	workspaceRootFS    *vfs.MapFS
 	replier            MessageReplier
-	importer           types.Importer
-	compileCacheMu     sync.Mutex
 	lastCompileCache   *compileCache
+	lastCompileCacheMu sync.Mutex
 }
 
 // New creates a new Server instance.
-func New(workspaceRootFS fs.ReadDirFS, replier MessageReplier) *Server {
+func New(mapFS *vfs.MapFS, replier MessageReplier) *Server {
 	return &Server{
 		workspaceRootURI: "file:///", // TODO: Allow setting this via the `initialize` request.
-		workspaceRootFS:  workspaceRootFS,
+		workspaceRootFS:  mapFS,
 		replier:          replier,
-		importer:         internal.NewImporter(nil),
 	}
 }
 
@@ -319,25 +314,6 @@ func (s *Server) toDocumentURI(path string) DocumentURI {
 	return DocumentURI(string(s.workspaceRootURI) + path)
 }
 
-// spxFiles returns a list of .spx files in the workspace root.
-func (s *Server) spxFiles() ([]string, error) {
-	entries, err := s.workspaceRootFS.ReadDir(".")
-	if err != nil {
-		return nil, err
-	}
-	files := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if !strings.HasSuffix(entry.Name(), ".spx") {
-			continue
-		}
-		files = append(files, entry.Name())
-	}
-	return files, nil
-}
-
 // createLocationFromPos creates a Location from a position.
 func (s *Server) createLocationFromPos(fset *goptoken.FileSet, pos goptoken.Pos) Location {
 	position := fset.Position(pos)
@@ -352,11 +328,11 @@ func (s *Server) createLocationFromPos(fset *goptoken.FileSet, pos goptoken.Pos)
 
 // createLocationFromIdent creates a Location from an ident position.
 func (s *Server) createLocationFromIdent(fset *goptoken.FileSet, ident *gopast.Ident) Location {
-	startPos := fset.Position(ident.Pos())
+	identPos := fset.Position(ident.Pos())
 	return Location{
-		URI: s.toDocumentURI(startPos.Filename),
+		URI: s.toDocumentURI(identPos.Filename),
 		Range: Range{
-			Start: FromGopTokenPosition(startPos),
+			Start: FromGopTokenPosition(identPos),
 			End:   FromGopTokenPosition(fset.Position(ident.End())),
 		},
 	}

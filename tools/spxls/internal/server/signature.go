@@ -19,10 +19,11 @@ func (s *Server) textDocumentSignatureHelp(params *SignatureHelpParams) (*Signat
 		return nil, nil
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if obj == nil {
 		return nil, nil
 	}
+
 	fun, ok := obj.(*types.Func)
 	if !ok {
 		return nil, nil

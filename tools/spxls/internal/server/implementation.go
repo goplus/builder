@@ -18,7 +18,7 @@ func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, 
 		return nil, nil
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}

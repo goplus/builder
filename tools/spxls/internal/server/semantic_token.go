@@ -71,7 +71,7 @@ type semanticTokenInfo struct {
 }
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_semanticTokens
-func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*SemanticTokens, error) {
+func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (tokens *SemanticTokens, err error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
@@ -82,6 +82,17 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 	if astFile == nil {
 		return nil, nil
 	}
+
+	if tokensIface, ok := result.computedCache.semanticTokens.Load(params.TextDocument.URI); ok {
+		return &SemanticTokens{
+			Data: tokensIface.([]uint32),
+		}, nil
+	}
+	defer func() {
+		if err == nil {
+			result.computedCache.semanticTokens.Store(params.TextDocument.URI, slices.Clip(tokens.Data))
+		}
+	}()
 
 	var tokenInfos []semanticTokenInfo
 	addToken := func(startPos, endPos goptoken.Pos, tokenType SemanticTokenTypes, tokenModifiers []SemanticTokenModifiers) {
@@ -125,7 +136,7 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 				if goptoken.Lookup(node.Name).IsKeyword() {
 					addToken(node.Pos(), node.End(), KeywordType, nil)
 				}
-				break
+				return true
 			}
 
 			var (
@@ -150,14 +161,14 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 					tokenType = TypeType
 				}
 			case *types.Var:
-				defIdent := result.defIdentOf(obj)
 				if obj.IsField() {
-					if obj.Pkg().Path() == "main" && defIdent != nil && result.isInMainSpxFirstVarBlock(defIdent.Pos()) {
+					if obj.Pkg().Path() == "main" && result.isDefinedInFirstVarBlock(obj) {
 						tokenType = VariableType
 					} else {
 						tokenType = PropertyType
 					}
 				} else if obj.Parent() != nil && obj.Parent().Parent() == nil {
+					defIdent := result.defIdentFor(obj)
 					if defIdent == node {
 						tokenType = ParameterType
 					} else {
@@ -180,7 +191,7 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 			case *types.Label:
 				tokenType = LabelType
 			}
-			if result.defIdentOf(obj) == node {
+			if result.defIdentFor(obj) == node {
 				modifiers = append(modifiers, ModDeclaration)
 			}
 			if obj.Pkg() != nil && obj.Pkg().Path() != "main" && !strings.Contains(obj.Pkg().Path(), ".") {
@@ -317,7 +328,7 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 			}
 		case *gopast.FuncDecl:
 			if node.Shadow {
-				break
+				return true
 			}
 
 			addToken(node.Type.Func, node.Type.Func+goptoken.Pos(len("func")), KeywordType, nil)
@@ -470,7 +481,7 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 	})
 
 	var (
-		tokens             []uint32
+		tokensData         = make([]uint32, 0, len(tokenInfos))
 		prevLine, prevChar uint32
 	)
 	for _, info := range tokenInfos {
@@ -488,16 +499,15 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 		modifiersMask := getSemanticTokenModifiersMask(info.tokenModifiers)
 
 		if line == prevLine {
-			tokens = append(tokens, 0, char-prevChar, length, typeIndex, modifiersMask)
+			tokensData = append(tokensData, 0, char-prevChar, length, typeIndex, modifiersMask)
 		} else {
-			tokens = append(tokens, line-prevLine, char, length, typeIndex, modifiersMask)
+			tokensData = append(tokensData, line-prevLine, char, length, typeIndex, modifiersMask)
 		}
 
 		prevLine = line
 		prevChar = char
 	}
-
 	return &SemanticTokens{
-		Data: tokens,
+		Data: tokensData,
 	}, nil
 }

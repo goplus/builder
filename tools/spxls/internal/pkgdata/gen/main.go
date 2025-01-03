@@ -85,7 +85,7 @@ func generate() error {
 				Name:   pkgPath,
 				Vars:   make(map[string]string),
 				Consts: make(map[string]string),
-				Types:  make(map[string]pkgdoc.TypeDoc),
+				Types:  make(map[string]*pkgdoc.TypeDoc),
 				Funcs:  make(map[string]string),
 			}
 			for _, decl := range astFile.Decls {
@@ -131,7 +131,7 @@ func generate() error {
 								if doc == "" {
 									doc = decl.Doc.Text()
 								}
-								pkgDoc.Types[spec.Name.Name] = pkgdoc.TypeDoc{
+								pkgDoc.Types[spec.Name.Name] = &pkgdoc.TypeDoc{
 									Doc: doc,
 								}
 							default:
@@ -148,7 +148,7 @@ func generate() error {
 				}
 			}
 		} else {
-			exportFile, err := execGo("list", "-export", "-f", "{{.Export}}", pkgPath)
+			exportFile, err := execGo("list", "-trimpath", "-export", "-f", "{{.Export}}", pkgPath)
 			if err != nil {
 				return err
 			}

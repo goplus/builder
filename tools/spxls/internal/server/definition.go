@@ -27,12 +27,12 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 		return nil, nil
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}
 
-	defIdent := result.defIdentOf(obj)
+	defIdent := result.defIdentFor(obj)
 	if defIdent == nil {
 		return nil, nil
 	}
@@ -52,7 +52,7 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 		return nil, nil
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}

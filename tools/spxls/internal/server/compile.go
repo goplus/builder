@@ -9,8 +9,12 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/goplus/builder/tools/spxls/internal"
+	"github.com/goplus/builder/tools/spxls/internal/pkgdata"
+	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 	"github.com/goplus/builder/tools/spxls/internal/util"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/goplus/gogen"
@@ -59,14 +63,18 @@ type compileResult struct {
 	// parent general declaration.
 	mainASTPkgSpecToGenDecl map[gopast.Spec]*gopast.GenDecl
 
+	// mainASTPkgIdentToFuncDecl maps each function identifier in the main
+	// package AST to its function declaration.
+	mainASTPkgIdentToFuncDecl map[*gopast.Ident]*gopast.FuncDecl
+
+	// mainPkgDoc is the documentation for the main package.
+	mainPkgDoc *pkgdoc.PkgDoc
+
 	// mainSpxFile is the main.spx file path.
 	mainSpxFile string
 
-	// mainSpxFirstVarBlock is the first var block in main.spx.
-	mainSpxFirstVarBlock *gopast.GenDecl
-
-	// spxPkg is the spx package.
-	spxPkg *types.Package
+	// firstVarBlocks maps each AST file to its first var block.
+	firstVarBlocks map[*gopast.File]*gopast.GenDecl
 
 	// typeInfo contains type information collected during the compile
 	// process.
@@ -75,21 +83,55 @@ type compileResult struct {
 	// spxSpriteNames stores spx sprite names.
 	spxSpriteNames []string
 
+	// spxResourceSet is the set of spx resources.
+	spxResourceSet SpxResourceSet
+
 	// spxResourceRefs stores spx resource references.
-	spxResourceRefs map[SpxResourceRefKey][]SpxResourceRef
+	spxResourceRefs []SpxResourceRef
+
+	// seenSpxResourceRefs stores already seen spx resource references to avoid
+	// duplicates.
+	seenSpxResourceRefs map[SpxResourceRef]struct{}
 
 	// spxSoundResourceAutoBindings stores spx sound resource auto-bindings.
-	spxSoundResourceAutoBindings []types.Object
+	spxSoundResourceAutoBindings map[types.Object]struct{}
 
 	// spxSpriteResourceAutoBindings stores spx sprite resource auto-bindings.
-	spxSpriteResourceAutoBindings []types.Object
+	spxSpriteResourceAutoBindings map[types.Object]struct{}
 
 	// diagnostics stores diagnostic messages for each document.
 	diagnostics map[DocumentURI][]Diagnostic
 
+	// seenDiagnostics stores already reported diagnostics to avoid duplicates.
+	seenDiagnostics map[DocumentURI]map[string]struct{}
+
 	// hasErrorSeverityDiagnostic is true if the compile result has any
 	// diagnostics with error severity.
 	hasErrorSeverityDiagnostic bool
+
+	// computedCache is the cache for computed results.
+	computedCache compileResultComputedCache
+}
+
+// compileResultComputedCache represents the computed cache for [compileResult].
+type compileResultComputedCache struct {
+	// identsAtASTFileLines stores the identifiers at the given AST file line.
+	identsAtASTFileLines sync.Map // map[astFileLine][]*gopast.Ident
+
+	// spxDefinitionsForNamedStructs stores spx definitions for named structs.
+	spxDefinitionsForNamedStructs sync.Map // map[*types.Named][]SpxDefinition
+
+	// documentLinks stores document links for each document URI.
+	documentLinks sync.Map // map[DocumentURI][]DocumentLink
+
+	// semanticTokens stores semantic tokens for each document URI.
+	semanticTokens sync.Map // map[DocumentURI][]uint32
+}
+
+// astFileLine represents an AST file line.
+type astFileLine struct {
+	astFile *gopast.File
+	line    int
 }
 
 // innermostScopeAt returns the innermost scope that contains the given
@@ -108,41 +150,62 @@ func (r *compileResult) innermostScopeAt(pos goptoken.Pos) *types.Scope {
 	return innermostScope
 }
 
-// identAndObjectAtASTFilePosition returns the identifier and object at the
-// given position in the given file.
-func (r *compileResult) identAndObjectAtASTFilePosition(astFile *gopast.File, position Position) (*gopast.Ident, types.Object) {
-	tokenPos := r.fset.Position(astFile.Pos())
-	tokenPos.Line = int(position.Line) + 1
-	tokenPos.Column = int(position.Character) + 1
-
-	var foundIdent *gopast.Ident
-	gopast.Inspect(astFile, func(node gopast.Node) bool {
-		ident, ok := node.(*gopast.Ident)
-		if !ok {
-			return true
-		}
-		identPos := r.fset.Position(ident.Pos())
-		identEnd := r.fset.Position(ident.End())
-		if tokenPos.Line != identPos.Line ||
-			tokenPos.Column < identPos.Column ||
-			tokenPos.Column > identEnd.Column {
-			return true
-		}
-
-		if foundIdent == nil || (identPos.Offset >= r.fset.Position(foundIdent.Pos()).Offset &&
-			identEnd.Offset <= r.fset.Position(foundIdent.End()).Offset) {
-			foundIdent = ident
-		}
-		return true
-	})
-	if foundIdent == nil {
-		return nil, nil
+// identsAtASTFileLine returns the identifiers at the given line in the given
+// AST file.
+func (r *compileResult) identsAtASTFileLine(astFile *gopast.File, line int) (idents []*gopast.Ident) {
+	astFileLine := astFileLine{astFile: astFile, line: line}
+	if identsAtLineIface, ok := r.computedCache.identsAtASTFileLines.Load(astFileLine); ok {
+		return identsAtLineIface.([]*gopast.Ident)
 	}
-	return foundIdent, r.typeInfo.ObjectOf(foundIdent)
+	defer func() {
+		r.computedCache.identsAtASTFileLines.Store(astFileLine, slices.Clip(idents))
+	}()
+
+	astFilePos := r.fset.Position(astFile.Pos())
+	collectIdentAtLine := func(ident *gopast.Ident) {
+		identPos := r.fset.Position(ident.Pos())
+		if identPos.Filename == astFilePos.Filename && identPos.Line == line {
+			idents = append(idents, ident)
+		}
+	}
+	for ident := range r.typeInfo.Defs {
+		collectIdentAtLine(ident)
+	}
+	for ident := range r.typeInfo.Uses {
+		collectIdentAtLine(ident)
+	}
+	return
 }
 
-// defIdentOf returns the identifier where the given object is defined.
-func (r *compileResult) defIdentOf(obj types.Object) *gopast.Ident {
+// identAtASTFilePosition returns the identifier at the given position in the
+// given AST file.
+func (r *compileResult) identAtASTFilePosition(astFile *gopast.File, position Position) *gopast.Ident {
+	pos := r.fset.Position(astFile.Pos())
+	pos.Line = int(position.Line) + 1
+	pos.Column = int(position.Character) + 1
+
+	var (
+		bestIdent    *gopast.Ident
+		bestNodeSpan int
+	)
+	for _, ident := range r.identsAtASTFileLine(astFile, pos.Line) {
+		identPos := r.fset.Position(ident.Pos())
+		identEnd := r.fset.Position(ident.End())
+		if pos.Column < identPos.Column || pos.Column > identEnd.Column {
+			continue
+		}
+
+		nodeSpan := identEnd.Column - identPos.Column
+		if bestIdent == nil || nodeSpan < bestNodeSpan {
+			bestIdent = ident
+			bestNodeSpan = nodeSpan
+		}
+	}
+	return bestIdent
+}
+
+// defIdentFor returns the identifier where the given object is defined.
+func (r *compileResult) defIdentFor(obj types.Object) *gopast.Ident {
 	if obj == nil {
 		return nil
 	}
@@ -154,8 +217,8 @@ func (r *compileResult) defIdentOf(obj types.Object) *gopast.Ident {
 	return nil
 }
 
-// refIdentsOf returns all identifiers where the given object is referenced.
-func (r *compileResult) refIdentsOf(obj types.Object) []*gopast.Ident {
+// refIdentsFor returns all identifiers where the given object is referenced.
+func (r *compileResult) refIdentsFor(obj types.Object) []*gopast.Ident {
 	if obj == nil {
 		return nil
 	}
@@ -168,13 +231,14 @@ func (r *compileResult) refIdentsOf(obj types.Object) []*gopast.Ident {
 	return idents
 }
 
-// inferSelectorTypeNameForIdent infers the selector type name for the given
+// selectorTypeNameForIdent returns the selector type name for the given
 // identifier. It returns empty string if no selector can be inferred.
-func (r *compileResult) inferSelectorTypeNameForIdent(ident *gopast.Ident) string {
+func (r *compileResult) selectorTypeNameForIdent(ident *gopast.Ident) string {
 	astFile, ok := r.mainASTPkg.Files[r.fset.Position(ident.Pos()).Filename]
 	if !ok {
 		return ""
 	}
+
 	if path, _ := util.PathEnclosingInterval(astFile, ident.Pos(), ident.End()); len(path) > 0 {
 		for _, node := range slices.Backward(path) {
 			sel, ok := node.(*gopast.SelectorExpr)
@@ -185,123 +249,236 @@ func (r *compileResult) inferSelectorTypeNameForIdent(ident *gopast.Ident) strin
 			if !ok {
 				continue
 			}
-			if named, ok := unwrapPointerType(tv.Type).(*types.Named); ok {
-				typeName := named.Obj().Name()
-				if named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == spxPkgPath && typeName == "Sprite" {
-					typeName = "SpriteImpl"
+
+			switch typ := unwrapPointerType(tv.Type).(type) {
+			case *types.Named:
+				obj := typ.Obj()
+				typeName := obj.Name()
+				if isSpxPkgObject(obj) && typeName == "SpriteImpl" {
+					typeName = "Sprite"
 				}
 				return typeName
-			}
-			if iface, ok := unwrapPointerType(tv.Type).(*types.Interface); ok && iface.String() != "interface{}" {
-				return iface.String()
+			case *types.Interface:
+				if typ.String() == "interface{}" {
+					return ""
+				}
+				return typ.String()
 			}
 		}
 	}
-	if obj := r.typeInfo.ObjectOf(ident); obj != nil {
-		if obj.Pkg() != nil && obj.Pkg().Path() == spxPkgPath {
-			astFileScope := r.typeInfo.Scopes[astFile]
-			innermostScope := r.innermostScopeAt(ident.Pos())
-			if innermostScope == astFileScope {
-				spxFile := r.fset.Position(ident.Pos()).Filename
-				if spxFile == r.mainSpxFile {
-					return "Game"
-				}
-				return "SpriteImpl"
+
+	obj := r.typeInfo.ObjectOf(ident)
+	if obj == nil || obj.Pkg() == nil {
+		return ""
+	}
+	if isSpxPkgObject(obj) {
+		astFileScope := r.typeInfo.Scopes[astFile]
+		innermostScope := r.innermostScopeAt(ident.Pos())
+		if innermostScope == astFileScope {
+			spxFile := r.fset.Position(ident.Pos()).Filename
+			if spxFile == r.mainSpxFile {
+				return "Game"
 			}
+			return "Sprite"
+		}
+	}
+	switch obj := obj.(type) {
+	case *types.Var:
+		if !obj.IsField() {
+			return ""
+		}
+
+		for _, def := range r.typeInfo.Defs {
+			if def == nil {
+				continue
+			}
+			named, ok := unwrapPointerType(def.Type()).(*types.Named)
+			if !ok || named.Obj().Pkg() != obj.Pkg() || !isNamedStructType(named) {
+				continue
+			}
+
+			var typeName string
+			walkStruct(named, func(member types.Object, selector *types.Named) bool {
+				if field, ok := member.(*types.Var); ok && field == obj {
+					typeName = selector.Obj().Name()
+					return false
+				}
+				return true
+			})
+			if isSpxPkgObject(obj) && typeName == "SpriteImpl" {
+				typeName = "Sprite"
+			}
+			if typeName != "" {
+				return typeName
+			}
+		}
+	case *types.Func:
+		recv := obj.Type().(*types.Signature).Recv()
+		if recv == nil {
+			return ""
+		}
+
+		switch typ := unwrapPointerType(recv.Type()).(type) {
+		case *types.Named:
+			obj := typ.Obj()
+			typeName := obj.Name()
+			if isSpxPkgObject(obj) && typeName == "SpriteImpl" {
+				typeName = "Sprite"
+			}
+			return typeName
+		case *types.Interface:
+			if typ.String() == "interface{}" {
+				return ""
+			}
+			return typ.String()
 		}
 	}
 	return ""
 }
 
-// isInMainSpxFirstVarBlock reports whether the given position is in the first
-// var block in main.spx.
-func (r *compileResult) isInMainSpxFirstVarBlock(pos goptoken.Pos) bool {
-	return r.mainSpxFirstVarBlock != nil &&
-		pos >= r.mainSpxFirstVarBlock.Pos() &&
-		pos <= r.mainSpxFirstVarBlock.End()
+// isDefinedInFirstVarBlock reports whether the given object is defined in the
+// first var block of an AST file.
+func (r *compileResult) isDefinedInFirstVarBlock(obj types.Object) bool {
+	defIdent := r.defIdentFor(obj)
+	if defIdent == nil {
+		return false
+	}
+	astFile, ok := r.mainASTPkg.Files[r.fset.Position(defIdent.Pos()).Filename]
+	if !ok {
+		return false
+	}
+	firstVarBlock := r.firstVarBlocks[astFile]
+	if firstVarBlock == nil {
+		return false
+	}
+	return defIdent.Pos() >= firstVarBlock.Pos() && defIdent.End() <= firstVarBlock.End()
+}
+
+// spxDefinitionsFor returns all spx definitions for the given object.
+func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName string) []SpxDefinition {
+	if obj == nil {
+		return nil
+	}
+	pkg := obj.Pkg()
+	if pkg == nil {
+		// Builtin definitions are not in any package.
+		return []SpxDefinition{GetSpxBuiltinDefinition(obj.Name())}
+	}
+
+	var pkgDoc *pkgdoc.PkgDoc
+	if pkgPath := pkg.Path(); pkgPath == "main" {
+		pkgDoc = r.mainPkgDoc
+	} else {
+		pkgDoc, _ = pkgdata.GetPkgDoc(pkgPath)
+	}
+
+	switch obj := obj.(type) {
+	case *types.Var:
+		return []SpxDefinition{NewSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
+	case *types.Const:
+		return []SpxDefinition{NewSpxDefinitionForConst(obj, pkgDoc)}
+	case *types.TypeName:
+		return []SpxDefinition{NewSpxDefinitionForType(obj, pkgDoc)}
+	case *types.Func:
+		if funcDecl, ok := r.mainASTPkgIdentToFuncDecl[r.defIdentFor(obj)]; ok && funcDecl.Shadow {
+			return nil
+		}
+		return NewSpxDefinitionsForFunc(obj, selectorTypeName, pkgDoc)
+	case *types.PkgName:
+		return []SpxDefinition{NewSpxDefinitionForPkg(obj, pkgDoc)}
+	}
+	return nil
+}
+
+// spxDefinitionsForIdent returns all spx definitions for the given identifier.
+func (r *compileResult) spxDefinitionsForIdent(ident *gopast.Ident) []SpxDefinition {
+	return r.spxDefinitionsFor(r.typeInfo.ObjectOf(ident), r.selectorTypeNameForIdent(ident))
+}
+
+// spxDefinitionsForNamedStruct returns all spx definitions for the given named struct type.
+func (r *compileResult) spxDefinitionsForNamedStruct(named *types.Named) (defs []SpxDefinition) {
+	if defsIface, ok := r.computedCache.spxDefinitionsForNamedStructs.Load(named); ok {
+		return defsIface.([]SpxDefinition)
+	}
+	defer func() {
+		r.computedCache.spxDefinitionsForNamedStructs.Store(named, slices.Clip(defs))
+	}()
+
+	walkStruct(named, func(member types.Object, selector *types.Named) bool {
+		defs = append(defs, r.spxDefinitionsFor(member, selector.Obj().Name())...)
+		return true
+	})
+	return
 }
 
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
-func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) (SpxResourceRefKey, SpxResourceRef) {
-	tokenPos := r.fset.Position(astFile.Pos())
-	tokenPos.Line = int(position.Line) + 1
-	tokenPos.Column = int(position.Character) + 1
+func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {
+	pos := r.fset.Position(astFile.Pos())
+	pos.Line = int(position.Line) + 1
+	pos.Column = int(position.Character) + 1
 
-	var foundNode gopast.Node
-	gopast.Inspect(astFile, func(node gopast.Node) bool {
-		if node == nil {
-			return true
+	var (
+		bestRef      *SpxResourceRef
+		bestNodeSpan int
+	)
+	for _, ref := range r.spxResourceRefs {
+		nodePos := r.fset.Position(ref.Node.Pos())
+		nodeEnd := r.fset.Position(ref.Node.End())
+		if nodePos.Filename != pos.Filename ||
+			pos.Line != nodePos.Line ||
+			pos.Column < nodePos.Column ||
+			pos.Column > nodeEnd.Column {
+			continue
 		}
-		startPos := r.fset.Position(node.Pos())
-		endPos := r.fset.Position(node.End())
-		if tokenPos.Line == startPos.Line &&
-			tokenPos.Column >= startPos.Column &&
-			tokenPos.Column <= endPos.Column {
-			if foundNode == nil || (node.Pos() >= foundNode.Pos() && node.End() <= foundNode.End()) {
-				foundNode = node
-			}
-			return true
-		}
-		return true
-	})
-	if foundNode == nil {
-		return nil, SpxResourceRef{}
-	}
 
-	for refKey, refs := range r.spxResourceRefs {
-		for _, ref := range refs {
-			if ref.Node == foundNode {
-				return refKey, ref
-			}
+		nodeSpan := nodeEnd.Column - nodePos.Column
+		if bestRef == nil || nodeSpan < bestNodeSpan {
+			bestRef = &ref
+			bestNodeSpan = nodeSpan
 		}
 	}
-	return nil, SpxResourceRef{}
+	return bestRef
 }
 
 // addSpxResourceRef adds a spx resource reference to the compile result.
-func (r *compileResult) addSpxResourceRef(refKey SpxResourceRefKey, node gopast.Node, kind SpxResourceRefKind) {
-	if !slices.Contains(r.spxResourceRefs[refKey], SpxResourceRef{Node: node, Kind: kind}) {
-		r.spxResourceRefs[refKey] = append(r.spxResourceRefs[refKey], SpxResourceRef{Node: node, Kind: kind})
+func (r *compileResult) addSpxResourceRef(ref SpxResourceRef) {
+	if r.seenSpxResourceRefs == nil {
+		r.seenSpxResourceRefs = make(map[SpxResourceRef]struct{})
 	}
-}
 
-// addSpxSoundResourceAutoBinding adds a spx sound resource auto-binding to the
-// compile result.
-func (r *compileResult) addSpxSoundResourceAutoBinding(obj types.Object) {
-	if !slices.Contains(r.spxSoundResourceAutoBindings, obj) {
-		r.spxSoundResourceAutoBindings = append(r.spxSoundResourceAutoBindings, obj)
+	if _, ok := r.seenSpxResourceRefs[ref]; ok {
+		return
 	}
-}
+	r.seenSpxResourceRefs[ref] = struct{}{}
 
-// addSpxSpriteResourceAutoBinding adds a spx sprite resource auto-binding to the
-// compile result.
-func (r *compileResult) addSpxSpriteResourceAutoBinding(obj types.Object) {
-	if !slices.Contains(r.spxSpriteResourceAutoBindings, obj) {
-		r.spxSpriteResourceAutoBindings = append(r.spxSpriteResourceAutoBindings, obj)
-	}
+	r.spxResourceRefs = append(r.spxResourceRefs, ref)
 }
 
 // addDiagnostics adds diagnostics to the compile result.
 func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnostic) {
-	dedupedDiags := slices.DeleteFunc(diags, func(diag Diagnostic) bool {
-		for _, existing := range r.diagnostics[documentURI] {
-			if existing.Severity == diag.Severity &&
-				existing.Range == diag.Range &&
-				existing.Message == diag.Message {
-				return true
-			}
+	if r.seenDiagnostics == nil {
+		r.seenDiagnostics = make(map[DocumentURI]map[string]struct{})
+	}
+	seenDiagnostics := r.seenDiagnostics[documentURI]
+	if seenDiagnostics == nil {
+		seenDiagnostics = make(map[string]struct{})
+		r.seenDiagnostics[documentURI] = seenDiagnostics
+	}
+
+	r.diagnostics[documentURI] = slices.Grow(r.diagnostics[documentURI], len(diags))
+	for _, diag := range diags {
+		fingerprint := fmt.Sprintf("%d\n%v\n%s", diag.Severity, diag.Range, diag.Message)
+		if _, ok := seenDiagnostics[fingerprint]; ok {
+			continue
 		}
-		return false
-	})
-	if !r.hasErrorSeverityDiagnostic {
-		for _, diag := range dedupedDiags {
-			if diag.Severity == SeverityError {
-				r.hasErrorSeverityDiagnostic = true
-			}
+		seenDiagnostics[fingerprint] = struct{}{}
+
+		r.diagnostics[documentURI] = append(r.diagnostics[documentURI], diag)
+		if diag.Severity == SeverityError {
+			r.hasErrorSeverityDiagnostic = true
 		}
 	}
-	r.diagnostics[documentURI] = append(r.diagnostics[documentURI], dedupedDiags...)
 }
 
 // compileCache represents a cache for compilation results.
@@ -312,7 +489,8 @@ type compileCache struct {
 
 // compile compiles spx source files and returns compile result.
 func (s *Server) compile() (*compileResult, error) {
-	spxFiles, err := s.spxFiles()
+	snapshot := s.workspaceRootFS.Snapshot()
+	spxFiles, err := listSpxFiles(snapshot)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get spx files: %w", err)
 	}
@@ -321,8 +499,8 @@ func (s *Server) compile() (*compileResult, error) {
 	}
 	slices.Sort(spxFiles)
 
-	s.compileCacheMu.Lock()
-	defer s.compileCacheMu.Unlock()
+	s.lastCompileCacheMu.Lock()
+	defer s.lastCompileCacheMu.Unlock()
 
 	// Try to use cache first.
 	if cache := s.lastCompileCache; cache != nil {
@@ -332,7 +510,7 @@ func (s *Server) compile() (*compileResult, error) {
 			// Check if any spx file has been modified.
 			modified := false
 			for _, spxFile := range spxFiles {
-				fi, err := fs.Stat(s.workspaceRootFS, spxFile)
+				fi, err := fs.Stat(snapshot, spxFile)
 				if err != nil {
 					return nil, fmt.Errorf("failed to stat file %q: %w", spxFile, err)
 				}
@@ -348,7 +526,7 @@ func (s *Server) compile() (*compileResult, error) {
 	}
 
 	// Compile uncached if cache is not used.
-	result, err := s.compileUncached(spxFiles)
+	result, err := s.compileUncached(snapshot, spxFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +534,7 @@ func (s *Server) compile() (*compileResult, error) {
 	// Update cache.
 	modTimes := make(map[string]time.Time, len(spxFiles))
 	for _, spxFile := range spxFiles {
-		fi, err := fs.Stat(s.workspaceRootFS, spxFile)
+		fi, err := fs.Stat(snapshot, spxFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to stat file %q: %w", spxFile, err)
 		}
@@ -374,12 +552,14 @@ func (s *Server) compile() (*compileResult, error) {
 //
 // TODO: Move diagnostics from [compileResult] to error return value by using
 // [errors.Join].
-func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
+func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compileResult, error) {
 	result := &compileResult{
-		fset:                    goptoken.NewFileSet(),
-		mainPkg:                 types.NewPackage("main", "main"),
-		mainASTPkg:              &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
-		mainASTPkgSpecToGenDecl: make(map[gopast.Spec]*gopast.GenDecl),
+		fset:                      goptoken.NewFileSet(),
+		mainPkg:                   types.NewPackage("main", "main"),
+		mainASTPkg:                &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
+		mainASTPkgSpecToGenDecl:   make(map[gopast.Spec]*gopast.GenDecl),
+		mainASTPkgIdentToFuncDecl: make(map[*gopast.Ident]*gopast.FuncDecl),
+		firstVarBlocks:            make(map[*gopast.File]*gopast.GenDecl),
 		typeInfo: &goptypesutil.Info{
 			Types:      make(map[gopast.Expr]types.TypeAndValue),
 			Defs:       make(map[*gopast.Ident]types.Object),
@@ -388,17 +568,18 @@ func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
 			Scopes:     make(map[gopast.Node]*types.Scope),
 		},
-		spxResourceRefs: make(map[SpxResourceRefKey][]SpxResourceRef),
-		diagnostics:     make(map[DocumentURI][]Diagnostic, len(spxFiles)),
+		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
+		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
+		diagnostics:                   make(map[DocumentURI][]Diagnostic, len(spxFiles)),
 	}
 
-	gpfs := vfs.NewGopParserFS(s.workspaceRootFS)
+	gpfs := vfs.NewGopParserFS(snapshot)
 	for _, spxFile := range spxFiles {
 		documentURI := s.toDocumentURI(spxFile)
 		result.diagnostics[documentURI] = []Diagnostic{}
 
 		astFile, err := gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
-			Mode: gopparser.AllErrors | gopparser.ParseComments,
+			Mode: gopparser.ParseComments | gopparser.AllErrors,
 		})
 		if err != nil {
 			var (
@@ -444,28 +625,23 @@ func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 			result.mainASTPkg.Files[spxFile] = astFile
 			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
 				result.mainSpxFile = spxFile
-
-				for _, decl := range astFile.Decls {
-					genDecl, ok := decl.(*gopast.GenDecl)
-					if !ok {
-						continue
-					}
-					for _, spec := range genDecl.Specs {
-						result.mainASTPkgSpecToGenDecl[spec] = genDecl
-					}
-				}
-
-				gopast.Inspect(astFile, func(n gopast.Node) bool {
-					if result.mainSpxFirstVarBlock == nil {
-						if decl, ok := n.(*gopast.GenDecl); ok && decl.Tok == goptoken.VAR {
-							result.mainSpxFirstVarBlock = decl
-							return false
-						}
-					}
-					return true
-				})
 			} else {
 				result.spxSpriteNames = append(result.spxSpriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
+			}
+
+			for _, decl := range astFile.Decls {
+				switch decl := decl.(type) {
+				case *gopast.GenDecl:
+					for _, spec := range decl.Specs {
+						result.mainASTPkgSpecToGenDecl[spec] = decl
+					}
+
+					if result.firstVarBlocks[astFile] == nil && decl.Tok == goptoken.VAR {
+						result.firstVarBlocks[astFile] = decl
+					}
+				case *gopast.FuncDecl:
+					result.mainASTPkgIdentToFuncDecl[decl.Name] = decl
+				}
 			}
 		}
 	}
@@ -482,11 +658,7 @@ func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 		return result, nil
 	}
 
-	var err error
-	result.spxPkg, err = s.importer.Import(spxPkgPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to import spx package: %w", err)
-	}
+	result.mainPkgDoc = pkgdoc.NewForSpxMainPackage(result.mainASTPkg)
 
 	mod := gopmod.New(gopmodload.Default)
 	if err := mod.ImportClasses(); err != nil {
@@ -508,7 +680,7 @@ func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 					})
 				}
 			},
-			Importer: s.importer,
+			Importer: internal.Importer,
 		},
 		&goptypesutil.Config{
 			Types: result.mainPkg,
@@ -521,9 +693,10 @@ func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 		// Errors should be handled by the type checker.
 	}
 
-	s.inspectForSpxResourceRootDir(result)
+	s.inspectForSpxResourceSet(snapshot, result)
 	s.inspectForSpxResourceAutoBindingsAndRefsAtDecls(result)
 	s.inspectForSpxResourceRefs(result)
+
 	return result, nil
 }
 
@@ -543,9 +716,9 @@ func (s *Server) compileAndGetASTFileForDocumentURI(uri DocumentURI) (result *co
 	return
 }
 
-// inspectForSpxResourceRootDir inspects for spx resource root directory in
-// main.spx.
-func (s *Server) inspectForSpxResourceRootDir(result *compileResult) {
+// inspectForSpxResourceSet inspects for spx resource set in main.spx.
+func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileResult) {
+	var spxResourceRootDir string
 	gopast.Inspect(result.mainASTPkg.Files[result.mainSpxFile], func(node gopast.Node) bool {
 		callExpr, ok := node.(*gopast.CallExpr)
 		if !ok {
@@ -566,7 +739,7 @@ func (s *Server) inspectForSpxResourceRootDir(result *compileResult) {
 		}
 
 		if types.AssignableTo(firstArgTV.Type, types.Typ[types.String]) {
-			s.spxResourceRootDir, _ = getStringLitOrConstValue(firstArg, firstArgTV)
+			spxResourceRootDir, _ = getStringLitOrConstValue(firstArg, firstArgTV)
 		} else {
 			documentURI := s.toDocumentURI(result.mainSpxFile)
 			result.addDiagnostics(documentURI, Diagnostic{
@@ -580,6 +753,24 @@ func (s *Server) inspectForSpxResourceRootDir(result *compileResult) {
 		}
 		return false
 	})
+	if spxResourceRootDir == "" {
+		spxResourceRootDir = "assets"
+	}
+	spxResourceRootFS, _ := fs.Sub(snapshot, spxResourceRootDir)
+
+	spxResourceSet, err := NewSpxResourceSet(spxResourceRootFS)
+	if err != nil {
+		result.addDiagnostics(s.toDocumentURI(result.mainSpxFile), Diagnostic{
+			Severity: SeverityError,
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 0, Character: 0},
+			},
+			Message: fmt.Sprintf("failed to create spx resource set: %v", err),
+		})
+		return
+	}
+	result.spxResourceSet = *spxResourceSet
 }
 
 // inspectForSpxResourceAutoBindingsAndRefsAtDecls inspects for spx resource
@@ -627,40 +818,54 @@ func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compile
 			}
 		}
 		if isSpxSoundResourceAutoBinding || isSpxSpriteResourceAutoBinding {
-			var subDiags []Diagnostic
+			var diags []Diagnostic
 			if isInMainSpx {
-				if result.isInMainSpxFirstVarBlock(ident.Pos()) {
+				if result.isDefinedInFirstVarBlock(obj) {
 					switch {
 					case isSpxSoundResourceAutoBinding:
-						refKey := SpxSoundResourceRefKey{SoundName: ident.Name}
-						result.addSpxResourceRef(refKey, ident, SpxResourceRefKindAutoBinding)
-						result.addSpxSoundResourceAutoBinding(obj)
-						if _, err := s.getSpxSoundResource(ident.Name); err != nil {
-							subDiags = collectDiagnosticsFromGetSpxResourceError(err, SpxResourceTypeSound, ident.Name, identRange)
+						result.addSpxResourceRef(SpxResourceRef{
+							ID:   SpxSoundResourceID{SoundName: ident.Name},
+							Kind: SpxResourceRefKindAutoBinding,
+							Node: ident,
+						})
+						result.spxSoundResourceAutoBindings[obj] = struct{}{}
+						if result.spxResourceSet.Sound(ident.Name) == nil {
+							diags = []Diagnostic{{
+								Severity: SeverityError,
+								Range:    identRange,
+								Message:  fmt.Sprintf("sound resource %q not found", ident.Name),
+							}}
 						}
 					case isSpxSpriteResourceAutoBinding:
-						refKey := SpxSpriteResourceRefKey{SpriteName: ident.Name}
-						result.addSpxResourceRef(refKey, ident, SpxResourceRefKindAutoBinding)
-						result.addSpxSpriteResourceAutoBinding(obj)
-						if _, err := s.getSpxSpriteResource(ident.Name); err != nil {
-							subDiags = collectDiagnosticsFromGetSpxResourceError(err, SpxResourceTypeSprite, ident.Name, identRange)
+						result.addSpxResourceRef(SpxResourceRef{
+							ID:   SpxSpriteResourceID{SpriteName: ident.Name},
+							Kind: SpxResourceRefKindAutoBinding,
+							Node: ident,
+						})
+						result.spxSpriteResourceAutoBindings[obj] = struct{}{}
+						if result.spxResourceSet.Sprite(ident.Name) == nil {
+							diags = []Diagnostic{{
+								Severity: SeverityError,
+								Range:    identRange,
+								Message:  fmt.Sprintf("sprite resource %q not found", ident.Name),
+							}}
 						}
 					}
 				} else {
-					subDiags = []Diagnostic{{
+					diags = []Diagnostic{{
 						Severity: SeverityWarning,
 						Range:    identRange,
 						Message:  "resources must be defined in the first var block for auto-binding",
 					}}
 				}
 			} else {
-				subDiags = []Diagnostic{{
+				diags = []Diagnostic{{
 					Severity: SeverityWarning,
 					Range:    identRange,
 					Message:  "auto-binding of resources can only happen in main.spx",
 				}}
 			}
-			result.addDiagnostics(documentURI, subDiags...)
+			result.addDiagnostics(documentURI, diags...)
 		}
 	}
 }
@@ -677,11 +882,11 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 		case *gopast.CallExpr:
 			funcTV, ok := result.typeInfo.Types[expr.Fun]
 			if !ok {
-				break
+				continue
 			}
 			funcSig, ok := funcTV.Type.(*types.Signature)
 			if !ok {
-				break
+				continue
 			}
 
 			var spxSpriteResource *SpxSpriteResource
@@ -742,11 +947,11 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 		objType := unwrapPointerType(obj.Type())
 		switch objType.String() {
 		case spxSpriteTypeName:
-			if slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
+			if _, ok := result.spxSpriteResourceAutoBindings[obj]; ok {
 				s.inspectSpxSpriteResourceRefAtExpr(result, ident, objType)
 			}
 		case spxSoundTypeName:
-			if slices.Contains(result.spxSoundResourceAutoBindings, obj) {
+			if _, ok := result.spxSoundResourceAutoBindings[obj]; ok {
 				s.inspectSpxSoundResourceRefAtExpr(result, ident, objType)
 			}
 		}
@@ -788,21 +993,41 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 // successfully retrieved.
 func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxBackdropResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
 
-	spxBackdropName, ok := ri.getStringResourceName(spxBackdropNameTypeName)
-	if !ok || !ri.validateResourceName(spxBackdropName, SpxResourceTypeBackdrop) {
+	spxBackdropName, ok := getStringLitOrConstValue(expr, exprTV)
+	if !ok {
+		return nil
+	}
+	if spxBackdropName == "" {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  "backdrop resource name cannot be empty",
+		})
 		return nil
 	}
 	spxResourceRefKind := SpxResourceRefKindStringLiteral
 	if _, ok := expr.(*gopast.Ident); ok {
 		spxResourceRefKind = SpxResourceRefKindConstantReference
 	}
-	ri.result.addSpxResourceRef(SpxBackdropResourceRefKey{BackdropName: spxBackdropName}, expr, spxResourceRefKind)
+	result.addSpxResourceRef(SpxResourceRef{
+		ID:   SpxBackdropResourceID{BackdropName: spxBackdropName},
+		Kind: spxResourceRefKind,
+		Node: expr,
+	})
 
-	spxBackdropResource, err := s.getSpxBackdropResource(spxBackdropName)
-	if err != nil {
-		ri.handleGetResourceError(err, SpxResourceTypeBackdrop, spxBackdropName)
+	spxBackdropResource := result.spxResourceSet.Backdrop(spxBackdropName)
+	if spxBackdropResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  fmt.Sprintf("backdrop resource %q not found", spxBackdropName),
+		})
 		return nil
 	}
 	return spxBackdropResource
@@ -813,7 +1038,11 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 // retrieved.
 func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSpriteResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
 
 	var spxSpriteName string
 	if callExpr, ok := expr.(*gopast.CallExpr); ok {
@@ -822,30 +1051,46 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			spxSpriteName = strings.TrimSuffix(path.Base(result.fset.Position(callExpr.Pos()).Filename), ".spx")
 		case *gopast.SelectorExpr:
 			if ident, ok := fun.X.(*gopast.Ident); ok {
-				ri.exprRange = Range{
-					Start: FromGopTokenPosition(result.fset.Position(fun.X.Pos())),
-					End:   FromGopTokenPosition(result.fset.Position(fun.X.End())),
+				exprRange = Range{
+					Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
+					End:   FromGopTokenPosition(result.fset.Position(ident.End())),
 				}
 
 				obj := result.typeInfo.ObjectOf(ident)
 				if obj != nil {
-					if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
+					if _, ok := result.spxSpriteResourceAutoBindings[obj]; !ok {
 						return nil
 					}
 					spxSpriteName = obj.Name()
-					ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, fun.X, SpxResourceRefKindAutoBindingReference)
+					result.addSpxResourceRef(SpxResourceRef{
+						ID:   SpxSpriteResourceID{SpriteName: spxSpriteName},
+						Kind: SpxResourceRefKindAutoBindingReference,
+						Node: ident,
+					})
 				}
 			}
 		}
-		if !ri.validateResourceName(spxSpriteName, SpxResourceTypeSprite) {
+		if spxSpriteName == "" {
+			result.addDiagnostics(documentURI, Diagnostic{
+				Severity: SeverityError,
+				Range:    exprRange,
+				Message:  "sprite resource name cannot be empty",
+			})
 			return nil
 		}
 	} else {
+		var typeName string
+		if declaredType != nil {
+			typeName = declaredType.String()
+		} else {
+			typeName = exprTV.Type.String()
+		}
+
 		var spxResourceRefKind SpxResourceRefKind
-		switch ri.getTypeName() {
+		switch typeName {
 		case spxSpriteNameTypeName:
 			var ok bool
-			spxSpriteName, ok = ri.getStringResourceName(spxSpriteNameTypeName)
+			spxSpriteName, ok = getStringLitOrConstValue(expr, exprTV)
 			if !ok {
 				return nil
 			}
@@ -862,7 +1107,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			if obj == nil {
 				return nil
 			}
-			if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
+			if _, ok := result.spxSpriteResourceAutoBindings[obj]; !ok {
 				return nil
 			}
 			spxSpriteName = obj.Name()
@@ -870,15 +1115,28 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 		default:
 			return nil
 		}
-		if !ri.validateResourceName(spxSpriteName, SpxResourceTypeSprite) {
+		if spxSpriteName == "" {
+			result.addDiagnostics(documentURI, Diagnostic{
+				Severity: SeverityError,
+				Range:    exprRange,
+				Message:  "sprite resource name cannot be empty",
+			})
 			return nil
 		}
-		ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, expr, spxResourceRefKind)
+		result.addSpxResourceRef(SpxResourceRef{
+			ID:   SpxSpriteResourceID{SpriteName: spxSpriteName},
+			Kind: spxResourceRefKind,
+			Node: expr,
+		})
 	}
 
-	spxSpriteResource, err := s.getSpxSpriteResource(spxSpriteName)
-	if err != nil {
-		ri.handleGetResourceError(err, SpxResourceTypeSprite, spxSpriteName)
+	spxSpriteResource := result.spxResourceSet.Sprite(spxSpriteName)
+	if spxSpriteResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  fmt.Sprintf("sprite resource %q not found", spxSpriteName),
+		})
 		return nil
 	}
 	return spxSpriteResource
@@ -889,16 +1147,27 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteCostumeResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
+
+	var typeName string
+	if declaredType != nil {
+		typeName = declaredType.String()
+	} else {
+		typeName = exprTV.Type.String()
+	}
 
 	var (
 		spxSpriteCostumeName string
 		spxResourceRefKind   SpxResourceRefKind
 	)
-	switch ri.getTypeName() {
+	switch typeName {
 	case spxSpriteCostumeNameTypeName:
 		var ok bool
-		spxSpriteCostumeName, ok = ri.getStringResourceName(spxSpriteCostumeNameTypeName)
+		spxSpriteCostumeName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
 			return nil
 		}
@@ -909,26 +1178,30 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 	default:
 		return nil
 	}
-	if !ri.validateResourceName(spxSpriteCostumeName, SpxResourceTypeCostume) {
-		return nil
-	}
-	ri.result.addSpxResourceRef(SpxSpriteCostumeResourceRefKey{
-		SpriteName:  spxSpriteResource.Name,
-		CostumeName: spxSpriteCostumeName,
-	}, expr, spxResourceRefKind)
-
-	idx := slices.IndexFunc(spxSpriteResource.Costumes, func(c SpxSpriteCostumeResource) bool {
-		return c.Name == spxSpriteCostumeName
-	})
-	if idx < 0 {
+	if spxSpriteCostumeName == "" {
 		result.addDiagnostics(documentURI, Diagnostic{
 			Severity: SeverityError,
-			Range:    ri.exprRange,
+			Range:    exprRange,
+			Message:  "sprite costume resource name cannot be empty",
+		})
+		return nil
+	}
+	result.addSpxResourceRef(SpxResourceRef{
+		ID:   SpxSpriteCostumeResourceID{SpriteName: spxSpriteResource.Name, CostumeName: spxSpriteCostumeName},
+		Kind: spxResourceRefKind,
+		Node: expr,
+	})
+
+	spxSpriteCostumeResource := spxSpriteResource.Costume(spxSpriteCostumeName)
+	if spxSpriteCostumeResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
 			Message:  fmt.Sprintf("costume resource %q not found in sprite %q", spxSpriteCostumeName, spxSpriteResource.Name),
 		})
 		return nil
 	}
-	return &spxSpriteResource.Costumes[idx]
+	return spxSpriteCostumeResource
 }
 
 // inspectSpxSpriteAnimationResourceRefAtExpr inspects a spx sprite animation
@@ -936,16 +1209,27 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteAnimationResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
+
+	var typeName string
+	if declaredType != nil {
+		typeName = declaredType.String()
+	} else {
+		typeName = exprTV.Type.String()
+	}
 
 	var (
 		spxSpriteAnimationName string
 		spxResourceRefKind     SpxResourceRefKind
 	)
-	switch ri.getTypeName() {
+	switch typeName {
 	case spxSpriteAnimationNameTypeName:
 		var ok bool
-		spxSpriteAnimationName, ok = ri.getStringResourceName(spxSpriteAnimationNameTypeName)
+		spxSpriteAnimationName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
 			return nil
 		}
@@ -956,26 +1240,30 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 	default:
 		return nil
 	}
-	if !ri.validateResourceName(spxSpriteAnimationName, SpxResourceTypeAnimation) {
-		return nil
-	}
-	ri.result.addSpxResourceRef(SpxSpriteAnimationResourceRefKey{
-		SpriteName:    spxSpriteResource.Name,
-		AnimationName: spxSpriteAnimationName,
-	}, expr, spxResourceRefKind)
-
-	idx := slices.IndexFunc(spxSpriteResource.Animations, func(a SpxSpriteAnimationResource) bool {
-		return a.Name == spxSpriteAnimationName
-	})
-	if idx < 0 {
+	if spxSpriteAnimationName == "" {
 		result.addDiagnostics(documentURI, Diagnostic{
 			Severity: SeverityError,
-			Range:    ri.exprRange,
+			Range:    exprRange,
+			Message:  "sprite animation resource name cannot be empty",
+		})
+		return nil
+	}
+	result.addSpxResourceRef(SpxResourceRef{
+		ID:   SpxSpriteAnimationResourceID{SpriteName: spxSpriteResource.Name, AnimationName: spxSpriteAnimationName},
+		Kind: spxResourceRefKind,
+		Node: expr,
+	})
+
+	spxSpriteAnimationResource := spxSpriteResource.Animation(spxSpriteAnimationName)
+	if spxSpriteAnimationResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
 			Message:  fmt.Sprintf("animation resource %q not found in sprite %q", spxSpriteAnimationName, spxSpriteResource.Name),
 		})
 		return nil
 	}
-	return &spxSpriteResource.Animations[idx]
+	return spxSpriteAnimationResource
 }
 
 // inspectSpxSoundResourceRefAtExpr inspects a spx sound resource reference at
@@ -983,16 +1271,27 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 // retrieved.
 func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSoundResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
+
+	var typeName string
+	if declaredType != nil {
+		typeName = declaredType.String()
+	} else {
+		typeName = exprTV.Type.String()
+	}
 
 	var (
 		spxSoundName       string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch ri.getTypeName() {
+	switch typeName {
 	case spxSoundNameTypeName:
 		var ok bool
-		spxSoundName, ok = ri.getStringResourceName(spxSoundNameTypeName)
+		spxSoundName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
 			return nil
 		}
@@ -1009,7 +1308,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 		if obj == nil {
 			return nil
 		}
-		if !slices.Contains(result.spxSoundResourceAutoBindings, obj) {
+		if _, ok := result.spxSoundResourceAutoBindings[obj]; !ok {
 			return nil
 		}
 		spxSoundName = obj.Name()
@@ -1017,14 +1316,27 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 	default:
 		return nil
 	}
-	if !ri.validateResourceName(spxSoundName, SpxResourceTypeSound) {
+	if spxSoundName == "" {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  "sound resource name cannot be empty",
+		})
 		return nil
 	}
-	ri.result.addSpxResourceRef(SpxSoundResourceRefKey{SoundName: spxSoundName}, expr, spxResourceRefKind)
+	result.addSpxResourceRef(SpxResourceRef{
+		ID:   SpxSoundResourceID{SoundName: spxSoundName},
+		Kind: spxResourceRefKind,
+		Node: expr,
+	})
 
-	spxSoundResource, err := s.getSpxSoundResource(spxSoundName)
-	if err != nil {
-		ri.handleGetResourceError(err, SpxResourceTypeSound, spxSoundName)
+	spxSoundResource := result.spxResourceSet.Sound(spxSoundName)
+	if spxSoundResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  fmt.Sprintf("sound resource %q not found", spxSoundName),
+		})
 		return nil
 	}
 	return spxSoundResource
@@ -1035,16 +1347,27 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 // retrieved.
 func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxWidgetResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
+	exprRange := Range{
+		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
+	}
+	exprTV := result.typeInfo.Types[expr]
+
+	var typeName string
+	if declaredType != nil {
+		typeName = declaredType.String()
+	} else {
+		typeName = exprTV.Type.String()
+	}
 
 	var (
 		spxWidgetName      string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch ri.getTypeName() {
+	switch typeName {
 	case spxWidgetNameTypeName:
 		var ok bool
-		spxWidgetName, ok = ri.getStringResourceName(spxWidgetNameTypeName)
+		spxWidgetName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
 			return nil
 		}
@@ -1055,96 +1378,28 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 	default:
 		return nil
 	}
-	if !ri.validateResourceName(spxWidgetName, SpxResourceTypeWidget) {
+	if spxWidgetName == "" {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  "widget resource name cannot be empty",
+		})
 		return nil
 	}
-	ri.result.addSpxResourceRef(SpxWidgetResourceRefKey{WidgetName: spxWidgetName}, expr, spxResourceRefKind)
+	result.addSpxResourceRef(SpxResourceRef{
+		ID:   SpxWidgetResourceID{WidgetName: spxWidgetName},
+		Kind: spxResourceRefKind,
+		Node: expr,
+	})
 
-	spxWidgetResource, err := s.getSpxWidgetResource(spxWidgetName)
-	if err != nil {
-		ri.handleGetResourceError(err, SpxResourceTypeWidget, spxWidgetName)
+	spxWidgetResource := result.spxResourceSet.Widget(spxWidgetName)
+	if spxWidgetResource == nil {
+		result.addDiagnostics(documentURI, Diagnostic{
+			Severity: SeverityError,
+			Range:    exprRange,
+			Message:  fmt.Sprintf("widget resource %q not found", spxWidgetName),
+		})
 		return nil
 	}
 	return spxWidgetResource
-}
-
-// spxResourceInspector helps inspect spx resource references in the code.
-type spxResourceInspector struct {
-	result       *compileResult
-	documentURI  DocumentURI
-	expr         gopast.Expr
-	declaredType types.Type
-	exprRange    Range
-	tv           types.TypeAndValue
-}
-
-// newSpxResourceInspector creates a new spx resource inspector.
-func newSpxResourceInspector(result *compileResult, documentURI DocumentURI, expr gopast.Expr, declaredType types.Type) *spxResourceInspector {
-	return &spxResourceInspector{
-		result:       result,
-		documentURI:  documentURI,
-		expr:         expr,
-		declaredType: declaredType,
-		exprRange: Range{
-			Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-			End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-		},
-		tv: result.typeInfo.Types[expr],
-	}
-}
-
-// getTypeName returns the type name of the expression being inspected.
-func (ri *spxResourceInspector) getTypeName() string {
-	if ri.declaredType != nil {
-		return ri.declaredType.String()
-	}
-	return ri.tv.Type.String()
-}
-
-// getStringResourceName returns the resource name if the expression is a string
-// literal or constant of the expected type.
-func (ri *spxResourceInspector) getStringResourceName(expectedType string) (string, bool) {
-	if ri.getTypeName() != expectedType {
-		return "", false
-	}
-	name, ok := getStringLitOrConstValue(ri.expr, ri.tv)
-	return name, ok
-}
-
-// validateResourceName validates that the resource name is not empty. It
-// returns true if the name is valid, false otherwise.
-func (ri *spxResourceInspector) validateResourceName(resourceName string, resourceType SpxResourceType) bool {
-	if resourceName == "" {
-		ri.result.addDiagnostics(ri.documentURI, Diagnostic{
-			Severity: SeverityError,
-			Range:    ri.exprRange,
-			Message:  string(resourceType) + " resource name cannot be empty",
-		})
-		return false
-	}
-	return true
-}
-
-// handleGetResourceError handles errors that occur when getting a resource by
-// adding appropriate diagnostics.
-func (ri *spxResourceInspector) handleGetResourceError(err error, resourceType SpxResourceType, resourceName string) {
-	diags := collectDiagnosticsFromGetSpxResourceError(err, resourceType, resourceName, ri.exprRange)
-	ri.result.addDiagnostics(ri.documentURI, diags...)
-}
-
-// collectDiagnosticsFromGetSpxResourceError collects diagnostics from an error
-// when calling resource getter methods.
-func collectDiagnosticsFromGetSpxResourceError(err error, resourceType SpxResourceType, resourceName string, resourceNameRange Range) []Diagnostic {
-	if errors.Is(err, fs.ErrNotExist) {
-		return []Diagnostic{{
-			Severity: SeverityError,
-			Range:    resourceNameRange,
-			Message:  fmt.Sprintf("%s resource %q not found", resourceType, resourceName),
-		}}
-	}
-	return []Diagnostic{{
-		Severity: SeverityError,
-		Range:    resourceNameRange,
-		Message:  fmt.Sprintf("failed to get %s resource %q: %v", resourceType, resourceName, err),
-	}}
 }

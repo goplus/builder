@@ -17,16 +17,12 @@ type importer struct {
 	loaded map[string]*types.Package
 }
 
-// NewImporter returns a new [types.Importer] that reads package data from the
-// embedded pkgdata.
-func NewImporter(fset *goptoken.FileSet) types.Importer {
-	if fset == nil {
-		fset = goptoken.NewFileSet()
-	}
+// newImporter creates a new instance of [importer].
+func newImporter() *importer {
 	loaded := make(map[string]*types.Package)
 	loaded["unsafe"] = types.Unsafe
 	return &importer{
-		fset:   fset,
+		fset:   goptoken.NewFileSet(),
 		loaded: loaded,
 	}
 }
@@ -52,3 +48,6 @@ func (imp *importer) Import(path string) (*types.Package, error) {
 	}
 	return pkg, nil
 }
+
+// Importer is the global instance of [importer].
+var Importer = newImporter()

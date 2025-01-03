@@ -22,6 +22,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
