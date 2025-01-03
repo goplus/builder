@@ -8,6 +8,7 @@ import type { CodeEditorUI } from '../code-editor-ui'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
+import { debounce } from 'lodash'
 
 export type ResourceReferencesContext = BaseContext
 
@@ -45,14 +46,14 @@ export class ResourceReferenceController extends Emitter<{
   }
 
   private lastTryCtrl: AbortController | null = null
-  private tryRefreshItems() {
+  private tryRefreshItems = debounce(() => {
     const textDocument = this.ui.activeTextDocument
     const provider = this.providerRef.value
     if (textDocument == null || provider == null) return
     if (this.lastTryCtrl != null) this.lastTryCtrl.abort()
     this.lastTryCtrl = new AbortController()
     this.refreshItems(provider, textDocument, this.lastTryCtrl.signal)
-  }
+  }, 100)
 
   private modifyingRef = shallowRef<InternalResourceReference | null>(null)
   get modifying() {
