@@ -9,7 +9,7 @@ import type { Animation } from '@/models/animation'
 
 const props = defineProps<{
   item: Animation
-  selected: boolean
+  selected?: boolean
 }>()
 const [imgSrc, imgLoading] = useFileUrl(() => props.item.costumes[0].img)
 </script>

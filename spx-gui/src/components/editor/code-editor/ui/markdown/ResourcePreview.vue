@@ -14,8 +14,7 @@ const resourceModel = computed(() => getResourceModel(codeEditorCtx.ui.project, 
 </script>
 
 <template>
-  <!-- TODO: disable hover effect -->
-  <ResourceItem v-if="resourceModel != null" :resource="resourceModel" :selected="false" />
+  <ResourceItem v-if="resourceModel != null" :resource="resourceModel" />
 </template>
 
 <style lang="scss" scoped></style>

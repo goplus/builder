@@ -16,3 +16,9 @@ export const ctxKey: InjectionKey<MenuCtx> = Symbol('menu-ctx')
 <script setup lang="ts">
 provide(ctxKey, { disabled: false, inGroup: false })
 </script>
+
+<style lang="scss" scoped>
+.ui-menu {
+  padding: 8px;
+}
+</style>

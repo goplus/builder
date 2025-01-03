@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected">
+  <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected" :interactive="selected != null">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -17,11 +17,12 @@ withDefaults(
     imgSrc: string | null
     imgLoading: boolean
     name: string
-    selected: boolean
+    selected?: boolean
     color?: 'sprite' | 'primary'
   }>(),
   {
-    color: 'sprite'
+    color: 'sprite',
+    selected: undefined
   }
 )
 </script>

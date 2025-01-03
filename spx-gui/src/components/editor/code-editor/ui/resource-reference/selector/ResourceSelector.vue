@@ -46,8 +46,7 @@ function handleWheel(e: WheelEvent) {
     @wheel="handleWheel"
   >
     <ul class="items">
-      <component
-        :is="ResourceItem"
+      <ResourceItem
         v-for="item in selector.items"
         :key="item.name"
         :resource="item"

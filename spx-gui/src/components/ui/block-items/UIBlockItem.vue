@@ -1,6 +1,12 @@
 <template>
   <div
-    :class="['block-item', active && 'block-item-active', `block-item-${variant}`, `block-item-${size}`]"
+    :class="[
+      'block-item',
+      active && 'block-item-active',
+      interactive && 'block-item-interactive',
+      `block-item-${variant}`,
+      `block-item-${size}`
+    ]"
     :style="style"
   >
     <slot></slot>
@@ -17,11 +23,13 @@ const props = withDefaults(
     color?: Color
     variant?: 'standard' | 'colorful'
     size?: 'medium' | 'large'
+    interactive?: boolean
   }>(),
   {
     variant: 'standard',
     size: 'medium',
-    color: 'primary'
+    color: 'primary',
+    interactive: true
   }
 )
 
@@ -52,13 +60,16 @@ const style = computed(() => ({
   border-radius: var(--ui-border-radius-2);
   border: 2px solid var(--ui-color-grey-300);
   background-color: var(--ui-color-grey-300);
-  cursor: pointer;
+
+  &.block-item-interactive {
+    cursor: pointer;
+  }
 
   &.block-item-colorful {
     border-color: var(--color-background-faint);
     background-color: var(--color-background-faint);
 
-    &:hover:not(.block-item-active) {
+    &.block-item-interactive:hover:not(.block-item-active) {
       border-color: var(--color-background);
       background-color: var(--color-background);
     }
@@ -73,7 +84,7 @@ const style = computed(() => ({
     border-color: var(--ui-color-grey-300);
     background-color: var(--ui-color-grey-300);
 
-    &:hover:not(.block-item-active) {
+    &.block-item-interactive:hover:not(.block-item-active) {
       border-color: var(--ui-color-grey-400);
       background-color: var(--ui-color-grey-400);
     }

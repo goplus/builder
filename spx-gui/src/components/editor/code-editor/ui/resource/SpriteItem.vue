@@ -9,7 +9,7 @@ import { Sprite } from '@/models/sprite'
 
 const props = defineProps<{
   item: Sprite
-  selected: boolean
+  selected?: boolean
 }>()
 const [imgSrc, imgLoading] = useFileUrl(() => props.item.defaultCostume?.img)
 </script>
