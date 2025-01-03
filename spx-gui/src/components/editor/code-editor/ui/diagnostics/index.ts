@@ -4,6 +4,7 @@ import type Emitter from '@/utils/emitter'
 import { type BaseContext, type Diagnostic } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 import type { TextDocument } from '../../text-document'
+import { debounce } from 'lodash'
 
 export type DiagnosticsContext = BaseContext
 
@@ -35,14 +36,14 @@ export class DiagnosticsController extends Disposable {
   }
 
   private lastTryCtrl: AbortController | null = null
-  private tryRefreshDiagnostics() {
+  private tryRefreshDiagnostics = debounce(() => {
     const textDocument = this.ui.activeTextDocument
     const provider = this.providerRef.value
     if (textDocument == null || provider == null) return
     if (this.lastTryCtrl != null) this.lastTryCtrl.abort()
     this.lastTryCtrl = new AbortController()
     this.refreshDiagnostics(provider, textDocument, this.lastTryCtrl.signal)
-  }
+  }, 100)
 
   init() {
     this.addDisposer(
