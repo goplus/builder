@@ -11,8 +11,11 @@ import {
   watchEffect,
   provide,
   watch,
-  nextTick
+  nextTick,
+  type WatchSource,
+  toValue
 } from 'vue'
+import { useContentSize } from '@/utils/dom'
 import { usePopupContainer } from './utils'
 
 export type DropdownCtrl = {
@@ -54,8 +57,10 @@ export type Events = {
 export default defineComponent<Props, Events>(
   (props, { slots, emit }) => {
     const attachTo = usePopupContainer()
-
     const nPopoverRef = ref<InstanceType<typeof NPopover>>()
+
+    const internalVisibleRef = ref(false)
+    const visibleComputed = computed(() => props.visible ?? internalVisibleRef.value)
 
     const extraStyle = computed(() => {
       const placement = props.placement!
@@ -76,6 +81,7 @@ export default defineComponent<Props, Events>(
 
     function handleUpdateShow(show: boolean) {
       emit('update:visible', show)
+      internalVisibleRef.value = show
     }
 
     function setVisible(visible: boolean) {
@@ -134,12 +140,20 @@ export default defineComponent<Props, Events>(
       nPopoverRef.value?.syncPosition()
     })
 
+    // Size of popover content may change after it is shown.
+    // We need to update the position of popover when its size changes.
+    const [popoverWrapperClass, popoverWrapperRef] = usePopoverWrapper(visibleComputed)
+    const popoverWrapperSize = useContentSize(popoverWrapperRef)
+    watch([popoverWrapperSize.width, popoverWrapperSize.height], () => {
+      nPopoverRef.value?.syncPosition()
+    })
+
     return function render() {
       return h(
         NPopover,
         {
           ref: nPopoverRef,
-          class: 'ui-dropdown-content',
+          class: popoverWrapperClass,
           style: {
             overflow: 'hidden',
             borderRadius: 'var(--ui-border-radius-1)',
@@ -197,3 +211,24 @@ export default defineComponent<Props, Events>(
     emits: ['update:visible', 'clickOutside']
   }
 )
+
+/**
+ * Get the wrapper of popover content.
+ * There is no direct way to get the wrapper element of `NPopover` in naive-ui.
+ * We use a unique class name to identify it.
+ */
+function usePopoverWrapper(visibleRef: WatchSource<boolean>) {
+  const id = Math.random().toString(36).slice(2)
+  const wrapperClass = `ui-dropdown-content-${id}`
+  const popoverWrapperRef = ref<HTMLElement | null>(null)
+
+  watchEffect(async () => {
+    if (!toValue(visibleRef)) return
+    await nextTick()
+    const popoverWrapper = document.querySelector(`.${wrapperClass}`)
+    if (popoverWrapper == null) return
+    popoverWrapperRef.value = popoverWrapper as HTMLElement
+  })
+
+  return [wrapperClass, popoverWrapperRef] as const
+}
