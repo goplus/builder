@@ -9,12 +9,8 @@ defineProps<{
 </script>
 
 <template>
-  <ContextMenu :data="controller.currentMenuData" :controller="controller" />
-  <Teleport :to="controller.menuTriggerWidgetEl">
-    <ContextMenuTrigger
-      v-if="controller.currentTriggerData != null"
-      :data="controller.currentTriggerData"
-      :controller="controller"
-    />
+  <ContextMenu :data="controller.menuData" :controller="controller" />
+  <Teleport :to="controller.triggerWidgetEl">
+    <ContextMenuTrigger v-if="controller.triggerData != null" :data="controller.triggerData" :controller="controller" />
   </Teleport>
 </template>

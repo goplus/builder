@@ -61,7 +61,7 @@ export class ActionException extends Exception {
 
 /** useAction transforms exceptions to ActionException instances, with proper messages */
 export function useAction<Args extends any[], T>(
-  fn: (...args: Args) => Promise<T>,
+  fn: (...args: Args) => Promise<T> | T,
   failureSummaryMessage: LocaleMessage // TODO: the messages can be simplified if the messages' format is consistent
 ): (...args: Args) => Promise<T> {
   return async function actionFn(...args: Args) {
@@ -80,7 +80,7 @@ export function useAction<Args extends any[], T>(
  * - handles loading / success / failure with naive-ui message
  */
 export function useMessageHandle<Args extends any[], T>(
-  fn: (...args: Args) => Promise<T>,
+  fn: (...args: Args) => Promise<T> | T,
   failureSummaryMessage?: LocaleMessage,
   successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
 ) {
@@ -96,7 +96,7 @@ export function useMessageHandle<Args extends any[], T>(
   // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
   function fnWithMessage(...args: Args): Promise<void> {
     isLoading.value = true
-    return fn(...args).then(
+    return Promise.resolve(fn(...args)).then(
       (ret) => {
         isLoading.value = false
         if (successMessage != null) {
@@ -108,12 +108,12 @@ export function useMessageHandle<Args extends any[], T>(
         isLoading.value = false
         // For
         // - `Cancelled` exceptions: nothing to do
-        // - `ActionException` exceptions: we will notify the user
+        // - `Exception` exceptions with `userMessage`: we will notify the user with `userMessage`
         // do `return` (which swallows the exception) instead of `throw`.
         // It let the runtime (browser, vue, etc.) ignore such exceptions, which is intended.
         if (e instanceof Cancelled) return
-        if (e instanceof ActionException) {
-          m.error(t(e.userMessage))
+        if (e instanceof Exception) {
+          if (e.userMessage != null) m.error(t(e.userMessage))
           console.warn(e)
           return
         }

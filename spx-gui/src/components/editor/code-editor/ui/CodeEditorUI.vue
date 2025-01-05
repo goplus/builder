@@ -45,7 +45,7 @@ import {
 } from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
 import { CodeEditorUI } from './code-editor-ui'
-import MonacoEditorComp, { type InitData as MonacoEditorInitData } from './MonacoEditor.vue'
+import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
@@ -125,10 +125,10 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   contextmenu: false
 }))
 
-const monacEditorInitDataRef = shallowRef<MonacoEditorInitData | null>(null)
+const monacEditorRef = shallowRef<MonacoEditor | null>(null)
 
-async function handleMonacoEditorInit(editor: MonacoEditor, editorEl: HTMLElement) {
-  monacEditorInitDataRef.value = [editor, editorEl]
+async function handleMonacoEditorInit(editor: MonacoEditor) {
+  monacEditorRef.value = editor
 }
 
 watch(
@@ -137,9 +137,9 @@ watch(
     const signal = getCleanupSignal(onCleanUp)
     signal.addEventListener('abort', () => ui.dispose())
 
-    const initData = await untilNotNull(monacEditorInitDataRef)
+    const editor = await untilNotNull(monacEditorRef)
     signal.throwIfAborted()
-    ui.init(...initData)
+    ui.init(editor)
 
     ui.editor.onDidChangeConfiguration((e) => {
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize

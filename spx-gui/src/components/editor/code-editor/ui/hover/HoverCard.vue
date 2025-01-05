@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import type { InternalAction } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -18,11 +19,13 @@ const actions = computed(() => {
   return props.hover.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
 })
 
-async function handleAction(action: InternalAction) {
-  // TODO: exception handling
-  codeEditorCtx.ui.executeCommand(action.command, ...action.arguments)
-  props.controller.hideHover()
-}
+const handleAction = useMessageHandle(
+  async (action: InternalAction) => {
+    await codeEditorCtx.ui.executeCommand(action.command, ...action.arguments)
+    props.controller.hideHover()
+  },
+  { en: 'Failed to execute command', zh: '执行命令失败' }
+).fn
 </script>
 
 <template>

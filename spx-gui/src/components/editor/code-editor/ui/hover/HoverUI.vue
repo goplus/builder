@@ -16,7 +16,7 @@ const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 
 watchEffect(() => {
-  const hover = props.controller.currentHoverRef.value
+  const hover = props.controller.hover
   if (hover == null) {
     dropdownVisible.value = false
     return
@@ -44,11 +44,7 @@ watchEffect(() => {
     placement="top-start"
     :offset="{ x: 0, y: 4 }"
   >
-    <HoverCard
-      v-if="controller.currentHoverRef.value != null"
-      :hover="controller.currentHoverRef.value"
-      :controller="controller"
-    />
+    <HoverCard v-if="controller.hover != null" :hover="controller.hover" :controller="controller" />
   </UIDropdown>
 </template>
 

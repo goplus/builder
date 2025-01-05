@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMessageHandle } from '@/utils/exception'
 import { UITooltip } from '@/components/ui'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
@@ -13,18 +14,23 @@ const props = defineProps<{
 
 const codeEditorCtx = useCodeEditorUICtx()
 
-function handleInsert() {
-  codeEditorCtx.ui.insertSnippet(props.item.insertText)
-  codeEditorCtx.ui.editor.focus()
-}
+const handleInsert = useMessageHandle(
+  () => {
+    codeEditorCtx.ui.insertSnippet(props.item.insertText)
+    codeEditorCtx.ui.editor.focus()
+  },
+  { en: 'Failed to insert', zh: '插入失败' }
+).fn
 
-function handleExplain() {
-  codeEditorCtx.ui.executeCommand(builtInCommandCopilotExplain, {
-    kind: ChatExplainKind.Definition,
-    overview: props.item.overview,
-    definition: props.item.definition
-  })
-}
+const handleExplain = useMessageHandle(
+  () =>
+    codeEditorCtx.ui.executeCommand(builtInCommandCopilotExplain, {
+      kind: ChatExplainKind.Definition,
+      overview: props.item.overview,
+      definition: props.item.definition
+    }),
+  { en: 'Failed to explain', zh: '解释失败' }
+).fn
 </script>
 
 <template>
