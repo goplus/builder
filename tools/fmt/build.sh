@@ -1,1 +1,1 @@
-GOOS=js GOARCH=wasm go build  -o static/main.wasm main.go
+GOOS=js GOARCH=wasm go build -trimpath -o static/main.wasm main.go

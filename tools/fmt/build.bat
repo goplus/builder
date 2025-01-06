@@ -4,6 +4,6 @@ setlocal
 set GOOS=js
 set GOARCH=wasm
 
-go build -o static\main.wasm main.go
+go build -trimpath -o static\main.wasm main.go
 
 endlocal

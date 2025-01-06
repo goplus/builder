@@ -24,7 +24,7 @@ RUN ./build.sh
 
 # Build backend
 WORKDIR /app/spx-backend
-RUN gop build -o spx-backend ./cmd/spx-backend
+RUN gop build -trimpath -o spx-backend ./cmd/spx-backend
 
 ################################################################################
 
