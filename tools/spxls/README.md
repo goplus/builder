@@ -18,7 +18,7 @@ through its API interfaces.
 2. Build the project:
 
   ```bash
-  GOOS=js GOARCH=wasm GODEBUG=gotypesalias=1 go build -o spxls.wasm
+  GOOS=js GOARCH=wasm GODEBUG=gotypesalias=1 go build -trimpath -o spxls.wasm
   ```
 
 ## Usage
