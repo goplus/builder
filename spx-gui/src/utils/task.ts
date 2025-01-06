@@ -19,7 +19,7 @@ export class TaskManager<P extends any[], T> {
 
   async start(...params: P) {
     const lastTask = this.currentTaskRef.value
-    if (lastTask != null) lastTask.ctrl.abort(new Cancelled('Cancelled for new task'))
+    if (lastTask != null) lastTask.ctrl.abort(new Cancelled('new task'))
 
     const ctrl = new AbortController()
     const task = shallowReactive<Task<T>>({ ctrl, data: null, error: null })
@@ -29,6 +29,8 @@ export class TaskManager<P extends any[], T> {
       ctrl.signal.throwIfAborted()
       task.data = data
     } catch (e) {
+      if (e instanceof Cancelled) return
+      console.warn('Task failed:', e)
       task.error = e
     }
   }
@@ -36,7 +38,7 @@ export class TaskManager<P extends any[], T> {
   stop() {
     const currentTask = this.currentTaskRef.value
     if (currentTask != null) {
-      currentTask.ctrl.abort(new Cancelled('Cancelled by `stop`'))
+      currentTask.ctrl.abort(new Cancelled('stop'))
       this.currentTaskRef.value = null
     }
   }

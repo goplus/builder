@@ -1,4 +1,4 @@
-import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type Spxls } from '.'
+import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
 
 /**
  * Client wrapper for the spxls.
@@ -46,7 +46,9 @@ export class Spxlc {
     }
     this.pendingRequests.delete(message.id)
 
-    if ('error' in message) pending.reject(message.error)
+    if ('error' in message && message.error != null) {
+      pending.reject(new ResponseError(message.error))
+    }
     else pending.resolve(message.result)
   }
 
@@ -136,5 +138,15 @@ export class Spxlc {
   dispose(): void {
     this.pendingRequests.clear()
     this.notificationHandlers.clear()
+  }
+}
+
+export class ResponseError extends Error {
+  code: number
+  data?: unknown
+  constructor(obj: ResponseErrorObj) {
+    super(obj.message)
+    this.code = obj.code
+    this.data = obj.data
   }
 }

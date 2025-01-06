@@ -1,9 +1,8 @@
-import { watchEffect, type InjectionKey, inject, provide, type ShallowRef } from 'vue'
+import { watchEffect, type InjectionKey, inject, provide } from 'vue'
 import { shikiToMonaco } from '@shikijs/monaco'
-import { untilNotNull } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { getHighlighter } from '@/utils/spx/highlighter'
-import { untilQueryLoaded, useQuery, type QueryRet } from '@/utils/query'
+import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import type { Project } from '@/models/project'
 import type { Runtime } from '@/models/runtime'
 import { type Position, type ResourceIdentifier, type TextDocumentIdentifier } from './common'
@@ -115,8 +114,8 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 }
 
 export function useProvideCodeEditorCtx(
-  projectRef: ShallowRef<Project | null>,
-  runtimeRef: ShallowRef<Runtime | null>
+  projectRet: QueryRet<Project>,
+  runtimeRet: QueryRet<Runtime>
 ): QueryRet<unknown> {
   const i18n = useI18n()
 
@@ -130,13 +129,16 @@ export function useProvideCodeEditorCtx(
   })
 
   const editorQueryRet = useQuery<CodeEditor>(
-    async () => {
+    async (signal) => {
       const [project, runtime, monaco] = await Promise.all([
-        untilNotNull(projectRef),
-        untilNotNull(runtimeRef),
-        untilQueryLoaded(monacoQueryRet)
+        composeQuery(projectRet),
+        composeQuery(runtimeRet),
+        composeQuery(monacoQueryRet)
       ])
-      return new CodeEditor(project, runtime, monaco, i18n)
+      signal.throwIfAborted()
+      const codeEditor = new CodeEditor(project, runtime, monaco, i18n)
+      codeEditor.disposeOnSignal(signal)
+      return codeEditor
     },
     { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
   )

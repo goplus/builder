@@ -120,6 +120,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const foo = await untilNotNull(fooRef)
  * const bar = await untilNotNull(() => getBar())
  * ```
+ * NOTE: Give value will not be collected as dependency.
  */
 export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, signal?: AbortSignal) {
   return untilConditionMet(
@@ -129,7 +130,10 @@ export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, 
   ) as Promise<NonNullable<T>>
 }
 
-/** Wait until given condition is met. */
+/**
+ * Wait until given condition is met.
+ * NOTE: Give condition will not be collected as dependency.
+ */
 export async function until(conditionSource: WatchSource<boolean>, signal?: AbortSignal) {
   await untilConditionMet(conditionSource, (c) => c, signal)
 }
@@ -140,6 +144,7 @@ export async function until(conditionSource: WatchSource<boolean>, signal?: Abor
  * const foo = await untilConditionMet(fooRef, (value) => value !== null)
  * const bar = await untilConditionMet(() => getBar(), (value) => value > 10)
  * ```
+ * NOTE: Give value will not be collected as dependency.
  */
 function untilConditionMet<T>(
   valueSource: WatchSource<T>,
