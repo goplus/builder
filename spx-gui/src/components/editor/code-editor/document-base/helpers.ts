@@ -7,6 +7,7 @@
 import { type DefinitionDocumentationItem } from '../common'
 import * as gopDefinitions from './gop'
 import * as spxDefinitions from './spx'
+import { keys as spxKeyDefinitions } from './spx/key'
 
 function transformItems(items: DefinitionDocumentationItem[]) {
   function simplifyPackage(pkg: string | undefined) {
@@ -30,7 +31,7 @@ function transformItems(items: DefinitionDocumentationItem[]) {
   const items = Object.values(spxDefinitions)
   const gameItems: DefinitionDocumentationItem[] = []
   const spriteItems: DefinitionDocumentationItem[] = []
-  const others: DefinitionDocumentationItem[] = []
+  const others: Array<DefinitionDocumentationItem> = []
   items.forEach((item) => {
     const name = item.definition.name ?? ''
     if (name.startsWith('Game.'))
@@ -54,6 +55,12 @@ function transformItems(items: DefinitionDocumentationItem[]) {
   return JSON.stringify({
     game: transformItems(gameItems),
     sprite: transformItems(spriteItems),
-    others: transformItems(others)
+    others: transformItems(others),
+    keys: {
+      pkg: 'spx',
+      names: spxKeyDefinitions.map((d) => d.definition.name).join(','),
+      sample: `onKey KeyLeft, => { ... }`,
+      desc: 'Key definitions, used for keyboard event listening.'
+    }
   })
 }

@@ -15,8 +15,10 @@ const props = defineProps<{
   language?: string
   /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
   file: string
-  /** `${startLine}-${endLine}`, e.g., `10-12` */
-  lineRange: string
+  /** Position (line number) to do change */
+  line: string
+  /** Line count to remove. No line will be removed if not provided */
+  removeLineCount?: string
 }>()
 
 const editorCtx = useEditorCtx()
@@ -29,8 +31,10 @@ const codeToAdd = computed(() => childrenText.value.replace(/^\n/, ''))
 const target = computed(() => {
   const textDocument = codeEditorCtx.getTextDocument({ uri: props.file })
   if (textDocument == null) return null
-  const [startLine, endLine] = props.lineRange.split('-').map((l) => parseInt(l, 10))
-  if (isNaN(startLine) || isNaN(endLine)) return null
+  const startLine = parseInt(props.line, 10)
+  const removeLineCount = props.removeLineCount == null ? 0 : parseInt(props.removeLineCount, 10)
+  if (isNaN(startLine) || isNaN(removeLineCount)) return null
+  const endLine = startLine + removeLineCount
   const range: Range = {
     start: { line: startLine, column: 1 },
     end: { line: endLine, column: 1 }

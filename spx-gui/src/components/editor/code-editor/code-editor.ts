@@ -514,7 +514,7 @@ export class CodeEditor extends Disposable {
           )
           apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
         } else {
-          // There may be compiling errors, so we fallback to all items
+          // When compiling errors encountered, we fallback to "all items".
           apiReferenceItems = await documentBase.getAllDocumentations()
         }
         return apiReferenceItems

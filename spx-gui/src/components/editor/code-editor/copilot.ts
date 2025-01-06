@@ -154,8 +154,14 @@ function getAnimationInfo(animation: Animation) {
 
 function getCodeInfo(code: string, codeSampleRatio: number) {
   return {
-    len: code.length,
+    lineNum: code.split('\n').length,
     // TODO: consider sampling code based on AST
-    sampled: code.slice(0, Math.floor(code.length * codeSampleRatio))
+    sampledLines: code
+      .slice(0, Math.floor(code.length * codeSampleRatio))
+      .split('\n')
+      .reduce<{ [l: number]: string }>((lines, line, i) => {
+        lines[i + 1] = line
+        return lines
+      }, {})
   }
 }
