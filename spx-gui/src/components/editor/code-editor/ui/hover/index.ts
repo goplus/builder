@@ -104,7 +104,6 @@ export class HoverController extends Emitter<{
         range: diagnostic.range,
         actions: [
           {
-            title: 'Fix',
             command: builtInCommandCopilotFixProblem,
             arguments: [
               {
