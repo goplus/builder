@@ -24,8 +24,5 @@ copy ispx\main.wasm ..\spx-gui\src\assets\ispx\main.wasm
 REM Get GOROOT environment variable
 for /f "tokens=*" %%i in ('go env GOROOT') do set GOROOT=%%i
 
-REM Copy the wasm_exec.js file
-copy "%GOROOT%\misc\wasm\wasm_exec.js" ..\spx-gui\src\assets\wasm_exec.js
-
 echo Build WASM complete
 endlocal
