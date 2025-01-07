@@ -1,6 +1,6 @@
 # `code-change`
 
-Display a change in the code. The change shows the difference between the original code and the new code. The user can apply the change by clicking "Apply" button in the element.
+Display a change to the code. The user may apply the change by clicking "Apply" button in the element.
 
 NOTE: Instead of `<code-change>`, you should use `<pre is="code-change">` to properly wrap the code change.
 
@@ -10,27 +10,28 @@ NOTE: Instead of `<code-change>`, you should use `<pre is="code-change">` to pro
 
 Text document URI, e.g., `file:///NiuXiaoQi.spx`
 
-### `line-range`
+### `line`
 
-The range of the original code.
+The position (line number) to do code change, e.g., `10`.
 
-Format: `${startLine}-${endLine}`, e.g., `10-12`
+### `remove-line-count`
 
-`startLine`, `endLine` are numbers start from 1. `10-12` means the range from line 10 to line 12. The end line is exclusive.
+The number of lines to remove, e.g., `3`. If omitted, no line will be removed.
 
 ### children
 
-The new code.
+The new code to insert.
 
 ## Examples
 
 ### Basic example
 
 ```xml
-<pre is="code-change" file="file:///NiuXiaoQi.spx" line-range="10-12">
+<pre is="code-change" file="file:///NiuXiaoQi.spx" line="10" remove-line-count="3">
 show
+
 say "Hello, world!"
 </pre>
 ```
 
-This is a change in the code of sprite `NiuXiaoQi`. The original code is line 10 & line 11. The new code is `show\nsay "Hello, world!"\n`.
+This is a change to the code of sprite `NiuXiaoQi`. The original code of line 10, 11 & 12 will be removed. And the code to insert is `show\n\nsay "Hello, world!"\n`.

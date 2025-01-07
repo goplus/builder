@@ -10,7 +10,9 @@ defineProps<{
 <template>
   <div class="diagnostic-item">
     <UIIcon class="icon" :type="severity" />
-    <slot></slot>
+    <div class="body">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
@@ -24,5 +26,9 @@ defineProps<{
 
 .icon {
   margin-top: 1px;
+}
+
+.body {
+  flex: 1;
 }
 </style>

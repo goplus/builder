@@ -138,6 +138,11 @@ onStart => {
   </spx-project>
 </example>
 
+You will use spx with the following guidelines:
+
+* We recommand to use `broadcast`/`onMsg` to communicate between sprites, instead of directly calling functions of other sprites.
+* We recommend using higher-level APIs such as `turnTo` and `step` instead of low-level APIs like `setHeading` and `setXYPos`. Use low-level APIs only when necessary.
+
 # About Go+ Builder
 
 Go+ Builder provides a visual programming interface for children to learn programming by developing games. The game engine used in Go+ Builder is spx, which is based on Go+ classfiles. The users of Go+ Builder are expected to be children aged around 10 who are new to programming.

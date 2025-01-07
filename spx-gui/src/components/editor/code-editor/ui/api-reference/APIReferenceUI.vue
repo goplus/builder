@@ -3,6 +3,7 @@ import { throttle } from 'lodash'
 import { computed, ref, watch, watchEffect } from 'vue'
 import { type LocaleMessage } from '@/utils/i18n'
 import { getCleanupSignal } from '@/utils/disposable'
+import { packageSpx } from '@/utils/spx'
 import { useUIVariables } from '@/components/ui'
 import { mainCategories, stringifyDefinitionId, subCategories } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
@@ -130,8 +131,16 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
   return item.categories.some((c) => c[0] === mcid && c[1] === scid)
 }
 
+const itemsForDisplay = computed(() => {
+  if (props.controller.items == null) return null
+  // There are too many key constants, we exclude them when displaying in list.
+  return props.controller.items.filter(
+    (item) => !(item.definition.package === packageSpx && item.definition.name?.startsWith('Key'))
+  )
+})
+
 const categoriesComputed = computed(() => {
-  const items = props.controller.items
+  const items = itemsForDisplay.value
   if (items == null) return []
   const result: MainCategory[] = []
   for (const mcvi of categoriesViewInfo) {
