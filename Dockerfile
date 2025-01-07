@@ -16,12 +16,6 @@ COPY spx-backend ./spx-backend
 
 ARG GOPROXY
 
-# Build WASM
-WORKDIR /app/tools/fmt
-RUN ./build.sh
-WORKDIR /app/tools/ispx
-RUN ./build.sh
-
 # Build backend
 WORKDIR /app/spx-backend
 RUN gop build -trimpath -o spx-backend ./cmd/spx-backend
@@ -30,15 +24,17 @@ RUN gop build -trimpath -o spx-backend ./cmd/spx-backend
 
 FROM ${GO_BASE_IMAGE} AS go-builder
 
-WORKDIR /app
-
-COPY tools ./tools
-
 ARG GOPROXY
+# Pre-install Go toolchain for 1.21.3, which will be used by tools/fmt & tools/ispx
+RUN GOTOOLCHAIN=go1.21.3 go version
 
-# Build WASM for spxls
-WORKDIR /app/tools/spxls
-RUN ./build.sh
+WORKDIR /app
+COPY tools ./tools
+COPY spx-gui ./spx-gui
+
+# Build WASM
+WORKDIR /app/spx-gui
+RUN ./build-wasm.sh
 
 ################################################################################
 
@@ -46,18 +42,19 @@ FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/spx-gui
 
-COPY spx-gui/package.json spx-gui/package-lock.json ./
-
+COPY spx-gui/package.json spx-gui/package-lock.json .
 ARG NPM_CONFIG_REGISTRY
-
 RUN npm install
+
+COPY spx-gui/public ./public
+COPY spx-gui/install-spx.sh .
+RUN ./install-spx.sh
 
 COPY spx-gui .
 COPY docs ../docs
 COPY tools ../tools
-COPY --from=gop-builder /app/tools/fmt/static/main.wasm /app/spx-gui/src/assets/format.wasm
-COPY --from=gop-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/main.wasm
-COPY --from=go-builder /app/tools/spxls/spxls.wasm /app/spx-gui/src/assets/spxls.wasm
+# Copy assets (with wasm)
+COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 
 ARG NODE_ENV
 

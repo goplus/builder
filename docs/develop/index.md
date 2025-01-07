@@ -8,6 +8,11 @@
 - **`/tools`**: Other independent tools that Go+ Builder depends on.
 - **`/scripts`**: Scripts for building, deploying, or other automation tasks.
 
-### Architecture design
+### Environment Requirements
+
+- **Node.js**: >= 20.11.1
+- **Go**: >= 1.23.4
+
+### Architecture Design
 
 TODO.
