@@ -54,9 +54,11 @@ watchEffect(() => {
   min-width: 8em;
   display: flex;
   align-items: center;
-  padding: 8px;
+  padding: 7px;
   border-radius: var(--ui-border-radius-1);
   cursor: pointer;
+  font-size: 12px;
+  color: var(--ui-color-grey-1000);
   &:hover {
     background: var(--ui-color-grey-300);
   }
@@ -66,7 +68,7 @@ watchEffect(() => {
 }
 
 .icon {
-  margin-right: 4px;
+  margin-right: 8px;
 }
 
 .code {

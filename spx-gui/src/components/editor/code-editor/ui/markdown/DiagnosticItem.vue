@@ -30,5 +30,6 @@ defineProps<{
 
 .body {
   flex: 1;
+  color: var(--ui-color-grey-1000);
 }
 </style>
