@@ -40,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   UIForm,
   UIFormItem,
@@ -61,7 +62,7 @@ import type { PartialAssetData } from '@/models/common/asset'
 import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { isAddPublicLibraryEnabled } from '@/utils/utils'
-import { categories, categoryAll } from './category'
+import { categoryAll, getAssetCategories } from './category'
 import BackdropPreview from './BackdropPreview.vue'
 import SpritePreview from './SpritePreview.vue'
 import SoundPreview from './SoundPreview.vue'
@@ -80,6 +81,15 @@ const emit = defineEmits<{
 const addPublicLibraryEnabled = isAddPublicLibraryEnabled()
 
 const { t } = useI18n()
+
+const assetType = computed(() => {
+  if (props.asset instanceof Backdrop) return AssetType.Backdrop
+  if (props.asset instanceof Sound) return AssetType.Sound
+  if (props.asset instanceof Sprite) return AssetType.Sprite
+  throw new Error(`unknown asset type ${props.asset}`)
+})
+
+const categories = computed(() => getAssetCategories(assetType.value))
 
 const form = useForm({
   name: [props.asset.name, validateName],

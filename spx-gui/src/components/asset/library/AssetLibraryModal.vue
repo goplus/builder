@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    style="width: 1076px"
+    style="width: 1096px"
     :visible="props.visible"
     :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -84,12 +84,10 @@ import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
+import { type Category, getAssetCategories, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
-
-const categories = [categoryAll, ...categoriesWithoutAll]
 
 const props = defineProps<{
   type: AssetType
@@ -101,6 +99,11 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
+
+const categories = computed(() => {
+  const categoriesWithoutAll = getAssetCategories(props.type)
+  return [categoryAll, ...categoriesWithoutAll]
+})
 
 const ItemComponent = computed(
   () =>
@@ -233,7 +236,8 @@ async function handleAssetClick(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 148px;
+  flex: 0 0 168px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);
