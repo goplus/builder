@@ -16,12 +16,12 @@ const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 
 watchEffect(() => {
-  const { currentCompletion, nonEmptyItems } = props.controller
-  if (currentCompletion == null || nonEmptyItems == null) {
+  const { completion, nonEmptyItems } = props.controller
+  if (completion == null || nonEmptyItems == null) {
     dropdownVisible.value = false
     return
   }
-  const aPos = toAbsolutePosition(currentCompletion.position, codeEditorUICtx.ui.editor)
+  const aPos = toAbsolutePosition(completion.position, codeEditorUICtx.ui.editor)
   if (aPos == null) {
     dropdownVisible.value = false
     return

@@ -2,8 +2,6 @@
 import { debounce } from 'lodash'
 import { untilNotNull } from '@/utils/utils'
 import { type Monaco, type MonacoEditor, type monaco as tmonaco } from '../monaco'
-
-export type InitData = [editor: MonacoEditor, editorEl: HTMLElement]
 </script>
 
 <script setup lang="ts">
@@ -15,7 +13,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  init: InitData
+  init: [MonacoEditor]
 }>()
 
 const editorElRef = ref<HTMLDivElement>()
@@ -65,7 +63,7 @@ watchEffect(async (onClenaup) => {
   const resizeObserver = new ResizeObserver(handleResize)
   resizeObserver.observe(editorEl)
 
-  emit('init', editor, editorEl)
+  emit('init', editor)
   onClenaup(() => {
     editor.dispose()
     resizeObserver.disconnect()

@@ -1,12 +1,12 @@
 import { computed, shallowRef, watch } from 'vue'
+import { debounce } from 'lodash'
+import { TaskManager } from '@/utils/task'
 import Emitter from '@/utils/emitter'
 import { ResourceReferenceKind, type BaseContext, type ResourceReference } from '../../common'
-import type { TextDocument } from '../../text-document'
 import { toMonacoRange } from '../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
-import { debounce } from 'lodash'
 
 export type ResourceReferencesContext = BaseContext
 
@@ -33,25 +33,18 @@ export class ResourceReferenceController extends Emitter<{
     super()
   }
 
-  private itemsRef = shallowRef<InternalResourceReference[] | null>(null)
-  get items() {
-    return this.itemsRef.value
-  }
-
-  private async refreshItems(provider: IResourceReferencesProvider, textDocument: TextDocument, signal: AbortSignal) {
-    const items = await provider.provideResourceReferences({ textDocument, signal })
-    this.itemsRef.value = items.map((item, i) => ({ ...item, id: i + '' }))
-  }
-
-  private lastTryCtrl: AbortController | null = null
-  private tryRefreshItems = debounce(() => {
-    const textDocument = this.ui.activeTextDocument
+  private itemsMgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (textDocument == null || provider == null) return
-    if (this.lastTryCtrl != null) this.lastTryCtrl.abort()
-    this.lastTryCtrl = new AbortController()
-    this.refreshItems(provider, textDocument, this.lastTryCtrl.signal)
-  }, 100)
+    if (provider == null) throw new Error('No provider registered')
+    const { activeTextDocument: textDocument } = this.ui
+    if (textDocument == null) throw new Error('No active text document')
+    const items = await provider.provideResourceReferences({ textDocument, signal })
+    return items.map<InternalResourceReference>((item, i) => ({ ...item, id: i + '' }))
+  })
+
+  get items() {
+    return this.itemsMgr.result.data
+  }
 
   private modifyingRef = shallowRef<InternalResourceReference | null>(null)
   get modifying() {
@@ -98,15 +91,17 @@ export class ResourceReferenceController extends Emitter<{
   }
 
   init() {
-    const { editor, editorEl } = this.ui
+    const { editor } = this.ui
+
+    const refreshItems = debounce(() => this.itemsMgr.start(), 100)
 
     this.addDisposer(
       watch(
         () => this.ui.activeTextDocument,
-        (textDocument, __, onCleanup) => {
+        (textDocument, _, onCleanup) => {
           if (textDocument == null) return
-          this.tryRefreshItems()
-          onCleanup(textDocument.on('didChangeContent', () => this.tryRefreshItems()))
+          refreshItems()
+          onCleanup(textDocument.on('didChangeContent', refreshItems))
         },
         { immediate: true }
       )
@@ -114,14 +109,17 @@ export class ResourceReferenceController extends Emitter<{
     this.addDisposer(
       watch(
         this.providerRef,
-        (provider, __, onCleanup) => {
+        (provider, _, onCleanup) => {
           if (provider == null) return
-          this.tryRefreshItems()
-          onCleanup(provider.on('didChangeResourceReferences', () => this.tryRefreshItems()))
+          refreshItems()
+          onCleanup(provider.on('didChangeResourceReferences', refreshItems))
         },
         { immediate: true }
       )
     )
+
+    const editorEl = editor.getDomNode()
+    if (editorEl == null) throw new Error('No editor dom node')
 
     let clickingId: string | null = null
 

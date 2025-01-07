@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
+import { useMessageHandle } from '@/utils/exception'
 import { type Range, type Position, type TextDocumentIdentifier, textDocumentId2CodeFileName } from './common'
 import { useCodeEditorCtx } from './context'
 
@@ -40,20 +41,23 @@ const defaultText = computed(() => {
   throw new Error('Either `position` or `range` must be provided')
 })
 
-function handleClick() {
-  const ui = codeEditorCtx.getAttachedUI()
-  if (ui == null) return
-  const { file, position, range } = props
-  if (position != null) {
-    ui.open(file, position)
-    return
-  }
-  if (range != null) {
-    ui.open(file, range)
-    return
-  }
-  throw new Error('Either `position` or `range` must be provided')
-}
+const handleClick = useMessageHandle(
+  () => {
+    const ui = codeEditorCtx.getAttachedUI()
+    if (ui == null) return
+    const { file, position, range } = props
+    if (position != null) {
+      ui.open(file, position)
+      return
+    }
+    if (range != null) {
+      ui.open(file, range)
+      return
+    }
+    throw new Error('Either `position` or `range` must be provided')
+  },
+  { en: 'Failed to open code location', zh: '打开代码位置失败' }
+).fn
 </script>
 
 <template>

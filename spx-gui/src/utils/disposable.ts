@@ -35,6 +35,15 @@ export class Disposable implements IDisposable {
     }
   }
 
+  /** Dispose when given signal aborted. */
+  disposeOnSignal(signal: AbortSignal) {
+    if (signal.aborted) {
+      this.dispose()
+    } else {
+      signal.addEventListener('abort', () => this.dispose(), { signal: this.ctrl.signal })
+    }
+  }
+
   getSignal() {
     return this.ctrl.signal
   }

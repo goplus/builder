@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
 import { type LocaleMessage } from '@/utils/i18n'
+import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
 import { packageSpx } from '@/utils/spx'
-import { useUIVariables } from '@/components/ui'
+import { useUIVariables, UIError } from '@/components/ui'
 import { mainCategories, stringifyDefinitionId, subCategories } from '../../common'
 import type { APIReferenceController, APIReferenceItem } from '.'
 import APIReferenceItemComp from './APIReferenceItem.vue'
@@ -131,12 +132,24 @@ function belongs(item: APIReferenceItem, mcid: string, scid: string) {
   return item.categories.some((c) => c[0] === mcid && c[1] === scid)
 }
 
-const itemsForDisplay = computed(() => {
-  if (props.controller.items == null) return null
-  // There are too many key constants, we exclude them when displaying in list.
-  return props.controller.items.filter(
-    (item) => !(item.definition.package === packageSpx && item.definition.name?.startsWith('Key'))
-  )
+const itemsForDisplay = shallowRef(props.controller.items)
+
+watch(
+  () => props.controller.items,
+  (newItems) => {
+    if (newItems == null) return // Ignore empty data to keep UI stable
+    // There are too many key-related constants, we exclude them when displaying in list.
+    itemsForDisplay.value = newItems.filter(
+      (item) => !(item.definition.package === packageSpx && item.definition.name?.startsWith('Key'))
+    )
+  }
+)
+
+const err = computed(() => {
+  const err = props.controller.error
+  if (err == null) return null
+  if (err instanceof Cancelled) return null
+  return new ActionException(err, { en: 'Failed to load data', zh: '加载数据失败' })
 })
 
 const categoriesComputed = computed(() => {
@@ -205,30 +218,39 @@ function handleCategoryClick(id: string) {
 
 <template>
   <section class="api-reference-ui">
-    <ul class="categories-wrapper">
-      <li
-        v-for="c in categoriesComputed"
-        :key="c.id"
-        class="category"
-        :class="{ active: c.id === activeCategoryIdRef }"
-        :style="{ '--category-color': c.color }"
-        @click="handleCategoryClick(c.id)"
-      >
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="icon" v-html="c.icon"></div>
-        <p class="label">{{ $t(c.label) }}</p>
-      </li>
-    </ul>
-    <ul ref="itemsWrapperRef" class="items-wrapper">
-      <li v-for="c in categoriesComputed" :key="c.id" :data-category-id="c.id" class="category-wrapper">
-        <ul v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
-          <h5 class="title">{{ $t(sc.label) }}</h5>
-          <ul class="items">
-            <APIReferenceItemComp v-for="item in sc.items" :key="stringifyDefinitionId(item.definition)" :item="item" />
+    <UIError v-if="err != null">
+      {{ $t(err.userMessage) }}
+    </UIError>
+    <template v-else>
+      <ul class="categories-wrapper">
+        <li
+          v-for="c in categoriesComputed"
+          :key="c.id"
+          class="category"
+          :class="{ active: c.id === activeCategoryIdRef }"
+          :style="{ '--category-color': c.color }"
+          @click="handleCategoryClick(c.id)"
+        >
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="icon" v-html="c.icon"></div>
+          <p class="label">{{ $t(c.label) }}</p>
+        </li>
+      </ul>
+      <ul ref="itemsWrapperRef" class="items-wrapper">
+        <li v-for="c in categoriesComputed" :key="c.id" :data-category-id="c.id" class="category-wrapper">
+          <ul v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
+            <h5 class="title">{{ $t(sc.label) }}</h5>
+            <ul class="items">
+              <APIReferenceItemComp
+                v-for="item in sc.items"
+                :key="stringifyDefinitionId(item.definition)"
+                :item="item"
+              />
+            </ul>
           </ul>
-        </ul>
-      </li>
-    </ul>
+        </li>
+      </ul>
+    </template>
   </section>
 </template>
 

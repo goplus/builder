@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import { UIMenu, UIMenuGroup, UIMenuItem, UIDropdown } from '@/components/ui'
 import type { ContextMenuController, InternalMenuItem, MenuData } from '.'
 
@@ -16,9 +17,10 @@ const pos = computed(() => {
   }
 })
 
-function handleItemClick(item: InternalMenuItem) {
-  props.controller.executeMenuItem(item)
-}
+const handleItemClick = useMessageHandle((item: InternalMenuItem) => props.controller.executeMenuItem(item), {
+  en: 'Failed to execute command',
+  zh: '执行命令失败'
+}).fn
 </script>
 
 <template>

@@ -1,5 +1,6 @@
-import { shallowRef } from 'vue'
+import { debounce } from 'lodash'
 import Emitter from '@/utils/emitter'
+import { TaskManager } from '@/utils/task'
 import {
   type Action,
   type BaseContext,
@@ -20,7 +21,7 @@ import {
   builtInCommandModifyResourceReference,
   builtInCommandRenameResource
 } from '../code-editor-ui'
-import { fromMonacoPosition, token2Signal, supportGoTo } from '../common'
+import { fromMonacoPosition, supportGoTo } from '../common'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -34,6 +35,18 @@ export type InternalHover = Hover & {
 
 export type HoverContext = BaseContext
 
+type HoverTarget =
+  | {
+      type: 'text'
+      position: Position
+    }
+  | {
+      type: 'hover-card'
+    }
+  | {
+      type: 'other'
+    }
+
 export interface IHoverProvider {
   provideHover(ctx: HoverContext, position: Position): Promise<Hover | null>
 }
@@ -42,16 +55,6 @@ export class HoverController extends Emitter<{
   cardMouseEnter: void
   cardMouseLeave: void
 }> {
-  currentHoverRef = shallowRef<InternalHover | null>(null)
-
-  private showHover(hover: InternalHover) {
-    this.currentHoverRef.value = hover
-  }
-
-  hideHover() {
-    this.currentHoverRef.value = null
-  }
-
   private provider: IHoverProvider | null = null
 
   registerProvider(provider: IHoverProvider) {
@@ -62,31 +65,36 @@ export class HoverController extends Emitter<{
     super()
   }
 
-  /** `toHide` records the hover that is "planned" to be hiden, while with delay */
-  private toHide: InternalHover | null = null
+  private hoverMgr = new TaskManager(async (signal, position: Position) => {
+    if (this.provider == null) throw new Error('No provider registered')
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) throw new Error('No active text document')
 
-  /** Hide current hover with delay, to avoid flickering when mouse moves quickly */
-  private hideHoverWithDelay() {
-    const currentHover = this.currentHoverRef.value
-    if (currentHover == null) return
-    this.toHide = currentHover
-    setTimeout(() => {
-      if (this.currentHoverRef.value === this.toHide) {
-        this.hideHover()
-      }
-    }, 150)
+    const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
+    if (diagnosticsHover != null) return diagnosticsHover
+
+    const resourceReferenceHover = this.getResourceReferenceHover(position)
+    if (resourceReferenceHover != null) return resourceReferenceHover
+
+    const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
+    if (providedHover == null) return null
+    const range = providedHover.range ?? textDocument.getDefaultRange(position)
+    return { ...providedHover, range }
+  })
+
+  get hover() {
+    return this.hoverMgr.result.data
   }
 
-  /** Cancel "planned" hiding */
-  private cancelHidingHover() {
-    this.toHide = null
+  hideHover() {
+    this.hoverMgr.stop()
   }
 
-  private getDiagnosticsHover(textDocument: ITextDocument, position: monaco.Position): InternalHover | null {
+  private getDiagnosticsHover(textDocument: ITextDocument, position: Position): InternalHover | null {
     const diagnosticsController = this.ui.diagnosticsController
     if (diagnosticsController.diagnostics == null) return null
     for (const diagnostic of diagnosticsController.diagnostics) {
-      if (!containsPosition(diagnostic.range, fromMonacoPosition(position))) continue
+      if (!containsPosition(diagnostic.range, position)) continue
       return {
         contents: [
           makeBasicMarkdownString(
@@ -111,11 +119,11 @@ export class HoverController extends Emitter<{
     return null
   }
 
-  private getResourceReferenceHover(textDocument: ITextDocument, position: monaco.Position): InternalHover | null {
+  private getResourceReferenceHover(position: Position): InternalHover | null {
     const resourceReferenceController = this.ui.resourceReferenceController
     if (resourceReferenceController.items == null) return null
     for (const reference of resourceReferenceController.items) {
-      if (!containsPosition(reference.range, fromMonacoPosition(position))) continue
+      if (!containsPosition(reference.range, position)) continue
       const actions: Action[] = []
       const resourceModel = getResourceModel(this.ui.project, reference.resource)
       if (resourceModel != null && supportGoTo(resourceModel)) {
@@ -146,68 +154,36 @@ export class HoverController extends Emitter<{
   init() {
     const { monaco, editor, resourceReferenceController } = this.ui
 
-    this.addDisposable(
-      monaco.languages.registerHoverProvider('spx', {
-        provideHover: async (_, position, token) => {
-          // TODO: use `onMouseMove` as trigger?
-          if (this.provider == null) return
-          const textDocument = this.ui.activeTextDocument
-          if (textDocument == null) throw new Error('No active text document')
+    const hideHoverWithDebounce = debounce(() => this.hideHover(), 100)
 
-          const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
-          if (diagnosticsHover != null) {
-            this.showHover(diagnosticsHover)
-            return null
-          }
-
-          const resourceReferenceHover = this.getResourceReferenceHover(textDocument, position)
-          if (resourceReferenceHover != null) {
-            this.showHover(resourceReferenceHover)
-            return null
-          }
-
-          const signal = token2Signal(token)
-          const providedHover = await this.provider.provideHover(
-            { textDocument, signal },
-            { line: position.lineNumber, column: position.column }
-          )
-          if (providedHover != null) {
-            this.showHover({
-              ...providedHover,
-              range: providedHover.range ?? textDocument.getDefaultRange(fromMonacoPosition(position))
-            })
-            return null
-          }
-
-          return null
-        }
-      })
-    )
+    const handleMouseEnter = debounce((target: HoverTarget) => {
+      if (target.type === 'other') {
+        hideHoverWithDebounce()
+        return
+      }
+      hideHoverWithDebounce.cancel()
+      if (target.type !== 'text') return
+      const position = target.position
+      const currentHover = this.hover
+      if (currentHover != null && containsPosition(currentHover.range, position)) return
+      this.hoverMgr.start(position)
+    }, 50)
 
     this.addDisposable(
       editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => {
         if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
-          this.hideHoverWithDelay()
+          handleMouseEnter({ type: 'other' })
           return
         }
-        const currentHover = this.currentHoverRef.value
         const position = fromMonacoPosition(e.target.position)
-        if (currentHover != null && containsPosition(currentHover.range, position)) {
-          this.cancelHidingHover()
-          return
-        }
-        this.hideHoverWithDelay()
+        handleMouseEnter({ type: 'text', position })
       })
     )
 
-    this.addDisposable(
-      editor.onMouseLeave(() => {
-        this.hideHoverWithDelay()
-      })
-    )
+    this.addDisposable(editor.onMouseLeave(() => handleMouseEnter({ type: 'other' })))
 
-    this.on('cardMouseEnter', () => this.cancelHidingHover())
-    this.on('cardMouseLeave', () => this.hideHoverWithDelay())
+    this.on('cardMouseEnter', () => handleMouseEnter({ type: 'hover-card' }))
+    this.on('cardMouseLeave', () => handleMouseEnter({ type: 'other' }))
 
     this.addDisposable(editor.onKeyDown(() => this.hideHover()))
     this.addDisposable(editor.onMouseDown(() => this.hideHover()))

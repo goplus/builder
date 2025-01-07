@@ -295,11 +295,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     if (this._editor == null) throw new Error('Editor not initialized')
     return this._editor
   }
-  private _editorEl: HTMLElement | null = null
-  get editorEl() {
-    if (this._editorEl == null) throw new Error('Editor element not initialized')
-    return this._editorEl
-  }
 
   private isCopilotActiveRef = ref(false)
   get isCopilotActive() {
@@ -309,9 +304,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.isCopilotActiveRef.value = active
   }
 
-  init(editor: MonacoEditor, editorEl: HTMLElement) {
+  init(editor: MonacoEditor) {
     this._editor = editor
-    this._editorEl = editorEl
 
     this.setActiveTextDocument(this.mainTextDocumentId)
 

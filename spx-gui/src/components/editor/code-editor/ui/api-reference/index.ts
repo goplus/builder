@@ -1,7 +1,8 @@
 import { debounce } from 'lodash'
-import { shallowRef, watchEffect } from 'vue'
-import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import { shallowRef, watch } from 'vue'
+import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
+import { TaskManager } from '@/utils/task'
 import { type BaseContext, type Position, type DefinitionDocumentationItem } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 
@@ -14,11 +15,6 @@ export interface IAPIReferenceProvider {
 }
 
 export class APIReferenceController extends Disposable {
-  private itemsRef = shallowRef<APIReferenceItem[] | null>(null)
-  get items() {
-    return this.itemsRef.value
-  }
-
   private providerRef = shallowRef<IAPIReferenceProvider | null>(null)
   registerProvider(provider: IAPIReferenceProvider) {
     this.providerRef.value = provider
@@ -28,29 +24,38 @@ export class APIReferenceController extends Disposable {
     super()
   }
 
+  private itemsMgr = new TaskManager(async (signal) => {
+    const provider = this.providerRef.value
+    if (provider == null) throw new Error('No provider registered')
+    const { activeTextDocument: textDocument, cursorPosition } = this.ui
+    if (textDocument == null) throw new Error('No active text document')
+    const position = cursorPosition ?? { line: 1, column: 1 }
+    return provider.provideAPIReference({ textDocument, signal }, position)
+  })
+
+  get items() {
+    return this.itemsMgr.result.data
+  }
+
+  get error() {
+    return this.itemsMgr.result.error
+  }
+
   init() {
-    const updateItems = debounce(
-      async (provider: IAPIReferenceProvider, context: APIReferenceContext, position: Position | null) => {
-        context.signal.throwIfAborted() // in case request cancelled when debouncing
-        this.itemsRef.value = await provider.provideAPIReference(context, position ?? { line: 1, column: 1 })
-      },
-      300
-    )
+    const updateItemsWithDebounce = debounce(() => this.itemsMgr.start(), 300)
 
     this.addDisposer(
-      watchEffect(async (onCleanup) => {
-        const signal = getCleanupSignal(onCleanup)
-        const provider = this.providerRef.value
-        if (provider == null) return
-        const { activeTextDocument, cursorPosition } = this.ui
-        if (activeTextDocument == null) return
-        const context: APIReferenceContext = { textDocument: activeTextDocument, signal }
-        updateItems(provider, context, cursorPosition)
+      watch(
+        () => [this.ui.activeTextDocument, this.ui.cursorPosition],
+        async () => {
+          updateItemsWithDebounce()
 
-        // Do not wait for debouncing to finish if there is no existing items
-        await timeout(0) // `timeout(0)` to avoid `this.items` collected as dep of `watchEffect`
-        if (this.items == null) updateItems.flush()
-      })
+          // Do not wait for debouncing to finish if there is no existing items
+          await timeout(0) // `timeout(0)` to avoid `this.items` collected as dep of `watchEffect`
+          if (this.items == null) updateItemsWithDebounce.flush()
+        },
+        { immediate: true }
+      )
     )
   }
 }

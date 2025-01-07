@@ -1,11 +1,11 @@
-import { computed, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
+import { TaskManager } from '@/utils/task'
 import {
   DefinitionKind as CompletionItemKind,
   type BaseContext,
   type DefinitionDocumentationString,
   type Position,
-  type ITextDocument,
   positionEq
 } from '../../common'
 import { type monaco } from '../../monaco'
@@ -52,20 +52,34 @@ export class CompletionController extends Emitter<{
     super()
   }
 
-  private currentCompletionRef = shallowRef<{
-    ctrl: AbortController
-    textDocument: ITextDocument
-    position: Position
-    wordStart: Position
-    items: CompletionItem[] | null
-  } | null>(null)
+  private filterPositionRef = shallowRef<Position | null>(null)
 
-  get currentCompletion() {
-    return this.currentCompletionRef.value
+  private completionMgr = new TaskManager(async (signal) => {
+    if (this.provider == null) throw new Error('No provider registered')
+    const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
+    if (textDocument == null || position == null) throw new Error('No active text document or cursor position')
+    this.filterPositionRef.value = position
+    const word = textDocument.getWordAtPosition(position)
+    const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
+    const ctx: CompletionContext = { textDocument, signal }
+    const items = await this.provider.provideCompletion(ctx, position)
+    return { textDocument, wordStart, items }
+  })
+
+  get completionError() {
+    return this.completionMgr.result.error
+  }
+
+  get completion() {
+    const d = this.completionMgr.result.data
+    if (d == null) return null
+    const position = this.filterPositionRef.value
+    if (position == null) return null
+    return { ...d, position }
   }
 
   private filteredItemsComputed = computed(() => {
-    const currentCompletion = this.currentCompletion
+    const currentCompletion = this.completion
     if (currentCompletion == null || currentCompletion.items == null) return null
     const { textDocument, wordStart, position, items } = currentCompletion
     const wordTyped = textDocument.getValueInRange({ start: wordStart, end: position })
@@ -78,46 +92,17 @@ export class CompletionController extends Emitter<{
     return items
   }
 
-  private async loadCompletionItems() {
-    const completion = this.currentCompletion
-    if (this.provider == null || completion == null) return
-    const items = await this.provider.provideCompletion(
-      {
-        signal: completion.ctrl.signal,
-        textDocument: completion.textDocument
-      },
-      completion.position
-    )
-    completion.ctrl.signal.throwIfAborted()
-    completion.items = items
+  private startCompletion() {
+    this.completionMgr.start()
   }
 
-  private startCompletion(textDocument: ITextDocument, position: Position) {
-    this.currentCompletionRef.value?.ctrl.abort()
-    const word = textDocument.getWordAtPosition(position)
-    const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
-    this.currentCompletionRef.value = shallowReactive({
-      ctrl: new AbortController(),
-      textDocument,
-      position,
-      wordStart,
-      items: null
-    })
-    this.loadCompletionItems()
-    return this.currentCompletionRef.value
+  stopCompletion() {
+    this.completionMgr.stop()
   }
 
   /** Update position of current completion to trigger refilter */
   private refilterCompletion(position: Position) {
-    const currentCompletion = this.currentCompletion
-    if (currentCompletion == null) return
-    currentCompletion.position = position
-  }
-
-  stopCompletion() {
-    if (this.currentCompletionRef.value == null) return
-    this.currentCompletionRef.value.ctrl.abort()
-    this.currentCompletionRef.value = null
+    this.filterPositionRef.value = position
   }
 
   /** Check if completion should be triggered, and trigger if needed */
@@ -140,26 +125,23 @@ export class CompletionController extends Emitter<{
       return
     }
 
-    if (this.currentCompletion != null) {
+    if (this.completion != null) {
       const word = textDocument.getWordAtPosition(position)
       const wordStart = word != null ? { line: position.line, column: word.startColumn } : position
-      if (
-        this.currentCompletion.textDocument === textDocument &&
-        positionEq(this.currentCompletion.wordStart, wordStart)
-      ) {
+      if (this.completion.textDocument === textDocument && positionEq(this.completion.wordStart, wordStart)) {
         // cursor moved within the same word
         this.refilterCompletion(position)
         return
       }
     }
 
-    this.startCompletion(textDocument, position)
+    this.startCompletion()
   }
 
   async applyCompletionItem(item: InternalCompletionItem) {
     const { editor, cursorPosition } = this.ui
-    if (this.currentCompletion == null) return
-    const { wordStart, position } = this.currentCompletion
+    if (this.completion == null) return
+    const { wordStart, position } = this.completion
     if (!positionEq(cursorPosition, position)) return
     const range = { start: wordStart, end: position }
     switch (item.insertTextFormat) {
@@ -207,11 +189,8 @@ export class CompletionController extends Emitter<{
       watch(
         () => [this.ui.activeTextDocument, this.ui.cursorPosition] as const,
         ([textDocument, position]) => {
-          if (this.currentCompletion == null) return
-          if (
-            this.currentCompletion.textDocument !== textDocument ||
-            !positionEq(this.currentCompletion.position, position)
-          ) {
+          if (this.completion == null) return
+          if (this.completion.textDocument !== textDocument || !positionEq(this.completion.position, position)) {
             this.stopCompletion()
           }
         }
@@ -230,12 +209,12 @@ export class CompletionController extends Emitter<{
           this.stopCompletion()
           return
         }
-        if (this.currentCompletion != null && e.source === 'deleteLeft') {
+        if (this.completion != null && e.source === 'deleteLeft') {
           // completion is active and something like backspace is used
           this.checkAndTrigger()
           return
         }
-        if (this.currentCompletion != null && e.reason === reasons.Explicit) {
+        if (this.completion != null && e.reason === reasons.Explicit) {
           // completion is active and something like cursor keys are used to move the cursor
           this.checkAndTrigger()
         }

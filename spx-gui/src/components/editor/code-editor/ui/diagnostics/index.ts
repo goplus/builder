@@ -1,10 +1,10 @@
+import { debounce } from 'lodash'
 import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type Emitter from '@/utils/emitter'
+import { TaskManager } from '@/utils/task'
 import { type BaseContext, type Diagnostic } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
-import type { TextDocument } from '../../text-document'
-import { debounce } from 'lodash'
 
 export type DiagnosticsContext = BaseContext
 
@@ -26,33 +26,28 @@ export class DiagnosticsController extends Disposable {
     super()
   }
 
-  private diagnosticsRef = shallowRef<Diagnostic[] | null>(null)
-  get diagnostics() {
-    return this.diagnosticsRef.value
-  }
-
-  private async refreshDiagnostics(provider: IDiagnosticsProvider, textDocument: TextDocument, signal: AbortSignal) {
-    this.diagnosticsRef.value = await provider.provideDiagnostics({ textDocument, signal })
-  }
-
-  private lastTryCtrl: AbortController | null = null
-  private tryRefreshDiagnostics = debounce(() => {
-    const textDocument = this.ui.activeTextDocument
+  private diagnosticsMgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (textDocument == null || provider == null) return
-    if (this.lastTryCtrl != null) this.lastTryCtrl.abort()
-    this.lastTryCtrl = new AbortController()
-    this.refreshDiagnostics(provider, textDocument, this.lastTryCtrl.signal)
-  }, 100)
+    if (provider == null) throw new Error('No provider registered')
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) throw new Error('No active text document')
+    return provider.provideDiagnostics({ textDocument, signal })
+  })
+
+  get diagnostics() {
+    return this.diagnosticsMgr.result.data
+  }
 
   init() {
+    const refreshDiagnostics = debounce(() => this.diagnosticsMgr.start(), 100)
+
     this.addDisposer(
       watch(
         () => this.ui.activeTextDocument,
-        (textDocument, __, onCleanup) => {
+        (textDocument, _, onCleanup) => {
           if (textDocument == null) return
-          this.tryRefreshDiagnostics()
-          onCleanup(textDocument.on('didChangeContent', () => this.tryRefreshDiagnostics()))
+          refreshDiagnostics()
+          onCleanup(textDocument.on('didChangeContent', refreshDiagnostics))
         },
         { immediate: true }
       )
@@ -60,10 +55,10 @@ export class DiagnosticsController extends Disposable {
     this.addDisposer(
       watch(
         this.providerRef,
-        (provider, __, onCleanup) => {
+        (provider, _, onCleanup) => {
           if (provider == null) return
-          this.tryRefreshDiagnostics()
-          onCleanup(provider.on('didChangeDiagnostics', () => this.tryRefreshDiagnostics()))
+          refreshDiagnostics()
+          onCleanup(provider.on('didChangeDiagnostics', refreshDiagnostics))
         },
         { immediate: true }
       )

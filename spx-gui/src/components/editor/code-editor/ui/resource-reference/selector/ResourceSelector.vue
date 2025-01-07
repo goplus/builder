@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends SelectableResource">
 import { ref } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import { UIDropdownModal, UIDropdown, UIBlockItem, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import ResourceItem from '../../resource/ResourceItem.vue'
 import { type IResourceSelector, type SelectableResource, type CreateMethod } from '.'
@@ -20,11 +21,14 @@ function handleSelect(name: string) {
   selected.value = name
 }
 
-async function handleCreateWith(method: CreateMethod<T>) {
-  const created = await method.handler()
-  const firstCreated = Array.isArray(created) ? created[0] : created
-  selected.value = firstCreated.name
-}
+const handleCreateWith = useMessageHandle(
+  async (method: CreateMethod<T>) => {
+    const created = await method.handler()
+    const firstCreated = Array.isArray(created) ? created[0] : created
+    selected.value = firstCreated.name
+  },
+  { en: 'Failed to create', zh: '创建失败' }
+).fn
 
 function handleConfirm() {
   emit('selected', selected.value)
