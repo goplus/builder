@@ -322,6 +322,13 @@ export type DefinitionDocumentationItem = {
   overview: string
   /** Detailed explanation for the definition, overview not included */
   detail: BasicMarkdownString
+  /**
+   * If the definition should be hidden from the list. Typically a definition is hidden when:
+   * - It is for internal usage only
+   * - It is not recommended to use
+   * - It is duplicated with another one
+   */
+  hiddenFromList?: true
 }
 
 export interface IDocumentBase {

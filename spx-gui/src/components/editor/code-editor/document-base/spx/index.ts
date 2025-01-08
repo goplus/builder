@@ -2,27 +2,61 @@ import { packageSpx } from '@/utils/spx'
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../../common'
 import { defineConst } from './common'
 
-export const clone: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
+export const clone0: DefinitionDocumentationItem = {
+  categories: [categories.game.sprite],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.clone'
+    name: 'Sprite.clone',
+    overloadId: '0'
   },
   insertText: 'clone',
   overview: 'clone',
   detail: makeBasicMarkdownString({
-    en: 'Make a clone of current sprite, with optional data (for `onCloned` callback)',
-    zh: '复制当前精灵，可传递数据给 `onCloned` 回调'
+    en: 'Make a clone of current sprite',
+    zh: '复制当前精灵'
   })
 }
 
-export const onCloned: DefinitionDocumentationItem = {
+export const clone1: DefinitionDocumentationItem = {
+  categories: [categories.game.sprite],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.clone',
+    overloadId: '1'
+  },
+  insertText: 'clone ${1:data}',
+  overview: 'clone data',
+  detail: makeBasicMarkdownString({
+    en: 'Make a clone of current sprite with given data, e.g., `clone 123` (you can get the data `123` by `onCloned`)',
+    zh: '复制当前精灵并传递数据，如：`clone 123`（你可以通过 `onCloned` 获得数据 `123`）'
+  })
+}
+
+export const onCloned0: DefinitionDocumentationItem = {
   categories: [categories.event.sprite],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.onCloned'
+    name: 'Sprite.onCloned',
+    overloadId: '0'
+  },
+  insertText: 'onCloned data => {\n\t${1}\n}',
+  overview: 'onCloned data => { ... }',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to current sprite cloned and get the data, e.g., `onCloned data => { ... }`',
+    zh: '当前精灵被复制时执行并获得数据，如：`onCloned data => { ... }`'
+  })
+}
+
+export const onCloned1: DefinitionDocumentationItem = {
+  categories: [categories.event.sprite],
+  kind: DefinitionKind.Listen,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onCloned',
+    overloadId: '1'
   },
   insertText: 'onCloned => {\n\t${1}\n}',
   overview: 'onCloned => { ... }',
@@ -96,12 +130,29 @@ export const onTouchStart3: DefinitionDocumentationItem = {
   })
 }
 
-export const onMoving: DefinitionDocumentationItem = {
+export const onMoving0: DefinitionDocumentationItem = {
   categories: [categories.event.motion],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.onMoving'
+    name: 'Sprite.onMoving',
+    overloadId: '0'
+  },
+  insertText: 'onMoving info => {\n\t${1}\n}',
+  overview: 'onMoving info => { ... }',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to current sprite moving (position change), and get the moving info, e.g., `onMoving info => { ... }`',
+    zh: '当前精灵移动（位置改变）时执行，并获得移动信息，如：`onMoving info => { ... }`'
+  })
+}
+
+export const onMoving1: DefinitionDocumentationItem = {
+  categories: [categories.event.motion],
+  kind: DefinitionKind.Listen,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onMoving',
+    overloadId: '1'
   },
   insertText: 'onMoving => {\n\t${1}\n}',
   overview: 'onMoving => { ... }',
@@ -111,12 +162,29 @@ export const onMoving: DefinitionDocumentationItem = {
   })
 }
 
-export const onTurning: DefinitionDocumentationItem = {
+export const onTurning0: DefinitionDocumentationItem = {
   categories: [categories.event.motion],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.onTurning'
+    name: 'Sprite.onTurning',
+    overloadId: '0'
+  },
+  insertText: 'onTurning info => {\n\t${1}\n}',
+  overview: 'onTurning info => { ... }',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to current sprite turning (heading change), and get the turning info, e.g., `onTurning info => { ... }`',
+    zh: '当前精灵转向（朝向改变）时执行，并获得转向信息，如：`onTurning info => { ... }`'
+  })
+}
+
+export const onTurning1: DefinitionDocumentationItem = {
+  categories: [categories.event.motion],
+  kind: DefinitionKind.Listen,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onTurning',
+    overloadId: '1'
   },
   insertText: 'onTurning => {\n\t${1}\n}',
   overview: 'onTurning => { ... }',
@@ -344,22 +412,40 @@ export const distanceTo2: DefinitionDocumentationItem = {
   })
 }
 
-export const move: DefinitionDocumentationItem = {
+export const move0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.move'
+    name: 'Sprite.move',
+    overloadId: '0'
   },
   insertText: 'move ${1:distance}',
   overview: 'move distance',
   detail: makeBasicMarkdownString({
-    en: 'Move given distance, toward current heading',
-    zh: '向当前朝向移动指定的距离'
+    en: 'Move given distance toward current heading, e.g., `move 10`',
+    zh: '向当前朝向移动指定的距离，如：`move 10`'
   })
 }
 
-export const step: DefinitionDocumentationItem = {
+export const move1: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.move',
+    overloadId: '1'
+  },
+  insertText: 'move ${1:distance}',
+  overview: 'move distance',
+  detail: makeBasicMarkdownString({
+    en: 'Move given distance toward current heading, e.g., `move 10`',
+    zh: '向当前朝向移动指定的距离，如：`move 10`'
+  }),
+  hiddenFromList: true // duplicate with `move0`
+}
+
+export const step0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
   definition: {
@@ -370,9 +456,42 @@ export const step: DefinitionDocumentationItem = {
   insertText: 'step ${1:distance}',
   overview: 'step distance',
   detail: makeBasicMarkdownString({
-    en: 'Step given distance, toward current heading. Animation bound to state "step" will be played',
-    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
+    en: 'Step given distance toward current heading. Animation bound to state "step" will be played, e.g., `step 10`',
+    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放，如：`step 10`'
   })
+}
+
+export const step1: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.step',
+    overloadId: '1'
+  },
+  insertText: 'step ${1:distance}, ${2:animationName}',
+  overview: 'step distance, animationName',
+  detail: makeBasicMarkdownString({
+    en: 'Step given distance toward current heading and animation with given name will be played, e.g., `step 10, "run"`',
+    zh: '向当前朝向行走指定的距离，并播放指定名称的动画，如：`step 10, "run"`'
+  })
+}
+
+export const step2: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.step',
+    overloadId: '2'
+  },
+  insertText: 'step ${1:distance}',
+  overview: 'step distance',
+  detail: makeBasicMarkdownString({
+    en: 'Step given distance toward current heading. Animation bound to state "step" will be played',
+    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
+  }),
+  hiddenFromList: true // duplicate with `step0`
 }
 
 export const goto0: DefinitionDocumentationItem = {
@@ -386,8 +505,8 @@ export const goto0: DefinitionDocumentationItem = {
   insertText: 'goto ${1:sprite}',
   overview: 'goto sprite',
   detail: makeBasicMarkdownString({
-    en: 'Move to given sprite',
-    zh: '移动到指定精灵'
+    en: 'Move to given sprite, e.g., `goto Enemy`',
+    zh: '移动到指定精灵，如：`goto Enemy`'
   })
 }
 
@@ -434,8 +553,8 @@ export const glide0: DefinitionDocumentationItem = {
   insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
   overview: 'glide x, y, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given position (X, Y), using a glide animation',
-    zh: '滑行到指定位置（X，Y）'
+    en: 'Move to given position (X, Y) with glide animation and given duration, e.g., `glide 100, 100, 2`',
+    zh: '滑行到指定位置（X，Y）并指定时长，如：`glide 100, 100, 2`'
   })
 }
 
@@ -450,8 +569,8 @@ export const glide1: DefinitionDocumentationItem = {
   insertText: 'glide {$1:sprite}, ${2:seconds}',
   overview: 'glide sprite, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given sprite, using a glide animation',
-    zh: '滑行到指定精灵'
+    en: 'Move to given sprite with glide animation and given duration, e.g., `glide Enemy, 2`',
+    zh: '滑行到指定精灵并指定时长，如：`glide Enemy, 2`'
   })
 }
 
@@ -466,8 +585,8 @@ export const glide2: DefinitionDocumentationItem = {
   insertText: 'glide ${1:spriteName}, ${2:seconds}',
   overview: 'glide spriteName, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to the sprite with given name, using a glide animation',
-    zh: '滑行到指定名称的精灵'
+    en: 'Move to the sprite with given name with glide animation and given duration, e.g., `glide "Enemy", 2`',
+    zh: '滑行到指定名称的精灵并指定时长，如：`glide "Enemy", 2`'
   })
 }
 
@@ -482,8 +601,8 @@ export const glide3: DefinitionDocumentationItem = {
   insertText: 'glide ${1:obj}, ${2:seconds}',
   overview: 'glide obj, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given obj, using a glide animation, e.g., `glide Mouse, 2`',
-    zh: '滑行到指定对象，如：`glide Mouse, 2`'
+    en: 'Move to given obj with glide animation and given duration, e.g., `glide Mouse, 2`',
+    zh: '滑行到指定对象并指定时长，如：`glide Mouse, 2`'
   })
 }
 
@@ -497,8 +616,8 @@ export const setXYpos: DefinitionDocumentationItem = {
   insertText: 'setXYpos ${1:x}, ${2:y}',
   overview: 'setXYpos x, y',
   detail: makeBasicMarkdownString({
-    en: 'Move to given position, e.g., `setXYpos 100, 100`',
-    zh: '移动到指定位置，如：`setXYpos 100, 100`'
+    en: 'Set the sprite\'s position, e.g., `setXYpos 100, 100`',
+    zh: '设置精灵位置，如：`setXYpos 100, 100`'
   })
 }
 
@@ -512,8 +631,8 @@ export const changeXYpos: DefinitionDocumentationItem = {
   insertText: 'changeXYpos ${1:dX}, ${2:dY}',
   overview: 'changeXYpos dX, dY',
   detail: makeBasicMarkdownString({
-    en: 'Move with given position (X, Y) change, e.g., `changeXYpos 10, 10`',
-    zh: '以指定的位置偏移移动（X，Y），如：`changeXYpos 10, 10`'
+    en: 'Change the sprite\'s position, e.g., `changeXYpos 10, 20` changing X position by 10 and Y position by 20',
+    zh: '改变精灵位置，如：`changeXYpos 10, 10` 使水平位置增加 10，垂直位置增加 10'
   })
 }
 
@@ -542,8 +661,8 @@ export const setXpos: DefinitionDocumentationItem = {
   insertText: 'setXpos ${1:x}',
   overview: 'setXpos x',
   detail: makeBasicMarkdownString({
-    en: 'Move to given X position, e.g., `setXpos 100`',
-    zh: '移动到指定的水平位置，如：`setXpos 100`'
+    en: 'Set the sprite\'s X position, e.g., `setXpos 100`',
+    zh: '设置精灵的水平位置，如：`setXpos 100`'
   })
 }
 
@@ -557,8 +676,8 @@ export const changeXpos: DefinitionDocumentationItem = {
   insertText: 'changeXpos ${1:dX}',
   overview: 'changeXpos dX',
   detail: makeBasicMarkdownString({
-    en: 'Move with given X position change, e.g., `changeXpos 10`',
-    zh: '以给定的水平位置偏移移动，如：`changeXpos 10`'
+    en: 'Change the sprite\'s X position, e.g., `changeXpos 10` changing X position by 10',
+    zh: '改变精灵的水平位置，如：`changeXpos 10` 使水平位置增加 10'
   })
 }
 
@@ -587,8 +706,8 @@ export const setYpos: DefinitionDocumentationItem = {
   insertText: 'setYpos ${1:y}',
   overview: 'setYpos y',
   detail: makeBasicMarkdownString({
-    en: 'Move to given Y position, e.g., `setYpos 100`',
-    zh: '移动到指定的垂直位置，如：`setYpos 100`'
+    en: 'Set the sprite\'s Y position, e.g., `setYpos 100`',
+    zh: '设置精灵的垂直位置，如：`setYpos 100`'
   })
 }
 
@@ -602,8 +721,8 @@ export const changeYpos: DefinitionDocumentationItem = {
   insertText: 'changeYpos ${1:dY}',
   overview: 'changeYpos dY',
   detail: makeBasicMarkdownString({
-    en: 'Move with given Y position change, e.g., `changeYpos 10`',
-    zh: '以给定的垂直位置偏移移动，如：`changeYpos 10`'
+    en: 'Change the sprite\'s Y position, e.g., `changeYpos 10` changing Y position by 10',
+    zh: '改变精灵的垂直位置，如：`changeYpos 10` 使垂直位置增加 10'
   })
 }
 
@@ -1500,27 +1619,62 @@ export const onBackdrop1: DefinitionDocumentationItem = {
   })
 }
 
-export const rand: DefinitionDocumentationItem = {
+export const rand0: DefinitionDocumentationItem = {
   categories: [categories.game.others],
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.rand'
+    name: 'rand',
+    overloadId: '0'
   },
   insertText: 'rand(${1:from}, ${2:to})',
   overview: 'rand(from, to)',
   detail: makeBasicMarkdownString({
-    en: 'Generate a random number, e.g., `rand(1, 10)`',
-    zh: '生成一个随机数，如：`rand(1, 10)`'
+    en: 'Generate a random integer, e.g., `rand(1, 10)`',
+    zh: '生成一个随机整数，如：`rand(1, 10)`'
   })
 }
 
-export const exit: DefinitionDocumentationItem = {
+export const rand1: DefinitionDocumentationItem = {
+  categories: [categories.game.others],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'rand',
+    overloadId: '1'
+  },
+  insertText: 'rand(${1:from}, ${2:to})',
+  overview: 'rand(from, to)',
+  detail: makeBasicMarkdownString({
+    en: 'Generate a random number, e.g., `rand(1.5, 9.9)`',
+    zh: '生成一个随机数，如：`rand(1.5, 9.9)`'
+  })
+}
+
+export const exit0: DefinitionDocumentationItem = {
   categories: [categories.game.others],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.exit'
+    name: 'exit',
+    overloadId: '0'
+  },
+  insertText: 'exit ${1:code}',
+  overview: 'exit code',
+  detail: makeBasicMarkdownString({
+    en: 'Exit the game with given code',
+    zh: '退出游戏并指定退出码'
+  }),
+  hiddenFromList: true // not recommended to use
+}
+
+export const exit1: DefinitionDocumentationItem = {
+  categories: [categories.game.others],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'exit',
+    overloadId: '1'
   },
   insertText: 'exit',
   overview: 'exit',
@@ -1546,6 +1700,7 @@ export const getWidget: DefinitionDocumentationItem = {
 }
 
 // TODO: definition for widget methods
+// TODO: Sprite.goBackLayers|gotoBack|gotoFront
 
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
