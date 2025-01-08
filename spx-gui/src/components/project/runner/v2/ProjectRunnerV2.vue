@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import JSZip from 'jszip'
+import { spxVersion } from '@/utils/env'
 import { untilNotNull } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { registerPlayer } from '@/utils/player-registry'
@@ -8,8 +9,7 @@ import { addPrefetchLink } from '@/utils/dom'
 import type { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 
-const runnerVersion = '20241126_1505'
-const runnerBaseUrl = `/runner/${runnerVersion}`
+const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
 
 const props = defineProps<{ project: Project }>()

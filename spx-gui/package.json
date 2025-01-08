@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
-    "build-wasm": "./build-wasm.sh",
-    "build-spxls": "./build-spxls.sh",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore",

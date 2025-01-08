@@ -1,3 +1,5 @@
+@REM **NOTE**: This script is outdated. Update it based on `./build-wasm.sh` before using it.
+
 @echo off
 setlocal
 echo Run this script from 'spx-gui' directory

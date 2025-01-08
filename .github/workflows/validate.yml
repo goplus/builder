@@ -32,6 +32,10 @@ jobs:
         working-directory: spx-gui
         run: npm install
 
+      - name: Install spx
+        working-directory: spx-gui
+        run: ./install-spx.sh
+
       - name: Run Vue TSC
         working-directory: spx-gui
         run: npm run type-check
@@ -40,23 +44,14 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
-      - name: Setup Go 1.21.3
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.21.3
-
-      - name: Build WASM
-        working-directory: spx-gui
-        run: npm run build-wasm
-
-      - name: Setup Go 1.23.4
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.23.4
 
-      - name: Build WASM for spxls
+      - name: Build WASM
         working-directory: spx-gui
-        run: npm run build-spxls
+        run: ./build-wasm.sh
 
       - name: Run Vitest
         working-directory: spx-gui
