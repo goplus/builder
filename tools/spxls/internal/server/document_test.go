@@ -105,7 +105,7 @@ onStart => {
 		}
 		linksForMySpriteSpx, err := s.textDocumentDocumentLink(paramsForMySpriteSpx)
 		require.NoError(t, err)
-		require.Len(t, linksForMySpriteSpx, 25)
+		require.Len(t, linksForMySpriteSpx, 16)
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 3, Character: 12},

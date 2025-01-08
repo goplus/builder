@@ -673,4 +673,56 @@ onStart => {
 			}
 		}
 	})
+
+	t.Run("WithNonBasicTypeAliases", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx": []byte(`
+import "image/color"
+
+onStart => {
+	touchingColor color.RGBA{0, 0, 0, 0}
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
+		require.NoError(t, err)
+		require.NotNil(t, report)
+		assert.Len(t, report.Items, 2)
+		for _, item := range report.Items {
+			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
+			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
+			assert.Empty(t, fullReport.Items)
+		}
+	})
+
+	t.Run("OnKey", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onKey KeyLeft, => {}
+
+// FIXME: Multi-key bindings currently fail because goplus/gogen lacks support for types.Alias.
+// See https://github.com/goplus/gogen/issues/457 for details.
+// onKey [KeyRight, KeyUp, KeyDown], => {}
+
+run "assets", {Title: "My Game"}
+`),
+			"assets/index.json": []byte(`{}`),
+		}), nil)
+
+		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
+		require.NoError(t, err)
+		require.NotNil(t, report)
+		assert.Len(t, report.Items, 1)
+		for _, item := range report.Items {
+			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
+			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
+			assert.Empty(t, fullReport.Items)
+		}
+	})
 }

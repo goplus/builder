@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 
@@ -31,30 +30,22 @@ var modulePaths = []string{
 // generate generates the pkgdata.zip file containing the exported symbols of
 // the given packages.
 func generate() error {
-	var pkgPaths []string
+	pkgPaths := []string{"builtin"}
 
 	// Scan the stdlib packages.
-	gorootSrcDir := filepath.Join(runtime.GOROOT(), "src")
-	if err := filepath.Walk(gorootSrcDir, func(p string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.IsDir() {
-			return nil
-		}
-
-		importPath := strings.TrimPrefix(p, gorootSrcDir+string(os.PathSeparator))
+	stdlibImportPaths, err := execGo("list", "-f", "{{.ImportPath}}", "std")
+	if err != nil {
+		return err
+	}
+	for _, importPath := range strings.Split(string(stdlibImportPaths), "\n") {
 		if !isSkippable(importPath) {
 			pkgPaths = append(pkgPaths, importPath)
 		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to walk goroot src dir: %w", err)
 	}
 
 	// Scan the modules.
 	for _, modulePath := range modulePaths {
-		importPaths, err := execGo("list", "-f", "{{.ImportPath}}", modulePath+"/...")
+		importPaths, err := execGo("list", "-deps", "-f", "{{if not .Standard}}{{.ImportPath}}{{end}}", modulePath+"/...")
 		if err != nil {
 			return err
 		}
@@ -199,7 +190,7 @@ func generate() error {
 	if err := zw.Close(); err != nil {
 		return err
 	}
-	return os.WriteFile("pkgdata.zip", zipBuf.Bytes(), 0644)
+	return os.WriteFile("pkgdata.zip", zipBuf.Bytes(), 0o644)
 }
 
 // isSkippable reports whether the import path should be skipped.

@@ -91,7 +91,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 
 		edits, err := s.textDocumentFormatting(params)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to format document")
+		require.Contains(t, err.Error(), "failed to format spx source file")
 		require.Nil(t, edits)
 	})
 
@@ -167,5 +167,28 @@ var (
 )
 `,
 		})
+	})
+
+	t.Run("NoTypeSpriteVarDeclaration", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// A spx game.
+
+var (
+	MySprite
+)
+
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx":                       []byte(``),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Nil(t, edits)
 	})
 }
