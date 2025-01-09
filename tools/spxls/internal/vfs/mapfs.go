@@ -30,8 +30,8 @@ type MapFS struct {
 func NewMapFS(getFileMap GetFileMapFunc) *MapFS {
 	return &MapFS{
 		getFileMap: getFileMap,
-		fileMode:   0444,
-		dirMode:    0444 | fs.ModeDir,
+		fileMode:   0o444,
+		dirMode:    0o444 | fs.ModeDir,
 	}
 }
 

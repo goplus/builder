@@ -318,7 +318,7 @@ func (ctx *completionContext) collectDotCompletions() (completionItemSet, error)
 			}
 
 			recvTypeName := ctx.result.selectorTypeNameForIdent(ctx.result.defIdentFor(method))
-			itemSet.addSpxDefs(NewSpxDefinitionsForFunc(method, recvTypeName, ctx.result.mainPkgDoc)...)
+			itemSet.addSpxDefs(NewSpxDefinitionForFunc(method, recvTypeName, ctx.result.mainPkgDoc))
 		}
 	} else if named, ok := typ.(*types.Named); ok && isNamedStructType(named) {
 		itemSet.addSpxDefs(ctx.result.spxDefinitionsForNamedStruct(named)...)

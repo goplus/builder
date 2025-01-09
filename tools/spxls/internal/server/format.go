@@ -27,11 +27,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, err
 	}
 
-	formatted, err := gopfmt.Source(content, false, spxFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to format document %q: %w", spxFile, err)
-	}
-	formatted, err = formatSpx(formatted)
+	formatted, err := formatSpx(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
@@ -62,10 +58,12 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 func formatSpx(src []byte) ([]byte, error) {
 	// Parse the source into AST.
 	fset := goptoken.NewFileSet()
-	f, err := gopparser.ParseFile(fset, "main.spx", src, gopparser.ParseComments)
+	f, err := gopparser.ParseFile(fset, "main.spx", src, gopparser.ParseComments|gopparser.ParseGoPlusClass)
 	if err != nil {
 		return nil, err
 	}
+
+	gopast.SortImports(fset, f)
 
 	// Find all var blocks and function declarations.
 	var (

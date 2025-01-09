@@ -259,6 +259,12 @@ var GetSpxPkg = sync.OnceValue(func() *types.Package {
 	return spxPkg
 })
 
+// GetSpxGameType returns the [spx.Game] type.
+var GetSpxGameType = sync.OnceValue(func() types.Type {
+	spxPkg := GetSpxPkg()
+	return spxPkg.Scope().Lookup("Game").Type()
+})
+
 // GetSpxSpriteImplType returns the [spx.SpriteImpl] type.
 var GetSpxSpriteImplType = sync.OnceValue(func() types.Type {
 	spxPkg := GetSpxPkg()
@@ -285,7 +291,13 @@ var GetSpxPkgDefinitions = sync.OnceValue(func() []SpxDefinition {
 			case *types.TypeName:
 				defs = append(defs, NewSpxDefinitionForType(obj, spxPkgDoc))
 			case *types.Func:
-				defs = append(defs, NewSpxDefinitionsForFunc(obj, "", spxPkgDoc)...)
+				if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
+					for _, funcOverload := range funcOverloads {
+						defs = append(defs, NewSpxDefinitionForFunc(funcOverload, "", spxPkgDoc))
+					}
+				} else {
+					defs = append(defs, NewSpxDefinitionForFunc(obj, "", spxPkgDoc))
+				}
 			case *types.PkgName:
 				defs = append(defs, NewSpxDefinitionForPkg(obj, spxPkgDoc))
 			}
@@ -375,7 +387,7 @@ func NewSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool
 // for constants.
 var nonMainPkgSpxDefCacheForConsts sync.Map // map[*types.Const]SpxDefinition
 
-// NewSpxDefinitionForConst makes a new [SpxDefinition] for the provided constant.
+// NewSpxDefinitionForConst creates a new [SpxDefinition] for the provided constant.
 func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(c) {
 		if defIface, ok := nonMainPkgSpxDefCacheForConsts.Load(c); ok {
@@ -417,7 +429,7 @@ func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDef
 // for types.
 var nonMainPkgSpxDefCacheForTypes sync.Map // map[*types.TypeName]SpxDefinition
 
-// NewSpxDefinitionForType makes a new [SpxDefinition] for the provided type.
+// NewSpxDefinitionForType creates a new [SpxDefinition] for the provided type.
 func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(typeName) {
 		if defIface, ok := nonMainPkgSpxDefCacheForTypes.Load(typeName); ok {
@@ -462,39 +474,30 @@ func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (d
 	return
 }
 
-// nonMainPkgSpxDefsCacheForFuncs is a cache of non-main package spx definitions
+// nonMainPkgSpxDefCacheForFuncs is a cache of non-main package spx definitions
 // for functions.
-var nonMainPkgSpxDefsCacheForFuncs sync.Map // map[nonMainPkgSpxDefsCacheForFuncsKey][]SpxDefinition
+var nonMainPkgSpxDefCacheForFuncs sync.Map // map[nonMainPkgSpxDefCacheForFuncsKey]SpxDefinition
 
-// nonMainPkgSpxDefsCacheForFuncsKey is the key for the non-main package spx
+// nonMainPkgSpxDefCacheForFuncsKey is the key for the non-main package spx
 // definition cache for functions.
-type nonMainPkgSpxDefsCacheForFuncsKey struct {
+type nonMainPkgSpxDefCacheForFuncsKey struct {
 	fun          *types.Func
 	recvTypeName string
 }
 
-// NewSpxDefinitionsForFunc creates new [SpxDefinition]s for the provided
-// function. It returns multiple definitions if the function has overloaded
-// variants.
-func NewSpxDefinitionsForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdoc.PkgDoc) (defs []SpxDefinition) {
+// NewSpxDefinitionForFunc creates a new [SpxDefinition] for the provided function.
+func NewSpxDefinitionForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(fun) {
-		cacheKey := nonMainPkgSpxDefsCacheForFuncsKey{
+		cacheKey := nonMainPkgSpxDefCacheForFuncsKey{
 			fun:          fun,
 			recvTypeName: recvTypeName,
 		}
-		if defsIface, ok := nonMainPkgSpxDefsCacheForFuncs.Load(cacheKey); ok {
-			return defsIface.([]SpxDefinition)
+		if defIface, ok := nonMainPkgSpxDefCacheForFuncs.Load(cacheKey); ok {
+			return defIface.(SpxDefinition)
 		}
 		defer func() {
-			nonMainPkgSpxDefsCacheForFuncs.Store(cacheKey, slices.Clip(defs))
+			nonMainPkgSpxDefCacheForFuncs.Store(cacheKey, def)
 		}()
-	}
-
-	if funcOverloads := expandGopOverloadedFunc(fun); len(funcOverloads) > 0 {
-		// When encountering a overload signature like `func(__gop_overload_args__ interface{_()})`,
-		// we expand it to concrete overloads and use the first one as the default representation.
-		// All overload variants will still be included in the returned definitions.
-		fun = funcOverloads[0]
 	}
 
 	if isSpxPkgObject(fun) && recvTypeName == "Sprite" {
@@ -515,8 +518,6 @@ func NewSpxDefinitionsForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgd
 		}
 	}
 
-	pkg := fun.Pkg()
-	pkgPath := pkg.Path()
 	idName := parsedName
 	if recvTypeName != "" {
 		recvTypeDisplayName := recvTypeName
@@ -525,104 +526,19 @@ func NewSpxDefinitionsForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgd
 		}
 		idName = recvTypeDisplayName + "." + idName
 	}
-	defs = []SpxDefinition{
-		{
-			ID: SpxDefinitionIdentifier{
-				Package:    &pkgPath,
-				Name:       &idName,
-				OverloadID: overloadID,
-			},
-			Overview: overview,
-			Detail:   detail,
-
-			CompletionItemLabel:            parsedName,
-			CompletionItemKind:             FunctionCompletion,
-			CompletionItemInsertText:       parsedName,
-			CompletionItemInsertTextFormat: PlainTextTextFormat,
+	def = SpxDefinition{
+		ID: SpxDefinitionIdentifier{
+			Package:    util.ToPtr(fun.Pkg().Path()),
+			Name:       &idName,
+			OverloadID: overloadID,
 		},
-	}
+		Overview: overview,
+		Detail:   detail,
 
-	if overloadID == nil {
-		return
-	}
-
-	seenOverloadNames := map[string]struct{}{fun.Name(): {}}
-	handleOverloads := func(overloads []*types.Func, funcDocs map[string]string) {
-		for _, overload := range overloads {
-			overloadName := overload.Name()
-			if _, ok := seenOverloadNames[overloadName]; ok {
-				continue
-			}
-			seenOverloadNames[overloadName] = struct{}{}
-
-			if _, methodName, ok := util.SplitGoptMethod(overloadName); ok {
-				overloadName = methodName
-			}
-
-			var detail string
-			if funcDocs != nil {
-				detail = funcDocs[overloadName]
-			}
-
-			_, oID := parseGopFuncName(overloadName)
-			overview, _, _, _ := makeSpxDefinitionOverviewForFunc(overload)
-			defs = append(defs, SpxDefinition{
-				ID: SpxDefinitionIdentifier{
-					Package:    &pkgPath,
-					Name:       &idName,
-					OverloadID: oID,
-				},
-				Overview: overview,
-				Detail:   detail,
-
-				CompletionItemLabel:            parsedName,
-				CompletionItemKind:             FunctionCompletion,
-				CompletionItemInsertText:       parsedName,
-				CompletionItemInsertTextFormat: PlainTextTextFormat,
-			})
-		}
-	}
-
-	if recvTypeName != "" {
-		recvType := pkg.Scope().Lookup(recvTypeName).Type()
-		if recvType == nil {
-			return
-		}
-		recvNamed, ok := recvType.(*types.Named)
-		if !ok || !isNamedStructType(recvNamed) {
-			return
-		}
-
-		var methodDocs map[string]string
-		if pkgDoc != nil {
-			recvTypeDoc, ok := pkgDoc.Types[recvTypeName]
-			if ok {
-				methodDocs = recvTypeDoc.Methods
-			}
-		}
-
-		walkStruct(recvNamed, func(member types.Object, selector *types.Named) bool {
-			method, ok := member.(*types.Func)
-			if !ok {
-				return true
-			}
-			if pn, _ := parseGopFuncName(method.Name()); pn != parsedName {
-				return true
-			}
-
-			overloads := expandGopOverloadedFunc(method)
-			if len(overloads) == 0 {
-				overloads = []*types.Func{method}
-			}
-			handleOverloads(overloads, methodDocs)
-			return true
-		})
-	} else {
-		var funcDocs map[string]string
-		if pkgDoc != nil {
-			funcDocs = pkgDoc.Funcs
-		}
-		handleOverloads(expandGopOverloadedFunc(fun), funcDocs)
+		CompletionItemLabel:            parsedName,
+		CompletionItemKind:             FunctionCompletion,
+		CompletionItemInsertText:       parsedName,
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 	return
 }

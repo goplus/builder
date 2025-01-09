@@ -416,7 +416,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#0\" overview=\"func clone()\">\n</definition-item>\n<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#1\" overview=\"func clone(data interface{})\">\n</definition-item>\n",
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#0\" overview=\"func clone()\">\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 5, Character: 1},

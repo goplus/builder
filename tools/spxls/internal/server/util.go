@@ -122,8 +122,7 @@ func walkStruct(named *types.Named, onMember func(member types.Object, selector 
 			}
 			selector = named
 
-			typeName := selector.Obj().Name()
-			if isSpxPkgObject(selector.Obj()) && (typeName == "Game" || typeName == "SpriteImpl") {
+			if isSpxPkgObject(selector.Obj()) && (selector == GetSpxGameType() || selector == GetSpxSpriteImplType()) {
 				break
 			}
 		}
@@ -197,9 +196,17 @@ func parseGopFuncName(name string) (parsedName string, overloadID *string) {
 	return
 }
 
-// expandGopOverloadedFunc expands the given Go+ function to all its overloads.
-// It returns nil if the function is not overloaded.
-func expandGopOverloadedFunc(fun *types.Func) []*types.Func {
+// isGopOverloadableFunc reports whether the given function is a Go+ overloadable
+// function with a signature like `func(__gop_overload_args__ interface{_()})`.
+func isGopOverloadableFunc(fun *types.Func) bool {
+	typ, _ := gogen.CheckSigFuncExObjects(fun.Type().(*types.Signature))
+	return typ != nil
+}
+
+// expandGopOverloadableFunc expands the given Go+ function with a signature
+// like `func(__gop_overload_args__ interface{_()})` to all its overloads. It
+// returns nil if the function is not qualified for overload expansion.
+func expandGopOverloadableFunc(fun *types.Func) []*types.Func {
 	typ, objs := gogen.CheckSigFuncExObjects(fun.Type().(*types.Signature))
 	if typ == nil {
 		return nil

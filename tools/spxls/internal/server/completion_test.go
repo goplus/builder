@@ -40,7 +40,8 @@ onStart => {
 		assert.Contains(t, emptyLineItems, SpxDefinition{
 			ID: SpxDefinitionIdentifier{
 				Package: util.ToPtr("main"),
-				Name:    util.ToPtr("MySprite")},
+				Name:    util.ToPtr("MySprite"),
+			},
 			Overview: "type MySprite struct{SpriteImpl; *main.Game}",
 
 			CompletionItemLabel:            "MySprite",
