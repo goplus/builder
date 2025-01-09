@@ -966,8 +966,8 @@ paths:
     post:
       tags:
         - Utils
-      summary: Format code
-      description: Format the provided code and optionally fix import statements.
+      summary: Format code (deprecated)
+      description: Format the provided code and optionally fix import statements. This API is deprecated; use `spxls` (`textDocument/formatting`) instead.
       security: []
       requestBody:
         required: true

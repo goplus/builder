@@ -1,4 +1,4 @@
-// Format the code.
+// Format the code (deprecated).
 //
 // Request:
 //   POST /util/fmtcode
