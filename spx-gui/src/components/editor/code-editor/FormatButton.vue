@@ -23,8 +23,8 @@ const handleFormat = useMessageHandle(
       codeEditorCtx.formatTextDocument(getTextDocumentId(props.codeFilePath))
     ),
   {
-    en: 'Failed to format',
-    zh: '格式化失败'
+    en: 'Failed to format, please check the code',
+    zh: '格式化失败，请检查代码'
   }
 )
 </script>

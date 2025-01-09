@@ -20,7 +20,7 @@ import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
 import { useEditorCtx } from '../editor/EditorContextProvider.vue'
-import { useCodeEditorCtx } from '../editor/code-editor/context'
+import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
 import { getResourceIdentifier } from '../editor/code-editor/common'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
@@ -199,6 +199,7 @@ export function useRenameSprite() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameSprite(sprite: Sprite) {
     return invokeRenameModal({
       target: {
@@ -213,7 +214,8 @@ export function useRenameSprite() {
             sprite.setName(newName)
           })
         },
-        inputTip: assetName.spriteNameTip
+        inputTip: assetName.spriteNameTip,
+        warning: await getRenameWarning()
       }
     })
   }
@@ -223,6 +225,7 @@ export function useRenameSound() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameSound(sound: Sound) {
     return invokeRenameModal({
       target: {
@@ -237,7 +240,8 @@ export function useRenameSound() {
             sound.setName(newName)
           })
         },
-        inputTip: assetName.soundNameTip
+        inputTip: assetName.soundNameTip,
+        warning: await getRenameWarning()
       }
     })
   }
@@ -247,6 +251,7 @@ export function useRenameCostume() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameCostume(costume: Costume) {
     return invokeRenameModal({
       target: {
@@ -261,7 +266,8 @@ export function useRenameCostume() {
             costume.setName(newName)
           })
         },
-        inputTip: assetName.costumeNameTip
+        inputTip: assetName.costumeNameTip,
+        warning: await getRenameWarning()
       }
     })
   }
@@ -271,6 +277,7 @@ export function useRenameBackdrop() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameBackdrop(backdrop: Backdrop) {
     return invokeRenameModal({
       target: {
@@ -285,7 +292,8 @@ export function useRenameBackdrop() {
             backdrop.setName(newName)
           })
         },
-        inputTip: assetName.backdropNameTip
+        inputTip: assetName.backdropNameTip,
+        warning: await getRenameWarning()
       }
     })
   }
@@ -295,6 +303,7 @@ export function useRenameAnimation() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameAnimation(animation: Animation) {
     return invokeRenameModal({
       target: {
@@ -309,7 +318,8 @@ export function useRenameAnimation() {
             animation.setName(newName)
           })
         },
-        inputTip: assetName.animationNameTip
+        inputTip: assetName.animationNameTip,
+        warning: await getRenameWarning()
       }
     })
   }
@@ -319,6 +329,7 @@ export function useRenameWidget() {
   const editorCtx = useEditorCtx()
   const codeEditorCtx = useCodeEditorCtx()
   const invokeRenameModal = useModal(RenameModal)
+  const getRenameWarning = useRenameWarning()
   return async function renameWidget(widget: Widget) {
     return invokeRenameModal({
       target: {
@@ -333,7 +344,8 @@ export function useRenameWidget() {
             widget.setName(newName)
           })
         },
-        inputTip: assetName.widgetNameTip
+        inputTip: assetName.widgetNameTip,
+        warning: await getRenameWarning()
       }
     })
   }

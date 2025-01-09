@@ -48,9 +48,6 @@ func (s *Server) spxRenameResources(params []SpxRenameResourceParams) (*Workspac
 		}
 		return nil, fmt.Errorf("failed to compile: %w", err)
 	}
-	if result.hasErrorSeverityDiagnostic {
-		return nil, errors.New("cannot rename spx resources when there are unresolved error severity diagnostics")
-	}
 
 	return s.spxRenameResourcesWithCompileResult(result, params)
 }

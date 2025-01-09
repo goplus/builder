@@ -49,9 +49,6 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 	if astFile == nil {
 		return nil, nil
 	}
-	if result.hasErrorSeverityDiagnostic {
-		return nil, errors.New("cannot rename symbol when there are unresolved error severity diagnostics")
-	}
 
 	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, params.Position); spxResourceRef != nil {
 		return s.spxRenameResourcesWithCompileResult(result, []SpxRenameResourceParams{{

@@ -1,6 +1,6 @@
 import { nextTick, watch } from 'vue'
 import { describe, it, expect, vitest } from 'vitest'
-import { isImage, isSound, nomalizeDegree, memoizeAsync, useLocalStorage } from './utils'
+import { isImage, isSound, nomalizeDegree, memoizeAsync, useLocalStorage, humanizeListWithLimit } from './utils'
 import { sleep } from './test'
 
 describe('isImage', () => {
@@ -184,5 +184,57 @@ describe('useLocalStorage', () => {
     expect(onStored1Change).toHaveBeenCalledWith(4)
     expect(onStored2Change).toHaveBeenCalledTimes(2)
     expect(onStored2Change).toHaveBeenCalledWith(4)
+  })
+})
+
+describe('humanizeListWithLimit', () => {
+  it('should work well', () => {
+    expect(humanizeListWithLimit([{ en: 'A', zh: '甲' }])).toEqual({ en: 'A', zh: '甲' })
+    expect(
+      humanizeListWithLimit([
+        { en: 'A', zh: '甲' },
+        { en: 'B', zh: '乙' }
+      ])
+    ).toEqual({
+      en: 'A, B',
+      zh: '甲、乙'
+    })
+    expect(
+      humanizeListWithLimit([
+        { en: 'A', zh: '甲' },
+        { en: 'B', zh: '乙' },
+        { en: 'C', zh: '丙' }
+      ])
+    ).toEqual({
+      en: 'A, B, C',
+      zh: '甲、乙、丙'
+    })
+    expect(
+      humanizeListWithLimit([
+        { en: 'A', zh: '甲' },
+        { en: 'B', zh: '乙' },
+        { en: 'C', zh: '丙' },
+        { en: 'D', zh: '丁' }
+      ])
+    ).toEqual({
+      en: 'A, B, C and 1 more',
+      zh: '甲、乙、丙等 4 个'
+    })
+  })
+  it('should work well with limit', () => {
+    expect(
+      humanizeListWithLimit(
+        [
+          { en: 'A', zh: '甲' },
+          { en: 'B', zh: '乙' },
+          { en: 'C', zh: '丙' },
+          { en: 'D', zh: '丁' }
+        ],
+        2
+      )
+    ).toEqual({
+      en: 'A, B and 2 more',
+      zh: '甲、乙等 4 个'
+    })
   })
 })

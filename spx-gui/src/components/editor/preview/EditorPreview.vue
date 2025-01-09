@@ -91,10 +91,13 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import { useAction, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { humanizeListWithLimit } from '@/utils/utils'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
-import { UICard, UICardHeader, UIButton } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog } from '@/components/ui'
+import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RunnerContainer from './RunnerContainer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
@@ -108,24 +111,46 @@ function handleStop() {
   editorCtx.runtime.setRunning({ mode: 'none' })
 }
 
-const formatWorkspace = useAction(
-  () =>
-    editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
-      codeEditorCtx.formatWorkspace()
-    ),
-  {
-    en: 'Failed to format code',
-    zh: '格式化代码失败'
+const i18n = useI18n()
+const confirm = useConfirmDialog()
+
+async function checkAndNotifyError() {
+  const r = await codeEditorCtx.diagnosticWorkspace()
+  const codeFilesWithError: LocaleMessage[] = []
+  for (const i of r.items) {
+    if (!i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
+    codeFilesWithError.push(textDocumentId2CodeFileName(i.textDocument))
   }
-)
+  if (codeFilesWithError.length === 0) return
+  const codeFileNamesWithError = humanizeListWithLimit(codeFilesWithError)
+  await confirm({
+    title: i18n.t({ en: 'Error exists in code', zh: '代码中存在错误' }),
+    content: i18n.t({
+      en: `There are stills errors in the project code (${codeFileNamesWithError.en}). The project may not run correctly. Are you sure to continue?`,
+      zh: `当前项目代码（${codeFileNamesWithError.zh}文件）中存在错误，项目可能无法正常运行，确定继续吗？`
+    })
+  })
+}
+
+async function tryFormatWorkspace() {
+  try {
+    await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditorCtx.formatWorkspace()
+    )
+  } catch (e) {
+    console.warn('Failed to format workspace', e)
+  }
+}
 
 const startRunning = useMessageHandle(async () => {
-  await formatWorkspace()
+  await checkAndNotifyError()
+  await tryFormatWorkspace()
   editorCtx.runtime.setRunning({ mode: 'run' })
 })
 
 const startDebugging = useMessageHandle(async () => {
-  await formatWorkspace()
+  await checkAndNotifyError()
+  await tryFormatWorkspace()
   editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
 })
 

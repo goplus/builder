@@ -41,7 +41,6 @@ import {
   selection2Range,
   toLSPPosition,
   fromLSPRange,
-  fromLSPSeverity,
   positionEq,
   type ITextDocument,
   type Range,
@@ -55,7 +54,10 @@ import {
   type CommandArgs,
   getTextDocumentId,
   containsPosition,
-  makeBasicMarkdownString
+  makeBasicMarkdownString,
+  type WorkspaceDiagnostics,
+  type TextDocumentDiagnostics,
+  fromLSPDiagnostic
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -123,14 +125,9 @@ class DiagnosticsProvider
     if (report.kind !== lsp.DocumentDiagnosticReportKind.Full)
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
-      const severity = item.severity == null ? null : fromLSPSeverity(item.severity)
-      if (severity === null) continue
-      const range = this.adaptDiagnosticRange(fromLSPRange(item.range), ctx.textDocument)
-      diagnostics.push({
-        range,
-        severity,
-        message: item.message
-      })
+      const diagnostic = fromLSPDiagnostic(item)
+      const range = this.adaptDiagnosticRange(diagnostic.range, ctx.textDocument)
+      diagnostics.push({ ...diagnostic, range })
     }
     return diagnostics
   }
@@ -468,6 +465,19 @@ export class CodeEditor extends Disposable {
       }
       textDocument.pushEdits(edits.map(fromLSPTextEdit))
     }
+  }
+
+  async diagnosticWorkspace(): Promise<WorkspaceDiagnostics> {
+    const diagnosticReport = await this.lspClient.workspaceDiagnostic({ previousResultIds: [] })
+    const items: TextDocumentDiagnostics[] = []
+    for (const report of diagnosticReport.items) {
+      if (report.kind === 'unchanged') continue // For now, we support 'full' reports only
+      items.push({
+        textDocument: { uri: report.uri },
+        diagnostics: report.items.map(fromLSPDiagnostic)
+      })
+    }
+    return { items }
   }
 
   /** Update code for renaming */

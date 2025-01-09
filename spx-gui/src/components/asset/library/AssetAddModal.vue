@@ -146,7 +146,7 @@ const handleSubmit = useMessageHandle(
         }),
         content: t({
           en: `The ${assetTypeName} you uploaded [${form.value.name}] is the same as the existing ${assetTypeName} [${assets[0].displayName}] in the asset library. Are you sure you want to add this ${assetTypeName} to the asset library?`,
-          zh: `您上传的${assetTypeName}「${form.value.name}」与已存在于素材库中的${assetTypeName}「${assets[0].displayName}」内容相同。是否确认需要将此${assetTypeName}添加到素材库中？`
+          zh: `你上传的${assetTypeName}「${form.value.name}」与已存在于素材库中的${assetTypeName}「${assets[0].displayName}」内容相同。是否确认需要将此${assetTypeName}添加到素材库中？`
         })
       })
     }

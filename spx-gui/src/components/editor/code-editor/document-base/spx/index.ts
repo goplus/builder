@@ -616,7 +616,7 @@ export const setXYpos: DefinitionDocumentationItem = {
   insertText: 'setXYpos ${1:x}, ${2:y}',
   overview: 'setXYpos x, y',
   detail: makeBasicMarkdownString({
-    en: 'Set the sprite\'s position, e.g., `setXYpos 100, 100`',
+    en: "Set the sprite's position, e.g., `setXYpos 100, 100`",
     zh: '设置精灵位置，如：`setXYpos 100, 100`'
   })
 }
@@ -631,7 +631,7 @@ export const changeXYpos: DefinitionDocumentationItem = {
   insertText: 'changeXYpos ${1:dX}, ${2:dY}',
   overview: 'changeXYpos dX, dY',
   detail: makeBasicMarkdownString({
-    en: 'Change the sprite\'s position, e.g., `changeXYpos 10, 20` changing X position by 10 and Y position by 20',
+    en: "Change the sprite's position, e.g., `changeXYpos 10, 20` changing X position by 10 and Y position by 20",
     zh: '改变精灵位置，如：`changeXYpos 10, 10` 使水平位置增加 10，垂直位置增加 10'
   })
 }
@@ -661,7 +661,7 @@ export const setXpos: DefinitionDocumentationItem = {
   insertText: 'setXpos ${1:x}',
   overview: 'setXpos x',
   detail: makeBasicMarkdownString({
-    en: 'Set the sprite\'s X position, e.g., `setXpos 100`',
+    en: "Set the sprite's X position, e.g., `setXpos 100`",
     zh: '设置精灵的水平位置，如：`setXpos 100`'
   })
 }
@@ -676,7 +676,7 @@ export const changeXpos: DefinitionDocumentationItem = {
   insertText: 'changeXpos ${1:dX}',
   overview: 'changeXpos dX',
   detail: makeBasicMarkdownString({
-    en: 'Change the sprite\'s X position, e.g., `changeXpos 10` changing X position by 10',
+    en: "Change the sprite's X position, e.g., `changeXpos 10` changing X position by 10",
     zh: '改变精灵的水平位置，如：`changeXpos 10` 使水平位置增加 10'
   })
 }
@@ -706,7 +706,7 @@ export const setYpos: DefinitionDocumentationItem = {
   insertText: 'setYpos ${1:y}',
   overview: 'setYpos y',
   detail: makeBasicMarkdownString({
-    en: 'Set the sprite\'s Y position, e.g., `setYpos 100`',
+    en: "Set the sprite's Y position, e.g., `setYpos 100`",
     zh: '设置精灵的垂直位置，如：`setYpos 100`'
   })
 }
@@ -721,7 +721,7 @@ export const changeYpos: DefinitionDocumentationItem = {
   insertText: 'changeYpos ${1:dY}',
   overview: 'changeYpos dY',
   detail: makeBasicMarkdownString({
-    en: 'Change the sprite\'s Y position, e.g., `changeYpos 10` changing Y position by 10',
+    en: "Change the sprite's Y position, e.g., `changeYpos 10` changing Y position by 10",
     zh: '改变精灵的垂直位置，如：`changeYpos 10` 使垂直位置增加 10'
   })
 }

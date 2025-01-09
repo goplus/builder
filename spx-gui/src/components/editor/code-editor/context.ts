@@ -5,7 +5,13 @@ import { getHighlighter } from '@/utils/spx/highlighter'
 import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import type { Project } from '@/models/project'
 import type { Runtime } from '@/models/runtime'
-import { type Position, type ResourceIdentifier, type TextDocumentIdentifier } from './common'
+import {
+  DiagnosticSeverity,
+  type Position,
+  type ResourceIdentifier,
+  type TextDocumentIdentifier,
+  type WorkspaceDiagnostics
+} from './common'
 import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
@@ -19,9 +25,10 @@ export type CodeEditorCtx = {
   getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null
   formatTextDocument(id: TextDocumentIdentifier): Promise<void>
   formatWorkspace(): Promise<void>
-  /** Update code for renaming */
+  diagnosticWorkspace(): Promise<WorkspaceDiagnostics>
+  /** Update code for (symbol) renaming */
   rename(id: TextDocumentIdentifier, position: Position, newName: string): Promise<void>
-  /** Update code for resource renaming, should be called before model name update */
+  /** Update code for resource renaming, should be called before model name update. */
   renameResource(resource: ResourceIdentifier, newName: string): Promise<void>
 }
 
@@ -31,6 +38,21 @@ export function useCodeEditorCtx() {
   const ctx = inject(codeEditorCtxInjectionKey)
   if (ctx == null) throw new Error('useCodeEditorCtx should be called inside of CodeEditor')
   return ctx
+}
+
+// There may be errors in the project code when renaming resource/symbol, which may cause some references to be updated incorrectly.
+// This function is used to provide warning for errors in the project code when renaming: we notify the user to check the code and update the references manually.
+export function useRenameWarning() {
+  const codeEditorCtx = useCodeEditorCtx()
+  return async function getRenameWarning() {
+    const r = await codeEditorCtx.diagnosticWorkspace()
+    const hasError = r.items.some((i) => i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error))
+    if (!hasError) return null
+    return {
+      en: 'There are errors in the project code. Some references may not be updated automatically. You can check the code and update them manually after renaming.',
+      zh: '当前项目代码中存在错误，部分引用可能不会自动更新，你可以在重命名后检查代码并手动修改。'
+    }
+  }
 }
 
 // copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
@@ -181,6 +203,10 @@ export function useProvideCodeEditorCtx(
     formatWorkspace() {
       if (editorRef.value == null) throw new Error('Code editor not initialized')
       return editorRef.value.formatWorkspace()
+    },
+    diagnosticWorkspace() {
+      if (editorRef.value == null) throw new Error('Code editor not initialized')
+      return editorRef.value.diagnosticWorkspace()
     },
     rename(id: TextDocumentIdentifier, position: Position, newName: string) {
       if (editorRef.value == null) throw new Error('Code editor not initialized')

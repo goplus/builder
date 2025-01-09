@@ -129,6 +129,11 @@ export class SpxLSPClient extends Disposable {
     return spxlc.request<lsp.DocumentDiagnosticReport>(lsp.DocumentDiagnosticRequest.method, params)
   }
 
+  async workspaceDiagnostic(params: lsp.WorkspaceDiagnosticParams): Promise<lsp.WorkspaceDiagnosticReport> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.WorkspaceDiagnosticReport>(lsp.WorkspaceDiagnosticRequest.method, params)
+  }
+
   async textDocumentHover(params: lsp.HoverParams): Promise<lsp.Hover | null> {
     const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
