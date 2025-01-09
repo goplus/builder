@@ -15,6 +15,10 @@ import (
 
 // SpxDefinition represents an spx definition.
 type SpxDefinition struct {
+	// Type represents the type that this definition is for. It may be nil
+	// if the definition has no associated type.
+	Type types.Type
+
 	ID       SpxDefinitionIdentifier
 	Overview string
 	Detail   string
@@ -113,6 +117,16 @@ var (
 	// in file scope.
 	SpxFileScopeDefinitions = []SpxDefinition{
 		{
+			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("import_declaration")},
+			Overview: "import \"package\"",
+			Detail:   "Import package declaration, e.g., `import \"fmt\"`",
+
+			CompletionItemLabel:            "import",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "import \"${1:package}\"$0",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
+		},
+		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("func_declaration")},
 			Overview: "func name(params) { ... }",
 			Detail:   "Function declaration, e.g., `func add(a int, b int) int {}`",
@@ -180,11 +194,11 @@ var (
 	}
 )
 
-// GetSpxBuiltinDefinition returns the spx definition for the given name.
-func GetSpxBuiltinDefinition(name string) SpxDefinition {
+// GetSpxBuiltinDefinition returns the spx definition for the given object.
+func GetSpxBuiltinDefinition(obj types.Object) SpxDefinition {
 	const pkgPath = "builtin"
 
-	idName := name
+	idName := obj.Name()
 	overview, ok := spxBuiltinDefinitionOverviews[idName]
 	if !ok {
 		overview = "builtin " + idName
@@ -217,13 +231,20 @@ func GetSpxBuiltinDefinition(name string) SpxDefinition {
 		case "const":
 			completionItemKind = ConstantCompletion
 		case "type":
-			completionItemKind = StructCompletion
+			switch idName {
+			case "any", "error":
+				completionItemKind = InterfaceCompletion
+			default:
+				completionItemKind = ClassCompletion
+			}
 		case "func":
 			completionItemKind = FunctionCompletion
 		}
 	}
 
 	return SpxDefinition{
+		Type: obj.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(pkgPath),
 			Name:    &idName,
@@ -231,9 +252,9 @@ func GetSpxBuiltinDefinition(name string) SpxDefinition {
 		Overview: overview,
 		Detail:   detail,
 
-		CompletionItemLabel:            name,
+		CompletionItemLabel:            obj.Name(),
 		CompletionItemKind:             completionItemKind,
-		CompletionItemInsertText:       name,
+		CompletionItemInsertText:       obj.Name(),
 		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
@@ -244,7 +265,7 @@ var GetSpxBuiltinDefinitions = sync.OnceValue(func() []SpxDefinition {
 	defs := make([]SpxDefinition, 0, len(names))
 	for _, name := range names {
 		if obj := types.Universe.Lookup(name); obj != nil && obj.Pkg() == nil {
-			defs = append(defs, GetSpxBuiltinDefinition(name))
+			defs = append(defs, GetSpxBuiltinDefinition(obj))
 		}
 	}
 	return slices.Clip(defs)
@@ -265,6 +286,12 @@ var GetSpxGameType = sync.OnceValue(func() *types.Named {
 	return spxPkg.Scope().Lookup("Game").Type().(*types.Named)
 })
 
+// GetSpxSpriteType returns the [spx.Sprite] type.
+var GetSpxSpriteType = sync.OnceValue(func() *types.Named {
+	spxPkg := GetSpxPkg()
+	return spxPkg.Scope().Lookup("Sprite").Type().(*types.Named)
+})
+
 // GetSpxSpriteImplType returns the [spx.SpriteImpl] type.
 var GetSpxSpriteImplType = sync.OnceValue(func() *types.Named {
 	spxPkg := GetSpxPkg()
@@ -274,37 +301,53 @@ var GetSpxSpriteImplType = sync.OnceValue(func() *types.Named {
 // GetSpxPkgDefinitions returns the spx definitions for the spx package.
 var GetSpxPkgDefinitions = sync.OnceValue(func() []SpxDefinition {
 	spxPkg := GetSpxPkg()
-	spxPkgDoc, err := pkgdata.GetPkgDoc(spxPkgPath)
+	spxPkgDoc, err := pkgdata.GetPkgDoc(spxPkg.Path())
 	if err != nil {
 		panic(fmt.Errorf("failed to get spx package doc: %w", err))
 	}
+	return GetPkgSpxDefinitions(spxPkg, spxPkgDoc)
+})
 
-	names := spxPkg.Scope().Names()
-	defs := make([]SpxDefinition, 0, len(names))
+// nonMainPkgSpxDefsCache is a cache of non-main package spx definitions.
+var nonMainPkgSpxDefsCache sync.Map // map[*types.Package][]SpxDefinition
+
+// GetPkgSpxDefinitions returns the spx definitions for the given package.
+func GetPkgSpxDefinitions(pkg *types.Package, pkgDoc *pkgdoc.PkgDoc) (defs []SpxDefinition) {
+	if pkg.Path() != "main" {
+		if defsIface, ok := nonMainPkgSpxDefsCache.Load(pkg); ok {
+			return defsIface.([]SpxDefinition)
+		}
+		defer func() {
+			nonMainPkgSpxDefsCache.Store(pkg, defs)
+		}()
+	}
+
+	names := pkg.Scope().Names()
+	defs = make([]SpxDefinition, 0, len(names))
 	for _, name := range names {
-		if obj := spxPkg.Scope().Lookup(name); obj != nil && obj.Exported() {
+		if obj := pkg.Scope().Lookup(name); obj != nil && obj.Exported() {
 			switch obj := obj.(type) {
 			case *types.Var:
-				defs = append(defs, NewSpxDefinitionForVar(obj, "", false, spxPkgDoc))
+				defs = append(defs, NewSpxDefinitionForVar(obj, "", false, pkgDoc))
 			case *types.Const:
-				defs = append(defs, NewSpxDefinitionForConst(obj, spxPkgDoc))
+				defs = append(defs, NewSpxDefinitionForConst(obj, pkgDoc))
 			case *types.TypeName:
-				defs = append(defs, NewSpxDefinitionForType(obj, spxPkgDoc))
+				defs = append(defs, NewSpxDefinitionForType(obj, pkgDoc))
 			case *types.Func:
 				if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 					for _, funcOverload := range funcOverloads {
-						defs = append(defs, NewSpxDefinitionForFunc(funcOverload, "", spxPkgDoc))
+						defs = append(defs, NewSpxDefinitionForFunc(funcOverload, "", pkgDoc))
 					}
 				} else {
-					defs = append(defs, NewSpxDefinitionForFunc(obj, "", spxPkgDoc))
+					defs = append(defs, NewSpxDefinitionForFunc(obj, "", pkgDoc))
 				}
 			case *types.PkgName:
-				defs = append(defs, NewSpxDefinitionForPkg(obj, spxPkgDoc))
+				defs = append(defs, NewSpxDefinitionForPkg(obj, pkgDoc))
 			}
 		}
 	}
 	return slices.Clip(defs)
-})
+}
 
 // nonMainPkgSpxDefCacheForVars is a cache of non-main package spx definitions
 // for variables.
@@ -368,6 +411,8 @@ func NewSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool
 		completionItemKind = FieldCompletion
 	}
 	def = SpxDefinition{
+		Type: v.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(v.Pkg().Path()),
 			Name:    &idName,
@@ -410,6 +455,8 @@ func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDef
 	}
 
 	def = SpxDefinition{
+		Type: c.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(c.Pkg().Path()),
 			Name:    util.ToPtr(c.Name()),
@@ -458,7 +505,19 @@ func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (d
 		}
 	}
 
+	completionKind := ClassCompletion
+	if named, ok := typeName.Type().(*types.Named); ok {
+		switch named.Underlying().(type) {
+		case *types.Interface:
+			completionKind = InterfaceCompletion
+		case *types.Struct:
+			completionKind = StructCompletion
+		}
+	}
+
 	def = SpxDefinition{
+		Type: typeName.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(typeName.Pkg().Path()),
 			Name:    util.ToPtr(typeName.Name()),
@@ -467,7 +526,7 @@ func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (d
 		Detail:   detail,
 
 		CompletionItemLabel:            typeName.Name(),
-		CompletionItemKind:             StructCompletion,
+		CompletionItemKind:             completionKind,
 		CompletionItemInsertText:       typeName.Name(),
 		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
@@ -527,6 +586,8 @@ func NewSpxDefinitionForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdo
 		idName = recvTypeDisplayName + "." + idName
 	}
 	def = SpxDefinition{
+		Type: fun.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package:    util.ToPtr(fun.Pkg().Path()),
 			Name:       &idName,
@@ -645,6 +706,8 @@ func NewSpxDefinitionForPkg(pkgName *types.PkgName, pkgDoc *pkgdoc.PkgDoc) (def 
 	}
 
 	def = SpxDefinition{
+		Type: pkgName.Type(),
+
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(pkgName.Pkg().Path()),
 		},

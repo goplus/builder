@@ -378,7 +378,7 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 	pkg := obj.Pkg()
 	if pkg == nil {
 		// Builtin definitions are not in any package.
-		return []SpxDefinition{GetSpxBuiltinDefinition(obj.Name())}
+		return []SpxDefinition{GetSpxBuiltinDefinition(obj)}
 	}
 
 	var pkgDoc *pkgdoc.PkgDoc

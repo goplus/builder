@@ -74,6 +74,18 @@ export const varDeclaration: DefinitionDocumentationItem = {
   })
 }
 
+export const importStatement: DefinitionDocumentationItem = {
+  categories: [categories.control.declaration],
+  kind: DefinitionKind.Statement,
+  definition: { name: 'import_declaration' }, // TODO
+  insertText: 'import "${1:package}"',
+  overview: 'import "package"',
+  detail: makeBasicMarkdownString({
+    en: 'Import package declaration, e.g., `import "fmt"`',
+    zh: '导入包声明，如 `import "fmt"`'
+  })
+}
+
 export const functionDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
