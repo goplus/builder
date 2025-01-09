@@ -288,6 +288,7 @@ class CompletionProvider implements ICompletionProvider {
 
         // Skip APIs from spx while without documentation, they are assumed not recommended
         if (defId != null && defId.package === packageSpx && definition == null) return null
+        if (definition != null && definition.hiddenFromList) return null
 
         if (definition != null) {
           result.kind = definition.kind
@@ -510,7 +511,11 @@ export class CodeEditor extends Disposable {
         let apiReferenceItems: DefinitionDocumentationItem[]
         if (definitions != null && definitions.length > 0) {
           const maybeDocumentationItems = await Promise.all(
-            definitions.map((def) => documentBase.getDocumentation(def))
+            definitions.map(async (def) => {
+              const doc = await documentBase.getDocumentation(def)
+              if (doc == null || doc.hiddenFromList) return null
+              return doc
+            })
           )
           apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
         } else {
