@@ -52,7 +52,7 @@ type SpxResourceURI string
 
 // HTML returns the HTML representation of the spx resource URI.
 func (u SpxResourceURI) HTML() string {
-	return fmt.Sprintf("<resource-preview resource=%q />\n", u)
+	return fmt.Sprintf("<resource-preview resource=%s />\n", attr(string(u)))
 }
 
 // SpxGetDefinitionsParams represents parameters to get definitions at a
