@@ -3,11 +3,7 @@ set -e
 
 echo Run this script from 'spx-gui' directory
 
-cd ../tools/fmt
-source ./build.sh
-cp ./static/main.wasm ../../spx-gui/src/assets/format.wasm
-
-cd ../ispx
+cd ../tools/ispx
 source ./build.sh
 cp ./main.wasm ../../spx-gui/src/assets/ispx/main.wasm
 

@@ -61,51 +61,6 @@ export const typeKeywords = [
   'nil'
 ]
 
-export const operators = [
-  '=',
-  '>',
-  '<',
-  '!',
-  '~',
-  '?',
-  ':',
-  '==',
-  '<=',
-  '>=',
-  '!=',
-  '&&',
-  '||',
-  '++',
-  '--',
-  '+',
-  '-',
-  '*',
-  '/',
-  '&',
-  '|',
-  '^',
-  '%',
-  '<<',
-  '>>',
-  '+=',
-  '-=',
-  '*=',
-  '/=',
-  '&=',
-  '|=',
-  '^=',
-  '%=',
-  '<<=',
-  '>>=',
-  '=>'
-]
-
-export const brackets = [
-  { open: '{', close: '}', token: 'delimiter.curly' },
-  { open: '[', close: ']', token: 'delimiter.bracket' },
-  { open: '(', close: ')', token: 'delimiter.parenthesis' }
-]
-
 /**
  * Audio file formats supported by spx.
  * See details in https://github.com/goplus/spx/blob/7f46dc7879e2320a9889f1396b9e592efb6d888d/audio.go
