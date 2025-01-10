@@ -6,6 +6,24 @@
   </div>
 </template>
 
+<script lang="ts">
+const zipEntryCache = new WeakMap<File, Promise<Blob>>()
+
+function getZipEntry(file: File) {
+  if (zipEntryCache.has(file)) return zipEntryCache.get(file)!
+  const zipEntry = toNativeFile(file).then((nf) => {
+    // For svg files, we convert them to png before sending to spx (v1):
+    // 1. Compatibility: Many SVG features are not supported in spx v1
+    // 2. Improve performance: SVG rendering is slow in spx v1
+    if (nf.type === 'image/svg+xml') return toPng(nf)
+    return nf
+  })
+  zipEntryCache.set(file, zipEntry)
+  zipEntry.catch(() => zipEntryCache.delete(file))
+  return zipEntry
+}
+</script>
+
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import JSZip from 'jszip'
@@ -13,7 +31,7 @@ import { registerPlayer } from '@/utils/player-registry'
 import { until } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { toPng } from '@/utils/img'
-import { toNativeFile } from '@/models/common/file'
+import { File, toNativeFile } from '@/models/common/file'
 import { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 import IframeDisplay, { preload } from './IframeDisplay.vue'
@@ -47,30 +65,23 @@ onUnmounted(() => {
   registered.onStopped()
 })
 
-async function getProjectZipData() {
+async function getProjectZipData(signal?: AbortSignal) {
   const zip = new JSZip()
   const [, files] = await props.project.export()
+  signal?.throwIfAborted()
   Object.entries(files).forEach(([path, file]) => {
     if (file == null) return
-    zip.file(
-      path,
-      toNativeFile(file).then((nf) => {
-        // For svg files, we convert them to png before sending to spx (v1):
-        // 1. Compatibility: Many SVG features are not supported in spx v1
-        // 2. Improve performance: SVG rendering is slow in spx v1
-        if (nf.type === 'image/svg+xml') return toPng(nf)
-        return nf
-      })
-    )
+    zip.file(path, getZipEntry(file))
   })
   return zip.generateAsync({ type: 'arraybuffer' })
 }
 
 defineExpose({
-  async run() {
+  async run(signal?: AbortSignal) {
     loading.value = true
     registered.onStart()
-    zipData.value = await getProjectZipData()
+    zipData.value = await getProjectZipData(signal)
+    signal?.throwIfAborted()
     await until(() => !loading.value)
   },
   stop() {
