@@ -33,7 +33,7 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 	}
 
 	defIdent := result.defIdentFor(obj)
-	if defIdent == nil {
+	if defIdent == nil || !result.isInFset(defIdent.Pos()) {
 		return nil, nil
 	}
 	return s.createLocationFromIdent(result.fset, defIdent), nil
@@ -64,7 +64,7 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 	}
 
 	objPos := named.Obj().Pos()
-	if !objPos.IsValid() {
+	if !result.isInFset(objPos) {
 		return nil, nil
 	}
 	return s.createLocationFromPos(result.fset, objPos), nil

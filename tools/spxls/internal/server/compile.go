@@ -56,6 +56,12 @@ type compileResult struct {
 	// mainPkg is the main package.
 	mainPkg *types.Package
 
+	// mainPkgGameType is the Game type in the main package.
+	mainPkgGameType *types.Named
+
+	// mainPkgSpriteTypes stores sprite types in the main package.
+	mainPkgSpriteTypes []*types.Named
+
 	// mainASTPkg is the main package AST.
 	mainASTPkg *gopast.Package
 
@@ -79,9 +85,6 @@ type compileResult struct {
 	// typeInfo contains type information collected during the compile
 	// process.
 	typeInfo *goptypesutil.Info
-
-	// spxSpriteNames stores spx sprite names.
-	spxSpriteNames []string
 
 	// spxResourceSet is the set of spx resources.
 	spxResourceSet SpxResourceSet
@@ -132,6 +135,11 @@ type compileResultComputedCache struct {
 type astFileLine struct {
 	astFile *gopast.File
 	line    int
+}
+
+// isInFset reports whether the given position exists in the file set.
+func (r *compileResult) isInFset(pos goptoken.Pos) bool {
+	return r.fset.File(pos) != nil
 }
 
 // innermostScopeAt returns the innermost scope that contains the given
@@ -591,7 +599,10 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 		diagnostics:                   make(map[DocumentURI][]Diagnostic, len(spxFiles)),
 	}
 
-	gpfs := vfs.NewGopParserFS(snapshot)
+	var (
+		gpfs        = vfs.NewGopParserFS(snapshot)
+		spriteNames = make([]string, 0, len(spxFiles)-1)
+	)
 	for _, spxFile := range spxFiles {
 		documentURI := s.toDocumentURI(spxFile)
 		result.diagnostics[documentURI] = []Diagnostic{}
@@ -644,7 +655,7 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
 				result.mainSpxFile = spxFile
 			} else {
-				result.spxSpriteNames = append(result.spxSpriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
+				spriteNames = append(spriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
 			}
 
 			for _, decl := range astFile.Decls {
@@ -707,12 +718,23 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 		},
 		nil,
 		result.typeInfo,
-	).Files(nil, gopASTFileMapToSlice(result.mainASTPkg.Files)); err != nil {
+	).Files(nil, slices.Collect(maps.Values(result.mainASTPkg.Files))); err != nil {
 		// Errors should be handled by the type checker.
 	}
 
+	if obj := result.mainPkg.Scope().Lookup("Game"); obj != nil {
+		result.mainPkgGameType = obj.Type().(*types.Named)
+	}
+
+	result.mainPkgSpriteTypes = make([]*types.Named, 0, len(spriteNames))
+	for _, spxSpriteName := range spriteNames {
+		if obj := result.mainPkg.Scope().Lookup(spxSpriteName); obj != nil {
+			result.mainPkgSpriteTypes = append(result.mainPkgSpriteTypes, obj.Type().(*types.Named))
+		}
+	}
+
 	s.inspectForSpxResourceSet(snapshot, result)
-	s.inspectForSpxResourceAutoBindingsAndRefsAtDecls(result)
+	s.inspectForSpxResourceAutoBindings(result)
 	s.inspectForSpxResourceRefs(result)
 
 	return result, nil
@@ -791,99 +813,69 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 	result.spxResourceSet = *spxResourceSet
 }
 
-// inspectForSpxResourceAutoBindingsAndRefsAtDecls inspects for spx resource
-// auto-bindings and references at variable or constant declarations.
-func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compileResult) {
+// inspectForSpxResourceAutoBindings inspects for spx resource auto-bindings and
+// references at variable or constant declarations.
+func (s *Server) inspectForSpxResourceAutoBindings(result *compileResult) {
+	mainSpxFileScope := result.typeInfo.Scopes[result.mainASTPkg.Files[result.mainSpxFile]]
 	for ident, obj := range result.typeInfo.Defs {
-		objType, ok := obj.Type().(*types.Named)
+		v, ok := obj.(*types.Var)
+		if !ok {
+			continue
+		}
+		varType, ok := v.Type().(*types.Named)
 		if !ok {
 			continue
 		}
 
 		spxFile := result.fset.Position(ident.Pos()).Filename
-		isInMainSpx := spxFile == result.mainSpxFile
-		documentURI := s.toDocumentURI(spxFile)
-
-		identRange := Range{
-			Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-			End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+		if spxFile != result.mainSpxFile || result.innermostScopeAt(ident.Pos()) != mainSpxFileScope {
+			continue
 		}
 
 		var (
 			isSpxSoundResourceAutoBinding  bool
 			isSpxSpriteResourceAutoBinding bool
 		)
-		switch objTypeName := objType.String(); objTypeName {
+		switch varType.String() {
 		case spxSoundTypeFullName:
-			isSpxSoundResourceAutoBinding = true
+			isSpxSoundResourceAutoBinding = result.spxResourceSet.Sound(v.Name()) != nil
 		case spxSpriteTypeFullName:
-			isSpxSpriteResourceAutoBinding = true
+			isSpxSpriteResourceAutoBinding = result.spxResourceSet.Sprite(v.Name()) != nil
 		default:
-			for _, spxSpriteName := range result.spxSpriteNames {
-				if objTypeName != "main."+spxSpriteName {
-					continue
-				}
-				if ident.Name != spxSpriteName {
-					result.addDiagnostics(documentURI, Diagnostic{
-						Severity: SeverityError,
-						Range:    identRange,
-						Message:  "sprite resource name must match type name for explicit auto-binding to work",
-					})
-					continue
-				}
-				isSpxSpriteResourceAutoBinding = true
-				break
-			}
+			isSpxSpriteResourceAutoBinding = v.Name() == varType.Obj().Name() && slices.Contains(result.mainPkgSpriteTypes, varType)
 		}
-		if isSpxSoundResourceAutoBinding || isSpxSpriteResourceAutoBinding {
-			var diags []Diagnostic
-			if isInMainSpx {
-				if result.isDefinedInFirstVarBlock(obj) {
-					switch {
-					case isSpxSoundResourceAutoBinding:
-						result.addSpxResourceRef(SpxResourceRef{
-							ID:   SpxSoundResourceID{SoundName: ident.Name},
-							Kind: SpxResourceRefKindAutoBinding,
-							Node: ident,
-						})
-						result.spxSoundResourceAutoBindings[obj] = struct{}{}
-						if result.spxResourceSet.Sound(ident.Name) == nil {
-							diags = []Diagnostic{{
-								Severity: SeverityError,
-								Range:    identRange,
-								Message:  fmt.Sprintf("sound resource %q not found", ident.Name),
-							}}
-						}
-					case isSpxSpriteResourceAutoBinding:
-						result.addSpxResourceRef(SpxResourceRef{
-							ID:   SpxSpriteResourceID{SpriteName: ident.Name},
-							Kind: SpxResourceRefKindAutoBinding,
-							Node: ident,
-						})
-						result.spxSpriteResourceAutoBindings[obj] = struct{}{}
-						if result.spxResourceSet.Sprite(ident.Name) == nil {
-							diags = []Diagnostic{{
-								Severity: SeverityError,
-								Range:    identRange,
-								Message:  fmt.Sprintf("sprite resource %q not found", ident.Name),
-							}}
-						}
-					}
-				} else {
-					diags = []Diagnostic{{
-						Severity: SeverityWarning,
-						Range:    identRange,
-						Message:  "resources must be defined in the first var block for auto-binding",
-					}}
-				}
-			} else {
-				diags = []Diagnostic{{
-					Severity: SeverityWarning,
-					Range:    identRange,
-					Message:  "auto-binding of resources can only happen in main.spx",
-				}}
-			}
-			result.addDiagnostics(documentURI, diags...)
+		if !isSpxSoundResourceAutoBinding && !isSpxSpriteResourceAutoBinding {
+			continue
+		}
+
+		if !result.isDefinedInFirstVarBlock(obj) {
+			documentURI := s.toDocumentURI(spxFile)
+			result.addDiagnostics(documentURI, Diagnostic{
+				Severity: SeverityWarning,
+				Range: Range{
+					Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
+					End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+				},
+				Message: "resources must be defined in the first var block for auto-binding",
+			})
+			continue
+		}
+
+		switch {
+		case isSpxSoundResourceAutoBinding:
+			result.addSpxResourceRef(SpxResourceRef{
+				ID:   SpxSoundResourceID{SoundName: ident.Name},
+				Kind: SpxResourceRefKindAutoBinding,
+				Node: ident,
+			})
+			result.spxSoundResourceAutoBindings[obj] = struct{}{}
+		case isSpxSpriteResourceAutoBinding:
+			result.addSpxResourceRef(SpxResourceRef{
+				ID:   SpxSpriteResourceID{SpriteName: ident.Name},
+				Kind: SpxResourceRefKindAutoBinding,
+				Node: ident,
+			})
+			result.spxSpriteResourceAutoBindings[obj] = struct{}{}
 		}
 	}
 }

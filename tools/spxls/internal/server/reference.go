@@ -36,7 +36,7 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 
 	if params.Context.IncludeDeclaration {
 		defIdent := result.defIdentFor(obj)
-		if defIdent != nil {
+		if defIdent != nil && result.isInFset(defIdent.Pos()) {
 			locations = append(locations, s.createLocationFromIdent(result.fset, defIdent))
 		}
 	}

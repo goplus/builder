@@ -180,7 +180,7 @@ var (
 		for _, item := range report.Items {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			if fullReport.URI == "file:///main.spx" {
-				require.Len(t, fullReport.Items, 3)
+				require.Len(t, fullReport.Items, 2)
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "expected ')', found 'EOF'",
@@ -195,14 +195,6 @@ var (
 					Range: Range{
 						Start: Position{Line: 3, Character: 23},
 						End:   Position{Line: 3, Character: 23},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sprite resource "MyAircraft" not found`,
-					Range: Range{
-						Start: Position{Line: 3, Character: 1},
-						End:   Position{Line: 3, Character: 11},
 					},
 				})
 			} else {
@@ -223,19 +215,16 @@ var (
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
 var (
-	AutoBindingSoundName Sound
+	Sound1 Sound
 )
-play AutoBindingSoundName
-var (
-	InvalidAutoBindingSoundName Sound
-)
+play Sound1
 run "assets", {Title: "My Game"}
 `),
 			"MySprite.spx": []byte(`
 const ConstSoundName = "ConstSoundName"
 var (
-	VarSoundName          string
-	AutoBindingSoundName2 Sound
+	VarSoundName string
+	Sound2       Sound
 )
 VarSoundName = "VarSoundName"
 onStart => {
@@ -243,8 +232,8 @@ onStart => {
 	play ConstSoundName
 	play "LiteralSoundName"
 	play VarSoundName
-	play AutoBindingSoundName
-	play AutoBindingSoundName2
+	play Sound1
+	play Sound2
 }
 `),
 			"assets/index.json": []byte(`{}`),
@@ -258,42 +247,8 @@ onStart => {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
 			switch fullReport.URI {
-			case "file:///main.spx":
-				require.Len(t, fullReport.Items, 3)
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sound resource "AutoBindingSoundName" not found`,
-					Range: Range{
-						Start: Position{Line: 2, Character: 1},
-						End:   Position{Line: 2, Character: 21},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sound resource "AutoBindingSoundName" not found`,
-					Range: Range{
-						Start: Position{Line: 4, Character: 5},
-						End:   Position{Line: 4, Character: 25},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityWarning,
-					Message:  "resources must be defined in the first var block for auto-binding",
-					Range: Range{
-						Start: Position{Line: 6, Character: 1},
-						End:   Position{Line: 6, Character: 28},
-					},
-				})
 			case "file:///MySprite.spx":
-				require.Len(t, fullReport.Items, 5)
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityWarning,
-					Message:  "auto-binding of resources can only happen in main.spx",
-					Range: Range{
-						Start: Position{Line: 4, Character: 1},
-						End:   Position{Line: 4, Character: 22},
-					},
-				})
+				require.Len(t, fullReport.Items, 3)
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "sound resource name cannot be empty",
@@ -316,14 +271,6 @@ onStart => {
 					Range: Range{
 						Start: Position{Line: 10, Character: 6},
 						End:   Position{Line: 10, Character: 24},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sound resource "AutoBindingSoundName" not found`,
-					Range: Range{
-						Start: Position{Line: 12, Character: 6},
-						End:   Position{Line: 12, Character: 26},
 					},
 				})
 			default:
@@ -406,9 +353,8 @@ onStart => {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
 var (
-	MySprite1  Sprite
-	MySprite2  MySprite2
-	MySprite2a MySprite2
+	MySprite1 Sprite
+	MySprite2 MySprite2
 )
 run "assets", {Title: "My Game"}
 `),
@@ -437,42 +383,7 @@ onStart => {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
 			switch fullReport.URI {
-			case "file:///main.spx":
-				require.Len(t, fullReport.Items, 3)
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sprite resource "MySprite1" not found`,
-					Range: Range{
-						Start: Position{Line: 2, Character: 1},
-						End:   Position{Line: 2, Character: 10},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sprite resource "MySprite2" not found`,
-					Range: Range{
-						Start: Position{Line: 3, Character: 1},
-						End:   Position{Line: 3, Character: 10},
-					},
-				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  "sprite resource name must match type name for explicit auto-binding to work",
-					Range: Range{
-						Start: Position{Line: 4, Character: 1},
-						End:   Position{Line: 4, Character: 11},
-					},
-				})
 			case "file:///MySprite1.spx":
-				require.Len(t, fullReport.Items, 3)
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityWarning,
-					Message:  "auto-binding of resources can only happen in main.spx",
-					Range: Range{
-						Start: Position{Line: 1, Character: 4},
-						End:   Position{Line: 1, Character: 13},
-					},
-				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
@@ -490,15 +401,6 @@ onStart => {
 					},
 				})
 			case "file:///MySprite2.spx":
-				require.Len(t, fullReport.Items, 3)
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `sprite resource "MySprite1" not found`,
-					Range: Range{
-						Start: Position{Line: 2, Character: 1},
-						End:   Position{Line: 2, Character: 10},
-					},
-				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
@@ -706,9 +608,7 @@ onStart => {
 			"main.spx": []byte(`
 onKey KeyLeft, => {}
 
-// FIXME: Multi-key bindings currently fail because goplus/gogen lacks support for types.Alias.
-// See https://github.com/goplus/gogen/issues/457 for details.
-// onKey [KeyRight, KeyUp, KeyDown], => {}
+onKey [KeyRight, KeyUp, KeyDown], => {}
 
 run "assets", {Title: "My Game"}
 `),
@@ -719,6 +619,32 @@ run "assets", {Title: "My Game"}
 		require.NoError(t, err)
 		require.NotNil(t, report)
 		assert.Len(t, report.Items, 1)
+		for _, item := range report.Items {
+			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
+			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
+			assert.Empty(t, fullReport.Items)
+		}
+	})
+
+	t.Run("NoTypeSpriteVarDeclaration", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// A spx game.
+
+var (
+	MySprite
+)
+
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx":                       []byte(``),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
+		require.NoError(t, err)
+		require.NotNil(t, report)
+		assert.Len(t, report.Items, 2)
 		for _, item := range report.Items {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)

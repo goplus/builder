@@ -9,6 +9,7 @@ import (
 	gopast "github.com/goplus/gop/ast"
 	gopfmt "github.com/goplus/gop/format"
 	gopparser "github.com/goplus/gop/parser"
+	"github.com/goplus/gop/parser/fsx/memfs"
 	goptoken "github.com/goplus/gop/token"
 )
 
@@ -58,25 +59,37 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 func formatSpx(src []byte) ([]byte, error) {
 	// Parse the source into AST.
 	fset := goptoken.NewFileSet()
-	f, err := gopparser.ParseFile(fset, "main.spx", src, gopparser.ParseComments|gopparser.ParseGoPlusClass)
-	if err != nil {
+	astFile, err := gopparser.ParseFSEntry(fset, memfs.SingleFile("", "main.spx", string(src)), "main.spx", nil, gopparser.Config{
+		Mode: gopparser.ParseComments | gopparser.ParseGoPlusClass,
+	})
+	if astFile == nil {
+		// Return error only if parsing completely failed. For partial parsing
+		// failures, we proceed with formatting.
 		return nil, err
 	}
 
-	gopast.SortImports(fset, f)
+	// Sort import statements first.
+	gopast.SortImports(fset, astFile)
 
-	// Find all var blocks and function declarations.
+	// Collect all declarations.
 	var (
-		varBlocks  []*gopast.GenDecl
-		funcDecls  []gopast.Decl
-		otherDecls []gopast.Decl
+		importDecls []gopast.Decl
+		constDecls  []gopast.Decl
+		varBlocks   []*gopast.GenDecl
+		funcDecls   []gopast.Decl
+		otherDecls  []gopast.Decl
 	)
-	for _, decl := range f.Decls {
+	for _, decl := range astFile.Decls {
 		switch d := decl.(type) {
 		case *gopast.GenDecl:
-			if d.Tok == goptoken.VAR {
+			switch d.Tok {
+			case goptoken.IMPORT:
+				importDecls = append(importDecls, d)
+			case goptoken.CONST:
+				constDecls = append(constDecls, d)
+			case goptoken.VAR:
 				varBlocks = append(varBlocks, d)
-			} else {
+			default:
 				otherDecls = append(otherDecls, d)
 			}
 		case *gopast.FuncDecl:
@@ -86,10 +99,12 @@ func formatSpx(src []byte) ([]byte, error) {
 		}
 	}
 
-	// Reorder declarations: vars -> funcs -> others.
+	// Reorder declarations: imports -> consts -> vars -> funcs -> others.
 	//
 	// See https://github.com/goplus/builder/issues/591 and https://github.com/goplus/builder/issues/752.
-	newDecls := make([]gopast.Decl, 0, len(f.Decls))
+	newDecls := make([]gopast.Decl, 0, len(astFile.Decls))
+	newDecls = append(newDecls, importDecls...)
+	newDecls = append(newDecls, constDecls...)
 	if len(varBlocks) > 0 {
 		// Merge multiple var blocks into a single one.
 		firstVarBlock := varBlocks[0]
@@ -112,11 +127,11 @@ func formatSpx(src []byte) ([]byte, error) {
 	}
 	newDecls = append(newDecls, funcDecls...)
 	newDecls = append(newDecls, otherDecls...)
-	f.Decls = newDecls
+	astFile.Decls = newDecls
 
 	// Format the modified AST.
 	var buf bytes.Buffer
-	if err := gopfmt.Node(&buf, fset, f); err != nil {
+	if err := gopfmt.Node(&buf, fset, astFile); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

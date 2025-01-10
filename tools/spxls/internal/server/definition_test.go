@@ -87,6 +87,23 @@ var x int
 		require.Nil(t, def)
 	})
 
+	t.Run("ThisPtr", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+this.run "assets", {Title: "My Game"}
+`),
+		}), nil)
+
+		def, err := s.textDocumentDefinition(&DefinitionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 1, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.Nil(t, def)
+	})
+
 	t.Run("InvalidPosition", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`

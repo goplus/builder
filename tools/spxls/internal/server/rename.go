@@ -30,6 +30,10 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
+	defIdent := result.defIdentFor(obj)
+	if defIdent == nil || !result.isInFset(defIdent.Pos()) {
+		return nil, nil
+	}
 
 	return &Range{
 		Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
@@ -63,9 +67,8 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
-
 	defIdent := result.defIdentFor(obj)
-	if defIdent == nil {
+	if defIdent == nil || !result.isInFset(defIdent.Pos()) {
 		return nil, fmt.Errorf("failed to find definition of object %q", obj.Name())
 	}
 
@@ -111,7 +114,7 @@ func (s *Server) spxRenameResourceAtRefs(result *compileResult, id SpxResourceID
 				// It has to be a constant. So we must find its declaration site and
 				// use the position of its value instead.
 				defIdent := result.defIdentFor(result.typeInfo.ObjectOf(ident))
-				if defIdent != nil {
+				if defIdent != nil && result.isInFset(defIdent.Pos()) {
 					parent, ok := defIdent.Obj.Decl.(*gopast.ValueSpec)
 					if ok && slices.Contains(parent.Names, defIdent) && len(parent.Values) > 0 {
 						nodePos = result.fset.Position(parent.Values[0].Pos())
