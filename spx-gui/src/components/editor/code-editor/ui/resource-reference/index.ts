@@ -97,17 +97,6 @@ export class ResourceReferenceController extends Emitter<{
 
     this.addDisposer(
       watch(
-        () => this.ui.activeTextDocument,
-        (textDocument, _, onCleanup) => {
-          if (textDocument == null) return
-          refreshItems()
-          onCleanup(textDocument.on('didChangeContent', refreshItems))
-        },
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
         this.providerRef,
         (provider, _, onCleanup) => {
           if (provider == null) return
@@ -117,6 +106,12 @@ export class ResourceReferenceController extends Emitter<{
         { immediate: true }
       )
     )
+
+    this.addDisposer(watch(
+      () => this.ui.project.filesHash,
+      () => refreshItems(),
+      { immediate: true }
+    ))
 
     const editorEl = editor.getDomNode()
     if (editorEl == null) throw new Error('No editor dom node')

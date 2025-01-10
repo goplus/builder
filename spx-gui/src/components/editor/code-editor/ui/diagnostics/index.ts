@@ -43,17 +43,6 @@ export class DiagnosticsController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => this.ui.activeTextDocument,
-        (textDocument, _, onCleanup) => {
-          if (textDocument == null) return
-          refreshDiagnostics()
-          onCleanup(textDocument.on('didChangeContent', refreshDiagnostics))
-        },
-        { immediate: true }
-      )
-    )
-    this.addDisposer(
-      watch(
         this.providerRef,
         (provider, _, onCleanup) => {
           if (provider == null) return
@@ -63,5 +52,11 @@ export class DiagnosticsController extends Disposable {
         { immediate: true }
       )
     )
+
+    this.addDisposer(watch(
+      () => this.ui.project.filesHash,
+      () => refreshDiagnostics(),
+      { immediate: true }
+    ))
   }
 }
