@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"go/types"
+	"html/template"
 	"io/fs"
 	"regexp"
 	"strings"
@@ -267,4 +268,9 @@ func getSimplifiedTypeString(typ types.Type) string {
 		}
 		return p.Name()
 	})
+}
+
+// attr transforms given string value to an HTML attribute value (with quotes).
+func attr(value string) string {
+	return fmt.Sprintf(`"%s"`, template.HTMLEscapeString(value))
 }

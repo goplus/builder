@@ -161,9 +161,13 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.setActiveTextDocument(textDocument)
     if (positionOrRange == null) return
     if ('line' in positionOrRange) {
-      this.editor.setPosition(toMonacoPosition(positionOrRange))
+      const mPos = toMonacoPosition(positionOrRange)
+      this.editor.setPosition(mPos)
+      this.editor.revealPositionNearTop(mPos)
     } else {
-      this.editor.setSelection(toMonacoRange(positionOrRange))
+      const mRange = toMonacoRange(positionOrRange)
+      this.editor.setSelection(mRange)
+      this.editor.revealRangeNearTopIfOutsideViewport(mRange)
     }
     this.editor.focus()
   }

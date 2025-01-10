@@ -27,7 +27,7 @@ type SpxDefinition struct {
 
 // HTML returns the HTML representation of the definition.
 func (def SpxDefinition) HTML() string {
-	return fmt.Sprintf("<definition-item def-id=%q overview=%q>\n%s</definition-item>\n", def.ID, def.Overview, def.Detail)
+	return fmt.Sprintf("<definition-item def-id=%s overview=%s>\n%s</definition-item>\n", attr(def.ID.String()), attr(def.Overview), def.Detail)
 }
 
 // CompletionItem constructs a [CompletionItem] from the definition.
