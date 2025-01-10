@@ -6,6 +6,7 @@ import { untilNotNull } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
+import { toNativeFile } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 
@@ -57,7 +58,7 @@ async function getProjectData() {
   const zip = new JSZip()
   const [, files] = await props.project.export()
   Object.entries(files).forEach(([path, file]) => {
-    if (file != null) zip.file(path, file.arrayBuffer())
+    if (file != null) zip.file(path, toNativeFile(file))
   })
   return zip.generateAsync({ type: 'arraybuffer' })
 }
