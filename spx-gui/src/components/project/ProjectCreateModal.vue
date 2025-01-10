@@ -69,7 +69,7 @@ const signedInUser = computed(() => userStore.getSignedInUser())
 
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
-  return { en: `Remix ${props.remixSource}`, zh: `改编 ${parseRemixSource(props.remixSource)}` }
+  return { en: `Remix ${props.remixSource}`, zh: `改编 ${props.remixSource}` }
 })
 
 const initialName = props.remixSource == null ? '' : parseRemixSource(props.remixSource).project
