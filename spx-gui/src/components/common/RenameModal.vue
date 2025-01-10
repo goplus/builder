@@ -8,12 +8,14 @@ export interface IRenameTarget {
   applyName(newName: string): Promise<void>
   /** Tip for new name input */
   inputTip: LocaleMessage
+  /** Extra warning message */
+  warning: LocaleMessage | null
 }
 </script>
 
 <script setup lang="ts">
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
-import { UIFormModal, UIButton, UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
+import { UIFormModal, UIButton, UITextInput, UIForm, UIFormItem, useForm, UIIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
@@ -64,6 +66,10 @@ function validateName(name: string) {
         <UITextInput v-model:value="form.value.name" />
         <template #tip>{{ $t(target.inputTip) }}</template>
       </UIFormItem>
+      <p v-if="target.warning != null" class="warning">
+        <UIIcon class="icon" type="warning" />
+        {{ $t(target.warning) }}
+      </p>
       <footer class="footer">
         <UIButton type="boring" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
@@ -77,6 +83,19 @@ function validateName(name: string) {
 </template>
 
 <style lang="scss" scoped>
+.warning {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--ui-color-yellow-500);
+  align-items: flex-start;
+
+  .icon {
+    flex: 0 0 auto;
+    height: 22px;
+  }
+}
+
 .footer {
   margin-top: 40px;
   display: flex;

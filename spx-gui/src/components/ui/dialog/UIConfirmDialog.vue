@@ -12,7 +12,7 @@
       <UIButton type="boring" @click="emit('cancelled')">
         {{ cancelText ?? config?.cancelText ?? 'Cancel' }}
       </UIButton>
-      <UIButton type="primary" :loading="isConfirmLoading" @click="handleConfirm">
+      <UIButton ref="confirmBtnRef" type="primary" :loading="isConfirmLoading" @click="handleConfirm">
         {{ confirmText ?? config?.confirmText ?? 'Confirm' }}
       </UIButton>
     </footer>
@@ -20,7 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { untilNotNull } from '@/utils/utils'
 import { useConfig } from '../UIConfigProvider.vue'
 import UIButton from '../UIButton.vue'
 import UIDialog from './UIDialog.vue'
@@ -50,6 +51,16 @@ const emit = defineEmits<{
   cancelled: []
   resolved: []
 }>()
+
+const confirmBtnRef = ref<InstanceType<typeof UIButton>>()
+watch(
+  () => props.visible,
+  async (visible) => {
+    if (!visible) return
+    const confirmBtn = await untilNotNull(confirmBtnRef)
+    confirmBtn.focus()
+  }
+)
 
 const isConfirmLoading = ref(false)
 

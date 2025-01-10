@@ -165,6 +165,15 @@ export type Diagnostic = {
   message: string
 }
 
+export type TextDocumentDiagnostics = {
+  textDocument: TextDocumentIdentifier
+  diagnostics: Diagnostic[]
+}
+
+export type WorkspaceDiagnostics = {
+  items: TextDocumentDiagnostics[]
+}
+
 export interface WordAtPosition {
   word: string
   startColumn: number
@@ -422,14 +431,22 @@ export function fromLSPRange(range: lsp.Range): Range {
   }
 }
 
-export function fromLSPSeverity(severity: lsp.DiagnosticSeverity): DiagnosticSeverity | null {
+export function fromLSPSeverity(severity: lsp.DiagnosticSeverity | undefined): DiagnosticSeverity {
   switch (severity) {
     case lsp.DiagnosticSeverity.Error:
       return DiagnosticSeverity.Error
     case lsp.DiagnosticSeverity.Warning:
       return DiagnosticSeverity.Warning
     default:
-      return null
+      return DiagnosticSeverity.Error
+  }
+}
+
+export function fromLSPDiagnostic(diagnostic: lsp.Diagnostic): Diagnostic {
+  return {
+    range: fromLSPRange(diagnostic.range),
+    severity: fromLSPSeverity(diagnostic.severity),
+    message: diagnostic.message
   }
 }
 

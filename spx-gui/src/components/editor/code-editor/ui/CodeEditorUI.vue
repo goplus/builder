@@ -34,7 +34,7 @@ import { isWidget } from '@/models/widget'
 import { useModal } from '@/components/ui'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { useCodeEditorCtx } from '../context'
+import { useCodeEditorCtx, useRenameWarning } from '../context'
 import {
   getResourceModel,
   getTextDocumentId,
@@ -70,8 +70,9 @@ const renameCostume = useRenameCostume()
 const renameBackdrop = useRenameBackdrop()
 const renameAnimation = useRenameAnimation()
 const renameWidget = useRenameWidget()
+const getRenameWarning = useRenameWarning()
 
-function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
+async function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
   const textDocument = codeEditorCtx.getTextDocument(textDocumentId)
   if (textDocument == null) throw new Error(`Text document (${textDocumentId.uri}) not found`)
   const name = textDocument.getValueInRange(range)
@@ -83,7 +84,8 @@ function rename(textDocumentId: TextDocumentIdentifier, position: Position, rang
         editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
           codeEditorCtx.rename(textDocumentId, position, newName)
         ),
-      inputTip: getGopIdentifierNameTip()
+      inputTip: getGopIdentifierNameTip(),
+      warning: await getRenameWarning()
     }
   })
 }

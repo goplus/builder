@@ -245,6 +245,22 @@ export function humanizeExactCount(count: number) {
   }
 }
 
+export function humanizeList(list: LocaleMessage[]) {
+  return {
+    en: list.map((i) => i.en).join(', '),
+    zh: list.map((i) => i.zh).join('、')
+  }
+}
+
+export function humanizeListWithLimit(list: LocaleMessage[], maxNum: number = 3) {
+  if (list.length <= maxNum) return humanizeList(list)
+  const limited = humanizeList(list.slice(0, maxNum))
+  return {
+    en: `${limited.en} and ${list.length - maxNum} more`,
+    zh: `${limited.zh}等 ${list.length} 个`
+  }
+}
+
 export function usePageTitle(
   titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
 ) {
