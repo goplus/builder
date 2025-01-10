@@ -1,3 +1,5 @@
+//go:build js && wasm
+
 package main
 
 //go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/spx

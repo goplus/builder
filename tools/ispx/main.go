@@ -46,6 +46,18 @@ func logWithCallerInfo(msg string, frame *igop.Frame) {
 	}
 }
 
+func logWithPanicInfo(info *igop.PanicInfo) {
+	position := info.Position()
+	logger.Error(
+		"panic",
+		"error", info.Error,
+		"function", info.String(),
+		"file", position.Filename,
+		"line", position.Line,
+		"column", position.Column,
+	)
+}
+
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
 
@@ -66,6 +78,8 @@ func main() {
 		log.Fatalf("Failed to resolve package import %q. This package is not available in the current environment.", path)
 		return
 	}
+
+	ctx.SetPanic(logWithPanicInfo)
 
 	// NOTE(everyone): Keep sync with the config in spx [gop.mod](https://github.com/goplus/spx/blob/main/gop.mod)
 	gopbuild.RegisterClassFileType(".spx", "Game", []*gopbuild.Class{{Ext: ".spx", Class: "SpriteImpl"}}, "github.com/goplus/spx")
