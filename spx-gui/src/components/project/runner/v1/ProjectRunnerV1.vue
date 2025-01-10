@@ -8,9 +8,12 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
+import JSZip from 'jszip'
 import { registerPlayer } from '@/utils/player-registry'
 import { until } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
+import { toPng } from '@/utils/img'
+import { toNativeFile } from '@/models/common/file'
 import { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 import IframeDisplay, { preload } from './IframeDisplay.vue'
@@ -44,12 +47,30 @@ onUnmounted(() => {
   registered.onStopped()
 })
 
+async function getProjectZipData() {
+  const zip = new JSZip()
+  const [, files] = await props.project.export()
+  Object.entries(files).forEach(([path, file]) => {
+    if (file == null) return
+    zip.file(
+      path,
+      toNativeFile(file).then((nf) => {
+        // For svg files, we convert them to png before sending to spx (v1):
+        // 1. Compatibility: Many SVG features are not supported in spx v1
+        // 2. Improve performance: SVG rendering is slow in spx v1
+        if (nf.type === 'image/svg+xml') return toPng(nf)
+        return nf
+      })
+    )
+  })
+  return zip.generateAsync({ type: 'arraybuffer' })
+}
+
 defineExpose({
   async run() {
     loading.value = true
     registered.onStart()
-    const gbpFile = await props.project.exportGbpFile()
-    zipData.value = await gbpFile.arrayBuffer()
+    zipData.value = await getProjectZipData()
     await until(() => !loading.value)
   },
   stop() {
