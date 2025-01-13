@@ -106,12 +106,15 @@ onMounted(() => {
 })
 
 defineExpose({
-  async run() {
+  async run(signal?: AbortSignal) {
     loading.value = true
     registered.onStart()
     const iframeWindow = await untilNotNull(iframeWindowRef)
+    signal?.throwIfAborted()
     const projectData = await getProjectData()
+    signal?.throwIfAborted()
     await withLog('startGame', iframeWindow.startGame(projectData, assetURLs))
+    signal?.throwIfAborted()
     loading.value = false
   },
   async stop() {

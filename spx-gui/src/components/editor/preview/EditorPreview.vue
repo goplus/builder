@@ -64,7 +64,7 @@
       >
         {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
       </UIButton>
-      <UIButton class="button" type="boring" :disabled="running.initializing" @click="handleStop">
+      <UIButton class="button" type="boring" @click="handleStop">
         {{ $t({ en: 'Stop', zh: '停止' }) }}
       </UIButton>
     </UICardHeader>

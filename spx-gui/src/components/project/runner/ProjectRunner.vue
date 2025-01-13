@@ -20,8 +20,8 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 const version = useSpxVersion()
 
 defineExpose({
-  async run() {
-    return projectRunnerRef.value?.run()
+  async run(signal?: AbortSignal) {
+    return projectRunnerRef.value?.run(signal)
   },
   async stop() {
     return projectRunnerRef.value?.stop()

@@ -11,24 +11,15 @@ export function convertImg(
   return new Promise<Blob>((resolve, reject) => {
     const img = new Image()
     img.onload = async () => {
-      const canvas = document.createElement('canvas')
+      let size = { width: img.naturalWidth, height: img.naturalHeight }
       if (input.type === 'image/svg+xml') {
         const svgText = await input.text()
-        const { width, height } = await getSVGSize(svgText)
-        canvas.width = width
-        canvas.height = height
-      } else {
-        canvas.width = img.naturalWidth
-        canvas.height = img.naturalHeight
+        size = await getSVGSize(svgText)
       }
-      canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height)
-      canvas.toBlob((newBlob) => {
-        if (newBlob == null) {
-          reject(new Error('toBlob failed'))
-          return
-        }
-        resolve(newBlob)
-      }, type)
+      const canvas = new OffscreenCanvas(size.width, size.height)
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, size.width, size.height)
+      resolve(canvas.convertToBlob({ type }))
     }
     img.onerror = (e) => reject(new Error(`load image failed: ${e.toString()}`))
     const url = URL.createObjectURL(input)
