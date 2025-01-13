@@ -260,15 +260,15 @@ var GetSpxPkg = sync.OnceValue(func() *types.Package {
 })
 
 // GetSpxGameType returns the [spx.Game] type.
-var GetSpxGameType = sync.OnceValue(func() types.Type {
+var GetSpxGameType = sync.OnceValue(func() *types.Named {
 	spxPkg := GetSpxPkg()
-	return spxPkg.Scope().Lookup("Game").Type()
+	return spxPkg.Scope().Lookup("Game").Type().(*types.Named)
 })
 
 // GetSpxSpriteImplType returns the [spx.SpriteImpl] type.
-var GetSpxSpriteImplType = sync.OnceValue(func() types.Type {
+var GetSpxSpriteImplType = sync.OnceValue(func() *types.Named {
 	spxPkg := GetSpxPkg()
-	return spxPkg.Scope().Lookup("SpriteImpl").Type()
+	return spxPkg.Scope().Lookup("SpriteImpl").Type().(*types.Named)
 })
 
 // GetSpxPkgDefinitions returns the spx definitions for the spx package.

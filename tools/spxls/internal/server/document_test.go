@@ -19,7 +19,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 `),
 			"MySprite.spx": []byte(`
 onStart => {
-	play "sound1"
+	play "MySound"
 	onBackdrop "backdrop1", func() {}
 	MySprite.setCostume "costume1"
 	MySprite.animate "anim1"
@@ -28,7 +28,7 @@ onStart => {
 `),
 			"assets/index.json":                  []byte(`{"backdrops":[{"name":"backdrop1"}],"zorder":[{"name":"widget1","type":"monitor"}]}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}],"fAnimations":{"anim1":{}}}`),
-			"assets/sounds/sound1/index.json":    []byte(`{}`),
+			"assets/sounds/MySound/index.json":   []byte(`{}`),
 		}), nil)
 
 		paramsForMainSpx := &DocumentLinkParams{
@@ -119,9 +119,9 @@ onStart => {
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 2, Character: 6},
-				End:   Position{Line: 2, Character: 14},
+				End:   Position{Line: 2, Character: 15},
 			},
-			Target: toURI("spx://resources/sounds/sound1"),
+			Target: toURI("spx://resources/sounds/MySound"),
 			Data: SpxResourceRefDocumentLinkData{
 				Kind: SpxResourceRefKindStringLiteral,
 			},
@@ -216,6 +216,8 @@ onStart => {
 var (
 	MySound Sound
 `),
+			"assets/index.json":                []byte(`{}`),
+			"assets/sounds/MySound/index.json": []byte(`{}`),
 		}), nil)
 		params := &DocumentLinkParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},

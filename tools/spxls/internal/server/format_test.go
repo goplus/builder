@@ -81,18 +81,35 @@ run "assets", {Title: "Bullet (by Go+)"}
 		require.Nil(t, edits)
 	})
 
-	t.Run("FormatError", func(t *testing.T) {
+	t.Run("AcceptableFormatError", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte("vbr Foobar string"),
+			"main.spx": []byte(`// A spx game.
+
+var MyAircraft MyAircraft
+!InvalidSyntax
+`),
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to format spx source file")
-		require.Nil(t, edits)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 4, Character: 0},
+			},
+			NewText: `// A spx game.
+
+var (
+	MyAircraft MyAircraft
+)
+
+!InvalidSyntax
+`,
+		})
 	})
 
 	t.Run("WithFormatSpx", func(t *testing.T) {
@@ -179,9 +196,27 @@ var (
 
 run "assets", {Title: "My Game"}
 `),
-			"MySprite.spx":                       []byte(``),
-			"assets/index.json":                  []byte(`{}`),
-			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Nil(t, edits)
+	})
+
+	t.Run("WithImportStmt", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// A spx game.
+import "math"
+
+onClick => {
+	println math.floor(2.5)
+}
+
+run "assets", {Title: "My Game"}
+`),
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},

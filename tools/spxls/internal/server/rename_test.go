@@ -61,6 +61,42 @@ onStart => {
 		require.NoError(t, err)
 		require.Nil(t, range3)
 	})
+
+	t.Run("ThisPtr", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onClick => {
+	_ = this
+}
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx": []byte(`
+onClick => {
+	_ = this
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		range1, err := s.textDocumentPrepareRename(&PrepareRenameParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 5},
+			},
+		})
+		require.NoError(t, err)
+		require.Nil(t, range1)
+
+		range2, err := s.textDocumentPrepareRename(&PrepareRenameParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 2, Character: 5},
+			},
+		})
+		require.NoError(t, err)
+		require.Nil(t, range2)
+	})
 }
 
 func TestServerTextDocumentRename(t *testing.T) {
@@ -217,6 +253,40 @@ onStart => {
 			},
 			NewText: "NewSprite",
 		})
+	})
+
+	t.Run("ThisPtr", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onClick => {
+	_ = this
+}
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx": []byte(`
+onClick => {
+	_ = this
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		mainSpxWorkspaceEdit, err := s.textDocumentRename(&RenameParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+			Position:     Position{Line: 2, Character: 5},
+			NewName:      "that",
+		})
+		require.EqualError(t, err, `failed to find definition of object "this"`)
+		require.Nil(t, mainSpxWorkspaceEdit)
+
+		mySpriteSpxWorkspaceEdit, err := s.textDocumentRename(&RenameParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+			Position:     Position{Line: 2, Character: 5},
+			NewName:      "that",
+		})
+		require.EqualError(t, err, `failed to find definition of object "this"`)
+		require.Nil(t, mySpriteSpxWorkspaceEdit)
 	})
 }
 

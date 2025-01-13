@@ -32,15 +32,6 @@ func listSpxFiles(rootFS fs.ReadDirFS) ([]string, error) {
 	return files, nil
 }
 
-// gopASTFileMapToSlice converts a map of [gopast.File] to a slice of [gopast.File].
-func gopASTFileMapToSlice(fileMap map[string]*gopast.File) []*gopast.File {
-	files := make([]*gopast.File, 0, len(fileMap))
-	for _, file := range fileMap {
-		files = append(files, file)
-	}
-	return files
-}
-
 // unwrapPointerType returns the underlying type of t. For pointer types, it
 // returns the element type that the pointer points to. For non-pointer types,
 // it returns the type unchanged.
