@@ -3,16 +3,13 @@ module github.com/goplus/builder/tools/spxls
 go 1.23.4
 
 require (
-	github.com/goplus/gogen v1.15.2
-	github.com/goplus/gop v1.2.6
-	github.com/goplus/mod v0.13.10
+	github.com/goplus/gogen v1.16.6-0.20250112152508-dc8cddfd52df
+	github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
+	github.com/goplus/mod v0.13.15
 	github.com/goplus/spx v1.1.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/tools v0.23.0
 )
-
-// https://github.com/nighca/mod/tree/web TODO: any better way to fix this?
-replace github.com/goplus/mod v0.13.10 => github.com/nighca/mod v0.0.0-20240805065729-b50535825ae2
 
 require (
 	github.com/ajstarks/svgo v0.0.0-20210927141636-6d70534b1098 // indirect
@@ -30,12 +27,12 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.13.10 // indirect
+	github.com/qiniu/x v1.13.11 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
-	golang.org/x/mod v0.19.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
