@@ -501,6 +501,8 @@ export class CodeEditor extends Disposable {
   private uis: ICodeEditorUI[] = []
 
   attachUI(ui: ICodeEditorUI) {
+    const idx = this.uis.indexOf(ui)
+    if (idx >= 0) this.uis.splice(idx, 1)
     this.uis.push(ui)
     ;(window as any).ui = ui // for debugging only
     const { copilot, documentBase, lspClient } = this

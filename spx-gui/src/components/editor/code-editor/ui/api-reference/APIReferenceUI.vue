@@ -169,6 +169,24 @@ const categoriesComputed = computed(() => {
   return result
 })
 
+// Initially display only items of the first category to improve initial rendering performance.
+// After a delay, display all items. Delay exists only for the first update (from empty to non-empty).
+const categoriesForItems = shallowRef(categoriesComputed.value)
+watch(
+  categoriesComputed,
+  (categories, _, onCleanUp) => {
+    if (categoriesForItems.value.length > 0) {
+      categoriesForItems.value = categories
+      return
+    }
+    categoriesForItems.value = categories.slice(0, 1)
+    const id = requestIdleCallback(() => {
+      categoriesForItems.value = categories
+    })
+    onCleanUp(() => cancelIdleCallback(id))
+  }
+)
+
 const activeCategoryIdRef = ref<string | null>(null)
 
 watch(
@@ -237,7 +255,7 @@ function handleCategoryClick(id: string) {
         </li>
       </ul>
       <ul ref="itemsWrapperRef" class="items-wrapper">
-        <li v-for="c in categoriesComputed" :key="c.id" :data-category-id="c.id" class="category-wrapper">
+        <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id" class="category-wrapper">
           <ul v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
             <h5 class="title">{{ $t(sc.label) }}</h5>
             <ul class="items">

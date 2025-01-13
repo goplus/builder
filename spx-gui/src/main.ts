@@ -1,3 +1,4 @@
+import './polyfills'
 import { createApp } from 'vue'
 import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
