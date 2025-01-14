@@ -43,7 +43,7 @@ export const onCloned0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onCloned data => {\n\t${1}\n}',
-  overview: 'onCloned data? => {}',
+  overview: 'onCloned data => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite cloned, optionally receiving data',
     zh: '当前精灵被复制时执行，并可选地接收数据'
@@ -69,7 +69,7 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onTouchStart sprite => {\n\t${1}\n}',
-  overview: 'onTouchStart sprite? => {}',
+  overview: 'onTouchStart sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any other sprites, optionally receiving the sprite',
     zh: '当前精灵与其他任意精灵开始接触时执行，并可选地接收精灵信息'
@@ -95,7 +95,7 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
-  overview: 'onTouchStart name, sprite? => {}',
+  overview: 'onTouchStart name, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name, optionally receiving the sprite',
     zh: '当前精灵与指定名字的精灵开始接触时执行，并可选地接收精灵信息'
@@ -121,7 +121,7 @@ export const onTouchStart4: DefinitionDocumentationItem = {
     overloadId: '4'
   },
   insertText: 'onTouchStart [${1:}], sprite => {\n\t${2}\n}',
-  overview: 'onTouchStart names, sprite? => {}',
+  overview: 'onTouchStart names, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any sprite of given names, optionally receiving the sprite',
     zh: '当前精灵与任一指定名字的精灵开始接触时执行，并可选地接收精灵信息'
@@ -147,7 +147,7 @@ export const onMoving0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onMoving info => {\n\t${1}\n}',
-  overview: 'onMoving info? => {}',
+  overview: 'onMoving info => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite moving (position change), optionally receiving the moving info',
     zh: '当前精灵移动（位置改变）时执行，并可选地接收移动信息'
@@ -173,7 +173,7 @@ export const onTurning0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onTurning info => {\n\t${1}\n}',
-  overview: 'onTurning info? => {}',
+  overview: 'onTurning info => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite turning (heading change), optionally receiving the turning info',
     zh: '当前精灵转向（朝向改变）时执行，并可选地接收转向信息'
@@ -1483,7 +1483,7 @@ export const gameOnKey1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
-  overview: 'onKey keys, key? => {}',
+  overview: 'onKey keys, key => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to given keys pressed, optionally receiving the key pressed, e.g., `onKey [KeyA, KeyB], key => {}`',
     zh: '指定多个按键，任一被按下时执行，并可选地接收被按下的按键，如：`onKey [KeyA, KeyB], key => {}`'

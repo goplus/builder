@@ -3,13 +3,12 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"go/types"
 	"io/fs"
 	"path"
 
 	gopast "github.com/goplus/gop/ast"
 	gopfmt "github.com/goplus/gop/format"
-	gopparser "github.com/goplus/gop/parser"
-	"github.com/goplus/gop/parser/fsx/memfs"
 	goptoken "github.com/goplus/gop/token"
 )
 
@@ -28,7 +27,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, err
 	}
 
-	formatted, err := formatSpx(content)
+	formatted, err := formatSpx(s, spxFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
@@ -56,18 +55,19 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 }
 
 // formatSpx formats a spx source file.
-func formatSpx(src []byte) ([]byte, error) {
+func formatSpx(s *Server, spxFileName string) ([]byte, error) {
 	// Parse the source into AST.
-	fset := goptoken.NewFileSet()
-	astFile, err := gopparser.ParseFSEntry(fset, memfs.SingleFile("", "main.spx", string(src)), "main.spx", nil, gopparser.Config{
-		Mode: gopparser.ParseComments | gopparser.ParseGoPlusClass,
-	})
+	compileResult, _ := s.compile()
+	astFile := compileResult.mainASTPkg.Files[spxFileName]
 	if astFile == nil {
 		// Return error only if parsing completely failed. For partial parsing
 		// failures, we proceed with formatting.
-		return nil, err
+		return nil, fmt.Errorf("failed to parse spx source file")
 	}
 
+	eliminateUnusedLambdaParams(compileResult, astFile)
+
+	fset := compileResult.fset
 	// Sort import statements first.
 	gopast.SortImports(fset, astFile)
 
@@ -135,4 +135,161 @@ func formatSpx(src []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// eliminateUnusedLambdaParams eliminates useless lambda parameter declarations.
+// A lambda parameter is considered "useless" if:
+// 1. The parameter is not used.
+// 2. The lambda is passed to a function that has a overload which receives the lambda without the parameter.
+// Then we can omit its declaration safely.
+//
+// NOTE: There are limitations with current implementation:
+// 1. Only `LambdaExpr2` (not `LambdaExpr`) is supported.
+// 2. Only the last parameter of the lambda is checked.
+// We may complete it in the future, if needed.
+func eliminateUnusedLambdaParams(compileResult *compileResult, astFile *gopast.File) {
+	gopast.Inspect(astFile, func(n gopast.Node) bool {
+		callExpr, ok := n.(*gopast.CallExpr)
+		if !ok {
+			return true
+		}
+		funIdent, ok := callExpr.Fun.(*gopast.Ident)
+		if !ok {
+			return true
+		}
+		funType, funTypeOverloads := getFuncAndOverloadsType(compileResult, funIdent)
+		if funType == nil || funTypeOverloads == nil {
+			return true
+		}
+		paramsType := funType.Signature().Params()
+		for argIdx, argExpr := range callExpr.Args {
+			lambdaExpr, ok := argExpr.(*gopast.LambdaExpr2)
+			if !ok {
+				continue
+			}
+			if argIdx >= paramsType.Len() {
+				break
+			}
+			lambdaSig, ok := paramsType.At(argIdx).Type().(*types.Signature)
+			if !ok {
+				continue
+			}
+			if len(lambdaExpr.Lhs) == 0 {
+				continue
+			}
+			// To simplify the implementation, we only check & process the last parameter,
+			// which is enough to cover known cases.
+			lastParamIdx := len(lambdaExpr.Lhs) - 1
+			if used := isIdentUsed(compileResult, lambdaExpr.Lhs[lastParamIdx]); used {
+				continue
+			}
+
+			newParamTypes := make([]*types.Var, lambdaSig.Params().Len()-1)
+			for i := 0; i < lambdaSig.Params().Len()-1; i++ {
+				newParamTypes[i] = lambdaSig.Params().At(i)
+			}
+			newLambdaSig := types.NewSignatureType(
+				lambdaSig.Recv(),
+				getTypeParamSlice(lambdaSig.RecvTypeParams()),
+				getTypeParamSlice(lambdaSig.TypeParams()),
+				types.NewTuple(newParamTypes...),
+				lambdaSig.Results(),
+				lambdaSig.Variadic(),
+			)
+			hasMatchedOverload := false
+			for _, overloadType := range funTypeOverloads {
+				if overloadType == funType {
+					continue
+				}
+				overloadParamsType := overloadType.Signature().Params()
+				if overloadParamsType.Len() != paramsType.Len() {
+					continue
+				}
+				overloadLambdaSig, ok := overloadParamsType.At(argIdx).Type().(*types.Signature)
+				if !ok {
+					continue
+				}
+				if types.AssignableTo(newLambdaSig, overloadLambdaSig) {
+					hasMatchedOverload = true
+					break
+				}
+			}
+			if hasMatchedOverload {
+				lambdaExpr.Lhs = lambdaExpr.Lhs[:lastParamIdx]
+				if len(lambdaExpr.Lhs) == 0 {
+					// Avoid `index out of range [0] with length 0` when printing lambda expression.
+					lambdaExpr.Lhs = nil
+				}
+			}
+		}
+		return true
+	})
+}
+
+// getFuncAndOverloadsType returns the function type and all its overloads.
+func getFuncAndOverloadsType(compileResult *compileResult, funIdent *gopast.Ident) (fun *types.Func, overloads []*types.Func) {
+	funTypeObj := compileResult.typeInfo.ObjectOf(funIdent)
+	if funTypeObj == nil {
+		return
+	}
+	funType, ok := funTypeObj.(*types.Func)
+	if !ok {
+		return
+	}
+	pkg := funType.Pkg()
+	if pkg == nil {
+		return
+	}
+	recvTypeName := compileResult.selectorTypeNameForIdent(funIdent)
+	if recvTypeName == "" {
+		return
+	}
+	if isSpxPkgObject(funTypeObj) && recvTypeName == "Sprite" {
+		recvTypeName = "SpriteImpl"
+	}
+
+	recvType := funType.Pkg().Scope().Lookup(recvTypeName).Type()
+	if recvType == nil {
+		return
+	}
+	recvNamed, ok := recvType.(*types.Named)
+	if !ok || !isNamedStructType(recvNamed) {
+		return
+	}
+	var underlineFunType *types.Func
+	walkStruct(recvNamed, func(member types.Object, selector *types.Named) bool {
+		method, ok := member.(*types.Func)
+		if !ok {
+			return true
+		}
+		if pn, overloadId := parseGopFuncName(method.Name()); pn == funIdent.Name && overloadId == nil {
+			underlineFunType = method
+		}
+		return true
+	})
+	if underlineFunType == nil {
+		return
+	}
+	return funType, expandGopOverloadableFunc(underlineFunType)
+}
+
+func isIdentUsed(compileResult *compileResult, ident *gopast.Ident) bool {
+	obj := compileResult.typeInfo.ObjectOf(ident)
+	for _, usedObj := range compileResult.typeInfo.Uses {
+		if usedObj == obj {
+			return true
+		}
+	}
+	return false
+}
+
+func getTypeParamSlice(list *types.TypeParamList) []*types.TypeParam {
+	if list == nil {
+		return nil
+	}
+	slice := make([]*types.TypeParam, list.Len())
+	for i := 0; i < list.Len(); i++ {
+		slice[i] = list.At(i)
+	}
+	return slice
 }
