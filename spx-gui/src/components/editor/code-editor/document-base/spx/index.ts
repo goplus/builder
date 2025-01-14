@@ -43,27 +43,21 @@ export const onCloned0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onCloned data => {\n\t${1}\n}',
-  overview: 'onCloned data => { ... }',
+  overview: 'onCloned data? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite cloned and get the data, e.g., `onCloned data => { ... }`',
-    zh: '当前精灵被复制时执行并获得数据，如：`onCloned data => { ... }`'
+    en: 'Listen to current sprite cloned, optionally receiving data',
+    zh: '当前精灵被复制时执行，并可选地接收数据'
   })
 }
 
 export const onCloned1: DefinitionDocumentationItem = {
-  categories: [categories.event.sprite],
-  kind: DefinitionKind.Listen,
+  ...onCloned0,
+  hiddenFromList: true, // duplicate with `onCloned0`
   definition: {
     package: packageSpx,
     name: 'Sprite.onCloned',
     overloadId: '1'
-  },
-  insertText: 'onCloned => {\n\t${1}\n}',
-  overview: 'onCloned => { ... }',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite cloned',
-    zh: '当前精灵被复制时执行'
-  })
+  }
 }
 
 export const onTouchStart0: DefinitionDocumentationItem = {
@@ -74,28 +68,22 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '0'
   },
-  insertText: 'onTouchStart => {\n\t${1}\n}',
-  overview: 'onTouchStart => { ... }',
+  insertText: 'onTouchStart sprite => {\n\t${1}\n}',
+  overview: 'onTouchStart sprite? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite starting to be touched by any other sprites',
-    zh: '当前精灵与其他任意精灵开始接触时执行'
+    en: 'Listen to current sprite starting to be touched by any other sprites, optionally receiving the sprite',
+    zh: '当前精灵与其他任意精灵开始接触时执行，并可选地接收精灵信息'
   })
 }
 
 export const onTouchStart1: DefinitionDocumentationItem = {
-  categories: [categories.event.sensing],
-  kind: DefinitionKind.Listen,
+  ...onTouchStart0,
+  hiddenFromList: true, // duplicate with `onTouchStart0`
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
     overloadId: '1'
-  },
-  insertText: 'onTouchStart sprite => {\n\t${1}\n}',
-  overview: 'onTouchStart sprite => { ... }',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite starting to be touched by any other sprites (and get the sprite)',
-    zh: '当前精灵与其他精灵开始接触时执行（并获得精灵信息）'
-  })
+  }
 }
 
 export const onTouchStart2: DefinitionDocumentationItem = {
@@ -106,28 +94,48 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '2'
   },
-  insertText: 'onTouchStart ${1:spriteName}, => {\n\t${2}\n}',
-  overview: 'onTouchStart spriteName, => { ... }',
+  insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
+  overview: 'onTouchStart name, sprite? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite starting to be touched by sprite of given name',
-    zh: '当前精灵与指定名字的精灵开始接触时执行'
+    en: 'Listen to current sprite starting to be touched by sprite of given name, optionally receiving the sprite',
+    zh: '当前精灵与指定名字的精灵开始接触时执行，并可选地接收精灵信息'
   })
 }
 
 export const onTouchStart3: DefinitionDocumentationItem = {
+  ...onTouchStart2,
+  hiddenFromList: true, // duplicate with `onTouchStart2
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onTouchStart',
+    overloadId: '3'
+  }
+}
+
+export const onTouchStart4: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
-    overloadId: '3'
+    overloadId: '4'
   },
-  insertText: 'onTouchStart ${1:spriteName}, sprite => {\n\t${2}\n}',
-  overview: 'onTouchStart spriteName, sprite => { ... }',
+  insertText: 'onTouchStart [${1:}], sprite => {\n\t${2}\n}',
+  overview: 'onTouchStart names, sprite? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite starting to be touched by sprite of given name (and get the sprite)',
-    zh: '当前精灵与指定名字的精灵开始接触时执行（并获得精灵信息）'
+    en: 'Listen to current sprite starting to be touched by any sprite of given names, optionally receiving the sprite',
+    zh: '当前精灵与任一指定名字的精灵开始接触时执行，并可选地接收精灵信息'
   })
+}
+
+export const onTouchStart5: DefinitionDocumentationItem = {
+  ...onTouchStart4,
+  hiddenFromList: true, // duplicate with `onTouchStart4
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onTouchStart',
+    overloadId: '5'
+  }
 }
 
 export const onMoving0: DefinitionDocumentationItem = {
@@ -139,27 +147,21 @@ export const onMoving0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onMoving info => {\n\t${1}\n}',
-  overview: 'onMoving info => { ... }',
+  overview: 'onMoving info? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite moving (position change), and get the moving info, e.g., `onMoving info => { ... }`',
-    zh: '当前精灵移动（位置改变）时执行，并获得移动信息，如：`onMoving info => { ... }`'
+    en: 'Listen to current sprite moving (position change), optionally receiving the moving info',
+    zh: '当前精灵移动（位置改变）时执行，并可选地接收移动信息'
   })
 }
 
 export const onMoving1: DefinitionDocumentationItem = {
-  categories: [categories.event.motion],
-  kind: DefinitionKind.Listen,
+  ...onMoving0,
+  hiddenFromList: true, // duplicate with `onMoving0`
   definition: {
     package: packageSpx,
     name: 'Sprite.onMoving',
     overloadId: '1'
-  },
-  insertText: 'onMoving => {\n\t${1}\n}',
-  overview: 'onMoving => { ... }',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite moving (position change)',
-    zh: '当前精灵移动（位置改变）时执行'
-  })
+  }
 }
 
 export const onTurning0: DefinitionDocumentationItem = {
@@ -171,27 +173,21 @@ export const onTurning0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onTurning info => {\n\t${1}\n}',
-  overview: 'onTurning info => { ... }',
+  overview: 'onTurning info? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite turning (heading change), and get the turning info, e.g., `onTurning info => { ... }`',
-    zh: '当前精灵转向（朝向改变）时执行，并获得转向信息，如：`onTurning info => { ... }`'
+    en: 'Listen to current sprite turning (heading change), optionally receiving the turning info',
+    zh: '当前精灵转向（朝向改变）时执行，并可选地接收转向信息'
   })
 }
 
 export const onTurning1: DefinitionDocumentationItem = {
-  categories: [categories.event.motion],
-  kind: DefinitionKind.Listen,
+  ...onTurning0,
+  hiddenFromList: true, // duplicate with `onTurning0`
   definition: {
     package: packageSpx,
     name: 'Sprite.onTurning',
     overloadId: '1'
-  },
-  insertText: 'onTurning => {\n\t${1}\n}',
-  overview: 'onTurning => { ... }',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to current sprite turning (heading change)',
-    zh: '当前精灵转向（朝向改变）时执行'
-  })
+  }
 }
 
 export const die: DefinitionDocumentationItem = {
@@ -388,8 +384,8 @@ export const distanceTo1: DefinitionDocumentationItem = {
     name: 'Sprite.distanceTo',
     overloadId: '1'
   },
-  insertText: 'distanceTo(${1:spriteName})',
-  overview: 'distanceTo(spriteName)',
+  insertText: 'distanceTo(${1:name})',
+  overview: 'distanceTo(name)',
   detail: makeBasicMarkdownString({
     en: 'Get the distance from current sprite to the sprite with given name, e.g., `distanceTo("Enemy")`',
     zh: '获取当前精灵到指定名字的精灵的距离，如：`distanceTo("Enemy")`'
@@ -469,8 +465,8 @@ export const step1: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '1'
   },
-  insertText: 'step ${1:distance}, ${2:animationName}',
-  overview: 'step distance, animationName',
+  insertText: 'step ${1:distance}, ${2:animation}',
+  overview: 'step distance, animation',
   detail: makeBasicMarkdownString({
     en: 'Step given distance toward current heading and animation with given name will be played, e.g., `step 10, "run"`',
     zh: '向当前朝向行走指定的距离，并播放指定名称的动画，如：`step 10, "run"`'
@@ -518,8 +514,8 @@ export const goto1: DefinitionDocumentationItem = {
     name: 'Sprite.goto',
     overloadId: '1'
   },
-  insertText: 'goto ${1:spriteName}',
-  overview: 'goto spriteName',
+  insertText: 'goto ${1:name}',
+  overview: 'goto name',
   detail: makeBasicMarkdownString({
     en: 'Move to the sprite with given name, e.g., `goto "Enemy"`',
     zh: '移动到指定名字的精灵，如：`goto "Enemy"`'
@@ -582,8 +578,8 @@ export const glide2: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '2'
   },
-  insertText: 'glide ${1:spriteName}, ${2:seconds}',
-  overview: 'glide spriteName, seconds',
+  insertText: 'glide ${1:name}, ${2:seconds}',
+  overview: 'glide name, seconds',
   detail: makeBasicMarkdownString({
     en: 'Move to the sprite with given name with glide animation and given duration, e.g., `glide "Enemy", 2`',
     zh: '滑行到指定名称的精灵并指定时长，如：`glide "Enemy", 2`'
@@ -812,8 +808,8 @@ export const turnTo1: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '1'
   },
-  insertText: 'turnTo ${1:spriteName}',
-  overview: 'turnTo spriteName',
+  insertText: 'turnTo ${1:name}',
+  overview: 'turnTo name',
   detail: makeBasicMarkdownString({
     en: 'Turn heading to given sprite by name, e.g., `turnTo "Enemy"`',
     zh: '将朝向转到指定名字的精灵，如：`turnTo "Enemy"`'
@@ -842,7 +838,7 @@ export const turnTo3: DefinitionDocumentationItem = {
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '0'
+    overloadId: '3'
   },
   insertText: 'turnTo ${1:direction}',
   overview: 'turnTo direction',
@@ -951,8 +947,8 @@ export const touching0: DefinitionDocumentationItem = {
     name: 'Sprite.touching',
     overloadId: '0'
   },
-  insertText: 'touching(${1:spriteName})',
-  overview: 'touching(spriteName)',
+  insertText: 'touching(${1:name})',
+  overview: 'touching(name)',
   detail: makeBasicMarkdownString({
     en: 'Check if current sprite touching sprite with given name',
     zh: '检查当前精灵是否与指定名字的精灵接触'
@@ -1059,8 +1055,8 @@ export const startBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '0'
   },
-  insertText: 'startBackdrop ${1:backdropName}',
-  overview: 'startBackdrop backdropName',
+  insertText: 'startBackdrop ${1:name}',
+  overview: 'startBackdrop name',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name, e.g., `startBackdrop "backdrop1"`',
     zh: '通过指定名称切换背景，如：`startBackdrop "backdrop1"`'
@@ -1075,8 +1071,8 @@ export const startBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '1'
   },
-  insertText: 'startBackdrop ${1:backdropName}, ${2:wait}',
-  overview: 'startBackdrop backdropName, wait',
+  insertText: 'startBackdrop ${1:name}, ${2:wait}',
+  overview: 'startBackdrop name, wait',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name, with waiting, e.g., `startBackdrop "backdrop1", true`',
     zh: '通过指定名称切换背景，并等待切换完成，如：`startBackdrop "backdrop1", true`'
@@ -1247,7 +1243,7 @@ export const play3: DefinitionDocumentationItem = {
     overloadId: '3'
   },
   insertText: 'play ${1:"sound"}',
-  overview: 'play soundName',
+  overview: 'play name',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name, e.g., `play "explosion"`',
     zh: '播放声音（指定名字），如：`play "explosion"`'
@@ -1263,7 +1259,7 @@ export const play4: DefinitionDocumentationItem = {
     overloadId: '4'
   },
   insertText: 'play ${1:"sound"}, ${2:wait}',
-  overview: 'play soundName, wait',
+  overview: 'play name, wait',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name and waiting, e.g., `play "explosion", true`',
     zh: '播放声音（指定名字）并等待播放完成，如：`play "explosion", true`'
@@ -1279,7 +1275,7 @@ export const play5: DefinitionDocumentationItem = {
     overloadId: '5'
   },
   insertText: 'play ${1:"sound"}, ${2:options}',
-  overview: 'play soundName, options',
+  overview: 'play name, options',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name and options, e.g., `play "explosion", { Loop: true }`',
     zh: '播放声音（指定名字）并指定选项，如：`play "explosion", { Loop: true }`'
@@ -1354,11 +1350,11 @@ export const broadcast0: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '0'
   },
-  insertText: 'broadcast ${1:"message"}',
-  overview: 'broadcast message',
+  insertText: 'broadcast ${1:"msg"}',
+  overview: 'broadcast msg',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message, e.g., `broadcast "message"`',
-    zh: '广播一条消息，如：`broadcast "message"`'
+    en: 'Broadcast a message, e.g., `broadcast "msg"`',
+    zh: '广播一条消息，如：`broadcast "msg"`'
   })
 }
 
@@ -1370,11 +1366,11 @@ export const broadcast1: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '1'
   },
-  insertText: 'broadcast ${1:"message"}, ${2:wait}',
-  overview: 'broadcast message, wait',
+  insertText: 'broadcast ${1:"msg"}, ${2:wait}',
+  overview: 'broadcast msg, wait',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with waiting, e.g., `broadcast "message", true`',
-    zh: '广播一条消息并等待，如：`broadcast "message", true`'
+    en: 'Broadcast a message with waiting, e.g., `broadcast "msg", true`',
+    zh: '广播一条消息并等待，如：`broadcast "msg", true`'
   })
 }
 
@@ -1386,11 +1382,11 @@ export const broadcast2: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '2'
   },
-  insertText: 'broadcast ${1:"message"}, ${2:data}, ${3:wait}',
-  overview: 'broadcast message, data, wait',
+  insertText: 'broadcast ${1:"msg"}, ${2:data}, ${3:wait}',
+  overview: 'broadcast msg, data, wait',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with data and waiting, e.g., `broadcast "message", data, true`',
-    zh: '广播一条消息（带有数据）并等待，如：`broadcast "message", data, true`'
+    en: 'Broadcast a message with data and waiting, e.g., `broadcast "msg", data, true`',
+    zh: '广播一条消息（带有数据）并等待，如：`broadcast "msg", data, true`'
   })
 }
 
@@ -1402,7 +1398,7 @@ export const gameOnStart: DefinitionDocumentationItem = {
     name: 'Game.onStart'
   },
   insertText: 'onStart => {\n\t${1}\n}',
-  overview: 'onStart => { ... }',
+  overview: 'onStart => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to game start',
     zh: '游戏开始时执行'
@@ -1425,7 +1421,7 @@ export const gameOnClick: DefinitionDocumentationItem = {
     name: 'Game.onClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
-  overview: 'onClick => { ... }',
+  overview: 'onClick => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to stage clicked',
     zh: '舞台被鼠标点击时执行'
@@ -1440,7 +1436,7 @@ export const spriteOnClick: DefinitionDocumentationItem = {
     name: 'Sprite.onClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
-  overview: 'onClick => { ... }',
+  overview: 'onClick => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite clicked',
     zh: '当前精灵被点击时执行'
@@ -1455,7 +1451,7 @@ export const onAnyKey: DefinitionDocumentationItem = {
     name: 'Game.onAnyKey'
   },
   insertText: 'onAnyKey key => {\n\t${1}\n}',
-  overview: 'onAnyKey key => { ... }',
+  overview: 'onAnyKey key => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to any key pressed',
     zh: '任意按键被按下时执行'
@@ -1471,10 +1467,10 @@ export const gameOnKey0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onKey ${1:key}, => {\n\t${2}\n}',
-  overview: 'onKey key, => { ... }',
+  overview: 'onKey key, => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to given key pressed, e.g., `onKey KeyA => { ... }`',
-    zh: '指定按键被按下时执行，如：`onKey KeyA => { ... }`'
+    en: 'Listen to given key pressed, e.g., `onKey KeyA => {}`',
+    zh: '指定按键被按下时执行，如：`onKey KeyA => {}`'
   })
 }
 
@@ -1487,27 +1483,21 @@ export const gameOnKey1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
-  overview: 'onKey keys, key => { ... }',
+  overview: 'onKey keys, key? => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to given keys pressed (and get the key)',
-    zh: '指定多个按键，任一被按下时执行（并获得按键信息）'
+    en: 'Listen to given keys pressed, optionally receiving the key pressed, e.g., `onKey [KeyA, KeyB], key => {}`',
+    zh: '指定多个按键，任一被按下时执行，并可选地接收被按下的按键，如：`onKey [KeyA, KeyB], key => {}`'
   })
 }
 
 export const gameOnKey2: DefinitionDocumentationItem = {
-  categories: [categories.event.sensing],
-  kind: DefinitionKind.Listen,
+  ...gameOnKey1,
+  hiddenFromList: true, // duplicate with `gameOnKey1`
   definition: {
     package: packageSpx,
     name: 'Game.onKey',
     overloadId: '2'
-  },
-  insertText: 'onKey [${1:}], => {\n\t${2}\n}',
-  overview: 'onKey keys, => { ... }',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to given keys pressed, e.g., `onKey [KeyA, KeyB] => { ... }`',
-    zh: '指定多个按键，任一被按下时执行，如：`onKey [KeyA, KeyB] => { ... }`'
-  })
+  }
 }
 
 export const spriteOnKey0: DefinitionDocumentationItem = {
@@ -1545,8 +1535,8 @@ export const gameOnMsg0: DefinitionDocumentationItem = {
     name: 'Game.onMsg',
     overloadId: '0'
   },
-  insertText: 'onMsg (message, data) => {\n\t${1}\n}',
-  overview: 'onMsg (message, data) => { ... }',
+  insertText: 'onMsg (msg, data) => {\n\t${1}\n}',
+  overview: 'onMsg (msg, data) => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to any message broadcasted, get the broadcasted message and data',
     zh: '任意消息被广播时执行，并获取被广播的消息和数据'
@@ -1561,8 +1551,8 @@ export const gameOnMsg1: DefinitionDocumentationItem = {
     name: 'Game.onMsg',
     overloadId: '1'
   },
-  insertText: 'onMsg ${1:message}, => {\n\t${2}\n}',
-  overview: 'onMsg message, => { ... }',
+  insertText: 'onMsg ${1:msg}, => {\n\t${2}\n}',
+  overview: 'onMsg msg, => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to specific message broadcasted',
     zh: '指定消息被广播时执行'
@@ -1596,7 +1586,7 @@ export const onBackdrop0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onBackdrop backdrop => {\n\t${1}\n}',
-  overview: 'onBackdrop backdrop => { ... }',
+  overview: 'onBackdrop backdrop => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to backdrop switching',
     zh: '背景切换时执行'
@@ -1612,7 +1602,7 @@ export const onBackdrop1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}',
-  overview: 'onBackdrop backdrop, => { ... }',
+  overview: 'onBackdrop backdrop, => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to switching to specific backdrop',
     zh: '切换到指定背景时执行'
