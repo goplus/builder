@@ -24,17 +24,18 @@ function humanizeTime(time: number) {
 }
 
 function getOutputSourceLocation(output: RuntimeOutput) {
-  console.warn('TODO: use `output.source`', output) // TODO: see details in https://github.com/goplus/builder/issues/1096
+  if (output.source == null) return null
   return {
-    file: { uri: 'file:///main.spx' },
-    position: { line: 1, column: 1 }
+    file: output.source.textDocument,
+    position: output.source.range.start
   }
 }
 
-function getOutputSourceLocationText(runtime: RuntimeOutput) {
-  const { file, position } = getOutputSourceLocation(runtime)
-  const codeFileName = i18n.t(textDocumentId2CodeFileName(file))
-  return `${codeFileName}:${position.line}`
+function getOutputSourceLocationText(output: RuntimeOutput) {
+  const location = getOutputSourceLocation(output)
+  if (location == null) return ''
+  const codeFileName = i18n.t(textDocumentId2CodeFileName(location.file))
+  return `${codeFileName}:${location.position.line}`
 }
 </script>
 
@@ -60,9 +61,9 @@ function getOutputSourceLocationText(runtime: RuntimeOutput) {
         :class="`kind-${output.kind}`"
       >
         <span class="time">{{ humanizeTime(output.time) }}</span>
-        <CodeLink class="link" v-bind="getOutputSourceLocation(output)">{{
-          getOutputSourceLocationText(output)
-        }}</CodeLink>
+        <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
+          {{ getOutputSourceLocationText(output) }}
+        </CodeLink>
         <span class="message">{{ output.message }}</span>
       </li>
     </ul>
