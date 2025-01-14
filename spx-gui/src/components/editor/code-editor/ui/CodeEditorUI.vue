@@ -11,7 +11,18 @@ export function useCodeEditorUICtx() {
 </script>
 
 <script setup lang="ts">
-import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed, onDeactivated, onActivated } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  ref,
+  watchEffect,
+  shallowRef,
+  watch,
+  computed,
+  onDeactivated,
+  onActivated
+} from 'vue'
 import { computedShallowReactive, untilNotNull, useLocalStorage } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'

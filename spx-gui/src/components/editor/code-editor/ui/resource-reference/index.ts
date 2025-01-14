@@ -107,11 +107,13 @@ export class ResourceReferenceController extends Emitter<{
       )
     )
 
-    this.addDisposer(watch(
-      () => this.ui.project.filesHash,
-      () => refreshItems(),
-      { immediate: true }
-    ))
+    this.addDisposer(
+      watch(
+        () => this.ui.project.filesHash,
+        () => refreshItems(),
+        { immediate: true }
+      )
+    )
 
     const editorEl = editor.getDomNode()
     if (editorEl == null) throw new Error('No editor dom node')
