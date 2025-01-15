@@ -1485,8 +1485,8 @@ export const gameOnKey1: DefinitionDocumentationItem = {
   insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
   overview: 'onKey keys, key => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to given keys pressed, optionally receiving the key pressed, e.g., `onKey [KeyA, KeyB], key => {}`',
-    zh: '指定多个按键，任一被按下时执行，并可选地接收被按下的按键，如：`onKey [KeyA, KeyB], key => {}`'
+    en: 'Listen to given keys pressed, optionally receiving the key pressed',
+    zh: '指定多个按键，任一被按下时执行，并可选地接收被按下的按键'
   })
 }
 
