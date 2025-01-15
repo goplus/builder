@@ -22,7 +22,7 @@ type MessageReplier interface {
 	ReplyMessage(m jsonrpc2.Message) error
 }
 
-// Server is the core language server implementation that handles LSP messages
+// Server is the core language server implementation that handles LSP messages.
 type Server struct {
 	workspaceRootURI   DocumentURI
 	workspaceRootFS    *vfs.MapFS
