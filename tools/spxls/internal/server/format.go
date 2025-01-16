@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"go/types"
-	"io/fs"
 	"path"
 
 	gopast "github.com/goplus/gop/ast"
@@ -23,24 +22,19 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, nil // Not a spx source file.
 	}
 
-	content, err := fs.ReadFile(s.workspaceRootFS, spxFile)
-	if err != nil {
-		return nil, err
-	}
-
-	formatted, err := formatSpx(s, spxFile)
+	formatted, original, err := formatSpx(s, spxFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
 
-	if formatted == nil || bytes.Equal(content, formatted) {
+	if formatted == nil || bytes.Equal(original, formatted) {
 		return nil, nil // No changes.
 	}
 
 	// Simply replace the entire document.
-	lines := bytes.Count(content, []byte("\n"))
-	lastNewLine := bytes.LastIndex(content, []byte("\n"))
-	lastLineLen := len(content) - (lastNewLine + 1)
+	lines := bytes.Count(original, []byte("\n"))
+	lastNewLine := bytes.LastIndex(original, []byte("\n"))
+	lastLineLen := len(original) - (lastNewLine + 1)
 	return []TextEdit{
 		{
 			Range: Range{
@@ -55,22 +49,23 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 	}, nil
 }
 
-// formatSpx formats a spx source file. If no change is needed, it returns `(nil, nil)`.
-func formatSpx(s *Server, spxFileName string) ([]byte, error) {
+// formatSpx formats a spx source file. If no change is needed, it returns `(nil, nil, nil)`.
+func formatSpx(s *Server, spxFileName string) (formatted, original []byte, err error) {
 	// Parse the source into AST.
 	compileResult, err := s.compile()
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
+		if errors.Is(err, errNoMainSpxFile) {
+			return nil, nil, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	astFile := compileResult.mainASTPkg.Files[spxFileName]
 	if astFile == nil {
 		// Return error only if parsing completely failed. For partial parsing
 		// failures, we proceed with formatting.
-		return nil, fmt.Errorf("failed to parse spx source file")
+		return nil, nil, fmt.Errorf("failed to parse spx source file")
 	}
+	original = astFile.Code
 
 	eliminateUnusedLambdaParams(compileResult, astFile)
 
@@ -122,7 +117,7 @@ func formatSpx(s *Server, spxFileName string) ([]byte, error) {
 				for _, spec := range varBlock.Specs {
 					valueSpec, ok := spec.(*gopast.ValueSpec)
 					if !ok {
-						return nil, fmt.Errorf("unexpected non-value spec in var block: %T", spec)
+						return nil, nil, fmt.Errorf("unexpected non-value spec in var block: %T", spec)
 					}
 					firstVarBlock.Specs = append(firstVarBlock.Specs, valueSpec)
 				}
@@ -139,9 +134,9 @@ func formatSpx(s *Server, spxFileName string) ([]byte, error) {
 	// Format the modified AST.
 	var buf bytes.Buffer
 	if err := gopfmt.Node(&buf, fset, astFile); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return buf.Bytes(), nil
+	return buf.Bytes(), original, nil
 }
 
 // eliminateUnusedLambdaParams eliminates useless lambda parameter declarations.
