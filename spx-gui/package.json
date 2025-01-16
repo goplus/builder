@@ -31,6 +31,7 @@
     "@vue/test-utils": "^2.4.5",
     "@vue/tsconfig": "^0.5.1",
     "casdoor-js-sdk": "^0.16.0",
+    "csv-stringify": "^6.5.2",
     "dayjs": "^1.11.10",
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.20.1",

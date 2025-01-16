@@ -1469,8 +1469,8 @@ export const gameOnKey0: DefinitionDocumentationItem = {
   insertText: 'onKey ${1:key}, => {\n\t${2}\n}',
   overview: 'onKey key, => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to given key pressed, e.g., `onKey KeyA => {}`',
-    zh: '指定按键被按下时执行，如：`onKey KeyA => {}`'
+    en: 'Listen to given key pressed, e.g., `onKey KeyA, => {}`',
+    zh: '指定按键被按下时执行，如：`onKey KeyA, => {}`'
   })
 }
 
@@ -1695,10 +1695,22 @@ export const getWidget: DefinitionDocumentationItem = {
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
 
-export const up = defineConst('Up', [categories.motion.heading], { en: 'Up direction', zh: '上' })
-export const down = defineConst('Down', [categories.motion.heading], { en: 'Down direction', zh: '下' })
-export const left = defineConst('Left', [categories.motion.heading], { en: 'Left direction', zh: '左' })
-export const right = defineConst('Right', [categories.motion.heading], { en: 'Right direction', zh: '右' })
+export const up = defineConst('Up', [categories.motion.heading], {
+  en: 'Up direction, i.e., 0 degree',
+  zh: '上，即角度 0'
+})
+export const down = defineConst('Down', [categories.motion.heading], {
+  en: 'Down direction, i.e., 180 degree',
+  zh: '下，即角度 180'
+})
+export const left = defineConst('Left', [categories.motion.heading], {
+  en: 'Left direction, i.e., -90 degree',
+  zh: '左，即角度 -90'
+})
+export const right = defineConst('Right', [categories.motion.heading], {
+  en: 'Right direction, i.e., 90 degree',
+  zh: '右，即角度 90'
+})
 
 export const none = defineConst('None', [categories.motion.rotationStyle], { en: "Don't Rotate", zh: '不旋转' })
 export const leftRight = defineConst('LeftRight', [categories.motion.rotationStyle], {

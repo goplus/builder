@@ -34,8 +34,10 @@ const hasLineNumbers = computed(() => {
 
 const codeHtml = computed(() => {
   if (highlighter.value == null) return ''
+  // Sometimes Copilot makes mistakes about go/gop, we correct it here.
+  const language = ['spx', 'gop', 'go'].includes(props.language) ? 'spx' : 'plaintext'
   return highlighter.value.codeToHtml(codeToDisplay.value, {
-    lang: props.language,
+    lang: language,
     structure: props.mode === 'block' ? 'classic' : 'inline',
     theme
   })

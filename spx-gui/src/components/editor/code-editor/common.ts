@@ -13,7 +13,9 @@ import { isWidget } from '@/models/widget'
 import { stageCodeFilePaths } from '@/models/stage'
 
 export type Position = {
+  /** The line number, starting from `1` */
   line: number
+  /** The column number, starting from `1` */
   column: number
 }
 
@@ -585,4 +587,8 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
     const spriteName = codeFilePath.replace(/\.spx$/, '')
     return { en: spriteName, zh: spriteName }
   }
+}
+
+export function isTextDocumentStageCode(id: TextDocumentIdentifier) {
+  return stageCodeFilePaths.includes(getCodeFilePath(id.uri))
 }
