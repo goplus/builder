@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/types"
 	"io/fs"
@@ -32,7 +33,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
 
-	if bytes.Equal(content, formatted) {
+	if formatted == nil || bytes.Equal(content, formatted) {
 		return nil, nil // No changes.
 	}
 
@@ -54,10 +55,16 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 	}, nil
 }
 
-// formatSpx formats a spx source file.
+// formatSpx formats a spx source file. If no change is needed, it returns `(nil, nil)`.
 func formatSpx(s *Server, spxFileName string) ([]byte, error) {
 	// Parse the source into AST.
-	compileResult, _ := s.compile()
+	compileResult, err := s.compile()
+	if err != nil {
+		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
+			return nil, nil
+		}
+		return nil, err
+	}
 	astFile := compileResult.mainASTPkg.Files[spxFileName]
 	if astFile == nil {
 		// Return error only if parsing completely failed. For partial parsing
@@ -264,6 +271,7 @@ func getFuncAndOverloadsType(compileResult *compileResult, funIdent *gopast.Iden
 		}
 		if pn, overloadId := parseGopFuncName(method.Name()); pn == funIdent.Name && overloadId == nil {
 			underlineFunType = method
+			return false
 		}
 		return true
 	})
