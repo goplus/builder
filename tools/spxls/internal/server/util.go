@@ -68,6 +68,15 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 	}
 }
 
+// posAt returns the [goptoken.Pos] of the given position in the given token file.
+func posAt(tokenFile *goptoken.File, position Position) goptoken.Pos {
+	line := int(position.Line) + 1
+	if line > tokenFile.LineCount() {
+		return goptoken.Pos(tokenFile.Base() + tokenFile.Size()) // EOF
+	}
+	return tokenFile.LineStart(line) + goptoken.Pos(int(position.Character))
+}
+
 // deduplicateLocations deduplicates locations.
 func deduplicateLocations(locations []Location) []Location {
 	result := make([]Location, 0, len(locations))

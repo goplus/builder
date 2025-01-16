@@ -198,7 +198,7 @@ onStart => {
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
-		mainSpxFileScopeParams := []SpxGetDefinitionsParams{
+		mySpriteSpxFileScopeParams := []SpxGetDefinitionsParams{
 			{
 				TextDocumentPositionParams: TextDocumentPositionParams{
 					TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
@@ -206,25 +206,65 @@ onStart => {
 				},
 			},
 		}
-		mainSpxFileScopeDefs, err := s.spxGetDefinitions(mainSpxFileScopeParams)
+		mySpriteSpxFileScopeDefs, err := s.spxGetDefinitions(mySpriteSpxFileScopeParams)
 		require.NoError(t, err)
-		require.NotNil(t, mainSpxFileScopeDefs)
-		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+		require.NotNil(t, mySpriteSpxFileScopeDefs)
+		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    util.ToPtr(spxPkgPath),
 			Name:       util.ToPtr("Game.play"),
 			OverloadID: util.ToPtr("1"),
 		}))
-		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr(spxPkgPath),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
-		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr(spxPkgPath),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
-		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr(spxPkgPath),
 			Name:    util.ToPtr("Sprite.onClick"),
+		}))
+	})
+
+	t.Run("EOF", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onStart => {}
+`),
+		}), nil)
+
+		mainSpxOnStartScopeParams := []SpxGetDefinitionsParams{
+			{
+				TextDocumentPositionParams: TextDocumentPositionParams{
+					TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+					Position:     Position{Line: 1, Character: 0},
+				},
+			},
+		}
+		mainSpxOnStartScopeDefs, err := s.spxGetDefinitions(mainSpxOnStartScopeParams)
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxOnStartScopeDefs)
+		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxOnStartScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(spxPkgPath),
+			Name:    util.ToPtr("Game.onStart"),
+		}))
+
+		mainSpxFileScopeParams := []SpxGetDefinitionsParams{
+			{
+				TextDocumentPositionParams: TextDocumentPositionParams{
+					TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+					Position:     Position{Line: 2, Character: 0},
+				},
+			},
+		}
+		mainSpxFileScopeDefs, err := s.spxGetDefinitions(mainSpxFileScopeParams)
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxFileScopeDefs)
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(spxPkgPath),
+			Name:    util.ToPtr("Game.onStart"),
 		}))
 	})
 }

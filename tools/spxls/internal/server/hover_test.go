@@ -61,6 +61,7 @@ onStart => {
 	clone
 	imagePoint.X = 100
 }
+onTouchStart ["MySprite"], => {}
 `),
 			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
@@ -442,6 +443,25 @@ onStart => {
 				End:   Position{Line: 6, Character: 13},
 			},
 		}, imagePointFieldHover)
+
+		onTouchStartFirstArgHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 8, Character: 14},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, onTouchStartFirstArgHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<resource-preview resource=\"spx://resources/sprites/MySprite\" />\n",
+			},
+			Range: Range{
+				Start: Position{Line: 8, Character: 14},
+				End:   Position{Line: 8, Character: 24},
+			},
+		}, onTouchStartFirstArgHover)
 	})
 
 	t.Run("InvalidPosition", func(t *testing.T) {

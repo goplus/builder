@@ -28,9 +28,7 @@ func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionI
 	}
 
 	tokenFile := result.fset.File(astFile.Pos())
-	line := min(int(params.Position.Line)+1, tokenFile.LineCount())
-	lineStart := tokenFile.LineStart(line)
-	pos := tokenFile.Pos(tokenFile.Offset(lineStart) + int(params.Position.Character))
+	pos := posAt(tokenFile, params.Position)
 	if !pos.IsValid() {
 		return nil, nil
 	}

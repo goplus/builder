@@ -918,23 +918,20 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 					// Use the last parameter type for variadic functions.
 					paramType = lastParamType
 				}
-				switch paramType.String() {
-				case spxBackdropNameTypeFullName:
-					s.inspectSpxBackdropResourceRefAtExpr(result, arg, paramType)
-				case spxSpriteNameTypeFullName, spxSpriteTypeFullName:
-					s.inspectSpxSpriteResourceRefAtExpr(result, arg, paramType)
-				case spxSpriteCostumeNameTypeFullName:
-					if spxSpriteResource != nil {
-						s.inspectSpxSpriteCostumeResourceRefAtExpr(result, spxSpriteResource, arg, paramType)
+
+				// Handle slice/array parameter types.
+				if sliceType, ok := paramType.(*types.Slice); ok {
+					paramType = unwrapPointerType(sliceType.Elem())
+				} else if arrayType, ok := paramType.(*types.Array); ok {
+					paramType = unwrapPointerType(arrayType.Elem())
+				}
+
+				if sliceLit, ok := arg.(*gopast.SliceLit); ok {
+					for _, elt := range sliceLit.Elts {
+						s.inspectSpxResourceRefForTypeAtExpr(result, elt, paramType, spxSpriteResource)
 					}
-				case spxSpriteAnimationNameTypeFullName:
-					if spxSpriteResource != nil {
-						s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, arg, paramType)
-					}
-				case spxSoundNameTypeFullName, spxSoundTypeFullName:
-					s.inspectSpxSoundResourceRefAtExpr(result, arg, paramType)
-				case spxWidgetNameTypeFullName:
-					s.inspectSpxWidgetResourceRefAtExpr(result, arg, paramType)
+				} else {
+					s.inspectSpxResourceRefForTypeAtExpr(result, arg, paramType, spxSpriteResource)
 				}
 			}
 		default:
@@ -995,6 +992,29 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 				s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, sel, selection.Type())
 			}
 		}
+	}
+}
+
+// inspectSpxResourceRefForTypeAtExpr inspects a spx resource reference for a
+// given type at an expression.
+func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr gopast.Expr, typ types.Type, spxSpriteResource *SpxSpriteResource) {
+	switch typ.String() {
+	case spxBackdropNameTypeFullName:
+		s.inspectSpxBackdropResourceRefAtExpr(result, expr, typ)
+	case spxSpriteNameTypeFullName, spxSpriteTypeFullName:
+		s.inspectSpxSpriteResourceRefAtExpr(result, expr, typ)
+	case spxSpriteCostumeNameTypeFullName:
+		if spxSpriteResource != nil {
+			s.inspectSpxSpriteCostumeResourceRefAtExpr(result, spxSpriteResource, expr, typ)
+		}
+	case spxSpriteAnimationNameTypeFullName:
+		if spxSpriteResource != nil {
+			s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, expr, typ)
+		}
+	case spxSoundNameTypeFullName, spxSoundTypeFullName:
+		s.inspectSpxSoundResourceRefAtExpr(result, expr, typ)
+	case spxWidgetNameTypeFullName:
+		s.inspectSpxWidgetResourceRefAtExpr(result, expr, typ)
 	}
 }
 
