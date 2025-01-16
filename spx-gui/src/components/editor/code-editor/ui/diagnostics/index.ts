@@ -53,10 +53,12 @@ export class DiagnosticsController extends Disposable {
       )
     )
 
-    this.addDisposer(watch(
-      () => this.ui.project.filesHash,
-      () => refreshDiagnostics(),
-      { immediate: true }
-    ))
+    this.addDisposer(
+      watch(
+        () => this.ui.project.filesHash,
+        () => refreshDiagnostics(),
+        { immediate: true }
+      )
+    )
   }
 }

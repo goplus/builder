@@ -43,6 +43,8 @@ github.com/goplus/reflectx v1.2.2 h1:T1p20OIH/HcnAvQQNnDLwl6AZOjU34icsfc6migD6L8
 github.com/goplus/reflectx v1.2.2/go.mod h1:wHOS9ilbB4zrecI0W1dMmkW9JMcpXV7VjALVbNU9xfM=
 github.com/goplus/spx v1.0.1-0.20241029011511-845f2c0e2e74 h1:68g+YDfUceO/iZ+RJUktPxDDaWLzE23QXrm+NuYTLls=
 github.com/goplus/spx v1.0.1-0.20241029011511-845f2c0e2e74/go.mod h1:1hkX9vPdDHrsA6LG8itiLMp83KIDJ0KlJI9CmpCoiCA=
+github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1 h1:JpAWB4m+LYjEIZwKMVvIeKqqvIjbcLYTXkkvU92Vbkk=
+github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1/go.mod h1:1hkX9vPdDHrsA6LG8itiLMp83KIDJ0KlJI9CmpCoiCA=
 github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3 h1:cKpQdzW3I+iLID68l25GaxzPZHSZVRdE9/Pz4SOPBR8=
 github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3/go.mod h1:iKp1U/H0J0rv9X4ztGSTXCyN6z/DKKrUL+D9sjg7SbI=
 github.com/hajimehoshi/go-mp3 v0.3.2/go.mod h1:qMJj/CSDxx6CGHiZeCgbiq2DSUkbK0UbtXShQcnfyMM=

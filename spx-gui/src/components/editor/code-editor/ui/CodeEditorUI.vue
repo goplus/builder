@@ -11,7 +11,18 @@ export function useCodeEditorUICtx() {
 </script>
 
 <script setup lang="ts">
-import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  ref,
+  watchEffect,
+  shallowRef,
+  watch,
+  computed,
+  onDeactivated,
+  onActivated
+} from 'vue'
 import { computedShallowReactive, untilNotNull, useLocalStorage } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
@@ -157,6 +168,14 @@ watch(
   },
   { immediate: true }
 )
+
+// We use `KeepAlive` (in `ProjectEditor`) to cache result of different editors (e.g. `SoundEditor`, `SpriteEditor`, `StageEditor`).
+// So we need to attach/detach UI when `CodeEditorUI` is activated/deactivated
+onActivated(() => codeEditorCtx.attachUI(uiRef.value))
+onDeactivated(() => {
+  uiRef.value.closeTempTextDocuments()
+  codeEditorCtx.detachUI(uiRef.value)
+})
 
 function handleCopilotTriggerClick() {
   uiRef.value.setIsCopilotActive(true)

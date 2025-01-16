@@ -226,4 +226,89 @@ run "assets", {Title: "My Game"}
 		require.NoError(t, err)
 		require.Nil(t, edits)
 	})
+
+	t.Run("WithUnusedLambdaParams", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// A spx game.
+onKey [KeyLeft, KeyRight], (key) => {
+	println "key"
+}
+
+onKey [KeyLeft, KeyRight], (key) => {
+	println key
+}
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 8, Character: 0},
+			},
+			NewText: `// A spx game.
+onKey [KeyLeft, KeyRight], () => {
+	println "key"
+}
+
+onKey [KeyLeft, KeyRight], (key) => {
+	println key
+}
+`,
+		})
+	})
+
+	t.Run("WithUnusedLambdaParamsForSprite", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": {},
+			"MySprite.spx": []byte(`// A spx game.
+onKey [KeyLeft, KeyRight], (key) => {
+	println "key"
+}
+onTouchStart s => {}
+onTouchStart s => {
+	println "touched", s
+}
+onTouchStart => {}
+onTouchStart (s, t) => { // type mismatch
+}
+onTouchStart 123, (s) => { // type mismatch
+}
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 13, Character: 0},
+			},
+			NewText: `// A spx game.
+onKey [KeyLeft, KeyRight], () => {
+	println "key"
+}
+onTouchStart => {
+}
+onTouchStart s => {
+	println "touched", s
+}
+onTouchStart => {
+}
+onTouchStart (s, t) => { // type mismatch
+}
+onTouchStart 123, (s) => { // type mismatch
+}
+`,
+		})
+	})
 }
