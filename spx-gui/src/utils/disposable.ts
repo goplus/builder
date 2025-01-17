@@ -56,3 +56,19 @@ export function getCleanupSignal(onCleanup: OnCleanup) {
   onCleanup(() => ctrl.abort(new Cancelled('cleanup')))
   return ctrl.signal
 }
+
+// TODO: Reimplement this with `AbortSignal.any()` once it is widely supported (including Node.js version we're using) or properly polyfilled.
+export function mergeSignals(...signals: Array<AbortSignal | null | undefined>) {
+  const nonEmptySignals = signals.filter((s) => s != null) as AbortSignal[]
+  if (nonEmptySignals.length === 1) return nonEmptySignals[0]
+  const ctrl = new AbortController()
+  const resultSignal = ctrl.signal
+  for (const signal of nonEmptySignals) {
+    if (signal.aborted) {
+      ctrl.abort(signal.reason)
+      break
+    }
+    signal.addEventListener('abort', () => ctrl.abort(signal.reason), { signal: resultSignal })
+  }
+  return resultSignal
+}
