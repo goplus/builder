@@ -1692,6 +1692,141 @@ export const getWidget: DefinitionDocumentationItem = {
 // TODO: definition for widget methods
 // TODO: Sprite.goBackLayers|gotoBack|gotoFront
 
+export const movingInfoOldX: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.OldX'
+  },
+  insertText: 'oldX',
+  overview: 'oldX',
+  detail: makeBasicMarkdownString({
+    en: 'The horizontal position before moving',
+    zh: '移动前的水平位置'
+  })
+}
+
+export const movingInfoOldY: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.OldY'
+  },
+  insertText: 'oldY',
+  overview: 'oldY',
+  detail: makeBasicMarkdownString({
+    en: 'The vertical position before moving',
+    zh: '移动前的垂直位置'
+  })
+}
+
+export const movingInfoNewX: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.NewX'
+  },
+  insertText: 'newX',
+  overview: 'newX',
+  detail: makeBasicMarkdownString({
+    en: 'The horizontal position after moving',
+    zh: '移动后的水平位置'
+  })
+}
+
+export const movingInfoNewY: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.NewY'
+  },
+  insertText: 'newY',
+  overview: 'newY',
+  detail: makeBasicMarkdownString({
+    en: 'The vertical position after moving',
+    zh: '移动后的垂直位置'
+  })
+}
+
+export const movingInfoDx: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.dx'
+  },
+  insertText: 'dx',
+  overview: 'dx',
+  detail: makeBasicMarkdownString({
+    en: 'The horizontal distance moved',
+    zh: '水平移动距离'
+  })
+}
+
+export const movingInfoDy: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'MovingInfo.dy'
+  },
+  insertText: 'dy',
+  overview: 'dy',
+  detail: makeBasicMarkdownString({
+    en: 'The vertical distance moved',
+    zh: '垂直移动距离'
+  })
+}
+
+export const turningInfoOldDir: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'TurningInfo.OldDir'
+  },
+  insertText: 'OldDir',
+  overview: 'OldDir',
+  detail: makeBasicMarkdownString({
+    en: 'The heading before turning',
+    zh: '旋转前的朝向'
+  })
+}
+
+export const turningInfoNewDir: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'TurningInfo.NewDir'
+  },
+  insertText: 'NewDir',
+  overview: 'NewDir',
+  detail: makeBasicMarkdownString({
+    en: 'The heading after turning',
+    zh: '旋转后的朝向'
+  })
+}
+
+export const turningInfoDir: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'TurningInfo.dir'
+  },
+  insertText: 'dir',
+  overview: 'dir',
+  detail: makeBasicMarkdownString({
+    en: 'The angle rotated',
+    zh: '旋转的角度'
+  })
+}
+
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
 
