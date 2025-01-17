@@ -111,16 +111,19 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		messages = append(messages, message)
 	}
 	generatedMsg, err := ctrl.anthropicClient.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.F(anthropic.ModelClaude3_5Haiku20241022),
+		Model:     anthropic.F(anthropic.ModelClaude3_5SonnetLatest),
 		MaxTokens: anthropic.F(int64(MAX_TOKENS)),
-		// Now we are using APIs from api.gptsapi.net for testing. `[]anthropic.TextBlockParam` is not supported.
-		// So we use `anthropic.Raw` to pass the string-type system prompt. TODO:
-		// * Switch to official API
-		// * Use `[]anthropic.TextBlockParam` instead of `string`
-		// * Enable prompt caching if it helps
-		System:      anthropic.Raw[[]anthropic.TextBlockParam](copilot.SystemPrompt),
+		System: anthropic.F([]anthropic.TextBlockParam{
+			{
+				Text: anthropic.F(copilot.SystemPrompt),
+				Type: anthropic.F(anthropic.TextBlockParamTypeText),
+				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
+					Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
+				}),
+			},
+		}),
 		Messages:    anthropic.F(messages),
-		Temperature: anthropic.F(0.3),
+		Temperature: anthropic.F(0.1),
 	})
 	if err != nil {
 		logger.Printf("failed to generate message: %v", err)

@@ -9,7 +9,10 @@ import {
   type BasicMarkdownString,
   type Diagnostic,
   makeBasicMarkdownString,
-  type TextDocumentIdentifier
+  type TextDocumentIdentifier,
+  type Position,
+  type Selection,
+  type ITextDocument
 } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 import { makeCodeBlock, makeCodeLinkWithRange } from '../markdown'
@@ -87,7 +90,12 @@ export type Chat = {
   messages: ChatMessage[]
 }
 
-export type ChatContext = BaseContext
+export type ChatContext = BaseContext & {
+  /** All opened text documents, including main and temp text documents */
+  openedTextDocuments: ITextDocument[]
+  cursorPosition: Position | null
+  selection: Selection | null
+}
 
 export interface ICopilot {
   getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString>
@@ -216,7 +224,13 @@ export class CopilotController extends Disposable {
     const currentRound = this.ensureCurrentRound()
     try {
       const answer = await this.copilot.getChatCompletion(
-        { textDocument, signal: currentRound.ctrl.signal },
+        {
+          textDocument,
+          openedTextDocuments: [this.ui.mainTextDocument!, ...this.ui.tempTextDocuments],
+          cursorPosition: this.ui.cursorPosition,
+          selection: this.ui.selection,
+          signal: currentRound.ctrl.signal
+        },
         this.ensureChat()
       )
       currentRound.answer = answer

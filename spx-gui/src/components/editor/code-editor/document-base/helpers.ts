@@ -9,29 +9,42 @@ import * as gopDefinitions from './gop'
 import * as spxDefinitions from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
 
-function transformItems(items: DefinitionDocumentationItem[]) {
-  function simplifyPackage(pkg: string | undefined) {
-    if (pkg === 'github.com/goplus/spx') return 'spx'
-    return pkg
-  }
-  const result = items.map((d) => {
-    return {
-      pkg: simplifyPackage(d.definition.package),
-      name: d.definition.name,
-      sample: d.overview,
-      desc: typeof d.detail.value === 'string' ? d.detail.value : d.detail.value.en
-    }
-  })
-  return result
+function sampleOf(ddi: DefinitionDocumentationItem) {
+  return ddi.overview === ddi.definition.name ? undefined : ddi.overview
 }
 
-// Run `copy(getGopDefinitions())` / `copy(getSpxDefinitions())` in browser console to copy generated definitions.
-;(globalThis as any).getGopDefinitions = () => JSON.stringify(transformItems(Object.values(gopDefinitions)))
-;(globalThis as any).getSpxDefinitions = () => {
+function descOf(ddi: DefinitionDocumentationItem) {
+  return typeof ddi.detail.value === 'string' ? ddi.detail.value : ddi.detail.value.en
+}
+
+// Run `copy(await getGopDefinitions())` / `copy(await getSpxDefinitions())` in browser console to copy generated definitions.
+;(globalThis as any).getGopDefinitions = async () => {
+  const csvStringify = await import('csv-stringify/browser/esm/sync').then((m) => m.stringify)
+  const gopTable = csvStringify(
+    Object.values(gopDefinitions)
+      .filter((d) => !d.hiddenFromList)
+      .map((d) => ({
+        Package: d.definition.package,
+        Name: d.definition.name,
+        Sample: sampleOf(d),
+        Description: descOf(d)
+      })),
+    { header: true }
+  )
+  return `\
+# Go+ Syntax
+
+\`\`\`csv
+${gopTable}
+\`\`\`
+`
+}
+;(globalThis as any).getSpxDefinitions = async () => {
+  const csvStringify = await import('csv-stringify/browser/esm/sync').then((m) => m.stringify)
   const items = Object.values(spxDefinitions)
   const gameItems: DefinitionDocumentationItem[] = []
   const spriteItems: DefinitionDocumentationItem[] = []
-  const others: Array<DefinitionDocumentationItem> = []
+  const otherItems: Array<DefinitionDocumentationItem> = []
   items.forEach((item) => {
     const name = item.definition.name ?? ''
     if (name.startsWith('Game.'))
@@ -50,17 +63,63 @@ function transformItems(items: DefinitionDocumentationItem[]) {
           name: name.slice(7)
         }
       })
-    else others.push(item)
+    else otherItems.push(item)
   })
-  return JSON.stringify({
-    game: transformItems(gameItems),
-    sprite: transformItems(spriteItems),
-    others: transformItems(others),
-    keys: {
-      pkg: 'spx',
-      names: spxKeyDefinitions.map((d) => d.definition.name).join(','),
-      sample: `onKey KeyLeft, => { ... }`,
-      desc: 'Key definitions, used for keyboard event listening.'
-    }
-  })
+  const makeSpxTable = (items: DefinitionDocumentationItem[]) => {
+    items = items.filter((d) => !d.hiddenFromList)
+    return csvStringify(
+      items.map((d) => ({
+        Name: d.definition.name,
+        Sample: sampleOf(d),
+        Description: descOf(d)
+      })),
+      { header: true }
+    )
+  }
+  const keyTable = csvStringify(
+    [
+      {
+        Name: getKeyNames(),
+        Sample: 'onKey Key1, => {}',
+        Description: 'Key definitions, used for keyboard event listening.'
+      }
+    ],
+    { header: true }
+  )
+  return `\
+# SPX APIs
+
+## Game
+
+\`\`\`csv
+${makeSpxTable(gameItems)}
+\`\`\`
+
+## Sprite
+
+\`\`\`csv
+${makeSpxTable(spriteItems)}
+\`\`\`
+
+## Others
+
+\`\`\`csv
+${makeSpxTable(otherItems)}
+\`\`\`
+
+## Keys
+
+\`\`\`csv
+${keyTable}
+\`\`\`
+`
+}
+
+const mergedKeyNames = 'Key0-Key9,KeyA-KeyZ,KeyF1-KeyF12,KeyKP0-KeyKP9'
+const mergedKeysPattern = /^Key([0-9A-Z]|F\d+|KP\d)$/
+
+function getKeyNames() {
+  const keyNames = spxKeyDefinitions.map((d) => d.definition.name)
+  const extraKeyNames = keyNames.filter((n) => !mergedKeysPattern.test(n!)).join(',')
+  return `${mergedKeyNames},${extraKeyNames}`
 }

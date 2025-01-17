@@ -25,8 +25,13 @@ const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 
 const childrenText = useSlotText()
-// strip leading line break to keep consistent with markdown code block
-const codeToAdd = computed(() => childrenText.value.replace(/^\n/, ''))
+const codeToAdd = computed(() => {
+  // strip leading line break to keep consistent with markdown code block
+  let code = childrenText.value.replace(/^\n/, '')
+  // add trailing line break, as the code is always inserted as lines
+  if (!code.endsWith('\n')) code = code + '\n'
+  return code
+})
 
 const target = computed(() => {
   const textDocument = codeEditorCtx.getTextDocument({ uri: props.file })

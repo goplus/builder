@@ -6,13 +6,13 @@ import (
 	"text/template"
 )
 
-// For details about maintaining `*_defs.json` files, see:
+// For details about maintaining `*_defs.md` files, see:
 // spx-gui/src/components/editor/code-editor/document-base/helpers.ts
 
-//go:embed gop_defs.json
+//go:embed gop_defs.md
 var gopDefs string
 
-//go:embed spx_defs.json
+//go:embed spx_defs.md
 var spxDefs string
 
 //go:embed custom_element_code_link.md

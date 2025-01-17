@@ -1,8 +1,12 @@
 # `code-change`
 
-Display a change to the code. The user may apply the change by clicking "Apply" button in the element.
+Display a modification based on the existing code.
 
-NOTE: Instead of `<code-change>`, you should use `<pre is="code-change">` to properly wrap the code change.
+**NOTE**:
+
+* Prefer `code-change` over standard code block when showcasing code modifications.
+* Use tabs to maintain indentation in the new code.
+* Use `<pre is="code-change">` instead of `<code-change>`.
 
 ## Attributes
 
@@ -24,14 +28,10 @@ The new code to insert.
 
 ## Examples
 
-### Basic example
-
 ```xml
 <pre is="code-change" file="file:///NiuXiaoQi.spx" line="10" remove-line-count="3">
-show
-
-say "Hello, world!"
+onStart => {
+	say "Hello, world!"
+}
 </pre>
 ```
-
-This is a change to the code of sprite `NiuXiaoQi`. The original code of line 10, 11 & 12 will be removed. And the code to insert is `show\n\nsay "Hello, world!"\n`.
