@@ -48,8 +48,10 @@ export enum ResourceReferenceKind {
  */
 export type ResourceURI = string
 
+const resourceURIPrefix = 'spx://resources/'
+
 export function isResourceUri(uri: string): uri is ResourceURI {
-  return uri.startsWith('spx://resources/')
+  return uri.startsWith(resourceURIPrefix)
 }
 
 export type ResourceIdentifier = {
@@ -468,8 +470,7 @@ export type ResourceNameWithType = {
 
 export function parseResourceURI(uri: string): ResourceNameWithType[] {
   if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
-  const url = new URL(uri)
-  const parts = url.pathname.slice(1).split('/').map(decodeURIComponent)
+  const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
   const parsed: ResourceNameWithType[] = []
   for (let i = 0; i < parts.length; ) {
     const type = (

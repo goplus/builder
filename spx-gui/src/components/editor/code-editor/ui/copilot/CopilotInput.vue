@@ -124,7 +124,10 @@ defineExpose({ focus })
     position: absolute;
     width: 100%;
     height: 100%;
+    padding: 0;
     scrollbar-width: thin;
+    font-size: inherit;
+    line-height: inherit;
   }
 }
 

@@ -22,6 +22,7 @@ defineProps<{
   align-items: center;
   height: 32px;
   padding: 0 6px;
+  color: var(--ui-color-text);
   background: var(--ui-color-grey-100);
   border: 1px solid var(--ui-color-grey-400);
   border-radius: var(--ui-border-radius-1);
@@ -30,11 +31,10 @@ defineProps<{
   transition: 0.2s;
 
   &:hover {
-    // TODO: reconfirm style here
-    background: var(--ui-color-grey-200);
+    background: var(--ui-color-grey-400);
   }
   &:active {
-    background: var(--ui-color-grey-300);
+    background: var(--ui-color-grey-500);
   }
 }
 </style>

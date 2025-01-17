@@ -120,12 +120,16 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
     display: flex;
     flex-direction: column;
     padding-left: 1.5em;
+    gap: 8px;
   }
   :deep(ul) {
     list-style: square;
   }
   :deep(ol) {
     list-style: decimal;
+  }
+  :deep(li > *:not(:last-child)) {
+    margin-bottom: 8px;
   }
 
   :deep(a) {
@@ -159,10 +163,10 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
     // TODO: keep consistent with component `UICode`
     font-size: 0.83em;
     line-height: 1.6;
-    padding: 4px 4px;
+    padding: 2px 4px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-500);
-    background: var(--ui-color-grey-100);
+    background: var(--ui-color-grey-300);
     word-break: break-word;
     overflow-wrap: break-word;
   }
