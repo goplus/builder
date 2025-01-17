@@ -51,10 +51,10 @@ const {
   error,
   refetch: reloadProject
 } = useQuery(
-  async (signal) => {
+  async (ctx) => {
     const p = new Project()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const loaded = await p.loadFromCloud(props.owner, props.name, true, signal)
+    const loaded = await p.loadFromCloud(props.owner, props.name, true, ctx.signal)
     return loaded
   },
   {

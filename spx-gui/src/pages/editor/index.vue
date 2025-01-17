@@ -83,11 +83,11 @@ const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: strin
 }
 
 const projectQueryRet = useQuery(
-  async (signal) => {
+  async (ctx) => {
     if (userInfo.value == null) throw new Error('User not signed in') // This should not happen as the route is protected
     // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const project = await loadProject(userInfo.value.name, props.projectName, signal)
+    const project = await loadProject(userInfo.value.name, props.projectName, ctx.signal)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     return project
   },
@@ -96,22 +96,22 @@ const projectQueryRet = useQuery(
 
 const project = projectQueryRet.data
 
-const runtimeQueryRet = useQuery(async (signal) => {
-  const project = await composeQuery(projectQueryRet)
-  signal.throwIfAborted()
+const runtimeQueryRet = useQuery(async (ctx) => {
+  const project = await composeQuery(ctx, projectQueryRet)
+  ctx.signal.throwIfAborted()
   const runtime = new Runtime(project)
-  runtime.disposeOnSignal(signal)
+  runtime.disposeOnSignal(ctx.signal)
   return runtime
 })
 
 const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet)
 
 const allQueryRet = useQuery(
-  (signal) =>
+  (ctx) =>
     Promise.all([
-      composeQuery(projectQueryRet, signal),
-      composeQuery(runtimeQueryRet, signal),
-      composeQuery(codeEditorQueryRet, signal)
+      composeQuery(ctx, projectQueryRet),
+      composeQuery(ctx, runtimeQueryRet),
+      composeQuery(ctx, codeEditorQueryRet)
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )

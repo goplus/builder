@@ -151,15 +151,15 @@ export function useProvideCodeEditorCtx(
   })
 
   const editorQueryRet = useQuery<CodeEditor>(
-    async (signal) => {
+    async (ctx) => {
       const [project, runtime, monaco] = await Promise.all([
-        composeQuery(projectRet),
-        composeQuery(runtimeRet),
-        composeQuery(monacoQueryRet)
+        composeQuery(ctx, projectRet),
+        composeQuery(ctx, runtimeRet),
+        composeQuery(ctx, monacoQueryRet)
       ])
-      signal.throwIfAborted()
+      ctx.signal.throwIfAborted()
       const codeEditor = new CodeEditor(project, runtime, monaco, i18n)
-      codeEditor.disposeOnSignal(signal)
+      codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },
     { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
