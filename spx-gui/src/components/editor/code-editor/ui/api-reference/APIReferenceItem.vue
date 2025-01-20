@@ -68,7 +68,7 @@ const handleExplain = useMessageHandle(
 
 <style lang="scss" scoped>
 .api-reference-item {
-  padding: 6px;
+  padding: 6px 8px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -88,16 +88,14 @@ const handleExplain = useMessageHandle(
 }
 
 .overview {
-  display: flex;
-  align-items: start;
   word-break: break-all;
-  color: var(--ui-color-title);
+  padding: 2px 0 1px;
 }
 
 .explain-btn {
   position: absolute;
-  right: 6px;
-  top: 5px;
+  right: 8px;
+  top: 6px;
   padding: 0;
   width: 24px;
   height: 24px;

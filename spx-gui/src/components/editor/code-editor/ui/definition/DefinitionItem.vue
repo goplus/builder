@@ -21,4 +21,8 @@ const props = defineProps<{
   flex-direction: column;
   gap: 2px;
 }
+
+.definition-item + .definition-item {
+  margin-top: 8px;
+}
 </style>

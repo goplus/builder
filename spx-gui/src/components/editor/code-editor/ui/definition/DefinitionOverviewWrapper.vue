@@ -12,10 +12,10 @@ const childrenText = useSlotText('default', true)
 </script>
 
 <template>
-  <h4 class="definition-overview-wrapper" :title="childrenText">
+  <div class="definition-overview-wrapper" :title="childrenText">
     <DefinitionIcon v-if="kind != null" class="icon" :kind="kind" />
     <CodeView class="code" mode="inline"><slot></slot></CodeView>
-  </h4>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -23,9 +23,8 @@ const childrenText = useSlotText('default', true)
   display: flex;
   color: var(--ui-color-title);
 
-  // Clear style from `h4` in `MarkdownView`
-  font-size: 12px !important;
-  line-height: 1.75 !important;
+  font-size: 12px;
+  line-height: 1.75;
 
   .icon {
     flex: 0 0 auto;

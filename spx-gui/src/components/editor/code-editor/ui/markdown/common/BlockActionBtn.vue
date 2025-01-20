@@ -28,7 +28,7 @@ defineProps<{
   cursor: pointer;
 
   &:hover {
-    color: var(--ui-color-title);
+    color: var(--ui-color-grey-700);
   }
 
   .icon {
