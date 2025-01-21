@@ -44,6 +44,7 @@ require (
 )
 
 replace (
+	github.com/goplus/gogen => github.com/nighca/gogen v0.0.0-20250120085330-e1951899211e
 	github.com/goplus/gop => github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
 	github.com/hajimehoshi/oto => github.com/hajimehoshi/oto v1.0.1
 	github.com/srwiley/oksvg => github.com/qiniu/oksvg v0.2.0-no-charset

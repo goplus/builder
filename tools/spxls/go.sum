@@ -20,8 +20,6 @@ github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 h1:DACJavvAHhabrF0
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 github.com/goplus/canvas v0.1.0 h1:Vx3f2+U8UANvWf5/01YsQYKNbZDm1GZCjhlEBFrQkeU=
 github.com/goplus/canvas v0.1.0/go.mod h1:Rhcvo5qkpD9WuXFnvnXtrBSY97l6h7sXQuofrmiLNdM=
-github.com/goplus/gogen v1.16.6-0.20250112152508-dc8cddfd52df h1:YIcLq6a7eGp3niBGF/VQJbSjos2MtnaUu+ysj6Iuhjo=
-github.com/goplus/gogen v1.16.6-0.20250112152508-dc8cddfd52df/go.mod h1:6TQYbabXDF9LCdDkOOzHmfg1R4ENfXQ3XpHa9RhTSD8=
 github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972 h1:wA4+I+DDfoNwR+zCnaeckt5pxZgLAuaKvVkC+T9GdiQ=
 github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972/go.mod h1:lcW75c0a5v361jId1Vxs4lRrsasWsQDH0k3dG3Z7wH0=
 github.com/goplus/mod v0.13.15 h1:IyneSjwm1VpwvHGz6hSHnFxZCuO6ULHcu74IAZcW9nw=
@@ -39,6 +37,8 @@ github.com/hajimehoshi/oto/v2 v2.3.1/go.mod h1:seWLbgHH7AyUMYKfKYT9pg7PhUu9/Sisy
 github.com/jezek/xgb v1.1.1 h1:bE/r8ZZtSv7l9gk6nU0mYx51aXrvnyb44892TwSaqS4=
 github.com/jezek/xgb v1.1.1/go.mod h1:nrhwO0FX/enq75I7Y7G8iN1ubpSGZEiA3v9e9GyRFlk=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
+github.com/nighca/gogen v0.0.0-20250120085330-e1951899211e h1:+7v0Q8+u4FMKljAEKh4vjrkp+JzaiBgM+LW7MGmRR7k=
+github.com/nighca/gogen v0.0.0-20250120085330-e1951899211e/go.mod h1:6TQYbabXDF9LCdDkOOzHmfg1R4ENfXQ3XpHa9RhTSD8=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

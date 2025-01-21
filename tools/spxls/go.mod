@@ -39,3 +39,5 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/goplus/gogen => github.com/nighca/gogen v0.0.0-20250120085330-e1951899211e

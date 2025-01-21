@@ -43,6 +43,19 @@ onStart => {
 			Name:    util.ToPtr("MySprite"),
 		}))
 
+		assert.Contains(t, emptyLineItems, SpxDefinition{
+			ID: SpxDefinitionIdentifier{
+				Package: util.ToPtr("github.com/goplus/spx"),
+				Name:    util.ToPtr("Game.getWidget"),
+			},
+			Overview: "func getWidget(T type, name WidgetName) *T",
+
+			CompletionItemLabel:            "getWidget",
+			CompletionItemKind:             FunctionCompletion,
+			CompletionItemInsertText:       "getWidget",
+			CompletionItemInsertTextFormat: PlainTextTextFormat,
+		}.CompletionItem())
+
 		mySpriteDotItems, err := s.textDocumentCompletion(&CompletionParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},

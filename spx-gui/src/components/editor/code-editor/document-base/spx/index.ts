@@ -2,6 +2,21 @@ import { packageSpx } from '@/utils/spx'
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../../common'
 import { defineConst } from './common'
 
+export const sprite: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Type,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite'
+  },
+  insertText: 'Sprite',
+  overview: 'Sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Type for sprite',
+    zh: '精灵类型'
+  })
+}
+
 export const clone0: DefinitionDocumentationItem = {
   categories: [categories.game.sprite],
   kind: DefinitionKind.Command,
@@ -1682,14 +1697,350 @@ export const getWidget: DefinitionDocumentationItem = {
     name: 'Game.getWidget'
   },
   insertText: 'getWidget(${1:Monitor}, ${2:name})',
-  overview: 'getWidget(type, name)',
+  overview: 'getWidget(T, name)',
   detail: makeBasicMarkdownString({
-    en: 'Get the widget by given name',
-    zh: '通过指定名称获取控件'
+    en: 'Get the widget by given type & name, e.g., `getWidget(Monitor, "score")`',
+    zh: '通过给定的类型和名称获取控件，如：`getWidget(Monitor, "score")`'
   })
 }
 
-// TODO: definition for widget methods
+export const widgetVisible: DefinitionDocumentationItem = {
+  categories: [categories.look.visibility],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.visible'
+  },
+  insertText: 'visible',
+  overview: 'visible',
+  detail: makeBasicMarkdownString({
+    en: 'If current widget visible, e.g., `w.visible`',
+    zh: '当前控件是否可见，如：`w.visible`'
+  })
+}
+
+export const widgetHide: DefinitionDocumentationItem = {
+  categories: [categories.look.visibility],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.hide'
+  },
+  insertText: 'hide',
+  overview: 'hide',
+  detail: makeBasicMarkdownString({
+    en: 'Make current widget invisible, e.g., `w.hide`',
+    zh: '使当前控件不可见，如：`w.hide`'
+  })
+}
+
+export const widgetShow: DefinitionDocumentationItem = {
+  categories: [categories.look.visibility],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.show'
+  },
+  insertText: 'show',
+  overview: 'show',
+  detail: makeBasicMarkdownString({
+    en: 'Make current widget visible, e.g., `w.show`',
+    zh: '使当前控件可见，如：`w.show`'
+  })
+}
+
+export const widgetSetXYpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.setXYpos'
+  },
+  insertText: 'setXYpos ${1:x}, ${2:y}',
+  overview: 'setXYpos x, y',
+  detail: makeBasicMarkdownString({
+    en: "Set the widget's position, e.g., `w.setXYpos 100, 100`",
+    zh: '设置控件位置，如：`w.setXYpos 100, 100`'
+  })
+}
+
+export const widgetChangeXYpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.changeXYpos'
+  },
+  insertText: 'changeXYpos ${1:dX}, ${2:dY}',
+  overview: 'changeXYpos dX, dY',
+  detail: makeBasicMarkdownString({
+    en: "Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20",
+    zh: '改变控件位置，如：`w.changeXYpos 10, 10` 使控件 `w` 的水平位置增加 10，垂直位置增加 10'
+  })
+}
+
+export const widgetXpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.xpos'
+  },
+  insertText: 'xpos',
+  overview: 'xpos',
+  detail: makeBasicMarkdownString({
+    en: 'Get current X position, e.g., `w.xpos`',
+    zh: '获取当前水平位置，如：`w.xpos`'
+  })
+}
+
+export const widgetSetXpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.setXpos'
+  },
+  insertText: 'setXpos ${1:x}',
+  overview: 'setXpos x',
+  detail: makeBasicMarkdownString({
+    en: "Set the widget's X position, e.g., `w.setXpos 100`",
+    zh: '设置控件的水平位置，如：`w.setXpos 100`'
+  })
+}
+
+export const widgetChangeXpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.changeXpos'
+  },
+  insertText: 'changeXpos ${1:dX}',
+  overview: 'changeXpos dX',
+  detail: makeBasicMarkdownString({
+    en: "Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10",
+    zh: '改变控件的水平位置，如：`w.changeXpos 10` 使控件 `w` 的水平位置增加 10'
+  })
+}
+
+export const widgetYpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.ypos'
+  },
+  insertText: 'ypos',
+  overview: 'ypos',
+  detail: makeBasicMarkdownString({
+    en: 'Get current Y position, e.g., `w.ypos`',
+    zh: '获取当前垂直位置，如：`w.ypos`'
+  })
+}
+
+export const widgetSetYpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.setYpos'
+  },
+  insertText: 'setYpos ${1:y}',
+  overview: 'setYpos y',
+  detail: makeBasicMarkdownString({
+    en: "Set the widget's Y position, e.g., `w.setYpos 100`",
+    zh: '设置控件的垂直位置，如：`w.setYpos 100`'
+  })
+}
+
+export const widgetChangeYpos: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.changeYpos'
+  },
+  insertText: 'changeYpos ${1:dY}',
+  overview: 'changeYpos dY',
+  detail: makeBasicMarkdownString({
+    en: "Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10",
+    zh: '改变控件的垂直位置，如：`w.changeYpos 10` 使控件 `w` 的垂直位置增加 10'
+  })
+}
+
+export const widgetSize: DefinitionDocumentationItem = {
+  categories: [categories.motion.size],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.size'
+  },
+  insertText: 'size',
+  overview: 'size',
+  detail: makeBasicMarkdownString({
+    en: 'Get current size, e.g., `w.size`',
+    zh: '获取当前大小，如：`w.size`'
+  })
+}
+
+export const widgetSetSize: DefinitionDocumentationItem = {
+  categories: [categories.motion.size],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.setSize'
+  },
+  insertText: 'setSize ${1:size}',
+  overview: 'setSize size',
+  detail: makeBasicMarkdownString({
+    en: 'Set the size of current widget, e.g., `w.setSize 2`',
+    zh: '设置当前控件的大小，如：`w.setSize 2`'
+  })
+}
+
+export const widgetChangeSize: DefinitionDocumentationItem = {
+  categories: [categories.motion.size],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Widget.changeSize'
+  },
+  insertText: 'changeSize ${1:dSize}',
+  overview: 'changeSize dSize',
+  detail: makeBasicMarkdownString({
+    en: 'Change the size of current widget, e.g., `w.changeSize 1`',
+    zh: '改变当前控件的大小，如：`w.changeSize 1`'
+  })
+}
+
+export const monitor: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Type,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor'
+  },
+  insertText: 'Monitor',
+  overview: 'Monitor',
+  detail: makeBasicMarkdownString({
+    en: 'Type for monitor widget',
+    zh: '监视器控件类型'
+  })
+}
+
+export const monitorVisible: DefinitionDocumentationItem = {
+  ...widgetVisible,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.visible'
+  }
+}
+
+export const monitorHide: DefinitionDocumentationItem = {
+  ...widgetHide,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.hide'
+  }
+}
+
+export const monitorShow: DefinitionDocumentationItem = {
+  ...widgetShow,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.show'
+  }
+}
+
+export const monitorSetXYpos: DefinitionDocumentationItem = {
+  ...widgetSetXYpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.setXYpos'
+  }
+}
+
+export const monitorChangeXYpos: DefinitionDocumentationItem = {
+  ...widgetChangeXYpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.changeXYpos'
+  }
+}
+
+export const monitorXpos: DefinitionDocumentationItem = {
+  ...widgetXpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.xpos'
+  }
+}
+
+export const monitorSetXpos: DefinitionDocumentationItem = {
+  ...widgetSetXpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.setXpos'
+  }
+}
+
+export const monitorChangeXpos: DefinitionDocumentationItem = {
+  ...widgetChangeXpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.changeXpos'
+  }
+}
+
+export const monitorYpos: DefinitionDocumentationItem = {
+  ...widgetYpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.ypos'
+  }
+}
+
+export const monitorSetYpos: DefinitionDocumentationItem = {
+  ...widgetSetYpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.setYpos'
+  }
+}
+
+export const monitorChangeYpos: DefinitionDocumentationItem = {
+  ...widgetChangeYpos,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.changeYpos'
+  }
+}
+
+export const monitorSize: DefinitionDocumentationItem = {
+  ...widgetSize,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.size'
+  }
+}
+
+export const monitorSetSize: DefinitionDocumentationItem = {
+  ...widgetSetSize,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.setSize'
+  }
+}
+
+export const monitorChangeSize: DefinitionDocumentationItem = {
+  ...widgetChangeSize,
+  definition: {
+    package: packageSpx,
+    name: 'Monitor.changeSize'
+  }
+}
+
 // TODO: Sprite.goBackLayers|gotoBack|gotoFront
 
 export const movingInfoOldX: DefinitionDocumentationItem = {
