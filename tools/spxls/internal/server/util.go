@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/fs"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/goplus/gogen"
@@ -52,14 +53,19 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 		if e.Kind != goptoken.STRING {
 			return "", false
 		}
-		s := e.Value[1 : len(e.Value)-1] // Unquote the string.
-		return s, true
+		v, err := strconv.Unquote(e.Value)
+		if err != nil {
+			return "", false
+		}
+		return v, true
 	case *gopast.Ident:
 		if tv.Value != nil {
 			// If it's a constant, we can get its value.
-			s := tv.Value.String()
-			s = s[1 : len(s)-1] // Unquote the string.
-			return s, true
+			v, err := strconv.Unquote(tv.Value.String())
+			if err != nil {
+				return "", false
+			}
+			return v, true
 		}
 		// There is nothing we can do for string variables.
 		return "", false
@@ -268,6 +274,40 @@ func getSimplifiedTypeString(typ types.Type) string {
 		}
 		return p.Name()
 	})
+}
+
+// isTypeCompatible checks if two types are compatible.
+func isTypeCompatible(got, want types.Type) bool {
+	if got == nil || want == nil {
+		return false
+	}
+
+	if types.AssignableTo(got, want) {
+		return true
+	}
+
+	switch want := want.(type) {
+	case *types.Interface:
+		return types.Implements(got, want)
+	case *types.Pointer:
+		if gotPtr, ok := got.(*types.Pointer); ok {
+			return types.Identical(want.Elem(), gotPtr.Elem())
+		}
+		return types.Identical(got, want.Elem())
+	case *types.Slice:
+		gotSlice, ok := got.(*types.Slice)
+		return ok && types.Identical(want.Elem(), gotSlice.Elem())
+	case *types.Chan:
+		gotCh, ok := got.(*types.Chan)
+		return ok && types.Identical(want.Elem(), gotCh.Elem()) &&
+			(want.Dir() == types.SendRecv || want.Dir() == gotCh.Dir())
+	}
+
+	if _, ok := got.(*types.Named); ok {
+		return types.Identical(got, want)
+	}
+
+	return false
 }
 
 // attr transforms given string value to an HTML attribute value (with quotes).
