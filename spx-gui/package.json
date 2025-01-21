@@ -67,7 +67,7 @@
     "vite-plugin-ejs": "^1.7.0",
     "vite-plugin-top-level-await": "^1.4.1",
     "vite-plugin-vercel": "^9.0.1",
-    "vite-plugin-vue-devtools": "^7.0.7",
+    "vite-plugin-vue-devtools": "^7.7.0",
     "vite-plugin-wasm": "^3.3.0",
     "vitest": "^1.4.0",
     "vscode-languageserver-protocol": "^3.17.5",
