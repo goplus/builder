@@ -376,8 +376,8 @@ func (ctx *completionContext) collectGeneral() error {
 		ctx.itemSet.setSupportedKinds(
 			VariableCompletion,
 			ConstantCompletion,
-			// TODO: Add FunctionCompletion after implementing return type compatibility check.
-			// FunctionCompletion,
+			// TODO: Add return type compatibility check for FunctionCompletion.
+			FunctionCompletion,
 		)
 	}
 	ctx.itemSet.setExpectedTypes(ctx.expectedTypes)
