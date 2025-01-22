@@ -194,18 +194,17 @@ func (r *compileResult) identsAtASTFileLine(astFile *gopast.File, line int) (ide
 // identAtASTFilePosition returns the identifier at the given position in the
 // given AST file.
 func (r *compileResult) identAtASTFilePosition(astFile *gopast.File, position Position) *gopast.Ident {
-	pos := r.fset.Position(astFile.Pos())
-	pos.Line = int(position.Line) + 1
-	pos.Column = int(position.Character) + 1
+	line := int(position.Line) + 1
+	column := int(position.Character) + 1
 
 	var (
 		bestIdent    *gopast.Ident
 		bestNodeSpan int
 	)
-	for _, ident := range r.identsAtASTFileLine(astFile, pos.Line) {
+	for _, ident := range r.identsAtASTFileLine(astFile, line) {
 		identPos := r.fset.Position(ident.Pos())
 		identEnd := r.fset.Position(ident.End())
-		if pos.Column < identPos.Column || pos.Column > identEnd.Column {
+		if column < identPos.Column || column > identEnd.Column {
 			continue
 		}
 
@@ -443,9 +442,9 @@ func (r *compileResult) spxDefinitionsForNamedStruct(named *types.Named) (defs [
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
 func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {
-	pos := r.fset.Position(astFile.Pos())
-	pos.Line = int(position.Line) + 1
-	pos.Column = int(position.Character) + 1
+	spxFile := r.fset.Position(astFile.Pos()).Filename
+	line := int(position.Line) + 1
+	column := int(position.Character) + 1
 
 	var (
 		bestRef      *SpxResourceRef
@@ -454,10 +453,10 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 	for _, ref := range r.spxResourceRefs {
 		nodePos := r.fset.Position(ref.Node.Pos())
 		nodeEnd := r.fset.Position(ref.Node.End())
-		if nodePos.Filename != pos.Filename ||
-			pos.Line != nodePos.Line ||
-			pos.Column < nodePos.Column ||
-			pos.Column > nodeEnd.Column {
+		if nodePos.Filename != spxFile ||
+			line != nodePos.Line ||
+			column < nodePos.Column ||
+			column > nodeEnd.Column {
 			continue
 		}
 

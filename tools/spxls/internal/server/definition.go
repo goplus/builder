@@ -33,7 +33,13 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 	}
 
 	defIdent := result.defIdentFor(obj)
-	if defIdent == nil || !result.isInFset(defIdent.Pos()) {
+	if defIdent == nil {
+		objPos := obj.Pos()
+		if !result.isInFset(objPos) {
+			return nil, nil
+		}
+		return s.createLocationFromPos(result.fset, objPos), nil
+	} else if !result.isInFset(defIdent.Pos()) {
 		return nil, nil
 	}
 	return s.createLocationFromIdent(result.fset, defIdent), nil

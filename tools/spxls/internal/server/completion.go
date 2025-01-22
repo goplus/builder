@@ -935,7 +935,7 @@ func (s *completionItemSet) add(items ...CompletionItem) {
 // addSpxDefs adds spx definitions to the set.
 func (s *completionItemSet) addSpxDefs(spxDefs ...SpxDefinition) {
 	for _, spxDef := range spxDefs {
-		if s.isCompatibleWithExpectedTypes != nil && !s.isCompatibleWithExpectedTypes(spxDef.Type) {
+		if s.isCompatibleWithExpectedTypes != nil && !s.isCompatibleWithExpectedTypes(spxDef.TypeHint) {
 			continue
 		}
 
