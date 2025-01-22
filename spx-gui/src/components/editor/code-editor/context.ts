@@ -144,7 +144,6 @@ export function useProvideCodeEditorCtx(
   const monacoQueryRet = useQuery<Monaco>(async () => {
     const [monaco, highlighter] = await Promise.all([getMonaco(i18n.lang.value), getHighlighter()])
     monaco.languages.register({ id: 'spx' })
-    // TODO: this causes extra-padding issue when rendering selection
     shikiToMonaco(highlighter, monaco)
     monaco.languages.setLanguageConfiguration('spx', spxLanguageConfiguration)
     return monaco
