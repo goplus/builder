@@ -7,8 +7,8 @@ Name,Sample,Description
 backdropIndex,,Get the index of the current backdrop
 backdropName,,Get the name of the current backdrop
 broadcast,broadcast msg,"Broadcast a message, e.g., `broadcast ""msg""`"
-broadcast,"broadcast msg, wait","Broadcast a message with waiting, e.g., `broadcast ""msg"", true`"
-broadcast,"broadcast msg, data, wait","Broadcast a message with data and waiting, e.g., `broadcast ""msg"", data, true`"
+broadcast,"broadcast msg, true","Broadcast a message with waiting for related (`onMsg`) works to complete, e.g., `broadcast ""msg"", true`"
+broadcast,"broadcast msg, data, true","Broadcast a message with data and waiting for related (`onMsg`) works to complete, e.g., `broadcast ""msg"", data, true`"
 changeVolume,changeVolume dVolume,"Change the volume for sounds with given volume change, e.g., `changeVolume 10`"
 onClick,onClick => {},Listen to stage clicked
 onKey,"onKey key, => {}","Listen to given key pressed, e.g., `onKey KeyA, => {}`"
@@ -23,6 +23,7 @@ mousePressed,,Check if the mouse is currently pressed
 mouseX,,Get X position of the mouse
 mouseY,,Get Y position of the mouse
 nextBackdrop,,Switch to the next backdrop
+nextBackdrop,nextBackdrop true,"Switch to the next backdrop, with waiting for related (`onBackdrop`) works to complete"
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
 onBackdrop,"onBackdrop backdrop, => {}",Listen to switching to specific backdrop
@@ -33,9 +34,10 @@ play,play name,"Play sound with given name, e.g., `play ""explosion""`"
 play,"play name, wait","Play sound with given name and waiting, e.g., `play ""explosion"", true`"
 play,"play name, options","Play sound with given name and options, e.g., `play ""explosion"", { Loop: true }`"
 prevBackdrop,,Switch to the previous backdrop
+prevBackdrop,prevBackdrop true,"Switch to the previous backdrop, with waiting for related (`onBackdrop`) works to complete"
 setVolume,setVolume volume,"Set the volume for sounds, e.g., `setVolume 100`"
 startBackdrop,startBackdrop name,"Set the current backdrop by specifying name, e.g., `startBackdrop ""backdrop1""`"
-startBackdrop,"startBackdrop name, wait","Set the current backdrop by specifying name, with waiting, e.g., `startBackdrop ""backdrop1"", true`"
+startBackdrop,"startBackdrop name, true","Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) works to complete, e.g., `startBackdrop ""backdrop1"", true`"
 stopAllSounds,,Stop all playing sounds
 volume,,Get the volume for sounds
 wait,wait seconds,"Block current execution (coroutine) for given seconds, e.g., `wait 0.5`"

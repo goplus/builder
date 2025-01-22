@@ -192,7 +192,5 @@ export class HoverController extends Emitter<{
         this.hideHover()
       })
     )
-
-    // TODO: clear hover when switching text document
   }
 }

@@ -1086,15 +1086,15 @@ export const startBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '1'
   },
-  insertText: 'startBackdrop ${1:name}, ${2:wait}',
-  overview: 'startBackdrop name, wait',
+  insertText: 'startBackdrop ${1:name}, ${2:true}',
+  overview: 'startBackdrop name, true',
   detail: makeBasicMarkdownString({
-    en: 'Set the current backdrop by specifying name, with waiting, e.g., `startBackdrop "backdrop1", true`',
-    zh: '通过指定名称切换背景，并等待切换完成，如：`startBackdrop "backdrop1", true`'
+    en: 'Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) works to complete, e.g., `startBackdrop "backdrop1", true`',
+    zh: '通过指定名称切换背景，并等待关联的（`onBackdrop`）行为结束，如：`startBackdrop "backdrop1", true`'
   })
 }
 
-export const nextBackdrop: DefinitionDocumentationItem = {
+export const nextBackdrop0: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
@@ -1110,7 +1110,23 @@ export const nextBackdrop: DefinitionDocumentationItem = {
   })
 }
 
-export const prevBackdrop: DefinitionDocumentationItem = {
+export const nextBackdrop1: DefinitionDocumentationItem = {
+  categories: [categories.look.backdrop],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.nextBackdrop',
+    overloadId: '1'
+  },
+  insertText: 'nextBackdrop ${2:true}',
+  overview: 'nextBackdrop true',
+  detail: makeBasicMarkdownString({
+    en: 'Switch to the next backdrop, with waiting for related (`onBackdrop`) works to complete',
+    zh: '切换到下一个背景，并等待关联的（`onBackdrop`）行为结束'
+  })
+}
+
+export const prevBackdrop0: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
@@ -1119,10 +1135,26 @@ export const prevBackdrop: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'prevBackdrop',
-  overview: 'prevBackdrop', // TODO: optional argument `wait`
+  overview: 'prevBackdrop',
   detail: makeBasicMarkdownString({
     en: 'Switch to the previous backdrop',
     zh: '切换到上一个背景'
+  })
+}
+
+export const prevBackdrop1: DefinitionDocumentationItem = {
+  categories: [categories.look.backdrop],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.prevBackdrop',
+    overloadId: '1'
+  },
+  insertText: 'prevBackdrop ${1:true}',
+  overview: 'prevBackdrop true',
+  detail: makeBasicMarkdownString({
+    en: 'Switch to the previous backdrop, with waiting for related (`onBackdrop`) works to complete',
+    zh: '切换到上一个背景，并等待关联的（`onBackdrop`）行为结束'
   })
 }
 
@@ -1381,11 +1413,11 @@ export const broadcast1: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '1'
   },
-  insertText: 'broadcast ${1:"msg"}, ${2:wait}',
-  overview: 'broadcast msg, wait',
+  insertText: 'broadcast ${1:"msg"}, ${2:true}',
+  overview: 'broadcast msg, true',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with waiting, e.g., `broadcast "msg", true`',
-    zh: '广播一条消息并等待，如：`broadcast "msg", true`'
+    en: 'Broadcast a message with waiting for related (`onMsg`) works to complete, e.g., `broadcast "msg", true`',
+    zh: '广播一条消息并等待关联的（`onMsg`）行为结束，如：`broadcast "msg", true`'
   })
 }
 
@@ -1397,11 +1429,11 @@ export const broadcast2: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '2'
   },
-  insertText: 'broadcast ${1:"msg"}, ${2:data}, ${3:wait}',
-  overview: 'broadcast msg, data, wait',
+  insertText: 'broadcast ${1:"msg"}, ${2:data}, ${3:true}',
+  overview: 'broadcast msg, data, true',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with data and waiting, e.g., `broadcast "msg", data, true`',
-    zh: '广播一条消息（带有数据）并等待，如：`broadcast "msg", data, true`'
+    en: 'Broadcast a message with data and waiting for related (`onMsg`) works to complete, e.g., `broadcast "msg", data, true`',
+    zh: '广播一条带数据的消息并等待关联的（`onMsg`）行为结束，如：`broadcast "msg", data, true`'
   })
 }
 

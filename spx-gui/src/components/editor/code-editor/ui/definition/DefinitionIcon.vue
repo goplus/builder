@@ -26,7 +26,6 @@ function getIcon(kind: DefinitionKind) {
 .definition-icon {
   width: 16px;
   height: 16px;
-  color: var(--ui-color-yellow-main);
 
   &:deep(svg) {
     width: 100%;

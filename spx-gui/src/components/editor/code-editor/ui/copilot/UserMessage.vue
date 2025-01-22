@@ -34,7 +34,7 @@ const editorCtx = useEditorCtx()
 }
 
 .content {
-  padding: 8px; // TODO: confirm padding
+  padding: 8px;
   align-self: stretch;
 
   border-radius: 0px var(--ui-border-radius-1) var(--ui-border-radius-1) var(--ui-border-radius-1);

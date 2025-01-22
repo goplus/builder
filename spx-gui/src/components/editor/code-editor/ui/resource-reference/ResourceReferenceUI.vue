@@ -128,7 +128,7 @@ watchEffect(() => {
 
 .code-editor-resource-reference-icon {
   &::after {
-    // TODO: different icon for different type of resource
+    // TODO: different icon for different type of resource. https://github.com/goplus/builder/issues/1259
     content: url(./icons/resource.svg);
     position: absolute;
     top: 50%;

@@ -226,7 +226,7 @@ function handleCategoryClick(id: string) {
   if (categoryWrapper == null) return
   itemsWrapper.scrollTo({
     top: (categoryWrapper as HTMLElement).offsetTop,
-    behavior: 'smooth' // TODO: scroll faster?
+    behavior: 'smooth'
   })
 }
 </script>

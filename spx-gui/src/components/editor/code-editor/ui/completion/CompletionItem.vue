@@ -76,7 +76,6 @@ watchEffect(() => {
 }
 
 .matched {
-  // TODO: reconfirm color here
   color: var(--ui-color-primary-main);
 }
 </style>

@@ -14,13 +14,10 @@ const props = defineProps<{
 
 const codeEditorCtx = useCodeEditorUICtx()
 
-const handleInsert = useMessageHandle(
-  () => {
-    codeEditorCtx.ui.insertSnippet(props.item.insertText)
-    codeEditorCtx.ui.editor.focus()
-  },
-  { en: 'Failed to insert', zh: '插入失败' }
-).fn
+const handleInsert = useMessageHandle(() => codeEditorCtx.ui.insertSnippet(props.item.insertText), {
+  en: 'Failed to insert',
+  zh: '插入失败'
+}).fn
 
 const handleExplain = useMessageHandle(
   () =>

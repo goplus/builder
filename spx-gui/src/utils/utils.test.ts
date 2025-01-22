@@ -1,6 +1,6 @@
 import { nextTick, watch } from 'vue'
 import { describe, it, expect, vitest } from 'vitest'
-import { isImage, isSound, nomalizeDegree, memoizeAsync, useLocalStorage, humanizeListWithLimit } from './utils'
+import { isImage, isSound, nomalizeDegree, memoizeAsync, localStorageRef, humanizeListWithLimit } from './utils'
 import { sleep } from './test'
 
 describe('isImage', () => {
@@ -141,10 +141,10 @@ describe('memoizeAsync', () => {
   })
 })
 
-describe('useLocalStorage', () => {
+describe('localStorageRef', () => {
   it('should work well', () => {
     const key = 'test-key'
-    const stored = useLocalStorage(key, 'default-value')
+    const stored = localStorageRef(key, 'default-value')
     expect(stored.value).toBe('default-value')
     stored.value = 'new-value'
     expect(stored.value).toBe('new-value')
@@ -156,8 +156,8 @@ describe('useLocalStorage', () => {
 
   it('should sync within the same document', async () => {
     const key = 'test-key'
-    const stored1 = useLocalStorage(key, 0)
-    const stored2 = useLocalStorage(key, 0)
+    const stored1 = localStorageRef(key, 0)
+    const stored2 = localStorageRef(key, 0)
     expect(stored1.value).toBe(0)
     expect(stored2.value).toBe(0)
 

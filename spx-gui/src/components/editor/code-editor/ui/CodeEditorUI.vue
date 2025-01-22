@@ -23,7 +23,7 @@ import {
   onDeactivated,
   onActivated
 } from 'vue'
-import { computedShallowReactive, untilNotNull, useLocalStorage } from '@/utils/utils'
+import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
@@ -128,7 +128,7 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
+const fontSize = localStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'spx',
@@ -193,7 +193,7 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = useLocalStorage('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = localStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {
@@ -253,7 +253,12 @@ function zoomReset() {
       </footer>
       <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
-    <div ref="resizeHandleEl" class="resize-handle" :style="{ left: `${sidebarWidth}px` }"></div>
+    <div
+      ref="resizeHandleEl"
+      class="resize-handle"
+      :class="{ active: isResizing }"
+      :style="{ left: `${sidebarWidth}px` }"
+    ></div>
     <MonacoEditorComp
       class="monaco-editor"
       :monaco="codeEditorCtx.getMonaco()"
@@ -313,19 +318,18 @@ function zoomReset() {
 
 .resize-handle {
   position: absolute;
-  width: 16px;
+  width: 13px;
   height: 100%;
-  margin-left: -8px;
+  margin-left: -7px;
   z-index: 10;
   cursor: col-resize;
   transition: background-color 0.2s;
 
-  // TODO: confirm style details
   &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(36, 41, 47, 0.05);
   }
   &.active {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(36, 41, 47, 0.1);
   }
 }
 

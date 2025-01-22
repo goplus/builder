@@ -50,8 +50,5 @@ export async function getMonaco(lang: Lang) {
   if (monacoPromise != null) return monacoPromise
   // now refreshing page required if lang changed
   loader.config(getLoaderConfig(lang))
-  return (monacoPromise = loader.init().then((monaco) => {
-    // TODO: do general configuration for monaco here
-    return monaco
-  }))
+  return (monacoPromise = loader.init())
 }

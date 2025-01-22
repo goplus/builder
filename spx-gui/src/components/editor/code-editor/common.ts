@@ -236,7 +236,7 @@ export function makeAdvancedMarkdownString(value: string | LocaleMessage): Advan
   return { value, flag: 'advanced' }
 }
 
-export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename'
+export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' | 'copy' | 'copilot'
 
 /**
  * Documentation string for a definition. Typically:
