@@ -4,7 +4,7 @@ import { UIIcon } from '@/components/ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
-import logoSrc from './logo.svg'
+import logoSrc from './logo.png'
 import type { CopilotController } from '.'
 
 const props = defineProps<{
@@ -58,7 +58,7 @@ watch(
         />
       </ul>
       <div v-else class="placeholder">
-        <img :src="logoSrc" alt="Copilot" />
+        <img class="logo" :src="logoSrc" alt="Copilot" />
         <h4 class="title">
           {{
             $t({
@@ -141,6 +141,10 @@ watch(
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    .logo {
+      width: 90px;
+    }
 
     .title {
       margin-top: 8px;
