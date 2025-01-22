@@ -1775,7 +1775,7 @@
 				}
 			},
 			"comment": "Support Commands",
-			"match": "(?:(?:((?<=\\.)\\b\\w+)|(^\\s*\\w+))(?=(\\s+(\\w|\"|\\(|=>|\\{)|$)))"
+			"match": "(?:(?:((?<=\\.)\\b\\w+)|(^\\s*\\w+))(?=(\\s+(\\w|\"|\\(|=>|\\{|\\-|//|\\[)|$)))"
 		},
 		"other_struct_interface_expressions": {
 			"comment": "struct and interface expression in-line (before curly bracket)",
@@ -2466,7 +2466,7 @@
 					"name": "entity.name.function.support.builtin.gop"
 				},
 				{
-					"match": "^\\s*(append|cap|close|complex|copy|delete|imag|len|panic|print|println|real|recover|min|max|clear)(?=(\\s+(\\w|\"|\\(|=>|\\{)|$))",
+					"match": "^\\s*(append|cap|close|complex|copy|delete|imag|len|panic|print|println|real|recover|min|max|clear)(?=(\\s+(\\w|\"|\\(|=>|\\{|\\-|//|\\[)|$))",
 					"name": "entity.name.function.support.builtin.command.gop"
 				},
 				{
