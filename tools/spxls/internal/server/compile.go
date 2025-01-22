@@ -399,6 +399,9 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 		if funcDecl, ok := r.mainASTPkgIdentToFuncDecl[r.defIdentFor(obj)]; ok && funcDecl.Shadow {
 			return nil
 		}
+		if isUnexpandableGopOverloadableFunc(obj) {
+			return nil
+		}
 		if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 			defs := make([]SpxDefinition, 0, len(funcOverloads))
 			for _, funcOverload := range funcOverloads {

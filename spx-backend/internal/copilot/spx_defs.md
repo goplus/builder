@@ -16,7 +16,7 @@ onKey,"onKey keys, key => {}","Listen to given keys pressed, optionally receivin
 onMsg,"onMsg (msg, data) => {}","Listen to any message broadcasted, get the broadcasted message and data"
 onMsg,"onMsg msg, => {}",Listen to specific message broadcasted
 onStart,onStart => {},Listen to game start
-getWidget,"getWidget(type, name)",Get the widget by given name
+getWidget,"getWidget(T, name)","Get the widget by given type & name, e.g., `getWidget(Monitor, ""score"")`"
 keyPressed,keyPressed(key),"Check if given key is currently pressed, e.g., `keyPressed(KeyA)`"
 mouseHitItem,,"Get the topmost sprite which is hit by mouse, e.g., `hitSprite, ok := mouseHitItem`"
 mousePressed,,Check if the mouse is currently pressed
@@ -126,7 +126,28 @@ EdgeTop,,Top edge
 exit,,Exit the game
 Left,,"Left direction, i.e., -90 degree"
 LeftRight,,Left-Right
+Monitor,,Type for monitor widget
+Monitor.changeSize,changeSize dSize,"Change the size of current widget, e.g., `w.changeSize 1`"
+Monitor.changeXYpos,"changeXYpos dX, dY","Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20"
+Monitor.changeXpos,changeXpos dX,"Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10"
+Monitor.changeYpos,changeYpos dY,"Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10"
+Monitor.hide,hide,"Make current widget invisible, e.g., `w.hide`"
+Monitor.setSize,setSize size,"Set the size of current widget, e.g., `w.setSize 2`"
+Monitor.setXYpos,"setXYpos x, y","Set the widget's position, e.g., `w.setXYpos 100, 100`"
+Monitor.setXpos,setXpos x,"Set the widget's X position, e.g., `w.setXpos 100`"
+Monitor.setYpos,setYpos y,"Set the widget's Y position, e.g., `w.setYpos 100`"
+Monitor.show,show,"Make current widget visible, e.g., `w.show`"
+Monitor.size,size,"Get current size, e.g., `w.size`"
+Monitor.visible,visible,"If current widget visible, e.g., `w.visible`"
+Monitor.xpos,xpos,"Get current X position, e.g., `w.xpos`"
+Monitor.ypos,ypos,"Get current Y position, e.g., `w.ypos`"
 Mouse,,Mouse
+MovingInfo.dx,dx,The horizontal distance moved
+MovingInfo.dy,dy,The vertical distance moved
+MovingInfo.NewX,newX,The horizontal position after moving
+MovingInfo.NewY,newY,The vertical position after moving
+MovingInfo.OldX,oldX,The horizontal position before moving
+MovingInfo.OldY,oldY,The vertical position before moving
 Next,,Next item
 None,,Don't Rotate
 Normal,,Normal
@@ -139,7 +160,25 @@ Prev,,Previous item
 rand,"rand(from, to)","Generate a random integer, e.g., `rand(1, 10)`"
 rand,"rand(from, to)","Generate a random number, e.g., `rand(1.5, 9.9)`"
 Right,,"Right direction, i.e., 90 degree"
+Sprite,,Type for sprite
+TurningInfo.dir,dir,The angle rotated
+TurningInfo.NewDir,NewDir,The heading after turning
+TurningInfo.OldDir,OldDir,The heading before turning
 Up,,"Up direction, i.e., 0 degree"
+Widget.changeSize,changeSize dSize,"Change the size of current widget, e.g., `w.changeSize 1`"
+Widget.changeXYpos,"changeXYpos dX, dY","Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20"
+Widget.changeXpos,changeXpos dX,"Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10"
+Widget.changeYpos,changeYpos dY,"Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10"
+Widget.hide,hide,"Make current widget invisible, e.g., `w.hide`"
+Widget.setSize,setSize size,"Set the size of current widget, e.g., `w.setSize 2`"
+Widget.setXYpos,"setXYpos x, y","Set the widget's position, e.g., `w.setXYpos 100, 100`"
+Widget.setXpos,setXpos x,"Set the widget's X position, e.g., `w.setXpos 100`"
+Widget.setYpos,setYpos y,"Set the widget's Y position, e.g., `w.setYpos 100`"
+Widget.show,show,"Make current widget visible, e.g., `w.show`"
+Widget.size,size,"Get current size, e.g., `w.size`"
+Widget.visible,visible,"If current widget visible, e.g., `w.visible`"
+Widget.xpos,xpos,"Get current X position, e.g., `w.xpos`"
+Widget.ypos,ypos,"Get current Y position, e.g., `w.ypos`"
 
 ```
 

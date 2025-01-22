@@ -643,21 +643,19 @@ func makeSpxDefinitionOverviewForFunc(fun *types.Func) (overview, parsedRecvType
 	}
 	sb.WriteString(parsedName)
 	sb.WriteString("(")
+	params := make([]string, 0, sig.TypeParams().Len()+sig.Params().Len())
+	for i := range sig.TypeParams().Len() {
+		tp := sig.TypeParams().At(i)
+		params = append(params, tp.Obj().Name()+" Type")
+	}
 	for i := range sig.Params().Len() {
-		if isGoptMethod {
-			if i == 0 {
-				continue
-			} else if i > 1 {
-				sb.WriteString(", ")
-			}
-		} else if i > 0 {
-			sb.WriteString(", ")
+		if isGoptMethod && i == 0 {
+			continue
 		}
 		param := sig.Params().At(i)
-		sb.WriteString(param.Name())
-		sb.WriteString(" ")
-		sb.WriteString(getSimplifiedTypeString(param.Type()))
+		params = append(params, param.Name()+" "+getSimplifiedTypeString(param.Type()))
 	}
+	sb.WriteString(strings.Join(params, ", "))
 	sb.WriteString(")")
 
 	if results := sig.Results(); results.Len() > 0 {

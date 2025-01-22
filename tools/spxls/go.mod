@@ -3,7 +3,7 @@ module github.com/goplus/builder/tools/spxls
 go 1.23.4
 
 require (
-	github.com/goplus/gogen v1.16.6-0.20250112152508-dc8cddfd52df
+	github.com/goplus/gogen v1.16.6
 	github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
 	github.com/goplus/mod v0.13.15
 	github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1

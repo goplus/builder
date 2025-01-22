@@ -210,6 +210,21 @@ func isGopOverloadableFunc(fun *types.Func) bool {
 	return typ != nil
 }
 
+// isUnexpandableGopOverloadableFunc checks if given function is a Unexpandable-Gop-Overloadable-Func.
+// "Unexpandable-Gop-Overloadable-Func" is a function that
+// 1. is overloadable: has a signature like `func(__gop_overload_args__ interface{_()})`
+// 2. but not expandable: can not be expanded into overloads
+// A typical example is method `GetWidget` on spx `Game`.
+func isUnexpandableGopOverloadableFunc(fun *types.Func) bool {
+	sig := fun.Type().(*types.Signature)
+	if _, ok := gogen.CheckSigFuncEx(sig); ok { // is `func(__gop_overload_args__ interface{_()})`
+		if t, _ := gogen.CheckSigFuncExObjects(sig); t == nil { // not expandable
+			return true
+		}
+	}
+	return false
+}
+
 // expandGopOverloadableFunc expands the given Go+ function with a signature
 // like `func(__gop_overload_args__ interface{_()})` to all its overloads. It
 // returns nil if the function is not qualified for overload expansion.
