@@ -48,7 +48,7 @@ onStart => {
 				Package: util.ToPtr("github.com/goplus/spx"),
 				Name:    util.ToPtr("Game.getWidget"),
 			},
-			Overview: "func getWidget(T type, name WidgetName) *T",
+			Overview: "func getWidget(T Type, name WidgetName) *T",
 
 			CompletionItemLabel:            "getWidget",
 			CompletionItemKind:             FunctionCompletion,

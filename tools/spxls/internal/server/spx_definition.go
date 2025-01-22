@@ -646,7 +646,7 @@ func makeSpxDefinitionOverviewForFunc(fun *types.Func) (overview, parsedRecvType
 	params := make([]string, 0, sig.TypeParams().Len()+sig.Params().Len())
 	for i := range sig.TypeParams().Len() {
 		tp := sig.TypeParams().At(i)
-		params = append(params, tp.Obj().Name()+" type")
+		params = append(params, tp.Obj().Name()+" Type")
 	}
 	for i := range sig.Params().Len() {
 		if isGoptMethod && i == 0 {
