@@ -15,9 +15,9 @@ import (
 
 // SpxDefinition represents an spx definition.
 type SpxDefinition struct {
-	// Type represents the type that this definition is for. It may be nil
-	// if the definition has no associated type.
-	Type types.Type
+	// TypeHint represents a type hint for this definition. It may be nil if
+	// the definition has no associated type.
+	TypeHint types.Type
 
 	ID       SpxDefinitionIdentifier
 	Overview string
@@ -243,7 +243,7 @@ func GetSpxBuiltinDefinition(obj types.Object) SpxDefinition {
 	}
 
 	return SpxDefinition{
-		Type: obj.Type(),
+		TypeHint: obj.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(pkgPath),
@@ -411,7 +411,7 @@ func NewSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool
 		completionItemKind = FieldCompletion
 	}
 	def = SpxDefinition{
-		Type: v.Type(),
+		TypeHint: v.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(v.Pkg().Path()),
@@ -455,7 +455,7 @@ func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDef
 	}
 
 	def = SpxDefinition{
-		Type: c.Type(),
+		TypeHint: c.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(c.Pkg().Path()),
@@ -516,7 +516,7 @@ func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (d
 	}
 
 	def = SpxDefinition{
-		Type: typeName.Type(),
+		TypeHint: typeName.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(typeName.Pkg().Path()),
@@ -586,7 +586,7 @@ func NewSpxDefinitionForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdo
 		idName = recvTypeDisplayName + "." + idName
 	}
 	def = SpxDefinition{
-		Type: fun.Type(),
+		TypeHint: fun.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package:    util.ToPtr(fun.Pkg().Path()),
@@ -706,7 +706,7 @@ func NewSpxDefinitionForPkg(pkgName *types.PkgName, pkgDoc *pkgdoc.PkgDoc) (def 
 	}
 
 	def = SpxDefinition{
-		Type: pkgName.Type(),
+		TypeHint: pkgName.Type(),
 
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(pkgName.Pkg().Path()),

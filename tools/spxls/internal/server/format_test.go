@@ -17,6 +17,7 @@ var (
   MyAircraft MyAircraft
   Bullet Bullet
 )
+type Score int
 run "assets",    { Title:    "Bullet (by Go+)" }
 `),
 		}), nil)
@@ -30,9 +31,11 @@ run "assets",    { Title:    "Bullet (by Go+)" }
 		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 8, Character: 0},
+				End:   Position{Line: 9, Character: 0},
 			},
 			NewText: `// A spx game.
+
+type Score int
 
 var (
 	MyAircraft MyAircraft

@@ -22,7 +22,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, nil // Not a spx source file.
 	}
 
-	formatted, original, err := formatSpx(s, spxFile)
+	formatted, original, err := s.formatSpx(spxFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
@@ -50,7 +50,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 }
 
 // formatSpx formats a spx source file. If no change is needed, it returns `(nil, nil, nil)`.
-func formatSpx(s *Server, spxFileName string) (formatted, original []byte, err error) {
+func (s *Server) formatSpx(spxFileName string) (formatted, original []byte, err error) {
 	// Parse the source into AST.
 	compileResult, err := s.compile()
 	if err != nil {
@@ -76,6 +76,7 @@ func formatSpx(s *Server, spxFileName string) (formatted, original []byte, err e
 	// Collect all declarations.
 	var (
 		importDecls []gopast.Decl
+		typeDecls   []gopast.Decl
 		constDecls  []gopast.Decl
 		varBlocks   []*gopast.GenDecl
 		funcDecls   []gopast.Decl
@@ -87,6 +88,8 @@ func formatSpx(s *Server, spxFileName string) (formatted, original []byte, err e
 			switch d.Tok {
 			case goptoken.IMPORT:
 				importDecls = append(importDecls, d)
+			case goptoken.TYPE:
+				typeDecls = append(typeDecls, d)
 			case goptoken.CONST:
 				constDecls = append(constDecls, d)
 			case goptoken.VAR:
@@ -101,11 +104,12 @@ func formatSpx(s *Server, spxFileName string) (formatted, original []byte, err e
 		}
 	}
 
-	// Reorder declarations: imports -> consts -> vars -> funcs -> others.
+	// Reorder declarations: imports -> types -> consts -> vars -> funcs -> others.
 	//
 	// See https://github.com/goplus/builder/issues/591 and https://github.com/goplus/builder/issues/752.
 	newDecls := make([]gopast.Decl, 0, len(astFile.Decls))
 	newDecls = append(newDecls, importDecls...)
+	newDecls = append(newDecls, typeDecls...)
 	newDecls = append(newDecls, constDecls...)
 	if len(varBlocks) > 0 {
 		// Merge multiple var blocks into a single one.

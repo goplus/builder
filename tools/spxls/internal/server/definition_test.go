@@ -120,6 +120,58 @@ var x int
 		require.NoError(t, err)
 		require.Nil(t, def)
 	})
+
+	t.Run("ImportedPackage", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+import "fmt"
+fmt.println "Hello, spx!"
+`),
+		}), nil)
+
+		def, err := s.textDocumentDefinition(&DefinitionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, def)
+		require.IsType(t, Location{}, def)
+		assert.Equal(t, Location{
+			URI: "file:///main.spx",
+			Range: Range{
+				Start: Position{Line: 1, Character: 7},
+				End:   Position{Line: 1, Character: 7},
+			},
+		}, def.(Location))
+	})
+
+	t.Run("ImportedPackageWithAlias", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+import fmt2 "fmt"
+fmt2.println "Hello, spx!"
+`),
+		}), nil)
+
+		def, err := s.textDocumentDefinition(&DefinitionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, def)
+		require.IsType(t, Location{}, def)
+		assert.Equal(t, Location{
+			URI: "file:///main.spx",
+			Range: Range{
+				Start: Position{Line: 1, Character: 7},
+				End:   Position{Line: 1, Character: 11},
+			},
+		}, def.(Location))
+	})
 }
 
 func TestServerTextDocumentTypeDefinition(t *testing.T) {
