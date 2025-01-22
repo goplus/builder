@@ -19,7 +19,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
-	github.com/goplus/gogen v1.16.6-0.20250112152508-dc8cddfd52df // indirect
+	github.com/goplus/gogen v1.16.6 // indirect
 	github.com/goplus/gop v1.2.6 // indirect
 	github.com/goplus/mod v0.13.15 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
@@ -44,7 +44,6 @@ require (
 )
 
 replace (
-	github.com/goplus/gogen => github.com/nighca/gogen v0.0.0-20250120085330-e1951899211e
 	github.com/goplus/gop => github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
 	github.com/hajimehoshi/oto => github.com/hajimehoshi/oto v1.0.1
 	github.com/srwiley/oksvg => github.com/qiniu/oksvg v0.2.0-no-charset
