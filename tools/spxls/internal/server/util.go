@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"go/constant"
 	"go/types"
 	"html/template"
 	"io/fs"
@@ -59,13 +60,9 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 		}
 		return v, true
 	case *gopast.Ident:
-		if tv.Value != nil {
+		if tv.Value != nil && tv.Value.Kind() == constant.String {
 			// If it's a constant, we can get its value.
-			v, err := strconv.Unquote(tv.Value.String())
-			if err != nil {
-				return "", false
-			}
-			return v, true
+			return constant.StringVal(tv.Value), true
 		}
 		// There is nothing we can do for string variables.
 		return "", false

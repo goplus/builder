@@ -378,7 +378,7 @@ onStart => {
 	t.Run("TypedConstantName", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
-// const Backdrop1 BackdropName = "backdrop1" // TODO: See https://github.com/goplus/builder/issues/1127
+const Backdrop1 BackdropName = "backdrop1"
 onBackdrop "backdrop1", func() {}
 run "assets", {Title: "My Game"}
 `),
@@ -401,16 +401,14 @@ onStart => {
 		require.Len(t, changes, 2)
 
 		mainSpxChanges := changes[s.toDocumentURI("main.spx")]
-		// TODO: See https://github.com/goplus/builder/issues/1127
-		// require.Len(t, mainSpxChanges, 2)
-		// assert.Contains(t, mainSpxChanges, TextEdit{
-		// 	Range: Range{
-		// 		Start: Position{Line: 1, Character: 32},
-		// 		End:   Position{Line: 1, Character: 41},
-		// 	},
-		// 	NewText: "backdrop2",
-		// })
-		require.Len(t, mainSpxChanges, 1)
+		require.Len(t, mainSpxChanges, 2)
+		assert.Contains(t, mainSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 1, Character: 32},
+				End:   Position{Line: 1, Character: 41},
+			},
+			NewText: "backdrop2",
+		})
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
 				Start: Position{Line: 2, Character: 12},
