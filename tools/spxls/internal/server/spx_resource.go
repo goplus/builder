@@ -15,6 +15,7 @@ import (
 
 // SpxResourceID is the ID of an spx resource.
 type SpxResourceID interface {
+	Name() string
 	URI() SpxResourceURI
 }
 
@@ -232,6 +233,11 @@ type SpxBackdropResourceID struct {
 	BackdropName string
 }
 
+// Name implements [SpxResourceID].
+func (id SpxBackdropResourceID) Name() string {
+	return id.BackdropName
+}
+
 // URI implements [SpxResourceID].
 func (id SpxBackdropResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/backdrops/%s", id.BackdropName))
@@ -247,6 +253,11 @@ type SpxSoundResource struct {
 // SpxSoundResourceID is the ID of an spx sound resource.
 type SpxSoundResourceID struct {
 	SoundName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSoundResourceID) Name() string {
+	return id.SoundName
 }
 
 // URI implements [SpxResourceID].
@@ -268,6 +279,11 @@ type SpxSpriteResource struct {
 // SpxSpriteResourceID is the ID of an spx sprite resource.
 type SpxSpriteResourceID struct {
 	SpriteName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSpriteResourceID) Name() string {
+	return id.SpriteName
 }
 
 // URI implements [SpxResourceID].
@@ -311,6 +327,11 @@ type SpxSpriteCostumeResourceID struct {
 	CostumeName string
 }
 
+// Name implements [SpxResourceID].
+func (id SpxSpriteCostumeResourceID) Name() string {
+	return id.CostumeName
+}
+
 // URI implements [SpxResourceID].
 func (id SpxSpriteCostumeResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/sprites/%s/costumes/%s", id.SpriteName, id.CostumeName))
@@ -326,6 +347,11 @@ type SpxSpriteAnimationResource struct {
 type SpxSpriteAnimationResourceID struct {
 	SpriteName    string
 	AnimationName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSpriteAnimationResourceID) Name() string {
+	return id.AnimationName
 }
 
 // URI implements [SpxResourceID].
@@ -345,6 +371,11 @@ type SpxWidgetResource struct {
 // SpxWidgetResourceID is the ID of an spx widget resource.
 type SpxWidgetResourceID struct {
 	WidgetName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxWidgetResourceID) Name() string {
+	return id.WidgetName
 }
 
 // URI implements [SpxResourceID].
