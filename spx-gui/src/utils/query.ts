@@ -73,7 +73,7 @@ export function useQuery<T>(
       },
       (e) => {
         if (e instanceof Cancelled) return
-        console.warn(e)
+        if (process.env.NODE_ENV !== 'test') console.warn(e)
         error.value = e
         isLoading.value = false
       }
