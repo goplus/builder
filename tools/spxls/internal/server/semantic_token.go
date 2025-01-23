@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"go/types"
 	"slices"
 	"sort"
@@ -74,9 +73,6 @@ type semanticTokenInfo struct {
 func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (tokens *SemanticTokens, err error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

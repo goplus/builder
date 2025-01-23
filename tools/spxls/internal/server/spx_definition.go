@@ -271,42 +271,86 @@ var GetSpxBuiltinDefinitions = sync.OnceValue(func() []SpxDefinition {
 	return slices.Clip(defs)
 })
 
-// GetSpxPkg returns the spx package.
-var GetSpxPkg = sync.OnceValue(func() *types.Package {
-	spxPkg, err := internal.Importer.Import(spxPkgPath)
-	if err != nil {
-		panic(fmt.Errorf("failed to import spx package: %w", err))
-	}
-	return spxPkg
-})
+var (
+	// GetSpxPkg returns the spx package.
+	GetSpxPkg = sync.OnceValue(func() *types.Package {
+		spxPkg, err := internal.Importer.Import("github.com/goplus/spx")
+		if err != nil {
+			panic(fmt.Errorf("failed to import spx package: %w", err))
+		}
+		return spxPkg
+	})
 
-// GetSpxGameType returns the [spx.Game] type.
-var GetSpxGameType = sync.OnceValue(func() *types.Named {
-	spxPkg := GetSpxPkg()
-	return spxPkg.Scope().Lookup("Game").Type().(*types.Named)
-})
+	// GetSpxGameType returns the [spx.Game] type.
+	GetSpxGameType = sync.OnceValue(func() *types.Named {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("Game").Type().(*types.Named)
+	})
 
-// GetSpxSpriteType returns the [spx.Sprite] type.
-var GetSpxSpriteType = sync.OnceValue(func() *types.Named {
-	spxPkg := GetSpxPkg()
-	return spxPkg.Scope().Lookup("Sprite").Type().(*types.Named)
-})
+	// GetSpxBackdropNameType returns the [spx.BackdropName] type.
+	GetSpxBackdropNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("BackdropName").Type().(*types.Alias)
+	})
 
-// GetSpxSpriteImplType returns the [spx.SpriteImpl] type.
-var GetSpxSpriteImplType = sync.OnceValue(func() *types.Named {
-	spxPkg := GetSpxPkg()
-	return spxPkg.Scope().Lookup("SpriteImpl").Type().(*types.Named)
-})
+	// GetSpxSpriteType returns the [spx.Sprite] type.
+	GetSpxSpriteType = sync.OnceValue(func() *types.Named {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("Sprite").Type().(*types.Named)
+	})
 
-// GetSpxPkgDefinitions returns the spx definitions for the spx package.
-var GetSpxPkgDefinitions = sync.OnceValue(func() []SpxDefinition {
-	spxPkg := GetSpxPkg()
-	spxPkgDoc, err := pkgdata.GetPkgDoc(spxPkg.Path())
-	if err != nil {
-		panic(fmt.Errorf("failed to get spx package doc: %w", err))
-	}
-	return GetPkgSpxDefinitions(spxPkg, spxPkgDoc)
-})
+	// GetSpxSpriteImplType returns the [spx.SpriteImpl] type.
+	GetSpxSpriteImplType = sync.OnceValue(func() *types.Named {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("SpriteImpl").Type().(*types.Named)
+	})
+
+	// GetSpxSpriteNameType returns the [spx.SpriteName] type.
+	GetSpxSpriteNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("SpriteName").Type().(*types.Alias)
+	})
+
+	// GetSpxSpriteCostumeNameType returns the [spx.SpriteCostumeName] type.
+	GetSpxSpriteCostumeNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("SpriteCostumeName").Type().(*types.Alias)
+	})
+
+	// GetSpxSpriteAnimationNameType returns the [spx.SpriteAnimationName] type.
+	GetSpxSpriteAnimationNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("SpriteAnimationName").Type().(*types.Alias)
+	})
+
+	// GetSpxSoundType returns the [spx.Sound] type.
+	GetSpxSoundType = sync.OnceValue(func() *types.Named {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("Sound").Type().(*types.Named)
+	})
+
+	// GetSpxSoundNameType returns the [spx.SoundName] type.
+	GetSpxSoundNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("SoundName").Type().(*types.Alias)
+	})
+
+	// GetSpxWidgetNameType returns the [spx.WidgetName] type.
+	GetSpxWidgetNameType = sync.OnceValue(func() *types.Alias {
+		spxPkg := GetSpxPkg()
+		return spxPkg.Scope().Lookup("WidgetName").Type().(*types.Alias)
+	})
+
+	// GetSpxPkgDefinitions returns the spx definitions for the spx package.
+	GetSpxPkgDefinitions = sync.OnceValue(func() []SpxDefinition {
+		spxPkg := GetSpxPkg()
+		spxPkgDoc, err := pkgdata.GetPkgDoc(spxPkg.Path())
+		if err != nil {
+			panic(fmt.Errorf("failed to get spx package doc: %w", err))
+		}
+		return GetPkgSpxDefinitions(spxPkg, spxPkgDoc)
+	})
+)
 
 // nonMainPkgSpxDefsCache is a cache of non-main package spx definitions.
 var nonMainPkgSpxDefsCache sync.Map // map[*types.Package][]SpxDefinition

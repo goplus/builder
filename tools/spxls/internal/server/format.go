@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/types"
 	"path"
@@ -16,7 +15,7 @@ import (
 func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]TextEdit, error) {
 	spxFile, err := s.fromDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get path from document uri: %w", err)
+		return nil, fmt.Errorf("failed to get file path from document uri %q: %w", params.TextDocument.URI, err)
 	}
 	if path.Ext(spxFile) != ".spx" {
 		return nil, nil // Not an spx source file.
@@ -54,16 +53,11 @@ func (s *Server) formatSpx(spxFileName string) (formatted, original []byte, err 
 	// Parse the source into AST.
 	compileResult, err := s.compile()
 	if err != nil {
-		if errors.Is(err, errNoMainSpxFile) {
-			return nil, nil, nil
-		}
 		return nil, nil, err
 	}
-	astFile := compileResult.mainASTPkg.Files[spxFileName]
-	if astFile == nil {
-		// Return error only if parsing completely failed. For partial parsing
-		// failures, we proceed with formatting.
-		return nil, nil, fmt.Errorf("failed to parse spx source file")
+	astFile, ok := compileResult.mainASTPkg.Files[spxFileName]
+	if !ok {
+		return nil, nil, nil
 	}
 	original = astFile.Code
 

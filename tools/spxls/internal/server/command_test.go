@@ -48,21 +48,21 @@ onStart => {
 			Name:    util.ToPtr("MySprite"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Game.play"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.turn"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
 
@@ -82,21 +82,21 @@ onStart => {
 			Name:    util.ToPtr("println"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Game.play"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.turn"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
 
@@ -116,25 +116,25 @@ onStart => {
 			Name:    util.ToPtr("println"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Game.play"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.turn"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.clone"),
 			OverloadID: util.ToPtr("1"),
 		}))
@@ -169,11 +169,11 @@ var (
 			Name:    util.ToPtr("Game.MySprite"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
 	})
@@ -210,20 +210,20 @@ onStart => {
 		require.NoError(t, err)
 		require.NotNil(t, mySpriteSpxFileScopeDefs)
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:    util.ToPtr(spxPkgPath),
+			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Game.play"),
 			OverloadID: util.ToPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onClick"),
 		}))
 	})
@@ -247,7 +247,7 @@ onStart => {}
 		require.NoError(t, err)
 		require.NotNil(t, mainSpxOnStartScopeDefs)
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 
@@ -263,7 +263,7 @@ onStart => {}
 		require.NoError(t, err)
 		require.NotNil(t, mainSpxFileScopeDefs)
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package: util.ToPtr(spxPkgPath),
+			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 	})

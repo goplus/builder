@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"go/types"
 
 	gopast "github.com/goplus/gop/ast"
@@ -11,9 +10,6 @@ import (
 func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"go/types"
 	"slices"
@@ -13,9 +12,6 @@ import (
 func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -45,9 +41,6 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

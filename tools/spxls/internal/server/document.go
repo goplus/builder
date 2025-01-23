@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"slices"
 
 	gopast "github.com/goplus/gop/ast"
@@ -11,9 +10,6 @@ import (
 func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) (links []DocumentLink, err error) {
 	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

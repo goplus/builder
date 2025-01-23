@@ -43,12 +43,8 @@ func (s *Server) workspaceExecuteCommand(params *ExecuteCommandParams) (any, err
 func (s *Server) spxRenameResources(params []SpxRenameResourceParams) (*WorkspaceEdit, error) {
 	result, err := s.compile()
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to compile: %w", err)
+		return nil, err
 	}
-
 	return s.spxRenameResourcesWithCompileResult(result, params)
 }
 
@@ -111,9 +107,6 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(param.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

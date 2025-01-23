@@ -249,7 +249,7 @@ func isSpxEventHandlerFuncName(name string) bool {
 
 // isSpxPkgObject reports whether the given object is defined in the spx package.
 func isSpxPkgObject(obj types.Object) bool {
-	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == spxPkgPath
+	return obj != nil && obj.Pkg() == GetSpxPkg()
 }
 
 // isMainPkgObject reports whether the given object is defined in the main package.
@@ -281,7 +281,7 @@ func isRenameableObject(obj types.Object) bool {
 // with the spx package name omitted while other packages use their short names.
 func getSimplifiedTypeString(typ types.Type) string {
 	return types.TypeString(typ, func(p *types.Package) string {
-		if p.Path() == spxPkgPath {
+		if p == GetSpxPkg() {
 			return ""
 		}
 		return p.Name()
