@@ -27,25 +27,9 @@ import (
 	gopmodload "github.com/goplus/mod/modload"
 )
 
-const (
-	spxPkgPath                         = "github.com/goplus/spx"
-	spxGameTypeFullName                = spxPkgPath + ".Game"
-	spxBackdropNameTypeFullName        = spxPkgPath + ".BackdropName"
-	spxSpriteTypeFullName              = spxPkgPath + ".Sprite"
-	spxSpriteImplTypeFullName          = spxPkgPath + ".SpriteImpl"
-	spxSpriteNameTypeFullName          = spxPkgPath + ".SpriteName"
-	spxSpriteCostumeNameTypeFullName   = spxPkgPath + ".SpriteCostumeName"
-	spxSpriteAnimationNameTypeFullName = spxPkgPath + ".SpriteAnimationName"
-	spxSoundTypeFullName               = spxPkgPath + ".Sound"
-	spxSoundNameTypeFullName           = spxPkgPath + ".SoundName"
-	spxWidgetNameTypeFullName          = spxPkgPath + ".WidgetName"
-)
-
-var (
-	errNoValidSpxFiles = errors.New("no valid spx files found in main package")
-	errNoMainSpxFile   = errors.New("no valid main.spx file found in main package")
-	errStopIteration   = errors.New("stop iteration")
-)
+// errNoMainSpxFile is the error returned when no valid main.spx file is found
+// in the main package while compiling.
+var errNoMainSpxFile = errors.New("no valid main.spx file found in main package")
 
 // compileResult contains the compile results and additional information from
 // the compile process.
@@ -523,7 +507,7 @@ func (s *Server) compile() (*compileResult, error) {
 		return nil, fmt.Errorf("failed to get spx files: %w", err)
 	}
 	if len(spxFiles) == 0 {
-		return nil, errNoValidSpxFiles
+		return nil, errNoMainSpxFile
 	}
 	slices.Sort(spxFiles)
 
@@ -577,9 +561,6 @@ func (s *Server) compile() (*compileResult, error) {
 }
 
 // compileUncached compiles spx source files without using cache.
-//
-// TODO: Move diagnostics from [compileResult] to error return value by using
-// [errors.Join].
 func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compileResult, error) {
 	result := &compileResult{
 		fset:                      goptoken.NewFileSet(),
@@ -676,12 +657,6 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 			}
 		}
 	}
-	if len(result.mainASTPkg.Files) == 0 {
-		if len(result.diagnostics) == 0 {
-			return nil, errNoValidSpxFiles
-		}
-		return result, nil
-	}
 	if result.mainSpxFile == "" {
 		if len(result.diagnostics) == 0 {
 			return nil, errNoMainSpxFile
@@ -747,7 +722,10 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 func (s *Server) compileAndGetASTFileForDocumentURI(uri DocumentURI) (result *compileResult, spxFile string, astFile *gopast.File, err error) {
 	spxFile, err = s.fromDocumentURI(uri)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("failed to get spx file from document URI %q: %w", uri, err)
+		return nil, "", nil, fmt.Errorf("failed to get file path from document URI %q: %w", uri, err)
+	}
+	if path.Ext(spxFile) != ".spx" {
+		return nil, "", nil, fmt.Errorf("file %q does not have .spx extension", spxFile)
 	}
 	result, err = s.compile()
 	if err != nil {
@@ -856,10 +834,10 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			isSpxSoundResourceAutoBinding  bool
 			isSpxSpriteResourceAutoBinding bool
 		)
-		switch varType.String() {
-		case spxSoundTypeFullName:
+		switch varType {
+		case GetSpxSoundType():
 			isSpxSoundResourceAutoBinding = result.spxResourceSet.Sound(v.Name()) != nil
-		case spxSpriteTypeFullName:
+		case GetSpxSpriteType():
 			isSpxSpriteResourceAutoBinding = result.spxResourceSet.Sprite(v.Name()) != nil
 		default:
 			isSpxSpriteResourceAutoBinding = v.Name() == varType.Obj().Name() && slices.Contains(result.mainPkgSpriteTypes, varType)
@@ -919,8 +897,8 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			var spxSpriteResource *SpxSpriteResource
 			if recv := funcSig.Recv(); recv != nil {
 				recvType := unwrapPointerType(recv.Type())
-				switch recvType.String() {
-				case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
+				switch recvType {
+				case GetSpxSpriteType(), GetSpxSpriteImplType():
 					spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, expr, recvType)
 				}
 			}
@@ -959,19 +937,19 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all identifier uses.
 	for ident, obj := range result.typeInfo.Uses {
 		objType := unwrapPointerType(obj.Type())
-		switch objType.String() {
-		case spxSpriteTypeFullName:
+		switch objType {
+		case GetSpxSpriteType():
 			if _, ok := result.spxSpriteResourceAutoBindings[obj]; ok {
 				s.inspectSpxSpriteResourceRefAtExpr(result, ident, objType)
 			}
-		case spxSoundTypeFullName:
+		case GetSpxSoundType():
 			if _, ok := result.spxSoundResourceAutoBindings[obj]; ok {
 				s.inspectSpxSoundResourceRefAtExpr(result, ident, objType)
 			}
-		case spxBackdropNameTypeFullName,
-			spxSpriteNameTypeFullName,
-			spxSoundNameTypeFullName,
-			spxWidgetNameTypeFullName:
+		case GetSpxBackdropNameType(),
+			GetSpxSpriteNameType(),
+			GetSpxSoundNameType(),
+			GetSpxWidgetNameType():
 			astFile, ok := result.mainASTPkg.Files[result.fset.Position(ident.Pos()).Filename]
 			if !ok {
 				continue
@@ -1001,8 +979,8 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all implicit objects.
 	for node, obj := range result.typeInfo.Implicits {
 		objType := unwrapPointerType(obj.Type())
-		switch objType.String() {
-		case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
+		switch objType {
+		case GetSpxSpriteType(), GetSpxSpriteImplType():
 			if typeAssert, ok := node.(*gopast.TypeAssertExpr); ok {
 				s.inspectSpxSpriteResourceRefAtExpr(result, typeAssert, objType)
 			}
@@ -1011,12 +989,12 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 	// Check all selections.
 	for sel, selection := range result.typeInfo.Selections {
-		recv := unwrapPointerType(selection.Recv())
+		recvType := unwrapPointerType(selection.Recv())
 
 		var spxSpriteResource *SpxSpriteResource
-		switch recv.String() {
-		case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
-			spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, sel.X, recv)
+		switch recvType {
+		case GetSpxSpriteType(), GetSpxSpriteImplType():
+			spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, sel.X, recvType)
 		}
 		if spxSpriteResource != nil {
 			s.inspectSpxResourceRefForTypeAtExpr(result, sel, unwrapPointerType(selection.Type()), spxSpriteResource)
@@ -1027,22 +1005,22 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 // inspectSpxResourceRefForTypeAtExpr inspects an spx resource reference for a
 // given type at an expression.
 func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr gopast.Expr, typ types.Type, spxSpriteResource *SpxSpriteResource) {
-	switch typ.String() {
-	case spxBackdropNameTypeFullName:
+	switch typ {
+	case GetSpxBackdropNameType():
 		s.inspectSpxBackdropResourceRefAtExpr(result, expr, typ)
-	case spxSpriteNameTypeFullName, spxSpriteTypeFullName:
+	case GetSpxSpriteNameType(), GetSpxSpriteType():
 		s.inspectSpxSpriteResourceRefAtExpr(result, expr, typ)
-	case spxSpriteCostumeNameTypeFullName:
+	case GetSpxSpriteCostumeNameType():
 		if spxSpriteResource != nil {
 			s.inspectSpxSpriteCostumeResourceRefAtExpr(result, spxSpriteResource, expr, typ)
 		}
-	case spxSpriteAnimationNameTypeFullName:
+	case GetSpxSpriteAnimationNameType():
 		if spxSpriteResource != nil {
 			s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, expr, typ)
 		}
-	case spxSoundNameTypeFullName, spxSoundTypeFullName:
+	case GetSpxSoundNameType(), GetSpxSoundType():
 		s.inspectSpxSoundResourceRefAtExpr(result, expr, typ)
-	case spxWidgetNameTypeFullName:
+	case GetSpxWidgetNameType():
 		s.inspectSpxWidgetResourceRefAtExpr(result, expr, typ)
 	}
 }
@@ -1138,16 +1116,16 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			return nil
 		}
 	} else {
-		var typeName string
+		var typ types.Type
 		if declaredType != nil {
-			typeName = declaredType.String()
+			typ = declaredType
 		} else {
-			typeName = exprTV.Type.String()
+			typ = exprTV.Type
 		}
 
 		var spxResourceRefKind SpxResourceRefKind
-		switch typeName {
-		case spxSpriteNameTypeFullName:
+		switch typ {
+		case GetSpxSpriteNameType():
 			var ok bool
 			spxSpriteName, ok = getStringLitOrConstValue(expr, exprTV)
 			if !ok {
@@ -1157,7 +1135,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			if _, ok := expr.(*gopast.Ident); ok {
 				spxResourceRefKind = SpxResourceRefKindConstantReference
 			}
-		case spxSpriteTypeFullName:
+		case GetSpxSpriteType():
 			ident, ok := expr.(*gopast.Ident)
 			if !ok {
 				return nil
@@ -1212,19 +1190,19 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 	}
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSpriteCostumeName string
 		spxResourceRefKind   SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSpriteCostumeNameTypeFullName:
+	switch typ {
+	case GetSpxSpriteCostumeNameType():
 		var ok bool
 		spxSpriteCostumeName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1274,19 +1252,19 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 	}
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSpriteAnimationName string
 		spxResourceRefKind     SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSpriteAnimationNameTypeFullName:
+	switch typ {
+	case GetSpxSpriteAnimationNameType():
 		var ok bool
 		spxSpriteAnimationName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1336,19 +1314,19 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 	}
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSoundName       string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSoundNameTypeFullName:
+	switch typ {
+	case GetSpxSoundNameType():
 		var ok bool
 		spxSoundName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1358,7 +1336,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 		if _, ok := expr.(*gopast.Ident); ok {
 			spxResourceRefKind = SpxResourceRefKindConstantReference
 		}
-	case spxSoundTypeFullName:
+	case GetSpxSoundType():
 		ident, ok := expr.(*gopast.Ident)
 		if !ok {
 			return nil
@@ -1412,19 +1390,19 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 	}
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxWidgetName      string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch typeName {
-	case spxWidgetNameTypeFullName:
+	switch typ {
+	case GetSpxWidgetNameType():
 		var ok bool
 		spxWidgetName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {

@@ -67,7 +67,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		require.Error(t, err)
+		require.ErrorIs(t, err, errNoMainSpxFile)
 		require.Nil(t, edits)
 	})
 

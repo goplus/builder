@@ -1,17 +1,11 @@
 package server
 
-import (
-	"errors"
-	"go/types"
-)
+import "go/types"
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_implementation
 func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
