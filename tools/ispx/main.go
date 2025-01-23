@@ -1,3 +1,5 @@
+//go:build js && wasm
+
 package main
 
 //go:generate qexp -outdir pkg github.com/goplus/spx
