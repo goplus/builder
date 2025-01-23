@@ -736,7 +736,6 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 	}
 
 	s.inspectForSpxResourceSet(snapshot, result)
-	s.inspectForSpxResourceAutoBindings(result)
 	s.inspectForSpxResourceRefs(result)
 
 	return result, nil
@@ -815,11 +814,30 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 	result.spxResourceSet = *spxResourceSet
 }
 
-// inspectForSpxResourceAutoBindings inspects for spx resource auto-bindings and
-// references at variable or constant declarations.
-func (s *Server) inspectForSpxResourceAutoBindings(result *compileResult) {
+// inspectForSpxResourceRefs inspects for spx resource references in the code.
+func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	mainSpxFileScope := result.typeInfo.Scopes[result.mainASTPkg.Files[result.mainSpxFile]]
+
+	// Check all identifier definitions.
 	for ident, obj := range result.typeInfo.Defs {
+		switch obj.(type) {
+		case *types.Const, *types.Var:
+			if ident.Obj == nil {
+				break
+			}
+			valueSpec, ok := ident.Obj.Decl.(*gopast.ValueSpec)
+			if !ok {
+				break
+			}
+			idx := slices.Index(valueSpec.Names, ident)
+			if idx < 0 || idx >= len(valueSpec.Values) {
+				break
+			}
+			expr := valueSpec.Values[idx]
+
+			s.inspectSpxResourceRefForTypeAtExpr(result, expr, unwrapPointerType(obj.Type()), nil)
+		}
+
 		v, ok := obj.(*types.Var)
 		if !ok {
 			continue
@@ -880,10 +898,7 @@ func (s *Server) inspectForSpxResourceAutoBindings(result *compileResult) {
 			result.spxSpriteResourceAutoBindings[obj] = struct{}{}
 		}
 	}
-}
 
-// inspectForSpxResourceRefs inspects for spx resource references in the code.
-func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all type-checked expressions.
 	for expr, tv := range result.typeInfo.Types {
 		if expr == nil || !expr.Pos().IsValid() || tv.IsType() || tv.Type == nil {
@@ -937,21 +952,11 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 				}
 			}
 		default:
-			typ := unwrapPointerType(tv.Type)
-			switch typ.String() {
-			case spxBackdropNameTypeFullName:
-				s.inspectSpxBackdropResourceRefAtExpr(result, expr, typ)
-			case spxSpriteNameTypeFullName, spxSpriteTypeFullName:
-				s.inspectSpxSpriteResourceRefAtExpr(result, expr, typ)
-			case spxSoundNameTypeFullName, spxSoundTypeFullName:
-				s.inspectSpxSoundResourceRefAtExpr(result, expr, typ)
-			case spxWidgetNameTypeFullName:
-				s.inspectSpxWidgetResourceRefAtExpr(result, expr, typ)
-			}
+			s.inspectSpxResourceRefForTypeAtExpr(result, expr, unwrapPointerType(tv.Type), nil)
 		}
 	}
 
-	// Check all identifier uses for auto-bindings.
+	// Check all identifier uses.
 	for ident, obj := range result.typeInfo.Uses {
 		objType := unwrapPointerType(obj.Type())
 		switch objType.String() {
@@ -963,10 +968,37 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			if _, ok := result.spxSoundResourceAutoBindings[obj]; ok {
 				s.inspectSpxSoundResourceRefAtExpr(result, ident, objType)
 			}
+		case spxBackdropNameTypeFullName,
+			spxSpriteNameTypeFullName,
+			spxSoundNameTypeFullName,
+			spxWidgetNameTypeFullName:
+			astFile, ok := result.mainASTPkg.Files[result.fset.Position(ident.Pos()).Filename]
+			if !ok {
+				continue
+			}
+
+			path, _ := util.PathEnclosingInterval(astFile, ident.Pos(), ident.End())
+			for _, node := range path {
+				assignStmt, ok := node.(*gopast.AssignStmt)
+				if !ok {
+					continue
+				}
+
+				idx := slices.IndexFunc(assignStmt.Lhs, func(lhs gopast.Expr) bool {
+					return lhs == ident
+				})
+				if idx < 0 || idx >= len(assignStmt.Rhs) {
+					continue
+				}
+				expr := assignStmt.Rhs[idx]
+
+				s.inspectSpxResourceRefForTypeAtExpr(result, expr, objType, nil)
+				break
+			}
 		}
 	}
 
-	// Check implicit objects.
+	// Check all implicit objects.
 	for node, obj := range result.typeInfo.Implicits {
 		objType := unwrapPointerType(obj.Type())
 		switch objType.String() {
@@ -977,7 +1009,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 		}
 	}
 
-	// Check selections for method calls and field accesses.
+	// Check all selections.
 	for sel, selection := range result.typeInfo.Selections {
 		recv := unwrapPointerType(selection.Recv())
 
@@ -987,12 +1019,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, sel.X, recv)
 		}
 		if spxSpriteResource != nil {
-			switch selection.Type().String() {
-			case spxSpriteCostumeNameTypeFullName:
-				s.inspectSpxSpriteCostumeResourceRefAtExpr(result, spxSpriteResource, sel, selection.Type())
-			case spxSpriteAnimationNameTypeFullName:
-				s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, sel, selection.Type())
-			}
+			s.inspectSpxResourceRefForTypeAtExpr(result, sel, unwrapPointerType(selection.Type()), spxSpriteResource)
 		}
 	}
 }
