@@ -76,10 +76,6 @@ function handleWheel(e: WheelEvent) {
 <style lang="scss" scoped>
 .resource-selector {
   overflow: hidden;
-  // TODO: share style with `.ui-dropdown-content` in `src/components/ui/UIDropdown.vue`?
-  border-radius: var(--ui-border-radius-2);
-  background-color: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-big);
 }
 
 .items {

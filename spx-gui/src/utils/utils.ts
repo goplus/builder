@@ -28,7 +28,7 @@ export function isAddPublicLibraryEnabled() {
 
 /** Manage spx version. */
 export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
-  return useLocalStorage<'v1' | 'v2'>('spx-gui-runner', 'v1')
+  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
@@ -89,10 +89,10 @@ function fireLSChange(key: string) {
 }
 
 /**
- * Manipulate data stored in localStorage.
+ * Get ref for reading / writing data in localStorage.
  * Changes will be synchronized within the same document.
  */
-export function useLocalStorage<T>(key: string, initialValue: T) {
+export function localStorageRef<T>(key: string, initialValue: T) {
   const ref = computed<T>({
     get() {
       watchLSChange(key)

@@ -14,10 +14,7 @@ export type InternalResourceReference = ResourceReference & {
   id: string
 }
 
-export interface IResourceReferencesProvider
-  extends Emitter<{
-    didChangeResourceReferences: []
-  }> {
+export interface IResourceReferencesProvider {
   provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]>
 }
 
@@ -98,10 +95,9 @@ export class ResourceReferenceController extends Emitter<{
     this.addDisposer(
       watch(
         this.providerRef,
-        (provider, _, onCleanup) => {
+        (provider) => {
           if (provider == null) return
           refreshItems()
-          onCleanup(provider.on('didChangeResourceReferences', refreshItems))
         },
         { immediate: true }
       )

@@ -76,7 +76,7 @@ export class Spxlc {
   request<T>(method: string, params?: any): Promise<T> {
     const id = this.nextRequestId++
     /* eslint-disable no-console */
-    // TODO: remove debug logs
+    // TODO: remove debug logs https://github.com/goplus/builder/issues/1255
     console.debug(`[${id}][${method}] params:`, params)
     const sendAt = Date.now()
     return new Promise<T>((resolve, reject) => {

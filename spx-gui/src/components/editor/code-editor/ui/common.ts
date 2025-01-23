@@ -61,7 +61,6 @@ export function toMonacoSelection(selection: Selection): monaco.ISelection {
 }
 
 export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
-  // TODO: check if this is correct
   return { uri: uri.toString() }
 }
 

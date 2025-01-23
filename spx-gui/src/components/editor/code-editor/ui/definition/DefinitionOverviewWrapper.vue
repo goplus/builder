@@ -34,7 +34,7 @@ const childrenText = useSlotText('default', true)
 
   .code {
     flex: 1 1 0;
-    word-break: break-all;
+    word-break: break-word;
 
     // Clear style from `code` in `MarkdownView`
     font-size: inherit;

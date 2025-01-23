@@ -68,7 +68,6 @@ watchEffect((onCleanUp) => {
         linesDecorationsClassName: getDiagnosticCls(diagnostic.severity, 'line-header')
       }
     })
-    // TODO: append message to the line end
   }
 
   const decorationsCollection = getDecorationsCollection()
