@@ -628,7 +628,7 @@ run "assets", {Title: "My Game"}
 
 	t.Run("NoTypeSpriteVarDeclaration", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 
 var (
 	MySprite
