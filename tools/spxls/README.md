@@ -95,7 +95,7 @@ interface ExecuteCommandParams {
 
 ```typescript
 /**
- * Parameters to rename a spx resource in the workspace.
+ * Parameters to rename an spx resource in the workspace.
  */
 interface SpxRenameResourceParams {
   /**
@@ -217,7 +217,7 @@ interface SpxDefinitionIdentifier {
 
 ```typescript
 /**
- * The data of a spx resource reference DocumentLink.
+ * The data of an spx resource reference DocumentLink.
  */
 interface SpxResourceRefDocumentLinkData {
   /**

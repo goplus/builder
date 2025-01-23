@@ -19,7 +19,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, fmt.Errorf("failed to get path from document uri: %w", err)
 	}
 	if path.Ext(spxFile) != ".spx" {
-		return nil, nil // Not a spx source file.
+		return nil, nil // Not an spx source file.
 	}
 
 	formatted, original, err := s.formatSpx(spxFile)
@@ -49,7 +49,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 	}, nil
 }
 
-// formatSpx formats a spx source file. If no change is needed, it returns `(nil, nil, nil)`.
+// formatSpx formats an spx source file. If no change is needed, it returns `(nil, nil, nil)`.
 func (s *Server) formatSpx(spxFileName string) (formatted, original []byte, err error) {
 	// Parse the source into AST.
 	compileResult, err := s.compile()

@@ -13,19 +13,19 @@ import (
 	gopast "github.com/goplus/gop/ast"
 )
 
-// SpxResourceID is the ID of a spx resource.
+// SpxResourceID is the ID of an spx resource.
 type SpxResourceID interface {
 	URI() SpxResourceURI
 }
 
-// SpxResourceRef is a reference to a spx resource.
+// SpxResourceRef is a reference to an spx resource.
 type SpxResourceRef struct {
 	ID   SpxResourceID
 	Kind SpxResourceRefKind
 	Node gopast.Node
 }
 
-// SpxResourceRefKind is the kind of a spx resource reference.
+// SpxResourceRefKind is the kind of an spx resource reference.
 type SpxResourceRefKind string
 
 const (
@@ -35,7 +35,7 @@ const (
 	SpxResourceRefKindConstantReference    SpxResourceRefKind = "constantReference"
 )
 
-// ParseSpxResourceURI parses a spx resource URI and returns the corresponding
+// ParseSpxResourceURI parses an spx resource URI and returns the corresponding
 // spx resource ID.
 func ParseSpxResourceURI(uri SpxResourceURI) (SpxResourceID, error) {
 	u, err := url.Parse(string(uri))
@@ -227,7 +227,7 @@ type SpxBackdropResource struct {
 	Path string                `json:"path"`
 }
 
-// SpxBackdropResourceID is the ID of a spx backdrop resource.
+// SpxBackdropResourceID is the ID of an spx backdrop resource.
 type SpxBackdropResourceID struct {
 	BackdropName string
 }
@@ -244,7 +244,7 @@ type SpxSoundResource struct {
 	Path string             `json:"path"`
 }
 
-// SpxSoundResourceID is the ID of a spx sound resource.
+// SpxSoundResourceID is the ID of an spx sound resource.
 type SpxSoundResourceID struct {
 	SoundName string
 }
@@ -254,7 +254,7 @@ func (id SpxSoundResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/sounds/%s", id.SoundName))
 }
 
-// SpxSpriteResource represents a spx sprite resource.
+// SpxSpriteResource represents an spx sprite resource.
 type SpxSpriteResource struct {
 	ID               SpxSpriteResourceID          `json:"-"`
 	Name             string                       `json:"name"`
@@ -265,7 +265,7 @@ type SpxSpriteResource struct {
 	DefaultAnimation string                       `json:"defaultAnimation"`
 }
 
-// SpxSpriteResourceID is the ID of a spx sprite resource.
+// SpxSpriteResourceID is the ID of an spx sprite resource.
 type SpxSpriteResourceID struct {
 	SpriteName string
 }
@@ -297,7 +297,7 @@ func (sprite *SpxSpriteResource) Animation(name string) *SpxSpriteAnimationResou
 	return &sprite.Animations[idx]
 }
 
-// SpxSpriteCostumeResource represents a spx sprite costume resource.
+// SpxSpriteCostumeResource represents an spx sprite costume resource.
 type SpxSpriteCostumeResource struct {
 	ID    SpxSpriteCostumeResourceID `json:"-"`
 	Index int                        `json:"index"`
@@ -305,7 +305,7 @@ type SpxSpriteCostumeResource struct {
 	Path  string                     `json:"path"`
 }
 
-// SpxSpriteCostumeResourceID is the ID of a spx sprite costume resource.
+// SpxSpriteCostumeResourceID is the ID of an spx sprite costume resource.
 type SpxSpriteCostumeResourceID struct {
 	SpriteName  string
 	CostumeName string
@@ -316,13 +316,13 @@ func (id SpxSpriteCostumeResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/sprites/%s/costumes/%s", id.SpriteName, id.CostumeName))
 }
 
-// SpxSpriteAnimationResource represents a spx sprite animation resource.
+// SpxSpriteAnimationResource represents an spx sprite animation resource.
 type SpxSpriteAnimationResource struct {
 	ID   SpxSpriteAnimationResourceID `json:"-"`
 	Name string                       `json:"name"`
 }
 
-// SpxSpriteAnimationResourceID is the ID of a spx sprite animation resource.
+// SpxSpriteAnimationResourceID is the ID of an spx sprite animation resource.
 type SpxSpriteAnimationResourceID struct {
 	SpriteName    string
 	AnimationName string
@@ -342,7 +342,7 @@ type SpxWidgetResource struct {
 	Val   string              `json:"val"`
 }
 
-// SpxWidgetResourceID is the ID of a spx widget resource.
+// SpxWidgetResourceID is the ID of an spx widget resource.
 type SpxWidgetResourceID struct {
 	WidgetName string
 }

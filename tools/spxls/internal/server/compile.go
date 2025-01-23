@@ -469,7 +469,7 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 	return bestRef
 }
 
-// addSpxResourceRef adds a spx resource reference to the compile result.
+// addSpxResourceRef adds an spx resource reference to the compile result.
 func (r *compileResult) addSpxResourceRef(ref SpxResourceRef) {
 	if r.seenSpxResourceRefs == nil {
 		r.seenSpxResourceRefs = make(map[SpxResourceRef]struct{})
@@ -997,7 +997,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	}
 }
 
-// inspectSpxResourceRefForTypeAtExpr inspects a spx resource reference for a
+// inspectSpxResourceRefForTypeAtExpr inspects an spx resource reference for a
 // given type at an expression.
 func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr gopast.Expr, typ types.Type, spxSpriteResource *SpxSpriteResource) {
 	switch typ.String() {
@@ -1020,7 +1020,7 @@ func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr 
 	}
 }
 
-// inspectSpxBackdropResourceRefAtExpr inspects a spx backdrop resource
+// inspectSpxBackdropResourceRefAtExpr inspects an spx backdrop resource
 // reference at an expression. It returns the spx backdrop resource if it was
 // successfully retrieved.
 func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxBackdropResource {
@@ -1065,8 +1065,8 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 	return spxBackdropResource
 }
 
-// inspectSpxSpriteResourceRefAtExpr inspects a spx sprite resource reference at
-// an expression. It returns the spx sprite resource if it was successfully
+// inspectSpxSpriteResourceRefAtExpr inspects an spx sprite resource reference
+// at an expression. It returns the spx sprite resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSpriteResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
@@ -1174,7 +1174,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 	return spxSpriteResource
 }
 
-// inspectSpxSpriteCostumeResourceRefAtExpr inspects a spx sprite costume
+// inspectSpxSpriteCostumeResourceRefAtExpr inspects an spx sprite costume
 // resource reference at an expression. It returns the spx sprite costume
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteCostumeResource {
@@ -1236,7 +1236,7 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 	return spxSpriteCostumeResource
 }
 
-// inspectSpxSpriteAnimationResourceRefAtExpr inspects a spx sprite animation
+// inspectSpxSpriteAnimationResourceRefAtExpr inspects an spx sprite animation
 // resource reference at an expression. It returns the spx sprite animation
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteAnimationResource {
@@ -1298,7 +1298,7 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 	return spxSpriteAnimationResource
 }
 
-// inspectSpxSoundResourceRefAtExpr inspects a spx sound resource reference at
+// inspectSpxSoundResourceRefAtExpr inspects an spx sound resource reference at
 // an expression. It returns the spx sound resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSoundResource {
@@ -1374,8 +1374,8 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 	return spxSoundResource
 }
 
-// inspectSpxWidgetResourceRefAtExpr inspects a spx widget resource reference at
-// an expression. It returns the spx widget resource if it was successfully
+// inspectSpxWidgetResourceRefAtExpr inspects an spx widget resource reference
+// at an expression. It returns the spx widget resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxWidgetResource {
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)

@@ -152,7 +152,7 @@ func (s *Server) spxRenameResourceAtRefs(result *compileResult, id SpxResourceID
 	return changes
 }
 
-// spxRenameBackdropResource renames a spx backdrop resource.
+// spxRenameBackdropResource renames an spx backdrop resource.
 func (s *Server) spxRenameBackdropResource(result *compileResult, id SpxBackdropResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	if result.spxResourceSet.Backdrop(newName) != nil {
 		return nil, fmt.Errorf("backdrop resource %q already exists", newName)
@@ -160,7 +160,7 @@ func (s *Server) spxRenameBackdropResource(result *compileResult, id SpxBackdrop
 	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
-// spxRenameSoundResource renames a spx sound resource.
+// spxRenameSoundResource renames an spx sound resource.
 func (s *Server) spxRenameSoundResource(result *compileResult, id SpxSoundResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	if result.spxResourceSet.Sound(newName) != nil {
 		return nil, fmt.Errorf("sound resource %q already exists", newName)
@@ -168,7 +168,7 @@ func (s *Server) spxRenameSoundResource(result *compileResult, id SpxSoundResour
 	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
-// spxRenameSpriteResource renames a spx sprite resource.
+// spxRenameSpriteResource renames an spx sprite resource.
 func (s *Server) spxRenameSpriteResource(result *compileResult, id SpxSpriteResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	if result.spxResourceSet.Sprite(newName) != nil {
 		return nil, fmt.Errorf("sprite resource %q already exists", newName)
@@ -203,7 +203,7 @@ func (s *Server) spxRenameSpriteResource(result *compileResult, id SpxSpriteReso
 	return changes, nil
 }
 
-// spxRenameSpriteCostumeResource renames a spx sprite costume resource.
+// spxRenameSpriteCostumeResource renames an spx sprite costume resource.
 func (s *Server) spxRenameSpriteCostumeResource(result *compileResult, id SpxSpriteCostumeResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	spxSpriteResource := result.spxResourceSet.Sprite(id.SpriteName)
 	if spxSpriteResource == nil {
@@ -217,7 +217,7 @@ func (s *Server) spxRenameSpriteCostumeResource(result *compileResult, id SpxSpr
 	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
-// spxRenameSpriteAnimationResource renames a spx sprite animation resource.
+// spxRenameSpriteAnimationResource renames an spx sprite animation resource.
 func (s *Server) spxRenameSpriteAnimationResource(result *compileResult, id SpxSpriteAnimationResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	spxSpriteResource := result.spxResourceSet.Sprite(id.SpriteName)
 	if spxSpriteResource == nil {
@@ -231,7 +231,7 @@ func (s *Server) spxRenameSpriteAnimationResource(result *compileResult, id SpxS
 	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
-// spxRenameWidgetResource renames a spx widget resource.
+// spxRenameWidgetResource renames an spx widget resource.
 func (s *Server) spxRenameWidgetResource(result *compileResult, id SpxWidgetResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
 	if result.spxResourceSet.Widget(newName) != nil {
 		return nil, fmt.Errorf("widget resource %q already exists", newName)

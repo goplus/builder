@@ -151,9 +151,9 @@ Under the hood, Go+ classfiles will be compiled into Go code with `struct` and m
 
 spx is a Scratch-like 2D Game Engine for STEM education. It is designed for children to learn programming by developing games. spx is developed based on Go+ classfiles. In spx, there are two types of classes: `Game` classes and `Sprite` classes.
 
-The `Game` class is the "project class" that represents the whole game. In a spx project, there is only one code file (named `main.spx`) for the `Game` class. We call it code for "the stage". Variables & functions declared in the stage code can be accessed by all game objects.
+The `Game` class is the "project class" that represents the whole game. In an spx project, there is only one code file (named `main.spx`) for the `Game` class. We call it code for "the stage". Variables & functions declared in the stage code can be accessed by all game objects.
 
-The `Sprite` classes are "worker classes" which are used to define game objects. In a spx project, there can be multiple code files for `Sprite` classes. Each `Sprite` class has its own code file, named after the sprite's name, e.g., `Apple.spx`, `Banana.spx`. Variables & functions declared in a sprite's code can only be accessed by that sprite.
+The `Sprite` classes are "worker classes" which are used to define game objects. In an spx project, there can be multiple code files for `Sprite` classes. Each `Sprite` class has its own code file, named after the sprite's name, e.g., `Apple.spx`, `Banana.spx`. Variables & functions declared in a sprite's code can only be accessed by that sprite.
 
 In document `spx-defs.md`, you can find definitions for most APIs of spx game engine.
 

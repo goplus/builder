@@ -32,8 +32,8 @@ func toURI(s string) *URI {
 	return &u
 }
 
-// SpxRenameResourceParams represents parameters to rename a spx resource in the
-// workspace.
+// SpxRenameResourceParams represents parameters to rename an spx resource in
+// the workspace.
 type SpxRenameResourceParams struct {
 	// The spx resource.
 	Resource SpxResourceIdentifier `json:"resource"`
@@ -41,13 +41,13 @@ type SpxRenameResourceParams struct {
 	NewName string `json:"newName"`
 }
 
-// SpxResourceIdentifier identifies a spx resource.
+// SpxResourceIdentifier identifies an spx resource.
 type SpxResourceIdentifier struct {
 	// The spx resource's URI.
 	URI SpxResourceURI `json:"uri"`
 }
 
-// SpxResourceURI represents a URI string for a spx resource.
+// SpxResourceURI represents a URI string for an spx resource.
 type SpxResourceURI string
 
 // HTML returns the HTML representation of the spx resource URI.
@@ -62,7 +62,7 @@ type SpxGetDefinitionsParams struct {
 	TextDocumentPositionParams
 }
 
-// SpxDefinitionIdentifier identifies a spx definition.
+// SpxDefinitionIdentifier identifies an spx definition.
 type SpxDefinitionIdentifier struct {
 	// Full name of source package.
 	// If not provided, it's assumed to be kind-statement.
@@ -101,7 +101,7 @@ func (id SpxDefinitionIdentifier) String() string {
 	return s
 }
 
-// SpxResourceRefDocumentLinkData represents data for a spx resource reference
+// SpxResourceRefDocumentLinkData represents data for an spx resource reference
 // document link.
 type SpxResourceRefDocumentLinkData struct {
 	// The kind of the spx resource reference.

@@ -11,7 +11,7 @@ func TestServerTextDocumentFormatting(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
-// A spx game.
+// An spx game.
 
 var (
   MyAircraft MyAircraft
@@ -33,7 +33,7 @@ run "assets",    { Title:    "Bullet (by Go+)" }
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 9, Character: 0},
 			},
-			NewText: `// A spx game.
+			NewText: `// An spx game.
 
 type Score int
 
@@ -86,7 +86,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 
 	t.Run("AcceptableFormatError", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 
 var MyAircraft MyAircraft
 !InvalidSyntax
@@ -104,7 +104,7 @@ var MyAircraft MyAircraft
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 4, Character: 0},
 			},
-			NewText: `// A spx game.
+			NewText: `// An spx game.
 
 var (
 	MyAircraft MyAircraft
@@ -117,7 +117,7 @@ var (
 
 	t.Run("WithFormatSpx", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 
 var (
 	// The aircraft.
@@ -160,7 +160,7 @@ var (
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 29, Character: 0},
 			},
-			NewText: `// A spx game.
+			NewText: `// An spx game.
 
 var (
 	// The aircraft.
@@ -191,7 +191,7 @@ var (
 
 	t.Run("NoTypeSpriteVarDeclaration", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 
 var (
 	MySprite
@@ -211,7 +211,7 @@ run "assets", {Title: "My Game"}
 
 	t.Run("WithImportStmt", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 import "math"
 
 onClick => {
@@ -232,7 +232,7 @@ run "assets", {Title: "My Game"}
 
 	t.Run("WithUnusedLambdaParams", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
-			"main.spx": []byte(`// A spx game.
+			"main.spx": []byte(`// An spx game.
 onKey [KeyLeft, KeyRight], (key) => {
 	println "key"
 }
@@ -254,7 +254,7 @@ onKey [KeyLeft, KeyRight], (key) => {
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 8, Character: 0},
 			},
-			NewText: `// A spx game.
+			NewText: `// An spx game.
 onKey [KeyLeft, KeyRight], () => {
 	println "key"
 }
@@ -269,7 +269,7 @@ onKey [KeyLeft, KeyRight], (key) => {
 	t.Run("WithUnusedLambdaParamsForSprite", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": {},
-			"MySprite.spx": []byte(`// A spx game.
+			"MySprite.spx": []byte(`// An spx game.
 onKey [KeyLeft, KeyRight], (key) => {
 	println "key"
 }
@@ -296,7 +296,7 @@ onTouchStart 123, (s) => { // type mismatch
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 13, Character: 0},
 			},
-			NewText: `// A spx game.
+			NewText: `// An spx game.
 onKey [KeyLeft, KeyRight], () => {
 	println "key"
 }
