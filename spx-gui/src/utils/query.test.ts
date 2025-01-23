@@ -2,14 +2,18 @@ import { ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
 import { useQuery, composeQuery, type QueryContext } from './query'
+import { withSetup } from './test'
 
 describe('composeQuery', () => {
   it('should work well', async () => {
     const valueRef = ref(0)
-    const queryFn1 = vi.fn(async () => valueRef.value)
-    const ret1 = useQuery(queryFn1)
-    const queryFn2 = vi.fn(async (ctx: QueryContext) => composeQuery(ctx, ret1))
-    const ret2 = useQuery(queryFn2)
+    const [queryFn1, ret1, queryFn2, ret2] = withSetup(() => {
+      const queryFn1 = vi.fn(async () => valueRef.value)
+      const ret1 = useQuery(queryFn1)
+      const queryFn2 = vi.fn(async (ctx: QueryContext) => composeQuery(ctx, ret1))
+      const ret2 = useQuery(queryFn2)
+      return [queryFn1, ret1, queryFn2, ret2] as const
+    })
     expect(ret2.isLoading.value).toBe(true)
     expect(ret2.data.value).toBe(null)
     expect(ret2.error.value).toBe(null)
@@ -56,8 +60,11 @@ describe('composeQuery', () => {
 
   it('should work well with exception', async () => {
     const err = new Error('test')
-    const ret1 = useQuery(makeErrorFn(3, err))
-    const ret2 = useQuery(async (ctx: QueryContext) => composeQuery(ctx, ret1))
+    const [ret1, ret2] = withSetup(() => {
+      const ret1 = useQuery(makeErrorFn(3, err))
+      const ret2 = useQuery(async (ctx: QueryContext) => composeQuery(ctx, ret1))
+      return [ret1, ret2] as const
+    })
 
     await flushPromises()
     expect(ret2.isLoading.value).toBe(false)
@@ -86,9 +93,12 @@ describe('composeQuery', () => {
   it('should work well with multiple dependencies', async () => {
     const err1 = new Error('test1')
     const err2 = new Error('test2')
-    const ret1 = useQuery(makeErrorFn(1, err1))
-    const ret2 = useQuery(makeErrorFn(2, err2))
-    const ret3 = useQuery(async (ctx: QueryContext) => Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)]))
+    const ret3 = withSetup(() => {
+      const ret1 = useQuery(makeErrorFn(1, err1))
+      const ret2 = useQuery(makeErrorFn(2, err2))
+      const ret3 = useQuery(async (ctx: QueryContext) => Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)]))
+      return ret3
+    })
 
     await flushPromises()
     expect(ret3.isLoading.value).toBe(false)
