@@ -15,6 +15,7 @@ import (
 
 // SpxResourceID is the ID of an spx resource.
 type SpxResourceID interface {
+	Name() string
 	URI() SpxResourceURI
 }
 
@@ -175,11 +176,24 @@ func NewSpxResourceSet(rootFS fs.FS) (*SpxResourceSet, error) {
 
 		// Process animations.
 		sprite.Animations = make([]SpxSpriteAnimationResource, 0, len(sprite.FAnimations))
-		for animName := range sprite.FAnimations {
+		for animName, fAnim := range sprite.FAnimations {
 			sprite.Animations = append(sprite.Animations, SpxSpriteAnimationResource{
-				ID:   SpxSpriteAnimationResourceID{SpriteName: spriteName, AnimationName: animName},
-				Name: animName,
+				ID:        SpxSpriteAnimationResourceID{SpriteName: spriteName, AnimationName: animName},
+				Name:      animName,
+				FromIndex: getCostumeIndex(fAnim.FrameFrom, sprite.Costumes),
+				ToIndex:   getCostumeIndex(fAnim.FrameTo, sprite.Costumes),
 			})
+		}
+
+		// Process normal costumes.
+		sprite.NormalCostumes = make([]SpxSpriteCostumeResource, 0, len(sprite.Costumes))
+		for i, costume := range sprite.Costumes {
+			isAnimation := slices.ContainsFunc(sprite.Animations, func(anim SpxSpriteAnimationResource) bool {
+				return anim.includeCostume(i)
+			})
+			if !isAnimation {
+				sprite.NormalCostumes = append(sprite.NormalCostumes, costume)
+			}
 		}
 
 		set.sprites[spriteName] = &sprite
@@ -232,6 +246,11 @@ type SpxBackdropResourceID struct {
 	BackdropName string
 }
 
+// Name implements [SpxResourceID].
+func (id SpxBackdropResourceID) Name() string {
+	return id.BackdropName
+}
+
 // URI implements [SpxResourceID].
 func (id SpxBackdropResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/backdrops/%s", id.BackdropName))
@@ -249,25 +268,42 @@ type SpxSoundResourceID struct {
 	SoundName string
 }
 
+// Name implements [SpxResourceID].
+func (id SpxSoundResourceID) Name() string {
+	return id.SoundName
+}
+
 // URI implements [SpxResourceID].
 func (id SpxSoundResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/sounds/%s", id.SoundName))
 }
 
+type spxSpriteFAnimation struct {
+	FrameFrom string `json:"frameFrom"`
+	FrameTo   string `json:"frameTo"`
+}
+
 // SpxSpriteResource represents an spx sprite resource.
 type SpxSpriteResource struct {
-	ID               SpxSpriteResourceID          `json:"-"`
-	Name             string                       `json:"name"`
-	Costumes         []SpxSpriteCostumeResource   `json:"costumes"`
-	CostumeIndex     int                          `json:"costumeIndex"`
-	FAnimations      map[string]json.RawMessage   `json:"fAnimations"`
-	Animations       []SpxSpriteAnimationResource `json:"-"`
-	DefaultAnimation string                       `json:"defaultAnimation"`
+	ID       SpxSpriteResourceID        `json:"-"`
+	Name     string                     `json:"name"`
+	Costumes []SpxSpriteCostumeResource `json:"costumes"`
+	// NormalCostumes includes all costumes except animation costumes.
+	NormalCostumes   []SpxSpriteCostumeResource     `json:"-"`
+	CostumeIndex     int                            `json:"costumeIndex"`
+	FAnimations      map[string]spxSpriteFAnimation `json:"fAnimations"`
+	Animations       []SpxSpriteAnimationResource   `json:"-"`
+	DefaultAnimation string                         `json:"defaultAnimation"`
 }
 
 // SpxSpriteResourceID is the ID of an spx sprite resource.
 type SpxSpriteResourceID struct {
 	SpriteName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSpriteResourceID) Name() string {
+	return id.SpriteName
 }
 
 // URI implements [SpxResourceID].
@@ -299,16 +335,20 @@ func (sprite *SpxSpriteResource) Animation(name string) *SpxSpriteAnimationResou
 
 // SpxSpriteCostumeResource represents an spx sprite costume resource.
 type SpxSpriteCostumeResource struct {
-	ID    SpxSpriteCostumeResourceID `json:"-"`
-	Index int                        `json:"index"`
-	Name  string                     `json:"name"`
-	Path  string                     `json:"path"`
+	ID   SpxSpriteCostumeResourceID `json:"-"`
+	Name string                     `json:"name"`
+	Path string                     `json:"path"`
 }
 
 // SpxSpriteCostumeResourceID is the ID of an spx sprite costume resource.
 type SpxSpriteCostumeResourceID struct {
 	SpriteName  string
 	CostumeName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSpriteCostumeResourceID) Name() string {
+	return id.CostumeName
 }
 
 // URI implements [SpxResourceID].
@@ -318,14 +358,28 @@ func (id SpxSpriteCostumeResourceID) URI() SpxResourceURI {
 
 // SpxSpriteAnimationResource represents an spx sprite animation resource.
 type SpxSpriteAnimationResource struct {
-	ID   SpxSpriteAnimationResourceID `json:"-"`
-	Name string                       `json:"name"`
+	ID        SpxSpriteAnimationResourceID `json:"-"`
+	Name      string                       `json:"name"`
+	FromIndex *int                         `json:"-"`
+	ToIndex   *int                         `json:"-"`
+}
+
+func (a *SpxSpriteAnimationResource) includeCostume(index int) bool {
+	if a.FromIndex == nil || a.ToIndex == nil {
+		return false
+	}
+	return *a.FromIndex <= index && index <= *a.ToIndex
 }
 
 // SpxSpriteAnimationResourceID is the ID of an spx sprite animation resource.
 type SpxSpriteAnimationResourceID struct {
 	SpriteName    string
 	AnimationName string
+}
+
+// Name implements [SpxResourceID].
+func (id SpxSpriteAnimationResourceID) Name() string {
+	return id.AnimationName
 }
 
 // URI implements [SpxResourceID].
@@ -347,7 +401,21 @@ type SpxWidgetResourceID struct {
 	WidgetName string
 }
 
+// Name implements [SpxResourceID].
+func (id SpxWidgetResourceID) Name() string {
+	return id.WidgetName
+}
+
 // URI implements [SpxResourceID].
 func (id SpxWidgetResourceID) URI() SpxResourceURI {
 	return SpxResourceURI(fmt.Sprintf("spx://resources/widgets/%s", id.WidgetName))
+}
+
+func getCostumeIndex(name string, costumes []SpxSpriteCostumeResource) *int {
+	for i, costume := range costumes {
+		if costume.Name == name {
+			return &i
+		}
+	}
+	return nil
 }
