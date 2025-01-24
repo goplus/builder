@@ -59,7 +59,7 @@ defineProps<{
   opacity: 0;
   color: var(--ui-color-grey-100);
   border-radius: 50%;
-  background-color: var(--ui-color-green-200);
+  background-color: var(--ui-color-green-main);
 }
 
 .name {

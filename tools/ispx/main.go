@@ -1,3 +1,5 @@
+//go:build js && wasm
+
 package main
 
 //go:generate qexp -outdir pkg github.com/goplus/spx
@@ -6,7 +8,10 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"log"
+	"log/slog"
+	"os"
 	"syscall/js"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
@@ -34,6 +39,20 @@ func loadData(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
+var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+func logWithCallerInfo(msg string, frame *igop.Frame) {
+	if frs := frame.CallerFrames(); len(frs) > 0 {
+		fr := frs[0]
+		logger.Info(
+			msg,
+			"function", fr.Function,
+			"file", fr.File,
+			"line", fr.Line,
+		)
+	}
+}
+
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
 
@@ -57,7 +76,7 @@ func main() {
 
 	// Register patch for spx to support functions with generic type like `Gopt_Game_Gopx_GetWidget`.
 	// See details in https://github.com/goplus/builder/issues/765#issuecomment-2313915805
-	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
+	if err := gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
 package spx
 
 import (
@@ -72,10 +91,25 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 		panic("GetWidget: type mismatch")
 	}
 }
-`)
-	if err != nil {
-		log.Fatalln("Failed to register package patch:", err)
+`); err != nil {
+		log.Fatalln("Failed to register package patch for github.com/goplus/spx:", err)
 	}
+
+	ctx.RegisterExternal("fmt.Print", func(frame *igop.Frame, a ...interface{}) (n int, err error) {
+		msg := fmt.Sprint(a...)
+		logWithCallerInfo(msg, frame)
+		return len(msg), nil
+	})
+	ctx.RegisterExternal("fmt.Printf", func(frame *igop.Frame, format string, a ...interface{}) (n int, err error) {
+		msg := fmt.Sprintf(format, a...)
+		logWithCallerInfo(msg, frame)
+		return len(msg), nil
+	})
+	ctx.RegisterExternal("fmt.Println", func(frame *igop.Frame, a ...interface{}) (n int, err error) {
+		msg := fmt.Sprintln(a...)
+		logWithCallerInfo(msg, frame)
+		return len(msg), nil
+	})
 
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {

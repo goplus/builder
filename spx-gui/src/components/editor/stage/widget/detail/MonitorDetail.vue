@@ -50,31 +50,26 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModal, UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
+import { UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/widget/monitor'
+import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import monitorIcon from '../monitor.svg?raw'
-import WidgetRenameModal from '../WidgetRenameModal.vue'
 
 const props = defineProps<{
   monitor: Monitor
 }>()
 
 const editorCtx = useEditorCtx()
-const renameWidget = useModal(WidgetRenameModal)
-
-const handleRename = useMessageHandle(
-  () =>
-    renameWidget({
-      widget: props.monitor,
-      project: editorCtx.project
-    }),
-  { en: 'Failed to rename widget', zh: '重命名控件失败' }
-).fn
+const renameWidget = useRenameWidget()
+const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
+  en: 'Failed to rename widget',
+  zh: '重命名控件失败'
+}).fn
 
 // We call wrapUpdateHandler `withDebounce: false` here, because:
 // 1. Unlike `UINumberInput`, debounce for value-update causes delay of `UITextInput` UI-update

@@ -9,6 +9,7 @@ import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
+import playHollow from './play-hollow.svg?raw'
 import playCircle from './play-circle.svg?raw'
 import loading from './loading.svg?raw'
 import check from './check.svg?raw'
@@ -25,6 +26,7 @@ import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
 import close from './close.svg?raw'
+import closeCircle from './close-circle.svg?raw'
 import rotate from './rotate.svg?raw'
 import share from './share.svg?raw'
 import arrowAlt from './arrow-alt.svg?raw'
@@ -42,12 +44,20 @@ import arrowRightSmall from './arrow-right-small.svg?raw'
 import calendar from './calendar.svg?raw'
 import remix from './remix.svg?raw'
 import heartHollow from './heart-hollow.svg?raw'
+import info from './info.svg?raw'
+import warning from './warning.svg?raw'
+import error from './error.svg?raw'
+import success from './success.svg?raw'
+import apply from './apply.svg?raw'
+import insert from './insert.svg?raw'
+import copy from './copy.svg?raw'
 
 const typeIconMap = {
   file,
   arrowDown,
   arrowUp,
   play,
+  playHollow,
   playCircle,
   loading,
   check,
@@ -64,6 +74,7 @@ const typeIconMap = {
   exchange,
   search,
   close,
+  closeCircle,
   rotate,
   share,
   arrowAlt,
@@ -80,7 +91,14 @@ const typeIconMap = {
   arrowRightSmall,
   calendar,
   remix,
-  heartHollow
+  heartHollow,
+  info,
+  warning,
+  error,
+  success,
+  apply,
+  insert,
+  copy
 }
 
 export type Type = keyof typeof typeIconMap

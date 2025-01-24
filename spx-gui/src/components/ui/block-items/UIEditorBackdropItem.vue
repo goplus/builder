@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem color="stage" :active="selected">
+  <UIBlockItem color="stage" :active="selected" :interactive="selected != null">
     <div class="img-container">
       <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
@@ -14,12 +14,17 @@ import UIBlockItem from './UIBlockItem.vue'
 import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
-defineProps<{
-  imgSrc: string | null
-  imgLoading: boolean
-  name: string
-  selected: boolean
-}>()
+withDefaults(
+  defineProps<{
+    imgSrc: string | null
+    imgLoading: boolean
+    name: string
+    selected?: boolean
+  }>(),
+  {
+    selected: undefined
+  }
+)
 </script>
 <style scoped lang="scss">
 .img-container {
@@ -29,7 +34,7 @@ defineProps<{
   justify-content: center;
 }
 .img {
-  height: 52px;
-  width: 39px;
+  width: 52px;
+  height: 39px;
 }
 </style>

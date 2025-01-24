@@ -1,5 +1,6 @@
 <template>
   <button
+    ref="btnRef"
     class="ui-button"
     :class="[`type-${type}`, `size-${size}`, loading && 'loading']"
     :disabled="disabled"
@@ -14,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 export type ButtonSize = 'small' | 'medium' | 'large'
@@ -41,6 +42,13 @@ const props = withDefaults(
 
 const disabled = computed(() => props.disabled || props.loading)
 const icon = computed(() => (props.loading ? 'loading' : props.icon))
+const btnRef = ref<HTMLButtonElement>()
+
+defineExpose({
+  focus() {
+    btnRef.value?.focus()
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -129,20 +137,20 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 .type-danger {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-danger-main);
-  --ui-button-shadow-color: var(--ui-color-danger-300);
+  --ui-button-shadow-color: var(--ui-color-danger-600);
 
   &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-danger-100);
+    --ui-button-bg-color: var(--ui-color-danger-400);
   }
 }
 
 .type-success {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-success-main);
-  --ui-button-shadow-color: var(--ui-color-success-300);
+  --ui-button-shadow-color: var(--ui-color-success-600);
 
   &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-success-100);
+    --ui-button-bg-color: var(--ui-color-success-400);
   }
 }
 

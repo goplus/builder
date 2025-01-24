@@ -56,11 +56,11 @@ const themeOverrides: GlobalThemeOverrides = {
     dividerColor: uiVariables.color.dividingLine[2],
     borderColor: uiVariables.color.border,
     errorColor: uiVariables.color.danger.main,
-    errorColorHover: uiVariables.color.danger[100],
+    errorColorHover: uiVariables.color.danger[400],
     warningColor: uiVariables.color.yellow.main,
     warningColorHover: uiVariables.color.yellow[100],
     successColor: uiVariables.color.success.main,
-    successColorHover: uiVariables.color.success[100],
+    successColorHover: uiVariables.color.success[400],
     infoColor: uiVariables.color.primary.main,
     infoColorHover: uiVariables.color.primary[100],
 

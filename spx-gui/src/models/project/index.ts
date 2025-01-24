@@ -16,6 +16,7 @@ import * as gbpHelper from '../common/gbp'
 import { hashFiles } from '../common/hash'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
+import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
@@ -41,20 +42,6 @@ export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
-
-export type Selected =
-  | {
-      type: 'sprite'
-      id: string
-    }
-  | {
-      type: 'sound'
-      id: string
-    }
-  | {
-      type: 'stage'
-    }
-  | null
 
 export type RunConfig = {
   width?: number
@@ -117,7 +104,8 @@ export class Project extends Disposable {
   releaseCount?: number
   remixCount?: number
 
-  private filesHash?: string
+  /** Files' hash of game content, available when project is under editing */
+  filesHash?: string
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
   get hasUnsyncedChanges() {
@@ -125,6 +113,9 @@ export class Project extends Disposable {
     if (this.filesHash == null) return false
     return this.lastSyncedFilesHash !== this.filesHash
   }
+
+  /** Modification time in milliseconds of project state, available when project is under editing */
+  modTime?: number
 
   stage: Stage
   sprites: Sprite[]
@@ -202,6 +193,19 @@ export class Project extends Disposable {
     this.sounds.push(sound)
   }
 
+  getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
+    switch (id.type) {
+      case 'stage':
+        return this.stage
+      case 'sprite':
+        return this.sprites.find((s) => s.id === id.id) ?? null
+      case 'sound':
+        return this.sounds.find((s) => s.id === id.id) ?? null
+      default:
+        throw new Error(`unsupported resource type: ${id.type}`)
+    }
+  }
+
   setVisibility(visibility: Visibility) {
     this.visibility = visibility
   }
@@ -214,21 +218,26 @@ export class Project extends Disposable {
     this.instructions = instructions
   }
 
-  selected: Selected = null
+  selected: ResourceModelIdentifier | null = null
 
   get selectedSprite() {
-    const { selected, sprites } = this
+    const selected = this.selected
     if (selected?.type !== 'sprite') return null
-    return sprites.find((s) => s.id === selected.id) ?? null
+    return this.getResourceModel(selected) as Sprite | null
   }
 
   get selectedSound() {
-    const { selected, sounds } = this
+    const selected = this.selected
     if (selected?.type !== 'sound') return null
-    return sounds.find((s) => s.id === selected.id) ?? null
+    return this.getResourceModel(selected) as Sound | null
   }
 
-  select(selected: Selected) {
+  select(selected: ResourceModelIdentifier | { type: 'stage' } | null) {
+    if (selected != null && !(selected instanceof ResourceModelIdentifier)) {
+      // compatibility for legacy usage: `select({ type, id })`
+      // TODO: remove this after all usage updated
+      selected = new ResourceModelIdentifier(selected.type, (selected as any).id)
+    }
     this.selected = selected
   }
 
@@ -322,7 +331,7 @@ export class Project extends Disposable {
     } = config
 
     const sounds = await Sound.loadAll(files)
-    const sprites = await Sprite.loadAll(files, sounds)
+    const sprites = await Sprite.loadAll(files, { sounds })
 
     const widgets: RawWidgetConfig[] = []
     const zorder: string[] = []
@@ -547,7 +556,12 @@ export class Project extends Disposable {
     )
   }
 
-  /** watch for all changes, auto save to local cache, or touch all files to trigger lazy loading to ensure they are in memory */
+  /**
+   * Watch for all changes to:
+   * 1. Auto save to local cache when enabled.
+   * 2. Touch all files to trigger lazy loading when not in local cache mode.
+   * 3. Update modification time.
+   */
   private autoSaveToLocalCache: (() => void) | null = null
   private startAutoSaveToLocalCache(localCacheKey: string) {
     const saveToLocalCache = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
@@ -563,6 +577,7 @@ export class Project extends Disposable {
     this.autoSaveToLocalCache = () => {
       if (this.autoSaveMode === AutoSaveMode.LocalCache) saveToLocalCache()
       else touchFiles()
+      this.modTime = Date.now()
     }
 
     this.addDisposer(
@@ -582,6 +597,7 @@ export class Project extends Disposable {
     if (this.lastSyncedFilesHash == null) {
       this.lastSyncedFilesHash = this.filesHash
     }
+    this.modTime = Date.now()
     this.startAutoSaveToCloud(localCacheKey)
     this.startAutoSaveToLocalCache(localCacheKey)
 

@@ -315,7 +315,7 @@ const handleRemove = useMessageHandle(
       }
 
       &.liking {
-        color: var(--ui-color-red-200);
+        color: var(--ui-color-red-main);
       }
 
       &.time {

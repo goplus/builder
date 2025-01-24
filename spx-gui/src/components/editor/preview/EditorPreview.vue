@@ -1,36 +1,170 @@
 <template>
   <UICard class="editor-preview">
-    <UICardHeader>
+    <UICardHeader v-if="running.mode !== 'debug'">
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton class="run-button" type="primary" icon="play" @click="show = true">
+      <UIButton
+        ref="runButtonRef"
+        class="button"
+        type="primary"
+        icon="playHollow"
+        :loading="startDebugging.isLoading.value"
+        @click="startDebugging.fn"
+      >
         {{ $t({ en: 'Run', zh: '运行' }) }}
+      </UIButton>
+      <UIButton
+        ref="fullScreenRunButtonRef"
+        class="button full-screen-run-button"
+        type="boring"
+        :loading="startRunning.isLoading.value"
+        @click="startRunning.fn"
+      >
+        <template #icon>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M8.61229 7.50624L6.59284 9.20967C6.25334 9.49609 5.73593 9.25286 5.73593 8.80778V5.19214C5.73593 4.74647 6.25276 4.50382 6.59284 4.79024L8.61229 6.49367C8.92554 6.75792 8.92554 7.24199 8.61229 7.50624Z"
+              fill="#57606A"
+            />
+            <path
+              d="M4.99991 2.3501H2.55001C2.43955 2.3501 2.35001 2.43964 2.35001 2.5501V5"
+              stroke="#57606A"
+              stroke-width="1.4"
+            />
+            <path
+              d="M9.00009 2.3501H11.45C11.5605 2.3501 11.65 2.43964 11.65 2.5501V5"
+              stroke="#57606A"
+              stroke-width="1.4"
+            />
+            <path
+              d="M4.99991 11.6499H2.55001C2.43955 11.6499 2.35001 11.5604 2.35001 11.4499V9"
+              stroke="#57606A"
+              stroke-width="1.4"
+            />
+            <path
+              d="M9.00009 11.6499H11.45C11.5605 11.6499 11.65 11.5604 11.65 11.4499V9"
+              stroke="#57606A"
+              stroke-width="1.4"
+            />
+          </svg>
+        </template>
+      </UIButton>
+    </UICardHeader>
+    <UICardHeader v-else>
+      <div class="header">
+        {{ $t({ en: 'Running', zh: '运行中' }) }}
+      </div>
+      <UIButton
+        class="button"
+        type="primary"
+        icon="rotate"
+        :disabled="running.initializing"
+        @click="handleInPlaceRerun"
+      >
+        {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+      </UIButton>
+      <UIButton class="button" type="boring" @click="handleStop">
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
       </UIButton>
     </UICardHeader>
 
-    <UIFullScreenModal v-model:show="show" class="project-runner-modal">
-      <RunnerContainer :project="editorCtx.project" @close="show = false" />
-    </UIFullScreenModal>
-    <div class="stage-viewer-container">
-      <StageViewer />
+    <!--
+      A hidden div is used instead of `UIModal` to initialize the runner early, allowing for flexible preload logic in the runner component.
+      Although naive-ui modal supports `display-directive: show`, it does not initialize the component until it is shown for the first time.
+      TODO: Update `UIModal` to support this requirement.
+    -->
+    <div class="full-screen-runner-modal" :class="{ visible: running.mode === 'run' }" :style="modalStyle">
+      <RunnerContainer :project="editorCtx.project" :visible="running.mode === 'run'" @close="handleStop" />
+    </div>
+
+    <div class="main">
+      <div class="stage-viewer-container">
+        <StageViewer />
+        <div v-show="running.mode === 'debug'" class="in-place-runner">
+          <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
+        </div>
+      </div>
     </div>
   </UICard>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
+import { humanizeListWithLimit } from '@/utils/utils'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UICard, UICardHeader, UIButton, UIFullScreenModal } from '@/components/ui'
+import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import { UICard, UICardHeader, UIButton, useConfirmDialog } from '@/components/ui'
+import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import RunnerContainer, { preload as preloadRunner } from '@/components/project/runner/RunnerContainer.vue'
-
-let show = ref(false)
+import RunnerContainer from './RunnerContainer.vue'
+import InPlaceRunner from './InPlaceRunner.vue'
 
 const editorCtx = useEditorCtx()
+const codeEditorCtx = useCodeEditorCtx()
 
-onMounted(() => {
-  preloadRunner()
+const running = computed(() => editorCtx.runtime.running)
+
+function handleStop() {
+  editorCtx.runtime.setRunning({ mode: 'none' })
+}
+
+const i18n = useI18n()
+const confirm = useConfirmDialog()
+
+async function checkAndNotifyError() {
+  const r = await codeEditorCtx.diagnosticWorkspace()
+  const codeFilesWithError: LocaleMessage[] = []
+  for (const i of r.items) {
+    if (!i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
+    codeFilesWithError.push(textDocumentId2CodeFileName(i.textDocument))
+  }
+  if (codeFilesWithError.length === 0) return
+  const codeFileNamesWithError = humanizeListWithLimit(codeFilesWithError)
+  await confirm({
+    title: i18n.t({ en: 'Error exists in code', zh: '代码中存在错误' }),
+    content: i18n.t({
+      en: `There are stills errors in the project code (${codeFileNamesWithError.en}). The project may not run correctly. Are you sure to continue?`,
+      zh: `当前项目代码（${codeFileNamesWithError.zh}文件）中存在错误，项目可能无法正常运行，确定继续吗？`
+    })
+  })
+}
+
+async function tryFormatWorkspace() {
+  try {
+    await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditorCtx.formatWorkspace()
+    )
+  } catch (e) {
+    console.warn('Failed to format workspace', e)
+  }
+}
+
+const startRunning = useMessageHandle(async () => {
+  await checkAndNotifyError()
+  await tryFormatWorkspace()
+  editorCtx.runtime.setRunning({ mode: 'run' })
+})
+
+const startDebugging = useMessageHandle(async () => {
+  await checkAndNotifyError()
+  await tryFormatWorkspace()
+  editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
+})
+
+const inPlaceRunner = ref<InstanceType<typeof InPlaceRunner>>()
+
+function handleInPlaceRerun() {
+  inPlaceRunner.value?.rerun()
+}
+
+const fullScreenRunButtonRef = ref<InstanceType<typeof UIButton>>()
+const modalStyle = computed(() => {
+  if (!fullScreenRunButtonRef.value) return null
+  const { top, left, width, height } = fullScreenRunButtonRef.value.$el.getBoundingClientRect()
+  return { transformOrigin: `${left + width / 2}px ${top + height / 2}px` }
 })
 </script>
 
@@ -47,27 +181,58 @@ onMounted(() => {
     color: var(--ui-color-title);
   }
 
-  .stage-viewer-container {
+  .button {
+    margin-left: 8px;
+  }
+
+  .full-screen-run-button :deep(.content) {
+    padding: 0 9px;
+  }
+
+  .main {
     display: flex;
     overflow: hidden;
     justify-content: center;
     padding: 12px;
     height: 100%;
   }
+
+  .stage-viewer-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--ui-border-radius-1);
+    overflow: hidden;
+  }
 }
 
-.project-runner-modal {
-  margin-left: 32px;
-  margin-right: 32px;
-  height: 80vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #fff;
-  border-radius: 20px;
-  .n-modal-content {
-    border-radius: 20px;
+.full-screen-runner-modal {
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: white;
+  transform: scale(0);
+  opacity: 0;
+  transition:
+    transform 0.5s ease-in-out,
+    opacity 0.2s ease-in-out 0.2s;
+
+  &.visible {
+    display: block;
+    transform: scale(1);
+    opacity: 1;
   }
-  padding: 16px;
+}
+
+.in-place-runner {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
 }
 </style>

@@ -8,14 +8,13 @@
 </template>
 
 <script setup lang="ts">
-import { UIImg, useModal } from '@/components/ui'
+import { UIImg } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
+import { useRenameCostume } from '@/components/asset'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
-import CostumeRenameModal from './CostumeRenameModal.vue'
-import { useEditorCtx } from '../EditorContextProvider.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 
 const props = defineProps<{
@@ -23,18 +22,11 @@ const props = defineProps<{
   sprite: Sprite
 }>()
 
-const editorCtx = useEditorCtx()
-const renameCostume = useModal(CostumeRenameModal)
-
-const handleRename = useMessageHandle(
-  () =>
-    renameCostume({
-      costume: props.costume,
-      sprite: props.sprite,
-      project: editorCtx.project
-    }),
-  { en: 'Failed to rename costume', zh: '重命名造型失败' }
-).fn
+const renameCostume = useRenameCostume()
+const handleRename = useMessageHandle(() => renameCostume(props.costume), {
+  en: 'Failed to rename costume',
+  zh: '重命名造型失败'
+}).fn
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>

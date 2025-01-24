@@ -59,7 +59,10 @@ const preloadFrames = async (costumeFiles: File[]) => {
       ...urls.map(async (url) => {
         const img = new Image()
         img.src = url
-        await img.decode()
+        await img.decode().catch((e) => {
+          // Sometimes `decode` fails, while the image is still able to be displayed
+          console.warn('Failed to decode image', url, e)
+        })
         return img
       })
     ])
@@ -138,7 +141,7 @@ watch(
       framesDisposable.dispose()
       return
     }
-    disposable.addDisposer(framesDisposable.dispose)
+    disposable.addDisposable(framesDisposable)
 
     if (soundSrc) {
       const nextAudioElement = await preloadAudio(soundSrc)

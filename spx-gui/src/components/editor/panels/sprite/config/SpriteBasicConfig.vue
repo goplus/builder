@@ -109,14 +109,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UINumberInput, UIIcon, useModal, UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
+import { UINumberInput, UIIcon, UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
 import { RotationStyle, LeftRight, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
+import { useRenameSprite } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
-import SpriteRenameModal from '../SpriteRenameModal.vue'
 import rotateIcon from './rotate.svg?raw'
 import leftRightIcon from './left-right.svg?raw'
 import noRotateIcon from './no-rotate.svg?raw'
@@ -130,16 +130,12 @@ const emit = defineEmits<{
   collapse: []
 }>()
 
-const renameSprite = useModal(SpriteRenameModal)
+const renameSprite = useRenameSprite()
 
-const handleNameEdit = useMessageHandle(
-  () =>
-    renameSprite({
-      sprite: props.sprite,
-      project: props.project
-    }),
-  { en: 'Failed to rename sprite', zh: '重命名精灵失败' }
-).fn
+const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
+  en: 'Failed to rename sprite',
+  zh: '重命名精灵失败'
+}).fn
 
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.sprite.setX(x ?? 0))
 const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(y ?? 0))

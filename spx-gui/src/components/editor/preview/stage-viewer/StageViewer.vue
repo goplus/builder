@@ -267,13 +267,10 @@ watchEffect((onCleanup) => {
   align-items: center;
   justify-content: center;
 
-  border-radius: var(--ui-border-radius-1);
   background-image: url(@/assets/stage-bg.svg);
   background-position: center;
   background-repeat: repeat;
   background-size: contain;
   position: relative;
-
-  overflow: hidden;
 }
 </style>

@@ -1,80 +1,38 @@
-<template>
-  <div class="iframe-container">
-    <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" @loaded="loading = false" />
-    <UIImg v-show="zipData == null || loading" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
-    <UILoading :visible="loading" cover />
-  </div>
-</template>
-
-<script lang="ts">
-import IframeDisplay, { preload } from './IframeDisplay.vue'
-export { preload }
-</script>
-
-<script lang="ts" setup>
-import { onUnmounted, ref } from 'vue'
-import { registerPlayer } from '@/utils/player-registry'
-import { useFileUrl } from '@/utils/file'
-import { Project } from '@/models/project'
-import { UIImg, UILoading } from '@/components/ui'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useSpxVersion } from '@/utils/utils'
+import type { Project } from '@/models/project'
+import ProjectRunnerV1 from './v1/ProjectRunnerV1.vue'
+import ProjectRunnerV2 from './v2/ProjectRunnerV2.vue'
 
 const props = defineProps<{ project: Project }>()
-
-const zipData = ref<ArrayBuffer | null>(null)
-const loading = ref(false)
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
-const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
+const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerV1> | InstanceType<typeof ProjectRunnerV2>>()
 
-const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
+function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   emit('console', type, args)
 }
 
-const registered = registerPlayer(() => {
-  // For now we don't need to implement stop handler here because there's no chance for
-  // the user to activate another audio player when `ProjectRunner` visible.
-  // If you see this warning in console, you need to think what the proper behavior is.
-  console.warn('unexpected call')
-})
-
-onUnmounted(() => {
-  registered.onStopped()
-})
+const version = useSpxVersion()
 
 defineExpose({
-  async run() {
-    loading.value = true
-    registered.onStart()
-    const gbpFile = await props.project.exportGbpFile()
-    zipData.value = await gbpFile.arrayBuffer()
+  async run(signal?: AbortSignal) {
+    return projectRunnerRef.value?.run(signal)
   },
-  stop() {
-    zipData.value = null
-    registered.onStopped()
+  async stop() {
+    return projectRunnerRef.value?.stop()
   },
-  rerun() {
-    this.stop()
-    return this.run()
+  async rerun() {
+    return projectRunnerRef.value?.rerun()
   }
 })
 </script>
-<style scoped lang="scss">
-.iframe-container {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
-.thumbnail {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-}
-</style>
+<template>
+  <ProjectRunnerV2 v-if="version === 'v2'" ref="projectRunnerRef" v-bind="props" @console="handleConsole" />
+  <ProjectRunnerV1 v-else v-bind="props" ref="projectRunnerRef" @console="handleConsole" />
+</template>

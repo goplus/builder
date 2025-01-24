@@ -1,5 +1,10 @@
 <template>
-  <UIBlockItem :color="color" :variant="color === 'sound' ? 'colorful' : 'standard'" :active="selected">
+  <UIBlockItem
+    :color="color"
+    :variant="color === 'sound' ? 'colorful' : 'standard'"
+    :active="selected"
+    :interactive="selected != null"
+  >
     <div class="sound-container">
       <div class="sound-player">
         <slot name="player"></slot>
@@ -19,10 +24,11 @@ withDefaults(
   defineProps<{
     color?: 'sound' | 'primary'
     name: string
-    selected: boolean
+    selected?: boolean
   }>(),
   {
-    color: 'sound'
+    color: 'sound',
+    selected: undefined
   }
 )
 </script>

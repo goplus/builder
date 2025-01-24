@@ -3,9 +3,7 @@ import { nanoid } from 'nanoid'
 
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
-import { Disposable } from '@/utils/disposable'
-import { File, type Files } from './common/file'
-import type { Size } from './common'
+import { File, type Files, getImageSize } from './common/file'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import type { Sprite } from './sprite'
 import type { Animation } from './animation'
@@ -24,10 +22,17 @@ export type RawCostumeConfig = Omit<CostumeInits, 'id'> & {
   path?: string
 }
 
+export type CostumeExportLoadOptions = {
+  /** Path of directory which contains the sprite's config file */
+  basePath: string
+  includeId?: boolean
+  namePrefix?: string
+}
+
 export class Costume {
   id: string
 
-  private parent: Sprite | Animation | null = null
+  parent: Sprite | Animation | null = null
   setParent(parent: Sprite | Animation | null) {
     this.parent = parent
   }
@@ -64,24 +69,8 @@ export class Costume {
     this.bitmapResolution = bitmapResolution
   }
 
-  private async getRawSize() {
-    const d = new Disposable()
-    const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
-    return new Promise<Size>((resolve, reject) => {
-      const img = new window.Image()
-      img.src = imgUrl
-      img.onload = () => {
-        resolve({
-          width: img.width,
-          height: img.height
-        })
-      }
-      img.onerror = (e) => {
-        reject(new Error(`load image failed: ${e.toString()}`))
-      }
-    }).finally(() => {
-      d.dispose()
-    })
+  async getRawSize() {
+    return getImageSize(this.img)
   }
 
   async getSize() {
@@ -103,8 +92,9 @@ export class Costume {
     return reactive(this) as this
   }
 
-  clone() {
+  clone(preserveId = false) {
     return new Costume(this.name, this.img, {
+      id: preserveId ? this.id : undefined,
       x: this.x,
       y: this.y,
       faceRight: this.faceRight,
@@ -140,26 +130,19 @@ export class Costume {
   static load(
     { builder_id: id, name, path, ...inits }: RawCostumeConfig,
     files: Files,
-    /** Path of directory which contains the sprite's config file */
-    basePath: string
+    { basePath, includeId }: CostumeExportLoadOptions
   ) {
     if (name == null) throw new Error(`name expected for costume`)
     if (path == null) throw new Error(`path expected for costume ${name}`)
     const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
-    return new Costume(name, file, { ...inits, id })
+    return new Costume(name, file, {
+      ...inits,
+      id: includeId ? id : undefined
+    })
   }
 
-  export({
-    basePath,
-    includeId = true,
-    namePrefix = ''
-  }: {
-    /** Path of directory which contains the sprite's config file */
-    basePath: string
-    includeId?: boolean
-    namePrefix?: string
-  }): [RawCostumeConfig, Files] {
+  export({ basePath, includeId = true, namePrefix = '' }: CostumeExportLoadOptions): [RawCostumeConfig, Files] {
     const name = namePrefix + this.name
     const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {

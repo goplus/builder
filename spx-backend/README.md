@@ -17,5 +17,5 @@ Run
 
 ```sh
 cp .env.dev .env
-gop run ./cmd/spx-backend
+GOTOOLCHAIN=go1.21.3 gop run ./cmd/spx-backend
 ```

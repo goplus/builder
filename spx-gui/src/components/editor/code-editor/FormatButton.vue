@@ -7,14 +7,24 @@
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type CodeEditor from './CodeEditor.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useCodeEditorCtx } from './context'
+import { getTextDocumentId } from './common'
 
 const props = defineProps<{
-  codeEditor: InstanceType<typeof CodeEditor>
+  codeFilePath: string
 }>()
 
-const handleFormat = useMessageHandle(() => props.codeEditor.format(), {
-  en: 'Failed to format',
-  zh: '格式化失败'
-})
+const editorCtx = useEditorCtx()
+const codeEditorCtx = useCodeEditorCtx()
+const handleFormat = useMessageHandle(
+  () =>
+    editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditorCtx.formatTextDocument(getTextDocumentId(props.codeFilePath))
+    ),
+  {
+    en: 'Failed to format, please check the code',
+    zh: '格式化失败，请检查代码'
+  }
+)
 </script>

@@ -151,20 +151,20 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 .type-danger {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-danger-main);
-  --ui-button-shadow-color: var(--ui-color-danger-300);
+  --ui-button-shadow-color: var(--ui-color-danger-600);
 
   &:hover:not(:active) {
-    --ui-button-bg-color: var(--ui-color-danger-100);
+    --ui-button-bg-color: var(--ui-color-danger-400);
   }
 }
 
 .type-success {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-success-main);
-  --ui-button-shadow-color: var(--ui-color-success-300);
+  --ui-button-shadow-color: var(--ui-color-success-600);
 
   &:hover:not(:active) {
-    --ui-button-bg-color: var(--ui-color-success-100);
+    --ui-button-bg-color: var(--ui-color-success-400);
   }
 }
 

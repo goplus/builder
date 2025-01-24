@@ -28,14 +28,13 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
-      - name: Setup Go 1.21.3
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21.3'
-
       - name: Install modules
         working-directory: spx-gui
         run: npm install
+
+      - name: Install spx
+        working-directory: spx-gui
+        run: ./install-spx.sh
 
       - name: Run Vue TSC
         working-directory: spx-gui
@@ -45,9 +44,14 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23.4
+
       - name: Build WASM
         working-directory: spx-gui
-        run: npm run build-wasm
+        run: ./build-wasm.sh
 
       - name: Run Vitest
         working-directory: spx-gui
@@ -65,9 +69,25 @@ jobs:
       - name: Set up Go & Go+
         uses: goplus/setup-goplus@v1
         with:
-          go-version: '1.21.3'
-          gop-version: '1.2.5'
+          go-version: 1.21.3
+          gop-version: 1.2.5
 
       - name: Run unit test cases
         working-directory: spx-backend
-        run: go test ./...
+        run: go test -v -race ./...
+
+  tools-spxls-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23.4
+
+      - name: Run unit test cases
+        working-directory: tools/spxls
+        env:
+          GODEBUG: gotypesalias=1
+        run: go test -v -race $(go list ./internal/... | grep -v github.com/goplus/builder/tools/spxls/internal/pkgdata/gen)

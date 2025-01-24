@@ -1,3 +1,4 @@
+import { mergeSignals } from '@/utils/disposable'
 import { Exception } from '@/utils/exception'
 import { Client } from './client'
 
@@ -28,6 +29,12 @@ class TimeoutException extends Exception {
   }
 }
 
+function getTimeoutSignal(timeout: number) {
+  const ctrl = new AbortController()
+  setTimeout(() => ctrl.abort(new TimeoutException()), timeout)
+  return ctrl.signal
+}
+
 export function useRequest(
   baseUrl: string = '',
   responseHandler?: ResponseHandler,
@@ -48,20 +55,10 @@ export function useRequest(
 
   return async function request(path: string, payload: unknown, options?: RequestOptions) {
     const req = await prepareRequest(path, payload, options)
+    options?.signal?.throwIfAborted()
     const timeout = options?.timeout ?? defaultTimeout
-    const ctrl = new AbortController()
-    if (options?.signal != null) {
-      // TODO: Reimplement this using `AbortSignal.any()` once it is widely supported.
-      options.signal.throwIfAborted()
-      options.signal.addEventListener('abort', () => ctrl.abort(options.signal?.reason))
-    }
-    const resp = await Promise.race([
-      fetch(req, { signal: ctrl.signal }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new TimeoutException()), timeout))
-    ]).catch((e) => {
-      if (e instanceof TimeoutException) ctrl.abort()
-      throw e
-    })
+    const signal = mergeSignals(options?.signal, getTimeoutSignal(timeout))
+    const resp = await fetch(req, { signal })
     return responseHandler != null ? responseHandler(resp) : resp
   }
 }

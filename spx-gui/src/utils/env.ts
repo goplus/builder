@@ -21,3 +21,5 @@ export const casdoorConfig = {
  * For now AIGC service is not ready for production. We disable it until it's ready.
  */
 export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
+
+export const spxVersion = import.meta.env.VITE_SPX_VERSION as string

@@ -10,6 +10,8 @@ import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as hashHelper from '../common/hash'
 import { Cancelled } from '@/utils/exception'
+import { Backdrop } from '../backdrop'
+import { Monitor } from '../widget/monitor'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -19,6 +21,16 @@ function makeProject() {
   const project = new Project()
   const sound = new Sound('sound', mockFile())
   project.addSound(sound)
+
+  const backdrop = new Backdrop('backdrop', mockFile())
+  project.stage.addBackdrop(backdrop)
+  const widget = new Monitor('monitor', {
+    x: 10,
+    y: 20,
+    label: 'Score',
+    variableName: 'score'
+  })
+  project.stage.addWidget(widget)
 
   const sprite = new Sprite('Sprite')
   const costume = new Costume('default', mockFile())
@@ -103,9 +115,9 @@ describe('Project', () => {
     const sound3 = new Sound('sound3', mockFile())
     project.addSound(sound3)
 
-    project.select({ type: 'stage' })
+    project.select({ type: 'stage', id: null })
     project.removeSound(sound3.id)
-    expect(project.selected).toEqual({ type: 'stage' })
+    expect(project.selected?.type).toEqual('stage')
 
     project.select({ type: 'sound', id: project.sounds[0].id })
 
@@ -137,7 +149,7 @@ describe('Project', () => {
 
     project.select({ type: 'stage' })
     project.removeSprite(sprite3.id)
-    expect(project.selected).toEqual({ type: 'stage' })
+    expect(project.selected?.type).toEqual('stage')
 
     project.select({ type: 'sprite', id: project.sprites[0].id })
 
@@ -311,5 +323,15 @@ describe('Project', () => {
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
     await flushPromises()
     expect(localSaveMock).toHaveBeenCalledTimes(0)
+  })
+
+  it('should preserve information after export & load', async () => {
+    const project = makeProject()
+    const files = project.exportGameFiles()
+    const hash = await hashHelper.hashFiles(files)
+    await project.loadGameFiles(files)
+    const files2 = project.exportGameFiles()
+    const hash2 = await hashHelper.hashFiles(files2)
+    expect(hash).toBe(hash2)
   })
 })

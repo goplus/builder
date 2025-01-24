@@ -2,9 +2,9 @@
  * @desc Definition for Exceptions & tools to help handle them
  */
 
+import { ref } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { useMessage } from '@/components/ui'
-import { useFnWithLoading } from './utils'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -61,7 +61,7 @@ export class ActionException extends Exception {
 
 /** useAction transforms exceptions to ActionException instances, with proper messages */
 export function useAction<Args extends any[], T>(
-  fn: (...args: Args) => Promise<T>,
+  fn: (...args: Args) => Promise<T> | T,
   failureSummaryMessage: LocaleMessage // TODO: the messages can be simplified if the messages' format is consistent
 ): (...args: Args) => Promise<T> {
   return async function actionFn(...args: Args) {
@@ -80,7 +80,7 @@ export function useAction<Args extends any[], T>(
  * - handles loading / success / failure with naive-ui message
  */
 export function useMessageHandle<Args extends any[], T>(
-  fn: (...args: Args) => Promise<T>,
+  fn: (...args: Args) => Promise<T> | T,
   failureSummaryMessage?: LocaleMessage,
   successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
 ) {
@@ -89,28 +89,31 @@ export function useMessageHandle<Args extends any[], T>(
   if (failureSummaryMessage != null) {
     fn = useAction(fn, failureSummaryMessage)
   }
-  const fnWithLoading = useFnWithLoading(fn)
+  const isLoading = ref(false)
 
   // Typically we should do message handling only in the very end of the action chain,
   // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
   // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
   function fnWithMessage(...args: Args): Promise<void> {
-    return fnWithLoading.fn(...args).then(
+    isLoading.value = true
+    return Promise.resolve(fn(...args)).then(
       (ret) => {
+        isLoading.value = false
         if (successMessage != null) {
           const successText = t(typeof successMessage === 'function' ? successMessage(ret) : successMessage)
           m.success(successText)
         }
       },
       (e) => {
+        isLoading.value = false
         // For
         // - `Cancelled` exceptions: nothing to do
-        // - `ActionException` exceptions: we will notify the user
+        // - `Exception` exceptions with `userMessage`: we will notify the user with `userMessage`
         // do `return` (which swallows the exception) instead of `throw`.
         // It let the runtime (browser, vue, etc.) ignore such exceptions, which is intended.
         if (e instanceof Cancelled) return
-        if (e instanceof ActionException) {
-          m.error(t(e.userMessage))
+        if (e instanceof Exception) {
+          if (e.userMessage != null) m.error(t(e.userMessage))
           console.warn(e)
           return
         }
@@ -120,6 +123,6 @@ export function useMessageHandle<Args extends any[], T>(
   }
   return {
     fn: fnWithMessage,
-    isLoading: fnWithLoading.isLoading
+    isLoading
   }
 }

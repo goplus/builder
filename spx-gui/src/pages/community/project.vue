@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
@@ -29,7 +29,7 @@ import {
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
-import ProjectRunner, { preload as preloadRunner } from '@/components/project/runner/ProjectRunner.vue'
+import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
@@ -51,10 +51,10 @@ const {
   error,
   refetch: reloadProject
 } = useQuery(
-  async (signal) => {
+  async (ctx) => {
     const p = new Project()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const loaded = await p.loadFromCloud(props.owner, props.name, true, signal)
+    const loaded = await p.loadFromCloud(props.owner, props.name, true, ctx.signal)
     return loaded
   },
   {
@@ -267,10 +267,6 @@ const remixesRet = useQuery(
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
-
-onMounted(() => {
-  preloadRunner()
-})
 </script>
 
 <template>

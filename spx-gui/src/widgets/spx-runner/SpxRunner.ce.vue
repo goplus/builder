@@ -29,8 +29,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import ProjectRunner, { preload as preloadRunner } from '@/components/project/runner/ProjectRunner.vue'
-import { onMounted, ref, watch } from 'vue'
+import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import { ref, watch } from 'vue'
 import { Project, fullName } from '@/models/project'
 import { shallowRef } from 'vue'
 const props = defineProps<{ owner?: string; name?: string }>()
@@ -71,10 +71,6 @@ const onStop = () => {
   run.value = false
   runner.value.stop()
 }
-
-onMounted(() => {
-  preloadRunner()
-})
 </script>
 <style lang="scss">
 .spx-runner-widget {

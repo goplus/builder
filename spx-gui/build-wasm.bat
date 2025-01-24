@@ -1,3 +1,5 @@
+@REM **NOTE**: This script is outdated. Update it based on `./build-wasm.sh` before using it.
+
 @echo off
 setlocal
 echo Run this script from 'spx-gui' directory
@@ -23,9 +25,6 @@ copy ispx\main.wasm ..\spx-gui\src\assets\ispx\main.wasm
 
 REM Get GOROOT environment variable
 for /f "tokens=*" %%i in ('go env GOROOT') do set GOROOT=%%i
-
-REM Copy the wasm_exec.js file
-copy "%GOROOT%\misc\wasm\wasm_exec.js" ..\spx-gui\src\assets\wasm_exec.js
 
 echo Build WASM complete
 endlocal

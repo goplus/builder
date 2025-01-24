@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    style="width: 1076px"
+    style="width: 1096px"
     :visible="props.visible"
     :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -37,38 +37,19 @@
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
         <div class="content">
-          <UILoading v-if="isLoading" />
-          <UIError v-else-if="error != null" :retry="refetch">
-            {{ $t(error.userMessage) }}
-          </UIError>
-          <UIEmpty v-else-if="assets?.data.length === 0" size="large" />
-          <ul v-else-if="assets != null && type === AssetType.Sound" class="asset-list">
-            <SoundItem
-              v-for="asset in assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
-          <ul v-else-if="assets != null && type === AssetType.Sprite" class="asset-list">
-            <SpriteItem
-              v-for="asset in assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
-          <ul v-else-if="assets != null && type === AssetType.Backdrop" class="asset-list">
-            <BackdropItem
-              v-for="asset in assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
+          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
+            <!-- fixed asset-list height to keep the layout stable -->
+            <ul class="asset-list" style="height: 436px">
+              <ItemComponent
+                v-for="asset in slotProps.data.data"
+                :key="asset.id"
+                :asset="asset"
+                :selected="isSelected(asset)"
+                @click="handleAssetClick(asset)"
+              />
+            </ul>
+          </ListResultWrapper>
+          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
         </div>
         <footer class="footer">
           <span v-show="selected.length > 0">
@@ -94,30 +75,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, watch } from 'vue'
-import {
-  UITextInput,
-  UIIcon,
-  UITag,
-  UILoading,
-  UIEmpty,
-  UIError,
-  UIButton,
-  UISearchableModal,
-  UIDivider
-} from '@/components/ui'
+import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { UITextInput, UIIcon, UITag, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
-import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
+import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import { type Category, getAssetCategories, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
-
-const categories = [categoryAll, ...categoriesWithoutAll]
 
 const props = defineProps<{
   type: AssetType
@@ -129,6 +99,20 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
+
+const categories = computed(() => {
+  const categoriesWithoutAll = getAssetCategories(props.type)
+  return [categoryAll, ...categoriesWithoutAll]
+})
+
+const ItemComponent = computed(
+  () =>
+    ({
+      [AssetType.Sound]: SoundItem,
+      [AssetType.Sprite]: SpriteItem,
+      [AssetType.Backdrop]: BackdropItem
+    })[props.type]
+)
 
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
@@ -156,18 +140,22 @@ const categoryPersonal = computed<Category>(() => ({
 }))
 const category = ref(categoryAll)
 
-const {
-  isLoading,
-  data: assets,
-  error,
-  refetch
-} = useQuery(
+const page = shallowRef(1)
+const pageSize = 18 // 6 * 3
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+
+watch(
+  () => [keyword.value, category.value],
+  () => (page.value = 1)
+)
+
+const queryRet = useQuery(
   () => {
     const c = category.value.value
     const cPersonal = categoryPersonal.value.value
     return listAsset({
-      pageSize: 100, // try to get all
-      pageIndex: 1,
+      pageSize,
+      pageIndex: page.value,
       type: props.type,
       keyword: keyword.value,
       category: c === categoryAll.value || c === cPersonal ? undefined : c,
@@ -248,7 +236,8 @@ async function handleAssetClick(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 148px;
+  flex: 0 0 168px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);
@@ -267,15 +256,17 @@ async function handleAssetClick(asset: AssetData) {
   color: var(--ui-color-grey-900);
 }
 .content {
-  height: 513px;
-  padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
-  overflow-y: auto;
-  overflow-x: visible;
+  padding: 8px 24px 0;
 }
 .asset-list {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-content: flex-start;
+}
+.pagination {
+  justify-content: center;
+  margin: 36px 0 12px;
 }
 .footer {
   padding: 20px 24px;

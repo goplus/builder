@@ -8,6 +8,9 @@ info:
     **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
     risk.**
 
+security:
+  - bearerAuth: []
+
 paths:
   /users/list:
     get:
@@ -15,6 +18,7 @@ paths:
         - Users
       summary: List users
       description: Retrieve a paginated list of users with optional filtering and ordering.
+      security: []
       parameters:
         - name: follower
           in: query
@@ -63,6 +67,7 @@ paths:
         - Users
       summary: Get a user
       description: Retrieve details of a specific user.
+      security: []
       parameters:
         - name: username
           in: path
@@ -230,6 +235,9 @@ paths:
         | true | bob | | Bob's public projects (force `visibility=public`) |
         | true | bob | public | Bob's public projects |
         | true | bob | private | `401 Unauthorized` |
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - name: owner
           in: query
@@ -325,6 +333,9 @@ paths:
         - Projects
       summary: Get a project
       description: Retrieve details of a specific project.
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - name: owner
           in: path
@@ -540,6 +551,7 @@ paths:
         - Project Releases
       summary: List project releases
       description: Retrieve a paginated list of project releases with optional filtering and ordering.
+      security: []
       parameters:
         - name: projectFullName
           in: query
@@ -583,6 +595,7 @@ paths:
         - Project Releases
       summary: Get a project release
       description: Retrieve details of a specific project release.
+      security: []
       parameters:
         - name: owner
           in: path
@@ -677,6 +690,9 @@ paths:
         | true | bob | | Bob's public assets (force `visibility=public`) |
         | true | bob | public | Bob's public assets |
         | true | bob | private | `401 Unauthorized` |
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - name: keyword
           in: query
@@ -746,6 +762,9 @@ paths:
         - Assets
       summary: Get an asset
       description: Retrieve details of a specific asset.
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -853,6 +872,45 @@ paths:
                     format: uri
                     description: URL of the processed image with background removed.
 
+  /copilot/message:
+    post:
+      tags:
+        - Copilot
+      summary: Generate a message
+      description: Generate a message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+
+      responses:
+        "201":
+          description: Message successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopilotMessage"
+                examples:
+                  - role: copilot
+                    content:
+                      type: text
+                      text: Hello!
+
   /util/upinfo:
     get:
       tags:
@@ -873,6 +931,7 @@ paths:
         - Utils
       summary: Generate signed URLs for files
       description: Create signed web URLs for the specified files to allow secure access.
+      security: []
       requestBody:
         required: true
         content:
@@ -907,8 +966,9 @@ paths:
     post:
       tags:
         - Utils
-      summary: Format code
-      description: Format the provided code and optionally fix import statements.
+      summary: Format code (deprecated)
+      description: Format the provided code and optionally fix import statements. This API is deprecated; use `spxls` (`textDocument/formatting`) instead.
+      security: []
       requestBody:
         required: true
         content:
@@ -953,6 +1013,13 @@ paths:
                     description: Details of any formatting errors encountered.
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token, in the format `Bearer {token}`.
+
   schemas:
     Model:
       type: object
@@ -1084,12 +1151,12 @@ components:
         files:
           type: object
           examples:
-            - Sprite.spx: kodo://goplus-builder-usercontent-test/files/Fto5o-5ea0sNMlW_75VgGJCv2AcJ-0
+            - NiuXiaoQi.spx: data:;,
               assets/backdrop.jpeg: kodo://goplus-builder-usercontent-test/files/FnPtX9heX2eXE8vRIiITmFXQVAOz-5352
-              assets/index.json: kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
-              assets/sprites/Sprite/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
-              assets/sprites/Sprite/index.json: kodo://goplus-builder-usercontent-test/files/FoDx7DeLnvbXK45k23OU7IvzmlKE-215
-              main.spx: kodo://goplus-builder-usercontent-test/files/Fto5o-5ea0sNMlW_75VgGJCv2AcJ-0
+              assets/index.json: data:application/json,%7B%22backdrops%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22backdrop%22%2C%22path%22%3A%22backdrop.png%22%2C%22builder_id%22%3A%22LGH5r3l8lDocud3zzlq3D%22%7D%5D%2C%22backdropIndex%22%3A0%2C%22map%22%3A%7B%22width%22%3A480%2C%22height%22%3A360%2C%22mode%22%3A%22fillRatio%22%7D%2C%22run%22%3A%7B%22width%22%3A480%2C%22height%22%3A360%7D%2C%22zorder%22%3A%5B%22NiuXiaoQi%22%5D%2C%22builder_spriteOrder%22%3A%5B%22fZFB5R_Mwwq95FB6xIVYu%22%5D%2C%22builder_soundOrder%22%3A%5B%5D%7D
+              assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+              assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
+              main.spx: data:;,
           description: File paths and their corresponding universal URLs associated with the project.
         visibility:
           $ref: "#/components/schemas/Visibility"
@@ -1217,9 +1284,8 @@ components:
         files:
           type: object
           examples:
-            - NiuXiaoQi.spx: kodo://goplus-builder-usercontent-test/files/Fk7e7QFkOtDe_dBJW61oIpR-tjEF/NiuXiaoQi.spx
-              assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq/costume.png
-              assets/sprites/NiuXiaoQi/index.json: kodo://goplus-builder-usercontent-test/files/FklZqw4fMW7eHmhIO4nkZ_MZyAq7/index.json
+            - assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+              assets/sprites/NiuXiaoQi/index.json: data:application/json,%7B%22heading%22%3A90%2C%22x%22%3A0%2C%22y%22%3A0%2C%22size%22%3A1%2C%22rotationStyle%22%3A%22normal%22%2C%22costumeIndex%22%3A0%2C%22visible%22%3Atrue%2C%22isDraggable%22%3Afalse%2C%22pivot%22%3A%7B%22x%22%3A71%2C%22y%22%3A-75%7D%2C%22costumes%22%3A%5B%7B%22x%22%3A0%2C%22y%22%3A0%2C%22faceRight%22%3A0%2C%22bitmapResolution%22%3A2%2C%22name%22%3A%22costume%22%2C%22path%22%3A%22costume.png%22%2C%22builder_id%22%3A%22VCxSMAnlb3WI1IyikqjCV%22%7D%5D%2C%22fAnimations%22%3A%7B%7D%2C%22animBindings%22%3A%7B%7D%2C%22builder_id%22%3A%22fZFB5R_Mwwq95FB6xIVYu%22%7D
           description: File paths and their corresponding universal URLs associated with the asset.
         filesHash:
           type: string
@@ -1273,6 +1339,33 @@ components:
           items:
             type: object
           description: Array of result items.
+
+    CopilotMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          description: Role of the message.
+          enum:
+            - user
+            - copilot
+          examples:
+            - user
+        content:
+          type: object
+          properties:
+            type:
+              type: string
+              description: Type of the message. Fow now, only `"text"` is supported.
+              enum:
+                - text
+              examples:
+                - text
+            text:
+              type: string
+              description: Text content of the message.
+              examples:
+                - Hello!
 
   parameters:
     SortOrder:

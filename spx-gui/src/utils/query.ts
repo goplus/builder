@@ -1,9 +1,19 @@
-import { shallowRef, watchEffect, type Ref, type ShallowRef, type WatchSource, computed } from 'vue'
+import {
+  shallowRef,
+  watchEffect,
+  type Ref,
+  type ShallowRef,
+  type WatchSource,
+  computed,
+  ref,
+  onUnmounted,
+  toValue
+} from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
-import { getCleanupSignal, type OnCleanup } from './disposable'
-import { useAction, type ActionException } from './exception'
-import { useFnWithLoading } from './utils'
+import { mergeSignals } from './disposable'
+import { useAction, type ActionException, Cancelled } from './exception'
+import { until } from './utils'
 
 export type QueryRet<T> = {
   isLoading: Ref<boolean>
@@ -13,43 +23,68 @@ export type QueryRet<T> = {
 }
 
 /**
+ * Source of query triggering.
+ * - `auto`: query is triggered automatically for dependencies' change.
+ * - `refetch`: query is triggered manually by `refetch`.
+ */
+export type QuerySource = 'auto' | 'refetch'
+
+export type QueryContext = {
+  /** Signal for aborting the query. */
+  signal: AbortSignal
+  /** Source of query fn calling. */
+  source: QuerySource
+}
+
+/**
  * `useQuery`
  * - do query automatically
  * - transform exceptions like `useAction`
  * - manage states for query result
  */
 export function useQuery<T>(
-  queryFn: (signal: AbortSignal) => Promise<T>,
+  queryFn: (ctx: QueryContext) => Promise<T>,
   failureSummaryMessage?: LocaleMessage
 ): QueryRet<T> {
   if (failureSummaryMessage != null) {
     queryFn = useAction(queryFn, failureSummaryMessage)
   }
-  const withLoading = useFnWithLoading(queryFn)
+  const isLoading = ref(false)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
 
-  function fetch(onCleanup: OnCleanup) {
-    const signal = getCleanupSignal(onCleanup)
-    withLoading.fn(signal).then(
+  let lastCtrl: AbortController | null = null
+  onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
+  const getSignal = () => {
+    if (lastCtrl != null) lastCtrl.abort(new Cancelled('new query'))
+    const ctrl = new AbortController()
+    lastCtrl = ctrl
+    return ctrl.signal
+  }
+
+  function fetch(source: QuerySource, signal?: AbortSignal) {
+    const finalSignal = mergeSignals(signal, getSignal())
+    isLoading.value = true
+    queryFn({ signal: finalSignal, source }).then(
       (d) => {
         data.value = d
         error.value = null
+        isLoading.value = false
       },
       (e) => {
+        if (e instanceof Cancelled) return
+        if (process.env.NODE_ENV !== 'test') console.warn(e)
         error.value = e
-        console.warn(e)
+        isLoading.value = false
       }
     )
   }
 
-  function refetch() {
-    fetch(() => {})
-  }
+  watchEffect(() => fetch('auto'))
 
-  watchEffect(fetch)
+  const refetch = (signal?: AbortSignal) => fetch('refetch', signal)
 
-  return { isLoading: withLoading.isLoading, data, error, refetch }
+  return { isLoading, data, error, refetch }
 }
 
 export type QueryWithCacheOptions<T> = {
@@ -96,4 +131,25 @@ export function useQueryCache<T>() {
     invalidate,
     invalidateWithOptimisticValue
   }
+}
+
+/**
+ * Compose query in another query.
+ * - If the query is loading, wait until it's done.
+ * - If the query failed, error will be thrown.
+ * - If the query is successful, the data will be returned.
+ * - Composed query will be collected as dependencies.
+ */
+export async function composeQuery<T>(ctx: QueryContext, queryRet: QueryRet<T>): Promise<T> {
+  if (ctx.source === 'refetch') {
+    queryRet.refetch(ctx.signal)
+  } else {
+    toValue(queryRet.isLoading) // Trigger dependency collection
+  }
+  return new Promise<T>((resolve, reject) => {
+    until(() => !queryRet.isLoading.value, ctx.signal).then(() => {
+      if (queryRet.error.value != null) reject(queryRet.error.value)
+      else resolve(queryRet.data.value!)
+    })
+  })
 }

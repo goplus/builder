@@ -1,7 +1,8 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import { shallowReactive, shallowRef, watch, watchEffect, type ShallowRef, type WatchSource, computed } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
+import type { Disposable } from './disposable'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -19,10 +20,15 @@ export const isSound = (url: string): boolean => {
  * If add-to-public-library features are enabled.
  * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).
  * These features are only enabled when there is `?library` in URL query. A simple & ugly interface will be provided.
- * This is a informal & temporary behavior.
+ * This is an informal & temporary behavior.
  */
 export function isAddPublicLibraryEnabled() {
-  return window.location.search.includes('?library')
+  return /\blibrary\b/.test(window.location.search)
+}
+
+/** Manage spx version. */
+export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
+  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
@@ -60,20 +66,50 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
   return r
 }
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
-  const ref = shallowRef<T>(initialValue)
-  const storedValue = localStorage.getItem(key)
-  if (storedValue != null) {
-    ref.value = JSON.parse(storedValue)
-  }
-  watch(ref, (newValue) => {
-    if (newValue === initialValue) {
-      // Remove the key if the value is the initial value.
-      // NOTE: this may be unexpected for some special use cases
-      localStorage.removeItem(key)
-      return
+/** Like `computed`, while dispose the value properly */
+export function useComputedDisposable<T extends Disposable | null>(getter: () => T) {
+  const r = shallowRef<T>()
+  watchEffect((onCleanup) => {
+    const value = getter()
+    onCleanup(() => value?.dispose())
+    r.value = value
+  })
+  return r as ShallowRef<T>
+}
+
+const lsSyncer = shallowReactive(new Map<string, number>())
+
+function watchLSChange(key: string) {
+  lsSyncer.get(key)
+}
+
+function fireLSChange(key: string) {
+  const val = lsSyncer.get(key) ?? 0
+  lsSyncer.set(key, val + 1)
+}
+
+/**
+ * Get ref for reading / writing data in localStorage.
+ * Changes will be synchronized within the same document.
+ */
+export function localStorageRef<T>(key: string, initialValue: T) {
+  const ref = computed<T>({
+    get() {
+      watchLSChange(key)
+      const storedValue = localStorage.getItem(key)
+      if (storedValue == null) return initialValue
+      return JSON.parse(storedValue)
+    },
+    set(newValue) {
+      if (newValue === initialValue) {
+        // Remove the key if the value is the initial value.
+        // NOTE: this may be unexpected for some special use cases
+        localStorage.removeItem(key)
+      } else {
+        localStorage.setItem(key, JSON.stringify(newValue))
+      }
+      fireLSChange(key)
     }
-    localStorage.setItem(key, JSON.stringify(newValue))
   })
   return ref
 }
@@ -84,6 +120,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const foo = await untilNotNull(fooRef)
  * const bar = await untilNotNull(() => getBar())
  * ```
+ * NOTE: Give value will not be collected as dependency.
  */
 export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, signal?: AbortSignal) {
   return untilConditionMet(
@@ -93,7 +130,10 @@ export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, 
   ) as Promise<NonNullable<T>>
 }
 
-/** Wait until given condition is met. */
+/**
+ * Wait until given condition is met.
+ * NOTE: Give condition will not be collected as dependency.
+ */
 export async function until(conditionSource: WatchSource<boolean>, signal?: AbortSignal) {
   await untilConditionMet(conditionSource, (c) => c, signal)
 }
@@ -104,6 +144,7 @@ export async function until(conditionSource: WatchSource<boolean>, signal?: Abor
  * const foo = await untilConditionMet(fooRef, (value) => value !== null)
  * const bar = await untilConditionMet(() => getBar(), (value) => value > 10)
  * ```
+ * NOTE: Give value will not be collected as dependency.
  */
 function untilConditionMet<T>(
   valueSource: WatchSource<T>,
@@ -204,17 +245,20 @@ export function humanizeExactCount(count: number) {
   }
 }
 
-export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => Promise<T>) {
-  const isLoading = ref(false)
-  async function wrappedFn(...args: Args) {
-    isLoading.value = true
-    try {
-      return await fn(...args)
-    } finally {
-      isLoading.value = false
-    }
+export function humanizeList(list: LocaleMessage[]) {
+  return {
+    en: list.map((i) => i.en).join(', '),
+    zh: list.map((i) => i.zh).join('、')
   }
-  return { fn: wrappedFn, isLoading }
+}
+
+export function humanizeListWithLimit(list: LocaleMessage[], maxNum: number = 3) {
+  if (list.length <= maxNum) return humanizeList(list)
+  const limited = humanizeList(list.slice(0, maxNum))
+  return {
+    en: `${limited.en} and ${list.length - maxNum} more`,
+    zh: `${limited.zh}等 ${list.length} 个`
+  }
 }
 
 export function usePageTitle(
@@ -239,4 +283,12 @@ export function usePageTitle(
     },
     { immediate: true }
   )
+}
+
+export function timeout(duration = 0) {
+  return new Promise<void>((resolve) => setTimeout(() => resolve(), duration))
+}
+
+export function trimLineBreaks(str: string) {
+  return str.replace(/^\n+|\n+$/g, '')
 }

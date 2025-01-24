@@ -4,11 +4,11 @@
       <EditorNavbar :project="project" />
     </header>
     <main v-if="userInfo" class="editor-main">
-      <UILoading v-if="isLoading" />
-      <UIError v-else-if="error != null" :retry="refetch">
-        {{ $t(error.userMessage) }}
+      <UILoading v-if="allQueryRet.isLoading.value" />
+      <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
+        {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else-if="project != null" :project="project" :user-info="userInfo">
+      <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
         <ProjectEditor />
       </EditorContextProvider>
     </main>
@@ -21,9 +21,11 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
-import { useQuery } from '@/utils/query'
+import { Cancelled } from '@/utils/exception'
+import { composeQuery, useQuery } from '@/utils/query'
 import { getStringParam } from '@/utils/route'
 import { clear } from '@/models/common/local'
+import { Runtime } from '@/models/runtime'
 import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -31,6 +33,7 @@ import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
+import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 
 const props = defineProps<{
@@ -79,39 +82,38 @@ const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: strin
   )
 }
 
-const askToOpenCachedVersionForCurrent = (cachedName: string): Promise<boolean> => {
-  return new Promise((resolve) =>
-    withConfirm({
-      title: t({
-        en: 'Restore unsaved changes?',
-        zh: '恢复未保存的变更？'
-      }),
-      content: t({
-        en: `You have unsaved changes for project ${cachedName}. Do you want to open project ${cachedName} and restore them?`,
-        zh: `项目 ${cachedName} 存在未保存的变更，要打开项目 ${cachedName} 并恢复未保存的变更吗？`
-      })
-    })
-      .then(() => {
-        resolve(true)
-      })
-      .catch(() => {
-        resolve(false)
-      })
-  )
-}
-
-const {
-  data: project,
-  isLoading,
-  error,
-  refetch
-} = useQuery(
-  () => {
+const projectQueryRet = useQuery(
+  async (ctx) => {
+    if (userInfo.value == null) throw new Error('User not signed in') // This should not happen as the route is protected
     // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
-    return loadProject(userInfo.value?.name, props.projectName)
+    const project = await loadProject(userInfo.value.name, props.projectName, ctx.signal)
+    ;(window as any).project = project // for debug purpose, TODO: remove me
+    return project
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
+)
+
+const project = projectQueryRet.data
+
+const runtimeQueryRet = useQuery(async (ctx) => {
+  const project = await composeQuery(ctx, projectQueryRet)
+  ctx.signal.throwIfAborted()
+  const runtime = new Runtime(project)
+  runtime.disposeOnSignal(ctx.signal)
+  return runtime
+})
+
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet)
+
+const allQueryRet = useQuery(
+  (ctx) =>
+    Promise.all([
+      composeQuery(ctx, projectQueryRet),
+      composeQuery(ctx, runtimeQueryRet),
+      composeQuery(ctx, codeEditorQueryRet)
+    ]),
+  { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
 // `?publish`
@@ -123,56 +125,44 @@ if (getStringParam(router, 'publish') != null) {
   })
 }
 
-async function loadProject(user: string | undefined, projectName: string | undefined) {
-  if (user == null) return null
-
+async function loadProject(user: string, projectName: string, signal: AbortSignal) {
   let localProject: Project | null
   try {
     localProject = new Project()
+    localProject.disposeOnSignal(signal)
     await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
   } catch (e) {
     console.warn('Failed to load project from local cache', e)
     localProject = null
     await clear(LOCAL_CACHE_KEY)
   }
+  signal.throwIfAborted()
 
   // https://github.com/goplus/builder/issues/259
   // https://github.com/goplus/builder/issues/393
   // Local Cache Saving & Restoring
-  if (localProject && localProject.owner !== user) {
+  if (localProject != null && localProject.owner !== user) {
     // Case 4: Different user: Discard local cache
     await clear(LOCAL_CACHE_KEY)
     localProject = null
   }
 
-  if (localProject?.hasUnsyncedChanges) {
-    if (!projectName) {
-      if (await askToOpenCachedVersionForCurrent(localProject.name!)) {
-        // Case 3: User has a project in the cache but not opening any project:
-        // Open the saved project
-        openProject(localProject.name!) // FIXME: name should be required?
-      } else {
-        // Case 3: Clear local cache
-        await clear(LOCAL_CACHE_KEY)
-        localProject = null
-      }
-      return null
-    }
-
-    if (localProject.name !== projectName) {
-      if (await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)) {
-        await clear(LOCAL_CACHE_KEY)
-        localProject = null
-      } else {
-        openProject(localProject.name!)
-        return null
-      }
+  if (localProject != null && localProject.name !== projectName && localProject.hasUnsyncedChanges) {
+    const stillOpenTarget = await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)
+    signal.throwIfAborted()
+    if (stillOpenTarget) {
+      await clear(LOCAL_CACHE_KEY)
+      localProject = null
+    } else {
+      openProject(localProject.name!)
+      throw new Cancelled('Open another project')
     }
   }
 
-  if (!projectName) return null
   let newProject = new Project()
+  newProject.disposeOnSignal(signal)
   await newProject.loadFromCloud(user, projectName)
+  signal.throwIfAborted()
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
@@ -187,6 +177,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
 
   setProjectAutoSaveMode(newProject)
   await newProject.startEditing(LOCAL_CACHE_KEY)
+  signal.throwIfAborted()
   return newProject
 }
 
@@ -195,17 +186,6 @@ function setProjectAutoSaveMode(project: Project | null) {
   project?.setAutoSaveMode(isOnline.value ? AutoSaveMode.Cloud : AutoSaveMode.LocalCache)
 }
 watch(isOnline, () => setProjectAutoSaveMode(project.value))
-
-watch(
-  // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
-  // According to the document, we should use `() => project.value` instead of
-  // `project` to avoid deep watching, which is not expected here.
-  () => project.value,
-  (_, oldProject) => {
-    oldProject?.dispose()
-    ;(window as any).project = project.value // for debug purpose, TODO: remove me
-  }
-)
 
 watchEffect((onCleanup) => {
   const cleanup = router.beforeEach(async () => {

@@ -26,8 +26,8 @@ export type AnimationInits = {
 
 export type RawAnimationConfig = {
   builder_id?: string
-  frameFrom?: number | string
-  frameTo?: number | string
+  frameFrom?: string
+  frameTo?: string
   frameFps?: number
   onStart?: ActionConfig
 
@@ -43,10 +43,15 @@ export type RawAnimationConfig = {
   onPlay?: ActionConfig
 }
 
+export type AnimationExportLoadOptions = {
+  sounds: Sound[]
+  includeId?: boolean
+}
+
 export class Animation extends Disposable {
   id: string
 
-  private sprite: Sprite | null = null
+  sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
   }
@@ -127,15 +132,15 @@ export class Animation extends Disposable {
       anitype
     }: RawAnimationConfig,
     costumes: Costume[],
-    sounds: Sound[]
+    { sounds, includeId = true }: AnimationExportLoadOptions
   ): [animation: Animation, animationCostumeNames: string[]] {
-    frameFrom = frameFrom ?? from
-    frameTo = frameTo ?? to
+    const finalFrom = frameFrom ?? from
+    const finalTo = frameTo ?? to
     frameFps = frameFps ?? fps
-    if (frameFrom == null || frameTo == null) throw new Error(`from and to expected for Animation ${name}`)
-    const fromIndex = getCostumeIndex(costumes, frameFrom)
-    const toIndex = getCostumeIndex(costumes, frameTo)
-    const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone())
+    if (finalFrom == null || finalTo == null) throw new Error(`from and to expected for Animation ${name}`)
+    const fromIndex = getCostumeIndex(costumes, finalFrom)
+    const toIndex = getCostumeIndex(costumes, finalTo)
+    const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone(true))
     const duration = animationCostumes.length / (frameFps ?? defaultFps)
     // drop spx `duration`, which is different from ours
     if (spxDuration != null) console.warn(`unsupported field: duration for animation ${name}`)
@@ -149,7 +154,7 @@ export class Animation extends Disposable {
       else soundId = sound.id
     }
     const animation = new Animation(name, {
-      id,
+      id: includeId ? id : undefined,
       duration,
       sound: soundId
     })
@@ -165,7 +170,8 @@ export class Animation extends Disposable {
 
   export(
     /** Path of directory which contains the sprite's config file */
-    { basePath, sounds, includeId = true }: { basePath: string; includeId?: boolean; sounds: Sound[] }
+    basePath: string,
+    { sounds, includeId = true }: AnimationExportLoadOptions
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}

@@ -12,15 +12,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModal } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
+import type { Animation } from '@/models/animation'
+import type { Sprite } from '@/models/sprite'
+import { useRenameAnimation } from '@/components/asset'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import type { Animation } from '@/models/animation'
 import AnimationPlayer from './animation/AnimationPlayer.vue'
-import AnimationRenameModal from './AnimationRenameModal.vue'
-import type { Sprite } from '@/models/sprite'
 import AnimationSettings from './animation/AnimationSettings.vue'
-import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   animation: Animation
@@ -28,22 +27,13 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const renameCostume = useModal(AnimationRenameModal)
+const renameCostume = useRenameAnimation()
 const sound = computed(() => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null)
 
-const handleRename = useMessageHandle(
-  () => {
-    return renameCostume({
-      animation: props.animation,
-      sprite: props.sprite,
-      project: editorCtx.project
-    })
-  },
-  {
-    en: 'Rename animation failed',
-    zh: '重命名动画失败'
-  }
-).fn
+const handleRename = useMessageHandle(() => renameCostume(props.animation), {
+  en: 'Rename animation failed',
+  zh: '重命名动画失败'
+}).fn
 </script>
 
 <style lang="scss" scoped>

@@ -38,7 +38,15 @@ export default defineConfig(({ mode }) => {
       include: [`monaco-editor/esm/vs/editor/editor.worker`]
     },
     test: { environment: 'happy-dom' },
+    server: {
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'credentialless',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
+    },
     vercel: {
+      // prevent redirection from `/runner/*/runner.html` to `/runner/*/runner`
+      cleanUrls: false,
       rewrites: [
         {
           source: '/api/(.*)',
@@ -65,6 +73,28 @@ export default defineConfig(({ mode }) => {
             {
               key: 'Cache-Control',
               value: 'public, max-age=300'
+            }
+          ]
+        },
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'credentialless'
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy',
+              value: 'same-origin'
+            }
+          ]
+        },
+        {
+          source: '/runner/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable'
             }
           ]
         }
