@@ -654,8 +654,8 @@ func (ctx *completionContext) collectTypeSpecific(typ types.Type) error {
 		expectedSpxSprite := ctx.getSpxSpriteResource()
 		for _, spxSprite := range ctx.result.spxResourceSet.sprites {
 			if expectedSpxSprite == nil || spxSprite == expectedSpxSprite {
-				spxResourceIds = slices.Grow(spxResourceIds, len(spxSprite.Costumes))
-				for _, spxSpriteCostume := range spxSprite.Costumes {
+				spxResourceIds = slices.Grow(spxResourceIds, len(spxSprite.NormalCostumes))
+				for _, spxSpriteCostume := range spxSprite.NormalCostumes {
 					spxResourceIds = append(spxResourceIds, SpxSpriteCostumeResourceID{spxSprite.Name, spxSpriteCostume.Name})
 				}
 			}
