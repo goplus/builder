@@ -90,9 +90,15 @@ func init() {
 			"Value":         reflect.TypeOf((*q.Value)(nil)).Elem(),
 		},
 		AliasTypes: map[string]reflect.Type{
-			"Color": reflect.TypeOf((*q.Color)(nil)).Elem(),
-			"Key":   reflect.TypeOf((*q.Key)(nil)).Elem(),
-			"Pos":   reflect.TypeOf((*int)(nil)).Elem(),
+			"BackdropName":        reflect.TypeOf((*string)(nil)).Elem(),
+			"Color":               reflect.TypeOf((*q.Color)(nil)).Elem(),
+			"Key":                 reflect.TypeOf((*q.Key)(nil)).Elem(),
+			"Pos":                 reflect.TypeOf((*int)(nil)).Elem(),
+			"SoundName":           reflect.TypeOf((*string)(nil)).Elem(),
+			"SpriteAnimationName": reflect.TypeOf((*string)(nil)).Elem(),
+			"SpriteCostumeName":   reflect.TypeOf((*string)(nil)).Elem(),
+			"SpriteName":          reflect.TypeOf((*string)(nil)).Elem(),
+			"WidgetName":          reflect.TypeOf((*string)(nil)).Elem(),
 		},
 		Vars: map[string]reflect.Value{},
 		Funcs: map[string]reflect.Value{
