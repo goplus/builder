@@ -26,6 +26,14 @@ func FromGopTokenPosition(p goptoken.Position) Position {
 	}
 }
 
+// RangeForGopTokenPosition returns a [Range] for the given [goptoken.Position].
+func RangeForGopTokenPosition(pos goptoken.Position) Range {
+	return Range{
+		Start: FromGopTokenPosition(pos),
+		End:   FromGopTokenPosition(pos),
+	}
+}
+
 // toURI converts a string to a [URI].
 func toURI(s string) *URI {
 	u := URI(s)

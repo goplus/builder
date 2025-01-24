@@ -35,10 +35,10 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 		if defIdent == nil {
 			objPos := obj.Pos()
 			if result.isInFset(objPos) {
-				locations = append(locations, s.createLocationFromPos(result.fset, objPos))
+				locations = append(locations, result.locationForPos(objPos))
 			}
 		} else if result.isInFset(defIdent.Pos()) {
-			locations = append(locations, s.createLocationFromIdent(result.fset, defIdent))
+			locations = append(locations, result.locationForNode(defIdent))
 		}
 	}
 
@@ -53,7 +53,7 @@ func (s *Server) findReferenceLocations(result *compileResult, obj types.Object)
 	}
 	locations := make([]Location, 0, len(refIdents))
 	for _, refIdent := range refIdents {
-		locations = append(locations, s.createLocationFromIdent(result.fset, refIdent))
+		locations = append(locations, result.locationForNode(refIdent))
 	}
 	return locations
 }
