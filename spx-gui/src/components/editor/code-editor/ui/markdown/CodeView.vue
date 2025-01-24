@@ -99,9 +99,11 @@ const codeHtml = computed(() => {
 
 .addition,
 .deletion {
-  :deep(pre) {
+  :deep(> pre) {
     position: relative;
     padding-left: 24px;
+    // Disable default background and show background from parent (addition/deletion)
+    background-color: transparent !important;
   }
   :deep(.line::before) {
     position: absolute;
