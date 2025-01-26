@@ -28,16 +28,12 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) (links []D
 	// Add links for spx resource references.
 	links = slices.Grow(links, len(result.spxResourceRefs))
 	for _, spxResourceRef := range result.spxResourceRefs {
-		nodePos := result.fset.Position(spxResourceRef.Node.Pos())
-		if nodePos.Filename != spxFile {
+		if result.nodeFilename(spxResourceRef.Node) != spxFile {
 			continue
 		}
 		target := URI(spxResourceRef.ID.URI())
 		links = append(links, DocumentLink{
-			Range: Range{
-				Start: FromGopTokenPosition(nodePos),
-				End:   FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.End())),
-			},
+			Range:  result.rangeForNode(spxResourceRef.Node),
 			Target: &target,
 			Data: SpxResourceRefDocumentLinkData{
 				Kind: spxResourceRef.Kind,
@@ -48,15 +44,11 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) (links []D
 	// Add links for spx definitions.
 	links = slices.Grow(links, len(result.typeInfo.Defs)+len(result.typeInfo.Uses))
 	addLinksForIdent := func(ident *gopast.Ident) {
-		identPos := result.fset.Position(ident.Pos())
-		if identPos.Filename != spxFile {
+		if result.nodeFilename(ident) != spxFile {
 			return
 		}
 		if spxDefs := result.spxDefinitionsForIdent(ident); spxDefs != nil {
-			identRange := Range{
-				Start: FromGopTokenPosition(identPos),
-				End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-			}
+			identRange := result.rangeForNode(ident)
 			for _, spxDef := range spxDefs {
 				target := URI(spxDef.ID.String())
 				links = append(links, DocumentLink{

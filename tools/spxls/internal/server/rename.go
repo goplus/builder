@@ -5,6 +5,7 @@ import (
 	"go/types"
 	"slices"
 
+	"github.com/goplus/builder/tools/spxls/internal/util"
 	gopast "github.com/goplus/gop/ast"
 )
 
@@ -31,10 +32,7 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 		return nil, nil
 	}
 
-	return &Range{
-		Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-	}, nil
+	return util.ToPtr(result.rangeForNode(ident)), nil
 }
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_rename
@@ -65,16 +63,13 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 		return nil, fmt.Errorf("failed to find definition of object %q", obj.Name())
 	}
 
-	defLoc := s.createLocationFromIdent(result.fset, defIdent)
+	defLoc := result.locationForNode(defIdent)
 
 	workspaceEdit := WorkspaceEdit{
 		Changes: map[DocumentURI][]TextEdit{
 			defLoc.URI: {
 				{
-					Range: Range{
-						Start: FromGopTokenPosition(result.fset.Position(defIdent.Pos())),
-						End:   FromGopTokenPosition(result.fset.Position(defIdent.End())),
-					},
+					Range:   result.rangeForNode(defIdent),
 					NewText: params.NewName,
 				},
 			},
@@ -123,7 +118,7 @@ func (s *Server) spxRenameResourceAtRefs(result *compileResult, id SpxResourceID
 			nodeEnd.Column--
 		}
 
-		documentURI := s.toDocumentURI(nodePos.Filename)
+		documentURI := result.documentURIs[nodePos.Filename]
 		textEdit := TextEdit{
 			Range: Range{
 				Start: FromGopTokenPosition(nodePos),
@@ -173,12 +168,9 @@ func (s *Server) spxRenameSpriteResource(result *compileResult, id SpxSpriteReso
 			continue
 		}
 		if tv.Type.String() == "main."+id.SpriteName {
-			documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
+			documentURI := result.nodeDocumentURI(expr)
 			textEdit := TextEdit{
-				Range: Range{
-					Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-					End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-				},
+				Range:   result.rangeForNode(expr),
 				NewText: newName,
 			}
 

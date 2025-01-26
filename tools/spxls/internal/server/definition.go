@@ -32,11 +32,11 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 		if !result.isInFset(objPos) {
 			return nil, nil
 		}
-		return s.createLocationFromPos(result.fset, objPos), nil
+		return result.locationForPos(objPos), nil
 	} else if !result.isInFset(defIdent.Pos()) {
 		return nil, nil
 	}
-	return s.createLocationFromIdent(result.fset, defIdent), nil
+	return result.locationForNode(defIdent), nil
 }
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_typeDefinition
@@ -64,5 +64,5 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 	if !result.isInFset(objPos) {
 		return nil, nil
 	}
-	return s.createLocationFromPos(result.fset, objPos), nil
+	return result.locationForPos(objPos), nil
 }

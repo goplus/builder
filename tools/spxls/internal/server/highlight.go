@@ -144,11 +144,8 @@ func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) 
 		}
 
 		highlights = append(highlights, DocumentHighlight{
-			Range: Range{
-				Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-				End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-			},
-			Kind: kind,
+			Range: result.rangeForNode(ident),
+			Kind:  kind,
 		})
 		return true
 	})

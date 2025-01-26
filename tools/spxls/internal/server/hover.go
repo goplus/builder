@@ -18,10 +18,7 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 				Kind:  Markdown,
 				Value: spxResourceRef.ID.URI().HTML(),
 			},
-			Range: Range{
-				Start: FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.Pos())),
-				End:   FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.End())),
-			},
+			Range: result.rangeForNode(spxResourceRef.Node),
 		}, nil
 	}
 
@@ -44,9 +41,6 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 			Kind:  Markdown,
 			Value: hoverContent.String(),
 		},
-		Range: Range{
-			Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-			End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-		},
+		Range: result.rangeForNode(ident),
 	}, nil
 }
