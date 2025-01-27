@@ -24,7 +24,7 @@ func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, 
 		}
 	}
 
-	return s.createLocationFromPos(result.fset, obj.Pos()), nil
+	return result.locationForPos(obj.Pos()), nil
 }
 
 // findImplementingMethodDefinitions finds the definition locations of all
@@ -49,7 +49,7 @@ func (s *Server) findImplementingMethodDefinitions(result *compileResult, iface 
 				continue
 			}
 
-			implementations = append(implementations, s.createLocationFromPos(result.fset, method.Pos()))
+			implementations = append(implementations, result.locationForPos(method.Pos()))
 		}
 	}
 	return implementations
