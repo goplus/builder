@@ -189,12 +189,12 @@ export class TextDocument
   pushEdits(edits: TextEdit[]): void {
     this.withChangeKindProgram(() => {
       this.monacoTextModel.pushEditOperations(
-        null, // TODO
+        null,
         edits.map((edit) => ({
           range: toMonacoRange(edit.range),
           text: edit.newText
         })),
-        () => null // TODO
+        () => null
       )
     })
   }

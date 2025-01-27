@@ -218,7 +218,7 @@ export class CopilotController extends Disposable {
 
   private async getCopilotAnswer() {
     const textDocument = this.ui.activeTextDocument
-    if (textDocument == null) throw new Error('No active text document') // TODO: we may support chat without active text document in the future
+    if (textDocument == null) throw new Error('No active text document') // we may support chat without active text document in the future
     if (this.copilot == null) throw new Error('No copilot')
 
     const currentRound = this.ensureCurrentRound()
@@ -241,7 +241,7 @@ export class CopilotController extends Disposable {
         return
       }
       currentRound.state = RoundState.Failed
-      currentRound.error = new ActionException(e, { en: 'Failed to load', zh: '加载失败' }) // TODO: better error message
+      currentRound.error = new ActionException(e, { en: 'Failed to get answer', zh: 'Copilot 出错了' })
     }
   }
 
@@ -300,7 +300,6 @@ function getMessageContentToFixProblem({ textDocument, problem }: ChatTopicFixPr
 function getTopicMessageContent(topic: ChatTopic): BasicMarkdownString {
   switch (topic.kind) {
     case ChatTopicKind.Inspire:
-      // TODO: More context about "inspire"?
       return makeBasicMarkdownString(topic.problem)
     case ChatTopicKind.Explain: {
       const target = topic.target

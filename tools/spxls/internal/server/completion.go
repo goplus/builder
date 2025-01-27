@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"go/types"
 	"path"
@@ -22,9 +21,6 @@ import (
 func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionItem, error) {
 	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -636,69 +632,71 @@ func (ctx *completionContext) collectTypeSpecific(typ types.Type) error {
 		return nil
 	}
 
-	var spxResourceNames []string
-	switch typ.String() {
-	case spxBackdropNameTypeFullName:
-		spxResourceNames = slices.Grow(spxResourceNames, len(ctx.result.spxResourceSet.backdrops))
+	var spxResourceIds []SpxResourceID
+	switch typ {
+	case GetSpxBackdropNameType():
+		spxResourceIds = slices.Grow(spxResourceIds, len(ctx.result.spxResourceSet.backdrops))
 		for spxBackdropName := range ctx.result.spxResourceSet.backdrops {
-			spxResourceNames = append(spxResourceNames, spxBackdropName)
+			spxResourceIds = append(spxResourceIds, SpxBackdropResourceID{spxBackdropName})
 		}
-	case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
+	case GetSpxSpriteType(), GetSpxSpriteImplType():
 		for spxSprite := range ctx.result.spxSpriteResourceAutoBindings {
-			if spxSprite.Type().String() == typ.String() {
+			if spxSprite.Type() == typ {
 				ctx.itemSet.addSpxDefs(ctx.result.spxDefinitionsFor(spxSprite, "Game")...)
 			}
 		}
-	case spxSpriteNameTypeFullName:
-		spxResourceNames = slices.Grow(spxResourceNames, len(ctx.result.spxResourceSet.sprites))
+	case GetSpxSpriteNameType():
+		spxResourceIds = slices.Grow(spxResourceIds, len(ctx.result.spxResourceSet.sprites))
 		for spxSpriteName := range ctx.result.spxResourceSet.sprites {
-			spxResourceNames = append(spxResourceNames, spxSpriteName)
+			spxResourceIds = append(spxResourceIds, SpxSpriteResourceID{spxSpriteName})
 		}
-	case spxSpriteCostumeNameTypeFullName:
+	case GetSpxSpriteCostumeNameType():
 		expectedSpxSprite := ctx.getSpxSpriteResource()
 		for _, spxSprite := range ctx.result.spxResourceSet.sprites {
 			if expectedSpxSprite == nil || spxSprite == expectedSpxSprite {
-				spxResourceNames = slices.Grow(spxResourceNames, len(spxSprite.Costumes))
-				for _, spxSpriteCostume := range spxSprite.Costumes {
-					spxResourceNames = append(spxResourceNames, spxSpriteCostume.Name)
+				spxResourceIds = slices.Grow(spxResourceIds, len(spxSprite.NormalCostumes))
+				for _, spxSpriteCostume := range spxSprite.NormalCostumes {
+					spxResourceIds = append(spxResourceIds, SpxSpriteCostumeResourceID{spxSprite.Name, spxSpriteCostume.Name})
 				}
 			}
 		}
-	case spxSpriteAnimationNameTypeFullName:
+	case GetSpxSpriteAnimationNameType():
 		expectedSpxSprite := ctx.getSpxSpriteResource()
 		for _, spxSprite := range ctx.result.spxResourceSet.sprites {
 			if expectedSpxSprite == nil || spxSprite == expectedSpxSprite {
-				spxResourceNames = slices.Grow(spxResourceNames, len(spxSprite.Animations))
+				spxResourceIds = slices.Grow(spxResourceIds, len(spxSprite.Animations))
 				for _, spxSpriteAnimation := range spxSprite.Animations {
-					spxResourceNames = append(spxResourceNames, spxSpriteAnimation.Name)
+					spxResourceIds = append(spxResourceIds, SpxSpriteAnimationResourceID{spxSprite.Name, spxSpriteAnimation.Name})
 				}
 			}
 		}
-	case spxSoundTypeFullName:
+	case GetSpxSoundType():
 		for spxSound := range ctx.result.spxSoundResourceAutoBindings {
-			if spxSound.Type().String() == typ.String() {
+			if spxSound.Type() == typ {
 				ctx.itemSet.addSpxDefs(ctx.result.spxDefinitionsFor(spxSound, "Game")...)
 			}
 		}
-	case spxSoundNameTypeFullName:
-		spxResourceNames = slices.Grow(spxResourceNames, len(ctx.result.spxResourceSet.sounds))
+	case GetSpxSoundNameType():
+		spxResourceIds = slices.Grow(spxResourceIds, len(ctx.result.spxResourceSet.sounds))
 		for spxSoundName := range ctx.result.spxResourceSet.sounds {
-			spxResourceNames = append(spxResourceNames, spxSoundName)
+			spxResourceIds = append(spxResourceIds, SpxSoundResourceID{spxSoundName})
 		}
-	case spxWidgetNameTypeFullName:
-		spxResourceNames = slices.Grow(spxResourceNames, len(ctx.result.spxResourceSet.widgets))
+	case GetSpxWidgetNameType():
+		spxResourceIds = slices.Grow(spxResourceIds, len(ctx.result.spxResourceSet.widgets))
 		for spxWidgetName := range ctx.result.spxResourceSet.widgets {
-			spxResourceNames = append(spxResourceNames, spxWidgetName)
+			spxResourceIds = append(spxResourceIds, SpxWidgetResourceID{spxWidgetName})
 		}
 	}
-	for _, spxResourceName := range spxResourceNames {
+	for _, spxResourceId := range spxResourceIds {
+		name := spxResourceId.Name()
 		if !ctx.inStringLit {
-			spxResourceName = strconv.Quote(spxResourceName)
+			name = strconv.Quote(name)
 		}
 		ctx.itemSet.add(CompletionItem{
-			Label:            spxResourceName,
+			Label:            name,
 			Kind:             TextCompletion,
-			InsertText:       spxResourceName,
+			Documentation:    &Or_CompletionItem_documentation{Value: MarkupContent{Kind: Markdown, Value: spxResourceId.URI().HTML()}},
+			InsertText:       name,
 			InsertTextFormat: util.ToPtr(PlainTextTextFormat),
 		})
 	}

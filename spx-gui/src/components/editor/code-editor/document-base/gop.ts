@@ -1,11 +1,13 @@
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../common'
 
-// TODO: more frequently-used tools for gop
+// TODO: https://github.com/goplus/builder/issues/1257
+// * Add more frequently-used statements for gop
+// * Review naming for these definitions
 
 export const forIterate: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
-  definition: { name: 'for_iterate' }, // TODO
+  definition: { name: 'for_iterate' },
   insertText: 'for ${1:i}, ${2:v} <- ${3:set} {\n\t${4:}\n}',
   overview: 'for i, v <- set {}',
   detail: makeBasicMarkdownString({
@@ -17,7 +19,7 @@ export const forIterate: DefinitionDocumentationItem = {
 export const forLoopWithCondition: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
-  definition: { name: 'for_loop_with_condition' }, // TODO
+  definition: { name: 'for_loop_with_condition' },
   insertText: 'for ${1:condition} {\n\t${2:}\n}',
   overview: 'for condition {}',
   detail: makeBasicMarkdownString({
@@ -29,7 +31,7 @@ export const forLoopWithCondition: DefinitionDocumentationItem = {
 export const forLoopWithRange: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
-  definition: { name: 'for_loop_with_range' }, // TODO
+  definition: { name: 'for_loop_with_range' },
   insertText: 'for ${1:i} <- ${2:start}:${3:end} {\n\t${4:}\n}',
   overview: 'for i <- start:end {}',
   detail: makeBasicMarkdownString({
@@ -41,7 +43,7 @@ export const forLoopWithRange: DefinitionDocumentationItem = {
 export const ifStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
-  definition: { name: 'if_statement' }, // TODO
+  definition: { name: 'if_statement' },
   insertText: 'if ${1:condition} {\n\t${2:}\n}',
   overview: 'if condition {}',
   detail: makeBasicMarkdownString({
@@ -53,7 +55,7 @@ export const ifStatement: DefinitionDocumentationItem = {
 export const ifElseStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
-  definition: { name: 'if_else_statement' }, // TODO
+  definition: { name: 'if_else_statement' },
   insertText: 'if ${1:condition} {\n\t${2:}\n} else {\n\t${3:}\n}',
   overview: 'if condition {} else {}',
   detail: makeBasicMarkdownString({
@@ -65,7 +67,7 @@ export const ifElseStatement: DefinitionDocumentationItem = {
 export const varDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
-  definition: { name: 'var_declaration' }, // TODO
+  definition: { name: 'var_declaration' },
   insertText: 'var ${1:name} ${2:type}',
   overview: 'var name type',
   detail: makeBasicMarkdownString({
@@ -77,7 +79,7 @@ export const varDeclaration: DefinitionDocumentationItem = {
 export const importStatement: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
-  definition: { name: 'import_declaration' }, // TODO
+  definition: { name: 'import_declaration' },
   insertText: 'import "${1:package}"',
   overview: 'import "package"',
   detail: makeBasicMarkdownString({
@@ -89,7 +91,7 @@ export const importStatement: DefinitionDocumentationItem = {
 export const functionDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
-  definition: { name: 'func_declaration' }, // TODO
+  definition: { name: 'func_declaration' },
   insertText: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}',
   overview: 'func name(params) {}',
   detail: makeBasicMarkdownString({

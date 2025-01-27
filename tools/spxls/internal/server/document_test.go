@@ -272,7 +272,7 @@ onStart => {
 		}
 
 		links, err := s.textDocumentDocumentLink(params)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, `file "main.gop" does not have .spx extension`)
 		assert.Nil(t, links)
 	})
 
@@ -283,7 +283,7 @@ onStart => {
 		}
 
 		links, err := s.textDocumentDocumentLink(params)
-		assert.NoError(t, err)
+		assert.ErrorIs(t, err, errNoMainSpxFile)
 		assert.Nil(t, links)
 	})
 

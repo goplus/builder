@@ -251,9 +251,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return range
   }
 
-  // TODO: Optimize inserting logic with inline context. For example:
-  // * If no space before cursor, insert a space before inserting snippet.
-  // * If current line isn't empty, insert a new line before inserting snippet for kind Command or Listen.
+  // TODO: Optimize inserting logic with inline context. https://github.com/goplus/builder/issues/1258
 
   async insertText(text: string, range: Range = this.getSelectionRange()) {
     this.activeTextDocument?.pushEdits([
@@ -262,6 +260,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         newText: text
       }
     ])
+    this.editor.focus()
   }
 
   async insertSnippet(snippet: string, range: Range = this.getSelectionRange()) {
@@ -280,6 +279,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     const contribution = editor.getContribution('snippetController2')
     if (contribution == null) throw new Error('Snippet contribution not found')
     ;(contribution as any).insert(snippet)
+    this.editor.focus()
   }
 
   private cursorPositionRef = shallowRef<Position | null>(null)
@@ -326,7 +326,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     )
 
     this.registerCommand(builtInCommandCopilotInspire, {
-      icon: 'explain', // TODO
+      icon: 'copilot',
       title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
         this.copilotController.startChat({
@@ -348,7 +348,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     })
 
     this.registerCommand(builtInCommandCopilotReview, {
-      icon: 'explain', // TODO
+      icon: 'explain', // TODO: Add specific icon for review when it is needed
       title: { en: 'Review', zh: '审查' },
       handler: (target) => {
         this.copilotController.startChat({
@@ -373,7 +373,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     // while these actions are missing in the `editor.getSupportedActions()`, see details in https://github.com/microsoft/monaco-editor/issues/2598.
     // As a workaround, we use `document.execCommand` to implement these actions.
     this.registerCommand(builtInCommandCopy, {
-      icon: 'explain', // TODO
+      icon: 'copy',
       title: { en: 'Copy', zh: '复制' },
       handler: () => {
         editor.focus()
@@ -381,7 +381,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
     this.registerCommand(builtInCommandCut, {
-      icon: 'explain', // TODO
+      icon: 'copy', // TODO: Add specific icon for cut when it is needed
       title: { en: 'Cut', zh: '剪切' },
       handler: () => {
         editor.focus()
@@ -389,7 +389,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
     this.registerCommand(builtInCommandPaste, {
-      icon: 'explain', // TODO
+      icon: 'copy', // TODO: Add specific icon for paste when it is needed
       title: { en: 'Paste', zh: '粘贴' },
       handler: async () => {
         try {

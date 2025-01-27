@@ -41,7 +41,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <li ref="wrapperRef" class="completion-item" :class="{ active }">
+  <li ref="wrapperRef" class="completion-item" :class="{ active }" :title="item.label">
     <DefinitionIcon class="icon" :kind="item.kind" />
     <code class="code"
       ><span v-for="(part, i) in parts" :key="i" :class="{ matched: part.isMatched }">{{ part.content }}</span></code
@@ -50,8 +50,11 @@ watchEffect(() => {
 </template>
 
 <style lang="scss" scoped>
+@import '@/utils/utils';
+
 .completion-item {
   min-width: 8em;
+  max-width: 14em;
   display: flex;
   align-items: center;
   padding: 7px;
@@ -72,11 +75,12 @@ watchEffect(() => {
 }
 
 .code {
+  flex: 1 1 0;
   font-family: var(--ui-font-family-code);
+  @include text-ellipsis;
 }
 
 .matched {
-  // TODO: reconfirm color here
   color: var(--ui-color-primary-main);
 }
 </style>

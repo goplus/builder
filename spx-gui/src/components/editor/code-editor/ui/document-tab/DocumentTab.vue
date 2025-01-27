@@ -45,7 +45,6 @@ const [stageImgUrl] = useFileUrl(() => {
     <template #trigger>
       <div class="document-tab" :class="{ active: isActive }" @click="emit('click')">
         <UIImg v-if="spriteImgUrl != null" class="sprite-img" :src="spriteImgUrl" />
-        <!-- TODO: white background? -->
         <UIImg v-else-if="stageImgUrl != null" class="stage-img" :src="stageImgUrl" />
       </div>
     </template>
@@ -62,6 +61,7 @@ const [stageImgUrl] = useFileUrl(() => {
   border-radius: var(--ui-border-radius-1);
   border: 2px solid transparent;
   transition: 0.2s;
+  background-color: var(--ui-color-grey-300);
 
   &.active {
     border: 2px solid var(--ui-color-yellow-500);

@@ -34,7 +34,13 @@
     "tab.selectedBackground": "#ffffffa5",
     "tab.selectedForeground": "#333333b3",
     "terminal.inactiveSelectionBackground": "#E5EBF1",
-    "widget.border": "#d4d4d4"
+    "widget.border": "#d4d4d4",
+    "editorBracketHighlight.foreground1": "#000000",
+    "editorBracketHighlight.foreground2": "#000000",
+    "editorBracketHighlight.foreground3": "#000000",
+    "editorBracketHighlight.foreground4": "#000000",
+    "editorBracketHighlight.foreground5": "#000000",
+    "editorBracketHighlight.foreground6": "#000000"
   },
   "displayName": "Default Light",
   "name": "default-light",

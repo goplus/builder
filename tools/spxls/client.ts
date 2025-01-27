@@ -75,10 +75,7 @@ export class Spxlc {
    */
   request<T>(method: string, params?: any): Promise<T> {
     const id = this.nextRequestId++
-    /* eslint-disable no-console */
-    // TODO: remove debug logs
-    console.debug(`[${id}][${method}] params:`, params)
-    const sendAt = Date.now()
+    const sendAt = performance.now()
     return new Promise<T>((resolve, reject) => {
       const message: RequestMessage = {
         jsonrpc: '2.0',
@@ -94,15 +91,14 @@ export class Spxlc {
       }
     }).then(
       result => {
-        const time = Date.now() - sendAt
-        console.debug(`[${id}][${method}] took ${time}ms`)
-        console.debug(`[${id}][${method}] result:`, result)
+        if (process.env.NODE_ENV === 'development') {
+          const time = performance.now() - sendAt
+          if (time > 20) console.warn(`[LSP] ${method} took ${Math.round(time)}ms, params:`, params)
+        }
         return result
       },
       err => {
-        const time = Date.now() - sendAt
-        console.debug(`[${id}][${method}] took ${time}ms`)
-        console.debug(`[${id}][${method}] error:`, err)
+        console.warn(`[LSP] ${method} error:`, err, ', params:', params)
         throw err
       }
     )

@@ -1,17 +1,11 @@
 package server
 
-import (
-	"errors"
-	"go/types"
-)
+import "go/types"
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_implementation
 func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -30,7 +24,7 @@ func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, 
 		}
 	}
 
-	return s.createLocationFromPos(result.fset, obj.Pos()), nil
+	return result.locationForPos(obj.Pos()), nil
 }
 
 // findImplementingMethodDefinitions finds the definition locations of all
@@ -55,7 +49,7 @@ func (s *Server) findImplementingMethodDefinitions(result *compileResult, iface 
 				continue
 			}
 
-			implementations = append(implementations, s.createLocationFromPos(result.fset, method.Pos()))
+			implementations = append(implementations, result.locationForPos(method.Pos()))
 		}
 	}
 	return implementations

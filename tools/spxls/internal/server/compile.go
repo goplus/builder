@@ -27,25 +27,9 @@ import (
 	gopmodload "github.com/goplus/mod/modload"
 )
 
-const (
-	spxPkgPath                         = "github.com/goplus/spx"
-	spxGameTypeFullName                = spxPkgPath + ".Game"
-	spxBackdropNameTypeFullName        = spxPkgPath + ".BackdropName"
-	spxSpriteTypeFullName              = spxPkgPath + ".Sprite"
-	spxSpriteImplTypeFullName          = spxPkgPath + ".SpriteImpl"
-	spxSpriteNameTypeFullName          = spxPkgPath + ".SpriteName"
-	spxSpriteCostumeNameTypeFullName   = spxPkgPath + ".SpriteCostumeName"
-	spxSpriteAnimationNameTypeFullName = spxPkgPath + ".SpriteAnimationName"
-	spxSoundTypeFullName               = spxPkgPath + ".Sound"
-	spxSoundNameTypeFullName           = spxPkgPath + ".SoundName"
-	spxWidgetNameTypeFullName          = spxPkgPath + ".WidgetName"
-)
-
-var (
-	errNoValidSpxFiles = errors.New("no valid spx files found in main package")
-	errNoMainSpxFile   = errors.New("no valid main.spx file found in main package")
-	errStopIteration   = errors.New("stop iteration")
-)
+// errNoMainSpxFile is the error returned when no valid main.spx file is found
+// in the main package while compiling.
+var errNoMainSpxFile = errors.New("no valid main.spx file found in main package")
 
 // compileResult contains the compile results and additional information from
 // the compile process.
@@ -114,6 +98,9 @@ type compileResult struct {
 
 	// computedCache is the cache for computed results.
 	computedCache compileResultComputedCache
+
+	// documentURIs maps each spx file path to its document URI.
+	documentURIs map[string]DocumentURI
 }
 
 // compileResultComputedCache represents the computed cache for [compileResult].
@@ -145,7 +132,7 @@ func (r *compileResult) isInFset(pos goptoken.Pos) bool {
 // innermostScopeAt returns the innermost scope that contains the given
 // position. It returns nil if not found.
 func (r *compileResult) innermostScopeAt(pos goptoken.Pos) *types.Scope {
-	fileScope := r.typeInfo.Scopes[r.mainASTPkg.Files[r.fset.Position(pos).Filename]]
+	fileScope := r.typeInfo.Scopes[r.posASTFile(pos)]
 	if fileScope == nil {
 		return nil
 	}
@@ -247,8 +234,8 @@ func (r *compileResult) refIdentsFor(obj types.Object) []*gopast.Ident {
 // selectorTypeNameForIdent returns the selector type name for the given
 // identifier. It returns empty string if no selector can be inferred.
 func (r *compileResult) selectorTypeNameForIdent(ident *gopast.Ident) string {
-	astFile, ok := r.mainASTPkg.Files[r.fset.Position(ident.Pos()).Filename]
-	if !ok {
+	astFile := r.nodeASTFile(ident)
+	if astFile == nil {
 		return ""
 	}
 
@@ -288,7 +275,7 @@ func (r *compileResult) selectorTypeNameForIdent(ident *gopast.Ident) string {
 		astFileScope := r.typeInfo.Scopes[astFile]
 		innermostScope := r.innermostScopeAt(ident.Pos())
 		if innermostScope == astFileScope {
-			spxFile := r.fset.Position(ident.Pos()).Filename
+			spxFile := r.nodeFilename(ident)
 			if spxFile == r.mainSpxFile {
 				return "Game"
 			}
@@ -356,8 +343,8 @@ func (r *compileResult) isDefinedInFirstVarBlock(obj types.Object) bool {
 	if defIdent == nil {
 		return false
 	}
-	astFile, ok := r.mainASTPkg.Files[r.fset.Position(defIdent.Pos()).Filename]
-	if !ok {
+	astFile := r.nodeASTFile(defIdent)
+	if astFile == nil {
 		return false
 	}
 	firstVarBlock := r.firstVarBlocks[astFile]
@@ -442,7 +429,7 @@ func (r *compileResult) spxDefinitionsForNamedStruct(named *types.Named) (defs [
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
 func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {
-	spxFile := r.fset.Position(astFile.Pos()).Filename
+	spxFile := r.nodeFilename(astFile)
 	line := int(position.Line) + 1
 	column := int(position.Character) + 1
 
@@ -509,6 +496,71 @@ func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnos
 	}
 }
 
+// addDiagnosticsForSpxFile adds diagnostics to the compile result for the given
+// spx file.
+func (r *compileResult) addDiagnosticsForSpxFile(spxFile string, diags ...Diagnostic) {
+	r.addDiagnostics(r.documentURIs[spxFile], diags...)
+}
+
+// posFilename returns the filename for the given position.
+func (r *compileResult) posFilename(pos goptoken.Pos) string {
+	return r.fset.Position(pos).Filename
+}
+
+// nodeFilename returns the filename for the given node.
+func (r *compileResult) nodeFilename(node gopast.Node) string {
+	return r.posFilename(node.Pos())
+}
+
+// posASTFile returns the AST file for the given position.
+func (r *compileResult) posASTFile(pos goptoken.Pos) *gopast.File {
+	return r.mainASTPkg.Files[r.posFilename(pos)]
+}
+
+// nodeASTFile returns the AST file for the given node.
+func (r *compileResult) nodeASTFile(node gopast.Node) *gopast.File {
+	return r.posASTFile(node.Pos())
+}
+
+// posDocumentURI returns the [DocumentURI] for the given position.
+func (r *compileResult) posDocumentURI(pos goptoken.Pos) DocumentURI {
+	return r.documentURIs[r.posFilename(pos)]
+}
+
+// nodeDocumentURI returns the [DocumentURI] for the given node.
+func (r *compileResult) nodeDocumentURI(node gopast.Node) DocumentURI {
+	return r.posDocumentURI(node.Pos())
+}
+
+// rangeForPos returns the [Range] for the given position.
+func (r *compileResult) rangeForPos(pos goptoken.Pos) Range {
+	return RangeForGopTokenPosition(r.fset.Position(pos))
+}
+
+// rangeForNode returns the [Range] for the given node.
+func (r *compileResult) rangeForNode(node gopast.Node) Range {
+	return Range{
+		Start: FromGopTokenPosition(r.fset.Position(node.Pos())),
+		End:   FromGopTokenPosition(r.fset.Position(node.End())),
+	}
+}
+
+// locationForPos returns the [Location] for the given position.
+func (r *compileResult) locationForPos(pos goptoken.Pos) Location {
+	return Location{
+		URI:   r.documentURIs[r.posFilename(pos)],
+		Range: r.rangeForPos(pos),
+	}
+}
+
+// locationForNode returns the [Location] for the given node.
+func (r *compileResult) locationForNode(node gopast.Node) Location {
+	return Location{
+		URI:   r.documentURIs[r.nodeFilename(node)],
+		Range: r.rangeForNode(node),
+	}
+}
+
 // compileCache represents a cache for compilation results.
 type compileCache struct {
 	result          *compileResult
@@ -523,7 +575,7 @@ func (s *Server) compile() (*compileResult, error) {
 		return nil, fmt.Errorf("failed to get spx files: %w", err)
 	}
 	if len(spxFiles) == 0 {
-		return nil, errNoValidSpxFiles
+		return nil, errNoMainSpxFile
 	}
 	slices.Sort(spxFiles)
 
@@ -577,9 +629,6 @@ func (s *Server) compile() (*compileResult, error) {
 }
 
 // compileUncached compiles spx source files without using cache.
-//
-// TODO: Move diagnostics from [compileResult] to error return value by using
-// [errors.Join].
 func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compileResult, error) {
 	result := &compileResult{
 		fset:                      goptoken.NewFileSet(),
@@ -599,6 +648,7 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
 		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
 		diagnostics:                   make(map[DocumentURI][]Diagnostic, len(spxFiles)),
+		documentURIs:                  make(map[string]DocumentURI, len(spxFiles)),
 	}
 
 	var (
@@ -608,6 +658,7 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 	for _, spxFile := range spxFiles {
 		documentURI := s.toDocumentURI(spxFile)
 		result.diagnostics[documentURI] = []Diagnostic{}
+		result.documentURIs[spxFile] = documentURI
 
 		astFile, err := gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
 			Mode: gopparser.ParseComments | gopparser.AllErrors | gopparser.ParseGoPlusClass,
@@ -622,33 +673,23 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 				for _, e := range parseErr {
 					result.addDiagnostics(documentURI, Diagnostic{
 						Severity: SeverityError,
-						Range: Range{
-							Start: FromGopTokenPosition(e.Pos),
-							End:   FromGopTokenPosition(e.Pos),
-						},
-						Message: e.Msg,
+						Range:    RangeForGopTokenPosition(e.Pos),
+						Message:  e.Msg,
 					})
 				}
 			} else if errors.As(err, &codeErr) {
 				// Handle code generation errors.
-				position := codeErr.Fset.Position(codeErr.Pos)
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
-					Range: Range{
-						Start: FromGopTokenPosition(position),
-						End:   FromGopTokenPosition(position),
-					},
-					Message: codeErr.Error(),
+					Range:    result.rangeForPos(codeErr.Pos),
+					Message:  codeErr.Error(),
 				})
 			} else {
 				// Handle unknown errors.
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
-					Range: Range{
-						Start: Position{Line: 0, Character: 0},
-						End:   Position{Line: 0, Character: 0},
-					},
-					Message: fmt.Sprintf("failed to parse spx file: %v", err),
+					Range:    RangeForGopTokenPosition(goptoken.Position{}),
+					Message:  fmt.Sprintf("failed to parse spx file: %v", err),
 				})
 			}
 		}
@@ -676,12 +717,6 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 			}
 		}
 	}
-	if len(result.mainASTPkg.Files) == 0 {
-		if len(result.diagnostics) == 0 {
-			return nil, errNoValidSpxFiles
-		}
-		return result, nil
-	}
 	if result.mainSpxFile == "" {
 		if len(result.diagnostics) == 0 {
 			return nil, errNoMainSpxFile
@@ -700,14 +735,10 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 			Error: func(err error) {
 				if typeErr, ok := err.(types.Error); ok {
 					position := typeErr.Fset.Position(typeErr.Pos)
-					documentURI := s.toDocumentURI(position.Filename)
-					result.addDiagnostics(documentURI, Diagnostic{
+					result.addDiagnosticsForSpxFile(position.Filename, Diagnostic{
 						Severity: SeverityError,
-						Range: Range{
-							Start: FromGopTokenPosition(position),
-							End:   FromGopTokenPosition(position),
-						},
-						Message: typeErr.Msg,
+						Range:    RangeForGopTokenPosition(position),
+						Message:  typeErr.Msg,
 					})
 				}
 			},
@@ -747,7 +778,10 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 func (s *Server) compileAndGetASTFileForDocumentURI(uri DocumentURI) (result *compileResult, spxFile string, astFile *gopast.File, err error) {
 	spxFile, err = s.fromDocumentURI(uri)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("failed to get spx file from document URI %q: %w", uri, err)
+		return nil, "", nil, fmt.Errorf("failed to get file path from document URI %q: %w", uri, err)
+	}
+	if path.Ext(spxFile) != ".spx" {
+		return nil, "", nil, fmt.Errorf("file %q does not have .spx extension", spxFile)
 	}
 	result, err = s.compile()
 	if err != nil {
@@ -782,14 +816,10 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 		if types.AssignableTo(firstArgTV.Type, types.Typ[types.String]) {
 			spxResourceRootDir, _ = getStringLitOrConstValue(firstArg, firstArgTV)
 		} else {
-			documentURI := s.toDocumentURI(result.mainSpxFile)
-			result.addDiagnostics(documentURI, Diagnostic{
+			result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 				Severity: SeverityError,
-				Range: Range{
-					Start: FromGopTokenPosition(result.fset.Position(firstArg.Pos())),
-					End:   FromGopTokenPosition(result.fset.Position(firstArg.End())),
-				},
-				Message: "first argument of run must be a string literal or constant",
+				Range:    result.rangeForNode(firstArg),
+				Message:  "first argument of run must be a string literal or constant",
 			})
 		}
 		return false
@@ -801,13 +831,10 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 
 	spxResourceSet, err := NewSpxResourceSet(spxResourceRootFS)
 	if err != nil {
-		result.addDiagnostics(s.toDocumentURI(result.mainSpxFile), Diagnostic{
+		result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 			Severity: SeverityError,
-			Range: Range{
-				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 0, Character: 0},
-			},
-			Message: fmt.Sprintf("failed to create spx resource set: %v", err),
+			Range:    RangeForGopTokenPosition(goptoken.Position{}),
+			Message:  fmt.Sprintf("failed to create spx resource set: %v", err),
 		})
 		return
 	}
@@ -847,7 +874,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			continue
 		}
 
-		spxFile := result.fset.Position(ident.Pos()).Filename
+		spxFile := result.nodeFilename(ident)
 		if spxFile != result.mainSpxFile || result.innermostScopeAt(ident.Pos()) != mainSpxFileScope {
 			continue
 		}
@@ -856,10 +883,10 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			isSpxSoundResourceAutoBinding  bool
 			isSpxSpriteResourceAutoBinding bool
 		)
-		switch varType.String() {
-		case spxSoundTypeFullName:
+		switch varType {
+		case GetSpxSoundType():
 			isSpxSoundResourceAutoBinding = result.spxResourceSet.Sound(v.Name()) != nil
-		case spxSpriteTypeFullName:
+		case GetSpxSpriteType():
 			isSpxSpriteResourceAutoBinding = result.spxResourceSet.Sprite(v.Name()) != nil
 		default:
 			isSpxSpriteResourceAutoBinding = v.Name() == varType.Obj().Name() && slices.Contains(result.mainPkgSpriteTypes, varType)
@@ -869,14 +896,10 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 		}
 
 		if !result.isDefinedInFirstVarBlock(obj) {
-			documentURI := s.toDocumentURI(spxFile)
-			result.addDiagnostics(documentURI, Diagnostic{
+			result.addDiagnosticsForSpxFile(spxFile, Diagnostic{
 				Severity: SeverityWarning,
-				Range: Range{
-					Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-					End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-				},
-				Message: "resources must be defined in the first var block for auto-binding",
+				Range:    result.rangeForNode(ident),
+				Message:  "resources must be defined in the first var block for auto-binding",
 			})
 			continue
 		}
@@ -919,8 +942,8 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			var spxSpriteResource *SpxSpriteResource
 			if recv := funcSig.Recv(); recv != nil {
 				recvType := unwrapPointerType(recv.Type())
-				switch recvType.String() {
-				case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
+				switch recvType {
+				case GetSpxSpriteType(), GetSpxSpriteImplType():
 					spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, expr, recvType)
 				}
 			}
@@ -959,21 +982,21 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all identifier uses.
 	for ident, obj := range result.typeInfo.Uses {
 		objType := unwrapPointerType(obj.Type())
-		switch objType.String() {
-		case spxSpriteTypeFullName:
+		switch objType {
+		case GetSpxSpriteType():
 			if _, ok := result.spxSpriteResourceAutoBindings[obj]; ok {
 				s.inspectSpxSpriteResourceRefAtExpr(result, ident, objType)
 			}
-		case spxSoundTypeFullName:
+		case GetSpxSoundType():
 			if _, ok := result.spxSoundResourceAutoBindings[obj]; ok {
 				s.inspectSpxSoundResourceRefAtExpr(result, ident, objType)
 			}
-		case spxBackdropNameTypeFullName,
-			spxSpriteNameTypeFullName,
-			spxSoundNameTypeFullName,
-			spxWidgetNameTypeFullName:
-			astFile, ok := result.mainASTPkg.Files[result.fset.Position(ident.Pos()).Filename]
-			if !ok {
+		case GetSpxBackdropNameType(),
+			GetSpxSpriteNameType(),
+			GetSpxSoundNameType(),
+			GetSpxWidgetNameType():
+			astFile := result.nodeASTFile(ident)
+			if astFile == nil {
 				continue
 			}
 
@@ -1001,8 +1024,8 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all implicit objects.
 	for node, obj := range result.typeInfo.Implicits {
 		objType := unwrapPointerType(obj.Type())
-		switch objType.String() {
-		case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
+		switch objType {
+		case GetSpxSpriteType(), GetSpxSpriteImplType():
 			if typeAssert, ok := node.(*gopast.TypeAssertExpr); ok {
 				s.inspectSpxSpriteResourceRefAtExpr(result, typeAssert, objType)
 			}
@@ -1011,12 +1034,12 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 	// Check all selections.
 	for sel, selection := range result.typeInfo.Selections {
-		recv := unwrapPointerType(selection.Recv())
+		recvType := unwrapPointerType(selection.Recv())
 
 		var spxSpriteResource *SpxSpriteResource
-		switch recv.String() {
-		case spxSpriteTypeFullName, spxSpriteImplTypeFullName:
-			spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, sel.X, recv)
+		switch recvType {
+		case GetSpxSpriteType(), GetSpxSpriteImplType():
+			spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, sel.X, recvType)
 		}
 		if spxSpriteResource != nil {
 			s.inspectSpxResourceRefForTypeAtExpr(result, sel, unwrapPointerType(selection.Type()), spxSpriteResource)
@@ -1027,22 +1050,22 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 // inspectSpxResourceRefForTypeAtExpr inspects an spx resource reference for a
 // given type at an expression.
 func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr gopast.Expr, typ types.Type, spxSpriteResource *SpxSpriteResource) {
-	switch typ.String() {
-	case spxBackdropNameTypeFullName:
+	switch typ {
+	case GetSpxBackdropNameType():
 		s.inspectSpxBackdropResourceRefAtExpr(result, expr, typ)
-	case spxSpriteNameTypeFullName, spxSpriteTypeFullName:
+	case GetSpxSpriteNameType(), GetSpxSpriteType():
 		s.inspectSpxSpriteResourceRefAtExpr(result, expr, typ)
-	case spxSpriteCostumeNameTypeFullName:
+	case GetSpxSpriteCostumeNameType():
 		if spxSpriteResource != nil {
 			s.inspectSpxSpriteCostumeResourceRefAtExpr(result, spxSpriteResource, expr, typ)
 		}
-	case spxSpriteAnimationNameTypeFullName:
+	case GetSpxSpriteAnimationNameType():
 		if spxSpriteResource != nil {
 			s.inspectSpxSpriteAnimationResourceRefAtExpr(result, spxSpriteResource, expr, typ)
 		}
-	case spxSoundNameTypeFullName, spxSoundTypeFullName:
+	case GetSpxSoundNameType(), GetSpxSoundType():
 		s.inspectSpxSoundResourceRefAtExpr(result, expr, typ)
-	case spxWidgetNameTypeFullName:
+	case GetSpxWidgetNameType():
 		s.inspectSpxWidgetResourceRefAtExpr(result, expr, typ)
 	}
 }
@@ -1051,11 +1074,8 @@ func (s *Server) inspectSpxResourceRefForTypeAtExpr(result *compileResult, expr 
 // reference at an expression. It returns the spx backdrop resource if it was
 // successfully retrieved.
 func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxBackdropResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
 	spxBackdropName, ok := getStringLitOrConstValue(expr, exprTV)
@@ -1063,7 +1083,7 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 		return nil
 	}
 	if spxBackdropName == "" {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  "backdrop resource name cannot be empty",
@@ -1082,7 +1102,7 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 
 	spxBackdropResource := result.spxResourceSet.Backdrop(spxBackdropName)
 	if spxBackdropResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("backdrop resource %q not found", spxBackdropName),
@@ -1096,24 +1116,18 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 // at an expression. It returns the spx sprite resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSpriteResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
 	var spxSpriteName string
 	if callExpr, ok := expr.(*gopast.CallExpr); ok {
 		switch fun := callExpr.Fun.(type) {
 		case *gopast.Ident:
-			spxSpriteName = strings.TrimSuffix(path.Base(result.fset.Position(callExpr.Pos()).Filename), ".spx")
+			spxSpriteName = strings.TrimSuffix(path.Base(result.nodeFilename(callExpr)), ".spx")
 		case *gopast.SelectorExpr:
 			if ident, ok := fun.X.(*gopast.Ident); ok {
-				exprRange = Range{
-					Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-					End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-				}
+				exprRange = result.rangeForNode(ident)
 
 				obj := result.typeInfo.ObjectOf(ident)
 				if obj != nil {
@@ -1130,7 +1144,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			}
 		}
 		if spxSpriteName == "" {
-			result.addDiagnostics(documentURI, Diagnostic{
+			result.addDiagnostics(exprDocumentURI, Diagnostic{
 				Severity: SeverityError,
 				Range:    exprRange,
 				Message:  "sprite resource name cannot be empty",
@@ -1138,16 +1152,16 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			return nil
 		}
 	} else {
-		var typeName string
+		var typ types.Type
 		if declaredType != nil {
-			typeName = declaredType.String()
+			typ = declaredType
 		} else {
-			typeName = exprTV.Type.String()
+			typ = exprTV.Type
 		}
 
 		var spxResourceRefKind SpxResourceRefKind
-		switch typeName {
-		case spxSpriteNameTypeFullName:
+		switch typ {
+		case GetSpxSpriteNameType():
 			var ok bool
 			spxSpriteName, ok = getStringLitOrConstValue(expr, exprTV)
 			if !ok {
@@ -1157,7 +1171,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			if _, ok := expr.(*gopast.Ident); ok {
 				spxResourceRefKind = SpxResourceRefKindConstantReference
 			}
-		case spxSpriteTypeFullName:
+		case GetSpxSpriteType():
 			ident, ok := expr.(*gopast.Ident)
 			if !ok {
 				return nil
@@ -1175,7 +1189,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			return nil
 		}
 		if spxSpriteName == "" {
-			result.addDiagnostics(documentURI, Diagnostic{
+			result.addDiagnostics(exprDocumentURI, Diagnostic{
 				Severity: SeverityError,
 				Range:    exprRange,
 				Message:  "sprite resource name cannot be empty",
@@ -1191,7 +1205,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 
 	spxSpriteResource := result.spxResourceSet.Sprite(spxSpriteName)
 	if spxSpriteResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("sprite resource %q not found", spxSpriteName),
@@ -1205,26 +1219,23 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 // resource reference at an expression. It returns the spx sprite costume
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteCostumeResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSpriteCostumeName string
 		spxResourceRefKind   SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSpriteCostumeNameTypeFullName:
+	switch typ {
+	case GetSpxSpriteCostumeNameType():
 		var ok bool
 		spxSpriteCostumeName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1238,7 +1249,7 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 		return nil
 	}
 	if spxSpriteCostumeName == "" {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  "sprite costume resource name cannot be empty",
@@ -1253,7 +1264,7 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 
 	spxSpriteCostumeResource := spxSpriteResource.Costume(spxSpriteCostumeName)
 	if spxSpriteCostumeResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("costume resource %q not found in sprite %q", spxSpriteCostumeName, spxSpriteResource.Name),
@@ -1267,26 +1278,23 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 // resource reference at an expression. It returns the spx sprite animation
 // resource if it was successfully retrieved.
 func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResult, spxSpriteResource *SpxSpriteResource, expr gopast.Expr, declaredType types.Type) *SpxSpriteAnimationResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSpriteAnimationName string
 		spxResourceRefKind     SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSpriteAnimationNameTypeFullName:
+	switch typ {
+	case GetSpxSpriteAnimationNameType():
 		var ok bool
 		spxSpriteAnimationName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1300,7 +1308,7 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 		return nil
 	}
 	if spxSpriteAnimationName == "" {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  "sprite animation resource name cannot be empty",
@@ -1315,7 +1323,7 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 
 	spxSpriteAnimationResource := spxSpriteResource.Animation(spxSpriteAnimationName)
 	if spxSpriteAnimationResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("animation resource %q not found in sprite %q", spxSpriteAnimationName, spxSpriteResource.Name),
@@ -1329,26 +1337,23 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 // an expression. It returns the spx sound resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxSoundResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxSoundName       string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch typeName {
-	case spxSoundNameTypeFullName:
+	switch typ {
+	case GetSpxSoundNameType():
 		var ok bool
 		spxSoundName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1358,7 +1363,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 		if _, ok := expr.(*gopast.Ident); ok {
 			spxResourceRefKind = SpxResourceRefKindConstantReference
 		}
-	case spxSoundTypeFullName:
+	case GetSpxSoundType():
 		ident, ok := expr.(*gopast.Ident)
 		if !ok {
 			return nil
@@ -1376,7 +1381,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 		return nil
 	}
 	if spxSoundName == "" {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  "sound resource name cannot be empty",
@@ -1391,7 +1396,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 
 	spxSoundResource := result.spxResourceSet.Sound(spxSoundName)
 	if spxSoundResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("sound resource %q not found", spxSoundName),
@@ -1405,26 +1410,23 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 // at an expression. It returns the spx widget resource if it was successfully
 // retrieved.
 func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr gopast.Expr, declaredType types.Type) *SpxWidgetResource {
-	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
-	exprRange := Range{
-		Start: FromGopTokenPosition(result.fset.Position(expr.Pos())),
-		End:   FromGopTokenPosition(result.fset.Position(expr.End())),
-	}
+	exprDocumentURI := result.nodeDocumentURI(expr)
+	exprRange := result.rangeForNode(expr)
 	exprTV := result.typeInfo.Types[expr]
 
-	var typeName string
+	var typ types.Type
 	if declaredType != nil {
-		typeName = declaredType.String()
+		typ = declaredType
 	} else {
-		typeName = exprTV.Type.String()
+		typ = exprTV.Type
 	}
 
 	var (
 		spxWidgetName      string
 		spxResourceRefKind SpxResourceRefKind
 	)
-	switch typeName {
-	case spxWidgetNameTypeFullName:
+	switch typ {
+	case GetSpxWidgetNameType():
 		var ok bool
 		spxWidgetName, ok = getStringLitOrConstValue(expr, exprTV)
 		if !ok {
@@ -1438,7 +1440,7 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 		return nil
 	}
 	if spxWidgetName == "" {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  "widget resource name cannot be empty",
@@ -1453,7 +1455,7 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 
 	spxWidgetResource := result.spxResourceSet.Widget(spxWidgetName)
 	if spxWidgetResource == nil {
-		result.addDiagnostics(documentURI, Diagnostic{
+		result.addDiagnostics(exprDocumentURI, Diagnostic{
 			Severity: SeverityError,
 			Range:    exprRange,
 			Message:  fmt.Sprintf("widget resource %q not found", spxWidgetName),

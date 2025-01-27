@@ -5,6 +5,8 @@ import iconFix from './fix.svg?raw'
 import iconGoto from './goto.svg?raw'
 import iconModify from './modify.svg?raw'
 import iconRename from './rename.svg?raw'
+import iconCopy from './copy.svg?raw'
+import iconCopilot from '../copilot/logo-simple.svg?raw'
 
 defineProps<{
   type: CommandIconType
@@ -15,7 +17,9 @@ const typeIconMap = {
   fix: iconFix,
   goto: iconGoto,
   modify: iconModify,
-  rename: iconRename
+  rename: iconRename,
+  copy: iconCopy,
+  copilot: iconCopilot
 }
 </script>
 

@@ -1,17 +1,11 @@
 package server
 
-import (
-	"errors"
-	"strings"
-)
+import "strings"
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_hover
 func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -24,10 +18,7 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 				Kind:  Markdown,
 				Value: spxResourceRef.ID.URI().HTML(),
 			},
-			Range: Range{
-				Start: FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.Pos())),
-				End:   FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.End())),
-			},
+			Range: result.rangeForNode(spxResourceRef.Node),
 		}, nil
 	}
 
@@ -50,9 +41,6 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 			Kind:  Markdown,
 			Value: hoverContent.String(),
 		},
-		Range: Range{
-			Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-			End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-		},
+		Range: result.rangeForNode(ident),
 	}, nil
 }

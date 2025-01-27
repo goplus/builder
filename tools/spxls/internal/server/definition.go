@@ -1,9 +1,6 @@
 package server
 
-import (
-	"errors"
-	"go/types"
-)
+import "go/types"
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_declaration
 func (s *Server) textDocumentDeclaration(params *DeclarationParams) (any, error) {
@@ -18,9 +15,6 @@ func (s *Server) textDocumentDeclaration(params *DeclarationParams) (any, error)
 func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -38,20 +32,17 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 		if !result.isInFset(objPos) {
 			return nil, nil
 		}
-		return s.createLocationFromPos(result.fset, objPos), nil
+		return result.locationForPos(objPos), nil
 	} else if !result.isInFset(defIdent.Pos()) {
 		return nil, nil
 	}
-	return s.createLocationFromIdent(result.fset, defIdent), nil
+	return result.locationForNode(defIdent), nil
 }
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_typeDefinition
 func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -73,5 +64,5 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 	if !result.isInFset(objPos) {
 		return nil, nil
 	}
-	return s.createLocationFromPos(result.fset, objPos), nil
+	return result.locationForPos(objPos), nil
 }

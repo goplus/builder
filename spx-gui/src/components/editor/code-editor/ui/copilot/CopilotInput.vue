@@ -24,7 +24,7 @@ const placeholder = computed(() => {
 
 function handleSubmit() {
   const problem = inputStr.value.trim()
-  if (problem === '') return // TODO: show hint?
+  if (problem === '') return
   inputStr.value = ''
   if (props.controller.currentChat == null) {
     props.controller.startChat({

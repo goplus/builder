@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"slices"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
@@ -13,9 +12,6 @@ import (
 func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) (*[]DocumentHighlight, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {
@@ -148,11 +144,8 @@ func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) 
 		}
 
 		highlights = append(highlights, DocumentHighlight{
-			Range: Range{
-				Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-				End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-			},
-			Kind: kind,
+			Range: result.rangeForNode(ident),
+			Kind:  kind,
 		})
 		return true
 	})

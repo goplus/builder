@@ -62,15 +62,8 @@ import {
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 
-class ResourceReferencesProvider
-  extends Emitter<{
-    didChangeResourceReferences: [] // TODO
-  }>
-  implements IResourceReferencesProvider
-{
-  constructor(private lspClient: SpxLSPClient) {
-    super()
-  }
+class ResourceReferencesProvider implements IResourceReferencesProvider {
+  constructor(private lspClient: SpxLSPClient) {}
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
     return this.lspClient.getResourceReferences(ctx.textDocument.id)
   }
@@ -117,7 +110,7 @@ class DiagnosticsProvider
     return { start, end }
   }
   async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    // TODO: get diagnostics from runtime
+    // TODO: get diagnostics from runtime. https://github.com/goplus/builder/issues/1256
     const diagnostics: Diagnostic[] = []
     const report = await this.lspClient.textDocumentDiagnostic({
       textDocument: ctx.textDocument.id
@@ -511,7 +504,6 @@ export class CodeEditor extends Disposable {
       async provideAPIReference(ctx, position) {
         const definitions = await lspClient
           .workspaceExecuteCommandSpxGetDefinitions({
-            // TODO: support signal
             textDocument: ctx.textDocument.id,
             position: toLSPPosition(position)
           })

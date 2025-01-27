@@ -8,8 +8,6 @@ import (
 
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
-	gopast "github.com/goplus/gop/ast"
-	goptoken "github.com/goplus/gop/token"
 )
 
 // MessageReplier is an interface for sending messages back to the client.
@@ -312,28 +310,4 @@ func (s *Server) fromDocumentURI(documentURI DocumentURI) (string, error) {
 // toDocumentURI returns the [DocumentURI] for a relative path.
 func (s *Server) toDocumentURI(path string) DocumentURI {
 	return DocumentURI(string(s.workspaceRootURI) + path)
-}
-
-// createLocationFromPos creates a Location from a position.
-func (s *Server) createLocationFromPos(fset *goptoken.FileSet, pos goptoken.Pos) Location {
-	position := fset.Position(pos)
-	return Location{
-		URI: s.toDocumentURI(position.Filename),
-		Range: Range{
-			Start: FromGopTokenPosition(position),
-			End:   FromGopTokenPosition(position),
-		},
-	}
-}
-
-// createLocationFromIdent creates a Location from an ident position.
-func (s *Server) createLocationFromIdent(fset *goptoken.FileSet, ident *gopast.Ident) Location {
-	identPos := fset.Position(ident.Pos())
-	return Location{
-		URI: s.toDocumentURI(identPos.Filename),
-		Range: Range{
-			Start: FromGopTokenPosition(identPos),
-			End:   FromGopTokenPosition(fset.Position(ident.End())),
-		},
-	}
 }

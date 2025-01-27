@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"go/types"
 	"strings"
 )
@@ -10,9 +9,6 @@ import (
 func (s *Server) textDocumentSignatureHelp(params *SignatureHelpParams) (*SignatureHelp, error) {
 	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	if astFile == nil {

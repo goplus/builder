@@ -139,7 +139,7 @@ export class CompletionController extends Emitter<{
   }
 
   async applyCompletionItem(item: InternalCompletionItem) {
-    const { editor, cursorPosition } = this.ui
+    const { cursorPosition } = this.ui
     if (this.completion == null) return
     const { wordStart, position } = this.completion
     if (!positionEq(cursorPosition, position)) return
@@ -152,7 +152,6 @@ export class CompletionController extends Emitter<{
         await this.ui.insertSnippet(item.insertText, range)
     }
     this.stopCompletion()
-    editor.focus()
   }
 
   init() {
@@ -224,7 +223,7 @@ export class CompletionController extends Emitter<{
 }
 
 function shouldTriggerCompletion(char: string) {
-  return /[\w.]/.test(char)
+  return /[\w."]/.test(char)
 }
 
 function compareItems(a: InternalCompletionItem, b: InternalCompletionItem) {

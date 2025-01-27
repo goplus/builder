@@ -207,7 +207,7 @@ var (
 		s := New(newMapFSWithoutModTime(map[string][]byte{}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
-		require.EqualError(t, err, "no valid spx files found in main package")
+		require.EqualError(t, err, "no valid main.spx file found in main package")
 		require.Nil(t, report)
 	})
 
