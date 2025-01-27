@@ -21,6 +21,82 @@ func newTestMapFS() (fs.FS, map[string]MapFile) {
 	return fsys, files
 }
 
+func TestMapFSWithOverlay(t *testing.T) {
+	fsys, _ := newTestMapFS()
+
+	t.Run("Normal", func(t *testing.T) {
+		overlay := map[string]MapFile{
+			"foo.txt":     {Content: []byte("modified foo")},
+			"new.txt":     {Content: []byte("new file")},
+			"dir/bar.txt": {Content: []byte("modified bar")},
+		}
+
+		overlayFS := fsys.(*MapFS).WithOverlay(overlay)
+
+		// Test modified file.
+		f, err := overlayFS.Open("foo.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		got, err := io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []byte("modified foo"); !bytes.Equal(got, want) {
+			t.Errorf("content mismatch: got %q, want %q", got, want)
+		}
+
+		// Test new file.
+		f, err = overlayFS.Open("new.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		got, err = io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []byte("new file"); !bytes.Equal(got, want) {
+			t.Errorf("content mismatch: got %q, want %q", got, want)
+		}
+
+		// Test unmodified file.
+		f, err = overlayFS.Open("dir/subdir/another.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		got, err = io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []byte("another"); !bytes.Equal(got, want) {
+			t.Errorf("content mismatch: got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("EmptyOverlay", func(t *testing.T) {
+		overlayFS := fsys.(*MapFS).WithOverlay(nil)
+		f, err := overlayFS.Open("foo.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		got, err := io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []byte("foo"); !bytes.Equal(got, want) {
+			t.Errorf("content mismatch: got %q, want %q", got, want)
+		}
+	})
+}
+
 func TestMapFSOpen(t *testing.T) {
 	fsys, files := newTestMapFS()
 
