@@ -1,9 +1,13 @@
 <template>
-  <UISpriteItem :selected="selected" :img-src="imgSrc" :img-loading="!imgSrc || imgLoading" :name="asset.displayName" />
+  <UISpriteItem :selectable="{ selected }" :name="asset.displayName">
+    <template #img="{ style }">
+      <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
+    </template>
+  </UISpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UISpriteItem } from '@/components/ui'
+import { UIImg, UISpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'

@@ -96,7 +96,9 @@ describe('composeQuery', () => {
     const ret3 = withSetup(() => {
       const ret1 = useQuery(makeErrorFn(1, err1))
       const ret2 = useQuery(makeErrorFn(2, err2))
-      const ret3 = useQuery(async (ctx: QueryContext) => Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)]))
+      const ret3 = useQuery(async (ctx: QueryContext) =>
+        Promise.all([composeQuery(ctx, ret1), composeQuery(ctx, ret2)])
+      )
       return ret3
     })
 

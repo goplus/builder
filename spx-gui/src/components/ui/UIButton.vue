@@ -99,6 +99,7 @@ defineExpose({
   }
 
   .icon {
+    flex: 0 0 auto;
     width: var(--ui-font-size-text);
     height: var(--ui-font-size-text);
   }

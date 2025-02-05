@@ -14,9 +14,9 @@
     <WidgetItem
       v-for="widget in stage.widgets"
       :key="widget.id"
-      :stage="stage"
       :widget="widget"
-      :selected="selected?.id === widget.id"
+      :selectable="{ selected: selected?.id === widget.id }"
+      removable
       @click="handleSelect(widget)"
     />
     <template #add-options>

@@ -10,7 +10,8 @@
         v-for="sound in editorCtx.project.sounds"
         :key="sound.id"
         :sound="sound"
-        :selected="sound.id === selected"
+        :selectable="{ selected: sound.id === selected }"
+        removable
         @click="handleSoundClick(sound.id)"
       />
       <UIDropdown trigger="click" placement="top">
@@ -38,7 +39,7 @@ import { ref } from 'vue'
 import type { Animation } from '@/models/animation'
 import { UIDropdownModal, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import SoundItem from './SoundItem.vue'
+import SoundItem from '@/components/editor/sound/SoundItem.vue'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
