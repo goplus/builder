@@ -14,7 +14,8 @@ const resourceModel = computed(() => getResourceModel(codeEditorCtx.ui.project, 
 </script>
 
 <template>
-  <ResourceItem v-if="resourceModel != null" :resource="resourceModel" />
+  <!-- TODO: Design specially for `ResourcePreview`, instead of using the same `ResourceItem` as `ResourceSelector` -->
+  <ResourceItem v-if="resourceModel != null" :resource="resourceModel" autoplay />
 </template>
 
 <style lang="scss" scoped></style>

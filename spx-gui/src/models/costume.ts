@@ -110,9 +110,9 @@ export class Costume {
     if (this.parent == null) throw new Error(`parent required to autoFit costume ${this.name}`)
     const reference = this.parent.costumes[0]
     if (reference == null || reference === this) return
-    const [referenceSize, size] = await Promise.all([reference.getRawSize(), this.getRawSize()])
-    this.setX(reference.x + (size.width - referenceSize.width) / 2)
-    this.setY(reference.y + (size.height - referenceSize.height) / 2)
+    const [referenceSize, size] = await Promise.all([reference.getSize(), this.getSize()])
+    this.setX((reference.x + (size.width - referenceSize.width) / 2) * this.bitmapResolution)
+    this.setY((reference.y + (size.height - referenceSize.height) / 2) * this.bitmapResolution)
   }
 
   /**

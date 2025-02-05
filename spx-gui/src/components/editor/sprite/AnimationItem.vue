@@ -1,19 +1,28 @@
 <template>
-  <UIEditorSpriteItem :selectable="selectable" :name="animation.name" :color="color">
+  <UIEditorSpriteItem ref="wrapperRef" :selectable="selectable" :name="animation.name" :color="color">
     <template #img="{ style }">
-      <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
+      <CostumesAutoPlayer
+        v-if="autoplay || hovered"
+        :style="style"
+        :costumes="animation.costumes"
+        :duration="animation.duration"
+        :placeholder-img="imgSrc"
+      />
+      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
   </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { UIImg, UIEditorSpriteItem, useModal, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
-import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useHovered } from '@/utils/dom'
 import type { Animation } from '@/models/animation'
 import { useMessageHandle } from '@/utils/exception'
+import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationRemoveModal from './AnimationRemoveModal.vue'
 
 const props = withDefaults(
@@ -22,11 +31,13 @@ const props = withDefaults(
     color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     removable?: boolean
+    autoplay?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
-    removable: false
+    removable: false,
+    autoplay: false
   }
 )
 
@@ -34,6 +45,9 @@ const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 
 const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
+const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
+const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
+
 const removeAnimation = useModal(AnimationRemoveModal)
 const handleRemove = useMessageHandle(
   () =>

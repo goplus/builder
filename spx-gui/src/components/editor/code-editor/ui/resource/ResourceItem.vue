@@ -17,19 +17,33 @@ withDefaults(
   defineProps<{
     resource: ResourceModel
     selectable?: false | { selected: boolean }
+    autoplay?: boolean
   }>(),
   {
-    selectable: false
+    selectable: false,
+    autoplay: false
   }
 )
 </script>
 
 <template>
-  <AnimationItem v-if="resource instanceof Animation" :animation="resource" :selectable="selectable" color="primary" />
+  <AnimationItem
+    v-if="resource instanceof Animation"
+    :animation="resource"
+    :selectable="selectable"
+    color="primary"
+    :autoplay="autoplay"
+  />
   <BackdropItem v-else-if="resource instanceof Backdrop" :backdrop="resource" :selectable="selectable" />
   <CostumeItem v-else-if="resource instanceof Costume" :costume="resource" :selectable="selectable" color="primary" />
   <SoundItem v-else-if="resource instanceof Sound" :sound="resource" :selectable="selectable" color="primary" />
-  <SpriteItem v-else-if="resource instanceof Sprite" :sprite="resource" :selectable="selectable" color="primary" />
+  <SpriteItem
+    v-else-if="resource instanceof Sprite"
+    :sprite="resource"
+    :selectable="selectable"
+    color="primary"
+    :autoplay="autoplay"
+  />
   <WidgetItem v-else-if="isWidget(resource)" :widget="resource" :selectable="selectable" color="primary" />
 </template>
 
