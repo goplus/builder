@@ -37,14 +37,12 @@
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
 import type { Animation } from '@/models/animation'
 import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
 
 import { ref } from 'vue'
 
 const props = defineProps<{
   visible: boolean
   animation: Animation
-  sprite: Sprite
   project: Project
 }>()
 const emit = defineEmits<{
@@ -55,6 +53,8 @@ const emit = defineEmits<{
 const preserveCostumes = ref(false)
 
 const handleConfirm = async () => {
+  const sprite = props.animation.sprite
+  if (sprite == null) throw new Error('sprite not found')
   await props.project.history.doAction(
     {
       name: {
@@ -63,11 +63,11 @@ const handleConfirm = async () => {
       }
     },
     () => {
-      props.sprite.removeAnimation(props.animation.id)
+      sprite.removeAnimation(props.animation.id)
       if (preserveCostumes.value) {
         for (const costume of props.animation.costumes) {
           const clonedCostume = costume.clone()
-          props.sprite.addCostume(clonedCostume)
+          sprite.addCostume(clonedCostume)
         }
       }
     }

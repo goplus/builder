@@ -25,7 +25,8 @@
           v-for="sprite in sprites"
           :key="sprite.id"
           :sprite="sprite"
-          :selected="isSelected(sprite)"
+          :selectable="{ selected: isSelected(sprite) }"
+          operable
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
@@ -63,11 +64,11 @@ import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
+import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
-import SpriteItem from './SpriteItem.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { useMessageHandle } from '@/utils/exception'

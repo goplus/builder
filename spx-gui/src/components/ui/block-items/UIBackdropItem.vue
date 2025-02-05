@@ -1,10 +1,15 @@
 <template>
-  <UIBlockItem class="ui-backdrop-item" size="large" :active="selected" :interactive="selected != null">
+  <UIBlockItem
+    class="ui-backdrop-item"
+    size="large"
+    :active="selectable && selectable.selected"
+    :interactive="!!selectable"
+  >
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
-    <UICornerIcon v-show="selected" type="check" />
+    <UICornerIcon v-show="selectable && selectable.selected" type="check" />
   </UIBlockItem>
 </template>
 <script setup lang="ts">
@@ -18,10 +23,10 @@ withDefaults(
     imgSrc: string | null
     imgLoading: boolean
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
   }>(),
   {
-    selected: undefined
+    selectable: false
   }
 )
 </script>

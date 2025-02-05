@@ -1,11 +1,15 @@
 <template>
-  <UISpriteItem :selected="selected" :img-src="imgSrc" :img-loading="!imgSrc" :name="asset.name" />
+  <UISpriteItem :selectable="{ selected }" :name="asset.name">
+    <template #img="{ style }">
+      <UIImg :style="style" :src="imgSrc" :loading="imgSrc == null" />
+    </template>
+  </UISpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UISpriteItem } from '@/components/ui'
-import type { ExportedScratchSprite } from '@/utils/scratch'
 import { ref, watchEffect } from 'vue'
+import { UIImg, UISpriteItem } from '@/components/ui'
+import type { ExportedScratchSprite } from '@/utils/scratch'
 
 const props = defineProps<{
   asset: ExportedScratchSprite

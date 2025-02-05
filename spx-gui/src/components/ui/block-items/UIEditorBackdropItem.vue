@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem color="stage" :active="selected" :interactive="selected != null">
+  <UIBlockItem color="stage" :active="selectable && selectable.selected" :interactive="!!selectable">
     <div class="img-container">
       <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
@@ -19,10 +19,10 @@ withDefaults(
     imgSrc: string | null
     imgLoading: boolean
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
   }>(),
   {
-    selected: undefined
+    selectable: false
   }
 )
 </script>

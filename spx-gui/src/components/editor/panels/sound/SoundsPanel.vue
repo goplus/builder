@@ -26,7 +26,8 @@
           v-for="sound in sounds"
           :key="sound.id"
           :sound="sound"
-          :selected="isSelected(sound)"
+          :selectable="{ selected: isSelected(sound) }"
+          removable
           @click="handleSoundClick(sound)"
         />
       </PanelList>
@@ -50,10 +51,10 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
+import SoundItem from '@/components/editor/sound/SoundItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
-import SoundItem from './SoundItem.vue'
 import SoundSummaryItem from './SoundSummaryItem.vue'
 
 defineProps<{
