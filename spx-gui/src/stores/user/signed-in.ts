@@ -95,10 +95,18 @@ export const useUserStore = defineStore('spx-user', {
     isSignedIn(): boolean {
       return this.isAccessTokenValid() || this.refreshToken != null
     },
+    parseAccessToken(accessToken: string) {
+      return jwtDecode<UserInfo>(accessToken)
+    },
     // TODO: return type `User` instead of `UserInfo` to keep consistency with `getUser` in `src/apis/user.ts`
     getSignedInUser(): UserInfo | null {
       if (!this.isSignedIn()) return null
-      return jwtDecode<UserInfo>(this.accessToken!)
+      return this.parseAccessToken(this.accessToken!)
+    },
+    signInWithAccessToken(accessToken: string) {
+      this.accessToken = accessToken
+      this.accessTokenExpiresAt = null
+      this.refreshToken = null
     }
   },
   persist: true
