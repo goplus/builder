@@ -37,6 +37,7 @@ onStart => {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, emptyLineItems)
+		assert.NotEmpty(t, emptyLineItems)
 		assert.True(t, containsCompletionItemLabel(emptyLineItems, "println"))
 		assert.True(t, containsCompletionSpxDefinitionID(emptyLineItems, SpxDefinitionIdentifier{
 			Package: util.ToPtr("main"),
@@ -64,6 +65,7 @@ onStart => {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, mySpriteDotItems)
+		assert.NotEmpty(t, mySpriteDotItems)
 		assert.False(t, containsCompletionItemLabel(mySpriteDotItems, "println"))
 		assert.True(t, containsCompletionSpxDefinitionID(mySpriteDotItems, SpxDefinitionIdentifier{
 			Package:    util.ToPtr("github.com/goplus/spx"),
@@ -90,6 +92,53 @@ onStart => {
 			Name:       util.ToPtr("Sprite.clone"),
 			OverloadID: util.ToPtr("1"),
 		}))
+	})
+
+	t.Run("InSpxEventHandler", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onStart => {
+
+}
+run "assets", {Title: "My Game"}
+`),
+		}), nil)
+
+		items, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 1},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items)
+		assert.NotEmpty(t, items)
+		assert.False(t, containsCompletionSpxDefinitionID(items, SpxDefinitionIdentifier{
+			Package: util.ToPtr("github.com/goplus/spx"),
+			Name:    util.ToPtr("Sprite.onStart"),
+		}))
+		assert.False(t, containsCompletionSpxDefinitionID(items, SpxDefinitionIdentifier{
+			Package: util.ToPtr("github.com/goplus/spx"),
+			Name:    util.ToPtr("Sprite.onClick"),
+		}))
+	})
+
+	t.Run("InStringLit", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+run "a
+`),
+		}), nil)
+
+		items, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 1, Character: 6},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items)
+		assert.Empty(t, items)
 	})
 
 	t.Run("InComment", func(t *testing.T) {
