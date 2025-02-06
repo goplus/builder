@@ -96,7 +96,8 @@ type completionContext struct {
 	switchTag          gopast.Expr
 	returnIndex        int
 
-	inStringLit bool
+	inStringLit       bool
+	inSpxEventHandler bool
 }
 
 // analyze analyzes the completion context to determine the kind of completion needed.
@@ -210,6 +211,8 @@ func (ctx *completionContext) analyze() {
 			ctx.kind = completionKindGeneral
 		}
 	}
+
+	ctx.inSpxEventHandler = ctx.result.isInSpxEventHandler(ctx.pos)
 }
 
 // isInComment reports whether the position of the current completion context
@@ -403,7 +406,18 @@ func (ctx *completionContext) collectGeneral() error {
 				continue
 			}
 
-			ctx.itemSet.addSpxDefs(ctx.result.spxDefinitionsForNamedStruct(named)...)
+			for _, def := range ctx.result.spxDefinitionsForNamedStruct(named) {
+				if ctx.inSpxEventHandler && def.ID.Name != nil {
+					name := *def.ID.Name
+					if idx := strings.LastIndex(name, "."); idx >= 0 {
+						name = name[idx+1:]
+					}
+					if isSpxEventHandlerFuncName(name) {
+						continue
+					}
+				}
+				ctx.itemSet.addSpxDefs(def)
+			}
 		}
 	}
 
