@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/goplus/igop v0.28.1
 	github.com/goplus/reflectx v1.2.2
-	github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1
+	github.com/goplus/spx v1.1.1-0.20250205081831-c3f6e69289be
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
 )
 
