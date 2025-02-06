@@ -182,6 +182,9 @@ export class Sprite extends Disposable {
       else if (bound === animationId) this.animationBindings[state as State] = undefined
     })
   }
+  getDefaultAnimation() {
+    return this.animations.find((a) => a.id === this.animationBindings[State.default]) ?? null
+  }
 
   heading: number
   setHeading(heading: number) {
