@@ -114,7 +114,6 @@ export class Stage extends Disposable {
     if (!this.widgetsZorder.includes(widget.id)) {
       this.widgetsZorder = [...this.widgetsZorder, widget.id]
     }
-    this.autoSelectWidget()
   }
   removeWidget(id: string): void {
     const idx = this.widgets.findIndex((s) => s.id === id)
