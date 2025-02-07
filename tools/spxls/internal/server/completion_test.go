@@ -474,6 +474,66 @@ onClick => {
 		assert.NotEmpty(t, items)
 		assert.True(t, containsCompletionItemLabel(items, "Sprite2Costume"))
 	})
+
+	t.Run("AtLineStartWithAnIdentifier", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onClick => {
+	pr
+}
+`),
+		}), nil)
+
+		items, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 3},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items)
+		assert.NotEmpty(t, items)
+		assert.True(t, containsCompletionItemLabel(items, "println"))
+	})
+
+	t.Run("AtLineStartWithAMemberAccessExpression", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+var (
+	MySprite Sprite
+)
+MySprite.setCo`), // Cursor at EOF.
+			"MySprite.spx": []byte(`
+onClick => {
+	MySprite.setCo
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		items1, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 4, Character: 14},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items1)
+		assert.NotEmpty(t, items1)
+		assert.True(t, containsCompletionItemLabel(items1, "setCostume"))
+
+		items2, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 2, Character: 15},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items2)
+		assert.NotEmpty(t, items2)
+		assert.True(t, containsCompletionItemLabel(items2, "setCostume"))
+	})
 }
 
 func containsCompletionItemLabel(items []CompletionItem, label string) bool {

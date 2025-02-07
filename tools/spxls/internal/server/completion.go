@@ -108,7 +108,7 @@ func (ctx *completionContext) analyze() {
 		case *gopast.ImportSpec:
 			ctx.kind = completionKindImport
 		case *gopast.SelectorExpr:
-			if node.Sel == nil || node.Sel.Pos() >= ctx.pos {
+			if node.Sel == nil || node.Sel.End() >= ctx.pos {
 				ctx.kind = completionKindDot
 				ctx.selectorExpr = node
 			}
@@ -266,17 +266,27 @@ func (ctx *completionContext) isInImportStringLit() bool {
 	return false
 }
 
-// isLineStart reports whether the position of the completion context is at the
-// start of a line, ignoring whitespace.
+// isLineStart reports whether the position is preceded by only whitespace, or
+// by a continuous sequence of non-whitespace characters (like an identifier or
+// a member access expression).
 func (ctx *completionContext) isLineStart() bool {
+	fileBase := goptoken.Pos(ctx.tokenFile.Base())
+	relPos := ctx.pos - fileBase
+	if relPos < 0 || int(relPos) > len(ctx.astFile.Code) {
+		return false
+	}
+
 	line := ctx.tokenFile.Line(ctx.pos)
 	lineStartPos := ctx.tokenFile.LineStart(line)
-	// Subtract 2 from cursor position to check content before the cursor,
-	// excluding any partial input at cursor position.
-	codeEndPos := min(ctx.pos-2, goptoken.Pos(len(ctx.astFile.Code)))
-	for pos := lineStartPos; pos < codeEndPos; pos++ {
+	relLineStartPos := lineStartPos - fileBase
+	if relLineStartPos < 0 || int(relLineStartPos) >= len(ctx.astFile.Code) {
+		return false
+	}
+
+	for pos := relLineStartPos; pos < relPos; pos++ {
 		if !unicode.IsSpace(rune(ctx.astFile.Code[pos])) {
-			return false
+			text := string(ctx.astFile.Code[pos:relPos])
+			return !slices.ContainsFunc([]rune(text), unicode.IsSpace)
 		}
 	}
 	return true
