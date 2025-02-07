@@ -56,7 +56,6 @@ import {
   type CommandArgs,
   getTextDocumentId,
   containsPosition,
-  makeBasicMarkdownString,
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
   fromLSPDiagnostic,
@@ -330,6 +329,11 @@ class CompletionProvider implements ICompletionProvider {
           documentation: null
         }
 
+        if (item.insertText != null) {
+          result.insertText = item.insertText
+          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
+        }
+
         const defId = item.data?.definition
         const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
 
@@ -341,7 +345,7 @@ class CompletionProvider implements ICompletionProvider {
           result.kind = definition.kind
           result.insertText = definition.insertText
           result.insertTextFormat = InsertTextFormat.Snippet
-          result.documentation = makeBasicMarkdownString(definition.overview)
+          result.documentation = definition.detail
         }
 
         if (item.documentation != null) {
@@ -349,10 +353,6 @@ class CompletionProvider implements ICompletionProvider {
           result.documentation = makeAdvancedMarkdownString(docStr)
         }
 
-        if (item.insertText != null) {
-          result.insertText = item.insertText
-          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
-        }
         return result
       })
     )
