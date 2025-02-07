@@ -173,6 +173,10 @@ export class TextDocument
     return this.monacoTextModel.getValueInRange(toMonacoRange(range))
   }
 
+  getLineContent(line: number): string {
+    return this.monacoTextModel.getLineContent(line)
+  }
+
   getWordAtPosition(position: Position): WordAtPosition | null {
     return this.monacoTextModel.getWordAtPosition(toMonacoPosition(position))
   }
