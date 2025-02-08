@@ -19,7 +19,7 @@ export const defaultFps = 10
 
 export type AnimationInits = {
   id?: string
-  /** Duration for animation to be played once */
+  /** Duration (in seconds) for animation to be played once */
   duration?: number
   sound?: string
 }
@@ -84,6 +84,7 @@ export class Animation extends Disposable {
     }
   }
 
+  /** Duration (in seconds) for animation to be played once */
   duration: number
   setDuration(duration: number) {
     this.duration = duration

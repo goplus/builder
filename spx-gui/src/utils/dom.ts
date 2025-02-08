@@ -1,4 +1,5 @@
 import { ref, watch, type WatchSource } from 'vue'
+import { getCleanupSignal } from './disposable'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
   const width = ref<number | null>(null)
@@ -52,4 +53,19 @@ export function addPrefetchLink(url: string) {
     document.head.removeChild(link)
   }
   document.head.appendChild(link)
+}
+
+export function useHovered(elSource: WatchSource<HTMLElement | null>) {
+  const hovered = ref(false)
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el == null) return
+      const signal = getCleanupSignal(onCleanup)
+      el.addEventListener('mouseenter', () => (hovered.value = true), { signal })
+      el.addEventListener('mouseleave', () => (hovered.value = false), { signal })
+    },
+    { immediate: true }
+  )
+  return hovered
 }

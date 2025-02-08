@@ -1,6 +1,18 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { shallowReactive, shallowRef, watch, watchEffect, type ShallowRef, type WatchSource, computed } from 'vue'
+import {
+  shallowReactive,
+  shallowRef,
+  watch,
+  watchEffect,
+  type ShallowRef,
+  type WatchSource,
+  computed,
+  onUnmounted,
+  onDeactivated,
+  ref,
+  onActivated
+} from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import type { Disposable } from './disposable'
 
@@ -291,4 +303,12 @@ export function timeout(duration = 0) {
 
 export function trimLineBreaks(str: string) {
   return str.replace(/^\n+|\n+$/g, '')
+}
+
+export function useActivated() {
+  const activatedRef = ref(true)
+  onActivated(() => (activatedRef.value = true))
+  onDeactivated(() => (activatedRef.value = false))
+  onUnmounted(() => (activatedRef.value = false))
+  return activatedRef
 }

@@ -15,12 +15,6 @@ const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
 
 function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   if (type === 'log' && args.length === 1 && typeof args[0] === 'string') {
-    // TODO: Temporarily filter out "go executable not found" error from igop.
-    // Needs upstream fix for PATH resolution in Wasm environment.
-    if (args[0] === 'exec: "go": executable file not found in $PATH') {
-      return
-    }
-
     try {
       // Log format is determined by `github.com/goplus/builder/tools/ispx/main.go:logWithCallerInfo`.
       //

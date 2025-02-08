@@ -19,7 +19,7 @@ const code = useSlotText()
 const handleInsert = useMessageHandle(
   () =>
     editorCtx.project.history.doAction({ name: { en: 'Insert code', zh: '插入代码' } }, () =>
-      codeEditorUICtx.ui.insertText(code.value)
+      codeEditorUICtx.ui.insertBlockText(code.value)
     ),
   { en: 'Failed to insert code', zh: '插入代码失败' }
 ).fn

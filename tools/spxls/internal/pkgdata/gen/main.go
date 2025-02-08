@@ -14,48 +14,122 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"slices"
-	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 	_ "github.com/goplus/spx"
 	"golang.org/x/tools/go/gcexportdata"
 )
 
-// modulePaths is the list of modules to generate the exported symbols for.
-var modulePaths = []string{
+// pkgPaths is the list of package paths to generate the exported symbols for.
+//
+// NOTE: All package paths listed here must also be imported in
+// `github.com/goplus/builder/tools/ispx/embedded_pkgs.go`.
+var pkgPaths = []string{
+	"builtin",
+
+	"archive/tar",
+	"archive/zip",
+	"bufio",
+	"bytes",
+	"cmp",
+	"compress/bzip2",
+	"compress/flate",
+	"compress/gzip",
+	"compress/lzw",
+	"compress/zlib",
+	"context",
+	"crypto",
+	"crypto/aes",
+	"crypto/cipher",
+	"crypto/des",
+	"crypto/dsa",
+	"crypto/ecdh",
+	"crypto/ecdsa",
+	"crypto/ed25519",
+	"crypto/elliptic",
+	"crypto/hmac",
+	"crypto/md5",
+	"crypto/rand",
+	"crypto/rc4",
+	"crypto/rsa",
+	"crypto/sha1",
+	"crypto/sha256",
+	"crypto/sha512",
+	"crypto/subtle",
+	"encoding",
+	"encoding/asn1",
+	"encoding/base32",
+	"encoding/base64",
+	"encoding/binary",
+	"encoding/csv",
+	"encoding/gob",
+	"encoding/hex",
+	"encoding/json",
+	"encoding/pem",
+	"encoding/xml",
+	"errors",
+	"fmt",
+	"hash",
+	"hash/adler32",
+	"hash/crc32",
+	"hash/crc64",
+	"hash/fnv",
+	"hash/maphash",
+	"html",
+	"html/template",
+	"image",
+	"image/color",
+	"image/color/palette",
+	"image/draw",
+	"image/gif",
+	"image/jpeg",
+	"image/png",
+	"io",
+	"io/fs",
+	"io/ioutil",
+	"log",
+	"log/slog",
+	"maps",
+	"math",
+	"math/big",
+	"math/bits",
+	"math/cmplx",
+	"math/rand",
+	"mime",
+	"net/http",
+	"net/netip",
+	"net/url",
+	"os",
+	"path",
+	"path/filepath",
+	"reflect",
+	"regexp",
+	"regexp/syntax",
+	"runtime",
+	"slices",
+	"sort",
+	"strconv",
+	"strings",
+	"sync",
+	"sync/atomic",
+	"syscall/js",
+	"text/scanner",
+	"text/tabwriter",
+	"text/template",
+	"text/template/parse",
+	"time",
+	"time/tzdata",
+	"unicode",
+	"unicode/utf16",
+	"unicode/utf8",
+
 	"github.com/goplus/spx",
+	"github.com/hajimehoshi/ebiten/v2",
 }
 
 // generate generates the pkgdata.zip file containing the exported symbols of
 // the given packages.
 func generate() error {
-	pkgPaths := []string{"builtin"}
-
-	// Scan the stdlib packages.
-	stdlibImportPaths, err := execGo("list", "-f", "{{.ImportPath}}", "std")
-	if err != nil {
-		return err
-	}
-	for _, importPath := range strings.Split(string(stdlibImportPaths), "\n") {
-		if !isSkippable(importPath) {
-			pkgPaths = append(pkgPaths, importPath)
-		}
-	}
-
-	// Scan the modules.
-	for _, modulePath := range modulePaths {
-		importPaths, err := execGo("list", "-deps", "-f", "{{if not .Standard}}{{.ImportPath}}{{end}}", modulePath+"/...")
-		if err != nil {
-			return err
-		}
-		for _, importPath := range strings.Split(string(importPaths), "\n") {
-			if !isSkippable(importPath) {
-				pkgPaths = append(pkgPaths, importPath)
-			}
-		}
-	}
-
 	var zipBuf bytes.Buffer
 	zw := zip.NewWriter(&zipBuf)
 	for _, pkgPath := range pkgPaths {
@@ -191,20 +265,6 @@ func generate() error {
 		return err
 	}
 	return os.WriteFile("pkgdata.zip", zipBuf.Bytes(), 0o644)
-}
-
-// isSkippable reports whether the import path should be skipped.
-func isSkippable(importPath string) bool {
-	if importPath == "" {
-		return true
-	}
-	return slices.ContainsFunc(strings.Split(importPath, string(os.PathSeparator)), func(part string) bool {
-		switch part {
-		case "internal", "test", "testdata", "vendor":
-			return true
-		}
-		return false
-	})
 }
 
 // execGo executes the given go command.
