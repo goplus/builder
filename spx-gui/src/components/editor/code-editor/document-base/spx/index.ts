@@ -436,7 +436,8 @@ export const move0: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Move given distance toward current heading, e.g., `move 10`',
     zh: '向当前朝向移动指定的距离，如：`move 10`'
-  })
+  }),
+  hiddenFromList: true // not recommended to use
 }
 
 export const move1: DefinitionDocumentationItem = {

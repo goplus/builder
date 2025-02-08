@@ -1,7 +1,7 @@
 package main
 
-//go:generate qexp -outdir pkg github.com/goplus/spx
-//go:generate qexp -outdir pkg github.com/hajimehoshi/ebiten/v2
+//go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/spx
+//go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/hajimehoshi/ebiten/v2
 
 // All packages available in the ispx Wasm runtime.
 //
