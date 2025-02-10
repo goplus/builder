@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"go/types"
 	"slices"
+	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
-	gopast "github.com/goplus/gop/ast"
-	goptoken "github.com/goplus/gop/token"
 )
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspace_executeCommand
@@ -124,6 +123,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	if innermostScope == nil {
 		return nil, nil
 	}
+	isInSpxEventHandler := result.isInSpxEventHandler(pos)
 
 	var defIDs []SpxDefinitionIdentifier
 	seenDefIDs := make(map[string]struct{})
@@ -138,52 +138,6 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		defIDs = slices.Grow(defIDs, len(defs))
 		for _, def := range defs {
 			addDefID(def.ID)
-		}
-	}
-
-	// Find called event handlers.
-	calledEventHandlers := make(map[string]struct{})
-	for expr, tv := range result.typeInfo.Types {
-		if expr == nil || !expr.Pos().IsValid() || tv.IsType() {
-			continue // Skip type identifiers.
-		}
-		if expr.Pos() < goptoken.Pos(tokenFile.Base()) ||
-			expr.End() > goptoken.Pos(tokenFile.Base()+tokenFile.Size()) ||
-			pos < expr.Pos() ||
-			pos > expr.End() {
-			continue
-		}
-
-		callExpr, ok := expr.(*gopast.CallExpr)
-		if !ok {
-			continue
-		}
-		funcIdent, ok := callExpr.Fun.(*gopast.Ident)
-		if !ok {
-			continue
-		}
-		if !isSpxEventHandlerFuncName(funcIdent.Name) {
-			continue
-		}
-		funcObj := result.typeInfo.ObjectOf(funcIdent)
-		if !isSpxPkgObject(funcObj) {
-			continue
-		}
-		funcTV, ok := result.typeInfo.Types[callExpr.Fun]
-		if !ok {
-			continue
-		}
-		funcSig, ok := funcTV.Type.(*types.Signature)
-		if !ok || funcSig.Recv() == nil {
-			continue
-		}
-
-		if paramCount := funcSig.Params().Len(); paramCount > 0 {
-			lastParamType := funcSig.Params().At(paramCount - 1).Type()
-			if _, ok := lastParamType.(*types.Signature); ok {
-				funcRecvTypeName := result.selectorTypeNameForIdent(funcIdent)
-				calledEventHandlers[funcRecvTypeName+"."+toLowerCamelCase(funcIdent.Name)] = struct{}{}
-			}
 		}
 	}
 
@@ -212,8 +166,12 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			}
 
 			for _, def := range result.spxDefinitionsForNamedStruct(named) {
-				if def.ID.Name != nil {
-					if _, ok := calledEventHandlers[*def.ID.Name]; ok {
+				if isInSpxEventHandler && def.ID.Name != nil {
+					name := *def.ID.Name
+					if idx := strings.LastIndex(name, "."); idx >= 0 {
+						name = name[idx+1:]
+					}
+					if isSpxEventHandlerFuncName(name) {
 						continue
 					}
 				}

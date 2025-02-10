@@ -3,7 +3,7 @@
     :img-src="imgSrc"
     :img-loading="!imgSrc || imgLoading"
     :name="asset.displayName"
-    :selected="selected"
+    :selectable="{ selected }"
   />
 </template>
 

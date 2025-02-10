@@ -426,6 +426,36 @@ func (r *compileResult) spxDefinitionsForNamedStruct(named *types.Named) (defs [
 	return
 }
 
+// isInSpxEventHandler checks if the given position is inside an spx event
+// handler callback.
+func (r *compileResult) isInSpxEventHandler(pos goptoken.Pos) bool {
+	astFile := r.posASTFile(pos)
+	if astFile == nil {
+		return false
+	}
+
+	path, _ := util.PathEnclosingInterval(astFile, pos-1, pos)
+	for _, node := range path {
+		callExpr, ok := node.(*gopast.CallExpr)
+		if !ok || len(callExpr.Args) == 0 {
+			continue
+		}
+		funcIdent, ok := callExpr.Fun.(*gopast.Ident)
+		if !ok {
+			continue
+		}
+		funcObj := r.typeInfo.ObjectOf(funcIdent)
+		if !isSpxPkgObject(funcObj) {
+			continue
+		}
+
+		if isSpxEventHandlerFuncName(funcIdent.Name) {
+			return true
+		}
+	}
+	return false
+}
+
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
 func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {

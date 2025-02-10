@@ -125,6 +125,7 @@ export class Stage extends Disposable {
     widget.dispose()
 
     this.widgetsZorder = this.widgetsZorder.filter((v) => v !== id)
+    this.autoSelectWidget()
   }
   private setWidgetZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.widgetsZorder.findIndex((v) => v === id)

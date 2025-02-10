@@ -282,6 +282,103 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.editor.focus()
   }
 
+  private async insertInlineContent(type: 'text' | 'snippet', content: string, range: Range) {
+    const textDocument = this.activeTextDocument
+    if (textDocument == null) return
+
+    const insert = async (cnt: string, rg: Range) => {
+      if (type === 'text') await this.insertText(cnt, rg)
+      else await this.insertSnippet(cnt, rg)
+    }
+
+    if (!isRangeEmpty(range)) return insert(content, range)
+
+    const pos = range.start
+    const lineCnt = textDocument.getLineContent(pos.line)
+    if (isEmptyText(lineCnt)) return insert(content, range)
+
+    const word = textDocument.getWordAtPosition(pos)
+    if (word == null) return insert(content, range)
+
+    const isPosInWord = pos.column >= word.startColumn && pos.column <= word.endColumn
+    if (isPosInWord) {
+      const wordEndPos = { line: pos.line, column: word.endColumn }
+      this.editor.setPosition(toMonacoPosition(wordEndPos))
+      return insert(' ' + content, { start: wordEndPos, end: wordEndPos })
+    }
+
+    return insert(content, range)
+  }
+
+  private async insertBlockContent(type: 'text' | 'snippet', content: string, range: Range) {
+    const textDocument = this.activeTextDocument
+    if (textDocument == null) return
+
+    const insert = async (cnt: string, rg: Range) => {
+      // Ensure trailing newline if the insertion occurs at the end of the file
+      const currentContent = textDocument.getValue()
+      const insertionEndOffset = textDocument.getOffsetAt(rg.end)
+      if (insertionEndOffset === currentContent.length && !cnt.endsWith('\n')) cnt += '\n'
+
+      if (type === 'snippet') {
+        await this.insertSnippet(cnt, rg)
+        return
+      }
+
+      await this.insertText(cnt, rg)
+
+      // Properly indent the inserted content for type `text`:
+      // 1. Select inserted content
+      const cursorPos = this.editor.getPosition()
+      if (cursorPos == null) return
+      this.editor.setSelection(toMonacoRange({ start: rg.start, end: fromMonacoPosition(cursorPos) }))
+      // 2. Indent selected content
+      this.editor.trigger('insertBlockContent', 'editor.action.reindentselectedlines', null)
+      // 3. Clear selection, move cursor to end of the selection
+      const selection = this.editor.getSelection()
+      if (selection == null) return
+      this.editor.setSelection({
+        startLineNumber: selection.endLineNumber,
+        startColumn: selection.endColumn,
+        endLineNumber: selection.endLineNumber,
+        endColumn: selection.endColumn
+      })
+    }
+
+    const pos = range.end
+    const lineCnt = textDocument.getLineContent(pos.line)
+    if (isEmptyText(lineCnt)) return insert(content, range)
+
+    const lineStartPos = { line: pos.line, column: 1 }
+    const lineCntBeforePos = textDocument.getValueInRange({ start: lineStartPos, end: pos })
+    const isPosAtLineStart = isEmptyText(lineCntBeforePos)
+    if (isPosAtLineStart) {
+      if (!content.endsWith('\n')) content = content + '\n'
+      return insert(content, range)
+    }
+
+    const lineEndPos = { line: pos.line, column: lineCnt.length + 1 }
+    this.editor.setPosition(toMonacoPosition(lineEndPos))
+    content = '\n' + content.replace(/\n$/, '')
+    return insert(content, { start: lineEndPos, end: lineEndPos })
+  }
+
+  async insertInlineText(text: string, range: Range = this.getSelectionRange()) {
+    return this.insertInlineContent('text', text, range)
+  }
+
+  async insertInlineSnippet(snippet: string, range: Range = this.getSelectionRange()) {
+    return this.insertInlineContent('snippet', snippet, range)
+  }
+
+  async insertBlockText(text: string, range: Range = this.getSelectionRange()) {
+    return this.insertBlockContent('text', text, range)
+  }
+
+  async insertBlockSnippet(snippet: string, range: Range = this.getSelectionRange()) {
+    return this.insertBlockContent('snippet', snippet, range)
+  }
+
   private cursorPositionRef = shallowRef<Position | null>(null)
   /** Cursor position (in current active text document) */
   get cursorPosition() {
@@ -477,4 +574,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this._editor?.setModel(null)
     super.dispose()
   }
+}
+
+function isEmptyText(s: string) {
+  return /^\s*$/.test(s)
 }

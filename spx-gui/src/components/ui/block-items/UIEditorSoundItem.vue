@@ -2,8 +2,8 @@
   <UIBlockItem
     :color="color"
     :variant="color === 'sound' ? 'colorful' : 'standard'"
-    :active="selected"
-    :interactive="selected != null"
+    :active="selectable && selectable.selected"
+    :interactive="!!selectable"
   >
     <div class="sound-container">
       <div class="sound-player">
@@ -24,11 +24,11 @@ withDefaults(
   defineProps<{
     color?: 'sound' | 'primary'
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
   }>(),
   {
     color: 'sound',
-    selected: undefined
+    selectable: false
   }
 )
 </script>

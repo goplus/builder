@@ -11,7 +11,7 @@ export type APIReferenceItem = DefinitionDocumentationItem
 export type APIReferenceContext = BaseContext
 
 export interface IAPIReferenceProvider {
-  provideAPIReference(ctx: APIReferenceContext, position: Position): Promise<APIReferenceItem[]>
+  provideAPIReference(ctx: APIReferenceContext, position: Position | null): Promise<APIReferenceItem[]>
 }
 
 export class APIReferenceController extends Disposable {
@@ -29,8 +29,7 @@ export class APIReferenceController extends Disposable {
     if (provider == null) throw new Error('No provider registered')
     const { activeTextDocument: textDocument, cursorPosition } = this.ui
     if (textDocument == null) throw new Error('No active text document')
-    const position = cursorPosition ?? { line: 1, column: 1 }
-    return provider.provideAPIReference({ textDocument, signal }, position)
+    return provider.provideAPIReference({ textDocument, signal }, cursorPosition)
   })
 
   get items() {

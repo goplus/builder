@@ -50,7 +50,7 @@ import type { Animation } from '@/models/animation'
 import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
 import DurationEditor from './DurationEditor.vue'
 import BoundStateEditor from './state/BoundStateEditor.vue'
-import SoundEditor from './sound/SoundEditor.vue'
+import SoundEditor from './SoundEditor.vue'
 import type { Sound } from '@/models/sound'
 
 const props = defineProps<{

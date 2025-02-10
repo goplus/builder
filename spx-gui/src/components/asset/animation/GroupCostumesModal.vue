@@ -17,7 +17,7 @@
           v-for="costume in props.sprite.costumes"
           :key="costume.id"
           :costume="costume"
-          :selected="selectedCostumeSet.has(costume)"
+          :checked="selectedCostumeSet.has(costume)"
           @click="handleCostumeClick(costume)"
         />
       </ul>
@@ -54,7 +54,7 @@ import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
 import { defaultFps } from '@/models/animation'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
-import CostumeItem from './CostumeItem.vue'
+import CostumeItem from '@/components/editor/sprite/CheckableCostumeItem.vue'
 
 const props = defineProps<{
   visible: boolean

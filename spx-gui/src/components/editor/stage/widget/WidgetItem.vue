@@ -1,34 +1,45 @@
 <template>
-  <UIEditorWidgetItem :name="widget.name" :selected="selected">
+  <UIEditorWidgetItem :name="widget.name" :selectable="selectable" :color="color">
     <template #icon>
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="getIcon(widget)"></div>
     </template>
-    <UICornerIcon v-if="selected" type="trash" color="stage" @click="handleRemove" />
+    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
   </UIEditorWidgetItem>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { UIEditorWidgetItem, UICornerIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import type { Widget } from '@/models/widget'
-import type { Stage } from '@/models/stage'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { getIcon } from './icon'
 
-const props = defineProps<{
-  stage: Stage
-  widget: Widget
-  selected: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    widget: Widget
+    color?: 'stage' | 'primary'
+    selectable?: false | { selected: boolean }
+    removable?: boolean
+  }>(),
+  {
+    color: 'stage',
+    selectable: false,
+    removable: false
+  }
+)
 
 const editorCtx = useEditorCtx()
 
+const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
+
 const handleRemove = useMessageHandle(
   async () => {
-    const name = props.widget.name
+    const { stage, name } = props.widget
+    if (stage == null) throw new Error('stage expected')
     const action = { name: { en: `Remove widget ${name}`, zh: `删除控件 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => props.stage.removeWidget(props.widget.id))
+    await editorCtx.project.history.doAction(action, () => stage.removeWidget(props.widget.id))
   },
   {
     en: 'Failed to remove widget',

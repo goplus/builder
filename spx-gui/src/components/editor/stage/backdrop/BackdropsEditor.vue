@@ -3,9 +3,9 @@
     <BackdropItem
       v-for="backdrop in stage.backdrops"
       :key="backdrop.id"
-      :stage="stage"
       :backdrop="backdrop"
-      :selected="selected?.id === backdrop.id"
+      :selectable="{ selected: selected?.id === backdrop.id }"
+      removable
       @click="handleSelect(backdrop)"
     />
     <template #add-options>

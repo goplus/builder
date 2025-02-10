@@ -1,34 +1,62 @@
 <template>
-  <UIEditorSpriteItem :selected="selected" :img-src="imgSrc" :img-loading="imgLoading" :name="costume.name">
-    <UICornerIcon v-if="selected && removable" type="trash" color="sprite" @click="handleRemove" />
+  <UIEditorSpriteItem :selectable="selectable" :name="costume.name" :color="color">
+    <template #img="{ style }">
+      <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
+    </template>
+    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
   </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
+import { UIImg, UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
-import type { Sprite } from '@/models/sprite'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { Sprite } from '@/models/sprite'
 
-const props = defineProps<{
-  costume: Costume
-  sprite: Sprite
-  selected: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    costume: Costume
+    color?: 'sprite' | 'primary'
+    selectable?: false | { selected: boolean }
+    removable?: boolean
+  }>(),
+  {
+    color: 'sprite',
+    selectable: false,
+    selected: false,
+    removable: false
+  }
+)
 
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 
-const removable = computed(() => props.sprite.costumes.length > 1)
+const parent = computed(() => {
+  const parent = props.costume.parent
+  if (parent == null) throw new Error('parent expected')
+  return parent
+})
+
+const removable = computed(() => {
+  const { removable, selectable } = props
+  const costumes = parent.value.costumes
+  return removable && selectable && selectable.selected && costumes.length > 1
+})
 
 const handleRemove = useMessageHandle(
   async () => {
     const name = props.costume.name
     const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(props.costume.id))
+    await editorCtx.project.history.doAction(action, () => {
+      if (parent.value instanceof Sprite) {
+        parent.value.removeCostume(props.costume.id)
+        return
+      }
+      throw new Error('parent expected to be Sprite')
+    })
   },
   {
     en: 'Failed to remove costume',
