@@ -26,7 +26,7 @@ import {
   selection2Range
 } from '../common'
 import { TextDocument } from '../text-document'
-import type { Monaco, MonacoEditor } from '../monaco'
+import type { Monaco, MonacoEditor, monaco } from '../monaco'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
 import {
@@ -220,6 +220,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return this.getTextDocument(this.activeTextDocumentIdRef.value)
   }
 
+  private viewStateMap = new WeakMap<TextDocument, monaco.editor.ICodeEditorViewState | null>()
+
   private setActiveTextDocument(activeId: TextDocumentIdentifier | null) {
     const textDocument = activeId != null ? this.getTextDocument(activeId) : null
     if (textDocument == null) {
@@ -233,8 +235,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     ) {
       this.tempTextDocumentIds.push(textDocument.id)
     }
+    if (this.activeTextDocument != null) this.viewStateMap.set(this.activeTextDocument, this.editor.saveViewState())
     this.activeTextDocumentIdRef.value = textDocument.id
     this.editor.setModel(textDocument.monacoTextModel)
+    const viewState = this.viewStateMap.get(textDocument)
+    if (viewState != null) this.editor.restoreViewState(viewState)
   }
 
   /** The "main" (initially opened) text document */
