@@ -690,9 +690,20 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 		result.diagnostics[documentURI] = []Diagnostic{}
 		result.documentURIs[spxFile] = documentURI
 
-		astFile, err := gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
-			Mode: gopparser.ParseComments | gopparser.AllErrors | gopparser.ParseGoPlusClass,
-		})
+		var (
+			astFile *gopast.File
+			err     error
+		)
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("parser panic: %v", r)
+				}
+			}()
+			astFile, err = gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
+				Mode: gopparser.ParseComments | gopparser.AllErrors | gopparser.ParseGoPlusClass,
+			})
+		}()
 		if err != nil {
 			var (
 				parseErr gopscanner.ErrorList
@@ -715,10 +726,9 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 					Message:  codeErr.Error(),
 				})
 			} else {
-				// Handle unknown errors.
+				// Handle unknown errors (including recovered panics).
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
-					Range:    RangeForGopTokenPosition(goptoken.Position{}),
 					Message:  fmt.Sprintf("failed to parse spx file: %v", err),
 				})
 			}
@@ -863,7 +873,6 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 	if err != nil {
 		result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 			Severity: SeverityError,
-			Range:    RangeForGopTokenPosition(goptoken.Position{}),
 			Message:  fmt.Sprintf("failed to create spx resource set: %v", err),
 		})
 		return
