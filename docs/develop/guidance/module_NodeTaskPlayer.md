@@ -4,6 +4,6 @@ type Props = {
   nodeTask: NodeTask
 }
 type Events = {
-  nodetaskCompleted: []
+  nodeTaskCompleted: []
 }
 ```

@@ -16,7 +16,7 @@
 // 接收 NodeTask 作为 prop
 const props = defineProps<{ nodeTask: NodeTask }>()
 // 定义节点任务完成事件
-const emit = defineEmits<{ (e: 'nodetaskCompleted'): void }>()
+const emit = defineEmits<{ (e: 'nodeTaskCompleted'): void }>()
 
 // 当前步骤的索引
 const currentStepIndex = ref(0)
@@ -27,7 +27,7 @@ function handleStepCompleted(): void {
   currentStepIndex.value++
   if (currentStepIndex.value === props.nodeTask.steps.length) {
     // 所有步骤完成后，通知父组件（LevelPlayer）节点任务完成
-    emit('nodetaskCompleted')
+    emit('nodeTaskCompleted')
   }
 }
 </script>
