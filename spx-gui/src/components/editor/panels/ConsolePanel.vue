@@ -17,7 +17,7 @@ let isScrolledToBottom = true
 
 const handleScroll = throttle((e: Event) => {
   const el = e.target as HTMLElement
-  isScrolledToBottom = el.scrollHeight - el.scrollTop === el.clientHeight
+  isScrolledToBottom = el.scrollHeight < el.scrollTop + el.clientHeight + 1
 }, 50)
 
 function handleOutput(outputEl: unknown, i: number) {
