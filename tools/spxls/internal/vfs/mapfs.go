@@ -3,6 +3,7 @@ package vfs
 import (
 	"io"
 	"io/fs"
+	"maps"
 	"path"
 	"slices"
 	"strings"
@@ -53,6 +54,18 @@ func (mfs *MapFS) Snapshot() *MapFS {
 // zero if it is not a snapshot.
 func (mfs *MapFS) SnapshottedAt() time.Time {
 	return mfs.snapshottedAt
+}
+
+// WithOverlay returns a new [MapFS] that overlays the given files on top of the
+// existing files. Files in the overlay take precedence over existing files with
+// the same name.
+func (mfs *MapFS) WithOverlay(overlay map[string]MapFile) *MapFS {
+	getFileMap := mfs.getFileMap
+	return NewMapFS(func() map[string]MapFile {
+		fileMap := maps.Clone(getFileMap())
+		maps.Copy(fileMap, overlay)
+		return fileMap
+	})
 }
 
 // Open implements [fs.ReadDirFS].

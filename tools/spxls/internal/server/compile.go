@@ -124,6 +124,30 @@ type astFileLine struct {
 	line    int
 }
 
+// newCompileResult creates a new [compileResult].
+func newCompileResult() *compileResult {
+	return &compileResult{
+		fset:                      goptoken.NewFileSet(),
+		mainPkg:                   types.NewPackage("main", "main"),
+		mainASTPkg:                &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
+		mainASTPkgSpecToGenDecl:   make(map[gopast.Spec]*gopast.GenDecl),
+		mainASTPkgIdentToFuncDecl: make(map[*gopast.Ident]*gopast.FuncDecl),
+		firstVarBlocks:            make(map[*gopast.File]*gopast.GenDecl),
+		typeInfo: &goptypesutil.Info{
+			Types:      make(map[gopast.Expr]types.TypeAndValue),
+			Defs:       make(map[*gopast.Ident]types.Object),
+			Uses:       make(map[*gopast.Ident]types.Object),
+			Implicits:  make(map[gopast.Node]types.Object),
+			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
+			Scopes:     make(map[gopast.Node]*types.Scope),
+		},
+		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
+		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
+		diagnostics:                   make(map[DocumentURI][]Diagnostic),
+		documentURIs:                  make(map[string]DocumentURI),
+	}
+}
+
 // isInFset reports whether the given position exists in the file set.
 func (r *compileResult) isInFset(pos goptoken.Pos) bool {
 	return r.fset.File(pos) != nil
@@ -597,7 +621,8 @@ type compileCache struct {
 	spxFileModTimes map[string]time.Time
 }
 
-// compile compiles spx source files and returns compile result.
+// compile compiles spx source files and returns compile result. It uses cached
+// result if available.
 func (s *Server) compile() (*compileResult, error) {
 	snapshot := s.workspaceRootFS.Snapshot()
 	spxFiles, err := listSpxFiles(snapshot)
@@ -635,8 +660,8 @@ func (s *Server) compile() (*compileResult, error) {
 		}
 	}
 
-	// Compile uncached if cache is not used.
-	result, err := s.compileUncached(snapshot, spxFiles)
+	// Compile at the given snapshot if cache is not used.
+	result, err := s.compileAt(snapshot)
 	if err != nil {
 		return nil, err
 	}
@@ -658,30 +683,19 @@ func (s *Server) compile() (*compileResult, error) {
 	return result, nil
 }
 
-// compileUncached compiles spx source files without using cache.
-func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compileResult, error) {
-	result := &compileResult{
-		fset:                      goptoken.NewFileSet(),
-		mainPkg:                   types.NewPackage("main", "main"),
-		mainASTPkg:                &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
-		mainASTPkgSpecToGenDecl:   make(map[gopast.Spec]*gopast.GenDecl),
-		mainASTPkgIdentToFuncDecl: make(map[*gopast.Ident]*gopast.FuncDecl),
-		firstVarBlocks:            make(map[*gopast.File]*gopast.GenDecl),
-		typeInfo: &goptypesutil.Info{
-			Types:      make(map[gopast.Expr]types.TypeAndValue),
-			Defs:       make(map[*gopast.Ident]types.Object),
-			Uses:       make(map[*gopast.Ident]types.Object),
-			Implicits:  make(map[gopast.Node]types.Object),
-			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
-			Scopes:     make(map[gopast.Node]*types.Scope),
-		},
-		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
-		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
-		diagnostics:                   make(map[DocumentURI][]Diagnostic, len(spxFiles)),
-		documentURIs:                  make(map[string]DocumentURI, len(spxFiles)),
+// compileAt compiles spx source files at the given snapshot and returns the
+// compile result.
+func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
+	spxFiles, err := listSpxFiles(snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get spx files: %w", err)
+	}
+	if len(spxFiles) == 0 {
+		return nil, errNoMainSpxFile
 	}
 
 	var (
+		result      = newCompileResult()
 		gpfs        = vfs.NewGopParserFS(snapshot)
 		spriteNames = make([]string, 0, len(spxFiles)-1)
 	)
