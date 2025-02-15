@@ -16,7 +16,5 @@ type StoryLine = {
 }
 
 type UserStoryLineRelationship = {
-    userId: string,
-    storyLineId: string,
     // TODO
 }
