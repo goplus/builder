@@ -3,7 +3,9 @@
 <template>
   <div class="level-player">
     <!-- VideoPlayer 组件，同时使用具名插槽 "cover" 定义封面内容 -->
-    <VideoPlayer ref="videoPlayerRef" @segmentReached="handleSegmentReached">
+    <VideoPlayer ref="videoPlayerRef" 
+      @segmentReached="handleSegmentReached"
+      @cardToggle="handleCardToggle">
       <template #cover>
         ...
       </template>
@@ -41,6 +43,14 @@ function handleSegmentReached(segment: Segment): void {
   currentNodeTaskIndex.value = segment.extension?.nodeTaskIndex
 
   currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
+}
+
+function handleCardToggle(isMinimized: boolean): void{
+  if(isMinimized){
+    videoPlayerRef.value.restoreCard();
+  }else{
+    videoPlayerRef.value.minimizeCard()
+  }
 }
 
 /**

@@ -24,6 +24,19 @@ interface Segment {
 }
 
 type Slots = {
-  cover: unknown // 供父组件插入的具名插槽(<slot name="cover"></slot>)，用于自定义展示视频上的封面 UI。
+  /** 
+   * 供父组件插入的具名插槽(<slot name="cover"></slot>)，用于自定义展示视频上的封面 UI。
+  */
+  cover: unknown
+  /** 
+   * 供父组件插入的具名插槽(<slot name="header-left"></slot>)，
+   * 父组件可在标题栏左侧添加多个按钮以满足个性化需求
+  */
+  header-left: unknown
+  /** 
+   * 供父组件插入的具名插槽(<slot name="header-right"></slot>)，
+   * 父组件可在标题栏右侧添加多个按钮以满足个性化需求
+  */
+  header-right: unknown
 }
 ```
