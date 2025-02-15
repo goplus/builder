@@ -18,7 +18,7 @@ type Expose = {
   restoreCard(): void // 恢复卡片
 }
 
-interface Segment {
+type Segment {
   time: number // 分段点在视频中的位置，单位秒（s）
   extension?: Object // 其他可扩展信息
 }
