@@ -1,112 +1,47 @@
-# TagManager
+# Tagging 伪代码
 
-```typescript
-import { ref, type Ref } from "vue";
+## 全局注册（单例）
 
-export type TagInfo = {
-  key: string;
-  element: HTMLElement;
-};
-
-export class TagManager {
-  private tagsMap: Ref<Map<string, HTMLElement>> = ref(new Map());
-
-  /**
-   * 添加标注
-   */
-  addTag(key: string, element: HTMLElement) {
-    if (this.tagsMap.value.has(key)) {
-      console.warn(`Tag ${key} already exists`);
-      return;
-    }
-    this.tagsMap.value.set(key, element);
-  }
-
-  /**
-   * 移除标注
-   */
-  removeTag(key: string) {
-    this.tagsMap.value.delete(key);
-  }
-
-  /**
-   * 获取所有标注
-   */
-  getAllTags(): TagInfo[] {
-    const tags: TagInfo[] = [];
-    this.tagsMap.value.forEach((element, key) => {
-      tags.push({ key, element });
-    });
-    return tags;
-  }
-
-  /**
-   * 根据 key 筛选标注
-   */
-  getTagByKey(key: string): TagInfo | undefined {
-    const element = this.tagsMap.value.get(key);
-    if (element) {
-      return { key, element };
-    }
-    return undefined;
-  }
-
-  /**
-   * 清空所有标注
-   */
-  clearAllTags() {
-    this.tagsMap.value.clear();
-  }
-}
+```ts
+// 通过 provide 全局注册单例
+const app = createApp(App);
+//
+app.provide("Tagging", new Tagging());
 ```
 
-## v-tag Directive
+## 语义化标注（标注方）
 
-```typescript
-import { DirectiveBinding, App } from "vue";
-import { TagManager } from "./TagManager";
-
-const TAG_MANAGER_KEY = "tag-manager";
-
-/**
- * 注册全局指令 v-tag
- */
-export function registerTagDirective(app: App, tagManager: TagManager) {
-  app.provide(TAG_MANAGER_KEY, tagManager);
-
-  app.directive("tag", {
-    mounted(el: HTMLElement, binding) {
-      const key = binding.arg;
-      if (!key) throw new Error("v-tag requires a key");
-
-      const observer = new MutationObserver(() => {
-        if (!document.contains(el)) {
-          tagManager.removeTag(key);
-          observer.disconnect();
-        }
-      });
-
-      tagManager.addTag(key, el);
-      el.dataset.tagKey = key;
-    },
-  });
-}
+```vue
+<template>
+  <RectComponent data-tag="RectComponent">
+    <ButtonComponent data-tag="ButtonComponent" />
+    <InputComponent data-tag="InputComponent" />
+    ...
+  </RectComponent>
+</template>
 ```
 
-## ToolFunction
+## 在 Mask 组件中使用（消费方）
 
-```typescript
-import { inject } from 'vue'
-import { TagManager } from './TagManager'
+```vue
+<script lang="ts" setup>
+// 组件内注入
+const tagging = inject("Tagging");
 
-const TAG_MANAGER_KEY = 'tag-manager'
+// 传入keys参数，查找为 key = ‘RectComponent’ 下的 key = ‘ButtonComponent’ 的组件，类似于CSS类选择器
+const element = tagging.getElementByKeys(["RectComponent", "ButtonComponent"]);
 
-/**
- * 获取全局 TagManager 实例
- */
-export function useTagManager() {
-  const tagManager = inject(TAG_MANAGER_KEY)
-  if (!tagManager) throw new Error('TagManager not installed')
-  return tagManager as TagManager
+const highlightElement = () => {
+  const lightElementStyle = {
+    ...
+    ...
+  }
+
+  element.style = highlightElement
 }
+</script>
+
+<template>
+  <div class="mask" v-if="visible">...</div>
+</template>
 ```

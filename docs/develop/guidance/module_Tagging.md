@@ -1,22 +1,22 @@
 ```typescript
 /** Tag 类 */
-export class TagManage {
+export class Tagging {
+  /** key 和 element 的映射 */
+  private tags: Map<string, HTMLElement>;
+
   /** 添加一个标注  */
-  function addTag(key: string, element: HTMLElement): void
+  addTag(key: string, element: HTMLElement): void;
 
   /** 移除标注 */
-  function removeTag(key: string): void
+  removeTag(key: string): void;
 
   /** 获取所有标注 */
-  function getAllTags(): TagInfo[]
+  getAllTags(): TagInfo[];
 
-  /** 按 key 获取标注 */
-  function getTagByKey(key: string): TagInfo | undefined
+  /** 通过查找路径keys获取目标组件 */
+  getElementByKeys(keys: string[]): HTMLElement | null;
 
   /** 清空所有标注 */
-  function clearAllTags(): void
+  clearAllTags(): void;
 }
-
-/** 消费工具 */
-export function useTagManager(): TagManager
 ```
