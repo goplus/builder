@@ -5,8 +5,4 @@ type Props = {
 type Events = {
   stepCompleted: []
 }
-
-type StepPlayerExpose = {
-  checkAnswer(): boolean
-}
 ```
