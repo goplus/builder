@@ -26,7 +26,7 @@ declare function updateStoryLine(input: StoryLine): Promise<void>
 
 ```typescript
 // Delete `/storyline/{id}`
-declare function updateStoryLine(id: string): Promise<void>
+declare function deleteStoryLine(id: string): Promise<void>
 ```
 
 ## 用户接口
@@ -36,27 +36,8 @@ declare function updateStoryLine(id: string): Promise<void>
 - 用于获取故事线信息
 
 ```typescript
-type GetUserStoryLineRelationshipInput = {
-    userName: string,
-    storyLineName: string,
-}
-
-// Get `/storyline/{owner}/{name}`
-declare function getStoryLine(input: GetUserStoryLineRelationshipInput): Promise<StoryLine>
-```
-
-### 接口名称：创建故事线与用户关系
-
-- 用于创建用户与故事线的关系（当用户新进入一个故事线时被调用）
-
-```typescript
-type CreateUserStoryLineRelationshipInput = {
-    userName: string,
-    storyLineName: string,
-}
-
-// Post `/storyline/{owner}/{name}/study`
-declare function CreateUserStoryLineRelationShip(input: CreateUserStoryLineRelationshipInput): Promise<void>
+// Get `/storyline/{id}`
+declare function getStoryLine(id: string): Promise<StoryLine>
 ```
 
 ### 接口名称：修改故事线与用户关系
@@ -65,25 +46,20 @@ declare function CreateUserStoryLineRelationShip(input: CreateUserStoryLineRelat
 
 ```typescript
 type UpdateUserStoryLineRelationshipInput = {
-    userName: string,
-    storyLineName: string,
+    id: string,
     lastFinishedLevelIndex: number,    // 当前最新完成的关卡下标
 }
 
-// Put `/storyline/{owner}/{name}/study`
+// Put `/storyline/{id}/study`
 declare function UpdateUserStoryLineRelationShip(input: UpdateUserStoryLineRelationshipInput): Promise<void>
 ```
 
 ### 接口名称：获取故事线与用户关系
+- 若用户是第一次进入故事线则会新建用户和故事线的关系，若不是第一次则会直接返回信息。
 
 ```typescript
-type GetUserStoryLineRelationshipInput = {
-    userName: string,
-    storyLineName: string,
-}
-
-// Get `/storyline/{owner}/{name}/study`
-declare function GetUserStoryLineRelationShip(input: GetUserStoryLineRelationshipInput): Promise<UserStoryLineRelationship>
+// Get `/storyline/{id}/study`
+declare function GetUserStoryLineRelationShip(id: string): Promise<UserStoryLineRelationship>
 ```
 
 ### 接口名称：大模型快照验证
@@ -92,11 +68,12 @@ declare function GetUserStoryLineRelationShip(input: GetUserStoryLineRelationshi
 
 ```typescript
 type CheckSnapshotInput = { 
-    userSnapshot: string, 
-    expectedSnapshot: string
+    userCode: string,
+    expectedCode: string,
+    context: string,        // 上下文（背景）信息，如当前项目、任务、步骤等
 }
 
 // Post `/checkSnapshot`
-declare function UpdateUserStoryLineRelationShip(input: CheckSnapshotInput): Promise<boolean>
+declare function checkSnapshot(input: CheckSnapshotInput): Promise<boolean>
 ```
 

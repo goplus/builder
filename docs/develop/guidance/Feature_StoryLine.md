@@ -5,34 +5,23 @@
 <script setup lang="ts">
   import { defineProps, ref, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import { LocaleMessage } from './index';
-
-  interface StoryLine {
-    id: string;
-    backgroundImage: string;            // 故事线的背景图url
-    name: string                 		// 故事线的名字
-    title: LocaleMessage;               // 故事线标题
-    description: LocaleMessage;         // 故事线描述
-    tag: 'easy' | 'medium' | 'hard';    // 故事线难度标签
-    levels: Level[];
-  }
 
   // 定义 props
   const props = defineProps<{
     storyLineId: string;
-    userName: string
   }>();
 
   // 定义响应式变量
   const storyLine = ref<StoryLine | null>(null);
+  const userStoryLineRelationship = ref<UserStoryLineRelationship | null>(null);
   const router = useRouter();
 
   // 获取故事线数据
   const init = async () => {
     try {
-      const data = await backend.getStoryLine(props.storyLineId);
+      const data = await backend.GetStoryLine(props.storyLineId);
       storyLine.value = data;
-      await backend.CreateUserStoryLineRelationShip(storyLine.value.name, props.userName)
+      userStoryLineRelationship.value = await backend.GetUserStoryLineRelationShip(props.storyLineId) // 若是第一次进入，则会新建用户和故事线的关系
     } catch (error) {
       console.error('Failed to init storyLine:', error);
     }

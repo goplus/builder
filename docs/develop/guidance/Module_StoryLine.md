@@ -9,6 +9,5 @@
 ```typescript
 type Props = {
     storyLineId: string,
-    userName: string
 }
 ```
