@@ -11,15 +11,11 @@
           ...
         </template>
       </VideoPlayer>
-
-      <!-- Coding步骤中的三个悬浮按钮及其点击后弹出的卡片 -->
-       <div class="buttons-group" v-if="buttonsVisible"></div>
     </div>
 
     <!-- 当有当前节点任务时，渲染 NodeTaskPlayer 组件 -->
     <NodeTaskPlayer
       v-if="currentNodeTask"
-      ref="nodeTaskPlayerRef"
       :nodeTask="currentNodeTask"
       @nodeTaskCompleted="handleNodeTaskCompleted"
     />
@@ -69,27 +65,20 @@ function handleNodeTaskCompleted(): void {
   currentNodeTaskIndex.value = null
 }
 
-function setButtonsVisible(visible: boolean) {
-  buttonsVisible.value = visible;
-}
-function setCodingContent(content: string) {
-  // codingContent：Coding步骤中，点击查看步骤content按钮弹窗呈现的内容
-  codingContent.value = content;
-}
-function setCodingAnswer(answer: string) {
-  // codingAnswer：Coding步骤中，点击查看答案代码按钮弹窗呈现的内容
-  codingAnswer.value = answer;
-}
-provide('setButtonsVisible', setButtonsVisible);
-provide('setCodingContent', setCodingContent);
-provide('setCodingAnswer', setCodingAnswer);
+const pos = ref<Placement>({ x: 100, y: 100 });
 
-const nodeTaskPlayerRef = ref<any>(null);
-function onCheckButtonClick() {
-  // 从 NodeTaskPlayer 获取孙组件（StepPlayer）的 API
-  const stepPlayerAPI = nodeTaskPlayerRef.value.getStepPlayerAPI()
-  // 调用StepPlayer的Coding步骤检测方法
-  stepPlayerAPI.checkAnswer()
+const getPos = () => pos.value;
+const setPos = (newPos) => {
+  pos.value = newPos;
+};
+function useLevelPlayerCtx(): LevelPlayerCtx{
+  return {
+    getPos,
+    setPos
+  }
 }
+
+// 通过 provide 共享位置信息
+provide("useLevelPlayerCtx", useLevelPlayerCtx);
 </script>
 ```

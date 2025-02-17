@@ -5,7 +5,6 @@
     <!-- 渲染当前步骤的 StepPlayer -->
     <StepPlayer
       v-if="currentStep"
-      ref="stepPlayerRef"
       :step="currentStep"
       @stepCompleted="handleStepCompleted"
     />
@@ -18,14 +17,6 @@
 const props = defineProps<{ nodeTask: NodeTask }>()
 // 定义节点任务完成事件
 const emit = defineEmits<{ (e: 'nodeTaskCompleted'): void }>()
-
-const stepPlayerRef = ref<any>(null);
-function getStepPlayerAPI(): StepPlayerExpose{
-  return stepPlayerRef.value;
-}
-const expose = defineExpose({
-  getStepPlayerAPI
-});
 
 // 当前步骤的索引
 const currentStepIndex = ref(0)
