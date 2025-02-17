@@ -363,7 +363,9 @@ var a int
 // floating comment2
 
 // comment for func test
-func test() {}
+func test() {
+	// comment inside func test
+}
 
 // floating comment3
 
@@ -383,7 +385,7 @@ const b = "123"
 		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 18, Character: 0},
+				End:   Position{Line: 20, Character: 0},
 			},
 			NewText: `import "fmt"
 
@@ -402,9 +404,47 @@ var (
 )
 
 // comment for func test
-func test() {}
+func test() {
+	// comment inside func test
+}
 
 // floating comment4
+`,
+		})
+	})
+
+	t.Run("WithTrailingComments", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`import "fmt" // trailing comment for import "fmt"
+
+const foo = "bar" // trailing comment for const foo
+
+var a int // trailing comment for var a
+
+func test() {} // trailing comment for func test
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 7, Character: 0},
+			},
+			NewText: `import "fmt" // trailing comment for import "fmt"
+
+const foo = "bar" // trailing comment for const foo
+
+var (
+	a int
+) // trailing comment for var a
+
+func test() {} // trailing comment for func test
 `,
 		})
 	})

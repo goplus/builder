@@ -6,6 +6,7 @@ import (
 	"go/types"
 	"io/fs"
 	"path"
+	"slices"
 	"time"
 
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
@@ -175,20 +176,9 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 	)
 	for _, decl := range astFile.Decls {
 		// Skip the declaration if it appears after the error position.
-		if errorPos.IsValid() && errorPos <= decl.Pos() {
+		if errorPos.IsValid() && decl.Pos() >= errorPos {
 			continue
 		}
-
-		// Pre-process all comments within the declaration to exclude
-		// them from floating comments.
-		gopast.Inspect(decl, func(node gopast.Node) bool {
-			cg, ok := node.(*gopast.CommentGroup)
-			if !ok {
-				return true
-			}
-			processedComments[cg] = struct{}{}
-			return true
-		})
 
 		switch decl := decl.(type) {
 		case *gopast.GenDecl:
@@ -213,6 +203,23 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 			overloadFuncDecls = append(overloadFuncDecls, decl)
 		default:
 			otherDecls = append(otherDecls, decl)
+		}
+
+		// Pre-process all comments within the declaration to exclude
+		// them from floating comments.
+		if doc := getDeclDoc(decl); doc != nil {
+			processedComments[doc] = struct{}{}
+		}
+		startLine := compileResult.fset.Position(decl.Pos()).Line
+		endLine := compileResult.fset.Position(decl.End()).Line
+		for _, cg := range astFile.Comments {
+			if _, ok := processedComments[cg]; ok {
+				continue
+			}
+			cgStartLine := compileResult.fset.Position(cg.Pos()).Line
+			if cgStartLine >= startLine && cgStartLine <= endLine {
+				processedComments[cg] = struct{}{}
+			}
 		}
 	}
 
@@ -259,30 +266,51 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 
 	// Format the sorted declarations.
 	formattedBuf := bytes.NewBuffer(make([]byte, 0, len(astFile.Code)))
+	ensureTrailingNewlines := func(count int) {
+		if formattedBuf.Len() == 0 {
+			return
+		}
+		for _, b := range slices.Backward(formattedBuf.Bytes()) {
+			if b != '\n' {
+				break
+			}
+			count--
+		}
+		for range count {
+			formattedBuf.WriteByte('\n')
+		}
+	}
 
 	// Handle declarations and floating comments in order of their position.
-	var lastDeclEnd goptoken.Pos
 	processDecl := func(decl gopast.Decl) error {
 		startPos := decl.Pos()
 		if doc := getDeclDoc(decl); doc != nil {
 			startPos = doc.Pos()
 		}
 
-		if formattedBuf.Len() > 0 {
-			formattedBuf.WriteByte('\n')
+		endPos := decl.End()
+		endLine := compileResult.fset.Position(endPos).Line
+		for _, cg := range astFile.Comments {
+			if compileResult.fset.Position(cg.Pos()).Line != endLine {
+				continue
+			}
+			if cg.Pos() > endPos {
+				endPos = cg.End()
+				break
+			}
 		}
+
+		ensureTrailingNewlines(2)
 		if genDecl, ok := decl.(*gopast.GenDecl); ok && genDecl.Tok == goptoken.VAR {
 			if err := gopfmt.Node(formattedBuf, compileResult.fset, decl); err != nil {
 				return err
 			}
 		} else {
 			start := compileResult.fset.Position(startPos).Offset
-			end := compileResult.fset.Position(decl.End()).Offset
+			end := compileResult.fset.Position(endPos).Offset
 			formattedBuf.Write(astFile.Code[start:end])
 		}
-		formattedBuf.WriteByte('\n')
-
-		lastDeclEnd = decl.End()
+		ensureTrailingNewlines(1)
 		return nil
 	}
 
@@ -294,10 +322,9 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 		}
 		processedComments[cg] = struct{}{}
 
-		if errorPos.IsValid() && errorPos <= cg.Pos() {
-			continue
-		}
-		if lastDeclEnd.IsValid() && cg.Pos() < lastDeclEnd {
+		// Skip the comment if it appears after the error position or
+		// shadow entry position.
+		if errorPos.IsValid() && cg.Pos() >= errorPos {
 			continue
 		}
 		if shadowEntryPos.IsValid() && cg.Pos() >= shadowEntryPos {
@@ -307,9 +334,6 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 		// Process declarations that should come before this comment.
 		for ; declIndex < len(sortedDecls); declIndex++ {
 			decl := sortedDecls[declIndex]
-			if errorPos.IsValid() && errorPos <= decl.Pos() {
-				continue
-			}
 
 			startPos := decl.Pos()
 			if doc := getDeclDoc(decl); doc != nil {
@@ -325,35 +349,27 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 		}
 
 		// Add the floating comment.
-		if formattedBuf.Len() > 0 {
-			formattedBuf.WriteByte('\n')
-		}
+		ensureTrailingNewlines(2)
 		start := compileResult.fset.Position(cg.Pos()).Offset
 		end := compileResult.fset.Position(cg.End()).Offset
 		formattedBuf.Write(astFile.Code[start:end])
-		formattedBuf.WriteByte('\n')
+		ensureTrailingNewlines(1)
 	}
 
 	// Process remaining declarations before shadow entry.
 	for ; declIndex < len(sortedDecls); declIndex++ {
-		decl := sortedDecls[declIndex]
-		if errorPos.IsValid() && errorPos <= decl.Pos() {
-			continue
-		}
-		if err := processDecl(decl); err != nil {
+		if err := processDecl(sortedDecls[declIndex]); err != nil {
 			return nil, err
 		}
 	}
 
 	// Add the shadow entry if it exists and not empty.
 	if shadowEntryPos.IsValid() {
-		if formattedBuf.Len() > 0 {
-			formattedBuf.WriteByte('\n')
-		}
+		ensureTrailingNewlines(2)
 		start := compileResult.fset.Position(shadowEntryPos).Offset
 		end := compileResult.fset.Position(astFile.ShadowEntry.End()).Offset
 		formattedBuf.Write(astFile.Code[start:end])
-		formattedBuf.WriteByte('\n')
+		ensureTrailingNewlines(1)
 	}
 
 	formatted := formattedBuf.Bytes()
