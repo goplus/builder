@@ -2,18 +2,24 @@
 <!-- LevelPlayer.vue -->
 <template>
   <div class="level-player">
-    <!-- VideoPlayer 组件，同时使用具名插槽 "cover" 定义封面内容 -->
-    <VideoPlayer ref="videoPlayerRef" 
-      @segmentReached="handleSegmentReached"
-      @cardToggle="handleCardToggle">
-      <template #cover>
-        ...
-      </template>
-    </VideoPlayer>
+    <!-- 可拖拽的卡片组（悬浮卡片+悬浮按钮） -->
+    <div class="card-group">
+      <!-- VideoPlayer 组件，同时使用具名插槽 "cover" 定义封面内容 -->
+      <VideoPlayer ref="videoPlayerRef" 
+        @segmentReached="handleSegmentReached">
+        <template #cover>
+          ...
+        </template>
+      </VideoPlayer>
+
+      <!-- Coding步骤中的三个悬浮按钮及其点击后弹出的卡片 -->
+       <div class="buttons-group" v-if="buttonsVisible"></div>
+    </div>
 
     <!-- 当有当前节点任务时，渲染 NodeTaskPlayer 组件 -->
     <NodeTaskPlayer
       v-if="currentNodeTask"
+      ref="nodeTaskPlayerRef"
       :nodeTask="currentNodeTask"
       @nodeTaskCompleted="handleNodeTaskCompleted"
     />
@@ -45,14 +51,6 @@ function handleSegmentReached(segment: Segment): void {
   currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
 }
 
-function handleCardToggle(isMinimized: boolean): void{
-  if(isMinimized){
-    videoPlayerRef.value.restoreCard();
-  }else{
-    videoPlayerRef.value.minimizeCard()
-  }
-}
-
 /**
  * 当 节点任务完成后调用：
  * 如果当前节点任务为最后一个节点任务，则更新封面内容（cover slot 的内容，主要渲染本关的成就、以及相关按钮（重玩本关、进入下一关、返回故事线）），
@@ -69,6 +67,29 @@ function handleNodeTaskCompleted(): void {
   }
   currentNodeTask.value = null
   currentNodeTaskIndex.value = null
+}
+
+function setButtonsVisible(visible: boolean) {
+  buttonsVisible.value = visible;
+}
+function setCodingContent(content: string) {
+  // codingContent：Coding步骤中，点击查看步骤content按钮弹窗呈现的内容
+  codingContent.value = content;
+}
+function setCodingAnswer(answer: string) {
+  // codingAnswer：Coding步骤中，点击查看答案代码按钮弹窗呈现的内容
+  codingAnswer.value = answer;
+}
+provide('setButtonsVisible', setButtonsVisible);
+provide('setCodingContent', setCodingContent);
+provide('setCodingAnswer', setCodingAnswer);
+
+const nodeTaskPlayerRef = ref<any>(null);
+function onCheckButtonClick() {
+  // 从 NodeTaskPlayer 获取孙组件（StepPlayer）的 API
+  const stepPlayerAPI = nodeTaskPlayerRef.value.getStepPlayerAPI()
+  // 调用StepPlayer的Coding步骤检测方法
+  stepPlayerAPI.checkAnswer()
 }
 </script>
 ```

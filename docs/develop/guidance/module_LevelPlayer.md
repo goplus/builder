@@ -3,6 +3,11 @@
 type Props = {
     level: Level
 }
+type Provide = {
+    setButtonsVisible(visible: boolean): void;
+    setCodingContent(content: string): void;
+    setCodingAnswer(answer: string): void;
+}
 type Level = {								// 一个故事线存在多个关卡
     cover: string,							// 封面图片url
     placement: Placement, 					// 在界面上的位置信息（每个故事线中的关卡放置位置是不确定的，由人为指定）
@@ -14,6 +19,10 @@ type Level = {								// 一个故事线存在多个关卡
         title: LocaleMessage,			    // 成就名称
     }
     nodeTasks: NodeTask[],
+}
+type Placement = {
+    x: number,
+    y: number
 }
 ```
 
