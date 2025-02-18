@@ -2,4 +2,3 @@
 - 输入：path: '/editor/:projectName?guide&storyLineId=<string>&levelIndex=<number>'
 - 使用示例：
   - 进入ProjectEditorWithGuidance（有向导的项目编辑器）：'/editor/hhh?guide&storyLineId=abc&levelIndex=1'
-  - 进入ProjectEditor（普通的项目编辑器）：'/editor/hhh?storyLineId=abc&levelIndex=1'

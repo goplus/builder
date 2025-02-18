@@ -3,6 +3,12 @@
 type Props = {
     level: Level
 }
+type Placement = {
+  /** X position in px */
+  x: number
+  /** Y position in px */
+  y: number
+}
 type LevelPlayerCtx = {
   getPos(): Placement
   setPos(pos: Placement): void

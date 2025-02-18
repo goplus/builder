@@ -32,6 +32,8 @@ type UserStoryLineRelationship = {
 }
 
 type Placement = {
-    x: number,
+    /** X position in percentage */
+    x: number
+    /** Y position in percentage */
     y: number
-}
+  }

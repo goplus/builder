@@ -64,21 +64,5 @@ function handleNodeTaskCompleted(): void {
   currentNodeTask.value = null
   currentNodeTaskIndex.value = null
 }
-
-const pos = ref<Placement>({ x: 100, y: 100 });
-
-const getPos = () => pos.value;
-const setPos = (newPos) => {
-  pos.value = newPos;
-};
-function useLevelPlayerCtx(): LevelPlayerCtx{
-  return {
-    getPos,
-    setPos
-  }
-}
-
-// 通过 provide 共享位置信息
-provide("useLevelPlayerCtx", useLevelPlayerCtx);
 </script>
 ```
