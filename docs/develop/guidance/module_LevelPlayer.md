@@ -1,0 +1,19 @@
+```ts
+// LevelPlayer模块主要负责执行VideoPlayer和NodeTaskPlayer模块
+type Props = {
+    level: Level
+}
+type Placement = {
+  /** X position in px */
+  x: number
+  /** Y position in px */
+  y: number
+}
+type LevelPlayerCtx = {
+  getPos(): Placement
+  setPos(pos: Placement): void
+}
+
+declare function useLevelPlayerCtx(): LevelPlayerCtx
+```
+
