@@ -1,9 +1,9 @@
 module github.com/goplus/builder/ispx
 
-go 1.21.0
+go 1.23.0
 
 require (
-	github.com/goplus/igop v0.32.0
+	github.com/goplus/igop v0.32.1
 	github.com/goplus/reflectx v1.3.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
@@ -20,7 +20,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
 	github.com/goplus/gogen v1.16.6 // indirect
-	github.com/goplus/gop v1.3.0 // indirect
+	github.com/goplus/gop v1.3.1 // indirect
 	github.com/goplus/mod v0.13.17 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
@@ -36,11 +36,11 @@ require (
 	github.com/visualfc/xtype v0.2.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
-	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/mod v0.23.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	golang.org/x/tools v0.23.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 )
 
 replace (
