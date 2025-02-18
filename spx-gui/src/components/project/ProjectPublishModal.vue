@@ -151,7 +151,7 @@ const handleSubmit = useMessageHandle(
   margin-bottom: 24px;
   width: 100%;
   height: 224px;
-  background: url(@/assets/stage-bg.svg) center / cover no-repeat;
+  background: url(@/assets/images/stage-bg.svg) center / cover no-repeat;
   border-radius: var(--ui-border-radius-1);
   overflow: hidden;
 

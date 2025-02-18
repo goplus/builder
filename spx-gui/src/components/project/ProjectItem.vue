@@ -207,7 +207,7 @@ const handleRemove = useMessageHandle(
   height: 172px;
   background-position: center;
   background-size: contain;
-  background-image: url(@/assets/stage-bg.svg);
+  background-image: url(@/assets/images/stage-bg.svg);
 
   .thumbnail {
     width: 100%;

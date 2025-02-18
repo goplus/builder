@@ -4,9 +4,9 @@
 
 <script lang="ts">
 import { ref, watch } from 'vue'
-import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
-import wasmExecUrl from '@/assets/wasm_exec.js?url'
-import wasmUrl from '@/assets/ispx/main.wasm?url'
+import wasmExecUrl from '@/assets/wasm/wasm_exec.js?url'
+import ispxWasmUrl from '@/assets/wasm/ispx.wasm?url'
+import ispxRunnerHtml from './ispx/runner.html?raw'
 import { addPrefetchLink } from '@/utils/dom'
 
 // preload resources (for example, wasm files) to accelerate the loading
@@ -15,7 +15,7 @@ export function preload() {
   // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be runned until the user clicks some "run" button.
   // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
   addPrefetchLink(wasmExecUrl)
-  addPrefetchLink(wasmUrl)
+  addPrefetchLink(ispxWasmUrl)
 }
 </script>
 
@@ -42,7 +42,7 @@ watch(iframe, () => {
   if (!iframeWindow) {
     return
   }
-  const runnerHtml = rawRunnerHtml.replace('/wasm_exec.js', wasmExecUrl).replace('main.wasm', wasmUrl)
+  const runnerHtml = ispxRunnerHtml.replace('/wasm_exec.js', wasmExecUrl).replace('ispx.wasm', ispxWasmUrl)
 
   iframeWindow.document.write(runnerHtml) // This resets the iframe's content, including its window object
 

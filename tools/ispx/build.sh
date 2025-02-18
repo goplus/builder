@@ -1,3 +1,4 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-GOTOOLCHAIN=go1.21.3 GOOS=js GOARCH=wasm go build -tags canvas -trimpath -o main.wasm
+GOOS=js GOARCH=wasm go build -tags canvas -trimpath -ldflags -checklinkname=0 -o ispx.wasm
