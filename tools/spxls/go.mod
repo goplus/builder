@@ -6,7 +6,7 @@ require (
 	github.com/goplus/gogen v1.16.6
 	github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
 	github.com/goplus/mod v0.13.15
-	github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1
+	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/tools v0.23.0
 )
@@ -27,7 +27,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.13.11 // indirect
+	github.com/qiniu/x v1.13.12 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	golang.org/x/image v0.18.0 // indirect
