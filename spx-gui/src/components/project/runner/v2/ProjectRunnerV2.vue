@@ -56,11 +56,12 @@ watch(iframeRef, (iframe) => {
 
 async function getProjectData() {
   const zip = new JSZip()
-  const [, files] = await props.project.export()
+  const [{ filesHash }, files] = await props.project.export()
   Object.entries(files).forEach(([path, file]) => {
     if (file != null) zip.file(path, toNativeFile(file))
   })
-  return zip.generateAsync({ type: 'arraybuffer' })
+  const zipped = await zip.generateAsync({ type: 'arraybuffer' })
+  return { filesHash, zipped }
 }
 
 function withLog(methodName: string, promise: Promise<unknown>) {
@@ -113,9 +114,10 @@ defineExpose({
     signal?.throwIfAborted()
     const projectData = await getProjectData()
     signal?.throwIfAborted()
-    await withLog('startGame', iframeWindow.startGame(projectData, assetURLs))
+    await withLog('startGame', iframeWindow.startGame(projectData.zipped, assetURLs))
     signal?.throwIfAborted()
     loading.value = false
+    return projectData.filesHash
   },
   async stop() {
     const iframeWindow = iframeWindowRef.value
@@ -125,7 +127,7 @@ defineExpose({
   },
   async rerun() {
     await this.stop()
-    await this.run()
+    return this.run()
   }
 })
 </script>

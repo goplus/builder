@@ -65,24 +65,27 @@ onUnmounted(() => {
   registered.onStopped()
 })
 
-async function getProjectZipData(signal?: AbortSignal) {
+async function getProjectData(signal?: AbortSignal) {
   const zip = new JSZip()
-  const [, files] = await props.project.export()
+  const [{ filesHash }, files] = await props.project.export()
   signal?.throwIfAborted()
   Object.entries(files).forEach(([path, file]) => {
     if (file == null) return
     zip.file(path, getZipEntry(file))
   })
-  return zip.generateAsync({ type: 'arraybuffer' })
+  const zipped = await zip.generateAsync({ type: 'arraybuffer' })
+  return { filesHash, zipped }
 }
 
 defineExpose({
   async run(signal?: AbortSignal) {
     loading.value = true
     registered.onStart()
-    zipData.value = await getProjectZipData(signal)
+    const projectData = await getProjectData(signal)
+    zipData.value = projectData.zipped
     signal?.throwIfAborted()
     await until(() => !loading.value)
+    return projectData.filesHash
   },
   stop() {
     zipData.value = null
