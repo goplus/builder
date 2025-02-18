@@ -24,7 +24,11 @@ const configuration = reactive<ReferenceConfiguration>({
   pathRouting: {
     basePath: '/docs/api'
   },
-  baseServerURL: apiBaseUrl
+  servers: [
+    {
+      url: apiBaseUrl
+    }
+  ]
 })
 </script>
 

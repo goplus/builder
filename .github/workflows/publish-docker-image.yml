@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - dev
-    paths-ignore:
-      - 'docs/**'
 jobs:
   publish-docker-image:
     runs-on: ubuntu-latest
