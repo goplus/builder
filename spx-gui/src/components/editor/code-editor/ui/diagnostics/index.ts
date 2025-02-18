@@ -10,7 +10,7 @@ export type DiagnosticsContext = BaseContext
 
 export interface IDiagnosticsProvider
   extends Emitter<{
-    didChangeDiagnostics: []
+    didChangeDiagnostics: void
   }> {
   provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]>
 }
@@ -55,7 +55,7 @@ export class DiagnosticsController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => this.ui.project.filesHash,
+        () => [this.ui.project.filesHash, this.ui.activeTextDocument],
         () => refreshDiagnostics(),
         { immediate: true }
       )

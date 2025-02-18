@@ -113,8 +113,8 @@ watch(
     const projectRunner = await untilNotNull(projectRunnerRef)
     signal.throwIfAborted()
     editorCtx.runtime.clearOutputs()
-    projectRunner.run().then(() => {
-      editorCtx.runtime.setRunning({ mode: 'debug', initializing: false })
+    projectRunner.run().then((filesHash) => {
+      editorCtx.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
     })
     signal.addEventListener('abort', () => {
       projectRunner.stop()
@@ -128,8 +128,8 @@ defineExpose({
     editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
     const projectRunner = await untilNotNull(projectRunnerRef)
     editorCtx.runtime.clearOutputs()
-    await projectRunner.rerun()
-    editorCtx.runtime.setRunning({ mode: 'debug', initializing: false })
+    const filesHash = await projectRunner.rerun()
+    editorCtx.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
   }
 })
 </script>

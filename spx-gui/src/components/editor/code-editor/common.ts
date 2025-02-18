@@ -198,6 +198,7 @@ export interface ITextDocument
   getOffsetAt(position: Position): number
   getPositionAt(offset: number): Position
   getValueInRange(range: Range): string
+  getLineContent(line: number): string
   getWordAtPosition(position: Position): WordAtPosition | null
   getDefaultRange(position: Position): Range
   pushEdits(edits: TextEdit[]): void

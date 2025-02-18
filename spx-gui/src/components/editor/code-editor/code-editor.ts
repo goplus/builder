@@ -4,7 +4,7 @@ import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
 import { packageSpx } from '@/utils/spx'
-import type { Runtime } from '@/models/runtime'
+import { RuntimeOutputKind, type Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
@@ -59,7 +59,9 @@ import {
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
   fromLSPDiagnostic,
-  isTextDocumentStageCode
+  isTextDocumentStageCode,
+  DiagnosticSeverity,
+  textDocumentIdEq
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -127,17 +129,54 @@ class ResourceReferencesProvider implements IResourceReferencesProvider {
 
 class DiagnosticsProvider
   extends Emitter<{
-    didChangeDiagnostics: []
+    didChangeDiagnostics: void
   }>
   implements IDiagnosticsProvider
 {
   constructor(
     private runtime: Runtime,
-    private lspClient: SpxLSPClient
+    private lspClient: SpxLSPClient,
+    private project: Project
   ) {
     super()
+
+    this.addDisposer(
+      this.runtime.on('didChangeOutput', () => {
+        this.emit('didChangeDiagnostics')
+      })
+    )
   }
-  private adaptDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
+
+  private adaptRuntimeDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
+    // Expand the range to whole line because the range from runtime is not accurate.
+    // TODO: it's a workaround, should be fixed in the runtime (ispx) side
+    if (start.line !== end.line) return { start, end }
+    const line = textDocument.getLineContent(start.line)
+    const leadingSpaces = line.match(/^\s*/)?.[0] ?? ''
+    const lineStartPos: Position = { line: start.line, column: leadingSpaces.length + 1 }
+    const lineEndPos: Position = { line: start.line, column: line.length + 1 }
+    return { start: lineStartPos, end: lineEndPos }
+  }
+
+  private getRuntimeDiagnostics(ctx: DiagnosticsContext) {
+    const { outputs, filesHash } = this.runtime
+    if (filesHash !== this.project.filesHash) return []
+    const diagnostics: Diagnostic[] = []
+    for (const output of outputs) {
+      if (output.kind !== RuntimeOutputKind.Error) continue
+      if (output.source == null) continue
+      if (!textDocumentIdEq(output.source.textDocument, ctx.textDocument.id)) continue
+      const range = this.adaptRuntimeDiagnosticRange(output.source.range, ctx.textDocument)
+      diagnostics.push({
+        message: output.message,
+        range,
+        severity: DiagnosticSeverity.Error
+      })
+    }
+    return diagnostics
+  }
+
+  private adaptLSDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
     // make sure the range is not empty, so that the diagnostic info can be displayed as inline decorations
     // TODO: it's a workaround, should be fixed in the server side
     if (positionEq(start, end)) {
@@ -165,8 +204,8 @@ class DiagnosticsProvider
     }
     return { start, end }
   }
-  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    // TODO: get diagnostics from runtime. https://github.com/goplus/builder/issues/1256
+
+  private async getLSDiagnostics(ctx: DiagnosticsContext) {
     const diagnostics: Diagnostic[] = []
     const report = await this.lspClient.textDocumentDiagnostic({
       textDocument: ctx.textDocument.id
@@ -175,10 +214,14 @@ class DiagnosticsProvider
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
       const diagnostic = fromLSPDiagnostic(item)
-      const range = this.adaptDiagnosticRange(diagnostic.range, ctx.textDocument)
+      const range = this.adaptLSDiagnosticRange(diagnostic.range, ctx.textDocument)
       diagnostics.push({ ...diagnostic, range })
     }
     return diagnostics
+  }
+
+  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
+    return [...this.getRuntimeDiagnostics(ctx), ...(await this.getLSDiagnostics(ctx))]
   }
 }
 
@@ -466,7 +509,7 @@ export class CodeEditor extends Disposable {
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
-    this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient)
+    this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
 
