@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem size="large" class="ui-sound-item" :active="selected" :interactive="selected != null">
+  <UIBlockItem size="large" class="ui-sound-item" :active="selected" :interactive="!!selectable">
     <div class="sound-container">
       <div class="sound-player">
         <slot name="player"></slot>
@@ -13,20 +13,23 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import { computed } from 'vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 import UICornerIcon from './UICornerIcon.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     duration: string
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
   }>(),
   {
-    selected: undefined
+    selectable: false
   }
 )
+
+const selected = computed(() => props.selectable && props.selectable.selected)
 </script>
 <style scoped lang="scss">
 .ui-sound-item {

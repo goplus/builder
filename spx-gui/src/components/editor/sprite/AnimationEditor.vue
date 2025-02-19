@@ -16,7 +16,8 @@
       :key="animation.id"
       :sprite="sprite"
       :animation="animation"
-      :selected="selectedAnimationId === animation.id"
+      :selectable="{ selected: selectedAnimationId === animation.id }"
+      removable
       @click="selectedAnimationId = animation.id"
     />
     <template #add-options>

@@ -1,6 +1,6 @@
 <template>
-  <UIBlockItem class="ui-sprite-item" size="large" :active="selected" :interactive="selected != null">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+  <UIBlockItem class="ui-sprite-item" size="large" :active="selected" :interactive="!!selectable">
+    <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
@@ -8,29 +8,30 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import { computed } from 'vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UICornerIcon from './UICornerIcon.vue'
-import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    imgSrc: string | null
-    imgLoading: boolean
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
   }>(),
   {
-    selected: undefined
+    selectable: false
   }
 )
+
+const selected = computed(() => props.selectable && props.selectable.selected)
+
+const imgStyle = {
+  height: '99px',
+  width: '99px'
+}
 </script>
 <style scoped lang="scss">
 .ui-sprite-item {
   padding: 2px;
-}
-.img {
-  height: 99px;
-  width: 99px;
 }
 </style>

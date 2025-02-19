@@ -1,11 +1,16 @@
 <template>
   <div class="container">
-    <h4>Logging in...</h4>
+    <h4>{{ $t(title) }}</h4>
   </div>
 </template>
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
+import { usePageTitle } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
+import { useUserStore } from '@/stores/user'
+
+const title = { en: 'Signing in...', zh: '登录中...' }
+
+usePageTitle(title)
 
 const userStore = useUserStore()
 const i18n = useI18n()
@@ -27,7 +32,6 @@ try {
 }
 </script>
 <style scoped lang="scss">
-// Center the text
 .container {
   display: flex;
   justify-content: center;

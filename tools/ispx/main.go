@@ -2,9 +2,6 @@
 
 package main
 
-//go:generate qexp -outdir pkg github.com/goplus/spx
-//go:generate qexp -outdir pkg github.com/hajimehoshi/ebiten/v2
-
 import (
 	"archive/zip"
 	"bytes"
@@ -14,13 +11,9 @@ import (
 	"os"
 	"syscall/js"
 
-	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
-	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
 	"github.com/goplus/builder/ispx/zipfs"
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
-	_ "github.com/goplus/igop/pkg/fmt"
-	_ "github.com/goplus/igop/pkg/math"
 	_ "github.com/goplus/reflectx/icall/icall8192"
 	spxfs "github.com/goplus/spx/fs"
 )
@@ -53,6 +46,18 @@ func logWithCallerInfo(msg string, frame *igop.Frame) {
 	}
 }
 
+func logWithPanicInfo(info *igop.PanicInfo) {
+	position := info.Position()
+	logger.Error(
+		"panic",
+		"error", info.Error,
+		"function", info.String(),
+		"file", position.Filename,
+		"line", position.Line,
+		"column", position.Column,
+	)
+}
+
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
 
@@ -68,8 +73,13 @@ func main() {
 		return fs.Chrooted(path), nil
 	})
 
-	var mode igop.Mode
-	ctx := igop.NewContext(mode)
+	ctx := igop.NewContext(0)
+	ctx.Lookup = func(root, path string) (dir string, found bool) {
+		log.Fatalf("Failed to resolve package import %q. This package is not available in the current environment.", path)
+		return
+	}
+
+	ctx.SetPanic(logWithPanicInfo)
 
 	// NOTE(everyone): Keep sync with the config in spx [gop.mod](https://github.com/goplus/spx/blob/main/gop.mod)
 	gopbuild.RegisterClassFileType(".spx", "Game", []*gopbuild.Class{{Ext: ".spx", Class: "SpriteImpl"}}, "github.com/goplus/spx")

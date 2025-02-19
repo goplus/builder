@@ -26,8 +26,8 @@ github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972 h1:wA4+I+DDfoNw
 github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972/go.mod h1:lcW75c0a5v361jId1Vxs4lRrsasWsQDH0k3dG3Z7wH0=
 github.com/goplus/mod v0.13.15 h1:IyneSjwm1VpwvHGz6hSHnFxZCuO6ULHcu74IAZcW9nw=
 github.com/goplus/mod v0.13.15/go.mod h1:invR72Rz2+qpOOsXqxz830MX8/aR2GDR2EAow/WgfHI=
-github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1 h1:JpAWB4m+LYjEIZwKMVvIeKqqvIjbcLYTXkkvU92Vbkk=
-github.com/goplus/spx v1.1.1-0.20241231062359-381fc67db3e1/go.mod h1:1hkX9vPdDHrsA6LG8itiLMp83KIDJ0KlJI9CmpCoiCA=
+github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499 h1:wt9bXZWSZ6MKgLw0c87GSbKrXjj69aCt7JVM1RwLp3c=
+github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499/go.mod h1:ng8mGU/k+1pXjG5zpeczzLOyDD0RhvOv35bxmpiTPGQ=
 github.com/hajimehoshi/ebiten/v2 v2.7.9 h1:DYH/usAa9dMHcGkBIIEApJsVqDekrJBxYHmsBuly8Iw=
 github.com/hajimehoshi/ebiten/v2 v2.7.9/go.mod h1:Ulbq5xDmdx47P24EJ+Mb31Zps7vQq+guieG9mghQUaA=
 github.com/hajimehoshi/go-mp3 v0.3.2/go.mod h1:qMJj/CSDxx6CGHiZeCgbiq2DSUkbK0UbtXShQcnfyMM=
@@ -46,8 +46,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/qiniu/audio v0.2.1 h1:lAc3dWfr7uAfn7mfee2u0/fl/QSQA9oTOqdBtxyFZAM=
 github.com/qiniu/audio v0.2.1/go.mod h1:APMJRPaS4toviejZnDzzZ8wVyr12jqZhd3xfKr/qYnE=
 github.com/qiniu/x v1.11.5/go.mod h1:03Ni9tj+N2h2aKnAz+6N0Xfl8FwMEDRC2PAlxekASDs=
-github.com/qiniu/x v1.13.11 h1:zlFLY9zFXOwKEjx0SQXRBunhFjDVpEY+pRGL/4shd5U=
-github.com/qiniu/x v1.13.11/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
+github.com/qiniu/x v1.13.12 h1:UyAwja6dgKUOYWZMzzc02wLodwnZ7wmK/0XzRd0e78g=
+github.com/qiniu/x v1.13.12/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
 github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe h1:J5Ga/gb+4/WgJBupg9Fp8F6JQnUT3UF+asoTweLi9Jc=
 github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe/go.mod h1:afMbS0qvv1m5tfENCwnOdZGOF8RGR/FsZ7bvBxQGZG4=
 github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 h1:oDMiXaTMyBEuZMU53atpxqYsSB3U1CHkeAu2zr6wTeY=

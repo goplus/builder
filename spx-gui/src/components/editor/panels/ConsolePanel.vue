@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { throttle } from 'lodash'
 import dayjs from 'dayjs'
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
@@ -12,10 +13,18 @@ const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const runtime = computed(() => editorCtx.runtime)
 
+let isScrolledToBottom = true
+
+const handleScroll = throttle((e: Event) => {
+  const el = e.target as HTMLElement
+  isScrolledToBottom = el.scrollHeight < el.scrollTop + el.clientHeight + 1
+}, 50)
+
 function handleOutput(outputEl: unknown, i: number) {
   if (i !== runtime.value.outputs.length - 1) return
+  if (!isScrolledToBottom) return
   if (outputEl == null) return
-  ;(outputEl as HTMLElement).scrollIntoView({ behavior: 'smooth' })
+  ;(outputEl as HTMLElement).scrollIntoView({ behavior: 'instant' })
 }
 
 function humanizeTime(time: number) {
@@ -44,7 +53,7 @@ function getOutputSourceLocationText(output: RuntimeOutput) {
     <UICardHeader>
       {{ $t({ en: 'Console', zh: '控制台' }) }}
     </UICardHeader>
-    <ul class="output-container">
+    <ul class="output-container" @scroll="handleScroll">
       <UIEmpty v-if="runtime.outputs.length === 0" size="small">
         <template v-if="runtime.running.mode === 'debug' && runtime.running.initializing">
           {{ $t({ en: 'Initializing...', zh: '初始化中...' }) }}

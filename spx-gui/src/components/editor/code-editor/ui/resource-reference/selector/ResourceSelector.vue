@@ -54,7 +54,7 @@ function handleWheel(e: WheelEvent) {
         v-for="item in selector.items"
         :key="item.name"
         :resource="item"
-        :selected="item.name === selected"
+        :selectable="{ selected: item.name === selected }"
         @click="handleSelect(item.name)"
       />
       <UIDropdown trigger="click" placement="top">

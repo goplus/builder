@@ -53,7 +53,7 @@
               v-for="costume in costumes"
               :key="costume.id"
               :costume="costume"
-              :selected="isCostumeSelected(costume)"
+              :checked="isCostumeSelected(costume)"
               @click="handleCostumeClick(costume)"
             />
           </ul>
@@ -84,7 +84,7 @@ import type { MethodComponent } from './common/types'
 import ProcessItem from './common/ProcessItem.vue'
 import ImgPreview from './common/ImgPreview.vue'
 import ProcessDetail from './common/ProcessDetail.vue'
-import CostumeItem from './CostumeItem.vue'
+import CostumeItem from '@/components/editor/sprite/CheckableCostumeItem.vue'
 import originalThumbnail from './original-thumbnail.svg'
 import SplitSpriteSheet from './split-sprite-sheet/SplitSpriteSheet.vue'
 import splitSpriteSheetThumbnail from './split-sprite-sheet/thumbnail.svg'

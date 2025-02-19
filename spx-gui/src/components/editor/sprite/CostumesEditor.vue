@@ -5,7 +5,8 @@
       :key="costume.id"
       :sprite="sprite"
       :costume="costume"
-      :selected="selected?.id === costume.id"
+      removable
+      :selectable="{ selected: selected?.id === costume.id }"
       @click="handleSelect(costume)"
     />
     <template #add-options>

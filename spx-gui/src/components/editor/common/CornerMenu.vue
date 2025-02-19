@@ -1,7 +1,7 @@
 <template>
   <UIDropdown trigger="click">
     <template #trigger>
-      <UICornerIcon v-show="visible" :color="color" type="more" />
+      <UICornerIcon :color="color" type="more" />
     </template>
     <UIMenu>
       <UIMenuItem @click="handleAddToAssetLibrary.fn">{{
@@ -23,7 +23,6 @@ const props = defineProps<{
   item: Backdrop | Sound | Sprite
   removable: boolean
   color: Color
-  visible: boolean
 }>()
 
 const emit = defineEmits<{

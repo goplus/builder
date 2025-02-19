@@ -4,7 +4,7 @@ import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
 import { packageSpx } from '@/utils/spx'
-import type { Runtime } from '@/models/runtime'
+import { RuntimeOutputKind, type Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
@@ -30,7 +30,9 @@ import {
   type CompletionContext,
   type CompletionItem,
   InsertTextFormat,
-  CompletionItemKind
+  CompletionItemKind,
+  type IAPIReferenceProvider,
+  type APIReferenceContext
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -54,13 +56,69 @@ import {
   type CommandArgs,
   getTextDocumentId,
   containsPosition,
-  makeBasicMarkdownString,
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
-  fromLSPDiagnostic
+  fromLSPDiagnostic,
+  isTextDocumentStageCode,
+  DiagnosticSeverity,
+  textDocumentIdEq
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
+
+class APIReferenceProvider implements IAPIReferenceProvider {
+  constructor(
+    private documentBase: DocumentBase,
+    private lspClient: SpxLSPClient
+  ) {}
+
+  private async getFallbackItems(ctx: APIReferenceContext) {
+    const isStage = isTextDocumentStageCode(ctx.textDocument.id)
+    const allItems = await this.documentBase.getAllDocumentations()
+    const overviewSet = new Set<string>()
+    const fallbackItems: DefinitionDocumentationItem[] = []
+    for (const item of allItems) {
+      if (item.hiddenFromList) continue
+      if (item.definition.package === packageSpx) {
+        const namespace = (item.definition.name ?? '').split('.')[0] // `Sprite` / `Game` / ...
+        if (isStage && namespace === 'Sprite') continue
+      }
+      if (overviewSet.has(item.overview)) continue // Skip duplicated items, e.g., `Sprite.onStart` & `Game.onStart`
+      overviewSet.add(item.overview)
+      fallbackItems.push(item)
+    }
+    return fallbackItems
+  }
+
+  async provideAPIReference(ctx: APIReferenceContext, position: Position | null) {
+    if (position == null) return this.getFallbackItems(ctx)
+
+    const definitions = await this.lspClient
+      .workspaceExecuteCommandSpxGetDefinitions({
+        textDocument: ctx.textDocument.id,
+        position: toLSPPosition(position)
+      })
+      .catch((e) => {
+        console.warn('Failed to get definitions', e)
+        return null
+      })
+    ctx.signal.throwIfAborted()
+    let apiReferenceItems: DefinitionDocumentationItem[]
+    if (definitions != null && definitions.length > 0) {
+      const maybeDocumentationItems = await Promise.all(
+        definitions.map(async (def) => {
+          const doc = await this.documentBase.getDocumentation(def)
+          if (doc == null || doc.hiddenFromList) return null
+          return doc
+        })
+      )
+      apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
+    } else {
+      apiReferenceItems = await this.getFallbackItems(ctx)
+    }
+    return apiReferenceItems
+  }
+}
 
 class ResourceReferencesProvider implements IResourceReferencesProvider {
   constructor(private lspClient: SpxLSPClient) {}
@@ -71,17 +129,54 @@ class ResourceReferencesProvider implements IResourceReferencesProvider {
 
 class DiagnosticsProvider
   extends Emitter<{
-    didChangeDiagnostics: []
+    didChangeDiagnostics: void
   }>
   implements IDiagnosticsProvider
 {
   constructor(
     private runtime: Runtime,
-    private lspClient: SpxLSPClient
+    private lspClient: SpxLSPClient,
+    private project: Project
   ) {
     super()
+
+    this.addDisposer(
+      this.runtime.on('didChangeOutput', () => {
+        this.emit('didChangeDiagnostics')
+      })
+    )
   }
-  private adaptDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
+
+  private adaptRuntimeDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
+    // Expand the range to whole line because the range from runtime is not accurate.
+    // TODO: it's a workaround, should be fixed in the runtime (ispx) side
+    if (start.line !== end.line) return { start, end }
+    const line = textDocument.getLineContent(start.line)
+    const leadingSpaces = line.match(/^\s*/)?.[0] ?? ''
+    const lineStartPos: Position = { line: start.line, column: leadingSpaces.length + 1 }
+    const lineEndPos: Position = { line: start.line, column: line.length + 1 }
+    return { start: lineStartPos, end: lineEndPos }
+  }
+
+  private getRuntimeDiagnostics(ctx: DiagnosticsContext) {
+    const { outputs, filesHash } = this.runtime
+    if (filesHash !== this.project.filesHash) return []
+    const diagnostics: Diagnostic[] = []
+    for (const output of outputs) {
+      if (output.kind !== RuntimeOutputKind.Error) continue
+      if (output.source == null) continue
+      if (!textDocumentIdEq(output.source.textDocument, ctx.textDocument.id)) continue
+      const range = this.adaptRuntimeDiagnosticRange(output.source.range, ctx.textDocument)
+      diagnostics.push({
+        message: output.message,
+        range,
+        severity: DiagnosticSeverity.Error
+      })
+    }
+    return diagnostics
+  }
+
+  private adaptLSDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
     // make sure the range is not empty, so that the diagnostic info can be displayed as inline decorations
     // TODO: it's a workaround, should be fixed in the server side
     if (positionEq(start, end)) {
@@ -109,8 +204,8 @@ class DiagnosticsProvider
     }
     return { start, end }
   }
-  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    // TODO: get diagnostics from runtime. https://github.com/goplus/builder/issues/1256
+
+  private async getLSDiagnostics(ctx: DiagnosticsContext) {
     const diagnostics: Diagnostic[] = []
     const report = await this.lspClient.textDocumentDiagnostic({
       textDocument: ctx.textDocument.id
@@ -119,10 +214,14 @@ class DiagnosticsProvider
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
       const diagnostic = fromLSPDiagnostic(item)
-      const range = this.adaptDiagnosticRange(diagnostic.range, ctx.textDocument)
+      const range = this.adaptLSDiagnosticRange(diagnostic.range, ctx.textDocument)
       diagnostics.push({ ...diagnostic, range })
     }
     return diagnostics
+  }
+
+  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
+    return [...this.getRuntimeDiagnostics(ctx), ...(await this.getLSDiagnostics(ctx))]
   }
 }
 
@@ -273,6 +372,11 @@ class CompletionProvider implements ICompletionProvider {
           documentation: null
         }
 
+        if (item.insertText != null) {
+          result.insertText = item.insertText
+          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
+        }
+
         const defId = item.data?.definition
         const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
 
@@ -284,7 +388,7 @@ class CompletionProvider implements ICompletionProvider {
           result.kind = definition.kind
           result.insertText = definition.insertText
           result.insertTextFormat = InsertTextFormat.Snippet
-          result.documentation = makeBasicMarkdownString(definition.overview)
+          result.documentation = definition.detail
         }
 
         if (item.documentation != null) {
@@ -292,10 +396,6 @@ class CompletionProvider implements ICompletionProvider {
           result.documentation = makeAdvancedMarkdownString(docStr)
         }
 
-        if (item.insertText != null) {
-          result.insertText = item.insertText
-          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
-        }
         return result
       })
     )
@@ -388,6 +488,9 @@ export class CodeEditor extends Disposable {
   private copilot: Copilot
   private documentBase: DocumentBase
   private lspClient: SpxLSPClient
+  private apiReferenceProvider: APIReferenceProvider
+  private completionProvider: CompletionProvider
+  private contextMenuProvider: ContextMenuProvider
   private resourceReferencesProvider: ResourceReferencesProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
@@ -402,8 +505,11 @@ export class CodeEditor extends Disposable {
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
+    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient)
+    this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
+    this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
-    this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient)
+    this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
 
@@ -497,46 +603,15 @@ export class CodeEditor extends Disposable {
     const idx = this.uis.indexOf(ui)
     if (idx >= 0) this.uis.splice(idx, 1)
     this.uis.push(ui)
-    ;(window as any).ui = ui // for debugging only
-    const { copilot, documentBase, lspClient } = this
 
-    ui.registerAPIReferenceProvider({
-      async provideAPIReference(ctx, position) {
-        const definitions = await lspClient
-          .workspaceExecuteCommandSpxGetDefinitions({
-            textDocument: ctx.textDocument.id,
-            position: toLSPPosition(position)
-          })
-          .catch((e) => {
-            console.warn('Failed to get definitions', e)
-            return null
-          })
-        ctx.signal.throwIfAborted()
-        let apiReferenceItems: DefinitionDocumentationItem[]
-        if (definitions != null && definitions.length > 0) {
-          const maybeDocumentationItems = await Promise.all(
-            definitions.map(async (def) => {
-              const doc = await documentBase.getDocumentation(def)
-              if (doc == null || doc.hiddenFromList) return null
-              return doc
-            })
-          )
-          apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
-        } else {
-          // When compiling errors encountered, we fallback to "all items".
-          apiReferenceItems = await documentBase.getAllDocumentations()
-        }
-        return apiReferenceItems
-      }
-    })
-
-    ui.registerCompletionProvider(new CompletionProvider(this.lspClient, documentBase))
-    ui.registerContextMenuProvider(new ContextMenuProvider(lspClient, documentBase))
-    ui.registerCopilot(copilot)
+    ui.registerAPIReferenceProvider(this.apiReferenceProvider)
+    ui.registerCompletionProvider(this.completionProvider)
+    ui.registerContextMenuProvider(this.contextMenuProvider)
+    ui.registerCopilot(this.copilot)
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
-    ui.registerDocumentBase(documentBase)
+    ui.registerDocumentBase(this.documentBase)
   }
 
   detachUI(ui: ICodeEditorUI) {

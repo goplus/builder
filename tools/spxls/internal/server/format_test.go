@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		require.ErrorIs(t, err, errNoMainSpxFile)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		require.Nil(t, edits)
 	})
 
@@ -255,6 +256,7 @@ onKey [KeyLeft, KeyRight], (key) => {
 				End:   Position{Line: 8, Character: 0},
 			},
 			NewText: `// An spx game.
+
 onKey [KeyLeft, KeyRight], () => {
 	println "key"
 }
@@ -297,6 +299,7 @@ onTouchStart 123, (s) => { // type mismatch
 				End:   Position{Line: 13, Character: 0},
 			},
 			NewText: `// An spx game.
+
 onKey [KeyLeft, KeyRight], () => {
 	println "key"
 }
@@ -311,6 +314,137 @@ onTouchStart (s, t) => { // type mismatch
 }
 onTouchStart 123, (s) => { // type mismatch
 }
+`,
+		})
+	})
+
+	t.Run("EmptyFile", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(``),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Nil(t, edits)
+	})
+
+	t.Run("WhitespaceOnlyFile", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(` `),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 0, Character: 1},
+			},
+			NewText: ``,
+		})
+	})
+
+	t.Run("WithFloatingComments", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`import "fmt"
+
+// floating comment1
+
+// comment for var a
+var a int
+
+// floating comment2
+
+// comment for func test
+func test() {
+	// comment inside func test
+}
+
+// floating comment3
+
+// comment for const b
+const b = "123"
+
+// floating comment4
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 20, Character: 0},
+			},
+			NewText: `import "fmt"
+
+// floating comment1
+
+// floating comment2
+
+// floating comment3
+
+// comment for const b
+const b = "123"
+
+// comment for var a
+var (
+	a int
+)
+
+// comment for func test
+func test() {
+	// comment inside func test
+}
+
+// floating comment4
+`,
+		})
+	})
+
+	t.Run("WithTrailingComments", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`import "fmt" // trailing comment for import "fmt"
+
+const foo = "bar" // trailing comment for const foo
+
+var a int // trailing comment for var a
+
+func test() {} // trailing comment for func test
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 7, Character: 0},
+			},
+			NewText: `import "fmt" // trailing comment for import "fmt"
+
+const foo = "bar" // trailing comment for const foo
+
+var (
+	a int
+) // trailing comment for var a
+
+func test() {} // trailing comment for func test
 `,
 		})
 	})

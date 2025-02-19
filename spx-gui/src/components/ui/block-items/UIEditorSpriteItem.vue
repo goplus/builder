@@ -1,6 +1,6 @@
 <template>
-  <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected" :interactive="selected != null">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+  <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected" :interactive="!!selectable">
+    <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
       {{ name }}
     </UIBlockItemTitle>
@@ -8,23 +8,28 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import { computed } from 'vue'
 import UIBlockItem from './UIBlockItem.vue'
-import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    imgSrc: string | null
-    imgLoading: boolean
     name: string
-    selected?: boolean
+    selectable?: false | { selected: boolean }
     color?: 'sprite' | 'primary'
   }>(),
   {
-    color: 'sprite',
-    selected: undefined
+    selectable: false,
+    color: 'sprite'
   }
 )
+
+const selected = computed(() => props.selectable && props.selectable.selected)
+
+const imgStyle = {
+  height: '60px',
+  width: '60px'
+}
 </script>
 <style scoped lang="scss">
 .ui-editor-sprite-item {

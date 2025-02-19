@@ -56,6 +56,10 @@ onStart => {
 			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(GetSpxPkg().Path()),
+			Name:    util.ToPtr("Game.onClick"),
+		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.turn"),
@@ -99,6 +103,10 @@ onStart => {
 			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
 		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(GetSpxPkg().Path()),
+			Name:    util.ToPtr("Sprite.onClick"),
+		}))
 
 		mySpriteSpxOnStartScopeParams := []SpxGetDefinitionsParams{
 			{
@@ -124,6 +132,10 @@ onStart => {
 			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Game.onStart"),
 		}))
+		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(GetSpxPkg().Path()),
+			Name:    util.ToPtr("Game.onClick"),
+		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package:    util.ToPtr(GetSpxPkg().Path()),
 			Name:       util.ToPtr("Sprite.turn"),
@@ -132,6 +144,10 @@ onStart => {
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package: util.ToPtr(GetSpxPkg().Path()),
 			Name:    util.ToPtr("Sprite.onStart"),
+		}))
+		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(GetSpxPkg().Path()),
+			Name:    util.ToPtr("Sprite.onClick"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package:    util.ToPtr(GetSpxPkg().Path()),
@@ -239,7 +255,7 @@ onStart => {}
 			{
 				TextDocumentPositionParams: TextDocumentPositionParams{
 					TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
-					Position:     Position{Line: 1, Character: 0},
+					Position:     Position{Line: 1, Character: 13},
 				},
 			},
 		}

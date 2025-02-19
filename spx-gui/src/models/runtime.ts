@@ -39,15 +39,18 @@ export class Runtime extends Emitter<{
 }> {
   running: RunningState = { mode: 'none' }
 
-  setRunning(running: RunningState) {
+  setRunning(running: RunningState, filesHash?: string) {
     this.running = running
+    if (running.mode === 'debug' && running.initializing === false) {
+      if (filesHash == null) throw new Error('filesHash is required when running in debug mode')
+      this.filesHash = filesHash
+    }
   }
 
+  /** Outputs of last debugging */
   outputs: RuntimeOutput[] = []
-
-  getOutputs(): RuntimeOutput[] {
-    return this.outputs
-  }
+  /** Project files' hash of last debugging */
+  filesHash: string | null = null
 
   addOutput(output: RuntimeOutput) {
     this.outputs.push(output)
@@ -75,7 +78,7 @@ export class Runtime extends Emitter<{
         () => reactiveThis.project.filesHash,
         async (_, oldHash) => {
           if (oldHash == null) return
-          await until(() => reactiveThis.running.mode === 'none')
+          await until(() => reactiveThis.running.mode !== 'debug')
           reactiveThis.clearOutputs()
         }
       )

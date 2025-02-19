@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMessageHandle } from '@/utils/exception'
 import { UITooltip } from '@/components/ui'
+import { DefinitionKind } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -14,10 +15,21 @@ const props = defineProps<{
 
 const codeEditorCtx = useCodeEditorUICtx()
 
-const handleInsert = useMessageHandle(() => codeEditorCtx.ui.insertSnippet(props.item.insertText), {
-  en: 'Failed to insert',
-  zh: '插入失败'
-}).fn
+const blockDefinitionKinds = [DefinitionKind.Command, DefinitionKind.Listen, DefinitionKind.Statement]
+
+const handleInsert = useMessageHandle(
+  () => {
+    if (blockDefinitionKinds.includes(props.item.kind)) {
+      codeEditorCtx.ui.insertBlockSnippet(props.item.insertText)
+    } else {
+      codeEditorCtx.ui.insertInlineSnippet(props.item.insertText)
+    }
+  },
+  {
+    en: 'Failed to insert',
+    zh: '插入失败'
+  }
+).fn
 
 const handleExplain = useMessageHandle(
   () =>

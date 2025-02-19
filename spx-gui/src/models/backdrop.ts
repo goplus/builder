@@ -17,7 +17,7 @@ export type BackdropExportLoadOptions = {
 
 // Backdrop is almost the same as Costume
 export class Backdrop extends Costume {
-  private stage: Stage | null = null
+  stage: Stage | null = null
   setStage(stage: Stage | null) {
     this.stage = stage
   }

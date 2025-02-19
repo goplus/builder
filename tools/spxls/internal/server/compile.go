@@ -124,6 +124,30 @@ type astFileLine struct {
 	line    int
 }
 
+// newCompileResult creates a new [compileResult].
+func newCompileResult() *compileResult {
+	return &compileResult{
+		fset:                      goptoken.NewFileSet(),
+		mainPkg:                   types.NewPackage("main", "main"),
+		mainASTPkg:                &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
+		mainASTPkgSpecToGenDecl:   make(map[gopast.Spec]*gopast.GenDecl),
+		mainASTPkgIdentToFuncDecl: make(map[*gopast.Ident]*gopast.FuncDecl),
+		firstVarBlocks:            make(map[*gopast.File]*gopast.GenDecl),
+		typeInfo: &goptypesutil.Info{
+			Types:      make(map[gopast.Expr]types.TypeAndValue),
+			Defs:       make(map[*gopast.Ident]types.Object),
+			Uses:       make(map[*gopast.Ident]types.Object),
+			Implicits:  make(map[gopast.Node]types.Object),
+			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
+			Scopes:     make(map[gopast.Node]*types.Scope),
+		},
+		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
+		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
+		diagnostics:                   make(map[DocumentURI][]Diagnostic),
+		documentURIs:                  make(map[string]DocumentURI),
+	}
+}
+
 // isInFset reports whether the given position exists in the file set.
 func (r *compileResult) isInFset(pos goptoken.Pos) bool {
 	return r.fset.File(pos) != nil
@@ -426,6 +450,36 @@ func (r *compileResult) spxDefinitionsForNamedStruct(named *types.Named) (defs [
 	return
 }
 
+// isInSpxEventHandler checks if the given position is inside an spx event
+// handler callback.
+func (r *compileResult) isInSpxEventHandler(pos goptoken.Pos) bool {
+	astFile := r.posASTFile(pos)
+	if astFile == nil {
+		return false
+	}
+
+	path, _ := util.PathEnclosingInterval(astFile, pos-1, pos)
+	for _, node := range path {
+		callExpr, ok := node.(*gopast.CallExpr)
+		if !ok || len(callExpr.Args) == 0 {
+			continue
+		}
+		funcIdent, ok := callExpr.Fun.(*gopast.Ident)
+		if !ok {
+			continue
+		}
+		funcObj := r.typeInfo.ObjectOf(funcIdent)
+		if !isSpxPkgObject(funcObj) {
+			continue
+		}
+
+		if isSpxEventHandlerFuncName(funcIdent.Name) {
+			return true
+		}
+	}
+	return false
+}
+
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
 func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {
@@ -567,7 +621,8 @@ type compileCache struct {
 	spxFileModTimes map[string]time.Time
 }
 
-// compile compiles spx source files and returns compile result.
+// compile compiles spx source files and returns compile result. It uses cached
+// result if available.
 func (s *Server) compile() (*compileResult, error) {
 	snapshot := s.workspaceRootFS.Snapshot()
 	spxFiles, err := listSpxFiles(snapshot)
@@ -605,8 +660,8 @@ func (s *Server) compile() (*compileResult, error) {
 		}
 	}
 
-	// Compile uncached if cache is not used.
-	result, err := s.compileUncached(snapshot, spxFiles)
+	// Compile at the given snapshot if cache is not used.
+	result, err := s.compileAt(snapshot)
 	if err != nil {
 		return nil, err
 	}
@@ -628,30 +683,19 @@ func (s *Server) compile() (*compileResult, error) {
 	return result, nil
 }
 
-// compileUncached compiles spx source files without using cache.
-func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compileResult, error) {
-	result := &compileResult{
-		fset:                      goptoken.NewFileSet(),
-		mainPkg:                   types.NewPackage("main", "main"),
-		mainASTPkg:                &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
-		mainASTPkgSpecToGenDecl:   make(map[gopast.Spec]*gopast.GenDecl),
-		mainASTPkgIdentToFuncDecl: make(map[*gopast.Ident]*gopast.FuncDecl),
-		firstVarBlocks:            make(map[*gopast.File]*gopast.GenDecl),
-		typeInfo: &goptypesutil.Info{
-			Types:      make(map[gopast.Expr]types.TypeAndValue),
-			Defs:       make(map[*gopast.Ident]types.Object),
-			Uses:       make(map[*gopast.Ident]types.Object),
-			Implicits:  make(map[gopast.Node]types.Object),
-			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
-			Scopes:     make(map[gopast.Node]*types.Scope),
-		},
-		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
-		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
-		diagnostics:                   make(map[DocumentURI][]Diagnostic, len(spxFiles)),
-		documentURIs:                  make(map[string]DocumentURI, len(spxFiles)),
+// compileAt compiles spx source files at the given snapshot and returns the
+// compile result.
+func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
+	spxFiles, err := listSpxFiles(snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get spx files: %w", err)
+	}
+	if len(spxFiles) == 0 {
+		return nil, errNoMainSpxFile
 	}
 
 	var (
+		result      = newCompileResult()
 		gpfs        = vfs.NewGopParserFS(snapshot)
 		spriteNames = make([]string, 0, len(spxFiles)-1)
 	)
@@ -660,9 +704,20 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 		result.diagnostics[documentURI] = []Diagnostic{}
 		result.documentURIs[spxFile] = documentURI
 
-		astFile, err := gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
-			Mode: gopparser.ParseComments | gopparser.AllErrors | gopparser.ParseGoPlusClass,
-		})
+		var (
+			astFile *gopast.File
+			err     error
+		)
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("parser panic: %v", r)
+				}
+			}()
+			astFile, err = gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
+				Mode: gopparser.ParseComments | gopparser.AllErrors | gopparser.ParseGoPlusClass,
+			})
+		}()
 		if err != nil {
 			var (
 				parseErr gopscanner.ErrorList
@@ -685,10 +740,9 @@ func (s *Server) compileUncached(snapshot *vfs.MapFS, spxFiles []string) (*compi
 					Message:  codeErr.Error(),
 				})
 			} else {
-				// Handle unknown errors.
+				// Handle unknown errors (including recovered panics).
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
-					Range:    RangeForGopTokenPosition(goptoken.Position{}),
 					Message:  fmt.Sprintf("failed to parse spx file: %v", err),
 				})
 			}
@@ -833,7 +887,6 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 	if err != nil {
 		result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 			Severity: SeverityError,
-			Range:    RangeForGopTokenPosition(goptoken.Position{}),
 			Message:  fmt.Sprintf("failed to create spx resource set: %v", err),
 		})
 		return

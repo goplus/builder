@@ -22,7 +22,7 @@ export class BaseWidget extends Disposable {
   id: string
   type: string
 
-  private stage: Stage | null = null
+  stage: Stage | null = null
   setStage(stage: Stage | null) {
     this.stage = stage
   }

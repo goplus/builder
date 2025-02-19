@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem color="stage" :active="selected" :interactive="selected != null">
+  <UIBlockItem :color="color" :active="selectable && selectable.selected" :interactive="!!selectable">
     <div class="icon-container">
       <slot name="icon"></slot>
     </div>
@@ -16,10 +16,12 @@ import UIBlockItemTitle from './UIBlockItemTitle.vue'
 withDefaults(
   defineProps<{
     name: string
-    selected?: boolean
+    color?: 'stage' | 'primary'
+    selectable?: false | { selected: boolean }
   }>(),
   {
-    selected: undefined
+    color: 'stage',
+    selectable: false
   }
 )
 </script>
