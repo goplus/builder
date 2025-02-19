@@ -8,7 +8,7 @@
 
         (async () => {
             const go = new Go();
-            const { instance } = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+            const { instance } = await WebAssembly.instantiateStreaming(fetch("ispx.wasm"), go.importObject)
             go.run(instance);
 
             window.startWithZipBuffer = (buffer) => {

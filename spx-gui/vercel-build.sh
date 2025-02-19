@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
 
-export PATH=$PATH:/usr/local/go/bin && ./build-wasm.sh
+export PATH=/usr/local/go/bin:$PATH
+
+./build-wasm.sh
 npm run build
