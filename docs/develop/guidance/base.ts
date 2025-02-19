@@ -25,7 +25,7 @@ type Level = {								// 一个故事线存在多个关卡
 type StoryLine = {
     id: string,
     backgroundImage: string,            // 故事线的背景图url
-    name: string,                 		// 为用户创建project时的projectName
+    name: string,                 		// 故事线的名字（能够唯一标识该故事线，可用于为用户创建project时的projectName）
     title: LocaleMessage,               // 故事线标题
     description: LocaleMessage,         // 故事线描述
     tag: 'easy' | 'medium' | 'hard',    // 故事线难度标签
