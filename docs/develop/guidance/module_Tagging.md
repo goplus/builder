@@ -1,19 +1,28 @@
-## Tag 标注方
+## 全局内容
 
 ```ts
 /** 节点信息 */
-export interface TagNode {
-  name: string;
-  instance: any;
-  children: TagNode[];
+export type TagNode = {
+  name: string,
+  instance: any,
+  children: TagNode[]
 }
 
 /** 每个节点对子节点提供的上下文 */
-export interface TagContext {
-  addChild: (node: TagNode) => void; // 挂载时，子节点注册到父节点
-  removeChild: (node: TagNode) => void; // 卸载时，子节点从父节点中移除
+export type TagContext = {
+  addChild: (node: TagNode) => void, // 挂载时，子节点注册到父节点
+  removeChild: (node: TagNode) => void, // 卸载时，子节点从父节点中移除
+}
+
+/** 提供一个全局tagApi，
+ * 1. 供RootTag把自己的find方法注册，
+ * 2. 供useTagFinder使用find方法 */
+export type tagApi = {
+  find: (path: string[]): any | null
 }
 ```
+
+## Tag 标注方
 
 ```ts
 /** 节点的标注信息 */
@@ -32,20 +41,25 @@ type Inject = {
 };
 ```
 
-## TagConsumer 消费方
+## RootTag 消费方
 
 ```ts
-/** 对如Mask模块提供的方法 */
-type Expose = {
-  find(path: string[]) => TagNode.instance
-}
-
 /** 跟节点对子节点提供TagContext，用于子节点向跟节点注册 */
 type Provide = {
-  currentContext: TagContext
-}
+  currentContext: TagContext;
+};
 
-/** 注意：TagConsumer如果存在嵌套情况，当前的TagConsumer不会向上上报自己tagTree。
- * 即：父TagConsumer或者Tag不知道子TagConsumer的存在，他们之间维护的tagTree是独立的
+/** 解释：
+ * RootTag 需要把自己的 find 方法传给全局tagApi :
+ * 如：tagApi.value.find = find
  */
+```
+
+## useTagFinder 消费方
+
+```ts
+/**
+ * useTagFinder 通过 全局的tagApi 返回 tagApi.find 方法
+ */
+export function find: (path: string[]) => any | null
 ```
