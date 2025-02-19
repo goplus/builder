@@ -1,5 +1,7 @@
 ```typescript
-interface ResourceFilterState {
+type ResourceType = 'api' | 'asset' | 'sprite' | 'animation'
+
+type ResourceFilterState {
   api: {
     enabled: boolean       // 是否启用API过滤
     resources: string[]    // 需要显示的API名称列表
@@ -18,13 +20,13 @@ interface ResourceFilterState {
   }
 }
 
-interface ResourceFilter {
-  // 设置某类资源的过滤状态
+type Events = {
+  filterChanged: [type: ResourceType, enabled: boolean, resources: string[]]  // 过滤器变更事件
+  filterReset: []      // 过滤器重置事件
+}
+
+type Expose {
   setFilter(type: ResourceType, enabled: boolean, resources: string[]): void
-  
-  // 重置所有过滤器
   reset(): void
-  
-  // 获取当前过滤状态
   getState(): ResourceFilterState
 }
