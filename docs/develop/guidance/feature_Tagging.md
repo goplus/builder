@@ -1,90 +1,77 @@
 # Tagging 伪代码
 
-## 全局注册（单例）
-
-```ts
-// 通过 provide 全局注册单例
-const app = createApp(App);
-//
-app.provide("Tagging", new Tagging());
-```
-
 ## 语义化标注（标注方）
 
 ### 示例组件
 
 ```vue
-<!-- 示例组件1 -->
 <template>
-  <Father data-tag="father">
-    <Son data-tag="son" />
-    <Daughter data-tag="daughter" />
-  </Father>
-</template>
-
-<!-- 示例组件2 -->
-<template>
-  <Mather data-tag="mather">
-    <Son data-tag="son" />
-    <Daughter data-tag="daughter" />
-  </Mather>
+  <TagConsumer ref="rootConsumerRef">
+    <Tag name="infoBox">
+      <div class="info-box">
+        <!-- contentConsumerRef 不会上报自己的tagTree -->
+        <TagConsumer ref="contentConsumerRef">
+          <Tag name="content"> ... </Tag>
+        </TagConsumer>
+        <Tag name="confirm"> ... </Tag>
+      </div>
+    </Tag>
+    <ClickToRender />
+  </TagConsumer>
 </template>
 ```
 
-### Tagging 中保存示例组件树结构信息
+### 示例组件的 TagTree
 
 ```ts
-this.tagTree = {
-  father: {
-    e: FatherComponent,
-    children: {
-      son: {
-        e: SonComponent,
-        children: {},
-      },
-      daughter: {
-        e: DaughterComponent,
-        children: {},
-      },
-    },
-  },
-  mather: {
-    e: MatherComponent,
-    children: {
-      son: {
-        e: SonComponent,
-        children: {},
-      },
-      daughter: {
-        e: DaughterComponent,
-        children: {},
-      },
-    },
-  },
-};
+// rootConsumerRef的tagTree
+{
+  name: "_root_",
+  instance: null,
+  children: [
+    {
+      name: "infoBox",
+      instance: ...,
+      children: [
+        {
+          name: "confirm",
+          instance: xxx,
+          children: []
+        }
+      ]
+    }
+  ]
+}
+
+// contentConsumerRef的tagTree
+{
+  name: "_root_",
+  instance: null,
+  children: [
+    {
+      name: "content",
+      instance: xxx,
+      children: []
+    }
+  ]
+}
 ```
 
 ## 在 Mask 组件中使用（消费方）
 
 ```vue
 <script lang="ts" setup>
-// 组件内注入
-const tagging = inject("Tagging");
+defineProps({
+  path: string[],
+  visible: boolean,
+  tagConsumerRef: componentInstance
+})
+/** 根据 path 路径查找 instance */
+const instance = tagConsumerRef.value?.find(["infoBox", "confirm"])
 
-// 传入keys参数，查找为 key = 'mother' 下的 key = 'son' 的组件，类似于CSS类选择器
-const component: Component = tagging.getElementByKeys(["mother", "son"]);
-
+/** 高亮逻辑 */
 const highlightComponentStyle = () => {
-  const lightElementStyle = {
-    ...
-    ...
-  }
-
-  component.style = highlightComponentStyle
+  ...
 }
 </script>
-
-<template>
-  <div class="mask" v-if="visible">...</div>
-</template>
 ```
