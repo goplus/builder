@@ -10,7 +10,6 @@ export interface Spxls {
   handleMessage(message: RequestMessage | NotificationMessage): Error | null
 }
 
-
 declare global {
   /**
    * Creates a new instance of the spx language server.

@@ -5,8 +5,6 @@ import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
-import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
-import spxlsWasmUrl from '@/assets/spxls.wasm?url'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
@@ -15,30 +13,37 @@ import {
   type TextDocumentIdentifier,
   containsPosition
 } from '../common'
-import { Spxlc } from './spxls/client'
-import type { Files as SpxlsFiles } from './spxls'
+import { Spxlc, type IConnection } from './spxls/client'
+import type { NotificationMessage, RequestMessage, ResponseMessage, Files as SpxlsFiles } from './spxls'
 import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
   parseDocumentLinkForDefinition
 } from './spxls/methods'
+import type { IWorkerHandler } from './worker'
 
-function loadScript(url: string) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = url
-    script.onload = resolve
-    script.onerror = reject
-    document.body.appendChild(script)
-  })
-}
-
-async function loadGoWasm(wasmUrl: string) {
-  await loadScript(wasmExecScriptUrl)
-  const go = new Go()
-  const { instance } = await WebAssembly.instantiateStreaming(fetch(wasmUrl), go.importObject)
-  go.run(instance)
+/** Connection between LS client and server when the server runs in a Web Worker. */
+class WorkerConnection implements IConnection {
+  private worker: IWorkerHandler
+  constructor() {
+    this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+  }
+  sendMessage(message: RequestMessage | NotificationMessage) {
+    this.worker.postMessage({ type: 'lsp', message })
+  }
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.worker.addEventListener('message', (event) => {
+      const message = event.data
+      handler(message.message)
+    })
+  }
+  sendFiles(files: SpxlsFiles): void {
+    this.worker.postMessage({ type: 'files', files })
+  }
+  dispose() {
+    this.worker.terminate()
+  }
 }
 
 export class SpxLSPClient extends Disposable {
@@ -46,7 +51,7 @@ export class SpxLSPClient extends Disposable {
     super()
   }
 
-  private files: SpxlsFiles = {}
+  private connection = new WorkerConnection()
   private isFilesStale = shallowRef(true)
   private spxlcRef = shallowRef<Spxlc | null>(null)
 
@@ -71,7 +76,7 @@ export class SpxLSPClient extends Disposable {
       })
     )
     signal.throwIfAborted()
-    this.files = loadedFiles
+    this.connection.sendFiles(loadedFiles)
     this.isFilesStale.value = false
   }
 
@@ -87,10 +92,15 @@ export class SpxLSPClient extends Disposable {
     return spxlc
   }
 
-  async init() {
+  init() {
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    await loadGoWasm(spxlsWasmUrl)
-    this.spxlcRef.value = new Spxlc(() => this.files)
+    this.spxlcRef.value = new Spxlc(this.connection)
+  }
+
+  dispose() {
+    this.spxlcRef.value?.dispose()
+    this.connection.dispose()
+    super.dispose()
   }
 
   private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
