@@ -32,8 +32,7 @@ type StoryLine = {
     levels: Level[],
 }
 
-type UserStoryLineRelationship = {
-    userId: string,
+type StoryLineStudy = {
     storyLineId: string,
     lastFinishedLevelIndex: number,         // 故事线状态，其值为当前最新已完成的关卡下标
 }
