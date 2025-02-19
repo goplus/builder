@@ -23,12 +23,18 @@ type Level = {								// 一个故事线存在多个关卡
 }
 
 type StoryLine = {
-    id: string
-    // TODO
+    id: string,
+    backgroundImage: string,            // 故事线的背景图url
+    name: string,                 		// 故事线的名字（能够唯一标识该故事线，可用于为用户创建project时的projectName）
+    title: LocaleMessage,               // 故事线标题
+    description: LocaleMessage,         // 故事线描述
+    tag: 'easy' | 'medium' | 'hard',    // 故事线难度标签
+    levels: Level[],
 }
 
-type UserStoryLineRelationship = {
-    // TODO
+type StoryLineStudy = {
+    storyLineId: string,
+    lastFinishedLevelIndex: number,         // 故事线状态，其值为当前最新已完成的关卡下标
 }
 
 type Placement = {
