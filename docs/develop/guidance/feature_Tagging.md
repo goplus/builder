@@ -7,10 +7,24 @@
 ```vue
 <template>
   <RootTag>
-    <Tag name="infoBox">
-      <div class="info-box">
-        <Tag name="content"> ... </Tag>
-        <Tag name="confirm"> ... </Tag>
+    <Tag name="editorbox">
+      <div class="editor">
+        <h2>Coding Here</h2>
+        <div class="options">
+          <Tag name="check">
+            <button @click="handleCheck">Check</button>
+          </Tag>
+          <Tag name="logpre">
+            <button @click="logCodeContext">logpre</button>
+          </Tag>
+        </div>
+        <Tag name="pre">
+          <pre>
+            <Tag name="code">
+              <code>console.log("Hello, World!");</code>
+            </Tag>
+          </pre>
+        </Tag>
       </div>
     </Tag>
   </RootTag>
@@ -21,14 +35,11 @@
 
 ```vue
 <script lang="ts" setup>
-defineProps({
-  path: string[],
-  visible: boolean,
-})
-/** 根据 path 路径查找 instance */
-const { find } = useTagFinder()
+const { getElement } = useTag()
+const path = ref("editorbox check")
 
-const instance = find(path)
+const element = getElement(path)
+
 /** 高亮逻辑 */
 const highlightComponentStyle = () => {
   ...
