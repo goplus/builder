@@ -6,5 +6,10 @@ type Props = {
 
 type Expose = {
   zIndex: number; // 蒙层的层级，用于stepPlayer的素材确定层级
+  lightElemntSize: {
+    // 高亮组件的大小
+    width: number;
+    height: number;
+  };
 };
 ```

@@ -12,6 +12,13 @@ const maskRef = ref(); // Mask组件的引用
 const zIndex = computed(() => {
   return maskRef.value.zIndex + 1;
 });
+
+/* 计算卡通形象、箭头的位置 */
+const position = computed(() => {
+  const width = maskRef.value.lightElemntSize.width;
+  const hight = maskRef.value.lightElemntSize.height;
+  // ...内部处理逻辑
+});
 </script>
 
 <template>
