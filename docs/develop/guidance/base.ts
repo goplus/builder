@@ -15,11 +15,13 @@ type Step = {
   type: 'coding' | 'following' // 存在两种类型的步骤，分别是Following步骤和Coding步骤
   isCheck: boolean // 该步骤是否涉及快照比对
   isApiControl: boolean // 是否需要去控制Api Reference的展示
-  apis: string[] // 该步骤中需要展示的Api Reference
-  isSpriteControl: boolean // 是否需要去控制精灵的展示
-  sprites: string[] // 该步骤中需要被展示的精灵
+  apis: string[] // 该步骤中需要展示的Api Reference的definition列表
   isAssetControl: boolean // 是否需要去控制素材的展示
-  assets: string[] // 该步骤中需要被展示的素材（素材库中的素材）
+  assets: string[] // 该步骤中需要被展示的素材的id列表
+  isSpriteControl: boolean // 是否需要去控制精灵的展示
+  sprites: string[] // 该步骤中需要被展示的精灵的name列表
+  isAnimationControl: boolean // 是否需要去控制动画的展示
+  animations: string[] // 该步骤中需要被展示的动画的name列表
   snapshot: {
     startSnapshot: string // 初始快照
     endSnapshot?: string // 结束快照
