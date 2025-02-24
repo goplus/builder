@@ -6,7 +6,7 @@
 
 ```vue
 <template>
-  <RootTag>
+  <TagRoot>
     <Tag name="editorbox">
       <div class="editor">
         <h2>Coding Here</h2>
@@ -27,7 +27,7 @@
         </Tag>
       </div>
     </Tag>
-  </RootTag>
+  </TagRoot>
 </template>
 ```
 
@@ -35,13 +35,16 @@
 
 ```vue
 <script lang="ts" setup>
-const { getElement } = useTag()
-const path = ref("editorbox check")
+defineProps({
+  highlightElementPath: string,
+  ...
+})
+const { getElement } = useTagRoot()
 
-const element = getElement(path)
+const element = getElement(highlightElementPath)
 
 /** 高亮逻辑 */
-const highlightComponentStyle = () => {
+const highlightElementStyle = () => {
   ...
 }
 </script>

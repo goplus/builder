@@ -1,4 +1,10 @@
-# Taggin 内部实现说明
+# Tagging 内部实现说明
+
+Tagging 主要有三部分组成：
+
+- `<Tag />`: 用于给组件添加标注的 vue component
+- `<TagRoot />`: 作为跟组件，收集`<Tag/>`上报的节点信息并构建`tagTree`，并向外提供方法。
+- `useTagRoot`: 用于返回给消费方`<TagRoot>`提供的方法。
 
 ## 实现原理说明
 
@@ -162,7 +168,7 @@ const logCodeContext = () => {
 </script>
 
 <template>
-  <RootTag>
+  <TagRoot>
     <Tag name="editorbox">
       <div class="editor">
         <h2>Coding Here</h2>
@@ -183,6 +189,6 @@ const logCodeContext = () => {
         </Tag>
       </div>
     </Tag>
-  </RootTag>
+  </TagRoot>
 </template>
 ```
