@@ -67,7 +67,7 @@ func New(ctx context.Context) (*Controller, error) {
 
 	// Create the Copilot instance.
 	copilot := copilot.NewCopilot(&copilot.Config{
-		DeepSeekAPIKey:  mustEnv(logger, "DEEPSEEK_API_KEY"),
+		QiniuAPIKey:     mustEnv(logger, "QINIU_API_KEY"),
 		AnthropicAPIKey: mustEnv(logger, "ANTHROPIC_API_KEY"),
 	})
 

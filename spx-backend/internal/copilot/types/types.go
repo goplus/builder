@@ -14,7 +14,7 @@ type Provider string
 
 // Supported AI providers.
 const (
-	DeepSeek  Provider = "deepseek"
+	Qiniu     Provider = "qiniu"
 	Anthropic Provider = "anthropic"
 )
 

@@ -1,4 +1,4 @@
-package deepseek
+package qnaigc
 
 import (
 	"context"
@@ -7,32 +7,32 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
 
-// DeepSeek represents a client for interacting with the DeepSeek API.
+// Qiniu represents a client for interacting with the Qiniu API.
 // It handles message processing and API communication.
-type DeepSeek struct {
+type Qiniu struct {
 	client *Client
 }
 
-// NewDeepSeek creates a new DeepSeek client instance with the provided API key.
-// apiKey: The authentication key for DeepSeek API
-func New(apiKey string) *DeepSeek {
-	return &DeepSeek{
+// NewQiniu creates a new Qiniu client instance with the provided API key.
+// apiKey: The authentication key for Qiniu API
+func New(apiKey string) *Qiniu {
+	return &Qiniu{
 		client: NewClient(apiKey),
 	}
 }
 
-// Message processes a conversation request with the DeepSeek API.
+// Message processes a conversation request with the Qiniu API.
 // ctx: Context for request cancellation and deadlines
 // params: Request parameters containing conversation messages
 // Returns:
 // - *types.Result: Contains the generated assistant message
 // - error: Returns API error or processing error if any occurs
-func (d *DeepSeek) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
+func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
 	// Check if the provider is supported
-	if params.Provider != types.DeepSeek {
+	if params.Provider != types.Qiniu {
 		return nil, fmt.Errorf("unsupported provider: %s", params.Provider)
 	}
-	// Convert role types to DeepSeek compatible format
+	// Convert role types to Qiniu compatible format
 	messages := make([]Message, 0, len(params.Messages))
 	for _, msg := range params.Messages {
 		var message Message
@@ -48,7 +48,7 @@ func (d *DeepSeek) Message(ctx context.Context, params *types.Params) (*types.Re
 
 	// Set default model if not provided
 	if params.Model == "" {
-		params.Model = "deepseek-chat"
+		params.Model = defaultModel
 	}
 
 	// Create API request payload

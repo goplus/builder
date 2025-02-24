@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot/anthropic"
-	"github.com/goplus/builder/spx-backend/internal/copilot/deepseek"
+	"github.com/goplus/builder/spx-backend/internal/copilot/qnaigc"
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
 
@@ -24,7 +24,7 @@ type AICopilot interface {
 // Config defines the configuration parameters for the Copilot service.
 // It includes API keys for different AI providers.
 type Config struct {
-	DeepSeekAPIKey  string
+	QiniuAPIKey     string
 	AnthropicAPIKey string
 }
 
@@ -32,7 +32,7 @@ type Config struct {
 // It serves as a facade for different AI implementations, selecting the appropriate
 // provider based on the request parameters.
 type Copilot struct {
-	deepseekCopilot  AICopilot // DeepSeek AI provider implementation
+	qnaigcCopilot    AICopilot // QnAIGC AI provider implementation
 	anthropicCopilot AICopilot // Anthropic AI provider implementation
 }
 
@@ -41,7 +41,7 @@ type Copilot struct {
 // with the selected AI provider.
 func NewCopilot(cfg *Config) AICopilot {
 	return &Copilot{
-		deepseekCopilot:  deepseek.New(cfg.DeepSeekAPIKey),
+		qnaigcCopilot:    qnaigc.New(cfg.QiniuAPIKey),
 		anthropicCopilot: anthropic.New(cfg.AnthropicAPIKey),
 	}
 }
@@ -50,9 +50,17 @@ func NewCopilot(cfg *Config) AICopilot {
 // appropriate AI provider based on the Provider field in the params.
 // Returns an error if the specified provider is not supported.
 func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
+	// Add system prompt message
+	params.Messages = append(params.Messages, types.Message{
+		Role: types.RoleSystem,
+		Content: types.Content{
+			Type: types.ContentTypeText,
+			Text: SystemPrompt,
+		},
+	})
 	switch params.Provider {
-	case types.DeepSeek:
-		return c.deepseekCopilot.Message(ctx, params)
+	case types.Qiniu:
+		return c.qnaigcCopilot.Message(ctx, params)
 	case types.Anthropic:
 		return c.anthropicCopilot.Message(ctx, params)
 	default:

@@ -1,5 +1,5 @@
-// Package deepseek provides a Go client for the DeepSeek API
-package deepseek
+// Package qnaigc provides a Go client for the Qiniu API
+package qnaigc
 
 import (
 	"bytes"
@@ -13,17 +13,17 @@ import (
 
 // Constants for API configuration
 const (
-	defaultBaseURL  = "https://api.deepseek.com/v1"
+	defaultBaseURL  = "https://api.qnaigc.com/v1"
 	defaultTimeout  = 30 * time.Second
-	defaultModel    = "deepseek-chat"
+	defaultModel    = "deepseek-v3?search"
 	maxRetries      = 3
 	retryDelay      = 500 * time.Millisecond
-	userAgent       = "deepseek-sdk-go/1.0"
+	userAgent       = "XBuilder Copilot/1.0"
 	contentTypeJSON = "application/json"
 )
 
 type (
-	// Client represents the main structure for interacting with the DeepSeek API
+	// Client represents the main structure for interacting with the Qiniu API
 	Client struct {
 		apiKey     string       // API authentication key
 		baseURL    string       // Base URL for API endpoints
@@ -72,10 +72,10 @@ type (
 
 // Error implements the error interface for APIError
 func (e *APIError) Error() string {
-	return fmt.Sprintf("DeepSeek API Error %d (%s): %s", e.Code, e.Type, e.Message)
+	return fmt.Sprintf("Qiniu API Error %d (%s): %s", e.Code, e.Type, e.Message)
 }
 
-// NewClient creates a new instance of the DeepSeek API client
+// NewClient creates a new instance of the Qiniu API client
 // apiKey: The API key for authentication
 // opts: Optional configuration options
 func NewClient(apiKey string, opts ...Option) *Client {
@@ -168,11 +168,11 @@ func (c *Client) sendRequest(
 	}
 
 	if httpResp.StatusCode >= 400 {
-		var apiErr APIError
+		var apiErr ChatCompletionResponse
 		if err := json.Unmarshal(respBody, &apiErr); err != nil {
 			return nil, fmt.Errorf("API error (status %d): %s", httpResp.StatusCode, string(respBody))
 		}
-		return nil, &apiErr
+		return nil, apiErr.Error
 	}
 
 	var response ChatCompletionResponse

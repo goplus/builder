@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
@@ -49,17 +48,8 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 
 	// Set default provider if not specified
 	if params.Provider == "" {
-		params.Provider = types.DeepSeek
+		params.Provider = types.Qiniu
 	}
-
-	// Add system prompt message
-	params.Messages = append(params.Messages, types.Message{
-		Role: types.RoleSystem,
-		Content: types.Content{
-			Type: types.ContentTypeText,
-			Text: copilot.SystemPrompt,
-		},
-	})
 
 	// Generate message using copilot
 	generatedContent, err := ctrl.copilot.Message(ctx, &types.Params{
