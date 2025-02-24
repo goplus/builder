@@ -15,6 +15,7 @@ type Expose = {
   pause(): void
   showCover(): void // 展示封面
   hideCover(): void // 隐藏封面
+  goToNextSegment(): void // 到下一个分段点
 }
 
 type Segment {
