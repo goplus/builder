@@ -27,6 +27,7 @@ type SpxResourceRef struct {
 	Node gopast.Node
 }
 
+// SpxReferencePkg is a reference to an imported package.
 type SpxReferencePkg struct {
 	PkgPath string
 	Pkg     *pkgdoc.PkgDoc

@@ -511,6 +511,7 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 	return bestRef
 }
 
+// spxImportsAtASTFilePosition returns the import at the given position in the given AST file.
 func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, position Position) *SpxReferencePkg {
 	spxFile := r.nodeFilename(astFile)
 	line := int(position.Line) + 1

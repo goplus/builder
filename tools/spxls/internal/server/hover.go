@@ -25,6 +25,8 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 		}, nil
 	}
 
+	// Check if the position is within an import declaration.
+	// If so, return the package documentation.
 	rpkg := result.spxImportsAtASTFilePosition(astFile, params.Position)
 	if rpkg != nil {
 		return &Hover{
