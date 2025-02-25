@@ -94,7 +94,14 @@ type Content struct {
 }
 
 // Validate checks if the content is valid.
+// It ensures that:
+// 1. Content Type is present and valid
+// 2. Text is not empty
+// 3. Text length does not exceed MAX_CONTENT_TEXT_LENGTH
 func (c *Content) Validate() (ok bool, msg string) {
+	if c.Type == "" {
+		return false, "missing content type"
+	}
 	if ok, msg := c.Type.Validate(); !ok {
 		return false, msg
 	}
