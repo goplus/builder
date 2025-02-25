@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -66,12 +67,23 @@ func New(ctx context.Context) (*Controller, error) {
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
 
-	// Create the Copilot instance.
-	copilot, err := copilot.NewCopilot(&copilot.Config{
-		Provider:        types.Provider(mustEnv(logger, "COPILOT_PROVIDER")),
-		QiniuAPIKey:     mustEnv(logger, "QINIU_API_KEY"),
-		AnthropicAPIKey: mustEnv(logger, "ANTHROPIC_API_KEY"),
-	})
+	var cpt copilot.AICopilot
+	var provider = types.Provider(mustEnv(logger, "COPILOT_PROVIDER"))
+	if provider == types.Qiniu {
+		cpt, err = copilot.NewCopilot(&copilot.Config{
+			Provider:     provider,
+			QiniuAPIKey:  mustEnv(logger, "QINIU_API_KEY"),
+			QiniuBaseURL: mustEnv(logger, "QINIU_BASE_URL"),
+		})
+	} else if provider == types.Anthropic {
+		cpt, err = copilot.NewCopilot(&copilot.Config{
+			Provider:         provider,
+			AnthropicAPIKey:  mustEnv(logger, "ANTHROPIC_API_KEY"),
+			AnthropicBaseURL: mustEnv(logger, "ANTHROPIC_BASE_URL"),
+		})
+	} else {
+		err = fmt.Errorf(" unknown provider: %v", provider)
+	}
 	if err != nil {
 		logger.Printf("failed to create copilot: %v", err)
 		return nil, err
@@ -82,7 +94,7 @@ func New(ctx context.Context) (*Controller, error) {
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
-		copilot:       copilot,
+		copilot:       cpt,
 	}, nil
 }
 

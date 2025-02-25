@@ -78,7 +78,7 @@ func (e *APIError) Error() string {
 // NewClient creates a new instance of the Qiniu API client
 // apiKey: The API key for authentication
 // opts: Optional configuration options
-func NewClient(apiKey string, opts ...Option) *Client {
+func NewClient(apiKey string, opts ...ClientOption) *Client {
 	c := &Client{
 		apiKey:     apiKey,
 		baseURL:    defaultBaseURL,
@@ -93,18 +93,18 @@ func NewClient(apiKey string, opts ...Option) *Client {
 	return c
 }
 
-// Option defines a function type for client configuration
-type Option func(*Client)
+// ClientOption defines a function type for client configuration
+type ClientOption func(*Client)
 
 // WithHTTPClient sets a custom HTTP client for the API client
-func WithHTTPClient(client *http.Client) Option {
+func WithHTTPClient(client *http.Client) ClientOption {
 	return func(c *Client) {
 		c.httpClient = client
 	}
 }
 
-// WithBaseURL sets a custom base URL for the API client
-func WithBaseURL(url string) Option {
+// WithClientBaseURL sets a custom base URL for the API client
+func WithClientBaseURL(url string) ClientOption {
 	return func(c *Client) {
 		c.baseURL = url
 	}

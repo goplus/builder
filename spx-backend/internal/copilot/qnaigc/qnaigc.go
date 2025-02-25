@@ -10,14 +10,40 @@ import (
 // Qiniu represents a client for interacting with the Qiniu API.
 // It handles message processing and API communication.
 type Qiniu struct {
+	options BaseOption
+
 	client *Client
+}
+
+// BaseOption contains the base URL for the API client
+type BaseOption struct {
+	baseURL string
 }
 
 // NewQiniu creates a new Qiniu client instance with the provided API key.
 // apiKey: The authentication key for Qiniu API
-func New(apiKey string) *Qiniu {
+func New(apiKey string, opts ...Option) *Qiniu {
+	var base BaseOption
+	for _, opt := range opts {
+		opt(&base)
+	}
+	if base.baseURL == "" {
+		base.baseURL = defaultBaseURL
+	}
+
 	return &Qiniu{
-		client: NewClient(apiKey),
+		options: base,
+		client:  NewClient(apiKey, WithClientBaseURL(base.baseURL)),
+	}
+}
+
+// Option is a function that configures the BaseOption
+type Option func(*BaseOption)
+
+// WithBaseURL sets a custom base URL for the API client
+func WithBaseURL(url string) Option {
+	return func(c *BaseOption) {
+		c.baseURL = url
 	}
 }
 

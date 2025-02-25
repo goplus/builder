@@ -18,16 +18,40 @@ const (
 
 // Anthropic represents a client for interacting with Anthropic's API
 type Anthropic struct {
+	options         BaseOption
 	anthropicClient *anthropic.Client
 }
 
+// BaseOption contains the base URL for the API client
+type BaseOption struct {
+	baseURL string
+}
+
 // NewAnthropic creates a new instance of the Anthropic client
-func New(apiKey string) *Anthropic {
+func New(apiKey string, opts ...Option) *Anthropic {
+	var base BaseOption
+	for _, opt := range opts {
+		opt(&base)
+	}
+	if base.baseURL == "" {
+		base.baseURL = defaultBaseURL
+	}
 	return &Anthropic{
+		options: base,
 		anthropicClient: anthropic.NewClient(
 			anthropicOption.WithAPIKey(apiKey),
-			anthropicOption.WithBaseURL(defaultBaseURL),
+			anthropicOption.WithBaseURL(base.baseURL),
 		),
+	}
+}
+
+// Option is a function that configures the BaseOption
+type Option func(*BaseOption)
+
+// WithBaseURL sets a custom base URL for the API client
+func WithBaseURL(url string) Option {
+	return func(c *BaseOption) {
+		c.baseURL = url
 	}
 }
 
@@ -45,7 +69,7 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 
 	// Convert internal message format to Anthropic's message format
 	messages := []anthropic.MessageParam{}
-	systerm := anthropic.TextBlockParam{}
+	system := anthropic.TextBlockParam{}
 	for _, m := range params.Messages {
 		var message anthropic.MessageParam
 		if m.Role == types.RoleUser {
@@ -58,7 +82,7 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 
 	// Add system prompt message
 	if params.System.Text != "" {
-		systerm = anthropic.TextBlockParam{
+		system = anthropic.TextBlockParam{
 			Text: anthropic.F(params.System.Text),
 			Type: anthropic.F(anthropic.TextBlockParamTypeText),
 			CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
@@ -77,7 +101,7 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 		Model:     anthropic.F(params.Model),
 		MaxTokens: anthropic.F(int64(types.MAX_TOKENS)),
 		System: anthropic.F([]anthropic.TextBlockParam{
-			systerm,
+			system,
 		}),
 		Messages:    anthropic.F(messages),
 		Temperature: anthropic.F(0.1), // Lower temperature for more deterministic outputs

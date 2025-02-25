@@ -26,8 +26,10 @@ type AICopilot interface {
 type Config struct {
 	Provider types.Provider
 
-	QiniuAPIKey     string
-	AnthropicAPIKey string
+	QiniuAPIKey      string
+	QiniuBaseURL     string
+	AnthropicAPIKey  string
+	AnthropicBaseURL string
 }
 
 // Copilot implements the AICopilot interface and manages multiple AI providers.
@@ -44,9 +46,9 @@ func NewCopilot(cfg *Config) (AICopilot, error) {
 	var copilot AICopilot
 	switch cfg.Provider {
 	case types.Qiniu:
-		copilot = qnaigc.New(cfg.QiniuAPIKey)
+		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL))
 	case types.Anthropic:
-		copilot = anthropic.New(cfg.AnthropicAPIKey)
+		copilot = anthropic.New(cfg.AnthropicAPIKey, anthropic.WithBaseURL(cfg.AnthropicBaseURL))
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
 	}

@@ -33,10 +33,6 @@ type GenerateMessageResult types.Message
 // GenerateMessage generates response message based on input messages.
 func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMessageParams) (*GenerateMessageResult, error) {
 	logger := log.GetReqLogger(ctx)
-	// Validate input parameters
-	if ok, msg := params.Validate(); !ok {
-		return nil, fmt.Errorf("invalid parameters: %s", msg)
-	}
 
 	// Check if copilot is initialized
 	if ctrl.copilot == nil {

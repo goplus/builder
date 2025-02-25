@@ -81,9 +81,7 @@ onTurning,onTurning info => {},"Listen to current sprite turning (heading change
 say,say word,"Make the sprite say some word, e.g., `say ""Hello!""`"
 say,"say word, seconds","Make the sprite say some word with duration, e.g., `say ""Hello!"", 2`"
 setCostume,setCostume name,"Set the current costume by specifying name, e.g., `setCostume ""happy""`"
-setHeading, setHeading direction, "Set heading to given numeric angle (0-360 degrees). 
-Note: Direction values must be numeric - string directions (Up, Left, Right, Down) are not supported. 
-Example: `setHeading 90`"
+setHeading, setHeading direction, Set heading to given float angle (0.0-360.0 degrees). Note: Direction values must be numeric - int directions (Up, Left, Right, Down) are not supported. Example: `setHeading 90.0`
 setRotationStyle,setRotationStyle style,"Set the rotation style of the sprite, e.g., `setRotationStyle LeftRight`"
 setSize,setSize size,"Set the size of current sprite, e.g., `setSize 2`"
 setXYpos,"setXYpos x, y","Set the sprite's position, e.g., `setXYpos 100, 100`"
