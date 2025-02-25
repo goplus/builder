@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -159,11 +158,6 @@ onStart => {
 		linksForMySpriteSpx, err := s.textDocumentDocumentLink(paramsForMySpriteSpx)
 		require.NoError(t, err)
 		require.Len(t, linksForMySpriteSpx, 21)
-		for _, link := range linksForMySpriteSpx {
-			if link.Range.Start.Line > 6 {
-				fmt.Println(link.Range, *link.Target)
-			}
-		}
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 3, Character: 12},
