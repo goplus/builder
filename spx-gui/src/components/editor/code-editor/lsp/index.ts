@@ -5,8 +5,8 @@ import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
-import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
-import spxlsWasmUrl from '@/assets/spxls.wasm?url'
+import wasmExecScriptUrl from '@/assets/wasm/wasm_exec.js?url'
+import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
 import {
   fromLSPRange,
   type DefinitionIdentifier,

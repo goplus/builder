@@ -25,8 +25,6 @@ RUN gop build -trimpath -o spx-backend ./cmd/spx-backend
 FROM ${GO_BASE_IMAGE} AS go-builder
 
 ARG GOPROXY
-# Pre-install Go toolchain for 1.21.3, which will be used by tools/ispx
-RUN GOTOOLCHAIN=go1.21.3 go version
 
 WORKDIR /app
 COPY tools ./tools
