@@ -6,7 +6,7 @@
     <div class="card-group">
       <!-- VideoPlayer 组件，同时使用具名插槽 "cover" 定义封面内容 -->
       <VideoPlayer ref="videoPlayerRef" 
-        @segmentReached="handleSegmentReached">
+        @segmentEnd="handleSegmentEnd">
         <template #cover>
           ...
         </template>
@@ -34,10 +34,10 @@ const currentNodeTaskIndex = ref<number | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
 
 /**
- * 当 VideoPlayer 触发 "segmentReached" 事件时调用
+ * 当 VideoPlayer 触发 "segmentEnd" 事件时调用
  * 从 segment.extension 中读取 nodeTaskIndex，然后在 level.nodeTasks 中查找对应的 NodeTask
  */
-function handleSegmentReached(segment: Segment): void {
+function handleSegmentEnd(segment: Segment): void {
   // 显示封面并暂停视频
   videoPlayerRef.value.showCover()
   videoPlayerRef.value.pause()

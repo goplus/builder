@@ -20,3 +20,5 @@ go.work
 
 .idea/
 *.wasm
+
+.vscode/
