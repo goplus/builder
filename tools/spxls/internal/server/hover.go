@@ -1,6 +1,9 @@
 package server
 
-import "strings"
+import (
+	"go/doc"
+	"strings"
+)
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_hover
 func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
@@ -19,6 +22,17 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 				Value: spxResourceRef.ID.URI().HTML(),
 			},
 			Range: result.rangeForNode(spxResourceRef.Node),
+		}, nil
+	}
+
+	rpkg := result.spxImportsAtASTFilePosition(astFile, params.Position)
+	if rpkg != nil {
+		return &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: doc.Synopsis(rpkg.Pkg.Doc),
+			},
+			Range: result.rangeForNode(rpkg.Node),
 		}, nil
 	}
 

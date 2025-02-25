@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 	gopast "github.com/goplus/gop/ast"
 )
 
@@ -24,6 +25,12 @@ type SpxResourceRef struct {
 	ID   SpxResourceID
 	Kind SpxResourceRefKind
 	Node gopast.Node
+}
+
+type SpxReferencePkg struct {
+	PkgPath string
+	Pkg     *pkgdoc.PkgDoc
+	Node    *gopast.ImportSpec
 }
 
 // SpxResourceRefKind is the kind of an spx resource reference.
