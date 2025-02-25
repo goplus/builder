@@ -13,6 +13,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/joho/godotenv"
@@ -66,10 +67,15 @@ func New(ctx context.Context) (*Controller, error) {
 	casdoorClient := newCasdoorClient(logger)
 
 	// Create the Copilot instance.
-	copilot := copilot.NewCopilot(&copilot.Config{
+	copilot, err := copilot.NewCopilot(&copilot.Config{
+		Provider:        types.Provider(mustEnv(logger, "COPILOT_PROVIDER")),
 		QiniuAPIKey:     mustEnv(logger, "QINIU_API_KEY"),
 		AnthropicAPIKey: mustEnv(logger, "ANTHROPIC_API_KEY"),
 	})
+	if err != nil {
+		logger.Printf("failed to create copilot: %v", err)
+		return nil, err
+	}
 
 	return &Controller{
 		db:            db,

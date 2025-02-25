@@ -52,17 +52,19 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 			message = anthropic.NewUserMessage(anthropic.NewTextBlock(m.Content.Text))
 		} else if m.Role == types.RoleCopilot {
 			message = anthropic.NewAssistantMessage(anthropic.NewTextBlock(m.Content.Text))
-		} else if m.Role == types.RoleSystem {
-			systerm = anthropic.TextBlockParam{
-				Text: anthropic.F(m.Content.Text),
-				Type: anthropic.F(anthropic.TextBlockParamTypeText),
-				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
-					Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
-				}),
-			}
-			continue
 		}
 		messages = append(messages, message)
+	}
+
+	// Add system prompt message
+	if params.System.Text != "" {
+		systerm = anthropic.TextBlockParam{
+			Text: anthropic.F(params.System.Text),
+			Type: anthropic.F(anthropic.TextBlockParamTypeText),
+			CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
+				Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
+			}),
+		}
 	}
 
 	// Set default model if not provided

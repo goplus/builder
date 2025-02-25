@@ -24,6 +24,7 @@ type Params struct {
 	Model    string   `json:"model"`
 
 	Messages []Message `json:"messages"`
+	System   Content   `json:"system"`
 }
 
 // Result represents the response message from the AI provider.

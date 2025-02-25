@@ -40,10 +40,13 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 			message = NewUserMessage(msg.Content.Text)
 		} else if msg.Role == types.RoleCopilot {
 			message = NewAssistantMessage(msg.Content.Text)
-		} else if msg.Role == types.RoleSystem {
-			message = NewSystemMessage(msg.Content.Text)
 		}
 		messages = append(messages, message)
+	}
+
+	// Add system prompt message
+	if params.System.Text != "" {
+		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
 
 	// Set default model if not provided

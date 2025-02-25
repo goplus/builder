@@ -13,9 +13,6 @@ const (
 )
 
 type GenerateMessageParams struct {
-	Provider types.Provider `json:"provider"`
-	Model    string         `json:"model"`
-
 	Messages []types.Message `json:"messages"`
 }
 
@@ -46,15 +43,8 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		return nil, fmt.Errorf("copilot is not initialized")
 	}
 
-	// Set default provider if not specified
-	if params.Provider == "" {
-		params.Provider = types.Qiniu
-	}
-
 	// Generate message using copilot
 	generatedContent, err := ctrl.copilot.Message(ctx, &types.Params{
-		Provider: params.Provider,
-		Model:    params.Model,
 		Messages: params.Messages,
 	})
 	if err != nil {
