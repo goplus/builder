@@ -7,7 +7,7 @@ type Props = {
   segments: Segment[]
 }
 type Events = {
-  // 当视频播放到分段结束时触发该事件，传入当前分段点信息
+  // 当视频播放到分段结束时触发该事件，传入当前分段信息
   segmentEnd: [segment: Segment]
 }
 type Expose = {

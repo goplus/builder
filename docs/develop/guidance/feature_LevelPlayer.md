@@ -34,7 +34,7 @@ const currentNodeTaskIndex = ref<number | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
 
 /**
- * 当 VideoPlayer 触发 "segmentReached" 事件时调用
+ * 当 VideoPlayer 触发 "segmentEnd" 事件时调用
  * 从 segment.extension 中读取 nodeTaskIndex，然后在 level.nodeTasks 中查找对应的 NodeTask
  */
 function handleSegmentEnd(segment: Segment): void {
