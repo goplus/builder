@@ -14,14 +14,22 @@ type Step = {
   target: string[] // 目标元素语义化标注的key
   type: 'coding' | 'following' // 存在两种类型的步骤，分别是Following步骤和Coding步骤
   isCheck: boolean // 该步骤是否涉及快照比对
-  isApiControl: boolean // 是否需要去控制Api Reference的展示
-  apis: string[] // 该步骤中需要展示的Api Reference的definition列表
+  isApiControl: boolean // 是否需要去控制API Reference的展示
+  apis: string[] // 该步骤中需要展示的API Reference的definition列表
   isAssetControl: boolean // 是否需要去控制素材的展示
   assets: string[] // 该步骤中需要被展示的素材的id列表
   isSpriteControl: boolean // 是否需要去控制精灵的展示
-  sprites: string[] // 该步骤中需要被展示的精灵的name列表
+  sprites: string[] // 该步骤中需要被展示的精灵的id列表
+  isSoundControl: boolean // 是否需要去控制声音的展示
+  sounds: string[] // 该步骤中需要被展示的声音的id列表
+  isCostumeControl: boolean // 是否需要去控制造型的展示
+  costumes: string[] // 该步骤中需要被展示的造型的id列表
   isAnimationControl: boolean // 是否需要去控制动画的展示
-  animations: string[] // 该步骤中需要被展示的动画的name列表
+  animations: string[] // 该步骤中需要被展示的动画的id列表
+  isWidgetControl: boolean // 是否需要去控制组件的展示
+  widgets: string[] // 该步骤中需要被展示的组件的id列表
+  isBackdropControl: boolean // 是否需要去控制背景的展示
+  backdrops: string[] // 该步骤中需要被展示的背景的id列表
   snapshot: {
     startSnapshot: string // 初始快照
     endSnapshot?: string // 结束快照
