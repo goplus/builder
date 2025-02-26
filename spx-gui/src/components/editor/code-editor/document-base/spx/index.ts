@@ -890,7 +890,7 @@ export const setHeading: DefinitionDocumentationItem = {
   insertText: 'setHeading ${1:direction}',
   overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
-    en: 'Set heading to given value, e.g., `setHeading 90',
+    en: 'Set heading to given value, e.g., `setHeading 90`',
     zh: '设置朝向为给定值，如：`setHeading 90`'
   })
 }

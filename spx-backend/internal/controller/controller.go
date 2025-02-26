@@ -73,13 +73,13 @@ func New(ctx context.Context) (*Controller, error) {
 		cpt, err = copilot.NewCopilot(&copilot.Config{
 			Provider:     provider,
 			QiniuAPIKey:  mustEnv(logger, "QINIU_API_KEY"),
-			QiniuBaseURL: mustEnv(logger, "QINIU_BASE_URL"),
+			QiniuBaseURL: mustEnv(logger, "QINIU_ENDPOINT"),
 		})
 	} else if provider == types.Anthropic {
 		cpt, err = copilot.NewCopilot(&copilot.Config{
 			Provider:         provider,
 			AnthropicAPIKey:  mustEnv(logger, "ANTHROPIC_API_KEY"),
-			AnthropicBaseURL: mustEnv(logger, "ANTHROPIC_BASE_URL"),
+			AnthropicBaseURL: mustEnv(logger, "ANTHROPIC_ENDPOINT"),
 		})
 	} else {
 		err = fmt.Errorf(" unknown provider: %v", provider)
