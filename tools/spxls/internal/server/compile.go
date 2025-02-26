@@ -747,27 +747,37 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 				})
 			}
 		}
-		if astFile != nil && astFile.Name.Name == "main" {
-			result.mainASTPkg.Files[spxFile] = astFile
-			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
-				result.mainSpxFile = spxFile
-			} else {
-				spriteNames = append(spriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
-			}
+		if astFile == nil {
+			continue
+		}
+		if astFile.Name.Name != "main" {
+			result.addDiagnostics(documentURI, Diagnostic{
+				Severity: SeverityError,
+				Range:    result.rangeForNode(astFile.Name),
+				Message:  "package name must be main",
+			})
+			continue
+		}
 
-			for _, decl := range astFile.Decls {
-				switch decl := decl.(type) {
-				case *gopast.GenDecl:
-					for _, spec := range decl.Specs {
-						result.mainASTPkgSpecToGenDecl[spec] = decl
-					}
+		result.mainASTPkg.Files[spxFile] = astFile
+		if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
+			result.mainSpxFile = spxFile
+		} else {
+			spriteNames = append(spriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
+		}
 
-					if result.firstVarBlocks[astFile] == nil && decl.Tok == goptoken.VAR {
-						result.firstVarBlocks[astFile] = decl
-					}
-				case *gopast.FuncDecl:
-					result.mainASTPkgIdentToFuncDecl[decl.Name] = decl
+		for _, decl := range astFile.Decls {
+			switch decl := decl.(type) {
+			case *gopast.GenDecl:
+				for _, spec := range decl.Specs {
+					result.mainASTPkgSpecToGenDecl[spec] = decl
 				}
+
+				if result.firstVarBlocks[astFile] == nil && decl.Tok == goptoken.VAR {
+					result.firstVarBlocks[astFile] = decl
+				}
+			case *gopast.FuncDecl:
+				result.mainASTPkgIdentToFuncDecl[decl.Name] = decl
 			}
 		}
 	}
