@@ -890,8 +890,8 @@ export const setHeading: DefinitionDocumentationItem = {
   insertText: 'setHeading ${1:direction}',
   overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
-    en: 'Set heading to given float angle (0.0-360.0 degrees). Note: Direction values must be numeric - int directions (Up, Left, Right, Down) are not supported. Example: `setHeading 90.0`',
-    zh: '设置朝向角度为给定值为浮点类型(0.0-360.0度), 注意 Up, Left, Right, Down 是 int 类型，并不被支持，比如 `setHeading 90.0`'
+    en: 'Set heading to given value, e.g., `setHeading 90',
+    zh: '设置朝向为给定值，如：`setHeading 90`'
   })
 }
 

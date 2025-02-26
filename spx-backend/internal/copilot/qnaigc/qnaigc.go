@@ -54,12 +54,12 @@ func WithBaseURL(url string) Option {
 // - *types.Result: Contains the generated assistant message
 // - error: Returns API error or processing error if any occurs
 func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
-	// Check if the provider is supported
-	if params.Provider != types.Qiniu {
-		return nil, fmt.Errorf("unsupported provider: %s", params.Provider)
-	}
 	// Convert role types to Qiniu compatible format
 	messages := make([]Message, 0, len(params.Messages))
+	// Add system prompt message
+	if params.System.Text != "" {
+		messages = append(messages, NewSystemMessage(params.System.Text))
+	}
 	for _, msg := range params.Messages {
 		var message Message
 		if msg.Role == types.RoleUser {
@@ -68,11 +68,6 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 			message = NewAssistantMessage(msg.Content.Text)
 		}
 		messages = append(messages, message)
-	}
-
-	// Add system prompt message
-	if params.System.Text != "" {
-		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
 
 	// Set default model if not provided

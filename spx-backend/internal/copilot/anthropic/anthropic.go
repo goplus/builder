@@ -3,7 +3,6 @@ package anthropic
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
@@ -60,10 +59,6 @@ func WithBaseURL(url string) Option {
 // params: contains the conversation messages and other parameters
 // Returns the AI response and any error encountered
 func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
-	// Check if the provider is supported
-	if params.Provider != types.Anthropic {
-		return nil, fmt.Errorf("unsupported provider: %s", params.Provider)
-	}
 	// Get logger from context
 	logger := log.GetReqLogger(ctx)
 

@@ -20,8 +20,7 @@ const (
 
 // Params represents the input parameters for the message request.
 type Params struct {
-	Provider Provider `json:"provider"`
-	Model    string   `json:"model"`
+	Model string `json:"model"`
 
 	Messages []Message `json:"messages"`
 	System   Content   `json:"system"`
