@@ -1,3 +1,5 @@
+import { reactive } from 'vue'
+
 export type ListFilterType =
   | 'apiReference'
   | 'asset'
@@ -61,6 +63,8 @@ export class ListFilter {
       widget: createDefaultFilter(),
       backdrop: createDefaultFilter()
     }
+
+    return reactive(this) as this
   }
 
   setFilter(type: ListFilterType, enabled: boolean, items: string[]) {
