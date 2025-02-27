@@ -1,5 +1,3 @@
-import { defineStore } from 'pinia'
-
 export type ListFilterType =
   | 'apiReference'
   | 'asset'
@@ -49,14 +47,11 @@ function createDefaultFilter(): { enabled: boolean; items: string[] } {
   return { enabled: false, items: [] }
 }
 
-/**
- * The useListFilterStore is a Pinia store used to manage the state of various filters
- * for different types of lists such as apiReference, asset, sprite, sound, etc.
- * It allows setting, getting, and resetting filters.
- */
-export const useListFilterStore = defineStore('list-filter', {
-  state: (): ListFilterState => {
-    return {
+export class ListFilter {
+  private state: ListFilterState
+
+  constructor() {
+    this.state = {
       apiReference: createDefaultFilter(),
       asset: createDefaultFilter(),
       sprite: createDefaultFilter(),
@@ -66,42 +61,34 @@ export const useListFilterStore = defineStore('list-filter', {
       widget: createDefaultFilter(),
       backdrop: createDefaultFilter()
     }
-  },
+  }
 
-  actions: {
-    setFilter(type: ListFilterType, enabled: boolean, items: string[]): void {
-      if (!Object.prototype.hasOwnProperty.call(this, type)) {
-        throw new Error(`Invalid filter type: ${type}`)
-      }
+  setFilter(type: ListFilterType, enabled: boolean, items: string[]) {
+    if (!Object.prototype.hasOwnProperty.call(this.state, type)) {
+      throw new Error('Invalid filter type')
+    }
 
-      this[type] = {
-        enabled,
-        items: [...items]
-      }
-    },
+    this.state[type].enabled = enabled
+    this.state[type].items = items
+  }
 
-    getFilter(type: ListFilterType): { enabled: boolean; items: string[] } {
-      if (!Object.prototype.hasOwnProperty.call(this, type)) {
-        throw new Error(`Invalid filter type: ${type}`)
-      }
+  getFilter(type: ListFilterType) {
+    if (!Object.prototype.hasOwnProperty.call(this.state, type)) {
+      throw new Error('Invalid filter type')
+    }
+    return this.state[type]
+  }
 
-      return {
-        enabled: this[type].enabled,
-        items: [...this[type].items]
-      }
-    },
-
-    reset() {
-      this.$patch({
-        apiReference: createDefaultFilter(),
-        asset: createDefaultFilter(),
-        sprite: createDefaultFilter(),
-        sound: createDefaultFilter(),
-        costume: createDefaultFilter(),
-        animation: createDefaultFilter(),
-        widget: createDefaultFilter(),
-        backdrop: createDefaultFilter()
-      })
+  reset() {
+    this.state = {
+      apiReference: createDefaultFilter(),
+      asset: createDefaultFilter(),
+      sprite: createDefaultFilter(),
+      sound: createDefaultFilter(),
+      costume: createDefaultFilter(),
+      animation: createDefaultFilter(),
+      widget: createDefaultFilter(),
+      backdrop: createDefaultFilter()
     }
   }
-})
+}
