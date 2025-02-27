@@ -64,18 +64,11 @@ export class ListFilter {
   }
 
   setFilter(type: ListFilterType, enabled: boolean, items: string[]) {
-    if (!Object.prototype.hasOwnProperty.call(this.state, type)) {
-      throw new Error('Invalid filter type')
-    }
-
     this.state[type].enabled = enabled
     this.state[type].items = items
   }
 
   getFilter(type: ListFilterType) {
-    if (!Object.prototype.hasOwnProperty.call(this.state, type)) {
-      throw new Error('Invalid filter type')
-    }
     return this.state[type]
   }
 
