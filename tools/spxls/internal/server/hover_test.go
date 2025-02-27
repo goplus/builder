@@ -478,4 +478,27 @@ onTouchStart ["MySprite"], => {}
 		require.NoError(t, err)
 		require.Nil(t, hover)
 	})
+
+	t.Run("Append", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+var nums []int
+nums = append(nums, 1)
+`),
+		}), nil)
+
+		hover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 7},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, hover)
+		assert.Contains(t, hover.Contents.Value, `def-id="gop:builtin?append"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 2, Character: 7},
+			End:   Position{Line: 2, Character: 13},
+		}, hover.Range)
+	})
 }
