@@ -17,7 +17,7 @@ const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
 
 export function useEditorCtx() {
   const ctx = inject(editorCtxKey)
-  if (ctx === null) throw new Error('useEditorCtx should be called inside of editor')
+  if (ctx == null) throw new Error('useEditorCtx should be called inside of editor')
   return ctx
 }
 </script>
