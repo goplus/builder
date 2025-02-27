@@ -531,10 +531,10 @@ func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, positi
 
 		pkg := imp.Path.Value
 		unquoted, err := strconv.Unquote(pkg)
-		if err == nil {
-			pkg = unquoted
+		if err != nil {
+			continue
 		}
-		pkgDoc, err := pkgdata.GetPkgDoc(pkg)
+		pkgDoc, err := pkgdata.GetPkgDoc(unquoted)
 		if err == nil {
 			rpkg = &SpxReferencePkg{
 				Pkg:     pkgDoc,
