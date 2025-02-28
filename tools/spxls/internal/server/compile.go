@@ -386,7 +386,7 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 		return nil
 	}
 	if isBuiltinObject(obj) {
-		return []SpxDefinition{GetSpxBuiltinDefinition(obj)}
+		return []SpxDefinition{GetSpxDefinitionForBuiltinObj(obj)}
 	}
 
 	var pkgDoc *pkgdoc.PkgDoc
@@ -398,11 +398,11 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 
 	switch obj := obj.(type) {
 	case *types.Var:
-		return []SpxDefinition{NewSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
 	case *types.Const:
-		return []SpxDefinition{NewSpxDefinitionForConst(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForConst(obj, pkgDoc)}
 	case *types.TypeName:
-		return []SpxDefinition{NewSpxDefinitionForType(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForType(obj, pkgDoc)}
 	case *types.Func:
 		if funcDecl, ok := r.mainASTPkgIdentToFuncDecl[r.defIdentFor(obj)]; ok && funcDecl.Shadow {
 			return nil
@@ -413,13 +413,13 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 		if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 			defs := make([]SpxDefinition, 0, len(funcOverloads))
 			for _, funcOverload := range funcOverloads {
-				defs = append(defs, NewSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
 			}
 			return defs
 		}
-		return []SpxDefinition{NewSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
 	case *types.PkgName:
-		return []SpxDefinition{NewSpxDefinitionForPkg(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForPkg(obj, pkgDoc)}
 	}
 	return nil
 }
