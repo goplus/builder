@@ -501,4 +501,41 @@ nums = append(nums, 1)
 			End:   Position{Line: 2, Character: 13},
 		}, hover.Range)
 	})
+
+	t.Run("WithGopBuiltins", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+var num int128
+echo num
+`),
+		}), nil)
+
+		hover1, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 1, Character: 8},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, hover1)
+		assert.Contains(t, hover1.Contents.Value, `def-id="gop:builtin?int128"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 1, Character: 8},
+			End:   Position{Line: 1, Character: 14},
+		}, hover1.Range)
+
+		hover2, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, hover2)
+		assert.Contains(t, hover2.Contents.Value, `def-id="gop:fmt?println"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 2, Character: 0},
+			End:   Position{Line: 2, Character: 4},
+		}, hover2.Range)
+	})
 }

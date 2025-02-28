@@ -182,10 +182,10 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 	// Add other definitions.
 	addDefs(GetSpxPkgDefinitions()...)
-	addDefs(GetSpxBuiltinDefinitions()...)
-	addDefs(SpxGeneralDefinitions...)
+	addDefs(GetBuiltinSpxDefinitions()...)
+	addDefs(GeneralSpxDefinitions...)
 	if innermostScope == astFileScope {
-		addDefs(SpxFileScopeDefinitions...)
+		addDefs(FileScopeSpxDefinitions...)
 	}
 
 	return defIDs, nil
