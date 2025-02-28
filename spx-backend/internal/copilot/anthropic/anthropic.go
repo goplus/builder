@@ -2,7 +2,10 @@
 package anthropic
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"sync"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
@@ -117,4 +120,58 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 			},
 		},
 	}, nil
+}
+
+// StreamMessage sends a conversation to Claude and returns its response
+// ctx: context for the request
+// params: contains the conversation messages and other parameters
+// Returns the AI response and any error encountered
+func (a *Anthropic) Stream(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+	// Convert internal message format to Anthropic's message format
+	messages := []anthropic.MessageParam{}
+	system := anthropic.TextBlockParam{}
+	for _, m := range params.Messages {
+		var message anthropic.MessageParam
+		if m.Role == types.RoleUser {
+			message = anthropic.NewUserMessage(anthropic.NewTextBlock(m.Content.Text))
+		} else if m.Role == types.RoleCopilot {
+			message = anthropic.NewAssistantMessage(anthropic.NewTextBlock(m.Content.Text))
+		}
+		messages = append(messages, message)
+	}
+
+	// Add system prompt message
+	if params.System.Text != "" {
+		system = anthropic.TextBlockParam{
+			Text: anthropic.F(params.System.Text),
+			Type: anthropic.F(anthropic.TextBlockParamTypeText),
+			CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
+				Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
+			}),
+		}
+	}
+
+	// Set default model if not provided
+	if params.Model == "" {
+		params.Model = anthropic.ModelClaude3_5SonnetLatest
+	}
+
+	stream := a.anthropicClient.Messages.NewStreaming(ctx, anthropic.MessageNewParams{
+		Model:     anthropic.F(params.Model),
+		MaxTokens: anthropic.F(int64(types.MAX_TOKENS)),
+		System: anthropic.F([]anthropic.TextBlockParam{
+			system,
+		}),
+		Messages:    anthropic.F(messages),
+		Temperature: anthropic.F(0.1),
+	})
+
+	wrapper := &streamWrapper{
+		stream: stream,
+		buffer: bytes.NewBuffer(nil),
+	}
+	wrapper.cond = sync.NewCond(&wrapper.mu)
+
+	go wrapper.processEvents(ctx)
+	return wrapper, nil
 }

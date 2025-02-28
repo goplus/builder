@@ -1,6 +1,6 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
-import { generateMessage, type Message } from '@/apis/copilot'
+import { generateMessage, generateStreamMessage, type Message } from '@/apis/copilot'
 import { Project } from '@/models/project'
 import type { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
@@ -128,7 +128,13 @@ ${codeInfoText}
     }
   }
 
-  async getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString> {
+  async getChatCompletion(
+    ctx: ChatContext, 
+    chat: Chat,
+    options?: {
+      onChunk?: (chunk: BasicMarkdownString) => void
+    }
+  ): Promise<BasicMarkdownString> {
     const messages = [this.makeContextMessage(ctx)]
     const toSkip = chat.messages.length - maxChatMessageCount
     // skip chat messages in range `[1, toSkip]`
@@ -140,8 +146,31 @@ ${codeInfoText}
       }
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
-    const message = await generateMessage(messages, ctx.signal)
-    return makeBasicMarkdownString(message.content.text)
+  
+    if (!options?.onChunk) {
+      // Non-streaming mode
+      const message = await generateMessage(messages, ctx.signal)
+      return makeBasicMarkdownString(message.content.text)
+    }
+
+    console.log('Streaming mode')
+    // Streaming mode
+    return new Promise((resolve, reject) => {
+      let accumulatedText = ''
+      
+      generateStreamMessage(messages, {
+        signal: ctx.signal,
+        onChunk: (message) => {
+          accumulatedText = message.content.text
+          console.log(accumulatedText)
+          options.onChunk?.(makeBasicMarkdownString(accumulatedText))
+        }
+      })
+      .then(() => {
+        resolve(makeBasicMarkdownString(accumulatedText))
+      })
+      .catch(reject)
+    })
   }
 }
 

@@ -97,8 +97,14 @@ export type ChatContext = BaseContext & {
   selection: Selection | null
 }
 
-export interface ICopilot {
-  getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString>
+export interface ICopilot extends Disposable {
+  getChatCompletion(
+    ctx: ChatContext, 
+    chat: Chat,
+    options?: {
+      onChunk?: (chunk: BasicMarkdownString) => void
+    }
+  ): Promise<BasicMarkdownString>
 }
 
 export enum RoundState {
@@ -231,7 +237,15 @@ export class CopilotController extends Disposable {
           selection: this.ui.selection,
           signal: currentRound.ctrl.signal
         },
-        this.ensureChat()
+        this.ensureChat(),
+        {
+          onChunk: (chunk) => {
+            // Update the current round's answer as chunks arrive
+            currentRound.answer = chunk
+            // Keep the loading state while streaming
+            currentRound.state = RoundState.Loading
+          }
+        }
       )
       currentRound.answer = answer
       currentRound.state = RoundState.Completed

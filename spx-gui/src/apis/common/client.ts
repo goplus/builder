@@ -48,4 +48,31 @@ export class Client {
     if (params != null) path = withQueryParams(path, params)
     return this.request(path, null, { ...options, method: 'DELETE' })
   }
+
+  async postStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    const response = await this.request(path, payload, { 
+      ...options, 
+      method: 'POST',
+    }) as Response
+    
+    if (!response.ok) {
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      if (reader) {
+        const { value } = await reader.read()
+        const errorText = decoder.decode(value)
+        try {
+          const errorBody = JSON.parse(errorText)
+          if (isApiExceptionPayload(errorBody)) {
+            throw new ApiException(errorBody.code, errorBody.msg)
+          }
+        } catch {
+          throw new Error('Stream request failed')
+        }
+      }
+      throw new Error('Stream request failed')
+    }
+    
+    return response
+  }
 }

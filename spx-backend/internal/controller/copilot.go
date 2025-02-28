@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -29,6 +30,27 @@ func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
 }
 
 type GenerateMessageResult types.Message
+
+// GenerateStream generates response message based on input messages.
+func (ctrl *Controller) GenerateStream(ctx context.Context, params *GenerateMessageParams) (io.ReadCloser, error) {
+	logger := log.GetReqLogger(ctx)
+
+	// Check if copilot is initialized
+	if ctrl.copilot == nil {
+		return nil, fmt.Errorf("copilot is not initialized")
+	}
+
+	// Generate stream message using copilot
+	stream, err := ctrl.copilot.Stream(ctx, &types.Params{
+		Messages: params.Messages,
+	})
+	if err != nil {
+		logger.Errorf("failed to generate message: %v", err)
+		return nil, err
+	}
+
+	return stream, nil
+}
 
 // GenerateMessage generates response message based on input messages.
 func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMessageParams) (*GenerateMessageResult, error) {

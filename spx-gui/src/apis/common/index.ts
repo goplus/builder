@@ -19,6 +19,7 @@ export type RequestOptions = {
   /** Timeout duration in milisecond, from request-sent to server-response-got */
   timeout?: number
   signal?: AbortSignal
+  responseType?: 'json' | 'stream'
 }
 
 class TimeoutException extends Exception {
@@ -59,6 +60,9 @@ export function useRequest(
     const timeout = options?.timeout ?? defaultTimeout
     const signal = mergeSignals(options?.signal, getTimeoutSignal(timeout))
     const resp = await fetch(req, { signal })
+    if (options?.responseType === 'stream') {
+      return resp
+    }
     return responseHandler != null ? responseHandler(resp) : resp
   }
 }
