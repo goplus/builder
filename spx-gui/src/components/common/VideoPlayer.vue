@@ -17,7 +17,7 @@
     ></video>
 
     <!-- 视频暂停显示播放操作图标 -->
-    <div v-show="videoRef&&videoRef.paused" class="pause-center-icon">
+    <div v-show="videoRef&&isPaused" class="pause-center-icon">
       <img :src="playCenterSvg" />
     </div>
 
@@ -35,7 +35,7 @@
       </div>
 
       <!-- 播放按钮 -->
-      <div v-if="videoRef&&videoRef.paused" class="play-button" @click="play">
+      <div v-if="videoRef&&isPaused" class="play-button" @click="play">
         <img :src="playSvg"/>
       </div>
       <!-- 暂停按钮 -->
@@ -104,10 +104,11 @@ const containerRef = ref<HTMLElement | null>(null)
 // 创建响应式的播放时间
 const currentTime = ref(0)
 
-// 状态：封面显示、进度条显示、全屏状态
+// 状态：封面显示、进度条显示、全屏状态、视频暂停状态
 const coverVisible = ref(false)
 const progressVisible = ref(false)
 const isFullScreen = ref(false)
+const isPaused = ref(true)
 
 // 当前视频播放时长与进度百分比
 const videoDuration = ref(0)
@@ -142,9 +143,11 @@ const formattedDuration = computed(() => {
 /** 播放、暂停、切换播放状态 */
 function play() {
   videoRef.value?.play()
+  isPaused.value = false
 }
 function pause() {
   videoRef.value?.pause()
+  isPaused.value = true
 }
 function togglePlay() {
   if (!videoRef.value) return
