@@ -25,21 +25,20 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 		}, nil
 	}
 
-	// Check if the position is within an import declaration.
-	// If so, return the package documentation.
-	rpkg := result.spxImportsAtASTFilePosition(astFile, params.Position)
-	if rpkg != nil {
-		return &Hover{
-			Contents: MarkupContent{
-				Kind:  Markdown,
-				Value: doc.Synopsis(rpkg.Pkg.Doc),
-			},
-			Range: result.rangeForNode(rpkg.Node),
-		}, nil
-	}
-
 	ident := result.identAtASTFilePosition(astFile, params.Position)
 	if ident == nil {
+		// Check if the position is within an import declaration.
+		// If so, return the package documentation.
+		rpkg := result.spxImportsAtASTFilePosition(astFile, params.Position)
+		if rpkg != nil {
+			return &Hover{
+				Contents: MarkupContent{
+					Kind:  Markdown,
+					Value: doc.Synopsis(rpkg.Pkg.Doc),
+				},
+				Range: result.rangeForNode(rpkg.Node),
+			}, nil
+		}
 		return nil, nil
 	}
 
