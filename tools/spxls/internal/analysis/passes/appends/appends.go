@@ -2,14 +2,14 @@ package appends
 
 import (
 	_ "embed"
-	"go/ast"
-	"go/types"
 
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/inspect"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/internal/analysisutil"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/internal/typeutil"
 	"github.com/goplus/builder/tools/spxls/internal/ast/inspector"
 	"github.com/goplus/builder/tools/spxls/internal/protocol"
+	"github.com/goplus/gogen"
+	"github.com/goplus/gop/ast"
 )
 
 //go:embed doc.go
@@ -31,7 +31,10 @@ func run(pass *protocol.Pass) (any, error) {
 	}
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		call := n.(*ast.CallExpr)
-		b, ok := typeutil.Callee(pass.TypesInfo, call).(*types.Builtin)
+		// ast.Print(pass.Fset, call)
+		// fmt.Printf("%T\n", typeutil.Callee(pass.TypesInfo, call))
+		b, ok := typeutil.Callee(pass.TypesInfo, call).(*gogen.TemplateFunc)
+		// fmt.Println(ok, b.Name())
 		if ok && b.Name() == "append" && len(call.Args) == 1 {
 			pass.ReportRangef(call, "append with no values")
 		}

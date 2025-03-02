@@ -1,6 +1,6 @@
 package astutil
 
-import "go/ast"
+import "github.com/goplus/gop/ast"
 
 // Unparen returns e with any enclosing parentheses stripped.
 // TODO(adonovan): use go1.22's ast.Unparen.

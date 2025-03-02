@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
+	"github.com/goplus/builder/tools/spxls/internal/protocol"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
 )
 
@@ -27,6 +28,7 @@ type Server struct {
 	replier            MessageReplier
 	lastCompileCache   *compileCache
 	lastCompileCacheMu sync.Mutex
+	analyzers          []*protocol.Analyzer
 }
 
 // New creates a new Server instance.

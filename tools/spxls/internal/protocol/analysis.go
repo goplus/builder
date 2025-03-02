@@ -3,10 +3,12 @@ package protocol
 import (
 	"flag"
 	"fmt"
-	"go/ast"
-	"go/token"
 	"go/types"
 	"reflect"
+
+	"github.com/goplus/gop/ast"
+	"github.com/goplus/gop/token"
+	goptypesutil "github.com/goplus/gop/x/typesutil"
 )
 
 // An Analyzer describes an analysis function and its options.
@@ -87,14 +89,14 @@ type Pass struct {
 	Analyzer *Analyzer // the identity of the current analyzer
 
 	// syntax and type information
-	Fset         *token.FileSet // file position information; Run may add new files
-	Files        []*ast.File    // the abstract syntax tree of each file
-	OtherFiles   []string       // names of non-Go files of this package
-	IgnoredFiles []string       // names of ignored source files in this package
-	Pkg          *types.Package // type information about the package
-	TypesInfo    *types.Info    // type information about the syntax trees
-	TypesSizes   types.Sizes    // function for computing sizes of types
-	TypeErrors   []types.Error  // type errors (only if Analyzer.RunDespiteErrors)
+	Fset         *token.FileSet     // file position information; Run may add new files
+	Files        []*ast.File        // the abstract syntax tree of each file
+	OtherFiles   []string           // names of non-Go files of this package
+	IgnoredFiles []string           // names of ignored source files in this package
+	Pkg          *types.Package     // type information about the package
+	TypesInfo    *goptypesutil.Info // type information about the syntax trees
+	TypesSizes   types.Sizes        // function for computing sizes of types
+	TypeErrors   []types.Error      // type errors (only if Analyzer.RunDespiteErrors)
 
 	// Report reports a Diagnostic, a finding about a specific location
 	// in the analyzed source code such as a potential mistake.
@@ -169,13 +171,6 @@ type PackageFact struct {
 type ObjectFact struct {
 	Object types.Object
 	Fact   Fact
-}
-
-// Reportf is a helper function that reports a Diagnostic using the
-// specified position and formatted error message.
-func (pass *Pass) Reportf(pos token.Pos, format string, args ...interface{}) {
-	msg := fmt.Sprintf(format, args...)
-	pass.Report(Diagnostic{Pos: pos, Message: msg})
 }
 
 // The Range interface provides a range. It's equivalent to and satisfied by
