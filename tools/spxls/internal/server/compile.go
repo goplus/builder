@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"go/token"
 	"go/types"
 	"io/fs"
 	"maps"
@@ -90,7 +91,7 @@ type compileResult struct {
 	spxSpriteResourceAutoBindings map[types.Object]struct{}
 
 	// diagnostics stores diagnostic messages for each document.
-	diagnostics map[DocumentURI][]protocol.Diagnostic
+	diagnostics map[DocumentURI][]Diagnostic
 
 	// seenDiagnostics stores already reported diagnostics to avoid duplicates.
 	seenDiagnostics map[DocumentURI]map[string]struct{}
@@ -146,7 +147,7 @@ func newCompileResult() *compileResult {
 		},
 		spxSoundResourceAutoBindings:  make(map[types.Object]struct{}),
 		spxSpriteResourceAutoBindings: make(map[types.Object]struct{}),
-		diagnostics:                   make(map[DocumentURI][]protocol.Diagnostic),
+		diagnostics:                   make(map[DocumentURI][]Diagnostic),
 		documentURIs:                  make(map[string]DocumentURI),
 	}
 }
@@ -547,7 +548,7 @@ func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnos
 		seenDiagnostics[fingerprint] = struct{}{}
 
 		r.diagnostics[documentURI] = append(r.diagnostics[documentURI], diag)
-		if diag.Severity == protocol.SeverityError {
+		if diag.Severity == SeverityError {
 			r.hasErrorSeverityDiagnostic = true
 		}
 	}
@@ -555,7 +556,7 @@ func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnos
 
 // addDiagnosticsForSpxFile adds diagnostics to the compile result for the given
 // spx file.
-func (r *compileResult) addDiagnosticsForSpxFile(spxFile string, diags ...protocol.Diagnostic) {
+func (r *compileResult) addDiagnosticsForSpxFile(spxFile string, diags ...Diagnostic) {
 	r.addDiagnostics(r.documentURIs[spxFile], diags...)
 }
 
@@ -611,8 +612,8 @@ func (r *compileResult) locationForPos(pos goptoken.Pos) Location {
 }
 
 // locationForNode returns the [Location] for the given node.
-func (r *compileResult) locationForNode(node gopast.Node) protocol.Location {
-	return protocol.Location{
+func (r *compileResult) locationForNode(node gopast.Node) Location {
+	return Location{
 		URI:   r.documentURIs[r.nodeFilename(node)],
 		Range: r.rangeForNode(node),
 	}
@@ -704,7 +705,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 	)
 	for _, spxFile := range spxFiles {
 		documentURI := s.toDocumentURI(spxFile)
-		result.diagnostics[documentURI] = []protocol.Diagnostic{}
+		result.diagnostics[documentURI] = []Diagnostic{}
 		result.documentURIs[spxFile] = documentURI
 
 		var (
@@ -729,7 +730,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 			if errors.As(err, &parseErr) {
 				// Handle parse errors.
 				for _, e := range parseErr {
-					result.addDiagnostics(documentURI, protocol.Diagnostic{
+					result.addDiagnostics(documentURI, Diagnostic{
 						Severity: SeverityError,
 						Range:    RangeForGopTokenPosition(e.Pos),
 						Message:  e.Msg,
@@ -802,7 +803,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 			Error: func(err error) {
 				if typeErr, ok := err.(types.Error); ok {
 					position := typeErr.Fset.Position(typeErr.Pos)
-					result.addDiagnosticsForSpxFile(position.Filename, protocol.Diagnostic{
+					result.addDiagnosticsForSpxFile(position.Filename, Diagnostic{
 						Severity: SeverityError,
 						Range:    RangeForGopTokenPosition(position),
 						Message:  typeErr.Msg,
@@ -883,7 +884,7 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 		if types.AssignableTo(firstArgTV.Type, types.Typ[types.String]) {
 			spxResourceRootDir, _ = getStringLitOrConstValue(firstArg, firstArgTV)
 		} else {
-			result.addDiagnosticsForSpxFile(result.mainSpxFile, protocol.Diagnostic{
+			result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 				Severity: SeverityError,
 				Range:    result.rangeForNode(firstArg),
 				Message:  "first argument of run must be a string literal or constant",
@@ -898,7 +899,7 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 
 	spxResourceSet, err := NewSpxResourceSet(spxResourceRootFS)
 	if err != nil {
-		result.addDiagnosticsForSpxFile(result.mainSpxFile, protocol.Diagnostic{
+		result.addDiagnosticsForSpxFile(result.mainSpxFile, Diagnostic{
 			Severity: SeverityError,
 			Message:  fmt.Sprintf("failed to create spx resource set: %v", err),
 		})
@@ -908,16 +909,24 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 }
 
 func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
+
 	// 遍历所有 spx 文件
 	for spxFile, astFile := range result.mainASTPkg.Files {
-		var diagnostics []protocol.Diagnostic
+
+		var diagnostics []Diagnostic
 		// 创建分析器的 pass
 		pass := &protocol.Pass{
 			Fset:      result.fset,
 			Files:     []*gopast.File{astFile},
 			TypesInfo: result.typeInfo,
 			Report: func(d protocol.Diagnostic) {
-				diagnostics = append(diagnostics, d)
+				tokFile := result.fset.File(d.Pos)
+				result.rangeForPos(token.Pos(tokFile.Base()))
+				diagnostics = append(diagnostics, Diagnostic{
+					Range:    result.rangeForPos(token.Pos(tokFile.Base())),
+					Severity: SeverityError,
+					Message:  d.Message,
+				})
 			},
 			ResultOf: map[*protocol.Analyzer]any{
 				inspect.Analyzer: inspector.New([]*gopast.File{astFile}),
@@ -928,12 +937,14 @@ func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 		for _, analyzer := range s.analyzers {
 			if _, err := analyzer.Run(pass); err != nil {
 				// 如果分析器运行出错，添加到诊断信息中
-				diagnostics = append(diagnostics, protocol.Diagnostic{
-					Severity: protocol.SeverityError,
+				diagnostics = append(diagnostics, Diagnostic{
+					Severity: SeverityError,
 					Message:  fmt.Sprintf("analyzer %q failed: %v", analyzer.Name, err),
 				})
 			}
 		}
+
+		result.addDiagnosticsForSpxFile(spxFile, diagnostics...)
 	}
 }
 
