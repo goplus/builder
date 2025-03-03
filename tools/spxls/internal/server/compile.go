@@ -386,14 +386,12 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 	if obj == nil {
 		return nil
 	}
-	pkg := obj.Pkg()
-	if pkg == nil {
-		// Builtin definitions are not in any package.
-		return []SpxDefinition{GetSpxBuiltinDefinition(obj)}
+	if isBuiltinObject(obj) {
+		return []SpxDefinition{GetSpxDefinitionForBuiltinObj(obj)}
 	}
 
 	var pkgDoc *pkgdoc.PkgDoc
-	if pkgPath := pkg.Path(); pkgPath == "main" {
+	if pkgPath := obj.Pkg().Path(); pkgPath == "main" {
 		pkgDoc = r.mainPkgDoc
 	} else {
 		pkgDoc, _ = pkgdata.GetPkgDoc(pkgPath)
@@ -401,11 +399,11 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 
 	switch obj := obj.(type) {
 	case *types.Var:
-		return []SpxDefinition{NewSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
 	case *types.Const:
-		return []SpxDefinition{NewSpxDefinitionForConst(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForConst(obj, pkgDoc)}
 	case *types.TypeName:
-		return []SpxDefinition{NewSpxDefinitionForType(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForType(obj, pkgDoc)}
 	case *types.Func:
 		if funcDecl, ok := r.mainASTPkgIdentToFuncDecl[r.defIdentFor(obj)]; ok && funcDecl.Shadow {
 			return nil
@@ -416,13 +414,13 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 		if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 			defs := make([]SpxDefinition, 0, len(funcOverloads))
 			for _, funcOverload := range funcOverloads {
-				defs = append(defs, NewSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
 			}
 			return defs
 		}
-		return []SpxDefinition{NewSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
 	case *types.PkgName:
-		return []SpxDefinition{NewSpxDefinitionForPkg(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForPkg(obj, pkgDoc)}
 	}
 	return nil
 }
@@ -784,27 +782,37 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 				})
 			}
 		}
-		if astFile != nil && astFile.Name.Name == "main" {
-			result.mainASTPkg.Files[spxFile] = astFile
-			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
-				result.mainSpxFile = spxFile
-			} else {
-				spriteNames = append(spriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
-			}
+		if astFile == nil {
+			continue
+		}
+		if astFile.Name.Name != "main" {
+			result.addDiagnostics(documentURI, Diagnostic{
+				Severity: SeverityError,
+				Range:    result.rangeForNode(astFile.Name),
+				Message:  "package name must be main",
+			})
+			continue
+		}
 
-			for _, decl := range astFile.Decls {
-				switch decl := decl.(type) {
-				case *gopast.GenDecl:
-					for _, spec := range decl.Specs {
-						result.mainASTPkgSpecToGenDecl[spec] = decl
-					}
+		result.mainASTPkg.Files[spxFile] = astFile
+		if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
+			result.mainSpxFile = spxFile
+		} else {
+			spriteNames = append(spriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
+		}
 
-					if result.firstVarBlocks[astFile] == nil && decl.Tok == goptoken.VAR {
-						result.firstVarBlocks[astFile] = decl
-					}
-				case *gopast.FuncDecl:
-					result.mainASTPkgIdentToFuncDecl[decl.Name] = decl
+		for _, decl := range astFile.Decls {
+			switch decl := decl.(type) {
+			case *gopast.GenDecl:
+				for _, spec := range decl.Specs {
+					result.mainASTPkgSpecToGenDecl[spec] = decl
 				}
+
+				if result.firstVarBlocks[astFile] == nil && decl.Tok == goptoken.VAR {
+					result.firstVarBlocks[astFile] = decl
+				}
+			case *gopast.FuncDecl:
+				result.mainASTPkgIdentToFuncDecl[decl.Name] = decl
 			}
 		}
 	}

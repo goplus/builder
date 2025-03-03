@@ -123,6 +123,32 @@ var (
 		assert.Empty(t, fullReport.Items)
 	})
 
+	t.Run("NonMainPackageDecl", func(t *testing.T) {
+		fileMap := newTestFileMap()
+		fileMap["main.spx"] = []byte("package nonmain")
+		s := New(newMapFSWithoutModTime(fileMap), nil)
+		params := &DocumentDiagnosticParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		report, err := s.textDocumentDiagnostic(params)
+		require.NoError(t, err)
+		require.NotNil(t, report)
+
+		fullReport, ok := report.Value.(RelatedFullDocumentDiagnosticReport)
+		assert.True(t, ok, "expected RelatedFullDocumentDiagnosticReport")
+		assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
+		require.Len(t, fullReport.Items, 1)
+		assert.Contains(t, fullReport.Items, Diagnostic{
+			Severity: SeverityError,
+			Message:  "package name must be main",
+			Range: Range{
+				Start: Position{Line: 0, Character: 8},
+				End:   Position{Line: 0, Character: 15},
+			},
+		})
+	})
+
 	t.Run("FileNotFound", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(newTestFileMap()), nil)
 		params := &DocumentDiagnosticParams{

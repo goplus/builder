@@ -534,6 +534,45 @@ onClick => {
 		assert.NotEmpty(t, items2)
 		assert.True(t, containsCompletionItemLabel(items2, "setCostume"))
 	})
+
+	t.Run("WithGopBuiltins", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onClick => {
+	var n in
+}
+`),
+			"MySprite.spx": []byte(`
+onClick => {
+	ec
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		items1, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 9},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items1)
+		assert.NotEmpty(t, items1)
+		assert.True(t, containsCompletionItemLabel(items1, "int128"))
+
+		items2, err := s.textDocumentCompletion(&CompletionParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 2, Character: 3},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, items2)
+		assert.NotEmpty(t, items2)
+		assert.True(t, containsCompletionItemLabel(items2, "echo"))
+	})
 }
 
 func containsCompletionItemLabel(items []CompletionItem, label string) bool {

@@ -49,8 +49,8 @@ func (def SpxDefinition) CompletionItem() CompletionItem {
 }
 
 var (
-	// SpxGeneralDefinitions are general spx definitions.
-	SpxGeneralDefinitions = []SpxDefinition{
+	// GeneralSpxDefinitions are general spx definitions.
+	GeneralSpxDefinitions = []SpxDefinition{
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("for_iterate")},
 			Overview: "for i, v <- set { ... }",
@@ -113,9 +113,9 @@ var (
 		},
 	}
 
-	// SpxFileScopeDefinitions are spx definitions that are only available
+	// FileScopeSpxDefinitions are spx definitions that are only available
 	// in file scope.
-	SpxFileScopeDefinitions = []SpxDefinition{
+	FileScopeSpxDefinitions = []SpxDefinition{
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("import_declaration")},
 			Overview: "import \"package\"",
@@ -138,9 +138,9 @@ var (
 		},
 	}
 
-	// spxBuiltinDefinitionOverviews contains overview descriptions for spx
-	// builtin definitions.
-	spxBuiltinDefinitionOverviews = map[string]string{
+	// builtinSpxDefinitionOverviews contains overview descriptions for
+	// builtin spx definitions.
+	builtinSpxDefinitionOverviews = map[string]string{
 		// Variables.
 		"nil": "var nil Type",
 
@@ -192,14 +192,49 @@ var (
 		"real":    "func real(c ComplexType) FloatType",
 		"recover": "func recover() interface{}",
 	}
+
+	// gopBuiltinAliases contains aliases for Go+ builtins.
+	//
+	// See github.com/goplus/gop/cl.initBuiltin for the list of Go+ builtin aliases.
+	gopBuiltinAliases = map[string]string{
+		// Types.
+		"bigfloat": "github.com/goplus/gop/builtin/ng#Bigfloat",
+		"bigint":   "github.com/goplus/gop/builtin/ng#Bigint",
+		"bigrat":   "github.com/goplus/gop/builtin/ng#Bigrat",
+		"int128":   "github.com/goplus/gop/builtin/ng#Int128",
+		"uint128":  "github.com/goplus/gop/builtin/ng#Uint128",
+
+		// Functions.
+		"blines":   "github.com/goplus/gop/builtin/iox#BLines",
+		"create":   "os#Create",
+		"echo":     "fmt#Println",
+		"errorf":   "fmt#Errorf",
+		"fprint":   "fmt#Fprint",
+		"fprintf":  "fmt#Fprintf",
+		"fprintln": "fmt#Fprintln",
+		"lines":    "github.com/goplus/gop/builtin/iox#Lines",
+		"newRange": "github.com/goplus/gop/builtin#NewRange__0",
+		"open":     "os#Open",
+		"print":    "fmt#Print",
+		"printf":   "fmt#Printf",
+		"println":  "fmt#Println",
+		"sprint":   "fmt#Sprint",
+		"sprintf":  "fmt#Sprintf",
+		"sprintln": "fmt#Sprintln",
+		// "type":     "reflect#TypeOf",
+	}
 )
 
-// GetSpxBuiltinDefinition returns the spx definition for the given object.
-func GetSpxBuiltinDefinition(obj types.Object) SpxDefinition {
+// GetSpxDefinitionForBuiltinObj returns the spx definition for the given object.
+func GetSpxDefinitionForBuiltinObj(obj types.Object) SpxDefinition {
 	const pkgPath = "builtin"
 
 	idName := obj.Name()
-	overview, ok := spxBuiltinDefinitionOverviews[idName]
+	if def, err := getSpxDefinitionForGopBuiltinAlias(idName); err == nil {
+		return def
+	}
+
+	overview, ok := builtinSpxDefinitionOverviews[idName]
 	if !ok {
 		overview = "builtin " + idName
 	}
@@ -259,17 +294,78 @@ func GetSpxBuiltinDefinition(obj types.Object) SpxDefinition {
 	}
 }
 
-// GetSpxBuiltinDefinitions returns the builtin spx definitions.
-var GetSpxBuiltinDefinitions = sync.OnceValue(func() []SpxDefinition {
+// GetBuiltinSpxDefinitions returns the builtin spx definitions.
+var GetBuiltinSpxDefinitions = sync.OnceValue(func() []SpxDefinition {
 	names := types.Universe.Names()
-	defs := make([]SpxDefinition, 0, len(names))
+	defs := make([]SpxDefinition, 0, len(names)+len(gopBuiltinAliases))
 	for _, name := range names {
-		if obj := types.Universe.Lookup(name); obj != nil && obj.Pkg() == nil {
-			defs = append(defs, GetSpxBuiltinDefinition(obj))
+		if _, ok := gopBuiltinAliases[name]; ok {
+			continue
 		}
+		if obj := types.Universe.Lookup(name); obj != nil && obj.Pkg() == nil {
+			defs = append(defs, GetSpxDefinitionForBuiltinObj(obj))
+		}
+	}
+	for alias := range gopBuiltinAliases {
+		def, err := getSpxDefinitionForGopBuiltinAlias(alias)
+		if err != nil {
+			panic(fmt.Errorf("failed to get spx definition for gop builtin alias %q: %w", alias, err))
+		}
+		defs = append(defs, def)
 	}
 	return slices.Clip(defs)
 })
+
+// getSpxDefinitionForGopBuiltinAlias returns the spx definition for the
+// given Go+ builtin alias.
+func getSpxDefinitionForGopBuiltinAlias(alias string) (SpxDefinition, error) {
+	ref, ok := gopBuiltinAliases[alias]
+	if !ok {
+		return SpxDefinition{}, fmt.Errorf("unknown gop builtin alias: %s", alias)
+	}
+
+	pkgPath, name, ok := strings.Cut(ref, "#")
+	if !ok {
+		return SpxDefinition{}, fmt.Errorf("invalid gop builtin alias: %s", alias)
+	}
+	pkg, err := internal.Importer.Import(pkgPath)
+	if err != nil {
+		return SpxDefinition{}, fmt.Errorf("failed to import package for gop builtin alias %q: %w", alias, err)
+	}
+	pkgDoc, err := pkgdata.GetPkgDoc(pkgPath)
+	if err != nil {
+		return SpxDefinition{}, fmt.Errorf("failed to get package doc for gop builtin alias %q: %w", alias, err)
+	}
+
+	obj := pkg.Scope().Lookup(name)
+	if obj == nil {
+		return SpxDefinition{}, fmt.Errorf("symbol %s not found in package %s", name, pkgPath)
+	}
+	var def SpxDefinition
+	switch obj := obj.(type) {
+	case *types.TypeName:
+		def = GetSpxDefinitionForType(obj, pkgDoc)
+	case *types.Func:
+		def = GetSpxDefinitionForFunc(obj, "", pkgDoc)
+	default:
+		return SpxDefinition{}, fmt.Errorf("unexpected object type for gop builtin alias %q: %T", alias, obj)
+	}
+
+	return SpxDefinition{
+		TypeHint: obj.Type(),
+		ID: SpxDefinitionIdentifier{
+			Package: util.ToPtr("builtin"),
+			Name:    &alias,
+		},
+		Overview: def.Overview,
+		Detail:   def.Detail,
+
+		CompletionItemLabel:            alias,
+		CompletionItemKind:             def.CompletionItemKind,
+		CompletionItemInsertText:       alias,
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
+	}, nil
+}
 
 var (
 	// GetSpxPkg returns the spx package.
@@ -348,15 +444,15 @@ var (
 		if err != nil {
 			panic(fmt.Errorf("failed to get spx package doc: %w", err))
 		}
-		return GetPkgSpxDefinitions(spxPkg, spxPkgDoc)
+		return GetSpxDefinitionsForPkg(spxPkg, spxPkgDoc)
 	})
 )
 
 // nonMainPkgSpxDefsCache is a cache of non-main package spx definitions.
 var nonMainPkgSpxDefsCache sync.Map // map[*types.Package][]SpxDefinition
 
-// GetPkgSpxDefinitions returns the spx definitions for the given package.
-func GetPkgSpxDefinitions(pkg *types.Package, pkgDoc *pkgdoc.PkgDoc) (defs []SpxDefinition) {
+// GetSpxDefinitionsForPkg returns the spx definitions for the given package.
+func GetSpxDefinitionsForPkg(pkg *types.Package, pkgDoc *pkgdoc.PkgDoc) (defs []SpxDefinition) {
 	if pkg.Path() != "main" {
 		if defsIface, ok := nonMainPkgSpxDefsCache.Load(pkg); ok {
 			return defsIface.([]SpxDefinition)
@@ -372,21 +468,21 @@ func GetPkgSpxDefinitions(pkg *types.Package, pkgDoc *pkgdoc.PkgDoc) (defs []Spx
 		if obj := pkg.Scope().Lookup(name); obj != nil && obj.Exported() {
 			switch obj := obj.(type) {
 			case *types.Var:
-				defs = append(defs, NewSpxDefinitionForVar(obj, "", false, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForVar(obj, "", false, pkgDoc))
 			case *types.Const:
-				defs = append(defs, NewSpxDefinitionForConst(obj, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForConst(obj, pkgDoc))
 			case *types.TypeName:
-				defs = append(defs, NewSpxDefinitionForType(obj, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForType(obj, pkgDoc))
 			case *types.Func:
 				if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 					for _, funcOverload := range funcOverloads {
-						defs = append(defs, NewSpxDefinitionForFunc(funcOverload, "", pkgDoc))
+						defs = append(defs, GetSpxDefinitionForFunc(funcOverload, "", pkgDoc))
 					}
 				} else {
-					defs = append(defs, NewSpxDefinitionForFunc(obj, "", pkgDoc))
+					defs = append(defs, GetSpxDefinitionForFunc(obj, "", pkgDoc))
 				}
 			case *types.PkgName:
-				defs = append(defs, NewSpxDefinitionForPkg(obj, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForPkg(obj, pkgDoc))
 			}
 		}
 	}
@@ -404,8 +500,8 @@ type nonMainPkgSpxDefCacheForVarsKey struct {
 	selectorTypeName string
 }
 
-// NewSpxDefinitionForVar creates a new [SpxDefinition] the provided variable.
-func NewSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
+// GetSpxDefinitionForVar returns the spx definition for the provided variable.
+func GetSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(v) {
 		cacheKey := nonMainPkgSpxDefCacheForVarsKey{
 			v:                v,
@@ -476,8 +572,8 @@ func NewSpxDefinitionForVar(v *types.Var, selectorTypeName string, forceVar bool
 // for constants.
 var nonMainPkgSpxDefCacheForConsts sync.Map // map[*types.Const]SpxDefinition
 
-// NewSpxDefinitionForConst creates a new [SpxDefinition] for the provided constant.
-func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
+// GetSpxDefinitionForConst returns the spx definition for the provided constant.
+func GetSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(c) {
 		if defIface, ok := nonMainPkgSpxDefCacheForConsts.Load(c); ok {
 			return defIface.(SpxDefinition)
@@ -520,8 +616,8 @@ func NewSpxDefinitionForConst(c *types.Const, pkgDoc *pkgdoc.PkgDoc) (def SpxDef
 // for types.
 var nonMainPkgSpxDefCacheForTypes sync.Map // map[*types.TypeName]SpxDefinition
 
-// NewSpxDefinitionForType creates a new [SpxDefinition] for the provided type.
-func NewSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
+// GetSpxDefinitionForType returns the spx definition for the provided type.
+func GetSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(typeName) {
 		if defIface, ok := nonMainPkgSpxDefCacheForTypes.Load(typeName); ok {
 			return defIface.(SpxDefinition)
@@ -588,8 +684,8 @@ type nonMainPkgSpxDefCacheForFuncsKey struct {
 	recvTypeName string
 }
 
-// NewSpxDefinitionForFunc creates a new [SpxDefinition] for the provided function.
-func NewSpxDefinitionForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
+// GetSpxDefinitionForFunc returns the spx definition for the provided function.
+func GetSpxDefinitionForFunc(fun *types.Func, recvTypeName string, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(fun) {
 		cacheKey := nonMainPkgSpxDefCacheForFuncsKey{
 			fun:          fun,
@@ -731,8 +827,8 @@ func makeSpxDefinitionOverviewForFunc(fun *types.Func) (overview, parsedRecvType
 // for packages.
 var nonMainPkgSpxDefCacheForPkgs sync.Map // map[*types.PkgName]SpxDefinition
 
-// NewSpxDefinitionForPkg creates a new [SpxDefinition] for the provided package.
-func NewSpxDefinitionForPkg(pkgName *types.PkgName, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
+// GetSpxDefinitionForPkg returns the spx definition for the provided package.
+func GetSpxDefinitionForPkg(pkgName *types.PkgName, pkgDoc *pkgdoc.PkgDoc) (def SpxDefinition) {
 	if !isMainPkgObject(pkgName) {
 		if defIface, ok := nonMainPkgSpxDefCacheForPkgs.Load(pkgName); ok {
 			return defIface.(SpxDefinition)

@@ -120,17 +120,18 @@ var (
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`// An spx game.
 
+// The first var block.
 var (
 	// The aircraft.
 	MyAircraft MyAircraft // The only aircraft.
-)
+) // Trailing comment for the first var block.
 
 var Bullet Bullet // The first bullet.
 
 // The second bullet.
 var Bullet2 Bullet
 
-var (
+var ( // Weirdly placed comment for the fourth var block.
 	// The third bullet.
 	Bullet3 Bullet
 )
@@ -138,7 +139,7 @@ var (
 // The fifth var block.
 var (
 	Bullet4 Bullet // The fourth bullet.
-)
+) // Trailing comment for the fifth var block.
 
 // The last var block.
 var (
@@ -146,7 +147,7 @@ var (
 	Bullet5 Bullet
 
 	Bullet6 Bullet // The sixth bullet.
-)
+) // Trailing comment for the last var block.
 `),
 		}), nil)
 		params := &DocumentFormattingParams{
@@ -159,18 +160,24 @@ var (
 		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 29, Character: 0},
+				End:   Position{Line: 30, Character: 0},
 			},
 			NewText: `// An spx game.
 
 var (
+	// The first var block.
+
 	// The aircraft.
 	MyAircraft MyAircraft // The only aircraft.
+
+	// Trailing comment for the first var block.
 
 	Bullet Bullet // The first bullet.
 
 	// The second bullet.
 	Bullet2 Bullet
+
+	// Weirdly placed comment for the fourth var block.
 
 	// The third bullet.
 	Bullet3 Bullet
@@ -179,12 +186,52 @@ var (
 
 	Bullet4 Bullet // The fourth bullet.
 
+	// Trailing comment for the fifth var block.
+
 	// The last var block.
 
 	// The fifth bullet.
 	Bullet5 Bullet
 
 	Bullet6 Bullet // The sixth bullet.
+
+	// Trailing comment for the last var block.
+)
+`,
+		})
+	})
+
+	t.Run("VarBlockWithoutDoc", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// An spx game.
+
+var (
+	// The aircraft.
+	MyAircraft MyAircraft // The only aircraft.
+)
+
+var Bullet Bullet
+`),
+		}), nil)
+		params := &DocumentFormattingParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+		}
+
+		edits, err := s.textDocumentFormatting(params)
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
+			Range: Range{
+				Start: Position{Line: 0, Character: 0},
+				End:   Position{Line: 8, Character: 0},
+			},
+			NewText: `// An spx game.
+
+var (
+	// The aircraft.
+	MyAircraft MyAircraft // The only aircraft.
+
+	Bullet Bullet
 )
 `,
 		})
@@ -398,8 +445,8 @@ const b = "123"
 // comment for const b
 const b = "123"
 
-// comment for var a
 var (
+	// comment for var a
 	a int
 )
 
@@ -441,8 +488,8 @@ func test() {} // trailing comment for func test
 const foo = "bar" // trailing comment for const foo
 
 var (
-	a int
-) // trailing comment for var a
+	a int // trailing comment for var a
+)
 
 func test() {} // trailing comment for func test
 `,
