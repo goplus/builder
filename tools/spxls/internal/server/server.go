@@ -36,7 +36,8 @@ type Server struct {
 // New creates a new Server instance.
 func New(mapFS *vfs.MapFS, replier MessageReplier) *Server {
 	return &Server{
-		workspaceRootURI: "file:///", // TODO: Allow setting this via the `initialize` request.
+		// MARKER(INIT-001): Initialize request should set this value
+		workspaceRootURI: "file:///",
 		workspaceRootFS:  mapFS,
 		replier:          replier,
 		analyzers:        initAnalyzers(true),

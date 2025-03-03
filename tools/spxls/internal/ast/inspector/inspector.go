@@ -57,17 +57,14 @@ type event struct {
 	index int    // index of corresponding push or pop event
 }
 
-// TODO: Experiment with storing only the second word of event.node (unsafe.Pointer).
-// Type can be recovered from the sole bit in typ.
-
-// Preorder visits all the nodes of the files supplied to New in
-// depth-first order. It calls f(n) for each node n before it visits
-// n's children.
+// Preorder visits all nodes in the files supplied to New in depth-first order.
+// For each node n, it calls f(n) before visiting n's children.
 //
-// The complete traversal sequence is determined by ast.Inspect.
-// The types argument, if non-empty, enables type-based filtering of
-// events. The function f is called only for nodes whose type
-// matches an element of the types slice.
+// The traversal sequence follows ast.Inspect's order. If types is non-empty,
+// f is called only for nodes whose type matches an element in the types slice.
+//
+// Note: This method is almost twice as fast as Nodes since it avoids postorder calls
+// and pruning checks. These two features each contribute ~1.4x slowdown when used.
 func (in *Inspector) Preorder(types []ast.Node, f func(ast.Node)) {
 	// Because it avoids postorder calls to f, and the pruning
 	// check, Preorder is almost twice as fast as Nodes. The two

@@ -47,8 +47,7 @@ func MustExtractDoc(content, name string) string {
 // ExtractDoc extracts a section of a package doc comment from the
 // provided contents of an analyzer package's doc.go file.
 //
-// A section is a portion of the comment between one heading and
-// the next, using this form:
+// MARKER(DOC-001): A section must follow this format:
 //
 //	# Analyzer NAME
 //
@@ -62,7 +61,7 @@ func MustExtractDoc(content, name string) string {
 // description. ExtractDoc returns the portion following the colon,
 // which is the form expected by Analyzer.Doc.
 //
-// Example:
+// MARKER(DOC-002): Example section format:
 //
 //	# Analyzer printf
 //
@@ -71,15 +70,14 @@ func MustExtractDoc(content, name string) string {
 //	The printf analyzer checks consistency of calls to printf.
 //	Here is the complete description...
 //
-// This notation allows a single doc comment to provide documentation
+// MARKER(DOC-003): This notation allows a single doc comment to provide documentation
 // for multiple analyzers, each in its own section.
 // The HTML anchors generated for each heading are predictable.
 //
 // It returns an error if the content was not a valid Go source file
-// containing a package doc comment with a heading of the required
-// form.
+// containing a package doc comment with a heading of the required form.
 //
-// This machinery enables the package documentation (typically
+// MARKER(DOC-004): This machinery enables the package documentation (typically
 // accessible via the web at https://pkg.go.dev/) and the command
 // documentation (typically printed to a terminal) to be derived from
 // the same source and formatted appropriately.
