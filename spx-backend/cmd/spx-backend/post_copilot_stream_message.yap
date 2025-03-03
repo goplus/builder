@@ -1,4 +1,4 @@
-// Generate a message by sending a list of input messages.
+// Generate a stream by sending a list of input messages.
 //
 // Request:
 //   POST /copilot/message
@@ -21,11 +21,13 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-read, err := ctrl.GenerateMessage(ctx.Context(), params)
+read, err := ctrl.GenerateStream(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
+
+defer read.Close()
 
 buf := make([]byte, 4096)
 stream read, buf
