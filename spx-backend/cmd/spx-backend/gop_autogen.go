@@ -1009,6 +1009,13 @@ func (this *post_copilot_stream_message) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_copilot_stream_message.yap:10:1
 	ctx := &this.Context
+//line cmd/spx-backend/post_copilot_stream_message.yap:11:1
+	if
+//line cmd/spx-backend/post_copilot_stream_message.yap:11:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+//line cmd/spx-backend/post_copilot_stream_message.yap:12:1
+		return
+	}
 //line cmd/spx-backend/post_copilot_stream_message.yap:15:1
 	params := &controller.GenerateMessageParams{}
 //line cmd/spx-backend/post_copilot_stream_message.yap:16:1
@@ -1026,7 +1033,7 @@ func (this *post_copilot_stream_message) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_copilot_stream_message.yap:24:1
-	read, err := this.ctrl.GenerateStream(ctx.Context(), params)
+	read, err := this.ctrl.GenerateMessageStream(ctx.Context(), params)
 //line cmd/spx-backend/post_copilot_stream_message.yap:25:1
 	if err != nil {
 //line cmd/spx-backend/post_copilot_stream_message.yap:26:1

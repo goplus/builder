@@ -125,8 +125,10 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 // StreamMessage sends a conversation to Claude and returns its response
 // ctx: context for the request
 // params: contains the conversation messages and other parameters
-// Returns the AI response and any error encountered
-func (a *Anthropic) Stream(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+// Returns:
+// - A reader for the streaming response
+// - error: Returns API error or processing error if any occurs
+func (a *Anthropic) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
 	// Convert internal message format to Anthropic's message format
 	messages := []anthropic.MessageParam{}
 	system := anthropic.TextBlockParam{}

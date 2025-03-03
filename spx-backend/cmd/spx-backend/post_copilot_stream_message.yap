@@ -8,9 +8,9 @@ import (
 )
 
 ctx := &Context
-//if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//	return
-//}
+if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	return
+}
 
 params := &controller.GenerateMessageParams{}
 if !parseJSON(ctx, params) {
@@ -21,7 +21,7 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-read, err := ctrl.GenerateStream(ctx.Context(), params)
+read, err := ctrl.GenerateMessageStream(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

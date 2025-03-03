@@ -20,10 +20,10 @@ type AICopilot interface {
 	// ctx provides context for the request, which can be used for cancellation and timeout.
 	// params contains the request parameters including the provider selection and message content.
 	Message(ctx context.Context, params *types.Params) (*types.Result, error)
-	// Stream sends a request to the AI provider and returns a stream of responses.
+	// StreamMessage sends a request to the AI provider and returns a stream of responses.
 	// ctx provides context for the request, which can be used for cancellation and timeout.
 	// params contains the request parameters including the provider selection and message content.
-	Stream(ctx context.Context, params *types.Params) (io.ReadCloser, error)
+	StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error)
 }
 
 // Config defines the configuration parameters for the Copilot service.
@@ -78,12 +78,12 @@ func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Res
 // Message implements the AICopilot interface. It routes the request to the
 // appropriate AI provider based on the Provider field in the params.
 // Returns an error if the specified provider is not supported.
-func (c *Copilot) Stream(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
 	// Add system prompt message
 	params.System = types.Content{
 		Type: types.ContentTypeText,
 		Text: SystemPrompt,
 	}
 	// Send message to the AI provider
-	return c.copilot.Stream(ctx, params)
+	return c.copilot.StreamMessage(ctx, params)
 }

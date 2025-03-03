@@ -108,13 +108,13 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 	}, nil
 }
 
-// Message processes a conversation request with the Qiniu API.
+// StreamMessage processes a conversation request with the Qiniu API.
 // ctx: Context for request cancellation and deadlines
-// params: Request parameters containing conversation messages
+// params: Parameters for the conversation request
 // Returns:
-// - *types.Result: Contains the generated assistant message
+// - A reader for the streaming response
 // - error: Returns API error or processing error if any occurs
-func (d *Qiniu) Stream(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
 	// Convert role types to Qiniu compatible format
 	messages := make([]Message, 0, len(params.Messages))
 	// Add system prompt message
