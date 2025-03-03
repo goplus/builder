@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed, onBeforeUnmount } from 'vue'
-import { useTag } from '@/utils/tagging'
-
-const props = defineProps<{
-  visible: boolean
-  highlightElementPath: string
-}>()
-const { getElement } = useTag()
-
-const borderRadius = ref(10)
+import { useTag } from '../../utils/tagging'
+import { useResizeObserver, useElementPosition } from '../../utils/dom'
 
 type HighlightRect = {
   left: number
@@ -17,6 +10,15 @@ type HighlightRect = {
   height: number
 }
 
+const props = defineProps<{
+  visible: boolean
+  highlightElementPath: string
+}>()
+
+const { getElement } = useTag()
+const { startResizeObserving, stopResizeObserving } = useResizeObserver(updateHighlightRect)
+const { startPositionObserving, stopPositionObserving } = useElementPosition(updateHighlightRect)
+
 const highlightRect = ref<HighlightRect>({
   left: 0,
   top: 0,
@@ -24,12 +26,14 @@ const highlightRect = ref<HighlightRect>({
   height: 0
 })
 
-const zIndex = ref(9999)
-
 const screenWidth = ref(window.innerWidth)
 const screenHeight = ref(window.innerHeight)
 
-const updateHighlightRect = () => {
+const zIndex = 999
+const borderRadius = 10
+
+/** 获取目标元素的真实坐标 */
+function updateHighlightRect() {
   const element = getElement(props.highlightElementPath)
   if (element) {
     const rect = element.getBoundingClientRect()
@@ -70,7 +74,7 @@ const svgPath = computed(() => {
   const y = highlightRect.value.top
   const w = highlightRect.value.width
   const h = highlightRect.value.height
-  const r = borderRadius.value
+  const r = borderRadius
 
   const outerRect = `M0,0 H${screenWidth.value} V${screenHeight.value} H0 Z`
 
@@ -82,19 +86,37 @@ const svgPath = computed(() => {
 watch(
   () => props.highlightElementPath,
   () => {
-    if (props.visible) updateHighlightRect()
+    if (props.visible) {
+      updateHighlightRect()
+      const element = getElement(props.highlightElementPath)
+      startResizeObserving(element)
+      startPositionObserving(element)
+    }
   }
 )
 
 watch(
   () => props.visible,
   (newVal) => {
-    if (newVal) updateHighlightRect()
+    if (newVal) {
+      updateHighlightRect()
+      const element = getElement(props.highlightElementPath)
+      startResizeObserving(element)
+      startPositionObserving(element)
+    } else {
+      stopResizeObserving()
+      stopPositionObserving()
+    }
   }
 )
 
 onMounted(() => {
-  if (props.visible) updateHighlightRect()
+  if (props.visible) {
+    updateHighlightRect()
+    const element = getElement(props.highlightElementPath)
+    startPositionObserving(element)
+    startResizeObserving(element)
+  }
   window.addEventListener('resize', () => {
     screenWidth.value = window.innerWidth
     screenHeight.value = window.innerHeight
@@ -102,6 +124,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopResizeObserving()
+  stopPositionObserving()
   window.removeEventListener('resize', () => {
     screenWidth.value = window.innerWidth
     screenHeight.value = window.innerHeight
@@ -125,7 +149,12 @@ onBeforeUnmount(() => {
       >
         <path :d="svgPath" fill="rgba(0, 0, 0, 0.5)" fill-rule="evenodd" pointer-events="fill" />
       </svg>
-      <slot :highlight-rect="highlightRect" :z-index="zIndex" />
+      <slot
+        :slot-info="{
+          ...highlightRect,
+          zIndex: zIndex
+        }"
+      />
     </div>
   </Transition>
 </template>
