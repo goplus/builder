@@ -871,6 +871,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 
 	s.inspectForSpxResourceSet(snapshot, result)
 	s.inspectForSpxResourceRefs(result)
+	s.inspectDiagnosticsAnalyzers(result)
 
 	return result, nil
 }
@@ -943,13 +944,27 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 	result.spxResourceSet = *spxResourceSet
 }
 
+// inspectDiagnosticsAnalyzers runs registered analyzers on each spx source file
+// and collects diagnostics.
+//
+// For each spx file in the main package, it:
+// 1. Creates an analysis pass with file-specific information
+// 2. Runs all registered analyzers on the file
+// 3. Collects diagnostics from analyzers
+// 4. Reports any analyzer errors as diagnostics
+//
+// Parameters:
+//   - result: The compilation result containing AST and type information
+//
+// The function updates result.diagnostics with any issues found by analyzers.
+// Diagnostic severity levels include:
+//   - Error: For analyzer failures or serious code issues
+//   - Warning: For potential problems that don't prevent compilation
 func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 
-	// 遍历所有 spx 文件
 	for spxFile, astFile := range result.mainASTPkg.Files {
 
 		var diagnostics []Diagnostic
-		// 创建分析器的 pass
 		pass := &protocol.Pass{
 			Fset:      result.fset,
 			Files:     []*gopast.File{astFile},
@@ -968,13 +983,12 @@ func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 			},
 		}
 
-		// 运行所有注册的分析器
 		for _, analyzer := range s.analyzers {
-			if _, err := analyzer.Run(pass); err != nil {
-				// 如果分析器运行出错，添加到诊断信息中
+			an := analyzer.Analyzer()
+			if _, err := an.Run(pass); err != nil {
 				diagnostics = append(diagnostics, Diagnostic{
 					Severity: SeverityError,
-					Message:  fmt.Sprintf("analyzer %q failed: %v", analyzer.Name, err),
+					Message:  fmt.Sprintf("analyzer %q failed: %v", an.Name, err),
 				})
 			}
 		}
