@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"go/token"
 	"go/types"
 	"io/fs"
 	"maps"
@@ -970,10 +969,8 @@ func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 			Files:     []*gopast.File{astFile},
 			TypesInfo: result.typeInfo,
 			Report: func(d protocol.Diagnostic) {
-				tokFile := result.fset.File(d.Pos)
-				result.rangeForPos(token.Pos(tokFile.Base()))
 				diagnostics = append(diagnostics, Diagnostic{
-					Range:    result.rangeForPos(token.Pos(tokFile.Base())),
+					Range:    result.rangeForPos(d.Pos),
 					Severity: SeverityError,
 					Message:  d.Message,
 				})
