@@ -7,7 +7,7 @@ class APIReferenceProvider implements IAPIReferenceProvider {
   async provideAPIReference(ctx: APIReferenceContext, position: Position | null) {
       const apiReferenceItems = await this.getFallbackItems(ctx)
           
-      // 从 ResourceFilterState 中获取API过滤状态
+      // 从 ListFilterState 中获取API过滤状态
       const { enabled, items } = this.filter.getFilter('apiReference')
           
       // 未启用过滤或列表为空时返回全部
@@ -32,14 +32,15 @@ const props = defineProps<{
 
 onMounted(() => {
   if (props.step.isApiControl) {
-    resourceFilter.setFilter('apiReference', true, props.step.apis)
+    filter.setFilter('apiReference', true, props.step.apis)
   }
-  if (props.step.isSpriteControl) {
-    resourceFilter.setFilter('sprite', true, props.step.sprites)
+  if (props.step.isAssetControl) {
+    filter.setFilter('asset', true, props.step.assets)
   }
+  // 其余代码同理
 })
 
 onBeforeUnmount(() => {
-  resourceFilter.reset()
+  filter.reset()
 })
 ```

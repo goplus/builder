@@ -16,6 +16,8 @@ type Expose = {
   showCover(): void // 展示封面
   hideCover(): void // 隐藏封面
   endCurrentSegment(): void // 结束当前分段的视频播放
+  enterFullScreen(): void // 进入全屏播放
+  exitFullScreen(): void // 退出全屏播放
 }
 
 type Segment {
