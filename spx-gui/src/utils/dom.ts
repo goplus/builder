@@ -70,109 +70,85 @@ export function useHovered(elSource: WatchSource<HTMLElement | null>) {
   return hovered
 }
 
-/**
- * 监听元素位置变化
- * @param callback
- * @returns
- */
-export function useElementPosition(callback: (rect: DOMRect) => void) {
-  const mutationObserver = ref<MutationObserver | null>(null)
-  const intersectionObserver = ref<IntersectionObserver | null>(null)
-  let lastRect: DOMRect | null = null
-  let rafId: number | null = null
+export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
+  const rect = ref<DOMRect | null>(null)
 
-  /** 使用requestAnimationFrame轮询监听元素位置信息 */
-  const pollPosition = (element: HTMLElement) => {
+  let rafId: number | null = null
+  let lastRect: DOMRect | null = null
+
+  function updateRect(element: HTMLElement) {
+    const newRect = element.getBoundingClientRect()
+    if (
+      !lastRect ||
+      lastRect.top !== newRect.top ||
+      lastRect.left !== newRect.left ||
+      lastRect.width !== newRect.width ||
+      lastRect.height !== newRect.height
+    ) {
+      lastRect = newRect
+      rect.value = newRect
+    }
+  }
+
+  // Use requestAnimationFrame to poll and monitor changes in elements
+  function pollPosition(element: HTMLElement) {
     if (rafId) cancelAnimationFrame(rafId)
     const check = () => {
-      const rect = element.getBoundingClientRect()
-      if (!lastRect || lastRect.top !== rect.top || lastRect.left !== rect.left) {
-        lastRect = rect
-        callback(rect)
-      }
+      updateRect(element)
       rafId = requestAnimationFrame(check)
     }
     rafId = requestAnimationFrame(check)
+    // Returns a function that cancels the poll
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = null
+    }
   }
 
-  /** 开始监听 */
-  const startPositionObserving = (element: HTMLElement | null) => {
-    if (!element) return
-    stopPositionObserving() // 先清除之前的监听
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (!el) return
 
-    // MutationObserver 监听 style/class 变化
-    mutationObserver.value = new MutationObserver(() => {
-      const rect = element.getBoundingClientRect()
-      callback(rect)
-    })
-    mutationObserver.value.observe(element, {
-      attributes: true,
-      attributeFilter: ['style', 'class']
-    })
+      updateRect(el)
 
-    // IntersectionObserver 监听滚动/视口变化
-    intersectionObserver.value = new IntersectionObserver(() => {
-      const rect = element.getBoundingClientRect()
-      callback(rect)
-    })
-    intersectionObserver.value.observe(element)
+      // Use ResizeObserver to monitor size changes
+      const resizeObserver = new ResizeObserver(() => {
+        updateRect(el)
+      })
+      resizeObserver.observe(el)
 
-    // 轮询监听（适用于 transform 变化）
-    pollPosition(element)
-  }
+      // Use MutationObserver to monitor style/class changes
+      const mutationObserver = new MutationObserver(() => {
+        updateRect(el)
+      })
+      mutationObserver.observe(el, {
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      })
 
-  /** 停止监听 */
-  const stopPositionObserving = () => {
-    mutationObserver.value?.disconnect()
-    intersectionObserver.value?.disconnect()
+      // Use IntersectionObserver to monitor scroll/viewport changes
+      const intersectionObserver = new IntersectionObserver(() => {
+        updateRect(el)
+      })
+      intersectionObserver.observe(el)
+
+      // Polling monitoring (capturing changes such as transform)
+      const cancelPoll = pollPosition(el)
+
+      onCleanup(() => {
+        resizeObserver.disconnect()
+        mutationObserver.disconnect()
+        intersectionObserver.disconnect()
+        cancelPoll()
+      })
+    },
+    { immediate: true }
+  )
+
+  onBeforeUnmount(() => {
     if (rafId) cancelAnimationFrame(rafId)
-    mutationObserver.value = null
-    intersectionObserver.value = null
-    rafId = null
-  }
-
-  onBeforeUnmount(() => {
-    stopPositionObserving()
   })
 
-  return {
-    startPositionObserving,
-    stopPositionObserving
-  }
-}
-
-/**
- * 监听元素尺寸变化
- * @param callback
- * @returns
- */
-export function useResizeObserver(callback: (entry: ResizeObserverEntry) => void) {
-  const resizeObserver = ref<ResizeObserver | null>(null)
-
-  /** 开始监听元素尺寸变化 */
-  const startResizeObserving = (element: HTMLElement | null) => {
-    if (!element) return
-    stopResizeObserving() // 先移除旧的监听
-    resizeObserver.value = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        callback(entry)
-      }
-    })
-    resizeObserver.value.observe(element)
-  }
-
-  /** 停止监听 */
-  const stopResizeObserving = () => {
-    resizeObserver.value?.disconnect()
-    resizeObserver.value = null
-  }
-
-  onBeforeUnmount(() => {
-    stopResizeObserving()
-  })
-
-  return {
-    startResizeObserving,
-    stopResizeObserving
-  }
+  return rect
 }

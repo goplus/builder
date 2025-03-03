@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useTag } from '../../utils/tagging'
-import { useResizeObserver, useElementPosition } from '../../utils/dom'
+import { useElementRect } from '../../utils/dom'
 
 type HighlightRect = {
   left: number
@@ -16,39 +16,31 @@ const props = defineProps<{
 }>()
 
 const { getElement } = useTag()
-const { startResizeObserving, stopResizeObserving } = useResizeObserver(updateHighlightRect)
-const { startPositionObserving, stopPositionObserving } = useElementPosition(updateHighlightRect)
 
-const highlightRect = ref<HighlightRect>({
-  left: 0,
-  top: 0,
-  width: 0,
-  height: 0
+const targetElement = computed(() => {
+  return props.visible ? getElement(props.highlightElementPath) : null
 })
+
+const elementRect = useElementRect(targetElement)
 
 const screenWidth = ref(window.innerWidth)
 const screenHeight = ref(window.innerHeight)
 
-const zIndex = 999
 const borderRadius = 10
 
-/** 获取目标元素的真实坐标 */
-function updateHighlightRect() {
-  const element = getElement(props.highlightElementPath)
-  if (element) {
-    const rect = element.getBoundingClientRect()
-    highlightRect.value = {
+const highlightRect = computed<HighlightRect>(() => {
+  const rect = elementRect.value
+  if (rect) {
+    return {
       left: rect.left + window.scrollX - 10,
       top: rect.top + window.scrollY - 10,
       width: rect.width + 20,
       height: rect.height + 20
     }
   }
-}
+  return { left: 0, top: 0, width: 0, height: 0 }
+})
 
-/**
- * 生成带圆角矩形的 Path（SVG 路径）
- */
 function createRoundedRectPath(x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2)
   return `
@@ -65,71 +57,24 @@ function createRoundedRectPath(x: number, y: number, w: number, h: number, r: nu
   `
 }
 
-/**
- * 生成“全屏矩形 + 挖空洞”的组合路径
- * 利用 fill-rule: evenodd 来把洞挖掉
- */
 const svgPath = computed(() => {
-  const x = highlightRect.value.left
-  const y = highlightRect.value.top
-  const w = highlightRect.value.width
-  const h = highlightRect.value.height
-  const r = borderRadius
-
+  const { left, top, width, height } = highlightRect.value
   const outerRect = `M0,0 H${screenWidth.value} V${screenHeight.value} H0 Z`
-
-  const holeRect = createRoundedRectPath(x, y, w, h, r)
-
+  const holeRect = createRoundedRectPath(left, top, width, height, borderRadius)
   return outerRect + ' ' + holeRect
 })
 
-watch(
-  () => props.highlightElementPath,
-  () => {
-    if (props.visible) {
-      updateHighlightRect()
-      const element = getElement(props.highlightElementPath)
-      startResizeObserving(element)
-      startPositionObserving(element)
-    }
-  }
-)
-
-watch(
-  () => props.visible,
-  (newVal) => {
-    if (newVal) {
-      updateHighlightRect()
-      const element = getElement(props.highlightElementPath)
-      startResizeObserving(element)
-      startPositionObserving(element)
-    } else {
-      stopResizeObserving()
-      stopPositionObserving()
-    }
-  }
-)
+function updateScreenSize() {
+  screenWidth.value = window.innerWidth
+  screenHeight.value = window.innerHeight
+}
 
 onMounted(() => {
-  if (props.visible) {
-    updateHighlightRect()
-    const element = getElement(props.highlightElementPath)
-    startPositionObserving(element)
-    startResizeObserving(element)
-  }
-  window.addEventListener('resize', () => {
-    screenWidth.value = window.innerWidth
-    screenHeight.value = window.innerHeight
-  })
+  window.addEventListener('resize', updateScreenSize)
 })
 
 onBeforeUnmount(() => {
-  stopResizeObserving()
-  stopPositionObserving()
-  window.removeEventListener('resize', () => {
-    screenWidth.value = window.innerWidth
-    screenHeight.value = window.innerHeight
-  })
+  window.removeEventListener('resize', updateScreenSize)
 })
 </script>
 
@@ -143,18 +88,12 @@ onBeforeUnmount(() => {
         :viewBox="`0 0 ${screenWidth} ${screenHeight}`"
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="none"
-        :style="{
-          zIndex: zIndex
-        }"
       >
         <path :d="svgPath" fill="rgba(0, 0, 0, 0.5)" fill-rule="evenodd" pointer-events="fill" />
       </svg>
-      <slot
-        :slot-info="{
-          ...highlightRect,
-          zIndex: zIndex
-        }"
-      />
+      <div class="slot-container">
+        <slot :slot-info="highlightRect" />
+      </div>
     </div>
   </Transition>
 </template>
@@ -175,6 +114,23 @@ onBeforeUnmount(() => {
   pointer-events: none;
   width: 100vw;
   height: 100vh;
+  z-index: 9999;
+}
+
+.slot-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  pointer-events: none;
+}
+.slot-container * {
+  pointer-events: auto;
 }
 
 .v-enter-active,
