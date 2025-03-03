@@ -629,6 +629,11 @@ func (r *compileResult) rangeForPos(pos goptoken.Pos) Range {
 	return RangeForGopTokenPosition(r.fset.Position(pos))
 }
 
+// rangeForStartEnd returns the [Range] for the given start and end positions.
+func (r *compileResult) rangeForStartEnd(start, end goptoken.Pos) Range {
+	return RangeForGopTokenStartEnd(r.fset.Position(start), r.fset.Position(end))
+}
+
 // rangeForNode returns the [Range] for the given node.
 func (r *compileResult) rangeForNode(node gopast.Node) Range {
 	return Range{
@@ -970,7 +975,7 @@ func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 			TypesInfo: result.typeInfo,
 			Report: func(d protocol.Diagnostic) {
 				diagnostics = append(diagnostics, Diagnostic{
-					Range:    result.rangeForPos(d.Pos),
+					Range:    result.rangeForStartEnd(d.Pos, d.End),
 					Severity: SeverityError,
 					Message:  d.Message,
 				})
