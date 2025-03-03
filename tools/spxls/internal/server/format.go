@@ -36,7 +36,7 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 		return nil, fmt.Errorf("failed to format spx source file: %w", err)
 	}
 
-	if bytes.Equal(original, formatted) {
+	if bytes.Equal(formatted, original) {
 		return nil, nil // No changes.
 	}
 
@@ -79,7 +79,7 @@ func (s *Server) formatSpx(snapshot *vfs.MapFS, spxFile string) ([]byte, error) 
 		if err != nil {
 			return nil, err
 		}
-		if subFormatted != nil {
+		if subFormatted != nil && !bytes.Equal(subFormatted, formatted) {
 			snapshot = snapshot.WithOverlay(map[string]vfs.MapFile{
 				spxFile: {
 					Content: subFormatted,
@@ -122,8 +122,8 @@ func (s *Server) formatSpxLambda(snapshot *vfs.MapFS, spxFile string) ([]byte, e
 	}
 
 	formatted := formattedBuf.Bytes()
-	if formatted == nil || string(formatted) == "\n" {
-		formatted = []byte{}
+	if len(formatted) == 0 || string(formatted) == "\n" {
+		return []byte{}, nil
 	}
 	return formatted, nil
 }
@@ -231,34 +231,9 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 	sortedDecls = append(sortedDecls, typeDecls...)
 	sortedDecls = append(sortedDecls, constDecls...)
 	if len(varBlocks) > 0 {
-		// Merge multiple var blocks into a single one.
-		firstVarBlock := varBlocks[0]
-		firstVarBlock.Lparen = firstVarBlock.Pos()
-		firstVarBlock.Rparen = varBlocks[len(varBlocks)-1].End()
-		if len(varBlocks) > 1 {
-			for _, varBlock := range varBlocks[1:] {
-				for i, spec := range varBlock.Specs {
-					valueSpec, ok := spec.(*gopast.ValueSpec)
-					if !ok {
-						return nil, fmt.Errorf("unexpected non-value spec in var block: %T", spec)
-					}
-
-					// If this is the first spec in the var block, associate the var block's doc with it.
-					if i == 0 && varBlock.Doc != nil && len(varBlock.Doc.List) > 0 {
-						if valueSpec.Doc == nil {
-							valueSpec.Doc = varBlock.Doc
-						} else {
-							// Merge block doc with existing spec doc.
-							mergedList := append(varBlock.Doc.List, valueSpec.Doc.List...)
-							valueSpec.Doc = &gopast.CommentGroup{List: mergedList}
-						}
-					}
-
-					firstVarBlock.Specs = append(firstVarBlock.Specs, valueSpec)
-				}
-			}
-		}
-		sortedDecls = append(sortedDecls, firstVarBlock)
+		// Add the first var block to reserve the correct position in declaration order.
+		// All var blocks will be merged and processed together later.
+		sortedDecls = append(sortedDecls, varBlocks[0])
 	}
 	sortedDecls = append(sortedDecls, funcDecls...)
 	sortedDecls = append(sortedDecls, overloadFuncDecls...)
@@ -281,36 +256,127 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 		}
 	}
 
-	// Handle declarations and floating comments in order of their position.
-	processDecl := func(decl gopast.Decl) error {
-		startPos := decl.Pos()
-		if doc := getDeclDoc(decl); doc != nil {
-			startPos = doc.Pos()
-		}
-
-		endPos := decl.End()
-		endLine := compileResult.fset.Position(endPos).Line
+	// Find comments that appears on the same line after the given position.
+	findInlineComments := func(pos goptoken.Pos) *gopast.CommentGroup {
+		line := compileResult.fset.Position(pos).Line
 		for _, cg := range astFile.Comments {
-			if compileResult.fset.Position(cg.Pos()).Line != endLine {
+			if compileResult.fset.Position(cg.Pos()).Line != line {
 				continue
 			}
-			if cg.Pos() > endPos {
-				endPos = cg.End()
-				break
+			if cg.Pos() > pos {
+				return cg
 			}
 		}
+		return nil
+	}
 
-		ensureTrailingNewlines(2)
+	// Handle declarations and floating comments in order of their position.
+	processDecl := func(decl gopast.Decl) error {
 		if genDecl, ok := decl.(*gopast.GenDecl); ok && genDecl.Tok == goptoken.VAR {
-			if err := gopfmt.Node(formattedBuf, compileResult.fset, decl); err != nil {
-				return err
+			for i, varBlock := range varBlocks {
+				ensureTrailingNewlines(2)
+
+				var doc []byte
+				if varBlock.Doc != nil && len(varBlock.Doc.List) > 0 {
+					docStart := compileResult.fset.Position(varBlock.Doc.Pos()).Offset
+					docEnd := compileResult.fset.Position(varBlock.Doc.End()).Offset
+					doc = astFile.Code[docStart:docEnd]
+				}
+
+				if doc != nil && varBlock.Lparen.IsValid() && (i > 0 || len(varBlocks) == 1) {
+					formattedBuf.Write(doc)
+					formattedBuf.WriteByte('\n')
+					doc = nil
+				}
+
+				if i == 0 {
+					formattedBuf.WriteString("var (")
+				}
+
+				if doc != nil {
+					if !varBlock.Lparen.IsValid() || len(varBlocks) > 1 {
+						formattedBuf.WriteByte('\n')
+					}
+					formattedBuf.Write(doc)
+					formattedBuf.WriteByte('\n')
+				}
+
+				var bodyStartPos goptoken.Pos
+				if varBlock.Lparen.IsValid() {
+					if cg := findInlineComments(varBlock.Lparen); cg != nil {
+						cgStart := compileResult.fset.Position(cg.Pos()).Offset
+						cgEnd := compileResult.fset.Position(cg.End()).Offset
+						formattedBuf.Write(astFile.Code[cgStart:cgEnd])
+						formattedBuf.WriteByte('\n')
+						if i > 0 {
+							formattedBuf.WriteByte('\n')
+						}
+
+						bodyStartPos = cg.End() + 1
+					} else {
+						bodyStartPos = varBlock.Lparen + 1
+					}
+				} else {
+					bodyStartPos = varBlock.Pos() + goptoken.Pos(len(varBlock.Tok.String())) + 1
+				}
+				var bodyEndPos goptoken.Pos
+				if varBlock.Rparen.IsValid() {
+					bodyEndPos = varBlock.Rparen - 1
+				} else {
+					bodyEndPos = varBlock.End()
+					if cg := findInlineComments(bodyEndPos); cg != nil {
+						bodyEndPos = cg.End()
+					}
+				}
+				bodyStart := compileResult.fset.Position(bodyStartPos).Offset
+				bodyEnd := compileResult.fset.Position(bodyEndPos).Offset
+				formattedBuf.Write(astFile.Code[bodyStart:bodyEnd])
+				formattedBuf.WriteByte('\n')
+
+				var trailingComments []byte
+				if varBlock.Rparen.IsValid() {
+					if cg := findInlineComments(varBlock.Rparen); cg != nil {
+						cgStart := compileResult.fset.Position(cg.Pos()).Offset
+						cgEnd := compileResult.fset.Position(cg.End()).Offset
+						trailingComments = astFile.Code[cgStart:cgEnd]
+					}
+				}
+
+				if i == len(varBlocks)-1 {
+					if i > 0 {
+						formattedBuf.WriteString("\n\t")
+						formattedBuf.Write(trailingComments)
+						formattedBuf.WriteByte('\n')
+						trailingComments = nil
+					}
+					formattedBuf.WriteString(")")
+					if trailingComments != nil {
+						formattedBuf.WriteByte(' ')
+						formattedBuf.Write(trailingComments)
+					}
+				} else if trailingComments != nil {
+					formattedBuf.WriteByte('\n')
+					formattedBuf.Write(trailingComments)
+				}
+				formattedBuf.WriteByte('\n')
 			}
 		} else {
+			startPos := decl.Pos()
+			if doc := getDeclDoc(decl); doc != nil {
+				startPos = doc.Pos()
+			}
+
+			endPos := decl.End()
+			if cg := findInlineComments(endPos); cg != nil {
+				endPos = cg.End()
+			}
+
+			ensureTrailingNewlines(2)
 			start := compileResult.fset.Position(startPos).Offset
 			end := compileResult.fset.Position(endPos).Offset
 			formattedBuf.Write(astFile.Code[start:end])
+			ensureTrailingNewlines(1)
 		}
-		ensureTrailingNewlines(1)
 		return nil
 	}
 
@@ -373,10 +439,10 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 	}
 
 	formatted := formattedBuf.Bytes()
-	if formatted == nil {
-		formatted = []byte{}
+	if len(formatted) == 0 || string(formatted) == "\n" {
+		return []byte{}, nil
 	}
-	return formatted, nil
+	return gopfmt.Source(formatted, true, spxFile)
 }
 
 // getDeclDoc returns the doc comment of a declaration if any.

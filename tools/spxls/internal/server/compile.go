@@ -9,6 +9,7 @@ import (
 	"maps"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -389,14 +390,12 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 	if obj == nil {
 		return nil
 	}
-	pkg := obj.Pkg()
-	if pkg == nil {
-		// Builtin definitions are not in any package.
-		return []SpxDefinition{GetSpxBuiltinDefinition(obj)}
+	if isBuiltinObject(obj) {
+		return []SpxDefinition{GetSpxDefinitionForBuiltinObj(obj)}
 	}
 
 	var pkgDoc *pkgdoc.PkgDoc
-	if pkgPath := pkg.Path(); pkgPath == "main" {
+	if pkgPath := obj.Pkg().Path(); pkgPath == "main" {
 		pkgDoc = r.mainPkgDoc
 	} else {
 		pkgDoc, _ = pkgdata.GetPkgDoc(pkgPath)
@@ -404,11 +403,11 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 
 	switch obj := obj.(type) {
 	case *types.Var:
-		return []SpxDefinition{NewSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForVar(obj, selectorTypeName, r.isDefinedInFirstVarBlock(obj), pkgDoc)}
 	case *types.Const:
-		return []SpxDefinition{NewSpxDefinitionForConst(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForConst(obj, pkgDoc)}
 	case *types.TypeName:
-		return []SpxDefinition{NewSpxDefinitionForType(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForType(obj, pkgDoc)}
 	case *types.Func:
 		if funcDecl, ok := r.mainASTPkgIdentToFuncDecl[r.defIdentFor(obj)]; ok && funcDecl.Shadow {
 			return nil
@@ -419,13 +418,13 @@ func (r *compileResult) spxDefinitionsFor(obj types.Object, selectorTypeName str
 		if funcOverloads := expandGopOverloadableFunc(obj); funcOverloads != nil {
 			defs := make([]SpxDefinition, 0, len(funcOverloads))
 			for _, funcOverload := range funcOverloads {
-				defs = append(defs, NewSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
+				defs = append(defs, GetSpxDefinitionForFunc(funcOverload, selectorTypeName, pkgDoc))
 			}
 			return defs
 		}
-		return []SpxDefinition{NewSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForFunc(obj, selectorTypeName, pkgDoc)}
 	case *types.PkgName:
-		return []SpxDefinition{NewSpxDefinitionForPkg(obj, pkgDoc)}
+		return []SpxDefinition{GetSpxDefinitionForPkg(obj, pkgDoc)}
 	}
 	return nil
 }
@@ -512,6 +511,42 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 		}
 	}
 	return bestRef
+}
+
+// spxImportsAtASTFilePosition returns the import at the given position in the given AST file.
+func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, position Position) *SpxReferencePkg {
+	spxFile := r.nodeFilename(astFile)
+	line := int(position.Line) + 1
+	column := int(position.Character) + 1
+
+	var rpkg *SpxReferencePkg
+
+	for _, imp := range astFile.Imports {
+		nodePos := r.fset.Position(imp.Pos())
+		nodeEnd := r.fset.Position(imp.End())
+		if nodePos.Filename != spxFile ||
+			line != nodePos.Line ||
+			column < nodePos.Column ||
+			column > nodeEnd.Column {
+			continue
+		}
+
+		pkg := imp.Path.Value
+		unquoted, err := strconv.Unquote(pkg)
+		if err != nil {
+			continue
+		}
+		pkgDoc, err := pkgdata.GetPkgDoc(unquoted)
+		if err != nil {
+			continue
+		}
+		rpkg = &SpxReferencePkg{
+			Pkg:     pkgDoc,
+			PkgPath: pkg,
+			Node:    imp,
+		}
+	}
+	return rpkg
 }
 
 // addSpxResourceRef adds an spx resource reference to the compile result.

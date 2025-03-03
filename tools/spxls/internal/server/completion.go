@@ -467,10 +467,10 @@ func (ctx *completionContext) collectGeneral() error {
 
 	// Add other definitions.
 	ctx.itemSet.addSpxDefs(GetSpxPkgDefinitions()...)
-	ctx.itemSet.addSpxDefs(GetSpxBuiltinDefinitions()...)
-	ctx.itemSet.addSpxDefs(SpxGeneralDefinitions...)
+	ctx.itemSet.addSpxDefs(GetBuiltinSpxDefinitions()...)
+	ctx.itemSet.addSpxDefs(GeneralSpxDefinitions...)
 	if ctx.innermostScope == ctx.astFileScope {
-		ctx.itemSet.addSpxDefs(SpxFileScopeDefinitions...)
+		ctx.itemSet.addSpxDefs(FileScopeSpxDefinitions...)
 	}
 
 	return nil
@@ -534,7 +534,7 @@ func (ctx *completionContext) collectDot() error {
 			}
 
 			recvTypeName := ctx.result.selectorTypeNameForIdent(ctx.result.defIdentFor(method))
-			ctx.itemSet.addSpxDefs(NewSpxDefinitionForFunc(method, recvTypeName, ctx.result.mainPkgDoc))
+			ctx.itemSet.addSpxDefs(GetSpxDefinitionForFunc(method, recvTypeName, ctx.result.mainPkgDoc))
 		}
 	} else if named, ok := typ.(*types.Named); ok && isNamedStructType(named) {
 		ctx.itemSet.addSpxDefs(ctx.result.spxDefinitionsForNamedStruct(named)...)
@@ -559,7 +559,7 @@ func (ctx *completionContext) collectPackageMembers(pkg *types.Package) error {
 		}
 	}
 
-	ctx.itemSet.addSpxDefs(GetPkgSpxDefinitions(pkg, pkgDoc)...)
+	ctx.itemSet.addSpxDefs(GetSpxDefinitionsForPkg(pkg, pkgDoc)...)
 	return nil
 }
 
@@ -799,7 +799,7 @@ func (ctx *completionContext) collectStructLit() error {
 
 		selectorTypeName := ctx.result.selectorTypeNameForIdent(ctx.result.defIdentFor(field))
 		forceVar := ctx.result.isDefinedInFirstVarBlock(field)
-		spxDef := NewSpxDefinitionForVar(field, selectorTypeName, forceVar, ctx.result.mainPkgDoc)
+		spxDef := GetSpxDefinitionForVar(field, selectorTypeName, forceVar, ctx.result.mainPkgDoc)
 		spxDef.CompletionItemInsertText = field.Name() + ": ${1:}"
 		spxDef.CompletionItemInsertTextFormat = SnippetTextFormat
 		ctx.itemSet.addSpxDefs(spxDef)
@@ -813,7 +813,7 @@ func (ctx *completionContext) collectSwitchCase() error {
 	if ctx.switchTag == nil {
 		for _, name := range []string{"int", "string", "bool", "error"} {
 			if obj := types.Universe.Lookup(name); obj != nil {
-				ctx.itemSet.addSpxDefs(GetSpxBuiltinDefinition(obj))
+				ctx.itemSet.addSpxDefs(GetSpxDefinitionForBuiltinObj(obj))
 			}
 		}
 		return nil
@@ -848,7 +848,7 @@ func (ctx *completionContext) collectSwitchCase() error {
 		}
 
 		if types.Identical(c.Type(), tv.Type) {
-			ctx.itemSet.addSpxDefs(NewSpxDefinitionForConst(c, pkgDoc))
+			ctx.itemSet.addSpxDefs(GetSpxDefinitionForConst(c, pkgDoc))
 		}
 	}
 	return nil

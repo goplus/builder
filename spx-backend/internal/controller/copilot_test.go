@@ -3,6 +3,7 @@ package controller
 import (
 	"testing"
 
+	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 
 	t.Run("Too many messages", func(t *testing.T) {
 		params := &GenerateMessageParams{
-			Messages: make([]Message, MAX_MESSAGE_COUNT+1),
+			Messages: make([]types.Message, MAX_MESSAGE_COUNT+1),
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -25,9 +26,9 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 
 	t.Run("Invalid message role", func(t *testing.T) {
 		params := &GenerateMessageParams{
-			Messages: []Message{
+			Messages: []types.Message{
 				{
-					Role: Role("invalid"),
+					Role: types.Role("invalid"),
 				},
 			},
 		}
@@ -38,11 +39,11 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 
 	t.Run("Invalid message content type", func(t *testing.T) {
 		params := &GenerateMessageParams{
-			Messages: []Message{
+			Messages: []types.Message{
 				{
-					Role: RoleUser,
-					Content: Content{
-						Type: ContentType("invalid"),
+					Role: types.RoleUser,
+					Content: types.Content{
+						Type: types.ContentType("invalid"),
 					},
 				},
 			},
@@ -54,11 +55,11 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 
 	t.Run("Invalid message empty content text", func(t *testing.T) {
 		params := &GenerateMessageParams{
-			Messages: []Message{
+			Messages: []types.Message{
 				{
-					Role: RoleUser,
-					Content: Content{
-						Type: ContentTypeText,
+					Role: types.RoleUser,
+					Content: types.Content{
+						Type: types.ContentTypeText,
 					},
 				},
 			},
@@ -70,12 +71,12 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 
 	t.Run("Invalid message too long content text", func(t *testing.T) {
 		params := &GenerateMessageParams{
-			Messages: []Message{
+			Messages: []types.Message{
 				{
-					Role: RoleUser,
-					Content: Content{
-						Type: ContentTypeText,
-						Text: "a" + string(make([]byte, MAX_CONTENT_TEXT_LENGTH)),
+					Role: types.RoleUser,
+					Content: types.Content{
+						Type: types.ContentTypeText,
+						Text: "a" + string(make([]byte, types.MAX_CONTENT_TEXT_LENGTH)),
 					},
 				},
 			},

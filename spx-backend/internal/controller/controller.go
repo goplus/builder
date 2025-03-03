@@ -3,17 +3,18 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	_ "image/png"
 	"io/fs"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
-	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/joho/godotenv"
@@ -38,11 +39,11 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db              *gorm.DB
-	kodo            *kodoConfig
-	aigcClient      *aigc.AigcClient
-	casdoorClient   casdoorClient
-	anthropicClient *anthropic.Client
+	db            *gorm.DB
+	kodo          *kodoConfig
+	aigcClient    *aigc.AigcClient
+	casdoorClient casdoorClient
+	copilot       copilot.AICopilot
 }
 
 // New creates a new controller.
@@ -65,17 +66,35 @@ func New(ctx context.Context) (*Controller, error) {
 	kodoConfig := newKodoConfig(logger)
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
-	anthropicClient := anthropic.NewClient(
-		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
-		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
-	)
+
+	var cpt copilot.AICopilot
+	var provider = types.Provider(mustEnv(logger, "COPILOT_PROVIDER"))
+	if provider == types.Qiniu {
+		cpt, err = copilot.NewCopilot(&copilot.Config{
+			Provider:     provider,
+			QiniuAPIKey:  mustEnv(logger, "QINIU_API_KEY"),
+			QiniuBaseURL: mustEnv(logger, "QINIU_ENDPOINT"),
+		})
+	} else if provider == types.Anthropic {
+		cpt, err = copilot.NewCopilot(&copilot.Config{
+			Provider:         provider,
+			AnthropicAPIKey:  mustEnv(logger, "ANTHROPIC_API_KEY"),
+			AnthropicBaseURL: mustEnv(logger, "ANTHROPIC_ENDPOINT"),
+		})
+	} else {
+		err = fmt.Errorf(" unknown provider: %v", provider)
+	}
+	if err != nil {
+		logger.Printf("failed to create copilot: %v", err)
+		return nil, err
+	}
 
 	return &Controller{
-		db:              db,
-		kodo:            kodoConfig,
-		aigcClient:      aigcClient,
-		casdoorClient:   casdoorClient,
-		anthropicClient: anthropicClient,
+		db:            db,
+		kodo:          kodoConfig,
+		aigcClient:    aigcClient,
+		casdoorClient: casdoorClient,
+		copilot:       cpt,
 	}, nil
 }
 
