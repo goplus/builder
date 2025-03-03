@@ -479,6 +479,38 @@ onTouchStart ["MySprite"], => {}
 		require.Nil(t, hover)
 	})
 
+	t.Run("ImportsAtASTFilePosition", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+import (
+	"fmt"
+	"image"
+)
+
+fmt.Println("Hello, World!")
+`),
+		}), nil)
+
+		importHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 2, Character: 1},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, importHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "Package fmt implements formatted I/O with functions analogous to C's printf and scanf.",
+			},
+			Range: Range{
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 6},
+			},
+		}, importHover)
+	})
+
 	t.Run("Append", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`

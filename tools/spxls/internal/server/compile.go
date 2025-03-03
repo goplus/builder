@@ -8,6 +8,7 @@ import (
 	"maps"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -506,6 +507,42 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 		}
 	}
 	return bestRef
+}
+
+// spxImportsAtASTFilePosition returns the import at the given position in the given AST file.
+func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, position Position) *SpxReferencePkg {
+	spxFile := r.nodeFilename(astFile)
+	line := int(position.Line) + 1
+	column := int(position.Character) + 1
+
+	var rpkg *SpxReferencePkg
+
+	for _, imp := range astFile.Imports {
+		nodePos := r.fset.Position(imp.Pos())
+		nodeEnd := r.fset.Position(imp.End())
+		if nodePos.Filename != spxFile ||
+			line != nodePos.Line ||
+			column < nodePos.Column ||
+			column > nodeEnd.Column {
+			continue
+		}
+
+		pkg := imp.Path.Value
+		unquoted, err := strconv.Unquote(pkg)
+		if err != nil {
+			continue
+		}
+		pkgDoc, err := pkgdata.GetPkgDoc(unquoted)
+		if err != nil {
+			continue
+		}
+		rpkg = &SpxReferencePkg{
+			Pkg:     pkgDoc,
+			PkgPath: pkg,
+			Node:    imp,
+		}
+	}
+	return rpkg
 }
 
 // addSpxResourceRef adds an spx resource reference to the compile result.
