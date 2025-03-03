@@ -31,6 +31,26 @@ export class Client {
     return resp.json()
   })
 
+  requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
+    const reader = resp.body?.getReader()
+    if (!reader) throw new Error('Response body is null')
+
+    try {
+      const decoder = new TextDecoder()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        yield decoder.decode(value, { stream: true })
+      }
+    } finally {
+      reader.releaseLock()
+    }
+  })
+
+  async postTextStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestTextStream(path, payload, { ...options, method: 'POST' })
+  }
+
   get(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
     return this.request(path, null, { ...options, method: 'GET' })
@@ -47,32 +67,5 @@ export class Client {
   delete(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
     return this.request(path, null, { ...options, method: 'DELETE' })
-  }
-
-  async postStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    const response = await this.request(path, payload, { 
-      ...options, 
-      method: 'POST',
-    }) as Response
-    
-    if (!response.ok) {
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
-      if (reader) {
-        const { value } = await reader.read()
-        const errorText = decoder.decode(value)
-        try {
-          const errorBody = JSON.parse(errorText)
-          if (isApiExceptionPayload(errorBody)) {
-            throw new ApiException(errorBody.code, errorBody.msg)
-          }
-        } catch {
-          throw new Error('Stream request failed')
-        }
-      }
-      throw new Error('Stream request failed')
-    }
-    
-    return response
   }
 }

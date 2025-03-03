@@ -128,15 +128,13 @@ ${codeInfoText}
     }
   }
 
-  async getChatCompletion(
+  async *getChatCompletion(
     ctx: ChatContext, 
-    chat: Chat,
-    options?: {
-      onChunk?: (chunk: BasicMarkdownString) => void
-    }
-  ): Promise<BasicMarkdownString> {
+    chat: Chat
+  ): AsyncIterableIterator<string> {
     const messages = [this.makeContextMessage(ctx)]
     const toSkip = chat.messages.length - maxChatMessageCount
+    
     // skip chat messages in range `[1, toSkip]`
     chat.messages.forEach((message, i) => {
       if (i === 0) {
@@ -146,31 +144,16 @@ ${codeInfoText}
       }
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
-  
-    if (!options?.onChunk) {
-      // Non-streaming mode
-      const message = await generateMessage(messages, ctx.signal)
-      return makeBasicMarkdownString(message.content.text)
-    }
 
-    console.log('Streaming mode')
-    // Streaming mode
-    return new Promise((resolve, reject) => {
-      let accumulatedText = ''
-      
-      generateStreamMessage(messages, {
-        signal: ctx.signal,
-        onChunk: (message) => {
-          accumulatedText = message.content.text
-          console.log(accumulatedText)
-          options.onChunk?.(makeBasicMarkdownString(accumulatedText))
-        }
-      })
-      .then(() => {
-        resolve(makeBasicMarkdownString(accumulatedText))
-      })
-      .catch(reject)
+    // Use generateStreamMessage directly
+    const stream = await generateStreamMessage(messages, {
+      signal: ctx.signal
     })
+
+    // Forward each chunk from the stream
+    for await (const chunk of stream) {
+      yield chunk
+    }
   }
 }
 

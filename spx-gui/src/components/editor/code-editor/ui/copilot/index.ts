@@ -100,11 +100,8 @@ export type ChatContext = BaseContext & {
 export interface ICopilot extends Disposable {
   getChatCompletion(
     ctx: ChatContext, 
-    chat: Chat,
-    options?: {
-      onChunk?: (chunk: BasicMarkdownString) => void
-    }
-  ): Promise<BasicMarkdownString>
+    chat: Chat
+  ): AsyncIterableIterator<string>
 }
 
 export enum RoundState {
@@ -229,7 +226,7 @@ export class CopilotController extends Disposable {
 
     const currentRound = this.ensureCurrentRound()
     try {
-      const answer = await this.copilot.getChatCompletion(
+      const stream = await this.copilot.getChatCompletion(
         {
           textDocument,
           openedTextDocuments: [this.ui.mainTextDocument!, ...this.ui.tempTextDocuments],
@@ -238,16 +235,17 @@ export class CopilotController extends Disposable {
           signal: currentRound.ctrl.signal
         },
         this.ensureChat(),
-        {
-          onChunk: (chunk) => {
-            // Update the current round's answer as chunks arrive
-            currentRound.answer = chunk
-            // Keep the loading state while streaming
-            currentRound.state = RoundState.Loading
-          }
-        }
       )
-      currentRound.answer = answer
+      let accumulatedText = ''
+      for await (const chunk of stream) {
+        accumulatedText += chunk
+        // Update the current round's answer as chunks arrive
+        currentRound.answer = makeBasicMarkdownString(accumulatedText)
+        // Keep the loading state while streaming
+        currentRound.state = RoundState.Loading
+      }
+
+      // Set final state once streaming is complete
       currentRound.state = RoundState.Completed
     } catch (e) {
       if (e instanceof Cancelled) {
