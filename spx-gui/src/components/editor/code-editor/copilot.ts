@@ -1,6 +1,6 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
-import { generateMessage, generateStreamMessage, type Message } from '@/apis/copilot'
+import { generateStreamMessage, type Message } from '@/apis/copilot'
 import { Project } from '@/models/project'
 import type { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
@@ -10,8 +10,6 @@ import type { Animation } from '@/models/animation'
 import type { Backdrop } from '@/models/backdrop'
 import type { Chat, ChatContext, ChatMessage, ICopilot } from './ui/code-editor-ui'
 import {
-  makeBasicMarkdownString,
-  type BasicMarkdownString,
   textDocumentId2CodeFileName,
   isTextDocumentStageCode,
   type Position,
