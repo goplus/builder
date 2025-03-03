@@ -98,10 +98,7 @@ export type ChatContext = BaseContext & {
 }
 
 export interface ICopilot extends Disposable {
-  getChatCompletion(
-    ctx: ChatContext, 
-    chat: Chat
-  ): AsyncIterableIterator<string>
+  getChatCompletion(ctx: ChatContext, chat: Chat): AsyncIterableIterator<string>
 }
 
 export enum RoundState {
@@ -234,15 +231,13 @@ export class CopilotController extends Disposable {
           selection: this.ui.selection,
           signal: currentRound.ctrl.signal
         },
-        this.ensureChat(),
+        this.ensureChat()
       )
       let accumulatedText = ''
       for await (const chunk of stream) {
         accumulatedText += chunk
         // Update the current round's answer as chunks arrive
         currentRound.answer = makeBasicMarkdownString(accumulatedText)
-        // Keep the loading state while streaming
-        currentRound.state = RoundState.Loading
       }
 
       // Set final state once streaming is complete

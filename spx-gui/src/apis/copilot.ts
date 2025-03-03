@@ -25,25 +25,20 @@ export async function* generateStreamMessage(
   }
 ): AsyncIterableIterator<string> {
   try {
-    const stream = await client.requestTextStream(
+    const stream = (await client.postTextStream(
       '/copilot/stream/message',
       { messages },
       {
-        method: 'POST',
         timeout: 30 * 1000,
-        signal: options?.signal,
+        signal: options?.signal
       }
-    ) as AsyncIterableIterator<string>
+    )) as AsyncIterableIterator<string>
 
     for await (const chunk of stream) {
-      if (chunk.trim()) {
-        yield chunk
-      }
+      yield chunk
     }
   } catch (error) {
     console.error('Streaming error:', error)
     throw error
   }
 }
-
-

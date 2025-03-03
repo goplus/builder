@@ -31,7 +31,7 @@ export class Client {
     return resp.json()
   })
 
-  requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
+  private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
     const reader = resp.body?.getReader()
     if (!reader) throw new Error('Response body is null')
 

@@ -126,13 +126,10 @@ ${codeInfoText}
     }
   }
 
-  async *getChatCompletion(
-    ctx: ChatContext, 
-    chat: Chat
-  ): AsyncIterableIterator<string> {
+  async *getChatCompletion(ctx: ChatContext, chat: Chat): AsyncIterableIterator<string> {
     const messages = [this.makeContextMessage(ctx)]
     const toSkip = chat.messages.length - maxChatMessageCount
-    
+
     // skip chat messages in range `[1, toSkip]`
     chat.messages.forEach((message, i) => {
       if (i === 0) {

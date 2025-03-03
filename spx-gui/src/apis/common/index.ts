@@ -10,7 +10,7 @@ export function setTokenProvider(provider: TokenProvider) {
   tokenProvider = provider
 }
 
-// First, update the ResponseHandler type to support both Promise and AsyncIterableIterator
+// ResponseHandler is used to handle the response from the server.
 export type ResponseHandler<T = unknown> = (resp: Response) => Promise<T> | AsyncIterableIterator<T>
 
 export type RequestOptions = {
