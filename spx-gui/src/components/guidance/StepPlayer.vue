@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ListFilter } from '@/models/list-filter'
-import { Step } from '@/components/guidance/common/types'
+import type { Step } from '@/apis/guidance'
 
 const props = defineProps<{
   step: Step
