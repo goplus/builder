@@ -63,7 +63,7 @@ type (
 		Error *APIError `json:"error,omitempty"` // Error information if request failed
 	}
 
-	// ChatCompletionStream 流式响应结构体
+	// ChatCompletionStream represents the API stream response structure
 	ChatCompletionStream struct {
 		Choices []struct {
 			Delta struct {
