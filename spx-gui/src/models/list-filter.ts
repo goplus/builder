@@ -1,3 +1,4 @@
+import type { DefinitionIdentifier } from '@/components/editor/code-editor/common'
 import { reactive } from 'vue'
 
 export type ListFilterType =
@@ -13,7 +14,7 @@ export type ListFilterType =
 export type ListFilterState = {
   apiReference: {
     enabled: boolean
-    items: string[]
+    items: DefinitionIdentifier[]
   }
   asset: {
     enabled: boolean
@@ -49,12 +50,15 @@ function createDefaultFilter(): { enabled: boolean; items: string[] } {
   return { enabled: false, items: [] }
 }
 
+function createApiReferenceFilter(): { enabled: boolean; items: DefinitionIdentifier[] } {
+  return { enabled: false, items: [] }
+}
 export class ListFilter {
   private state: ListFilterState
 
   constructor() {
     this.state = {
-      apiReference: createDefaultFilter(),
+      apiReference: createApiReferenceFilter(),
       asset: createDefaultFilter(),
       sprite: createDefaultFilter(),
       sound: createDefaultFilter(),
@@ -78,7 +82,7 @@ export class ListFilter {
 
   reset() {
     this.state = {
-      apiReference: createDefaultFilter(),
+      apiReference: createApiReferenceFilter(),
       asset: createDefaultFilter(),
       sprite: createDefaultFilter(),
       sound: createDefaultFilter(),
