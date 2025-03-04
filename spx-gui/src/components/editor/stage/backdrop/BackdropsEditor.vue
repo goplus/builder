@@ -1,7 +1,7 @@
 <template>
   <EditorList color="stage" :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })">
     <BackdropItem
-      v-for="backdrop in stage.backdrops"
+      v-for="backdrop in backdrops"
       :key="backdrop.id"
       :backdrop="backdrop"
       :selectable="{ selected: selected?.id === backdrop.id }"
@@ -37,8 +37,21 @@ import BackdropItem from './BackdropItem.vue'
 import BackdropDetail from './BackdropDetail.vue'
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
+
 const stage = computed(() => editorCtx.project.stage)
 const selected = computed(() => stage.value.defaultBackdrop)
+
+const backdrops = computed(() => {
+  const allBackdrops = editorCtx.project.stage.backdrops
+  const { enabled, items } = listFilter.getFilter('backdrop')
+
+  if (enabled && items.length > 0) {
+    return allBackdrops.filter((backdrop) => items.includes(backdrop.id))
+  }
+
+  return allBackdrops
+})
 
 function handleSelect(backdrop: Backdrop) {
   const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
