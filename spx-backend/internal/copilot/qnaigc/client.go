@@ -2,6 +2,7 @@
 package qnaigc
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -60,6 +61,15 @@ type (
 			TotalTokens      int `json:"total_tokens"`      // Total number of tokens used
 		} `json:"usage"`
 		Error *APIError `json:"error,omitempty"` // Error information if request failed
+	}
+
+	// ChatCompletionStream represents the API stream response structure
+	ChatCompletionStream struct {
+		Choices []struct {
+			Delta struct {
+				Content string `json:"content"`
+			} `json:"delta"`
+		} `json:"choices"`
 	}
 
 	// APIError represents the error response from the API
@@ -131,6 +141,48 @@ func (c *Client) CreateChatCompletion(
 	}
 
 	return resp, err
+}
+
+// StreamChatCompletion sends a chat completion request to the API
+// ctx: Context for the request
+// req: The chat completion request parameters
+// Returns the API response or an error
+func (c *Client) StreamChatCompletion(
+	ctx context.Context,
+	req *ChatCompletionRequest,
+) (io.ReadCloser, error) {
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request failed: %w", err)
+	}
+
+	endpoint := c.baseURL + "/chat/completions"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("create request failed: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", contentTypeJSON)
+	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
+	httpReq.Header.Set("Accept", "text/event-stream")
+	httpReq.Header.Set("User-Agent", c.userAgent)
+
+	httpResp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP request failed: %w", err)
+	}
+
+	if httpResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(httpResp.Body)
+		httpResp.Body.Close()
+		return nil, fmt.Errorf("API error: %s | %s", httpResp.Status, body)
+	}
+
+	return &StreamReader{
+		body:    httpResp.Body,
+		scanner: bufio.NewScanner(httpResp.Body),
+		buffer:  bytes.NewBuffer(nil),
+	}, nil
 }
 
 // sendRequest handles the actual HTTP request to the API

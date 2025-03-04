@@ -476,7 +476,12 @@ onTouchStart ["MySprite"], => {}
 			},
 		})
 		require.NoError(t, err)
-		require.Nil(t, hover)
+		require.NotNil(t, hover)
+		assert.Contains(t, hover.Contents.Value, `def-id="gop:builtin?int"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 0, Character: 6},
+			End:   Position{Line: 0, Character: 9},
+		}, hover.Range)
 	})
 
 	t.Run("ImportsAtASTFilePosition", func(t *testing.T) {
@@ -569,5 +574,54 @@ echo num
 			Start: Position{Line: 2, Character: 0},
 			End:   Position{Line: 2, Character: 4},
 		}, hover2.Range)
+	})
+
+	t.Run("WithNonENCharacters", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+onStart => {
+	var 中文 []int
+	中文 = append(中文, 1)
+	println "非英文", 中文
+}
+`),
+		}), nil)
+
+		hover1, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 3, Character: 15},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, hover1)
+		assert.Contains(t, hover1.Contents.Value, `def-id="gop:main?%E4%B8%AD%E6%96%87"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 3, Character: 13},
+			End:   Position{Line: 3, Character: 15},
+		}, hover1.Range)
+
+		hover2, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 3, Character: 18},
+			},
+		})
+		require.NoError(t, err)
+		require.Nil(t, hover2)
+
+		hover3, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 4, Character: 18},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, hover3)
+		assert.Contains(t, hover3.Contents.Value, `def-id="gop:main?%E4%B8%AD%E6%96%87"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 4, Character: 16},
+			End:   Position{Line: 4, Character: 18},
+		}, hover3.Range)
 	})
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/types"
@@ -208,18 +209,15 @@ func (r *compileResult) identsAtASTFileLine(astFile *gopast.File, line int) (ide
 
 // identAtASTFilePosition returns the identifier at the given position in the
 // given AST file.
-func (r *compileResult) identAtASTFilePosition(astFile *gopast.File, position Position) *gopast.Ident {
-	line := int(position.Line) + 1
-	column := int(position.Character) + 1
-
+func (r *compileResult) identAtASTFilePosition(astFile *gopast.File, position goptoken.Position) *gopast.Ident {
 	var (
 		bestIdent    *gopast.Ident
 		bestNodeSpan int
 	)
-	for _, ident := range r.identsAtASTFileLine(astFile, line) {
+	for _, ident := range r.identsAtASTFileLine(astFile, position.Line) {
 		identPos := r.fset.Position(ident.Pos())
 		identEnd := r.fset.Position(ident.End())
-		if column < identPos.Column || column > identEnd.Column {
+		if position.Column < identPos.Column || position.Column > identEnd.Column {
 			continue
 		}
 
@@ -484,11 +482,7 @@ func (r *compileResult) isInSpxEventHandler(pos goptoken.Pos) bool {
 
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
-func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) *SpxResourceRef {
-	spxFile := r.nodeFilename(astFile)
-	line := int(position.Line) + 1
-	column := int(position.Character) + 1
-
+func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position goptoken.Position) *SpxResourceRef {
 	var (
 		bestRef      *SpxResourceRef
 		bestNodeSpan int
@@ -496,10 +490,10 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 	for _, ref := range r.spxResourceRefs {
 		nodePos := r.fset.Position(ref.Node.Pos())
 		nodeEnd := r.fset.Position(ref.Node.End())
-		if nodePos.Filename != spxFile ||
-			line != nodePos.Line ||
-			column < nodePos.Column ||
-			column > nodeEnd.Column {
+		if nodePos.Filename != position.Filename ||
+			position.Line != nodePos.Line ||
+			position.Column < nodePos.Column ||
+			position.Column > nodeEnd.Column {
 			continue
 		}
 
@@ -513,39 +507,32 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 }
 
 // spxImportsAtASTFilePosition returns the import at the given position in the given AST file.
-func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, position Position) *SpxReferencePkg {
-	spxFile := r.nodeFilename(astFile)
-	line := int(position.Line) + 1
-	column := int(position.Character) + 1
-
-	var rpkg *SpxReferencePkg
-
+func (r *compileResult) spxImportsAtASTFilePosition(astFile *gopast.File, position goptoken.Position) *SpxReferencePkg {
 	for _, imp := range astFile.Imports {
 		nodePos := r.fset.Position(imp.Pos())
 		nodeEnd := r.fset.Position(imp.End())
-		if nodePos.Filename != spxFile ||
-			line != nodePos.Line ||
-			column < nodePos.Column ||
-			column > nodeEnd.Column {
+		if nodePos.Filename != position.Filename ||
+			position.Line != nodePos.Line ||
+			position.Column < nodePos.Column ||
+			position.Column > nodeEnd.Column {
 			continue
 		}
 
-		pkg := imp.Path.Value
-		unquoted, err := strconv.Unquote(pkg)
+		pkg, err := strconv.Unquote(imp.Path.Value)
 		if err != nil {
 			continue
 		}
-		pkgDoc, err := pkgdata.GetPkgDoc(unquoted)
+		pkgDoc, err := pkgdata.GetPkgDoc(pkg)
 		if err != nil {
 			continue
 		}
-		rpkg = &SpxReferencePkg{
+		return &SpxReferencePkg{
 			Pkg:     pkgDoc,
 			PkgPath: pkg,
 			Node:    imp,
 		}
 	}
-	return rpkg
+	return nil
 }
 
 // addSpxResourceRef adds an spx resource reference to the compile result.
@@ -624,22 +611,84 @@ func (r *compileResult) nodeDocumentURI(node gopast.Node) DocumentURI {
 	return r.posDocumentURI(node.Pos())
 }
 
+// fromPosition converts a [goptoken.Position] to a protocol [Position].
+func (r *compileResult) fromPosition(astFile *gopast.File, position goptoken.Position) Position {
+	tokenFile := r.fset.File(astFile.Pos())
+
+	line := position.Line
+	lineStart := int(tokenFile.LineStart(line))
+	relLineStart := lineStart - tokenFile.Base()
+	lineContent := astFile.Code[relLineStart : relLineStart+position.Column]
+	utf16Offset := utf8OffsetToUTF16(string(lineContent), position.Column-1)
+
+	return Position{
+		Line:      uint32(position.Line - 1),
+		Character: uint32(utf16Offset),
+	}
+}
+
+// toPosition converts a protocol [Position] to a [goptoken.Position].
+func (r *compileResult) toPosition(astFile *gopast.File, position Position) goptoken.Position {
+	tokenFile := r.fset.File(astFile.Pos())
+
+	line := min(int(position.Line)+1, tokenFile.LineCount())
+	lineStart := int(tokenFile.LineStart(line))
+	relLineStart := lineStart - tokenFile.Base()
+	lineContent := astFile.Code[relLineStart:]
+	if i := bytes.IndexByte(lineContent, '\n'); i >= 0 {
+		lineContent = lineContent[:i]
+	}
+	utf8Offset := utf16OffsetToUTF8(string(lineContent), int(position.Character))
+	column := utf8Offset + 1
+
+	return goptoken.Position{
+		Filename: tokenFile.Name(),
+		Offset:   relLineStart + utf8Offset,
+		Line:     line,
+		Column:   column,
+	}
+}
+
+// posAt returns the [goptoken.Pos] of the given position in the given AST file.
+func (r *compileResult) posAt(astFile *gopast.File, position Position) goptoken.Pos {
+	tokenFile := r.fset.File(astFile.Pos())
+	if int(position.Line) > tokenFile.LineCount()-1 {
+		return goptoken.Pos(tokenFile.Base() + tokenFile.Size()) // EOF
+	}
+	return tokenFile.Pos(r.toPosition(astFile, position).Offset)
+}
+
+// rangeForASTFilePosition returns a [Range] for the given [goptoken.Position]
+// in the given AST file.
+func (r *compileResult) rangeForASTFilePosition(astFile *gopast.File, position goptoken.Position) Range {
+	p := r.fromPosition(astFile, position)
+	return Range{Start: p, End: p}
+}
+
 // rangeForPos returns the [Range] for the given position.
 func (r *compileResult) rangeForPos(pos goptoken.Pos) Range {
-	return RangeForGopTokenPosition(r.fset.Position(pos))
+	return r.rangeForASTFilePosition(r.posASTFile(pos), r.fset.Position(pos))
+}
+
+// rangeForASTFileNode returns the [Range] for the given node in the given AST file.
+func (r *compileResult) rangeForASTFileNode(astFile *gopast.File, node gopast.Node) Range {
+	return Range{
+		Start: r.fromPosition(astFile, r.fset.Position(node.Pos())),
+		End:   r.fromPosition(astFile, r.fset.Position(node.End())),
+	}
 }
 
 // rangeForStartEnd returns the [Range] for the given start and end positions.
-func (r *compileResult) rangeForStartEnd(start, end goptoken.Pos) Range {
-	return RangeForGopTokenStartEnd(r.fset.Position(start), r.fset.Position(end))
+func (r *compileResult) rangeForStartEnd(astFile *gopast.File, start, end goptoken.Pos) Range {
+	return Range{
+		Start: r.fromPosition(astFile, r.fset.Position(start)),
+		End:   r.fromPosition(astFile, r.fset.Position(end)),
+	}
 }
 
 // rangeForNode returns the [Range] for the given node.
 func (r *compileResult) rangeForNode(node gopast.Node) Range {
-	return Range{
-		Start: FromGopTokenPosition(r.fset.Position(node.Pos())),
-		End:   FromGopTokenPosition(r.fset.Position(node.End())),
-	}
+	return r.rangeForASTFileNode(r.nodeASTFile(node), node)
 }
 
 // locationForPos returns the [Location] for the given position.
@@ -763,24 +812,24 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 		}()
 		if err != nil {
 			var (
-				parseErr gopscanner.ErrorList
-				codeErr  *gogen.CodeError
+				errorList gopscanner.ErrorList
+				codeError *gogen.CodeError
 			)
-			if errors.As(err, &parseErr) {
+			if errors.As(err, &errorList) {
 				// Handle parse errors.
-				for _, e := range parseErr {
+				for _, e := range errorList {
 					result.addDiagnostics(documentURI, Diagnostic{
 						Severity: SeverityError,
-						Range:    RangeForGopTokenPosition(e.Pos),
+						Range:    result.rangeForASTFilePosition(astFile, e.Pos),
 						Message:  e.Msg,
 					})
 				}
-			} else if errors.As(err, &codeErr) {
+			} else if errors.As(err, &codeError) {
 				// Handle code generation errors.
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
-					Range:    result.rangeForPos(codeErr.Pos),
-					Message:  codeErr.Error(),
+					Range:    result.rangeForPos(codeError.Pos),
+					Message:  codeError.Error(),
 				})
 			} else {
 				// Handle unknown errors (including recovered panics).
@@ -796,7 +845,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 		if astFile.Name.Name != "main" {
 			result.addDiagnostics(documentURI, Diagnostic{
 				Severity: SeverityError,
-				Range:    result.rangeForNode(astFile.Name),
+				Range:    result.rangeForASTFileNode(astFile, astFile.Name),
 				Message:  "package name must be main",
 			})
 			continue
@@ -844,7 +893,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 					position := typeErr.Fset.Position(typeErr.Pos)
 					result.addDiagnosticsForSpxFile(position.Filename, Diagnostic{
 						Severity: SeverityError,
-						Range:    RangeForGopTokenPosition(position),
+						Range:    result.rangeForPos(typeErr.Pos),
 						Message:  typeErr.Msg,
 					})
 				}
@@ -975,7 +1024,7 @@ func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
 			TypesInfo: result.typeInfo,
 			Report: func(d protocol.Diagnostic) {
 				diagnostics = append(diagnostics, Diagnostic{
-					Range:    result.rangeForStartEnd(d.Pos, d.End),
+					Range:    result.rangeForStartEnd(astFile, d.Pos, d.End),
 					Severity: SeverityError,
 					Message:  d.Message,
 				})

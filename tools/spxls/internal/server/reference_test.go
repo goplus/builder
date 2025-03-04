@@ -26,7 +26,7 @@ onStart => {
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
-		mainSpxMySpriteDef, err := s.textDocumentReferences(&ReferenceParams{
+		mainSpxMySpriteRef, err := s.textDocumentReferences(&ReferenceParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 				Position:     Position{Line: 2, Character: 2},
@@ -36,23 +36,23 @@ onStart => {
 			},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainSpxMySpriteDef)
-		require.Len(t, mainSpxMySpriteDef, 3)
-		assert.Contains(t, mainSpxMySpriteDef, Location{
+		require.NotNil(t, mainSpxMySpriteRef)
+		require.Len(t, mainSpxMySpriteRef, 3)
+		assert.Contains(t, mainSpxMySpriteRef, Location{
 			URI: "file:///main.spx",
 			Range: Range{
 				Start: Position{Line: 2, Character: 1},
 				End:   Position{Line: 2, Character: 9},
 			},
 		})
-		assert.Contains(t, mainSpxMySpriteDef, Location{
+		assert.Contains(t, mainSpxMySpriteRef, Location{
 			URI: "file:///main.spx",
 			Range: Range{
 				Start: Position{Line: 4, Character: 0},
 				End:   Position{Line: 4, Character: 8},
 			},
 		})
-		assert.Contains(t, mainSpxMySpriteDef, Location{
+		assert.Contains(t, mainSpxMySpriteRef, Location{
 			URI: "file:///MySprite.spx",
 			Range: Range{
 				Start: Position{Line: 2, Character: 1},
@@ -60,7 +60,7 @@ onStart => {
 			},
 		})
 
-		mainSpxTurnDef, err := s.textDocumentReferences(&ReferenceParams{
+		mainSpxTurnRef, err := s.textDocumentReferences(&ReferenceParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 				Position:     Position{Line: 4, Character: 9},
@@ -70,16 +70,16 @@ onStart => {
 			},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mainSpxTurnDef)
-		require.Len(t, mainSpxTurnDef, 2)
-		assert.Contains(t, mainSpxTurnDef, Location{
+		require.NotNil(t, mainSpxTurnRef)
+		require.Len(t, mainSpxTurnRef, 2)
+		assert.Contains(t, mainSpxTurnRef, Location{
 			URI: "file:///main.spx",
 			Range: Range{
 				Start: Position{Line: 4, Character: 9},
 				End:   Position{Line: 4, Character: 13},
 			},
 		})
-		assert.Contains(t, mainSpxTurnDef, Location{
+		assert.Contains(t, mainSpxTurnRef, Location{
 			URI: "file:///MySprite.spx",
 			Range: Range{
 				Start: Position{Line: 2, Character: 10},
@@ -100,6 +100,14 @@ onStart => {
 			},
 		})
 		require.NoError(t, err)
-		require.Nil(t, refs)
+		require.NotNil(t, refs)
+		require.Len(t, refs, 1)
+		assert.Contains(t, refs, Location{
+			URI: "file:///main.spx",
+			Range: Range{
+				Start: Position{Line: 0, Character: 6},
+				End:   Position{Line: 0, Character: 9},
+			},
+		})
 	})
 }

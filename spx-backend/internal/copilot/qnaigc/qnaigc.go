@@ -3,6 +3,7 @@ package qnaigc
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
@@ -105,4 +106,50 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 			},
 		},
 	}, nil
+}
+
+// StreamMessage processes a conversation request with the Qiniu API.
+// ctx: Context for request cancellation and deadlines
+// params: Parameters for the conversation request
+// Returns:
+// - A reader for the streaming response
+// - error: Returns API error or processing error if any occurs
+func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+	// Convert role types to Qiniu compatible format
+	messages := make([]Message, 0, len(params.Messages))
+	// Add system prompt message
+	if params.System.Text != "" {
+		messages = append(messages, NewSystemMessage(params.System.Text))
+	}
+	for _, msg := range params.Messages {
+		var message Message
+		if msg.Role == types.RoleUser {
+			message = NewUserMessage(msg.Content.Text)
+		} else if msg.Role == types.RoleCopilot {
+			message = NewAssistantMessage(msg.Content.Text)
+		}
+		messages = append(messages, message)
+	}
+
+	// Set default model if not provided
+	if params.Model == "" {
+		params.Model = defaultModel
+	}
+
+	// Create API request payload
+	req := &ChatCompletionRequest{
+		Model:       params.Model,
+		Messages:    messages,
+		Temperature: 0.7,
+		MaxTokens:   types.MAX_TOKENS,
+		Stream:      true,
+	}
+
+	// Build API request payload
+	stream, err := d.client.StreamChatCompletion(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("API call failed: %w", err)
+	}
+
+	return stream, nil
 }
