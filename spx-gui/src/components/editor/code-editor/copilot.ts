@@ -1,6 +1,6 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n, LocaleMessage } from '@/utils/i18n'
-import { generateMessage, type Message } from '@/apis/copilot'
+import { generateStreamMessage, type Message } from '@/apis/copilot'
 import { Project } from '@/models/project'
 import type { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
@@ -10,8 +10,6 @@ import type { Animation } from '@/models/animation'
 import type { Backdrop } from '@/models/backdrop'
 import type { Chat, ChatContext, ChatMessage, ICopilot } from './ui/code-editor-ui'
 import {
-  makeBasicMarkdownString,
-  type BasicMarkdownString,
   textDocumentId2CodeFileName,
   isTextDocumentStageCode,
   type Position,
@@ -128,9 +126,10 @@ ${codeInfoText}
     }
   }
 
-  async getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString> {
+  async *getChatCompletion(ctx: ChatContext, chat: Chat): AsyncIterableIterator<string> {
     const messages = [this.makeContextMessage(ctx)]
     const toSkip = chat.messages.length - maxChatMessageCount
+
     // skip chat messages in range `[1, toSkip]`
     chat.messages.forEach((message, i) => {
       if (i === 0) {
@@ -140,8 +139,16 @@ ${codeInfoText}
       }
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
-    const message = await generateMessage(messages, ctx.signal)
-    return makeBasicMarkdownString(message.content.text)
+
+    // Use generateStreamMessage directly
+    const stream = await generateStreamMessage(messages, {
+      signal: ctx.signal
+    })
+
+    // Forward each chunk from the stream
+    for await (const chunk of stream) {
+      yield chunk
+    }
   }
 }
 

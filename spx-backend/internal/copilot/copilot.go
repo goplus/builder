@@ -5,6 +5,7 @@ package copilot
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot/anthropic"
 	"github.com/goplus/builder/spx-backend/internal/copilot/qnaigc"
@@ -19,6 +20,10 @@ type AICopilot interface {
 	// ctx provides context for the request, which can be used for cancellation and timeout.
 	// params contains the request parameters including the provider selection and message content.
 	Message(ctx context.Context, params *types.Params) (*types.Result, error)
+	// StreamMessage sends a request to the AI provider and returns a stream of responses.
+	// ctx provides context for the request, which can be used for cancellation and timeout.
+	// params contains the request parameters including the provider selection and message content.
+	StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error)
 }
 
 // Config defines the configuration parameters for the Copilot service.
@@ -68,4 +73,17 @@ func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Res
 	}
 	// Send message to the AI provider
 	return c.copilot.Message(ctx, params)
+}
+
+// Message implements the AICopilot interface. It routes the request to the
+// appropriate AI provider based on the Provider field in the params.
+// Returns an error if the specified provider is not supported.
+func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+	// Add system prompt message
+	params.System = types.Content{
+		Type: types.ContentTypeText,
+		Text: SystemPrompt,
+	}
+	// Send message to the AI provider
+	return c.copilot.StreamMessage(ctx, params)
 }

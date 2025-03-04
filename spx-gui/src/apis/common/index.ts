@@ -10,8 +10,8 @@ export function setTokenProvider(provider: TokenProvider) {
   tokenProvider = provider
 }
 
-/** ReponseHandler handles the response from fetch() */
-export type ResponseHandler = (resp: Response) => Promise<unknown>
+// ResponseHandler is used to handle the response from the server.
+export type ResponseHandler<T = unknown> = (resp: Response) => Promise<T> | AsyncIterableIterator<T>
 
 export type RequestOptions = {
   method: string
