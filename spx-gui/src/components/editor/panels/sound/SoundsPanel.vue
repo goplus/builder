@@ -66,8 +66,19 @@ const emit = defineEmits<{
 }>()
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
 
-const sounds = computed(() => editorCtx.project.sounds)
+const sounds = computed(() => {
+  const allSounds = editorCtx.project.sounds
+  const { enabled, items } = listFilter.getFilter('sound')
+
+  if (enabled && items.length > 0) {
+    return allSounds.filter((sound) => items.includes(sound.id))
+  }
+
+  return allSounds
+})
+
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sounds, () => summaryList.value?.listWrapper ?? null)
 

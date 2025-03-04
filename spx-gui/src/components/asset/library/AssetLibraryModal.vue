@@ -88,6 +88,7 @@ import { type Category, getAssetCategories, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
   type: AssetType
@@ -99,6 +100,9 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
+
+const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
 
 const categories = computed(() => {
   const categoriesWithoutAll = getAssetCategories(props.type)
@@ -161,6 +165,22 @@ const queryRet = useQuery(
       category: c === categoryAll.value || c === cPersonal ? undefined : c,
       owner: c === cPersonal ? undefined : '*',
       visibility: c === cPersonal ? undefined : Visibility.Public
+    }).then((result) => {
+      const filterType =
+        props.type === AssetType.Sprite
+          ? 'sprite'
+          : props.type === AssetType.Sound
+            ? 'sound'
+            : props.type === AssetType.Backdrop
+              ? 'backdrop'
+              : 'asset'
+
+      const { enabled, items } = listFilter.getFilter(filterType)
+      if (enabled && items.length > 0) {
+        result.data = result.data.filter((asset) => items.includes(asset.id))
+      }
+
+      return result
     })
   },
   {

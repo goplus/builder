@@ -63,11 +63,13 @@ import {
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
+import type { ListFilter } from '@/models/list-filter'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
     private documentBase: DocumentBase,
-    private lspClient: SpxLSPClient
+    private lspClient: SpxLSPClient,
+    private filter: ListFilter
   ) {}
 
   private async getFallbackItems(ctx: APIReferenceContext) {
@@ -114,6 +116,13 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     } else {
       apiReferenceItems = await this.getFallbackItems(ctx)
     }
+
+    // apply filter
+    const { enabled, items } = this.filter.getFilter('apiReference')
+    if (enabled && items.length > 0) {
+      return apiReferenceItems.filter((item) => items.includes(item.definition.name || ''))
+    }
+
     return apiReferenceItems
   }
 }
@@ -456,13 +465,14 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n
+    private i18n: I18n,
+    private filter: ListFilter
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
-    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient)
+    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient, this.filter)
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
