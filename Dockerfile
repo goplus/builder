@@ -3,7 +3,7 @@
 ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.2
 ARG GO_BASE_IMAGE=golang:1.23.4
 ARG NODE_BASE_IMAGE=node:20.11.1
-ARG NGINX_BASE_IMAGE=nginx:1.27
+ARG NGINX_BASE_IMAGE=nginx:1.27-dev 
 
 ################################################################################
 
@@ -62,9 +62,6 @@ RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
-
-RUN  sed -i s@/deb.debian.org/@/mirrors.aliyun.com/@g /etc/apt/sources.list.d/debian.sources \
-    && apt-get clean && apt-get update && apt-get install -y procps vim
 
 COPY --from=gop-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
