@@ -12,7 +12,7 @@
   </UIEmpty>
   <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
     <WidgetItem
-      v-for="widget in stage.widgets"
+      v-for="widget in widgets"
       :key="widget.id"
       :widget="widget"
       :selectable="{ selected: selected?.id === widget.id }"
@@ -43,6 +43,19 @@ import WidgetDetail from './detail/WidgetDetail.vue'
 import monitorIcon from './monitor-gray.svg'
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
+
+const widgets = computed(() => {
+  const allWidgets = editorCtx.project.stage.widgets
+  const { enabled, items } = listFilter.getFilter('widget')
+
+  if (enabled && items.length > 0) {
+    return allWidgets.filter((widget) => items.includes(widget.id))
+  }
+
+  return allWidgets
+})
+
 const stage = computed(() => editorCtx.project.stage)
 const selected = computed(() => stage.value.selectedWidget)
 
