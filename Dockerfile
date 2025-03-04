@@ -62,7 +62,6 @@ RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
-
 COPY --from=gop-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
