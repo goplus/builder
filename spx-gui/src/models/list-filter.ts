@@ -53,6 +53,7 @@ function createDefaultFilter(): { enabled: boolean; items: string[] } {
 function createApiReferenceFilter(): { enabled: boolean; items: DefinitionIdentifier[] } {
   return { enabled: false, items: [] }
 }
+
 export class ListFilter {
   private state: ListFilterState
 
@@ -71,7 +72,7 @@ export class ListFilter {
     return reactive(this) as this
   }
 
-  setFilter(type: ListFilterType, enabled: boolean, items: string[]) {
+  setFilter(type: ListFilterType, enabled: boolean, items: string[] | DefinitionIdentifier[]) {
     this.state[type].enabled = enabled
     this.state[type].items = items
   }
