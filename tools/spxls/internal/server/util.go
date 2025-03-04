@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/goplus/gogen"
 	gopast "github.com/goplus/gop/ast"
@@ -69,15 +71,6 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 	default:
 		return "", false
 	}
-}
-
-// posAt returns the [goptoken.Pos] of the given position in the given token file.
-func posAt(tokenFile *goptoken.File, position Position) goptoken.Pos {
-	line := int(position.Line) + 1
-	if line > tokenFile.LineCount() {
-		return goptoken.Pos(tokenFile.Base() + tokenFile.Size()) // EOF
-	}
-	return tokenFile.LineStart(line) + goptoken.Pos(int(position.Character))
 }
 
 // deduplicateLocations deduplicates locations.
@@ -332,4 +325,38 @@ func isTypeCompatible(got, want types.Type) bool {
 // attr transforms given string value to an HTML attribute value (with quotes).
 func attr(value string) string {
 	return fmt.Sprintf(`"%s"`, template.HTMLEscapeString(value))
+}
+
+// utf16OffsetToUTF8 converts a UTF-16 offset to a UTF-8 offset in the given string.
+func utf16OffsetToUTF8(s string, utf16Offset int) int {
+	if utf16Offset <= 0 {
+		return 0
+	}
+
+	var utf16Units, utf8Bytes int
+	for _, r := range s {
+		if utf16Units >= utf16Offset {
+			break
+		}
+		utf16Units += utf16.RuneLen(r)
+		utf8Bytes += utf8.RuneLen(r)
+	}
+	return utf8Bytes
+}
+
+// utf8OffsetToUTF16 converts a UTF-8 offset to a UTF-16 offset in the given string.
+func utf8OffsetToUTF16(s string, utf8Offset int) int {
+	if utf8Offset <= 0 {
+		return 0
+	}
+
+	var utf8Bytes, utf16Units int
+	for _, r := range s {
+		if utf8Bytes >= utf8Offset {
+			break
+		}
+		utf8Bytes += utf8.RuneLen(r)
+		utf16Units += utf16.RuneLen(r)
+	}
+	return utf16Units
 }

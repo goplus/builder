@@ -17,8 +17,9 @@ func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) 
 	if astFile == nil {
 		return nil, nil
 	}
+	position := result.toPosition(astFile, params.Position)
 
-	targetObj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
+	targetObj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, position))
 	if targetObj == nil {
 		return nil, nil
 	}

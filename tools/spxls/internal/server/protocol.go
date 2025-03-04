@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-
-	goptoken "github.com/goplus/gop/token"
 )
 
 // UnmarshalJSON unmarshals msg into the variable pointed to by params.
@@ -16,22 +14,6 @@ func UnmarshalJSON(msg json.RawMessage, v any) error {
 		return nil
 	}
 	return json.Unmarshal(msg, v)
-}
-
-// FromGopTokenPosition converts a [goptoken.Position] to a protocol [Position].
-func FromGopTokenPosition(p goptoken.Position) Position {
-	return Position{
-		Line:      uint32(p.Line - 1),
-		Character: uint32(p.Column - 1),
-	}
-}
-
-// RangeForGopTokenPosition returns a [Range] for the given [goptoken.Position].
-func RangeForGopTokenPosition(pos goptoken.Position) Range {
-	return Range{
-		Start: FromGopTokenPosition(pos),
-		End:   FromGopTokenPosition(pos),
-	}
 }
 
 // toURI converts a string to a [URI].

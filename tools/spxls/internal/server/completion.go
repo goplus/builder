@@ -27,8 +27,7 @@ func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionI
 		return nil, nil
 	}
 
-	tokenFile := result.fset.File(astFile.Pos())
-	pos := posAt(tokenFile, params.Position)
+	pos := result.posAt(astFile, params.Position)
 	if !pos.IsValid() {
 		return nil, nil
 	}
@@ -43,7 +42,7 @@ func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionI
 		spxFile:        spxFile,
 		astFile:        astFile,
 		astFileScope:   result.typeInfo.Scopes[astFile],
-		tokenFile:      tokenFile,
+		tokenFile:      result.fset.File(astFile.Pos()),
 		pos:            pos,
 		innermostScope: innermostScope,
 	}

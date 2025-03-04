@@ -14,8 +14,9 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 	if astFile == nil {
 		return nil, nil
 	}
+	position := result.toPosition(astFile, params.Position)
 
-	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, params.Position); spxResourceRef != nil {
+	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, position); spxResourceRef != nil {
 		return &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
@@ -25,11 +26,11 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 		}, nil
 	}
 
-	ident := result.identAtASTFilePosition(astFile, params.Position)
+	ident := result.identAtASTFilePosition(astFile, position)
 	if ident == nil {
 		// Check if the position is within an import declaration.
 		// If so, return the package documentation.
-		rpkg := result.spxImportsAtASTFilePosition(astFile, params.Position)
+		rpkg := result.spxImportsAtASTFilePosition(astFile, position)
 		if rpkg != nil {
 			return &Hover{
 				Contents: MarkupContent{

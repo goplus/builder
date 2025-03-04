@@ -15,8 +15,9 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 	if astFile == nil {
 		return nil, nil
 	}
+	position := result.toPosition(astFile, params.Position)
 
-	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, position))
 	if obj == nil {
 		return nil, nil
 	}
