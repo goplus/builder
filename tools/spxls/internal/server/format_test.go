@@ -420,6 +420,10 @@ func test() {
 const b = "123"
 
 // floating comment4
+
+run "assets", {Title: "My Game"}
+
+// floating comment5
 `),
 		}), nil)
 		params := &DocumentFormattingParams{
@@ -432,7 +436,7 @@ const b = "123"
 		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 20, Character: 0},
+				End:   Position{Line: 24, Character: 0},
 			},
 			NewText: `import "fmt"
 
@@ -456,6 +460,10 @@ func test() {
 }
 
 // floating comment4
+
+run "assets", {Title: "My Game"}
+
+// floating comment5
 `,
 		})
 	})
