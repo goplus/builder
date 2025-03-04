@@ -283,6 +283,43 @@ onStart => {}
 			Name:    util.ToPtr("Game.onStart"),
 		}))
 	})
+
+	// See https://github.com/goplus/builder/issues/1398.
+	t.Run("Issue#1398", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+run "assets", {Title: "My Game"}
+`),
+			"MySprite.spx": []byte(`
+onTouchStart "" => {
+	say "touched by someone"
+}
+`),
+			"assets/index.json":                  []byte(`{}`),
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
+		}), nil)
+
+		params := []SpxGetDefinitionsParams{
+			{
+				TextDocumentPositionParams: TextDocumentPositionParams{
+					TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+					Position:     Position{Line: 1, Character: 15},
+				},
+			},
+		}
+		defs, err := s.spxGetDefinitions(params)
+		require.NoError(t, err)
+		require.NotNil(t, defs)
+		assert.False(t, spxDefinitionIdentifierSliceContains(defs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(GetSpxPkg().Path()),
+			Name:    util.ToPtr("Sprite.onTouchStart"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(defs, SpxDefinitionIdentifier{
+			Package:    util.ToPtr(GetSpxPkg().Path()),
+			Name:       util.ToPtr("Sprite.say"),
+			OverloadID: util.ToPtr("0"),
+		}))
+	})
 }
 
 // spxDefinitionIdentifierSliceContains reports whether a slice of [SpxDefinitionIdentifier]
