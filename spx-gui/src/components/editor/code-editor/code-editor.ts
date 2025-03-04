@@ -65,7 +65,6 @@ import {
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import type DefinitionItem from './ui/definition/DefinitionItem.vue'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
