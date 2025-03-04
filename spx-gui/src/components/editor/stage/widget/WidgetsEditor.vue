@@ -45,8 +45,10 @@ import monitorIcon from './monitor-gray.svg'
 const editorCtx = useEditorCtx()
 const listFilter = editorCtx.listFilter
 
+const stage = computed(() => editorCtx.project.stage)
+
 const widgets = computed(() => {
-  const allWidgets = editorCtx.project.stage.widgets
+  const allWidgets = stage.value.widgets
   const { enabled, items } = listFilter.getFilter('widget')
 
   if (enabled && items.length > 0) {
@@ -56,7 +58,6 @@ const widgets = computed(() => {
   return allWidgets
 })
 
-const stage = computed(() => editorCtx.project.stage)
 const selected = computed(() => stage.value.selectedWidget)
 
 function handleSelect(widget: Widget) {
