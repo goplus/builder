@@ -54,15 +54,10 @@ export function useRequest<T>(
     const req = await prepareRequest(path, payload, options)
     options?.signal?.throwIfAborted()
     const timeout = options?.timeout ?? defaultTimeout
-    let responseHeaderReceived = false
     const timeoutCtrl = new AbortController()
-    setTimeout(() => {
-      if (responseHeaderReceived) return
-      timeoutCtrl.abort(new TimeoutException())
-    }, timeout)
+    const timeoutTimer = setTimeout(() => timeoutCtrl.abort(new TimeoutException()), timeout)
     const signal = mergeSignals(options?.signal, timeoutCtrl.signal)
-    const resp = await fetch(req, { signal })
-    responseHeaderReceived = true
+    const resp = await fetch(req, { signal }).finally(() => clearTimeout(timeoutTimer))
     return responseHandler(resp)
   }
 }
