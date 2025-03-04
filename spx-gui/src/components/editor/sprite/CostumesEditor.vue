@@ -1,7 +1,7 @@
 <template>
   <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
     <CostumeItem
-      v-for="costume in sprite.costumes"
+      v-for="costume in costumes"
       :key="costume.id"
       :sprite="sprite"
       :costume="costume"
@@ -39,6 +39,19 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
+
+const costumes = computed(() => {
+  const allCostumes = props.sprite.costumes
+  const { enabled, items } = listFilter.getFilter('costume')
+
+  if (enabled && items.length > 0) {
+    return allCostumes.filter((costume) => items.includes(costume.id))
+  }
+
+  return allCostumes
+})
+
 const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
