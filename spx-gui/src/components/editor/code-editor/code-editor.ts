@@ -59,17 +59,18 @@ import {
   type WorkspaceDiagnostics,
   type TextDocumentDiagnostics,
   fromLSPDiagnostic,
-  isTextDocumentStageCode
+  isTextDocumentStageCode,
+  type DefinitionIdentifier
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
-import type { ListFilter } from '@/models/list-filter'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import type DefinitionItem from './ui/definition/DefinitionItem.vue'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
     private documentBase: DocumentBase,
-    private lspClient: SpxLSPClient,
-    private filter: ListFilter
+    private lspClient: SpxLSPClient
   ) {}
 
   private async getFallbackItems(ctx: APIReferenceContext) {
@@ -117,10 +118,17 @@ class APIReferenceProvider implements IAPIReferenceProvider {
       apiReferenceItems = await this.getFallbackItems(ctx)
     }
 
+    const editorCtx = useEditorCtx()
+    const listFilter = editorCtx.listFilter
     // apply filter
-    const { enabled, items } = this.filter.getFilter('apiReference')
+    const { enabled, items } = listFilter.getFilter('apiReference')
     if (enabled && items.length > 0) {
-      return apiReferenceItems.filter((item) => items.includes(item.definition.name || ''))
+      return apiReferenceItems.filter((item) =>
+        items.some(
+          (filterItem: DefinitionIdentifier) =>
+            filterItem.name === item.definition.name && filterItem.package === item.definition.package
+        )
+      )
     }
 
     return apiReferenceItems
@@ -465,14 +473,13 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n,
-    private filter: ListFilter
+    private i18n: I18n
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
-    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient, this.filter)
+    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient)
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
