@@ -3,7 +3,7 @@
 ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.2
 ARG GO_BASE_IMAGE=golang:1.23.4
 ARG NODE_BASE_IMAGE=node:20.11.1
-ARG NGINX_BASE_IMAGE=nginx:1.27-dev 
+ARG NGINX_BASE_IMAGE=nginx:1.27
 
 ################################################################################
 
