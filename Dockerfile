@@ -62,6 +62,10 @@ RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
+
+RUN  sed -i s@/deb.debian.org/@/mirrors.aliyun.com/@g /etc/apt/sources.list.d/debian.sources \
+    && apt-get clean && apt-get update && apt-get install -y procps vim
+
 COPY --from=gop-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
