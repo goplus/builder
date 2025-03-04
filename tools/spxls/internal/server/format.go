@@ -433,8 +433,7 @@ func (s *Server) formatSpxDecls(snapshot *vfs.MapFS, spxFile string) ([]byte, er
 	if shadowEntryPos.IsValid() {
 		ensureTrailingNewlines(2)
 		start := compileResult.fset.Position(shadowEntryPos).Offset
-		end := compileResult.fset.Position(astFile.ShadowEntry.End()).Offset
-		formattedBuf.Write(astFile.Code[start:end])
+		formattedBuf.Write(astFile.Code[start:])
 		ensureTrailingNewlines(1)
 	}
 
