@@ -1,4 +1,4 @@
-import { ref, watch, onBeforeUnmount, type WatchSource } from 'vue'
+import { ref, watch, type WatchSource } from 'vue'
 import { getCleanupSignal } from './disposable'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
@@ -73,7 +73,6 @@ export function useHovered(elSource: WatchSource<HTMLElement | null>) {
 export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
   const rect = ref<DOMRect | null>(null)
 
-  let rafId: number | null = null
   let lastRect: DOMRect | null = null
 
   function updateRect(element: HTMLElement) {
@@ -90,21 +89,6 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
     }
   }
 
-  // Use requestAnimationFrame to poll and monitor changes in elements
-  function pollPosition(element: HTMLElement) {
-    if (rafId) cancelAnimationFrame(rafId)
-    const check = () => {
-      updateRect(element)
-      rafId = requestAnimationFrame(check)
-    }
-    rafId = requestAnimationFrame(check)
-    // Returns a function that cancels the poll
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId)
-      rafId = null
-    }
-  }
-
   watch(
     elSource,
     (el, _, onCleanup) => {
@@ -118,7 +102,11 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
       })
       resizeObserver.observe(el)
 
-      // Use MutationObserver to monitor style/class changes
+      /**
+       * Use `MutationObserver` to monitor `style/class` changes.
+       * It is mainly used to deal with special cases such as the use of `transform`.
+       * `transform` is the rendering done by the browser on the existing element, which will not change the position and size
+       */
       const mutationObserver = new MutationObserver(() => {
         updateRect(el)
       })
@@ -133,22 +121,14 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
       })
       intersectionObserver.observe(el)
 
-      // Polling monitoring (capturing changes such as transform)
-      const cancelPoll = pollPosition(el)
-
       onCleanup(() => {
         resizeObserver.disconnect()
         mutationObserver.disconnect()
         intersectionObserver.disconnect()
-        cancelPoll()
       })
     },
     { immediate: true }
   )
-
-  onBeforeUnmount(() => {
-    if (rafId) cancelAnimationFrame(rafId)
-  })
 
   return rect
 }
