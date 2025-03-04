@@ -19,7 +19,7 @@ docker build \
 	--build-arg GOP_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/gop:1.2" \
 	--build-arg GO_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/golang:1.23.4" \
 	--build-arg NODE_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/node:20.11.1" \
-	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27" \
+	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27-dev" \
 	--build-arg GOPROXY=https://goproxy.cn,direct \
 	--build-arg NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
 	--build-arg NODE_ENV=staging \
