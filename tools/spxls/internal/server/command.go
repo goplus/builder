@@ -114,8 +114,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	astFileScope := result.typeInfo.Scopes[astFile]
 
 	// Find the innermost scope contains the position.
-	tokenFile := result.fset.File(astFile.Pos())
-	pos := posAt(tokenFile, param.Position)
+	pos := result.posAt(astFile, param.Position)
 	if !pos.IsValid() {
 		return nil, nil
 	}

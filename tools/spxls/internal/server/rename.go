@@ -18,8 +18,9 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 	if astFile == nil {
 		return nil, nil
 	}
+	position := result.toPosition(astFile, params.Position)
 
-	ident := result.identAtASTFilePosition(astFile, params.Position)
+	ident := result.identAtASTFilePosition(astFile, position)
 	if ident == nil {
 		return nil, nil
 	}
@@ -44,8 +45,9 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 	if astFile == nil {
 		return nil, nil
 	}
+	position := result.toPosition(astFile, params.Position)
 
-	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, params.Position); spxResourceRef != nil {
+	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, position); spxResourceRef != nil {
 		return s.spxRenameResourcesWithCompileResult(result, []SpxRenameResourceParams{{
 			Resource: SpxResourceIdentifier{
 				URI: spxResourceRef.ID.URI(),
@@ -54,7 +56,7 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 		}})
 	}
 
-	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, position))
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
@@ -119,10 +121,11 @@ func (s *Server) spxRenameResourceAtRefs(result *compileResult, id SpxResourceID
 		}
 
 		documentURI := result.documentURIs[nodePos.Filename]
+		astFile := result.nodeASTFile(ref.Node)
 		textEdit := TextEdit{
 			Range: Range{
-				Start: FromGopTokenPosition(nodePos),
-				End:   FromGopTokenPosition(nodeEnd),
+				Start: result.fromPosition(astFile, nodePos),
+				End:   result.fromPosition(astFile, nodeEnd),
 			},
 			NewText: newName,
 		}
