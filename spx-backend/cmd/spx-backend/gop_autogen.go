@@ -66,6 +66,14 @@ type get_projects_list struct {
 	yap.Handler
 	*AppV2
 }
+type get_storyline_id struct {
+	yap.Handler
+	*AppV2
+}
+type get_storyline_id_study struct {
+	yap.Handler
+	*AppV2
+}
 type get_user_username struct {
 	yap.Handler
 	*AppV2
@@ -115,6 +123,10 @@ type post_project_owner_name_view struct {
 	yap.Handler
 	*AppV2
 }
+type post_storyline_id_study struct {
+	yap.Handler
+	*AppV2
+}
 type post_user_username_following struct {
 	yap.Handler
 	*AppV2
@@ -132,6 +144,10 @@ type put_asset_id struct {
 	*AppV2
 }
 type put_project_owner_name struct {
+	yap.Handler
+	*AppV2
+}
+type put_storyline_id_study struct {
 	yap.Handler
 	*AppV2
 }
@@ -196,7 +212,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_storyline_id), new(get_storyline_id_study), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_storyline_id_study), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_storyline_id_study), new(put_user))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -728,6 +744,46 @@ func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_projects_list) Classfname() string {
 	return "get_projects_list"
 }
+//line cmd/spx-backend/get_storyline_#id.yap:6
+func (this *get_storyline_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_storyline_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_storyline_#id.yap:8:1
+	storyline, err := this.ctrl.GetStoryline(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_storyline_#id.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_storyline_#id.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_storyline_#id.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_storyline_#id.yap:13:1
+	this.Json__1(storyline)
+}
+func (this *get_storyline_id) Classfname() string {
+	return "get_storyline_#id"
+}
+//line cmd/spx-backend/get_storyline_#id_study.yap:6
+func (this *get_storyline_id_study) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_storyline_#id_study.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_storyline_#id_study.yap:8:1
+	userStorylineRelationship, err := this.ctrl.GetStoryLineStudy(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_storyline_#id_study.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_storyline_#id_study.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_storyline_#id_study.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_storyline_#id_study.yap:13:1
+	this.Json__1(userStorylineRelationship)
+}
+func (this *get_storyline_id_study) Classfname() string {
+	return "get_storyline_#id_study"
+}
 //line cmd/spx-backend/get_user_#username.yap:6
 func (this *get_user_username) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1140,6 +1196,26 @@ func (this *post_project_owner_name_view) Main(_gop_arg0 *yap.Context) {
 func (this *post_project_owner_name_view) Classfname() string {
 	return "post_project_#owner_#name_view"
 }
+//line cmd/spx-backend/post_storyline_#id_study.yap:6
+func (this *post_storyline_id_study) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_storyline_#id_study.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_storyline_#id_study.yap:8:1
+	userStorylineRelationship, err := this.ctrl.StudyStoryline(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/post_storyline_#id_study.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/post_storyline_#id_study.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_storyline_#id_study.yap:11:1
+		return
+	}
+//line cmd/spx-backend/post_storyline_#id_study.yap:13:1
+	this.Json__1(userStorylineRelationship)
+}
+func (this *post_storyline_id_study) Classfname() string {
+	return "post_storyline_#id_study"
+}
 //line cmd/spx-backend/post_user_#username_following.yap:6
 func (this *post_user_username_following) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1324,6 +1400,42 @@ func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
 }
 func (this *put_project_owner_name) Classfname() string {
 	return "put_project_#owner_#name"
+}
+//line cmd/spx-backend/put_storyline_#id_study.yap:11
+func (this *put_storyline_id_study) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/put_storyline_#id_study.yap:11:1
+	ctx := &this.Context
+//line cmd/spx-backend/put_storyline_#id_study.yap:13:1
+	param := &controller.UpdateUserStorylineRelationshipParam{}
+//line cmd/spx-backend/put_storyline_#id_study.yap:14:1
+	if !parseJSON(ctx, param) {
+//line cmd/spx-backend/put_storyline_#id_study.yap:15:1
+		return
+	}
+//line cmd/spx-backend/put_storyline_#id_study.yap:18:1
+	if
+//line cmd/spx-backend/put_storyline_#id_study.yap:18:1
+	ok, msg := param.Validate(); !ok {
+//line cmd/spx-backend/put_storyline_#id_study.yap:19:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_storyline_#id_study.yap:20:1
+		return
+	}
+//line cmd/spx-backend/put_storyline_#id_study.yap:23:1
+	userStorylineRelationship, err := this.ctrl.FinishStorylineLevel(ctx.Context(), this.Gop_Env("id"), param)
+//line cmd/spx-backend/put_storyline_#id_study.yap:24:1
+	if err != nil {
+//line cmd/spx-backend/put_storyline_#id_study.yap:25:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_storyline_#id_study.yap:26:1
+		return
+	}
+//line cmd/spx-backend/put_storyline_#id_study.yap:28:1
+	this.Json__1(userStorylineRelationship)
+}
+func (this *put_storyline_id_study) Classfname() string {
+	return "put_storyline_#id_study"
 }
 //line cmd/spx-backend/put_user.yap:10
 func (this *put_user) Main(_gop_arg0 *yap.Context) {
