@@ -46,7 +46,7 @@ const costumes = computed(() => {
   const { enabled, items } = listFilter.getFilter('costume')
 
   if (enabled && items.length > 0) {
-    return allCostumes.filter((costume) => items.includes(costume.id))
+    return allCostumes.filter((costume) => items.includes(costume.name))
   }
 
   return allCostumes

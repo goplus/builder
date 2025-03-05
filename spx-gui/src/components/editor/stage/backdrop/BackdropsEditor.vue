@@ -47,7 +47,7 @@ const backdrops = computed(() => {
   const { enabled, items } = listFilter.getFilter('backdrop')
 
   if (enabled && items.length > 0) {
-    return allBackdrops.filter((backdrop) => items.includes(backdrop.id))
+    return allBackdrops.filter((backdrop) => items.includes(backdrop.name))
   }
 
   return allBackdrops

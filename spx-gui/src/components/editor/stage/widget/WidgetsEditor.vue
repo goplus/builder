@@ -52,7 +52,7 @@ const widgets = computed(() => {
   const { enabled, items } = listFilter.getFilter('widget')
 
   if (enabled && items.length > 0) {
-    return allWidgets.filter((widget) => items.includes(widget.id))
+    return allWidgets.filter((widget) => items.includes(widget.name))
   }
 
   return allWidgets

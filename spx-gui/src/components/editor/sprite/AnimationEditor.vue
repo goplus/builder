@@ -57,7 +57,7 @@ const animations = computed(() => {
   const { enabled, items } = listFilter.getFilter('animation')
 
   if (enabled && items.length > 0) {
-    return allAnimations.filter((animation) => items.includes(animation.id))
+    return allAnimations.filter((animation) => items.includes(animation.name))
   }
 
   return allAnimations
