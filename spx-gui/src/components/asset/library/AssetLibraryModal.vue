@@ -177,7 +177,8 @@ const queryRet = useQuery(
 
       const { enabled, items } = listFilter.getFilter(filterType)
       if (enabled && items.length > 0) {
-        result.data = result.data.filter((asset) => items.includes(asset.id))
+        const data = result.data.filter((asset) => items.includes(asset.id))
+        return { ...result, data }
       }
 
       return result
