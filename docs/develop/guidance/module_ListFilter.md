@@ -8,7 +8,7 @@ type ListFilterState = {
   }
   asset: {
     enabled: boolean    // 启用/禁用素材过滤器
-    items: string[]    // 要显示的资源displayName列表
+    items: string[]    // 要显示的资源id列表
   }
   sprite: {
     enabled: boolean    // 启用/禁用精灵过滤器
