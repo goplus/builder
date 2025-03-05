@@ -174,7 +174,7 @@ onTouchStart ["MySprite"], => {}
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-item def-id=\"gop:main?Point\" overview=\"type Point struct{X int; Y int}\">\nPoint is a type.\n</definition-item>\n",
+				Value: "<definition-item def-id=\"gop:main?Point\" overview=\"type Point\">\nPoint is a type.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 25, Character: 5},

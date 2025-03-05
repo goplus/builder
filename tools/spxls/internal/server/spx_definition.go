@@ -630,12 +630,6 @@ func GetSpxDefinitionForType(typeName *types.TypeName, pkgDoc *pkgdoc.PkgDoc) (d
 	var overview strings.Builder
 	overview.WriteString("type ")
 	overview.WriteString(typeName.Name())
-	overview.WriteString(" ")
-	if named, ok := typeName.Type().(*types.Named); ok {
-		overview.WriteString(getSimplifiedTypeString(named.Underlying()))
-	} else {
-		overview.WriteString(getSimplifiedTypeString(typeName.Type()))
-	}
 
 	var detail string
 	if pkgDoc != nil {
