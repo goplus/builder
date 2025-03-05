@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { useBottomSticky } from '@/utils/dom'
 import { UIIcon } from '@/components/ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import CopilotInput from './CopilotInput.vue'
@@ -12,7 +13,7 @@ const props = defineProps<{
 }>()
 
 const codeEditorCtx = useCodeEditorUICtx()
-const bodyRef = ref<HTMLElement>()
+const bodyRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 
 function handleClose() {
@@ -37,6 +38,8 @@ watch(
     inputRef.value?.focus()
   }
 )
+
+useBottomSticky(bodyRef)
 </script>
 
 <template>

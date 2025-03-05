@@ -10,13 +10,16 @@ export function setTokenProvider(provider: TokenProvider) {
   tokenProvider = provider
 }
 
-// ResponseHandler is used to handle the response from the server.
-export type ResponseHandler<T = unknown> = (resp: Response) => Promise<T> | AsyncIterableIterator<T>
+/** ResponseHandler is used to handle the response from the server. */
+export type ResponseHandler<T> = (resp: Response) => T | Promise<T>
 
 export type RequestOptions = {
   method: string
   headers?: Headers
-  /** Timeout duration in milisecond, from request-sent to server-response-got */
+  /**
+   * Timeout duration in milliseconds, from request-sent to response-header-received, not including reading-response-body.
+   * TODO: If we need a timeout for whole request-response roundtrip?
+   */
   timeout?: number
   signal?: AbortSignal
 }
@@ -29,15 +32,9 @@ class TimeoutException extends Exception {
   }
 }
 
-function getTimeoutSignal(timeout: number) {
-  const ctrl = new AbortController()
-  setTimeout(() => ctrl.abort(new TimeoutException()), timeout)
-  return ctrl.signal
-}
-
-export function useRequest(
+export function useRequest<T>(
   baseUrl: string = '',
-  responseHandler?: ResponseHandler,
+  responseHandler: ResponseHandler<T>,
   defaultTimeout: number = 10 * 1000 // 10 seconds
 ) {
   async function prepareRequest(path: string, payload: unknown, options?: RequestOptions) {
@@ -57,9 +54,11 @@ export function useRequest(
     const req = await prepareRequest(path, payload, options)
     options?.signal?.throwIfAborted()
     const timeout = options?.timeout ?? defaultTimeout
-    const signal = mergeSignals(options?.signal, getTimeoutSignal(timeout))
-    const resp = await fetch(req, { signal })
-    return responseHandler != null ? responseHandler(resp) : resp
+    const timeoutCtrl = new AbortController()
+    const timeoutTimer = setTimeout(() => timeoutCtrl.abort(new TimeoutException()), timeout)
+    const signal = mergeSignals(options?.signal, timeoutCtrl.signal)
+    const resp = await fetch(req, { signal }).finally(() => clearTimeout(timeoutTimer))
+    return responseHandler(resp)
   }
 }
 
