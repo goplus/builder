@@ -91,7 +91,7 @@ const sprites = computed(() => {
   const { enabled, items } = listFilter.getFilter('sprite')
 
   if (enabled && items.length > 0) {
-    return allSprites.filter((sprite) => items.includes(sprite.id))
+    return allSprites.filter((sprite) => items.includes(sprite.name))
   }
 
   return allSprites

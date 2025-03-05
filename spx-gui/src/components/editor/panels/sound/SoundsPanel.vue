@@ -73,7 +73,7 @@ const sounds = computed(() => {
   const { enabled, items } = listFilter.getFilter('sound')
 
   if (enabled && items.length > 0) {
-    return allSounds.filter((sound) => items.includes(sound.id))
+    return allSounds.filter((sound) => items.includes(sound.name))
   }
 
   return allSounds
