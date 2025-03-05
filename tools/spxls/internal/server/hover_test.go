@@ -238,7 +238,7 @@ onTouchStart ["MySprite"], => {}
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-item def-id=\"gop:builtin?int8\" overview=\"type int8 int8\">\nint8 is the set of all signed 8-bit integers.\nRange: -128 through 127.\n</definition-item>\n",
+				Value: "<definition-item def-id=\"gop:builtin?int8\" overview=\"type int8\">\nint8 is the set of all signed 8-bit integers.\nRange: -128 through 127.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 33, Character: 12},
