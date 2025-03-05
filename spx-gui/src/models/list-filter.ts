@@ -14,7 +14,7 @@ export type ListFilterType =
 export type ListFilterState = {
   apiReference: {
     enabled: boolean
-    items: DefinitionIdentifier[]
+    items: string[] /** gop:<package>?<name>#<overloadId> */
   }
   asset: {
     enabled: boolean
@@ -50,16 +50,12 @@ function createDefaultFilter(): { enabled: boolean; items: string[] } {
   return { enabled: false, items: [] }
 }
 
-function createApiReferenceFilter(): { enabled: boolean; items: DefinitionIdentifier[] } {
-  return { enabled: false, items: [] }
-}
-
 export class ListFilter {
   private state: ListFilterState
 
   constructor() {
     this.state = {
-      apiReference: createApiReferenceFilter(),
+      apiReference: createDefaultFilter(),
       asset: createDefaultFilter(),
       sprite: createDefaultFilter(),
       sound: createDefaultFilter(),
@@ -72,7 +68,7 @@ export class ListFilter {
     return reactive(this) as this
   }
 
-  setFilter(type: ListFilterType, enabled: boolean, items: string[] | DefinitionIdentifier[]) {
+  setFilter(type: ListFilterType, enabled: boolean, items: string[]) {
     this.state[type].enabled = enabled
     this.state[type].items = items
   }
@@ -83,7 +79,7 @@ export class ListFilter {
 
   reset() {
     this.state = {
-      apiReference: createApiReferenceFilter(),
+      apiReference: createDefaultFilter(),
       asset: createDefaultFilter(),
       sprite: createDefaultFilter(),
       sound: createDefaultFilter(),

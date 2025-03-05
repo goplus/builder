@@ -60,7 +60,7 @@ import {
   type TextDocumentDiagnostics,
   fromLSPDiagnostic,
   isTextDocumentStageCode,
-  type DefinitionIdentifier
+  stringifyDefinitionId
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -122,12 +122,10 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     // apply filter
     const { enabled, items } = listFilter.getFilter('apiReference')
     if (enabled && items.length > 0) {
-      return apiReferenceItems.filter((item) =>
-        items.some(
-          (filterItem: DefinitionIdentifier) =>
-            filterItem.name === item.definition.name && filterItem.package === item.definition.package
-        )
-      )
+      return apiReferenceItems.filter((item) => {
+        const itemIdentifier = stringifyDefinitionId(item.definition)
+        return items.includes(itemIdentifier)
+      })
     }
 
     return apiReferenceItems
