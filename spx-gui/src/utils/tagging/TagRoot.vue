@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TAG_CONTEXT_KEY, tagApi, type TagContext, type TagNode } from '../../utils/tagging'
+import { TAG_CONTEXT_KEY, tagApi, type TagContext, type TagNode } from '.'
 import { reactive, provide, onMounted, onBeforeUnmount } from 'vue'
 
 const root = reactive<TagNode>({
@@ -12,10 +12,11 @@ const getElement = (path: string) => {
   const pathTokens = path.trim().split(/\s+/)
   if (pathTokens.length === 0) return null
 
-  // 模糊搜索
+  // fuzzy search
   function fuzzySearch(rootNodes: TagNode[]): TagNode | null {
     /**
-     * 维护一个队列，作为 搜索队列，存储待搜索的节点(node)及其匹配进度(index)
+     * Maintain a queue as a search queue to store the nodes to be searched (node)
+     * and their matching progress (index)
      */
     const queue: { node: TagNode; index: number }[] = rootNodes.map((node) => ({
       node,
@@ -25,13 +26,15 @@ const getElement = (path: string) => {
     while (queue.length > 0) {
       const { node, index } = queue.shift()!
 
-      // 匹配成功时，如果 index 达到 pathTokens.length - 1，表示完全匹配，直接返回该节点。
+      // When the match is successful, if the index reaches pathTokens.length - 1,
+      // it indicates a complete match and the node is returned directly.
       if (node.name === pathTokens[index]) {
-        // 如果完全匹配，则返回结果
+        // If there is an exact match, the result is returned
         if (index === pathTokens.length - 1) {
           return node
         }
-        // 否则，采用 DFS，优先深入当前分支，这有助于快速找到“连续匹配”的路径。
+        // Otherwise, DFS is used, giving priority to going deep into the current branch,
+        // which helps to quickly find the "continuous matching" path.
         queue.unshift(
           ...node.children.map((child) => ({
             node: child,
@@ -40,8 +43,9 @@ const getElement = (path: string) => {
         )
       }
 
-      // 无论当前节点是否匹配，都将其子节点以原始匹配进度（未递增 index）的方式加入队列，
-      // 这样即便当前分支走不通，也能从旁边的分支找出正确的路径
+      // Regardless of whether the current node is matched or not,
+      // its child nodes are added to the queue with the original matching progress (without incrementing the index).
+      // In this way, even if the current branch is blocked, you can find the correct path from the next branch.
       queue.push(
         ...node.children.map((child) => ({
           node: child,
