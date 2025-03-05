@@ -114,7 +114,7 @@ func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserSto
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
 	if err := ctrl.db.WithContext(ctx).
-		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, mStoryline.ID). // TODO: replace 1 with mAuthedUser.ID
+		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, mStoryline.ID).
 		First(&mUserStorylineRelationship).
 		Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -122,7 +122,7 @@ func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserSto
 		}
 
 		mUserStorylineRelationship = model.UserStorylineRelationship{
-			UserID:                 mAuthedUser.ID, // TODO: replace 1 with mAuthedUser.ID
+			UserID:                 mAuthedUser.ID,
 			StorylineID:            mStoryline.ID,
 			LastFinishedLevelIndex: 0,
 		}
@@ -151,7 +151,7 @@ func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*User
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
 	if err := ctrl.db.WithContext(ctx).
-		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id). // TODO: replace 1 with mAuthedUser.ID
+		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id).
 		First(&mUserStorylineRelationship).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user-storyline relationship: %w", err)
@@ -185,7 +185,7 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
 	if err := ctrl.db.WithContext(ctx).
-		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id). // TODO: replace 1 with mAuthedUser.ID
+		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id).
 		First(&mUserStorylineRelationship).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user-storyline relationship: %w", err)
