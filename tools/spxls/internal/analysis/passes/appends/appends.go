@@ -3,11 +3,11 @@ package appends
 import (
 	_ "embed"
 
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/inspector"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/inspect"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/internal/analysisutil"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/internal/typeutil"
-	"github.com/goplus/builder/tools/spxls/internal/ast/inspector"
-	"github.com/goplus/builder/tools/spxls/internal/protocol"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 	"github.com/goplus/gogen"
 	"github.com/goplus/gop/ast"
 )

@@ -27,8 +27,8 @@ package inspect
 import (
 	"reflect"
 
-	"github.com/goplus/builder/tools/spxls/internal/ast/inspector"
-	"github.com/goplus/builder/tools/spxls/internal/protocol"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/inspector"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 )
 
 var Analyzer = &protocol.Analyzer{

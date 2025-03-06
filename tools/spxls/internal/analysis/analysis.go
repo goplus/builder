@@ -2,7 +2,7 @@ package analysis
 
 import (
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/appends"
-	"github.com/goplus/builder/tools/spxls/internal/protocol"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 )
 
 // Analyzer augments a [protocol.Analyzer] with additional LSP configuration.

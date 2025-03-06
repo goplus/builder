@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/goplus/builder/tools/spxls/internal"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/inspector"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/inspect"
-	"github.com/goplus/builder/tools/spxls/internal/ast/inspector"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 	"github.com/goplus/builder/tools/spxls/internal/pkgdata"
 	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
-	"github.com/goplus/builder/tools/spxls/internal/protocol"
 	"github.com/goplus/builder/tools/spxls/internal/util"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/goplus/gogen"

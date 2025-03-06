@@ -3,7 +3,7 @@ package typeutil
 import (
 	"go/types"
 
-	"github.com/goplus/builder/tools/spxls/internal/ast/astutil"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/astutil"
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/token"
 	goptypesutil "github.com/goplus/gop/x/typesutil"

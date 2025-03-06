@@ -4,9 +4,9 @@ import (
 	"go/types"
 	"testing"
 
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/inspector"
 	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/inspect"
-	"github.com/goplus/builder/tools/spxls/internal/ast/inspector"
-	"github.com/goplus/builder/tools/spxls/internal/protocol"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/parser"
 	"github.com/goplus/gop/token"
