@@ -4,7 +4,6 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
-import { ListFilter } from '@/models/list-filter'
 import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
 import type { Step } from '@/apis/guidance'
 
@@ -16,8 +15,6 @@ const emit = defineEmits<{
   stepCompleted: []
 }>()
 
-const filter = new ListFilter()
-
 onMounted(() => {
   await loadSnapshot(props.step.snapshot.startSnapshot)
   if (props.step.isApiControl) {
@@ -27,22 +24,22 @@ onMounted(() => {
     filter.setFilter('asset', true, props.step.assets)
   }
   if (props.step.isSpriteControl) {
-    filter.setFilter('sprite', true, props.step.sprite)
+    filter.setFilter('sprite', true, props.step.sprites)
   }
   if (props.step.isSoundControl) {
-    filter.setFilter('sound', true, props.step.sound)
+    filter.setFilter('sound', true, props.step.sounds)
   }
   if (props.step.isCostumeControl) {
-    filter.setFilter('costume', true, props.step.costume)
+    filter.setFilter('costume', true, props.step.costumes)
   }
   if (props.step.isAnimationControl) {
-    filter.setFilter('animation', true, props.step.animation)
+    filter.setFilter('animation', true, props.step.animations)
   }
   if (props.step.isWidgetControl) {
-    filter.setFilter('widget', true, props.step.widget)
+    filter.setFilter('widget', true, props.step.widgets)
   }
   if (props.step.isBackdropControl) {
-    filter.setFilter('backdrop', true, props.step.backdrop)
+    filter.setFilter('backdrop', true, props.step.backdrops)
   }
 })
 
