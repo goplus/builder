@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ListFilter } from '@/models/list-filter'
+import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
 import type { Step } from '@/apis/guidance'
 
 const props = defineProps<{
@@ -17,7 +18,8 @@ const emit = defineEmits<{
 
 const filter = new ListFilter()
 
-onMounted(() => {
+onMounted(async () => {
+  await loadSnapshot(props.step.startSnapshot)
   if (props.step.isApiControl) {
     filter.setFilter('apiReference', true, props.step.apis)
   }
@@ -47,4 +49,19 @@ onMounted(() => {
 onBeforeUnmount(() => {
   filter.reset()
 })
+
+async function loadSnapshot(snapshotStr: string) {
+  if (!snapshotStr) return
+
+  try {
+    const editorCtx = useEditorCtx()
+    const project = editorCtx.project
+
+    const { metadata, files } = JSON.parse(snapshotStr)
+
+    await project.load(metadata, files)
+  } catch (error) {
+    console.error('Failed to load snapshot:', error)
+  }
+}
 </script>
