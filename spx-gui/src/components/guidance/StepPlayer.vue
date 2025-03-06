@@ -1,10 +1,22 @@
 <template>
-  <div class="step-player"></div>
+  <div class="step-player">
+    <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
+      <template v-if="props.step.type === 'coding'" #code-button>
+        <div class="code-button-container">
+          <button @click="handleCheckButtonClick">Check</button>
+        </div>
+      </template>
+      <template v-if="props.step.type === 'following'" #guide-ui>
+        <div class="guide-ui-container"></div>
+      </template>
+    </MaskWithHighlight>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
+import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 
 const editorCtx = useEditorCtx
@@ -61,5 +73,9 @@ async function loadSnapshot(snapshotStr: string) {
   } catch (error) {
     console.error('Failed to load snapshot:', error)
   }
+}
+
+function handleCheckButtonClick() {
+  emit('stepCompleted')
 }
 </script>
