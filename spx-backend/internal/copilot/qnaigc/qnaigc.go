@@ -62,6 +62,7 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
 
+	// Add default assistant message for go+ spx language
 	messages = append(messages, NewAssistantMessage("You are a Go+ Spx language assistant. Please answer using Spx language."))
 
 	for _, msg := range params.Messages {
