@@ -10,6 +10,7 @@ package inspector
 // see https://go-review.googlesource.com/c/tools/+/135655/1/go/ast/inspector/inspector.go#196
 
 import (
+	"math"
 	_ "unsafe"
 
 	"github.com/goplus/gop/ast"
@@ -216,5 +217,17 @@ func typeOf(n ast.Node) uint64 {
 	return 0
 }
 
-//go:linkname maskOf golang.org/x/tools/go/ast/inspector.maskOf
-func maskOf(nodes []ast.Node) uint64
+// maskOf returns a bit mask representing all node types in the given slice.
+// If the slice is empty, it returns a mask that matches all possible node types.
+// The returned mask is the bitwise OR of all node type bits from the input nodes.
+// Each bit in the mask corresponds to a specific AST node type as defined by typeOf.
+func maskOf(nodes []ast.Node) uint64 {
+	if len(nodes) == 0 {
+		return math.MaxUint64 // match all node types
+	}
+	var mask uint64
+	for _, n := range nodes {
+		mask |= typeOf(n)
+	}
+	return mask
+}
