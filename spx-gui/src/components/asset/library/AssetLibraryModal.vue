@@ -102,7 +102,7 @@ const emit = defineEmits<{
 }>()
 
 const editorCtx = useEditorCtx()
-const listFilter = editorCtx.listFilter
+const listFilter = computed(() => editorCtx.listFilter)
 
 const categories = computed(() => {
   const categoriesWithoutAll = getAssetCategories(props.type)
@@ -175,7 +175,7 @@ const queryRet = useQuery(
               ? 'backdrop'
               : 'asset'
 
-      const { enabled, items } = listFilter.getFilter(filterType)
+      const { enabled, items } = listFilter.value.getFilter(filterType)
       if (enabled && items.length > 0) {
         const data = result.data.filter((asset) => items.includes(asset.id))
         return { ...result, data }
