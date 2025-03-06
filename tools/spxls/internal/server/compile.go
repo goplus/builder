@@ -15,6 +15,9 @@ import (
 	"time"
 
 	"github.com/goplus/builder/tools/spxls/internal"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/ast/inspector"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/passes/inspect"
+	"github.com/goplus/builder/tools/spxls/internal/analysis/protocol"
 	"github.com/goplus/builder/tools/spxls/internal/pkgdata"
 	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 	"github.com/goplus/builder/tools/spxls/internal/util"
@@ -675,6 +678,14 @@ func (r *compileResult) rangeForASTFileNode(astFile *gopast.File, node gopast.No
 	}
 }
 
+// rangeForStartEnd returns the [Range] for the given start and end positions.
+func (r *compileResult) rangeForStartEnd(astFile *gopast.File, start, end goptoken.Pos) Range {
+	return Range{
+		Start: r.fromPosition(astFile, r.fset.Position(start)),
+		End:   r.fromPosition(astFile, r.fset.Position(end)),
+	}
+}
+
 // rangeForNode returns the [Range] for the given node.
 func (r *compileResult) rangeForNode(node gopast.Node) Range {
 	return r.rangeForASTFileNode(r.nodeASTFile(node), node)
@@ -913,6 +924,7 @@ func (s *Server) compileAt(snapshot *vfs.MapFS) (*compileResult, error) {
 
 	s.inspectForSpxResourceSet(snapshot, result)
 	s.inspectForSpxResourceRefs(result)
+	s.inspectDiagnosticsAnalyzers(result)
 
 	return result, nil
 }
@@ -983,6 +995,57 @@ func (s *Server) inspectForSpxResourceSet(snapshot *vfs.MapFS, result *compileRe
 		return
 	}
 	result.spxResourceSet = *spxResourceSet
+}
+
+// inspectDiagnosticsAnalyzers runs registered analyzers on each spx source file
+// and collects diagnostics.
+//
+// For each spx file in the main package, it:
+// 1. Creates an analysis pass with file-specific information
+// 2. Runs all registered analyzers on the file
+// 3. Collects diagnostics from analyzers
+// 4. Reports any analyzer errors as diagnostics
+//
+// Parameters:
+//   - result: The compilation result containing AST and type information
+//
+// The function updates result.diagnostics with any issues found by analyzers.
+// Diagnostic severity levels include:
+//   - Error: For analyzer failures or serious code issues
+//   - Warning: For potential problems that don't prevent compilation
+func (s *Server) inspectDiagnosticsAnalyzers(result *compileResult) {
+
+	for spxFile, astFile := range result.mainASTPkg.Files {
+
+		var diagnostics []Diagnostic
+		pass := &protocol.Pass{
+			Fset:      result.fset,
+			Files:     []*gopast.File{astFile},
+			TypesInfo: result.typeInfo,
+			Report: func(d protocol.Diagnostic) {
+				diagnostics = append(diagnostics, Diagnostic{
+					Range:    result.rangeForStartEnd(astFile, d.Pos, d.End),
+					Severity: SeverityError,
+					Message:  d.Message,
+				})
+			},
+			ResultOf: map[*protocol.Analyzer]any{
+				inspect.Analyzer: inspector.New([]*gopast.File{astFile}),
+			},
+		}
+
+		for _, analyzer := range s.analyzers {
+			an := analyzer.Analyzer()
+			if _, err := an.Run(pass); err != nil {
+				diagnostics = append(diagnostics, Diagnostic{
+					Severity: SeverityError,
+					Message:  fmt.Sprintf("analyzer %q failed: %v", an.Name, err),
+				})
+			}
+		}
+
+		result.addDiagnosticsForSpxFile(spxFile, diagnostics...)
+	}
 }
 
 // inspectForSpxResourceRefs inspects for spx resource references in the code.
