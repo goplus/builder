@@ -10,7 +10,6 @@ package inspector
 // see https://go-review.googlesource.com/c/tools/+/135655/1/go/ast/inspector/inspector.go#196
 
 import (
-	"math"
 	_ "unsafe"
 
 	"github.com/goplus/gop/ast"
@@ -218,13 +217,4 @@ func typeOf(n ast.Node) uint64 {
 }
 
 //go:linkname maskOf golang.org/x/tools/go/ast/inspector.maskOf
-func maskOf(nodes []ast.Node) uint64 {
-	if len(nodes) == 0 {
-		return math.MaxUint64 // match all node types
-	}
-	var mask uint64
-	for _, n := range nodes {
-		mask |= typeOf(n)
-	}
-	return mask
-}
+func maskOf(nodes []ast.Node) uint64
