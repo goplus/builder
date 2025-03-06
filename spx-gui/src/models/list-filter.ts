@@ -1,4 +1,3 @@
-import type { DefinitionIdentifier } from '@/components/editor/code-editor/common'
 import { reactive } from 'vue'
 
 export type ListFilterType =
