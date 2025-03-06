@@ -18,8 +18,8 @@ const emit = defineEmits<{
 
 const filter = new ListFilter()
 
-onMounted(async () => {
-  await loadSnapshot(props.step.startSnapshot)
+onMounted(() => {
+  await loadSnapshot(props.step.snapshot.startSnapshot)
   if (props.step.isApiControl) {
     filter.setFilter('apiReference', true, props.step.apis)
   }
