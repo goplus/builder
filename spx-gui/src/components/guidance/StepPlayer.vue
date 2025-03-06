@@ -7,6 +7,8 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
 import type { Step } from '@/apis/guidance'
 
+const editorCtx = useEditorCtx
+const filter = editorCtx.filter
 const props = defineProps<{
   step: Step
 }>()
@@ -15,7 +17,7 @@ const emit = defineEmits<{
   stepCompleted: []
 }>()
 
-onMounted(() => {
+onMounted(async () => {
   await loadSnapshot(props.step.snapshot.startSnapshot)
   if (props.step.isApiControl) {
     filter.setFilter('apiReference', true, props.step.apis)
@@ -51,7 +53,6 @@ async function loadSnapshot(snapshotStr: string) {
   if (!snapshotStr) return
 
   try {
-    const editorCtx = useEditorCtx()
     const project = editorCtx.project
 
     const { metadata, files } = JSON.parse(snapshotStr)
