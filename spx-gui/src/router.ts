@@ -91,10 +91,19 @@ const routes: Array<RouteRecordRaw> = [
           }
         ]
       },
-      {
+      { 
         path: '/project/:owner/:name',
         component: () => import('@/pages/community/project.vue'),
         props: true
+      },
+      {
+        path: '/storyline/:storyLineId',
+        component: () => import('@/pages/community/storyline.vue'),
+        props: true
+      },
+      {
+        path: '/courses',
+        component: () => import('@/pages/community/courses.vue')
       }
     ]
   },
