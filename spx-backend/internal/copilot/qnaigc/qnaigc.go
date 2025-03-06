@@ -8,6 +8,10 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
 
+const (
+	defaultAssistantMsg = "You are a Go+ Spx language assistant. Please answer using Spx language."
+)
+
 // Qiniu represents a client for interacting with the Qiniu API.
 // It handles message processing and API communication.
 type Qiniu struct {
@@ -63,7 +67,7 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 	}
 
 	// Add default assistant message for go+ spx language
-	messages = append(messages, NewAssistantMessage("You are a Go+ Spx language assistant. Please answer using Spx language."))
+	messages = append(messages, NewAssistantMessage(defaultAssistantMsg))
 
 	for _, msg := range params.Messages {
 		var message Message
@@ -127,7 +131,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 	}
 
 	// Add default assistant message for go+ spx language
-	messages = append(messages, NewAssistantMessage("You are a Go+ Spx language assistant. Please answer using Spx language."))
+	messages = append(messages, NewAssistantMessage(defaultAssistantMsg))
 
 	for _, msg := range params.Messages {
 		var message Message
