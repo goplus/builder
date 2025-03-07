@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultAssistantMsg = "You are a Go+ Spx language assistant. Please answer using Spx language."
+	defaultSystemMsg = "You are a Go+ Spx language assistant. Please answer using Spx language."
 )
 
 // Qiniu represents a client for interacting with the Qiniu API.
@@ -66,8 +66,8 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
 
-	// Add default assistant message for go+ spx language
-	messages = append(messages, NewAssistantMessage(defaultAssistantMsg))
+	// Add default system message for go+ spx language
+	messages = append(messages, NewSystemMessage(defaultSystemMsg))
 
 	for _, msg := range params.Messages {
 		var message Message
@@ -130,8 +130,8 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
 
-	// Add default assistant message for go+ spx language
-	messages = append(messages, NewAssistantMessage(defaultAssistantMsg))
+	// Add default system message for go+ spx language
+	// messages = append(messages, NewSystemMessage(defaultSystemMsg))
 
 	for _, msg := range params.Messages {
 		var message Message
