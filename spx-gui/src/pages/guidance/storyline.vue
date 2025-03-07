@@ -77,9 +77,7 @@
               </p>
             </div>
           </div>
-          <div v-else class="content log-tip">
-            登陆以查看当前关卡
-          </div>
+          <div v-else class="content log-tip">登陆以查看当前关卡</div>
         </div>
         <div class="card card-group-item">
           <h3>{{ $t({ zh: '成就系统', en: 'Achievements' }) }}</h3>
@@ -94,9 +92,7 @@
               <span>{{ $t(level.achievement.title) }}</span>
             </div>
           </div>
-          <div v-else class="content log-tip">
-            登陆以查看成就
-          </div>
+          <div v-else class="content log-tip">登陆以查看成就</div>
         </div>
       </div>
       <div class="card description-card">
