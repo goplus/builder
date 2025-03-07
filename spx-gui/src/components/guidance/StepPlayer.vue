@@ -59,7 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, computed } from 'vue'
+import { useTag } from '@/utils/tagging'
 import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
@@ -101,11 +102,12 @@ onMounted(async () => {
   if (props.step.isBackdropControl) {
     filter.setFilter('backdrop', true, props.step.backdrops)
   }
+  currentGuidePositions = null
+  setupTargetElementListener()
 })
 
 onBeforeUnmount(() => {
   filter.reset()
-  currentGuidePositions = null
 })
 
 async function loadSnapshot(snapshotStr: string): Promise<void> {
@@ -245,7 +247,38 @@ function getBubbleStyle(highlightRect: HighlightRect) {
   return currentGuidePositions.bubbleStyle
 }
 
+function setupTargetElementListener() {
+  if (props.step.type !== 'following' || !props.step.target) return
+  const { getElement } = useTag()
+
+  const targetElement = computed(() => {
+    return getElement(props.step.target)
+  })
+
+  if (targetElement.value) {
+    targetElement.value.addEventListener('click', handleTargetElementClick)
+  }
+}
+
+async function handleTargetElementClick() {
+  if (props.step.type !== 'following') return
+
+  if (props.step.snapshot?.endSnapshot) {
+    const result = await compareSnapshot(props.step.snapshot.endSnapshot)
+    if (result.success) {
+      emit('stepCompleted')
+    } else {
+      console.warn('Snapshot comparison failed:', result.reason)
+    }
+  }
+}
+
 function handleCheckButtonClick() {
   emit('stepCompleted')
+}
+
+function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
+  if (!snapshotStr) return Promise.resolve({ success: false, reason: 'No end snapshot' })
+  return Promise.resolve({ success: true })
 }
 </script>
