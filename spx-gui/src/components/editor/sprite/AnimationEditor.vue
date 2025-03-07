@@ -22,9 +22,11 @@
     />
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleGroupCostumes">{{
-          $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' })
-        }}</UIMenuItem>
+        <TagNode name="group-costumes">
+          <UIMenuItem @click="handleGroupCostumes">{{
+            $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' })
+          }}</UIMenuItem>
+        </TagNode>
       </UIMenu>
     </template>
     <template #detail>

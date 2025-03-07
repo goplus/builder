@@ -5,14 +5,18 @@
         <div :class="['title', { center: centerTitle }]">
           {{ title }}
         </div>
-        <UIModalClose class="close" @click="handleCloseButton" />
+        <TagNode name="close-modal">
+          <UIModalClose class="close" @click="handleCloseButton" />
+        </TagNode>
       </div>
 
       <UIDivider />
 
-      <div class="body" :style="bodyStyle">
-        <slot></slot>
-      </div>
+      <TagNode name="form-modal-body">
+        <div class="body" :style="bodyStyle">
+          <slot></slot>
+        </div>
+      </TagNode>
     </div>
   </UIModal>
 </template>

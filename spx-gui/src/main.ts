@@ -8,9 +8,10 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/zh'
-
 import { initI18n } from './i18n'
 import App from './App.vue'
+import TagRoot from './utils/tagging/TagRoot.vue'
+import TagNode from './utils/tagging/TagNode.vue'
 import { initRouter } from './router'
 import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
@@ -39,6 +40,9 @@ async function initApp() {
   })
 
   app.use(VueQueryPlugin)
+
+  app.component('TagRoot', TagRoot)
+  app.component('TagNode', TagNode)
 
   app.mount('#app')
 }
