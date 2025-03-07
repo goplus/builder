@@ -13,12 +13,13 @@ import (
 // from the Qiniu AI API. It processes the streaming response and provides
 // a synchronized reading interface for the response content.
 type StreamReader struct {
-	body    io.ReadCloser  // Original response body from the HTTP request
-	scanner *bufio.Scanner // Scanner for reading SSE events line by line
-	buffer  *bytes.Buffer  // Buffer for storing processed content
-	mu      sync.Mutex     // Mutex for thread-safe operations
-	closed  bool           // Flag indicating if the stream is closed
-	err     error          // Stores any error that occurred during streaming
+	body       io.ReadCloser  // Original response body from the HTTP request
+	scanner    *bufio.Scanner // Scanner for reading SSE events line by line
+	buffer     *bytes.Buffer  // Buffer for storing processed content
+	mu         sync.Mutex     // Mutex for thread-safe operations
+	closed     bool           // Flag indicating if the stream is closed
+	err        error          // Stores any error that occurred during streaming
+	isThinking bool           // Flag indicating if the response is thinking
 }
 
 // Read implements io.Reader interface. It reads data from the buffer in a thread-safe manner.
@@ -78,13 +79,36 @@ func (r *StreamReader) Read(p []byte) (n int, err error) {
 		}
 
 		// Skip empty content
-		if len(streamResp.Choices) == 0 || streamResp.Choices[0].Delta.Content == "" {
+		if len(streamResp.Choices) == 0 || (streamResp.Choices[0].Delta.Content == "" &&
+			streamResp.Choices[0].Delta.ReasoningContent == "") {
 			continue
 		}
 
 		// Write content to buffer and break the loop
-		content := []byte(streamResp.Choices[0].Delta.Content)
-		r.buffer.Write(content)
+		// Handle thinking content
+		thinking := streamResp.Choices[0].Delta.ReasoningContent
+		content := streamResp.Choices[0].Delta.Content
+
+		// fmt.Println(thinking != "", content != "", r.isThinking)
+		if thinking != "" {
+			if !r.isThinking {
+				r.buffer.WriteString("<thinking>")
+				r.isThinking = true
+			}
+			r.buffer.WriteString(thinking)
+		} else if r.isThinking {
+			r.buffer.WriteString("</thinking>\n")
+			r.isThinking = false
+		}
+
+		// Handle regular content
+		if content != "" {
+			if r.isThinking {
+				r.buffer.WriteString("</thinking>\n")
+				r.isThinking = false
+			}
+			r.buffer.WriteString(content)
+		}
 		break
 	}
 

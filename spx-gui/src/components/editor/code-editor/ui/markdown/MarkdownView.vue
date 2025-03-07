@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from 'vue' // Add h import
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import type { MarkdownStringFlag } from '../../common'
@@ -9,6 +9,7 @@ import CodeBlock from './CodeBlock.vue'
 import CodeChange from './CodeChange.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
+import Thinking from './ThinkingView.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -29,6 +30,11 @@ const basicComponents = {
    * ```
    */
   'code-link': CodeLink,
+  /** 
+   * Usage:
+   * 
+   */
+  'thinking': Thinking,
   /**
    * Usage:
    * ```html

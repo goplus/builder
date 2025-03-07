@@ -237,7 +237,7 @@ export class CopilotController extends Disposable {
       for await (const chunk of stream) {
         accumulatedText += chunk
         // Update the current round's answer as chunks arrive
-        currentRound.answer = makeBasicMarkdownString(accumulatedText)
+        currentRound.answer = makeBasicMarkdownString(accumulatedText, {thinking: true})
       }
 
       // Set final state once streaming is complete

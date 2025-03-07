@@ -215,6 +215,10 @@ export type MarkdownString<F extends MarkdownStringFlag = MarkdownStringFlag> = 
   flag?: F
   /** Markdown string with MDX support. */
   value: string | LocaleMessage
+  /** Style options for specific tags */
+  styleOptions?: {
+    thinking?: boolean
+  }
 }
 
 /**
@@ -223,8 +227,15 @@ export type MarkdownString<F extends MarkdownStringFlag = MarkdownStringFlag> = 
  */
 export type BasicMarkdownString = MarkdownString<'basic'>
 
-export function makeBasicMarkdownString(value: string | LocaleMessage): BasicMarkdownString {
-  return { value, flag: 'basic' }
+export function makeBasicMarkdownString(
+  value: string | LocaleMessage,
+  styleOptions?: { thinking?: boolean }
+): BasicMarkdownString {
+  return {
+    value,
+    flag: 'basic',
+    styleOptions
+  }
 }
 
 /**

@@ -153,7 +153,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 		Model:       params.Model,
 		Messages:    messages,
 		Temperature: 0.7,
-		MaxTokens:   types.MAX_TOKENS,
+		TopP:        0.9,
 		Stream:      true,
 	}
 
