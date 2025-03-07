@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { getSoundName, getSpriteName, normalizeAssetName, normalizeGopIdentifierAssetName } from './asset-name'
+import {
+  getSoundName,
+  getSpriteName,
+  normalizeAssetName,
+  normalizeGopIdentifierAssetName,
+  validateSoundName,
+  validateSpriteName
+} from './asset-name'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
@@ -52,10 +59,10 @@ describe('normalizeGopIdentifierAssetName', () => {
 describe('getSpriteName', () => {
   it('should work well', () => {
     const project = new Project()
-    expect(getSpriteName(project)).toBe('Sprite')
-    project.addSprite(new Sprite('Sprite'))
-    project.addSprite(new Sprite('Sprite3'))
-    expect(getSpriteName(project)).toBe('Sprite2')
+    expect(getSpriteName(project)).toBe('MySprite')
+    project.addSprite(new Sprite('MySprite'))
+    project.addSprite(new Sprite('MySprite3'))
+    expect(getSpriteName(project)).toBe('MySprite2')
   })
 
   it('should work well with base', () => {
@@ -66,6 +73,7 @@ describe('getSpriteName', () => {
     expect(getSpriteName(project, 'foo_bar')).toBe('FooBar3')
     expect(getSpriteName(project, 'fooBar')).toBe('FooBar3')
     expect(getSpriteName(project, 'Foo  bar')).toBe('FooBar3')
+    expect(getSpriteName(project, 'Sprite')).toBe('Sprite2')
   })
 })
 
@@ -86,6 +94,24 @@ describe('getSoundName', () => {
     expect(getSoundName(project, 'foo_bar')).toBe('fooBar3')
     expect(getSoundName(project, 'fooBar')).toBe('fooBar3')
     expect(getSoundName(project, 'Foo  bar')).toBe('fooBar3')
+  })
+})
+
+describe('validateSpriteName', () => {
+  it('should reject names conflict with spx exports', () => {
+    expect(validateSpriteName('SpriteImpl', null)).not.toBeFalsy()
+    expect(validateSpriteName('Sprite', null)).not.toBeFalsy()
+    expect(validateSpriteName('Sound', null)).not.toBeFalsy()
+    expect(validateSpriteName('Game', null)).not.toBeFalsy()
+  })
+})
+
+describe('validateSoundName', () => {
+  it('should reject names conflict with spx exports', () => {
+    expect(validateSoundName('SpriteImpl', null)).not.toBeFalsy()
+    expect(validateSoundName('Sprite', null)).not.toBeFalsy()
+    expect(validateSoundName('Sound', null)).not.toBeFalsy()
+    expect(validateSoundName('Game', null)).not.toBeFalsy()
   })
 })
 

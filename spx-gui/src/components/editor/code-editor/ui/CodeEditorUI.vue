@@ -27,7 +27,7 @@ import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getSpxIdentifierNameTip, validateSpxIdentifierName } from '@/utils/spx'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -91,12 +91,12 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
   return invokeRenameModal({
     target: {
       name,
-      validateName: validateGopIdentifierName,
+      validateName: validateSpxIdentifierName,
       applyName: (newName) =>
         editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
           codeEditorCtx.rename(textDocumentId, position, newName)
         ),
-      inputTip: getGopIdentifierNameTip(),
+      inputTip: getSpxIdentifierNameTip(),
       warning: await getRenameWarning()
     }
   })

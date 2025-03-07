@@ -1,5 +1,5 @@
 import type { LocaleMessage } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getSpxIdentifierNameTip, validateSpxIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
@@ -21,26 +21,26 @@ function getAssetNameTip(asset: LocaleMessage) {
   }
 }
 
-function validateGopIdentifierAssetName(name: string) {
+function validateSpxIdentifierAssetName(name: string) {
   const err = validateAssetName(name)
   if (err != null) return err
-  // spx code is go+ code, and the asset name will compiled to an identifier of go+
-  // so asset name rules is depend on the identifier rules of go+.
-  return validateGopIdentifierName(name)
+  return validateSpxIdentifierName(name)
 }
 
-function getGopIdentifierAssetNameTip(asset: LocaleMessage) {
-  return getGopIdentifierNameTip(asset)
+function getSpxIdentifierAssetNameTip(asset: LocaleMessage) {
+  return getSpxIdentifierNameTip(asset)
 }
 
-export const spriteNameTip = getGopIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
+export const spriteNameTip = getSpxIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
 
 export function validateSpriteName(name: string, project: Project | null) {
-  // spx will use the sprite's name as identifier for the sprite variable in compiled code,
-  // so it should obey the naming rule of gop identifier
-  const err = validateGopIdentifierAssetName(name)
+  // Name of a sprite should obey the naming rule of identifiers, because:
+  // 1. It will be used to name the sprite struct in compiled code
+  // 2. It will be used to name the identifier in [auto-binding]((https://github.com/goplus/spx/issues/379))
+  const err = validateSpxIdentifierAssetName(name)
   if (err != null) return err
   if (project != null) {
+    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
     if (project.sprites.find((s) => s.name === name))
       return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
     if (project.sounds.find((s) => s.name === name))
@@ -66,11 +66,20 @@ export function validateAnimationName(name: string, sprite: Sprite | null) {
     return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
 
-export const soundNameTip = getGopIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
+export const soundNameTip = getSpxIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
 
 export function validateSoundName(name: string, project: Project | null) {
-  // Now same validation logic for sprite & sound
-  return validateSpriteName(name, project)
+  // Name of a sound should obey the naming rule of identifiers, because:
+  // It will be used to name the identifier in [auto-binding]((https://github.com/goplus/spx/issues/379))
+  const err = validateSpxIdentifierAssetName(name)
+  if (err != null) return err
+  if (project != null) {
+    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
+    if (project.sprites.find((s) => s.name === name))
+      return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
+    if (project.sounds.find((s) => s.name === name))
+      return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
+  }
 }
 
 export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
@@ -129,7 +138,7 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'Sprite'
+  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'MySprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 

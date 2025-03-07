@@ -103,21 +103,47 @@ export async function adaptImg(file: File): Promise<File> {
   return fromBlob(jpegFileName, jpegBlob)
 }
 
-export function validateGopIdentifierName(name: string) {
+function validateGopIdentifierName(name: string) {
   const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
   if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
   if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
   if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
 }
 
-export function getGopIdentifierNameTip(target?: LocaleMessage) {
+function getGopIdentifierNameTip(target?: LocaleMessage) {
   if (target == null)
     return {
-      en: 'The name can only contain Chineses / English letters, digits, and the character _.',
+      en: 'The name can only contain Chinese / English letters, digits, and the character _.',
       zh: '名称只能包含中英文字符、数字及下划线'
     }
   return {
-    en: `The ${target.en} name can only contain Chineses / English letters, digits, and the character _.`,
+    en: `The ${target.en} name can only contain Chinese / English letters, digits, and the character _.`,
     zh: `${target.zh}名称只能包含中英文字符、数字及下划线`
   }
+}
+
+/**
+ * Exported definition names from spx package.
+ * We need to avoid conflict with them when naming special assets like sounds and sprites,
+ * as that may cause resource-reference related issues.
+ */
+export const exportedDefNames = [
+  'Sound',
+  'Game',
+  'Sprite',
+  'SpriteImpl'
+  // There are other exports from spx apart from these, while less important.
+  // TODO: Find a more reliable way to get or check (conflict with) them.
+]
+
+/** Validate if given name a valid identifier name for spx code. */
+export function validateSpxIdentifierName(name: string) {
+  const err = validateGopIdentifierName(name)
+  if (err != null) return err
+  if (exportedDefNames.includes(name)) return { en: 'Conflict with built-in definitions', zh: '与内置定义冲突' }
+}
+
+/** Get tip for naming identifier in spx code. */
+export function getSpxIdentifierNameTip(target?: LocaleMessage) {
+  return getGopIdentifierNameTip(target)
 }
