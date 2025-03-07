@@ -34,7 +34,7 @@ type Step = {
     startSnapshot: string // 初始快照
     endSnapshot?: string // 结束快照
   }
-  coding: {
+  coding?: {
     // coding任务独有的数据结构
     path: string // 编码文件路径
     codeMasks: Mask[] // 完形填空的mask数组，一个mask对应一个空的答案

@@ -1,14 +1,13 @@
 <template>
-  <li class="course-item">
+  <li class="storyline-item">
     <RouterLink class="link" :to="to">
-      <div class="background-image" :style="{ backgroundImage: `url(${course.backgroundImage})` }">
-      </div>
+      <div class="background-image" :style="{ backgroundImage: `url(${storyline.backgroundImage})` }"></div>
       <div class="info">
         <div class="title">
-          {{ $t(course.title) }}
+          {{ $t(storyline.title) }}
         </div>
         <div class="description">
-          <p>{{ $t(course.description) }}</p>
+          <p>{{ $t(storyline.description) }}</p>
         </div>
       </div>
     </RouterLink>
@@ -20,17 +19,17 @@ import { computed } from 'vue'
 import type { StoryLine } from '@/apis/guidance'
 import { getStoryLineRoute } from '@/router'
 const props = defineProps<{
-  course: StoryLine
+  storyline: StoryLine
 }>()
 
 const to = computed(() => {
-  const { id } = props.course
+  const { id } = props.storyline
   return getStoryLineRoute(id)
 })
 </script>
 
 <style scoped lang="scss">
-.course-item{
+.storyline-item {
   width: 232px;
   height: 210px;
   overflow: hidden;
@@ -40,20 +39,20 @@ const to = computed(() => {
   &:hover {
     box-shadow: 0px 4px 12px 0px rgba(36, 41, 47, 0.08);
   }
-  .background-image{
+  .background-image {
     width: 100%;
     aspect-ratio: 16/9;
     background-repeat: no-repeat;
     background-size: cover;
   }
-  .info{
+  .info {
     padding: 10px;
-    .title{
+    .title {
       font-size: 16px;
     }
-    .description{
+    .description {
       font-size: 12px;
-      p{
+      p {
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;

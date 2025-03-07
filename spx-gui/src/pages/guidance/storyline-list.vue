@@ -1,6 +1,6 @@
 <template>
   <CenteredWrapper class="main">
-    <CoursesSection :query-ret="easyCourses" :num-in-row="numInRow" icon-color="green">
+    <StoryLinesSection :query-ret="easyStoryLines" :num-in-row="numInRow" icon-color="green">
       <template #title>
         {{
           $t({
@@ -9,9 +9,9 @@
           })
         }}
       </template>
-      <CourseItem v-for="course in easyCourses.data.value" :key="course.id" :course="course" />
-    </CoursesSection>
-    <CoursesSection :query-ret="mediumCourses" :num-in-row="numInRow" icon-color="blue">
+      <StoryLineItem v-for="storyLine in easyStoryLines.data.value" :key="storyLine.id" :storyline="storyLine" />
+    </StoryLinesSection>
+    <StoryLinesSection :query-ret="mediumStoryLines" :num-in-row="numInRow" icon-color="blue">
       <template #title>
         {{
           $t({
@@ -20,9 +20,9 @@
           })
         }}
       </template>
-      <CourseItem v-for="course in mediumCourses.data.value" :key="course.id" :course="course" />
-    </CoursesSection>
-    <CoursesSection :query-ret="hardCourses" :num-in-row="numInRow" icon-color="red">
+      <StoryLineItem v-for="storyLine in mediumStoryLines.data.value" :key="storyLine.id" :storyline="storyLine" />
+    </StoryLinesSection>
+    <StoryLinesSection :query-ret="hardStoryLines" :num-in-row="numInRow" icon-color="red">
       <template #title>
         {{
           $t({
@@ -31,16 +31,16 @@
           })
         }}
       </template>
-      <CourseItem v-for="course in hardCourses.data.value" :key="course.id" :course="course" />
-    </CoursesSection>
+      <StoryLineItem v-for="storyLine in hardStoryLines.data.value" :key="storyLine.id" :storyline="storyLine" />
+    </StoryLinesSection>
   </CenteredWrapper>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
-import CoursesSection from '@/components/guidance/CoursesSection.vue'
-import CourseItem from '@/components/guidance/CourseItem.vue'
+import StoryLinesSection from '@/components/guidance/StoryLineSection.vue'
+import StoryLineItem from '@/components/guidance/StoryLineItem.vue'
 import { useQuery } from '@/utils/query'
 import { listStoryLine } from '@/apis/storyline'
 import { useResponsive } from '@/components/ui'
@@ -48,7 +48,7 @@ import { useResponsive } from '@/components/ui'
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
-const easyCourses = useQuery(
+const easyStoryLines = useQuery(
   async () => {
     return listStoryLine('easy')
   },
@@ -57,16 +57,16 @@ const easyCourses = useQuery(
     zh: '加载入门课程失败'
   }
 )
-const mediumCourses = useQuery(
+const mediumStoryLines = useQuery(
   async () => {
     return listStoryLine('medium')
   },
   {
     en: 'Failed to load medium courses',
-    zh: '加载入中级课程失败'
+    zh: '加载中级课程失败'
   }
 )
-const hardCourses = useQuery(
+const hardStoryLines = useQuery(
   async () => {
     return listStoryLine('hard')
   },
@@ -78,7 +78,7 @@ const hardCourses = useQuery(
 </script>
 
 <style lang="scss" scoped>
-.main{
+.main {
   padding-top: 10px;
 }
 </style>

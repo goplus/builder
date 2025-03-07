@@ -2,82 +2,91 @@
   <CenteredWrapper size="medium">
     <main class="storyline-page">
       <header class="storyline-header">
-        <h2>{{$t(storyLine?.title ?? { zh: '', en: '' })}}</h2>
+        <h2>{{ $t(storyLine?.title ?? { zh: '', en: '' }) }}</h2>
       </header>
-      <div 
-        class="map-wrapper"
-        :style="{backgroundImage: `url(${storyLine?.backgroundImage})`}">
-        <div 
+      <div class="map-wrapper" :style="{ backgroundImage: `url(${storyLine?.backgroundImage})` }">
+        <div
           v-for="(level, index) in storyLine?.levels"
           :key="index"
           class="level"
-          :class="{ 'locked': !userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0)}"
-          :style="{left: `${level.placement.x}%`, top: `${level.placement.y}%`}">
-          <img :src="level.cover" alt=""/>
+          :class="{ locked: !userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0) }"
+          :style="{ left: `${level.placement.x}%`, top: `${level.placement.y}%` }"
+        >
+          <img :src="level.cover" alt="" />
           <div class="level-index">
-            {{$t({ zh: '第', en: 'Level ' })}}{{index + 1}}{{$t({zh: '关', en: '' })}}
+            {{
+              $t({
+                en: `Level ${index + 1}`,
+                zh: `第 ${index + 1} 关`
+              })
+            }}
           </div>
           <div class="level-title">
             {{ $t(level.title ?? { zh: '', en: '' }) }}
           </div>
-          <div 
-            v-if="!userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0)" 
-            class="level-mask">
-              {{$t({ zh: '未解锁', en: 'Locked' })}}
+          <div
+            v-if="!userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0)"
+            class="level-mask"
+          >
+            {{ $t({ zh: '未解锁', en: 'Locked' }) }}
           </div>
         </div>
       </div>
       <div class="card-groups">
         <div class="card card-group-item">
-          <h3>{{$t({ zh: '当前进度', en: 'Progress' })}}</h3>
+          <h3>{{ $t({ zh: '当前进度', en: 'Progress' }) }}</h3>
           <div class="content progress-content">
             <div class="progress-container">
               <div class="progress-bar">
-                <div 
+                <div
                   class="progress-fill"
                   :style="{
-                    width: storyLine && storyLineStudy 
-                      ? `${(storyLineStudy.lastFinishedLevelIndex / storyLine.levels.length) * 100}%`
-                      : '0%'
+                    width:
+                      storyLine && storyLineStudy
+                        ? `${(storyLineStudy.lastFinishedLevelIndex / storyLine.levels.length) * 100}%`
+                        : '0%'
                   }"
                 ></div>
               </div>
               <span class="progress-percentage">
-                {{ storyLine && storyLineStudy 
-                  ? `${Math.round((storyLineStudy.lastFinishedLevelIndex / storyLine.levels.length) * 100)}%`
-                  : '0%' 
+                {{
+                  storyLine && storyLineStudy
+                    ? `${Math.round((storyLineStudy.lastFinishedLevelIndex / storyLine.levels.length) * 100)}%`
+                    : '0%'
                 }}
               </span>
             </div>
             <div class="progress-text">
-              {{$t({ zh: '已完成关卡', en: 'Levels Completed' })}} {{ storyLineStudy?.lastFinishedLevelIndex ?? 0 }}/{{ storyLine?.levels.length ?? 0 }}
+              {{ $t({ zh: '已完成关卡', en: 'Levels Completed' }) }}
+              {{ storyLineStudy?.lastFinishedLevelIndex ?? 0 }}/{{ storyLine?.levels.length ?? 0 }}
             </div>
           </div>
         </div>
         <div class="card card-group-item">
-          <h3>{{$t({ zh: '当前关卡', en: 'Current Level' })}}</h3>
-          <div 
-            v-if="userStore.isSignedIn()"
-            class="content current-level-content">
+          <h3>{{ $t({ zh: '当前关卡', en: 'Current Level' }) }}</h3>
+          <div v-if="userStore.isSignedIn()" class="content current-level-content">
             <div class="level-cover">
-              <img :src="storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].cover" alt=""/>
+              <img :src="storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].cover" alt="" />
             </div>
             <div class="level-description">
-              <h4>{{$t({ zh: '第', en: 'Level ' })}}{{(storyLineStudy?.lastFinishedLevelIndex ?? -1) + 1}}{{$t({zh: '关', en: '' })}}: {{ $t(storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].title ?? { zh: '', en: '' }) }}</h4>
-              <p>{{ $t(storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].description ?? { zh: '', en: '' }) }}</p>
+              <h4>{{ $t(currentLevelTitle) }}</h4>
+              <p>
+                {{
+                  $t(storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].description ?? { zh: '', en: '' })
+                }}
+              </p>
             </div>
           </div>
         </div>
         <div class="card card-group-item">
-          <h3>{{$t({ zh: '成就系统', en: 'Achievements' })}}</h3>
-          <div 
-            v-if="userStore.isSignedIn()"
-            class="content">
-            <div 
-              v-for="(level, index) in storyLine?.levels" 
-              v-show="index <= (storyLineStudy?.lastFinishedLevelIndex ?? 0 -1) && level.achievement" 
+          <h3>{{ $t({ zh: '成就系统', en: 'Achievements' }) }}</h3>
+          <div v-if="userStore.isSignedIn()" class="content">
+            <div
+              v-for="(level, index) in storyLine?.levels"
+              v-show="index <= (storyLineStudy?.lastFinishedLevelIndex ?? 0 - 1) && level.achievement"
               :key="index"
-              class="achievement">
+              class="achievement"
+            >
               <img :src="level.achievement.icon" :alt="$t(level.achievement.title)" />
               <span>{{ $t(level.achievement.title) }}</span>
             </div>
@@ -85,8 +94,8 @@
         </div>
       </div>
       <div class="card description-card">
-        <h3>{{$t({ zh: '故事背景', en: 'Story Background' })}}</h3>
-        <p>{{$t(storyLine?.description ?? { zh: '', en: '' })}}</p>
+        <h3>{{ $t({ zh: '故事背景', en: 'Story Background' }) }}</h3>
+        <p>{{ $t(storyLine?.description ?? { zh: '', en: '' }) }}</p>
       </div>
     </main>
   </CenteredWrapper>
@@ -97,6 +106,7 @@ import { useEnsureSignedIn } from '@/utils/user'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import { getStoryLine, getStoryLineStudy, createStoryLineStudy } from '@/apis/storyline'
 import { useUserStore } from '@/stores/user'
+import { computed } from 'vue'
 
 const props = defineProps<{
   storyLineId: string
@@ -135,18 +145,28 @@ const { data: storyLineStudy } = useQuery(
   }
 )
 
+// 当前关卡标题
+const currentLevelTitle = computed(() => {
+  const currentIndex = storyLineStudy.value?.lastFinishedLevelIndex ?? -1
+  const levelTitle = storyLine.value?.levels[currentIndex]?.title ?? { zh: '', en: '' }
+
+  return {
+    zh: `第${currentIndex + 1}关: ${levelTitle.zh}`,
+    en: `Level ${currentIndex + 1}: ${levelTitle.en}`
+  }
+})
 </script>
 <style scoped lang="scss">
 .storyline-page {
   height: 1000px;
-  .storyline-header{
+  .storyline-header {
     text-align: center;
-    h2{
+    h2 {
       font-size: 32px;
-      color: #F9A134;
+      color: #f9a134;
     }
   }
-  .map-wrapper{
+  .map-wrapper {
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
@@ -164,31 +184,31 @@ const { data: storyLineStudy } = useQuery(
       width: 0;
       height: 0;
     }
-    .level{
+    .level {
       position: absolute;
       width: 100px;
       text-align: center;
       &.locked {
         cursor: default;
       }
-      
+
       &:not(.locked):hover {
         cursor: pointer;
         transform: translateY(-5px);
         transition: all 0.3s ease;
       }
-      img{
+      img {
         width: 50px;
         height: 50px;
         border-radius: 50%;
       }
-      .level-index{
+      .level-index {
         font-size: 14px;
       }
-      .level-title{
+      .level-title {
         font-size: 12px;
       }
-      .level-mask{
+      .level-mask {
         position: absolute;
         top: 0;
         left: 50%;
@@ -203,35 +223,35 @@ const { data: storyLineStudy } = useQuery(
       }
     }
   }
-  .card{
+  .card {
     background: white;
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     cursor: pointer;
     padding: 16px;
-    
+
     &:hover {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
       transform: translateY(-2px);
     }
   }
-  .card-groups{
+  .card-groups {
     margin-top: 20px;
     display: flex;
     flex-direction: row;
     gap: 15px;
-    .card-group-item{
+    .card-group-item {
       flex: 1;
       min-height: 80px;
       max-height: 160px;
       display: flex;
       flex-direction: column;
-      .content{
+      .content {
         flex: 1;
         overflow: auto;
       }
-      .progress-content{
+      .progress-content {
         display: flex;
         flex-direction: column;
         gap: 5px;
@@ -243,76 +263,71 @@ const { data: storyLineStudy } = useQuery(
           .progress-bar {
             flex: 1;
             height: 8px;
-            background-color: #E5E7EB;
+            background-color: #e5e7eb;
             border-radius: 4px;
             overflow: hidden;
-            
+
             .progress-fill {
               height: 100%;
-              background-color: #FF6B6B;
+              background-color: #ff6b6b;
               transition: width 0.3s ease;
             }
           }
-          
+
           .progress-percentage {
             min-width: 30px;
             font-size: 12px;
           }
         }
-        
+
         .progress-text {
           font-size: 12px;
         }
       }
-      .current-level-content{
+      .current-level-content {
         display: flex;
-        .level-cover{
+        .level-cover {
           width: 30px;
           height: 100%;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          img{
+          img {
             width: 30px;
             height: 30px;
             border-radius: 50%;
           }
         }
-        .level-description{
+        .level-description {
           flex: 1;
           padding-left: 10px;
-          h4{
+          h4 {
             font-size: 13px;
           }
-          p{
+          p {
             font-size: 12px;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-            overflow: hidden;
-            margin: 0;
           }
         }
       }
-      .achievement{
+      .achievement {
         display: flex;
         margin-top: 5px;
-        img{
+        img {
           width: 20px;
           height: 20px;
           border-radius: 50%;
         }
-        span{
+        span {
           padding-left: 5px;
           font-size: 12px;
         }
       }
     }
   }
-  .description-card{
+  .description-card {
     min-height: 80px;
     margin-top: 20px;
-    p{
+    p {
       font-size: 12px;
     }
   }
