@@ -1099,10 +1099,10 @@ export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineS
     return storyLineStudy
 }
 
-export async function listStoryLine(): Promise<StoryLine[]> {
+export async function listStoryLine(tag: 'easy' | 'medium' | 'hard'): Promise<StoryLine[]> {
     // const storyLine: StoryLine = JSON.parse(storyLineJson)
     const storyLine: StoryLine = storyLineJson as unknown as StoryLine
-    const storyLines: StoryLine[] = [storyLine];
+    const storyLines: StoryLine[] = [storyLine, storyLine, storyLine, storyLine, storyLine, storyLine, storyLine, storyLine, storyLine, storyLine];
     return storyLines
 }
 

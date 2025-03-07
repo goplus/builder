@@ -32,6 +32,10 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export function getStoryLineRoute(storyLineId: string) {
+  return `/storyline/${storyLineId}`
+}
+
 declare module 'vue-router' {
   interface RouteMeta {
     /** Whether the route requires sign-in */
