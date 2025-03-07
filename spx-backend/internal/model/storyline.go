@@ -52,11 +52,11 @@ func ParseStorylineTag(tag string) StorylineTag {
 func (tag StorylineTag) String() string {
 	switch tag {
 	case EasyTag:
-		return "easy,简单"
+		return "easy"
 	case MediumTag:
-		return "medium,中等"
+		return "medium"
 	case HardTag:
-		return "hard,困难"
+		return "hard"
 	}
-	return "unknown,未知"
+	return "unknown"
 }

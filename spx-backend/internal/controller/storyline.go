@@ -5,25 +5,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
+	"io"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
 )
 
 const (
-	AllowedTimeDiff = 10 * time.Second // Updated the time difference limit for the latest levels in the storyline
+	allowedTimeDiff = 10 * time.Second // Updated the time difference limit for the latest levels in the storyline
 )
 
-type StorylineDto struct {
+type StorylineDTO struct {
 	ModelDTO
 	BackgroundImage string        `json:"backgroundImage"`
 	Name            string        `json:"name"`
 	Title           LocaleMessage `json:"title"`
 	Description     LocaleMessage `json:"description"`
-	Tag             LocaleMessage `json:"tag"`
+	Tag             string        `json:"tag"`
 	Levels          string        `json:"levels"`
 }
 
@@ -32,25 +38,21 @@ type LocaleMessage struct {
 	Zh string `json:"zh"`
 }
 
-// toStorylineDto converts a storyline model to a storyline DTO.
-func toStorylineDto(m model.Storyline) StorylineDto {
-	tag := strings.Split(m.Tag.String(), ",")
+// toStorylineDTO converts a storyline model to a storyline DTO.
+func toStorylineDTO(m model.Storyline) StorylineDTO {
 	title := LocaleMessage{}
 	_ = json.Unmarshal([]byte(m.Title), &title)
 	description := LocaleMessage{}
 	_ = json.Unmarshal([]byte(m.Description), &description)
 
-	return StorylineDto{
+	return StorylineDTO{
 		ModelDTO:        toModelDTO(m.Model),
 		BackgroundImage: m.BackgroundImage,
 		Name:            m.Name,
 		Title:           title,
 		Description:     description,
-		Tag: LocaleMessage{
-			En: tag[0],
-			Zh: tag[1],
-		},
-		Levels: m.Levels,
+		Tag:             m.Tag.String(),
+		Levels:          m.Levels,
 	}
 }
 
@@ -68,48 +70,50 @@ func (ctrl *Controller) ensureStoryline(ctx context.Context, storylineId int64) 
 }
 
 // GetStoryline Get the storyline by ID
-func (ctrl *Controller) GetStoryline(ctx context.Context, id string) (*StorylineDto, error) {
+func (ctrl *Controller) GetStoryline(ctx context.Context, id string) (*StorylineDTO, error) {
 	storylineId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid asset id: %w", err)
+		return nil, fmt.Errorf("invalid storyline id: %w", err)
 	}
 	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
 	if err != nil {
 		return nil, err
 	}
 
-	StorylineDto := toStorylineDto(*mStoryline)
+	StorylineDTO := toStorylineDTO(*mStoryline)
 
-	return &StorylineDto, nil
+	return &StorylineDTO, nil
 }
 
-type UserStorylineRelationshipDto struct {
+type UserStorylineRelationshipDTO struct {
 	StorylineID            int64 `json:"storylineId"`
 	LastFinishedLevelIndex int8  `json:"lastFinishedLevelIndex"`
 }
 
-// toUserStorylineRelationshipDto converts a user-storyline relationship model to a user-storyline relationship DTO.
-func toUserStorylineRelationshipDto(m model.UserStorylineRelationship) UserStorylineRelationshipDto {
-	return UserStorylineRelationshipDto{
+// toUserStorylineRelationshipDTO converts a user-storyline relationship model to a user-storyline relationship DTO.
+func toUserStorylineRelationshipDTO(m model.UserStorylineRelationship) UserStorylineRelationshipDTO {
+	return UserStorylineRelationshipDTO{
 		StorylineID:            m.StorylineID,
 		LastFinishedLevelIndex: m.LastFinishedLevelIndex,
 	}
 }
 
 // StudyStoryline Users learn the storyline
-func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserStorylineRelationshipDto, error) {
+func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserStorylineRelationshipDTO, error) {
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
 		return nil, fmt.Errorf("storyline ID is required")
 	}
 
-	var mStoryline model.Storyline
-	if err := ctrl.db.WithContext(ctx).
-		Where("id = ?", id).
-		First(&mStoryline).
-		Error; err != nil {
-		return nil, fmt.Errorf("failed to get storyline: %w", err)
+	storylineId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid storyline id: %w", err)
+	}
+
+	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
+	if err != nil {
+		return nil, err
 	}
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
@@ -133,16 +137,16 @@ func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserSto
 			return nil, fmt.Errorf("failed to create user-storyline relationship: %w", err)
 		}
 
-		userStorylineRelationshipDto := toUserStorylineRelationshipDto(mUserStorylineRelationship)
+		userStorylineRelationshipDTO := toUserStorylineRelationshipDTO(mUserStorylineRelationship)
 
-		return &userStorylineRelationshipDto, nil
+		return &userStorylineRelationshipDTO, nil
 	}
 
-	return nil, fmt.Errorf("user has already studied the storyline")
+	return nil, ErrBadRequest
 }
 
 // GetStoryLineStudy Get the user's learning status of the storyline
-func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*UserStorylineRelationshipDto, error) {
+func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*UserStorylineRelationshipDTO, error) {
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
@@ -157,9 +161,9 @@ func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*User
 		return nil, fmt.Errorf("failed to get user-storyline relationship: %w", err)
 	}
 
-	userStorylineRelationshipDto := toUserStorylineRelationshipDto(mUserStorylineRelationship)
+	userStorylineRelationshipDTO := toUserStorylineRelationshipDTO(mUserStorylineRelationship)
 
-	return &userStorylineRelationshipDto, nil
+	return &userStorylineRelationshipDTO, nil
 }
 
 type UpdateUserStorylineRelationshipParam struct {
@@ -174,7 +178,7 @@ func (p *UpdateUserStorylineRelationshipParam) Validate() (ok bool, msg string) 
 }
 
 // FinishStorylineLevel Users finish the level of the storyline
-func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, param *UpdateUserStorylineRelationshipParam) (*UserStorylineRelationshipDto, error) {
+func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, param *UpdateUserStorylineRelationshipParam) (*UserStorylineRelationshipDTO, error) {
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
@@ -192,14 +196,14 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 	}
 
 	if lastFinishedLevelIndex != mUserStorylineRelationship.LastFinishedLevelIndex+1 {
-		return nil, fmt.Errorf("invalid level index")
+		return nil, ErrBadRequest
 	}
 
 	// Control update interval limits users by bypassing front-end updates
 	currentTime := time.Now()
 	timeDiff := currentTime.Sub(mUserStorylineRelationship.UpdatedAt)
-	if timeDiff < AllowedTimeDiff {
-		return nil, fmt.Errorf("too frequent operation")
+	if timeDiff < allowedTimeDiff {
+		return nil, ErrForbidden
 	}
 
 	mUserStorylineRelationship.LastFinishedLevelIndex = lastFinishedLevelIndex
@@ -209,7 +213,172 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 		return nil, fmt.Errorf("failed to save user-storyline relationship: %w", err)
 	}
 
-	userStorylineRelationshipDto := toUserStorylineRelationshipDto(mUserStorylineRelationship)
+	userStorylineRelationshipDTO := toUserStorylineRelationshipDTO(mUserStorylineRelationship)
 
-	return &userStorylineRelationshipDto, nil
+	return &userStorylineRelationshipDTO, nil
+}
+
+type CheckCodeParam struct {
+	UserCode     string `json:"userCode"`
+	ExpectedCode string `json:"expectedCode"`
+	Content      string `json:"content"`
+}
+
+func (p *CheckCodeParam) Validate() (ok bool, msg string) {
+	if p.UserCode == "" {
+		return false, "invalid user code"
+	}
+	if p.ExpectedCode == "" {
+		return false, "invalid expected code"
+	}
+	if len(p.UserCode) > 10000 {
+		return false, "user code too long"
+	}
+	if len(p.ExpectedCode) > 10000 {
+		return false, "expected code too long"
+	}
+	return true, ""
+}
+
+const (
+	prompt = "Strictly follow the following requirements to analyze whether the functions of the two pieces of code are consistent:\n1. Only consider the functional implementation of the code, not considering the differences in code style and format\n2. Ignore naming differences such as variable names and function names\n3. The final conclusion must and can only be answered in a single word: Yes/no\n\n"
+	// Timeout for a single request
+	timeout    = 10 * time.Second
+	rateLimit  = 0.2
+	burstLimit = 3
+)
+
+var (
+	httpClient = &http.Client{
+		Timeout: timeout,
+	}
+	limiter = rate.NewLimiter(rate.Limit(rateLimit), burstLimit)
+)
+
+// compareCode Compare the code
+func compareCode(ctx context.Context, code1, code2, content string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout*2)
+	defer cancel()
+
+	// Wait for the rate limit to pass
+	if err := limiter.Wait(ctx); err != nil {
+		return false, fmt.Errorf("API call frequency limit: %v", err)
+	}
+
+	chat := prompt
+	safeContent := html.EscapeString(content)
+	// Prevents prompt word injection
+	chat += fmt.Sprintf("The following text surrounded by ``` is the content that you need to judge.\n\n```\nSupplementary Information:\n%s\n\nCode 1:\n%s\n\nCode 2:\n%s\n```", safeContent, code1, code2)
+
+	fmt.Println(chat)
+
+	data := url.Values{}
+	data.Set("q", chat)
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		ApiURL,
+		strings.NewReader(data.Encode()),
+	)
+	if err != nil {
+		return false, fmt.Errorf("create request failed: %v", err)
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return false, fmt.Errorf("request timeout")
+		}
+		return false, fmt.Errorf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("the API returns an exception status code: %d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("read response failure: %v", err)
+	}
+
+	response := strings.ToLower(strings.TrimSpace(string(body)))
+	switch response {
+	case "yes":
+		return true, nil
+	case "no":
+		return false, nil
+	default:
+		return false, fmt.Errorf("unexpected response: %s", response)
+	}
+}
+
+// CheckCode Check the code
+func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (bool, error) {
+	result, err := compareCode(ctx, param.UserCode, param.ExpectedCode, param.Content)
+	if err != nil {
+		return false, fmt.Errorf("failed to compare code: %w", err)
+	}
+
+	return result, nil
+}
+
+type ListStorylineParams struct {
+	Tag        *string    `json:"tag"`
+	Pagination Pagination `json:"pagination"`
+	SortOrder  SortOrder  `json:"sortOrder"`
+}
+
+func NewListStorylineParams() *ListStorylineParams {
+	return &ListStorylineParams{
+		SortOrder:  SortOrderAsc,
+		Pagination: Pagination{Index: 1, Size: 10},
+	}
+}
+
+func (p *ListStorylineParams) Validate() (ok bool, msg string) {
+	if p.Tag != nil && model.ParseStorylineTag(*p.Tag).String() != *p.Tag {
+		return false, "invalid tag"
+	}
+	if !p.Pagination.IsValid() {
+		return false, "invalid pagination"
+	}
+	if !p.SortOrder.IsValid() {
+		return false, "invalid sort order"
+	}
+	return true, ""
+}
+
+// GetStorylineList Get the list of storylines
+func (ctrl *Controller) ListStoryline(ctx context.Context, params *ListStorylineParams) (*ByPage[StorylineDTO], error) {
+	query := ctrl.db.WithContext(ctx).Model(&model.Storyline{})
+	if params.Tag != nil {
+		query = query.Where("tag = ?", model.ParseStorylineTag(*params.Tag))
+	}
+	query = query.Order("created_at " + params.SortOrder)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, fmt.Errorf("failed to count storyline: %w", err)
+	}
+
+	var mStorylines []model.Storyline
+	if err := query.
+		Offset(params.Pagination.Offset()).
+		Limit(params.Pagination.Size).
+		Find(&mStorylines).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to get storyline: %w", err)
+	}
+
+	storylineDTOs := make([]StorylineDTO, len(mStorylines))
+	for i, mStoryline := range mStorylines {
+		storylineDTOs[i] = toStorylineDTO(mStoryline)
+	}
+
+	return &ByPage[StorylineDTO]{
+		Total: total,
+		Data:  storylineDTOs,
+	}, nil
 }

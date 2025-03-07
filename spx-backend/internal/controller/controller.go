@@ -28,7 +28,10 @@ var (
 	ErrNotExist     = errors.New("not exist")
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrForbidden    = errors.New("forbidden")
+	ErrConflict     = errors.New("conflict error")
 )
+
+var ApiURL string
 
 // contextKey is a value for use with [context.WithValue]. It's used as a
 // pointer so it fits in an interface{} without allocation.
@@ -53,6 +56,8 @@ func New(ctx context.Context) (*Controller, error) {
 		logger.Printf("failed to load env: %v", err)
 		return nil, err
 	}
+
+	ApiURL = mustEnv(logger, "API_URL")
 
 	dsn := mustEnv(logger, "GOP_SPX_DSN")
 	db, err := model.OpenDB(ctx, dsn, 0, 0)
