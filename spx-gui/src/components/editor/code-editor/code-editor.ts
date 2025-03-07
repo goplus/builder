@@ -80,8 +80,12 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     for (const item of allItems) {
       if (item.hiddenFromList) continue
       if (item.definition.package === packageSpx) {
-        const namespace = (item.definition.name ?? '').split('.')[0] // `Sprite` / `Game` / ...
-        if (isStage && namespace === 'Sprite') continue
+        const parts = (item.definition.name ?? '').split('.')
+        if (parts.length > 1) {
+          const namespace = parts[0] // `Sprite` / `Game` / ...
+          if (namespace !== 'Game' && namespace !== 'Sprite') continue
+          if (namespace === 'Sprite' && isStage) continue
+        }
       }
       if (overviewSet.has(item.overview)) continue // Skip duplicated items, e.g., `Sprite.onStart` & `Game.onStart`
       overviewSet.add(item.overview)
@@ -91,6 +95,7 @@ class APIReferenceProvider implements IAPIReferenceProvider {
   }
 
   async provideAPIReference(ctx: APIReferenceContext, position: Position | null) {
+    // TODO: get items from lsp server even no position provided, see details in https://github.com/goplus/builder/issues/1421
     if (position == null) return this.getFallbackItems(ctx)
 
     const definitions = await this.lspClient
