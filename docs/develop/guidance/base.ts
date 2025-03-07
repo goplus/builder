@@ -57,7 +57,7 @@ type Level = {
   title: LocaleMessage // 关卡标题
   description: LocaleMessage // 关卡描述
   video: string // 关卡的整体视频url（由NodeTask的视频拼接而来）
-  achievement: {
+  achievement?: {
     // 成就与关卡绑定，一个关卡可能存在多个成就
     icon: string // 成就图标url
     title: LocaleMessage // 成就名称
