@@ -3,7 +3,7 @@ import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useTag } from '../../utils/tagging'
 import { useElementRect } from '../../utils/dom'
 
-type HighlightRect = {
+export type HighlightRect = {
   left: number
   top: number
   width: number
