@@ -5,8 +5,9 @@
       <UITab value="widgets">{{ $t({ en: 'Widgets', zh: '控件' }) }}</UITab>
       <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
     </UITabs>
+
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />
+      <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />s
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>
@@ -26,6 +27,7 @@ import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './backdrop/BackdropsEditor.vue'
 import WidgetsEditor from './widget/WidgetsEditor.vue'
 import BackdropModeSelector from './backdrop/BackdropModeSelector.vue'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 defineProps<{
   stage: Stage

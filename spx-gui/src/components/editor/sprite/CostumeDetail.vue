@@ -1,9 +1,11 @@
 <template>
   <EditorItemDetail :name="costume.name" @rename="handleRename">
-    <div class="img-wrapper">
-      <CheckerboardBackground class="background" />
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    </div>
+    <TagNode name="costome-img-wrapper">
+      <div class="img-wrapper">
+        <CheckerboardBackground class="background" />
+        <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+      </div>
+    </TagNode>
   </EditorItemDetail>
 </template>
 

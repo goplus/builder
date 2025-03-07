@@ -249,9 +249,13 @@ function zoomReset() {
     <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
       <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
       <footer class="footer">
-        <CopilotTrigger @click="handleCopilotTriggerClick" />
+        <TagNode name="copilot-trigger">
+          <CopilotTrigger @click="handleCopilotTriggerClick" />
+        </TagNode>
       </footer>
-      <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
+      <TagNode name="copilot-chat">
+        <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
+      </TagNode>
     </aside>
     <div
       ref="resizeHandleEl"

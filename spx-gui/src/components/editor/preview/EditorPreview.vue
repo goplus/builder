@@ -80,7 +80,9 @@
 
     <div class="main">
       <div class="stage-viewer-container">
-        <StageViewer />
+        <TagNode name="stage-viewer">
+          <StageViewer />
+        </TagNode>
         <div v-show="running.mode === 'debug'" class="in-place-runner">
           <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
         </div>
@@ -101,6 +103,7 @@ import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RunnerContainer from './RunnerContainer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()

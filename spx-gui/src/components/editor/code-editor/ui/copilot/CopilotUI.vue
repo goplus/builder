@@ -47,6 +47,7 @@ watch(
         <UIIcon class="icon" type="close" @click="handleClose" />
       </button>
     </header>
+
     <div ref="bodyRef" class="body">
       <ul v-if="rounds != null" class="messages">
         <CopilotRound

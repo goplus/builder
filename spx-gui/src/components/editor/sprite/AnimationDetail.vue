@@ -1,12 +1,16 @@
 <template>
   <EditorItemDetail :name="animation.name" @rename="handleRename">
-    <AnimationPlayer
-      :costumes="animation.costumes"
-      :sound="sound"
-      :duration="animation.duration"
-      class="animation-player"
-    />
-    <AnimationSettings :animation="animation" :sprite="sprite" :sounds="editorCtx.project.sounds" />
+    <TagNode name="animation-player">
+      <AnimationPlayer
+        :costumes="animation.costumes"
+        :sound="sound"
+        :duration="animation.duration"
+        class="animation-player"
+      />
+    </TagNode>
+    <TagNode name="animation-setting">
+      <AnimationSettings :animation="animation" :sprite="sprite" :sounds="editorCtx.project.sounds" />
+    </TagNode>
   </EditorItemDetail>
 </template>
 

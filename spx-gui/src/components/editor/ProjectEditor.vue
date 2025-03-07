@@ -1,16 +1,20 @@
 <template>
-  <UICard class="main">
-    <KeepAlive>
-      <SoundEditor v-if="editorCtx.project.selectedSound != null" :sound="editorCtx.project.selectedSound" />
-      <SpriteEditor v-else-if="editorCtx.project.selectedSprite != null" :sprite="editorCtx.project.selectedSprite" />
-      <StageEditor v-else-if="editorCtx.project.selected?.type === 'stage'" :stage="editorCtx.project.stage" />
-      <EditorPlaceholder v-else />
-    </KeepAlive>
-  </UICard>
-  <div class="sider">
-    <EditorPreview />
-    <EditorPanels />
-  </div>
+  <TagNode name="project-editor">
+    <UICard class="main">
+      <KeepAlive>
+        <SoundEditor v-if="editorCtx.project.selectedSound != null" :sound="editorCtx.project.selectedSound" />
+        <SpriteEditor v-else-if="editorCtx.project.selectedSprite != null" :sprite="editorCtx.project.selectedSprite" />
+        <StageEditor v-else-if="editorCtx.project.selected?.type === 'stage'" :stage="editorCtx.project.stage" />
+        <EditorPlaceholder v-else />
+      </KeepAlive>
+    </UICard>
+  </TagNode>
+  <TagNode name="project-sider">
+    <div class="sider">
+      <EditorPreview />
+      <EditorPanels />
+    </div>
+  </TagNode>
 </template>
 
 <script setup lang="ts">
@@ -22,6 +26,7 @@ import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 const editorCtx = useEditorCtx()
 </script>
