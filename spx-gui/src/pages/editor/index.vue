@@ -35,6 +35,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
+import { ListFilter } from '@/models/list-filter'
 
 const props = defineProps<{
   projectName: string
@@ -104,7 +105,9 @@ const runtimeQueryRet = useQuery(async (ctx) => {
   return runtime
 })
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet)
+const filterQueryRet = useQuery(() => Promise.resolve(new ListFilter()))
+
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, filterQueryRet)
 
 const allQueryRet = useQuery(
   (ctx) =>

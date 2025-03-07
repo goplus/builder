@@ -16,6 +16,7 @@ import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
+import type { ListFilter } from '@/models/list-filter'
 
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void
@@ -137,7 +138,8 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 
 export function useProvideCodeEditorCtx(
   projectRet: QueryRet<Project>,
-  runtimeRet: QueryRet<Runtime>
+  runtimeRet: QueryRet<Runtime>,
+  listFilterRet: QueryRet<ListFilter>
 ): QueryRet<unknown> {
   const i18n = useI18n()
 
@@ -151,13 +153,14 @@ export function useProvideCodeEditorCtx(
 
   const editorQueryRet = useQuery<CodeEditor>(
     async (ctx) => {
-      const [project, runtime, monaco] = await Promise.all([
+      const [project, runtime, monaco, listFilter] = await Promise.all([
         composeQuery(ctx, projectRet),
         composeQuery(ctx, runtimeRet),
-        composeQuery(ctx, monacoQueryRet)
+        composeQuery(ctx, monacoQueryRet),
+        composeQuery(ctx, listFilterRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, runtime, monaco, i18n)
+      const codeEditor = new CodeEditor(project, runtime, monaco, i18n, listFilter)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },
