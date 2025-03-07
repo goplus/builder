@@ -113,11 +113,11 @@ export function validateGopIdentifierName(name: string) {
 export function getGopIdentifierNameTip(target?: LocaleMessage) {
   if (target == null)
     return {
-      en: 'The name can only contain Chineses / English letters, digits, and the character _.',
+      en: 'The name can only contain Chinese / English letters, digits, and the character _.',
       zh: '名称只能包含中英文字符、数字及下划线'
     }
   return {
-    en: `The ${target.en} name can only contain Chineses / English letters, digits, and the character _.`,
+    en: `The ${target.en} name can only contain Chinese / English letters, digits, and the character _.`,
     zh: `${target.zh}名称只能包含中英文字符、数字及下划线`
   }
 }

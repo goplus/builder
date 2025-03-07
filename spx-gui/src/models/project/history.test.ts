@@ -29,7 +29,7 @@ const actionUpdateCode: Action = {
 
 function makeProject() {
   const project = new Project()
-  const sprite = new Sprite('Sprite')
+  const sprite = new Sprite('MySprite')
   const file1 = mockFile()
   const costume = new Costume('costume', file1)
   sprite.addCostume(costume)
@@ -58,7 +58,7 @@ describe('History', () => {
     expect(project.sprites[0].costumes[0].name).toBe('costume')
 
     await history.doAction(actionRenameSprite, () => {
-      project.sprites[0].setName('Sprite2')
+      project.sprites[0].setName('MySprite2')
     })
 
     await history.doAction(actionAddCostume, async () => {
@@ -71,19 +71,19 @@ describe('History', () => {
 
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionAddCostume)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
     expect(project.sprites[0].costumes[1].name).toBe('costume_2')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionAddCostume)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
     expect(project.sprites[0].costumes).toHaveLength(1)
 
     await history.redo()
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionAddCostume)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
     expect(project.sprites[0].costumes[1].name).toBe('costume_2')
 
     await history.undo()
@@ -95,7 +95,7 @@ describe('History', () => {
     await history.redo()
     expect(history.getRedoAction()).toBe(actionAddCostume)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
     expect(project.sprites[0].costumes).toHaveLength(1)
   })
 
@@ -135,44 +135,44 @@ describe('History', () => {
     const history = new History(project)
 
     const promise1 = history.doAction(actionRenameSprite, async () => {
-      project.sprites[0].setName('Sprite1_1')
+      project.sprites[0].setName('MySprite1_1')
       await sleep(100)
-      project.sprites[0].setName('Sprite1_2')
+      project.sprites[0].setName('MySprite1_2')
     })
 
     const promise2 = history.doAction(actionRenameSprite, async () => {
-      project.sprites[0].setName('Sprite2_1')
+      project.sprites[0].setName('MySprite2_1')
       await sleep(100)
-      project.sprites[0].setName('Sprite2_2')
+      project.sprites[0].setName('MySprite2_2')
       await sleep(100)
-      project.sprites[0].setName('Sprite2_3')
+      project.sprites[0].setName('MySprite2_3')
     })
 
     const promise3 = history.doAction(actionRenameSprite, async () => {
-      project.sprites[0].setName('Sprite3_1')
+      project.sprites[0].setName('MySprite3_1')
       await sleep(100)
-      project.sprites[0].setName('Sprite3_2')
+      project.sprites[0].setName('MySprite3_2')
     })
 
     await Promise.all([promise1, promise2, promise3])
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite3_2')
+    expect(project.sprites[0].name).toBe('MySprite3_2')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite2_3')
+    expect(project.sprites[0].name).toBe('MySprite2_3')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite1_2')
+    expect(project.sprites[0].name).toBe('MySprite1_2')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBeNull()
-    expect(project.sprites[0].name).toBe('Sprite')
+    expect(project.sprites[0].name).toBe('MySprite')
   })
 
   it('should work well with max history length', async () => {
@@ -181,32 +181,32 @@ describe('History', () => {
 
     for (let i = 0; i < 3; i++) {
       await history.doAction(actionRenameSprite, () => {
-        project.sprites[0].setName(`Sprite${i + 1}`)
+        project.sprites[0].setName(`MySprite${i + 1}`)
       })
     }
 
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite3')
+    expect(project.sprites[0].name).toBe('MySprite3')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBeNull()
-    expect(project.sprites[0].name).toBe('Sprite1')
+    expect(project.sprites[0].name).toBe('MySprite1')
 
     await history.redo()
     expect(history.getRedoAction()).toBe(actionRenameSprite)
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite2')
+    expect(project.sprites[0].name).toBe('MySprite2')
 
     await history.redo()
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionRenameSprite)
-    expect(project.sprites[0].name).toBe('Sprite3')
+    expect(project.sprites[0].name).toBe('MySprite3')
   })
 })

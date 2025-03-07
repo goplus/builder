@@ -14,7 +14,7 @@ function mockFile(name = 'mocked') {
 
 function makeProject() {
   const project = new Project()
-  const sprite = new Sprite('Sprite')
+  const sprite = new Sprite('MySprite')
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))

@@ -10,7 +10,7 @@ function makeCostume(name: string) {
 
 describe('Sprite', () => {
   it('should export & load animations correctly', async () => {
-    const sprite = new Sprite('Sprite')
+    const sprite = new Sprite('MySprite')
     sprite.addCostume(makeCostume('costume1'))
     sprite.addCostume(makeCostume('costume2'))
     const animation1 = new Animation('animation1')
@@ -27,7 +27,7 @@ describe('Sprite', () => {
     expect(loadedSprite.animations[1].costumes.map((c) => c.name)).toEqual(['costume5', 'costume6'])
   })
   it('should handle id-name conversion for animationBindings correctly', async () => {
-    const sprite = new Sprite('Sprite')
+    const sprite = new Sprite('MySprite')
     const animation = new Animation('animation')
     animation.setCostumes([makeCostume('costume1')])
     sprite.addAnimation(animation)
