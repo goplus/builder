@@ -9,10 +9,12 @@
         </div>
       </template>
       <template v-if="props.step.type === 'following'" #defulat="{ slotInfo }">
-        <div class="guide-ui-container" :style="getGuideContainerStyle(slotInfo.highlightRect)">
+        <div class="guide-ui-container">
           <img
             class="niuxiaoqi"
-            :style="getMascotStyle(slotInfo.highlightRect)"
+            :style="getNiuxiaoqiStyle(slotInfo.highlightRect)"
+            width="300"
+            height="320"
             src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
           />
           <svg
@@ -23,6 +25,7 @@
             xmlns="http://www.w3.org/2000/svg"
             p-id="1444"
             data-spm-anchor-id="a313x.search_index.0.i0.6e8f3a81bBVDWW"
+            width="300"
             height="200"
           >
             <path
@@ -102,9 +105,10 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   filter.reset()
+  currentGuidePositions = null
 })
 
-async function loadSnapshot(snapshotStr: string) {
+async function loadSnapshot(snapshotStr: string): Promise<void> {
   if (!snapshotStr) return
 
   try {
@@ -118,35 +122,129 @@ async function loadSnapshot(snapshotStr: string) {
   }
 }
 
-function getGuideContainerStyle(highlightRect: HighlightRect) {
+function calculateGuidePositions(highlightRect: HighlightRect) {
+  const windowWidth = window.innerWidth
+  const windowHeight = window.innerHeight
+
+  // 确定高亮区域所在象限
+  const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
+  const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
+
+  const arrowSize = { width: 200, height: 200 }
+  const niuxiaoqiSize = { width: 300, height: 320 }
+  const bubbleSize = { width: 300, height: 200 }
+
+  let arrowPosition = { left: 0, top: 0 }
+  let niuxiaoqiPosition = { left: 0, top: 0 }
+  let bubblePosition = { left: 0, top: 0 }
+
+  // 根据象限计算位置
+  if (isLeft && isTop) {
+    // 左上象限
+    arrowPosition = {
+      left: highlightRect.left + highlightRect.width,
+      top: highlightRect.top + highlightRect.height
+    }
+    niuxiaoqiPosition = {
+      left: arrowPosition.left + arrowSize.width,
+      top: arrowPosition.top + arrowSize.height
+    }
+    bubblePosition = {
+      left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
+      top: niuxiaoqiPosition.top - bubbleSize.height
+    }
+  } else if (!isLeft && isTop) {
+    // 右上象限
+    arrowPosition = {
+      left: highlightRect.left - arrowSize.width,
+      top: highlightRect.top + highlightRect.height
+    }
+    niuxiaoqiPosition = {
+      left: arrowPosition.left - niuxiaoqiSize.width,
+      top: arrowPosition.top + arrowSize.height
+    }
+    bubblePosition = {
+      left: niuxiaoqiPosition.left - bubbleSize.width,
+      top: niuxiaoqiPosition.top - bubbleSize.height
+    }
+  } else if (isLeft && !isTop) {
+    // 左下象限
+    arrowPosition = {
+      left: highlightRect.left + highlightRect.width,
+      top: highlightRect.top - arrowSize.height
+    }
+    niuxiaoqiPosition = {
+      left: arrowPosition.left + arrowSize.width,
+      top: arrowPosition.top - niuxiaoqiSize.height
+    }
+    bubblePosition = {
+      left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
+      top: niuxiaoqiPosition.top + niuxiaoqiSize.height
+    }
+  } else {
+    // 右下象限
+    arrowPosition = {
+      left: highlightRect.left - arrowSize.width,
+      top: highlightRect.top - arrowSize.height
+    }
+    niuxiaoqiPosition = {
+      left: arrowPosition.left - niuxiaoqiSize.width,
+      top: arrowPosition.top - niuxiaoqiSize.height
+    }
+    bubblePosition = {
+      left: niuxiaoqiPosition.left - bubbleSize.width,
+      top: niuxiaoqiPosition.top + niuxiaoqiSize.height
+    }
+  }
+
   return {
-    left: highlightRect.left + 'px',
-    top: highlightRect.top + 'px',
-    width: highlightRect.width + 'px',
-    height: highlightRect.height + 'px'
+    arrowStyle: {
+      position: 'absolute',
+      left: `${arrowPosition.left}px`,
+      top: `${arrowPosition.top}px`,
+      width: `${arrowSize.width}px`,
+      height: `${arrowSize.height}px`
+    },
+    niuxiaoqiStyle: {
+      position: 'absolute',
+      left: `${niuxiaoqiPosition.left}px`,
+      top: `${niuxiaoqiPosition.top}px`,
+      width: `${niuxiaoqiSize.width}px`,
+      height: `${niuxiaoqiSize.height}px`
+    },
+    bubbleStyle: {
+      position: 'absolute',
+      left: `${bubblePosition.left}px`,
+      top: `${bubblePosition.top}px`,
+      width: `${bubbleSize.width}px`,
+      height: `${bubbleSize.height}px`
+    }
   }
 }
 
-function getMascotStyle(highlightRect: HighlightRect) {
-  return {
-    left: highlightRect.left + 'px',
-    top: highlightRect.top + 'px'
+let currentGuidePositions: { arrowStyle: any; niuxiaoqiStyle: any; bubbleStyle: any } | null = null
+
+function getArrowStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions) {
+    currentGuidePositions = calculateGuidePositions(highlightRect)
   }
+  return currentGuidePositions.arrowStyle
+}
+
+function getNiuxiaoqiStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions) {
+    currentGuidePositions = calculateGuidePositions(highlightRect)
+  }
+  return currentGuidePositions.niuxiaoqiStyle
 }
 
 function getBubbleStyle(highlightRect: HighlightRect) {
-  return {
-    left: highlightRect.left + 'px',
-    top: highlightRect.top + 'px'
+  if (!currentGuidePositions) {
+    currentGuidePositions = calculateGuidePositions(highlightRect)
   }
+  return currentGuidePositions.bubbleStyle
 }
 
-function getArrowStyle(highlightRect: HighlightRect) {
-  return {
-    left: highlightRect.left + 'px',
-    top: highlightRect.top + 'px'
-  }
-}
 function handleCheckButtonClick() {
   emit('stepCompleted')
 }
