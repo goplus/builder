@@ -77,6 +77,9 @@
               </p>
             </div>
           </div>
+          <div v-else class="content log-tip">
+            登陆以查看当前关卡
+          </div>
         </div>
         <div class="card card-group-item">
           <h3>{{ $t({ zh: '成就系统', en: 'Achievements' }) }}</h3>
@@ -91,6 +94,9 @@
               <span>{{ $t(level.achievement.title) }}</span>
             </div>
           </div>
+          <div v-else class="content log-tip">
+            登陆以查看成就
+          </div>
         </div>
       </div>
       <div class="card description-card">
@@ -102,7 +108,6 @@
 </template>
 <script setup lang="ts">
 import { useQuery } from '@/utils/query'
-import { useEnsureSignedIn } from '@/utils/user'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import { getStoryLine, getStoryLineStudy, createStoryLineStudy } from '@/apis/storyline'
 import { useUserStore } from '@/stores/user'
@@ -125,12 +130,12 @@ const { data: storyLine } = useQuery(
   }
 )
 
-const ensureSignedIn = useEnsureSignedIn()
-
 // 获取用户学习进度
 const { data: storyLineStudy } = useQuery(
   async () => {
-    await ensureSignedIn()
+    if (!userStore.isSignedIn()) {
+      return { storyLineId: props.storyLineId, lastFinishedLevelIndex: 0 }
+    }
     const study = await getStoryLineStudy(props.storyLineId)
     if (!study.lastFinishedLevelIndex) {
       // 如果是第一次进入，创建学习记录
@@ -321,6 +326,11 @@ const currentLevelTitle = computed(() => {
           padding-left: 5px;
           font-size: 12px;
         }
+      }
+      .log-tip {
+        font-size: 15px;
+        text-align: center;
+        line-height: 60px;
       }
     }
   }
