@@ -28,7 +28,6 @@ var (
 	ErrNotExist     = errors.New("not exist")
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrForbidden    = errors.New("forbidden")
-	ErrConflict     = errors.New("conflict error")
 )
 
 var ApiURL string
