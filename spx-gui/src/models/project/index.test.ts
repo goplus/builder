@@ -32,7 +32,7 @@ function makeProject() {
   })
   project.stage.addWidget(widget)
 
-  const sprite = new Sprite('Sprite')
+  const sprite = new Sprite('MySprite')
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
@@ -71,10 +71,10 @@ describe('Project', () => {
   it('should preserve order for sprites & sounds however files are sorted', async () => {
     const project = makeProject()
 
-    project.sprites[0].setName('Sprite1')
-    const sprite3 = new Sprite('Sprite3')
+    project.sprites[0].setName('MySprite1')
+    const sprite3 = new Sprite('MySprite3')
     project.addSprite(sprite3)
-    const sprite2 = new Sprite('Sprite2')
+    const sprite2 = new Sprite('MySprite2')
     project.addSprite(sprite2)
 
     project.sounds[0].setName('sound1')
@@ -92,7 +92,7 @@ describe('Project', () => {
         return acc
       }, {})
     await project.loadGameFiles(reversedFiles)
-    expect(project.sprites.map((s) => s.name)).toEqual(['Sprite1', 'Sprite3', 'Sprite2'])
+    expect(project.sprites.map((s) => s.name)).toEqual(['MySprite1', 'MySprite3', 'MySprite2'])
     expect(project.sounds.map((s) => s.name)).toEqual(['sound1', 'sound3', 'sound2'])
 
     const shuffledFiles = Object.keys(files)
@@ -102,13 +102,13 @@ describe('Project', () => {
         return acc
       }, {})
     await project.loadGameFiles(shuffledFiles)
-    expect(project.sprites.map((s) => s.name)).toEqual(['Sprite1', 'Sprite3', 'Sprite2'])
+    expect(project.sprites.map((s) => s.name)).toEqual(['MySprite1', 'MySprite3', 'MySprite2'])
     expect(project.sounds.map((s) => s.name)).toEqual(['sound1', 'sound3', 'sound2'])
   })
 
   it('should select correctly after sound removed', async () => {
     const project = makeProject()
-    const sprite2 = new Sprite('Sprite2')
+    const sprite2 = new Sprite('MySprite2')
     project.addSprite(sprite2)
     const sound2 = new Sound('sound2', mockFile())
     project.addSound(sound2)
@@ -132,7 +132,7 @@ describe('Project', () => {
 
     project.removeSound(sound2.id)
 
-    const spriteId = project.sprites.find((s) => s.name === 'Sprite')?.id
+    const spriteId = project.sprites.find((s) => s.name === 'MySprite')?.id
     expect(spriteId).toBeTruthy()
     expect(project.selected).toEqual({
       type: 'sprite',
@@ -142,9 +142,9 @@ describe('Project', () => {
 
   it('should select correctly after sprite removed', async () => {
     const project = makeProject()
-    const sprite2 = new Sprite('Sprite2')
+    const sprite2 = new Sprite('MySprite2')
     project.addSprite(sprite2)
-    const sprite3 = new Sprite('Sprite3')
+    const sprite3 = new Sprite('MySprite3')
     project.addSprite(sprite3)
 
     project.select({ type: 'stage' })
@@ -156,7 +156,7 @@ describe('Project', () => {
     project.removeSprite(project.sprites[0].id)
     const nextId: string = (project.selected as any).id
     expect(nextId).toBeTruthy()
-    expect(nextId).toEqual(project.sprites.find((s) => s.name === 'Sprite2')?.id)
+    expect(nextId).toEqual(project.sprites.find((s) => s.name === 'MySprite2')?.id)
 
     project.removeSprite(sprite2.id)
     expect(project.selected).toBeNull()

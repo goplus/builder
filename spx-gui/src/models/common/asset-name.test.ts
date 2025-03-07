@@ -52,10 +52,10 @@ describe('normalizeGopIdentifierAssetName', () => {
 describe('getSpriteName', () => {
   it('should work well', () => {
     const project = new Project()
-    expect(getSpriteName(project)).toBe('Sprite')
-    project.addSprite(new Sprite('Sprite'))
-    project.addSprite(new Sprite('Sprite3'))
-    expect(getSpriteName(project)).toBe('Sprite2')
+    expect(getSpriteName(project)).toBe('MySprite')
+    project.addSprite(new Sprite('MySprite'))
+    project.addSprite(new Sprite('MySprite3'))
+    expect(getSpriteName(project)).toBe('MySprite2')
   })
 
   it('should work well with base', () => {
