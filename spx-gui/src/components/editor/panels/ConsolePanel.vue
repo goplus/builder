@@ -51,12 +51,7 @@ function getOutputSourceLocationText(output: RuntimeOutput) {
           {{ $t({ en: 'No output', zh: '无输出' }) }}
         </template>
       </UIEmpty>
-      <li
-        v-for="(output, i) in runtime.outputs"
-        :key="i"
-        class="output"
-        :class="`kind-${output.kind}`"
-      >
+      <li v-for="(output, i) in runtime.outputs" :key="i" class="output" :class="`kind-${output.kind}`">
         <span class="time">{{ humanizeTime(output.time) }}</span>
         <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
           {{ getOutputSourceLocationText(output) }}
