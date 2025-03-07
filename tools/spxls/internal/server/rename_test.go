@@ -255,6 +255,87 @@ onStart => {
 		})
 	})
 
+	t.Run("SpxResourceInOtherSpriteFiles", func(t *testing.T) {
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
+var (
+	MyAircraft MyAircraft
+	Bullet     Bullet
+)
+
+run "assets", {Title: "Bullet (by Go+)"}
+`),
+			"MyAircraft.spx": []byte(`
+onStart => {
+	for {
+		wait 0.1
+		Bullet.clone
+		setXYpos mouseX, mouseY
+	}
+}
+`),
+			"Bullet.spx": []byte(`
+onCloned => {
+	setXYpos MyAircraft.xpos, MyAircraft.ypos+5
+	show
+	for {
+		wait 0.04
+		step 10
+		if touching(Edge) {
+			destroy
+		}
+	}
+}
+`),
+			"assets/index.json":                    []byte(`{}`),
+			"assets/sprites/MyAircraft/index.json": []byte(`{}`),
+			"assets/sprites/Bullet/index.json":     []byte(`{}`),
+		}), nil)
+
+		workspaceEdit, err := s.textDocumentRename(&RenameParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///Bullet.spx"},
+			Position:     Position{Line: 2, Character: 10},
+			NewName:      "Jet",
+		})
+		require.NoError(t, err)
+		require.NotNil(t, workspaceEdit)
+		require.NotNil(t, workspaceEdit.Changes)
+
+		mainSpxChanges := workspaceEdit.Changes["file:///main.spx"]
+		require.Len(t, mainSpxChanges, 2)
+		assert.Contains(t, mainSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 11},
+			},
+			NewText: "Jet",
+		})
+		assert.Contains(t, mainSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 2, Character: 12},
+				End:   Position{Line: 2, Character: 22},
+			},
+			NewText: "Jet",
+		})
+
+		bulletSpxChanges := workspaceEdit.Changes["file:///Bullet.spx"]
+		require.Len(t, bulletSpxChanges, 2)
+		assert.Contains(t, bulletSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 2, Character: 10},
+				End:   Position{Line: 2, Character: 20},
+			},
+			NewText: "Jet",
+		})
+		assert.Contains(t, bulletSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 2, Character: 27},
+				End:   Position{Line: 2, Character: 37},
+			},
+			NewText: "Jet",
+		})
+	})
+
 	t.Run("ThisPtr", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
