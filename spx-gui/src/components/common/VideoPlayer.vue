@@ -73,7 +73,7 @@ import playSvg from './icons/play.svg'
 import pauseSvg from './icons/pause.svg'
 import playCenterSvg from './icons/play_center.svg'
 
-type Segment = {
+export type Segment = {
   endTime: number; 
   extension?: Object;  
 }

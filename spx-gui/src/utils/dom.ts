@@ -132,3 +132,93 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
 
   return rect
 }
+
+
+type Pos = {
+  x: number;
+  y: number;
+};
+type DragOptions = {
+  onDragStart?: () => void; // 开始拖拽
+  onDragEnd?: () => void; // 结束拖拽
+  onDrag?: (deltaX: number, deltaY: number) => void; // 拖拽中
+  onClick?: () => void; // 点击
+  bondary?: { // 边界
+    minX?: number;
+    maxX?: number;
+    minY?: number;
+    maxY?: number;
+  }
+}
+
+export function useDrag(elSource: WatchSource<HTMLElement | null>, 
+  getPos: () => Pos, 
+  setPos: (pos: Pos) => void,
+  options?: DragOptions) {
+  const isDragging = ref<boolean>(false);
+  const startPos = ref<Pos>({ x: 0, y: 0 });
+  const startTime = ref<number>(0);
+
+  function handleMousedown(e: MouseEvent): void {
+    const { x, y } = getPos();
+    startTime.value = Date.now();
+    isDragging.value = true;
+    startPos.value = {
+      x: e.clientX - x,
+      y: e.clientY - y,
+    };
+    options?.onDragStart?.();
+    window.addEventListener('mousemove', handleMousemove);
+    window.addEventListener('mouseup', handleMouseup);
+    e.preventDefault();
+  }
+
+  function handleMousemove(e: MouseEvent): void {
+    if (!isDragging.value) return;
+    requestAnimationFrame(() => {
+      let newX = e.clientX - startPos.value.x;
+      let newY = e.clientY - startPos.value.y;
+
+      // 边界处理
+      if (options?.bondary) {
+        newX = Math.max(options.bondary.minX || 0, Math.min(options.bondary.maxX || Infinity, newX));
+        newY = Math.max(options.bondary.minY || 0, Math.min(options.bondary.maxY || Infinity, newY));
+      }
+
+      options?.onDrag?.(newX, newY);
+
+      setPos({
+        x: newX,
+        y: newY,
+      });
+    });
+  }
+
+  function handleMouseup(): void {
+    isDragging.value = false;
+    options?.onDragEnd?.();
+    if (Date.now() - startTime.value < 200) {
+      options?.onClick?.();
+    }
+    window.removeEventListener('mousemove', handleMousemove);
+    window.removeEventListener('mouseup', handleMouseup);
+  }
+
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el == null) return;
+      el.addEventListener('mousedown', handleMousedown);
+      onCleanup(() => {
+        el.removeEventListener('mousedown', handleMousedown);
+        window.removeEventListener('mousemove', handleMousemove);
+        window.removeEventListener('mouseup', handleMouseup);
+      });
+    },
+    { immediate: true }
+  );
+
+  return {
+    isDragging
+  };
+}
