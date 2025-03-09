@@ -29,7 +29,7 @@ func NewStorylineCheckClient(endpoint string) *StorylineCheckClient {
 	}
 }
 
-// Escape function
+// Escape function, whose purpose is to prevent prompt injection.
 func escape(s string) string {
 	return strings.ReplaceAll(s, "`", "\\`")
 }
