@@ -12,7 +12,7 @@
   </UIEmpty>
   <EditorList v-else color="sprite" :add-text="$t({ en: 'Add animation', zh: '添加动画' })">
     <AnimationItem
-      v-for="animation in sprite.animations"
+      v-for="animation in animations"
       :key="animation.id"
       :sprite="sprite"
       :animation="animation"
@@ -50,6 +50,18 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
+
+const animations = computed(() => {
+  const allAnimations = props.sprite.animations
+  const { enabled, items } = listFilter.getFilter('animation')
+
+  if (enabled && items.length > 0) {
+    return allAnimations.filter((animation) => items.includes(animation.name))
+  }
+
+  return allAnimations
+})
 
 const selectedAnimationId = ref<string | null>(props.sprite.animations[0]?.id || null)
 const selectedAnimation = computed(

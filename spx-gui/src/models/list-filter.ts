@@ -13,7 +13,7 @@ export type ListFilterType =
 export type ListFilterState = {
   apiReference: {
     enabled: boolean
-    items: string[]
+    items: string[] /** gop:<package>?<name>#<overloadId> */
   }
   asset: {
     enabled: boolean

@@ -82,10 +82,20 @@ const emit = defineEmits<{
 }>()
 
 const editorCtx = useEditorCtx()
+const listFilter = editorCtx.listFilter
 
 const footerExpanded = ref(true)
 
-const sprites = computed(() => editorCtx.project.sprites)
+const sprites = computed(() => {
+  const allSprites = editorCtx.project.sprites
+  const { enabled, items } = listFilter.getFilter('sprite')
+
+  if (enabled && items.length > 0) {
+    return allSprites.filter((sprite) => items.includes(sprite.name))
+  }
+
+  return allSprites
+})
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 

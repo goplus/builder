@@ -17,7 +17,8 @@ class APIReferenceProvider implements IAPIReferenceProvider {
 
       // 使用 items 列表进行过滤
       return apiReferenceItems.filter(item => {
-        return items.includes(item.definition)
+        const itemIdentifier = stringifyDefinitionId(item.definition)
+        return items.includes(itemIdentifier)
       })
   }
 }
