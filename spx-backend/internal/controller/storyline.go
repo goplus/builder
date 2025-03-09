@@ -5,12 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
-	"io"
-	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -63,7 +58,7 @@ func (ctrl *Controller) ensureStoryline(ctx context.Context, storylineId int64) 
 		Where("id = ?", storylineId).
 		First(&mStoryline).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get storyline: %w", err)
+		return nil, fmt.Errorf("failed to get storyline %d: %w", storylineId, err)
 	}
 
 	return &mStoryline, nil
@@ -73,7 +68,7 @@ func (ctrl *Controller) ensureStoryline(ctx context.Context, storylineId int64) 
 func (ctrl *Controller) GetStoryline(ctx context.Context, id string) (*StorylineDTO, error) {
 	storylineId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid storyline id: %w", err)
+		return nil, ErrBadRequest
 	}
 	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
 	if err != nil {
@@ -103,12 +98,12 @@ func (ctrl *Controller) StudyStoryline(ctx context.Context, id string) (*UserSto
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
-		return nil, fmt.Errorf("storyline ID is required")
+		return nil, ErrBadRequest
 	}
 
 	storylineId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid storyline id: %w", err)
+		return nil, ErrBadRequest
 	}
 
 	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
@@ -150,7 +145,7 @@ func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*User
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
-		return nil, fmt.Errorf("storyline ID is required")
+		return nil, ErrBadRequest
 	}
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
@@ -182,7 +177,7 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 	mAuthedUser, _ := AuthedUserFromContext(ctx)
 
 	if id == "" {
-		return nil, fmt.Errorf("storyline ID is required")
+		return nil, ErrBadRequest
 	}
 
 	lastFinishedLevelIndex := param.LastFinishedLevelIndex
@@ -221,7 +216,7 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 type CheckCodeParam struct {
 	UserCode     string `json:"userCode"`
 	ExpectedCode string `json:"expectedCode"`
-	Content      string `json:"content"`
+	Context      string `json:"context"`
 }
 
 func (p *CheckCodeParam) Validate() (ok bool, msg string) {
@@ -241,84 +236,32 @@ func (p *CheckCodeParam) Validate() (ok bool, msg string) {
 }
 
 const (
-	prompt = "Strictly follow the following requirements to analyze whether the functions of the two pieces of code are consistent:\n1. Only consider the functional implementation of the code, not considering the differences in code style and format\n2. Ignore naming differences such as variable names and function names\n3. The final conclusion must and can only be answered in a single word: Yes/no\n\n"
 	// Timeout for a single request
 	timeout    = 10 * time.Second
 	rateLimit  = 0.2
-	burstLimit = 3
+	burstLimit = 1
 )
 
 var (
-	httpClient = &http.Client{
-		Timeout: timeout,
-	}
 	limiter = rate.NewLimiter(rate.Limit(rateLimit), burstLimit)
 )
 
-// compareCode Compare the code
-func compareCode(ctx context.Context, code1, code2, content string) (bool, error) {
+// CheckCode Check the code
+func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout*2)
 	defer cancel()
 
 	// Wait for the rate limit to pass
 	if err := limiter.Wait(ctx); err != nil {
-		return false, fmt.Errorf("API call frequency limit: %v", err)
-	}
-
-	chat := prompt
-	safeContent := html.EscapeString(content)
-	// Prevents prompt word injection
-	chat += fmt.Sprintf("The following text surrounded by ``` is the content that you need to judge.\n\n```\nSupplementary Information:\n%s\n\nCode 1:\n%s\n\nCode 2:\n%s\n```", safeContent, code1, code2)
-
-	fmt.Println(chat)
-
-	data := url.Values{}
-	data.Set("q", chat)
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		"POST",
-		ApiURL,
-		strings.NewReader(data.Encode()),
-	)
-	if err != nil {
-		return false, fmt.Errorf("create request failed: %v", err)
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return false, fmt.Errorf("request timeout")
+			return false, fmt.Errorf("request timed out waiting for rate limit")
 		}
-		return false, fmt.Errorf("request failed: %v", err)
+		return false, fmt.Errorf("rate limit exceeded: %w", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("the API returns an exception status code: %d", resp.StatusCode)
-	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	result, err := ctrl.storylineCheckClient.Check(ctx, param.Context, param.UserCode, param.ExpectedCode)
 	if err != nil {
-		return false, fmt.Errorf("read response failure: %v", err)
-	}
-
-	response := strings.ToLower(strings.TrimSpace(string(body)))
-	switch response {
-	case "yes":
-		return true, nil
-	case "no":
-		return false, nil
-	default:
-		return false, fmt.Errorf("unexpected response: %s", response)
-	}
-}
-
-// CheckCode Check the code
-func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (bool, error) {
-	result, err := compareCode(ctx, param.UserCode, param.ExpectedCode, param.Content)
-	if err != nil {
-		return false, fmt.Errorf("failed to compare code: %w", err)
+		return result, fmt.Errorf("failed to compare code: %w", err)
 	}
 
 	return result, nil

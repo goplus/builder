@@ -1,4 +1,4 @@
-// Check the code (deprecated).
+// Check the code.
 //
 // Request:
 //   POST /util/guidance-check
@@ -8,6 +8,9 @@ import (
 )
 
 ctx := &Context
+if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	return
+}
 
 params := &controller.CheckCodeParam{}
 if !parseJSON(ctx, params) {
@@ -23,4 +26,4 @@ if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json 201, result
+json result

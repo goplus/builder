@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"github.com/goplus/builder/spx-backend/internal/storyline"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -30,8 +31,6 @@ var (
 	ErrForbidden    = errors.New("forbidden")
 )
 
-var ApiURL string
-
 // contextKey is a value for use with [context.WithValue]. It's used as a
 // pointer so it fits in an interface{} without allocation.
 type contextKey struct {
@@ -40,11 +39,12 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db              *gorm.DB
-	kodo            *kodoConfig
-	aigcClient      *aigc.AigcClient
-	casdoorClient   casdoorClient
-	anthropicClient *anthropic.Client
+	db                   *gorm.DB
+	kodo                 *kodoConfig
+	aigcClient           *aigc.AigcClient
+	casdoorClient        casdoorClient
+	anthropicClient      *anthropic.Client
+	storylineCheckClient *storyline.StorylineCheckClient
 }
 
 // New creates a new controller.
@@ -55,8 +55,6 @@ func New(ctx context.Context) (*Controller, error) {
 		logger.Printf("failed to load env: %v", err)
 		return nil, err
 	}
-
-	ApiURL = mustEnv(logger, "API_URL")
 
 	dsn := mustEnv(logger, "GOP_SPX_DSN")
 	db, err := model.OpenDB(ctx, dsn, 0, 0)
@@ -73,13 +71,15 @@ func New(ctx context.Context) (*Controller, error) {
 		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
 		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
 	)
+	storylineCheckClient := storyline.NewStorylineCheckClient(mustEnv(logger, "STORYLINE_CHECK_ENDPOINT"))
 
 	return &Controller{
-		db:              db,
-		kodo:            kodoConfig,
-		aigcClient:      aigcClient,
-		casdoorClient:   casdoorClient,
-		anthropicClient: anthropicClient,
+		db:                   db,
+		kodo:                 kodoConfig,
+		aigcClient:           aigcClient,
+		casdoorClient:        casdoorClient,
+		anthropicClient:      anthropicClient,
+		storylineCheckClient: storylineCheckClient,
 	}, nil
 }
 

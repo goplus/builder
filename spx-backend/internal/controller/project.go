@@ -111,7 +111,7 @@ type CreateProjectParams struct {
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
-	Status       string               `json:"status"`
+	Hidden       int8                 `json:"hidden"`
 }
 
 // Validate validates the parameters.
@@ -149,11 +149,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		Instructions: params.Instructions,
 		Thumbnail:    params.Thumbnail,
 	}
-	if params.Status == "0" {
-		mProject.Status = 0
-	} else {
-		mProject.Status = 1
-	}
+	mProject.Hidden = params.Hidden
 	if params.RemixSource != "" {
 		parts := strings.Split(params.RemixSource, "/")
 		ownerUsername := parts[0]
@@ -385,7 +381,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 
 	query := ctrl.db.WithContext(ctx).Model(&model.Project{})
 
-	query = query.Where("status == 1")
+	query = query.Where("hidden == 0")
 
 	if params.Owner != nil {
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
@@ -520,7 +516,7 @@ type UpdateProjectParams struct {
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
-	Status       string               `json:"status"`
+	Hidden       string               `json:"hidden"`
 }
 
 // Validate validates the parameters.
@@ -549,8 +545,8 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if p.Thumbnail != mProject.Thumbnail {
 		updates["thumbnail"] = p.Thumbnail
 	}
-	if p.Status == "1" {
-		updates["status"] = 1
+	if p.Hidden == "0" {
+		updates["hidden"] = 0
 	}
 	return updates
 }
