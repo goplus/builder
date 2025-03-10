@@ -512,11 +512,11 @@ func (ctrl *Controller) GetProject(ctx context.Context, owner, name string) (*Pr
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
 	Hidden       int8                 `json:"hidden"`
+	Visibility   string               `json:"visibility"`
 }
 
 // Validate validates the parameters.
@@ -533,9 +533,6 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if !maps.Equal(p.Files, mProject.Files) {
 		updates["files"] = p.Files
 	}
-	if p.Visibility != mProject.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(p.Visibility)
-	}
 	if p.Description != mProject.Description {
 		updates["description"] = p.Description
 	}
@@ -545,8 +542,11 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if p.Thumbnail != mProject.Thumbnail {
 		updates["thumbnail"] = p.Thumbnail
 	}
-	if p.Hidden == 0 {
-		updates["hidden"] = 0
+	if p.Hidden != mProject.Hidden {
+		updates["hidden"] = p.Hidden
+	}
+	if p.Visibility != mProject.Visibility.String() {
+		updates["visibility"] = model.ParseVisibility(p.Visibility)
 	}
 	return updates
 }

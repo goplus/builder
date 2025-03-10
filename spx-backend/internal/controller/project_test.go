@@ -1405,11 +1405,13 @@ func TestControllerUpdateProject(t *testing.T) {
 			Name:        "testproject",
 			Visibility:  model.VisibilityPrivate,
 			Description: "Original description",
+			Hidden:      1,
 		}
 
 		params := &UpdateProjectParams{
-			Visibility:  "public",
 			Description: "Updated description",
+			Hidden:      0,
+			Visibility:  "public",
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -1446,8 +1448,9 @@ func TestControllerUpdateProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
 			Updates(map[string]any{
-				"visibility":  model.ParseVisibility(params.Visibility),
 				"description": params.Description,
+				"hidden":      params.Hidden,
+				"visibility":  model.ParseVisibility(params.Visibility),
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
