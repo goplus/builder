@@ -34,13 +34,13 @@
               class="icon-fill"
               p-id="1445"
             ></path>
-            <text 
-              x="50%" 
-              y="50%" 
-              text-anchor="middle" 
-              dominant-baseline="middle" 
-              font-family="Arial" 
-              font-size="48" 
+            <text
+              x="50%"
+              y="50%"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-family="Arial"
+              font-size="48"
               fill="black"
             >
               {{ props.step.description }}
@@ -280,7 +280,7 @@ function setupTargetElementListener() {
 async function handleTargetElementClick() {
   if (props.step.type !== 'following') return
 
-  if (props.step.snapshot?.endSnapshot) {
+  if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
     const result = await compareSnapshot(props.step.snapshot.endSnapshot)
     if (result.success) {
       emit('stepCompleted')
@@ -291,30 +291,34 @@ async function handleTargetElementClick() {
 }
 
 function handleCheckButtonClick() {
-  checkAnswer().then((result) => {
-    if (result) {
-      emit('stepCompleted')
-    } else {
-      console.warn('Answer mismatch')
-    }
-  })
+  if (props.step.type !== 'coding') return
+
+  if (props.step.isCheck) {
+    checkAnswer().then((result) => {
+      if (result) {
+        emit('stepCompleted')
+      } else {
+        console.warn('Answer mismatch')
+      }
+    })
+  }
 }
 
 async function checkAnswer(): Promise<boolean> {
   const project = editorCtx.project
   const files = await project.getFiles()
   const answer = props.step.coding?.path ? await project.getFileContent(props.step.coding.path) : null
-  
+
   if (!answer) {
     return false
   }
-  
+
   const userFile = files[props.step.coding.path]
-  
+
   if (!userFile) {
     return false
   }
-  
+
   return userFile === answer
 }
 
