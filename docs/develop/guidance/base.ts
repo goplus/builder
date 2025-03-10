@@ -34,7 +34,7 @@ type Step = {
     startSnapshot: string // 初始快照
     endSnapshot?: string // 结束快照
   }
-  coding: {
+  coding?: {
     // coding任务独有的数据结构
     path: string // 编码文件路径
     codeMasks: Mask[] // 完形填空的mask数组，一个mask对应一个空的答案
@@ -57,7 +57,7 @@ type Level = {
   title: LocaleMessage // 关卡标题
   description: LocaleMessage // 关卡描述
   video: string // 关卡的整体视频url（由NodeTask的视频拼接而来）
-  achievement: {
+  achievement?: {
     // 成就与关卡绑定，一个关卡可能存在多个成就
     icon: string // 成就图标url
     title: LocaleMessage // 成就名称
