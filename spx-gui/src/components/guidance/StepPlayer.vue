@@ -283,8 +283,12 @@ function handleCheckButtonClick() {
   emit('stepCompleted')
 }
 
-function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
+async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
   if (!snapshotStr) return Promise.resolve({ success: false, reason: 'No end snapshot' })
+  const userSnapshot = await getSnapshot()
+  if (snapshotStr !== userSnapshot) {
+    return Promise.resolve({ success: false, reason: 'Snapshot mismatch' })
+  }
   return Promise.resolve({ success: true })
 }
 </script>
