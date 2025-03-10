@@ -8,7 +8,7 @@ package main
 // All packages available in the ispx Wasm runtime.
 //
 // NOTE: Any changes to this file must also be synchronized with
-// `github.com/goplus/builder/tools/spxls/internal/pkgdata/gen/main.go`.
+// `github.com/goplus/goxlsw/internal/pkgdata/gen/main.go`.
 import (
 	// Embedded stdlib packages.
 	_ "github.com/goplus/igop/pkg/archive/tar"
