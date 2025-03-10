@@ -777,16 +777,23 @@ func (this *get_storyline_id_study) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_storyline_#id_study.yap:6:1
 	ctx := &this.Context
-//line cmd/spx-backend/get_storyline_#id_study.yap:9:1
-	userStorylineRelationship, err := this.ctrl.GetStoryLineStudy(ctx.Context(), this.Gop_Env("id"))
-//line cmd/spx-backend/get_storyline_#id_study.yap:10:1
-	if err != nil {
-//line cmd/spx-backend/get_storyline_#id_study.yap:11:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_storyline_#id_study.yap:12:1
+//line cmd/spx-backend/get_storyline_#id_study.yap:7:1
+	if
+//line cmd/spx-backend/get_storyline_#id_study.yap:7:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+//line cmd/spx-backend/get_storyline_#id_study.yap:8:1
 		return
 	}
+//line cmd/spx-backend/get_storyline_#id_study.yap:11:1
+	userStorylineRelationship, err := this.ctrl.GetStoryLineStudy(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_storyline_#id_study.yap:12:1
+	if err != nil {
+//line cmd/spx-backend/get_storyline_#id_study.yap:13:1
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/get_storyline_#id_study.yap:14:1
+		return
+	}
+//line cmd/spx-backend/get_storyline_#id_study.yap:16:1
 	this.Json__1(userStorylineRelationship)
 }
 func (this *get_storyline_id_study) Classfname() string {
@@ -1384,32 +1391,39 @@ func (this *post_util_guidance_check) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_util_guidance-check.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_util_guidance-check.yap:13:1
-	params := &controller.CheckCodeParam{}
-//line cmd/spx-backend/post_util_guidance-check.yap:14:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_util_guidance-check.yap:15:1
-		return
-	}
-//line cmd/spx-backend/post_util_guidance-check.yap:17:1
+//line cmd/spx-backend/post_util_guidance-check.yap:11:1
 	if
+//line cmd/spx-backend/post_util_guidance-check.yap:11:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+//line cmd/spx-backend/post_util_guidance-check.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_util_guidance-check.yap:15:1
+	params := &controller.CheckCodeParam{}
+//line cmd/spx-backend/post_util_guidance-check.yap:16:1
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_util_guidance-check.yap:17:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_util_guidance-check.yap:18:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+		return
+	}
 //line cmd/spx-backend/post_util_guidance-check.yap:19:1
+	if
+//line cmd/spx-backend/post_util_guidance-check.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_util_guidance-check.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_util_guidance-check.yap:21:1
 		return
 	}
-//line cmd/spx-backend/post_util_guidance-check.yap:22:1
-	result, err := this.ctrl.CheckCode(ctx.Context(), params)
-//line cmd/spx-backend/post_util_guidance-check.yap:23:1
-	if err != nil {
 //line cmd/spx-backend/post_util_guidance-check.yap:24:1
-		replyWithInnerError(ctx, err)
+	result, err := this.ctrl.CheckCode(ctx.Context(), params)
 //line cmd/spx-backend/post_util_guidance-check.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_util_guidance-check.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_util_guidance-check.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_util_guidance-check.yap:27:1
+//line cmd/spx-backend/post_util_guidance-check.yap:29:1
 	this.Json__1(result)
 }
 func (this *post_util_guidance_check) Classfname() string {

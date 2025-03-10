@@ -1,4 +1,4 @@
-package storyline
+package chat91DictCnGemini
 
 import (
 	"context"
@@ -8,13 +8,15 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
-type StorylineCheckClient struct {
+type Chat91DictCnGeminiClient struct {
 	endpoint string
 	client   *http.Client
 }
 
+// TODO Provide gop/spx knowledge to the llm in the storyline
 const prompt = `Strictly follow the following requirements to analyze whether the functions of the two pieces of code are consistent:
 1. Only consider the functional implementation of the code, not considering the differences in code style and format.
 2. Ignore naming differences such as variable names and function names.
@@ -22,10 +24,12 @@ const prompt = `Strictly follow the following requirements to analyze whether th
 There may be supplementary information later, but keep in mind that the additional information is only there to introduce additional knowledge to help you identify the code.
 `
 
-func NewStorylineCheckClient(endpoint string) *StorylineCheckClient {
-	return &StorylineCheckClient{
+func NewChat91DictCnGeminiClient(endpoint string) *Chat91DictCnGeminiClient {
+	return &Chat91DictCnGeminiClient{
 		endpoint: endpoint,
-		client:   &http.Client{},
+		client: &http.Client{
+			Timeout: 20 * time.Second,
+		},
 	}
 }
 
@@ -34,7 +38,7 @@ func escape(s string) string {
 	return strings.ReplaceAll(s, "`", "\\`")
 }
 
-func (c *StorylineCheckClient) Check(ctx context.Context, content, code1, code2 string) (bool, error) {
+func (c *Chat91DictCnGeminiClient) ContrastCode(ctx context.Context, content, code1, code2 string) (bool, error) {
 	chat := prompt
 	escapedContent := escape(content)
 	escapedCode1 := escape(code1)

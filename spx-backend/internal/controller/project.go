@@ -381,7 +381,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 
 	query := ctrl.db.WithContext(ctx).Model(&model.Project{})
 
-	query = query.Where("hidden == 0")
+	query = query.Where("hidden = 0")
 
 	if params.Owner != nil {
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
@@ -516,7 +516,7 @@ type UpdateProjectParams struct {
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
-	Hidden       string               `json:"hidden"`
+	Hidden       int8                 `json:"hidden"`
 }
 
 // Validate validates the parameters.
@@ -545,7 +545,7 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if p.Thumbnail != mProject.Thumbnail {
 		updates["thumbnail"] = p.Thumbnail
 	}
-	if p.Hidden == "0" {
+	if p.Hidden == 0 {
 		updates["hidden"] = 0
 	}
 	return updates

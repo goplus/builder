@@ -248,7 +248,7 @@ var (
 
 // CheckCode Check the code
 func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout*2)
+	ctx, cancel := context.WithTimeout(ctx, timeout*3)
 	defer cancel()
 
 	// Wait for the rate limit to pass
@@ -259,7 +259,7 @@ func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (b
 		return false, fmt.Errorf("rate limit exceeded: %w", err)
 	}
 
-	result, err := ctrl.storylineCheckClient.Check(ctx, param.Context, param.UserCode, param.ExpectedCode)
+	result, err := ctrl.chat91DictCnGeminiClient.ContrastCode(ctx, param.Context, param.UserCode, param.ExpectedCode)
 	if err != nil {
 		return result, fmt.Errorf("failed to compare code: %w", err)
 	}
