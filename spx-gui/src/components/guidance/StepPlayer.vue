@@ -116,12 +116,18 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
   try {
     const project = editorCtx.project
 
-    const { metadata, files } = JSON.parse(snapshotStr)
+    const { files } = JSON.parse(snapshotStr)
 
-    await project.load(metadata, files)
+    await project.load(files)
   } catch (error) {
     console.error('Failed to load snapshot:', error)
   }
+}
+
+async function getSnapshot(): Promise<string> {
+  const project = editorCtx.project
+  const files = await project.getFiles()
+  return JSON.stringify({ files })
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
