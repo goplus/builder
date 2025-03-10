@@ -5,7 +5,7 @@
       <div>{{ $t(props.level.title) }}</div>
     </div>
     <div class="intro-desc">
-      <div>{{ $t({zh:'关卡介绍', en: 'Level intro'}) }}</div>
+      <div>{{ $t({ zh: '关卡介绍', en: 'Level intro' }) }}</div>
       <div>{{ $t(props.level.description) }}</div>
     </div>
     <div class="intro-node">
@@ -18,59 +18,83 @@
     </div>
     <div class="intro-opt">
       <div class="intro-btn" @click="handleToClick('storyline')">
-        <span>{{ $t({zh: '返回选关', en: 'Back'}) }}</span>
+        <span>{{ $t({ zh: '返回选关', en: 'Back' }) }}</span>
       </div>
       <div class="intro-btn" @click="handleStartLevel">
-        <span>{{ $t({zh: '开始挑战', en: 'Start'}) }}</span>
+        <span>{{ $t({ zh: '开始挑战', en: 'Start' }) }}</span>
       </div>
     </div>
   </div>
-  <div 
-    v-else 
-    class="level-player" 
+  <div
+    v-else
+    class="level-player"
     :style="{
-    transform: `translate(${getPos().x}px, ${getPos().y}px)`,
-  }">
+      transform: `translate(${getPos().x}px, ${getPos().y}px)`
+    }"
+  >
     <!-- 可拖拽的卡片组（悬浮卡片+悬浮按钮） -->
-    <div class="card-group" >
+    <div class="card-group">
       <!-- navbar 状态栏 -->
       <div v-show="videoPlayerVisible" class="player-container">
         <div class="navbar">
           <div class="navbar-left" @click="handleToClick('storyline')">
-            <img src="./icons/path.svg" alt="">
+            <img src="./icons/path.svg" alt="" />
           </div>
           <div class="navbar-center">
-            <span>{{ $t({zh: '进度', en: 'Progress'}) }}: {{ currentNodeTaskIndex || 0 }} / {{ props.level.nodeTasks.length }}</span>
+            <span
+              >{{ $t({ zh: '进度', en: 'Progress' }) }}: {{ currentNodeTaskIndex || 0 }} /
+              {{ props.level.nodeTasks.length }}</span
+            >
           </div>
           <div class="navbar-right"></div>
         </div>
-        <VideoPlayer 
-          ref="videoPlayerRef" 
+        <VideoPlayer
+          ref="videoPlayerRef"
           class="video-player"
           :video-url="props.level.video"
           :segments="videoPlayerSegments"
-          @segment-end="(segment: Segment) => handleSegmentEnd(segment as ExtendSegment)">
+          @segment-end="handleSegmentEnd"
+        >
           <template #cover>
             <div v-if="coverType === CoverType.LEVEL_END" class="cover cover-bg">
               <div class="achievement">
                 <div class="achievement-img">
-                  <img :src="props.level.achievement.icon" alt="">
+                  <img v-if="props.level.achievement.icon" :src="props.level.achievement.icon" alt="" />
+                  <img v-else src="./icons/thumbs-up.svg" alt="" />
                 </div>
-                <div class="achievement-desc">{{ $t({zh: '太棒了！恭喜你完成本关卡挑战！', en: 'Marvelous! Congratulations on completing this level challenge!'}) }}</div>
-                <div class="achievement-desc">{{ $t({zh: '解锁成就', en:'Unlock achievements'}) }}:<span>{{ $t(props.level.achievement.title) }}</span>!</div>
+                <div class="achievement-desc">
+                  {{
+                    $t({
+                      zh: '太棒了！恭喜你完成本关卡挑战！',
+                      en: 'Marvelous! Congratulations on completing this level challenge!'
+                    })
+                  }}
+                </div>
+                <div class="achievement-desc" v-if="props.level.achievement.title">
+                  {{ $t({ zh: '解锁成就', en: 'Unlock achievements' }) }}:<span>{{
+                    $t(props.level.achievement.title)
+                  }}</span
+                  >!
+                </div>
               </div>
               <div class="opt">
-                <div class="opt-wrap" @click="handleToClick('storyline')"><img src="./icons/arrow.svg" alt="">{{ $t({zh: '返回故事线', en: 'Back'}) }}</div>
-                <div>{{ $t({zh:'重新挑战', en: 'Replay'}) }}</div>
-                <div class="opt-wrap" @click="handleToClick('nextLevel')">{{ $t({zh: '进入下一关', en: 'Next level'}) }}<img src="./icons/arrow.svg" alt=""></div>
+                <div class="opt-wrap" @click="handleToClick('storyline')">
+                  <img src="./icons/arrow.svg" alt="" />{{ $t({ zh: '返回故事线', en: 'Back' }) }}
+                </div>
+                <div @click="handleToClick('replay')">{{ $t({ zh: '重新挑战', en: 'Replay' }) }}</div>
+                <div class="opt-wrap" @click="handleToClick('nextLevel')">
+                  {{ $t({ zh: '进入下一关', en: 'Next level' }) }}<img src="./icons/arrow.svg" alt="" />
+                </div>
               </div>
             </div>
             <div v-if="coverType === CoverType.LEVEL_START" class="cover">
-              <img :src="props.level.cover" />
+              <!-- 此处播放视频，不展示cover -->
             </div>
             <div v-if="coverType === CoverType.NODE_TASK_START" class="cover cover-bg">
               <div class="cover-title">
-                <span>{{ $t({zh: '现在，请你开始本节点任务！', en: 'Now, please start the task of this part'}) }}</span>
+                <span>{{
+                  $t({ zh: '现在，请你开始本节点任务！', en: 'Now, please start the task of this part' })
+                }}</span>
               </div>
               <div class="cover-desc">
                 <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
@@ -78,7 +102,7 @@
                 </div>
               </div>
               <div class="cover-btn" @click="handleStartNodeTask">
-                <span>{{ $t({zh: '现在开始', en: 'Get start'}) }}</span>
+                <span>{{ $t({ zh: '现在开始', en: 'Get start' }) }}</span>
               </div>
             </div>
             <div v-if="coverType === CoverType.NODE_TASK_PENDING" class="cover cover-bg">
@@ -94,10 +118,10 @@
           </template>
         </VideoPlayer>
       </div>
-      
+
       <!-- 悬浮按钮 -->
       <div ref="floatingBtnRef" class="floating-btn">
-        <img src="./icons/play.svg" alt="">
+        <img src="./icons/play.svg" alt="" />
       </div>
     </div>
 
@@ -110,26 +134,39 @@
   </div>
 </template>
 
-<script setup lang="ts" generic="T extends { nodeTaskIndex: number }">
-import type { Level, NodeTask } from '@/apis/guidance';
-import { ref, computed, provide, type InjectionKey, inject, nextTick } from 'vue';
-import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue';
-import NodeTaskPlayer from './NodeTaskPlayer.vue';
-import { useDrag } from '@/utils/dom';
+<script setup lang="ts">
+import type { Level, NodeTask } from '@/apis/guidance'
+import { ref, computed, provide, type InjectionKey, inject, type ComponentPublicInstance } from 'vue'
+import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
+import NodeTaskPlayer from './NodeTaskPlayer.vue'
+import { useDrag } from '@/utils/dom'
+import { untilNotNull } from '@/utils/utils'
 
-const props = defineProps<{ level: Level }>();
+const props = defineProps<{ level: Level }>()
 
-const videoPlayerRef = ref<InstanceType<typeof VideoPlayer> | null>(null);
-const currentNodeTask = ref<NodeTask | null>(null);
-const currentNodeTaskIndex = ref<number | null>(null);
-const videoPlayerSegments = computed(() => {
+interface VideoPlayerExposed {
+  play: () => void
+  pause: () => void
+  showCover: () => void
+  hideCover: () => void
+  endCurrentSegment: () => void
+  enterFullScreen: () => void
+  exitFullScreen: () => void
+}
+const videoPlayerRef = ref<(ComponentPublicInstance<typeof VideoPlayer> & VideoPlayerExposed) | null>(null)
+const currentNodeTask = ref<NodeTask | null>(null)
+const currentNodeTaskIndex = ref<number | null>(null)
+type LevelSegment = Segment<{
+  nodeTaskIndex: number
+}>
+const videoPlayerSegments = computed<LevelSegment[]>(() => {
   return props.level.nodeTasks.map((nodeTask, index) => {
     return {
       endTime: nodeTask.triggerTime,
-      extension: { nodeTaskIndex: index },
-    } as ExtendSegment;
-  });
-});
+      extension: { nodeTaskIndex: index }
+    }
+  })
+})
 
 // 视频组件封面类型
 enum CoverType {
@@ -137,7 +174,7 @@ enum CoverType {
   NODE_TASK_START, // 节点任务开始封面
   NODE_TASK_PENDING, // 节点任务进行中封面
   NODE_TASK_END, // 节点任务结束封面，此时播放视频，不展示cover
-  LEVEL_END, // 关卡完成封面
+  LEVEL_END // 关卡完成封面
 }
 
 const coverType = ref<CoverType>(CoverType.LEVEL_START)
@@ -145,70 +182,65 @@ const coverType = ref<CoverType>(CoverType.LEVEL_START)
  * 视频段播放完成
  * @param segment 回传的片段参数
  */
-type ExtendSegment = Segment & {
-  extension: T;
-}
-function handleSegmentEnd(segment: ExtendSegment): void {
-  coverType.value = CoverType.NODE_TASK_START;
+function handleSegmentEnd(segment: LevelSegment): void {
+  coverType.value = CoverType.NODE_TASK_START
+  videoPlayerRef.value?.showCover()
+  videoPlayerRef.value?.pause()
 
-  videoPlayerRef.value?.showCover();
-  videoPlayerRef.value?.pause();
+  currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
-  currentNodeTaskIndex.value = segment.extension.nodeTaskIndex;
-
-  currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value];
+  currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
 }
 
 /**
  * 节点任务开始
  */
 function handleStartNodeTask(): void {
-  coverType.value = CoverType.NODE_TASK_PENDING;
-  videoPlayerVisible.value = false;
+  coverType.value = CoverType.NODE_TASK_PENDING
+  videoPlayerRef.value?.exitFullScreen()
+  videoPlayerVisible.value = false
 }
 
 /**
  * 节点任务完成
  */
 async function handleNodeTaskCompleted(): Promise<void> {
-  coverType.value = CoverType.NODE_TASK_END;
-  videoPlayerVisible.value = true;
+  coverType.value = CoverType.NODE_TASK_END
+  videoPlayerVisible.value = true
   if (currentNodeTaskIndex.value === props.level.nodeTasks.length - 1) {
     // 更新 关卡完结cover
-    coverType.value = CoverType.LEVEL_END;
-    videoPlayerRef.value?.showCover();
+    coverType.value = CoverType.LEVEL_END
+    videoPlayerRef.value?.showCover()
     // await updateStoryLineStudy({
 
     // });
   } else {
-    videoPlayerRef.value?.hideCover();
-    videoPlayerRef.value?.play();
+    videoPlayerRef.value?.hideCover()
+    videoPlayerRef.value?.play()
   }
-  currentNodeTaskIndex.value = null;
-  currentNodeTask.value = null;
+  currentNodeTaskIndex.value = null
+  currentNodeTask.value = null
 }
 
 /**
  * 悬浮按钮逻辑
  */
-const videoPlayerVisible = ref<boolean>(true);
+const videoPlayerVisible = ref<boolean>(true)
 function handleFloatingBtnClick(): void {
-  videoPlayerVisible.value = !videoPlayerVisible.value;
+  videoPlayerVisible.value = !videoPlayerVisible.value
 }
 
 /**
  * 关卡介绍
  */
-const levelIntroVisible = ref<boolean>(true);
-function handleStartLevel(): void {
-  levelIntroVisible.value = false;
-  videoPlayerVisible.value = true;
-  coverType.value = CoverType.LEVEL_START;
-  nextTick(() => {
-    videoPlayerRef.value?.showCover();
-  });
+const levelIntroVisible = ref<boolean>(true)
+async function handleStartLevel(): Promise<void> {
+  levelIntroVisible.value = false
+  videoPlayerVisible.value = true
+  coverType.value = CoverType.LEVEL_START
+  const videoPlayer = await untilNotNull(videoPlayerRef)
+  videoPlayer.play()
 }
-
 
 /**
  * 跳转
@@ -217,11 +249,17 @@ function handleStartLevel(): void {
 function handleToClick(target: string): void {
   switch (target) {
     case 'storyline':
-      console.log('handleToClick storyline');
-      break;
+      console.log('handleToClick storyline')
+      break
     case 'nextLevel':
-      console.log('handleToClick nextLevel');
-      break;
+      console.log('handleToClick nextLevel')
+      break
+    case 'replay':
+      currentNodeTask.value = null
+      videoPlayerRef.value?.hideCover()
+      currentNodeTaskIndex.value = 0
+      // 还要等VideoPlayer的reset接口
+      break
   }
 }
 
@@ -233,10 +271,10 @@ const levelPlayerPos = ref<Pos>({
   y: 0
 })
 function getPos(): Pos {
-  return levelPlayerPos.value;
+  return levelPlayerPos.value
 }
 function setPos(pos: Pos): void {
-  levelPlayerPos.value = pos;
+  levelPlayerPos.value = pos
 }
 const levelPlayerCtx = {
   getPos,
@@ -247,16 +285,16 @@ provide(levelPlayerCtxKey, levelPlayerCtx)
 /**
  * 拖拽
  */
-const floatingBtnRef = ref<HTMLElement | null>(null);
+const floatingBtnRef = ref<HTMLElement | null>(null)
 useDrag(floatingBtnRef, getPos, setPos, {
-  onClick: handleFloatingBtnClick,
+  onClick: handleFloatingBtnClick
 })
 </script>
 <script lang="ts">
 export type Pos = {
-  x: number;
-  y: number;
-};
+  x: number
+  y: number
+}
 export type LevelPlayerCtx = {
   getPos(): Pos
   setPos(pos: Pos): void
@@ -292,7 +330,7 @@ export function useLevelPlayerCtx() {
   height: 40px;
   color: #fff;
   align-items: center;
-  background-color: #0EC1D0;
+  background-color: #0ec1d0;
   .navbar-left {
     display: flex;
     align-items: center;
@@ -311,14 +349,14 @@ export function useLevelPlayerCtx() {
   height: 35px;
   width: 35px;
   border-radius: 50%;
-  background-color: #E9FDFF;
+  background-color: #e9fdff;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   &:hover {
-    background-color: #D4F9FF;
+    background-color: #d4f9ff;
     box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.5);
   }
   img {
@@ -361,7 +399,7 @@ export function useLevelPlayerCtx() {
     }
   }
   .cover-btn {
-    background-color: #E9FDFF;
+    background-color: #e9fdff;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -370,9 +408,9 @@ export function useLevelPlayerCtx() {
     font-size: 14px;
     cursor: pointer;
     &:hover {
-      color: #F9A134;
+      color: #f9a134;
     }
-    color: #0EC1D0;
+    color: #0ec1d0;
   }
   .achievement {
     display: flex;
@@ -388,7 +426,7 @@ export function useLevelPlayerCtx() {
       font-size: 16px;
       margin: 10px 0;
       span {
-        color: #F9A134;
+        color: #f9a134;
         margin: 0 5px;
         font-size: 18px;
       }
@@ -399,10 +437,10 @@ export function useLevelPlayerCtx() {
     justify-content: space-around;
     width: 100%;
     div:hover {
-      color: #0EC1D0;
+      color: #0ec1d0;
       cursor: pointer;
-    } 
-    
+    }
+
     .opt-wrap {
       display: flex;
       align-items: center;
@@ -410,6 +448,7 @@ export function useLevelPlayerCtx() {
       img {
         width: 20px;
         height: 20px;
+        margin: 0 5px;
       }
       &:first-child {
         img {
@@ -441,7 +480,7 @@ export function useLevelPlayerCtx() {
     }
     div:first-child {
       font-size: 22px;
-      color: #0EC1D0;
+      color: #0ec1d0;
     }
   }
   .intro-desc {
@@ -464,7 +503,7 @@ export function useLevelPlayerCtx() {
       position: relative;
       width: 13px;
       height: 13px;
-      background: #0EC1D0;
+      background: #0ec1d0;
       border-radius: 50%;
       margin-right: 10px;
       display: flex;
@@ -475,9 +514,9 @@ export function useLevelPlayerCtx() {
       position: absolute;
       width: 100%;
       height: 100%;
-      border: 2px solid rgba(255,255,255,0.7);
+      border: 2px solid rgba(255, 255, 255, 0.7);
       border-radius: 50%;
-      animation: ripple 1.5s cubic-bezier(0.4,0,0.2,1) infinite;
+      animation: ripple 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
     @keyframes ripple {
       0% {
@@ -496,22 +535,21 @@ export function useLevelPlayerCtx() {
     margin-top: 20px;
     font-size: 13px;
     .intro-btn {
-      background-color: #0EC1D0;
+      background-color: #0ec1d0;
       color: #fff;
       border-radius: 10px;
       padding: 6px 17px;
       cursor: pointer;
       &:hover {
-        background-color: #0EC1D0;
+        background-color: #0ec1d0;
         color: #fff;
         box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.3);
       }
       &:first-child {
-        background-color: #E5E7EB;
+        background-color: #e5e7eb;
         color: #000;
       }
     }
   }
 }
-
 </style>

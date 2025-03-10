@@ -1,11 +1,12 @@
 <!-- VideoPlayer.vue -->
 <template>
-  <div 
-    ref="containerRef" class="video-player-container" 
+  <div
+    ref="containerRef"
+    class="video-player-container"
     @mousemove="handleMouseMove"
     @mouseenter="showProgress"
-    @mouseleave="hideProgress">
-
+    @mouseleave="hideProgress"
+  >
     <!-- 视频元素（禁用原生控制） -->
     <video
       ref="videoRef"
@@ -17,7 +18,7 @@
     ></video>
 
     <!-- 视频暂停显示播放操作图标 -->
-    <div v-show="videoRef&&isPaused" class="pause-center-icon">
+    <div v-show="videoRef && isPaused" class="pause-center-icon">
       <img :src="playCenterSvg" />
     </div>
 
@@ -30,32 +31,30 @@
           v-for="(seg, index) in props.segments"
           :key="index"
           class="segment-dot"
-          :style="{ left: (seg.endTime / videoDuration * 100) + '%' }"
+          :style="{ left: (seg.endTime / videoDuration) * 100 + '%' }"
         ></div>
       </div>
 
       <!-- 播放按钮 -->
-      <div v-if="videoRef&&isPaused" class="play-button" @click="play">
-        <img :src="playSvg"/>
+      <div v-if="videoRef && isPaused" class="play-button" @click="play">
+        <img :src="playSvg" />
       </div>
       <!-- 暂停按钮 -->
       <div v-else class="pause-button" @click="pause">
-        <img :src="pauseSvg"/>
+        <img :src="pauseSvg" />
       </div>
 
       <!-- 全屏按钮：非全屏状态下显示 -->
       <div v-if="!isFullScreen" class="fullscreen-button" @click="enterFullScreen">
-        <img :src="maximizeSvg"/>
+        <img :src="maximizeSvg" />
       </div>
       <!-- 缩小按钮：全屏状态下显示 -->
       <div v-else class="minimize-button" @click="exitFullScreen">
-        <img :src="minimizeSvg"/>
+        <img :src="minimizeSvg" />
       </div>
 
       <!-- 播放时长显示 -->
-      <div class="play-time">
-        {{ formattedCurrentTime }} / {{ formattedDuration }}
-      </div>
+      <div class="play-time">{{ formattedCurrentTime }} / {{ formattedDuration }}</div>
     </div>
 
     <!-- 自定义封面区域，通过具名插槽 cover 提供 -->
@@ -65,33 +64,33 @@
   </div>
 </template>
 
-<script lang="ts" setup>
-import {ref, computed, onMounted, onBeforeUnmount } from 'vue'
+<script lang="ts" setup generic="T">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import maximizeSvg from './icons/maximize.svg'
 import minimizeSvg from './icons/minimize.svg'
 import playSvg from './icons/play.svg'
 import pauseSvg from './icons/pause.svg'
 import playCenterSvg from './icons/play_center.svg'
 
-export type Segment = {
-  endTime: number; 
-  extension?: Object;  
+export type Segment<T> = {
+  endTime: number
+  extension?: T
 }
 type Props = {
-  videoUrl: string;
-  segments: Segment[];
+  videoUrl: string
+  segments: Segment<T>[]
 }
 type Events = {
-  segmentEnd: [segment: Segment];
+  segmentEnd: [segment: Segment<T>]
 }
 type Expose = {
-  play(): void;
-  pause(): void;
-  showCover(): void;
-  hideCover(): void;
-  endCurrentSegment(): void;
-  enterFullScreen(): void;
-  exitFullScreen(): void;
+  play(): void
+  pause(): void
+  showCover(): void
+  hideCover(): void
+  endCurrentSegment(): void
+  enterFullScreen(): void
+  exitFullScreen(): void
 }
 
 const props = defineProps<Props>()
@@ -122,7 +121,7 @@ function formatTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const sec = Math.floor(seconds % 60)
-  
+
   if (hours > 0) {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
   } else {
@@ -165,9 +164,9 @@ function hideCover() {
 /** 结束当前分段的视频播放：快进到当前分段结束点，然后触发 segmentEnd 事件 */
 function endCurrentSegment() {
   if (triggeredSegments.value !== null && videoRef.value) {
-    const seg = props.segments[triggeredSegments.value[triggeredSegments.value.length - 1]+1];
+    const seg = props.segments[triggeredSegments.value[triggeredSegments.value.length - 1] + 1]
     // 快进到分段结束点
-    videoRef.value.currentTime = seg.endTime;
+    videoRef.value.currentTime = seg.endTime
   }
 }
 
@@ -256,7 +255,7 @@ defineExpose<Expose>({
   hideCover,
   endCurrentSegment,
   enterFullScreen,
-  exitFullScreen,
+  exitFullScreen
 })
 </script>
 
@@ -277,7 +276,7 @@ defineExpose<Expose>({
   }
 
   // 视频暂停显示播放操作图标
-  .pause-center-icon{
+  .pause-center-icon {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -301,7 +300,9 @@ defineExpose<Expose>({
     background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
     opacity: 0;
     transform: translateY(100%);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
 
     &.visible {
       opacity: 1;
@@ -319,7 +320,7 @@ defineExpose<Expose>({
       .progress-fill {
         position: absolute;
         height: 100%;
-        background: #0EC1D0;
+        background: #0ec1d0;
         width: 0%;
         border-radius: inherit;
       }
@@ -330,21 +331,21 @@ defineExpose<Expose>({
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #F9A134;
+        background: #f9a134;
         transform: translateX(-50%);
       }
     }
 
     // 播放按钮和暂停按钮
     .play-button,
-    .pause-button{
+    .pause-button {
       width: 15px;
       height: 15px;
       position: absolute;
       left: 10px;
       top: 10px;
       cursor: pointer;
-      img{
+      img {
         width: 100%;
         height: 100%;
       }
@@ -359,14 +360,14 @@ defineExpose<Expose>({
       right: 10px;
       top: 10px;
       cursor: pointer;
-      img{
+      img {
         width: 100%;
         height: 100%;
       }
     }
 
     // 播放时长显示
-    .play-time{
+    .play-time {
       position: absolute;
       left: 40px;
       top: 12px;
