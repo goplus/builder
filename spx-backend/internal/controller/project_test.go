@@ -736,6 +736,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
@@ -745,6 +746,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
 			Offset(params.Pagination.Offset()).
@@ -800,6 +802,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", *params.Owner).
 			Count(new(int64)).
@@ -810,6 +813,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", *params.Owner).
 			Order("project.created_at asc, project.id").
@@ -866,6 +870,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Where("project.name LIKE ?", "%"+*params.Keyword+"%").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
@@ -876,6 +881,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Where("project.name LIKE ?", "%"+*params.Keyword+"%").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
@@ -932,6 +938,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Joins("JOIN user_project_relationship AS liker_relationship ON liker_relationship.project_id = project.id").
 			Joins("JOIN user AS liker ON liker.id = liker_relationship.user_id").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
@@ -945,6 +952,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Joins("JOIN user_project_relationship AS liker_relationship ON liker_relationship.project_id = project.id").
 			Joins("JOIN user AS liker ON liker.id = liker_relationship.user_id").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
@@ -1011,6 +1019,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
@@ -1020,6 +1029,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.like_count desc, project.id").
 			Offset(params.Pagination.Offset()).
@@ -1064,6 +1074,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
@@ -1091,6 +1102,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
@@ -1100,6 +1112,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
 			Offset(params.Pagination.Offset()).
@@ -1143,6 +1156,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
+			Where("hidden = 0").
 			Joins("JOIN project_release ON project_release.id = project.remixed_from_release_id").
 			Joins("JOIN project AS remixed_from_project ON remixed_from_project.id = project_release.project_id").
 			Joins("JOIN user AS remixed_from_user ON remixed_from_user.id = remixed_from_project.owner_id").
@@ -1157,6 +1171,7 @@ func TestControllerListProjects(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("hidden = 0").
 			Joins("JOIN project_release ON project_release.id = project.remixed_from_release_id").
 			Joins("JOIN project AS remixed_from_project ON remixed_from_project.id = project_release.project_id").
 			Joins("JOIN user AS remixed_from_user ON remixed_from_user.id = remixed_from_project.owner_id").
@@ -1390,11 +1405,13 @@ func TestControllerUpdateProject(t *testing.T) {
 			Name:        "testproject",
 			Visibility:  model.VisibilityPrivate,
 			Description: "Original description",
+			Hidden:      1,
 		}
 
 		params := &UpdateProjectParams{
-			Visibility:  "public",
 			Description: "Updated description",
+			Hidden:      0,
+			Visibility:  "public",
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -1431,12 +1448,13 @@ func TestControllerUpdateProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
 			Updates(map[string]any{
-				"visibility":  model.ParseVisibility(params.Visibility),
 				"description": params.Description,
+				"hidden":      params.Hidden,
+				"visibility":  model.ParseVisibility(params.Visibility),
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[2] = sqlmock.AnyArg() // UpdatedAt
+		dbMockArgs[3] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
