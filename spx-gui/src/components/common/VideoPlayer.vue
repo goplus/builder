@@ -65,6 +65,7 @@
 </template>
 
 <script lang="ts" setup generic="T">
+
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import maximizeSvg from './icons/maximize.svg'
 import minimizeSvg from './icons/minimize.svg'
