@@ -152,8 +152,8 @@ const currentLevelTitle = computed(() => {
   const levelTitle = storyLine.value?.levels[currentIndex]?.title ?? { zh: '', en: '' }
 
   return {
-    zh: `第${currentIndex + 1}关: ${levelTitle.zh}`,
-    en: `Level ${currentIndex + 1}: ${levelTitle.en}`
+    zh: `第 ${currentIndex + 1} 关：${levelTitle.zh}`,
+    en: `Level ${currentIndex + 1}：${levelTitle.en}`
   }
 })
 </script>
