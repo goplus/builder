@@ -153,7 +153,7 @@ const currentLevelTitle = computed(() => {
 
   return {
     zh: `第 ${currentIndex + 1} 关：${levelTitle.zh}`,
-    en: `Level ${currentIndex + 1}：${levelTitle.en}`
+    en: `Level ${currentIndex + 1}: ${levelTitle.en}`
   }
 })
 </script>
