@@ -1,108 +1,108 @@
-import type { LocaleMessage } from "@/utils/i18n";
-import type { Position } from "@/components/editor/code-editor/common";
+import type { LocaleMessage } from '@/utils/i18n'
+import type { Position } from '@/components/editor/code-editor/common'
 
 export type Mask = {
-    startPos: Position
-    endPos: Position
+  startPos: Position
+  endPos: Position
 }
 
 export type Placement = {
-    /** X position in percentage */
-    x: number
-    /** Y position in percentage */
-    y: number
+  /** X position in percentage */
+  x: number
+  /** Y position in percentage */
+  y: number
 }
 
 export type Step = {
-    title: LocaleMessage
-    description: LocaleMessage
-    /** Interactive prompt (conditional trigger required) */
-    tip: LocaleMessage
-    /** Duration of the user's current step delay (unit: second) */
-    duration: number
-    /** key of the target element semantically annotated */
-    target: string[]
-    /** There are two types of steps, the Following step and the Coding step */
-    type: 'coding' | 'following'
-    /** Check whether this step involves snapshot comparison */
-    isCheck: boolean
-    isApiControl: boolean
-    apis: string[]
-    isAssetControl: boolean
-    assets: string[]
-    isSpriteControl: boolean
-    sprites: string[]
-    isSoundControl: boolean
-    sounds: string[]
-    isCostumeControl: boolean
-    costumes: string[]
-    isAnimationControl: boolean
-    animations: string[]
-    isWidgetControl: boolean
-    widgets: string[]
-    isBackdropControl: boolean
-    backdrops: string[]
-    snapshot: {
-        startSnapshot: string
-        endSnapshot?: string
-    }
-    /** Data structure unique to the coding task */
-    coding?: {
-        /** Coded file path */
-        path: string
-        /** Cloze an array of masks, one mask for one empty answer */
-        codeMasks: Mask[]
-        /** The beginning position of the answer display */
-        startPosition: Position
-        /** The end position of the answer display */
-        endPosition: Position
-    }
+  title: LocaleMessage
+  description: LocaleMessage
+  /** Interactive prompt (conditional trigger required) */
+  tip: LocaleMessage
+  /** Duration of the user's current step delay (unit: second) */
+  duration: number
+  /** key of the target element semantically annotated */
+  target: string[]
+  /** There are two types of steps, the Following step and the Coding step */
+  type: 'coding' | 'following'
+  /** Check whether this step involves snapshot comparison */
+  isCheck: boolean
+  isApiControl: boolean
+  apis: string[]
+  isAssetControl: boolean
+  assets: string[]
+  isSpriteControl: boolean
+  sprites: string[]
+  isSoundControl: boolean
+  sounds: string[]
+  isCostumeControl: boolean
+  costumes: string[]
+  isAnimationControl: boolean
+  animations: string[]
+  isWidgetControl: boolean
+  widgets: string[]
+  isBackdropControl: boolean
+  backdrops: string[]
+  snapshot: {
+    startSnapshot: string
+    endSnapshot?: string
+  }
+  /** Data structure unique to the coding task */
+  coding?: {
+    /** Coded file path */
+    path: string
+    /** Cloze an array of masks, one mask for one empty answer */
+    codeMasks: Mask[]
+    /** The beginning position of the answer display */
+    startPosition: Position
+    /** The end position of the answer display */
+    endPosition: Position
+  }
 }
 
 export type NodeTask = {
-    name: LocaleMessage
-    /** Trigger time of the node in the video (unit: second) */
-    triggerTime: number
-    video: string
-    steps: Step[]
+  name: LocaleMessage
+  /** Trigger time of the node in the video (unit: second) */
+  triggerTime: number
+  video: string
+  steps: Step[]
 }
 
 export type Level = {
-    /** Cover image url */
-    cover: string
-    /** Position information on the interface 
-     * (the position of the level placement in each storyline is not determined and is manually specified) 
-     **/
-    placement: Placement
+  /** Cover image url */
+  cover: string
+  /** Position information on the interface
+   * (the position of the level placement in each storyline is not determined and is manually specified)
+   **/
+  placement: Placement
+  title: LocaleMessage
+  description: LocaleMessage
+  /** The overall video url of the level (spliced from the video of NodeTask) */
+  video: string
+  achievement: {
+    icon: string
     title: LocaleMessage
-    description: LocaleMessage
-    /** The overall video url of the level (spliced from the video of NodeTask) */
-    video: string
-    achievement: {
-        icon: string
-        title: LocaleMessage
-    }
-    nodeTasks: NodeTask[]
+  }
+  nodeTasks: NodeTask[]
 }
 
 export type StoryLine = {
-    id: string
-    backgroundImage: string
-    /** The name of the story line 
-     * (a projectName that uniquely identifies the story line and can be used when creating a project for the user)
-     **/
-    name: string
-    title: LocaleMessage
-    description: LocaleMessage
-    /** Storyline Difficulty tag */
-    tag: 'easy' | 'medium' | 'hard'
-    levels: Level[]
+  id: string
+  backgroundImage: string
+  /** The name of the story line
+   * (a projectName that uniquely identifies the story line and can be used when creating a project for the user)
+   **/
+  name: string
+  title: LocaleMessage
+  description: LocaleMessage
+  /** Storyline Difficulty tag */
+  tag: 'easy' | 'medium' | 'hard'
+  levels: Level[]
 }
 
 export type StoryLineStudy = {
-    storyLineId: string
-    /** Storyline status, the value of which is the current most recently completed level subscript */
-    lastFinishedLevelIndex: number
+  storyLineId: string
+  /** Storyline status, the value of which is the current most recently completed level subscript */
+  lastFinishedLevelIndex: number
 }
 
 const storyLineJson = `
@@ -747,37 +747,37 @@ const storyLineStudyJson = `
 `
 
 export async function getStoryLine(storyLineId: string): Promise<StoryLine> {
-    const storyLine: StoryLine = JSON.parse(storyLineJson)
-    return storyLine
+  const storyLine: StoryLine = JSON.parse(storyLineJson)
+  return storyLine
 }
 
 export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineStudy> {
-    const storyLineStudy: StoryLineStudy = JSON.parse(storyLineStudyJson)
-    return storyLineStudy
+  const storyLineStudy: StoryLineStudy = JSON.parse(storyLineStudyJson)
+  return storyLineStudy
 }
 
 export async function listStoryLine(): Promise<StoryLine[]> {
-    const storyLine: StoryLine = JSON.parse(storyLineJson)
-    const storyLines: StoryLine[] = [storyLine];
-    return storyLines
+  const storyLine: StoryLine = JSON.parse(storyLineJson)
+  const storyLines: StoryLine[] = [storyLine]
+  return storyLines
 }
 
 export type CheckCodeInput = {
-    userCode: string,
-    expectedCode: string,
-    context: string
+  userCode: string
+  expectedCode: string
+  context: string
 }
 
 export async function checkCode(input: CheckCodeInput): Promise<boolean> {
-    return true
+  return true
 }
 
 export async function createStoryLineStudy(storyLineId: string): Promise<StoryLineStudy> {
-    const storyLineStudy: StoryLineStudy = JSON.parse(storyLineStudyJson)
-    return storyLineStudy
+  const storyLineStudy: StoryLineStudy = JSON.parse(storyLineStudyJson)
+  return storyLineStudy
 }
 
 export async function updateStoryLineStudy(storyLineStudy: StoryLineStudy): Promise<StoryLineStudy> {
-    storyLineStudy.lastFinishedLevelIndex += 1
-    return storyLineStudy
+  storyLineStudy.lastFinishedLevelIndex += 1
+  return storyLineStudy
 }

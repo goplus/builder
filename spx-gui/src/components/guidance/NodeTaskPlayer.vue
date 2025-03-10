@@ -10,12 +10,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { NodeTask, Step } from '@/apis/guidance';
-import { ref, computed } from 'vue';
+import type { NodeTask, Step } from '@/apis/guidance'
+import { ref, computed } from 'vue'
 
-const props = defineProps<{ nodeTask: NodeTask }>();
+const props = defineProps<{ nodeTask: NodeTask }>()
 
-const emit = defineEmits<{ nodeTaskCompleted: [] }>();
+const emit = defineEmits<{ nodeTaskCompleted: [] }>()
 
 // 当前步骤的索引
 const currentStepIndex = ref(0)
@@ -31,6 +31,4 @@ function handleStepCompleted(): void {
 }
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
