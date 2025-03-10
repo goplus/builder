@@ -280,7 +280,31 @@ async function handleTargetElementClick() {
 }
 
 function handleCheckButtonClick() {
-  emit('stepCompleted')
+  checkAnswer().then((result) => {
+    if (result) {
+      emit('stepCompleted')
+    } else {
+      console.warn('Answer mismatch')
+    }
+  })
+}
+
+async function checkAnswer(): Promise<boolean> {
+  const project = editorCtx.project
+  const files = await project.getFiles()
+  const answer = props.step.coding?.path ? await project.getFileContent(props.step.coding.path) : null
+  
+  if (!answer) {
+    return false
+  }
+  
+  const userFile = files[props.step.coding.path]
+  
+  if (!userFile) {
+    return false
+  }
+  
+  return userFile === answer
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
