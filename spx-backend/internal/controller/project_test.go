@@ -1454,7 +1454,7 @@ func TestControllerUpdateProject(t *testing.T) {
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[2] = sqlmock.AnyArg() // UpdatedAt
+		dbMockArgs[3] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
