@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function handleBrowse() {
-  router.push('storyline-list')
+  router.push('/storyline-list')
 }
 </script>
 
