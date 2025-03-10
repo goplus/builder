@@ -34,6 +34,17 @@
               class="icon-fill"
               p-id="1445"
             ></path>
+            <text 
+              x="50%" 
+              y="50%" 
+              text-anchor="middle" 
+              dominant-baseline="middle" 
+              font-family="Arial" 
+              font-size="48" 
+              fill="black"
+            >
+              {{ props.step.description }}
+            </text>
           </svg>
           <svg
             t="1741314616196"
