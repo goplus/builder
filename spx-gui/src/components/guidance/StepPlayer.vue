@@ -4,8 +4,8 @@
       <template v-if="props.step.type === 'coding'">
         <div class="code-button-container">
           <button @click="handleCheckButtonClick">Check</button>
-          <button>Info</button>
-          <button>Answer</button>
+          <button @click="handleInfoButtonClick">Info</button>
+          <button @click="handleAnswerButtonClick">Answer</button>
         </div>
         <div class="suggestion-box">
           <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
@@ -15,6 +15,7 @@
             :title="'检测结果'"
             :content="'太棒了！你的代码检测通过！'"
             :button="'下一步'"
+            @next="handleNextButtonClick"
           >
           </ResultDialog>
           <ResultDialog
@@ -22,6 +23,7 @@
             :title="'检测结果'"
             :content="'错误\n' + props.step.tip.zh"
             :button="'重试'"
+            @retry="handleRetryButtonClick"
           >
           </ResultDialog>
           <ResultDialog
@@ -372,15 +374,41 @@ async function handleTargetElementClick() {
 function handleCheckButtonClick() {
   if (props.step.type !== 'coding') return
 
+  isCheckingDialogVisible.value = true
+
   if (props.step.isCheck) {
     checkAnswer().then((result) => {
       if (result) {
-        emit('stepCompleted')
+        isCheckingDialogVisible.value = false
+        isNextDailogVisible.value = true
       } else {
+        isCheckingDialogVisible.value = false
+        isRetryDialogVisible.value = true
         console.warn('Answer mismatch')
       }
     })
   }
+}
+
+function handleInfoButtonClick() {
+  if (props.step.type !== 'coding') return
+
+  isInfoDialogVisible.value = !isInfoDialogVisible.value
+}
+
+function handleAnswerButtonClick() {
+  if (props.step.type !== 'coding') return
+
+  isAnswerDialogVisible.value = !isAnswerDialogVisible.value
+}
+
+function handleNextButtonClick() {
+  isNextDailogVisible.value = false
+  emit('stepCompleted')
+}
+
+function handleRetryButtonClick() {
+  isRetryDialogVisible.value = false
 }
 
 async function checkAnswer(): Promise<boolean> {
