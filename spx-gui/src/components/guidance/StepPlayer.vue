@@ -24,7 +24,13 @@
             :button="'重试'"
           >
           </ResultDialog>
-          <ResultDialog :visible="isAnswerDialogVisible" :title="'参考答案'" :content="''" :is-code="true">
+          <ResultDialog
+            :visible="isAnswerDialogVisible"
+            :title="'参考答案'"
+            :content="''"
+            :is-code="true"
+            :code="answer || ''"
+          >
           </ResultDialog>
           <ResultDialog :visible="isInfoDialogVisible" :title="'当前步骤'" :content="props.step.description.zh">
           </ResultDialog>
@@ -99,6 +105,7 @@ import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import ResultDialog from './ResultDialog.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
+import { urlSafeBase64Decode } from 'qiniu-js'
 
 const editorCtx = useEditorCtx
 const filter = editorCtx.filter
@@ -115,6 +122,8 @@ const isNextDailogVisible = ref(false)
 const isRetryDialogVisible = ref(false)
 const isAnswerDialogVisible = ref(false)
 const isInfoDialogVisible = ref(false)
+
+const answer = ref(await extractAnswerFromFile())
 
 onMounted(async () => {
   await loadSnapshot(props.step.snapshot.startSnapshot)
@@ -168,6 +177,47 @@ async function getSnapshot(): Promise<string> {
   const project = editorCtx.project
   const files = await project.getFiles()
   return JSON.stringify({ files })
+}
+
+async function extractAnswerFromFile(): Promise<string | null> {
+  try {
+    const fileContent = urlSafeBase64Decode(await props.step.coding.path)
+
+    if (!fileContent) {
+      console.error('文件内容为空')
+      return null
+    }
+
+    const startPos = props.step.coding?.startPosition
+    const endPos = props.step.coding?.endPosition
+
+    if (!startPos || !endPos) {
+      console.error('缺少位置信息')
+      return null
+    }
+
+    const lines = fileContent.split('\n')
+
+    let extractedContent = ''
+
+    if (startPos.line === endPos.line) {
+      extractedContent = lines[startPos.line - 1].substring(startPos.column - 1, endPos.column - 1)
+    } else {
+      const firstLineIndent = lines[startPos.line - 1].match(/^\s*/)?.at(0) || ''
+      extractedContent += firstLineIndent + lines[startPos.line - 1].substring(startPos.column - 1) + '\n'
+
+      for (let i = startPos.line; i < endPos.line - 1; i++) {
+        extractedContent += lines[i] + '\n'
+      }
+
+      extractedContent += lines[endPos.line - 1].substring(0, endPos.column - 1)
+    }
+
+    return extractedContent
+  } catch (error) {
+    console.error('提取答案时出错:', error)
+    return null
+  }
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
