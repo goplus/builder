@@ -184,9 +184,6 @@ function handleSegmentEnd(segment: LevelSegment): void {
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
 
-  // for test
-  coverType.value = CoverType.LEVEL_END
-
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
   currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
