@@ -1,10 +1,18 @@
 <template>
   <EditorHeader color="stage">
-    <UITabs v-model:value="selectedTab" color="stage">
-      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
-      <UITab value="widgets">{{ $t({ en: 'Widgets', zh: '控件' }) }}</UITab>
-      <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
-    </UITabs>
+    <TagNode name="stage-editor-header">
+      <UITabs v-model:value="selectedTab" color="stage">
+        <TagNode name="stage-tab-code">
+          <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
+        </TagNode>
+        <TagNode name="stage-tab-widgets">
+          <UITab value="widgets">{{ $t({ en: 'Widgets', zh: '控件' }) }}</UITab>
+        </TagNode>
+        <TagNode name="stage-tab-backdrops">
+          <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
+        </TagNode>
+      </UITabs>
+    </TagNode>
 
     <template #extra>
       <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />s
@@ -27,7 +35,6 @@ import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './backdrop/BackdropsEditor.vue'
 import WidgetsEditor from './widget/WidgetsEditor.vue'
 import BackdropModeSelector from './backdrop/BackdropModeSelector.vue'
-import TagNode from '@/utils/tagging/TagNode.vue'
 
 defineProps<{
   stage: Stage

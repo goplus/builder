@@ -61,7 +61,7 @@ const inputRef = ref<HTMLElement | null>(null)
   gap: 8px;
   z-index: 100000;
   position: fixed;
-  top: 1rem;
+  top: 5rem;
   left: 50%;
   transform: translateX(-50%);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);

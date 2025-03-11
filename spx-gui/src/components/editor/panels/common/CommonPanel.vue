@@ -3,12 +3,17 @@
 <template>
   <div class="common-panel" :class="{ expanded }" :style="cssVars">
     <section v-show="expanded" class="details">
-      <PanelHeader :active="active">
-        {{ title }}
-        <template #add-options>
-          <slot name="add-options"></slot>
-        </template>
-      </PanelHeader>
+      <TagNode :name="headerTagName">
+        <div>
+          <PanelHeader :active="active">
+            {{ title }}
+            <template #add-options>
+              <slot name="add-options"></slot>
+            </template>
+          </PanelHeader>
+        </div>
+      </TagNode>
+
       <slot name="details"></slot>
     </section>
     <section v-show="!expanded" class="summary" @click="emit('expand')">
@@ -38,6 +43,7 @@ const props = defineProps<{
   expanded: boolean
   active: boolean
   color: Color
+  headerTagName?: string
 }>()
 
 const emit = defineEmits<{

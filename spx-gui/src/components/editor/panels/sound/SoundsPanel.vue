@@ -3,6 +3,7 @@
     :expanded="expanded"
     :active="editorCtx.project.selectedSound != null"
     :title="$t({ en: 'Sounds', zh: '声音' })"
+    header-tag-name="sounds-panel-header"
     color="sound"
     @expand="emit('expand')"
   >
@@ -18,26 +19,32 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList>
-        <UIEmpty v-if="sounds.length === 0" size="medium">
-          {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
-        </UIEmpty>
-        <SoundItem
-          v-for="sound in sounds"
-          :key="sound.id"
-          :sound="sound"
-          :selectable="{ selected: isSelected(sound) }"
-          removable
-          @click="handleSoundClick(sound)"
-        />
-      </PanelList>
+      <TagNode name="sounds-panel-list">
+        <PanelList>
+          <TagNode name="empty-add-sounds">
+            <UIEmpty v-if="sounds.length === 0" size="medium">
+              {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
+            </UIEmpty>
+          </TagNode>
+          <TagNode v-for="sound in sounds" :key="sound.id" :name="sound.name.toLocaleLowerCase()">
+            <SoundItem
+              :sound="sound"
+              :selectable="{ selected: isSelected(sound) }"
+              removable
+              @click="handleSoundClick(sound)"
+            />
+          </TagNode>
+        </PanelList>
+      </TagNode>
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
         <UIEmpty v-if="sounds.length === 0" size="small">
           {{ $t({ en: 'Empty', zh: '无' }) }}
         </UIEmpty>
-        <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.id" :sound="sound" />
+        <TagNode v-for="sound in summaryListData.list" :key="sound.id" :name="sound.name.toLocaleLowerCase()">
+          <SoundSummaryItem :sound="sound" />
+        </TagNode>
       </PanelSummaryList>
     </template>
   </CommonPanel>

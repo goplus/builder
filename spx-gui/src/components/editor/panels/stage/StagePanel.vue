@@ -3,9 +3,11 @@
     <!-- TODO: use UICardHeader? -->
     <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
-      <div class="overview" :class="{ active }" @click="activate">
-        <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
-      </div>
+      <TagNode name="stage-overview">
+        <div class="overview" :class="{ active }" @click="activate">
+          <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+        </div>
+      </TagNode>
     </main>
   </section>
 </template>
