@@ -142,6 +142,10 @@ import NodeTaskPlayer from './NodeTaskPlayer.vue'
 import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
 import type { ComponentExposed } from '@/utils/types'
+import { useRouter, type LocationQueryValue } from 'vue-router'
+import { updateStoryLineStudy } from '@/apis/storyline'
+
+const router = useRouter()
 
 const props = defineProps<{ level: Level }>()
 
@@ -179,6 +183,9 @@ function handleSegmentEnd(segment: LevelSegment): void {
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
 
+  // for test
+  coverType.value = CoverType.LEVEL_END
+
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
   currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
@@ -203,9 +210,13 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    // await updateStoryLineStudy({
-
-    // });
+    const { storyLineId, levelIndex } = router.currentRoute.value.query
+    if (storyLineId && levelIndex) {
+      await updateStoryLineStudy({
+        id: storyLineId as string,
+        lastFinishedLevelIndex: parseInt(levelIndex as string)
+      });
+    }
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
@@ -234,6 +245,9 @@ async function handleStartLevel(): Promise<void> {
   videoPlayer.play()
 }
 
+const emit = defineEmits<{
+  nextLevel: [storyLineId: string, levelIndex: string]
+}>();
 /**
  * 跳转
  * @param target 目标路由
@@ -241,10 +255,15 @@ async function handleStartLevel(): Promise<void> {
 function handleToClick(target: string): void {
   switch (target) {
     case 'storyline':
-      console.log('handleToClick storyline')
+      router.push(`/storyline/${router.currentRoute.value.query.storyLineId}`)
       break
     case 'nextLevel':
-      console.log('handleToClick nextLevel')
+      const { storyLineId, levelIndex } = router.currentRoute.value.query
+      if (storyLineId && levelIndex) {
+        if (typeof storyLineId === 'string' && typeof levelIndex === 'string') {
+          emit('nextLevel', storyLineId, levelIndex);
+        }
+      }
       break
     case 'replay':
       currentNodeTask.value = null
