@@ -1520,39 +1520,32 @@ func (this *put_storyline_id_study) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/put_storyline_#id_study.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/put_storyline_#id_study.yap:11:1
-	if
-//line cmd/spx-backend/put_storyline_#id_study.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 //line cmd/spx-backend/put_storyline_#id_study.yap:12:1
-		return
-	}
-//line cmd/spx-backend/put_storyline_#id_study.yap:15:1
 	param := &controller.UpdateUserStorylineRelationshipParam{}
-//line cmd/spx-backend/put_storyline_#id_study.yap:16:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:13:1
 	if !parseJSON(ctx, param) {
+//line cmd/spx-backend/put_storyline_#id_study.yap:14:1
+		return
+	}
 //line cmd/spx-backend/put_storyline_#id_study.yap:17:1
-		return
-	}
-//line cmd/spx-backend/put_storyline_#id_study.yap:20:1
 	if
-//line cmd/spx-backend/put_storyline_#id_study.yap:20:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:17:1
 	ok, msg := param.Validate(); !ok {
-//line cmd/spx-backend/put_storyline_#id_study.yap:21:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:18:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_storyline_#id_study.yap:19:1
+		return
+	}
 //line cmd/spx-backend/put_storyline_#id_study.yap:22:1
-		return
-	}
-//line cmd/spx-backend/put_storyline_#id_study.yap:25:1
 	userStorylineRelationship, err := this.ctrl.FinishStorylineLevel(ctx.Context(), this.Gop_Env("id"), param)
-//line cmd/spx-backend/put_storyline_#id_study.yap:26:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:23:1
 	if err != nil {
-//line cmd/spx-backend/put_storyline_#id_study.yap:27:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:24:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/put_storyline_#id_study.yap:28:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:25:1
 		return
 	}
-//line cmd/spx-backend/put_storyline_#id_study.yap:30:1
+//line cmd/spx-backend/put_storyline_#id_study.yap:27:1
 	this.Json__1(userStorylineRelationship)
 }
 func (this *put_storyline_id_study) Classfname() string {
