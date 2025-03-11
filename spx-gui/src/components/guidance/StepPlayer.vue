@@ -7,6 +7,16 @@
           <button>Info</button>
           <button>Answer</button>
         </div>
+        <div class="suggestion-box">
+          <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''"> </ResultDialog>
+          <ResultDialog :visinle="isNextDailogVisible" :title="'检测结果'" :content="'太棒了！你的代码检测通过！'">
+          </ResultDialog>
+          <ResultDialog :visible="isRetryDialogVisible" :title="'检测结果'" :content="'错误\n' + props.step.tip.zh">
+          </ResultDialog>
+          <ResultDialog :visible="isAnswerDialogVisible" :title="'参考答案'" :content="''"> </ResultDialog>
+          <ResultDialog :visible="isInfoDialogVisible" :title="'当前步骤'" :content="props.step.description.zh">
+          </ResultDialog>
+        </div>
       </template>
       <template v-if="props.step.type === 'following'" #defulat="{ slotInfo }">
         <div class="guide-ui-container">
@@ -70,10 +80,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, computed } from 'vue'
+import { onMounted, onBeforeUnmount, computed, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
 import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
+import ResultDialog from './ResultDialog.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 
@@ -86,6 +97,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   stepCompleted: []
 }>()
+
+const isCheckingDialogVisible = ref(false)
+const isNextDailogVisible = ref(false)
+const isRetryDialogVisible = ref(false)
+const isAnswerDialogVisible = ref(false)
+const isInfoDialogVisible = ref(false)
 
 onMounted(async () => {
   await loadSnapshot(props.step.snapshot.startSnapshot)
