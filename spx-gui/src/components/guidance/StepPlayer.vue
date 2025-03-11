@@ -8,12 +8,24 @@
           <button>Answer</button>
         </div>
         <div class="suggestion-box">
-          <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''"> </ResultDialog>
-          <ResultDialog :visinle="isNextDailogVisible" :title="'检测结果'" :content="'太棒了！你的代码检测通过！'">
+          <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
           </ResultDialog>
-          <ResultDialog :visible="isRetryDialogVisible" :title="'检测结果'" :content="'错误\n' + props.step.tip.zh">
+          <ResultDialog
+            :visinle="isNextDailogVisible"
+            :title="'检测结果'"
+            :content="'太棒了！你的代码检测通过！'"
+            :button="'下一步'"
+          >
           </ResultDialog>
-          <ResultDialog :visible="isAnswerDialogVisible" :title="'参考答案'" :content="''"> </ResultDialog>
+          <ResultDialog
+            :visible="isRetryDialogVisible"
+            :title="'检测结果'"
+            :content="'错误\n' + props.step.tip.zh"
+            :button="'重试'"
+          >
+          </ResultDialog>
+          <ResultDialog :visible="isAnswerDialogVisible" :title="'参考答案'" :content="''" :is-code="true">
+          </ResultDialog>
           <ResultDialog :visible="isInfoDialogVisible" :title="'当前步骤'" :content="props.step.description.zh">
           </ResultDialog>
         </div>
