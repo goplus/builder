@@ -1,17 +1,14 @@
 <template>
   <div class="node-task-player">
     <!-- 渲染当前步骤的 StepPlayer -->
-    <!-- <StepPlayer
-      v-if="currentStep"
-      :step="currentStep"
-      @stepCompleted="handleStepCompleted"
-    /> -->
+    <StepPlayer v-if="currentStep" :step="currentStep" @step-completed="handleStepCompleted" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import type { NodeTask, Step } from '@/apis/guidance'
 import { ref, computed } from 'vue'
+import StepPlayer from './StepPlayer.vue'
 
 const props = defineProps<{ nodeTask: NodeTask }>()
 
