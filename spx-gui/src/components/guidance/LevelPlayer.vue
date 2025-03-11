@@ -142,8 +142,9 @@ import NodeTaskPlayer from './NodeTaskPlayer.vue'
 import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
 import type { ComponentExposed } from '@/utils/types'
-import { useRouter, type LocationQueryValue } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { updateStoryLineStudy } from '@/apis/storyline'
+import { getStringParam } from '@/utils/route'
 
 const router = useRouter()
 
@@ -246,7 +247,7 @@ async function handleStartLevel(): Promise<void> {
 }
 
 const emit = defineEmits<{
-  nextLevel: [storyLineId: string, levelIndex: string]
+  nextLevel: [storyLineId: string | null, levelIndex: string | null]
 }>();
 /**
  * 跳转
@@ -255,15 +256,10 @@ const emit = defineEmits<{
 function handleToClick(target: string): void {
   switch (target) {
     case 'storyline':
-      router.push(`/storyline/${router.currentRoute.value.query.storyLineId}`)
+      router.push(`/storyline/${getStringParam(router, 'storyLineId')}`)
       break
-    case 'nextLevel':
-      const { storyLineId, levelIndex } = router.currentRoute.value.query
-      if (storyLineId && levelIndex) {
-        if (typeof storyLineId === 'string' && typeof levelIndex === 'string') {
-          emit('nextLevel', storyLineId, levelIndex);
-        }
-      }
+    case 'nextLevel': 
+      emit('nextLevel', getStringParam(router,'storyLineId'), getStringParam(router,'levelIndex'));
       break
     case 'replay':
       currentNodeTask.value = null
