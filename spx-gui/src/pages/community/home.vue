@@ -1,5 +1,6 @@
 <template>
   <CenteredWrapper class="home-page">
+    <StoryLineBanner v-if="userStore.isSignedIn()" class="storyline-banner" />
     <GuestBanner v-if="!userStore.isSignedIn()" class="guest-banner" />
     <ProjectsSection
       v-else
@@ -124,6 +125,7 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
 import GuestBanner from '@/components/community/home/banner/GuestBanner.vue'
+import StoryLineBanner from '@/components/guidance/StoryLineBanner.vue'
 
 usePageTitle([])
 
@@ -159,6 +161,8 @@ const communityLikingProjects = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
+// console.log('communityLikingProjects',communityLikingProjects);
+
 const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
 
 const communityRemixingProjects = useQuery(
@@ -185,7 +189,8 @@ const followingCreatedProjects = useQuery(
   margin-top: 20px;
 }
 
-.guest-banner {
+.guest-banner,
+.storyline-banner {
   margin: 12px 0 32px;
 }
 </style>

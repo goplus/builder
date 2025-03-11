@@ -32,6 +32,10 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export function getStoryLineRoute(storyLineId: string) {
+  return `/storyline/${storyLineId}`
+}
+
 declare module 'vue-router' {
   interface RouteMeta {
     /** Whether the route requires sign-in */
@@ -95,6 +99,15 @@ const routes: Array<RouteRecordRaw> = [
         path: '/project/:owner/:name',
         component: () => import('@/pages/community/project.vue'),
         props: true
+      },
+      {
+        path: '/storyline/:storyLineId',
+        component: () => import('@/pages/guidance/storyline.vue'),
+        props: true
+      },
+      {
+        path: '/storyline-list',
+        component: () => import('@/pages/guidance/storyline-list.vue')
       }
     ]
   },
