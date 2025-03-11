@@ -11,10 +11,11 @@
           <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
           </ResultDialog>
           <ResultDialog
-            :visinle="isNextDailogVisible"
+            :visible="isNextDailogVisible"
             :title="'检测结果'"
             :content="'太棒了！你的代码检测通过！'"
             :button="'下一步'"
+            :button-action="'next'"
             @next="handleNextButtonClick"
           >
           </ResultDialog>
@@ -23,6 +24,7 @@
             :title="'检测结果'"
             :content="'错误\n' + props.step.tip.zh"
             :button="'重试'"
+            :button-action="'retry'"
             @retry="handleRetryButtonClick"
           >
           </ResultDialog>
@@ -35,6 +37,15 @@
           >
           </ResultDialog>
           <ResultDialog :visible="isInfoDialogVisible" :title="'当前步骤'" :content="props.step.description.zh">
+          </ResultDialog>
+          <ResultDialog
+            :visible="isTimeoutDialogVisible"
+            :title="'温馨提醒'"
+            :content="'牛小七发现你卡顿好久了...可以试着点击下方按钮直接查看答案哦～'"
+            :button="'查看答案'"
+            :button-action="'answer'"
+            @answer="handleAnswerFromTimeout"
+          >
           </ResultDialog>
         </div>
       </template>
@@ -124,6 +135,7 @@ const isNextDailogVisible = ref(false)
 const isRetryDialogVisible = ref(false)
 const isAnswerDialogVisible = ref(false)
 const isInfoDialogVisible = ref(false)
+const isTimeoutDialogVisible = ref(false)
 
 const answer = ref(await extractAnswerFromFile())
 
@@ -409,6 +421,11 @@ function handleNextButtonClick() {
 
 function handleRetryButtonClick() {
   isRetryDialogVisible.value = false
+}
+
+function handleAnswerFromTimeout() {
+  isTimeoutDialogVisible.value = false
+  isAnswerDialogVisible.value = true
 }
 
 async function checkAnswer(): Promise<boolean> {

@@ -13,11 +13,7 @@
 
       <div class="dialog-footer">
         <slot name="footer">
-          <button
-            v-if="button !== ''"
-            :class="button.toLowerCase() + '-button'"
-            @click="emit(button.toLowerCase() === 'next' ? 'next' : 'retry')"
-          >
+          <button v-if="button !== ''" :class="buttonClass" @click="handleButtonClick">
             {{ button }}
           </button>
         </slot>
@@ -27,7 +23,9 @@
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits(['next', 'retry'])
+import { computed } from 'vue'
+
+const emit = defineEmits(['next', 'retry', 'answer'])
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -36,7 +34,8 @@ const props = defineProps({
   code: { type: String, default: '' },
   isCode: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
-  button: { type: String, default: '' }
+  button: { type: String, default: '' },
+  buttonAction: { type: String, default: '' }
 })
 
 defineExpose({
@@ -48,6 +47,18 @@ defineExpose({
   loading: props.loading,
   button: props.button
 })
+
+const buttonClass = computed(() => {
+  return props.buttonAction.toLowerCase() + '-button'
+})
+
+const handleButtonClick = () => {
+  const validActions = ['next', 'retry', 'answer']
+  const action = props.buttonAction.toLowerCase()
+  if (validActions.includes(action)) {
+    emit(action as 'next' | 'retry' | 'answer')
+  }
+}
 </script>
 
 <style scoped>
