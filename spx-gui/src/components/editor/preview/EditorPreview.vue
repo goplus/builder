@@ -1,73 +1,84 @@
 <template>
   <UICard class="editor-preview">
-    <UICardHeader v-if="running.mode !== 'debug'">
-      <div class="header">
-        {{ $t({ en: 'Preview', zh: '预览' }) }}
-      </div>
-      <UIButton
-        ref="runButtonRef"
-        class="button"
-        type="primary"
-        icon="playHollow"
-        :loading="startDebugging.isLoading.value"
-        @click="startDebugging.fn"
-      >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
-      <UIButton
-        ref="fullScreenRunButtonRef"
-        class="button full-screen-run-button"
-        type="boring"
-        :loading="startRunning.isLoading.value"
-        @click="startRunning.fn"
-      >
-        <template #icon>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M8.61229 7.50624L6.59284 9.20967C6.25334 9.49609 5.73593 9.25286 5.73593 8.80778V5.19214C5.73593 4.74647 6.25276 4.50382 6.59284 4.79024L8.61229 6.49367C8.92554 6.75792 8.92554 7.24199 8.61229 7.50624Z"
-              fill="#57606A"
-            />
-            <path
-              d="M4.99991 2.3501H2.55001C2.43955 2.3501 2.35001 2.43964 2.35001 2.5501V5"
-              stroke="#57606A"
-              stroke-width="1.4"
-            />
-            <path
-              d="M9.00009 2.3501H11.45C11.5605 2.3501 11.65 2.43964 11.65 2.5501V5"
-              stroke="#57606A"
-              stroke-width="1.4"
-            />
-            <path
-              d="M4.99991 11.6499H2.55001C2.43955 11.6499 2.35001 11.5604 2.35001 11.4499V9"
-              stroke="#57606A"
-              stroke-width="1.4"
-            />
-            <path
-              d="M9.00009 11.6499H11.45C11.5605 11.6499 11.65 11.5604 11.65 11.4499V9"
-              stroke="#57606A"
-              stroke-width="1.4"
-            />
-          </svg>
-        </template>
-      </UIButton>
-    </UICardHeader>
-    <UICardHeader v-else>
-      <div class="header">
-        {{ $t({ en: 'Running', zh: '运行中' }) }}
-      </div>
-      <UIButton
-        class="button"
-        type="primary"
-        icon="rotate"
-        :disabled="running.initializing"
-        @click="handleInPlaceRerun"
-      >
-        {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-      </UIButton>
-      <UIButton class="button" type="boring" @click="handleStop">
-        {{ $t({ en: 'Stop', zh: '停止' }) }}
-      </UIButton>
-    </UICardHeader>
+    <TagNode name="preview-header">
+      <UICardHeader v-if="running.mode !== 'debug'">
+        <div class="header">
+          {{ $t({ en: 'Preview', zh: '预览' }) }}
+        </div>
+        <TagNode name="run-button">
+          <UIButton
+            ref="runButtonRef"
+            class="button"
+            type="primary"
+            icon="playHollow"
+            :loading="startDebugging.isLoading.value"
+            @click="startDebugging.fn"
+          >
+            {{ $t({ en: 'Run', zh: '运行' }) }}
+          </UIButton>
+        </TagNode>
+
+        <TagNode name="full-screen-run-button">
+          <UIButton
+            ref="fullScreenRunButtonRef"
+            class="button full-screen-run-button"
+            type="boring"
+            :loading="startRunning.isLoading.value"
+            @click="startRunning.fn"
+          >
+            <template #icon>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M8.61229 7.50624L6.59284 9.20967C6.25334 9.49609 5.73593 9.25286 5.73593 8.80778V5.19214C5.73593 4.74647 6.25276 4.50382 6.59284 4.79024L8.61229 6.49367C8.92554 6.75792 8.92554 7.24199 8.61229 7.50624Z"
+                  fill="#57606A"
+                />
+                <path
+                  d="M4.99991 2.3501H2.55001C2.43955 2.3501 2.35001 2.43964 2.35001 2.5501V5"
+                  stroke="#57606A"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M9.00009 2.3501H11.45C11.5605 2.3501 11.65 2.43964 11.65 2.5501V5"
+                  stroke="#57606A"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M4.99991 11.6499H2.55001C2.43955 11.6499 2.35001 11.5604 2.35001 11.4499V9"
+                  stroke="#57606A"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M9.00009 11.6499H11.45C11.5605 11.6499 11.65 11.5604 11.65 11.4499V9"
+                  stroke="#57606A"
+                  stroke-width="1.4"
+                />
+              </svg>
+            </template>
+          </UIButton>
+        </TagNode>
+      </UICardHeader>
+      <UICardHeader v-else>
+        <div class="header">
+          {{ $t({ en: 'Running', zh: '运行中' }) }}
+        </div>
+        <TagNode name="rerun-button">
+          <UIButton
+            class="button"
+            type="primary"
+            icon="rotate"
+            :disabled="running.initializing"
+            @click="handleInPlaceRerun"
+          >
+            {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+          </UIButton>
+        </TagNode>
+
+        <TagNode name="">
+          <UIButton class="button" type="boring" @click="handleStop"> {{ $t({ en: 'Stop', zh: '停止' }) }} </UIButton
+          >stop-run-button
+        </TagNode>
+      </UICardHeader>
+    </TagNode>
 
     <!--
       A hidden div is used instead of `UIModal` to initialize the runner early, allowing for flexible preload logic in the runner component.

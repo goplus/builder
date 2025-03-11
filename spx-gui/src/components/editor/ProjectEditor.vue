@@ -11,7 +11,9 @@
   </TagNode>
   <TagNode name="project-sider">
     <div class="sider">
-      <EditorPreview />
+      <TagNode name="editor-preview">
+        <EditorPreview />
+      </TagNode>
       <EditorPanels />
     </div>
   </TagNode>

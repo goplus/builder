@@ -3,6 +3,7 @@
     :expanded="expanded"
     :active="editorCtx.project.selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
+    header-tag-name="sprites-panel-header"
     color="sprite"
     @expand="emit('expand')"
   >
@@ -17,26 +18,35 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList>
-        <UIEmpty v-if="sprites.length === 0" size="medium">
-          {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
-        </UIEmpty>
-        <SpriteItem
-          v-for="sprite in sprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selectable="{ selected: isSelected(sprite) }"
-          operable
-          @click="handleSpriteClick(sprite)"
-        />
-      </PanelList>
-      <PanelFooter v-if="footerExpanded && editorCtx.project.selectedSprite != null">
-        <SpriteBasicConfig
-          :sprite="editorCtx.project.selectedSprite"
-          :project="editorCtx.project"
-          @collapse="footerExpanded = false"
-        />
-      </PanelFooter>
+      <TagNode name="sprites-panel-list">
+        <PanelList>
+          <TagNode name="empty-add-sprite">
+            <UIEmpty v-if="sprites.length === 0" size="medium">
+              {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
+            </UIEmpty>
+          </TagNode>
+
+          <TagNode v-for="sprite in sprites" :key="sprite.id" :name="sprite.name.toLocaleLowerCase()">
+            <SpriteItem
+              :sprite="sprite"
+              :selectable="{ selected: isSelected(sprite) }"
+              operable
+              @click="handleSpriteClick(sprite)"
+            />
+          </TagNode>
+        </PanelList>
+      </TagNode>
+
+      <TagNode name="sprites-panel-footer">
+        <PanelFooter v-if="footerExpanded && editorCtx.project.selectedSprite != null">
+          <SpriteBasicConfig
+            :sprite="editorCtx.project.selectedSprite"
+            :project="editorCtx.project"
+            @collapse="footerExpanded = false"
+          />
+        </PanelFooter>
+      </TagNode>
+
       <UITooltip v-if="!footerExpanded && editorCtx.project.selectedSprite != null">
         <template #trigger>
           <div class="footer-expand-button" @click="footerExpanded = true">
