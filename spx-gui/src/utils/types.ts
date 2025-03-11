@@ -49,3 +49,9 @@ export type PruneProps<Props, Emits extends Record<string, any[]>> = Omit<
   Props,
   keyof ShortEmitsToProps<Emits> | keyof VNodeProps | keyof AllowedComponentProps
 >
+
+
+export type ComponentExposed<T> =
+	T extends new (...args: any) => infer E ? E :
+	T extends (props: any, ctx: any, expose: (exposed: infer E) => any, ...args: any) => any ? NonNullable<E> :
+	{};

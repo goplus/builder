@@ -42,7 +42,7 @@
           </div>
           <div class="navbar-center">
             <span
-              >{{ $t({ zh: '进度', en: 'Progress' }) }}: {{ currentNodeTaskIndex || 0 }} /
+              >{{ $t({ zh: '进度：', en: 'Progress:' }) }} {{ currentNodeTaskIndex || 0 }} /
               {{ props.level.nodeTasks.length }}</span
             >
           </div>
@@ -70,7 +70,7 @@
                     })
                   }}
                 </div>
-                <div class="achievement-desc" v-if="props.level.achievement.title">
+                <div v-if="props.level.achievement.title" class="achievement-desc">
                   {{ $t({ zh: '解锁成就', en: 'Unlock achievements' }) }}:<span>{{
                     $t(props.level.achievement.title)
                   }}</span
@@ -136,24 +136,16 @@
 
 <script setup lang="ts">
 import type { Level, NodeTask } from '@/apis/guidance'
-import { ref, computed, provide, type InjectionKey, inject, type ComponentPublicInstance } from 'vue'
+import { ref, computed, provide, type InjectionKey, inject } from 'vue'
 import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
 import NodeTaskPlayer from './NodeTaskPlayer.vue'
 import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
+import type { ComponentExposed } from '@/utils/types'
 
 const props = defineProps<{ level: Level }>()
 
-interface VideoPlayerExposed {
-  play: () => void
-  pause: () => void
-  showCover: () => void
-  hideCover: () => void
-  endCurrentSegment: () => void
-  enterFullScreen: () => void
-  exitFullScreen: () => void
-}
-const videoPlayerRef = ref<(ComponentPublicInstance<typeof VideoPlayer> & VideoPlayerExposed) | null>(null)
+const videoPlayerRef = ref<(ComponentExposed<typeof VideoPlayer>) | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
 const currentNodeTaskIndex = ref<number | null>(null)
 type LevelSegment = Segment<{
