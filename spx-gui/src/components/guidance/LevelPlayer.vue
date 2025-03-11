@@ -208,11 +208,12 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    const { storyLineId, levelIndex } = router.currentRoute.value.query
+    const storyLineId = getStringParam(router, 'storyLineId')
+    const levelIndex = getStringParam(router, 'levelIndex')
     if (storyLineId && levelIndex) {
       await updateStoryLineStudy({
-        id: storyLineId as string,
-        lastFinishedLevelIndex: parseInt(levelIndex as string)
+        id: storyLineId,
+        lastFinishedLevelIndex: parseInt(levelIndex)
       });
     }
   } else {
