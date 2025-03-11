@@ -158,7 +158,7 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
     const { files } = JSON.parse(snapshotStr)
 
-    await project.load(files)
+    await project.loadGameFiles(files)
   } catch (error) {
     console.error('Failed to load snapshot:', error)
   }
