@@ -14,6 +14,7 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/chat91DictCnGemini"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/joho/godotenv"
@@ -38,11 +39,12 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db              *gorm.DB
-	kodo            *kodoConfig
-	aigcClient      *aigc.AigcClient
-	casdoorClient   casdoorClient
-	anthropicClient *anthropic.Client
+	db                       *gorm.DB
+	kodo                     *kodoConfig
+	aigcClient               *aigc.AigcClient
+	casdoorClient            casdoorClient
+	anthropicClient          *anthropic.Client
+	chat91DictCnGeminiClient *chat91DictCnGemini.Chat91DictCnGeminiClient
 }
 
 // New creates a new controller.
@@ -69,13 +71,15 @@ func New(ctx context.Context) (*Controller, error) {
 		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
 		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
 	)
+	chat91DictCnGeminiClient := chat91DictCnGemini.NewChat91DictCnGeminiClient(mustEnv(logger, "CHAT91DICTCN_GEMINI_ENDPOINT"))
 
 	return &Controller{
-		db:              db,
-		kodo:            kodoConfig,
-		aigcClient:      aigcClient,
-		casdoorClient:   casdoorClient,
-		anthropicClient: anthropicClient,
+		db:                       db,
+		kodo:                     kodoConfig,
+		aigcClient:               aigcClient,
+		casdoorClient:            casdoorClient,
+		anthropicClient:          anthropicClient,
+		chat91DictCnGeminiClient: chat91DictCnGeminiClient,
 	}, nil
 }
 

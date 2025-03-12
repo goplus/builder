@@ -35,6 +35,10 @@ type Project struct {
 	// Visibility is the visibility.
 	Visibility Visibility `gorm:"column:visibility;index"`
 
+	// Hidden of the project.
+	// Items with hidden attribute 0 can be displayed normally, while items with hidden attribute 1 cannot be displayed directly.
+	Hidden int8 `gorm:"column:hidden;index"`
+
 	// Description is the brief description.
 	Description string `gorm:"column:description"`
 
