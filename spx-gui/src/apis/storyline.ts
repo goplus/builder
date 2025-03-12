@@ -1,5 +1,5 @@
-import type {LocaleMessage} from '@/utils/i18n'
-import type {Position} from '@/components/editor/code-editor/common'
+import type { LocaleMessage } from '@/utils/i18n'
+import type { Position } from '@/components/editor/code-editor/common'
 
 export type Mask = {
   startPos: Position
@@ -1149,14 +1149,15 @@ export async function createStoryLineStudy(storyLineId: string): Promise<StoryLi
 }
 
 type UpdateStoryLineStudyInput = {
-  id: string,
-  lastFinishedLevelIndex: number,    // The most recently completed level subscript
+  id: string
+  lastFinishedLevelIndex: number // The most recently completed level subscript
 }
 
-export async function updateStoryLineStudy(updateStoryLineStudyInput: UpdateStoryLineStudyInput): Promise<StoryLineStudy> {
-  updateStoryLineStudyInput.lastFinishedLevelIndex += 1
+export async function updateStoryLineStudy(
+  updateStoryLineStudyInput: UpdateStoryLineStudyInput
+): Promise<StoryLineStudy> {
   return {
     storyLineId: updateStoryLineStudyInput.id,
-    lastFinishedLevelIndex: updateStoryLineStudyInput.lastFinishedLevelIndex
+    lastFinishedLevelIndex: updateStoryLineStudyInput.lastFinishedLevelIndex + 1
   }
 }
