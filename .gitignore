@@ -22,3 +22,4 @@ go.work
 *.wasm
 
 .vscode/
+package-lock.json

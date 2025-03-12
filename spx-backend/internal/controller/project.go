@@ -111,6 +111,7 @@ type CreateProjectParams struct {
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
+	Hidden       int8                 `json:"hidden"`
 }
 
 // Validate validates the parameters.
@@ -148,6 +149,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		Instructions: params.Instructions,
 		Thumbnail:    params.Thumbnail,
 	}
+	mProject.Hidden = params.Hidden
 	if params.RemixSource != "" {
 		parts := strings.Split(params.RemixSource, "/")
 		ownerUsername := parts[0]
@@ -378,6 +380,9 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 	}
 
 	query := ctrl.db.WithContext(ctx).Model(&model.Project{})
+
+	query = query.Where("hidden = 0")
+
 	if params.Owner != nil {
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
 	}
@@ -507,10 +512,11 @@ func (ctrl *Controller) GetProject(ctx context.Context, owner, name string) (*Pr
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
+	Hidden       int8                 `json:"hidden"`
+	Visibility   string               `json:"visibility"`
 }
 
 // Validate validates the parameters.
@@ -527,9 +533,6 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if !maps.Equal(p.Files, mProject.Files) {
 		updates["files"] = p.Files
 	}
-	if p.Visibility != mProject.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(p.Visibility)
-	}
 	if p.Description != mProject.Description {
 		updates["description"] = p.Description
 	}
@@ -538,6 +541,12 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	}
 	if p.Thumbnail != mProject.Thumbnail {
 		updates["thumbnail"] = p.Thumbnail
+	}
+	if p.Hidden != mProject.Hidden {
+		updates["hidden"] = p.Hidden
+	}
+	if p.Visibility != mProject.Visibility.String() {
+		updates["visibility"] = model.ParseVisibility(p.Visibility)
 	}
 	return updates
 }
