@@ -143,7 +143,6 @@ import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
 import type { ComponentExposed } from '@/utils/types'
 import { useRouter } from 'vue-router'
-import { updateStoryLineStudy } from '@/apis/storyline'
 import { getStringParam } from '@/utils/route'
 
 const router = useRouter()
@@ -208,14 +207,16 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    const storyLineId = getStringParam(router, 'storyLineId')
-    const levelIndex = getStringParam(router, 'levelIndex')
-    if (storyLineId && levelIndex) {
-      await updateStoryLineStudy({
-        id: storyLineId,
-        lastFinishedLevelIndex: parseInt(levelIndex)
-      });
-    }
+    emit('nodeTaskCompleted', getStringParam(router,'storyLineId'), getStringParam(router,'levelIndex'))
+    // 更新 关卡完成进度
+    // const storyLineId = getStringParam(router, 'storyLineId')
+    // const levelIndex = getStringParam(router, 'levelIndex')
+    // if (storyLineId && levelIndex) {
+    //   await updateStoryLineStudy({
+    //     id: storyLineId,
+    //     lastFinishedLevelIndex: parseInt(levelIndex)
+    //   });
+    // }
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
@@ -246,6 +247,7 @@ async function handleStartLevel(): Promise<void> {
 
 const emit = defineEmits<{
   nextLevel: [storyLineId: string | null, levelIndex: string | null]
+  nodeTaskCompleted: [storyLineId: string | null, levelIndex: string | null]
 }>();
 /**
  * 跳转
@@ -293,6 +295,10 @@ provide(levelPlayerCtxKey, levelPlayerCtx)
 const floatingBtnRef = ref<HTMLElement | null>(null)
 useDrag(floatingBtnRef, getPos, setPos, {
   onClick: handleFloatingBtnClick
+})
+
+defineExpose({
+  levelIntroVisible
 })
 </script>
 <script lang="ts">
