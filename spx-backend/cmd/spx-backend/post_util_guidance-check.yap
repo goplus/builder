@@ -12,7 +12,7 @@ if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 	return
 }
 
-params := &controller.CheckCodeParam{}
+params := &controller.CheckCodeParams{}
 if !parseJSON(ctx, params) {
 	return
 }

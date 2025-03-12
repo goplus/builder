@@ -147,10 +147,14 @@ func (ctrl *Controller) GetStoryLineStudy(ctx context.Context, id string) (*User
 	if id == "" {
 		return nil, ErrBadRequest
 	}
+	storylineId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
 	if err := ctrl.db.WithContext(ctx).
-		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id).
+		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, storylineId).
 		First(&mUserStorylineRelationship).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user-storyline relationship: %w", err)
@@ -180,11 +184,16 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 		return nil, ErrBadRequest
 	}
 
+	storylineId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
 	lastFinishedLevelIndex := param.LastFinishedLevelIndex
 
 	var mUserStorylineRelationship model.UserStorylineRelationship
 	if err := ctrl.db.WithContext(ctx).
-		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, id).
+		Where("user_id = ? AND storyline_id = ?", mAuthedUser.ID, storylineId).
 		First(&mUserStorylineRelationship).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user-storyline relationship: %w", err)
@@ -201,25 +210,28 @@ func (ctrl *Controller) FinishStorylineLevel(ctx context.Context, id string, par
 		return nil, ErrForbidden
 	}
 
-	mUserStorylineRelationship.LastFinishedLevelIndex = lastFinishedLevelIndex
-	if err := ctrl.db.WithContext(ctx).
-		Save(&mUserStorylineRelationship).
-		Error; err != nil {
-		return nil, fmt.Errorf("failed to save user-storyline relationship: %w", err)
-	}
+	updates := map[string]any{}
+	updates["last_finished_level_index"] = lastFinishedLevelIndex
 
+	if err := ctrl.db.WithContext(ctx).
+		Model(mUserStorylineRelationship).
+		Updates(updates).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to update user-storyline relationship: %w", err)
+	}
+	mUserStorylineRelationship.LastFinishedLevelIndex = lastFinishedLevelIndex
 	userStorylineRelationshipDTO := toUserStorylineRelationshipDTO(mUserStorylineRelationship)
 
 	return &userStorylineRelationshipDTO, nil
 }
 
-type CheckCodeParam struct {
+type CheckCodeParams struct {
 	UserCode     string `json:"userCode"`
 	ExpectedCode string `json:"expectedCode"`
 	Context      string `json:"context"`
 }
 
-func (p *CheckCodeParam) Validate() (ok bool, msg string) {
+func (p *CheckCodeParams) Validate() (ok bool, msg string) {
 	if p.UserCode == "" {
 		return false, "invalid user code"
 	}
@@ -231,6 +243,9 @@ func (p *CheckCodeParam) Validate() (ok bool, msg string) {
 	}
 	if len(p.ExpectedCode) > 10000 {
 		return false, "expected code too long"
+	}
+	if len(p.Context) > 10000 {
+		return false, "context too long"
 	}
 	return true, ""
 }
@@ -247,7 +262,7 @@ var (
 )
 
 // CheckCode Check the code
-func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParam) (bool, error) {
+func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParams) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout*3)
 	defer cancel()
 
@@ -299,7 +314,7 @@ func (ctrl *Controller) ListStoryline(ctx context.Context, params *ListStoryline
 	if params.Tag != nil {
 		query = query.Where("tag = ?", model.ParseStorylineTag(*params.Tag))
 	}
-	query = query.Order("created_at " + params.SortOrder)
+	query = query.Order(fmt.Sprintf("created_at %s", params.SortOrder))
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
