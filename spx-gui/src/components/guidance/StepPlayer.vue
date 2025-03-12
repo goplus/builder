@@ -431,13 +431,18 @@ function handleAnswerFromTimeout() {
 async function checkAnswer(): Promise<boolean> {
   const project = editorCtx.project
   const files = await project.getFiles()
+
+  if (!props.step.coding?.path) {
+    return false
+  }
+
   const answer = props.step.coding?.path ? await project.getFileContent(props.step.coding.path) : null
 
   if (!answer) {
     return false
   }
 
-  const userFile = files[props.step.coding?.path]
+  const userFile = files[props.step.coding.path]
 
   if (!userFile) {
     return false
