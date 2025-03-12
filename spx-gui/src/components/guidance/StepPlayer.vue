@@ -113,15 +113,16 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, computed, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
-import useEditorCtx from '@/components/editor/EditorContextProvider.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import ResultDialog from './ResultDialog.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 import { urlSafeBase64Decode } from 'qiniu-js'
+import { toText } from '@/models/common/file'
 
-const editorCtx = useEditorCtx
-const filter = editorCtx.filter
+const editorCtx = useEditorCtx()
+const filter = editorCtx.listFilter
 const props = defineProps<{
   step: Step
 }>()
@@ -137,7 +138,7 @@ const isAnswerDialogVisible = ref(false)
 const isInfoDialogVisible = ref(false)
 const isTimeoutDialogVisible = ref(false)
 
-const answer = ref(await extractAnswerFromFile())
+const answer = ref(await extractAnswerFromFile(props.step.coding?.path || ''))
 
 onMounted(async () => {
   await loadSnapshot(props.step.snapshot.startSnapshot)
@@ -189,13 +190,13 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
 async function getSnapshot(): Promise<string> {
   const project = editorCtx.project
-  const files = await project.getFiles()
+  const files = await project.exportGameFiles()
   return JSON.stringify({ files })
 }
 
-async function extractAnswerFromFile(): Promise<string | null> {
+async function extractAnswerFromFile(path: string): Promise<string | null> {
   try {
-    const fileContent = urlSafeBase64Decode(await props.step.coding?.path)
+    const fileContent = urlSafeBase64Decode(path)
 
     if (!fileContent) {
       console.error('文件内容为空')
@@ -430,13 +431,13 @@ function handleAnswerFromTimeout() {
 
 async function checkAnswer(): Promise<boolean> {
   const project = editorCtx.project
-  const files = await project.getFiles()
+  const files = await project.exportGameFiles()
 
   if (!props.step.coding?.path) {
     return false
   }
 
-  const answer = props.step.coding?.path ? await project.getFileContent(props.step.coding.path) : null
+  const answer = await extractAnswerFromFile(await props.step.coding?.path)
 
   if (!answer) {
     return false
@@ -448,7 +449,9 @@ async function checkAnswer(): Promise<boolean> {
     return false
   }
 
-  return userFile === answer
+  const userAnswer = await extractAnswerFromFile(await toText(userFile))
+
+  return userAnswer === answer
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
