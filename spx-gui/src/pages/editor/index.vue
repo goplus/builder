@@ -38,7 +38,7 @@ import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context
 import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
-import { getStoryLine, type StoryLine } from '@/apis/storyline'
+import { getStoryLine, type StoryLine } from '@/apis/guidance'
 
 const props = defineProps<{
   projectName: string
@@ -53,7 +53,7 @@ const storyLineInfo = ref<StoryLine | null>(null)
 
 const levelPlayerRef = ref<InstanceType<typeof LevelPlayer> | null>(null)
 async function handleGuidance () {
-  if ('guide' in router.currentRoute.value.query) {
+  if (getStringParam(router, 'guide') != null) {
     isGuidanceMode.value = true
     const storyLineId: string | null = getStringParam(router, 'storyLineId')
     if (storyLineId != null) {
