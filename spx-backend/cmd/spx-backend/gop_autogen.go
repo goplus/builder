@@ -1399,7 +1399,7 @@ func (this *post_util_guidance_check) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_util_guidance-check.yap:15:1
-	params := &controller.CheckCodeParam{}
+	params := &controller.CheckCodeParams{}
 //line cmd/spx-backend/post_util_guidance-check.yap:16:1
 	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_util_guidance-check.yap:17:1
