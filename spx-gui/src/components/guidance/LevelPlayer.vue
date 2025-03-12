@@ -145,7 +145,7 @@
 
 <script setup lang="ts">
 import type { Level, NodeTask } from '@/apis/guidance'
-import { type StoryLine, updateStoryLineStudy } from '@/apis/storyline'
+import { type StoryLine, updateStoryLineStudy } from '@/apis/guidance'
 import { ref, computed, provide, type InjectionKey, inject } from 'vue'
 import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
 import NodeTaskPlayer from './NodeTaskPlayer.vue'
@@ -199,10 +199,6 @@ function handleSegmentEnd(segment: LevelSegment): void {
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
 
-  //for test  2
-  coverType.value = CoverType.LEVEL_END
-  isLastLevel.value = true
-
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
   currentNodeTask.value = level.value.nodeTasks[currentNodeTaskIndex.value]
@@ -238,7 +234,7 @@ async function handleNodeTaskCompleted(): Promise<void> {
     }
     // 更新 关卡完成进度
     await updateStoryLineStudy({
-      id: props.storyLineInfo.id,
+      storyLineId: props.storyLineInfo.id,
       lastFinishedLevelIndex: props.currentLevelIndex
     })
   } else {
