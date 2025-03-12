@@ -159,10 +159,12 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const router = useRouter()
 
-const props = defineProps<{ storyLineInfo: StoryLine, currentLevelIndex: number }>()
-const level = computed<Level>(() => props.storyLineInfo.levels[props.currentLevelIndex])
 const projectName = useEditorCtx().project.name
 
+const props = defineProps<{ storyLineInfo: StoryLine, currentLevelIndex: number }>()
+const level = computed<Level>(() => {
+  return props.storyLineInfo.levels[props.currentLevelIndex]
+})
 const videoPlayerRef = ref<(ComponentExposed<typeof VideoPlayer>) | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
 const currentNodeTaskIndex = ref<number | null>(null)
@@ -196,6 +198,10 @@ function handleSegmentEnd(segment: LevelSegment): void {
   coverType.value = CoverType.NODE_TASK_START
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
+
+  //for test  2
+  coverType.value = CoverType.LEVEL_END
+  isLastLevel.value = true
 
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
