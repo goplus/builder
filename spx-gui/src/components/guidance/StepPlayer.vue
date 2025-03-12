@@ -195,7 +195,7 @@ async function getSnapshot(): Promise<string> {
 
 async function extractAnswerFromFile(): Promise<string | null> {
   try {
-    const fileContent = urlSafeBase64Decode(await props.step.coding.path)
+    const fileContent = urlSafeBase64Decode(await props.step.coding?.path)
 
     if (!fileContent) {
       console.error('文件内容为空')
@@ -437,7 +437,7 @@ async function checkAnswer(): Promise<boolean> {
     return false
   }
 
-  const userFile = files[props.step.coding.path]
+  const userFile = files[props.step.coding?.path]
 
   if (!userFile) {
     return false
