@@ -1148,7 +1148,16 @@ export async function createStoryLineStudy(storyLineId: string): Promise<StoryLi
   return storyLineStudy
 }
 
-export async function updateStoryLineStudy(storyLineStudy: StoryLineStudy): Promise<StoryLineStudy> {
-  storyLineStudy.lastFinishedLevelIndex += 1
-  return storyLineStudy
+type UpdateStoryLineStudyInput = {
+  id: string
+  lastFinishedLevelIndex: number // The most recently completed level subscript
+}
+
+export async function updateStoryLineStudy(
+  updateStoryLineStudyInput: UpdateStoryLineStudyInput
+): Promise<StoryLineStudy> {
+  return {
+    storyLineId: updateStoryLineStudyInput.id,
+    lastFinishedLevelIndex: updateStoryLineStudyInput.lastFinishedLevelIndex + 1
+  }
 }
