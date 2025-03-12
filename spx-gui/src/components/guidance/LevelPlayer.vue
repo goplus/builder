@@ -2,14 +2,14 @@
   <!-- 关卡介绍 -->
   <div v-if="levelIntroVisible" class="intro">
     <div class="intro-title">
-      <div>{{ $t(props.level.title) }}</div>
+      <div>{{ $t(level.title) }}</div>
     </div>
     <div class="intro-desc">
       <div>{{ $t({ zh: '关卡介绍', en: 'Level intro' }) }}</div>
-      <div>{{ $t(props.level.description) }}</div>
+      <div>{{ $t(level.description) }}</div>
     </div>
     <div class="intro-node">
-      <div v-for="item in props.level.nodeTasks" :key="item.name.en">
+      <div v-for="item in level.nodeTasks" :key="item.name.en">
         <div class="ripple-container">
           <div class="ripple"></div>
         </div>
@@ -43,7 +43,7 @@
           <div class="navbar-center">
             <span
               >{{ $t({ zh: '进度：', en: 'Progress:' }) }} {{ currentNodeTaskIndex || 0 }} /
-              {{ props.level.nodeTasks.length }}</span
+              {{ level.nodeTasks.length }}</span
             >
           </div>
           <div class="navbar-right"></div>
@@ -51,7 +51,7 @@
         <VideoPlayer
           ref="videoPlayerRef"
           class="video-player"
-          :video-url="props.level.video"
+          :video-url="level.video"
           :segments="videoPlayerSegments"
           @segment-end="handleSegmentEnd"
         >
@@ -59,7 +59,7 @@
             <div v-if="coverType === CoverType.LEVEL_END" class="cover cover-bg">
               <div class="achievement">
                 <div class="achievement-img">
-                  <img v-if="props.level.achievement.icon" :src="props.level.achievement.icon" alt="" />
+                  <img v-if="level.achievement.icon" :src="level.achievement.icon" alt="" />
                   <img v-else src="./icons/thumbs-up.svg" alt="" />
                 </div>
                 <div class="achievement-desc">
@@ -70,9 +70,17 @@
                     })
                   }}
                 </div>
-                <div v-if="props.level.achievement.title" class="achievement-desc">
+                <div v-if="isLastLevel" class="achievement-desc tip">
+                  {{ 
+                    $t({
+                      zh: '这已经是最后一关啦！',
+                      en: 'This is the last level!'
+                    })
+                  }}
+                </div>
+                <div v-if="level.achievement.title" class="achievement-desc">
                   {{ $t({ zh: '解锁成就', en: 'Unlock achievements' }) }}:<span>{{
-                    $t(props.level.achievement.title)
+                    $t(level.achievement.title)
                   }}</span
                   >!
                 </div>
@@ -128,6 +136,7 @@
     <!-- 当有当前节点任务时，渲染 NodeTaskPlayer 组件 -->
     <NodeTaskPlayer
       v-if="currentNodeTask"
+      ref="nodeTaskPlayerRef"
       :node-task="currentNodeTask"
       @node-task-completed="handleNodeTaskCompleted"
     />
@@ -136,6 +145,7 @@
 
 <script setup lang="ts">
 import type { Level, NodeTask } from '@/apis/guidance'
+import { type StoryLine } from '@/apis/storyline'
 import { ref, computed, provide, type InjectionKey, inject } from 'vue'
 import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
 import NodeTaskPlayer from './NodeTaskPlayer.vue'
@@ -143,11 +153,15 @@ import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
 import type { ComponentExposed } from '@/utils/types'
 import { useRouter } from 'vue-router'
-import { getStringParam } from '@/utils/route'
+import { useMessage } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
 
 const router = useRouter()
 
-const props = defineProps<{ level: Level }>()
+const props = defineProps<{ storyLineInfo: StoryLine, projectName: string }>()
+const level = computed<Level>(() => props.storyLineInfo.levels[currentLevelIndex.value])
+
+const currentLevelIndex = ref<number>(0)
 
 const videoPlayerRef = ref<(ComponentExposed<typeof VideoPlayer>) | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
@@ -156,7 +170,7 @@ type LevelSegment = Segment<{
   nodeTaskIndex: number
 }>
 const videoPlayerSegments = computed<LevelSegment[]>(() => {
-  return props.level.nodeTasks.map((nodeTask, index) => {
+  return level.value.nodeTasks.map((nodeTask, index) => {
     return {
       endTime: nodeTask.triggerTime,
       extension: { nodeTaskIndex: index }
@@ -185,7 +199,7 @@ function handleSegmentEnd(segment: LevelSegment): void {
 
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
-  currentNodeTask.value = props.level.nodeTasks[currentNodeTaskIndex.value]
+  currentNodeTask.value = level.value.nodeTasks[currentNodeTaskIndex.value]
 }
 
 /**
@@ -197,20 +211,27 @@ function handleStartNodeTask(): void {
   videoPlayerVisible.value = false
 }
 
+const isLastLevel = ref<boolean>(false)
 /**
  * 节点任务完成
  */
 async function handleNodeTaskCompleted(): Promise<void> {
   coverType.value = CoverType.NODE_TASK_END
   videoPlayerVisible.value = true
-  if (currentNodeTaskIndex.value === props.level.nodeTasks.length - 1) {
+  // 当前关卡最后一个节点任务完成
+  if (currentNodeTaskIndex.value === level.value.nodeTasks.length - 1) {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    emit('nodeTaskCompleted', getStringParam(router,'storyLineId'), getStringParam(router,'levelIndex'))
+    // 如果是最后一个关卡
+    if (currentLevelIndex.value === props.storyLineInfo.levels.length - 1) {
+      // 提示，展示 ending UI
+      isLastLevel.value = true
+    } else if (currentLevelIndex.value < props.storyLineInfo.levels.length - 1) {
+      // 否则 进入下一关
+      currentLevelIndex.value++
+    }
     // 更新 关卡完成进度
-    // const storyLineId = getStringParam(router, 'storyLineId')
-    // const levelIndex = getStringParam(router, 'levelIndex')
     // if (storyLineId && levelIndex) {
     //   await updateStoryLineStudy({
     //     id: storyLineId,
@@ -245,10 +266,8 @@ async function handleStartLevel(): Promise<void> {
   videoPlayer.play()
 }
 
-const emit = defineEmits<{
-  nextLevel: [storyLineId: string | null, levelIndex: string | null]
-  nodeTaskCompleted: [storyLineId: string | null, levelIndex: string | null]
-}>();
+const m = useMessage()
+const { t } = useI18n()
 /**
  * 跳转
  * @param target 目标路由
@@ -256,10 +275,15 @@ const emit = defineEmits<{
 function handleToClick(target: string): void {
   switch (target) {
     case 'storyline':
-      router.push(`/storyline/${getStringParam(router, 'storyLineId')}`)
+      router.push(`/storyline/${props.storyLineInfo.id}`)
       break
     case 'nextLevel': 
-      emit('nextLevel', getStringParam(router,'storyLineId'), getStringParam(router,'levelIndex'));
+      if (isLastLevel.value) {
+        m.warning(t({zh: '本故事线已经通关啦！请返回故事线列表开启其他故事旅程吧！', en: 'This storyline has been completed! Please return to the storyline list to start other story journeys!'}))
+      } else {
+        router.push(`/editor/${props.projectName}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${currentLevelIndex.value}`)
+        levelIntroVisible.value = true
+      }
       break
     case 'replay':
       currentNodeTask.value = null
@@ -296,10 +320,6 @@ const floatingBtnRef = ref<HTMLElement | null>(null)
 useDrag(floatingBtnRef, getPos, setPos, {
   onClick: handleFloatingBtnClick
 })
-
-defineExpose({
-  levelIntroVisible
-})
 </script>
 <script lang="ts">
 export type Pos = {
@@ -319,7 +339,6 @@ export function useLevelPlayerCtx() {
 </script>
 <style lang="scss" scoped>
 .level-player {
-  height: 300px;
   width: 500px;
   position: absolute;
 }
@@ -441,6 +460,11 @@ export function useLevelPlayerCtx() {
         margin: 0 5px;
         font-size: 18px;
       }
+    }
+    .tip {
+      font-size: 12px;
+      margin: 0 0;
+      color: rgba(255, 255, 255, 0.7);
     }
   }
   .opt {
