@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script lang="ts" setup generic="T">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import maximizeSvg from './icons/maximize.svg'
 import minimizeSvg from './icons/minimize.svg'
@@ -72,16 +72,16 @@ import playSvg from './icons/play.svg'
 import pauseSvg from './icons/pause.svg'
 import playCenterSvg from './icons/play_center.svg'
 
-type Segment = {
+export type Segment<T> = {
   endTime: number
-  extension?: Object
+  extension?: T
 }
 type Props = {
   videoUrl: string
-  segments: Segment[]
+  segments: Segment<T>[]
 }
 type Events = {
-  segmentEnd: [segment: Segment]
+  segmentEnd: [segment: Segment<T>]
 }
 type Expose = {
   play(): void
