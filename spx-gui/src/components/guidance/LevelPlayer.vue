@@ -145,7 +145,7 @@
 
 <script setup lang="ts">
 import type { Level, NodeTask } from '@/apis/guidance'
-import { type StoryLine } from '@/apis/storyline'
+import { type StoryLine, updateStoryLineStudy } from '@/apis/storyline'
 import { ref, computed, provide, type InjectionKey, inject } from 'vue'
 import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
 import NodeTaskPlayer from './NodeTaskPlayer.vue'
@@ -223,6 +223,10 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
+    await updateStoryLineStudy({
+      id: props.storyLineInfo.id,
+      lastFinishedLevelIndex: currentLevelIndex.value
+    })
     // 如果是最后一个关卡
     if (currentLevelIndex.value === props.storyLineInfo.levels.length - 1) {
       // 提示，展示 ending UI
@@ -232,12 +236,7 @@ async function handleNodeTaskCompleted(): Promise<void> {
       currentLevelIndex.value++
     }
     // 更新 关卡完成进度
-    // if (storyLineId && levelIndex) {
-    //   await updateStoryLineStudy({
-    //     id: storyLineId,
-    //     lastFinishedLevelIndex: parseInt(levelIndex)
-    //   });
-    // }
+    
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
