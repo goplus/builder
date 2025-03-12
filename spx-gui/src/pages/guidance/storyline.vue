@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { useQuery } from '@/utils/query'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
-import { getStoryLine, getStoryLineStudy, createStoryLineStudy } from '@/apis/storyline'
+import { getStoryLine, getStoryLineStudy, createStoryLineStudy } from '@/apis/guidance'
 import { useUserStore } from '@/stores/user'
 import { computed } from 'vue'
 
