@@ -155,13 +155,13 @@ import type { ComponentExposed } from '@/utils/types'
 import { useRouter } from 'vue-router'
 import { useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const router = useRouter()
 
-const props = defineProps<{ storyLineInfo: StoryLine, projectName: string }>()
-const level = computed<Level>(() => props.storyLineInfo.levels[currentLevelIndex.value])
-
-const currentLevelIndex = ref<number>(0)
+const props = defineProps<{ storyLineInfo: StoryLine, currentLevelIndex: number }>()
+const level = computed<Level>(() => props.storyLineInfo.levels[props.currentLevelIndex])
+const projectName = useEditorCtx().project.name
 
 const videoPlayerRef = ref<(ComponentExposed<typeof VideoPlayer>) | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
@@ -223,20 +223,18 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     coverType.value = CoverType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    await updateStoryLineStudy({
-      id: props.storyLineInfo.id,
-      lastFinishedLevelIndex: currentLevelIndex.value
-    })
     // 如果是最后一个关卡
-    if (currentLevelIndex.value === props.storyLineInfo.levels.length - 1) {
+    if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
       // 提示，展示 ending UI
       isLastLevel.value = true
-    } else if (currentLevelIndex.value < props.storyLineInfo.levels.length - 1) {
-      // 否则 进入下一关
-      currentLevelIndex.value++
+    } else {
+      isLastLevel.value = false
     }
     // 更新 关卡完成进度
-    
+    await updateStoryLineStudy({
+      id: props.storyLineInfo.id,
+      lastFinishedLevelIndex: props.currentLevelIndex
+    })
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
@@ -280,7 +278,7 @@ function handleToClick(target: string): void {
       if (isLastLevel.value) {
         m.warning(t({zh: '本故事线已经通关啦！请返回故事线列表开启其他故事旅程吧！', en: 'This storyline has been completed! Please return to the storyline list to start other story journeys!'}))
       } else {
-        router.push(`/editor/${props.projectName}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${currentLevelIndex.value}`)
+        router.push(`/editor/${projectName}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${props.currentLevelIndex + 1}`)
         levelIntroVisible.value = true
       }
       break
