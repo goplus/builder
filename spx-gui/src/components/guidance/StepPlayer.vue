@@ -3,9 +3,9 @@
     <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
       <template v-if="props.step.type === 'coding'">
         <div class="code-button-container">
-          <button @click="handleCheckButtonClick">Check</button>
-          <button @click="handleInfoButtonClick">Info</button>
-          <button @click="handleAnswerButtonClick">Answer</button>
+          <button class="guidance-button check-button" @click="handleCheckButtonClick">Check</button>
+          <button class="guidance-button info-button" @click="handleInfoButtonClick">Info</button>
+          <button class="guidance-button answer-button" @click="handleAnswerButtonClick">Answer</button>
         </div>
         <div class="suggestion-box">
           <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
@@ -140,8 +140,16 @@ const isTimeoutDialogVisible = ref(false)
 
 const answer = ref(await extractAnswerFromFile(props.step.coding?.path || ''))
 
+// 添加日志
 onMounted(async () => {
-  await loadSnapshot(props.step.snapshot.startSnapshot)
+  console.log('StepPlayer mounted with step:', props.step)
+  try {
+    await loadSnapshot(props.step.snapshot.startSnapshot)
+    console.log('Snapshot loaded successfully')
+  } catch (error) {
+    console.error('Failed to load snapshot:', error)
+  }
+
   if (props.step.isApiControl) {
     filter.setFilter('apiReference', true, props.step.apis)
   }
@@ -463,3 +471,75 @@ async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean;
   return Promise.resolve({ success: true })
 }
 </script>
+
+<style scoped>
+.step-player {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1001;
+}
+
+.code-button-container {
+  position: fixed;
+  right: 20px;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10000;
+}
+
+.guidance-button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.check-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.info-button {
+  background-color: #2196f3;
+  color: white;
+}
+
+.answer-button {
+  background-color: #ffc107;
+  color: black;
+}
+
+.guide-ui-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.guide-ui-container * {
+  pointer-events: auto;
+}
+
+.svg-fill {
+  fill: #ffeb3b;
+  opacity: 0.8;
+}
+
+.icon-fill {
+  fill: #5c5c66;
+}
+
+.suggestion-box {
+  z-index: 10001;
+}
+</style>
