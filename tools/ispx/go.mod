@@ -6,15 +6,15 @@ require (
 	github.com/goplus/igop v0.33.0
 	github.com/goplus/reflectx v1.3.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
-	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
+	github.com/hajimehoshi/ebiten/v2 v2.9.0-alpha.4
 )
 
 require (
 	github.com/ajstarks/svgo v0.0.0-20210927141636-6d70534b1098 // indirect
-	github.com/ebitengine/gomobile v0.0.0-20240518074828-e86332849895 // indirect
+	github.com/ebitengine/gomobile v0.0.0-20250209143333-6071a2a2351c // indirect
 	github.com/ebitengine/hideconsole v1.0.0 // indirect
-	github.com/ebitengine/oto/v3 v3.3.0-alpha.3 // indirect
-	github.com/ebitengine/purego v0.8.0-alpha.3 // indirect
+	github.com/ebitengine/oto/v3 v3.4.0-alpha.4 // indirect
+	github.com/ebitengine/purego v0.9.0-alpha.2 // indirect
 	github.com/esimov/stackblur-go v1.0.1-0.20190121110005-00e727e3c7a9 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
@@ -34,12 +34,12 @@ require (
 	github.com/visualfc/gid v0.2.0 // indirect
 	github.com/visualfc/goembed v0.3.2 // indirect
 	github.com/visualfc/xtype v0.2.0 // indirect
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
 	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 )
 
