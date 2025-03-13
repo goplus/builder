@@ -1,4 +1,3 @@
-sp
 <template>
   <TagNode name="editor-header">
     <EditorHeader>

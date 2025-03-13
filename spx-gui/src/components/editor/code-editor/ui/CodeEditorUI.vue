@@ -253,7 +253,7 @@ function zoomReset() {
           <CopilotTrigger @click="handleCopilotTriggerClick" />
         </TagNode>
       </footer>
-      <TagNode name="copilot-chat">
+      <TagNode name="copilot-ui">
         <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
       </TagNode>
     </aside>
