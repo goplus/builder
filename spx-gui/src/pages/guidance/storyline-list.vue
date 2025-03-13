@@ -44,6 +44,11 @@ import StoryLineItem from '@/components/guidance/StoryLineItem.vue'
 import { useQuery } from '@/utils/query'
 import { listStoryLine } from '@/apis/guidance'
 import { useResponsive } from '@/components/ui'
+import { usePageTitle } from '@/utils/utils'
+usePageTitle({
+  en: 'Courses',
+  zh: '课程'
+})
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))

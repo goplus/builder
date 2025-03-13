@@ -11,6 +11,7 @@
           class="level"
           :class="{ locked: !userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0) }"
           :style="{ left: `${level.placement.x}%`, top: `${level.placement.y}%` }"
+          @click="handleLevelClick(index)"
         >
           <img :src="level.cover" alt="" />
           <div class="level-index">
@@ -108,12 +109,18 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import { getStoryLine, getStoryLineStudy, createStoryLineStudy } from '@/apis/guidance'
 import { useUserStore } from '@/stores/user'
 import { computed } from 'vue'
+import { Project } from '@/models/project'
+import { Visibility } from '@/apis/project'
+import { untilNotNull } from '@/utils/utils'
+import defaultProjectFileUrl from '@/components/project/default-project.gbp?url'
 
 const props = defineProps<{
   storyLineId: string
 }>()
 
 const userStore = useUserStore()
+
+const signedInUser = computed(() => userStore.getSignedInUser())
 
 // 获取故事线信息
 const { data: storyLine } = useQuery(
@@ -126,6 +133,12 @@ const { data: storyLine } = useQuery(
   }
 )
 
+async function getDefaultProjectFile() {
+  const resp = await fetch(defaultProjectFileUrl)
+  const blob = await resp.blob()
+  return new window.File([blob], 'default-project.gbp', { type: blob.type })
+}
+
 // 获取用户学习进度
 const { data: storyLineStudy } = useQuery(
   async () => {
@@ -133,10 +146,20 @@ const { data: storyLineStudy } = useQuery(
       return { storyLineId: props.storyLineId, lastFinishedLevelIndex: 0 }
     }
     const study = await getStoryLineStudy(props.storyLineId)
-    if (!study.lastFinishedLevelIndex) {
-      // 如果是第一次进入，创建学习记录
+    if (!study) {
+      // 如果是第一次进入，创建学习记录 并 创建Project A
       await createStoryLineStudy(props.storyLineId)
-      return { ...study, lastFinishedLevelIndex: 0 }
+
+      const owner = await untilNotNull(signedInUser)
+      const storyLineInfo = await untilNotNull(storyLine)
+    
+      const defaultProjectFile = await getDefaultProjectFile()
+      const project = new Project(owner.name, 'auto_generated_projectA_for_'+storyLineInfo.name)
+      await project.loadGbpFile(defaultProjectFile)    
+      project.setVisibility(Visibility.Private)
+      await project.saveToCloud()
+      
+      return { storyLineId: props.storyLineId, lastFinishedLevelIndex: 0 }
     }
     return study
   },
@@ -156,6 +179,11 @@ const currentLevelTitle = computed(() => {
     en: `Level ${currentIndex + 1}: ${levelTitle.en}`
   }
 })
+
+function handleLevelClick(index: number){
+  if(!userStore.isSignedIn() || index > (storyLineStudy.value?.lastFinishedLevelIndex ?? -1)) return
+  console.log(index)
+}
 </script>
 <style scoped lang="scss">
 .storyline-page {

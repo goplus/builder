@@ -5,10 +5,12 @@
 - 由引导编辑器调用，用于故事线的创建
 
 ```typescript
-type CreateStoryLineInput = Omit<StoryLine, 'id'>
+type CreateStoryLineInput = Omit<StoryLine, "id">;
 
 // POST `/storyline`
-declare function createStoryLine(input: CreateStoryLineInput): Promise<StoryLine>
+declare function createStoryLine(
+  input: CreateStoryLineInput
+): Promise<StoryLine>;
 ```
 
 ### 接口名称：修改故事线
@@ -17,7 +19,7 @@ declare function createStoryLine(input: CreateStoryLineInput): Promise<StoryLine
 
 ```typescript
 // Put `/storyline/{id}`
-declare function updateStoryLine(input: StoryLine): Promise<StoryLine>
+declare function updateStoryLine(input: StoryLine): Promise<StoryLine>;
 ```
 
 ### 接口名称：删除故事线
@@ -26,7 +28,7 @@ declare function updateStoryLine(input: StoryLine): Promise<StoryLine>
 
 ```typescript
 // Delete `/storyline/{id}`
-declare function deleteStoryLine(id: string): Promise<void>
+declare function deleteStoryLine(id: string): Promise<void>;
 ```
 
 ## 用户接口
@@ -37,7 +39,7 @@ declare function deleteStoryLine(id: string): Promise<void>
 
 ```typescript
 // Get `/storyline/{id}`
-declare function getStoryLine(id: string): Promise<StoryLine>
+declare function getStoryLine(id: string): Promise<StoryLine>;
 ```
 
 ### 接口名称：修改故事线与用户关系
@@ -46,19 +48,21 @@ declare function getStoryLine(id: string): Promise<StoryLine>
 
 ```typescript
 type UpdateStoryLineStudyInput = {
-    id: string,
-    lastFinishedLevelIndex: number,    // 当前最新完成的关卡下标
-}
+  id: string;
+  lastFinishedLevelIndex: number; // 当前最新完成的关卡下标
+};
 
 // Put `/storyline/{id}/study`
-declare function updateStoryLineStudy(input: UpdateStoryLineStudyInput): Promise<StoryLineStudy>
+declare function updateStoryLineStudy(
+  input: UpdateStoryLineStudyInput
+): Promise<StoryLineStudy>;
 ```
 
 ### 接口名称：获取故事线与用户关系
 
 ```typescript
 // Get `/storyline/{id}/study`
-declare function getStoryLineStudy(id: string): Promise<StoryLineStudy>
+declare function getStoryLineStudy(id: string): Promise<StoryLineStudy | null>;
 ```
 
 ### 接口名称：创建故事线与用户关系
@@ -67,7 +71,7 @@ declare function getStoryLineStudy(id: string): Promise<StoryLineStudy>
 
 ```typescript
 // Post `/storyline/{id}/study`
-declare function createStoryLineStudy(id: string): Promise<StoryLineStudy>
+declare function createStoryLineStudy(id: string): Promise<StoryLineStudy>;
 ```
 
 ### 接口名称：大模型代码验证
@@ -75,13 +79,12 @@ declare function createStoryLineStudy(id: string): Promise<StoryLineStudy>
 - 用于步骤内的代码验证
 
 ```typescript
-type CheckCodeInput = { 
-    userCode: string,
-    expectedCode: string,
-    context: string,        // 上下文（背景）信息，如当前项目、任务、步骤等
-}
+type CheckCodeInput = {
+  userCode: string;
+  expectedCode: string;
+  context: string; // 上下文（背景）信息，如当前项目、任务、步骤等
+};
 
 // Post `/util/guidance-check`
-declare function checkCode(input: CheckCodeInput): Promise<boolean>
+declare function checkCode(input: CheckCodeInput): Promise<boolean>;
 ```
-
