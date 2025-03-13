@@ -4,14 +4,12 @@
   <div class="common-panel" :class="{ expanded }" :style="cssVars">
     <section v-show="expanded" class="details">
       <TagNode :name="headerTagName">
-        <div>
-          <PanelHeader :active="active">
-            {{ title }}
-            <template #add-options>
-              <slot name="add-options"></slot>
-            </template>
-          </PanelHeader>
-        </div>
+        <PanelHeader :active="active">
+          {{ title }}
+          <template #add-options>
+            <slot name="add-options"></slot>
+          </template>
+        </PanelHeader>
       </TagNode>
 
       <slot name="details"></slot>
