@@ -13,9 +13,9 @@
 
       <div class="dialog-footer">
         <slot name="footer">
-          <button v-if="button !== ''" :class="buttonClass" @click="handleButtonClick">
+          <UIButton v-if="button !== ''" :class="buttonClass" @click="handleButtonClick">
             {{ button }}
-          </button>
+          </UIButton>
         </slot>
       </div>
     </div>
@@ -24,8 +24,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import UIButton from '../ui/UIButton.vue'
 
-const emit = defineEmits(['next', 'retry', 'answer'])
+const emit = defineEmits(['next', 'retry', 'answer', 'close'])
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -53,10 +54,10 @@ const buttonClass = computed(() => {
 })
 
 const handleButtonClick = () => {
-  const validActions = ['next', 'retry', 'answer']
+  const validActions = ['next', 'retry', 'answer', 'close']
   const action = props.buttonAction.toLowerCase()
   if (validActions.includes(action)) {
-    emit(action as 'next' | 'retry' | 'answer')
+    emit(action as 'next' | 'retry' | 'answer' | 'close')
   }
 }
 </script>
@@ -130,43 +131,5 @@ const handleButtonClick = () => {
   display: flex;
   justify-content: center;
   gap: 10px;
-}
-
-.next-button {
-  background-color: #00c4cc;
-  color: white;
-  font-size: 14px;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.next-button:hover {
-  background-color: #00a3aa;
-}
-
-.next-button:active {
-  background-color: #008a8f;
-}
-
-.retry-button {
-  background-color: #cccccc;
-  color: black;
-  font-size: 14px;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.retry-button:hover {
-  background-color: #b3b3b3;
-}
-
-.retry-button:active {
-  background-color: #999999;
 }
 </style>
