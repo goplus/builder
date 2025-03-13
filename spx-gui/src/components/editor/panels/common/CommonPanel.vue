@@ -3,7 +3,7 @@
 <template>
   <div class="common-panel" :class="{ expanded }" :style="cssVars">
     <section v-show="expanded" class="details">
-      <TagNode :name="headerTagName">
+      <TagNode name="panel-header">
         <PanelHeader :active="active">
           {{ title }}
           <template #add-options>
@@ -41,7 +41,6 @@ const props = defineProps<{
   expanded: boolean
   active: boolean
   color: Color
-  headerTagName?: string
 }>()
 
 const emit = defineEmits<{

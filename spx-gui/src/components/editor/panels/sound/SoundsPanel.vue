@@ -3,7 +3,6 @@
     :expanded="expanded"
     :active="editorCtx.project.selectedSound != null"
     :title="$t({ en: 'Sounds', zh: '声音' })"
-    header-tag-name="sounds-panel-header"
     color="sound"
     @expand="emit('expand')"
   >

@@ -3,7 +3,6 @@
     :expanded="expanded"
     :active="editorCtx.project.selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
-    header-tag-name="sprites-panel-header"
     color="sprite"
     @expand="emit('expand')"
   >
