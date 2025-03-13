@@ -8,7 +8,7 @@
         class="animation-player"
       />
     </TagNode>
-    <TagNode name="animation-setting">
+    <TagNode name="animation-settings">
       <AnimationSettings :animation="animation" :sprite="sprite" :sounds="editorCtx.project.sounds" />
     </TagNode>
   </EditorItemDetail>

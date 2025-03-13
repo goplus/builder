@@ -9,14 +9,12 @@
       </KeepAlive>
     </UICard>
   </TagNode>
-  <TagNode name="project-sider">
-    <div class="sider">
-      <TagNode name="editor-preview">
-        <EditorPreview />
-      </TagNode>
-      <EditorPanels />
-    </div>
-  </TagNode>
+  <div class="sider">
+    <TagNode name="editor-preview">
+      <EditorPreview />
+    </TagNode>
+    <EditorPanels />
+  </div>
 </template>
 
 <script setup lang="ts">

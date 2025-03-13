@@ -15,7 +15,6 @@
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
-import TagRoot from './utils/tagging/TagRoot.vue'
 import TaggingAndMask from './components/test/TaggingAndMask.vue'
 const { t } = useI18n()
 

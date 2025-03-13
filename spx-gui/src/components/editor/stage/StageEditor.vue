@@ -15,7 +15,7 @@
     </TagNode>
 
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />s
+      <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>

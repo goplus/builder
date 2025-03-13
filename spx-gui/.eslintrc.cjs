@@ -30,6 +30,7 @@ module.exports = {
           'router-link',
           'v-.*', // for Vue Konva components
           'I18nT',
+          'TagRoot',
           'TagNode' // for TagNode while register as a global component in main.ts
         ]
       }
