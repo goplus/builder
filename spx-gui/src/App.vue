@@ -7,7 +7,6 @@
         </UIModalProvider>
       </UIMessageProvider>
     </UIConfigProvider>
-    <TaggingAndMask />
   </TagRoot>
 </template>
 
@@ -15,7 +14,6 @@
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
-import TaggingAndMask from './components/test/TaggingAndMask.vue'
 const { t } = useI18n()
 
 const config = computed<Config>(() => ({
