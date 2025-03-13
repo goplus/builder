@@ -19,7 +19,7 @@ require (
 	github.com/casdoor/casdoor-go-sdk v1.5.0
 	github.com/goplus/gop v1.2.6
 	github.com/qiniu/go-sdk/v7 v7.18.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.10.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 )
