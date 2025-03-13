@@ -159,7 +159,8 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const router = useRouter()
 
-const projectName = useEditorCtx().project.name
+const editorCtx = useEditorCtx()
+const projectName = computed(() => editorCtx.project.name)
 
 const props = defineProps<{ storyLineInfo: StoryLine, currentLevelIndex: number }>()
 const level = computed<Level>(() => {
@@ -280,7 +281,7 @@ function handleToClick(target: string): void {
       if (isLastLevel.value) {
         m.warning(t({zh: '本故事线已经通关啦！请返回故事线列表开启其他故事旅程吧！', en: 'This storyline has been completed! Please return to the storyline list to start other story journeys!'}))
       } else {
-        router.push(`/editor/${projectName}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${props.currentLevelIndex + 1}`)
+        router.push(`/editor/${projectName.value}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${props.currentLevelIndex + 1}`)
         levelIntroVisible.value = true
       }
       break

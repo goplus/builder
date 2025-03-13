@@ -10,7 +10,7 @@
       </UIError>
       <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
         <ProjectEditor />
-        <LevelPlayer v-if="isGuidanceMode && storyLineInfo" ref="levelPlayerRef" class="level-player" :story-line-info="storyLineInfo" :current-level-index="currentLevelIndex" />
+        <LevelPlayer v-if="isGuidanceMode && storyLineInfo" class="level-player" :story-line-info="storyLineInfo" :current-level-index="currentLevelIndex" />
       </EditorContextProvider>
     </main>
   </section>
@@ -51,7 +51,6 @@ const currentLevelIndex = computed(() => {
 const isGuidanceMode = ref<boolean>(false)
 const storyLineInfo = ref<StoryLine | null>(null)
 
-const levelPlayerRef = ref<InstanceType<typeof LevelPlayer> | null>(null)
 async function handleGuidance () {
   if (getStringParam(router, 'guide') != null) {
     isGuidanceMode.value = true
