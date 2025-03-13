@@ -16,7 +16,7 @@ require (
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.11
-	github.com/casdoor/casdoor-go-sdk v0.36.0
+	github.com/casdoor/casdoor-go-sdk v1.5.0
 	github.com/goplus/gop v1.2.6
 	github.com/qiniu/go-sdk/v7 v7.18.0
 	github.com/stretchr/testify v1.8.1

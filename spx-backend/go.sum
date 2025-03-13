@@ -59,8 +59,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 h1:ZsDKRLXGWHk8WdtyYMoGNO7bTudr
 github.com/aws/aws-sdk-go-v2/service/sts v1.30.3/go.mod h1:zwySh8fpFyXp9yOr/KVzxOl8SRqgf/IDw5aUt9UKFcQ=
 github.com/aws/smithy-go v1.20.3 h1:ryHwveWzPV5BIof6fyDvor6V3iUL7nTfiTKXHiW05nE=
 github.com/aws/smithy-go v1.20.3/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
-github.com/casdoor/casdoor-go-sdk v0.36.0 h1:0kK98ptEhqSb2/QR3EO5DvOHTa/Rr9y1Lc7D/jOSFmE=
-github.com/casdoor/casdoor-go-sdk v0.36.0/go.mod h1:hVSgmSdwTCsBEJNt9r2K5aLVsoeMc37/N4Zzescy5SA=
+github.com/casdoor/casdoor-go-sdk v1.5.0 h1:mlKWG2NcQfpR1w+TyOtzPtupfgseuDMSqykP1gJq+g0=
+github.com/casdoor/casdoor-go-sdk v1.5.0/go.mod h1:cMnkCQJgMYpgAlgEx8reSt1AVaDIQLcJ1zk5pzBaz+4=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
