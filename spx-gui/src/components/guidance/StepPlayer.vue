@@ -3,9 +3,9 @@
     <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
       <template v-if="props.step.type === 'coding'">
         <div class="code-button-container">
-          <button class="guidance-button check-button" @click="handleCheckButtonClick">Check</button>
-          <button class="guidance-button info-button" @click="handleInfoButtonClick">Info</button>
-          <button class="guidance-button answer-button" @click="handleAnswerButtonClick">Answer</button>
+          <UIButton type="success" size="medium" @click="handleCheckButtonClick">Check</UIButton>
+          <UIButton type="primary" size="medium" @click="handleInfoButtonClick">Info</UIButton>
+          <UIButton type="secondary" size="medium" @click="handleAnswerButtonClick">Answer</UIButton>
         </div>
         <div class="suggestion-box">
           <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
@@ -33,10 +33,20 @@
             :title="'参考答案'"
             :content="''"
             :is-code="true"
+            :button="'关闭'"
+            :button-action="'close'"
             :code="answer || ''"
+            @close="handleAnswerCloseButtonClick"
           >
           </ResultDialog>
-          <ResultDialog :visible="isInfoDialogVisible" :title="'当前步骤'" :content="props.step.description.zh">
+          <ResultDialog
+            :visible="isInfoDialogVisible"
+            :title="'当前步骤'"
+            :content="props.step.description.zh"
+            :button="'关闭'"
+            :button-action="'close'"
+            @close="handleInfoCloseButtonClick"
+          >
           </ResultDialog>
           <ResultDialog
             :visible="isTimeoutDialogVisible"
@@ -111,15 +121,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, computed, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import ResultDialog from './ResultDialog.vue'
+import UIButton from '@/components/ui/UIButton.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 import { urlSafeBase64Decode } from 'qiniu-js'
-import { toText } from '@/models/common/file'
+import { fromText, toText, type Files } from '@/models/common/file'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -229,10 +240,49 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
   try {
     const project = editorCtx.project
+    if (!project) {
+      console.log("Project doesn't exist")
+      return
+    }
 
-    const { files } = JSON.parse(snapshotStr)
+    let fileMap: Record<string, string> = {}
+    try {
+      fileMap = JSON.parse(snapshotStr)
+    } catch (parseError) {
+      console.error('Failed to parse snapshot:', parseError)
+      return
+    }
+
+    const files: Files = {}
+
+    for (const [path, content] of Object.entries(fileMap)) {
+      if (typeof content === 'string') {
+        if (content.startsWith('data:')) {
+          try {
+            const contentParts = content.split(',')
+            if (contentParts.length > 1) {
+              const base64Part = contentParts[1]
+              const decodedContent = atob(base64Part)
+              files[path] = fromText(path, decodedContent)
+            } else {
+              files[path] = fromText(path, '')
+            }
+          } catch (e) {
+            console.error('Failed to decode data URL:', e)
+          }
+        } else {
+          files[path] = fromText(path, content)
+        }
+      }
+    }
+
+    if (Object.keys(files).length === 0) {
+      console.log('No files to load')
+      return
+    }
 
     await project.loadGameFiles(files)
+    console.log('Snapshot loaded successfully')
   } catch (error) {
     console.error('Failed to load snapshot:', error)
   }
@@ -543,6 +593,14 @@ function handleRetryButtonClick() {
 function handleAnswerFromTimeout() {
   isTimeoutDialogVisible.value = false
   isAnswerDialogVisible.value = true
+}
+
+function handleInfoCloseButtonClick() {
+  isInfoDialogVisible.value = false
+}
+
+function handleAnswerCloseButtonClick() {
+  isAnswerDialogVisible.value = false
 }
 
 async function checkAnswer(): Promise<boolean> {
