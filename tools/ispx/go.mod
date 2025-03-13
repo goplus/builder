@@ -3,7 +3,7 @@ module github.com/goplus/builder/ispx
 go 1.23.0
 
 require (
-	github.com/goplus/igop v0.32.1
+	github.com/goplus/igop v0.33.0
 	github.com/goplus/reflectx v1.3.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
@@ -20,7 +20,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
 	github.com/goplus/gogen v1.16.6 // indirect
-	github.com/goplus/gop v1.3.1 // indirect
+	github.com/goplus/gop v1.2.0-pre.1.0.20250310113631-49fb8aab7aa7 // indirect
 	github.com/goplus/mod v0.13.17 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
@@ -44,7 +44,6 @@ require (
 )
 
 replace (
-	github.com/goplus/gop => github.com/goplus/gop v1.2.0-pre.1.0.20250112163018-5fb12b1b2972
 	github.com/hajimehoshi/oto => github.com/hajimehoshi/oto v1.0.1
 	github.com/srwiley/oksvg => github.com/qiniu/oksvg v0.2.0-no-charset
 	golang.org/x/image => golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
