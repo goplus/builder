@@ -60,14 +60,9 @@ const getElement = (path: string) => {
   return foundNode?.instance?.subTree?.children?.[0]?.el || null
 }
 
-const logTree = () => {
-  console.log(root.children)
-}
-
 onMounted(() => {
   tagApi.value = {
-    getElement,
-    logTree
+    getElement
   }
 })
 

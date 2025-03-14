@@ -1,6 +1,6 @@
 <template>
   <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
-    <TagNode v-for="costume in sprite.costumes" :key="costume.id" :name="costume.name">
+    <TagNode v-for="costume in costumes" :key="costume.id" :name="costume.name">
       <CostumeItem
         :sprite="sprite"
         :costume="costume"

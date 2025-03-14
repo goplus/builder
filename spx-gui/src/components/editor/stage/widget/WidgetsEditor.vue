@@ -13,7 +13,7 @@
     </template>
   </UIEmpty>
   <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
-    <TagNode v-for="widget in stage.widgets" :key="widget.id" :name="widget.name.toLocaleLowerCase()">
+    <TagNode v-for="widget in widgets" :key="widget.id" :name="widget.name.toLocaleLowerCase()">
       <WidgetItem
         :widget="widget"
         :selectable="{ selected: selected?.id === widget.id }"
