@@ -146,11 +146,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to open the asset library.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -189,11 +185,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here with the left mouse button to select Sprite 1.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -232,11 +224,7 @@ const storyLineJson: StoryLine = {
                 en: 'You can select multiple sprites at once in the asset library! Click here to choose your second sprite!'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -275,11 +263,7 @@ const storyLineJson: StoryLine = {
                 en: 'Click OK button'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: true,
               isApiControl: false,
@@ -329,11 +313,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to switch to the stage.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -372,11 +352,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to switch to the backdrop.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -415,11 +391,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to add a backdrop.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -493,11 +465,7 @@ const storyLineJson: StoryLine = {
                 en: 'test'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'coding',
               isCheck: true,
               isApiControl: true,
@@ -649,11 +617,7 @@ const storyLineJson: StoryLine = {
                 en: 'test'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'coding',
               isCheck: true,
               isApiControl: true,
@@ -775,11 +739,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to open the asset library.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -818,11 +778,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here with the left mouse button to select Sprite 1.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -861,11 +817,7 @@ const storyLineJson: StoryLine = {
                 en: 'You can select multiple sprites at once in the asset library! Click here to choose your second sprite!'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -904,11 +856,7 @@ const storyLineJson: StoryLine = {
                 en: 'Click OK button'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: true,
               isApiControl: false,
@@ -958,11 +906,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to switch to the stage.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -1001,11 +945,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to switch to the backdrop.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
@@ -1044,11 +984,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to add a backdrop.'
               },
               duration: 20,
-              target: [
-                // TODO
-                '',
-                ''
-              ],
+              target: '',
               type: 'following',
               isCheck: false,
               isApiControl: false,
