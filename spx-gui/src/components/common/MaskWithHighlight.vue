@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useTag } from '../../utils/tagging'
 import { useElementRect } from '../../utils/dom'
 
@@ -16,10 +16,72 @@ const props = defineProps<{
 }>()
 
 const { getElement } = useTag()
+const targetElement = ref<HTMLElement | null>(null)
 
-const targetElement = computed(() => {
-  return props.visible ? getElement(props.highlightElementPath) : null
+// 不再使用computed，而是在onMounted后设置目标元素
+// 避免在TagConsumer挂载前调用getElement
+onMounted(() => {
+  // 延迟执行，确保TagConsumer已挂载
+  setTimeout(() => {
+    updateTargetElement()
+  }, 0)
 })
+
+// 更新目标元素的函数
+function updateTargetElement() {
+  // 清晰的开始标记
+  console.warn('===== 开始检查目标元素 =====')
+  console.warn(`检查路径: "${props.highlightElementPath}"`)
+  console.warn(`路径类型: ${typeof props.highlightElementPath}`)
+  console.warn(`路径值: ${JSON.stringify(props.highlightElementPath)}`)
+
+  if (!props.visible) {
+    console.warn('遮罩不可见，不检查目标元素')
+    targetElement.value = null
+    return
+  }
+
+  if (!props.highlightElementPath) {
+    console.warn('目标元素路径为空')
+    targetElement.value = null
+    return
+  }
+
+  try {
+    // 确保路径是字符串
+    const elementPath = String(props.highlightElementPath)
+    console.warn(`转换后的路径类型: ${typeof elementPath}`)
+    console.warn(`转换后的路径值: "${elementPath}"`)
+
+    // 检查路径格式是否有效
+    const isValidPath = /^[a-zA-Z0-9_\-\/\.]+$/.test(elementPath)
+    if (!isValidPath) {
+      console.warn(`目标元素路径格式可能无效: "${elementPath}"`)
+    }
+
+    // 使用转换后的字符串调用 getElement
+    targetElement.value = getElement(elementPath)
+
+    if (targetElement.value) {
+      console.warn(
+        `✅ 成功找到目标元素:`,
+        targetElement.value.tagName,
+        `ID: ${targetElement.value.id || '无'}, ` + `类名: ${targetElement.value.className || '无'}`
+      )
+    } else {
+      console.warn(`❌ 未找到目标元素: "${elementPath}"`)
+    }
+  } catch (error) {
+    console.warn(`⚠️ 获取目标元素时发生错误:`, error)
+    targetElement.value = null
+  }
+
+  console.warn('===== 目标元素检查结束 =====')
+}
+
+// 监听highlightElementPath变化
+watch(() => props.highlightElementPath, updateTargetElement)
+watch(() => props.visible, updateTargetElement)
 
 const elementRect = useElementRect(targetElement)
 
@@ -38,7 +100,13 @@ const highlightRect = computed<HighlightRect>(() => {
       height: rect.height + 20
     }
   }
-  return { left: 0, top: 0, width: 0, height: 0 }
+  // 使用默认位置
+  return {
+    left: screenWidth.value / 2 - 100,
+    top: screenHeight.value / 2 - 100,
+    width: 200,
+    height: 200
+  }
 })
 
 function createRoundedRectPath(x: number, y: number, w: number, h: number, r: number) {
