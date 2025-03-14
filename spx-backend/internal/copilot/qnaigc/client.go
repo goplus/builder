@@ -21,7 +21,6 @@ const (
 	retryDelay      = 500 * time.Millisecond
 	userAgent       = "XBuilder Copilot/1.0"
 	contentTypeJSON = "application/json"
-	enableThinking  = false
 )
 
 type (
