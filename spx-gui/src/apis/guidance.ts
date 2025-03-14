@@ -1090,7 +1090,7 @@ export async function getStoryLine(storyLineId: string): Promise<StoryLine> {
   return storyLine
 }
 
-export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineStudy> {
+export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineStudy | null> {
   const storyLineStudy: StoryLineStudy = storyLineStudyJson
   return storyLineStudy
 }
