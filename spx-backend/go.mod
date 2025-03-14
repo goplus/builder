@@ -6,7 +6,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/goplus/yap v0.8.2 //gop:class
 	github.com/joho/godotenv v1.5.1
-	github.com/qiniu/go-cdk-driver v0.1.0
+	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/x v1.13.12
 	gocloud.dev v0.36.0 // indirect
 	golang.org/x/mod v0.20.0
