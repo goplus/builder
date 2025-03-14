@@ -3,7 +3,7 @@
     <div class="dialog-container">
       <div class="dialog-header">
         <h3>{{ title }}</h3>
-        <span v-if="loading" class="loading-icon">🔄</span>
+        <UILoading v-if="loading" class="loading-icon" />
       </div>
 
       <div class="dialog-content">
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIButton from '../ui/UIButton.vue'
+import UILoading from '../ui/UILoading.vue'
 
 const emit = defineEmits(['next', 'retry', 'answer', 'close'])
 
