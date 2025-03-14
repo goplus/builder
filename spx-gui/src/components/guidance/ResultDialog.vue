@@ -39,16 +39,6 @@ const props = defineProps({
   buttonAction: { type: String, default: '' }
 })
 
-defineExpose({
-  visible: props.visible,
-  title: props.title,
-  content: props.content,
-  code: props.code,
-  isCode: props.isCode,
-  loading: props.loading,
-  button: props.button
-})
-
 const buttonClass = computed(() => {
   return props.buttonAction.toLowerCase() + '-button'
 })
