@@ -59,18 +59,18 @@
           </ResultDialog>
         </div>
       </template>
-      <template v-if="props.step.type === 'following'" #defulat="{ slotInfo }">
+      <template v-if="props.step.type === 'following'" #default="{ slotInfo }">
         <div class="guide-ui-container">
           <img
             class="niuxiaoqi"
-            :style="getNiuxiaoqiStyle(slotInfo.highlightRect)"
+            :style="getNiuxiaoqiStyle(slotInfo)"
             width="300"
             height="320"
             src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
           />
           <svg
             class="ic-bubble"
-            :style="getBubbleStyle(slotInfo.highlightRect)"
+            :style="getBubbleStyle(slotInfo)"
             viewBox="0 0 1024 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -100,7 +100,7 @@
           <svg
             t="1741314616196"
             class="ic-arrow"
-            :style="getArrowStyle(slotInfo.highlightRect)"
+            :style="getArrowStyle(slotInfo)"
             viewBox="0 0 1536 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -149,20 +149,15 @@ const isAnswerDialogVisible = ref(false)
 const isInfoDialogVisible = ref(false)
 const isTimeoutDialogVisible = ref(false)
 
-// 修改为仅初始化空ref，onMounted中才获取
 const answer = ref<string | null>(null)
 
-// 添加日志
 onMounted(async () => {
   console.log('StepPlayer mounted with step:', props.step)
 
-  // 安全地处理answer初始化
   try {
     if (props.step.type === 'coding' && props.step.coding?.path) {
-      // 提取或生成mock的参考答案
       answer.value = await extractAnswerFromFile(props.step.coding.path)
 
-      // 如果无法正常提取答案，使用一个mock答案用于演示
       if (!answer.value) {
         console.log('无法提取答案，使用mock答案')
         answer.value = `// 这是一个模拟的参考答案
