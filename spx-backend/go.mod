@@ -3,7 +3,7 @@ module github.com/goplus/builder/spx-backend
 go 1.21.0
 
 require (
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.0
 	github.com/goplus/yap v0.8.2 //gop:class
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.0
