@@ -15,12 +15,13 @@ import (
 // Constants for API configuration
 const (
 	defaultBaseURL  = "https://api.qnaigc.com/v1"
-	defaultTimeout  = 30 * time.Second
-	defaultModel    = "deepseek-v3?search" // ?search enables internet search capability
+	defaultTimeout  = 15 * time.Second
+	defaultModel    = "deepseek-v3"
 	maxRetries      = 3
 	retryDelay      = 500 * time.Millisecond
 	userAgent       = "XBuilder Copilot/1.0"
 	contentTypeJSON = "application/json"
+	enableThinking  = false
 )
 
 type (
@@ -37,6 +38,7 @@ type (
 		Model       string    `json:"model"`                // Name of the model to use
 		Messages    []Message `json:"messages"`             // Conversation history
 		Temperature float64   `json:"temperature"`          // Sampling temperature
+		TopP        float64   `json:"top_p,omitempty"`      // Top-p sampling cutoff
 		MaxTokens   int       `json:"max_tokens,omitempty"` // Maximum number of tokens to generate
 		Stream      bool      `json:"stream,omitempty"`     // Whether to stream the response
 	}
@@ -89,10 +91,14 @@ func (e *APIError) Error() string {
 // apiKey: The API key for authentication
 // opts: Optional configuration options
 func NewClient(apiKey string, opts ...ClientOption) *Client {
+	transport := &http.Transport{
+		ResponseHeaderTimeout: defaultTimeout,
+	}
+
 	c := &Client{
 		apiKey:     apiKey,
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{Timeout: defaultTimeout},
+		httpClient: &http.Client{Transport: transport},
 		userAgent:  userAgent,
 	}
 
@@ -151,13 +157,17 @@ func (c *Client) StreamChatCompletion(
 	ctx context.Context,
 	req *ChatCompletionRequest,
 ) (io.ReadCloser, error) {
-	reqBody, err := json.Marshal(req)
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(req)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request failed: %w", err)
 	}
 
 	endpoint := c.baseURL + "/chat/completions"
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
