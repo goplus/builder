@@ -382,26 +382,32 @@ async function getSnapshot(): Promise<string> {
 
 async function extractAnswerFromFile(path: string): Promise<string | null> {
   try {
-    if (!path || path.length < 20) {
-      // 长度过短可能表示不是有效路径
-      console.warn('路径过短或为空，尝试使用备用答案')
+    if (!path || path.trim().length === 0) {
+      console.warn('路径为空，尝试使用备用答案')
       return getMockAnswer()
     }
 
-    console.log('提取答案，path长度:', path.length)
+    console.log('提取答案，路径:', path)
 
-    let fileContent: string
-    try {
-      fileContent = urlSafeBase64Decode(path)
-      console.log('解码后文件内容大小:', fileContent ? fileContent.length : 0)
-    } catch (err) {
-      console.error('Base64解码失败:', err)
+    const project = editorCtx.project
+    if (!project) {
+      console.error('无法获取项目实例')
       return getMockAnswer()
     }
+
+    const files = await project.exportGameFiles()
+    if (!files || !files[path]) {
+      console.error('找不到文件:', path)
+      return getMockAnswer()
+    }
+
+    const file = files[path]
+    const fileContent = await toText(file)
+
+    console.log('文件内容大小:', fileContent ? fileContent.length : 0)
 
     if (!fileContent || fileContent.length < 10) {
-      // 内容太短，可能无效
-      console.error('解码后文件内容过短或为空')
+      console.error('文件内容过短或为空')
       return getMockAnswer()
     }
 
@@ -416,7 +422,6 @@ async function extractAnswerFromFile(path: string): Promise<string | null> {
     const lines = fileContent.split('\n')
     console.log('文件行数:', lines.length)
 
-    // 自动调整位置适应实际文件
     const adjustedStartLine = Math.min(startPos.line, lines.length)
     const adjustedEndLine = Math.min(endPos.line, lines.length)
 
@@ -427,26 +432,21 @@ async function extractAnswerFromFile(path: string): Promise<string | null> {
 
     let extractedContent = ''
 
-    // 处理单行情况
     if (adjustedStartLine === adjustedEndLine) {
       const line = lines[adjustedStartLine - 1]
       const startCol = Math.min(startPos.column - 1, line.length)
       const endCol = Math.min(endPos.column - 1, line.length)
       extractedContent = line.substring(startCol, endCol)
-    }
-    // 多行情况
-    else {
+    } else {
       const firstLine = lines[adjustedStartLine - 1]
       const firstLineIndent = firstLine.match(/^\s*/)?.at(0) || ''
       const startCol = Math.min(startPos.column - 1, firstLine.length)
       extractedContent += firstLineIndent + firstLine.substring(startCol) + '\n'
 
-      // 只处理实际存在的中间行
       for (let i = adjustedStartLine; i < adjustedEndLine - 1 && i < lines.length; i++) {
         extractedContent += lines[i] + '\n'
       }
 
-      // 确保最后一行存在
       if (adjustedEndLine <= lines.length) {
         const lastLine = lines[adjustedEndLine - 1]
         const endCol = Math.min(endPos.column - 1, lastLine.length)
@@ -697,7 +697,7 @@ async function checkAnswer(): Promise<boolean> {
     return false
   }
 
-  const answer = await extractAnswerFromFile(await props.step.coding?.path)
+  const answer = await extractAnswerFromFile(props.step.coding.path)
 
   if (!answer) {
     return false
