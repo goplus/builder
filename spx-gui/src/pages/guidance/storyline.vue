@@ -125,8 +125,8 @@ const userStore = useUserStore()
 
 const signedInUser = computed(() => userStore.getSignedInUser())
 
-function generateProjectAName(storyLineName: string) {
-  return 'auto_generated_projectA_for_' + storyLineName
+function generateStudyProjectName(storyLineName: string) {
+  return 'auto_generated_study_project_for_' + storyLineName
 }
 
 // 获取故事线信息
@@ -161,7 +161,7 @@ const { data: storyLineStudy } = useQuery(
       const storyLineInfo = await untilNotNull(storyLine)
 
       const defaultProjectFile = await getDefaultProjectFile()
-      const project = new Project(owner.name, generateProjectAName(storyLineInfo.name))
+      const project = new Project(owner.name, generateStudyProjectName(storyLineInfo.name))
       await project.loadGbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
@@ -191,7 +191,7 @@ function handleLevelClick(levelIndex: number) {
   if (!userStore.isSignedIn() || !storyLine.value || levelIndex > (storyLineStudy.value?.lastFinishedLevelIndex ?? -1))
     return
   router.push(
-    getProjectEditorWithGuidanceRoute(generateProjectAName(storyLine.value.name), storyLine.value.id, levelIndex)
+    getProjectEditorWithGuidanceRoute(generateStudyProjectName(storyLine.value.name), storyLine.value.id, levelIndex)
   )
 }
 </script>
