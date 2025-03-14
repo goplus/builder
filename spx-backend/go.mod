@@ -18,7 +18,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
 	github.com/casdoor/casdoor-go-sdk v1.5.0
 	github.com/goplus/gop v1.3.5
-	github.com/qiniu/go-sdk/v7 v7.18.0
+	github.com/qiniu/go-sdk/v7 v7.25.2
 	github.com/stretchr/testify v1.10.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
@@ -26,7 +26,11 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/alex-ant/gomath v0.0.0-20160516115720-89013a210a82 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gammazero/toposort v0.1.1 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
@@ -50,4 +54,5 @@ require (
 	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	modernc.org/fileutil v1.0.0 // indirect
 )
