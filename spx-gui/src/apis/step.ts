@@ -12,11 +12,7 @@ export const stepJson = {
     en: 'test'
   },
   duration: 20,
-  target: [
-    // TODO
-    '',
-    ''
-  ],
+  target: ['code-editor'],
   type: 'coding',
   isCheck: true,
   isApiControl: true,
