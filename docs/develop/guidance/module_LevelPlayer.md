@@ -1,7 +1,8 @@
 ```ts
 // LevelPlayer模块主要负责执行VideoPlayer和NodeTaskPlayer模块
 type Props = {
-    level: Level
+    storyLineInfo: StoryLine
+    currentLevelIndex: number
 }
 type Placement = {
   /** X position in px */

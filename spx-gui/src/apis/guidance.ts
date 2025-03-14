@@ -1082,7 +1082,7 @@ const storyLineJson: StoryLine = {
 
 const storyLineStudyJson: StoryLineStudy = {
   storyLineId: '1',
-  lastFinishedLevelIndex: 0
+  lastFinishedLevelIndex: 1
 }
 
 export async function getStoryLine(storyLineId: string): Promise<StoryLine> {

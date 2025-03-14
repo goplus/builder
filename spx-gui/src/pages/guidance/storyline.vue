@@ -113,14 +113,21 @@ import { Project } from '@/models/project'
 import { Visibility } from '@/apis/project'
 import { untilNotNull } from '@/utils/utils'
 import defaultProjectFileUrl from '@/components/project/default-project.gbp?url'
+import { useRouter } from 'vue-router'
+import { getProjectEditorWithGuidanceRoute } from '@/router'
 
 const props = defineProps<{
   storyLineId: string
 }>()
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const signedInUser = computed(() => userStore.getSignedInUser())
+
+function generateProjectAName(storyLineName: string) {
+  return 'auto_generated_projectA_for_' + storyLineName
+}
 
 // 获取故事线信息
 const { data: storyLine } = useQuery(
@@ -152,13 +159,13 @@ const { data: storyLineStudy } = useQuery(
 
       const owner = await untilNotNull(signedInUser)
       const storyLineInfo = await untilNotNull(storyLine)
-    
+
       const defaultProjectFile = await getDefaultProjectFile()
-      const project = new Project(owner.name, 'auto_generated_projectA_for_'+storyLineInfo.name)
-      await project.loadGbpFile(defaultProjectFile)    
+      const project = new Project(owner.name, generateProjectAName(storyLineInfo.name))
+      await project.loadGbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
-      
+
       return { storyLineId: props.storyLineId, lastFinishedLevelIndex: 0 }
     }
     return study
@@ -180,9 +187,12 @@ const currentLevelTitle = computed(() => {
   }
 })
 
-function handleLevelClick(index: number){
-  if(!userStore.isSignedIn() || index > (storyLineStudy.value?.lastFinishedLevelIndex ?? -1)) return
-  console.log(index)
+function handleLevelClick(levelIndex: number) {
+  if (!userStore.isSignedIn() || !storyLine.value || levelIndex > (storyLineStudy.value?.lastFinishedLevelIndex ?? -1))
+    return
+  router.push(
+    getProjectEditorWithGuidanceRoute(generateProjectAName(storyLine.value.name), storyLine.value.id, levelIndex)
+  )
 }
 </script>
 <style scoped lang="scss">
