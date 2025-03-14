@@ -402,6 +402,11 @@ async function extractAnswerFromFile(path: string): Promise<string | null> {
     }
 
     const file = files[path]
+    if (!file) {
+      console.error('文件对象为空')
+      return getMockAnswer()
+    }
+
     const fileContent = await toText(file)
 
     console.log('文件内容大小:', fileContent ? fileContent.length : 0)
