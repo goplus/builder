@@ -1,23 +1,27 @@
 <template>
   <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
-    <CostumeItem
-      v-for="costume in costumes"
-      :key="costume.id"
-      :sprite="sprite"
-      :costume="costume"
-      removable
-      :selectable="{ selected: selected?.id === costume.id }"
-      @click="handleSelect(costume)"
-    />
+    <TagNode v-for="costume in costumes" :key="costume.id" :name="costume.name">
+      <CostumeItem
+        :sprite="sprite"
+        :costume="costume"
+        removable
+        :selectable="{ selected: selected?.id === costume.id }"
+        @click="handleSelect(costume)"
+      />
+    </TagNode>
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{
-          $t({ en: 'Select local file', zh: '选择本地文件' })
-        }}</UIMenuItem>
+        <TagNode name="select-local-file">
+          <UIMenuItem @click="handleAddFromLocalFile">{{
+            $t({ en: 'Select local file', zh: '选择本地文件' })
+          }}</UIMenuItem>
+        </TagNode>
       </UIMenu>
     </template>
     <template #detail>
-      <CostumeDetail v-if="selected != null" :sprite="sprite" :costume="selected" />
+      <TagNode name="costume-detail">
+        <CostumeDetail v-if="selected != null" :sprite="sprite" :costume="selected" />
+      </TagNode>
     </template>
   </EditorList>
 </template>

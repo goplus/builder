@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/llmprompt"
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
@@ -115,7 +115,7 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		MaxTokens: anthropic.F(int64(MAX_TOKENS)),
 		System: anthropic.F([]anthropic.TextBlockParam{
 			{
-				Text: anthropic.F(copilot.SystemPrompt),
+				Text: anthropic.F(llmprompt.SystemPrompt),
 				Type: anthropic.F(anthropic.TextBlockParamTypeText),
 				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
 					Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),

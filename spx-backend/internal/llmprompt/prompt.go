@@ -1,4 +1,4 @@
-package copilot
+package llmprompt
 
 import (
 	_ "embed"
@@ -24,6 +24,9 @@ var customElementCodeChange string
 //go:embed system_prompt.md
 var systemPromptTpl string
 
+//go:embed check_code_prompt.md
+var checkCodePromptTpl string
+
 type systemPromptTplData struct {
 	GopDefs                 string
 	SpxDefs                 string
@@ -33,14 +36,15 @@ type systemPromptTplData struct {
 
 var SystemPrompt string
 
-func init() {
-	tplData := systemPromptTplData{
-		GopDefs:                 gopDefs,
-		SpxDefs:                 spxDefs,
-		CustomElementCodeLink:   customElementCodeLink,
-		CustomElementCodeChange: customElementCodeChange,
-	}
-	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
+type checkCodePromptTplData struct {
+	GopDefs string
+	SpxDefs string
+}
+
+var CheckCodePrompt string
+
+func parseTemplate(tplData interface{}, tplStr string, resultVar *string) {
+	tpl, err := template.New("prompt").Parse(tplStr)
 	if err != nil {
 		panic(err)
 	}
@@ -48,5 +52,21 @@ func init() {
 	if err := tpl.Execute(&sb, tplData); err != nil {
 		panic(err)
 	}
-	SystemPrompt = sb.String()
+	*resultVar = sb.String()
+}
+
+func init() {
+	tplData := systemPromptTplData{
+		GopDefs:                 gopDefs,
+		SpxDefs:                 spxDefs,
+		CustomElementCodeLink:   customElementCodeLink,
+		CustomElementCodeChange: customElementCodeChange,
+	}
+	parseTemplate(tplData, systemPromptTpl, &SystemPrompt)
+
+	checkCodeTplData := checkCodePromptTplData{
+		GopDefs: gopDefs,
+		SpxDefs: spxDefs,
+	}
+	parseTemplate(checkCodeTplData, checkCodePromptTpl, &CheckCodePrompt)
 }

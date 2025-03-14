@@ -1,22 +1,32 @@
 <template>
   <section class="editor-home">
-    <header class="editor-header">
-      <EditorNavbar :project="project" />
-    </header>
-    <main v-if="userInfo" class="editor-main">
-      <UILoading v-if="allQueryRet.isLoading.value" />
-      <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
-        {{ $t(allQueryRet.error.value.userMessage) }}
-      </UIError>
-      <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
-        <ProjectEditor />
-      </EditorContextProvider>
-    </main>
+    <TagNode name="editor-header">
+      <header class="editor-header">
+        <EditorNavbar :project="project" />
+      </header>
+    </TagNode>
+    <TagNode name="editor-main">
+      <main v-if="userInfo" class="editor-main">
+        <UILoading v-if="allQueryRet.isLoading.value" />
+        <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
+          {{ $t(allQueryRet.error.value.userMessage) }}
+        </UIError>
+        <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
+          <ProjectEditor />
+          <LevelPlayer
+            v-if="isGuidanceMode && storyLineInfo"
+            class="level-player"
+            :story-line-info="storyLineInfo"
+            :current-level-index="currentLevelIndex"
+          />
+        </EditorContextProvider>
+      </main>
+    </TagNode>
   </section>
 </template>
 
 <script setup lang="ts">
-import { watchEffect, watch, onMounted, onUnmounted, computed } from 'vue'
+import { watchEffect, watch, onMounted, onUnmounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
@@ -36,10 +46,33 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
+import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
+import { getStoryLine, type StoryLine } from '@/apis/guidance'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
   projectName: string
 }>()
+
+const currentLevelIndex = computed(() => {
+  return parseInt(getStringParam(router, 'levelIndex') ?? '0')
+})
+
+const isGuidanceMode = ref<boolean>(false)
+const storyLineInfo = ref<StoryLine | null>(null)
+
+async function handleGuidance() {
+  if (getStringParam(router, 'guide') != null) {
+    isGuidanceMode.value = true
+    const storyLineId: string | null = getStringParam(router, 'storyLineId')
+    if (storyLineId != null) {
+      const data: StoryLine = await getStoryLine(storyLineId)
+      if (data) {
+        storyLineInfo.value = data
+      }
+    }
+  }
+}
 
 usePageTitle(() => ({
   en: `Edit ${props.projectName}`,
@@ -234,6 +267,7 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 }
 
 onMounted(() => {
+  handleGuidance()
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
@@ -265,5 +299,9 @@ function openProject(projectName: string) {
   display: flex;
   gap: var(--ui-gap-middle);
   padding: 16px;
+}
+
+.level-player {
+  z-index: 10;
 }
 </style>

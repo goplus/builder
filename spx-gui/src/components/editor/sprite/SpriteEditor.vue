@@ -1,18 +1,36 @@
 <template>
-  <EditorHeader>
-    <UITabs v-model:value="selectedTab" color="sprite">
-      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
-      <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
-      <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
-    </UITabs>
-    <template #extra>
-      <FormatButton v-if="selectedTab === 'code'" :code-file-path="sprite.codeFilePath" />
-    </template>
-  </EditorHeader>
-  <CodeEditorUI v-show="selectedTab === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
-  <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
+  <TagNode name="editor-header">
+    <EditorHeader>
+      <TagNode name="ui-tabs">
+        <UITabs v-model:value="selectedTab" color="sprite">
+          <TagNode name="tab-code">
+            <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
+          </TagNode>
+          <TagNode name="tab-costumes">
+            <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
+          </TagNode>
+          <TagNode name="tab-animations">
+            <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
+          </TagNode>
+        </UITabs>
+      </TagNode>
+      <template #extra>
+        <TagNode name="code-format-button">
+          <FormatButton v-if="selectedTab === 'code'" :code-file-path="sprite.codeFilePath" />
+        </TagNode>
+      </template>
+    </EditorHeader>
+  </TagNode>
+  <TagNode name="code-editor">
+    <CodeEditorUI v-show="selectedTab === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
+  </TagNode>
+  <TagNode name="costumes-editor">
+    <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
+  </TagNode>
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
-  <AnimationEditor v-if="selectedTab === 'animations'" :sprite="sprite" />
+  <TagNode name="animation-editor">
+    <AnimationEditor v-if="selectedTab === 'animations'" :sprite="sprite" />
+  </TagNode>
 </template>
 
 <script setup lang="ts">

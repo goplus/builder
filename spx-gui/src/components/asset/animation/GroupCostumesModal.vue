@@ -13,13 +13,13 @@
   >
     <div class="container">
       <ul class="costume-list">
-        <CostumeItem
-          v-for="costume in props.sprite.costumes"
-          :key="costume.id"
-          :costume="costume"
-          :checked="selectedCostumeSet.has(costume)"
-          @click="handleCostumeClick(costume)"
-        />
+        <TagNode v-for="costume in props.sprite.costumes" :key="costume.id" :name="costume.name">
+          <CostumeItem
+            :costume="costume"
+            :checked="selectedCostumeSet.has(costume)"
+            @click="handleCostumeClick(costume)"
+          />
+        </TagNode>
       </ul>
       <div class="sep"></div>
       <div class="preview">
@@ -41,9 +41,11 @@
           }}
         </span>
       </UICheckbox>
-      <UIButton size="large" :disabled="selectedCostumeSet.size === 0" @click="handleConfirm">
-        {{ $t({ en: 'Add animation', zh: '添加动画' }) }}
-      </UIButton>
+      <TagNode name="add-animation-button">
+        <UIButton size="large" :disabled="selectedCostumeSet.size === 0" @click="handleConfirm">
+          {{ $t({ en: 'Add animation', zh: '添加动画' }) }}
+        </UIButton>
+      </TagNode>
     </div>
   </UIFormModal>
 </template>

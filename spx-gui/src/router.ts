@@ -8,6 +8,10 @@ export function getProjectEditorRoute(projectName: string, publish = false) {
   return publish ? `/editor/${projectName}?publish` : `/editor/${projectName}`
 }
 
+export function getProjectEditorWithGuidanceRoute(projectName: string, storyLineId: string, levelIndex: number) {
+  return `/editor/${projectName}?guide&storyLineId=${storyLineId}&levelIndex=${levelIndex}`
+}
+
 export function getProjectPageRoute(owner: string, name: string) {
   return `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }

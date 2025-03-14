@@ -1,9 +1,11 @@
 <template>
   <main class="editor-item-detail">
-    <h4 class="name">
-      <AssetName>{{ name }}</AssetName>
-      <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="emit('rename')" />
-    </h4>
+    <TagNode name="editor-item-detail-name">
+      <h4 class="name">
+        <AssetName>{{ name }}</AssetName>
+        <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="emit('rename')" />
+      </h4>
+    </TagNode>
     <slot></slot>
   </main>
 </template>

@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script lang="ts" setup generic="T">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import maximizeSvg from './icons/maximize.svg'
 import minimizeSvg from './icons/minimize.svg'
@@ -72,16 +72,16 @@ import playSvg from './icons/play.svg'
 import pauseSvg from './icons/pause.svg'
 import playCenterSvg from './icons/play_center.svg'
 
-type Segment = {
+export type Segment<T> = {
   endTime: number
-  extension?: Object
+  extension?: T
 }
 type Props = {
   videoUrl: string
-  segments: Segment[]
+  segments: Segment<T>[]
 }
 type Events = {
-  segmentEnd: [segment: Segment]
+  segmentEnd: [segment: Segment<T>]
 }
 type Expose = {
   play(): void
@@ -91,6 +91,7 @@ type Expose = {
   endCurrentSegment(): void
   enterFullScreen(): void
   exitFullScreen(): void
+  reset(): void
 }
 
 const props = defineProps<Props>()
@@ -165,6 +166,8 @@ function hideCover() {
 function endCurrentSegment() {
   if (triggeredSegments.value !== null && videoRef.value) {
     const seg = props.segments[triggeredSegments.value[triggeredSegments.value.length - 1] + 1]
+    if (!seg) return
+
     // 快进到分段结束点
     videoRef.value.currentTime = seg.endTime
   }
@@ -182,6 +185,15 @@ function exitFullScreen() {
     isFullScreen.value = false
     document.exitFullscreen()
   }
+}
+
+/** 重置视频状态 */
+function reset() {
+  if (!videoRef.value) return
+  videoRef.value.currentTime = 0
+  pause()
+  triggeredSegments.value = [-1]
+  isPaused.value = true
 }
 
 /** 监听视频播放时间更新 */
@@ -205,6 +217,7 @@ function onTimeUpdate() {
 /** 视频播放结束重置状态 */
 function onVideoEnded() {
   triggeredSegments.value = [-1]
+  isPaused.value = true
 }
 
 /** 进度条显示控制 */
@@ -255,7 +268,8 @@ defineExpose<Expose>({
   hideCover,
   endCurrentSegment,
   enterFullScreen,
-  exitFullScreen
+  exitFullScreen,
+  reset
 })
 </script>
 

@@ -9,35 +9,51 @@
     >
       <template #trigger>
         <ul class="settings">
-          <li class="setting" :class="{ active: activeSetting === 'duration' }" @click="handleSummaryClick('duration')">
-            <UIIcon type="timer" />
-            {{ $t({ en: 'Duration', zh: '时长' }) }}
-            <span class="value">{{ formatDuration(animation.duration, 2) }}</span>
-          </li>
-          <li
-            class="setting"
-            :class="{ active: activeSetting === 'bound-state' }"
-            @click="handleSummaryClick('bound-state')"
-          >
-            <UIIcon type="status" />
-            {{ $t({ en: 'Binding', zh: '绑定' }) }}
-            <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
-          </li>
-          <li class="setting" :class="{ active: activeSetting === 'sound' }" @click="handleSummaryClick('sound')">
-            <UIIcon type="sound" />
-            {{ $t({ en: 'Sound', zh: '声音' }) }}
-            <span class="value">{{ soundName }}</span>
-          </li>
+          <TagNode name="animation-setting-timer">
+            <li
+              class="setting"
+              :class="{ active: activeSetting === 'duration' }"
+              @click="handleSummaryClick('duration')"
+            >
+              <UIIcon type="timer" />
+              {{ $t({ en: 'Duration', zh: '时长' }) }}
+              <span class="value">{{ formatDuration(animation.duration, 2) }}</span>
+            </li>
+          </TagNode>
+          <TagNode name="animation-setting-status">
+            <li
+              class="setting"
+              :class="{ active: activeSetting === 'bound-state' }"
+              @click="handleSummaryClick('bound-state')"
+            >
+              <UIIcon type="status" />
+              {{ $t({ en: 'Binding', zh: '绑定' }) }}
+              <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
+            </li>
+          </TagNode>
+          <TagNode name="animation-setting-sound">
+            <li class="setting" :class="{ active: activeSetting === 'sound' }" @click="handleSummaryClick('sound')">
+              <UIIcon type="sound" />
+              {{ $t({ en: 'Sound', zh: '声音' }) }}
+              <span class="value">{{ soundName }}</span>
+            </li>
+          </TagNode>
         </ul>
       </template>
-      <DurationEditor v-show="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
-      <BoundStateEditor
-        v-show="activeSetting === 'bound-state'"
-        :animation="animation"
-        :sprite="sprite"
-        @close="handleEditorClose"
-      />
-      <SoundEditor v-show="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
+      <TagNode name="duration-editor">
+        <DurationEditor v-show="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
+      </TagNode>
+      <TagNode name="bound-state-editor">
+        <BoundStateEditor
+          v-show="activeSetting === 'bound-state'"
+          :animation="animation"
+          :sprite="sprite"
+          @close="handleEditorClose"
+        />
+      </TagNode>
+      <TagNode name="sound-editor">
+        <SoundEditor v-show="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
+      </TagNode>
     </UIDropdown>
   </section>
 </template>

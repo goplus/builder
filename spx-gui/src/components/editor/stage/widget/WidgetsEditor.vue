@@ -2,30 +2,36 @@
   <UIEmpty v-if="stage.widgets.length === 0" size="extra-large">
     {{ $t({ en: 'No widgets', zh: '没有控件' }) }}
     <template #op>
-      <UIButton type="boring" size="large" @click="handleAddMonitor">
-        <template #icon>
-          <img :src="monitorIcon" />
-        </template>
-        {{ $t({ en: 'Add widget Monitor', zh: '添加监视器控件' }) }}
-      </UIButton>
+      <TagNode name="empty-add-widget">
+        <UIButton type="boring" size="large" @click="handleAddMonitor">
+          <template #icon>
+            <img :src="monitorIcon" />
+          </template>
+          {{ $t({ en: 'Add widget Monitor', zh: '添加监视器控件' }) }}
+        </UIButton>
+      </TagNode>
     </template>
   </UIEmpty>
   <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
-    <WidgetItem
-      v-for="widget in widgets"
-      :key="widget.id"
-      :widget="widget"
-      :selectable="{ selected: selected?.id === widget.id }"
-      removable
-      @click="handleSelect(widget)"
-    />
+    <TagNode v-for="widget in widgets" :key="widget.id" :name="widget.name.toLocaleLowerCase()">
+      <WidgetItem
+        :widget="widget"
+        :selectable="{ selected: selected?.id === widget.id }"
+        removable
+        @click="handleSelect(widget)"
+      />
+    </TagNode>
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddMonitor">{{ $t({ en: 'Monitor', zh: '监视器' }) }}</UIMenuItem>
+        <TagNode name="add-widget-monitor">
+          <UIMenuItem @click="handleAddMonitor">{{ $t({ en: 'Monitor', zh: '监视器' }) }}</UIMenuItem>
+        </TagNode>
       </UIMenu>
     </template>
     <template #detail>
-      <WidgetDetail v-if="selected != null" :widget="selected" />
+      <TagNode name="widget-detail">
+        <WidgetDetail v-if="selected != null" :widget="selected" />
+      </TagNode>
     </template>
   </EditorList>
 </template>

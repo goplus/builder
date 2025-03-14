@@ -100,21 +100,21 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mask {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
 }
 
 .svg-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
   pointer-events: none;
   width: 100vw;
   height: 100vh;
-  z-index: 9999;
 }
 
 .slot-container {

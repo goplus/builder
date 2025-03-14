@@ -1,5 +1,5 @@
 ```ts
-/** 
+/**
  * VideoPlayer定位仅为 视频播放器部分
  */
 type Props = {
@@ -18,6 +18,7 @@ type Expose = {
   endCurrentSegment(): void // 结束当前分段的视频播放
   enterFullScreen(): void // 进入全屏播放
   exitFullScreen(): void // 退出全屏播放
+  reset(): void // 重置视频状态
 }
 
 type Segment {
@@ -26,7 +27,7 @@ type Segment {
 }
 
 type Slots = {
-  /** 
+  /**
    * 供父组件插入的具名插槽(<slot name="cover"></slot>)，用于自定义展示视频上的封面 UI。
   */
   cover: unknown

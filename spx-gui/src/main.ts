@@ -8,8 +8,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/zh'
-
 import { initI18n } from './i18n'
+import { initTagging } from './utils/tagging'
 import App from './App.vue'
 import { initRouter } from './router'
 import { initUserStore, useUserStore } from './stores/user'
@@ -33,13 +33,13 @@ async function initApp() {
   initApiClient()
   initRouter(app)
   initI18n(app)
+  initTagging(app)
 
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })
 
   app.use(VueQueryPlugin)
-
   app.mount('#app')
 }
 

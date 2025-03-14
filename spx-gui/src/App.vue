@@ -1,18 +1,19 @@
 <template>
-  <UIConfigProvider :config="config">
-    <UIMessageProvider>
-      <UIModalProvider>
-        <RouterView />
-      </UIModalProvider>
-    </UIMessageProvider>
-  </UIConfigProvider>
+  <TagRoot>
+    <UIConfigProvider :config="config">
+      <UIMessageProvider>
+        <UIModalProvider>
+          <RouterView />
+        </UIModalProvider>
+      </UIMessageProvider>
+    </UIConfigProvider>
+  </TagRoot>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
-
 const { t } = useI18n()
 
 const config = computed<Config>(() => ({

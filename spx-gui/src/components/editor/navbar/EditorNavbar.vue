@@ -80,9 +80,11 @@
     </template>
     <template #right>
       <div v-show="project != null" class="publish">
-        <UIButton type="secondary" :disabled="!isOnline" @click="handlePublishProject">
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
+        <TagNode name="publish">
+          <UIButton type="secondary" :disabled="!isOnline" @click="handlePublishProject">
+            {{ $t({ en: 'Publish', zh: '发布' }) }}
+          </UIButton>
+        </TagNode>
       </div>
     </template>
   </NavbarWrapper>

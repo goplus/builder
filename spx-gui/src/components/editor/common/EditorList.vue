@@ -1,23 +1,32 @@
 <template>
   <div class="editor-list" :style="cssVars">
-    <div class="sider">
-      <ul class="items">
-        <slot></slot>
-      </ul>
-      <UIDropdownWithTooltip>
-        <template #dropdown-content>
-          <slot name="add-options"></slot>
-        </template>
-        <template #tooltip-content>
-          {{ addText }}
-        </template>
-        <template #trigger>
-          <button class="add">
-            <UIIcon class="icon" type="plus" />
-          </button>
-        </template>
-      </UIDropdownWithTooltip>
-    </div>
+    <TagNode name="editor-sider">
+      <div class="sider">
+        <TagNode name="editor-list-sider-items">
+          <ul class="items">
+            <slot></slot>
+          </ul>
+        </TagNode>
+        <TagNode name="dropdown-with-tooltip">
+          <div>
+            <UIDropdownWithTooltip>
+              <template #dropdown-content>
+                <slot name="add-options"></slot>
+              </template>
+              <template #tooltip-content>
+                {{ addText }}
+              </template>
+              <template #trigger>
+                <button class="add">
+                  <UIIcon class="icon" type="plus" />
+                </button>
+              </template>
+            </UIDropdownWithTooltip>
+          </div>
+        </TagNode>
+      </div>
+    </TagNode>
+
     <slot name="detail"></slot>
   </div>
 </template>

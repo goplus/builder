@@ -9,20 +9,14 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/llmprompt"
 )
 
 type Chat91DictCnGeminiClient struct {
 	endpoint string
 	client   *http.Client
 }
-
-// TODO Provide gop/spx knowledge to the llm in the storyline
-const prompt = `Strictly follow the following requirements to analyze whether the functions of the two pieces of code are consistent:
-1. Only consider the functional implementation of the code, not considering the differences in code style and format.
-2. Ignore naming differences such as variable names and function names.
-3. The final conclusion must and can only be answered in a single word: Yes/No.
-There may be supplementary information later, but keep in mind that the additional information is only there to introduce additional knowledge to help you identify the code.
-`
 
 func NewChat91DictCnGeminiClient(endpoint string) *Chat91DictCnGeminiClient {
 	return &Chat91DictCnGeminiClient{
@@ -39,7 +33,7 @@ func escape(s string) string {
 }
 
 func (c *Chat91DictCnGeminiClient) ContrastCode(ctx context.Context, content, code1, code2 string) (bool, error) {
-	chat := prompt
+	chat := llmprompt.CheckCodePrompt
 	escapedContent := escape(content)
 	escapedCode1 := escape(code1)
 	escapedCode2 := escape(code2)
