@@ -3,37 +3,48 @@
     <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
       <template v-if="props.step.type === 'coding'">
         <div class="code-button-container">
-          <UIButton type="success" size="medium" @click="handleCheckButtonClick">Check</UIButton>
-          <UIButton type="primary" size="medium" @click="handleInfoButtonClick">Info</UIButton>
-          <UIButton type="secondary" size="medium" @click="handleAnswerButtonClick">Answer</UIButton>
+          <UIButton type="success" size="medium" @click="handleCheckButtonClick">
+            {{ t({ zh: '检查', en: 'Check' }) }}
+          </UIButton>
+          <UIButton type="primary" size="medium" @click="handleInfoButtonClick">
+            {{ t({ zh: '信息', en: 'Info' }) }}
+          </UIButton>
+          <UIButton type="secondary" size="medium" @click="handleAnswerButtonClick">
+            {{ t({ zh: '答案', en: 'Answer' }) }}
+          </UIButton>
         </div>
         <div class="suggestion-box">
-          <ResultDialog :visible="isCheckingDialogVisible" :title="'代码检查中'" :content="''" :loading="true">
+          <ResultDialog
+            :visible="isCheckingDialogVisible"
+            :title="t({ zh: '代码检查中', en: 'Checking code' })"
+            :content="''"
+            :loading="true"
+          >
           </ResultDialog>
           <ResultDialog
             :visible="isNextDailogVisible"
-            :title="'检测结果'"
-            :content="'太棒了！你的代码检测通过！'"
-            :button="'下一步'"
+            :title="t({ zh: '检测结果', en: 'Check Result' })"
+            :content="t({ zh: '太棒了！你的代码检测通过！', en: 'Great! Your code check passed!' })"
+            :button="t({ zh: '下一步', en: 'Next' })"
             :button-action="'next'"
             @next="handleNextButtonClick"
           >
           </ResultDialog>
           <ResultDialog
             :visible="isRetryDialogVisible"
-            :title="'检测结果'"
-            :content="'错误\n' + props.step.tip.zh"
-            :button="'重试'"
+            :title="t({ zh: '检测结果', en: 'Check Result' })"
+            :content="t({ zh: '错误\n', en: 'Error\n' }) + props.step.tip.zh"
+            :button="t({ zh: '重试', en: 'Retry' })"
             :button-action="'retry'"
             @retry="handleRetryButtonClick"
           >
           </ResultDialog>
           <ResultDialog
             :visible="isAnswerDialogVisible"
-            :title="'参考答案'"
+            :title="t({ zh: '参考答案', en: 'Reference Answer' })"
             :content="''"
             :is-code="true"
-            :button="'关闭'"
+            :button="t({ zh: '关闭', en: 'Close' })"
             :button-action="'close'"
             :code="answer || ''"
             @close="handleAnswerCloseButtonClick"
@@ -41,18 +52,23 @@
           </ResultDialog>
           <ResultDialog
             :visible="isInfoDialogVisible"
-            :title="'当前步骤'"
+            :title="t({ zh: '当前步骤', en: 'Current Step' })"
             :content="props.step.description.zh"
-            :button="'关闭'"
+            :button="t({ zh: '关闭', en: 'Close' })"
             :button-action="'close'"
             @close="handleInfoCloseButtonClick"
           >
           </ResultDialog>
           <ResultDialog
             :visible="isTimeoutDialogVisible"
-            :title="'温馨提醒'"
-            :content="'牛小七发现你卡顿好久了...可以试着点击下方按钮直接查看答案哦～'"
-            :button="'查看答案'"
+            :title="t({ zh: '温馨提醒', en: 'Friendly Reminder' })"
+            :content="
+              t({
+                zh: '牛小七发现你卡顿好久了...可以试着点击下方按钮直接查看答案哦～',
+                en: 'Niuxiaoqi found you stuck for a long time... You can click the button below to view the answer directly~'
+              })
+            "
+            :button="t({ zh: '查看答案', en: 'View Answer' })"
             :button-action="'answer'"
             @answer="handleAnswerFromTimeout"
           >
@@ -122,6 +138,7 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from '@/utils/i18n'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
@@ -150,6 +167,8 @@ const isInfoDialogVisible = ref(false)
 const isTimeoutDialogVisible = ref(false)
 
 const answer = ref<string | null>(null)
+
+const { t } = useI18n()
 
 onMounted(async () => {
   console.log('StepPlayer mounted with step:', props.step)
