@@ -231,55 +231,127 @@ onBeforeUnmount(() => {
 })
 
 async function loadSnapshot(snapshotStr: string): Promise<void> {
-  if (!snapshotStr) return
+  if (!snapshotStr) {
+    console.log('快照字符串为空，直接返回')
+    return
+  }
 
   try {
     const project = editorCtx.project
-    if (!project) {
-      console.log("Project doesn't exist")
-      return
-    }
+    if (!project) return
 
+    // 解析快照字符串为 JSON 对象
     let fileMap: Record<string, string> = {}
     try {
       fileMap = JSON.parse(snapshotStr)
     } catch (parseError) {
-      console.error('Failed to parse snapshot:', parseError)
+      console.error('解析快照 JSON 失败:', parseError)
       return
     }
 
+    // 准备文件对象
     const files: Files = {}
+    let processedCount = 0
+    let errorCount = 0
 
+    // 处理每个文件路径
     for (const [path, content] of Object.entries(fileMap)) {
       if (typeof content === 'string') {
-        if (content.startsWith('data:')) {
-          try {
+        try {
+          // 处理 data URL 格式
+          if (content.startsWith('data:')) {
             const contentParts = content.split(',')
+
             if (contentParts.length > 1) {
+              let decodedContent = ''
               const base64Part = contentParts[1]
-              const decodedContent = atob(base64Part)
+
+              // 判断是否需要 URL 解码
+              const needsUrlDecode = base64Part.includes('%')
+
+              if (needsUrlDecode) {
+                try {
+                  const urlDecoded = decodeURIComponent(base64Part)
+                  if (!urlDecoded.match(/^[A-Za-z0-9+/=]+$/)) {
+                    decodedContent = urlDecoded
+                  } else {
+                    decodedContent = atob(urlDecoded)
+                  }
+                } catch (e) {
+                  decodedContent = base64Part
+                }
+              } else {
+                try {
+                  decodedContent = atob(base64Part)
+                } catch (e1) {
+                  try {
+                    const fixedBase64 = base64Part
+                      .replace(/-/g, '+')
+                      .replace(/_/g, '/')
+                      .padEnd(Math.ceil(base64Part.length / 4) * 4, '=')
+
+                    decodedContent = atob(fixedBase64)
+                  } catch (e2) {
+                    decodedContent = base64Part
+                  }
+                }
+              }
+
+              // 对 JSON 文件进行特殊处理
+              if (path.endsWith('.json')) {
+                try {
+                  JSON.parse(decodedContent)
+                } catch (jsonError) {
+                  console.warn(`文件 ${path} 解码后不是有效 JSON`)
+                  decodedContent = '{}'
+                }
+              }
+
               files[path] = fromText(path, decodedContent)
+              processedCount++
             } else {
               files[path] = fromText(path, '')
+              processedCount++
             }
-          } catch (e) {
-            console.error('Failed to decode data URL:', e)
+          } else {
+            files[path] = fromText(path, content)
+            processedCount++
           }
-        } else {
-          files[path] = fromText(path, content)
+        } catch (e) {
+          errorCount++
+          console.error(`处理文件失败: ${path}`, e)
         }
       }
     }
 
-    if (Object.keys(files).length === 0) {
-      console.log('No files to load')
-      return
+    console.log(`处理完成 成功: ${processedCount}, 错误: ${errorCount}`)
+
+    // 在加载前检查 JSON 文件的完整性
+    const jsonFiles = Object.keys(files).filter((path) => path.endsWith('.json'))
+    for (const jsonPath of jsonFiles) {
+      try {
+        const file = files[jsonPath]
+        if (file) {
+          const content = await toText(file)
+          JSON.parse(content)
+        }
+      } catch (e) {
+        console.warn(`移除无效 JSON: ${jsonPath}`)
+        delete files[jsonPath]
+      }
     }
 
-    await project.loadGameFiles(files)
-    console.log('Snapshot loaded successfully')
+    // 加载有效的文件
+    if (Object.keys(files).length > 0) {
+      try {
+        await project.loadGameFiles(files)
+        console.log('成功加载游戏文件')
+      } catch (loadError) {
+        console.error('加载游戏文件失败:', loadError)
+      }
+    }
   } catch (error) {
-    console.error('Failed to load snapshot:', error)
+    console.error('加载快照失败:', error)
   }
 }
 
