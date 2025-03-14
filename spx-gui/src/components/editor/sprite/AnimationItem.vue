@@ -1,17 +1,19 @@
 <template>
-  <UIEditorSpriteItem ref="wrapperRef" :selectable="selectable" :name="animation.name" :color="color">
-    <template #img="{ style }">
-      <CostumesAutoPlayer
-        v-if="autoplay || hovered"
-        :style="style"
-        :costumes="animation.costumes"
-        :duration="animation.duration"
-        :placeholder-img="imgSrc"
-      />
-      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
-    </template>
-    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
-  </UIEditorSpriteItem>
+  <TagNode :name="animation.name">
+    <UIEditorSpriteItem ref="wrapperRef" :selectable="selectable" :name="animation.name" :color="color">
+      <template #img="{ style }">
+        <CostumesAutoPlayer
+          v-if="autoplay || hovered"
+          :style="style"
+          :costumes="animation.costumes"
+          :duration="animation.duration"
+          :placeholder-img="imgSrc"
+        />
+        <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
+      </template>
+      <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
+    </UIEditorSpriteItem>
+  </TagNode>
 </template>
 
 <script setup lang="ts">

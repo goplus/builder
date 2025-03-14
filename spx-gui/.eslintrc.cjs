@@ -29,7 +29,9 @@ module.exports = {
           'router-view',
           'router-link',
           'v-.*', // for Vue Konva components
-          'I18nT'
+          'I18nT',
+          'TagRoot',
+          'TagNode' // for TagNode while register as a global component in main.ts
         ]
       }
     ],
@@ -41,8 +43,7 @@ module.exports = {
             // Workaround for https://github.com/vuejs/eslint-plugin-vue/issues/2437
             name: 'vue',
             importNames: ['defineProps', 'defineEmits'],
-            message:
-              '`defineProps` and `defineEmits` are compiler macros and no longer need to be imported.'
+            message: '`defineProps` and `defineEmits` are compiler macros and no longer need to be imported.'
           }
         ]
       }

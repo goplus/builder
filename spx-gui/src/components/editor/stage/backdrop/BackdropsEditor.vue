@@ -1,13 +1,13 @@
 <template>
   <EditorList color="stage" :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })">
-    <BackdropItem
-      v-for="backdrop in backdrops"
-      :key="backdrop.id"
-      :backdrop="backdrop"
-      :selectable="{ selected: selected?.id === backdrop.id }"
-      removable
-      @click="handleSelect(backdrop)"
-    />
+    <TagNode v-for="backdrop in backdrops" :key="backdrop.id" :name="backdrop.name.toLocaleLowerCase()">
+      <BackdropItem
+        :backdrop="backdrop"
+        :selectable="{ selected: selected?.id === backdrop.id }"
+        removable
+        @click="handleSelect(backdrop)"
+      />
+    </TagNode>
     <template #add-options>
       <UIMenu>
         <UIMenuItem @click="handleAddFromLocalFile">{{
@@ -19,7 +19,9 @@
       </UIMenu>
     </template>
     <template #detail>
-      <BackdropDetail v-if="selected != null" :backdrop="selected" />
+      <TagNode name="backdrop-detail">
+        <BackdropDetail v-if="selected != null" :backdrop="selected" />
+      </TagNode>
     </template>
   </EditorList>
 </template>

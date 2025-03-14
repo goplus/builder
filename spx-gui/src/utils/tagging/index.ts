@@ -1,4 +1,6 @@
-import { ref } from 'vue'
+import { ref, type App } from 'vue'
+import TagNode from './TagNode.vue'
+import TagRoot from './TagRoot.vue'
 
 export interface TagNode {
   name: string
@@ -32,4 +34,9 @@ export function useTag() {
   return {
     getElement
   }
+}
+
+export function initTagging(app: App) {
+  app.component('TagRoot', TagRoot)
+  app.component('TagNode', TagNode)
 }

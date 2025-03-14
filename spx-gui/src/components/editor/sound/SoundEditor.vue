@@ -1,48 +1,65 @@
 <template>
-  <EditorHeader>
-    <UITabs value="sound" color="sound">
-      <UITab value="sound">{{ $t({ en: 'Sound', zh: '声音' }) }}</UITab>
-    </UITabs>
-  </EditorHeader>
+  <TagNode name="sound-editor-header">
+    <EditorHeader>
+      <UITabs value="sound" color="sound">
+        <UITab value="sound">{{ $t({ en: 'Sound', zh: '声音' }) }}</UITab>
+      </UITabs>
+    </EditorHeader>
+  </TagNode>
+
   <div class="main">
-    <div class="header">
-      <div class="name">
-        <AssetName>{{ sound.name }}</AssetName>
-        <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+    <TagNode name="sound-name">
+      <div class="header">
+        <div class="name">
+          <AssetName>{{ sound.name }}</AssetName>
+          <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+        </div>
+        <div class="duration">
+          {{ formattedTrimmedDuration || '&nbsp;' }}
+        </div>
       </div>
-      <div class="duration">
-        {{ formattedTrimmedDuration || '&nbsp;' }}
-      </div>
-    </div>
-    <WaveformPlayer
-      ref="waveformPlayerRef"
-      v-model:range="audioRange"
-      class="waveform-player"
-      :audio-src="audioUrl || undefined"
-      :gain="gain"
-      @progress="handleProgress"
-      @stop="handleStop"
-      @play="handlePlay"
-    />
-    <div class="opeartions">
-      <DumbSoundPlayer
-        color="sound"
-        class="play-button"
-        :playing="playing != null"
-        :progress="playing?.progress ?? 0"
-        :play-handler="handlePlayClick"
-        :loading="audioLoading"
-        @stop="handleStopClick"
+    </TagNode>
+    <TagNode name="waveform-player">
+      <WaveformPlayer
+        ref="waveformPlayerRef"
+        v-model:range="audioRange"
+        class="waveform-player"
+        :audio-src="audioUrl || undefined"
+        :gain="gain"
+        @progress="handleProgress"
+        @stop="handleStop"
+        @play="handlePlay"
       />
-      <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
-      <div class="spacer" />
-      <div v-if="editing" class="editing-buttons">
-        <UIButton type="boring" @click="handleResetEdit">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
-        <UIButton type="success" icon="check" :loading="handleSave.isLoading.value" @click="handleSave.fn">
-          {{ $t({ en: 'Save', zh: '保存' }) }}
-        </UIButton>
+    </TagNode>
+
+    <TagNode name="sound-editor-opeartions">
+      <div class="opeartions">
+        <TagNode name="sound-player">
+          <DumbSoundPlayer
+            color="sound"
+            class="play-button"
+            :playing="playing != null"
+            :progress="playing?.progress ?? 0"
+            :play-handler="handlePlayClick"
+            :loading="audioLoading"
+            @stop="handleStopClick"
+          />
+        </TagNode>
+
+        <TagNode name="volume-slider">
+          <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
+        </TagNode>
+        <div class="spacer" />
+        <TagNode name="sound-editing">
+          <div v-if="editing" class="editing-buttons">
+            <UIButton type="boring" @click="handleResetEdit">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
+            <UIButton type="success" icon="check" :loading="handleSave.isLoading.value" @click="handleSave.fn">
+              {{ $t({ en: 'Save', zh: '保存' }) }}
+            </UIButton>
+          </div>
+        </TagNode>
       </div>
-    </div>
+    </TagNode>
   </div>
 </template>
 
