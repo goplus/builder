@@ -1,6 +1,7 @@
 module github.com/goplus/builder/spx-backend
 
 go 1.21.0
+toolchain go1.24.1
 
 require (
 	github.com/go-sql-driver/mysql v1.9.0
@@ -9,7 +10,7 @@ require (
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/x v1.13.12
 	gocloud.dev v0.36.0 // indirect
-	golang.org/x/mod v0.20.0
+	golang.org/x/mod v0.24.0
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 )
 
