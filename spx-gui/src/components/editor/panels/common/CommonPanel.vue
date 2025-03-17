@@ -3,12 +3,15 @@
 <template>
   <div class="common-panel" :class="{ expanded }" :style="cssVars">
     <section v-show="expanded" class="details">
-      <PanelHeader :active="active">
-        {{ title }}
-        <template #add-options>
-          <slot name="add-options"></slot>
-        </template>
-      </PanelHeader>
+      <TagNode name="panel-header">
+        <PanelHeader :active="active">
+          {{ title }}
+          <template #add-options>
+            <slot name="add-options"></slot>
+          </template>
+        </PanelHeader>
+      </TagNode>
+
       <slot name="details"></slot>
     </section>
     <section v-show="!expanded" class="summary" @click="emit('expand')">

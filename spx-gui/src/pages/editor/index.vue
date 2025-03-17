@@ -1,23 +1,27 @@
 <template>
   <section class="editor-home">
-    <header class="editor-header">
-      <EditorNavbar :project="project" />
-    </header>
-    <main v-if="userInfo" class="editor-main">
-      <UILoading v-if="allQueryRet.isLoading.value" />
-      <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
-        {{ $t(allQueryRet.error.value.userMessage) }}
-      </UIError>
-      <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
-        <ProjectEditor />
-        <LevelPlayer
-          v-if="isGuidanceMode && storyLineInfo"
-          class="level-player"
-          :story-line-info="storyLineInfo"
-          :current-level-index="currentLevelIndex"
-        />
-      </EditorContextProvider>
-    </main>
+    <TagNode name="editor-header">
+      <header class="editor-header">
+        <EditorNavbar :project="project" />
+      </header>
+    </TagNode>
+    <TagNode name="editor-main">
+      <main v-if="userInfo" class="editor-main">
+        <UILoading v-if="allQueryRet.isLoading.value" />
+        <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
+          {{ $t(allQueryRet.error.value.userMessage) }}
+        </UIError>
+        <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
+          <ProjectEditor />
+          <LevelPlayer
+            v-if="isGuidanceMode && storyLineInfo"
+            class="level-player"
+            :story-line-info="storyLineInfo"
+            :current-level-index="currentLevelIndex"
+          />
+        </EditorContextProvider>
+      </main>
+    </TagNode>
   </section>
 </template>
 
@@ -44,6 +48,7 @@ import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
 import { getStoryLine, type StoryLine } from '@/apis/guidance'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
   projectName: string

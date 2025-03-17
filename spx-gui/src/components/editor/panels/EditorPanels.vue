@@ -1,14 +1,26 @@
 <template>
   <div v-show="running.mode !== 'debug'" class="editor-panels">
-    <UICard class="main">
-      <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
-      <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
-    </UICard>
-    <UICard class="sider">
-      <StagePanel></StagePanel>
-    </UICard>
+    <TagNode name="main-panel">
+      <UICard class="main">
+        <TagNode name="sprites-panel">
+          <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
+        </TagNode>
+        <TagNode name="sounds-panel">
+          <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
+        </TagNode>
+      </UICard>
+    </TagNode>
+    <TagNode name="sider-panel">
+      <UICard class="sider">
+        <TagNode name="stage-panel">
+          <StagePanel></StagePanel>
+        </TagNode>
+      </UICard>
+    </TagNode>
   </div>
-  <ConsolePanel v-show="running.mode === 'debug'" class="console-panel" />
+  <TagNode name="console-panel">
+    <ConsolePanel v-show="running.mode === 'debug'" class="console-panel" />
+  </TagNode>
 </template>
 
 <script setup lang="ts">

@@ -1,7 +1,6 @@
 <!-- Header for Sprite/Sound Panel -->
-
+<!-- TODO: use UICardHeader? -->
 <template>
-  <!-- TODO: use UICardHeader? -->
   <div class="panel-header" :class="{ active }">
     <div class="main">
       <slot></slot>
