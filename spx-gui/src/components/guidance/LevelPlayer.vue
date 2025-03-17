@@ -159,9 +159,6 @@ import { useRouter } from 'vue-router'
 import { useMessage, UIButton } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useUserStore } from '@/stores/user'
-import { Project } from '@/models/project'
-import { Visibility } from '@/apis/project'
 
 const router = useRouter()
 
@@ -222,9 +219,6 @@ function handleStartNodeTask(): void {
 }
 
 const isLastLevel = ref<boolean>(false)
-const userStore = useUserStore()
-
-const signedInUser = computed(() => userStore.getSignedInUser())
 /**
  * 节点任务完成
  */
@@ -240,13 +234,7 @@ async function handleNodeTaskCompleted(): Promise<void> {
     if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
       // 提示，展示 ending UI
       isLastLevel.value = true
-      // 创建一个 project B
-      const owner = await untilNotNull(signedInUser)
-      const project = new Project(owner.name, projectName.value)
-      const [metadata, files] = await project.export()
-      await project.load(metadata, files)
-      project.setVisibility(Visibility.Private)
-      await project.saveToCloud()
+      // TODO: 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
     } else {
       isLastLevel.value = false
     }
