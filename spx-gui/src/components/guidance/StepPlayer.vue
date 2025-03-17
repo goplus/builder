@@ -126,8 +126,7 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
-import { urlSafeBase64Decode } from 'qiniu-js'
-import { fromText, toText, type Files } from '@/models/common/file'
+import { toText, type Files } from '@/models/common/file'
 import { useI18n } from '@/utils/i18n'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
