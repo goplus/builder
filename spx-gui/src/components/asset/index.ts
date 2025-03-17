@@ -48,9 +48,9 @@ export function useAddAssetFromLibrary(autoSelect = true) {
 }
 
 export function useSaveAssetToLibrary() {
-  const invokeAddAssetModal = useModal(AssetSaveModal)
-  return function addAssetToLibrary(resourceModel: AssetModel) {
-    return invokeAddAssetModal({ resourceModel })
+  const invokeAssetSaveModal = useModal(AssetSaveModal)
+  return function saveAssetToLibrary(model: AssetModel) {
+    return invokeAssetSaveModal({ model })
   }
 }
 

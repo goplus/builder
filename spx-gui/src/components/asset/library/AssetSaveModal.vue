@@ -19,7 +19,7 @@ import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { validateAssetDisplayName, getAssetDisplayNameTip } from '@/models/common/asset-name'
-import type { PartialAssetData } from '@/models/common/asset'
+import type { AssetModel, PartialAssetData } from '@/models/common/asset'
 import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
@@ -31,7 +31,7 @@ import SoundPreview from './SoundPreview.vue'
 
 const props = defineProps<{
   visible: boolean
-  resourceModel: Backdrop | Sound | Sprite
+  model: AssetModel
 }>()
 
 const emit = defineEmits<{
@@ -59,7 +59,7 @@ const {
 } = useQuery(
   async () => {
     if (!advancedLibraryEnabled.value) return null
-    const metadata = props.resourceModel.assetMetadata
+    const metadata = props.model.assetMetadata
     if (metadata == null || metadata.owner !== user.value.name) return null
     return getAsset(metadata.id).catch((e) => {
       console.warn('failed to get existed asset', e)
@@ -73,44 +73,51 @@ const {
 )
 
 const assetType = computed(() => {
-  if (props.resourceModel instanceof Backdrop) return AssetType.Backdrop
-  if (props.resourceModel instanceof Sound) return AssetType.Sound
-  if (props.resourceModel instanceof Sprite) return AssetType.Sprite
-  throw new Error(`unknown asset type ${props.resourceModel}`)
+  if (props.model instanceof Backdrop) return AssetType.Backdrop
+  if (props.model instanceof Sound) return AssetType.Sound
+  if (props.model instanceof Sprite) return AssetType.Sprite
+  throw new Error(`unknown asset type ${props.model}`)
 })
 
 const categories = computed(() => getAssetCategories(assetType.value))
 
+enum Action {
+  /** Save by updating existed asset */
+  Update = 'update',
+  /** Save by creating new asset */
+  Create = 'create'
+}
+
 const form = useForm({
-  name: [props.resourceModel.name, (n) => t(validateAssetDisplayName(n) ?? null)],
+  name: [props.model.name, (n) => t(validateAssetDisplayName(n) ?? null)],
   category: [categoryAll.value],
-  action: ['create']
+  action: [Action.Create]
 })
 
 watch(existedAsset, (ea) => {
   if (ea == null) return
   form.value.name = ea.displayName
   form.value.category = ea.category
-  form.value.action = 'update'
+  form.value.action = Action.Update
 })
 
-const withConfirm = useConfirmDialog()
+const confirm = useConfirmDialog()
 
 const handleSubmit = useMessageHandle(
   async () => {
     let params: PartialAssetData
-    if (props.resourceModel instanceof Backdrop) {
-      params = await backdrop2Asset(props.resourceModel)
-    } else if (props.resourceModel instanceof Sound) {
-      params = await sound2Asset(props.resourceModel)
-    } else if (props.resourceModel instanceof Sprite) {
-      params = await sprite2Asset(props.resourceModel)
+    if (props.model instanceof Backdrop) {
+      params = await backdrop2Asset(props.model)
+    } else if (props.model instanceof Sound) {
+      params = await sound2Asset(props.model)
+    } else if (props.model instanceof Sprite) {
+      params = await sprite2Asset(props.model)
     } else {
-      throw new Error(`unknown asset type ${props.resourceModel}`)
+      throw new Error(`unknown asset type ${props.model}`)
     }
 
     let saved: AssetData
-    if (existedAsset.value != null && form.value.action === 'update') {
+    if (existedAsset.value != null && form.value.action === Action.Update) {
       const { id, visibility } = existedAsset.value
       saved = await updateAsset(id, {
         displayName: form.value.name,
@@ -118,13 +125,13 @@ const handleSubmit = useMessageHandle(
         category: form.value.category,
         files: params.files,
         filesHash: params.filesHash,
-        visibility: visibility
+        visibility
       })
     } else {
       saved = await addAssetWithParams(params)
     }
     const { files, ...metadata } = saved
-    props.resourceModel.setAssetMetadata(metadata)
+    props.model.setAssetMetadata(metadata)
     emit('resolved')
     return saved
   },
@@ -154,7 +161,7 @@ async function addAssetWithParams(params: PartialAssetData) {
         assetTypeName = t({ en: 'sound', zh: '声音' })
         break
     }
-    await withConfirm({
+    await confirm({
       type: 'warning',
       title: t({
         en: `Duplicate ${assetTypeName} confirmation`,
@@ -189,9 +196,9 @@ async function addAssetWithParams(params: PartialAssetData) {
     <UIForm v-else :form="form" @submit="handleSubmit.fn">
       <main class="main">
         <div class="sider">
-          <BackdropPreview v-if="resourceModel instanceof Backdrop" class="preview" :backdrop="resourceModel" />
-          <SpritePreview v-if="resourceModel instanceof Sprite" class="preview" :sprite="resourceModel" />
-          <SoundPreview v-if="resourceModel instanceof Sound" class="preview" :sound="resourceModel" />
+          <BackdropPreview v-if="model instanceof Backdrop" class="preview" :backdrop="model" />
+          <SpritePreview v-if="model instanceof Sprite" class="preview" :sprite="model" />
+          <SoundPreview v-if="model instanceof Sound" class="preview" :sound="model" />
         </div>
         <div class="inputs">
           <UIFormItem path="name">
@@ -210,7 +217,7 @@ async function addAssetWithParams(params: PartialAssetData) {
           >
             <UIRadioGroup v-model:value="form.value.action">
               <UIRadio
-                value="update"
+                :value="Action.Update"
                 :label="
                   $t({
                     en: `Update existed asset (${existedAsset.displayName})`,
@@ -218,7 +225,7 @@ async function addAssetWithParams(params: PartialAssetData) {
                   })
                 "
               />
-              <UIRadio value="create" :label="$t({ en: 'Create new asset', zh: '创建新素材' })" />
+              <UIRadio :value="Action.Create" :label="$t({ en: 'Create new asset', zh: '创建新素材' })" />
             </UIRadioGroup>
           </UIFormItem>
         </div>
