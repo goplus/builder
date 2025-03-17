@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useTag } from '../../utils/tagging'
 import { useElementRect } from '../../utils/dom'
 
@@ -16,41 +16,10 @@ const props = defineProps<{
 }>()
 
 const { getElement } = useTag()
-const targetElement = ref<HTMLElement | null>(null)
 
-onMounted(() => {
-  setTimeout(() => {
-    updateTargetElement()
-  }, 0)
+const targetElement = computed(() => {
+  return props.visible ? getElement(props.highlightElementPath) : null
 })
-
-function updateTargetElement() {
-  if (!props.visible) {
-    targetElement.value = null
-    return
-  }
-
-  if (!props.highlightElementPath) {
-    targetElement.value = null
-    return
-  }
-
-  try {
-    const elementPath = String(props.highlightElementPath)
-
-    const isValidPath = /^[a-zA-Z0-9_\-/.]+$/.test(elementPath)
-    if (!isValidPath) {
-      console.warn(`目标元素路径格式可能无效: "${elementPath}"`)
-    }
-
-    targetElement.value = getElement(elementPath)
-  } catch (error) {
-    targetElement.value = null
-  }
-}
-
-watch(() => props.highlightElementPath, updateTargetElement)
-watch(() => props.visible, updateTargetElement)
 
 const elementRect = useElementRect(targetElement)
 
@@ -69,13 +38,7 @@ const highlightRect = computed<HighlightRect>(() => {
       height: rect.height + 20
     }
   }
-  // 使用默认位置
-  return {
-    left: 0,
-    top: 0,
-    width: screenWidth.value,
-    height: screenHeight.value
-  }
+  return { left: 0, top: 0, width: 0, height: 0 }
 })
 
 function createRoundedRectPath(x: number, y: number, w: number, h: number, r: number) {
