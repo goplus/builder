@@ -159,8 +159,6 @@ const answer = ref<string | null>(null)
 const { t } = useI18n()
 
 onMounted(async () => {
-  console.log('StepPlayer mounted with step:', props.step)
-
   try {
     if (props.step.type === 'coding' && props.step.coding?.path) {
       answer.value = await extractAnswerFromFile(props.step.coding.path)
@@ -192,12 +190,12 @@ onKey KeyDown, => {
   try {
     if (props.step.snapshot?.startSnapshot) {
       await loadSnapshot(props.step.snapshot.startSnapshot)
-      console.log('Snapshot loaded successfully')
+      console.log('Snapshot 加载完成')
     } else {
-      console.log('No snapshot to load')
+      console.log('未提供开始快照')
     }
   } catch (error) {
-    console.error('Failed to load snapshot:', error)
+    console.error('快照加载出错：', error)
   }
 
   // 设置过滤器
