@@ -71,10 +71,10 @@ const highlightRect = computed<HighlightRect>(() => {
   }
   // 使用默认位置
   return {
-    left: screenWidth.value / 2 - 100,
-    top: screenHeight.value / 2 - 100,
-    width: 200,
-    height: 200
+    left: 0,
+    top: 0,
+    width: screenWidth.value,
+    height: screenHeight.value
   }
 })
 
