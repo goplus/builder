@@ -1,4 +1,5 @@
 <template>
+  <div v-if="levelIntroVisible" class="mask"></div>
   <!-- 关卡介绍 -->
   <div v-if="levelIntroVisible" class="intro">
     <div class="intro-title">
@@ -46,7 +47,11 @@
               {{ level.nodeTasks.length }}</span
             >
           </div>
-          <div class="navbar-right"></div>
+          <div class="navbar-right">
+            <UIButton class="browse-btn" type="secondary" size="small" :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING" @click="handleToClick('skipVideo')">
+              {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
+            </UIButton>
+          </div>
         </div>
         <VideoPlayer
           ref="videoPlayerRef"
@@ -56,7 +61,7 @@
           @segment-end="handleSegmentEnd"
         >
           <template #cover>
-            <div v-if="coverType === CoverType.LEVEL_END" class="cover cover-bg">
+            <div v-if="levelStatus === LevelStatusType.LEVEL_END" class="cover cover-bg">
               <div class="achievement">
                 <div class="achievement-img">
                   <img v-if="level.achievement.icon" :src="level.achievement.icon" alt="" />
@@ -93,10 +98,10 @@
                 </div>
               </div>
             </div>
-            <div v-if="coverType === CoverType.LEVEL_START" class="cover">
+            <div v-if="levelStatus === LevelStatusType.LEVEL_START" class="cover">
               <!-- 此处播放视频，不展示cover -->
             </div>
-            <div v-if="coverType === CoverType.NODE_TASK_START" class="cover cover-bg">
+            <div v-if="levelStatus === LevelStatusType.NODE_TASK_START" class="cover cover-bg">
               <div class="cover-title">
                 <span>{{
                   $t({ zh: '现在，请你开始本节点任务！', en: 'Now, please start the task of this part' })
@@ -111,14 +116,14 @@
                 <span>{{ $t({ zh: '现在开始', en: 'Get start' }) }}</span>
               </div>
             </div>
-            <div v-if="coverType === CoverType.NODE_TASK_PENDING" class="cover cover-bg">
+            <div v-if="levelStatus === LevelStatusType.NODE_TASK_PENDING" class="cover cover-bg">
               <div class="cover-desc">
                 <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
                   Step{{ index + 1 }}: {{ $t(item.title) }}
                 </div>
               </div>
             </div>
-            <div v-if="coverType === CoverType.NODE_TASK_END" class="cover">
+            <div v-if="levelStatus === LevelStatusType.NODE_TASK_END" class="cover">
               <!-- 此时播放视频 不展示cover -->
             </div>
           </template>
@@ -151,7 +156,7 @@ import { useDrag } from '@/utils/dom'
 import { untilNotNull } from '@/utils/utils'
 import type { ComponentExposed } from '@/utils/types'
 import { useRouter } from 'vue-router'
-import { useMessage } from '@/components/ui'
+import { useMessage, UIButton } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -179,22 +184,23 @@ const videoPlayerSegments = computed<LevelSegment[]>(() => {
   })
 })
 
-// 视频组件封面类型
-enum CoverType {
-  LEVEL_START, // 视频开始封面
-  NODE_TASK_START, // 节点任务开始封面
-  NODE_TASK_PENDING, // 节点任务进行中封面
-  NODE_TASK_END, // 节点任务结束封面，此时播放视频，不展示cover
-  LEVEL_END // 关卡完成封面
+// 关卡内部状态
+enum LevelStatusType {
+  LEVEL_START, // 视频开始
+  VIDEO_PLAYING, // 视频播放中
+  NODE_TASK_START, // 节点任务开始 (视频播放结束)
+  NODE_TASK_PENDING, // 节点任务进行中
+  NODE_TASK_END, // 节点任务结束封面，此时播放视频，不展示cover （视频开始i播放）
+  LEVEL_END // 关卡完成
 }
 
-const coverType = ref<CoverType>(CoverType.LEVEL_START)
+const levelStatus = ref<LevelStatusType>(LevelStatusType.LEVEL_START)
 /**
  * 视频段播放完成
  * @param segment 回传的片段参数
  */
 function handleSegmentEnd(segment: LevelSegment): void {
-  coverType.value = CoverType.NODE_TASK_START
+  levelStatus.value = LevelStatusType.NODE_TASK_START
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
 
@@ -207,7 +213,7 @@ function handleSegmentEnd(segment: LevelSegment): void {
  * 节点任务开始
  */
 function handleStartNodeTask(): void {
-  coverType.value = CoverType.NODE_TASK_PENDING
+  levelStatus.value = LevelStatusType.NODE_TASK_PENDING
   videoPlayerRef.value?.exitFullScreen()
   videoPlayerVisible.value = false
 }
@@ -217,17 +223,18 @@ const isLastLevel = ref<boolean>(false)
  * 节点任务完成
  */
 async function handleNodeTaskCompleted(): Promise<void> {
-  coverType.value = CoverType.NODE_TASK_END
+  levelStatus.value = LevelStatusType.NODE_TASK_END
   videoPlayerVisible.value = true
   // 当前关卡最后一个节点任务完成
   if (currentNodeTaskIndex.value === level.value.nodeTasks.length - 1) {
     // 更新 关卡完结cover
-    coverType.value = CoverType.LEVEL_END
+    levelStatus.value = LevelStatusType.LEVEL_END
     videoPlayerRef.value?.showCover()
     // 如果是最后一个关卡
     if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
       // 提示，展示 ending UI
       isLastLevel.value = true
+      // TODO: 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
     } else {
       isLastLevel.value = false
     }
@@ -239,6 +246,7 @@ async function handleNodeTaskCompleted(): Promise<void> {
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
+    levelStatus.value = LevelStatusType.VIDEO_PLAYING
   }
   currentNodeTaskIndex.value = null
   currentNodeTask.value = null
@@ -259,9 +267,10 @@ const levelIntroVisible = ref<boolean>(true)
 async function handleStartLevel(): Promise<void> {
   levelIntroVisible.value = false
   videoPlayerVisible.value = true
-  coverType.value = CoverType.LEVEL_START
+  levelStatus.value = LevelStatusType.LEVEL_START
   const videoPlayer = await untilNotNull(videoPlayerRef)
   videoPlayer.play()
+  levelStatus.value = LevelStatusType.VIDEO_PLAYING
 }
 
 const m = useMessage()
@@ -272,6 +281,11 @@ const { t } = useI18n()
  */
 function handleToClick(target: string): void {
   switch (target) {
+    case 'skipVideo':
+      if (levelStatus.value === LevelStatusType.VIDEO_PLAYING) {
+        videoPlayerRef.value?.endCurrentSegment()
+      }
+      break
     case 'storyline':
       router.push(`/storyline/${props.storyLineInfo.id}`)
       break
@@ -294,7 +308,8 @@ function handleToClick(target: string): void {
       currentNodeTask.value = null
       videoPlayerRef.value?.hideCover()
       currentNodeTaskIndex.value = 0
-      // 还要等VideoPlayer的reset接口
+      videoPlayerRef.value?.reset()
+      handleStartLevel()
       break
   }
 }
@@ -343,9 +358,19 @@ export function useLevelPlayerCtx() {
 }
 </script>
 <style lang="scss" scoped>
+.mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
 .level-player {
   width: 500px;
   position: absolute;
+  z-index: 20;
 }
 .card-group {
   position: relative;
@@ -509,6 +534,7 @@ export function useLevelPlayerCtx() {
   transform: translate(-50%, -50%);
   padding: 20px 25px;
   box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.3);
+  z-index: 15;
   .intro-title {
     display: flex;
     flex-direction: column;
