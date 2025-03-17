@@ -3,16 +3,23 @@ import { resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
 import type { File, Files } from './common/file'
 import { getBackdropName, validateBackdropName } from './common/asset-name'
+import type { AssetMetadata } from './common/asset'
 import type { Stage } from './stage'
 import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 
-export type BackdropInits = CostumeInits
-export type RawBackdropConfig = RawCostumeConfig
+export type BackdropInits = CostumeInits & {
+  assetMetadata?: AssetMetadata
+}
+
+export type RawBackdropConfig = RawCostumeConfig & {
+  builder_assetMetadata?: AssetMetadata
+}
 
 const backdropAssetPath = 'assets'
 
 export type BackdropExportLoadOptions = {
   includeId?: boolean
+  includeAssetMetadata?: boolean
 }
 
 // Backdrop is almost the same as Costume
@@ -28,8 +35,14 @@ export class Backdrop extends Costume {
     this.name = name
   }
 
+  assetMetadata: AssetMetadata | null
+  setAssetMetadata(metadata: AssetMetadata | null) {
+    this.assetMetadata = metadata
+  }
+
   constructor(name: string, file: File, inits?: BackdropInits) {
     super(name, file, inits)
+    this.assetMetadata = inits?.assetMetadata ?? null
     return reactive(this) as this
   }
 
@@ -48,7 +61,7 @@ export class Backdrop extends Costume {
   static load(
     { name, path, builder_id: id, ...inits }: RawBackdropConfig,
     files: Files,
-    { includeId = true }: BackdropExportLoadOptions = {}
+    { includeId = true, includeAssetMetadata: includeMetadata = true }: BackdropExportLoadOptions = {}
   ) {
     if (name == null) throw new Error(`name expected for backdrop`)
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
@@ -56,11 +69,20 @@ export class Backdrop extends Costume {
     if (file == null) throw new Error(`file ${path} for backdrop ${name} not found`)
     return new Backdrop(name, file, {
       ...inits,
-      id: includeId ? id : undefined
+      id: includeId ? id : undefined,
+      assetMetadata: includeMetadata ? inits.builder_assetMetadata : undefined
     })
   }
 
-  export({ includeId = true }: BackdropExportLoadOptions = {}): [RawBackdropConfig, Files] {
-    return super.export({ basePath: backdropAssetPath, includeId })
+  export({ includeId = true, includeAssetMetadata: includeMetadata = true }: BackdropExportLoadOptions = {}): [
+    RawBackdropConfig,
+    Files
+  ] {
+    const [costumeConfig, files] = super.export({ basePath: backdropAssetPath, includeId })
+    let config: RawBackdropConfig = costumeConfig
+    if (includeMetadata && this.assetMetadata != null) {
+      config = { ...config, builder_assetMetadata: this.assetMetadata }
+    }
+    return [config, files]
   }
 }

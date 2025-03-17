@@ -10,12 +10,13 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
+    <UICornerIcon v-show="selected" type="check" />
   </UISpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIImg, UISpriteItem } from '@/components/ui'
+import { UIImg, UISpriteItem, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'

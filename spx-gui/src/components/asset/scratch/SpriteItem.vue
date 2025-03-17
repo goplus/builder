@@ -10,12 +10,13 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgSrc == null" />
     </template>
+    <UICornerIcon v-show="selected" type="check" />
   </UISpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { UIImg, UISpriteItem } from '@/components/ui'
+import { UIImg, UISpriteItem, UICornerIcon } from '@/components/ui'
 import { useHovered } from '@/utils/dom'
 import type { ExportedScratchFile, ExportedScratchSprite } from '@/utils/scratch'
 import { fromBlob } from '@/models/common/file'

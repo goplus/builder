@@ -28,16 +28,6 @@ export const isSound = (url: string): boolean => {
   return ['wav', 'mp3', 'ogg'].includes(extension)
 }
 
-/**
- * If add-to-public-library features are enabled.
- * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).
- * These features are only enabled when there is `?library` in URL query. A simple & ugly interface will be provided.
- * This is an informal & temporary behavior.
- */
-export function isAddPublicLibraryEnabled() {
-  return /\blibrary\b/.test(window.location.search)
-}
-
 /** Manage spx version. */
 export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
   return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')

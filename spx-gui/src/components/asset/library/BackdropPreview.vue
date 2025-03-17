@@ -3,13 +3,20 @@
 </template>
 
 <script setup lang="ts">
-import { UIImg } from '@/components/ui'
-import type { Backdrop } from '@/models/backdrop'
+import { useAsyncComputed } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
+import type { AssetData } from '@/apis/asset'
+import { asset2Backdrop } from '@/models/common/asset'
+import { Backdrop } from '@/models/backdrop'
+import { UIImg } from '@/components/ui'
 
 const props = defineProps<{
-  backdrop: Backdrop
+  backdrop: Backdrop | AssetData
 }>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
+const backdrop = useAsyncComputed(async () => {
+  if (props.backdrop instanceof Backdrop) return props.backdrop
+  return asset2Backdrop(props.backdrop)
+})
+const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 </script>

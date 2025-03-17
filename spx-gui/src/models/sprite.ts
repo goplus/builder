@@ -14,6 +14,7 @@ import {
   getSpriteName,
   validateSpriteName
 } from './common/asset-name'
+import type { AssetMetadata } from './common/asset'
 import { type RawCostumeConfig, Costume } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
@@ -52,10 +53,12 @@ export type SpriteInits = {
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
   pivot?: Pivot
+  assetMetadata?: AssetMetadata
 }
 
-export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings'> & {
+export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings' | 'metadata'> & {
   builder_id?: string
+  builder_assetMetadata?: AssetMetadata
   /** Same as costumeIndex, for compatibility only */
   currentCostumeIndex?: number
   costumes?: RawCostumeConfig[]
@@ -85,6 +88,7 @@ export type SpriteExportLoadOptions = {
   sounds: Sound[]
   includeId?: boolean
   includeCode?: boolean
+  includeAssetMetadata?: boolean
 }
 
 export class Sprite extends Disposable {
@@ -144,6 +148,17 @@ export class Sprite extends Disposable {
     costume.setName(newCostumeName)
     costume.setParent(this)
     this.costumes.push(costume)
+  }
+  /** Move a costume within the costumes array, without changing the default costume */
+  moveCostume(from: number, to: number) {
+    if (from < 0 || from >= this.costumes.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.costumes.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const costume = this.costumes[from]
+    const defaultCostumeId = this.defaultCostume?.id ?? null
+    this.costumes.splice(from, 1)
+    this.costumes.splice(to, 0, costume)
+    if (defaultCostumeId != null) this.setDefaultCostume(defaultCostumeId)
   }
 
   animations: Animation[]
@@ -226,6 +241,11 @@ export class Sprite extends Disposable {
     this.pivot = pivot
   }
 
+  assetMetadata: AssetMetadata | null
+  setAssetMetadata(metadata: AssetMetadata | null) {
+    this.assetMetadata = metadata
+  }
+
   constructor(name: string, code: string = '', inits?: SpriteInits) {
     super()
     this.name = name
@@ -252,6 +272,7 @@ export class Sprite extends Disposable {
     this.isDraggable = inits?.isDraggable ?? false
     this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     this.id = inits?.id ?? nanoid()
+    this.assetMetadata = inits?.assetMetadata ?? null
     return reactive(this) as this
   }
 
@@ -298,13 +319,19 @@ export class Sprite extends Disposable {
   static async load(
     name: string,
     files: Files,
-    { sounds, includeId = true, includeCode = true }: SpriteExportLoadOptions
+    {
+      sounds,
+      includeId = true,
+      includeCode = true,
+      includeAssetMetadata: includeMetadata = true
+    }: SpriteExportLoadOptions
   ) {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
     const {
       builder_id: id,
+      builder_assetMetadata: metadata,
       currentCostumeIndex,
       costumes: costumeConfigs,
       costumeSet,
@@ -357,7 +384,8 @@ export class Sprite extends Disposable {
         [State.step]: animationNameToId(animBindings?.[State.step]),
         [State.turn]: animationNameToId(animBindings?.[State.turn]),
         [State.glide]: animationNameToId(animBindings?.[State.glide])
-      }
+      },
+      assetMetadata: includeMetadata ? metadata : undefined
     })
     for (const costume of costumes) {
       // If this costume is included by any animation, exclude it from sprite's costume list
@@ -384,7 +412,12 @@ export class Sprite extends Disposable {
     return sprites
   }
 
-  export({ includeCode = true, includeId = true, sounds }: SpriteExportLoadOptions): Files {
+  export({
+    includeCode = true,
+    includeId = true,
+    includeAssetMetadata: includeMetadata = true,
+    sounds
+  }: SpriteExportLoadOptions): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -435,6 +468,7 @@ export class Sprite extends Disposable {
       files[codeFilePath] = fromText(codeFilePath, this.code)
     }
     if (includeId) config.builder_id = this.id
+    if (includeMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }

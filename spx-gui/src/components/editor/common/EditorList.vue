@@ -1,9 +1,9 @@
 <template>
   <div class="editor-list" :style="cssVars">
     <div class="sider">
-      <ul class="items">
+      <div ref="itemsWrapper" class="items">
         <slot></slot>
-      </ul>
+      </div>
       <UIDropdownWithTooltip>
         <template #dropdown-content>
           <slot name="add-options"></slot>
@@ -23,16 +23,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useSortable } from '@/utils/sortable'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
-const props = defineProps<{
-  color: Color
-  addText: string
+const props = withDefaults(
+  defineProps<{
+    color: Color
+    addText: string
+    sortable?: boolean
+  }>(),
+  {
+    sortable: false
+  }
+)
+
+const emit = defineEmits<{
+  sorted: [oldIdx: number, newIdx: number]
 }>()
 
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))
+
+const itemsWrapper = ref<HTMLElement>()
+const sortableItemsWrapper = computed(() => (props.sortable ? itemsWrapper.value : null))
+
+useSortable(sortableItemsWrapper, {
+  ghostClass: 'ghost-sortable-item',
+  onSorted(oldIdx, newIdx) {
+    emit('sorted', oldIdx, newIdx)
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -56,6 +77,10 @@ const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.co
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  :deep(.ghost-sortable-item) {
+    opacity: 0.3;
+  }
 }
 
 .add {

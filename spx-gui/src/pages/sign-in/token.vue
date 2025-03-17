@@ -10,6 +10,11 @@
           :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
         />
       </UIFormItem>
+      <UIFormItem path="enableAdvancedLibrary">
+        <UICheckbox v-model:checked="form.value.enableAdvancedLibrary">
+          {{ $t({ en: 'Enable advanced library features', zh: '启用高级素材库功能' }) }}
+        </UICheckbox>
+      </UIFormItem>
       <footer class="footer">
         <UIButton type="boring" @click="handleCancel">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
@@ -27,8 +32,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
 import { usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { useUserStore, type UserInfo } from '@/stores/user'
-import { UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
+import { useUserStore, type UserInfoFromToken } from '@/stores/user'
+import { UIForm, UIFormItem, UITextInput, UIButton, UICheckbox, useForm } from '@/components/ui'
 
 const title = {
   en: 'Sign in with token',
@@ -41,7 +46,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const i18n = useI18n()
 
-const userInfo = ref<UserInfo | null>(null)
+const userInfo = ref<UserInfoFromToken | null>(null)
 const buttonText = computed(() => {
   if (userInfo.value == null) return i18n.t({ en: 'Sign in', zh: '登录' })
   const username = userInfo.value.displayName || userInfo.value.name
@@ -52,7 +57,8 @@ const buttonText = computed(() => {
 })
 
 const form = useForm({
-  token: ['', validateToken]
+  token: ['', validateToken],
+  enableAdvancedLibrary: [true]
 })
 
 function validateToken(token: string) {
@@ -80,7 +86,7 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const token = form.value.token.trim()
-    userStore.signInWithAccessToken(token)
+    userStore.signInWithAccessToken(token, form.value.enableAdvancedLibrary)
     router.push('/')
   },
   {

@@ -1,11 +1,12 @@
 <template>
-  <!-- TODO: margin among multiple FormItems -->
-  <NFormItem class="ui-form-item" :show-label="!!label" :label="label" :path="path" v-bind="nFormItemProps">
-    <UIFormItemInternal :handle-content-blur="handleContentBlur" :handle-content-input="handleContentInput">
-      <slot></slot>
-    </UIFormItemInternal>
-  </NFormItem>
-  <p v-if="!!slots.tip" class="tip"><slot name="tip"></slot></p>
+  <div class="ui-form-item">
+    <NFormItem :show-label="!!label" :label="label" :path="path" v-bind="nFormItemProps">
+      <UIFormItemInternal :handle-content-blur="handleContentBlur" :handle-content-input="handleContentInput">
+        <slot></slot>
+      </UIFormItemInternal>
+    </NFormItem>
+    <p v-if="!!slots.tip" class="tip"><slot name="tip"></slot></p>
+  </div>
 </template>
 
 <script setup lang="ts">

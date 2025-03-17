@@ -1,20 +1,10 @@
-<template>
-  <UIBackdropItem
-    :img-src="imgSrc"
-    :img-loading="!imgSrc || imgLoading"
-    :name="asset.displayName"
-    :selectable="{ selected }"
-  >
-    <UICornerIcon v-show="selected" type="check" />
-  </UIBackdropItem>
-</template>
-
 <script setup lang="ts">
-import { UIBackdropItem, UICornerIcon } from '@/components/ui'
+import { computed } from 'vue'
+import { useAsyncComputed } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/common/asset'
-import { useAsyncComputed } from '@/utils/utils'
+import { UIBackdropItem } from '@/components/ui'
 
 const props = defineProps<{
   asset: AssetData
@@ -23,4 +13,11 @@ const props = defineProps<{
 
 const backdrop = useAsyncComputed(() => asset2Backdrop(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
+const name = computed(() => props.asset.displayName)
 </script>
+
+<template>
+  <UIBackdropItem :img-src="imgSrc" :img-loading="imgLoading" :name="name" :selectable="{ selected }">
+    <slot></slot>
+  </UIBackdropItem>
+</template>

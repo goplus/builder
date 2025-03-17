@@ -39,4 +39,38 @@ describe('Sprite', () => {
 
     expect(imported[0].getAnimationBoundStates(animation.id)).toEqual([State.die, State.turn])
   })
+  it('should move costumes correctly', async () => {
+    const sprite = new Sprite('MySprite')
+    const costume1 = makeCostume('costume1')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    sprite.addCostume(costume1)
+    sprite.addCostume(costume2)
+    sprite.addCostume(costume3)
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+    sprite.moveCostume(0, 1)
+    expect(sprite.costumes.map((c) => c.name)).toEqual(['costume2', 'costume1', 'costume3'])
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+    expect(costume1.parent).toEqual(sprite)
+
+    sprite.moveCostume(1, 2)
+    expect(sprite.costumes.map((c) => c.name)).toEqual(['costume2', 'costume3', 'costume1'])
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+
+    sprite.moveCostume(2, 0)
+    expect(sprite.costumes.map((c) => c.name)).toEqual(['costume1', 'costume2', 'costume3'])
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+
+    sprite.moveCostume(2, 1)
+    expect(sprite.costumes.map((c) => c.name)).toEqual(['costume1', 'costume3', 'costume2'])
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+
+    sprite.moveCostume(1, 1)
+    expect(sprite.costumes.map((c) => c.name)).toEqual(['costume1', 'costume3', 'costume2'])
+    expect(sprite.defaultCostume?.name).toEqual('costume1')
+
+    // invalid index causes error:
+    expect(() => sprite.moveCostume(2, 3)).toThrow()
+    expect(() => sprite.moveCostume(-1, 1)).toThrow()
+  })
 })
