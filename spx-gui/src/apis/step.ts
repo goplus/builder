@@ -1,4 +1,6 @@
-export const codingStep = {
+import { type Step } from '@/apis/guidance'
+
+export const codingStep: Step = {
   title: {
     zh: '编写代码',
     en: 'Write relevant code.'
@@ -12,7 +14,7 @@ export const codingStep = {
     en: 'test'
   },
   duration: 20,
-  target: ['code-editor'],
+  target: 'code-editor',
   type: 'coding',
   isCheck: true,
   isApiControl: true,
@@ -151,7 +153,7 @@ export const codingStep = {
   }
 }
 
-export const followingStep = {
+export const followingStep: Step = {
   title: {
     zh: '点击舞台',
     en: 'Click the stage.'
