@@ -164,24 +164,6 @@ onMounted(async () => {
   try {
     if (props.step.type === 'coding' && props.step.coding?.path) {
       answer.value = await extractAnswerFromFile(props.step.coding.path)
-
-      if (!answer.value) {
-        console.log('无法提取答案，使用mock答案')
-        answer.value = `// 这是一个模拟的参考答案
-onStart => {
-  think "如何通过斑马线呢？", 4
-  broadcast "start"
-}
-
-onTouchStart => {
-  die
-}
-
-onKey KeyDown, => {
-  setHeading 180
-  step 30
-}`
-      }
     }
   } catch (error) {
     console.error('初始化answer时出错:', error)
@@ -383,7 +365,6 @@ async function extractAnswerFromFile(path: string): Promise<string | null> {
   }
 }
 
-// 提供一个mock答案以确保UI能够正常展示
 function getMockAnswer(): string {
   return `// 这是一个模拟的参考答案
 onStart => {
