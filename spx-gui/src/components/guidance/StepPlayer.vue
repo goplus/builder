@@ -22,7 +22,7 @@
           >
           </ResultDialog>
           <ResultDialog
-            :visible="isNextDailogVisible"
+            :visible="isNextDialogVisible"
             :title="t({ zh: '检测结果', en: 'Check Result' })"
             :content="t({ zh: '太棒了！你的代码检测通过！', en: 'Great! Your code check passed!' })"
             :button="t({ zh: '下一步', en: 'Next' })"
@@ -125,7 +125,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
+import { urlSafeBase64Decode } from 'qiniu-js'
+import { fromText, toText, type Files } from '@/models/common/file'
 import { useI18n } from '@/utils/i18n'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -134,8 +136,6 @@ import ResultDialog from './ResultDialog.vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
-import { urlSafeBase64Decode } from 'qiniu-js'
-import { fromText, toText, type Files } from '@/models/common/file'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -148,7 +148,7 @@ const emit = defineEmits<{
 }>()
 
 const isCheckingDialogVisible = ref(false)
-const isNextDailogVisible = ref(false)
+const isNextDialogVisible = ref(false)
 const isRetryDialogVisible = ref(false)
 const isAnswerDialogVisible = ref(false)
 const isInfoDialogVisible = ref(false)
@@ -240,12 +240,12 @@ onBeforeUnmount(() => {
 async function loadSnapshot(snapshotStr: string): Promise<void> {
   if (!snapshotStr) {
     console.log('快照字符串为空，直接返回')
-    return
+    return Promise.reject(new Error('Snapshot string is empty'))
   }
 
   try {
     const project = editorCtx.project
-    if (!project) return
+    if (!project) return Promise.reject(new Error('Project instance is not available'))
 
     // 解析快照字符串为 JSON 对象
     let fileMap: Record<string, string> = {}
@@ -699,8 +699,8 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 function setupTargetElementListener() {
   if (props.step.type !== 'following' || !props.step.target) return
 
-  // 延迟执行，确保组件已完全挂载
-  setTimeout(() => {
+  // 使用 nextTick 确保组件已完全挂载
+  nextTick(() => {
     try {
       const { getElement } = useTag()
       const element = getElement(props.step.target)
@@ -713,7 +713,7 @@ function setupTargetElementListener() {
     } catch (error) {
       console.warn('Error setting up target element listener:', error)
     }
-  }, 200) // 延迟200ms，确保TagConsumer已完全初始化
+  })
 }
 
 async function handleTargetElementClick() {
@@ -738,7 +738,7 @@ function handleCheckButtonClick() {
     checkAnswer().then((result) => {
       if (result) {
         isCheckingDialogVisible.value = false
-        isNextDailogVisible.value = true
+        isNextDialogVisible.value = true
       } else {
         isCheckingDialogVisible.value = false
         isRetryDialogVisible.value = true
@@ -761,7 +761,7 @@ function handleAnswerButtonClick() {
 }
 
 function handleNextButtonClick() {
-  isNextDailogVisible.value = false
+  isNextDialogVisible.value = false
   emit('stepCompleted')
 }
 
@@ -804,7 +804,7 @@ async function checkAnswer(): Promise<boolean> {
 
   const userAnswer = await extractAnswerFromFile(await toText(userFile))
 
-  return userAnswer === answer
+  return JSON.stringify(userAnswer) === JSON.stringify(answer)
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
