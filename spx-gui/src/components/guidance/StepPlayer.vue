@@ -136,6 +136,8 @@ import ResultDialog from './ResultDialog.vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
+import { getFiles } from '@/models/common/cloud'
+import type { FileCollection } from '@/apis/common'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -243,108 +245,21 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
   try {
     const project = editorCtx.project
-    if (!project) return Promise.reject(new Error('Project instance is not available'))
+    if (!project) return Promise.reject(new Error('Project instance not available'))
 
-    // 解析快照字符串为 JSON 对象
-    let fileMap: Record<string, string> = {}
+    let fileCollection: FileCollection
     try {
-      fileMap = JSON.parse(snapshotStr)
+      fileCollection = JSON.parse(snapshotStr)
     } catch (parseError) {
       console.error('解析快照 JSON 失败:', parseError)
       return
     }
 
-    // 准备文件对象
-    const files: Files = {}
-    let processedCount = 0
-    let errorCount = 0
+    const files = getFiles(fileCollection)
+    console.log(`从快照中加载了 ${Object.keys(files).length} 个文件`)
 
-    // 处理每个文件路径
-    for (const [path, content] of Object.entries(fileMap)) {
-      if (typeof content === 'string') {
-        try {
-          // 处理 data URL 格式
-          if (content.startsWith('data:')) {
-            const contentParts = content.split(',')
-
-            if (contentParts.length > 1) {
-              let decodedContent = ''
-              const base64Part = contentParts[1]
-
-              // 判断是否需要 URL 解码
-              const needsUrlDecode = base64Part.includes('%')
-
-              if (needsUrlDecode) {
-                try {
-                  const urlDecoded = decodeURIComponent(base64Part)
-                  if (!urlDecoded.match(/^[A-Za-z0-9+/=]+$/)) {
-                    decodedContent = urlDecoded
-                  } else {
-                    decodedContent = atob(urlDecoded)
-                  }
-                } catch (e) {
-                  decodedContent = base64Part
-                }
-              } else {
-                try {
-                  decodedContent = atob(base64Part)
-                } catch (e1) {
-                  try {
-                    const fixedBase64 = base64Part
-                      .replace(/-/g, '+')
-                      .replace(/_/g, '/')
-                      .padEnd(Math.ceil(base64Part.length / 4) * 4, '=')
-
-                    decodedContent = atob(fixedBase64)
-                  } catch (e2) {
-                    decodedContent = base64Part
-                  }
-                }
-              }
-
-              // 对 JSON 文件进行特殊处理
-              if (path.endsWith('.json')) {
-                try {
-                  JSON.parse(decodedContent)
-                } catch (jsonError) {
-                  console.warn(`文件 ${path} 解码后不是有效 JSON`)
-                  decodedContent = '{}'
-                }
-              }
-
-              files[path] = fromText(path, decodedContent)
-              processedCount++
-            } else {
-              files[path] = fromText(path, '')
-              processedCount++
-            }
-          } else {
-            files[path] = fromText(path, content)
-            processedCount++
-          }
-        } catch (e) {
-          errorCount++
-          console.error(`处理文件失败: ${path}`, e)
-        }
-      }
-    }
-
-    console.log(`处理完成 成功: ${processedCount}, 错误: ${errorCount}`)
-
-    // 在加载前检查 JSON 文件的完整性
-    const jsonFiles = Object.keys(files).filter((path) => path.endsWith('.json'))
-    for (const jsonPath of jsonFiles) {
-      try {
-        const file = files[jsonPath]
-        if (file) {
-          const content = await toText(file)
-          JSON.parse(content)
-        }
-      } catch (e) {
-        console.warn(`移除无效 JSON: ${jsonPath}`)
-        delete files[jsonPath]
-      }
-    }
+    // 验证JSON文件
+    await validateJsonFiles(files)
 
     // 加载有效的文件
     if (Object.keys(files).length > 0) {
@@ -357,6 +272,22 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
     }
   } catch (error) {
     console.error('加载快照失败:', error)
+  }
+}
+
+async function validateJsonFiles(files: Files): Promise<void> {
+  const jsonFiles = Object.keys(files).filter((path) => path.endsWith('.json'))
+  for (const jsonPath of jsonFiles) {
+    try {
+      const file = files[jsonPath]
+      if (file) {
+        const content = await toText(file)
+        JSON.parse(content)
+      }
+    } catch (e) {
+      console.warn(`移除无效 JSON: ${jsonPath}`)
+      delete files[jsonPath]
+    }
   }
 }
 
