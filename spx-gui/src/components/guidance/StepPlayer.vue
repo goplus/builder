@@ -85,8 +85,8 @@
             src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
           />
           <svg
-            class="ic-bubble"
-            :style="getBubbleStyle(slotInfo)"
+            class="ic-arrow"
+            :style="getArrowStyle(slotInfo)"
             viewBox="0 0 1024 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -101,35 +101,23 @@
               class="icon-fill"
               p-id="1445"
             ></path>
-            <text
-              x="50%"
-              y="50%"
-              text-anchor="middle"
-              dominant-baseline="middle"
-              font-family="Arial"
-              font-size="48"
-              fill="black"
+          </svg>
+          <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+            <svg
+              class="ic-bubble-bg"
+              :style="getBubbleBgStyle(slotInfo)"
+              viewBox="0 0 1536 1024"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              {{ props.step.description }}
-            </text>
-          </svg>
-          <svg
-            t="1741314616196"
-            class="ic-arrow"
-            :style="getArrowStyle(slotInfo)"
-            viewBox="0 0 1536 1024"
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-            p-id="6877"
-            width="200"
-            height="200"
-          >
-            <path
-              d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
-              class="svg-fill"
-              p-id="6878"
-            ></path>
-          </svg>
+              <path
+                d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
+                class="svg-fill"
+              ></path>
+            </svg>
+            <div v-if="props.step.tip" class="bubble-tip">
+              {{ t({ zh: props.step.tip.zh, en: props.step.tip.en }) }}
+            </div>
+          </div>
         </div>
       </template>
     </MaskWithHighlight>
@@ -484,6 +472,33 @@ onKey KeyDown, => {
 }`
 }
 
+function calculateBubbleArrowDirection(niuxiaoqiPos: any, bubblePos: any) {
+  // 计算气泡中心点
+  const bubbleCenter = {
+    x: bubblePos.left + bubblePos.width / 2,
+    y: bubblePos.top + bubblePos.height / 2
+  }
+
+  // 计算牛小七中心点
+  const niuxiaoqiCenter = {
+    x: niuxiaoqiPos.left + niuxiaoqiPos.width / 2,
+    y: niuxiaoqiPos.top + niuxiaoqiPos.height / 2
+  }
+
+  // 确定箭头方向 (top、right、bottom、left)
+  const dx = bubbleCenter.x - niuxiaoqiCenter.x
+  const dy = bubbleCenter.y - niuxiaoqiCenter.y
+
+  // 主导方向决定箭头在哪个边
+  if (Math.abs(dx) > Math.abs(dy)) {
+    // 水平方向为主
+    return dx > 0 ? 'left' : 'right'
+  } else {
+    // 垂直方向为主
+    return dy > 0 ? 'top' : 'bottom'
+  }
+}
+
 function calculateGuidePositions(highlightRect: HighlightRect) {
   const windowWidth = window.innerWidth
   const windowHeight = window.innerHeight
@@ -492,13 +507,28 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
   const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
   const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
 
-  const arrowSize = { width: 200, height: 200 }
-  const niuxiaoqiSize = { width: 300, height: 320 }
-  const bubbleSize = { width: 300, height: 200 }
+  const scale = Math.min(windowWidth, windowHeight) / 1920
+  const maxScale = 0.8 // 限制最大缩放比例
+  const finalScale = Math.min(scale, maxScale)
+
+  const arrowSize = {
+    width: 200 * finalScale,
+    height: 200 * finalScale
+  }
+  const niuxiaoqiSize = {
+    width: 300 * finalScale,
+    height: 320 * finalScale
+  }
+  const bubbleSize = {
+    width: 300 * finalScale,
+    height: 200 * finalScale
+  }
 
   let arrowPosition = { left: 0, top: 0 }
   let niuxiaoqiPosition = { left: 0, top: 0 }
   let bubblePosition = { left: 0, top: 0 }
+
+  let arrowRotation = 0
 
   // 根据象限计算位置
   if (isLeft && isTop) {
@@ -507,6 +537,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left + highlightRect.width,
       top: highlightRect.top + highlightRect.height
     }
+    arrowRotation = 270
     niuxiaoqiPosition = {
       left: arrowPosition.left + arrowSize.width,
       top: arrowPosition.top + arrowSize.height
@@ -521,6 +552,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left - arrowSize.width,
       top: highlightRect.top + highlightRect.height
     }
+    arrowRotation = 0
     niuxiaoqiPosition = {
       left: arrowPosition.left - niuxiaoqiSize.width,
       top: arrowPosition.top + arrowSize.height
@@ -535,6 +567,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left + highlightRect.width,
       top: highlightRect.top - arrowSize.height
     }
+    arrowRotation = 180
     niuxiaoqiPosition = {
       left: arrowPosition.left + arrowSize.width,
       top: arrowPosition.top - niuxiaoqiSize.height
@@ -549,6 +582,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left - arrowSize.width,
       top: highlightRect.top - arrowSize.height
     }
+    arrowRotation = 90
     niuxiaoqiPosition = {
       left: arrowPosition.left - niuxiaoqiSize.width,
       top: arrowPosition.top - niuxiaoqiSize.height
@@ -559,13 +593,25 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
     }
   }
 
+  const bubbleArrowDirection = calculateBubbleArrowDirection(
+    {
+      left: niuxiaoqiPosition.left,
+      top: niuxiaoqiPosition.top,
+      width: niuxiaoqiSize.width,
+      height: niuxiaoqiSize.height
+    },
+    { left: bubblePosition.left, top: bubblePosition.top, width: bubbleSize.width, height: bubbleSize.height }
+  )
+
   return {
     arrowStyle: {
       position: 'absolute',
       left: `${arrowPosition.left}px`,
       top: `${arrowPosition.top}px`,
       width: `${arrowSize.width}px`,
-      height: `${arrowSize.height}px`
+      height: `${arrowSize.height}px`,
+      transform: `rotate(${arrowRotation}deg)`,
+      transformOrigin: 'center center'
     },
     niuxiaoqiStyle: {
       position: 'absolute',
@@ -579,7 +625,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: `${bubblePosition.left}px`,
       top: `${bubblePosition.top}px`,
       width: `${bubbleSize.width}px`,
-      height: `${bubbleSize.height}px`
+      height: `${bubbleSize.height}px`,
+      arrowDirection: bubbleArrowDirection
     }
   }
 }
@@ -600,11 +647,52 @@ function getNiuxiaoqiStyle(highlightRect: HighlightRect) {
   return currentGuidePositions.niuxiaoqiStyle
 }
 
-function getBubbleStyle(highlightRect: HighlightRect) {
+function getBubbleContainerStyle(highlightRect: HighlightRect) {
   if (!currentGuidePositions) {
     currentGuidePositions = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.bubbleStyle
+
+  const { left, top, width, height } = currentGuidePositions.bubbleStyle
+
+  return {
+    position: 'absolute' as const,
+    left,
+    top,
+    width,
+    height
+  }
+}
+
+function getBubbleBgStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions) {
+    currentGuidePositions = calculateGuidePositions(highlightRect)
+  }
+
+  const arrowDirection = currentGuidePositions.bubbleStyle.arrowDirection
+
+  let transform = ''
+
+  switch (arrowDirection) {
+    case 'bottom':
+      transform = ''
+      break
+    case 'top':
+      transform = 'scale(1, -1)'
+      break
+    case 'left':
+      transform = 'scale(-1, 1)'
+      break
+    case 'right':
+      transform = 'scale(-1, -1)'
+      break
+  }
+
+  return {
+    transform,
+    transformOrigin: 'center center',
+    width: '100%',
+    height: '100%'
+  }
 }
 
 // 修改setupTargetElementListener函数，使用onMounted + setTimeout确保安全调用
@@ -798,5 +886,41 @@ async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean;
 
 .suggestion-box {
   z-index: 10001;
+}
+
+.bubble-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.ic-bubble-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.bubble-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  pointer-events: none;
+  margin-top: 0px;
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 8px;
+  max-width: 100%;
 }
 </style>
