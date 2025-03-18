@@ -79,23 +79,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Transition>
-    <div v-if="visible" class="mask">
-      <svg
-        class="svg-mask"
-        :width="screenWidth"
-        :height="screenHeight"
-        :viewBox="`0 0 ${screenWidth} ${screenHeight}`"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="none"
-      >
-        <path :d="svgPath" fill="rgba(0, 0, 0, 0.5)" fill-rule="evenodd" pointer-events="fill" />
-      </svg>
-      <div class="slot-container">
-        <slot :slot-info="highlightRect" />
+  <teleport to="body">
+    <Transition>
+      <div v-if="visible" class="mask">
+        <svg
+          class="svg-mask"
+          :width="screenWidth"
+          :height="screenHeight"
+          :viewBox="`0 0 ${screenWidth} ${screenHeight}`"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <path :d="svgPath" fill="rgba(0, 0, 0, 0.5)" fill-rule="evenodd" pointer-events="fill" />
+        </svg>
+        <div class="slot-container">
+          <slot :slot-info="highlightRect" />
+        </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </teleport>
 </template>
 
 <style scoped>
