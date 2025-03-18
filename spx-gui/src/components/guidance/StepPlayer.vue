@@ -1,126 +1,128 @@
 <template>
   <div class="step-player">
-    <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
-      <template v-if="props.step.type === 'coding'">
-        <div class="code-button-container">
-          <UIButton type="success" size="medium" @click="handleCheckButtonClick">
-            {{ t({ zh: '检查', en: 'Check' }) }}
-          </UIButton>
-          <UIButton type="primary" size="medium" @click="handleInfoButtonClick">
-            {{ t({ zh: '信息', en: 'Info' }) }}
-          </UIButton>
-          <UIButton type="secondary" size="medium" @click="handleAnswerButtonClick">
-            {{ t({ zh: '答案', en: 'Answer' }) }}
-          </UIButton>
-        </div>
-        <div class="suggestion-box">
-          <ResultDialog
-            :visible="isCheckingDialogVisible"
-            :title="t({ zh: '代码检查中', en: 'Checking code' })"
-            :content="''"
-            :loading="true"
-          >
-          </ResultDialog>
-          <ResultDialog
-            :visible="isNextDialogVisible"
-            :title="t({ zh: '检测结果', en: 'Check Result' })"
-            :content="t({ zh: '太棒了！你的代码检测通过！', en: 'Great! Your code check passed!' })"
-            :button="t({ zh: '下一步', en: 'Next' })"
-            :button-action="'next'"
-            @next="handleNextButtonClick"
-          >
-          </ResultDialog>
-          <ResultDialog
-            :visible="isRetryDialogVisible"
-            :title="t({ zh: '检测结果', en: 'Check Result' })"
-            :content="t({ zh: '错误\n', en: 'Error\n' }) + props.step.tip.zh"
-            :button="t({ zh: '重试', en: 'Retry' })"
-            :button-action="'retry'"
-            @retry="handleRetryButtonClick"
-          >
-          </ResultDialog>
-          <ResultDialog
-            :visible="isAnswerDialogVisible"
-            :title="t({ zh: '参考答案', en: 'Reference Answer' })"
-            :content="''"
-            :is-code="true"
-            :button="t({ zh: '关闭', en: 'Close' })"
-            :button-action="'close'"
-            :code="answer || ''"
-            @close="handleAnswerCloseButtonClick"
-          >
-          </ResultDialog>
-          <ResultDialog
-            :visible="isInfoDialogVisible"
-            :title="t({ zh: '当前步骤', en: 'Current Step' })"
-            :content="props.step.description.zh"
-            :button="t({ zh: '关闭', en: 'Close' })"
-            :button-action="'close'"
-            @close="handleInfoCloseButtonClick"
-          >
-          </ResultDialog>
-          <ResultDialog
-            :visible="isTimeoutDialogVisible"
-            :title="t({ zh: '温馨提醒', en: 'Friendly Reminder' })"
-            :content="
-              t({
-                zh: '牛小七发现你卡顿好久了...可以试着点击下方按钮直接查看答案哦～',
-                en: 'Niuxiaoqi found you stuck for a long time... You can click the button below to view the answer directly~'
-              })
-            "
-            :button="t({ zh: '查看答案', en: 'View Answer' })"
-            :button-action="'answer'"
-            @answer="handleAnswerFromTimeout"
-          >
-          </ResultDialog>
-        </div>
-      </template>
-      <template v-if="props.step.type === 'following'" #default="{ slotInfo }">
-        <div class="guide-ui-container">
-          <img
-            class="niuxiaoqi"
-            :style="getNiuxiaoqiStyle(slotInfo)"
-            width="300"
-            height="320"
-            src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
-          />
-          <svg
-            class="ic-arrow"
-            :style="getArrowStyle(slotInfo)"
-            viewBox="0 0 1024 1024"
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-            p-id="1444"
-            data-spm-anchor-id="a313x.search_index.0.i0.6e8f3a81bBVDWW"
-            width="300"
-            height="200"
-          >
-            <path
-              d="M149.333333 896a21.333333 21.333333 0 0 1-15.086666-36.42L823.166667 170.666667H661.333333a21.333333 21.333333 0 0 1 0-42.666667h213.46a21.333333 21.333333 0 0 1 21.206667 21.206667V362.666667a21.333333 21.333333 0 0 1-42.666667 0V200.833333L164.42 889.753333A21.266667 21.266667 0 0 1 149.333333 896z"
-              fill="#5C5C66"
-              class="icon-fill"
-              p-id="1445"
-            ></path>
-          </svg>
-          <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+    <teleport to="body">
+      <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
+        <template v-if="props.step.type === 'coding'">
+          <div class="code-button-container">
+            <UIButton type="success" size="medium" @click="handleCheckButtonClick">
+              {{ t({ zh: '检查', en: 'Check' }) }}
+            </UIButton>
+            <UIButton type="primary" size="medium" @click="handleInfoButtonClick">
+              {{ t({ zh: '信息', en: 'Info' }) }}
+            </UIButton>
+            <UIButton type="secondary" size="medium" @click="handleAnswerButtonClick">
+              {{ t({ zh: '答案', en: 'Answer' }) }}
+            </UIButton>
+          </div>
+          <div class="suggestion-box">
+            <ResultDialog
+              :visible="isCheckingDialogVisible"
+              :title="t({ zh: '代码检查中', en: 'Checking code' })"
+              :content="''"
+              :loading="true"
+            >
+            </ResultDialog>
+            <ResultDialog
+              :visible="isNextDialogVisible"
+              :title="t({ zh: '检测结果', en: 'Check Result' })"
+              :content="t({ zh: '太棒了！你的代码检测通过！', en: 'Great! Your code check passed!' })"
+              :button="t({ zh: '下一步', en: 'Next' })"
+              :button-action="'next'"
+              @next="handleNextButtonClick"
+            >
+            </ResultDialog>
+            <ResultDialog
+              :visible="isRetryDialogVisible"
+              :title="t({ zh: '检测结果', en: 'Check Result' })"
+              :content="t({ zh: '错误\n', en: 'Error\n' }) + props.step.tip.zh"
+              :button="t({ zh: '重试', en: 'Retry' })"
+              :button-action="'retry'"
+              @retry="handleRetryButtonClick"
+            >
+            </ResultDialog>
+            <ResultDialog
+              :visible="isAnswerDialogVisible"
+              :title="t({ zh: '参考答案', en: 'Reference Answer' })"
+              :content="''"
+              :is-code="true"
+              :button="t({ zh: '关闭', en: 'Close' })"
+              :button-action="'close'"
+              :code="answer || ''"
+              @close="handleAnswerCloseButtonClick"
+            >
+            </ResultDialog>
+            <ResultDialog
+              :visible="isInfoDialogVisible"
+              :title="t({ zh: '当前步骤', en: 'Current Step' })"
+              :content="props.step.description.zh"
+              :button="t({ zh: '关闭', en: 'Close' })"
+              :button-action="'close'"
+              @close="handleInfoCloseButtonClick"
+            >
+            </ResultDialog>
+            <ResultDialog
+              :visible="isTimeoutDialogVisible"
+              :title="t({ zh: '温馨提醒', en: 'Friendly Reminder' })"
+              :content="
+                t({
+                  zh: '牛小七发现你卡顿好久了...可以试着点击下方按钮直接查看答案哦～',
+                  en: 'Niuxiaoqi found you stuck for a long time... You can click the button below to view the answer directly~'
+                })
+              "
+              :button="t({ zh: '查看答案', en: 'View Answer' })"
+              :button-action="'answer'"
+              @answer="handleAnswerFromTimeout"
+            >
+            </ResultDialog>
+          </div>
+        </template>
+        <template v-if="props.step.type === 'following'" #default="{ slotInfo }">
+          <div class="guide-ui-container">
+            <img
+              class="niuxiaoqi"
+              :style="getNiuxiaoqiStyle(slotInfo)"
+              width="300"
+              height="320"
+              src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
+            />
             <svg
-              class="ic-bubble-bg"
-              :style="getBubbleBgStyle(slotInfo)"
-              viewBox="0 0 1536 1024"
+              class="ic-arrow"
+              :style="getArrowStyle(slotInfo)"
+              viewBox="0 0 1024 1024"
+              version="1.1"
               xmlns="http://www.w3.org/2000/svg"
+              p-id="1444"
+              data-spm-anchor-id="a313x.search_index.0.i0.6e8f3a81bBVDWW"
+              width="300"
+              height="200"
             >
               <path
-                d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
-                class="svg-fill"
+                d="M149.333333 896a21.333333 21.333333 0 0 1-15.086666-36.42L823.166667 170.666667H661.333333a21.333333 21.333333 0 0 1 0-42.666667h213.46a21.333333 21.333333 0 0 1 21.206667 21.206667V362.666667a21.333333 21.333333 0 0 1-42.666667 0V200.833333L164.42 889.753333A21.266667 21.266667 0 0 1 149.333333 896z"
+                fill="#5C5C66"
+                class="icon-fill"
+                p-id="1445"
               ></path>
             </svg>
-            <div v-if="props.step.tip" class="bubble-tip">
-              {{ t({ zh: props.step.tip.zh, en: props.step.tip.en }) }}
+            <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+              <svg
+                class="ic-bubble-bg"
+                :style="getBubbleBgStyle(slotInfo)"
+                viewBox="0 0 1536 1024"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
+                  class="svg-fill"
+                ></path>
+              </svg>
+              <div v-if="props.step.tip" class="bubble-tip">
+                {{ t({ zh: props.step.tip.zh, en: props.step.tip.en }) }}
+              </div>
             </div>
           </div>
-        </div>
-      </template>
-    </MaskWithHighlight>
+        </template>
+      </MaskWithHighlight>
+    </teleport>
   </div>
 </template>
 

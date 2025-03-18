@@ -48,7 +48,13 @@
             >
           </div>
           <div class="navbar-right">
-            <UIButton class="browse-btn" type="secondary" size="small" :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING" @click="handleToClick('skipVideo')">
+            <UIButton
+              class="browse-btn"
+              type="secondary"
+              size="small"
+              :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING"
+              @click="handleToClick('skipVideo')"
+            >
               {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
             </UIButton>
           </div>
@@ -241,9 +247,9 @@ async function handleNodeTaskCompleted(): Promise<void> {
       isLastLevel.value = true
       // 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
       const owner = await untilNotNull(signedInUser)
-      const [ metadata, files ] = await editorCtx.project.export()
+      const [metadata, files] = await editorCtx.project.export()
       const project = new Project(owner.name, `result-${projectName.value}`)
-      await project.load({thumbnail: metadata.thumbnail}, files)
+      await project.load({ thumbnail: metadata.thumbnail }, files)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
     } else {

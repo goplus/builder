@@ -6,28 +6,32 @@
   <UIEmpty size="extra-large">
     {{ $t({ en: 'Add a sprite to start', zh: '添加一个精灵' }) }}
     <template #op>
-      <UIButton
-        type="boring"
-        size="large"
-        :loading="handleAddFromLocalFile.isLoading.value"
-        @click="handleAddFromLocalFile.fn"
-      >
-        <template #icon>
-          <img :src="localFileImg" />
-        </template>
-        {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
-      </UIButton>
-      <UIButton
-        type="boring"
-        size="large"
-        :loading="handleAddFromAssetLibrary.isLoading.value"
-        @click="handleAddFromAssetLibrary.fn"
-      >
-        <template #icon>
-          <img :src="assetLibraryImg" />
-        </template>
-        {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
-      </UIButton>
+      <TagNode name="add-asset-from-local-file">
+        <UIButton
+          type="boring"
+          size="large"
+          :loading="handleAddFromLocalFile.isLoading.value"
+          @click="handleAddFromLocalFile.fn"
+        >
+          <template #icon>
+            <img :src="localFileImg" />
+          </template>
+          {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+        </UIButton>
+      </TagNode>
+      <TagNode name="add-asset-from-asset-library">
+        <UIButton
+          type="boring"
+          size="large"
+          :loading="handleAddFromAssetLibrary.isLoading.value"
+          @click="handleAddFromAssetLibrary.fn"
+        >
+          <template #icon>
+            <img :src="assetLibraryImg" />
+          </template>
+          {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
+        </UIButton>
+      </TagNode>
     </template>
   </UIEmpty>
 </template>

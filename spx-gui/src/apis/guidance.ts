@@ -146,7 +146,7 @@ const storyLineJson: StoryLine = {
                 en: 'Please click here to open the asset library.'
               },
               duration: 20,
-              target: '',
+              target: 'add-asset-from-local-file',
               type: 'following',
               isCheck: false,
               isApiControl: false,
