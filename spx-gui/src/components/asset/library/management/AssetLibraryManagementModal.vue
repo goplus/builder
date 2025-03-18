@@ -70,7 +70,7 @@ watch(
 const category = ref(categoryAll)
 
 const page = shallowRef(1)
-const pageSize = 18 // 6 * 3
+const pageSize = 28 // 7 * 4
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
@@ -175,7 +175,7 @@ const handleRemove = useMessageHandle(
 
 <template>
   <UISearchableModal
-    style="width: 1096px"
+    style="width: 1244px"
     :visible="props.visible"
     :title="$t({ en: `Manage ${entityMessage.en}s`, zh: `管理${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -205,9 +205,9 @@ const handleRemove = useMessageHandle(
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
         <div class="content">
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
+          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="584">
             <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 436px">
+            <ul class="asset-list" style="height: 584px">
               <ItemComponent
                 v-for="asset in slotProps.data.data"
                 :key="asset.id"
@@ -266,7 +266,7 @@ const handleRemove = useMessageHandle(
   color: var(--ui-color-grey-900);
 }
 .content {
-  padding: 8px 24px 0;
+  padding: 8px 24px 20px;
 }
 .asset-list {
   display: flex;
@@ -276,6 +276,6 @@ const handleRemove = useMessageHandle(
 }
 .pagination {
   justify-content: center;
-  margin: 36px 0 12px;
+  margin: 36px 0 0;
 }
 </style>
