@@ -1,4 +1,5 @@
 import * as qiniu from 'qiniu-js'
+import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
@@ -181,6 +182,13 @@ export const universalUrlToWebUrl = (() => {
     if (cached != null) return cached
 
     const webUrl = await makeObjectUrl(universalUrl)
+    if (!webUrl.startsWith(usercontentBaseUrl)) {
+      console.warn(`\
+Expect webUrl (${webUrl}) to start with usercontentBaseUrl (${usercontentBaseUrl}). \
+The env variable \`VITE_USERCONTENT_BASE_URL\` may be misconfigured. \
+See details in file \`.env\`.
+`)
+    }
     cache.set(universalUrl, webUrl)
     return webUrl
   }

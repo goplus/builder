@@ -1,6 +1,7 @@
 import type * as monaco from 'monaco-editor'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import loader from '@monaco-editor/loader'
+import { staticBaseUrl } from '@/utils/env'
 
 export type { monaco }
 export type Monaco = typeof import('monaco-editor')
@@ -23,7 +24,7 @@ export type Lang = 'en' | 'zh'
 function getLoaderConfig(lang: Lang) {
   const loaderConfig = {
     paths: {
-      vs: 'https://builder-static.gopluscdn.com/libs/monaco-editor/0.45.0/min/vs'
+      vs: `${staticBaseUrl}/libs/monaco-editor/0.45.0/min/vs`
     }
   }
   if (lang === 'en') return loaderConfig
