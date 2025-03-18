@@ -65,8 +65,8 @@ jobs:
       - name: Set up Go & Go+
         uses: goplus/setup-goplus@v1
         with:
-          go-version: 1.21.3
-          gop-version: 1.2.5
+          go-version: 1.22.12
+          gop-version: 1.3.6
 
       - name: Run unit test cases
         working-directory: spx-backend
