@@ -8,7 +8,7 @@
 <script lang="ts" setup>
 import type { NodeTask, Step } from '@/apis/guidance'
 import { ref, computed } from 'vue'
-import StepPlayer from './StepPlayer.vue'
+import StepPlayer from './step/StepPlayer.vue'
 
 const props = defineProps<{ nodeTask: NodeTask }>()
 
