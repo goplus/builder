@@ -121,6 +121,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 	if params.System.Text != "" {
 		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
+
 	for _, msg := range params.Messages {
 		var message Message
 		if msg.Role == types.RoleUser {
