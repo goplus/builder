@@ -1,5 +1,5 @@
 <template>
-  <div v-if="levelIntroVisible" class="mask"></div>
+  <div v-if="levelIntroVisible || levelStatus !== LevelStatusType.NODE_TASK_PENDING" class="mask"></div>
   <!-- 关卡介绍 -->
   <div v-if="levelIntroVisible" class="intro">
     <div class="intro-title">
@@ -48,7 +48,13 @@
             >
           </div>
           <div class="navbar-right">
-            <UIButton class="browse-btn" type="secondary" size="small" :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING" @click="handleToClick('skipVideo')">
+            <UIButton
+              class="browse-btn"
+              type="secondary"
+              size="small"
+              :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING"
+              @click="handleToClick('skipVideo')"
+            >
               {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
             </UIButton>
           </div>

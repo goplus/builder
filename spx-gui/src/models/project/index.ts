@@ -94,6 +94,7 @@ export class Project extends Disposable {
   remixedFrom?: string | null
   name?: string
   version = 0
+  hidden = 0
   visibility?: Visibility
   description?: string
   instructions?: string
@@ -210,6 +211,10 @@ export class Project extends Disposable {
     this.visibility = visibility
   }
 
+  setHidden(hidden: number) {
+    this.hidden = hidden
+  }
+
   setDescription(description: string) {
     this.description = description
   }
@@ -313,7 +318,8 @@ export class Project extends Disposable {
       instructions: this.instructions,
       thumbnail: this.thumbnail,
       filesHash: this.filesHash,
-      lastSyncedFilesHash: this.lastSyncedFilesHash
+      lastSyncedFilesHash: this.lastSyncedFilesHash,
+      hidden: this.hidden
     }
   }
 

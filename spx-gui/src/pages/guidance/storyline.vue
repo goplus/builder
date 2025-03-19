@@ -155,7 +155,7 @@ const { data: storyLineStudy } = useQuery(
     const study = await getStoryLineStudy(props.storyLineId)
     if (!study) {
       // 如果是第一次进入，创建学习记录 并 创建Project A
-      await createStoryLineStudy(props.storyLineId)
+      const initialStudy = await createStoryLineStudy(props.storyLineId)
 
       const owner = await untilNotNull(signedInUser)
       const storyLineInfo = await untilNotNull(storyLine)
@@ -164,9 +164,10 @@ const { data: storyLineStudy } = useQuery(
       const project = new Project(owner.name, generateStudyProjectName(storyLineInfo.name))
       await project.loadGbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
+      project.setHidden(1)
       await project.saveToCloud()
 
-      return { storyLineId: props.storyLineId, lastFinishedLevelIndex: 0 }
+      return initialStudy
     }
     return study
   },

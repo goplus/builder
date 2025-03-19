@@ -6,12 +6,24 @@ type Mask = {
   endPos: Position
 }
 
+enum TaggingHandlerType {
+  ClickToNext = 'clickToNext',
+  ClickForbidden = 'clickForbidden',
+  EnterForbidden = 'enterForbidden',
+  EscapeForbidden = 'escapeForbidden',
+}
+
+type TaggingHandler = {
+  [key: string]: TaggingHandlerType
+}
+
 type Step = {
   title: LocaleMessage // 步骤名称
   description: LocaleMessage // 步骤描述
   tip: LocaleMessage // 互动提示（需要条件触发）
   duration: number // 用户当前步骤卡顿距离给提示的时长（单位：秒）
-  target: string[] // 目标元素语义化标注的key
+  target: string // 目标元素语义化标注的key（用于高亮元素）
+  taggingHandler: TaggingHandler // 元素的语义化标注 及其 处理方式
   type: 'coding' | 'following' // 存在两种类型的步骤，分别是Following步骤和Coding步骤
   isCheck: boolean // 该步骤是否涉及快照比对
   isApiControl: boolean // 是否需要去控制API Reference的展示
