@@ -127,10 +127,6 @@ type post_util_fileurls struct {
 	yap.Handler
 	*AppV2
 }
-type post_util_fmtcode struct {
-	yap.Handler
-	*AppV2
-}
 type put_asset_id struct {
 	yap.Handler
 	*AppV2
@@ -200,7 +196,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_copilot_stream_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_copilot_stream_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(put_asset_id), new(put_project_owner_name), new(put_user))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -1351,46 +1347,6 @@ func (this *post_util_fileurls) Classfname() string {
 	return "post_util_fileurls"
 }
 func (this *post_util_fileurls) Classclone() interface{} {
-	_gop_ret := *this
-	return &_gop_ret
-}
-//line cmd/spx-backend/post_util_fmtcode.yap:10
-func (this *post_util_fmtcode) Main(_gop_arg0 *yap.Context) {
-	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/post_util_fmtcode.yap:10:1
-	ctx := &this.Context
-//line cmd/spx-backend/post_util_fmtcode.yap:12:1
-	params := &controller.FmtCodeParams{}
-//line cmd/spx-backend/post_util_fmtcode.yap:13:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_util_fmtcode.yap:14:1
-		return
-	}
-//line cmd/spx-backend/post_util_fmtcode.yap:16:1
-	if
-//line cmd/spx-backend/post_util_fmtcode.yap:16:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_util_fmtcode.yap:17:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_util_fmtcode.yap:18:1
-		return
-	}
-//line cmd/spx-backend/post_util_fmtcode.yap:21:1
-	formattedCode, err := this.ctrl.FmtCode(ctx.Context(), params)
-//line cmd/spx-backend/post_util_fmtcode.yap:22:1
-	if err != nil {
-//line cmd/spx-backend/post_util_fmtcode.yap:23:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_util_fmtcode.yap:24:1
-		return
-	}
-//line cmd/spx-backend/post_util_fmtcode.yap:26:1
-	this.Json__0(201, formattedCode)
-}
-func (this *post_util_fmtcode) Classfname() string {
-	return "post_util_fmtcode"
-}
-func (this *post_util_fmtcode) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }

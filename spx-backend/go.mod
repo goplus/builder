@@ -3,23 +3,17 @@ module github.com/goplus/builder/spx-backend
 go 1.22.0
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
+	github.com/casdoor/casdoor-go-sdk v1.5.0
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/goplus/yap v0.8.3 //gop:class
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.1
-	github.com/qiniu/x v1.13.12
-	gocloud.dev v0.36.0 // indirect
-	golang.org/x/mod v0.20.0
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
-)
-
-require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
-	github.com/casdoor/casdoor-go-sdk v1.5.0
-	github.com/goplus/gop v1.3.6
 	github.com/qiniu/go-sdk/v7 v7.25.2
+	github.com/qiniu/x v1.13.12
 	github.com/stretchr/testify v1.10.0
+	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 )
@@ -34,7 +28,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
-	github.com/goplus/gogen v1.16.7 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
