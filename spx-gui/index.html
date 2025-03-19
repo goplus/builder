@@ -4,24 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel="dns-prefetch" href="https://upload-na0.qiniup.com" />
-    <% if (NODE_ENV === 'production') { %>
-    <link rel="dns-prefetch" href="https://builder-static.gopluscdn.com" />
-    <link rel="dns-prefetch" href="https://builder-usercontent.gopluscdn.com" />
-    <link rel="preconnect" href="https://builder-static.gopluscdn.com" crossorigin />
-    <link rel="preconnect" href="https://builder-usercontent.gopluscdn.com" crossorigin />
-    <% } else { %>
-    <link rel="dns-prefetch" href="https://builder-static-test.gopluscdn.com" />
-    <link rel="dns-prefetch" href="https://builder-usercontent-test.gopluscdn.com" />
-    <link rel="preconnect" href="https://builder-static-test.gopluscdn.com" crossorigin />
-    <link rel="preconnect" href="https://builder-usercontent-test.gopluscdn.com" crossorigin />
-    <% } %>
+    <link rel="dns-prefetch" href="%VITE_USERCONTENT_UPLOAD_BASE_URL%" />
+    <link rel="dns-prefetch" href="%VITE_STATIC_BASE_URL%" />
+    <link rel="dns-prefetch" href="%VITE_USERCONTENT_BASE_URL%" />
+    <link rel="preconnect" href="%VITE_STATIC_BASE_URL%" crossorigin />
+    <link rel="preconnect" href="%VITE_USERCONTENT_BASE_URL%" crossorigin />
 
     <title>Go+ Builder</title>
     <meta name="description" content="Go+ Builder is a tool for building games. We create it to help children to learn abilities to build." />
     <meta name="keywords" content="Go+ Builder, game development for kids, educational coding tools, STEM education, creative game building, children's programming, learn to code for kids" />
 
-    <link rel="icon" href="/logo.svg" />
+    <link rel="icon" href="/src/assets/logo.svg" />
 
     <style>
       html,

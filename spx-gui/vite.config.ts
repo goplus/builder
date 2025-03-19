@@ -6,8 +6,9 @@ import VueDevTools from 'vite-plugin-vue-devtools'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import vercel from 'vite-plugin-vercel'
 import path from 'path'
-// https://vitejs.dev/config/
+
 const resolve = (dir: string) => path.join(__dirname, dir)
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
@@ -45,7 +46,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     vercel: {
-      // prevent redirection from `/runner/*/runner.html` to `/runner/*/runner`
+      // prevent redirection from `*/foo.html` (e.g., `spx_2.0.1/runner.html`) to `*/foo`
       cleanUrls: false,
       rewrites: [
         {
@@ -59,11 +60,19 @@ export default defineConfig(({ mode }) => {
       ],
       headers: [
         {
-          source: '/assets/(.*)',
+          source: '/(.*)',
           headers: [
             {
               key: 'Cache-Control',
-              value: 'public, max-age=31536000, immutable'
+              value: 'public, max-age=300'
+            },
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'credentialless'
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy',
+              value: 'same-origin'
             }
           ]
         },
@@ -77,20 +86,17 @@ export default defineConfig(({ mode }) => {
           ]
         },
         {
-          source: '/(.*)',
+          source: '/assets/(.*)',
           headers: [
             {
-              key: 'Cross-Origin-Embedder-Policy',
-              value: 'credentialless'
-            },
-            {
-              key: 'Cross-Origin-Opener-Policy',
-              value: 'same-origin'
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable'
             }
           ]
         },
         {
-          source: '/runner/(.*)',
+          // For files in folder `public/spx_*`
+          source: '/spx_(.*)',
           headers: [
             {
               key: 'Cache-Control',
