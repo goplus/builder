@@ -6,8 +6,6 @@ import (
 	"text/template"
 )
 
-var defaultSystemMsg = "You are a Go+ Spx language assistant. Please answer using Spx language."
-
 // For details about maintaining `*_defs.md` files, see:
 // spx-gui/src/components/editor/code-editor/document-base/helpers.ts
 
@@ -50,5 +48,5 @@ func init() {
 	if err := tpl.Execute(&sb, tplData); err != nil {
 		panic(err)
 	}
-	SystemPrompt = sb.String() + "\n" + defaultSystemMsg
+	SystemPrompt = sb.String()
 }
