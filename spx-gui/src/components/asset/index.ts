@@ -23,10 +23,11 @@ import { useEditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
 import { getResourceIdentifier } from '../editor/code-editor/common'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
-import AssetAddModal from './library/AssetAddModal.vue'
+import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
+import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
@@ -46,10 +47,17 @@ export function useAddAssetFromLibrary(autoSelect = true) {
   }
 }
 
-export function useAddAssetToLibrary() {
-  const invokeAddAssetModal = useModal(AssetAddModal)
-  return function addAssetToLibrary(asset: Backdrop | Sound | Sprite) {
-    return invokeAddAssetModal({ asset })
+export function useSaveAssetToLibrary() {
+  const invokeAssetSaveModal = useModal(AssetSaveModal)
+  return function saveAssetToLibrary(model: AssetModel) {
+    return invokeAssetSaveModal({ model })
+  }
+}
+
+export function useAssetLibraryManagement() {
+  const invokeAssetLibraryManagementModal = useModal(AssetLibraryManagementModal)
+  return function manageAssetLibrary(type: AssetType) {
+    return invokeAssetLibraryManagementModal({ type })
   }
 }
 

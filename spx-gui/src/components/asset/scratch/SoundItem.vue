@@ -3,12 +3,13 @@
     <template #player>
       <BlobSoundPlayer :blob="asset.blob" color="primary" />
     </template>
+    <UICornerIcon v-show="selected" type="check" />
   </UISoundItem>
 </template>
 <script setup lang="ts">
 import type { ExportedScratchFile } from '@/utils/scratch'
 import { useAudioDuration } from '@/utils/audio'
-import { UISoundItem } from '@/components/ui'
+import { UISoundItem, UICornerIcon } from '@/components/ui'
 import BlobSoundPlayer from '../BlobSoundPlayer.vue'
 
 const props = defineProps<{

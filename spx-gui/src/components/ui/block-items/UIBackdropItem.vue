@@ -9,12 +9,11 @@
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
-    <UICornerIcon v-show="selectable && selectable.selected" type="check" />
+    <slot></slot>
   </UIBlockItem>
 </template>
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
-import UICornerIcon from './UICornerIcon.vue'
 import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 

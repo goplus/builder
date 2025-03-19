@@ -32,6 +32,20 @@
           {{ $t({ en: 'Use new SPX (in beta)', zh: '启用新 SPX（测试中）' }) }}
         </UIMenuItem>
       </UIMenuGroup>
+      <UIMenuGroup v-if="userInfo.advancedLibraryEnabled">
+        <UIMenuItem @click="manageAssets(AssetType.Sprite)">
+          {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Sound)">
+          {{ $t({ en: 'Manage sounds', zh: '管理声音' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
+          {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleDisableAdvancedLibrary">
+          {{ $t({ en: 'Disable advanced library features', zh: '禁用高级素材库功能' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
@@ -47,8 +61,10 @@ import { useSpxVersion } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
+import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
+import { useAssetLibraryManagement } from '@/components/asset'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
@@ -101,6 +117,13 @@ const handleUseSpxV2 = useMessageHandle(
     zh: '已启用新版本 SPX'
   }
 ).fn
+
+function handleDisableAdvancedLibrary() {
+  userStore.disableAdvancedLibrary()
+}
+
+const manageAssetLibrary = useAssetLibraryManagement()
+const manageAssets = useMessageHandle(manageAssetLibrary).fn
 
 function handleSignOut() {
   userStore.signOut()

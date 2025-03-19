@@ -4,13 +4,12 @@
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
-    <UICornerIcon v-show="selected" type="check" />
+    <slot></slot>
   </UIBlockItem>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIBlockItem from './UIBlockItem.vue'
-import UICornerIcon from './UICornerIcon.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 const props = withDefaults(

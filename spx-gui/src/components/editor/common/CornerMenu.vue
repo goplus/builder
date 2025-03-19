@@ -4,15 +4,15 @@
       <UICornerIcon :color="color" type="more" />
     </template>
     <UIMenu>
-      <UIMenuItem @click="handleAddToAssetLibrary.fn">{{
-        $t({ en: 'Add to asset library', zh: '添加到素材库' })
+      <UIMenuItem @click="handleSaveToAssetLibrary.fn">{{
+        $t({ en: 'Save to asset library', zh: '保存到素材库' })
       }}</UIMenuItem>
       <UIMenuItem :disabled="!removable" @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
     </UIMenu>
   </UIDropdown>
 </template>
 <script setup lang="ts">
-import { useAddAssetToLibrary } from '@/components/asset'
+import { useSaveAssetToLibrary } from '@/components/asset'
 import { UIDropdown, UICornerIcon, UIMenu, UIMenuItem, type Color } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
 import type { Sound } from '@/models/sound'
@@ -29,15 +29,15 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const addAssetToLibrary = useAddAssetToLibrary()
+const saveAssetToLibrary = useSaveAssetToLibrary()
 
-const handleAddToAssetLibrary = useMessageHandle(
+const handleSaveToAssetLibrary = useMessageHandle(
   async () => {
-    await addAssetToLibrary(props.item)
+    await saveAssetToLibrary(props.item)
   },
   {
-    en: 'Failed to add to asset library',
-    zh: '添加至素材库失败'
+    en: 'Failed to save to asset library',
+    zh: '保存至素材库失败'
   }
 )
 </script>

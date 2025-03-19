@@ -1,9 +1,13 @@
 <template>
-  <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
+  <EditorList
+    color="sprite"
+    :add-text="$t({ en: 'Add costume', zh: '添加造型' })"
+    :sortable="sortable"
+    @sorted="handleSorted"
+  >
     <CostumeItem
       v-for="costume in sprite.costumes"
       :key="costume.id"
-      :sprite="sprite"
       :costume="costume"
       removable
       :selectable="{ selected: selected?.id === costume.id }"
@@ -39,6 +43,7 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const sortable = computed(() => editorCtx.userInfo.advancedLibraryEnabled)
 const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
@@ -51,4 +56,9 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.spr
   en: 'Failed to add from local file',
   zh: '从本地文件添加失败'
 }).fn
+
+function handleSorted(oldIdx: number, newIdx: number) {
+  const action = { name: { en: 'Sort costumes', zh: '调整造型顺序' } }
+  editorCtx.project.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
+}
 </script>

@@ -5,7 +5,9 @@ import { Sprite } from '../sprite'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 
-export type PartialAssetData = Pick<AssetData, 'displayName' | 'type' | 'files' | 'filesHash'>
+export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
+
+export type AssetMetadata = Omit<AssetData, 'files'>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
@@ -17,63 +19,70 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   const { fileCollection, fileCollectionHash } = await saveFiles(
-    sprite.export({ sounds: [], includeId: false, includeCode: false }) // animation sound is not preserved when saving as assets
+    sprite.export({ sounds: [], includeId: false, includeCode: false, includeAssetMetadata: false }) // animation sound is not preserved when saving as assets
   )
   return {
-    displayName: sprite.name,
     type: AssetType.Sprite,
     files: fileCollection,
     filesHash: fileCollectionHash
   }
 }
 
-export async function asset2Sprite(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
+export async function asset2Sprite({ files: fileCollection, ...metadata }: AssetData) {
+  const files = getFiles(fileCollection)
   const sprites = await Sprite.loadAll(files, {
     sounds: [],
     includeId: false,
-    includeCode: false
+    includeCode: false,
+    includeAssetMetadata: false
   })
   if (sprites.length === 0) throw new Error('no sprite loaded')
-  return sprites[0]
+  const sprite = sprites[0]
+  sprite.setAssetMetadata(metadata)
+  return sprite
 }
+
 // Config for backdrop is not a standalone file in a project, but part of config for the project (`assets/index.json`).
 // To save config for backdrop in asset data, we make a virtual file which contains the backdrop's config only.
 const virtualBackdropConfigFileName = 'assets/__backdrop__.json'
 
 export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetData> {
-  const [config, files] = backdrop.export({ includeId: false })
+  const [config, files] = backdrop.export({ includeId: false, includeAssetMetadata: false })
   files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
   const { fileCollection, fileCollectionHash } = await saveFiles(files)
   return {
-    displayName: backdrop.name,
     type: AssetType.Backdrop,
     files: fileCollection,
     filesHash: fileCollectionHash
   }
 }
 
-export async function asset2Backdrop(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
+export async function asset2Backdrop({ files: fileCollection, ...metadata }: AssetData) {
+  const files = getFiles(fileCollection)
   const configFile = files[virtualBackdropConfigFileName]
   if (configFile == null) throw new Error('no config file found')
   const config = (await toConfig(configFile)) as BackdropInits
-  return Backdrop.load(config, files, { includeId: false })
+  const backdrop = Backdrop.load(config, files, { includeId: false, includeAssetMetadata: false })
+  backdrop.setAssetMetadata(metadata)
+  return backdrop
 }
 
 export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
-  const { fileCollection, fileCollectionHash } = await saveFiles(sound.export({ includeId: false }))
+  const { fileCollection, fileCollectionHash } = await saveFiles(
+    sound.export({ includeId: false, includeAssetMetadata: false })
+  )
   return {
-    displayName: sound.name,
     type: AssetType.Sound,
     files: fileCollection,
     filesHash: fileCollectionHash
   }
 }
 
-export async function asset2Sound(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
-  const sounds = await Sound.loadAll(files, { includeId: false })
+export async function asset2Sound({ files: fileCollection, ...metadata }: AssetData) {
+  const files = getFiles(fileCollection)
+  const sounds = await Sound.loadAll(files, { includeId: false, includeAssetMetadata: false })
   if (sounds.length === 0) throw new Error('no sound loaded')
-  return sounds[0]
+  const sound = sounds[0]
+  sound.setAssetMetadata(metadata)
+  return sound
 }

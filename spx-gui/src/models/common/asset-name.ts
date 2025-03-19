@@ -21,6 +21,23 @@ function getAssetNameTip(asset: LocaleMessage) {
   }
 }
 
+export function validateAssetDisplayName(name: string) {
+  name = name.trim()
+  if (name === '') return { en: 'The asset name must not be blank', zh: '名称不可为空' }
+  if (name.length > 100)
+    return {
+      en: 'The name is too long (maximum is 100 characters)',
+      zh: '名字长度超出限制（最多 100 个字符）'
+    }
+}
+
+export function getAssetDisplayNameTip() {
+  return {
+    en: 'A good name makes it easy to be found in asset library.',
+    zh: '起一个准确的名字，可以帮助你下次更快地找到它'
+  }
+}
+
 function validateGopIdentifierAssetName(name: string) {
   const err = validateAssetName(name)
   if (err != null) return err

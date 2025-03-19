@@ -5,15 +5,22 @@
 </template>
 
 <script setup lang="ts">
-import type { Sound } from '@/models/sound'
+import { useAsyncComputed } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
+import { asset2Sound } from '@/models/common/asset'
+import type { AssetData } from '@/apis/asset'
+import { Sound } from '@/models/sound'
 import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
 
 const props = defineProps<{
-  sound: Sound
+  sound: Sound | AssetData
 }>()
 
-const [audioSrc] = useFileUrl(() => props.sound.file)
+const sound = useAsyncComputed(async () => {
+  if (props.sound instanceof Sound) return props.sound
+  return asset2Sound(props.sound)
+})
+const [audioSrc] = useFileUrl(() => sound.value?.file)
 </script>
 
 <style scoped lang="scss">
