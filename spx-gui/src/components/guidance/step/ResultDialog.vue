@@ -24,8 +24,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import UIButton from '../ui/UIButton.vue'
-import UILoading from '../ui/UILoading.vue'
+import UIButton from '@/components/ui/UIButton.vue'
+import UILoading from '@/components/ui/UILoading.vue'
 
 const emit = defineEmits(['next', 'retry', 'answer', 'close'])
 
