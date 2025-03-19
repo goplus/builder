@@ -1,19 +1,13 @@
 <template>
   <div class="guide-ui-container">
-    <img
-      class="niuxiaoqi"
-      :style="getNiuxiaoqiStyle(slotInfo)"
-      width="300"
-      height="320"
-      src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
-    />
     <svg
-      class="ic-bubble"
-      :style="getBubbleStyle(slotInfo)"
+      class="ic-arrow"
+      :style="getArrowStyle(props.slotInfo)"
       viewBox="0 0 1024 1024"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
       p-id="1444"
+      data-spm-anchor-id="a313x.search_index.0.i0.6e8f3a81bBVDWW"
       width="300"
       height="200"
     >
@@ -23,44 +17,40 @@
         class="icon-fill"
         p-id="1445"
       ></path>
-      <text
-        x="50%"
-        y="50%"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        font-family="Arial"
-        font-size="48"
-        fill="black"
+    </svg>
+    <img
+      class="niuxiaoqi"
+      :style="getNiuxiaoqiStyle(props.slotInfo)"
+      width="300"
+      height="320"
+      src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
+    />
+    <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+      <svg
+        class="ic-bubble-bg"
+        :style="getBubbleBgStyle(props.slotInfo)"
+        viewBox="0 0 1536 1024"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        {{ props.step.description.zh }}
-      </text>
-    </svg>
-    <svg
-      t="1741314616196"
-      class="ic-arrow"
-      :style="getArrowStyle(slotInfo)"
-      viewBox="0 0 1536 1024"
-      version="1.1"
-      xmlns="http://www.w3.org/2000/svg"
-      p-id="6877"
-      width="200"
-      height="200"
-    >
-      <path
-        d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
-        class="svg-fill"
-        p-id="6878"
-      ></path>
-    </svg>
+        <path
+          d="M269.824 1024H0l122.481778-133.461333V56.888889a56.888889 56.888889 0 0 1 56.888889-56.888889H1479.111111a56.888889 56.888889 0 0 1 56.888889 56.888889v910.222222a56.888889 56.888889 0 0 1-56.888889 56.888889z"
+          class="svg-fill"
+        ></path>
+      </svg>
+      <div class="bubble-content">
+        {{ t({ zh: props.step.description.zh, en: props.step.description.en }) }}
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
+import { useI18n } from '@/utils/i18n'
 
 const editorCtx = useEditorCtx()
 
@@ -72,6 +62,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   followingStepCompleted: []
 }>()
+
+const { t } = useI18n()
 
 let currentGuidePositions: {
   arrowStyle: any
@@ -95,6 +87,10 @@ function preventEscapeAndEnter(event: KeyboardEvent) {
 onMounted(() => {
   setupTargetElementListener()
   setupKeyboardEventListeners()
+
+  nextTick(() => {
+    currentGuidePositions = calculateGuidePositions(props.slotInfo)
+  })
 })
 
 onBeforeUnmount(() => {
@@ -121,10 +117,20 @@ function getTargetElement(): HTMLElement | null {
 function setupTargetElementListener() {
   if (props.step.type !== 'following' || !props.step.target) return
 
-  const element = getTargetElement()
-  if (element) {
-    element.addEventListener('click', handleTargetElementClick)
-  }
+  nextTick(() => {
+    try {
+      const { getElement } = useTag()
+      const element = getElement(props.step.target)
+      if (element) {
+        console.log('Setting up target element listener:', element)
+        element.addEventListener('click', handleTargetElementClick)
+      } else {
+        console.warn('Target element not found:', props.step.target)
+      }
+    } catch (error) {
+      console.warn('Error setting up target element listener:', error)
+    }
+  })
 }
 
 async function handleTargetElementClick() {
@@ -158,28 +164,66 @@ async function getSnapshot(): Promise<string> {
   return JSON.stringify({ files })
 }
 
-// UI位置计算
+function calculateBubbleArrowDirection(niuxiaoqiPos: HighlightRect, bubblePos: HighlightRect) {
+  const niuxiaoqiCenter = {
+    x: niuxiaoqiPos.left + niuxiaoqiPos.width / 2,
+    y: niuxiaoqiPos.top + niuxiaoqiPos.height / 2
+  }
+
+  const bubbleCenter = {
+    x: bubblePos.left + bubblePos.width / 2,
+    y: bubblePos.top + bubblePos.height / 2
+  }
+
+  const dx = bubbleCenter.x - niuxiaoqiCenter.x
+  const dy = bubbleCenter.y - niuxiaoqiCenter.y
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? 'left' : 'right'
+  } else {
+    return dy > 0 ? 'top' : 'bottom'
+  }
+}
+
 function calculateGuidePositions(highlightRect: HighlightRect) {
   const windowWidth = window.innerWidth
   const windowHeight = window.innerHeight
 
+  // 确定高亮区域所在象限
   const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
   const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
 
-  const arrowSize = { width: 200, height: 200 }
-  const niuxiaoqiSize = { width: 300, height: 320 }
-  const bubbleSize = { width: 300, height: 200 }
+  const scale = Math.min(windowWidth, windowHeight) / 1920
+  const maxScale = 0.8 // 限制最大缩放比例
+  const finalScale = Math.min(scale, maxScale)
+
+  const arrowSize = {
+    width: 200 * finalScale,
+    height: 200 * finalScale
+  }
+  const niuxiaoqiSize = {
+    width: 300 * finalScale,
+    height: 320 * finalScale
+  }
+  const bubbleSize = {
+    width: 300 * finalScale,
+    height: 200 * finalScale
+  }
 
   let arrowPosition = { left: 0, top: 0 }
   let niuxiaoqiPosition = { left: 0, top: 0 }
   let bubblePosition = { left: 0, top: 0 }
 
+  let arrowRotation = 0
+
+  // 根据象限计算位置
   if (isLeft && isTop) {
     // 左上象限
     arrowPosition = {
       left: highlightRect.left + highlightRect.width,
       top: highlightRect.top + highlightRect.height
     }
+    arrowRotation = 270
     niuxiaoqiPosition = {
       left: arrowPosition.left + arrowSize.width,
       top: arrowPosition.top + arrowSize.height
@@ -194,6 +238,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left - arrowSize.width,
       top: highlightRect.top + highlightRect.height
     }
+    arrowRotation = 0
     niuxiaoqiPosition = {
       left: arrowPosition.left - niuxiaoqiSize.width,
       top: arrowPosition.top + arrowSize.height
@@ -208,6 +253,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left + highlightRect.width,
       top: highlightRect.top - arrowSize.height
     }
+    arrowRotation = 180
     niuxiaoqiPosition = {
       left: arrowPosition.left + arrowSize.width,
       top: arrowPosition.top - niuxiaoqiSize.height
@@ -222,6 +268,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: highlightRect.left - arrowSize.width,
       top: highlightRect.top - arrowSize.height
     }
+    arrowRotation = 90
     niuxiaoqiPosition = {
       left: arrowPosition.left - niuxiaoqiSize.width,
       top: arrowPosition.top - niuxiaoqiSize.height
@@ -232,13 +279,25 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
     }
   }
 
+  const bubbleArrowDirection = calculateBubbleArrowDirection(
+    {
+      left: niuxiaoqiPosition.left,
+      top: niuxiaoqiPosition.top,
+      width: niuxiaoqiSize.width,
+      height: niuxiaoqiSize.height
+    },
+    { left: bubblePosition.left, top: bubblePosition.top, width: bubbleSize.width, height: bubbleSize.height }
+  )
+
   return {
     arrowStyle: {
       position: 'absolute',
       left: `${arrowPosition.left}px`,
       top: `${arrowPosition.top}px`,
       width: `${arrowSize.width}px`,
-      height: `${arrowSize.height}px`
+      height: `${arrowSize.height}px`,
+      transform: `rotate(${arrowRotation}deg)`,
+      transformOrigin: 'center center'
     },
     niuxiaoqiStyle: {
       position: 'absolute',
@@ -252,7 +311,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: `${bubblePosition.left}px`,
       top: `${bubblePosition.top}px`,
       width: `${bubbleSize.width}px`,
-      height: `${bubbleSize.height}px`
+      height: `${bubbleSize.height}px`,
+      arrowDirection: bubbleArrowDirection
     }
   }
 }
@@ -271,11 +331,53 @@ function getNiuxiaoqiStyle(highlightRect: HighlightRect) {
   return currentGuidePositions.niuxiaoqiStyle
 }
 
-function getBubbleStyle(highlightRect: HighlightRect) {
+function getBubbleContainerStyle(highlightRect: HighlightRect) {
   if (!currentGuidePositions) {
     currentGuidePositions = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.bubbleStyle
+
+  const { left, top, width, height } = currentGuidePositions.bubbleStyle
+
+  return {
+    position: 'absolute' as const,
+    left,
+    top,
+    width,
+    height
+  }
+}
+
+// 添加气泡背景样式函数
+function getBubbleBgStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions) {
+    currentGuidePositions = calculateGuidePositions(highlightRect)
+  }
+
+  const arrowDirection = currentGuidePositions.bubbleStyle.arrowDirection
+
+  let transform = ''
+
+  switch (arrowDirection) {
+    case 'bottom':
+      transform = ''
+      break
+    case 'top':
+      transform = 'scale(1, -1)'
+      break
+    case 'left':
+      transform = 'scale(-1, 1)'
+      break
+    case 'right':
+      transform = 'scale(-1, -1)'
+      break
+  }
+
+  return {
+    transform,
+    transformOrigin: 'center center',
+    width: '100%',
+    height: '100%'
+  }
 }
 </script>
 
@@ -301,5 +403,22 @@ function getBubbleStyle(highlightRect: HighlightRect) {
 
 .icon-fill {
   fill: #5c5c66;
+}
+
+.bubble-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  box-sizing: border-box;
+  font-size: 18px;
+  color: #333;
+  text-align: center;
+  pointer-events: none;
 }
 </style>
