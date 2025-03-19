@@ -4,21 +4,6 @@
 
 import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
 
-export interface FormatError {
-  column: number
-  line: number
-  msg: string
-}
-
-export interface FormatResponse {
-  body: string
-  error?: FormatError
-}
-
-export function formatSpxCode(body: string) {
-  return client.post('/util/fmtcode', { body }) as Promise<FormatResponse>
-}
-
 export type UpInfo = {
   /** Uptoken */
   token: string

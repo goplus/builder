@@ -962,56 +962,6 @@ paths:
                       - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
                     description: Map from universal URLs to signed web URLs for the objects.
 
-  /util/fmtcode:
-    post:
-      tags:
-        - Utils
-      summary: Format code (deprecated)
-      description: Format the provided code and optionally fix import statements. This API is deprecated; use `spxls` (`textDocument/formatting`) instead.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - body
-              properties:
-                body:
-                  type: string
-                  description: Code body to format.
-                fixImports:
-                  type: boolean
-                  default: false
-                  description: Whether to fix import statements during formatting.
-      responses:
-        "201":
-          description: Successfully formatted the code.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  body:
-                    type: string
-                    description: Formatted code body.
-                  error:
-                    type: object
-                    properties:
-                      line:
-                        type: integer
-                        format: int32
-                        description: Line number where the error occurred.
-                      column:
-                        type: integer
-                        format: int32
-                        description: Column number where the error occurred.
-                      msg:
-                        type: string
-                        description: Message describing the formatting error.
-                    description: Details of any formatting errors encountered.
-
 components:
   securitySchemes:
     bearerAuth:
