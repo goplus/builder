@@ -263,7 +263,7 @@ func TestControllerListUsers(t *testing.T) {
 		}
 
 		params := NewListUsersParams()
-		params.Follower = stringPtr("follower_user")
+		params.Follower = ptr("follower_user")
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.User{}).
@@ -314,7 +314,7 @@ func TestControllerListUsers(t *testing.T) {
 		}
 
 		params := NewListUsersParams()
-		params.Followee = stringPtr("followee_user")
+		params.Followee = ptr("followee_user")
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.User{}).
@@ -370,7 +370,7 @@ func TestControllerListUsers(t *testing.T) {
 
 		params := NewListUsersParams()
 		params.OrderBy = ListUsersOrderByFollowedAt
-		params.Follower = stringPtr("follower_user")
+		params.Follower = ptr("follower_user")
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.User{}).
@@ -542,7 +542,7 @@ func TestControllerGetUser(t *testing.T) {
 
 		_, err := ctrl.GetUser(context.Background(), mUserUsername)
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("failed to get user %s: record not found", mUserUsername))
+		assert.EqualError(t, err, fmt.Sprintf("failed to get user %q: record not found", mUserUsername))
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -659,7 +659,7 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 
 		_, err := ctrl.UpdateAuthedUser(ctx, params)
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("failed to update authenticated user %s: update error", mAuthedUser.Username))
+		assert.EqualError(t, err, fmt.Sprintf("failed to update authenticated user %q: update error", mAuthedUser.Username))
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})

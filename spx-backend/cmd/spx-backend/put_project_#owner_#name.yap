@@ -21,7 +21,8 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-project, err := ctrl.UpdateProject(ctx.Context(), ${owner}, ${name}, params)
+projectFullName := controller.ProjectFullName{Owner: ${owner}, Project: ${name}}
+project, err := ctrl.UpdateProject(ctx.Context(), projectFullName, params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

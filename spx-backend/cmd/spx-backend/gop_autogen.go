@@ -229,28 +229,30 @@ func (this *delete_asset_id) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/delete_project_#owner_#name.yap:6
+//line cmd/spx-backend/delete_project_#owner_#name.yap:10
 func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/delete_project_#owner_#name.yap:6:1
+//line cmd/spx-backend/delete_project_#owner_#name.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/delete_project_#owner_#name.yap:7:1
+//line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
 	if
-//line cmd/spx-backend/delete_project_#owner_#name.yap:7:1
+//line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
 	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/delete_project_#owner_#name.yap:8:1
-		return
-	}
-//line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
-	if
-//line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
-	err := this.ctrl.DeleteProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
 //line cmd/spx-backend/delete_project_#owner_#name.yap:12:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/delete_project_#owner_#name.yap:13:1
 		return
 	}
 //line cmd/spx-backend/delete_project_#owner_#name.yap:15:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/delete_project_#owner_#name.yap:16:1
+	if
+//line cmd/spx-backend/delete_project_#owner_#name.yap:16:1
+	err := this.ctrl.DeleteProject(ctx.Context(), projectFullName); err != nil {
+//line cmd/spx-backend/delete_project_#owner_#name.yap:17:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_project_#owner_#name.yap:18:1
+		return
+	}
+//line cmd/spx-backend/delete_project_#owner_#name.yap:20:1
 	this.Text__0(204, "", "")
 }
 func (this *delete_project_owner_name) Classfname() string {
@@ -260,28 +262,30 @@ func (this *delete_project_owner_name) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:6
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:10
 func (this *delete_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:6:1
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:7:1
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
 	if
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:7:1
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
 	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:8:1
-		return
-	}
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
-	if
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
-	err := this.ctrl.UnlikeProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:12:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:13:1
 		return
 	}
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:15:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:16:1
+	if
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:16:1
+	err := this.ctrl.UnlikeProject(ctx.Context(), projectFullName); err != nil {
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:17:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:18:1
+		return
+	}
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:20:1
 	this.Text__0(204, "", "")
 }
 func (this *delete_project_owner_name_liking) Classfname() string {
@@ -458,21 +462,25 @@ func (this *get_assets_list) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:6
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:10
 func (this *get_project_release_owner_project_release) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:6:1
-	ctx := &this.Context
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:8:1
-	projectRelease, err := this.ctrl.GetProjectRelease(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("project"), this.Gop_Env("release"))
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:9:1
-	if err != nil {
 //line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:12:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:13:1
+	projectReleaseFullName := controller.ProjectReleaseFullName{ProjectFullName: projectFullName, Release: this.Gop_Env("release")}
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:14:1
+	projectRelease, err := this.ctrl.GetProjectRelease(ctx.Context(), projectReleaseFullName)
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:15:1
+	if err != nil {
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:16:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:11:1
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:17:1
 		return
 	}
-//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:13:1
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:19:1
 	this.Json__1(projectRelease)
 }
 func (this *get_project_release_owner_project_release) Classfname() string {
@@ -494,45 +502,54 @@ func (this *get_project_releases_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_project-releases_list.yap:14:1
 	projectFullName := this.Gop_Env("projectFullName"); projectFullName != "" {
 //line cmd/spx-backend/get_project-releases_list.yap:15:1
-		params.ProjectFullName = &projectFullName
+		pfn, err := controller.ParseProjectFullName(projectFullName)
+//line cmd/spx-backend/get_project-releases_list.yap:16:1
+		if err != nil {
+//line cmd/spx-backend/get_project-releases_list.yap:17:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid projectFullName")
+//line cmd/spx-backend/get_project-releases_list.yap:18:1
+			return
+		}
+//line cmd/spx-backend/get_project-releases_list.yap:20:1
+		params.ProjectFullName = &pfn
 	}
-//line cmd/spx-backend/get_project-releases_list.yap:18:1
+//line cmd/spx-backend/get_project-releases_list.yap:23:1
 	if
-//line cmd/spx-backend/get_project-releases_list.yap:18:1
+//line cmd/spx-backend/get_project-releases_list.yap:23:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_project-releases_list.yap:19:1
+//line cmd/spx-backend/get_project-releases_list.yap:24:1
 		params.OrderBy = controller.ListProjectReleasesOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_project-releases_list.yap:21:1
+//line cmd/spx-backend/get_project-releases_list.yap:26:1
 	if
-//line cmd/spx-backend/get_project-releases_list.yap:21:1
+//line cmd/spx-backend/get_project-releases_list.yap:26:1
 	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
-//line cmd/spx-backend/get_project-releases_list.yap:22:1
+//line cmd/spx-backend/get_project-releases_list.yap:27:1
 		params.SortOrder = controller.SortOrder(sortOrder)
 	}
-//line cmd/spx-backend/get_project-releases_list.yap:25:1
+//line cmd/spx-backend/get_project-releases_list.yap:30:1
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_project-releases_list.yap:26:1
+//line cmd/spx-backend/get_project-releases_list.yap:31:1
 	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_project-releases_list.yap:27:1
-	if
-//line cmd/spx-backend/get_project-releases_list.yap:27:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_project-releases_list.yap:28:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/get_project-releases_list.yap:29:1
-		return
-	}
 //line cmd/spx-backend/get_project-releases_list.yap:32:1
-	projectReleases, err := this.ctrl.ListProjectReleases(ctx.Context(), params)
+	if
+//line cmd/spx-backend/get_project-releases_list.yap:32:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/get_project-releases_list.yap:33:1
-	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/get_project-releases_list.yap:34:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_project-releases_list.yap:35:1
 		return
 	}
 //line cmd/spx-backend/get_project-releases_list.yap:37:1
+	projectReleases, err := this.ctrl.ListProjectReleases(ctx.Context(), params)
+//line cmd/spx-backend/get_project-releases_list.yap:38:1
+	if err != nil {
+//line cmd/spx-backend/get_project-releases_list.yap:39:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_project-releases_list.yap:40:1
+		return
+	}
+//line cmd/spx-backend/get_project-releases_list.yap:42:1
 	this.Json__1(projectReleases)
 }
 func (this *get_project_releases_list) Classfname() string {
@@ -542,21 +559,23 @@ func (this *get_project_releases_list) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/get_project_#owner_#name.yap:6
+//line cmd/spx-backend/get_project_#owner_#name.yap:10
 func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/get_project_#owner_#name.yap:6:1
-	ctx := &this.Context
-//line cmd/spx-backend/get_project_#owner_#name.yap:8:1
-	project, err := this.ctrl.GetProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name"))
-//line cmd/spx-backend/get_project_#owner_#name.yap:9:1
-	if err != nil {
 //line cmd/spx-backend/get_project_#owner_#name.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_project_#owner_#name.yap:12:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/get_project_#owner_#name.yap:13:1
+	project, err := this.ctrl.GetProject(ctx.Context(), projectFullName)
+//line cmd/spx-backend/get_project_#owner_#name.yap:14:1
+	if err != nil {
+//line cmd/spx-backend/get_project_#owner_#name.yap:15:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_project_#owner_#name.yap:11:1
+//line cmd/spx-backend/get_project_#owner_#name.yap:16:1
 		return
 	}
-//line cmd/spx-backend/get_project_#owner_#name.yap:13:1
+//line cmd/spx-backend/get_project_#owner_#name.yap:18:1
 	this.Json__1(project)
 }
 func (this *get_project_owner_name) Classfname() string {
@@ -566,33 +585,35 @@ func (this *get_project_owner_name) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:6
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:10
 func (this *get_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:6:1
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:7:1
-	if
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:8:1
-		return
-	}
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:11:1
-	hasLiked, err := this.ctrl.HasLikedProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name"))
+	if
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:11:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:12:1
-	if err != nil {
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:13:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:14:1
 		return
 	}
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:15:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:16:1
-	if hasLiked {
+	hasLiked, err := this.ctrl.HasLikedProject(ctx.Context(), projectFullName)
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:17:1
+	if err != nil {
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:18:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:19:1
+		return
+	}
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:21:1
+	if hasLiked {
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:22:1
 		ctx.Text__0(204, "", "")
 	} else {
-//line cmd/spx-backend/get_project_#owner_#name_liking.yap:19:1
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:24:1
 		replyWithCode(ctx, errorNotFound)
 	}
 }
@@ -639,130 +660,139 @@ func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_projects_list.yap:30:1
 	remixedFrom := this.Gop_Env("remixedFrom"); remixedFrom != "" {
 //line cmd/spx-backend/get_projects_list.yap:31:1
-		params.RemixedFrom = &remixedFrom
+		rs, err := controller.ParseRemixSource(remixedFrom)
+//line cmd/spx-backend/get_projects_list.yap:32:1
+		if err != nil {
+//line cmd/spx-backend/get_projects_list.yap:33:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixedFrom")
+//line cmd/spx-backend/get_projects_list.yap:34:1
+			return
+		}
+//line cmd/spx-backend/get_projects_list.yap:36:1
+		params.RemixedFrom = &rs
 	}
-//line cmd/spx-backend/get_projects_list.yap:34:1
+//line cmd/spx-backend/get_projects_list.yap:39:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:34:1
+//line cmd/spx-backend/get_projects_list.yap:39:1
 	keyword := this.Gop_Env("keyword"); keyword != "" {
-//line cmd/spx-backend/get_projects_list.yap:35:1
+//line cmd/spx-backend/get_projects_list.yap:40:1
 		params.Keyword = &keyword
 	}
-//line cmd/spx-backend/get_projects_list.yap:38:1
+//line cmd/spx-backend/get_projects_list.yap:43:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:38:1
+//line cmd/spx-backend/get_projects_list.yap:43:1
 	visibility := this.Gop_Env("visibility"); visibility != "" {
-//line cmd/spx-backend/get_projects_list.yap:39:1
+//line cmd/spx-backend/get_projects_list.yap:44:1
 		params.Visibility = &visibility
 	}
-//line cmd/spx-backend/get_projects_list.yap:42:1
+//line cmd/spx-backend/get_projects_list.yap:47:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:42:1
+//line cmd/spx-backend/get_projects_list.yap:47:1
 	liker := this.Gop_Env("liker"); liker != "" {
-//line cmd/spx-backend/get_projects_list.yap:43:1
+//line cmd/spx-backend/get_projects_list.yap:48:1
 		params.Liker = &liker
 	}
-//line cmd/spx-backend/get_projects_list.yap:46:1
+//line cmd/spx-backend/get_projects_list.yap:51:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:46:1
+//line cmd/spx-backend/get_projects_list.yap:51:1
 	createdAfter := this.Gop_Env("createdAfter"); createdAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:47:1
+//line cmd/spx-backend/get_projects_list.yap:52:1
 		createdAfterTime, err := time.Parse(time.RFC3339Nano, createdAfter)
-//line cmd/spx-backend/get_projects_list.yap:48:1
+//line cmd/spx-backend/get_projects_list.yap:53:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:49:1
+//line cmd/spx-backend/get_projects_list.yap:54:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid createdAfter")
-//line cmd/spx-backend/get_projects_list.yap:50:1
+//line cmd/spx-backend/get_projects_list.yap:55:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:52:1
+//line cmd/spx-backend/get_projects_list.yap:57:1
 		params.CreatedAfter = &createdAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:55:1
+//line cmd/spx-backend/get_projects_list.yap:60:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:55:1
+//line cmd/spx-backend/get_projects_list.yap:60:1
 	likesReceivedAfter := this.Gop_Env("likesReceivedAfter"); likesReceivedAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:56:1
+//line cmd/spx-backend/get_projects_list.yap:61:1
 		likesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, likesReceivedAfter)
-//line cmd/spx-backend/get_projects_list.yap:57:1
+//line cmd/spx-backend/get_projects_list.yap:62:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:58:1
+//line cmd/spx-backend/get_projects_list.yap:63:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid likesReceivedAfter")
-//line cmd/spx-backend/get_projects_list.yap:59:1
+//line cmd/spx-backend/get_projects_list.yap:64:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:61:1
+//line cmd/spx-backend/get_projects_list.yap:66:1
 		params.LikesReceivedAfter = &likesReceivedAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:64:1
+//line cmd/spx-backend/get_projects_list.yap:69:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:64:1
+//line cmd/spx-backend/get_projects_list.yap:69:1
 	remixesReceivedAfter := this.Gop_Env("remixesReceivedAfter"); remixesReceivedAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:65:1
+//line cmd/spx-backend/get_projects_list.yap:70:1
 		remixesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, remixesReceivedAfter)
-//line cmd/spx-backend/get_projects_list.yap:66:1
+//line cmd/spx-backend/get_projects_list.yap:71:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:67:1
+//line cmd/spx-backend/get_projects_list.yap:72:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixesReceivedAfter")
-//line cmd/spx-backend/get_projects_list.yap:68:1
+//line cmd/spx-backend/get_projects_list.yap:73:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:70:1
+//line cmd/spx-backend/get_projects_list.yap:75:1
 		params.RemixesReceivedAfter = &remixesReceivedAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:73:1
+//line cmd/spx-backend/get_projects_list.yap:78:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:73:1
+//line cmd/spx-backend/get_projects_list.yap:78:1
 	fromFollowees := this.Gop_Env("fromFollowees"); fromFollowees != "" {
-//line cmd/spx-backend/get_projects_list.yap:74:1
+//line cmd/spx-backend/get_projects_list.yap:79:1
 		fromFolloweesBool, err := strconv.ParseBool(fromFollowees)
-//line cmd/spx-backend/get_projects_list.yap:75:1
+//line cmd/spx-backend/get_projects_list.yap:80:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:76:1
+//line cmd/spx-backend/get_projects_list.yap:81:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid fromFollowees")
-//line cmd/spx-backend/get_projects_list.yap:77:1
+//line cmd/spx-backend/get_projects_list.yap:82:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:79:1
+//line cmd/spx-backend/get_projects_list.yap:84:1
 		params.FromFollowees = &fromFolloweesBool
 	}
-//line cmd/spx-backend/get_projects_list.yap:82:1
+//line cmd/spx-backend/get_projects_list.yap:87:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:82:1
+//line cmd/spx-backend/get_projects_list.yap:87:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_projects_list.yap:83:1
+//line cmd/spx-backend/get_projects_list.yap:88:1
 		params.OrderBy = controller.ListProjectsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_projects_list.yap:85:1
+//line cmd/spx-backend/get_projects_list.yap:90:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:85:1
+//line cmd/spx-backend/get_projects_list.yap:90:1
 	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
-//line cmd/spx-backend/get_projects_list.yap:86:1
+//line cmd/spx-backend/get_projects_list.yap:91:1
 		params.SortOrder = controller.SortOrder(sortOrder)
 	}
-//line cmd/spx-backend/get_projects_list.yap:89:1
+//line cmd/spx-backend/get_projects_list.yap:94:1
 	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_projects_list.yap:90:1
+//line cmd/spx-backend/get_projects_list.yap:95:1
 	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_projects_list.yap:91:1
-	if
-//line cmd/spx-backend/get_projects_list.yap:91:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_projects_list.yap:92:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/get_projects_list.yap:93:1
-		return
-	}
 //line cmd/spx-backend/get_projects_list.yap:96:1
-	projects, err := this.ctrl.ListProjects(ctx.Context(), params)
+	if
+//line cmd/spx-backend/get_projects_list.yap:96:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/get_projects_list.yap:97:1
-	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/get_projects_list.yap:98:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_projects_list.yap:99:1
 		return
 	}
 //line cmd/spx-backend/get_projects_list.yap:101:1
+	projects, err := this.ctrl.ListProjects(ctx.Context(), params)
+//line cmd/spx-backend/get_projects_list.yap:102:1
+	if err != nil {
+//line cmd/spx-backend/get_projects_list.yap:103:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_projects_list.yap:104:1
+		return
+	}
+//line cmd/spx-backend/get_projects_list.yap:106:1
 	this.Json__1(projects)
 }
 func (this *get_projects_list) Classfname() string {
@@ -1217,28 +1247,30 @@ func (this *post_project) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:6
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:10
 func (this *post_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:6:1
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:7:1
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
 	if
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:7:1
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
 	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:8:1
-		return
-	}
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
-	if
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
-	err := this.ctrl.LikeProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:12:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_project_#owner_#name_liking.yap:13:1
 		return
 	}
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:15:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:16:1
+	if
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:16:1
+	err := this.ctrl.LikeProject(ctx.Context(), projectFullName); err != nil {
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:17:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:20:1
 	this.Text__0(204, "", "")
 }
 func (this *post_project_owner_name_liking) Classfname() string {
@@ -1248,28 +1280,30 @@ func (this *post_project_owner_name_liking) Classclone() interface{} {
 	_gop_ret := *this
 	return &_gop_ret
 }
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:6
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:10
 func (this *post_project_owner_name_view) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:6:1
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:7:1
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
 	if
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:7:1
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
 	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:8:1
-		return
-	}
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
-	if
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
-	err := this.ctrl.RecordProjectView(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:12:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_project_#owner_#name_view.yap:13:1
 		return
 	}
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:15:1
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:16:1
+	if
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:16:1
+	err := this.ctrl.RecordProjectView(ctx.Context(), projectFullName); err != nil {
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:17:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:20:1
 	this.Text__0(204, "", "")
 }
 func (this *post_project_owner_name_view) Classfname() string {
@@ -1426,15 +1460,17 @@ func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/put_project_#owner_#name.yap:24:1
-	project, err := this.ctrl.UpdateProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name"), params)
+	projectFullName := controller.ProjectFullName{Owner: this.Gop_Env("owner"), Project: this.Gop_Env("name")}
 //line cmd/spx-backend/put_project_#owner_#name.yap:25:1
-	if err != nil {
+	project, err := this.ctrl.UpdateProject(ctx.Context(), projectFullName, params)
 //line cmd/spx-backend/put_project_#owner_#name.yap:26:1
-		replyWithInnerError(ctx, err)
+	if err != nil {
 //line cmd/spx-backend/put_project_#owner_#name.yap:27:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_project_#owner_#name.yap:28:1
 		return
 	}
-//line cmd/spx-backend/put_project_#owner_#name.yap:29:1
+//line cmd/spx-backend/put_project_#owner_#name.yap:30:1
 	this.Json__1(project)
 }
 func (this *put_project_owner_name) Classfname() string {

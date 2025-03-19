@@ -12,7 +12,12 @@ ctx := &Context
 params := controller.NewListProjectReleasesParams()
 
 if projectFullName := ${projectFullName}; projectFullName != "" {
-	params.ProjectFullName = &projectFullName
+	pfn, err := controller.ParseProjectFullName(projectFullName)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid projectFullName")
+		return
+	}
+	params.ProjectFullName = &pfn
 }
 
 if orderBy := ${orderBy}; orderBy != "" {
