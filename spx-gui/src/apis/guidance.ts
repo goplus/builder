@@ -1,6 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Position } from '@/components/editor/code-editor/common'
-import { client } from './common/client2'
+import { client } from './common'
 import { type ByPage } from './common'
 
 export type Mask = {
