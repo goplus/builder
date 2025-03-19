@@ -8,11 +8,6 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
 
-const (
-	// defaultSystemMsg is the default system message for the Qiniu API
-	defaultSystemMsg = "You are a Go+ Spx language assistant. Please answer using Spx language."
-)
-
 // Qiniu represents a client for interacting with the Qiniu API.
 // It handles message processing and API communication.
 type Qiniu struct {
@@ -126,8 +121,6 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 	if params.System.Text != "" {
 		messages = append(messages, NewSystemMessage(params.System.Text))
 	}
-	// Add default system message for go+ spx language
-	messages = append(messages, NewSystemMessage(defaultSystemMsg))
 
 	for _, msg := range params.Messages {
 		var message Message
@@ -149,7 +142,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 		Model:       params.Model,
 		Messages:    messages,
 		Temperature: 0.7,
-		TopP:        0.9,
+		MaxTokens:   types.MAX_TOKENS,
 		Stream:      true,
 	}
 
