@@ -65,7 +65,7 @@ func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk
 		}).
 		FirstOrCreate(&mUser).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get/create user %s: %w", casdoorUser.Name, err)
+		return nil, fmt.Errorf("failed to get/create user %q: %w", casdoorUser.Name, err)
 	}
 	if mUser.ID == 0 {
 		// Unfortunatlly, MySQL doesn't support the RETURNING clause.
@@ -73,7 +73,7 @@ func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk
 			Where("username = ?", casdoorUser.Name).
 			First(&mUser).
 			Error; err != nil {
-			return nil, fmt.Errorf("failed to get user %s: %w", casdoorUser.Name, err)
+			return nil, fmt.Errorf("failed to get user %q: %w", casdoorUser.Name, err)
 		}
 	}
 	return &mUser, nil

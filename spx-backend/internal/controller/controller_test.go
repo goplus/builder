@@ -129,10 +129,6 @@ func TestPagination(t *testing.T) {
 	})
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
+func ptr[T any](v T) *T {
+	return &v
 }

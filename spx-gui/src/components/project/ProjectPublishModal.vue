@@ -8,6 +8,7 @@ import { createRelease } from '@/apis/project-release'
 import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
+import { stringifyProjectFullName } from '@/apis/project'
 
 const props = defineProps<{
   project: Project
@@ -69,7 +70,7 @@ const handleSubmit = useMessageHandle(
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
-      projectFullName: `${project.owner!}/${project.name!}`,
+      projectFullName: stringifyProjectFullName(project.owner!, project.name!),
       name: generateReleaseName(),
       description: form.value.releaseDescription,
       thumbnail: thumbnailUniversalUrl
