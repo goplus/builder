@@ -47,6 +47,8 @@ export type ProjectData = {
   releaseCount: number
   /** Number of remixes associated with the project */
   remixCount: number
+  /** Whether the project is hidden */
+  hidden: number
 }
 
 export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> & {
@@ -54,13 +56,13 @@ export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> &
   remixSource: string
 }
 
-export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>
+export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail' | 'hidden'>
 
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
-export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
+export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility' | 'hidden'> &
   Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
 
 export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {

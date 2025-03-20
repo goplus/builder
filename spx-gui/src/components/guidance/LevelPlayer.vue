@@ -1,5 +1,5 @@
 <template>
-  <div v-if="levelIntroVisible" class="mask"></div>
+  <div v-if="levelIntroVisible || levelStatus !== LevelStatusType.NODE_TASK_PENDING" class="mask"></div>
   <!-- 关卡介绍 -->
   <div v-if="levelIntroVisible" class="intro">
     <div class="intro-title">

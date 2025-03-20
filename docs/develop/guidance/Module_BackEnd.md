@@ -33,6 +33,15 @@ declare function deleteStoryLine(id: string): Promise<void>;
 
 ## 用户接口
 
+### 接口名称：获取故事线列表
+
+- 用于获取故事线列表
+
+```typescript
+// Get /storylines/list?tag={tag}`
+declare function listStoryLine(tag: 'easy' | 'medium' | 'hard'): Promise<ByPage<StoryLine>>;
+```
+
 ### 接口名称：获取故事线页面渲染信息
 
 - 用于获取故事线信息

@@ -55,7 +55,8 @@ const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
 const easyStoryLines = useQuery(
   async () => {
-    return listStoryLine('easy')
+    const { data: storyLines } = await listStoryLine('easy')
+    return storyLines
   },
   {
     en: 'Failed to load easy courses',
@@ -64,7 +65,8 @@ const easyStoryLines = useQuery(
 )
 const mediumStoryLines = useQuery(
   async () => {
-    return listStoryLine('medium')
+    const { data: storyLines } = await listStoryLine('medium')
+    return storyLines
   },
   {
     en: 'Failed to load medium courses',
@@ -73,7 +75,8 @@ const mediumStoryLines = useQuery(
 )
 const hardStoryLines = useQuery(
   async () => {
-    return listStoryLine('hard')
+    const { data: storyLines } = await listStoryLine('hard')
+    return storyLines
   },
   {
     en: 'Failed to load hard courses',
