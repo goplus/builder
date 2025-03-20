@@ -187,27 +187,6 @@ async function getSnapshot(): Promise<string> {
   return JSON.stringify({ files })
 }
 
-function calculateBubbleArrowDirection(niuxiaoqiPos: HighlightRect, bubblePos: HighlightRect) {
-  const niuxiaoqiCenter = {
-    x: niuxiaoqiPos.left + niuxiaoqiPos.width / 2,
-    y: niuxiaoqiPos.top + niuxiaoqiPos.height / 2
-  }
-
-  const bubbleCenter = {
-    x: bubblePos.left + bubblePos.width / 2,
-    y: bubblePos.top + bubblePos.height / 2
-  }
-
-  const dx = bubbleCenter.x - niuxiaoqiCenter.x
-  const dy = bubbleCenter.y - niuxiaoqiCenter.y
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    return dx > 0 ? 'left' : 'right'
-  } else {
-    return dy > 0 ? 'top' : 'bottom'
-  }
-}
-
 function calculateGuidePositions(highlightRect: HighlightRect) {
   const windowWidth = window.innerWidth
   const windowHeight = window.innerHeight
