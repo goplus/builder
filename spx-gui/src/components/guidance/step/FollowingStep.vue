@@ -239,7 +239,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 
   let arrowRotation = 0
 
-  // 根据象限计算位置
+  let bubbleArrowDirection = 'left-down'
+
   if (isLeft && isTop) {
     // 左上象限
     arrowPosition = {
@@ -255,6 +256,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
+    bubbleArrowDirection = 'left-down'
   } else if (!isLeft && isTop) {
     // 右上象限
     arrowPosition = {
@@ -270,6 +272,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
+    bubbleArrowDirection = 'right-down'
   } else if (isLeft && !isTop) {
     // 左下象限
     arrowPosition = {
@@ -285,6 +288,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
+    bubbleArrowDirection = 'left-top'
   } else {
     // 右下象限
     arrowPosition = {
@@ -300,17 +304,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
+    bubbleArrowDirection = 'right-top'
   }
-
-  const bubbleArrowDirection = calculateBubbleArrowDirection(
-    {
-      left: niuxiaoqiPosition.left,
-      top: niuxiaoqiPosition.top,
-      width: niuxiaoqiSize.width,
-      height: niuxiaoqiSize.height
-    },
-    { left: bubblePosition.left, top: bubblePosition.top, width: bubbleSize.width, height: bubbleSize.height }
-  )
 
   return {
     arrowStyle: {
@@ -370,7 +365,6 @@ function getBubbleContainerStyle(highlightRect: HighlightRect) {
   }
 }
 
-// 添加气泡背景样式函数
 function getBubbleBgStyle(highlightRect: HighlightRect) {
   if (!currentGuidePositions.value) {
     currentGuidePositions.value = calculateGuidePositions(highlightRect)
@@ -381,16 +375,16 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
   let transform = ''
 
   switch (arrowDirection) {
-    case 'bottom':
+    case 'left-bottom':
       transform = ''
       break
-    case 'top':
+    case 'right-bottom':
       transform = 'scale(1, -1)'
       break
-    case 'left':
+    case 'left-top':
       transform = 'scale(-1, 1)'
       break
-    case 'right':
+    case 'right-top':
       transform = 'scale(-1, -1)'
       break
   }
