@@ -10,9 +10,7 @@ export type Mask = {
 
 export enum TaggingHandlerType {
   ClickToNext = 'clickToNext',
-  ClickForbidden = 'clickForbidden',
-  EnterForbidden = 'enterForbidden',
-  EscapeForbidden = 'escapeForbidden'
+  SubmitToNext = 'submitToNext'
 }
 
 export type TaggingHandler = {

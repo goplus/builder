@@ -8,9 +8,7 @@ type Mask = {
 
 enum TaggingHandlerType {
   ClickToNext = 'clickToNext',
-  ClickForbidden = 'clickForbidden',
-  EnterForbidden = 'enterForbidden',
-  EscapeForbidden = 'escapeForbidden',
+  SubmitToNext = 'submitToNext'
 }
 
 type TaggingHandler = {
