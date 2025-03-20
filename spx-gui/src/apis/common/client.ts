@@ -31,36 +31,21 @@ export class Client {
     return resp.json()
   })
 
-  private addDefaultHeaders(headers?: Headers): Headers {
-    const finalHeaders = headers ?? new Headers()
-    // 添加 ngrok-skip-browser-warning 头部
-    finalHeaders.set('ngrok-skip-browser-warning', '1')
-    return finalHeaders
-  }
-
   get(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
-    // return this.request(path, null, { ...options, method: 'GET' })
-    const headers = this.addDefaultHeaders(options?.headers)
-    return this.request(path, null, { ...options, headers, method: 'GET' })
+    return this.request(path, null, { ...options, method: 'GET' })
   }
 
   post(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    // return this.request(path, payload, { ...options, method: 'POST' })
-    const headers = this.addDefaultHeaders(options?.headers)
-    return this.request(path, payload, { ...options, headers, method: 'POST' })
+    return this.request(path, payload, { ...options, method: 'POST' })
   }
 
   put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
-    // return this.request(path, payload, { ...options, method: 'PUT' })
-    const headers = this.addDefaultHeaders(options?.headers)
-    return this.request(path, payload, { ...options, headers, method: 'PUT' })
+    return this.request(path, payload, { ...options, method: 'PUT' })
   }
 
   delete(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     if (params != null) path = withQueryParams(path, params)
-    // return this.request(path, null, { ...options, method: 'DELETE' })
-    const headers = this.addDefaultHeaders(options?.headers)
-    return this.request(path, null, { ...options, headers, method: 'DELETE' })
+    return this.request(path, null, { ...options, method: 'DELETE' })
   }
 }
