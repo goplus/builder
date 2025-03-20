@@ -25,7 +25,7 @@
       height="320"
       src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
     />
-    <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+    <div class="bubble-container" :style="getBubbleContainerStyle(props.slotInfo)">
       <svg
         class="ic-bubble-bg"
         :style="getBubbleBgStyle(props.slotInfo)"
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { Step } from '@/apis/guidance'
@@ -65,11 +65,34 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-let currentGuidePositions: {
-  arrowStyle: any
-  niuxiaoqiStyle: any
-  bubbleStyle: any
-} | null = null
+interface GuidePositions {
+  arrowStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+    transform: string
+    transformOrigin: string
+  }
+  niuxiaoqiStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+  }
+  bubbleStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+    arrowDirection: string
+  }
+}
+
+const currentGuidePositions = ref<GuidePositions | null>(null)
 
 // 设置事件键盘监听器，禁用escape和enter键
 function setupKeyboardEventListeners() {
@@ -89,7 +112,7 @@ onMounted(() => {
   setupKeyboardEventListeners()
 
   nextTick(() => {
-    currentGuidePositions = calculateGuidePositions(props.slotInfo)
+    currentGuidePositions.value = calculateGuidePositions(props.slotInfo)
   })
 })
 
@@ -122,7 +145,7 @@ function setupTargetElementListener() {
       const { getElement } = useTag()
       const element = getElement(props.step.target)
       if (element) {
-        console.log('Setting up target element listener:', element)
+        // Add event listener to target element
         element.addEventListener('click', handleTargetElementClick)
       } else {
         console.warn('Target element not found:', props.step.target)
@@ -291,7 +314,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 
   return {
     arrowStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${arrowPosition.left}px`,
       top: `${arrowPosition.top}px`,
       width: `${arrowSize.width}px`,
@@ -300,14 +323,14 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       transformOrigin: 'center center'
     },
     niuxiaoqiStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${niuxiaoqiPosition.left}px`,
       top: `${niuxiaoqiPosition.top}px`,
       width: `${niuxiaoqiSize.width}px`,
       height: `${niuxiaoqiSize.height}px`
     },
     bubbleStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${bubblePosition.left}px`,
       top: `${bubblePosition.top}px`,
       width: `${bubbleSize.width}px`,
@@ -318,25 +341,25 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 }
 
 function getArrowStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.arrowStyle
+  return currentGuidePositions.value.arrowStyle
 }
 
 function getNiuxiaoqiStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.niuxiaoqiStyle
+  return currentGuidePositions.value.niuxiaoqiStyle
 }
 
 function getBubbleContainerStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
 
-  const { left, top, width, height } = currentGuidePositions.bubbleStyle
+  const { left, top, width, height } = currentGuidePositions.value.bubbleStyle
 
   return {
     position: 'absolute' as const,
@@ -349,11 +372,11 @@ function getBubbleContainerStyle(highlightRect: HighlightRect) {
 
 // 添加气泡背景样式函数
 function getBubbleBgStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
 
-  const arrowDirection = currentGuidePositions.bubbleStyle.arrowDirection
+  const arrowDirection = currentGuidePositions.value.bubbleStyle.arrowDirection
 
   let transform = ''
 
