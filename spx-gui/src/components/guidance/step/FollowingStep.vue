@@ -48,7 +48,7 @@
 import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import type { Step } from '@/apis/guidance'
+import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
 
@@ -142,13 +142,17 @@ function setupTargetElementListener() {
 
   nextTick(() => {
     try {
-      const { getElement } = useTag()
-      const element = getElement(props.step.target)
-      if (element) {
-        // Add event listener to target element
-        element.addEventListener('click', handleTargetElementClick)
-      } else {
-        console.warn('Target element not found:', props.step.target)
+      const { elementTag, taggingHandlerType } = props.step.taggingHandler
+      if (taggingHandlerType === TaggingHandlerType.SubmitToNext) {
+        const { getElement } = useTag()
+        const element = getElement(elementTag)
+        if (element) {
+          element.addEventListener('click', handleTargetElementClick)
+        } else {
+          console.warn('没找到监听元素', elementTag)
+        }
+      } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
+        console.warn('ClickToNext is not supported yet')
       }
     } catch (error) {
       console.warn('Error setting up target element listener:', error)
