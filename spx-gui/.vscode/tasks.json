@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm run dev",
+      "detail": "Run dev server for spx-gui",
+      "type": "npm",
+      "script": "dev",
+      "presentation": {
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build wasm",
+      "detail": "Build WASM modules for spx-gui",
+      "type": "shell",
+      "command": "bash build-wasm.sh",
+      "options": {
+        "env": {
+          "GOTOOLCHAIN": "go1.23.4"
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
