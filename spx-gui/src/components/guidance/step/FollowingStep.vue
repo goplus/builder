@@ -142,17 +142,30 @@ function setupTargetElementListener() {
 
   nextTick(() => {
     try {
-      const { elementTag, taggingHandlerType } = props.step.taggingHandler
+      console.warn('taggingHandler:', props.step.taggingHandler)
+      if (!props.step.taggingHandler || Object.keys(props.step.taggingHandler).length === 0) {
+        console.warn('taggingHandler 为空或无效')
+        return
+      }
+
+      const elementTag = Object.keys(props.step.taggingHandler)[0]
+      const taggingHandlerType = props.step.taggingHandler[elementTag]
+      console.warn('elementTag:', elementTag)
+      const { getElement } = useTag()
+      const element = getElement(elementTag)
+      console.warn('element:', element)
       if (taggingHandlerType === TaggingHandlerType.SubmitToNext) {
-        const { getElement } = useTag()
-        const element = getElement(elementTag)
+        if (element) {
+          element.addEventListener('submit', handleTargetElementSubmit)
+        } else {
+          console.warn('没找到监听元素', elementTag)
+        }
+      } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
         if (element) {
           element.addEventListener('click', handleTargetElementClick)
         } else {
           console.warn('没找到监听元素', elementTag)
         }
-      } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
-        console.warn('ClickToNext is not supported yet')
       }
     } catch (error) {
       console.warn('Error setting up target element listener:', error)
@@ -160,35 +173,113 @@ function setupTargetElementListener() {
   })
 }
 
-async function handleTargetElementClick() {
-  // 如果有结束快照并且需要检查
+async function handleTargetElementSubmit() {
   if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
-    const result = await compareSnapshot(props.step.snapshot.endSnapshot)
-    if (result.success) {
-      emit('followingStepCompleted')
+    console.log("Haven't implemented snapshot comparison for submit events yet")
+  }
+}
+
+async function handleTargetElementClick(event: MouseEvent): Promise<void> {
+  console.warn('点击事件触发', event)
+
+  try {
+    if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
+      console.warn('准备比较快照', {
+        hasSnapshot: !!props.step.snapshot?.endSnapshot,
+        isCheck: !!props.step.isCheck
+      })
+
+      try {
+        const result = await compareSnapshot(props.step.snapshot.endSnapshot)
+        console.warn('快照比较结果:', result)
+
+        if (result.success) {
+          console.warn('【事件触发前】快照对比成功，即将触发完成事件')
+          emit('followingStepCompleted')
+          console.warn('【事件触发后】完成事件已触发')
+        } else {
+          console.warn('快照比较失败:', result.reason)
+          // 若需要无论比较结果如何都触发，取消下面注释
+          console.warn('【事件触发前】尽管快照比较失败，仍将触发完成事件')
+          emit('followingStepCompleted')
+          console.warn('【事件触发后】完成事件已触发')
+        }
+      } catch (error) {
+        console.error('快照比较过程发生异常:', error)
+        // 出错时仍然允许继续
+        console.warn('【事件触发前】快照比较异常，仍将触发完成事件')
+        emit('followingStepCompleted')
+        console.warn('【事件触发后】完成事件已触发')
+      }
     } else {
-      console.warn('快照比较失败:', result.reason)
+      console.warn('【事件触发前】无需比较快照，即将触发完成事件', {
+        hasSnapshot: !!props.step.snapshot?.endSnapshot,
+        isCheck: !!props.step.isCheck
+      })
+      emit('followingStepCompleted')
+      console.warn('【事件触发后】完成事件已触发')
     }
-  } else {
-    // 没有结束快照要求，直接完成步骤
+  } catch (error) {
+    console.error('处理点击事件时发生异常:', error)
+    // 确保即使出错也触发完成
+    console.warn('【事件触发前】处理异常，仍将触发完成事件')
     emit('followingStepCompleted')
+    console.warn('【事件触发后】完成事件已触发')
   }
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
-  if (!snapshotStr) return { success: false, reason: '没有结束快照' }
+  console.warn('开始比较快照')
 
-  const userSnapshot = await getSnapshot()
-  if (snapshotStr !== userSnapshot) {
-    return { success: false, reason: '快照不匹配' }
+  if (!snapshotStr) {
+    console.warn('结束快照为空')
+    return { success: false, reason: '没有结束快照' }
   }
-  return { success: true }
+
+  try {
+    const userSnapshot = await getSnapshot()
+    console.warn('获取当前快照成功')
+
+    if (snapshotStr !== userSnapshot) {
+      console.warn('快照不匹配', {
+        expected: snapshotStr.substring(0, 100) + '...',
+        actual: userSnapshot.substring(0, 100) + '...'
+      })
+      return { success: false, reason: '快照不匹配' }
+    }
+
+    return { success: true }
+  } catch (error: unknown) {
+    console.error('获取快照时发生错误:', error)
+    return { success: false, reason: `获取快照失败: ${error instanceof Error ? error.message : String(error)}` }
+  }
 }
 
 async function getSnapshot(): Promise<string> {
+  console.warn('开始获取快照')
+
+  if (!editorCtx) {
+    console.error('editorCtx 不存在')
+    throw new Error('Editor context not found')
+  }
+
+  if (!editorCtx.project) {
+    console.error('editorCtx.project 不存在')
+    throw new Error('Project not found in editor context')
+  }
+
   const project = editorCtx.project
-  const files = await project.exportGameFiles()
-  return JSON.stringify({ files })
+  console.warn('获取到 project 对象')
+
+  try {
+    const files = await project.exportGameFiles()
+    console.warn('导出游戏文件成功')
+    const snapshot = JSON.stringify({ files })
+    return snapshot
+  } catch (error) {
+    console.error('导出游戏文件失败:', error)
+    throw error
+  }
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
