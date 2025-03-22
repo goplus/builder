@@ -39,8 +39,15 @@ function selectAsset(project: Project, asset: AssetModel | undefined) {
 
 export function useAddAssetFromLibrary(autoSelect = true) {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
+  const editorCtx = useEditorCtx()
+
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const added = (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
+    const added = (await invokeAssetLibraryModal({
+      project,
+      type,
+      listFilter: editorCtx.listFilter
+    })) as Array<AssetModel<T>>
+
     if (autoSelect) selectAsset(project, added[0])
     return added
   }
