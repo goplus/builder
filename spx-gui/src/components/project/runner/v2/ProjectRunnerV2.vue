@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import { throttle } from 'lodash'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import JSZip from 'jszip'
 import { spxVersion } from '@/utils/env'
-import { untilNotNull } from '@/utils/utils'
+import { timeout, untilNotNull } from '@/utils/utils'
+import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
 import { useFileUrl } from '@/utils/file'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
 import { toNativeFile } from '@/models/common/file'
 import type { Project } from '@/models/project'
-import { UIImg, UILoading } from '@/components/ui'
+import { UIImg, UIDetailedLoading } from '@/components/ui'
 
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
@@ -19,7 +21,7 @@ const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
-const loading = ref(true)
+const loading = ref(false)
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 interface IframeWindow extends Window {
@@ -54,13 +56,33 @@ watch(iframeRef, (iframe) => {
   })
 })
 
-async function getProjectData() {
-  const zip = new JSZip()
+async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) {
+  const collector = ProgressCollector.collectorFor(reporter)
+  const projectExportReporter = collector.getSubReporter(
+    { en: 'Counting project files...', zh: '清点项目文件中...' },
+    1
+  )
+  const filesDesc = { en: 'Loading project files...', zh: '加载项目文件中...' }
+  const filesReporter = collector.getSubReporter(filesDesc, 10)
+  const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
+
   const [{ filesHash }, files] = await props.project.export()
+  signal?.throwIfAborted()
+  projectExportReporter.report(1)
+
+  const zip = new JSZip()
+  const filesCollector = ProgressCollector.collectorFor(filesReporter, filesDesc)
   Object.entries(files).forEach(([path, file]) => {
-    if (file != null) zip.file(path, toNativeFile(file))
+    if (file == null) return
+    const r = filesCollector.getSubReporter()
+    const nativeFile = toNativeFile(file).then((f) => (r.report(1), f))
+    zip.file(path, nativeFile)
   })
+
   const zipped = await zip.generateAsync({ type: 'arraybuffer' })
+  signal?.throwIfAborted()
+  zipReporter.report(1)
+
   return { filesHash, zipped }
 }
 
@@ -106,16 +128,40 @@ onMounted(() => {
   })
 })
 
+const progressRef = ref<Progress>({ percentage: 0, desc: null })
+
 defineExpose({
   async run(signal?: AbortSignal) {
     loading.value = true
+    const collector = new ProgressCollector()
+    collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
+    const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing enviroment...', zh: '准备环境中...' }, 1)
+    const getProjectDataReporter = collector.getSubReporter(
+      { en: 'Loading project data...', zh: '加载项目数据中...' },
+      5
+    )
+    const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '开始运行项目...' }, 5)
+
     registered.onStart()
+
     const iframeWindow = await untilNotNull(iframeWindowRef)
     signal?.throwIfAborted()
-    const projectData = await getProjectData()
-    signal?.throwIfAborted()
+    iframeLoadReporter.report(1)
+
+    const projectData = await getProjectData(getProjectDataReporter, signal)
+
+    // Ensure the latest progress update to be rendered to UI
+    // This is necessary because now spx runs in the same thread as the main thread of editor.
+    // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
+    // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
+    await timeout(50)
+
+    // TODO: get progress for engine-loading, which is now included in `startGame`
+    startGameReporter.startAutoReport(10 * 1000)
     await withLog('startGame', iframeWindow.startGame(projectData.zipped, assetURLs))
     signal?.throwIfAborted()
+    startGameReporter.report(1)
+
     loading.value = false
     return projectData.filesHash
   },
@@ -135,8 +181,10 @@ defineExpose({
 <template>
   <div class="iframe-container">
     <iframe ref="iframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
-    <UIImg v-show="loading" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
-    <UILoading :visible="loading" cover />
+    <UIImg v-show="progressRef.percentage !== 1" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
+    <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
+      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中' }) }}</span>
+    </UIDetailedLoading>
   </div>
 </template>
 

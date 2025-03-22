@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import UILoading from './UILoading.vue'
+import UILoading from './loading/UILoading.vue'
 
 const props = withDefaults(
   defineProps<{
