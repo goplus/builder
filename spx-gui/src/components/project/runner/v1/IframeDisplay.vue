@@ -38,7 +38,7 @@ const props = defineProps<{ zipData: ArrayBuffer | Uint8Array }>()
 const iframe = ref<HTMLIFrameElement>()
 
 const collector = new ProgressCollector()
-const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing enviroment...', zh: '准备环境中...' }, 1)
+const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
 const wasmReadyReporter = collector.getSubReporter({ en: 'Loading game engine...', zh: '加载游戏引擎中...' }, 5)
 const startWithZipBufferReporter = collector.getSubReporter({ en: 'Starting project...', zh: '开始运行项目...' }, 0.01)
 

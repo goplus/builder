@@ -135,12 +135,15 @@ defineExpose({
     loading.value = true
     const collector = new ProgressCollector()
     collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
-    const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing enviroment...', zh: '准备环境中...' }, 1)
+    const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
     const getProjectDataReporter = collector.getSubReporter(
       { en: 'Loading project data...', zh: '加载项目数据中...' },
       5
     )
-    const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '开始运行项目...' }, 5)
+    const startGameReporter = collector.getSubReporter(
+      { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
+      5
+    )
 
     registered.onStart()
 
