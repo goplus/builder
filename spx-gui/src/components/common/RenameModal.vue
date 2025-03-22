@@ -17,6 +17,7 @@ export interface IRenameTarget {
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { UIFormModal, UIButton, UITextInput, UIForm, UIFormItem, useForm, UIIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { rename } from 'fs'
 
 const props = defineProps<{
   visible: boolean
@@ -61,24 +62,26 @@ function validateName(name: string) {
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
-    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <UIFormItem path="name">
-        <UITextInput v-model:value="form.value.name" />
-        <template #tip>{{ $t(target.inputTip) }}</template>
-      </UIFormItem>
-      <p v-if="target.warning != null" class="warning">
-        <UIIcon class="icon" type="warning" />
-        {{ $t(target.warning) }}
-      </p>
-      <footer class="footer">
-        <UIButton type="boring" @click="emit('cancelled')">
-          {{ $t({ en: 'Cancel', zh: '取消' }) }}
-        </UIButton>
-        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-          {{ $t({ en: 'Confirm', zh: '确认' }) }}
-        </UIButton>
-      </footer>
-    </UIForm>
+    <TagNode name="rename-modal-form">
+      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+        <UIFormItem path="name">
+          <UITextInput v-model:value="form.value.name" />
+          <template #tip>{{ $t(target.inputTip) }}</template>
+        </UIFormItem>
+        <p v-if="target.warning != null" class="warning">
+          <UIIcon class="icon" type="warning" />
+          {{ $t(target.warning) }}
+        </p>
+        <footer class="footer">
+          <UIButton type="boring" @click="emit('cancelled')">
+            {{ $t({ en: 'Cancel', zh: '取消' }) }}
+          </UIButton>
+          <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+            {{ $t({ en: 'Confirm', zh: '确认' }) }}
+          </UIButton>
+        </footer>
+      </UIForm>
+    </TagNode>
   </UIFormModal>
 </template>
 
