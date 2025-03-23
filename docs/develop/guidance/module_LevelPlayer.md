@@ -13,6 +13,8 @@ type Placement = {
 type LevelPlayerCtx = {
   getPos(): Placement
   setPos(pos: Placement): void
+  getVideoPlayerVisible(): boolean
+  setVideoPlayerVisible(visible: boolean): void
 }
 
 declare function useLevelPlayerCtx(): LevelPlayerCtx

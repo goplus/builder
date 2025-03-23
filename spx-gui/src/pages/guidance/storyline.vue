@@ -169,6 +169,7 @@ const { data: storyLineStudy } = useQuery(
 
       return initialStudy
     }
+
     return study
   },
   {
