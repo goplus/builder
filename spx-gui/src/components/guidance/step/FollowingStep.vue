@@ -120,6 +120,7 @@ onBeforeUnmount(() => {
   const element = getTargetElement()
   if (element) {
     element.removeEventListener('click', handleTargetElementClick)
+    element.removeEventListener('submit', handleTargetElementSubmit)
   }
 
   document.removeEventListener('keydown', preventEscapeAndEnter)
@@ -143,7 +144,11 @@ function setupTargetElementListener() {
   nextTick(() => {
     try {
       console.warn('taggingHandler:', props.step.taggingHandler)
-      if (!props.step.taggingHandler || Object.keys(props.step.taggingHandler).length === 0) {
+      if (
+        !props.step.taggingHandler ||
+        typeof props.step.taggingHandler !== 'object' ||
+        Object.keys(props.step.taggingHandler).length === 0
+      ) {
         console.warn('taggingHandler 为空或无效')
         return
       }
@@ -173,59 +178,54 @@ function setupTargetElementListener() {
   })
 }
 
-async function handleTargetElementSubmit() {
-  if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
-    console.log("Haven't implemented snapshot comparison for submit events yet")
-  }
-}
+async function handleTargetElementSubmit(event: Event) {
+  console.warn('表单提交事件被触发', event)
 
-async function handleTargetElementClick(event: MouseEvent): Promise<void> {
-  console.warn('点击事件触发', event)
+  // 阻止默认提交行为，以便我们可以控制
+  event.preventDefault()
 
   try {
+    // 检查是否需要比较快照
     if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
-      console.warn('准备比较快照', {
-        hasSnapshot: !!props.step.snapshot?.endSnapshot,
-        isCheck: !!props.step.isCheck
-      })
+      console.warn('需要比较快照，开始比较')
 
       try {
         const result = await compareSnapshot(props.step.snapshot.endSnapshot)
         console.warn('快照比较结果:', result)
 
         if (result.success) {
-          console.warn('【事件触发前】快照对比成功，即将触发完成事件')
+          console.warn('【快照比较成功】触发 followingStepCompleted 事件')
           emit('followingStepCompleted')
-          console.warn('【事件触发后】完成事件已触发')
+          console.warn('followingStepCompleted 事件已触发')
         } else {
-          console.warn('快照比较失败:', result.reason)
-          // 若需要无论比较结果如何都触发，取消下面注释
-          console.warn('【事件触发前】尽管快照比较失败，仍将触发完成事件')
-          emit('followingStepCompleted')
-          console.warn('【事件触发后】完成事件已触发')
+          console.warn('【快照比较失败】:', result.reason)
+          // 可以选择即使比较失败也触发事件，取决于您的业务逻辑
+          // emit('followingStepCompleted')
         }
       } catch (error) {
         console.error('快照比较过程发生异常:', error)
-        // 出错时仍然允许继续
-        console.warn('【事件触发前】快照比较异常，仍将触发完成事件')
-        emit('followingStepCompleted')
-        console.warn('【事件触发后】完成事件已触发')
+        // 出错时是否继续取决于您的业务需求
+        // emit('followingStepCompleted')
       }
     } else {
-      console.warn('【事件触发前】无需比较快照，即将触发完成事件', {
-        hasSnapshot: !!props.step.snapshot?.endSnapshot,
-        isCheck: !!props.step.isCheck
-      })
+      // 无需比较快照，直接触发事件
+      console.warn('无需比较快照，直接触发 followingStepCompleted 事件')
       emit('followingStepCompleted')
-      console.warn('【事件触发后】完成事件已触发')
+      console.warn('followingStepCompleted 事件已触发')
     }
+
+    // 在这里可以选择是否要继续原始的表单提交
+    // 如果原始表单有 onsubmit 处理程序，可以这样调用：
+    // if (event.target.onsubmit) {
+    //   event.target.onsubmit.call(event.target);
+    // }
   } catch (error) {
-    console.error('处理点击事件时发生异常:', error)
-    // 确保即使出错也触发完成
-    console.warn('【事件触发前】处理异常，仍将触发完成事件')
-    emit('followingStepCompleted')
-    console.warn('【事件触发后】完成事件已触发')
+    console.error('处理表单提交事件时发生异常:', error)
   }
+}
+
+async function handleTargetElementClick() {
+  emit('followingStepCompleted')
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
