@@ -88,12 +88,13 @@ import { type Category, getAssetCategories, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import type { ListFilter } from '@/models/list-filter'
 
 const props = defineProps<{
   type: AssetType
   visible: boolean
   project: Project
+  listFilter: ListFilter
 }>()
 
 const emit = defineEmits<{
@@ -101,8 +102,7 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-const editorCtx = useEditorCtx()
-const listFilter = computed(() => editorCtx.listFilter)
+const listFilter = computed(() => props.listFilter)
 
 const categories = computed(() => {
   const categoriesWithoutAll = getAssetCategories(props.type)
