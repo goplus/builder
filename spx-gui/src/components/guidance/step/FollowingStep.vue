@@ -181,11 +181,9 @@ function setupTargetElementListener() {
 async function handleTargetElementSubmit(event: Event) {
   console.warn('表单提交事件被触发', event)
 
-  // 阻止默认提交行为，以便我们可以控制
   event.preventDefault()
 
   try {
-    // 检查是否需要比较快照
     if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
       console.warn('需要比较快照，开始比较')
 
@@ -199,26 +197,15 @@ async function handleTargetElementSubmit(event: Event) {
           console.warn('followingStepCompleted 事件已触发')
         } else {
           console.warn('【快照比较失败】:', result.reason)
-          // 可以选择即使比较失败也触发事件，取决于您的业务逻辑
-          // emit('followingStepCompleted')
         }
       } catch (error) {
         console.error('快照比较过程发生异常:', error)
-        // 出错时是否继续取决于您的业务需求
-        // emit('followingStepCompleted')
       }
     } else {
-      // 无需比较快照，直接触发事件
       console.warn('无需比较快照，直接触发 followingStepCompleted 事件')
       emit('followingStepCompleted')
       console.warn('followingStepCompleted 事件已触发')
     }
-
-    // 在这里可以选择是否要继续原始的表单提交
-    // 如果原始表单有 onsubmit 处理程序，可以这样调用：
-    // if (event.target.onsubmit) {
-    //   event.target.onsubmit.call(event.target);
-    // }
   } catch (error) {
     console.error('处理表单提交事件时发生异常:', error)
   }
