@@ -21,6 +21,7 @@ export const TAG_CONTEXT_KEY = Symbol('tag_context')
 
 export const tagApi = ref<{
   getElement: (path: string) => HTMLElement | null
+  getInstance: (path: string) => any
 } | null>(null)
 
 export function useTag() {
@@ -31,8 +32,16 @@ export function useTag() {
     return tagApi.value.getElement(path)
   }
 
+  const getInstance = (path: string) => {
+    if (!tagApi.value) {
+      throw new Error('TagConsumer not mounted')
+    }
+    return tagApi.value.getInstance(path)
+  }
+
   return {
-    getElement
+    getElement,
+    getInstance,
   }
 }
 
