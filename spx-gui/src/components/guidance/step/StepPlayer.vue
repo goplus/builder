@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, onUpdated } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
@@ -45,18 +45,47 @@ onMounted(async () => {
   setFilterControls()
 })
 
-onUpdated(async () => {
-  stepType.value = props.step.type
-  try {
-    if (props.step.snapshot?.startSnapshot) {
-      await loadSnapshot(props.step.snapshot.startSnapshot)
-    }
-  } catch (error) {
-    console.error('Failed to load snapshot:', error)
-  }
+watch(
+  () => props.step,
+  async (newStep) => {
+    await initializeStep(newStep)
+  },
+  { deep: true }
+)
 
-  setFilterControls()
-})
+async function initializeStep(step: Step) {
+  if (isProcessing.value) return
+  isProcessing.value = true
+
+  stepType.value = null
+
+  await nextTick()
+
+  try {
+    if (step.snapshot?.startSnapshot) {
+      await loadSnapshot(step.snapshot.startSnapshot)
+    }
+
+    setFilterControls()
+
+    // Wait for modal to be shown
+    const isModalStep =
+      step.target?.includes('modal') ||
+      (step.taggingHandler && Object.keys(step.taggingHandler).some((k) => k.includes('modal')))
+
+    if (isModalStep) {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+    }
+
+    stepType.value = step.type
+  } catch (error) {
+    console.error('初始化步骤出错:', error)
+  } finally {
+    setTimeout(() => {
+      isProcessing.value = false
+    }, 200)
+  }
+}
 
 onBeforeUnmount(() => {
   filter.reset()
@@ -86,19 +115,18 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
-const isStepProcessing = ref(false)
+const isProcessing = ref(false)
 
 function handleStepCompleted() {
+  if (isProcessing.value) return
+  isProcessing.value = true
+
   stepType.value = null
   emit('stepCompleted')
-  setTimeout(() => {
-    stepType.value = null
-    emit('stepCompleted')
 
-    setTimeout(() => {
-      isStepProcessing.value = false
-    }, 100)
-  }, 100)
+  setTimeout(() => {
+    isProcessing.value = false
+  }, 200)
 }
 </script>
 
