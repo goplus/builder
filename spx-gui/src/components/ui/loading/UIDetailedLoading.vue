@@ -106,6 +106,7 @@ watch(
     height: 100%;
     background-color: var(--ui-color-primary-main);
     border-radius: 2.5px;
+    transition: width 0.3s ease;
   }
 }
 
