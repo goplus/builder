@@ -4,7 +4,7 @@
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
-    <TagNode name="asset-add-modal">
+    <TagNode name="asset-add-form">
       <UIForm :form="form" @submit="handleSubmit.fn">
         <main class="main">
           <div class="sider">

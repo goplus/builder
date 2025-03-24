@@ -37,7 +37,7 @@
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
         <div class="content">
-          <TagNode name="asset-library-modal">
+          <TagNode name="asset-library-list">
             <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
               <!-- fixed asset-list height to keep the layout stable -->
               <ul class="asset-list" style="height: 436px">
