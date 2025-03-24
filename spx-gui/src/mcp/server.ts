@@ -15,6 +15,7 @@ import {
   addSprite,
   insertCode,
 } from "./tools";
+import { ref } from 'vue';
 
 /**
  * MCP Server instance configuration
@@ -136,6 +137,23 @@ export const tools = [
 ];
 
 /**
+ * Interface for request history items
+ */
+export interface RequestHistoryItem {
+  tool: string;
+  params: any;
+  response: string;
+  time: string;
+  error?: boolean;
+}
+
+
+/**
+ * Reactive request history store
+ */
+export const mcpRequestHistory = ref<RequestHistoryItem[]>([]);
+
+/**
  * Handler for listing available tools
  * Returns the list of registered tools and their configurations
  * 
@@ -160,9 +178,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  * @throws {Error} When tool execution fails or validation fails
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const timestamp = new Date().toLocaleTimeString();
+  
+  // Record the request
+  mcpRequestHistory.value.unshift({
+    tool: request.params.name,
+    params: request.params.arguments,
+    response: 'Pending...',
+    time: timestamp
+  });
+
   try {
     const { name, arguments: parameters } = request.params;
-
+    let result;
+    
     switch (name) {
       case "create_project": {
         const { projectName } = parameters as { projectName: string };
@@ -172,7 +201,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         await createProject(projectName);
-        return {
+        result = {
           content: [
             {
               type: "text",
@@ -180,6 +209,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           ],
         };
+        // Update request history with success response
+        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
+        return result;
       }
 
       case "navigate_page": {
@@ -190,7 +222,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         await navigatePage(location);
-        return {
+        result = {
           content: [
             {
               type: "text",
@@ -198,6 +230,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           ],
         };
+        // Update request history with success response
+        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
+        return result;
       }
 
       case "add_sprite": {
@@ -215,7 +250,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         await addSprite(libraryName, spriteName);
-        return {
+        result = {
           content: [
             {
               type: "text",
@@ -223,6 +258,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           ],
         };
+        // Update request history with success response
+        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
+        return result;
       }
 
       case "insert_code": {
@@ -274,28 +312,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ? `from line ${replaceRange.startLine} to ${replaceRange.endLine}`
           : `at line ${insertRange.startLine}`;
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Successfully ${action} code ${location}`,
-            },
-          ],
-        };
+          result = {
+            content: [
+              {
+                type: "text",
+                text: `Successfully ${action} code ${location}`,
+              },
+            ],
+          };
+          // Update request history with success response
+          mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
+          return result;
       }
 
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error: ${error.message}`,
-        },
-      ],
-    };
+    const errorMessage = `Unknown tool: ${name}`;
+    // Update request history with error
+    mcpRequestHistory.value[0].response = errorMessage;
+    mcpRequestHistory.value[0].error = true;
+    throw new Error(errorMessage);
   }
 });
 

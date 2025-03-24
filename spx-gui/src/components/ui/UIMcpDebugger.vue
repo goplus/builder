@@ -22,12 +22,12 @@
 
         <div class="debug-section">
           <h4>请求历史</h4>
-          <div v-if="requestHistory.length === 0" class="empty-state">
+          <div v-if="mcpRequestHistory.length === 0" class="empty-state">
             <p>暂无请求记录</p>
           </div>
           <div v-else class="request-history">
             <div
-              v-for="(request, index) in requestHistory"
+              v-for="(request, index) in mcpRequestHistory"
               :key="index"
               class="request-item"
               :class="{ 'expanded': expandedItems[index] }"
@@ -35,7 +35,7 @@
             >
               <div class="request-header">
                 <div class="request-info">
-                  <span class="request-number">#{{ requestHistory.length - index }}</span>
+                  <span class="request-number">#{{ mcpRequestHistory.length - index }}</span>
                   <span class="request-tool">{{ request.tool }}</span>
                   <span class="request-time">{{ request.time }}</span>
                 </div>
@@ -44,21 +44,21 @@
 
               <div v-show="expandedItems[index]" class="request-details">
                 <div class="request-section">
-                  <div class="section-header" @click.stop="toggleSection(index, 'params')">
+                  <div class="section-header" @click.stop="toggleSection(index, 'params')" data-type="params">
                     <span>请求参数</span>
                     <span class="expand-icon">{{ expandedSections[index]?.params ? '▼' : '▶' }}</span>
                   </div>
-                  <pre v-show="expandedSections[index]?.params">{{ JSON.stringify(request.params, null, 2) }}</pre>
+                  <pre v-show="expandedSections[index]?.params" class="params">{{ JSON.stringify(request.params, null, 2) }}</pre>
                 </div>
 
                 <div class="request-section">
-                  <div class="section-header" @click.stop="toggleSection(index, 'response')">
+                  <div class="section-header" @click.stop="toggleSection(index, 'response')" data-type="response" :class="{ 'error': request.error }">
                     <span>{{ request.error ? '错误响应' : '响应结果' }}</span>
                     <span class="expand-icon">{{ expandedSections[index]?.response ? '▼' : '▶' }}</span>
                   </div>
                   <pre
                     v-show="expandedSections[index]?.response"
-                    :class="{ 'error': request.error }"
+                    :class="{ 'error': request.error, 'response': !request.error }"
                   >{{ request.response }}</pre>
                 </div>
               </div>
@@ -160,21 +160,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { mcpConnectionStatus } from '@/mcp/transport'
-import { tools } from '@/mcp/server'
+import { tools, mcpRequestHistory } from '@/mcp/server'
 import { client } from '@/mcp/client'
 import { UITooltip } from '@/components/ui'
-
-/**
- * @interface RequestHistoryItem
- * @description Represents a historical request record
- */
-interface RequestHistoryItem {
-  tool: string;         // Name of the tool called
-  params: any;          // Parameters sent with the request
-  response: string;     // Response received from the server
-  time: string;         // Timestamp of the request
-  error?: boolean;      // Whether the request resulted in an error
-}
 
 /**
  * @interface McpDebuggerPanelProps
@@ -193,7 +181,6 @@ const emit = defineEmits<{
 // State management
 const selectedTool = ref('');
 const paramValues = ref<Record<string, any>>({});
-const requestHistory = ref<RequestHistoryItem[]>([]);
 const isLoading = ref(false);
 
 // UI state for expandable sections
@@ -250,7 +237,7 @@ const toolParams = computed(() => {
       description: schema.description,
       required: required.includes(name),
       properties: schema.properties,
-      requiredProperties: schema.required // 重命名为 requiredProperties 避免冲突
+      requiredProperties: schema.required
   }));
 });
 
@@ -312,38 +299,21 @@ async function sendRequest() {
   if (!selectedTool.value || !isFormValid.value) return;
   
   isLoading.value = true;
-  const timestamp = new Date().toLocaleTimeString();
   
   try {
-    // 转换参数，删除未填写的可选参数
     const cleanParams = { ...paramValues.value };
     
-    const response = await client.callTool({ 
+    await client.callTool({ 
       name: selectedTool.value, 
       arguments: cleanParams 
     });
     
-    // 记录请求历史
-    requestHistory.value.unshift({
-      tool: selectedTool.value,
-      params: cleanParams,
-      response: JSON.stringify(response, null, 2),
-      time: timestamp
-    });
-    
-    // 重置表单
+    // Reset form
     selectedTool.value = '';
     paramValues.value = {};
     
   } catch (error) {
-    // 记录错误
-    requestHistory.value.unshift({
-      tool: selectedTool.value,
-      params: paramValues.value,
-      response: error instanceof Error ? error.message : String(error),
-      time: timestamp,
-      error: true
-    });
+    console.error('Tool execution failed:', error);
   } finally {
     isLoading.value = false;
   }
@@ -615,15 +585,40 @@ function onClose() {
                 justify-content: space-between;
                 align-items: center;
                 padding: 8px 16px;
-                background-color: #f8f9fa;
                 font-size: 12px;
-                color: #495057;
                 cursor: pointer;
                 user-select: none;
                 border-bottom: 1px solid #e9ecef;
                 
-                &:hover {
-                  background-color: #f1f3f5;
+                // Add different colors for different sections
+                &[data-type="params"] {
+                  background-color: #e7f5ff;  // Light blue background
+                  color: #1971c2;  // Blue text
+                  border-bottom: 1px solid #d0ebff;
+                  
+                  &:hover {
+                    background-color: #d0ebff;
+                  }
+                }
+                
+                &[data-type="response"] {
+                  background-color: #ebfbee;  // Light green background
+                  color: #2b8a3e;  // Green text
+                  border-bottom: 1px solid #d3f9d8;
+                  
+                  &:hover {
+                    background-color: #d3f9d8;
+                  }
+                  
+                  &.error {
+                    background-color: #fff5f5;  // Light red background
+                    color: #e03131;  // Red text
+                    border-bottom: 1px solid #ffe3e3;
+                    
+                    &:hover {
+                      background-color: #ffe3e3;
+                    }
+                  }
                 }
               }
               
@@ -635,9 +630,18 @@ function onClose() {
                 background-color: #fff;
                 overflow-x: auto;
                 
-                &.error {
-                  color: #e03131;
-                  background-color: #fff5f5;
+                &.params {
+                  border-left: 3px solid #1971c2;  // Blue border
+                }
+                
+                &.response {
+                  border-left: 3px solid #2b8a3e;  // Green border
+                  
+                  &.error {
+                    border-left: 3px solid #e03131;  // Red border
+                    color: #e03131;
+                    background-color: #fff5f5;
+                  }
                 }
               }
             }
