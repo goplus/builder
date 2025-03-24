@@ -25,7 +25,7 @@
       height="320"
       src="https://www-static.qbox.me/sem/pili-live-1001/source/img/qiniu.png"
     />
-    <div class="bubble-container" :style="getBubbleContainerStyle(slotInfo)">
+    <div class="bubble-container" :style="getBubbleContainerStyle(props.slotInfo)">
       <svg
         class="ic-bubble-bg"
         :style="getBubbleBgStyle(props.slotInfo)"
@@ -45,14 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
 import { useTag } from '@/utils/tagging'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import type { Step } from '@/apis/guidance'
+import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
-
-const editorCtx = useEditorCtx()
 
 const props = defineProps<{
   step: Step
@@ -65,11 +62,36 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-let currentGuidePositions: {
-  arrowStyle: any
-  niuxiaoqiStyle: any
-  bubbleStyle: any
-} | null = null
+const { getElement } = useTag()
+
+interface GuidePositions {
+  arrowStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+    transform: string
+    transformOrigin: string
+  }
+  niuxiaoqiStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+  }
+  bubbleStyle: {
+    position: 'absolute'
+    left: string
+    top: string
+    width: string
+    height: string
+    arrowDirection: string
+  }
+}
+
+const currentGuidePositions = ref<GuidePositions | null>(null)
 
 // 设置事件键盘监听器，禁用escape和enter键
 function setupKeyboardEventListeners() {
@@ -89,7 +111,7 @@ onMounted(() => {
   setupKeyboardEventListeners()
 
   nextTick(() => {
-    currentGuidePositions = calculateGuidePositions(props.slotInfo)
+    currentGuidePositions.value = calculateGuidePositions(props.slotInfo)
   })
 })
 
@@ -97,6 +119,7 @@ onBeforeUnmount(() => {
   const element = getTargetElement()
   if (element) {
     element.removeEventListener('click', handleTargetElementClick)
+    element.removeEventListener('submit', handleTargetElementSubmit)
   }
 
   document.removeEventListener('keydown', preventEscapeAndEnter)
@@ -115,74 +138,45 @@ function getTargetElement(): HTMLElement | null {
 }
 
 function setupTargetElementListener() {
-  if (props.step.type !== 'following' || !props.step.target) return
+  if (props.step.type !== 'following') return
 
-  nextTick(() => {
-    try {
-      const { getElement } = useTag()
-      const element = getElement(props.step.target)
-      if (element) {
-        console.log('Setting up target element listener:', element)
-        element.addEventListener('click', handleTargetElementClick)
-      } else {
-        console.warn('Target element not found:', props.step.target)
+  watch(
+    () => {
+      if (!props.step.taggingHandler) return []
+
+      return Object.keys(props.step.taggingHandler).map((path) => {
+        const type = props.step.taggingHandler[path]
+        const element = getElement(path)
+        return { path, type, element }
+      })
+    },
+    (taggingItems, _, onCleanup) => {
+      for (const { type, element } of taggingItems) {
+        if (!element) continue
+
+        if (type === TaggingHandlerType.SubmitToNext) {
+          element.addEventListener('submit', handleTargetElementSubmit)
+          onCleanup(() => {
+            element.removeEventListener('submit', handleTargetElementSubmit)
+          })
+        } else if (type === TaggingHandlerType.ClickToNext) {
+          element.addEventListener('click', handleTargetElementClick)
+          onCleanup(() => {
+            element.removeEventListener('click', handleTargetElementClick)
+          })
+        }
       }
-    } catch (error) {
-      console.warn('Error setting up target element listener:', error)
-    }
-  })
+    },
+    { immediate: true }
+  )
+}
+
+async function handleTargetElementSubmit() {
+  emit('followingStepCompleted')
 }
 
 async function handleTargetElementClick() {
-  // 如果有结束快照并且需要检查
-  if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
-    const result = await compareSnapshot(props.step.snapshot.endSnapshot)
-    if (result.success) {
-      emit('followingStepCompleted')
-    } else {
-      console.warn('快照比较失败:', result.reason)
-    }
-  } else {
-    // 没有结束快照要求，直接完成步骤
-    emit('followingStepCompleted')
-  }
-}
-
-async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
-  if (!snapshotStr) return { success: false, reason: '没有结束快照' }
-
-  const userSnapshot = await getSnapshot()
-  if (snapshotStr !== userSnapshot) {
-    return { success: false, reason: '快照不匹配' }
-  }
-  return { success: true }
-}
-
-async function getSnapshot(): Promise<string> {
-  const project = editorCtx.project
-  const files = await project.exportGameFiles()
-  return JSON.stringify({ files })
-}
-
-function calculateBubbleArrowDirection(niuxiaoqiPos: HighlightRect, bubblePos: HighlightRect) {
-  const niuxiaoqiCenter = {
-    x: niuxiaoqiPos.left + niuxiaoqiPos.width / 2,
-    y: niuxiaoqiPos.top + niuxiaoqiPos.height / 2
-  }
-
-  const bubbleCenter = {
-    x: bubblePos.left + bubblePos.width / 2,
-    y: bubblePos.top + bubblePos.height / 2
-  }
-
-  const dx = bubbleCenter.x - niuxiaoqiCenter.x
-  const dy = bubbleCenter.y - niuxiaoqiCenter.y
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    return dx > 0 ? 'left' : 'right'
-  } else {
-    return dy > 0 ? 'top' : 'bottom'
-  }
+  emit('followingStepCompleted')
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
@@ -206,8 +200,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
     height: 320 * finalScale
   }
   const bubbleSize = {
-    width: 300 * finalScale,
-    height: 200 * finalScale
+    width: 600 * finalScale,
+    height: 400 * finalScale
   }
 
   let arrowPosition = { left: 0, top: 0 }
@@ -216,7 +210,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 
   let arrowRotation = 0
 
-  // 根据象限计算位置
+  let bubbleArrowDirection = 'left-down'
+
   if (isLeft && isTop) {
     // 左上象限
     arrowPosition = {
@@ -232,6 +227,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
+    bubbleArrowDirection = 'left-down'
   } else if (!isLeft && isTop) {
     // 右上象限
     arrowPosition = {
@@ -247,6 +243,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
+    bubbleArrowDirection = 'right-down'
   } else if (isLeft && !isTop) {
     // 左下象限
     arrowPosition = {
@@ -262,6 +259,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
+    bubbleArrowDirection = 'left-top'
   } else {
     // 右下象限
     arrowPosition = {
@@ -277,21 +275,12 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
+    bubbleArrowDirection = 'right-top'
   }
-
-  const bubbleArrowDirection = calculateBubbleArrowDirection(
-    {
-      left: niuxiaoqiPosition.left,
-      top: niuxiaoqiPosition.top,
-      width: niuxiaoqiSize.width,
-      height: niuxiaoqiSize.height
-    },
-    { left: bubblePosition.left, top: bubblePosition.top, width: bubbleSize.width, height: bubbleSize.height }
-  )
 
   return {
     arrowStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${arrowPosition.left}px`,
       top: `${arrowPosition.top}px`,
       width: `${arrowSize.width}px`,
@@ -300,14 +289,14 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       transformOrigin: 'center center'
     },
     niuxiaoqiStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${niuxiaoqiPosition.left}px`,
       top: `${niuxiaoqiPosition.top}px`,
       width: `${niuxiaoqiSize.width}px`,
       height: `${niuxiaoqiSize.height}px`
     },
     bubbleStyle: {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${bubblePosition.left}px`,
       top: `${bubblePosition.top}px`,
       width: `${bubbleSize.width}px`,
@@ -318,25 +307,25 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 }
 
 function getArrowStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.arrowStyle
+  return currentGuidePositions.value.arrowStyle
 }
 
 function getNiuxiaoqiStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
-  return currentGuidePositions.niuxiaoqiStyle
+  return currentGuidePositions.value.niuxiaoqiStyle
 }
 
 function getBubbleContainerStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
 
-  const { left, top, width, height } = currentGuidePositions.bubbleStyle
+  const { left, top, width, height } = currentGuidePositions.value.bubbleStyle
 
   return {
     position: 'absolute' as const,
@@ -347,27 +336,26 @@ function getBubbleContainerStyle(highlightRect: HighlightRect) {
   }
 }
 
-// 添加气泡背景样式函数
 function getBubbleBgStyle(highlightRect: HighlightRect) {
-  if (!currentGuidePositions) {
-    currentGuidePositions = calculateGuidePositions(highlightRect)
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
   }
 
-  const arrowDirection = currentGuidePositions.bubbleStyle.arrowDirection
+  const arrowDirection = currentGuidePositions.value.bubbleStyle.arrowDirection
 
   let transform = ''
 
   switch (arrowDirection) {
-    case 'bottom':
+    case 'left-bottom':
       transform = ''
       break
-    case 'top':
+    case 'right-bottom':
       transform = 'scale(1, -1)'
       break
-    case 'left':
+    case 'left-top':
       transform = 'scale(-1, 1)'
       break
-    case 'right':
+    case 'right-top':
       transform = 'scale(-1, -1)'
       break
   }
@@ -397,8 +385,7 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 }
 
 .svg-fill {
-  fill: #ffeb3b;
-  opacity: 0.8;
+  fill: #07c0cf;
 }
 
 .icon-fill {
@@ -408,15 +395,15 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 .bubble-content {
   position: absolute;
   top: 0;
-  left: 0;
+  left: -0.8rem;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px;
+  padding: 20px;
   box-sizing: border-box;
-  font-size: 18px;
+  font-size: 1rem;
   color: #333;
   text-align: center;
   pointer-events: none;
