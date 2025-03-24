@@ -62,6 +62,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const { getElement } = useTag()
+
 interface GuidePositions {
   arrowStyle: {
     position: 'absolute'
@@ -144,7 +146,6 @@ function setupTargetElementListener() {
 
       return Object.keys(props.step.taggingHandler).map((path) => {
         const type = props.step.taggingHandler[path]
-        const { getElement } = useTag()
         const element = getElement(path)
         return { path, type, element }
       })
@@ -166,7 +167,7 @@ function setupTargetElementListener() {
         }
       }
     },
-    { immediate: true, deep: true }
+    { immediate: true }
   )
 }
 
