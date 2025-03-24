@@ -158,7 +158,7 @@ function setupTargetElementListener() {
           }
         } else if (retryCount < maxRetries) {
           retryCount++
-          setTimeout(findAndSetupElement, 300)
+          setTimeout(findAndSetupElement, 500)
         }
       } catch (error) {
         console.warn('setupTargetElementListener error:', error)

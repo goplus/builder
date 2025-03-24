@@ -18,6 +18,7 @@ import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 import CodingStep from './CodingStep.vue'
 import FollowingStep from './FollowingStep.vue'
+import { getFiles } from '@/models/common/cloud'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -66,7 +67,8 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
   try {
     const project = editorCtx.project
-    const { files } = JSON.parse(snapshotStr)
+    const fileCollection = JSON.parse(snapshotStr)
+    const files = getFiles(fileCollection)
     await project.loadGameFiles(files)
   } catch (error) {
     console.error('Failed to load snapshot:', error)
@@ -84,9 +86,19 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
+const isStepProcessing = ref(false)
+
 function handleStepCompleted() {
   stepType.value = null
   emit('stepCompleted')
+  setTimeout(() => {
+    stepType.value = null
+    emit('stepCompleted')
+
+    setTimeout(() => {
+      isStepProcessing.value = false
+    }, 100)
+  }, 100)
 }
 </script>
 
