@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
@@ -136,37 +136,38 @@ function getTargetElement(): HTMLElement | null {
 }
 
 function setupTargetElementListener() {
-  if (props.step.type !== 'following' || !props.step.target) return
+  if (props.step.type !== 'following') return
 
-  setTimeout(() => {
-    let retryCount = 0
-    const maxRetries = 5
+  watch(
+    () => {
+      if (!props.step.taggingHandler) return []
 
-    function findAndSetupElement() {
-      try {
-        const elementTag = Object.keys(props.step.taggingHandler)[0]
-        const taggingHandlerType = props.step.taggingHandler[elementTag]
-
+      return Object.keys(props.step.taggingHandler).map((path) => {
+        const type = props.step.taggingHandler[path]
         const { getElement } = useTag()
-        const element = getElement(elementTag)
+        const element = getElement(path)
+        return { path, type, element }
+      })
+    },
+    (taggingItems, _, onCleanup) => {
+      for (const { type, element } of taggingItems) {
+        if (!element) continue
 
-        if (element) {
-          if (taggingHandlerType === TaggingHandlerType.SubmitToNext) {
-            element.addEventListener('submit', handleTargetElementSubmit)
-          } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
-            element.addEventListener('click', handleTargetElementClick)
-          }
-        } else if (retryCount < maxRetries) {
-          retryCount++
-          setTimeout(findAndSetupElement, 500)
+        if (type === TaggingHandlerType.SubmitToNext) {
+          element.addEventListener('submit', handleTargetElementSubmit)
+          onCleanup(() => {
+            element.removeEventListener('submit', handleTargetElementSubmit)
+          })
+        } else if (type === TaggingHandlerType.ClickToNext) {
+          element.addEventListener('click', handleTargetElementClick)
+          onCleanup(() => {
+            element.removeEventListener('click', handleTargetElementClick)
+          })
         }
-      } catch (error) {
-        console.warn('setupTargetElementListener error:', error)
       }
-    }
-
-    findAndSetupElement()
-  }, 500)
+    },
+    { immediate: true, deep: true }
+  )
 }
 
 async function handleTargetElementSubmit() {
