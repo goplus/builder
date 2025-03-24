@@ -47,15 +47,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue'
 import { useTag } from '@/utils/tagging'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
-import type { FileCollection } from '@/apis/common'
-import { getFiles } from '@/models/common/cloud'
-import { isText, toText, type Files } from '@/models/common/file'
-
-const editorCtx = useEditorCtx()
 
 const props = defineProps<{
   step: Step
@@ -144,215 +138,43 @@ function getTargetElement(): HTMLElement | null {
 function setupTargetElementListener() {
   if (props.step.type !== 'following' || !props.step.target) return
 
-  nextTick(() => {
-    try {
-      console.warn('taggingHandler:', props.step.taggingHandler)
-      if (
-        !props.step.taggingHandler ||
-        typeof props.step.taggingHandler !== 'object' ||
-        Object.keys(props.step.taggingHandler).length === 0
-      ) {
-        console.warn('taggingHandler 为空或无效')
-        return
-      }
+  setTimeout(() => {
+    let retryCount = 0
+    const maxRetries = 5
 
-      const elementTag = Object.keys(props.step.taggingHandler)[0]
-      const taggingHandlerType = props.step.taggingHandler[elementTag]
-      console.warn('elementTag:', elementTag)
-      const { getElement } = useTag()
-      const element = getElement(elementTag)
-      console.warn('element:', element)
-      if (taggingHandlerType === TaggingHandlerType.SubmitToNext) {
-        if (element) {
-          element.addEventListener('submit', handleTargetElementSubmit)
-        } else {
-          console.warn('没找到监听元素', elementTag)
-        }
-      } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
-        if (element) {
-          element.addEventListener('click', handleTargetElementClick)
-        } else {
-          console.warn('没找到监听元素', elementTag)
-        }
-      }
-    } catch (error) {
-      console.warn('Error setting up target element listener:', error)
-    }
-  })
-}
-
-async function handleTargetElementSubmit(event: Event) {
-  console.warn('表单提交事件被触发', event)
-
-  event.preventDefault()
-
-  try {
-    if (props.step.snapshot?.endSnapshot && props.step.isCheck) {
-      console.warn('需要比较快照，开始比较')
-
+    function findAndSetupElement() {
       try {
-        const result = await compareSnapshot(props.step.snapshot.endSnapshot)
-        console.warn('快照比较结果:', result)
+        const elementTag = Object.keys(props.step.taggingHandler)[0]
+        const taggingHandlerType = props.step.taggingHandler[elementTag]
 
-        if (result.success) {
-          console.warn('【快照比较成功】触发 followingStepCompleted 事件')
-          emit('followingStepCompleted')
-          console.warn('followingStepCompleted 事件已触发')
-        } else {
-          console.warn('【快照比较失败】:', result.reason)
+        const { getElement } = useTag()
+        const element = getElement(elementTag)
+
+        if (element) {
+          if (taggingHandlerType === TaggingHandlerType.SubmitToNext) {
+            element.addEventListener('submit', handleTargetElementSubmit)
+          } else if (taggingHandlerType === TaggingHandlerType.ClickToNext) {
+            element.addEventListener('click', handleTargetElementClick)
+          }
+        } else if (retryCount < maxRetries) {
+          retryCount++
+          setTimeout(findAndSetupElement, 300)
         }
       } catch (error) {
-        console.error('快照比较过程发生异常:', error)
+        console.warn('setupTargetElementListener error:', error)
       }
-    } else {
-      console.warn('无需比较快照，直接触发 followingStepCompleted 事件')
-      emit('followingStepCompleted')
-      console.warn('followingStepCompleted 事件已触发')
     }
-  } catch (error) {
-    console.error('处理表单提交事件时发生异常:', error)
-  }
+
+    findAndSetupElement()
+  }, 500)
+}
+
+async function handleTargetElementSubmit() {
+  emit('followingStepCompleted')
 }
 
 async function handleTargetElementClick() {
   emit('followingStepCompleted')
-}
-
-async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
-  if (!snapshotStr) {
-    return { success: false, reason: '没有结束快照' }
-  }
-
-  try {
-    let expectedFiles
-    try {
-      const expectedSnapshot: FileCollection = JSON.parse(snapshotStr)
-      expectedFiles = getFiles(expectedSnapshot)
-
-      if (!expectedFiles) {
-        return { success: false, reason: '快照格式不正确' }
-      }
-    } catch (parseError) {
-      return { success: false, reason: '快照格式解析错误' }
-    }
-
-    if (!editorCtx || !editorCtx.project) {
-      return { success: false, reason: 'Editor context not found' }
-    }
-
-    try {
-      const currentFiles = await editorCtx.project.exportGameFiles()
-      const filesEqual = compareFiles(expectedFiles, currentFiles)
-
-      if (!filesEqual) {
-        return { success: false, reason: '快照不匹配' }
-      }
-
-      return { success: true }
-    } catch (exportError) {
-      return {
-        success: false,
-        reason: `获取快照失败: ${exportError instanceof Error ? exportError.message : String(exportError)}`
-      }
-    }
-  } catch (error: unknown) {
-    return {
-      success: false,
-      reason: `快照比较失败: ${error instanceof Error ? error.message : String(error)}`
-    }
-  }
-}
-
-async function compareFiles(expectedFiles: Files, actualFiles: Files): Promise<{ success: boolean; reason?: string }> {
-  // 比较文件路径和数量
-  const expectedPaths = Object.keys(expectedFiles).sort()
-  const actualPaths = Object.keys(actualFiles).sort()
-
-  if (expectedPaths.length !== actualPaths.length) {
-    console.warn('文件数量不匹配', {
-      预期数量: expectedPaths.length,
-      实际数量: actualPaths.length
-    })
-    return { success: false, reason: '文件数量不匹配' }
-  }
-
-  // 比较文件路径名称
-  for (let i = 0; i < expectedPaths.length; i++) {
-    if (expectedPaths[i] !== actualPaths[i]) {
-      console.warn('文件路径不匹配', {
-        预期路径: expectedPaths[i],
-        实际路径: actualPaths[i]
-      })
-      return { success: false, reason: '文件路径不匹配' }
-    }
-
-    const expectedFile = expectedFiles[expectedPaths[i]]
-    const actualFile = actualFiles[actualPaths[i]]
-
-    // 检查文件是否存在
-    if (!expectedFile || !actualFile) {
-      console.warn('文件缺失', { path: expectedPaths[i] })
-      return { success: false, reason: `文件缺失: ${expectedPaths[i]}` }
-    }
-
-    // 比较基本文件属性
-    if (expectedFile.name !== actualFile.name || expectedFile.type !== actualFile.type) {
-      console.warn('文件属性不匹配', {
-        path: expectedPaths[i],
-        expectedName: expectedFile.name,
-        actualName: actualFile.name,
-        expectedType: expectedFile.type,
-        actualType: actualFile.type
-      })
-      return { success: false, reason: `文件属性不匹配: ${expectedPaths[i]}` }
-    }
-
-    // 比较文件内容 - 根据文件类型选择比较方式
-    try {
-      if (isText(expectedFile) && isText(actualFile)) {
-        // 文本文件比较
-        const expectedText = await toText(expectedFile)
-        const actualText = await toText(actualFile)
-
-        if (expectedText !== actualText) {
-          console.warn('文本内容不匹配', { path: expectedPaths[i] })
-          return { success: false, reason: `文本内容不匹配: ${expectedPaths[i]}` }
-        }
-      } else {
-        // 二进制文件比较 - 比较ArrayBuffer
-        const expectedBuffer = await expectedFile.arrayBuffer()
-        const actualBuffer = await actualFile.arrayBuffer()
-
-        if (!compareArrayBuffers(expectedBuffer, actualBuffer)) {
-          console.warn('二进制内容不匹配', { path: expectedPaths[i] })
-          return { success: false, reason: `二进制内容不匹配: ${expectedPaths[i]}` }
-        }
-      }
-    } catch (error) {
-      console.error('比较文件内容时出错:', error, { path: expectedPaths[i] })
-      return { success: false, reason: `比较文件内容出错: ${error instanceof Error ? error.message : String(error)}` }
-    }
-  }
-
-  return { success: true }
-}
-
-// 辅助函数：比较两个ArrayBuffer
-function compareArrayBuffers(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
-  if (buf1.byteLength !== buf2.byteLength) {
-    return false
-  }
-
-  const dv1 = new DataView(buf1)
-  const dv2 = new DataView(buf2)
-
-  for (let i = 0; i < buf1.byteLength; i++) {
-    if (dv1.getUint8(i) !== dv2.getUint8(i)) {
-      return false
-    }
-  }
-
-  return true
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
@@ -376,8 +198,8 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
     height: 320 * finalScale
   }
   const bubbleSize = {
-    width: 300 * finalScale,
-    height: 200 * finalScale
+    width: 600 * finalScale,
+    height: 400 * finalScale
   }
 
   let arrowPosition = { left: 0, top: 0 }
@@ -561,8 +383,7 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 }
 
 .svg-fill {
-  fill: #ffeb3b;
-  opacity: 0.8;
+  fill: #07c0cf;
 }
 
 .icon-fill {
@@ -572,15 +393,15 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 .bubble-content {
   position: absolute;
   top: 0;
-  left: 0;
+  left: -0.8rem;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px;
+  padding: 20px;
   box-sizing: border-box;
-  font-size: 18px;
+  font-size: 1rem;
   color: #333;
   text-align: center;
   pointer-events: none;
