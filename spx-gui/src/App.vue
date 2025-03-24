@@ -8,7 +8,7 @@
       </UIMessageProvider>
     </UIConfigProvider>
     
-    <!-- 添加 MCP 调试工具面板 -->
+    <!--  MCP Debugger  -->
     <UIMcpDebugger 
       :is-visible="isMcpDebuggerVisible" 
       @close="closeMcpDebugger" 

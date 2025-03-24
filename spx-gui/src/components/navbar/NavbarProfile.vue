@@ -58,11 +58,6 @@
   </UIDropdown>
 </template>
 
-<script lang="ts">
-import type { InjectionKey } from 'vue'
-export const mcpDebuggerVisibleInjectionKey: InjectionKey<() => string | undefined> = Symbol('mcpDebuggerVisible')
-</script>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'

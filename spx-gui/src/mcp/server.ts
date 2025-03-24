@@ -1,3 +1,8 @@
+/**
+ * MCP Server implementation for SPX Builder
+ * Handles tool registration, request processing, and server-side operations
+ * @module server
+ */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
@@ -11,6 +16,13 @@ import {
   insertCode,
 } from "./tools";
 
+/**
+ * MCP Server instance configuration
+ * Provides tool execution capabilities for SPX Builder
+ * 
+ * @constant
+ * @type {Server}
+ */
 const server = new Server(
   {
     name: "spx",
@@ -18,12 +30,18 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {},
+      tools: {}, // Tool execution capability
     },
   }
 );
 
-// Define tools configuration
+/**
+ * Available tools configuration
+ * Defines the tools that can be called through the MCP server
+ * 
+ * @constant
+ * @type {Array<Tool>}
+ */
 export const tools = [
   {
     name: "create_project",
@@ -117,14 +135,30 @@ export const tools = [
   },
 ];
 
-// Set handler for listing available tools
+/**
+ * Handler for listing available tools
+ * Returns the list of registered tools and their configurations
+ * 
+ * @async
+ * @returns {Promise<{tools: Array<Tool>}>} List of available tools
+ */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools,
   };
 });
 
-// Set handler for calling tools
+/**
+ * Handler for tool execution requests
+ * Processes tool calls and returns the execution results
+ * 
+ * @async
+ * @param {Object} request - The tool execution request
+ * @param {string} request.params.name - The name of the tool to execute
+ * @param {Object} request.params.arguments - The parameters for the tool
+ * @returns {Promise<{content: Array<{type: string, text: string}>}>} Execution result
+ * @throws {Error} When tool execution fails or validation fails
+ */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const { name, arguments: parameters } = request.params;
@@ -265,6 +299,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+/**
+ * Initialize the MCP server connection
+ * Updates the connection status and logs the result
+ * 
+ * @async
+ * @returns {Promise<void>}
+ * @throws {Error} When connection fails
+ */
 server.connect(serverTransport)
   .then(() => {
     console.log("MCP Server connected successfully");

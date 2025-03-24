@@ -158,47 +158,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { mcpConnectionStatus } from '@/mcp/transport'
 import { tools } from '@/mcp/server'
 import { client } from '@/mcp/client'
 import { UITooltip } from '@/components/ui'
 
-interface ToolParam {
-  name: string;
-  type: string;
-  description: string;
-  required: boolean;
-  properties?: Record<string, any>;
-}
-
+/**
+ * @interface RequestHistoryItem
+ * @description Represents a historical request record
+ */
 interface RequestHistoryItem {
-  tool: string;
-  params: any;
-  response: string;
-  time: string;
-  error?: boolean;
+  tool: string;         // Name of the tool called
+  params: any;          // Parameters sent with the request
+  response: string;     // Response received from the server
+  time: string;         // Timestamp of the request
+  error?: boolean;      // Whether the request resulted in an error
 }
 
-// Props
+/**
+ * @interface McpDebuggerPanelProps
+ * @description Props for the MCP Debugger panel component
+ */
 interface McpDebuggerPanelProps {
-  isVisible: boolean;
+  isVisible: boolean;   // Controls the visibility of the debugger panel
 }
 
+// Component props and emits
 const props = defineProps<McpDebuggerPanelProps>();
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-// 状态
+// State management
 const selectedTool = ref('');
 const paramValues = ref<Record<string, any>>({});
 const requestHistory = ref<RequestHistoryItem[]>([]);
 const isLoading = ref(false);
 
+// UI state for expandable sections
 const expandedItems = ref<Record<number, boolean>>({});
 const expandedSections = ref<Record<number, Record<string, boolean>>>({});
 
+/**
+ * Toggles the expansion state of a request history item
+ * @param index - Index of the request history item
+ */
 function toggleExpand(index: number) {
   expandedItems.value[index] = !expandedItems.value[index];
   
@@ -211,6 +216,11 @@ function toggleExpand(index: number) {
   }
 }
 
+/**
+ * Toggles visibility of a specific section within a request history item
+ * @param index - Index of the request history item
+ * @param section - Section to toggle ('params' or 'response')
+ */
 function toggleSection(index: number, section: 'params' | 'response') {
   if (!expandedSections.value[index]) {
     expandedSections.value[index] = {
@@ -221,7 +231,10 @@ function toggleSection(index: number, section: 'params' | 'response') {
   expandedSections.value[index][section] = !expandedSections.value[index][section];
 }
 
-// 工具参数
+/**
+ * Computed property that returns the parameters for the currently selected tool
+ * Transforms the tool's parameter schema into a more usable format
+ */
 const toolParams = computed(() => {
   if (!selectedTool.value) return [];
   
@@ -241,7 +254,10 @@ const toolParams = computed(() => {
   }));
 });
 
-// 表单验证
+/**
+ * Validates the form based on required parameters and their values
+ * Checks both top-level and nested required parameters
+ */
 const isFormValid = computed(() => {
   if (!selectedTool.value) return false;
   
@@ -262,7 +278,10 @@ const isFormValid = computed(() => {
   return true;
 });
 
-// 工具变更处理
+/**
+ * Handles tool selection changes
+ * Resets parameter values and initializes object type parameters
+ */
 function onToolChange() {
   // 重置参数值
   paramValues.value = {};
@@ -275,13 +294,20 @@ function onToolChange() {
   }
 }
 
-// 获取工具描述
+/**
+ * Retrieves the description for a given tool
+ * @param toolName - Name of the tool
+ * @returns Tool description or empty string if tool not found
+ */
 function getToolDescription(toolName: string) {
   const tool = tools.find(t => t.name === toolName);
   return tool ? tool.description : '';
 }
 
-// 发送请求
+/**
+ * Sends a request to the selected tool with current parameter values
+ * Records the request in history and handles both success and error cases
+ */
 async function sendRequest() {
   if (!selectedTool.value || !isFormValid.value) return;
   
@@ -323,6 +349,9 @@ async function sendRequest() {
   }
 }
 
+/**
+ * Emits close event to parent component
+ */
 function onClose() {
   emit('close');
 }
