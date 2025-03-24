@@ -1,5 +1,4 @@
 <template>
-  <div class="app-container">
     <UIConfigProvider :config="config">
       <UIMessageProvider>
         <UIModalProvider>
@@ -13,7 +12,6 @@
       :is-visible="isMcpDebuggerVisible" 
       @close="closeMcpDebugger" 
     />
-  </div>
 </template>
 
 <script setup lang="ts">
