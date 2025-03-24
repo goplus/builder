@@ -57,16 +57,14 @@ async function initializeStep(step: Step) {
   if (isProcessing.value) return
   isProcessing.value = true
 
-  stepType.value = null
-
-  await nextTick()
-
   try {
     if (step.snapshot?.startSnapshot) {
       await loadSnapshot(step.snapshot.startSnapshot)
     }
 
     setFilterControls()
+
+    stepType.value = step.type
 
     // Wait for modal to be shown
     const isModalStep =
@@ -77,13 +75,11 @@ async function initializeStep(step: Step) {
       await new Promise((resolve) => setTimeout(resolve, 300))
     }
 
-    stepType.value = step.type
+    await nextTick()
   } catch (error) {
-    console.error('初始化步骤出错:', error)
+    console.error('Failed to initialize step:', error)
   } finally {
-    setTimeout(() => {
-      isProcessing.value = false
-    }, 200)
+    isProcessing.value = false
   }
 }
 
