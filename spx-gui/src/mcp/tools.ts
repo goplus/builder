@@ -1,8 +1,3 @@
-import { useCreateProject } from '@/components/project'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
 /**
  * Create a new project with the specified name.
  * @param projectName [REQUIRED] The name of the project to be created.
