@@ -3,7 +3,7 @@
     <div v-if="isVisible" class="mcp-debugger-panel">
       <div class="mcp-debugger-header">
         <h3>MCP Debugger</h3>
-        <button @click="onClose" class="close-btn">
+        <button class="close-btn" @click="onClose">
           <span class="close-icon">×</span>
         </button>
       </div>
@@ -143,9 +143,9 @@
 
             <div class="form-actions">
               <button
-                @click="sendRequest"
                 class="send-button"
                 :disabled="!isFormValid || !selectedTool"
+                @click="sendRequest"
               >
                 发送请求
               </button>
