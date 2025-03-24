@@ -37,18 +37,20 @@
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
         <div class="content">
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
-            <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 436px">
-              <ItemComponent
-                v-for="asset in slotProps.data.data"
-                :key="asset.id"
-                :asset="asset"
-                :selected="isSelected(asset)"
-                @click="handleAssetClick(asset)"
-              />
-            </ul>
-          </ListResultWrapper>
+          <TagNode name="asset-library-modal">
+            <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
+              <!-- fixed asset-list height to keep the layout stable -->
+              <ul class="asset-list" style="height: 436px">
+                <ItemComponent
+                  v-for="asset in slotProps.data.data"
+                  :key="asset.id"
+                  :asset="asset"
+                  :selected="isSelected(asset)"
+                  @click="handleAssetClick(asset)"
+                />
+              </ul>
+            </ListResultWrapper>
+          </TagNode>
           <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
         </div>
         <footer class="footer">
@@ -60,14 +62,16 @@
               })
             }}
           </span>
-          <UIButton
-            size="large"
-            :disabled="selected.length === 0"
-            :loading="handleConfirm.isLoading.value"
-            @click="handleConfirm.fn"
-          >
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
-          </UIButton>
+          <TagNode name="asset-library-confirm">
+            <UIButton
+              size="large"
+              :disabled="selected.length === 0"
+              :loading="handleConfirm.isLoading.value"
+              @click="handleConfirm.fn"
+            >
+              {{ $t({ en: 'Confirm', zh: '确认' }) }}
+            </UIButton>
+          </TagNode>
         </footer>
       </main>
     </section>
