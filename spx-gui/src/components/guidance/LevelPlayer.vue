@@ -1,5 +1,5 @@
 <template>
-  <div v-if="levelIntroVisible" class="mask"></div>
+  <div v-if="levelIntroVisible || levelStatus !== LevelStatusType.NODE_TASK_PENDING" class="mask"></div>
   <!-- 关卡介绍 -->
   <div v-if="levelIntroVisible" class="intro">
     <div class="intro-title">
@@ -37,7 +37,7 @@
     <div class="card-group">
       <!-- navbar 状态栏 -->
       <div v-show="videoPlayerVisible" class="player-container">
-        <div class="navbar">
+        <div ref="cardGroupNavbarRef" class="navbar">
           <div class="navbar-left" @click="handleToClick('storyline')">
             <img src="./icons/path.svg" alt="" />
           </div>
@@ -48,7 +48,13 @@
             >
           </div>
           <div class="navbar-right">
-            <UIButton class="browse-btn" type="secondary" size="small" :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING" @click="handleToClick('skipVideo')">
+            <UIButton
+              class="browse-btn"
+              type="secondary"
+              size="small"
+              :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING"
+              @click="handleToClick('skipVideo')"
+            >
               {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
             </UIButton>
           </div>
@@ -138,7 +144,7 @@
 
     <!-- 当有当前节点任务时，渲染 NodeTaskPlayer 组件 -->
     <NodeTaskPlayer
-      v-if="currentNodeTask"
+      v-if="currentNodeTask && levelStatus === LevelStatusType.NODE_TASK_PENDING"
       ref="nodeTaskPlayerRef"
       :node-task="currentNodeTask"
       @node-task-completed="handleNodeTaskCompleted"
@@ -206,6 +212,7 @@ function handleSegmentEnd(segment: LevelSegment): void {
   levelStatus.value = LevelStatusType.NODE_TASK_START
   videoPlayerRef.value?.showCover()
   videoPlayerRef.value?.pause()
+  videoPlayerRef.value?.exitFullScreen()
 
   currentNodeTaskIndex.value = segment.extension!.nodeTaskIndex
 
@@ -217,11 +224,12 @@ function handleSegmentEnd(segment: LevelSegment): void {
  */
 function handleStartNodeTask(): void {
   levelStatus.value = LevelStatusType.NODE_TASK_PENDING
-  videoPlayerRef.value?.exitFullScreen()
   videoPlayerVisible.value = false
 }
 
 const isLastLevel = ref<boolean>(false)
+const userStore = useUserStore()
+const signedInUser = computed(() => userStore.getSignedInUser())
 const userStore = useUserStore()
 const signedInUser = computed(() => userStore.getSignedInUser())
 /**
@@ -244,6 +252,13 @@ async function handleNodeTaskCompleted(): Promise<void> {
       const [ metadata, files ] = await editorCtx.project.export()
       const project = new Project(owner.name, `result-${projectName.value}`)
       await project.load({thumbnail: metadata.thumbnail}, files)
+      project.setVisibility(Visibility.Private)
+      await project.saveToCloud()
+      // 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
+      const owner = await untilNotNull(signedInUser)
+      const [metadata, files] = await editorCtx.project.export()
+      const project = new Project(owner.name, `result-${projectName.value}`)
+      await project.load({ thumbnail: metadata.thumbnail }, files)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
     } else {
@@ -338,9 +353,17 @@ function getPos(): Pos {
 function setPos(pos: Pos): void {
   levelPlayerPos.value = pos
 }
+function getVideoPlayerVisible(): boolean {
+  return videoPlayerVisible.value
+}
+function setVideoPlayerVisible(visible: boolean): void {
+  videoPlayerVisible.value = visible
+}
 const levelPlayerCtx = {
   getPos,
-  setPos
+  setPos,
+  getVideoPlayerVisible,
+  setVideoPlayerVisible
 }
 provide(levelPlayerCtxKey, levelPlayerCtx)
 
@@ -348,9 +371,11 @@ provide(levelPlayerCtxKey, levelPlayerCtx)
  * 拖拽
  */
 const floatingBtnRef = ref<HTMLElement | null>(null)
+const cardGroupNavbarRef = ref<HTMLElement | null>(null)
 useDrag(floatingBtnRef, getPos, setPos, {
   onClick: handleFloatingBtnClick
 })
+useDrag(cardGroupNavbarRef, getPos, setPos)
 </script>
 <script lang="ts">
 export type Pos = {
@@ -360,6 +385,8 @@ export type Pos = {
 export type LevelPlayerCtx = {
   getPos(): Pos
   setPos(pos: Pos): void
+  getVideoPlayerVisible(): boolean
+  setVideoPlayerVisible(visible: boolean): void
 }
 const levelPlayerCtxKey: InjectionKey<LevelPlayerCtx> = Symbol('level-player-ctx')
 export function useLevelPlayerCtx() {
@@ -380,8 +407,10 @@ export function useLevelPlayerCtx() {
 }
 .level-player {
   width: 500px;
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
 }
 .card-group {
   position: relative;
@@ -402,6 +431,7 @@ export function useLevelPlayerCtx() {
   color: #fff;
   align-items: center;
   background-color: #0ec1d0;
+  cursor: move;
   .navbar-left {
     display: flex;
     align-items: center;

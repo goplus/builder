@@ -161,8 +161,6 @@ const communityLikingProjects = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
-// console.log('communityLikingProjects',communityLikingProjects);
-
 const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
 
 const communityRemixingProjects = useQuery(

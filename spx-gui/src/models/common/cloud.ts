@@ -38,7 +38,7 @@ export function getPublishedContent(project: ProjectData) {
 }
 
 export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
-  const { owner, name, id } = metadata
+  const { owner, name, id, hidden } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
 
@@ -62,11 +62,15 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
           files: fileCollection,
           description: metadata.description,
           instructions: metadata.instructions,
-          thumbnail: thumbnailUniversalUrl
+          thumbnail: thumbnailUniversalUrl,
+          hidden: hidden ?? 0
         },
         signal
       )
-    : addProject({ name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
+    : addProject(
+        { name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection, hidden: hidden ?? 0 },
+        signal
+      ))
   signal?.throwIfAborted()
 
   metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }

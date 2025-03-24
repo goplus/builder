@@ -1,4 +1,4 @@
-import { type Step } from '@/apis/guidance'
+import { type Step, TaggingHandlerType } from '@/apis/guidance'
 
 export const codingStep: Step = {
   title: {
@@ -15,6 +15,7 @@ export const codingStep: Step = {
   },
   duration: 20,
   target: 'code-editor',
+  taggingHandler: {},
   type: 'coding',
   isCheck: true,
   isApiControl: true,
@@ -168,6 +169,9 @@ export const followingStep: Step = {
   },
   duration: 20,
   target: 'stage-panel',
+  taggingHandler: {
+    'code-editor': 'clickToNext' as TaggingHandlerType
+  },
   type: 'following',
   isCheck: false,
   isApiControl: false,

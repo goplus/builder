@@ -47,7 +47,7 @@ import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context
 import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
-import { getStoryLine, type StoryLine } from '@/apis/guidance'
+import { getStoryLine, type StoryLine, storyLineJson } from '@/apis/guidance'
 import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
@@ -68,7 +68,8 @@ async function handleGuidance() {
     if (storyLineId != null) {
       const data: StoryLine = await getStoryLine(storyLineId)
       if (data) {
-        storyLineInfo.value = data
+        // storyLineInfo.value = data
+        storyLineInfo.value = storyLineJson
       }
     }
   }
