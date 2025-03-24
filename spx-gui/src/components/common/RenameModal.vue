@@ -17,7 +17,6 @@ export interface IRenameTarget {
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { UIFormModal, UIButton, UITextInput, UIForm, UIFormItem, useForm, UIIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { rename } from 'fs'
 
 const props = defineProps<{
   visible: boolean
@@ -76,9 +75,11 @@ function validateName(name: string) {
           <UIButton type="boring" @click="emit('cancelled')">
             {{ $t({ en: 'Cancel', zh: '取消' }) }}
           </UIButton>
-          <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
-          </UIButton>
+          <TagNode name="rename-submit-button">
+            <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+              {{ $t({ en: 'Confirm', zh: '确认' }) }}
+            </UIButton>
+          </TagNode>
         </footer>
       </UIForm>
     </TagNode>
