@@ -230,8 +230,6 @@ function handleStartNodeTask(): void {
 const isLastLevel = ref<boolean>(false)
 const userStore = useUserStore()
 const signedInUser = computed(() => userStore.getSignedInUser())
-const userStore = useUserStore()
-const signedInUser = computed(() => userStore.getSignedInUser())
 /**
  * 节点任务完成
  */
@@ -252,13 +250,6 @@ async function handleNodeTaskCompleted(): Promise<void> {
       const [ metadata, files ] = await editorCtx.project.export()
       const project = new Project(owner.name, `result-${projectName.value}`)
       await project.load({thumbnail: metadata.thumbnail}, files)
-      project.setVisibility(Visibility.Private)
-      await project.saveToCloud()
-      // 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
-      const owner = await untilNotNull(signedInUser)
-      const [metadata, files] = await editorCtx.project.export()
-      const project = new Project(owner.name, `result-${projectName.value}`)
-      await project.load({ thumbnail: metadata.thumbnail }, files)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
     } else {
