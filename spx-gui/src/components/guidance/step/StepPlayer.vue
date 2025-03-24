@@ -54,9 +54,6 @@ watch(
 )
 
 async function initializeStep(step: Step) {
-  if (isProcessing.value) return
-  isProcessing.value = true
-
   try {
     if (step.snapshot?.startSnapshot) {
       await loadSnapshot(step.snapshot.startSnapshot)
@@ -65,15 +62,6 @@ async function initializeStep(step: Step) {
     setFilterControls()
 
     stepType.value = step.type
-
-    // Wait for modal to be shown
-    const isModalStep =
-      step.target?.includes('modal') ||
-      (step.taggingHandler && Object.keys(step.taggingHandler).some((k) => k.includes('modal')))
-
-    if (isModalStep) {
-      await new Promise((resolve) => setTimeout(resolve, 300))
-    }
 
     await nextTick()
   } catch (error) {
