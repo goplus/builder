@@ -1,19 +1,36 @@
 <template>
-  <UIConfigProvider :config="config">
-    <UIMessageProvider>
-      <UIModalProvider>
-        <RouterView />
-      </UIModalProvider>
-    </UIMessageProvider>
-  </UIConfigProvider>
+  <div class="app-container">
+    <UIConfigProvider :config="config">
+      <UIMessageProvider>
+        <UIModalProvider>
+          <RouterView />
+        </UIModalProvider>
+      </UIMessageProvider>
+    </UIConfigProvider>
+    
+    <!-- 添加 MCP 调试工具面板 -->
+    <UIMcpDebugger 
+      :is-visible="isMcpDebuggerVisible" 
+      @close="closeMcpDebugger" 
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
+import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger, type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
+import { useMcpDebuggerStore } from '@/utils/utils'
 
 const { t } = useI18n()
+
+// Ensure the injected state is reactive
+const isMcpDebuggerVisible  = useMcpDebuggerStore()
+
+// Close the debugger panel
+function closeMcpDebugger() {
+  isMcpDebuggerVisible.value = false; // Update the state
+}
 
 const config = computed<Config>(() => ({
   confirmDialog: {
