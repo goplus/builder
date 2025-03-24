@@ -311,7 +311,7 @@ export const storyLineJson: StoryLine = {
                 en: 'test'
               },
               duration: 20,
-              target: '',
+              target: 'code-editor',
               taggingHandler: {},
               type: 'coding',
               isCheck: true,
@@ -398,7 +398,8 @@ export const storyLineJson: StoryLine = {
 // }
 
 export async function getStoryLine(storyLineId: string): Promise<StoryLine> {
-  return client.get(`/storyline/${encodeURIComponent(storyLineId)}`) as Promise<StoryLine>
+  // return client.get(`/storyline/${encodeURIComponent(storyLineId)}`) as Promise<StoryLine>
+  return storyLineJson
 }
 
 export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineStudy | null> {
