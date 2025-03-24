@@ -51,6 +51,9 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
+import type { FileCollection } from '@/apis/common'
+import { getFiles } from '@/models/common/cloud'
+import { isText, toText, type Files } from '@/models/common/file'
 
 const editorCtx = useEditorCtx()
 
@@ -216,57 +219,140 @@ async function handleTargetElementClick() {
 }
 
 async function compareSnapshot(snapshotStr: string): Promise<{ success: boolean; reason?: string }> {
-  console.warn('开始比较快照')
-
   if (!snapshotStr) {
-    console.warn('结束快照为空')
     return { success: false, reason: '没有结束快照' }
   }
 
   try {
-    const userSnapshot = await getSnapshot()
-    console.warn('获取当前快照成功')
+    let expectedFiles
+    try {
+      const expectedSnapshot: FileCollection = JSON.parse(snapshotStr)
+      expectedFiles = getFiles(expectedSnapshot)
 
-    if (snapshotStr !== userSnapshot) {
-      console.warn('快照不匹配', {
-        expected: snapshotStr.substring(0, 100) + '...',
-        actual: userSnapshot.substring(0, 100) + '...'
-      })
-      return { success: false, reason: '快照不匹配' }
+      if (!expectedFiles) {
+        return { success: false, reason: '快照格式不正确' }
+      }
+    } catch (parseError) {
+      return { success: false, reason: '快照格式解析错误' }
     }
 
-    return { success: true }
+    if (!editorCtx || !editorCtx.project) {
+      return { success: false, reason: 'Editor context not found' }
+    }
+
+    try {
+      const currentFiles = await editorCtx.project.exportGameFiles()
+      const filesEqual = compareFiles(expectedFiles, currentFiles)
+
+      if (!filesEqual) {
+        return { success: false, reason: '快照不匹配' }
+      }
+
+      return { success: true }
+    } catch (exportError) {
+      return {
+        success: false,
+        reason: `获取快照失败: ${exportError instanceof Error ? exportError.message : String(exportError)}`
+      }
+    }
   } catch (error: unknown) {
-    console.error('获取快照时发生错误:', error)
-    return { success: false, reason: `获取快照失败: ${error instanceof Error ? error.message : String(error)}` }
+    return {
+      success: false,
+      reason: `快照比较失败: ${error instanceof Error ? error.message : String(error)}`
+    }
   }
 }
 
-async function getSnapshot(): Promise<string> {
-  console.warn('开始获取快照')
+async function compareFiles(expectedFiles: Files, actualFiles: Files): Promise<{ success: boolean; reason?: string }> {
+  // 比较文件路径和数量
+  const expectedPaths = Object.keys(expectedFiles).sort()
+  const actualPaths = Object.keys(actualFiles).sort()
 
-  if (!editorCtx) {
-    console.error('editorCtx 不存在')
-    throw new Error('Editor context not found')
+  if (expectedPaths.length !== actualPaths.length) {
+    console.warn('文件数量不匹配', {
+      预期数量: expectedPaths.length,
+      实际数量: actualPaths.length
+    })
+    return { success: false, reason: '文件数量不匹配' }
   }
 
-  if (!editorCtx.project) {
-    console.error('editorCtx.project 不存在')
-    throw new Error('Project not found in editor context')
+  // 比较文件路径名称
+  for (let i = 0; i < expectedPaths.length; i++) {
+    if (expectedPaths[i] !== actualPaths[i]) {
+      console.warn('文件路径不匹配', {
+        预期路径: expectedPaths[i],
+        实际路径: actualPaths[i]
+      })
+      return { success: false, reason: '文件路径不匹配' }
+    }
+
+    const expectedFile = expectedFiles[expectedPaths[i]]
+    const actualFile = actualFiles[actualPaths[i]]
+
+    // 检查文件是否存在
+    if (!expectedFile || !actualFile) {
+      console.warn('文件缺失', { path: expectedPaths[i] })
+      return { success: false, reason: `文件缺失: ${expectedPaths[i]}` }
+    }
+
+    // 比较基本文件属性
+    if (expectedFile.name !== actualFile.name || expectedFile.type !== actualFile.type) {
+      console.warn('文件属性不匹配', {
+        path: expectedPaths[i],
+        expectedName: expectedFile.name,
+        actualName: actualFile.name,
+        expectedType: expectedFile.type,
+        actualType: actualFile.type
+      })
+      return { success: false, reason: `文件属性不匹配: ${expectedPaths[i]}` }
+    }
+
+    // 比较文件内容 - 根据文件类型选择比较方式
+    try {
+      if (isText(expectedFile) && isText(actualFile)) {
+        // 文本文件比较
+        const expectedText = await toText(expectedFile)
+        const actualText = await toText(actualFile)
+
+        if (expectedText !== actualText) {
+          console.warn('文本内容不匹配', { path: expectedPaths[i] })
+          return { success: false, reason: `文本内容不匹配: ${expectedPaths[i]}` }
+        }
+      } else {
+        // 二进制文件比较 - 比较ArrayBuffer
+        const expectedBuffer = await expectedFile.arrayBuffer()
+        const actualBuffer = await actualFile.arrayBuffer()
+
+        if (!compareArrayBuffers(expectedBuffer, actualBuffer)) {
+          console.warn('二进制内容不匹配', { path: expectedPaths[i] })
+          return { success: false, reason: `二进制内容不匹配: ${expectedPaths[i]}` }
+        }
+      }
+    } catch (error) {
+      console.error('比较文件内容时出错:', error, { path: expectedPaths[i] })
+      return { success: false, reason: `比较文件内容出错: ${error instanceof Error ? error.message : String(error)}` }
+    }
   }
 
-  const project = editorCtx.project
-  console.warn('获取到 project 对象')
+  return { success: true }
+}
 
-  try {
-    const files = await project.exportGameFiles()
-    console.warn('导出游戏文件成功')
-    const snapshot = JSON.stringify({ files })
-    return snapshot
-  } catch (error) {
-    console.error('导出游戏文件失败:', error)
-    throw error
+// 辅助函数：比较两个ArrayBuffer
+function compareArrayBuffers(buf1: ArrayBuffer, buf2: ArrayBuffer): boolean {
+  if (buf1.byteLength !== buf2.byteLength) {
+    return false
   }
+
+  const dv1 = new DataView(buf1)
+  const dv2 = new DataView(buf2)
+
+  for (let i = 0; i < buf1.byteLength; i++) {
+    if (dv1.getUint8(i) !== dv2.getUint8(i)) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function calculateGuidePositions(highlightRect: HighlightRect) {
