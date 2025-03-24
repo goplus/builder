@@ -66,8 +66,6 @@ async function initializeStep(step: Step) {
     await nextTick()
   } catch (error) {
     console.error('Failed to initialize step:', error)
-  } finally {
-    isProcessing.value = false
   }
 }
 
@@ -99,18 +97,9 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
-const isProcessing = ref(false)
-
 function handleStepCompleted() {
-  if (isProcessing.value) return
-  isProcessing.value = true
-
   stepType.value = null
   emit('stepCompleted')
-
-  setTimeout(() => {
-    isProcessing.value = false
-  }, 200)
 }
 </script>
 
