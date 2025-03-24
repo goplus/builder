@@ -1,6 +1,6 @@
 <template>
   <Transition name="slide">
-    <div v-if="isVisible" class="mcp-debugger-panel">
+    <div v-if="props.isVisible" class="mcp-debugger-panel">
       <div class="mcp-debugger-header">
         <h3>MCP Debugger</h3>
         <button class="close-btn" @click="onClose">

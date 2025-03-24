@@ -309,7 +309,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  */
 server.connect(serverTransport)
   .then(() => {
-    console.log("MCP Server connected successfully");
     setServerConnected(true);
 })
   .catch(error => {

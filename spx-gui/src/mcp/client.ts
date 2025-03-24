@@ -37,7 +37,6 @@ const client = new Client(
  */
 client.connect(clientTransport)
     .then(() => {
-        console.log("MCP Client connected successfully");
         setClientConnected(true);
     })
     .catch(error => {
