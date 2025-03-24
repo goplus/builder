@@ -54,36 +54,38 @@ function validateName(name: string) {
 </script>
 
 <template>
-  <UIFormModal
-    class="rename-modal"
-    style="width: 512px"
-    :title="$t({ en: 'Rename', zh: '重命名' })"
-    :visible="visible"
-    @update:visible="emit('cancelled')"
-  >
-    <TagNode name="rename-modal-form">
-      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-        <UIFormItem path="name">
-          <UITextInput v-model:value="form.value.name" />
-          <template #tip>{{ $t(target.inputTip) }}</template>
-        </UIFormItem>
-        <p v-if="target.warning != null" class="warning">
-          <UIIcon class="icon" type="warning" />
-          {{ $t(target.warning) }}
-        </p>
-        <footer class="footer">
-          <UIButton type="boring" @click="emit('cancelled')">
-            {{ $t({ en: 'Cancel', zh: '取消' }) }}
-          </UIButton>
-          <TagNode name="rename-submit-button">
-            <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-              {{ $t({ en: 'Confirm', zh: '确认' }) }}
+  <TagNode name="rename-modal">
+    <UIFormModal
+      class="rename-modal"
+      style="width: 512px"
+      :title="$t({ en: 'Rename', zh: '重命名' })"
+      :visible="visible"
+      @update:visible="emit('cancelled')"
+    >
+      <TagNode name="rename-modal-form">
+        <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+          <UIFormItem path="name">
+            <UITextInput v-model:value="form.value.name" />
+            <template #tip>{{ $t(target.inputTip) }}</template>
+          </UIFormItem>
+          <p v-if="target.warning != null" class="warning">
+            <UIIcon class="icon" type="warning" />
+            {{ $t(target.warning) }}
+          </p>
+          <footer class="footer">
+            <UIButton type="boring" @click="emit('cancelled')">
+              {{ $t({ en: 'Cancel', zh: '取消' }) }}
             </UIButton>
-          </TagNode>
-        </footer>
-      </UIForm>
-    </TagNode>
-  </UIFormModal>
+            <TagNode name="rename-submit-button">
+              <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+                {{ $t({ en: 'Confirm', zh: '确认' }) }}
+              </UIButton>
+            </TagNode>
+          </footer>
+        </UIForm>
+      </TagNode>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <style lang="scss" scoped>

@@ -8,7 +8,9 @@
     <UIDropdown trigger="click" placement="bottom-end" :offset="{ x: 0, y: 16 }">
       <template #trigger>
         <div class="add">
-          <UIIcon type="plus" />
+          <TagNode name="panel-header-add-icon">
+            <UIIcon type="plus" />
+          </TagNode>
         </div>
       </template>
       <slot name="add-options"></slot>
