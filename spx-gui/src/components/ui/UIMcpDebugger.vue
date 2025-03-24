@@ -44,7 +44,7 @@
 
               <div v-show="expandedItems[index]" class="request-details">
                 <div class="request-section">
-                  <div class="section-header" @click.stop="toggleSection(index, 'params')" data-type="params">
+                  <div class="section-header" data-type="params" @click.stop="toggleSection(index, 'params')">
                     <span>请求参数</span>
                     <span class="expand-icon">{{ expandedSections[index]?.params ? '▼' : '▶' }}</span>
                   </div>
@@ -52,7 +52,7 @@
                 </div>
 
                 <div class="request-section">
-                  <div class="section-header" @click.stop="toggleSection(index, 'response')" data-type="response" :class="{ 'error': request.error }">
+                  <div class="section-header" data-type="response" :class="{ 'error': request.error }" @click.stop="toggleSection(index, 'response')">
                     <span>{{ request.error ? '错误响应' : '响应结果' }}</span>
                     <span class="expand-icon">{{ expandedSections[index]?.response ? '▼' : '▶' }}</span>
                   </div>
