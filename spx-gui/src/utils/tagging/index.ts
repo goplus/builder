@@ -41,7 +41,7 @@ export function useTag() {
 
   return {
     getElement,
-    getInstance,
+    getInstance
   }
 }
 

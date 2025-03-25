@@ -1,10 +1,10 @@
 <template>
   <div class="step-player">
     <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
-      <template v-if="stepType === 'coding'">
+      <template v-if="props.step.type === 'coding'">
         <CodingStep :step="props.step" @coding-step-completed="handleStepCompleted" />
       </template>
-      <template v-if="stepType === 'following'" #default="{ slotInfo }">
+      <template v-if="props.step.type === 'following'" #default="{ slotInfo }">
         <FollowingStep :step="props.step" :slot-info="slotInfo" @following-step-completed="handleStepCompleted" />
       </template>
     </MaskWithHighlight>
@@ -12,7 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
@@ -31,8 +32,6 @@ const emit = defineEmits<{
   stepCompleted: []
 }>()
 
-const stepType = ref<'coding' | 'following' | null>(props.step.type)
-
 onMounted(async () => {
   try {
     if (props.step.snapshot?.startSnapshot) {
@@ -43,6 +42,7 @@ onMounted(async () => {
   }
 
   setFilterControls()
+  await nextTick()
 })
 
 watch(
@@ -60,8 +60,6 @@ async function initializeStep(step: Step) {
     }
 
     setFilterControls()
-
-    stepType.value = step.type
 
     await nextTick()
   } catch (error) {
@@ -97,8 +95,7 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
-function handleStepCompleted() {
-  stepType.value = null
+async function handleStepCompleted() {
   emit('stepCompleted')
 }
 </script>
