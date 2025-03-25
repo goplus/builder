@@ -43,7 +43,6 @@ const highlightRect = computed<HighlightRect>(() => {
 
 function createRoundedRectPath(x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2)
-  console.log('rebuild hole rect', x, y, w, h, r)
 
   return `
     M${x + rr},${y}
