@@ -132,12 +132,7 @@ function generateStudyProjectName(storyLineName: string) {
 // 获取故事线信息
 const { data: storyLine } = useQuery(
   async () => {
-    const storyLine = await getStoryLine(props.storyLineId)
-    // 解析levels字段
-    if (storyLine && typeof storyLine.levels === 'string') {
-      storyLine.levels = JSON.parse(storyLine.levels)
-    }
-    return storyLine
+    return getStoryLine(props.storyLineId)
   },
   {
     en: 'Failed to load storyline',

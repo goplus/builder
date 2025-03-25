@@ -68,10 +68,6 @@ async function handleGuidance() {
     if (storyLineId != null) {
       const data: StoryLine = await getStoryLine(storyLineId)
       if (data) {
-        // 解析levels字段
-        if (data && typeof data.levels === 'string') {
-          data.levels = JSON.parse(data.levels)
-        }
         storyLineInfo.value = data
       }
     }

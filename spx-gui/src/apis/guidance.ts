@@ -398,7 +398,12 @@ export const storyLineJson: StoryLine = {
 // }
 
 export async function getStoryLine(storyLineId: string): Promise<StoryLine> {
-  return client.get(`/storyline/${encodeURIComponent(storyLineId)}`) as Promise<StoryLine>
+  const result = (await client.get(`/storyline/${encodeURIComponent(storyLineId)}`)) as StoryLine
+  // 解析levels字段
+  if (result && typeof result.levels === 'string') {
+    result.levels = JSON.parse(result.levels)
+  }
+  return result
 }
 
 export async function getStoryLineStudy(storyLineId: string): Promise<StoryLineStudy | null> {
