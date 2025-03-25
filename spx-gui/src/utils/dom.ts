@@ -77,6 +77,8 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
 
   function updateRect(element: HTMLElement) {
     const newRect = element.getBoundingClientRect()
+    console.log("newRect", newRect);
+
     if (
       !lastRect ||
       lastRect.top !== newRect.top ||
@@ -121,14 +123,22 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
       })
       intersectionObserver.observe(el)
 
+      // Use window resize to monitor window size changes
+      const onWindowResize = () => {
+        updateRect(el)
+      }
+      window.addEventListener('resize', onWindowResize)
+
       onCleanup(() => {
         resizeObserver.disconnect()
         mutationObserver.disconnect()
         intersectionObserver.disconnect()
+        window.removeEventListener('resize', onWindowResize)
       })
     },
     { immediate: true }
   )
+
 
   return rect
 }

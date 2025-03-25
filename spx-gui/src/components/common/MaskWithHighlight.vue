@@ -43,6 +43,8 @@ const highlightRect = computed<HighlightRect>(() => {
 
 function createRoundedRectPath(x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2)
+  console.log('rebuild hole rect', x, y, w, h, r)
+
   return `
     M${x + rr},${y}
     H${x + w - rr}
@@ -65,23 +67,15 @@ const svgPath = computed(() => {
 })
 
 function updateScreenSize() {
-  console.log('updateScreenSize');
   screenWidth.value = window.innerWidth
   screenHeight.value = window.innerHeight
-  console.log('screenWidth', screenWidth.value);
-  console.log('screenHeight', screenHeight.value);
-  
 }
 
 onMounted(() => {
-  console.log('MaskWithHighlight挂载');
-  console.log('props', props);
-  
   window.addEventListener('resize', updateScreenSize)
 })
 
 onBeforeUnmount(() => {
-  console.log('MaskWithHighlight卸载');
   window.removeEventListener('resize', updateScreenSize)
 })
 </script>
