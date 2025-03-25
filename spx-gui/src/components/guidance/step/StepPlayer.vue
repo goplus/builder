@@ -12,7 +12,6 @@
 </template>
 
 <script setup lang="ts">
-
 import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -43,6 +42,7 @@ onMounted(async () => {
   }
 
   setFilterControls()
+  await nextTick()
 })
 
 watch(

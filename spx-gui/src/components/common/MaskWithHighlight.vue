@@ -65,23 +65,15 @@ const svgPath = computed(() => {
 })
 
 function updateScreenSize() {
-  console.log('updateScreenSize');
   screenWidth.value = window.innerWidth
   screenHeight.value = window.innerHeight
-  console.log('screenWidth', screenWidth.value);
-  console.log('screenHeight', screenHeight.value);
-  
 }
 
 onMounted(() => {
-  console.log('MaskWithHighlight挂载');
-  console.log('props', props);
-  
   window.addEventListener('resize', updateScreenSize)
 })
 
 onBeforeUnmount(() => {
-  console.log('MaskWithHighlight卸载');
   window.removeEventListener('resize', updateScreenSize)
 })
 </script>

@@ -322,8 +322,6 @@ async function checkAnswer(): Promise<boolean> {
   let expectedCode = decodeURIComponent(encodedContent)
   // const userCode = await getUserCode(props.step.coding.path)
   let userCode = await getUserCode('Sprite.spx')
-  console.log('userCode', userCode);
-  
 
   const normalize = (str: string) =>
     str
@@ -418,20 +416,23 @@ onBeforeUnmount(() => {
   }
 })
 
-watch(() => props.step, () => {
-  checkDialogVisible.value = false
-  if (props.step.coding && props.step.snapshot.endSnapshot) {
-    answer.value = getAnswerFromEndSnapshot(
-      props.step.coding.path,
-      props.step.snapshot.endSnapshot,
-      props.step.coding.startPosition,
-      props.step.coding.endPosition,
-      props.step.coding.codeMasks
-    )
-  } else {
-    answer.value = '// 无法加载答案，请检查控制台错误'
+watch(
+  () => props.step,
+  () => {
+    checkDialogVisible.value = false
+    if (props.step.coding && props.step.snapshot.endSnapshot) {
+      answer.value = getAnswerFromEndSnapshot(
+        props.step.coding.path,
+        props.step.snapshot.endSnapshot,
+        props.step.coding.startPosition,
+        props.step.coding.endPosition,
+        props.step.coding.codeMasks
+      )
+    } else {
+      answer.value = '// 无法加载答案，请检查控制台错误'
+    }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">

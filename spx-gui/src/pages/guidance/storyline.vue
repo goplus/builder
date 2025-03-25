@@ -85,7 +85,7 @@
           <div v-if="userStore.isSignedIn()" class="content">
             <div
               v-for="(level, index) in storyLine?.levels"
-              v-show="index <= ((storyLineStudy?.lastFinishedLevelIndex ?? 0) - 1) && level.achievement"
+              v-show="index <= (storyLineStudy?.lastFinishedLevelIndex ?? 0) - 1 && level.achievement"
               :key="index"
               class="achievement"
             >
