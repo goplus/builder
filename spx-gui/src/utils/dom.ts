@@ -77,7 +77,6 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
 
   function updateRect(element: HTMLElement) {
     const newRect = element.getBoundingClientRect()
-    console.log("newRect", newRect);
 
     if (
       !lastRect ||
