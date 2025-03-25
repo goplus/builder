@@ -87,7 +87,7 @@
             </div>
           </template>
           <template #content>
-            <pre class="answer-code"><code v-html="safeAnswer"></code></pre>
+            <pre class="answer-code"><code v-html="answer"></code></pre>
           </template>
         </CodingDialog>
       </div>
@@ -119,7 +119,6 @@ import { useI18n } from '@/utils/i18n'
 import { useLevelPlayerCtx } from '../LevelPlayer.vue'
 import CodingDialog from './CodingDialog.vue'
 import { useDrag } from '@/utils/dom'
-import DOMPurify from 'dompurify'
 import { checkCode } from '@/apis/guidance'
 
 const editorCtx = useEditorCtx()
@@ -141,14 +140,7 @@ const answerDialogVisible = ref(false)
 
 // 该步骤答案
 const answer = ref<string | null>(null)
-// 对高亮答案进行安全处理
-const safeAnswer = computed(() => {
-  if (!answer.value) return ''
-  return DOMPurify.sanitize(answer.value, {
-    ALLOWED_TAGS: ['span'],
-    ALLOWED_ATTR: ['class']
-  })
-})
+
 let timeoutTimer: number | null = null
 
 const levelPlayerCtx = useLevelPlayerCtx()
@@ -423,6 +415,24 @@ onBeforeUnmount(() => {
     clearTimeout(timeoutTimer)
   }
 })
+
+watch(
+  () => props.step,
+  () => {
+    checkDialogVisible.value = false
+    if (props.step.coding && props.step.snapshot.endSnapshot) {
+      answer.value = getAnswerFromEndSnapshot(
+        props.step.coding.path,
+        props.step.snapshot.endSnapshot,
+        props.step.coding.startPosition,
+        props.step.coding.endPosition,
+        props.step.coding.codeMasks
+      )
+    } else {
+      answer.value = '// 无法加载答案，请检查控制台错误'
+    }
+  }
+)
 </script>
 
 <style scoped lang="scss">
@@ -433,8 +443,10 @@ onBeforeUnmount(() => {
   width: 540px;
   display: flex;
   justify-content: right;
+  pointer-events: none;
   .code-dialog-group {
     margin-right: 5px;
+    pointer-events: none;
     .answer-code {
       background-color: #f0f0f0;
       height: 100%;
