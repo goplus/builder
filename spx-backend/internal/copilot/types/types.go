@@ -9,6 +9,12 @@ const (
 	MAX_TOKENS              = 1024
 )
 
+type ToolType string
+
+const (
+	ToolTypeFunction ToolType = "function"
+)
+
 // Provider represents the AI provider for the message.
 type Provider string
 
@@ -24,6 +30,25 @@ type Params struct {
 
 	Messages []Message `json:"messages"`
 	System   Content   `json:"system"`
+	Tools    []Tool    `json:"tools"`
+}
+
+// Tool represents an additional tool to use in the completion
+type Tool struct {
+	Type ToolType            `json:"type"`               // Type of tool to use
+	F    *FunctionDefinition `json:"function,omitempty"` // Function definition
+}
+
+// FunctionDefinition represents the definition of a function tool
+type FunctionDefinition struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// Parameters is an object describing the function.
+	// You can pass json.RawMessage to describe the schema,
+	// or you can pass in a struct which serializes to the proper JSON schema.
+	// The jsonschema package is provided for convenience, but you should
+	// consider another specialized library if you require more complex schemas.
+	Parameters interface{} `json:"parameters"`
 }
 
 // Result represents the response message from the AI provider.

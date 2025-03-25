@@ -1,0 +1,100 @@
+[
+    {
+      "function": {
+        "name": "create_project",
+        "description": "Create a new project with the specified name.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "projectName": {
+              "type": "string",
+              "description": "The name of the project to be created."
+            }
+          },
+          "required": ["projectName"]
+        }
+      }
+    },
+    {
+      "function": {
+        "name": "navigate_page",
+        "description": "Navigate to a specific page using the provided location URL.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The URL or path of the page to navigate to."
+            }
+          },
+          "required": ["location"]
+        }
+      }
+    },
+    {
+      "function": {
+        "name": "add_sprite",
+        "description": "Add a new sprite to the project from the specified library.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "libraryName": {
+              "type": "string",
+              "description": "The name of the library containing the sprite."
+            },
+            "spriteName": {
+              "type": "string",
+              "description": "The name of the sprite to be added after selection."
+            }
+          },
+          "required": ["libraryName", "spriteName"]
+        }
+      }
+    },
+    {
+      "function": {
+        "name": "insert_code",
+        "description": "Insert or replace code at a specific location in the file.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "The code to be inserted or replaced."
+            },
+            "insertRange": {
+              "type": "object",
+              "description": "The range where the code will be inserted.",
+              "properties": {
+                "startLine": {
+                  "type": "number",
+                  "description": "The starting line number for the insertion."
+                },
+                "endLine": {
+                  "type": "number",
+                  "description": "The ending line number for the insertion."
+                }
+              },
+              "required": ["startLine", "endLine"]
+            },
+            "replaceRange": {
+              "type": "object",
+              "description": "The range of code to be replaced.",
+              "properties": {
+                "startLine": {
+                  "type": "number",
+                  "description": "The starting line number of the code to replace."
+                },
+                "endLine": {
+                  "type": "number",
+                  "description": "The ending line number of the code to replace."
+                }
+              },
+              "required": ["startLine", "endLine"]
+            }
+          },
+          "required": ["code", "insertRange"]
+        }
+      }
+    }
+  ]

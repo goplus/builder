@@ -84,6 +84,25 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 		MaxTokens:   types.MAX_TOKENS,
 	}
 
+	// Convert and set tools only if they exist
+	if len(params.Tools) > 0 {
+		// Convert params.Tools to Qiniu API compatible format
+		tools := make([]*Tool, 0, len(params.Tools))
+		for _, tool := range params.Tools {
+			if tool.F != nil {
+				tools = append(tools, &Tool{
+					Type: ToolTypeFunction,
+					F: &FunctionDefinition{
+						Name:        tool.F.Name,
+						Description: tool.F.Description,
+						Parameters:  tool.F.Parameters,
+					},
+				})
+			}
+		}
+		req.Tools = tools
+	}
+
 	// Build API request payload
 	resp, err := d.client.CreateChatCompletion(ctx, req)
 	if err != nil {
@@ -144,6 +163,25 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 		Temperature: 0.7,
 		MaxTokens:   types.MAX_TOKENS,
 		Stream:      true,
+	}
+
+	// Convert and set tools only if they exist
+	if len(params.Tools) > 0 {
+		// Convert params.Tools to Qiniu API compatible format
+		tools := make([]*Tool, 0, len(params.Tools))
+		for _, tool := range params.Tools {
+			if tool.F != nil {
+				tools = append(tools, &Tool{
+					Type: ToolTypeFunction,
+					F: &FunctionDefinition{
+						Name:        tool.F.Name,
+						Description: tool.F.Description,
+						Parameters:  tool.F.Parameters,
+					},
+				})
+			}
+		}
+		req.Tools = tools
 	}
 
 	// Build API request payload

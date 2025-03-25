@@ -71,6 +71,8 @@ func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Res
 		Type: types.ContentTypeText,
 		Text: SystemPrompt,
 	}
+	// Add tools to the params
+	params.Tools = Tools
 	// Send message to the AI provider
 	return c.copilot.Message(ctx, params)
 }
@@ -84,6 +86,8 @@ func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.R
 		Type: types.ContentTypeText,
 		Text: SystemPrompt,
 	}
+	// Add tools to the params
+	params.Tools = Tools
 	// Send message to the AI provider
 	return c.copilot.StreamMessage(ctx, params)
 }

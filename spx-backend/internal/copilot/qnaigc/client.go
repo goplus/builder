@@ -14,13 +14,19 @@ import (
 
 // Constants for API configuration
 const (
-	defaultBaseURL  = "https://api.qnaigc.com/v1"
-	defaultTimeout  = 15 * time.Second
-	defaultModel    = "deepseek-v3"
+	defaultBaseURL  = "https://api.siliconflow.cn/v1"
+	defaultTimeout  = 300 * time.Second
+	defaultModel    = "deepseek-ai/DeepSeek-V3"
 	maxRetries      = 3
 	retryDelay      = 500 * time.Millisecond
 	userAgent       = "XBuilder Copilot/1.0"
 	contentTypeJSON = "application/json"
+)
+
+type ToolType string
+
+const (
+	ToolTypeFunction ToolType = "function"
 )
 
 type (
@@ -40,12 +46,47 @@ type (
 		TopP        float64   `json:"top_p,omitempty"`      // Top-p sampling cutoff
 		MaxTokens   int       `json:"max_tokens,omitempty"` // Maximum number of tokens to generate
 		Stream      bool      `json:"stream,omitempty"`     // Whether to stream the response
+		Tools       []*Tool   `json:"tools,omitempty"`      // Additional tools to use
 	}
 
 	// Message represents a single message in the conversation
 	Message struct {
-		Role    string `json:"role"`    // Role of the message sender (system/user/assistant)
-		Content string `json:"content"` // Content of the message
+		Role       string      `json:"role"`                   // Role of the message sender (system/user/assistant)
+		Content    string      `json:"content"`                // Content of the message
+		ToolCalls  []*ToolCall `json:"tool_calls,omitempty"`   // Tool calls to use in the completion
+		ToolCallID string      `json:"tool_call_id,omitempty"` // ID of the tool call to use in the completion
+	}
+
+	// ToolCall represents a tool call to use in the completion
+	ToolCall struct {
+		ID       string       `json:"id"`
+		Type     ToolType     `json:"type"`
+		Function FunctionCall `json:"function"`
+		Index    *int         `json:"index,omitempty"`
+	}
+
+	// FunctionCall represents a function call
+	FunctionCall struct {
+		Name      string `json:"name,omitempty"`
+		Arguments string `json:"arguments,omitempty"`
+	}
+
+	// Tool represents an additional tool to use in the completion
+	Tool struct {
+		Type ToolType            `json:"type"`     // Type of tool to use
+		F    *FunctionDefinition `json:"function"` // Function definition
+	}
+
+	// FunctionDefinition represents the definition of a function tool
+	FunctionDefinition struct {
+		Name        string `json:"name"`
+		Description string `json:"description,omitempty"`
+		// Parameters is an object describing the function.
+		// You can pass json.RawMessage to describe the schema,
+		// or you can pass in a struct which serializes to the proper JSON schema.
+		// The jsonschema package is provided for convenience, but you should
+		// consider another specialized library if you require more complex schemas.
+		Parameters interface{} `json:"parameters"`
 	}
 
 	// ChatCompletionResponse represents the API response structure
@@ -68,7 +109,8 @@ type (
 	ChatCompletionStream struct {
 		Choices []struct {
 			Delta struct {
-				Content string `json:"content"`
+				Content   string     `json:"content"`
+				ToolCalls []ToolCall `json:"tool_calls"`
 			} `json:"delta"`
 		} `json:"choices"`
 	}
