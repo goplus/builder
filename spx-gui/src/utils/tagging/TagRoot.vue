@@ -8,61 +8,85 @@ const root = reactive<TagNode>({
   children: []
 })
 
-const getElement = (path: string) => {
-  const pathTokens = path.trim().split(/\s+/)
-  if (pathTokens.length === 0) return null
+/**
+ * Perform a fuzzy search to find a node based on `pathTokens`.
+ * A queue is used to store nodes being searched (`node`)
+ * and their matching progress (`index`).
+ */
+const fuzzySearch = (rootNodes: TagNode[], pathTokens: string[]): TagNode | null => {
+  const queue: { node: TagNode; index: number }[] = rootNodes.map((node) => ({
+    node,
+    index: 0
+  }))
 
-  // fuzzy search
-  function fuzzySearch(rootNodes: TagNode[]): TagNode | null {
-    /**
-     * Maintain a queue as a search queue to store the nodes to be searched (node)
-     * and their matching progress (index)
-     */
-    const queue: { node: TagNode; index: number }[] = rootNodes.map((node) => ({
-      node,
-      index: 0
-    }))
+  while (queue.length > 0) {
+    const { node, index } = queue.shift()!
 
-    while (queue.length > 0) {
-      const { node, index } = queue.shift()!
-
-      // When the match is successful, if the index reaches pathTokens.length - 1,
-      // it indicates a complete match and the node is returned directly.
-      if (node.name === pathTokens[index]) {
-        // If there is an exact match, the result is returned
-        if (index === pathTokens.length - 1) {
-          return node
-        }
-        // Otherwise, DFS is used, giving priority to going deep into the current branch,
-        // which helps to quickly find the "continuous matching" path.
-        queue.unshift(
-          ...node.children.map((child) => ({
-            node: child,
-            index: index + 1
-          }))
-        )
+    // If the current node matches the token at `index`
+    if (node.name === pathTokens[index]) {
+      // If this is the last token, return the matched node
+      if (index === pathTokens.length - 1) {
+        return node
       }
 
-      // Regardless of whether the current node is matched or not,
-      // its child nodes are added to the queue with the original matching progress (without incrementing the index).
-      // In this way, even if the current branch is blocked, you can find the correct path from the next branch.
-      queue.push(
+      // Use Depth-First Search (DFS) to prioritize deeper matches
+      queue.unshift(
         ...node.children.map((child) => ({
           node: child,
-          index
+          index: index + 1
         }))
       )
     }
-    return null
-  }
 
-  const foundNode = fuzzySearch(root.children)
+    // Add all child nodes to the queue with the same matching progress.
+    // This ensures that if one branch fails, we can still find a match elsewhere.
+    queue.push(
+      ...node.children.map((child) => ({
+        node: child,
+        index
+      }))
+    )
+  }
+  return null
+}
+
+const handleFound = (path: string) => {
+  const pathTokens = path.trim().split(/\s+/)
+  if (pathTokens.length === 0) return null
+
+  const foundNode = fuzzySearch(root.children, pathTokens)
+  return foundNode
+}
+
+/**
+ * Retrieve the root HTML element of a matched component.
+ * Returns `null` if no match is found.
+ */
+const getElement = (path: string) => {
+  const foundNode = handleFound(path)
   return foundNode?.instance?.subTree?.children?.[0]?.el || null
+}
+
+/**
+ * Retrieve the component instance.
+ * The instance object contains:
+ * - `children`: The child nodes of the component.
+ * - `ctx`: The component's context.
+ * - `el`: The root element of the component.
+ * - `props`: The component's props.
+ * - `type`: The component definition (`Component.name` or `HTMLElement.name`).
+ * - `ref`: Refs used in the component.
+ * Returns `null` if no match is found.
+ */
+const getInstance = (path: string) => {
+  const foundNode = handleFound(path)
+  return foundNode?.instance?.subTree?.children?.[0] || null
 }
 
 onMounted(() => {
   tagApi.value = {
-    getElement
+    getElement,
+    getInstance
   }
 })
 
