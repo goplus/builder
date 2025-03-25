@@ -12,12 +12,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch } from 'vue'
+
+import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 import CodingStep from './CodingStep.vue'
 import FollowingStep from './FollowingStep.vue'
+import { getFiles } from '@/models/common/cloud'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -42,17 +45,27 @@ onMounted(async () => {
   setFilterControls()
 })
 
-watch(() => props.step, async () => {
-  try {
-    if (props.step.snapshot?.startSnapshot) {
-      await loadSnapshot(props.step.snapshot.startSnapshot)
-    }
-  } catch (error) {
-    console.error('Failed to load snapshot:', error)
-  }
+watch(
+  () => props.step,
+  async (newStep) => {
+    await initializeStep(newStep)
+  },
+  { deep: true }
+)
 
-  setFilterControls()
-})
+async function initializeStep(step: Step) {
+  try {
+    if (step.snapshot?.startSnapshot) {
+      await loadSnapshot(step.snapshot.startSnapshot)
+    }
+
+    setFilterControls()
+
+    await nextTick()
+  } catch (error) {
+    console.error('Failed to initialize step:', error)
+  }
+}
 
 onBeforeUnmount(() => {
   filter.reset()
@@ -63,7 +76,8 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
   try {
     const project = editorCtx.project
-    const { files } = JSON.parse(snapshotStr)
+    const fileCollection = JSON.parse(snapshotStr)
+    const files = getFiles(fileCollection)
     await project.loadGameFiles(files)
   } catch (error) {
     console.error('Failed to load snapshot:', error)

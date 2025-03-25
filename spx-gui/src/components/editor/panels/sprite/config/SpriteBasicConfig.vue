@@ -2,7 +2,9 @@
 <template>
   <div class="line name">
     <AssetName>{{ sprite.name }}</AssetName>
-    <UIIcon class="icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+    <TagNode name="sprite-rename-icon">
+      <UIIcon class="icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+    </TagNode>
     <div class="spacer" />
     <UITooltip>
       <template #trigger>
