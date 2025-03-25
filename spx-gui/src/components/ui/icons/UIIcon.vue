@@ -1,6 +1,4 @@
 <template v-html="typeIconMap[type]">
-  <!-- TODO: is there any way to avoid the wrapper `<div>`? -->
-  <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
   <div class="ui-icon" :class="{ spinning: type === 'loading' }" v-html="typeIconMap[type]"></div>
 </template>
 

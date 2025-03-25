@@ -21,18 +21,27 @@ export const TAG_CONTEXT_KEY = Symbol('tag_context')
 
 export const tagApi = ref<{
   getElement: (path: string) => HTMLElement | null
+  getInstance: (path: string) => unknown
 } | null>(null)
 
 export function useTag() {
   const getElement = (path: string) => {
     if (!tagApi.value) {
-      throw new Error('TagConsumer not mounted')
+      throw new Error('TagRoot not mounted')
     }
     return tagApi.value.getElement(path)
   }
 
+  const getInstance = (path: string) => {
+    if (!tagApi.value) {
+      throw new Error('TagRoot not mounted')
+    }
+    return tagApi.value.getInstance(path)
+  }
+
   return {
-    getElement
+    getElement,
+    getInstance,
   }
 }
 
