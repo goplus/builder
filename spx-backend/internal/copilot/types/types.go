@@ -30,7 +30,6 @@ type Params struct {
 
 	Messages []Message `json:"messages"`
 	System   Content   `json:"system"`
-	Tools    []Tool    `json:"tools"`
 }
 
 // Tool represents an additional tool to use in the completion

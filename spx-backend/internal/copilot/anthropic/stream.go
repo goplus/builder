@@ -72,41 +72,10 @@ func (s *streamWrapper) processEvents(ctx context.Context) {
 			return
 		default:
 			event := s.stream.Current()
-			// Special handling for message_start events that contain content blocks
-			if messageStart, ok := event.AsUnion().(anthropic.MessageStartEvent); ok {
-				if len(messageStart.Message.Content) > 0 {
-					// Process each content block in the message
-					for _, contentBlock := range messageStart.Message.Content {
-						if err := s.processContentBlock(contentBlock); err != nil {
-							s.setError(err)
-							return
-						}
-					}
-				}
-				continue
-			}
-
-			// Handle content_block_start events
-			if blockStart, ok := event.AsUnion().(anthropic.ContentBlockStartEvent); ok {
-				if err := s.processContentBlock(blockStart.ContentBlock); err != nil {
-					s.setError(err)
-					return
-				}
-				continue
-			}
-
-			// Handle delta events
 			switch delta := event.Delta.(type) {
 			case anthropic.ContentBlockDeltaEventDelta:
-				switch deltaUnion := delta.AsUnion().(type) {
-				case anthropic.TextDelta:
-					s.appendData([]byte(deltaUnion.Text))
-				case anthropic.InputJSONDelta:
-					// For tool_use blocks, handle JSON delta
-					s.appendData([]byte(deltaUnion.PartialJSON))
-				}
+				s.appendData([]byte(delta.Text))
 			case anthropic.MessageDeltaEventDelta:
-				// End of message
 				s.setError(io.EOF)
 			}
 		}
@@ -116,48 +85,6 @@ func (s *streamWrapper) processEvents(ctx context.Context) {
 	if err := s.stream.Err(); err != nil {
 		s.setError(err)
 	}
-}
-
-// processContentBlock handles different types of content blocks, especially tool_use blocks
-func (s *streamWrapper) processContentBlock(contentBlock interface{}) error {
-	switch block := contentBlock.(type) {
-	case anthropic.ContentBlock:
-		// Process based on block type
-		switch block.Type {
-		case anthropic.ContentBlockTypeToolUse:
-			if block.Name != "" {
-				s.appendData([]byte(block.Name))
-			}
-			if block.Input != nil {
-				s.appendData(block.Input)
-			}
-
-		case anthropic.ContentBlockTypeText:
-			// Regular text content
-			if block.Text != "" {
-				s.appendData([]byte(block.Text))
-			}
-		}
-
-	case anthropic.ContentBlockStartEventContentBlock:
-		// Process for content block start events
-		if block.Type == anthropic.ContentBlockStartEventContentBlockTypeToolUse {
-			toolUseBlock := block.AsUnion().(anthropic.ToolUseBlock)
-
-			if toolUseBlock.Name != "" {
-				s.appendData([]byte(toolUseBlock.Name))
-			}
-			if toolUseBlock.Input != nil {
-				s.appendData(toolUseBlock.Input)
-			}
-		} else if block.Type == anthropic.ContentBlockStartEventContentBlockTypeText {
-			if block.Text != "" {
-				s.appendData([]byte(block.Text))
-			}
-		}
-	}
-
-	return nil
 }
 
 // appendData adds new data to the buffer in a thread-safe manner.

@@ -105,29 +105,6 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 		Temperature: anthropic.F(0.1), // Lower temperature for more deterministic outputs
 	}
 
-	if len(params.Tools) > 0 {
-		// Convert params.Tools to Anthropic API compatible format
-		tools := make([]anthropic.ToolUnionUnionParam, 0, len(params.Tools))
-		for _, tool := range params.Tools {
-			if tool.F != nil {
-				// Create a tool with the correct structure
-				toolParam := anthropic.ToolUnionParam{
-					Name:        anthropic.F(tool.F.Name),
-					Description: anthropic.F(tool.F.Description),
-					// Convert parameters to input_schema
-					InputSchema: anthropic.F(tool.F.Parameters),
-					CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
-						Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
-					}),
-				}
-				tools = append(tools, toolParam)
-			}
-		}
-
-		// Add tools to request
-		req.Tools = anthropic.F(tools)
-	}
-
 	// Make API call to Anthropic's Claude model
 	ret, err := a.anthropicClient.Messages.New(ctx, req)
 	if err != nil {
@@ -193,29 +170,6 @@ func (a *Anthropic) StreamMessage(ctx context.Context, params *types.Params) (io
 		}),
 		Messages:    anthropic.F(messages),
 		Temperature: anthropic.F(0.1), // Lower temperature for more deterministic outputs
-	}
-
-	if len(params.Tools) > 0 {
-		// Convert params.Tools to Anthropic API compatible format
-		tools := make([]anthropic.ToolUnionUnionParam, 0, len(params.Tools))
-		for _, tool := range params.Tools {
-			if tool.F != nil {
-				// Create a tool with the correct structure
-				toolParam := anthropic.ToolUnionParam{
-					Name:        anthropic.F(tool.F.Name),
-					Description: anthropic.F(tool.F.Description),
-					// Convert parameters to input_schema
-					InputSchema: anthropic.F(tool.F.Parameters),
-					CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
-						Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
-					}),
-				}
-				tools = append(tools, toolParam)
-			}
-		}
-
-		// Add tools to request
-		req.Tools = anthropic.F(tools)
 	}
 
 	stream := a.anthropicClient.Messages.NewStreaming(ctx, req)

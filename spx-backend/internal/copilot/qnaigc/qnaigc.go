@@ -18,7 +18,8 @@ type Qiniu struct {
 
 // BaseOption contains the base URL for the API client
 type BaseOption struct {
-	baseURL string
+	baseURL   string
+	modelName string
 }
 
 // NewQiniu creates a new Qiniu client instance with the provided API key.
@@ -30,6 +31,10 @@ func New(apiKey string, opts ...Option) *Qiniu {
 	}
 	if base.baseURL == "" {
 		base.baseURL = defaultBaseURL
+	}
+
+	if base.modelName == "" {
+		base.modelName = defaultModel
 	}
 
 	return &Qiniu{
@@ -45,6 +50,12 @@ type Option func(*BaseOption)
 func WithBaseURL(url string) Option {
 	return func(c *BaseOption) {
 		c.baseURL = url
+	}
+}
+
+func WithModel(model string) Option {
+	return func(c *BaseOption) {
+		c.modelName = model
 	}
 }
 
@@ -73,7 +84,7 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 
 	// Set default model if not provided
 	if params.Model == "" {
-		params.Model = defaultModel
+		params.Model = d.options.modelName
 	}
 
 	// Create API request payload
@@ -82,25 +93,6 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 		Messages:    messages,
 		Temperature: 0.7,
 		MaxTokens:   types.MAX_TOKENS,
-	}
-
-	// Convert and set tools only if they exist
-	if len(params.Tools) > 0 {
-		// Convert params.Tools to Qiniu API compatible format
-		tools := make([]*Tool, 0, len(params.Tools))
-		for _, tool := range params.Tools {
-			if tool.F != nil {
-				tools = append(tools, &Tool{
-					Type: ToolTypeFunction,
-					F: &FunctionDefinition{
-						Name:        tool.F.Name,
-						Description: tool.F.Description,
-						Parameters:  tool.F.Parameters,
-					},
-				})
-			}
-		}
-		req.Tools = tools
 	}
 
 	// Build API request payload
@@ -153,7 +145,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 
 	// Set default model if not provided
 	if params.Model == "" {
-		params.Model = defaultModel
+		params.Model = d.options.modelName
 	}
 
 	// Create API request payload
@@ -163,25 +155,6 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 		Temperature: 0.7,
 		MaxTokens:   types.MAX_TOKENS,
 		Stream:      true,
-	}
-
-	// Convert and set tools only if they exist
-	if len(params.Tools) > 0 {
-		// Convert params.Tools to Qiniu API compatible format
-		tools := make([]*Tool, 0, len(params.Tools))
-		for _, tool := range params.Tools {
-			if tool.F != nil {
-				tools = append(tools, &Tool{
-					Type: ToolTypeFunction,
-					F: &FunctionDefinition{
-						Name:        tool.F.Name,
-						Description: tool.F.Description,
-						Parameters:  tool.F.Parameters,
-					},
-				})
-			}
-		}
-		req.Tools = tools
 	}
 
 	// Build API request payload

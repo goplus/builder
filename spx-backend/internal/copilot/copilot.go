@@ -33,6 +33,7 @@ type Config struct {
 
 	QiniuAPIKey      string
 	QiniuBaseURL     string
+	QiniuModelName   string
 	AnthropicAPIKey  string
 	AnthropicBaseURL string
 }
@@ -51,7 +52,7 @@ func NewCopilot(cfg *Config) (AICopilot, error) {
 	var copilot AICopilot
 	switch cfg.Provider {
 	case types.Qiniu:
-		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL))
+		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL), qnaigc.WithModel(cfg.QiniuModelName))
 	case types.Anthropic:
 		copilot = anthropic.New(cfg.AnthropicAPIKey, anthropic.WithBaseURL(cfg.AnthropicBaseURL))
 	default:
@@ -71,8 +72,6 @@ func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Res
 		Type: types.ContentTypeText,
 		Text: SystemPrompt,
 	}
-	// Add tools to the params
-	params.Tools = Tools
 	// Send message to the AI provider
 	return c.copilot.Message(ctx, params)
 }
@@ -86,8 +85,6 @@ func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.R
 		Type: types.ContentTypeText,
 		Text: SystemPrompt,
 	}
-	// Add tools to the params
-	params.Tools = Tools
 	// Send message to the AI provider
 	return c.copilot.StreamMessage(ctx, params)
 }
