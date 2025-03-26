@@ -64,6 +64,8 @@ const { t } = useI18n()
 
 const { getElement } = useTag()
 
+const eventListeners = ref<{ element: HTMLElement; type: string; handler: Function }[]>([])
+
 interface GuidePositions {
   arrowStyle: {
     position: 'absolute'
@@ -107,13 +109,20 @@ function preventEscapeAndEnter(event: KeyboardEvent) {
 }
 
 onMounted(() => {
-  setupTargetElementListener()
   setupKeyboardEventListeners()
 
   nextTick(() => {
     currentGuidePositions.value = calculateGuidePositions(props.slotInfo)
   })
 })
+
+function clearAllEventListeners() {
+  for (const { element, type, handler } of eventListeners.value) {
+    element.removeEventListener(type, handler as EventListener)
+  }
+
+  eventListeners.value = []
+}
 
 onBeforeUnmount(() => {
   const element = getTargetElement()
@@ -137,45 +146,42 @@ function getTargetElement(): HTMLElement | null {
   }
 }
 
-function setupTargetElementListener() {
-  if (props.step.type !== 'following') return
+watch(
+  () => props.step,
+  (newStep) => {
+    nextTick(() => {
+      if (newStep.type !== 'following' || !newStep.taggingHandler) return
 
-  watch(
-    () => {
-      if (!props.step.taggingHandler) return []
+      Object.keys(newStep.taggingHandler).forEach((path) => {
+        if (!path) return
 
-      return Object.keys(props.step.taggingHandler).map((path) => {
-        const type = props.step.taggingHandler[path]
+        const type = newStep.taggingHandler[path]
         const element = getElement(path)
-        return { path, type, element }
-      })
-    },
-    (taggingItems, _, onCleanup) => {
-      for (const { type, element } of taggingItems) {
-        if (!element) continue
+
+        if (!element) return
 
         if (type === TaggingHandlerType.SubmitToNext) {
-          element.addEventListener('submit', handleTargetElementSubmit)
-          onCleanup(() => {
-            element.removeEventListener('submit', handleTargetElementSubmit)
-          })
+          const handler = handleTargetElementSubmit
+          element.addEventListener('submit', handler)
+          eventListeners.value.push({ element, type: 'submit', handler })
         } else if (type === TaggingHandlerType.ClickToNext) {
-          element.addEventListener('click', handleTargetElementClick)
-          // onCleanup(() => {
-          //   element.removeEventListener('click', handleTargetElementClick)
-          // })
+          const handler = handleTargetElementClick
+          element.addEventListener('click', handler)
+          eventListeners.value.push({ element, type: 'click', handler })
         }
-      }
-    },
-    { immediate: true }
-  )
-}
+      })
+    })
+  },
+  { immediate: true }
+)
 
 async function handleTargetElementSubmit() {
+  clearAllEventListeners()
   emit('followingStepCompleted')
 }
 
 async function handleTargetElementClick() {
+  clearAllEventListeners()
   emit('followingStepCompleted')
 }
 

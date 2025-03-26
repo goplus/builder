@@ -121,10 +121,17 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
       })
       intersectionObserver.observe(el)
 
+      // Use window resize to monitor window size changes
+      const onWindowResize = () => {
+        updateRect(el)
+      }
+      window.addEventListener('resize', onWindowResize)
+
       onCleanup(() => {
         resizeObserver.disconnect()
         mutationObserver.disconnect()
         intersectionObserver.disconnect()
+        window.removeEventListener('resize', onWindowResize)
       })
     },
     { immediate: true }
