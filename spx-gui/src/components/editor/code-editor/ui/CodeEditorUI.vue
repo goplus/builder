@@ -23,7 +23,7 @@ import {
   onDeactivated,
   onActivated
 } from 'vue'
-import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/utils'
+import { computedShallowReactive, untilNotNull, localStorageRef, useCopilotStore } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
@@ -145,6 +145,9 @@ async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacEditorRef.value = editor
 }
 
+const copilotVisible = useCopilotStore()
+const globalCopilotController = copilotVisible.controller 
+
 watch(
   uiRef,
   async (ui, _, onCleanUp) => {
@@ -154,6 +157,16 @@ watch(
     const editor = await untilNotNull(monacEditorRef)
     signal.throwIfAborted()
     ui.init(editor)
+
+    if (globalCopilotController) {
+      globalCopilotController.registorEditorUI(ui)
+      signal.addEventListener('abort', () => {
+        // Unregister when component is cleaned up
+        if (globalCopilotController) {
+          globalCopilotController.registorEditorUI(null)
+        }
+      })
+    }
 
     ui.editor.onDidChangeConfiguration((e) => {
       const fontSizeId = ui.monaco.editor.EditorOption.fontSize

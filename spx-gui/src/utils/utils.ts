@@ -33,6 +33,10 @@ export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
   return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
 }
 
+export function useCopilotStore() {
+  return localStorageRef('global-copilot', false)
+}
+
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {

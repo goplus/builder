@@ -127,14 +127,20 @@ type InternalChat = {
 }
 
 export class CopilotController extends Disposable {
-  constructor(private ui: CodeEditorUI) {
-    super()
-  }
-
   private copilot: ICopilot | null = null
+  private ui: CodeEditorUI | null;
+
+  constructor(ui?: CodeEditorUI | null) {
+    super()
+    this.ui = ui || null
+  }
 
   registerCopilot(copilot: ICopilot) {
     this.copilot = copilot
+  }
+
+  registorEditorUI(ui: CodeEditorUI) {
+    this.ui = ui
   }
 
   private currentChatRef = ref<InternalChat | null>(null)
@@ -143,6 +149,10 @@ export class CopilotController extends Disposable {
   }
 
   async startChat(topic: ChatTopic) {
+    if (!this.ui) {
+      console.warn("CopilotController: No UI available");
+      return;
+    }
     this.ui.setIsCopilotActive(true)
     const currentChat = this.currentChat
     if (currentChat != null) currentChat.ctrl.abort()
@@ -159,6 +169,10 @@ export class CopilotController extends Disposable {
     if (this.currentChatRef.value != null) {
       this.currentChatRef.value.ctrl.abort()
       this.currentChatRef.value = null
+    }
+    if (!this.ui) {
+      console.warn("CopilotController: No UI availablet");
+      return;
     }
     this.ui.setIsCopilotActive(false)
   }
@@ -217,6 +231,10 @@ export class CopilotController extends Disposable {
   }
 
   private async getCopilotAnswer() {
+    if (!this.ui) {
+      console.warn("CopilotController: No UI available");
+      return;
+    }
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) throw new Error('No active text document') // we may support chat without active text document in the future
     if (this.copilot == null) throw new Error('No copilot')
