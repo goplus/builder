@@ -85,7 +85,7 @@ watch(
   { immediate: true }
 )
 
-const runnerState = ref<'initial' | 'running'>('initial')
+const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 watch(
   () => [props.owner, props.name],
   () => {
@@ -138,6 +138,7 @@ const ensureSignedIn = useEnsureSignedIn()
 
 const handleRun = useMessageHandle(
   async () => {
+    runnerState.value = 'loading'
     await projectRunnerRef.value?.run()
     runnerState.value = 'running'
   },
