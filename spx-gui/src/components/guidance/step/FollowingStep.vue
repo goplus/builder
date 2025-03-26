@@ -233,7 +233,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
-    bubbleArrowDirection = 'left-down'
+    bubbleArrowDirection = 'left-top'
   } else if (!isLeft && isTop) {
     // 右上象限
     arrowPosition = {
@@ -249,7 +249,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
-    bubbleArrowDirection = 'right-down'
+    bubbleArrowDirection = 'right-top'
   } else if (isLeft && !isTop) {
     // 左下象限
     arrowPosition = {
@@ -265,7 +265,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
-    bubbleArrowDirection = 'left-top'
+    bubbleArrowDirection = 'left-bottom'
   } else {
     // 右下象限
     arrowPosition = {
@@ -352,16 +352,15 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
   let transform = ''
 
   switch (arrowDirection) {
-    case 'left-bottom':
-      transform = ''
+    case 'left-top':
       break
-    case 'right-bottom':
+    case 'left-bottom':
       transform = 'scale(1, -1)'
       break
-    case 'left-top':
+    case 'right-top':
       transform = 'scale(-1, 1)'
       break
-    case 'right-top':
+    case 'right-bottom':
       transform = 'scale(-1, -1)'
       break
   }
@@ -401,15 +400,14 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 .bubble-content {
   position: absolute;
   top: 0;
-  left: -0.8rem;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 10%;
   box-sizing: border-box;
-  font-size: 1rem;
+  font-size: 100%;
   color: #333;
   text-align: center;
   pointer-events: none;
