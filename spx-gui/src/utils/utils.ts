@@ -37,6 +37,10 @@ export function useCopilotStore() {
   return localStorageRef('global-copilot', false)
 }
 
+export function useMcpDebuggerStore() {
+  return localStorageRef('mcp-debugger', false)
+}
+
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {

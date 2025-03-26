@@ -8,14 +8,16 @@
   </UIConfigProvider>
 
   <CopilotUI v-show="isCopilotActive" class="copilot" :controller="copilotController" />
+  <!--  MCP Debugger  -->
+  <UIMcpDebugger :is-visible="isMcpDebuggerVisible" @close="closeMcpDebugger" />
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
+import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger, type Config } from '@/components/ui'
 import CopilotUI from '@/components/editor/code-editor/ui/copilot/CopilotUI.vue' // Import from correct path
 import { useI18n } from './utils/i18n'
-import { useCopilotStore } from '@/utils/utils'
+import { useCopilotStore, useMcpDebuggerStore } from '@/utils/utils'
 import { CopilotController } from '@/components/editor/code-editor/ui/copilot' // Import the controller
 
 const { t } = useI18n()
@@ -23,6 +25,12 @@ const { t } = useI18n()
 // Ensure the injected state is reactive
 const isCopilotActive = useCopilotStore()
 const copilotController = new CopilotController(null)
+const isMcpDebuggerVisible = useMcpDebuggerStore()
+
+// Close the debugger panel
+function closeMcpDebugger() {
+  isMcpDebuggerVisible.value = false // Update the state
+}
 
 const config = computed<Config>(() => ({
   confirmDialog: {
