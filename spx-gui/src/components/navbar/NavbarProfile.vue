@@ -47,6 +47,11 @@
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
+        <UIMenuItem @click="handleUseMcpDebuggerUtils">
+          {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
@@ -57,7 +62,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useSpxVersion } from '@/utils/utils'
+import { useSpxVersion, useMcpDebuggerStore } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
@@ -81,6 +86,8 @@ function handleProjects() {
 }
 
 const spxVersion = useSpxVersion()
+
+const mcpDebuggerVisible = useMcpDebuggerStore()
 
 const handleUseSpxV1 = useMessageHandle(
   async () => {
@@ -124,6 +131,17 @@ function handleDisableAdvancedLibrary() {
 
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
+const handleUseMcpDebuggerUtils = useMessageHandle(
+  async () => {
+    mcpDebuggerVisible.value = !mcpDebuggerVisible.value // Toggle visibility
+    return mcpDebuggerVisible.value
+  },
+  undefined,
+  (isVisible) => ({
+    en: `MCP Debugger Utils ${isVisible ? 'enabled' : 'disabled'}`,
+    zh: `MCP 调试工具${isVisible ? '已启用' : '已禁用'}`
+  })
+).fn
 
 function handleSignOut() {
   userStore.signOut()
