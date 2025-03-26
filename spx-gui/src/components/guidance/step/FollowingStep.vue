@@ -161,9 +161,9 @@ function setupTargetElementListener() {
           })
         } else if (type === TaggingHandlerType.ClickToNext) {
           element.addEventListener('click', handleTargetElementClick)
-          onCleanup(() => {
-            element.removeEventListener('click', handleTargetElementClick)
-          })
+          // onCleanup(() => {
+          //   element.removeEventListener('click', handleTargetElementClick)
+          // })
         }
       }
     },
