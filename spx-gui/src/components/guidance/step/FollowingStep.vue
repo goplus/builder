@@ -352,17 +352,16 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
   let transform = ''
 
   switch (arrowDirection) {
+    case 'left-top':
+      break
     case 'left-bottom':
       transform = 'scale(1, -1)'
       break
-    case 'right-bottom':
-      transform = 'scale(-1, -1)'
-      break
-    case 'left-top':
-      transform = 'scale(1, 1)'
-      break
     case 'right-top':
       transform = 'scale(-1, 1)'
+      break
+    case 'right-bottom':
+      transform = 'scale(-1, -1)'
       break
   }
 
