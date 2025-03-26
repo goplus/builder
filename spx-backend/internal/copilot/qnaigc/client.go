@@ -176,7 +176,6 @@ func (c *Client) StreamChatCompletion(
 	httpReq.Header.Set("Accept", "text/event-stream")
 	httpReq.Header.Set("User-Agent", c.userAgent)
 
-	fmt.Println(endpoint)
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)
