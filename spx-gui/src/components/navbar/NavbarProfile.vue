@@ -133,8 +133,8 @@ const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 const handleUseMcpDebuggerUtils = useMessageHandle(
   async () => {
-    mcpDebuggerVisible.value = !mcpDebuggerVisible.value; // Toggle visibility
-    return mcpDebuggerVisible.value;
+    mcpDebuggerVisible.value = !mcpDebuggerVisible.value // Toggle visibility
+    return mcpDebuggerVisible.value
   },
   undefined,
   (isVisible) => ({

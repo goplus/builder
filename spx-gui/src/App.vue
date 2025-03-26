@@ -1,17 +1,14 @@
 <template>
-    <UIConfigProvider :config="config">
-      <UIMessageProvider>
-        <UIModalProvider>
-          <RouterView />
-        </UIModalProvider>
-      </UIMessageProvider>
-    </UIConfigProvider>
-    
-    <!--  MCP Debugger  -->
-    <UIMcpDebugger 
-      :is-visible="isMcpDebuggerVisible" 
-      @close="closeMcpDebugger" 
-    />
+  <UIConfigProvider :config="config">
+    <UIMessageProvider>
+      <UIModalProvider>
+        <RouterView />
+      </UIModalProvider>
+    </UIMessageProvider>
+  </UIConfigProvider>
+
+  <!--  MCP Debugger  -->
+  <UIMcpDebugger :is-visible="isMcpDebuggerVisible" @close="closeMcpDebugger" />
 </template>
 
 <script setup lang="ts">
@@ -23,11 +20,11 @@ import { useMcpDebuggerStore } from '@/utils/utils'
 const { t } = useI18n()
 
 // Ensure the injected state is reactive
-const isMcpDebuggerVisible  = useMcpDebuggerStore()
+const isMcpDebuggerVisible = useMcpDebuggerStore()
 
 // Close the debugger panel
 function closeMcpDebugger() {
-  isMcpDebuggerVisible.value = false; // Update the state
+  isMcpDebuggerVisible.value = false // Update the state
 }
 
 const config = computed<Config>(() => ({

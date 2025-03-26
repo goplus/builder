@@ -12,7 +12,10 @@
           <h4>连接状态</h4>
           <div class="status-container">
             <div class="status-indicator overall">
-              <span class="status-dot" :class="{ active: mcpConnectionStatus.server && mcpConnectionStatus.client }"></span>
+              <span
+                class="status-dot"
+                :class="{ active: mcpConnectionStatus.server && mcpConnectionStatus.client }"
+              ></span>
               <span class="status-text">
                 MCP 状态: {{ mcpConnectionStatus.server && mcpConnectionStatus.client ? '已连接' : '未连接' }}
               </span>
@@ -30,7 +33,7 @@
               v-for="(request, index) in mcpRequestHistory"
               :key="index"
               class="request-item"
-              :class="{ 'expanded': expandedItems[index] }"
+              :class="{ expanded: expandedItems[index] }"
               @click="toggleExpand(index)"
             >
               <div class="request-header">
@@ -48,18 +51,26 @@
                     <span>请求参数</span>
                     <span class="expand-icon">{{ expandedSections[index]?.params ? '▼' : '▶' }}</span>
                   </div>
-                  <pre v-show="expandedSections[index]?.params" class="params">{{ JSON.stringify(request.params, null, 2) }}</pre>
+                  <pre v-show="expandedSections[index]?.params" class="params">{{
+                    JSON.stringify(request.params, null, 2)
+                  }}</pre>
                 </div>
 
                 <div class="request-section">
-                  <div class="section-header" data-type="response" :class="{ 'error': request.error }" @click.stop="toggleSection(index, 'response')">
+                  <div
+                    class="section-header"
+                    data-type="response"
+                    :class="{ error: request.error }"
+                    @click.stop="toggleSection(index, 'response')"
+                  >
                     <span>{{ request.error ? '错误响应' : '响应结果' }}</span>
                     <span class="expand-icon">{{ expandedSections[index]?.response ? '▼' : '▶' }}</span>
                   </div>
                   <pre
                     v-show="expandedSections[index]?.response"
-                    :class="{ 'error': request.error, 'response': !request.error }"
-                  >{{ request.response }}</pre>
+                    :class="{ error: request.error, response: !request.error }"
+                    >{{ request.response }}</pre
+                  >
                 </div>
               </div>
             </div>
@@ -142,11 +153,7 @@
             </div>
 
             <div class="form-actions">
-              <button
-                class="send-button"
-                :disabled="!isFormValid || !selectedTool"
-                @click="sendRequest"
-              >
+              <button class="send-button" :disabled="!isFormValid || !selectedTool" @click="sendRequest">
                 发送请求
               </button>
             </div>
@@ -169,37 +176,37 @@ import { UITooltip } from '@/components/ui'
  * @description Props for the MCP Debugger panel component
  */
 interface McpDebuggerPanelProps {
-  isVisible: boolean;   // Controls the visibility of the debugger panel
+  isVisible: boolean // Controls the visibility of the debugger panel
 }
 
 // Component props and emits
-const props = defineProps<McpDebuggerPanelProps>();
+const props = defineProps<McpDebuggerPanelProps>()
 const emit = defineEmits<{
-  (e: 'close'): void;
-}>();
+  (e: 'close'): void
+}>()
 
 // State management
-const selectedTool = ref('');
-const paramValues = ref<Record<string, any>>({});
-const isLoading = ref(false);
+const selectedTool = ref('')
+const paramValues = ref<Record<string, any>>({})
+const isLoading = ref(false)
 
 // UI state for expandable sections
-const expandedItems = ref<Record<number, boolean>>({});
-const expandedSections = ref<Record<number, Record<string, boolean>>>({});
+const expandedItems = ref<Record<number, boolean>>({})
+const expandedSections = ref<Record<number, Record<string, boolean>>>({})
 
 /**
  * Toggles the expansion state of a request history item
  * @param index - Index of the request history item
  */
 function toggleExpand(index: number) {
-  expandedItems.value[index] = !expandedItems.value[index];
-  
+  expandedItems.value[index] = !expandedItems.value[index]
+
   // Initialize section expansion state if not exists
   if (!expandedSections.value[index]) {
     expandedSections.value[index] = {
       params: false,
       response: false
-    };
+    }
   }
 }
 
@@ -213,9 +220,9 @@ function toggleSection(index: number, section: 'params' | 'response') {
     expandedSections.value[index] = {
       params: false,
       response: false
-    };
+    }
   }
-  expandedSections.value[index][section] = !expandedSections.value[index][section];
+  expandedSections.value[index][section] = !expandedSections.value[index][section]
 }
 
 /**
@@ -223,47 +230,47 @@ function toggleSection(index: number, section: 'params' | 'response') {
  * Transforms the tool's parameter schema into a more usable format
  */
 const toolParams = computed(() => {
-  if (!selectedTool.value) return [];
-  
-  const tool = tools.find(t => t.name === selectedTool.value);
-  if (!tool) return [];
-  
-  const parameters = tool.parameters?.properties || {};
-  const required = tool.parameters?.required || [];
-  
+  if (!selectedTool.value) return []
+
+  const tool = tools.find((t) => t.name === selectedTool.value)
+  if (!tool) return []
+
+  const parameters = tool.parameters?.properties || {}
+  const required = tool.parameters?.required || []
+
   return Object.entries(parameters).map(([name, schema]: [string, any]) => ({
-      name,
-      type: schema.type,
-      description: schema.description,
-      required: required.includes(name),
-      properties: schema.properties,
-      requiredProperties: schema.required
-  }));
-});
+    name,
+    type: schema.type,
+    description: schema.description,
+    required: required.includes(name),
+    properties: schema.properties,
+    requiredProperties: schema.required
+  }))
+})
 
 /**
  * Validates the form based on required parameters and their values
  * Checks both top-level and nested required parameters
  */
 const isFormValid = computed(() => {
-  if (!selectedTool.value) return false;
-  
+  if (!selectedTool.value) return false
+
   for (const param of toolParams.value) {
     if (param.required && !paramValues.value[param.name]) {
-      return false;
+      return false
     }
-    
+
     if (param.type === 'object' && param.properties && param.required) {
       for (const requiredKey of param.requiredProperties) {
         if (!paramValues.value[param.name] || !paramValues.value[param.name][requiredKey]) {
-          return false;
+          return false
         }
       }
     }
   }
-  
-  return true;
-});
+
+  return true
+})
 
 /**
  * Handles tool selection changes
@@ -271,12 +278,12 @@ const isFormValid = computed(() => {
  */
 function onToolChange() {
   // 重置参数值
-  paramValues.value = {};
-  
+  paramValues.value = {}
+
   // 初始化每个参数的结构
   for (const param of toolParams.value) {
     if (param.type === 'object') {
-      paramValues.value[param.name] = {};
+      paramValues.value[param.name] = {}
     }
   }
 }
@@ -287,8 +294,8 @@ function onToolChange() {
  * @returns Tool description or empty string if tool not found
  */
 function getToolDescription(toolName: string) {
-  const tool = tools.find(t => t.name === toolName);
-  return tool ? tool.description : '';
+  const tool = tools.find((t) => t.name === toolName)
+  return tool ? tool.description : ''
 }
 
 /**
@@ -296,26 +303,25 @@ function getToolDescription(toolName: string) {
  * Records the request in history and handles both success and error cases
  */
 async function sendRequest() {
-  if (!selectedTool.value || !isFormValid.value) return;
-  
-  isLoading.value = true;
-  
+  if (!selectedTool.value || !isFormValid.value) return
+
+  isLoading.value = true
+
   try {
-    const cleanParams = { ...paramValues.value };
-    
-    await client.callTool({ 
-      name: selectedTool.value, 
-      arguments: cleanParams 
-    });
-    
+    const cleanParams = { ...paramValues.value }
+
+    await client.callTool({
+      name: selectedTool.value,
+      arguments: cleanParams
+    })
+
     // Reset form
-    selectedTool.value = '';
-    paramValues.value = {};
-    
+    selectedTool.value = ''
+    paramValues.value = {}
   } catch (error) {
-    console.error('Tool execution failed:', error);
+    console.error('Tool execution failed:', error)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
@@ -323,7 +329,7 @@ async function sendRequest() {
  * Emits close event to parent component
  */
 function onClose() {
-  emit('close');
+  emit('close')
 }
 </script>
 
@@ -341,7 +347,7 @@ function onClose() {
   flex-direction: column;
   overflow: hidden;
   z-index: 1000;
-  
+
   .mcp-debugger-header {
     display: flex;
     justify-content: space-between;
@@ -349,14 +355,14 @@ function onClose() {
     padding: 14px 18px;
     background: linear-gradient(to right, #f8f9fa, #f1f3f5);
     border-bottom: 1px solid #e9ecef;
-    
+
     h3 {
       margin: 0;
       font-size: 15px;
       font-weight: 600;
       color: #343a40;
     }
-    
+
     .close-btn {
       display: flex;
       align-items: center;
@@ -368,11 +374,11 @@ function onClose() {
       border-radius: 50%;
       cursor: pointer;
       transition: background-color 0.2s;
-      
+
       &:hover {
         background-color: rgba(0, 0, 0, 0.05);
       }
-      
+
       .close-icon {
         font-size: 18px;
         line-height: 1;
@@ -380,15 +386,15 @@ function onClose() {
       }
     }
   }
-  
+
   .mcp-debugger-content {
     flex: 1;
     overflow: auto;
     padding: 16px;
-    
+
     .debug-section {
       margin-bottom: 24px;
-      
+
       h4 {
         font-size: 14px;
         font-weight: 600;
@@ -397,39 +403,39 @@ function onClose() {
         padding-bottom: 8px;
         border-bottom: 1px solid #e9ecef;
       }
-      
+
       h5 {
         font-size: 13px;
         font-weight: 500;
         color: #495057;
         margin: 16px 0 8px 0;
       }
-      
+
       .status-indicator {
         display: flex;
         align-items: center;
         padding: 8px 12px;
         background-color: #f8f9fa;
         border-radius: 4px;
-        
+
         .status-dot {
           width: 8px;
           height: 8px;
           border-radius: 50%;
           margin-right: 8px;
           background-color: #868e96;
-          
+
           &.active {
             background-color: #40c057;
           }
         }
-        
+
         .status-text {
           font-size: 13px;
           color: #495057;
         }
       }
-      
+
       .empty-state {
         padding: 20px;
         text-align: center;
@@ -438,24 +444,24 @@ function onClose() {
         border-radius: 4px;
         font-size: 13px;
       }
-      
+
       .tool-form {
         .form-group {
           margin-bottom: 12px;
-          
+
           label {
             display: block;
             font-size: 12px;
             color: #495057;
             margin-bottom: 4px;
           }
-          
+
           &.nested {
             margin-left: 12px;
             margin-top: 8px;
           }
         }
-        
+
         .tool-select {
           width: 100%;
           padding: 8px;
@@ -465,7 +471,7 @@ function onClose() {
           color: #495057;
           background-color: #fff;
         }
-        
+
         .param-input {
           width: 100%;
           padding: 8px;
@@ -473,14 +479,14 @@ function onClose() {
           border-radius: 4px;
           font-size: 13px;
           color: #495057;
-          
+
           &:focus {
             border-color: #4dabf7;
             outline: none;
             box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
           }
         }
-        
+
         .tool-description {
           margin: 8px 0 16px;
           padding: 8px 12px;
@@ -490,7 +496,7 @@ function onClose() {
           color: #495057;
           line-height: 1.5;
         }
-        
+
         .nested-params {
           padding: 8px;
           margin-top: 4px;
@@ -498,11 +504,11 @@ function onClose() {
           border-radius: 4px;
           border: 1px solid #e9ecef;
         }
-        
+
         .form-actions {
           margin-top: 16px;
           text-align: right;
-          
+
           .send-button {
             padding: 8px 16px;
             background-color: #228be6;
@@ -512,11 +518,11 @@ function onClose() {
             font-size: 13px;
             cursor: pointer;
             transition: background-color 0.2s;
-            
+
             &:hover {
               background-color: #1c7ed6;
             }
-            
+
             &:disabled {
               background-color: #adb5bd;
               cursor: not-allowed;
@@ -524,7 +530,7 @@ function onClose() {
           }
         }
       }
-      
+
       .request-history {
         .request-item {
           margin-bottom: 8px;
@@ -532,12 +538,12 @@ function onClose() {
           border-radius: 4px;
           overflow: hidden;
           background-color: #f8f9fa;
-          
+
           &.expanded {
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
           }
-          
+
           .request-header {
             display: flex;
             justify-content: space-between;
@@ -547,38 +553,38 @@ function onClose() {
             cursor: pointer;
             user-select: none;
             margin-bottom: 0; // 重置之前的 margin
-            
+
             &:hover {
               background-color: #f1f3f5;
             }
-            
+
             .request-info {
               display: flex;
               gap: 12px;
               align-items: center;
-              
+
               .request-number {
                 font-size: 13px;
                 color: #868e96;
                 min-width: 24px;
               }
-              
+
               .request-tool {
                 font-size: 13px;
                 font-weight: 500;
                 color: #343a40;
               }
-              
+
               .request-time {
                 font-size: 12px;
                 color: #868e96;
               }
             }
           }
-          
+
           .request-details {
             border-top: 1px solid #e9ecef;
-            
+
             .request-section {
               .section-header {
                 display: flex;
@@ -589,39 +595,39 @@ function onClose() {
                 cursor: pointer;
                 user-select: none;
                 border-bottom: 1px solid #e9ecef;
-                
+
                 // Add different colors for different sections
-                &[data-type="params"] {
-                  background-color: #e7f5ff;  // Light blue background
-                  color: #1971c2;  // Blue text
+                &[data-type='params'] {
+                  background-color: #e7f5ff; // Light blue background
+                  color: #1971c2; // Blue text
                   border-bottom: 1px solid #d0ebff;
-                  
+
                   &:hover {
                     background-color: #d0ebff;
                   }
                 }
-                
-                &[data-type="response"] {
-                  background-color: #ebfbee;  // Light green background
-                  color: #2b8a3e;  // Green text
+
+                &[data-type='response'] {
+                  background-color: #ebfbee; // Light green background
+                  color: #2b8a3e; // Green text
                   border-bottom: 1px solid #d3f9d8;
-                  
+
                   &:hover {
                     background-color: #d3f9d8;
                   }
-                  
+
                   &.error {
-                    background-color: #fff5f5;  // Light red background
-                    color: #e03131;  // Red text
+                    background-color: #fff5f5; // Light red background
+                    color: #e03131; // Red text
                     border-bottom: 1px solid #ffe3e3;
-                    
+
                     &:hover {
                       background-color: #ffe3e3;
                     }
                   }
                 }
               }
-              
+
               pre {
                 margin: 0;
                 padding: 12px 16px;
@@ -629,16 +635,16 @@ function onClose() {
                 line-height: 1.5;
                 background-color: #fff;
                 overflow-x: auto;
-                
+
                 &.params {
-                  border-left: 3px solid #1971c2;  // Blue border
+                  border-left: 3px solid #1971c2; // Blue border
                 }
-                
+
                 &.response {
-                  border-left: 3px solid #2b8a3e;  // Green border
-                  
+                  border-left: 3px solid #2b8a3e; // Green border
+
                   &.error {
-                    border-left: 3px solid #e03131;  // Red border
+                    border-left: 3px solid #e03131; // Red border
                     color: #e03131;
                     background-color: #fff5f5;
                   }
@@ -646,7 +652,7 @@ function onClose() {
               }
             }
           }
-          
+
           .expand-icon {
             font-size: 12px;
             color: #868e96;
@@ -660,7 +666,9 @@ function onClose() {
 // 动画效果
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
 }
 
 .slide-enter-from,
@@ -669,44 +677,44 @@ function onClose() {
   opacity: 0;
 }
 .param-label {
-display: flex;
-align-items: center;
-gap: 4px;
-margin-bottom: 6px;
-position: relative; // Add this
-
-.required-asterisk {
-  color: #e03131;
-  font-weight: bold;
-  margin-right: 2px;
-}
-
-.param-name {
-  font-weight: 500;
-  color: #1a1a1a;
-}
-
-.info-icon {
-  color: #868e96;
-  font-size: 14px;
-  cursor: help;
-  margin-left: 4px;
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  
-  &:hover {
-    color: #495057;
-    background-color: rgba(0, 0, 0, 0.05);
+  gap: 4px;
+  margin-bottom: 6px;
+  position: relative; // Add this
+
+  .required-asterisk {
+    color: #e03131;
+    font-weight: bold;
+    margin-right: 2px;
   }
-}
+
+  .param-name {
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  .info-icon {
+    color: #868e96;
+    font-size: 14px;
+    cursor: help;
+    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+
+    &:hover {
+      color: #495057;
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
 }
 
 // Add this to ensure tooltip is visible
 :deep(.ui-tooltip) {
-z-index: 1100;
+  z-index: 1100;
 }
 </style>

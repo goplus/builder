@@ -3,8 +3,8 @@
  * @param projectName [REQUIRED] The name of the project to be created.
  */
 export function createProject(projectName: string): Promise<boolean> {
-    // Placeholder implementation that doesn't cause errors
-  return Promise.resolve(true);
+  // Placeholder implementation that doesn't cause errors
+  return Promise.resolve(true)
 }
 
 /**
@@ -13,7 +13,7 @@ export function createProject(projectName: string): Promise<boolean> {
  */
 export function navigatePage(location: string): Promise<void> {
   // Placeholder implementation that doesn't cause errors
-  return Promise.resolve();
+  return Promise.resolve()
 }
 
 /**
@@ -23,7 +23,7 @@ export function navigatePage(location: string): Promise<void> {
  */
 export function addSprite(spriteHubName: string, spriteName: string): Promise<void> {
   // Placeholder implementation that doesn't cause errors
-  return Promise.resolve();
+  return Promise.resolve()
 }
 
 /**
@@ -37,10 +37,10 @@ export function addSprite(spriteHubName: string, spriteName: string): Promise<vo
  * @param replaceRange.endLine The ending line number of code to replace.
  */
 export function insertCode(
-  code: string, 
+  code: string,
   insertRange: { startLine: number; endLine: number },
   replaceRange?: { startLine: number; endLine: number }
 ): Promise<boolean> {
-    // Placeholder implementation that doesn't cause errors
-  return Promise.resolve(true);
+  // Placeholder implementation that doesn't cause errors
+  return Promise.resolve(true)
 }
