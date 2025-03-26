@@ -1,6 +1,6 @@
 /**
  * @file env file
- * @desc Exports enviroment variables from `.env.*` file
+ * @desc Exports environment variables from `.env.*` file
  */
 
 /// <reference types="vite/client" />
