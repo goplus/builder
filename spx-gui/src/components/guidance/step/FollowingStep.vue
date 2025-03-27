@@ -37,7 +37,7 @@
           class="svg-fill"
         ></path>
       </svg>
-      <div class="bubble-content">
+      <div class="bubble-content" :style="getBubbleContentStyle(props.slotInfo)">
         {{ t({ zh: props.step.description.zh, en: props.step.description.en }) }}
       </div>
     </div>
@@ -200,6 +200,10 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
   const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
   const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
 
+  const widthRatio = highlightRect.width / windowWidth
+  const heightRatio = highlightRect.height / windowHeight
+  const isLargeElement = widthRatio > 0.8 || heightRatio > 0.7
+
   const scale = Math.min(windowWidth, windowHeight) / 1920
   const maxScale = 0.8 // 限制最大缩放比例
   const finalScale = Math.min(scale, maxScale)
@@ -225,7 +229,26 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 
   let bubbleArrowDirection = 'left-down'
 
-  if (isLeft && isTop) {
+  if (isLargeElement) {
+    arrowPosition = {
+      left: highlightRect.left - arrowSize.width,
+      top: highlightRect.top
+    }
+
+    arrowRotation = 0
+
+    niuxiaoqiPosition = {
+      left: arrowPosition.left - niuxiaoqiSize.width,
+      top: arrowPosition.top + arrowSize.height
+    }
+
+    bubblePosition = {
+      left: niuxiaoqiPosition.left - (2 * bubbleSize.width) / 3,
+      top: niuxiaoqiPosition.top + niuxiaoqiSize.height + bubbleSize.height / 3
+    }
+
+    bubbleArrowDirection = 'large-element'
+  } else if (isLeft && isTop) {
     // 左上象限
     arrowPosition = {
       left: highlightRect.left + highlightRect.width,
@@ -359,6 +382,9 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
   let transform = ''
 
   switch (arrowDirection) {
+    case 'large-element':
+      transform = 'rotate(-90deg) scale(-1, 1)'
+      break
     case 'left-top':
       break
     case 'left-bottom':
@@ -377,6 +403,35 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
     transformOrigin: 'center center',
     width: '100%',
     height: '100%'
+  }
+}
+
+function getBubbleContentStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
+  }
+
+  let padding = '10%'
+  const arrowDirection = currentGuidePositions.value.bubbleStyle.arrowDirection
+
+  if (arrowDirection === 'large-element') {
+    padding = '20%'
+  }
+
+  return {
+    position: 'absolute' as const,
+    top: '0',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: padding,
+    boxSizing: 'border-box' as const,
+    fontSize: '100%',
+    color: '#333',
+    textAlign: 'center' as const,
+    PointerEvents: 'none'
   }
 }
 </script>
@@ -402,21 +457,5 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 
 .icon-fill {
   fill: #5c5c66;
-}
-
-.bubble-content {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10%;
-  box-sizing: border-box;
-  font-size: 100%;
-  color: #333;
-  text-align: center;
-  pointer-events: none;
 }
 </style>
