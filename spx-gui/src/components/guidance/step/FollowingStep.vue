@@ -281,7 +281,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
-    bubbleArrowDirection = 'right-top'
+    bubbleArrowDirection = 'right-bottom'
   }
 
   return {
