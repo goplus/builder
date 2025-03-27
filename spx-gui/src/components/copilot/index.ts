@@ -40,6 +40,7 @@ export type Round = {
    * `null` means the answer is still loading or the round is cancelled by the user.
    */
   answer: MCPMarkdownString | null
+  toolExecResult: MCPMarkdownString | null
   error: ActionException | null
   state: RoundState
   ctrl: AbortController
@@ -82,6 +83,13 @@ export class CopilotController extends Disposable {
     await this.startRound(makeMCPMarkdownString(problem))
   }
 
+  async toolExecResult(result: string) {
+    const currentRound = this.ensureCurrentRound()
+    currentRound.toolExecResult = makeMCPMarkdownString(result)
+
+    await this.getCopilotAnswer()
+  }
+
   cancelCurrentRound() {
     const currentRound = this.ensureCurrentRound()
     if (currentRound.state !== RoundState.Loading)
@@ -110,6 +118,7 @@ export class CopilotController extends Disposable {
     currentChat.rounds.push({
       problem,
       answer: null,
+      toolExecResult: null,
       state: RoundState.Loading,
       ctrl: getChildAbortController(currentChat.ctrl),
       error: null
@@ -123,6 +132,7 @@ export class CopilotController extends Disposable {
     const messages = currentChat.rounds.flatMap((round) => {
       const roundMessages: ChatMessage[] = [{ role: 'user', content: round.problem }]
       if (round.answer != null) roundMessages.push({ role: 'copilot', content: round.answer })
+      if (round.toolExecResult != null) roundMessages.push({ role: 'user', content: round.toolExecResult })
       return roundMessages
     })
     return {
@@ -157,65 +167,6 @@ export class CopilotController extends Disposable {
       currentRound.state = RoundState.Failed
       currentRound.error = new ActionException(e, { en: 'Failed to get answer', zh: 'Copilot 出错了' })
     }
-  }
-
-  private async processMcpToolCalls(answer: string): Promise<string> {
-    const regex = /<use_mcp_tool>([\s\S]*?)<server_name>([\s\S]*?)<\/server_name>([\s\S]*?)<tool_name>([\s\S]*?)<\/tool_name>([\s\S]*?)<arguments>([\s\S]*?)<\/arguments>([\s\S]*?)<\/use_mcp_tool>/g;
-    
-    let processedAnswer = answer;
-    let match;
-    const toolCallResults = [];
-    
-    // 查找所有工具调用标记
-    while ((match = regex.exec(answer)) !== null) {
-      const [fullMatch, _, /* serverName */, __, toolName, ___, argumentsString] = match;
-      
-      try {
-        // 解析参数
-        const args = JSON.parse(argumentsString.trim());
-        
-        // 调用 MCP 工具
-        const result = await client.callTool({
-          name: toolName.trim(),
-          arguments: args
-        });
-        
-        // 记录结果
-        toolCallResults.push({
-          tool: toolName.trim(),
-          result
-        });
-        
-        // 替换原文本
-        const resultBlock = `
-  <mcp_tool_result>
-  <tool_name>${toolName.trim()}</tool_name>
-  <status>success</status>
-  <result>
-  \`\`\`json
-  ${JSON.stringify(result, null, 2)}
-  \`\`\`
-  </result>
-  </mcp_tool_result>
-        `;
-        
-        processedAnswer = processedAnswer.replace(fullMatch, resultBlock);
-      } catch (error) {
-        // 处理错误
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorBlock = `
-  <mcp_tool_result>
-  <tool_name>${toolName.trim()}</tool_name>
-  <status>error</status>
-  <error_message>${errorMessage}</error_message>
-  </mcp_tool_result>
-        `;
-        
-        processedAnswer = processedAnswer.replace(fullMatch, errorBlock);
-      }
-    }
-    
-    return processedAnswer;
   }
 
   init() {

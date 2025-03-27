@@ -61,19 +61,10 @@ const mcpComponents = {
   /**
    * Usage:
    *  ```html
-   * <use_mcp_tool>
-  *      <server_name>
-  *         xbuilder-action
-  *      </server_name>
-  *      <tool_name>
-  *         create_project
-  *      </tool_name>
-  *      <arguments>
-  *        { "project_name": "test" }
-  *      </arguments>
-  * </use_mcp_tool>
+   * <use-mcp-tool server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'/>
+   * ```
   */
-  'use_mcp_tool': UseMcpTool,
+  'use-mcp-tool': UseMcpTool,
 }
 
 const advancedComponents = {
@@ -90,6 +81,7 @@ const advancedComponents = {
 
 const components = computed(() => {
   if (props.flag === 'mcp') {
+    console.log("mcpComponents", mcpComponents)
     return {
       codeBlock: CodeBlockEx,
       custom: mcpComponents

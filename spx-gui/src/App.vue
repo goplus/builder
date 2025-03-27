@@ -12,11 +12,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, provide } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger,  type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
 import { useCopilotStore, useMcpDebuggerStore } from '@/utils/utils'
 import { CopilotChat, CopilotController } from '@/components/copilot'
+// import UseMcpTool from '@/components/editor/code-editor/ui/markdown/UseMcpTool.vue'
 
 import { Copilot } from '@/components/copilot/copilot'
 
@@ -30,6 +31,8 @@ let copilot = new Copilot(i18n)
 let copilotController = new CopilotController(copilot)
 
 copilotController.init()
+
+provide('copilotController', copilotController)
 
 // Close the debugger panel
 function closeMcpDebugger() {

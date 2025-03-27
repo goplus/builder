@@ -119,7 +119,7 @@ function toggleCollapse() {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
+    padding: 1px 5px;
     background-color: var(--ui-color-grey-100, #f1f3f5);
     border-bottom: 1px solid var(--ui-color-grey-200, #e9ecef);
     cursor: pointer;

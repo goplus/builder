@@ -1,16 +1,19 @@
 <!-- filepath: /home/wuxinyi/go/src/github.com/goplus/builder/spx-gui/src/components/editor/code-editor/ui/markdown/UseMcpTool.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { UIButton, UIIcon } from '@/components/ui'
-import CodeBlock from './CodeBlock.vue'
+import { UIButton } from '@/components/ui'
+import CodeBlockEx from './CodeBlockEx.vue'
 import { client } from '@/mcp/client'
+import type { CopilotController } from '@/components/copilot'
+
+const copilotController = inject('copilotController', null) as CopilotController | null
 
 const props = defineProps<{
   /** 服务器名称 */
-  serverName?: string
+  server?: string
   /** 工具名称 */
-  toolName: string
+  tool: string
   /** 工具参数（JSON格式字符串） */
   arguments: string
 }>()
@@ -22,8 +25,9 @@ const { t } = i18n
 const status = ref<'pending' | 'running' | 'success' | 'error'>('pending')
 const result = ref<any>(null)
 const errorMessage = ref<string | null>(null)
-const isExpanded = ref(true)
+const isExpanded = ref(false)
 const isExecuting = ref(false)
+const autoExecute = ref(true) 
 
 // 格式化参数
 const formattedArguments = computed(() => {
@@ -80,18 +84,33 @@ async function executeTool() {
     
     // 调用 MCP 工具
     result.value = await client.callTool({
-      name: props.toolName.trim(),
+      name: props.tool.trim(),
       arguments: args
     })
     
     status.value = 'success'
     errorMessage.value = null
+
+    if (copilotController && status.value === 'success') {
+      await sendResultToCopilot()
+    }
   } catch (error) {
     status.value = 'error'
     errorMessage.value = error instanceof Error ? error.message : String(error)
     result.value = null
   } finally {
     isExecuting.value = false
+  }
+}
+
+async function sendResultToCopilot() {
+  if (!copilotController || !result.value) return
+  
+  try {
+    const formattedToolResult = `[use-mcp-tool for '${props.server}'] Tool '${props.tool}' execution result: ${formattedResult.value}`;
+    await copilotController.toolExecResult(formattedToolResult)
+  } catch (error) {
+    console.error('Failed to send result to Copilot:', error)
   }
 }
 
@@ -104,6 +123,10 @@ function toggleExpand() {
 onMounted(() => {
   try {
     JSON.parse(props.arguments)
+
+    if (autoExecute.value) {
+      executeTool()
+    }
   } catch (e) {
     errorMessage.value = t({ 
       en: 'Invalid JSON arguments', 
@@ -119,27 +142,22 @@ onMounted(() => {
     <div class="tool-header" @click="toggleExpand">
       <div class="tool-info">
         <span class="tool-icon custom-icon">{{ isExpanded ? '▼' : '▶' }}</span>
-        <span class="tool-name">{{ toolName }}</span>
+        <span class="tool-name">{{ tool }}</span>
       </div>
       
       <div class="tool-actions">
-        <span class="tool-status">{{ statusText }}</span>
+        <span class="tool-status" :class="statusClass">{{ statusText }}</span>
         <UIButton 
-          v-if="status === 'pending' || status === 'error'"
+          v-if="(!autoExecute && status === 'pending') || status === 'error'"
           type="primary"
           size="small"
           :loading="isExecuting"
           @click.stop="executeTool"
         >
-          {{ t({ en: 'Execute', zh: '执行' }) }}
-        </UIButton>
-        <UIButton 
-          v-else-if="status === 'success'"
-          type="secondary"
-          size="small"
-          @click.stop="executeTool"
-        >
-          {{ t({ en: 'Run again', zh: '重新执行' }) }}
+          {{ status === 'error' 
+              ? t({ en: 'Retry', zh: '重试' }) 
+              : t({ en: 'Execute', zh: '执行' }) 
+          }}
         </UIButton>
       </div>
     </div>
@@ -147,12 +165,12 @@ onMounted(() => {
     <div v-if="isExpanded" class="tool-content">
       <div class="args-section">
         <div class="section-label">{{ t({ en: 'Arguments', zh: '参数' }) }}</div>
-        <CodeBlock :code="formattedArguments" language="json" />
+        <CodeBlockEx :code="formattedArguments" language="json" />
       </div>
       
       <div v-if="status === 'success'" class="result-section">
         <div class="section-label">{{ t({ en: 'Result', zh: '结果' }) }}</div>
-        <CodeBlock :code="formattedResult" language="json" />
+        <CodeBlockEx :code="formattedResult" language="json" />
       </div>
       
       <div v-if="status === 'error'" class="error-section">
@@ -171,29 +189,29 @@ onMounted(() => {
   overflow: hidden;
   
   &.is-pending {
-    border-color: var(--ui-color-grey-400);
+    border-color: grey;
   }
   
   &.is-running {
-    border-color: var(--ui-color-blue-400);
-    background-color: var(--ui-color-blue-50);
+    border-color: blue;
+    background-color: blue;
   }
   
   &.is-success {
-    border-color: var(--ui-color-green-400);
-    background-color: var(--ui-color-green-50);
+    border-color: green;
+    background-color: green;
   }
   
   &.is-error {
-    border-color: var(--ui-color-red-400);
-    background-color: var(--ui-color-red-50);
+    border-color: red;
+    background-color: red;
   }
   
   .tool-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
+    padding: 5px 10px;
     cursor: pointer;
     background-color: rgba(255, 255, 255, 0.5);
     
@@ -225,18 +243,20 @@ onMounted(() => {
       
       .tool-status {
         font-size: 12px;
-        color: var(--ui-color-grey-700);
+        color: gray;
         
-        .is-running & {
-          color: var(--ui-color-blue-700);
+        &.is-running {
+          color: blue;
         }
         
-        .is-success & {
-          color: var(--ui-color-green-700);
+        &.is-success {
+          color: green;
+          font-weight: 500;
         }
         
-        .is-error & {
-          color: var(--ui-color-red-700);
+        &.is-error {
+          color: red;
+          font-weight: 500;
         }
       }
     }
@@ -273,6 +293,15 @@ onMounted(() => {
       font-size: 12px;
       white-space: pre-wrap;
     }
+  }
+  
+  .custom-icon {
+    font-size: 10px;
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>
