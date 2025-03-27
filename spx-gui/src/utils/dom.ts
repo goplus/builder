@@ -98,7 +98,6 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
 
       // Use ResizeObserver to monitor size changes
       const resizeObserver = new ResizeObserver(() => {
-        console.log('ResizeObserver triggered', el.getBoundingClientRect())
         updateRect(el)
       })
       resizeObserver.observe(el)
@@ -109,7 +108,6 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
        * `transform` is the rendering done by the browser on the existing element, which will not change the position and size
        */
       const mutationObserver = new MutationObserver(() => {
-        console.log('MutationObserver triggered', el.getBoundingClientRect())
         updateRect(el)
       })
       mutationObserver.observe(el, {
@@ -119,7 +117,6 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
 
       // Use IntersectionObserver to monitor scroll/viewport changes
       const intersectionObserver = new IntersectionObserver(() => {
-        console.log('IntersectionObserver triggered', el.getBoundingClientRect())
         updateRect(el)
       })
       intersectionObserver.observe(el)
