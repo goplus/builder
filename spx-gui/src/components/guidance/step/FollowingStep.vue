@@ -197,15 +197,12 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
   const windowHeight = window.innerHeight
 
   // 确定高亮区域所在象限
-  console.log('highlightRect', highlightRect)
   const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
   const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
 
   const widthRatio = highlightRect.width / windowWidth
   const heightRatio = highlightRect.height / windowHeight
-  console.log('widthRatio', widthRatio)
-  console.log('heightRatio', heightRatio)
-  const isLargeElement = highlightRect.width > 900 || widthRatio > 0.8
+  const isLargeElement = widthRatio > 0.8 || heightRatio > 0.7
 
   const scale = Math.min(windowWidth, windowHeight) / 1920
   const maxScale = 0.8 // 限制最大缩放比例
