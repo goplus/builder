@@ -21,13 +21,6 @@ const targetElement = computed(() => {
   return props.visible ? getElement(props.highlightElementPath) : null
 })
 
-watch(
-  () => props.highlightElementPath,
-  async (newPath) => {
-    await nextTick()
-  }
-)
-
 const elementRect = useElementRect(() => targetElement.value)
 
 const screenWidth = ref(window.innerWidth)
