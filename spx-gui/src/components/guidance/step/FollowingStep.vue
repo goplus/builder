@@ -147,6 +147,13 @@ function getTargetElement(): HTMLElement | null {
 }
 
 watch(
+  () => props.slotInfo,
+  (newSlotInfo) => {
+    currentGuidePositions.value = calculateGuidePositions(newSlotInfo)
+  }
+)
+
+watch(
   () => props.step,
   (newStep) => {
     nextTick(() => {
@@ -281,7 +288,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
-    bubbleArrowDirection = 'right-top'
+    bubbleArrowDirection = 'right-bottom'
   }
 
   return {
