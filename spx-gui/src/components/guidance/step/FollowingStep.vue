@@ -147,6 +147,13 @@ function getTargetElement(): HTMLElement | null {
 }
 
 watch(
+  () => props.slotInfo,
+  (newSlotInfo) => {
+    currentGuidePositions.value = calculateGuidePositions(newSlotInfo)
+  }
+)
+
+watch(
   () => props.step,
   (newStep) => {
     nextTick(() => {
