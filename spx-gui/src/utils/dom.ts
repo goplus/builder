@@ -1,4 +1,4 @@
-import { ref, watch, type WatchSource } from 'vue'
+import { ref, watch, type WatchSource, nextTick } from 'vue'
 import { getCleanupSignal } from './disposable'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
@@ -94,49 +94,27 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
     (el, _, onCleanup) => {
       if (!el) return
 
-      updateRect(el)
+      let running = true
 
-      // Use ResizeObserver to monitor size changes
-      const resizeObserver = new ResizeObserver(() => {
-        updateRect(el)
-      })
-      resizeObserver.observe(el)
-
-      /**
-       * Use `MutationObserver` to monitor `style/class` changes.
-       * It is mainly used to deal with special cases such as the use of `transform`.
-       * `transform` is the rendering done by the browser on the existing element, which will not change the position and size
-       */
-      const mutationObserver = new MutationObserver(() => {
-        updateRect(el)
-      })
-      mutationObserver.observe(el, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      })
-
-      // Use IntersectionObserver to monitor scroll/viewport changes
-      const intersectionObserver = new IntersectionObserver(() => {
-        updateRect(el)
-      })
-      intersectionObserver.observe(el)
-
-      // Use window resize to monitor window size changes
-      const onWindowResize = () => {
-        updateRect(el)
+      function tick() {
+        if (!running) return
+        nextTick(() => {
+          updateRect(el as HTMLElement)
+          requestAnimationFrame(tick)
+        })
       }
-      window.addEventListener('resize', onWindowResize)
 
-      el.addEventListener('transitionend', () => updateRect(el))
-      el.addEventListener('animationend', () => updateRect(el))
+      requestAnimationFrame(tick)
+
+      const updateHandler = () => updateRect(el)
+
+      el.addEventListener('transitionend', updateHandler)
+      el.addEventListener('animationend', updateHandler)
 
       onCleanup(() => {
-        resizeObserver.disconnect()
-        mutationObserver.disconnect()
-        intersectionObserver.disconnect()
-        window.removeEventListener('resize', onWindowResize)
-        el.removeEventListener('transitionend', () => updateRect(el))
-        el.removeEventListener('animationend', () => updateRect(el))
+        running = false
+        el.removeEventListener('transitionend', updateHandler)
+        el.removeEventListener('animationend', updateHandler)
       })
     },
     { immediate: true }
