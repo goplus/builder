@@ -25,7 +25,6 @@ watch(
   () => props.highlightElementPath,
   async (newPath) => {
     await nextTick()
-    console.log('新元素已加载：', getElement(newPath))
   }
 )
 
