@@ -15,7 +15,6 @@
     </TagNode>
     <EditorPanels />
   </div>
-  <button style="position: fixed; bottom: 0; left: 0; width: 200px; height: 50px; background-color: #000; color: #fff;z-index: 100000;" @click="handleNewWholeStoryLineProject">测试按钮</button>
 </template>
 
 <script setup lang="ts">
@@ -28,21 +27,6 @@ import EditorPanels from './panels/EditorPanels.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import TagNode from '@/utils/tagging/TagNode.vue'
-
-import { useMessageHandle } from '@/utils/exception'
-import { useCreateWholeStoryLineProject } from '@/components/guidance'
-const createWholeStoryLineProject = useCreateWholeStoryLineProject()
-
-const handleNewWholeStoryLineProject = useMessageHandle(
-  async () => {
-    const name = await createWholeStoryLineProject(
-      { en: 'Cross the road', zh: '过马路' }, 
-      editorCtx.project
-    )
-    // router.push(getProjectEditorRoute(name))
-  },
-  { en: 'Failed to create new project', zh: '新建项目失败' }
-).fn
 
 const editorCtx = useEditorCtx()
 </script>
