@@ -81,7 +81,6 @@ const advancedComponents = {
 
 const components = computed(() => {
   if (props.flag === 'mcp') {
-    console.log("mcpComponents", mcpComponents)
     return {
       codeBlock: CodeBlockEx,
       custom: mcpComponents

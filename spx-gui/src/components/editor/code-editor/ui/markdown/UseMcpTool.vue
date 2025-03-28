@@ -29,6 +29,16 @@ const isExpanded = ref(false)
 const isExecuting = ref(false)
 const autoExecute = ref(true) 
 
+const executedMcpTools = inject('executedMcpTools', ref(new Set<string>()))
+
+const toolExecutionId = computed(() => {
+  return `${props.tool}_${props.arguments}`
+})
+
+const isAlreadyExecuted = computed(() => {
+  return executedMcpTools.value.has(toolExecutionId.value)
+})
+
 // 格式化参数
 const formattedArguments = computed(() => {
   try {
@@ -75,6 +85,11 @@ const statusText = computed(() => {
 async function executeTool() {
   if (isExecuting.value) return
 
+  if (isAlreadyExecuted.value) {
+    console.log(`Tool ${props.tool} already executed, skipping`)
+    return
+  }
+
   isExecuting.value = true
   status.value = 'running'
   
@@ -90,6 +105,7 @@ async function executeTool() {
     
     status.value = 'success'
     errorMessage.value = null
+    executedMcpTools.value.add(toolExecutionId.value)
 
     if (copilotController && status.value === 'success') {
       await sendResultToCopilot()

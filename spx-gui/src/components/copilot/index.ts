@@ -5,7 +5,6 @@ import {
   type MCPMarkdownString,
   makeMCPMarkdownString,
 } from '@/components/editor/code-editor/common'
-import { client } from '@/mcp/client';
 export { default as CopilotChat } from './CopilotChat.vue'
 
 export type MessageRole = 'user' | 'copilot'
@@ -84,10 +83,7 @@ export class CopilotController extends Disposable {
   }
 
   async toolExecResult(result: string) {
-    const currentRound = this.ensureCurrentRound()
-    currentRound.toolExecResult = makeMCPMarkdownString(result)
-
-    await this.getCopilotAnswer()
+    await this.askProblem(result)
   }
 
   cancelCurrentRound() {
