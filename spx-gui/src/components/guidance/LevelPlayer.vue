@@ -43,7 +43,7 @@
           </div>
           <div class="navbar-center">
             <span
-              >{{ $t({ zh: '进度：', en: 'Progress:' }) }} {{ currentNodeTaskIndex || 0 }} /
+              >{{ $t({ zh: '进度：', en: 'Progress:' }) }} {{ lastFinishedNodeTaskIndex ?(lastFinishedNodeTaskIndex+1): 0 }} /
               {{ level.nodeTasks.length }}</span
             >
           </div>
@@ -165,9 +165,22 @@ import { useRouter } from 'vue-router'
 import { useMessage, UIButton } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { useUserStore } from '@/stores/user'
-import { Project } from '@/models/project'
-import { Visibility } from '@/apis/project'
+import { useMessageHandle } from '@/utils/exception'
+import { useCreateWholeStoryLineProject } from '@/components/guidance'
+import { getProjectEditorRoute } from '@/router'
+
+const createWholeStoryLineProject = useCreateWholeStoryLineProject()
+
+const handleNewWholeStoryLineProject = useMessageHandle(
+  async () => {
+    const name = await createWholeStoryLineProject(
+      { en: 'Cross the road', zh: '过马路' }, 
+      editorCtx.project
+    )
+    router.push(getProjectEditorRoute(name))
+  },
+  { en: 'Failed to create new project', zh: '新建项目失败' }
+).fn
 
 const router = useRouter()
 
@@ -181,6 +194,7 @@ const level = computed<Level>(() => {
 const videoPlayerRef = ref<ComponentExposed<typeof VideoPlayer> | null>(null)
 const currentNodeTask = ref<NodeTask | null>(null)
 const currentNodeTaskIndex = ref<number | null>(null)
+const lastFinishedNodeTaskIndex = ref<number | null>(null)
 type LevelSegment = Segment<{
   nodeTaskIndex: number
 }>
@@ -228,8 +242,7 @@ function handleStartNodeTask(): void {
 }
 
 const isLastLevel = ref<boolean>(false)
-const userStore = useUserStore()
-const signedInUser = computed(() => userStore.getSignedInUser())
+
 /**
  * 节点任务完成
  */
@@ -241,31 +254,25 @@ async function handleNodeTaskCompleted(): Promise<void> {
     // 更新 关卡完结cover
     levelStatus.value = LevelStatusType.LEVEL_END
     videoPlayerRef.value?.showCover()
-    // 如果是最后一个关卡
-    if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
-      // 提示，展示 ending UI
-      isLastLevel.value = true
-      // 完成故事线后，创建一个新的项目关联用户，内容为当前已完成的故事线
-      const owner = await untilNotNull(signedInUser)
-      const [metadata, files] = await editorCtx.project.export()
-      const project = new Project(owner.name, `result-${projectName.value}`)
-      await project.load({ thumbnail: metadata.thumbnail }, files)
-      project.setVisibility(Visibility.Private)
-      await project.saveToCloud()
-    } else {
-      isLastLevel.value = false
-    }
     // 更新 关卡完成进度
     await updateStoryLineStudy({
       storyLineId: props.storyLineInfo.id,
       lastFinishedLevelIndex: props.currentLevelIndex
     })
+    // 如果是最后一个关卡，可以让用户选择创建Project B
+    if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
+      // 提示，展示 ending UI
+      isLastLevel.value = true
+      handleNewWholeStoryLineProject()
+    } else {
+      isLastLevel.value = false
+    }
   } else {
     videoPlayerRef.value?.hideCover()
     videoPlayerRef.value?.play()
     levelStatus.value = LevelStatusType.VIDEO_PLAYING
   }
-  currentNodeTaskIndex.value = null
+  lastFinishedNodeTaskIndex.value = currentNodeTaskIndex.value
   currentNodeTask.value = null
 }
 
