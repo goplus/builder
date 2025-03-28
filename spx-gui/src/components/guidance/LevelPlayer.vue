@@ -257,7 +257,7 @@ async function handleNodeTaskCompleted(): Promise<void> {
     }
     // 更新 关卡完成进度
     await updateStoryLineStudy({
-      storyLineId: props.storyLineInfo.id,
+      storyLineId: props.storyLineInfo.id!,
       lastFinishedLevelIndex: props.currentLevelIndex
     })
   } else {
