@@ -45,8 +45,8 @@ import { Project } from '@/models/project'
 import type { LocaleMessage } from '@/utils/i18n'
 
 const props = defineProps<{
-  visible: boolean,
-  title: LocaleMessage,
+  visible: boolean
+  title: LocaleMessage
   projectFile?: File
 }>()
 
@@ -61,7 +61,10 @@ const userStore = useUserStore()
 const signedInUser = computed(() => userStore.getSignedInUser())
 
 const title = computed(() => {
-  return { en: `Create a project with the whole code of course ${props.title.en}`, zh: `创建一个具有课程 ${props.title.zh} 完整代码的项目` }
+  return {
+    en: `Create a project with the whole code of course ${props.title.en}`,
+    zh: `创建一个具有课程 ${props.title.zh} 完整代码的项目`
+  }
 })
 
 const form = useForm({
@@ -84,7 +87,7 @@ const handleSubmit = useMessageHandle(
     }
     project.setVisibility(Visibility.Private)
     await project.saveToCloud()
-    
+
     emit('resolved', projectName)
     return projectName
   },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useTag } from '../../utils/tagging'
 import { useElementRect } from '../../utils/dom'
 
@@ -21,7 +21,7 @@ const targetElement = computed(() => {
   return props.visible ? getElement(props.highlightElementPath) : null
 })
 
-const elementRect = useElementRect(targetElement)
+const elementRect = useElementRect(() => targetElement.value)
 
 const screenWidth = ref(window.innerWidth)
 const screenHeight = ref(window.innerHeight)

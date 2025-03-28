@@ -43,7 +43,8 @@
           </div>
           <div class="navbar-center">
             <span
-              >{{ $t({ zh: '进度：', en: 'Progress:' }) }} {{ lastFinishedNodeTaskIndex ?(lastFinishedNodeTaskIndex+1): 0 }} /
+              >{{ $t({ zh: '进度：', en: 'Progress:' }) }}
+              {{ lastFinishedNodeTaskIndex !== null ? lastFinishedNodeTaskIndex + 1 : 0 }} /
               {{ level.nodeTasks.length }}</span
             >
           </div>
@@ -154,7 +155,7 @@
 
 <script setup lang="ts">
 import type { Level, NodeTask } from '@/apis/guidance'
-import { type StoryLine, updateStoryLineStudy } from '@/apis/guidance'
+import { type StoryLine, updateStoryLineStudy, getStoryLineStudy } from '@/apis/guidance'
 import { ref, computed, provide, type InjectionKey, inject } from 'vue'
 import VideoPlayer, { type Segment } from '../common/VideoPlayer.vue'
 import NodeTaskPlayer from './NodeTaskPlayer.vue'
@@ -173,10 +174,7 @@ const createWholeStoryLineProject = useCreateWholeStoryLineProject()
 
 const handleNewWholeStoryLineProject = useMessageHandle(
   async () => {
-    const name = await createWholeStoryLineProject(
-      { en: 'Cross the road', zh: '过马路' }, 
-      editorCtx.project
-    )
+    const name = await createWholeStoryLineProject({ en: 'Cross the road', zh: '过马路' }, editorCtx.project)
     router.push(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
@@ -249,16 +247,21 @@ const isLastLevel = ref<boolean>(false)
 async function handleNodeTaskCompleted(): Promise<void> {
   levelStatus.value = LevelStatusType.NODE_TASK_END
   videoPlayerVisible.value = true
+  lastFinishedNodeTaskIndex.value = currentNodeTaskIndex.value
+  currentNodeTask.value = null
   // 当前关卡最后一个节点任务完成
   if (currentNodeTaskIndex.value === level.value.nodeTasks.length - 1) {
     // 更新 关卡完结cover
     levelStatus.value = LevelStatusType.LEVEL_END
     videoPlayerRef.value?.showCover()
     // 更新 关卡完成进度
-    await updateStoryLineStudy({
-      storyLineId: props.storyLineInfo.id,
-      lastFinishedLevelIndex: props.currentLevelIndex
-    })
+    const study = await getStoryLineStudy(props.storyLineInfo.id)
+    if (study!.lastFinishedLevelIndex === props.currentLevelIndex) {
+      await updateStoryLineStudy({
+        id: props.storyLineInfo.id,
+        lastFinishedLevelIndex: props.currentLevelIndex + 1
+      })
+    }
     // 如果是最后一个关卡，可以让用户选择创建Project B
     if (props.currentLevelIndex === props.storyLineInfo.levels.length - 1) {
       // 提示，展示 ending UI
@@ -272,8 +275,6 @@ async function handleNodeTaskCompleted(): Promise<void> {
     videoPlayerRef.value?.play()
     levelStatus.value = LevelStatusType.VIDEO_PLAYING
   }
-  lastFinishedNodeTaskIndex.value = currentNodeTaskIndex.value
-  currentNodeTask.value = null
 }
 
 /**
