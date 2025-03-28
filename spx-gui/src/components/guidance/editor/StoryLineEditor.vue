@@ -7,7 +7,7 @@
         </UIButton>
       </div>
       <div>
-        <UIButton type="primary" @click="handleSubmit" :loading="isLoading">
+        <UIButton type="primary" :loading="isLoading" @click="handleSubmit" >
           {{ $t({zh: '保存', en: 'Save'}) }}
         </UIButton>
       </div>
@@ -68,7 +68,7 @@
         </div>
         <UIDivider />
         <div class="level-list">
-          <div class="level-item" v-for="(level, index) in form.value.levels" :key="level.title.en">
+          <div v-for="(level, index) in form.value.levels" :key="level.title.en" class="level-item">
             <div class="level-top">
               <div class="level-top-left"> 
                 <div class="num">{{ index+1 }}</div>  

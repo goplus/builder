@@ -193,7 +193,7 @@ function handleLevelClick(levelIndex: number) {
   if (!userStore.isSignedIn() || !storyLine.value || levelIndex > (storyLineStudy.value?.lastFinishedLevelIndex ?? -1))
     return
   router.push(
-    getProjectEditorWithGuidanceRoute(generateStudyProjectName(storyLine.value.name), storyLine.value.id, levelIndex)
+    getProjectEditorWithGuidanceRoute(generateStudyProjectName(storyLine.value.name), storyLine.value.id!, levelIndex)
   )
 }
 </script>

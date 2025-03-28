@@ -86,7 +86,6 @@ async function handleGuidance() {
   }
 
   if (getStringParam(router, 'guidanceEditor') != null) {
-    console.log('guidanceEditor')
     guidanceMode.value = GuidanceMode.GuidanceEditor
     const storyLineId: string | null = getStringParam(router, 'storyLineId')
     if (storyLineId != null) {

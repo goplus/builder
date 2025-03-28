@@ -24,7 +24,7 @@ const props = defineProps<{
 
 const to = computed(() => {
   const { id } = props.storyline
-  return getStoryLineRoute(id)
+  return getStoryLineRoute(id!)
 })
 </script>
 
