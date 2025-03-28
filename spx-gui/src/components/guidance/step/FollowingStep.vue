@@ -159,7 +159,7 @@ watch(
     nextTick(() => {
       if (newStep.type !== 'following' || !newStep.taggingHandler) return
 
-      Object.keys(newStep.taggingHandler).forEach((path) => {
+      Object.keys(newStep.taggingHandler).forEach(async (path) => {
         if (!path) return
 
         const type = newStep.taggingHandler[path]
@@ -174,6 +174,7 @@ watch(
         } else if (type === TaggingHandlerType.ClickToNext) {
           const handler = handleTargetElementClick
           element.addEventListener('click', handler)
+
           eventListeners.value.push({ element, type: 'click', handler })
         }
       })
@@ -189,6 +190,7 @@ async function handleTargetElementSubmit() {
 
 async function handleTargetElementClick() {
   clearAllEventListeners()
+
   emit('followingStepCompleted')
 }
 

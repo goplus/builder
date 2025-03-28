@@ -320,8 +320,7 @@ async function checkAnswer(): Promise<boolean> {
   const targetFileContent = getTargetFileContent(props.step.coding.path, props.step.snapshot.endSnapshot)
   const encodedContent = targetFileContent.replace('data:;,', '')
   let expectedCode = decodeURIComponent(encodedContent)
-  // const userCode = await getUserCode(props.step.coding.path)
-  let userCode = await getUserCode('Sprite.spx')
+  let userCode = await getUserCode(props.step.coding.path)
 
   const normalize = (str: string) =>
     str
