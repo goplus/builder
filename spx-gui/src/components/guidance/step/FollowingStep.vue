@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch, computed } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
@@ -153,67 +153,52 @@ watch(
   }
 )
 
+const targetElements = computed(() => {
+  if (!props.step.taggingHandler || props.step.type !== 'following') {
+    return []
+  }
+
+  return Object.entries(props.step.taggingHandler)
+    .filter(([path]) => !!path)
+    .map(([path, handlerType]) => ({ path, handlerType }))
+})
+
 watch(
-  () => props.step,
-  async (newStep) => {
-    try {
-      await nextTick()
+  targetElements,
+  (newTargets) => {
+    clearAllEventListeners()
 
-      if (newStep.type !== 'following' || !newStep.taggingHandler) return
+    newTargets.forEach(({ path, handlerType }) => {
+      const targetElement = computed(() => getElement(path))
 
-      const eventHandlers = {
-        [TaggingHandlerType.SubmitToNext]: {
-          type: 'submit',
-          handler: handleTargetElementSubmit
-        },
-        [TaggingHandlerType.ClickToNext]: {
-          type: 'click',
-          handler: handleTargetElementClick
-        }
-      }
+      watch(
+        targetElement,
+        (element) => {
+          if (!element) return
 
-      await Promise.all(
-        Object.entries(newStep.taggingHandler)
-          .filter(([path]) => !!path)
-          .map(async ([path, handlerType]) => {
-            try {
-              const element = await waitForElement(path)
-
-              if (element && eventHandlers[handlerType]) {
-                const { type, handler } = eventHandlers[handlerType]
-                element.addEventListener(type, handler)
-                eventListeners.value.push({ element, type, handler })
-              }
-            } catch (error) {
-              console.warn(`为元素 ${path} 添加事件处理失败:`, error)
+          const eventHandlers = {
+            [TaggingHandlerType.SubmitToNext]: {
+              type: 'submit',
+              handler: handleTargetElementSubmit
+            },
+            [TaggingHandlerType.ClickToNext]: {
+              type: 'click',
+              handler: handleTargetElementClick
             }
-          })
+          }
+
+          if (eventHandlers[handlerType]) {
+            const { type, handler } = eventHandlers[handlerType]
+            element.addEventListener(type, handler)
+            eventListeners.value.push({ element, type, handler })
+          }
+        },
+        { immediate: true }
       )
-    } catch (error) {
-      console.error('设置事件监听器时出错:', error)
-    }
+    })
   },
   { immediate: true }
 )
-
-async function waitForElement(path: string, maxAttempts = 5, delay = 200): Promise<HTMLElement | null> {
-  let attempts = 0
-
-  while (attempts < maxAttempts) {
-    const element = getElement(path)
-    if (element) return element
-
-    attempts++
-    if (attempts >= maxAttempts) {
-      console.warn(`未能找到元素 ${path}，已重试 ${attempts} 次`)
-      return null
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, delay))
-  }
-
-  return null
-}
 
 async function handleTargetElementSubmit() {
   clearAllEventListeners()
