@@ -37,7 +37,7 @@
           class="svg-fill"
         ></path>
       </svg>
-      <div class="bubble-content">
+      <div class="bubble-content" :style="getBubbleContentStyle(props.slotInfo)">
         {{ t({ zh: props.step.description.zh, en: props.step.description.en }) }}
       </div>
     </div>
@@ -63,6 +63,8 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const { getElement } = useTag()
+
+const eventListeners = ref<{ element: HTMLElement; type: string; handler: Function }[]>([])
 
 interface GuidePositions {
   arrowStyle: {
@@ -107,13 +109,20 @@ function preventEscapeAndEnter(event: KeyboardEvent) {
 }
 
 onMounted(() => {
-  setupTargetElementListener()
   setupKeyboardEventListeners()
 
   nextTick(() => {
     currentGuidePositions.value = calculateGuidePositions(props.slotInfo)
   })
 })
+
+function clearAllEventListeners() {
+  for (const { element, type, handler } of eventListeners.value) {
+    element.removeEventListener(type, handler as EventListener)
+  }
+
+  eventListeners.value = []
+}
 
 onBeforeUnmount(() => {
   const element = getTargetElement()
@@ -137,45 +146,49 @@ function getTargetElement(): HTMLElement | null {
   }
 }
 
-function setupTargetElementListener() {
-  if (props.step.type !== 'following') return
+watch(
+  () => props.slotInfo,
+  (newSlotInfo) => {
+    currentGuidePositions.value = calculateGuidePositions(newSlotInfo)
+  }
+)
 
-  watch(
-    () => {
-      if (!props.step.taggingHandler) return []
+watch(
+  () => props.step,
+  (newStep) => {
+    nextTick(() => {
+      if (newStep.type !== 'following' || !newStep.taggingHandler) return
 
-      return Object.keys(props.step.taggingHandler).map((path) => {
-        const type = props.step.taggingHandler[path]
+      Object.keys(newStep.taggingHandler).forEach((path) => {
+        if (!path) return
+
+        const type = newStep.taggingHandler[path]
         const element = getElement(path)
-        return { path, type, element }
-      })
-    },
-    (taggingItems, _, onCleanup) => {
-      for (const { type, element } of taggingItems) {
-        if (!element) continue
+
+        if (!element) return
 
         if (type === TaggingHandlerType.SubmitToNext) {
-          element.addEventListener('submit', handleTargetElementSubmit)
-          onCleanup(() => {
-            element.removeEventListener('submit', handleTargetElementSubmit)
-          })
+          const handler = handleTargetElementSubmit
+          element.addEventListener('submit', handler)
+          eventListeners.value.push({ element, type: 'submit', handler })
         } else if (type === TaggingHandlerType.ClickToNext) {
-          element.addEventListener('click', handleTargetElementClick)
-          onCleanup(() => {
-            element.removeEventListener('click', handleTargetElementClick)
-          })
+          const handler = handleTargetElementClick
+          element.addEventListener('click', handler)
+          eventListeners.value.push({ element, type: 'click', handler })
         }
-      }
-    },
-    { immediate: true }
-  )
-}
+      })
+    })
+  },
+  { immediate: true }
+)
 
 async function handleTargetElementSubmit() {
+  clearAllEventListeners()
   emit('followingStepCompleted')
 }
 
 async function handleTargetElementClick() {
+  clearAllEventListeners()
   emit('followingStepCompleted')
 }
 
@@ -186,6 +199,10 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
   // 确定高亮区域所在象限
   const isLeft = highlightRect.left + highlightRect.width / 2 < windowWidth / 2
   const isTop = highlightRect.top + highlightRect.height / 2 < windowHeight / 2
+
+  const widthRatio = highlightRect.width / windowWidth
+  const heightRatio = highlightRect.height / windowHeight
+  const isLargeElement = widthRatio > 0.8 || heightRatio > 0.7
 
   const scale = Math.min(windowWidth, windowHeight) / 1920
   const maxScale = 0.8 // 限制最大缩放比例
@@ -212,7 +229,26 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
 
   let bubbleArrowDirection = 'left-down'
 
-  if (isLeft && isTop) {
+  if (isLargeElement) {
+    arrowPosition = {
+      left: highlightRect.left - arrowSize.width,
+      top: highlightRect.top
+    }
+
+    arrowRotation = 0
+
+    niuxiaoqiPosition = {
+      left: arrowPosition.left - niuxiaoqiSize.width,
+      top: arrowPosition.top + arrowSize.height
+    }
+
+    bubblePosition = {
+      left: niuxiaoqiPosition.left - (2 * bubbleSize.width) / 3,
+      top: niuxiaoqiPosition.top + niuxiaoqiSize.height + bubbleSize.height / 3
+    }
+
+    bubbleArrowDirection = 'large-element'
+  } else if (isLeft && isTop) {
     // 左上象限
     arrowPosition = {
       left: highlightRect.left + highlightRect.width,
@@ -227,7 +263,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
-    bubbleArrowDirection = 'left-down'
+    bubbleArrowDirection = 'left-top'
   } else if (!isLeft && isTop) {
     // 右上象限
     arrowPosition = {
@@ -243,7 +279,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top - bubbleSize.height
     }
-    bubbleArrowDirection = 'right-down'
+    bubbleArrowDirection = 'right-top'
   } else if (isLeft && !isTop) {
     // 左下象限
     arrowPosition = {
@@ -259,7 +295,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left + niuxiaoqiSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
-    bubbleArrowDirection = 'left-top'
+    bubbleArrowDirection = 'left-bottom'
   } else {
     // 右下象限
     arrowPosition = {
@@ -275,7 +311,7 @@ function calculateGuidePositions(highlightRect: HighlightRect) {
       left: niuxiaoqiPosition.left - bubbleSize.width,
       top: niuxiaoqiPosition.top + niuxiaoqiSize.height
     }
-    bubbleArrowDirection = 'right-top'
+    bubbleArrowDirection = 'right-bottom'
   }
 
   return {
@@ -346,16 +382,18 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
   let transform = ''
 
   switch (arrowDirection) {
-    case 'left-bottom':
-      transform = ''
-      break
-    case 'right-bottom':
-      transform = 'scale(1, -1)'
+    case 'large-element':
+      transform = 'rotate(-90deg) scale(-1, 1)'
       break
     case 'left-top':
-      transform = 'scale(-1, 1)'
+      break
+    case 'left-bottom':
+      transform = 'scale(1, -1)'
       break
     case 'right-top':
+      transform = 'scale(-1, 1)'
+      break
+    case 'right-bottom':
       transform = 'scale(-1, -1)'
       break
   }
@@ -365,6 +403,35 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
     transformOrigin: 'center center',
     width: '100%',
     height: '100%'
+  }
+}
+
+function getBubbleContentStyle(highlightRect: HighlightRect) {
+  if (!currentGuidePositions.value) {
+    currentGuidePositions.value = calculateGuidePositions(highlightRect)
+  }
+
+  let padding = '10%'
+  const arrowDirection = currentGuidePositions.value.bubbleStyle.arrowDirection
+
+  if (arrowDirection === 'large-element') {
+    padding = '20%'
+  }
+
+  return {
+    position: 'absolute' as const,
+    top: '0',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: padding,
+    boxSizing: 'border-box' as const,
+    fontSize: '100%',
+    color: '#333',
+    textAlign: 'center' as const,
+    PointerEvents: 'none'
   }
 }
 </script>
@@ -390,22 +457,5 @@ function getBubbleBgStyle(highlightRect: HighlightRect) {
 
 .icon-fill {
   fill: #5c5c66;
-}
-
-.bubble-content {
-  position: absolute;
-  top: 0;
-  left: -0.8rem;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  box-sizing: border-box;
-  font-size: 1rem;
-  color: #333;
-  text-align: center;
-  pointer-events: none;
 }
 </style>

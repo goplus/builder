@@ -36,8 +36,9 @@
       </div>
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
-        <div class="content">
-          <TagNode name="asset-library-list">
+
+        <TagNode name="asset-library-list">
+          <div class="content">
             <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
               <!-- fixed asset-list height to keep the layout stable -->
               <ul class="asset-list" style="height: 436px">
@@ -50,9 +51,10 @@
                 />
               </ul>
             </ListResultWrapper>
-          </TagNode>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-        </div>
+
+            <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+          </div>
+        </TagNode>
         <footer class="footer">
           <span v-show="selected.length > 0">
             {{
