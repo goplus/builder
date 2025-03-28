@@ -155,32 +155,65 @@ watch(
 
 watch(
   () => props.step,
-  (newStep) => {
-    nextTick(() => {
+  async (newStep) => {
+    try {
+      await nextTick()
+
       if (newStep.type !== 'following' || !newStep.taggingHandler) return
 
-      Object.keys(newStep.taggingHandler).forEach((path) => {
-        if (!path) return
-
-        const type = newStep.taggingHandler[path]
-        const element = getElement(path)
-
-        if (!element) return
-
-        if (type === TaggingHandlerType.SubmitToNext) {
-          const handler = handleTargetElementSubmit
-          element.addEventListener('submit', handler)
-          eventListeners.value.push({ element, type: 'submit', handler })
-        } else if (type === TaggingHandlerType.ClickToNext) {
-          const handler = handleTargetElementClick
-          element.addEventListener('click', handler)
-          eventListeners.value.push({ element, type: 'click', handler })
+      const eventHandlers = {
+        [TaggingHandlerType.SubmitToNext]: {
+          type: 'submit',
+          handler: handleTargetElementSubmit
+        },
+        [TaggingHandlerType.ClickToNext]: {
+          type: 'click',
+          handler: handleTargetElementClick
         }
-      })
-    })
+      }
+
+      await Promise.all(
+        Object.entries(newStep.taggingHandler)
+          .filter(([path]) => !!path)
+          .map(async ([path, handlerType]) => {
+            try {
+              const element = await waitForElement(path)
+
+              if (element && eventHandlers[handlerType]) {
+                const { type, handler } = eventHandlers[handlerType]
+                element.addEventListener(type, handler)
+                eventListeners.value.push({ element, type, handler })
+              }
+            } catch (error) {
+              console.warn(`为元素 ${path} 添加事件处理失败:`, error)
+            }
+          })
+      )
+    } catch (error) {
+      console.error('设置事件监听器时出错:', error)
+    }
   },
   { immediate: true }
 )
+
+async function waitForElement(path: string, maxAttempts = 5, delay = 200): Promise<HTMLElement | null> {
+  let attempts = 0
+
+  while (attempts < maxAttempts) {
+    const element = getElement(path)
+    if (element) return element
+
+    attempts++
+    if (attempts >= maxAttempts) {
+      console.warn(`未能找到元素 ${path}，已重试 ${attempts} 次`)
+      return null
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delay))
+  }
+
+  return null
+}
 
 async function handleTargetElementSubmit() {
   clearAllEventListeners()
