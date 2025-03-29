@@ -153,53 +153,54 @@ watch(
   }
 )
 
-const targetElements = computed(() => {
+const targetPath = computed(() => {
   if (!props.step.taggingHandler || props.step.type !== 'following') {
-    return []
+    return null
   }
 
-  return Object.entries(props.step.taggingHandler)
-    .filter(([path]) => !!path)
-    .map(([path, handlerType]) => ({ path, handlerType }))
+  const entries = Object.entries(props.step.taggingHandler).filter(([path]) => !!path)
+
+  return entries.length > 0
+    ? {
+        path: entries[0][0],
+        handlerType: entries[0][1]
+      }
+    : null
+})
+
+const targetElement = computed(() => {
+  if (!targetPath.value) return null
+  return getElement(targetPath.value.path)
 })
 
 watch(
-  targetElements,
-  (newTargets) => {
+  targetElement,
+  (element) => {
     clearAllEventListeners()
 
-    newTargets.forEach(({ path, handlerType }) => {
-      const targetElement = computed(() => getElement(path))
+    if (!element || !targetPath.value) return
 
-      watch(
-        targetElement,
-        (element) => {
-          if (!element) return
+    const { handlerType } = targetPath.value
 
-          const eventHandlers = {
-            [TaggingHandlerType.SubmitToNext]: {
-              type: 'submit',
-              handler: handleTargetElementSubmit
-            },
-            [TaggingHandlerType.ClickToNext]: {
-              type: 'click',
-              handler: handleTargetElementClick
-            }
-          }
+    const eventHandlers = {
+      [TaggingHandlerType.SubmitToNext]: {
+        type: 'submit',
+        handler: handleTargetElementSubmit
+      },
+      [TaggingHandlerType.ClickToNext]: {
+        type: 'click',
+        handler: handleTargetElementClick
+      }
+    }
 
-          if (eventHandlers[handlerType]) {
-            const { type, handler } = eventHandlers[handlerType]
-            element.addEventListener(type, handler)
-            eventListeners.value.push({ element, type, handler })
-          }
-        },
-        { immediate: true }
-      )
-    })
+    if (eventHandlers[handlerType]) {
+      const { type, handler } = eventHandlers[handlerType]
+      element.addEventListener(type, handler)
+      eventListeners.value.push({ element, type, handler })
+    }
   },
   { immediate: true }
 )
-
 async function handleTargetElementSubmit() {
   clearAllEventListeners()
   emit('followingStepCompleted')
