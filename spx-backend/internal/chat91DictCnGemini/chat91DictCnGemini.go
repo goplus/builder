@@ -41,7 +41,6 @@ func (c *Chat91DictCnGeminiClient) ContrastCode(ctx context.Context, content, co
 
 	data := url.Values{}
 
-	fmt.Println(chat)
 	data.Set("q", chat)
 
 	req, err := http.NewRequestWithContext(
