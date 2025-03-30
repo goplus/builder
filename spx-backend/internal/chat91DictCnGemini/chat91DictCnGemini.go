@@ -37,10 +37,11 @@ func (c *Chat91DictCnGeminiClient) ContrastCode(ctx context.Context, content, co
 	escapedContent := escape(content)
 	escapedCode1 := escape(code1)
 	escapedCode2 := escape(code2)
-	// Prevents prompt word injection
-	chat += fmt.Sprintf("The following text surrounded by ``` is the content that you need to judge.\n\n```\nSupplementary Information:\n%s\n\nCode 1:\n%s\n\nCode 2:\n%s\n```", escapedContent, escapedCode1, escapedCode2)
+	chat += fmt.Sprintf("The following text is the content that you need to judge. *Code1* is the user's code, *Code2* is the expected answer, and *Supplementary Information* is the supplementary information that may exist.\n\nSupplementary Information:\n```\n%s\n```\n\n### Code 1:\n```\n%s\n```\n### Code 2:\n```\n%s\n```", escapedContent, escapedCode1, escapedCode2)
 
 	data := url.Values{}
+
+	fmt.Println(chat)
 	data.Set("q", chat)
 
 	req, err := http.NewRequestWithContext(
