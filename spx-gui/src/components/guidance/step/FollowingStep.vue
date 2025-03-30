@@ -154,24 +154,13 @@ watch(
 )
 
 const targetPath = computed(() => {
-  if (!props.step.taggingHandler || props.step.type !== 'following') {
-    return null
-  }
+  if (!props.step.taggingHandler || props.step.type !== 'following') return null
 
-  const entries = Object.entries(props.step.taggingHandler).filter(([path]) => !!path)
-
-  return entries.length > 0
-    ? {
-        path: entries[0][0],
-        handlerType: entries[0][1]
-      }
-    : null
+  const entry = Object.entries(props.step.taggingHandler).find(([path]) => !!path)
+  return entry ? { path: entry[0], handlerType: entry[1] } : null
 })
 
-const targetElement = computed(() => {
-  if (!targetPath.value) return null
-  return getElement(targetPath.value.path)
-})
+const targetElement = computed(() => (targetPath.value ? getElement(targetPath.value.path) : null))
 
 watch(
   targetElement,
