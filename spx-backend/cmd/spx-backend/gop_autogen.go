@@ -1391,39 +1391,32 @@ func (this *post_util_guidance_check) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_util_guidance-check.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_util_guidance-check.yap:11:1
-	if
-//line cmd/spx-backend/post_util_guidance-check.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 //line cmd/spx-backend/post_util_guidance-check.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_util_guidance-check.yap:15:1
 	params := &controller.CheckCodeParams{}
-//line cmd/spx-backend/post_util_guidance-check.yap:16:1
+//line cmd/spx-backend/post_util_guidance-check.yap:13:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_util_guidance-check.yap:17:1
+//line cmd/spx-backend/post_util_guidance-check.yap:14:1
 		return
 	}
-//line cmd/spx-backend/post_util_guidance-check.yap:19:1
+//line cmd/spx-backend/post_util_guidance-check.yap:16:1
 	if
-//line cmd/spx-backend/post_util_guidance-check.yap:19:1
+//line cmd/spx-backend/post_util_guidance-check.yap:16:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_util_guidance-check.yap:20:1
+//line cmd/spx-backend/post_util_guidance-check.yap:17:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_util_guidance-check.yap:18:1
+		return
+	}
 //line cmd/spx-backend/post_util_guidance-check.yap:21:1
-		return
-	}
-//line cmd/spx-backend/post_util_guidance-check.yap:24:1
 	result, err := this.ctrl.CheckCode(ctx.Context(), params)
-//line cmd/spx-backend/post_util_guidance-check.yap:25:1
+//line cmd/spx-backend/post_util_guidance-check.yap:22:1
 	if err != nil {
-//line cmd/spx-backend/post_util_guidance-check.yap:26:1
+//line cmd/spx-backend/post_util_guidance-check.yap:23:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_util_guidance-check.yap:27:1
+//line cmd/spx-backend/post_util_guidance-check.yap:24:1
 		return
 	}
-//line cmd/spx-backend/post_util_guidance-check.yap:29:1
+//line cmd/spx-backend/post_util_guidance-check.yap:26:1
 	this.Json__1(result)
 }
 func (this *post_util_guidance_check) Classfname() string {

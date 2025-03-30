@@ -8,9 +8,6 @@ import (
 )
 
 ctx := &Context
-if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-	return
-}
 
 params := &controller.CheckCodeParams{}
 if !parseJSON(ctx, params) {
