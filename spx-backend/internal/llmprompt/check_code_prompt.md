@@ -203,3 +203,14 @@ Code 2:
 
 You should return *No*.
 
+## Decision strategy
+
+There are several steps you can follow to determine if Code1 is the same as Code2:
+
+* step1: Check that Code1 is syntactically correct.Syntax checking should include support for Go+/ SPX-specific syntax to ensure code conforms to the language specification.
+* step2: Compare the logical structure of the code in detail, including function calls, conditional statements, loops, etc.
+* step3: Run the code through simulations to see if it behaves consistently.
+* step4: Make sure both pieces of code output the same in all cases.
+* step5: Make sure the input source and format of the two pieces of code are exactly the same.
+* step6: Understand the purpose of the code from its comments and context, and ensure that the implementation is consistent with the purpose.
+
