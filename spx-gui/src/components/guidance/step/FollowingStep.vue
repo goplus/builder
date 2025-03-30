@@ -190,7 +190,6 @@ async function handleTargetElementSubmit() {
 
 async function handleTargetElementClick() {
   clearAllEventListeners()
-
   emit('followingStepCompleted')
 }
 
