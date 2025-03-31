@@ -10,7 +10,8 @@ import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig, File } from '../common/file'
+import { Costume } from '@/models/costume'
+import { toConfig, fromBlob, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
@@ -122,6 +123,37 @@ export class Project extends Disposable {
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
+
+  async addSpriteFromCanvos(spriteName: string, size: number, color: string) {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')!
+
+    // Set canvas dimensions
+    canvas.width = size
+    canvas.height = size
+
+    // Draw a square
+    ctx.fillStyle = color
+    ctx.fillRect(0, 0, size, size)
+
+    // Convert canvas to Blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob!)
+      }, 'image/png')
+    })
+
+    // Create file from Blob
+    const file = fromBlob(spriteName, blob)
+
+    // Create sprite with costume
+    const sprite = Sprite.create(spriteName)
+    const costume = new Costume(spriteName, file)
+    sprite.addCostume(costume)
+
+    this.addSprite(sprite)
+    return file
+  }
 
   removeSprite(id: string) {
     const idx = this.sprites.findIndex((s) => s.id === id)
