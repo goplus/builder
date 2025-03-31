@@ -141,7 +141,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      case 'add_sprite': {
+      case 'add_sprite_from_canvos': {
         const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters);
         if (!args.success) {
           throw new Error(`Invalid arguments for add_sprite: ${args.error}`);

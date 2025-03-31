@@ -32,7 +32,7 @@ export async function addSpriteFromCanvos(options: AddSpriteFromCanvosOptions) {
 
   try {
     // 添加精灵到项目
-    await useAddSpriteFromCanvos(project, spriteName, size, color);
+    await useAddSpriteFromCanvos(project, spriteName, size, color)();
     
     // 保存更改到云端
     await project.saveToCloud();

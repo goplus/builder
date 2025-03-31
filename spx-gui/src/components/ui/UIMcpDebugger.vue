@@ -234,8 +234,8 @@ const toolParams = computed(() => {
   const tool = tools.find((t) => t.name === selectedTool.value)
   if (!tool) return []
 
-  const parameters = tool.parameters?.properties || {}
-  const required = tool.parameters?.required || []
+  const parameters = tool.inputSchema?.properties || {}
+  const required: string[] = Array.isArray(tool.inputSchema?.required) ? tool.inputSchema.required : []
 
   return Object.entries(parameters).map(([name, schema]: [string, any]) => ({
     name,

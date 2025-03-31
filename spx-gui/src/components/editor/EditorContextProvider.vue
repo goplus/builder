@@ -44,7 +44,7 @@ const editorCtx = computedShallowReactive<EditorCtx>(() => ({
 provide(editorCtxKey, editorCtx)
 
 onMounted(() => {
-  editorService.registerEditorCtx(useEditorCtx())
+  editorService.registerEditorCtx(editorCtx)
 })
 
 onUnmounted(() => {
