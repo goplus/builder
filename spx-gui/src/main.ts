@@ -37,11 +37,11 @@ setProjectProvider({
     try {
       const project = await getProject(username, projectName)
       return project
-     } catch (e) {
+    } catch (e) {
       if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) {
         // 项目不存在，继续创建流程
         return null
-      }else{
+      } else {
         console.error('Error fetching project:', e)
         throw e
       }
@@ -50,7 +50,7 @@ setProjectProvider({
   createProject: async (username: string, projectName: string): Promise<any> => {
     const project = new Project(username, projectName)
     project.setVisibility(Visibility.Private)
-   
+
     try {
       const defaultProjectFile = await getDefaultProjectFile()
       await project.loadGbpFile(defaultProjectFile)
