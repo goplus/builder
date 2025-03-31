@@ -186,19 +186,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'create_project': {
         const { projectName } = parameters as { projectName: string }
-
         if (!projectName || projectName.trim() === '') {
-          throw new Error('Project name cannot be empty')
+          const errorMsg = 'Project name cannot be empty';
+          
+          // 更新请求历史，记录错误
+          mcpRequestHistory.value[0].response = errorMsg;
+          mcpRequestHistory.value[0].error = true;
+          
+          // 返回错误结果而不是抛出异常
+          return {
+            content: [
+              {
+                type: 'text',
+                text: errorMsg
+              }
+            ],
+            error: true // 可选，标记此结果为错误
+          };
         }
 
-        await createProject(projectName)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully created project: ${projectName}`
-            }
-          ]
+        const createResult = await createProject(projectName)
+        // 根据执行结果构建响应
+        if (createResult.success) {
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: createResult.message || `Successfully created project: ${projectName}`
+              }
+            ]
+          }
+        } else {
+          // 项目创建失败 - 不抛出错误，而是返回错误信息
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to create project: ${createResult.message || 'Unknown error'}`
+              }
+            ],
+            error: true // 可选，标记此结果为错误
+          };
+          
+          // 更新请求历史，标记为错误
+          mcpRequestHistory.value[0].error = true;
         }
         // Update request history with success response
         mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
@@ -227,31 +258,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'add_sprite': {
-        const { libraryName, spriteName } = parameters as {
-          libraryName: string
-          spriteName: string
+        const { spriteHubName, spriteName } = parameters as { 
+          spriteHubName: string, 
+          spriteName: string 
+        };
+        
+        // 验证必需参数
+        if (!spriteHubName || typeof spriteHubName !== 'string') {
+          const errorMsg = 'Sprite hub name is required and must be a string';
+          mcpRequestHistory.value[0].response = errorMsg;
+          mcpRequestHistory.value[0].error = true;
+          return {
+            content: [{ type: 'text', text: errorMsg }],
+            error: true
+          };
         }
-
-        if (!libraryName || libraryName.trim() === '') {
-          throw new Error('Library name cannot be empty')
+        
+        if (!spriteName || typeof spriteName !== 'string') {
+          const errorMsg = 'Sprite name is required and must be a string';
+          mcpRequestHistory.value[0].response = errorMsg;
+          mcpRequestHistory.value[0].error = true;
+          return {
+            content: [{ type: 'text', text: errorMsg }],
+            error: true
+          };
         }
-
-        if (!spriteName || spriteName.trim() === '') {
-          throw new Error('Sprite name cannot be empty')
+        
+        const addResult = await addSprite(spriteHubName, spriteName);
+        
+        if (addResult.success) {
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: addResult.message || `Successfully added sprite "${spriteName}"`
+              }
+            ]
+          };
+        } else {
+          result = {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to add sprite: ${addResult.message || 'Unknown error'}`
+              }
+            ],
+            error: true
+          };
         }
-
-        await addSprite(libraryName, spriteName)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully added sprite '${spriteName}' from library '${libraryName}'`
-            }
-          ]
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
+        
+        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
+        return result;
       }
 
       case 'insert_code': {
