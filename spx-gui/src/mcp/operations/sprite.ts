@@ -1,4 +1,3 @@
-import { useAddSpriteFromCanvos } from '@/components/asset'
 import { getEditorCtx } from '@/pages/editor/context'
 import { z } from 'zod'
 
@@ -34,8 +33,7 @@ export async function addSpriteFromCanvos(options: AddSpriteFromCanvosOptions) {
 
   try {
     // 添加精灵到项目
-    await useAddSpriteFromCanvos(project, spriteName, size, color)()
-
+    await project.addSpriteFromCanvos(spriteName, size, color)
     // 保存更改到云端
     await project.saveToCloud()
 
