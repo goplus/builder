@@ -71,7 +71,7 @@ func init() {
 		// formatJSON converts a Go value to a properly indented JSON string
 		// This is used to format tool parameters in a readable format
 		"formatJSON": func(v interface{}) string {
-			indented, err := json.MarshalIndent(v, "    ", "  ")
+			indented, err := json.MarshalIndent(v, "", "\t")
 			if err != nil {
 				return fmt.Sprintf("Error formatting JSON: %v", err)
 			}
@@ -93,4 +93,6 @@ func init() {
 
 	// Store the fully rendered system prompt
 	SystemPrompt = sb.String()
+
+	fmt.Println(SystemPrompt)
 }
