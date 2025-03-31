@@ -17,6 +17,7 @@ export interface IRenameTarget {
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { UIFormModal, UIButton, UITextInput, UIForm, UIFormItem, useForm, UIIcon } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -73,9 +74,11 @@ function validateName(name: string) {
             {{ $t(target.warning) }}
           </p>
           <footer class="footer">
-            <UIButton type="boring" @click="emit('cancelled')">
-              {{ $t({ en: 'Cancel', zh: '取消' }) }}
-            </UIButton>
+            <TagNode name="rename-cancel-button">
+              <UIButton type="boring" @click="emit('cancelled')">
+                {{ $t({ en: 'Cancel', zh: '取消' }) }}
+              </UIButton>
+            </TagNode>
             <TagNode name="rename-submit-button">
               <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
                 {{ $t({ en: 'Confirm', zh: '确认' }) }}
