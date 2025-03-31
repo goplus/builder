@@ -65,7 +65,10 @@
         </div>
         <div class="card card-group-item">
           <h3>{{ $t({ zh: '当前关卡', en: 'Current Level' }) }}</h3>
-          <div v-if="userStore.isSignedIn()" class="content current-level-content">
+          <div
+            v-if="userStore.isSignedIn() && storyLineStudy?.lastFinishedLevelIndex !== storyLine?.levels.length"
+            class="content current-level-content"
+          >
             <div class="level-cover">
               <img :src="storyLine?.levels[storyLineStudy?.lastFinishedLevelIndex ?? 0].cover" alt="" />
             </div>
@@ -78,14 +81,19 @@
               </p>
             </div>
           </div>
-          <div v-else class="content log-tip">登陆以查看当前关卡</div>
+          <div v-else-if="userStore.isSignedIn()" class="content tip">
+            {{ $t({ zh: '您已完成本课程！', en: 'You have completed the course!' }) }}
+          </div>
+          <div v-else class="content tip">
+            {{ $t({ zh: '请先登录以查看当前关卡', en: 'Please login to view the current level' }) }}
+          </div>
         </div>
         <div class="card card-group-item">
           <h3>{{ $t({ zh: '成就系统', en: 'Achievements' }) }}</h3>
           <div v-if="userStore.isSignedIn()" class="content">
             <div
               v-for="(level, index) in storyLine?.levels"
-              v-show="index <= (storyLineStudy?.lastFinishedLevelIndex ?? 0 - 1) && level.achievement"
+              v-show="index <= (storyLineStudy?.lastFinishedLevelIndex ?? 0) - 1 && level.achievement"
               :key="index"
               class="achievement"
             >
@@ -93,7 +101,9 @@
               <span>{{ $t(level.achievement.title) }}</span>
             </div>
           </div>
-          <div v-else class="content log-tip">登陆以查看成就</div>
+          <div v-else class="content tip">
+            {{ $t({ zh: '请先登录以查看成就', en: 'Please login to view the achievements' }) }}
+          </div>
         </div>
       </div>
       <div class="card description-card">
@@ -132,7 +142,7 @@ function generateStudyProjectName(storyLineName: string) {
 // 获取故事线信息
 const { data: storyLine } = useQuery(
   async () => {
-    return getStoryLine(props.storyLineId)
+    return await getStoryLine(props.storyLineId)
   },
   {
     en: 'Failed to load storyline',
@@ -363,7 +373,7 @@ function handleLevelClick(levelIndex: number) {
           font-size: 12px;
         }
       }
-      .log-tip {
+      .tip {
         font-size: 15px;
         text-align: center;
         line-height: 60px;

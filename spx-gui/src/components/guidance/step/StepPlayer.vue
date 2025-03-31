@@ -1,10 +1,10 @@
 <template>
   <div class="step-player">
     <MaskWithHighlight :visible="true" :highlight-element-path="props.step.target">
-      <template v-if="stepType === 'coding'">
+      <template v-if="props.step.type === 'coding'">
         <CodingStep :step="props.step" @coding-step-completed="handleStepCompleted" />
       </template>
-      <template v-if="stepType === 'following'" #default="{ slotInfo }">
+      <template v-if="props.step.type === 'following'" #default="{ slotInfo }">
         <FollowingStep :step="props.step" :slot-info="slotInfo" @following-step-completed="handleStepCompleted" />
       </template>
     </MaskWithHighlight>
@@ -12,12 +12,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, onUpdated } from 'vue'
+import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
 import type { Step } from '@/apis/guidance'
 import CodingStep from './CodingStep.vue'
 import FollowingStep from './FollowingStep.vue'
+import { getFiles } from '@/models/common/cloud'
 
 const editorCtx = useEditorCtx()
 const filter = editorCtx.listFilter
@@ -30,8 +32,6 @@ const emit = defineEmits<{
   stepCompleted: []
 }>()
 
-const stepType = ref<'coding' | 'following' | null>(props.step.type)
-
 onMounted(async () => {
   try {
     if (props.step.snapshot?.startSnapshot) {
@@ -42,20 +42,30 @@ onMounted(async () => {
   }
 
   setFilterControls()
+  await nextTick()
 })
 
-onUpdated(async () => {
-  stepType.value = props.step.type
+watch(
+  () => props.step,
+  async (newStep) => {
+    await initializeStep(newStep)
+  },
+  { deep: true }
+)
+
+async function initializeStep(step: Step) {
   try {
-    if (props.step.snapshot?.startSnapshot) {
-      await loadSnapshot(props.step.snapshot.startSnapshot)
+    if (step.snapshot?.startSnapshot) {
+      await loadSnapshot(step.snapshot.startSnapshot)
     }
-  } catch (error) {
-    console.error('Failed to load snapshot:', error)
-  }
 
-  setFilterControls()
-})
+    setFilterControls()
+
+    await nextTick()
+  } catch (error) {
+    console.error('Failed to initialize step:', error)
+  }
+}
 
 onBeforeUnmount(() => {
   filter.reset()
@@ -66,7 +76,8 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 
   try {
     const project = editorCtx.project
-    const { files } = JSON.parse(snapshotStr)
+    const fileCollection = JSON.parse(snapshotStr)
+    const files = getFiles(fileCollection)
     await project.loadGameFiles(files)
   } catch (error) {
     console.error('Failed to load snapshot:', error)
@@ -84,8 +95,7 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
-function handleStepCompleted() {
-  stepType.value = null
+async function handleStepCompleted() {
   emit('stepCompleted')
 }
 </script>

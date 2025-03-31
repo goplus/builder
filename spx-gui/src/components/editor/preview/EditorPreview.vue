@@ -73,9 +73,8 @@
           </UIButton>
         </TagNode>
 
-        <TagNode name="">
-          <UIButton class="button" type="boring" @click="handleStop"> {{ $t({ en: 'Stop', zh: '停止' }) }} </UIButton
-          >stop-run-button
+        <TagNode name="stop-run-button">
+          <UIButton class="button" type="boring" @click="handleStop"> {{ $t({ en: 'Stop', zh: '停止' }) }} </UIButton>
         </TagNode>
       </UICardHeader>
     </TagNode>

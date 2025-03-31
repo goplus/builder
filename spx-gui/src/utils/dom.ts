@@ -1,4 +1,4 @@
-import { ref, watch, type WatchSource } from 'vue'
+import { ref, watch, type WatchSource, nextTick } from 'vue'
 import { getCleanupSignal } from './disposable'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
@@ -94,37 +94,27 @@ export function useElementRect(elSource: WatchSource<HTMLElement | null>) {
     (el, _, onCleanup) => {
       if (!el) return
 
-      updateRect(el)
+      let running = true
 
-      // Use ResizeObserver to monitor size changes
-      const resizeObserver = new ResizeObserver(() => {
-        updateRect(el)
-      })
-      resizeObserver.observe(el)
+      function tick() {
+        if (!running) return
+        nextTick(() => {
+          updateRect(el as HTMLElement)
+          requestAnimationFrame(tick)
+        })
+      }
 
-      /**
-       * Use `MutationObserver` to monitor `style/class` changes.
-       * It is mainly used to deal with special cases such as the use of `transform`.
-       * `transform` is the rendering done by the browser on the existing element, which will not change the position and size
-       */
-      const mutationObserver = new MutationObserver(() => {
-        updateRect(el)
-      })
-      mutationObserver.observe(el, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      })
+      requestAnimationFrame(tick)
 
-      // Use IntersectionObserver to monitor scroll/viewport changes
-      const intersectionObserver = new IntersectionObserver(() => {
-        updateRect(el)
-      })
-      intersectionObserver.observe(el)
+      const updateHandler = () => updateRect(el)
+
+      el.addEventListener('transitionend', updateHandler)
+      el.addEventListener('animationend', updateHandler)
 
       onCleanup(() => {
-        resizeObserver.disconnect()
-        mutationObserver.disconnect()
-        intersectionObserver.disconnect()
+        running = false
+        el.removeEventListener('transitionend', updateHandler)
+        el.removeEventListener('animationend', updateHandler)
       })
     },
     { immediate: true }

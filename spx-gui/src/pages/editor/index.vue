@@ -47,30 +47,39 @@ import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context
 import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
-import { getStoryLine, type StoryLine, storyLineJson } from '@/apis/guidance'
+import { getStoryLine, type StoryLine } from '@/apis/guidance'
 import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
   projectName: string
 }>()
 
+const router = useRouter()
+
 const currentLevelIndex = computed(() => {
   return parseInt(getStringParam(router, 'levelIndex') ?? '0')
 })
 
-const isGuidanceMode = ref<boolean>(false)
+const isGuidanceMode = computed(() => {
+  return getStringParam(router, 'guide') !== null
+})
 const storyLineInfo = ref<StoryLine | null>(null)
 
+watch(
+  isGuidanceMode,
+  (value) => {
+    if (value) {
+      handleGuidance()
+    }
+  },
+  { immediate: true }
+)
 async function handleGuidance() {
-  if (getStringParam(router, 'guide') != null) {
-    isGuidanceMode.value = true
-    const storyLineId: string | null = getStringParam(router, 'storyLineId')
-    if (storyLineId != null) {
-      const data: StoryLine = await getStoryLine(storyLineId)
-      if (data) {
-        // storyLineInfo.value = data
-        storyLineInfo.value = storyLineJson
-      }
+  const storyLineId: string | null = getStringParam(router, 'storyLineId')
+  if (storyLineId != null) {
+    const data: StoryLine = await getStoryLine(storyLineId)
+    if (data) {
+      storyLineInfo.value = data
     }
   }
 }
@@ -84,8 +93,6 @@ const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())
-
-const router = useRouter()
 
 const withConfirm = useConfirmDialog()
 const { t } = useI18n()
@@ -268,7 +275,6 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 }
 
 onMounted(() => {
-  handleGuidance()
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
