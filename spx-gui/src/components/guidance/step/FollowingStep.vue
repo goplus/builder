@@ -190,6 +190,7 @@ watch(
   },
   { immediate: true }
 )
+
 async function handleTargetElementSubmit() {
   clearAllEventListeners()
   emit('followingStepCompleted')
