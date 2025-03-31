@@ -38,7 +38,6 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
-import { setCurrentProject } from '@/pages/editor/context'
 
 const props = defineProps<{
   projectName: string
@@ -250,16 +249,11 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
   }
 }
 
-watch(project, (newProject) => {
-  setCurrentProject(newProject || null)
-}, { immediate: true })
-
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
-  setCurrentProject(null)
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 

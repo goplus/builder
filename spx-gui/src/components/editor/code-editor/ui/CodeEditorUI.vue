@@ -67,6 +67,7 @@ import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
+import { editorService } from '@/pages/editor/context'
 
 const props = defineProps<{
   codeFilePath: string
@@ -172,10 +173,14 @@ watch(
 
 // We use `KeepAlive` (in `ProjectEditor`) to cache result of different editors (e.g. `SoundEditor`, `SpriteEditor`, `StageEditor`).
 // So we need to attach/detach UI when `CodeEditorUI` is activated/deactivated
-onActivated(() => codeEditorCtx.attachUI(uiRef.value))
+onActivated(() => {
+  codeEditorCtx.attachUI(uiRef.value)
+  editorService.registerCodeEditorUI(uiRef.value)
+})
 onDeactivated(() => {
   uiRef.value.closeTempTextDocuments()
   codeEditorCtx.detachUI(uiRef.value)
+  editorService.unregisterCodeEditorUI()
 })
 
 function handleCopilotTriggerClick() {

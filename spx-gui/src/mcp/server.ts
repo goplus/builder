@@ -3,11 +3,22 @@
  * Handles tool registration, request processing, and server-side operations
  * @module server
  */
+import { ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { serverTransport, setServerConnected } from './transport'
-import { createProject, navigatePage, addSprite, insertCode } from './tools'
-import { ref } from 'vue'
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { CreateProjectArgsSchema, createProject }  from './operations/project'; 
+import { RunGameArgsSchema, runGame }  from './operations/game'; 
+import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos }  from './operations/sprite'; 
+import { InsertCodeArgsSchema, insertCode }  from './operations/code'; 
+import { z } from "zod";
+import {
+  ToolSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+
+const ToolInputSchema = ToolSchema.shape.inputSchema;
+type ToolInput = z.infer<typeof ToolInputSchema>;
 
 /**
  * MCP Server instance configuration
@@ -29,106 +40,6 @@ const server = new Server(
 )
 
 /**
- * Available tools configuration
- * Defines the tools that can be called through the MCP server
- *
- * @constant
- * @type {Array<Tool>}
- */
-export const tools = [
-  {
-    name: 'create_project',
-    description: 'Create a new project with the specified name.',
-    parameters: {
-      type: 'object',
-      properties: {
-        projectName: {
-          type: 'string',
-          description: 'The name of the project to be created.'
-        }
-      },
-      required: ['projectName']
-    }
-  },
-  {
-    name: 'navigate_page',
-    description: 'Navigate to a specific page using the provided location URL.',
-    parameters: {
-      type: 'object',
-      properties: {
-        location: {
-          type: 'string',
-          description: 'The URL or path of the page to navigate to.'
-        }
-      },
-      required: ['location']
-    }
-  },
-  {
-    name: 'add_sprite',
-    description: 'Add a new sprite to the project from the specified library.',
-    parameters: {
-      type: 'object',
-      properties: {
-        libraryName: {
-          type: 'string',
-          description: 'The name of the library containing the sprite.'
-        },
-        spriteName: {
-          type: 'string',
-          description: 'The name of the sprite to be added after selection.'
-        }
-      },
-      required: ['libraryName', 'spriteName']
-    }
-  },
-  {
-    name: 'insert_code',
-    description: 'Insert or replace code at a specific location in the file.',
-    parameters: {
-      type: 'object',
-      properties: {
-        code: {
-          type: 'string',
-          description: 'The code to be inserted or replaced.'
-        },
-        insertRange: {
-          type: 'object',
-          description: 'The range where the code will be inserted.',
-          properties: {
-            startLine: {
-              type: 'number',
-              description: 'The starting line number for the insertion.'
-            },
-            endLine: {
-              type: 'number',
-              description: 'The ending line number for the insertion.'
-            }
-          },
-          required: ['startLine', 'endLine']
-        },
-        replaceRange: {
-          type: 'object',
-          description: 'The range of code to be replaced.',
-          properties: {
-            startLine: {
-              type: 'number',
-              description: 'The starting line number of the code to replace.'
-            },
-            endLine: {
-              type: 'number',
-              description: 'The ending line number of the code to replace.'
-            }
-          },
-          required: ['startLine', 'endLine']
-        }
-      },
-      required: ['code', 'insertRange']
-    }
-  }
-]
-
-/**
  * Interface for request history items
  */
 export interface RequestHistoryItem {
@@ -144,6 +55,29 @@ export interface RequestHistoryItem {
  */
 export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
 
+export const tools = [
+  {
+    name: "create_project",
+    description: "Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.",
+    inputSchema: zodToJsonSchema(CreateProjectArgsSchema) as ToolInput,
+  },
+  {
+    name: "run_game",
+    description: "Run the current Go+ XBuilder SPX project in the XBuilder environment.",
+    inputSchema: zodToJsonSchema(RunGameArgsSchema) as ToolInput,
+  },
+  {
+    name: "add_sprite_from_canvos",
+    description: "Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.",
+    inputSchema: zodToJsonSchema(AddSpriteFromCanvosArgsSchema) as ToolInput,
+  },
+  {
+    name: "insert_code",
+    description: "Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.",
+    inputSchema: zodToJsonSchema(InsertCodeArgsSchema) as ToolInput,
+  },
+]
+
 /**
  * Handler for listing available tools
  * Returns the list of registered tools and their configurations
@@ -154,7 +88,7 @@ export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools
-  }
+}
 })
 
 /**
@@ -181,181 +115,56 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     const { name, arguments: parameters } = request.params
-    let result
-
     switch (name) {
       case 'create_project': {
-        const { projectName } = parameters as { projectName: string }
-        if (!projectName || projectName.trim() === '') {
-          const errorMsg = 'Project name cannot be empty';
-          
-          // 更新请求历史，记录错误
-          mcpRequestHistory.value[0].response = errorMsg;
-          mcpRequestHistory.value[0].error = true;
-          
-          // 返回错误结果而不是抛出异常
-          return {
-            content: [
-              {
-                type: 'text',
-                text: errorMsg
-              }
-            ],
-            error: true // 可选，标记此结果为错误
-          };
+        const args = CreateProjectArgsSchema.safeParse(parameters);
+        if (!args.success) {
+          throw new Error(`Invalid arguments for create_project: ${args.error}`);
         }
-
-        const createResult = await createProject(projectName)
-        // 根据执行结果构建响应
-        if (createResult.success) {
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: createResult.message || `Successfully created project: ${projectName}`
-              }
-            ]
-          }
-        } else {
-          // 项目创建失败 - 不抛出错误，而是返回错误信息
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: `Failed to create project: ${createResult.message || 'Unknown error'}`
-              }
-            ],
-            error: true // 可选，标记此结果为错误
-          };
-          
-          // 更新请求历史，标记为错误
-          mcpRequestHistory.value[0].error = true;
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
+        const result = await createProject(args.data)
+        const response =  JSON.stringify(result, null, 2);
+        mcpRequestHistory.value[0].response = response;
+        return {
+          content: [{ type: "text", text: response }],
+        };
       }
-
-      case 'navigate_page': {
-        const { location } = parameters as { location: string }
-
-        if (!location || location.trim() === '') {
-          throw new Error('Location cannot be empty')
+      case 'run_game': {
+        const args = RunGameArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for run_game: ${args.error}`);
         }
-
-        await navigatePage(location)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully navigated to: ${location}`
-            }
-          ]
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
+        const result = await runGame(args.data)
+        const response =  JSON.stringify(result, null, 2);
+        mcpRequestHistory.value[0].response = response;
+        return {
+          content: [{ type: "text", text: response }],
+        };
       }
 
       case 'add_sprite': {
-        const { spriteHubName, spriteName } = parameters as { 
-          spriteHubName: string, 
-          spriteName: string 
+        const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters);
+        if (!args.success) {
+          throw new Error(`Invalid arguments for add_sprite: ${args.error}`);
+        }
+        const result = await addSpriteFromCanvos(args.data);
+        const response =  JSON.stringify(result, null, 2);
+        mcpRequestHistory.value[0].response = response;
+        return {
+          content: [{ type: "text", text: response}],
         };
-        
-        // 验证必需参数
-        if (!spriteHubName || typeof spriteHubName !== 'string') {
-          const errorMsg = 'Sprite hub name is required and must be a string';
-          mcpRequestHistory.value[0].response = errorMsg;
-          mcpRequestHistory.value[0].error = true;
-          return {
-            content: [{ type: 'text', text: errorMsg }],
-            error: true
-          };
-        }
-        
-        if (!spriteName || typeof spriteName !== 'string') {
-          const errorMsg = 'Sprite name is required and must be a string';
-          mcpRequestHistory.value[0].response = errorMsg;
-          mcpRequestHistory.value[0].error = true;
-          return {
-            content: [{ type: 'text', text: errorMsg }],
-            error: true
-          };
-        }
-        
-        const addResult = await addSprite(spriteHubName, spriteName);
-        
-        if (addResult.success) {
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: addResult.message || `Successfully added sprite "${spriteName}"`
-              }
-            ]
-          };
-        } else {
-          result = {
-            content: [
-              {
-                type: 'text',
-                text: `Failed to add sprite: ${addResult.message || 'Unknown error'}`
-              }
-            ],
-            error: true
-          };
-        }
-        
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2);
-        return result;
       }
 
       case 'insert_code': {
-        const { code, insertRange, replaceRange } = parameters as {
-          code: string
-          insertRange: { startLine: number; endLine: number }
-          replaceRange?: { startLine: number; endLine: number }
+        const args = InsertCodeArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for insert_code: ${args.error}`);
         }
-
-        if (!code) {
-          throw new Error('Code cannot be empty')
-        }
-
-        if (!insertRange || typeof insertRange.startLine !== 'number' || typeof insertRange.endLine !== 'number') {
-          throw new Error('Invalid insertion range')
-        }
-
-        if (insertRange.startLine < 1 || insertRange.endLine < insertRange.startLine) {
-          throw new Error('Invalid insertion line numbers')
-        }
-
-        if (replaceRange && (typeof replaceRange.startLine !== 'number' || typeof replaceRange.endLine !== 'number')) {
-          throw new Error('Invalid replace range')
-        }
-
-        if (replaceRange && (replaceRange.startLine < 1 || replaceRange.endLine < replaceRange.startLine)) {
-          throw new Error('Invalid replace line numbers')
-        }
-
-        await insertCode(code, insertRange, replaceRange)
-
-        const action = replaceRange ? 'replaced' : 'inserted'
-        const location = replaceRange
-          ? `from line ${replaceRange.startLine} to ${replaceRange.endLine}`
-          : `at line ${insertRange.startLine}`
-
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully ${action} code ${location}`
-            }
-          ]
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
+        const result = await insertCode(args.data)
+        const response =  JSON.stringify(result, null, 2);
+        mcpRequestHistory.value[0].response = response;
+        return {
+          content: [{ type: "text", text: response}],
+        };
       }
 
       default:
