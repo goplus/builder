@@ -29,7 +29,8 @@ func NewChat91DictCnGeminiClient(endpoint string) *Chat91DictCnGeminiClient {
 
 // Escape function, whose purpose is to prevent prompt injection.
 func escape(s string) string {
-	return strings.ReplaceAll(s, "`", "\\`")
+	s = strings.ReplaceAll(s, "`", "\\`")
+	return strings.ReplaceAll(s, "__", "")
 }
 
 func (c *Chat91DictCnGeminiClient) ContrastCode(ctx context.Context, content, code1, code2 string) (bool, error) {

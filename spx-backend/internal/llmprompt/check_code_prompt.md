@@ -139,7 +139,6 @@ You MUST follow the following requirements to analyze whether the functions of t
 
 * Only consider the functional implementation of the code, not considering the differences in code style and format.
 * Ignore naming differences between variable names and function names.
-* The __ symbol is where the user needs to fill in the code to fill in the gaps. When the user has filled in the space, __ will be replaced by the answer. If the user still has __ in the code, it means that the user did not complete the cloze and you should determine that the code did not pass. So you should return No.
 * The final conclusion must and can only be answered in a single word: Yes/No.
 
 Here are some examples to help you better understand how to make judgments:
@@ -179,29 +178,6 @@ Code 2:
 ```
 
 You should return *Yes*.
-
-### Note the __ symbol
-
-Code 1:
-
-```
-    onStart => {
-      __ "How to cross a zebra crossing?", 4 
-      __ "start" 
-    }
-```
-
-Code 2:
-
-```
-    onStart => {
-      think "How to cross a zebra crossing?", 4 
-      broadcast "start" 
-    }
-    
-```
-
-You should return *No*.
 
 ## Decision strategy
 
