@@ -178,7 +178,7 @@ const createWholeStoryLineProject = useCreateWholeStoryLineProject()
 const handleNewWholeStoryLineProject = useMessageHandle(
   async () => {
     const name = await createWholeStoryLineProject(props.storyLineInfo.title, editorCtx.project)
-    window.location.replace(getProjectEditorRoute(name))
+    router.replace(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn
@@ -332,12 +332,7 @@ function handleToClick(target: string): void {
       }
       break
     case 'replay':
-      currentNodeTask.value = null
-      videoPlayerRef.value?.hideCover()
-      currentNodeTaskIndex.value = 0
-      lastFinishedNodeTaskIndex.value = null
-      videoPlayerRef.value?.reset()
-      handleStartLevel()
+      window.location.reload()
       break
   }
 }
