@@ -7,18 +7,16 @@ import { ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { serverTransport, setServerConnected } from './transport'
-import { zodToJsonSchema } from "zod-to-json-schema";
-import { CreateProjectArgsSchema, createProject }  from './operations/project'; 
-import { RunGameArgsSchema, runGame }  from './operations/game'; 
-import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos }  from './operations/sprite'; 
-import { InsertCodeArgsSchema, insertCode }  from './operations/code'; 
-import { z } from "zod";
-import {
-  ToolSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { zodToJsonSchema } from 'zod-to-json-schema'
+import { CreateProjectArgsSchema, createProject } from './operations/project'
+import { RunGameArgsSchema, runGame } from './operations/game'
+import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos } from './operations/sprite'
+import { InsertCodeArgsSchema, insertCode } from './operations/code'
+import { z } from 'zod'
+import { ToolSchema } from '@modelcontextprotocol/sdk/types.js'
 
-const ToolInputSchema = ToolSchema.shape.inputSchema;
-type ToolInput = z.infer<typeof ToolInputSchema>;
+const ToolInputSchema = ToolSchema.shape.inputSchema
+type ToolInput = z.infer<typeof ToolInputSchema>
 
 /**
  * MCP Server instance configuration
@@ -57,25 +55,27 @@ export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
 
 export const tools = [
   {
-    name: "create_project",
-    description: "Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.",
-    inputSchema: zodToJsonSchema(CreateProjectArgsSchema) as ToolInput,
+    name: 'create_project',
+    description:
+      'Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.',
+    inputSchema: zodToJsonSchema(CreateProjectArgsSchema) as ToolInput
   },
   {
-    name: "run_game",
-    description: "Run the current Go+ XBuilder SPX project in the XBuilder environment.",
-    inputSchema: zodToJsonSchema(RunGameArgsSchema) as ToolInput,
+    name: 'run_game',
+    description: 'Run the current Go+ XBuilder SPX project in the XBuilder environment.',
+    inputSchema: zodToJsonSchema(RunGameArgsSchema) as ToolInput
   },
   {
-    name: "add_sprite_from_canvos",
-    description: "Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.",
-    inputSchema: zodToJsonSchema(AddSpriteFromCanvosArgsSchema) as ToolInput,
+    name: 'add_sprite_from_canvos',
+    description: 'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
+    inputSchema: zodToJsonSchema(AddSpriteFromCanvosArgsSchema) as ToolInput
   },
   {
-    name: "insert_code",
-    description: "Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.",
-    inputSchema: zodToJsonSchema(InsertCodeArgsSchema) as ToolInput,
-  },
+    name: 'insert_code',
+    description:
+      'Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.',
+    inputSchema: zodToJsonSchema(InsertCodeArgsSchema) as ToolInput
+  }
 ]
 
 /**
@@ -88,7 +88,7 @@ export const tools = [
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools
-}
+  }
 })
 
 /**
@@ -117,54 +117,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: parameters } = request.params
     switch (name) {
       case 'create_project': {
-        const args = CreateProjectArgsSchema.safeParse(parameters);
+        const args = CreateProjectArgsSchema.safeParse(parameters)
         if (!args.success) {
-          throw new Error(`Invalid arguments for create_project: ${args.error}`);
+          throw new Error(`Invalid arguments for create_project: ${args.error}`)
         }
         const result = await createProject(args.data)
-        const response =  JSON.stringify(result, null, 2);
-        mcpRequestHistory.value[0].response = response;
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
         return {
-          content: [{ type: "text", text: response }],
-        };
+          content: [{ type: 'text', text: response }]
+        }
       }
       case 'run_game': {
         const args = RunGameArgsSchema.safeParse(parameters)
         if (!args.success) {
-          throw new Error(`Invalid arguments for run_game: ${args.error}`);
+          throw new Error(`Invalid arguments for run_game: ${args.error}`)
         }
         const result = await runGame(args.data)
-        const response =  JSON.stringify(result, null, 2);
-        mcpRequestHistory.value[0].response = response;
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
         return {
-          content: [{ type: "text", text: response }],
-        };
+          content: [{ type: 'text', text: response }]
+        }
       }
 
       case 'add_sprite_from_canvos': {
-        const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters);
+        const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters)
         if (!args.success) {
-          throw new Error(`Invalid arguments for add_sprite: ${args.error}`);
+          throw new Error(`Invalid arguments for add_sprite: ${args.error}`)
         }
-        const result = await addSpriteFromCanvos(args.data);
-        const response =  JSON.stringify(result, null, 2);
-        mcpRequestHistory.value[0].response = response;
+        const result = await addSpriteFromCanvos(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
         return {
-          content: [{ type: "text", text: response}],
-        };
+          content: [{ type: 'text', text: response }]
+        }
       }
 
       case 'insert_code': {
         const args = InsertCodeArgsSchema.safeParse(parameters)
         if (!args.success) {
-          throw new Error(`Invalid arguments for insert_code: ${args.error}`);
+          throw new Error(`Invalid arguments for insert_code: ${args.error}`)
         }
         const result = await insertCode(args.data)
-        const response =  JSON.stringify(result, null, 2);
-        mcpRequestHistory.value[0].response = response;
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
         return {
-          content: [{ type: "text", text: response}],
-        };
+          content: [{ type: 'text', text: response }]
+        }
       }
 
       default:

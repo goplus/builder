@@ -82,9 +82,8 @@ export const editorService = {
    */
   hasCodeEditorUI(): boolean {
     return codeEditorUIRef.value !== null
-  },
+  }
 }
-
 
 // 导出简化的 getter 函数，方便直接使用
 export function getEditorCtx() {

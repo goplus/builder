@@ -131,13 +131,13 @@
                     <label :for="`${param.name}-${key}`">{{ nestedParam.description || key }}:</label>
                     {{ ensureNestedObjectExists(param.name) }}
                     <input
-                        v-if="nestedParam.type === 'string'"
-                        :id="`${param.name}-${key}`"
-                        v-model="paramValues[param.name][key]"
-                        type="text"
-                        class="param-input"
-                        :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
-                      />
+                      v-if="nestedParam.type === 'string'"
+                      :id="`${param.name}-${key}`"
+                      v-model="paramValues[param.name][key]"
+                      type="text"
+                      class="param-input"
+                      :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
+                    />
                     <input
                       v-if="nestedParam.type === 'number'"
                       :id="`${param.name}-${key}`"
@@ -337,7 +337,7 @@ function onClose() {
 function ensureNestedObjectExists(paramName: string) {
   // Ensure the parent object exists
   if (!paramValues.value[paramName]) {
-    paramValues.value[paramName] = {};
+    paramValues.value[paramName] = {}
   }
 }
 </script>
