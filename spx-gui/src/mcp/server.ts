@@ -5,15 +5,14 @@
  */
 import { ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import { CallToolRequestSchema, ListToolsRequestSchema, ToolSchema } from '@modelcontextprotocol/sdk/types.js'
 import { serverTransport, setServerConnected } from './transport'
 import { zodToJsonSchema } from 'zod-to-json-schema'
+import { z } from 'zod'
 import { CreateProjectArgsSchema, createProject } from './operations/project'
 import { RunGameArgsSchema, runGame } from './operations/game'
 import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos } from './operations/sprite'
 import { InsertCodeArgsSchema, insertCode } from './operations/code'
-import { z } from 'zod'
-import { ToolSchema } from '@modelcontextprotocol/sdk/types.js'
 
 const ToolInputSchema = ToolSchema.shape.inputSchema
 type ToolInput = z.infer<typeof ToolInputSchema>

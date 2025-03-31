@@ -6,6 +6,7 @@ import { getProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
 import { z } from 'zod'
 import router from '@/router'
+import { getDefaultProjectFile } from '@/components/project'
 
 // Schema definitions
 export const CreateProjectArgsSchema = z.object({
@@ -66,10 +67,10 @@ export async function createProject(options: CreateProjectOptions) {
       }
     }
 
-    // const defaultProjectFile = await getDefaultProjectFile()
+    const defaultProjectFile = await getDefaultProjectFile()
     const project = new Project(username, projectName)
     project.setVisibility(Visibility.Private)
-    // await project.loadGbpFile(defaultProjectFile)
+    await project.loadGbpFile(defaultProjectFile)
     await project.saveToCloud()
 
     // 构建项目URL
