@@ -381,7 +381,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 
 	query := ctrl.db.WithContext(ctx).Model(&model.Project{})
 
-	query = query.Where("hidden = 0")
+	query = query.Where("project.hidden = 0")
 
 	if params.Owner != nil {
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
