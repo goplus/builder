@@ -5,11 +5,7 @@ import type { Project } from '@/models/project'
 export function useCreateWholeStoryLineProject() {
   const modal = useModal(WholeStoryLineProjectCreateModal)
 
-  return async function createWholeStoryLineProject(title: LocaleMessage, project?: Project) {
-    let projectFile: File | undefined
-    if (project) {
-      projectFile = await project.exportGbpFile()
-    }
-    return modal({ title, projectFile })
+  return async function createWholeStoryLineProject(title: LocaleMessage, project: Project) {
+    return modal({ title, project })
   }
 }

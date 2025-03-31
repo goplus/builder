@@ -36,107 +36,110 @@
     <!-- 可拖拽的卡片组（悬浮卡片+悬浮按钮） -->
     <div class="card-group">
       <!-- navbar 状态栏 -->
-      <div v-show="videoPlayerVisible" class="player-container">
-        <div ref="cardGroupNavbarRef" class="navbar">
-          <div class="navbar-left" @click="handleToClick('storyline')">
-            <img src="./icons/path.svg" alt="" />
+      <Transition name="dialog-expand">
+        <div v-show="videoPlayerVisible" class="player-container">
+          <div ref="cardGroupNavbarRef" class="navbar">
+            <div class="navbar-left" @click="handleToClick('storyline')">
+              <img src="./icons/path.svg" alt="" />
+            </div>
+            <div class="navbar-center">
+              <span
+                >{{ $t({ zh: '进度：', en: 'Progress:' }) }}
+                {{ lastFinishedNodeTaskIndex !== null ? lastFinishedNodeTaskIndex + 1 : 0 }} /
+                {{ level.nodeTasks.length }}</span
+              >
+            </div>
+            <div class="navbar-right">
+              <UIButton
+                class="browse-btn"
+                type="secondary"
+                size="small"
+                :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING"
+                @click="handleToClick('skipVideo')"
+              >
+                {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
+              </UIButton>
+            </div>
           </div>
-          <div class="navbar-center">
-            <span
-              >{{ $t({ zh: '进度：', en: 'Progress:' }) }}
-              {{ lastFinishedNodeTaskIndex !== null ? lastFinishedNodeTaskIndex + 1 : 0 }} /
-              {{ level.nodeTasks.length }}</span
-            >
-          </div>
-          <div class="navbar-right">
-            <UIButton
-              class="browse-btn"
-              type="secondary"
-              size="small"
-              :disabled="levelStatus != LevelStatusType.VIDEO_PLAYING"
-              @click="handleToClick('skipVideo')"
-            >
-              {{ $t({ zh: '跳过视频', en: 'Skip video' }) }}
-            </UIButton>
-          </div>
+          <VideoPlayer
+            ref="videoPlayerRef"
+            class="video-player"
+            :video-url="level.video"
+            :segments="videoPlayerSegments"
+            @segment-end="handleSegmentEnd"
+          >
+            <template #cover>
+              <div v-if="levelStatus === LevelStatusType.LEVEL_END" class="cover cover-bg">
+                <div class="achievement">
+                  <div class="achievement-img">
+                    <img v-if="level.achievement.icon" :src="level.achievement.icon" alt="" />
+                    <img v-else src="./icons/thumbs-up.svg" alt="" />
+                  </div>
+                  <div class="achievement-desc">
+                    {{
+                      $t({
+                        zh: '太棒了！恭喜你完成本关卡挑战！',
+                        en: 'Marvelous! Congratulations on completing this level challenge!'
+                      })
+                    }}
+                  </div>
+                  <div v-if="isLastLevel" class="achievement-desc tip">
+                    {{
+                      $t({
+                        zh: '这已经是最后一关啦！',
+                        en: 'This is the last level!'
+                      })
+                    }}
+                  </div>
+                  <div v-if="level.achievement.title" class="achievement-desc">
+                    {{ $t({ zh: '解锁成就', en: 'Unlock achievements' }) }}:<span>{{
+                      $t(level.achievement.title)
+                    }}</span
+                    >!
+                  </div>
+                </div>
+                <div class="opt">
+                  <div class="opt-wrap" @click="handleToClick('storyline')">
+                    <img src="./icons/arrow.svg" alt="" />{{ $t({ zh: '返回故事线', en: 'Back' }) }}
+                  </div>
+                  <div @click="handleToClick('replay')">{{ $t({ zh: '重新挑战', en: 'Replay' }) }}</div>
+                  <div class="opt-wrap" @click="handleToClick('nextLevel')">
+                    {{ $t({ zh: '进入下一关', en: 'Next level' }) }}<img src="./icons/arrow.svg" alt="" />
+                  </div>
+                </div>
+              </div>
+              <div v-if="levelStatus === LevelStatusType.LEVEL_START" class="cover">
+                <!-- 此处播放视频，不展示cover -->
+              </div>
+              <div v-if="levelStatus === LevelStatusType.NODE_TASK_START" class="cover cover-bg">
+                <div class="cover-title">
+                  <span>{{
+                    $t({ zh: '现在，请你开始本节点任务！', en: 'Now, please start the task of this part' })
+                  }}</span>
+                </div>
+                <div class="cover-desc">
+                  <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
+                    Step{{ index + 1 }}: {{ $t(item.title) }}
+                  </div>
+                </div>
+                <div class="cover-btn" @click="handleStartNodeTask">
+                  <span>{{ $t({ zh: '现在开始', en: 'Get start' }) }}</span>
+                </div>
+              </div>
+              <div v-if="levelStatus === LevelStatusType.NODE_TASK_PENDING" class="cover cover-bg">
+                <div class="cover-desc">
+                  <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
+                    Step{{ index + 1 }}: {{ $t(item.title) }}
+                  </div>
+                </div>
+              </div>
+              <div v-if="levelStatus === LevelStatusType.NODE_TASK_END" class="cover">
+                <!-- 此时播放视频 不展示cover -->
+              </div>
+            </template>
+          </VideoPlayer>
         </div>
-        <VideoPlayer
-          ref="videoPlayerRef"
-          class="video-player"
-          :video-url="level.video"
-          :segments="videoPlayerSegments"
-          @segment-end="handleSegmentEnd"
-        >
-          <template #cover>
-            <div v-if="levelStatus === LevelStatusType.LEVEL_END" class="cover cover-bg">
-              <div class="achievement">
-                <div class="achievement-img">
-                  <img v-if="level.achievement.icon" :src="level.achievement.icon" alt="" />
-                  <img v-else src="./icons/thumbs-up.svg" alt="" />
-                </div>
-                <div class="achievement-desc">
-                  {{
-                    $t({
-                      zh: '太棒了！恭喜你完成本关卡挑战！',
-                      en: 'Marvelous! Congratulations on completing this level challenge!'
-                    })
-                  }}
-                </div>
-                <div v-if="isLastLevel" class="achievement-desc tip">
-                  {{
-                    $t({
-                      zh: '这已经是最后一关啦！',
-                      en: 'This is the last level!'
-                    })
-                  }}
-                </div>
-                <div v-if="level.achievement.title" class="achievement-desc">
-                  {{ $t({ zh: '解锁成就', en: 'Unlock achievements' }) }}:<span>{{ $t(level.achievement.title) }}</span
-                  >!
-                </div>
-              </div>
-              <div class="opt">
-                <div class="opt-wrap" @click="handleToClick('storyline')">
-                  <img src="./icons/arrow.svg" alt="" />{{ $t({ zh: '返回故事线', en: 'Back' }) }}
-                </div>
-                <div @click="handleToClick('replay')">{{ $t({ zh: '重新挑战', en: 'Replay' }) }}</div>
-                <div class="opt-wrap" @click="handleToClick('nextLevel')">
-                  {{ $t({ zh: '进入下一关', en: 'Next level' }) }}<img src="./icons/arrow.svg" alt="" />
-                </div>
-              </div>
-            </div>
-            <div v-if="levelStatus === LevelStatusType.LEVEL_START" class="cover">
-              <!-- 此处播放视频，不展示cover -->
-            </div>
-            <div v-if="levelStatus === LevelStatusType.NODE_TASK_START" class="cover cover-bg">
-              <div class="cover-title">
-                <span>{{
-                  $t({ zh: '现在，请你开始本节点任务！', en: 'Now, please start the task of this part' })
-                }}</span>
-              </div>
-              <div class="cover-desc">
-                <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
-                  Step{{ index + 1 }}: {{ $t(item.title) }}
-                </div>
-              </div>
-              <div class="cover-btn" @click="handleStartNodeTask">
-                <span>{{ $t({ zh: '现在开始', en: 'Get start' }) }}</span>
-              </div>
-            </div>
-            <div v-if="levelStatus === LevelStatusType.NODE_TASK_PENDING" class="cover cover-bg">
-              <div class="cover-desc">
-                <div v-for="(item, index) in currentNodeTask?.steps" :key="item.title.en">
-                  Step{{ index + 1 }}: {{ $t(item.title) }}
-                </div>
-              </div>
-            </div>
-            <div v-if="levelStatus === LevelStatusType.NODE_TASK_END" class="cover">
-              <!-- 此时播放视频 不展示cover -->
-            </div>
-          </template>
-        </VideoPlayer>
-      </div>
-
+      </Transition>
       <!-- 悬浮按钮 -->
       <div ref="floatingBtnRef" class="floating-btn">
         <img src="./icons/play.svg" alt="" />
@@ -174,8 +177,8 @@ const createWholeStoryLineProject = useCreateWholeStoryLineProject()
 
 const handleNewWholeStoryLineProject = useMessageHandle(
   async () => {
-    const name = await createWholeStoryLineProject({ en: 'Cross the road', zh: '过马路' }, editorCtx.project)
-    router.push(getProjectEditorRoute(name))
+    const name = await createWholeStoryLineProject(props.storyLineInfo.title, editorCtx.project)
+    router.replace(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn
@@ -246,7 +249,7 @@ const isLastLevel = ref<boolean>(false)
  */
 async function handleNodeTaskCompleted(): Promise<void> {
   levelStatus.value = LevelStatusType.NODE_TASK_END
-  videoPlayerVisible.value = true
+  if (props.currentLevelIndex !== props.storyLineInfo.levels.length - 1) videoPlayerVisible.value = true
   lastFinishedNodeTaskIndex.value = currentNodeTaskIndex.value
   currentNodeTask.value = null
   // 当前关卡最后一个节点任务完成
@@ -323,18 +326,13 @@ function handleToClick(target: string): void {
           })
         )
       } else {
-        router.push(
+        window.location.replace(
           `/editor/${projectName.value}?guide&storyLineId=${props.storyLineInfo.id}&levelIndex=${props.currentLevelIndex + 1}`
         )
-        levelIntroVisible.value = true
       }
       break
     case 'replay':
-      currentNodeTask.value = null
-      videoPlayerRef.value?.hideCover()
-      currentNodeTaskIndex.value = 0
-      videoPlayerRef.value?.reset()
-      handleStartLevel()
+      window.location.reload()
       break
   }
 }
@@ -657,5 +655,24 @@ export function useLevelPlayerCtx() {
       }
     }
   }
+}
+/* 视频播放器展开和收起的动画 */
+.dialog-expand-enter-active,
+.dialog-expand-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: top right;
+  pointer-events: auto;
+}
+
+.dialog-expand-enter-from,
+.dialog-expand-leave-to {
+  opacity: 0;
+  transform: scale(0.1);
+}
+
+.dialog-expand-enter-to,
+.dialog-expand-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
 </style>

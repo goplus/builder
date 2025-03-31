@@ -47,7 +47,7 @@ import type { LocaleMessage } from '@/utils/i18n'
 const props = defineProps<{
   visible: boolean
   title: LocaleMessage
-  projectFile?: File
+  project: Project
 }>()
 
 const emit = defineEmits<{
@@ -80,11 +80,8 @@ const handleSubmit = useMessageHandle(
     const projectName = form.value.name
     const owner = await untilNotNull(signedInUser)
     const project = new Project(owner.name, projectName)
-    if (props.projectFile) {
-      await project.loadGbpFile(props.projectFile)
-    } else {
-      console.warn('No project file provided, creating empty project')
-    }
+    const projectFile = await props.project.exportGbpFile()
+    await project.loadGbpFile(projectFile)
     project.setVisibility(Visibility.Private)
     await project.saveToCloud()
 
