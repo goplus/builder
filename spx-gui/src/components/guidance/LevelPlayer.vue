@@ -178,7 +178,7 @@ const createWholeStoryLineProject = useCreateWholeStoryLineProject()
 const handleNewWholeStoryLineProject = useMessageHandle(
   async () => {
     const name = await createWholeStoryLineProject(props.storyLineInfo.title, editorCtx.project)
-    router.push(getProjectEditorRoute(name))
+    window.location.replace(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn

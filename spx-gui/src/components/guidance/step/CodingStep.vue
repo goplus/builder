@@ -360,9 +360,6 @@ async function checkAnswer(): Promise<boolean> {
     return true
   }
 
-  console.log('userCode', userCode)
-  console.log('expectedCode', expectedCode)
-
   // 调用接口检测代码
   const result = await checkCode({
     userCode,
