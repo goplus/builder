@@ -512,20 +512,24 @@ func (ctrl *Controller) DeleteStoryline(ctx context.Context, id string) error {
 		return ErrBadRequest
 	}
 
-	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
-	if err != nil {
-		return err
-	}
+	return ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var mStoryline model.Storyline
+		if err := tx.Where("id = ?", storylineId).First(&mStoryline).Error; err != nil {
+			return fmt.Errorf("failed to get storyline %d: %w", storylineId, err)
+		}
 
-	if mAuthedUser.ID != mStoryline.OwnerID {
-		return ErrForbidden
-	}
+		if mAuthedUser.ID != mStoryline.OwnerID {
+			return ErrForbidden
+		}
 
-	if err := ctrl.db.WithContext(ctx).
-		Delete(mStoryline).
-		Error; err != nil {
-		return fmt.Errorf("failed to delete storyline: %w", err)
-	}
+		if err := tx.Where("storyline_id = ?", storylineId).Delete(&model.UserStorylineRelationship{}).Error; err != nil {
+			return fmt.Errorf("failed to delete user-storyline relationships: %w", err)
+		}
 
-	return nil
+		if err := tx.Delete(&mStoryline).Error; err != nil {
+			return fmt.Errorf("failed to delete storyline: %w", err)
+		}
+
+		return nil
+	})
 }
