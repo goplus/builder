@@ -77,7 +77,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('mouseover', handleMouseOver)
-  window.removeEventListener('click', handleClick)
+  window.removeEventListener('click', handleClick, true)
   elementToNode = null
   nodeToPath = null
   currentPath.value = null
