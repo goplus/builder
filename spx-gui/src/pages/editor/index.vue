@@ -60,6 +60,8 @@ const props = defineProps<{
   projectName: string
 }>()
 
+const router = useRouter()
+
 const currentLevelIndex = computed(() => {
   return parseInt(getStringParam(router, 'levelIndex') ?? '0')
 })
@@ -71,6 +73,15 @@ enum GuidanceMode {
 const guidanceMode = ref<GuidanceMode>(GuidanceMode.None)
 const storyLineInfo = ref<StoryLine | null>(null)
 
+watch(
+  guidanceMode,
+  (value) => {
+    if (value) {
+      handleGuidance()
+    }
+  },
+  { immediate: true }
+)
 async function handleGuidance() {
   if (getStringParam(router, 'guide') != null) {
     guidanceMode.value = GuidanceMode.Guidance
@@ -107,8 +118,6 @@ const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())
-
-const router = useRouter()
 
 const withConfirm = useConfirmDialog()
 const { t } = useI18n()
@@ -291,7 +300,6 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 }
 
 onMounted(() => {
-  handleGuidance()
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 

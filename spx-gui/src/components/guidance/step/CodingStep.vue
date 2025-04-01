@@ -8,88 +8,112 @@
     >
       <div class="code-dialog-group">
         <!-- 点击检测按钮弹窗 -->
-        <CodingDialog
-          v-show="checkDialogVisible"
-          :content-height="checkCodeStatus === CheckCodeStatus.CHECKING ? '50px' : '100px'"
-        >
-          <template #title>
-            <div ref="checkDialogTitleRef" style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move">
-              {{
-                checkCodeStatus === CheckCodeStatus.CHECKING
-                  ? t({ zh: '代码检测中', en: 'Code Checking' })
-                  : t({ zh: '检测结果', en: 'Check Result' })
-              }}
-            </div>
-          </template>
-          <template #content>
-            <div
-              v-if="checkCodeStatus === CheckCodeStatus.CHECKING"
-              style="height: 100%; display: flex; justify-content: center; align-items: center"
-            >
-              <div style="width: 35px; height: 35px" class="rotating-img">
-                <img src="../icons/checking.svg" alt="" style="width: 100%; height: 100%" />
+        <Transition name="dialog-expand">
+          <CodingDialog
+            v-show="checkDialogVisible"
+            class="dialog"
+            :content-height="checkCodeStatus === CheckCodeStatus.CHECKING ? '50px' : '100px'"
+          >
+            <template #title>
+              <div
+                ref="checkDialogTitleRef"
+                style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move"
+              >
+                {{
+                  checkCodeStatus === CheckCodeStatus.CHECKING
+                    ? t({ zh: '代码检测中', en: 'Code Checking' })
+                    : t({ zh: '检测结果', en: 'Check Result' })
+                }}
               </div>
-            </div>
-            <div
-              v-else-if="checkCodeStatus === CheckCodeStatus.SUCCESS"
-              style="
-                height: 100%;
-                padding-top: 5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-around;
-              "
-            >
-              <div>{{ t({ zh: '太棒了！您通过了！', en: 'Check Success！' }) }}</div>
-              <div style="display: flex; justify-content: right; padding-right: 10px">
-                <div class="check-btn" @click="handleNextBtnClick">
-                  <span>{{ t({ zh: '下一步', en: 'Next' }) }}</span>
+            </template>
+            <template #content>
+              <div
+                v-if="checkCodeStatus === CheckCodeStatus.CHECKING"
+                style="height: 100%; display: flex; justify-content: center; align-items: center"
+              >
+                <div style="width: 35px; height: 35px" class="rotating-img">
+                  <img src="../icons/checking.svg" alt="" style="width: 100%; height: 100%" />
                 </div>
               </div>
-            </div>
-            <div
-              v-else-if="checkCodeStatus === CheckCodeStatus.FAILED"
-              style="
-                height: 100%;
-                padding-top: 5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-around;
-              "
-            >
-              <div>{{ t({ zh: '很遗憾，您代码有错误！', en: 'Check Failed！' }) }}</div>
-              <div style="display: flex; justify-content: right; padding-right: 10px">
-                <div class="check-btn" @click="handleRetryBtnClick">
-                  <span>{{ t({ zh: '重试', en: 'Retry' }) }}</span>
+              <div
+                v-else-if="checkCodeStatus === CheckCodeStatus.SUCCESS"
+                style="
+                  height: 100%;
+                  padding-top: 5px;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-around;
+                "
+              >
+                <div>{{ t({ zh: '太棒了！您通过了！', en: 'Check Success！' }) }}</div>
+                <div style="display: flex; justify-content: right; padding-right: 10px">
+                  <div class="check-btn" @click="handleNextBtnClick">
+                    <span>{{ t({ zh: '下一步', en: 'Next' }) }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </template>
-        </CodingDialog>
+              <div
+                v-else-if="checkCodeStatus === CheckCodeStatus.FAILED"
+                style="
+                  height: 100%;
+                  padding-top: 5px;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-around;
+                "
+              >
+                <div>{{ t({ zh: '很遗憾，您代码有错误！', en: 'Check Failed！' }) }}</div>
+                <div style="display: flex; justify-content: right; padding-right: 10px">
+                  <div class="check-btn" @click="handleRetryBtnClick">
+                    <span>{{ t({ zh: '重试', en: 'Retry' }) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </CodingDialog>
+        </Transition>
         <!-- 点击查看该步骤描述按钮弹窗 -->
-        <CodingDialog v-show="descDialogVisible" content-height="240px" style="margin-top: 45px">
-          <template #title>
-            <div ref="descDialogTitleRef" style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move">
-              {{ t({ zh: '当前步骤', en: 'Current Step' }) }}
-            </div>
-          </template>
-          <template #content>
-            <div style="padding-top: 10px">
-              {{ t(props.step.description) }}
-            </div>
-          </template>
-        </CodingDialog>
+        <Transition name="dialog-expand">
+          <CodingDialog v-show="descDialogVisible" content-height="240px" class="dialog" style="top: 45px">
+            <template #title>
+              <div ref="descDialogTitleRef" style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move">
+                {{ t({ zh: '当前步骤', en: 'Current Step' }) }}
+              </div>
+            </template>
+            <template #content>
+              <div style="padding-top: 10px">
+                {{ t(props.step.description) }}
+              </div>
+            </template>
+          </CodingDialog>
+        </Transition>
         <!-- 点击查看参考答案按钮弹窗 -->
-        <CodingDialog v-show="answerDialogVisible" content-height="240px" style="margin-top: 90px">
-          <template #title>
-            <div ref="answerDialogTitleRef" style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move">
-              {{ t({ zh: '参考答案', en: 'Answer' }) }}
-            </div>
-          </template>
-          <template #content>
-            <pre class="answer-code"><code v-html="answer"></code></pre>
-          </template>
-        </CodingDialog>
+        <Transition name="dialog-expand">
+          <CodingDialog v-show="answerDialogVisible" content-height="240px" class="dialog" style="top: 95px">
+            <template #title>
+              <div
+                ref="answerDialogTitleRef"
+                style="font-weight: bold; font-size: 18px; line-height: 30px; cursor: move"
+              >
+                {{ t({ zh: '参考答案', en: 'Answer' }) }}
+              </div>
+            </template>
+            <template #content>
+              <div
+                class="answer-container"
+                @mouseenter="!isCopyStatusLocked && (copyStatus = CopyStatus.WAITING)"
+                @mouseleave="!isCopyStatusLocked && (copyStatus = CopyStatus.HIDDEN)"
+              >
+                <div class="code-type-indicator" @click="copyAnswerCode">
+                  <span v-if="copyStatus === CopyStatus.HIDDEN">Go+</span>
+                  <img v-else-if="copyStatus === CopyStatus.WAITING" src="../icons/copy.svg" alt="复制" />
+                  <img v-else-if="copyStatus === CopyStatus.SUCCESS" src="../icons/copy-success.svg" alt="复制成功" />
+                </div>
+                <pre class="answer-code"><code v-html="answer"></code></pre>
+              </div>
+            </template>
+          </CodingDialog>
+        </Transition>
       </div>
       <div class="code-button-group">
         <!-- 检测代码按钮 -->
@@ -320,8 +344,7 @@ async function checkAnswer(): Promise<boolean> {
   const targetFileContent = getTargetFileContent(props.step.coding.path, props.step.snapshot.endSnapshot)
   const encodedContent = targetFileContent.replace('data:;,', '')
   let expectedCode = decodeURIComponent(encodedContent)
-  // const userCode = await getUserCode(props.step.coding.path)
-  let userCode = await getUserCode('Sprite.spx')
+  let userCode = await getUserCode(props.step.coding.path)
 
   const normalize = (str: string) =>
     str
@@ -356,11 +379,12 @@ async function getUserCode(path: string): Promise<string> {
 
 // 点击查看该步骤描述按钮
 function handleDescFloatingBtnClick() {
-  if (checkDialogVisible.value) return
+  if (checkDialogVisible.value && checkCodeStatus.value === CheckCodeStatus.CHECKING) return
   if (descDialogVisible.value) {
     descDialogVisible.value = false
   } else {
     descDialogVisible.value = true
+    checkDialogVisible.value = false
     answerDialogVisible.value = false
     setVideoPlayerVisible(false)
   }
@@ -368,11 +392,12 @@ function handleDescFloatingBtnClick() {
 
 // 点击查看参考答案按钮
 function handleAnswerFloatingBtnClick() {
-  if (checkDialogVisible.value) return
+  if (checkDialogVisible.value && checkCodeStatus.value === CheckCodeStatus.CHECKING) return
   if (answerDialogVisible.value) {
     answerDialogVisible.value = false
   } else {
     answerDialogVisible.value = true
+    checkDialogVisible.value = false
     descDialogVisible.value = false
     setVideoPlayerVisible(false)
   }
@@ -381,6 +406,7 @@ function handleAnswerFloatingBtnClick() {
 // 和视频组件切换按钮联动
 watch(getVideoPlayerVisible, (visible: boolean) => {
   if (visible) {
+    checkDialogVisible.value = false
     descDialogVisible.value = false
     answerDialogVisible.value = false
   }
@@ -433,6 +459,36 @@ watch(
     }
   }
 )
+
+// 控制复制图标显示状态
+enum CopyStatus {
+  HIDDEN,
+  WAITING,
+  SUCCESS
+}
+const copyStatus = ref(CopyStatus.HIDDEN)
+const isCopyStatusLocked = ref(false)
+// 复制参考答案代码
+async function copyAnswerCode() {
+  if (!answer.value) return
+
+  // 创建一个不包含HTML标签的纯文本版本
+  const tempElement = document.createElement('div')
+  tempElement.innerHTML = answer.value
+  const plainText = tempElement.textContent || tempElement.innerText || ''
+
+  try {
+    await navigator.clipboard.writeText(plainText)
+    isCopyStatusLocked.value = true
+    copyStatus.value = CopyStatus.SUCCESS
+
+    setTimeout(() => {
+      isCopyStatusLocked.value = false
+    }, 1000)
+  } catch (err) {
+    console.error('复制失败:', err)
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -447,11 +503,40 @@ watch(
   .code-dialog-group {
     margin-right: 5px;
     pointer-events: none;
+    position: relative;
+    .dialog {
+      position: absolute;
+      right: 0;
+    }
+    .answer-container {
+      position: relative;
+    }
+
+    .code-type-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #bfbfbf;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      transition: all 0.2s ease;
+
+      img {
+        width: 18px;
+        height: 18px;
+      }
+    }
     .answer-code {
       background-color: #f0f0f0;
       height: 100%;
       border-radius: 10px;
       padding: 10px;
+      padding-top: 15px;
       overflow: auto;
     }
     code {
@@ -507,5 +592,24 @@ watch(
 
 .rotating-img {
   animation: rotate 1.5s linear infinite;
+}
+/* 对话框展开和收起的动画 */
+.dialog-expand-enter-active,
+.dialog-expand-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: top right;
+  pointer-events: auto;
+}
+
+.dialog-expand-enter-from,
+.dialog-expand-leave-to {
+  opacity: 0;
+  transform: scale(0.1);
+}
+
+.dialog-expand-enter-to,
+.dialog-expand-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
 </style>

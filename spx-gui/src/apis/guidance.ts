@@ -92,6 +92,11 @@ export type StoryLineStudy = {
   lastFinishedLevelIndex: number // 故事线状态，其值为当前最新已完成的关卡下标
 }
 
+export type UpdateStoryLineStudyInput = {
+  id: string
+  lastFinishedLevelIndex: number // 当前最新完成的关卡下标
+}
+
 type Placement = {
   /** X position in percentage */
   x: number
@@ -434,9 +439,6 @@ export async function createStoryLineStudy(storyLineId: string): Promise<StoryLi
   return client.post(`/storyline/${encodeURIComponent(storyLineId)}/study`) as Promise<StoryLineStudy>
 }
 
-export async function updateStoryLineStudy(storyLineStudy: StoryLineStudy): Promise<StoryLineStudy> {
-  return client.put(
-    `/storyline/${encodeURIComponent(storyLineStudy.storyLineId)}/study`,
-    storyLineStudy
-  ) as Promise<StoryLineStudy>
+export async function updateStoryLineStudy(input: UpdateStoryLineStudyInput): Promise<StoryLineStudy> {
+  return client.put(`/storyline/${encodeURIComponent(input.id)}/study`, input) as Promise<StoryLineStudy>
 }

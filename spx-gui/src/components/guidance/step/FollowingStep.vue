@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch, computed } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
@@ -153,31 +153,40 @@ watch(
   }
 )
 
+const targetPath = computed(() => {
+  if (!props.step.taggingHandler || props.step.type !== 'following') return null
+
+  const entry = Object.entries(props.step.taggingHandler).find(([path]) => !!path)
+  return entry ? { path: entry[0], handlerType: entry[1] } : null
+})
+
+const targetElement = computed(() => (targetPath.value ? getElement(targetPath.value.path) : null))
+
 watch(
-  () => props.step,
-  (newStep) => {
-    nextTick(() => {
-      if (newStep.type !== 'following' || !newStep.taggingHandler) return
+  targetElement,
+  (element) => {
+    clearAllEventListeners()
 
-      Object.keys(newStep.taggingHandler).forEach((path) => {
-        if (!path) return
+    if (!element || !targetPath.value) return
 
-        const type = newStep.taggingHandler[path]
-        const element = getElement(path)
+    const { handlerType } = targetPath.value
 
-        if (!element) return
+    const eventHandlers = {
+      [TaggingHandlerType.SubmitToNext]: {
+        type: 'submit',
+        handler: handleTargetElementSubmit
+      },
+      [TaggingHandlerType.ClickToNext]: {
+        type: 'click',
+        handler: handleTargetElementClick
+      }
+    }
 
-        if (type === TaggingHandlerType.SubmitToNext) {
-          const handler = handleTargetElementSubmit
-          element.addEventListener('submit', handler)
-          eventListeners.value.push({ element, type: 'submit', handler })
-        } else if (type === TaggingHandlerType.ClickToNext) {
-          const handler = handleTargetElementClick
-          element.addEventListener('click', handler)
-          eventListeners.value.push({ element, type: 'click', handler })
-        }
-      })
-    })
+    if (eventHandlers[handlerType]) {
+      const { type, handler } = eventHandlers[handlerType]
+      element.addEventListener(type, handler)
+      eventListeners.value.push({ element, type, handler })
+    }
   },
   { immediate: true }
 )
@@ -189,6 +198,7 @@ async function handleTargetElementSubmit() {
 
 async function handleTargetElementClick() {
   clearAllEventListeners()
+
   emit('followingStepCompleted')
 }
 
