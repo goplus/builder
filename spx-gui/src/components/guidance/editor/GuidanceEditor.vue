@@ -5,7 +5,7 @@
     </div>
     <div v-show="!isShowIcon" class="guidance-editor-content">
       <StoryLineEditor v-show="editorStatus === editorStatusType.STORYLINE" v-model:story-line="storyLine" @level-change="handleLevelChange" @minimize="isShowIcon = true"/>
-      <LevelEditor v-show="editorStatus === editorStatusType.LEVELEDITOR" :level="level" />
+      <!-- <LevelEditor v-show="editorStatus === editorStatusType.LEVELEDITOR" :level="level" /> -->
     </div>
   </div>
 </template>
@@ -14,7 +14,7 @@
 import { computed, ref } from 'vue'
 import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
-import LevelEditor from './LevelEditor.vue'
+// import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
@@ -33,9 +33,9 @@ enum editorStatusType {
 const editorStatus = ref<editorStatusType>(editorStatusType.STORYLINE)
 
 const levelIndex = ref<number>(0)
-const level = computed(() => {
-  return storyLine.value.levels[levelIndex.value]
-})
+// const level = computed(() => {
+//   return storyLine.value.levels[levelIndex.value]
+// })
 function handleLevelChange(index: number) {
   levelIndex.value = index
 }
