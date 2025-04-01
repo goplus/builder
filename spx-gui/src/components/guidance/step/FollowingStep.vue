@@ -46,10 +46,15 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, nextTick, ref, watch, computed } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
+
+interface ComponentWithEmit extends ComponentPublicInstance {
+  emit: (event: string, ...args: any[]) => any
+}
 
 const props = defineProps<{
   step: Step
@@ -62,7 +67,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const { getElement } = useTag()
+const { getElement, getInstance } = useTag()
 
 const eventListeners = ref<{ element: HTMLElement; type: string; handler: Function }[]>([])
 
@@ -116,14 +121,6 @@ onMounted(() => {
   })
 })
 
-function clearAllEventListeners() {
-  for (const { element, type, handler } of eventListeners.value) {
-    element.removeEventListener(type, handler as EventListener)
-  }
-
-  eventListeners.value = []
-}
-
 onBeforeUnmount(() => {
   const element = getTargetElement()
   if (element) {
@@ -153,43 +150,95 @@ watch(
   }
 )
 
-const targetPath = computed(() => {
-  if (!props.step.taggingHandler || props.step.type !== 'following') return null
+let pollTimer: ReturnType<typeof setTimeout> | null = null
 
-  const entry = Object.entries(props.step.taggingHandler).find(([path]) => !!path)
-  return entry ? { path: entry[0], handlerType: entry[1] } : null
-})
+function initializeHandlers() {
+  clearAllEventListeners()
 
-const targetElement = computed(() => (targetPath.value ? getElement(targetPath.value.path) : null))
+  if (props.step.taggingHandler && props.step.type === 'following') {
+    const handlers = props.step.taggingHandler
+    let allHandled = true
+
+    Object.entries(handlers).forEach(([path, handlerType]) => {
+      if (!path) return
+
+      const element = getElement(path)
+
+      if (element) {
+        applyHandler(element, handlerType as string, path)
+      } else {
+        allHandled = false
+      }
+    })
+
+    if (!allHandled) {
+      if (pollTimer) clearTimeout(pollTimer)
+      pollTimer = setTimeout(initializeHandlers, 300)
+    }
+  }
+}
+
+function applyHandler(element: HTMLElement, handlerType: string, path: string) {
+  const eventHandlers = {
+    [TaggingHandlerType.SubmitToNext]: {
+      type: 'submit',
+      handler: handleTargetElementSubmit
+    },
+    [TaggingHandlerType.ClickToNext]: {
+      type: 'click',
+      handler: handleTargetElementClick
+    }
+  }
+
+  if (handlerType === TaggingHandlerType.CancelForbidden) {
+    handleCancelForbidden(element, path)
+    return
+  } else if (handlerType === TaggingHandlerType.SubmitToNext || handlerType === TaggingHandlerType.ClickToNext) {
+    const { type, handler } = eventHandlers[handlerType]
+    element.addEventListener(type, handler)
+    eventListeners.value.push({ element, type, handler })
+  }
+}
+
+function clearAllEventListeners() {
+  for (const { element, type, handler } of eventListeners.value) {
+    element.removeEventListener(type, handler as EventListener)
+  }
+  eventListeners.value = []
+}
 
 watch(
-  targetElement,
-  (element) => {
-    clearAllEventListeners()
-
-    if (!element || !targetPath.value) return
-
-    const { handlerType } = targetPath.value
-
-    const eventHandlers = {
-      [TaggingHandlerType.SubmitToNext]: {
-        type: 'submit',
-        handler: handleTargetElementSubmit
-      },
-      [TaggingHandlerType.ClickToNext]: {
-        type: 'click',
-        handler: handleTargetElementClick
-      }
-    }
-
-    if (eventHandlers[handlerType]) {
-      const { type, handler } = eventHandlers[handlerType]
-      element.addEventListener(type, handler)
-      eventListeners.value.push({ element, type, handler })
-    }
+  () => props.step.taggingHandler,
+  () => {
+    initializeHandlers()
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
+
+function handleCancelForbidden(element: HTMLElement, path: string) {
+  try {
+    const instance = getInstance(path) as ComponentWithEmit
+
+    if (instance && typeof instance.emit === 'function') {
+      const originalEmit = instance.emit
+
+      instance.emit = function (event: string, ...args: any[]) {
+        if (event === 'cancelled') {
+          return
+        }
+        return originalEmit.call(this, event, ...args)
+      }
+
+      eventListeners.value.push({
+        element,
+        type: 'emitOverride',
+        handler: originalEmit
+      })
+    }
+  } catch (error) {
+    console.warn('拦截取消事件失败:', error)
+  }
+}
 
 async function handleTargetElementSubmit() {
   clearAllEventListeners()
