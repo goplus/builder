@@ -3,11 +3,20 @@
  * Handles tool registration, request processing, and server-side operations
  * @module server
  */
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
-import { serverTransport, setServerConnected } from './transport'
-import { createProject, navigatePage, addSprite, insertCode } from './tools'
 import { ref } from 'vue'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { CallToolRequestSchema, ListToolsRequestSchema, ToolSchema } from '@modelcontextprotocol/sdk/types.js'
+import { serverTransport, setServerConnected } from './transport'
+import { zodToJsonSchema } from 'zod-to-json-schema'
+import { z } from 'zod'
+import { CreateProjectArgsSchema, createProject } from './operations/project'
+import { RunGameArgsSchema, StopGameArgsSchema, runGame, stopGame } from './operations/game'
+import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos } from './operations/sprite'
+import { InsertCodeArgsSchema, insertCode } from './operations/code'
+import { AddStageBackdropFromCanvosArgsSchema, addStageBackdropFromCanvos } from './operations/stage'
+
+const ToolInputSchema = ToolSchema.shape.inputSchema
+type ToolInput = z.infer<typeof ToolInputSchema>
 
 /**
  * MCP Server instance configuration
@@ -29,106 +38,6 @@ const server = new Server(
 )
 
 /**
- * Available tools configuration
- * Defines the tools that can be called through the MCP server
- *
- * @constant
- * @type {Array<Tool>}
- */
-export const tools = [
-  {
-    name: 'create_project',
-    description: 'Create a new project with the specified name.',
-    parameters: {
-      type: 'object',
-      properties: {
-        projectName: {
-          type: 'string',
-          description: 'The name of the project to be created.'
-        }
-      },
-      required: ['projectName']
-    }
-  },
-  {
-    name: 'navigate_page',
-    description: 'Navigate to a specific page using the provided location URL.',
-    parameters: {
-      type: 'object',
-      properties: {
-        location: {
-          type: 'string',
-          description: 'The URL or path of the page to navigate to.'
-        }
-      },
-      required: ['location']
-    }
-  },
-  {
-    name: 'add_sprite',
-    description: 'Add a new sprite to the project from the specified library.',
-    parameters: {
-      type: 'object',
-      properties: {
-        libraryName: {
-          type: 'string',
-          description: 'The name of the library containing the sprite.'
-        },
-        spriteName: {
-          type: 'string',
-          description: 'The name of the sprite to be added after selection.'
-        }
-      },
-      required: ['libraryName', 'spriteName']
-    }
-  },
-  {
-    name: 'insert_code',
-    description: 'Insert or replace code at a specific location in the file.',
-    parameters: {
-      type: 'object',
-      properties: {
-        code: {
-          type: 'string',
-          description: 'The code to be inserted or replaced.'
-        },
-        insertRange: {
-          type: 'object',
-          description: 'The range where the code will be inserted.',
-          properties: {
-            startLine: {
-              type: 'number',
-              description: 'The starting line number for the insertion.'
-            },
-            endLine: {
-              type: 'number',
-              description: 'The ending line number for the insertion.'
-            }
-          },
-          required: ['startLine', 'endLine']
-        },
-        replaceRange: {
-          type: 'object',
-          description: 'The range of code to be replaced.',
-          properties: {
-            startLine: {
-              type: 'number',
-              description: 'The starting line number of the code to replace.'
-            },
-            endLine: {
-              type: 'number',
-              description: 'The ending line number of the code to replace.'
-            }
-          },
-          required: ['startLine', 'endLine']
-        }
-      },
-      required: ['code', 'insertRange']
-    }
-  }
-]
-
-/**
  * Interface for request history items
  */
 export interface RequestHistoryItem {
@@ -143,6 +52,41 @@ export interface RequestHistoryItem {
  * Reactive request history store
  */
 export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
+
+export const tools = [
+  {
+    name: 'create_project',
+    description:
+      'Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.',
+    inputSchema: zodToJsonSchema(CreateProjectArgsSchema) as ToolInput
+  },
+  {
+    name: 'stop_game',
+    description: 'Stop the current Go+ XBuilder SPX project in the XBuilder environment.',
+    inputSchema: zodToJsonSchema(StopGameArgsSchema) as ToolInput
+  },
+  {
+    name: 'run_game',
+    description: 'Run the current Go+ XBuilder SPX project in the XBuilder environment.',
+    inputSchema: zodToJsonSchema(RunGameArgsSchema) as ToolInput
+  },
+  {
+    name: 'add_stage_backdrop_from_canvos',
+    description: 'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
+    inputSchema: zodToJsonSchema(AddStageBackdropFromCanvosArgsSchema) as ToolInput
+  },
+  {
+    name: 'add_sprite_from_canvos',
+    description: 'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
+    inputSchema: zodToJsonSchema(AddSpriteFromCanvosArgsSchema) as ToolInput
+  },
+  {
+    name: 'insert_code',
+    description:
+      'Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.',
+    inputSchema: zodToJsonSchema(InsertCodeArgsSchema) as ToolInput
+  }
+]
 
 /**
  * Handler for listing available tools
@@ -181,124 +125,78 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     const { name, arguments: parameters } = request.params
-    let result
-
     switch (name) {
       case 'create_project': {
-        const { projectName } = parameters as { projectName: string }
-
-        if (!projectName || projectName.trim() === '') {
-          throw new Error('Project name cannot be empty')
+        const args = CreateProjectArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for create_project: ${args.error}`)
         }
-
-        await createProject(projectName)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully created project: ${projectName}`
-            }
-          ]
+        const result = await createProject(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
         }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
       }
-
-      case 'navigate_page': {
-        const { location } = parameters as { location: string }
-
-        if (!location || location.trim() === '') {
-          throw new Error('Location cannot be empty')
+      case 'run_game': {
+        const args = RunGameArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for run_game: ${args.error}`)
         }
-
-        await navigatePage(location)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully navigated to: ${location}`
-            }
-          ]
+        const result = await runGame(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
         }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
       }
-
-      case 'add_sprite': {
-        const { libraryName, spriteName } = parameters as {
-          libraryName: string
-          spriteName: string
+      case 'stop_game': {
+        const args = StopGameArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for stop_game: ${args.error}`)
         }
-
-        if (!libraryName || libraryName.trim() === '') {
-          throw new Error('Library name cannot be empty')
+        const result = await stopGame(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
         }
-
-        if (!spriteName || spriteName.trim() === '') {
-          throw new Error('Sprite name cannot be empty')
-        }
-
-        await addSprite(libraryName, spriteName)
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully added sprite '${spriteName}' from library '${libraryName}'`
-            }
-          ]
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
       }
-
+      case 'add_sprite_from_canvos': {
+        const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for add_sprite: ${args.error}`)
+        }
+        const result = await addSpriteFromCanvos(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
+        }
+      }
+      case 'add_stage_backdrop_from_canvos': {
+        const args = AddStageBackdropFromCanvosArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for add_sprite: ${args.error}`)
+        }
+        const result = await addStageBackdropFromCanvos(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
+        }
+      }
       case 'insert_code': {
-        const { code, insertRange, replaceRange } = parameters as {
-          code: string
-          insertRange: { startLine: number; endLine: number }
-          replaceRange?: { startLine: number; endLine: number }
+        const args = InsertCodeArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for insert_code: ${args.error}`)
         }
-
-        if (!code) {
-          throw new Error('Code cannot be empty')
+        const result = await insertCode(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
         }
-
-        if (!insertRange || typeof insertRange.startLine !== 'number' || typeof insertRange.endLine !== 'number') {
-          throw new Error('Invalid insertion range')
-        }
-
-        if (insertRange.startLine < 1 || insertRange.endLine < insertRange.startLine) {
-          throw new Error('Invalid insertion line numbers')
-        }
-
-        if (replaceRange && (typeof replaceRange.startLine !== 'number' || typeof replaceRange.endLine !== 'number')) {
-          throw new Error('Invalid replace range')
-        }
-
-        if (replaceRange && (replaceRange.startLine < 1 || replaceRange.endLine < replaceRange.startLine)) {
-          throw new Error('Invalid replace line numbers')
-        }
-
-        await insertCode(code, insertRange, replaceRange)
-
-        const action = replaceRange ? 'replaced' : 'inserted'
-        const location = replaceRange
-          ? `from line ${replaceRange.startLine} to ${replaceRange.endLine}`
-          : `at line ${insertRange.startLine}`
-
-        result = {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully ${action} code ${location}`
-            }
-          ]
-        }
-        // Update request history with success response
-        mcpRequestHistory.value[0].response = JSON.stringify(result, null, 2)
-        return result
       }
 
       default:

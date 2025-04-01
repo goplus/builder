@@ -7,10 +7,11 @@ import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
-import { Disposable } from '@/utils/disposable'
+import { Disposable, type IDisposable } from '@/utils/disposable'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig, File } from '../common/file'
+import { Costume } from '@/models/costume'
+import { toConfig, fromBlob, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
@@ -19,6 +20,7 @@ import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { Stage, type RawStageConfig } from '../stage'
+import { Backdrop } from '../backdrop'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -122,6 +124,47 @@ export class Project extends Disposable {
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
+
+  async createCanvos(name: string, width: number, height: number, color: string) {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')!
+
+    // Set canvas dimensions
+    canvas.width = width
+    canvas.height = height
+
+    // Draw a square
+    ctx.fillStyle = color
+    ctx.fillRect(0, 0, width, height)
+
+    // Convert canvas to Blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob!)
+      }, 'image/png')
+    })
+    const file = fromBlob(name, blob)
+    return file
+  }
+
+  async addBackdropFromCanvos(backdropName: string, color: string) {
+    const file = await this.createCanvos(backdropName, 800, 600, color)
+    const backdrop = await Backdrop.create(backdropName, file)
+    this.stage.addBackdrop(backdrop)
+    return backdrop
+  }
+
+  async addSpriteFromCanvos(spriteName: string, size: number, color: string) {
+    const file = await this.createCanvos(spriteName, size, size, color)
+
+    // Create sprite with costume
+    const sprite = Sprite.create(spriteName)
+    const costume = new Costume(spriteName, file)
+    sprite.addCostume(costume)
+
+    this.addSprite(sprite)
+    return file
+  }
 
   removeSprite(id: string) {
     const idx = this.sprites.findIndex((s) => s.id === id)
@@ -276,6 +319,11 @@ export class Project extends Disposable {
     if (!this.hasUnsyncedChanges && !!this.thumbnail) return
     const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
     this.thumbnail = await screenshotTaker('thumbnail', signal)
+  }
+
+  public async setThumbnail(thumbnail: File) {
+    if (!this.hasUnsyncedChanges && !!this.thumbnail) return
+    this.thumbnail = thumbnail
   }
 
   constructor(owner?: string, name?: string) {

@@ -42,15 +42,7 @@ import { untilNotNull } from '@/utils/utils'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { Project } from '@/models/project'
-
-/**
- * How to update the default project:
- * 1. Use Go+ Builder to create / open a project.
- * 2. Edit it as needed.
- * 3. Export the project file (`.gbp`).
- * 4. Replace `./default-project.gbp` with the exported file.
- */
-import defaultProjectFileUrl from './default-project.gbp?url'
+import { getDefaultProjectFile } from '@/components/project'
 
 const props = defineProps<{
   remixSource?: string
@@ -80,12 +72,6 @@ const form = useForm({
 
 function handleCancel() {
   emit('cancelled')
-}
-
-async function getDefaultProjectFile() {
-  const resp = await fetch(defaultProjectFileUrl)
-  const blob = await resp.blob()
-  return new window.File([blob], 'default-project.gbp', { type: blob.type })
 }
 
 const handleSubmit = useMessageHandle(

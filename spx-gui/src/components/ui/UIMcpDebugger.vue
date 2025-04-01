@@ -129,23 +129,22 @@
                 <div v-if="param.type === 'object'" class="nested-params">
                   <div v-for="(nestedParam, key) in param.properties" :key="key" class="form-group nested">
                     <label :for="`${param.name}-${key}`">{{ nestedParam.description || key }}:</label>
-
+                    {{ ensureNestedObjectExists(param.name) }}
                     <input
                       v-if="nestedParam.type === 'string'"
                       :id="`${param.name}-${key}`"
                       v-model="paramValues[param.name][key]"
                       type="text"
                       class="param-input"
-                      :required="param.required && param.requiredProperties.includes(key)"
+                      :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
                     />
-
                     <input
                       v-if="nestedParam.type === 'number'"
                       :id="`${param.name}-${key}`"
                       v-model.number="paramValues[param.name][key]"
                       type="number"
                       class="param-input"
-                      :required="param.required && param.requiredProperties.includes(key)"
+                      :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
                     />
                   </div>
                 </div>
@@ -235,8 +234,8 @@ const toolParams = computed(() => {
   const tool = tools.find((t) => t.name === selectedTool.value)
   if (!tool) return []
 
-  const parameters = tool.parameters?.properties || {}
-  const required = tool.parameters?.required || []
+  const parameters = tool.inputSchema?.properties || {}
+  const required: string[] = Array.isArray(tool.inputSchema?.required) ? tool.inputSchema.required : []
 
   return Object.entries(parameters).map(([name, schema]: [string, any]) => ({
     name,
@@ -309,7 +308,6 @@ async function sendRequest() {
 
   try {
     const cleanParams = { ...paramValues.value }
-
     await client.callTool({
       name: selectedTool.value,
       arguments: cleanParams
@@ -331,6 +329,17 @@ async function sendRequest() {
 function onClose() {
   emit('close')
 }
+
+/**
+ * Helper function to ensure the nested object exists
+ * @param paramName - Name of the parent parameter
+ */
+function ensureNestedObjectExists(paramName: string) {
+  // Ensure the parent object exists
+  if (!paramValues.value[paramName]) {
+    paramValues.value[paramName] = {}
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -339,7 +348,7 @@ function onClose() {
   top: 50px;
   right: 0;
   width: 25%;
-  height: auto;
+  height: calc(100vh - 50px);
   background: white;
   border-radius: 8px 0 0 8px;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
