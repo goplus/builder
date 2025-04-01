@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div ref="currentElementRef" class="tagging-selector" v-if="currentPath">
+    <div v-if="currentPath" ref="currentElementRef" class="tagging-selector">
       <span class="current-path">{{ currentPath }}</span>
     </div>
   </Teleport>
