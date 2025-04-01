@@ -9,7 +9,7 @@
     />
     <UIImg v-show="zipData == null || loading" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
     <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
-      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中' }) }}</span>
+      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
     </UIDetailedLoading>
   </div>
 </template>
@@ -86,8 +86,7 @@ onUnmounted(() => {
 async function getProjectData(signal: AbortSignal | undefined, reporter: ProgressReporter) {
   const collector = ProgressCollector.collectorFor(reporter)
   const projectExportReporter = collector.getSubReporter({ en: 'Exporting project...', zh: '导出项目中...' }, 1)
-  const filesDesc = { en: 'Loading project files...', zh: '加载项目文件中...' }
-  const filesReporter = collector.getSubReporter(filesDesc, 10)
+  const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
   const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
 
   const [{ filesHash }, files] = await props.project.export()
@@ -95,7 +94,10 @@ async function getProjectData(signal: AbortSignal | undefined, reporter: Progres
   projectExportReporter.report(1)
 
   const zip = new JSZip()
-  const filesCollector = ProgressCollector.collectorFor(filesReporter, filesDesc)
+  const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
+    en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
+    zh: `加载项目文件中（${info.finishedNum}/${info.totalNum}）...`
+  }))
   Object.entries(files).forEach(([path, file], i) => {
     if (file == null) return
     zip.file(path, getZipEntry(file, filesCollector.getSubReporter()))

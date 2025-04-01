@@ -83,7 +83,10 @@ describe('ProgressCollector', () => {
 
   it('should collect progress well with descBase', () => {
     const onProgress = vitest.fn()
-    const collector = new ProgressCollector({ en: 'base', zh: 'base' })
+    const collector = new ProgressCollector((info) => ({
+      en: `base (${info.finishedNum}/${info.totalNum})`,
+      zh: `base（${info.finishedNum}/${info.totalNum}）`
+    }))
     collector.onProgress(onProgress)
     const subReporter = collector.getSubReporter()
     const subReporter2 = collector.getSubReporter({ en: '2', zh: '2' })
@@ -179,7 +182,10 @@ describe('ProgressCollector', () => {
       const onReporterProgress = vitest.fn()
       const reporter = new ProgressReporter(onReporterProgress)
 
-      const collector = ProgressCollector.collectorFor(reporter, { en: 'base', zh: 'base' })
+      const collector = ProgressCollector.collectorFor(reporter, (info) => ({
+        en: `base (${info.finishedNum}/${info.totalNum})`,
+        zh: `base（${info.finishedNum}/${info.totalNum}）`
+      }))
       expect(collector).toBeInstanceOf(ProgressCollector)
 
       const subReporter = collector.getSubReporter()
@@ -193,11 +199,17 @@ describe('ProgressCollector', () => {
       const onReporterProgress = vitest.fn()
       const reporter = new ProgressReporter(onReporterProgress)
 
-      const collector1 = ProgressCollector.collectorFor(reporter, { en: 'base1', zh: 'base1' })
+      const collector1 = ProgressCollector.collectorFor(reporter, (info) => ({
+        en: `base1 (${info.finishedNum}/${info.totalNum})`,
+        zh: `base1（${info.finishedNum}/${info.totalNum}）`
+      }))
       collector1.getSubReporter().report(0.5, null)
       collector1.getSubReporter().report(0.5, null)
 
-      const collector2 = ProgressCollector.collectorFor(reporter, { en: 'base2', zh: 'base2' })
+      const collector2 = ProgressCollector.collectorFor(reporter, (info) => ({
+        en: `base2 (${info.finishedNum}/${info.totalNum})`,
+        zh: `base2（${info.finishedNum}/${info.totalNum}）`
+      }))
       const subReporter1 = collector2.getSubReporter()
       const subReporter2 = collector2.getSubReporter()
 

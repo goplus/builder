@@ -5,7 +5,7 @@
     </header>
     <main v-if="userInfo" class="editor-main">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
-        <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中' }) }}</span>
+        <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
       <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
         {{ $t(allQueryRet.error.value.userMessage) }}

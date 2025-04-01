@@ -62,8 +62,7 @@ async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) 
     { en: 'Counting project files...', zh: '清点项目文件中...' },
     1
   )
-  const filesDesc = { en: 'Loading project files...', zh: '加载项目文件中...' }
-  const filesReporter = collector.getSubReporter(filesDesc, 10)
+  const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
   const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
 
   const [{ filesHash }, files] = await props.project.export()
@@ -71,7 +70,10 @@ async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) 
   projectExportReporter.report(1)
 
   const zip = new JSZip()
-  const filesCollector = ProgressCollector.collectorFor(filesReporter, filesDesc)
+  const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
+    en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
+    zh: `加载项目文件中（${info.finishedNum}/${info.totalNum}）...`
+  }))
   Object.entries(files).forEach(([path, file]) => {
     if (file == null) return
     const r = filesCollector.getSubReporter()
@@ -186,7 +188,7 @@ defineExpose({
     <iframe ref="iframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
     <UIImg v-show="progressRef.percentage !== 1" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
     <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
-      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中' }) }}</span>
+      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
     </UIDetailedLoading>
   </div>
 </template>
