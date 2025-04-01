@@ -39,7 +39,6 @@ setProjectProvider({
       return project
     } catch (e) {
       if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) {
-        // 项目不存在，继续创建流程
         return null
       } else {
         console.error('Error fetching project:', e)
@@ -52,8 +51,8 @@ setProjectProvider({
     project.setVisibility(Visibility.Private)
 
     try {
-      const defaultProjectFile = await getDefaultProjectFile()
-      await project.loadGbpFile(defaultProjectFile)
+      const thumbnail = await project.createCanvos("stage.png",800, 600, '#000000')
+      project.setThumbnail(thumbnail)
       await project.saveToCloud()
 
       const projectRoute = getProjectEditorRoute(projectName)

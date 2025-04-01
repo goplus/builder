@@ -27,7 +27,7 @@ export function insertCode(options: InsertCodeOptions) {
   const iRange = options.insertRange
   const rRange = options.replaceRange
   const codeEditorUICtx = getCodeEditorUI()
-  if (rRange) {
+  if (rRange && rRange.startLine > 0 && rRange.endLine > 0 && rRange.startLine <= rRange.endLine) {
     codeEditorUICtx.open(
       { uri: file },
       {

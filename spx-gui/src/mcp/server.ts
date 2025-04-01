@@ -10,9 +10,10 @@ import { serverTransport, setServerConnected } from './transport'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { z } from 'zod'
 import { CreateProjectArgsSchema, createProject } from './operations/project'
-import { RunGameArgsSchema, runGame } from './operations/game'
+import { RunGameArgsSchema, StopGameArgsSchema, runGame, stopGame } from './operations/game'
 import { AddSpriteFromCanvosArgsSchema, addSpriteFromCanvos } from './operations/sprite'
 import { InsertCodeArgsSchema, insertCode } from './operations/code'
+import { AddStageBackdropFromCanvosArgsSchema, addStageBackdropFromCanvos } from './operations/stage'
 
 const ToolInputSchema = ToolSchema.shape.inputSchema
 type ToolInput = z.infer<typeof ToolInputSchema>
@@ -60,9 +61,19 @@ export const tools = [
     inputSchema: zodToJsonSchema(CreateProjectArgsSchema) as ToolInput
   },
   {
+    name: 'stop_game',
+    description: 'Stop the current Go+ XBuilder SPX project in the XBuilder environment.',
+    inputSchema: zodToJsonSchema(StopGameArgsSchema) as ToolInput
+  },
+  {
     name: 'run_game',
     description: 'Run the current Go+ XBuilder SPX project in the XBuilder environment.',
     inputSchema: zodToJsonSchema(RunGameArgsSchema) as ToolInput
+  },
+  {
+    name: 'add_stage_backdrop_from_canvos',
+    description: 'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
+    inputSchema: zodToJsonSchema(AddStageBackdropFromCanvosArgsSchema) as ToolInput
   },
   {
     name: 'add_sprite_from_canvos',
@@ -139,7 +150,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: 'text', text: response }]
         }
       }
-
+      case 'stop_game': {
+        const args = StopGameArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for stop_game: ${args.error}`)
+        }
+        const result = await stopGame(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
+        }
+      }
       case 'add_sprite_from_canvos': {
         const args = AddSpriteFromCanvosArgsSchema.safeParse(parameters)
         if (!args.success) {
@@ -152,7 +174,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: 'text', text: response }]
         }
       }
-
+      case 'add_stage_backdrop_from_canvos': {
+        const args = AddStageBackdropFromCanvosArgsSchema.safeParse(parameters)
+        if (!args.success) {
+          throw new Error(`Invalid arguments for add_sprite: ${args.error}`)
+        }
+        const result = await addStageBackdropFromCanvos(args.data)
+        const response = JSON.stringify(result, null, 2)
+        mcpRequestHistory.value[0].response = response
+        return {
+          content: [{ type: 'text', text: response }]
+        }
+      }
       case 'insert_code': {
         const args = InsertCodeArgsSchema.safeParse(parameters)
         if (!args.success) {

@@ -348,7 +348,7 @@ function ensureNestedObjectExists(paramName: string) {
   top: 50px;
   right: 0;
   width: 25%;
-  height: auto;
+  height: calc(100vh - 50px);
   background: white;
   border-radius: 8px 0 0 8px;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
