@@ -145,6 +145,14 @@ watch(
   }
 )
 
+watch(
+  () => props.step.taggingHandler,
+  () => {
+    initializeHandlers()
+  },
+  { immediate: true, deep: true }
+)
+
 let pollTimer: ReturnType<typeof setTimeout> | null = null
 
 function initializeHandlers() {
@@ -160,7 +168,7 @@ function initializeHandlers() {
       const element = getElement(path)
 
       if (element) {
-        applyHandler(element, handlerType as string)
+        applyHandler(element, handlerType as string, path)
       } else {
         allHandled = false
       }
@@ -173,7 +181,7 @@ function initializeHandlers() {
   }
 }
 
-function applyHandler(element: HTMLElement, handlerType: string) {
+function applyHandler(element: HTMLElement, handlerType: string, path: string) {
   const eventHandlers = {
     [TaggingHandlerType.SubmitToNext]: {
       type: 'submit',
@@ -186,7 +194,7 @@ function applyHandler(element: HTMLElement, handlerType: string) {
   }
 
   if (handlerType === TaggingHandlerType.CancelForbidden) {
-    handleCancelForbidden(element)
+    handleCancelForbidden(element, path)
     return
   } else if (handlerType === TaggingHandlerType.SubmitToNext || handlerType === TaggingHandlerType.ClickToNext) {
     const { type, handler } = eventHandlers[handlerType]
@@ -202,25 +210,17 @@ function clearAllEventListeners() {
   eventListeners.value = []
 }
 
-watch(
-  () => props.step.taggingHandler,
-  () => {
-    initializeHandlers()
-  },
-  { immediate: true, deep: true }
-)
+function handleCancelForbidden(element: HTMLElement, path: string) {
+  const modal = getInstance(path) as any
 
-function handleCancelForbidden(element: HTMLElement) {
-  const renameModal = getInstance('rename-modal') as any
-
-  if (!renameModal) {
+  if (!modal) {
     return
   }
 
-  if (renameModal?.ctx && typeof renameModal.ctx.emit === 'function') {
-    const originalEmit = renameModal.ctx.emit
+  if (modal?.ctx && typeof modal.ctx.emit === 'function') {
+    const originalEmit = modal.ctx.emit
 
-    renameModal.ctx.emit = function (event: string, ...args: any[]) {
+    modal.ctx.emit = function (event: string, ...args: any[]) {
       if (event === 'cancelled') {
         return
       }
@@ -237,7 +237,7 @@ function handleCancelForbidden(element: HTMLElement) {
     const paths = ['ctx', 'component', 'vnode.component']
 
     for (const propPath of paths) {
-      let target = renameModal
+      let target = modal
       const parts = propPath.split('.')
 
       for (const part of parts) {
