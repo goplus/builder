@@ -20,9 +20,9 @@
             :current-level-index="currentLevelIndex"
           />
           <GuidanceEditor
-            v-if="guidanceMode === GuidanceMode.GuidanceEditor && storyLineInfo"
+            v-if="guidanceMode === GuidanceMode.GuidanceEditor && maybeSavedStoryLineInfo"
             class="guidance-editor"
-            :story-line="storyLineInfo"
+            :story-line="maybeSavedStoryLineInfo"
           />
         </EditorContextProvider>
       </main>
@@ -53,7 +53,7 @@ import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
 import GuidanceEditor from '@/components/guidance/editor/GuidanceEditor.vue'
-import { getStoryLine, type StoryLine, storyLineJson } from '@/apis/guidance'
+import { getStoryLine, type StoryLine, storyLineJson, type MaybeSavedStoryLine } from '@/apis/guidance'
 import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
@@ -72,6 +72,7 @@ enum GuidanceMode {
 }
 const guidanceMode = ref<GuidanceMode>(GuidanceMode.None)
 const storyLineInfo = ref<StoryLine | null>(null)
+const maybeSavedStoryLineInfo = ref<MaybeSavedStoryLine | null>(null)
 
 watch(
   guidanceMode,
@@ -99,11 +100,12 @@ async function handleGuidance() {
   if (getStringParam(router, 'guidanceEditor') != null) {
     guidanceMode.value = GuidanceMode.GuidanceEditor
     const storyLineId: string | null = getStringParam(router, 'storyLineId')
+    // for test
+    maybeSavedStoryLineInfo.value = storyLineJson
     if (storyLineId != null) {
-      storyLineInfo.value = storyLineJson
       const data: StoryLine = await getStoryLine(storyLineId)
       if (data) {
-        storyLineInfo.value = data
+        maybeSavedStoryLineInfo.value = data
       }
     }
   }

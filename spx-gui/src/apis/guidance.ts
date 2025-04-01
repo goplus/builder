@@ -78,13 +78,17 @@ export type Level = {
 }
 
 export type StoryLine = {
-  id?: string
+  id: string
   backgroundImage: string // 故事线的背景图url
   name: string // 故事线的名字（能够唯一标识该故事线，可用于为用户创建project时的projectName）
   title: LocaleMessage // 故事线标题
   description: LocaleMessage // 故事线描述
   tag: 'easy' | 'medium' | 'hard' // 故事线难度标签
   levels: Level[]
+}
+
+export type MaybeSavedStoryLine = Omit<StoryLine, 'id'> & {
+  id?: string
 }
 
 export type StoryLineStudy = {

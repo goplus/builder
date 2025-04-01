@@ -53,10 +53,15 @@
       <UICard class="base-info">
         <div class="base-info-header">
           <span>{{ $t({zh: '故事线背景图', en: 'Background image of story line'}) }}</span>
+          <UIButton type="primary" @click="uploadImg">
+            {{ $t({zh: '上传背景', en: 'Upload image'}) }}
+          </UIButton>
         </div>
         <UIDivider />
         <div class="img-content">
-          <!-- TODO: 上传控件、预览控件 -->
+          <div class="img-preview">
+            <UIImg class="thumbnail" style="height: 100%; width: 100%;" :src="form.value.backgroundImage" :loading="bgLoading" size="contain" />
+          </div>
         </div>
       </UICard>
       <UICard class="base-info">
@@ -76,7 +81,7 @@
                 <div class="status">未完成</div>
               </div>
               <div class="level-top-right">
-                <div><img src="../icons/edit-level.svg" alt=""></div>
+                <div @click="emit('levelChange', index)"><img src="../icons/edit-level.svg" alt=""></div>
                 <div><img src="../icons/delete.svg" alt=""></div>
               </div>
             </div>
@@ -95,7 +100,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type StoryLine } from '@/apis/guidance'
+import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import { UIForm, 
          UIFormItem, 
          UITextInput,
@@ -104,18 +109,25 @@ import { UIForm,
          UICard, 
          useForm, 
          UIRadioGroup,
-         UIDivider} from '@/components/ui';
+         UIImg,
+         UIDivider,
+         useMessage} from '@/components/ui';
 import { useI18n } from '@/utils/i18n'
+import { selectImg } from '@/utils/file'
+import { fromNativeFile } from '@/models/common/file';
+import { useNetwork } from '@/utils/network'
+import { saveFile, universalUrlToWebUrl } from '@/models/common/cloud';
 
 const { t } = useI18n()
 
 const props = defineProps<{
-  storyLine: StoryLine
+  storyLine: MaybeSavedStoryLine
 }>()
 
 const emit = defineEmits<{
-  'update:storyLine': [StoryLine],
-  minimize: [boolean]
+  'update:storyLine': [MaybeSavedStoryLine],
+  minimize: [boolean],
+  'levelChange': [number]
 }>()
 
 const form = useForm({
@@ -153,10 +165,28 @@ const handleSubmit = async () => {
   }
 }
 
-const handleOpt = () => {
+function handleOpt() {
   emit('minimize', true)
 }
 
+const bgLoading = ref<boolean>(false)
+const m = useMessage()
+async function uploadImg() {
+  const { isOnline } = useNetwork()
+    try {
+      const img = await selectImg()
+      const file = fromNativeFile(img)
+      if (isOnline) {
+        bgLoading.value = true
+        const fileUrl = await m.withLoading(saveFile(file), t({ en: 'Uploading image...', zh: '正在上传图片...' }))
+        const url = await universalUrlToWebUrl(fileUrl)
+        form.value.backgroundImage = url
+        bgLoading.value = false
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+    }
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -278,6 +308,31 @@ const handleOpt = () => {
   left: 10px;
   div {
     margin: 10px;
+  }
+}
+.img-content {
+  display: flex;
+  justify-content: center;
+  // align-items: center;
+  padding-top: 20px;
+  width: 100%;
+  height: 100%;
+  .img-preview {
+    width: 100%;
+    height: 380px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    // img {
+    //   width: 100%;
+    //   height: 50px;
+    //   margin-right: 10px;
+    // }
+    span {
+      font-size: 16px;
+      color: #666666;
+    }
   }
 }
 </style>

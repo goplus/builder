@@ -4,24 +4,41 @@
       <img src="../icons/edit.svg" alt="guidance-editor" />
     </div>
     <div v-show="!isShowIcon" class="guidance-editor-content">
-      <StoryLineEditor :story-line="storyLine" @minimize="isShowIcon = true"/>
+      <StoryLineEditor v-show="editorStatus === editorStatusType.STORYLINE" v-model:story-line="storyLine" @level-change="handleLevelChange" @minimize="isShowIcon = true"/>
+      <LevelEditor v-show="editorStatus === editorStatusType.LEVELEDITOR" :level="level" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { type StoryLine } from '@/apis/guidance'
+import { computed, ref } from 'vue'
+import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
+import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
 
 const props = defineProps<{
-  storyLine: StoryLine
+  storyLine: MaybeSavedStoryLine
 }>()
 
-const storyLine = ref<StoryLine>(props.storyLine)
+const storyLine = ref<MaybeSavedStoryLine>(props.storyLine)
+
+enum editorStatusType {
+  STORYLINE,
+  LEVELEDITOR
+}
+
+const editorStatus = ref<editorStatusType>(editorStatusType.STORYLINE)
+
+const levelIndex = ref<number>(0)
+const level = computed(() => {
+  return storyLine.value.levels[levelIndex.value]
+})
+function handleLevelChange(index: number) {
+  levelIndex.value = index
+}
 
 const editorIconPos = ref<Pos>({
   x: 0,
