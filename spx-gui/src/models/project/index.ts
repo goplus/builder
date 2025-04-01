@@ -8,6 +8,7 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
+import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
@@ -413,10 +414,28 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+  async loadFromCloud(
+    owner: string,
+    name: string,
+    preferPublishedContent: boolean = false,
+    signal?: AbortSignal,
+    reporter?: ProgressReporter
+  ) {
+    const collector = reporter != null ? ProgressCollector.collectorFor(reporter) : null
+    const cloudLoadReporter = collector?.getSubReporter(
+      { en: 'Downloading project info...', zh: '正在下载项目信息...' },
+      1
+    )
+    const projectLoadReporter = collector?.getSubReporter({ en: 'Loading project...', zh: '正在载入项目...' }, 1)
+
     const { metadata, files } = await cloudHelper.load(owner, name, preferPublishedContent, signal)
     signal?.throwIfAborted()
+    cloudLoadReporter?.report(1)
+
     await this.load(metadata, files)
+    signal?.throwIfAborted()
+    projectLoadReporter?.report(1)
+
     return this as CloudProject
   }
 

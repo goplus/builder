@@ -7,18 +7,21 @@ import {
   computed,
   ref,
   onUnmounted,
-  toValue
+  toValue,
+  watch
 } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
 import { mergeSignals } from './disposable'
 import { useAction, type ActionException, Cancelled } from './exception'
 import { until } from './utils'
+import { ProgressReporter, type Progress, ProgressCollector } from './progress'
 
 export type QueryRet<T> = {
   isLoading: Ref<boolean>
   data: ShallowRef<T | null>
   error: ShallowRef<ActionException | null>
+  progress: ShallowRef<Progress>
   refetch: (signal?: AbortSignal) => void
 }
 
@@ -34,6 +37,8 @@ export type QueryContext = {
   signal: AbortSignal
   /** Source of query fn calling. */
   source: QuerySource
+  /** Progress reporter for the query */
+  reporter: ProgressReporter
 }
 
 /**
@@ -52,6 +57,7 @@ export function useQuery<T>(
   const isLoading = ref(false)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
+  const progress = shallowRef<Progress>({ percentage: 0, desc: null })
 
   let lastCtrl: AbortController | null = null
   onUnmounted(() => lastCtrl?.abort(new Cancelled('unmounted')))
@@ -64,8 +70,9 @@ export function useQuery<T>(
 
   function fetch(source: QuerySource, signal?: AbortSignal) {
     const finalSignal = mergeSignals(signal, getSignal())
+    const reporter = new ProgressReporter((p) => (progress.value = p))
     isLoading.value = true
-    queryFn({ signal: finalSignal, source }).then(
+    queryFn({ signal: finalSignal, source, reporter }).then(
       (d) => {
         data.value = d
         error.value = null
@@ -84,7 +91,7 @@ export function useQuery<T>(
 
   const refetch = (signal?: AbortSignal) => fetch('refetch', signal)
 
-  return { isLoading, data, error, refetch }
+  return { isLoading, data, error, progress, refetch }
 }
 
 export type QueryWithCacheOptions<T> = {
@@ -110,8 +117,9 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
   const isLoading = ret.isLoading
   const data = computed(() => ret.data.value ?? null)
   const error = ret.error as Ref<ActionException | null>
+  const progress = shallowRef<Progress>({ percentage: 0, desc: null })
   const refetch = () => ret.refetch()
-  return { isLoading, data, error, refetch }
+  return { isLoading, data, error, progress, refetch }
 }
 
 /** Manage cache of `useQueryWithCache` */
@@ -133,6 +141,19 @@ export function useQueryCache<T>() {
   }
 }
 
+const composedReporterCollectorMap = new WeakMap<ProgressReporter, ProgressCollector>()
+
+function getCollector(reporter: ProgressReporter) {
+  let collector = composedReporterCollectorMap.get(reporter)
+  if (collector == null) {
+    collector = ProgressCollector.collectorFor(reporter)
+    composedReporterCollectorMap.set(reporter, collector)
+  }
+  return collector
+}
+
+export type SubReporterParams = Parameters<ProgressCollector['getSubReporter']>
+
 /**
  * Compose query in another query.
  * - If the query is loading, wait until it's done.
@@ -140,12 +161,21 @@ export function useQueryCache<T>() {
  * - If the query is successful, the data will be returned.
  * - Composed query will be collected as dependencies.
  */
-export async function composeQuery<T>(ctx: QueryContext, queryRet: QueryRet<T>): Promise<T> {
+export async function composeQuery<T>(
+  ctx: QueryContext,
+  queryRet: QueryRet<T>,
+  subReportParams?: SubReporterParams
+): Promise<T> {
   if (ctx.source === 'refetch') {
     queryRet.refetch(ctx.signal)
   } else {
     toValue(queryRet.isLoading) // Trigger dependency collection
   }
+
+  const collector = getCollector(ctx.reporter)
+  const subReporter = collector.getSubReporter(...(subReportParams ?? []))
+  watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
+
   return new Promise<T>((resolve, reject) => {
     until(() => !queryRet.isLoading.value, ctx.signal).then(() => {
       if (queryRet.error.value != null) reject(queryRet.error.value)
