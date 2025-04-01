@@ -45,16 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick, ref, watch, computed } from 'vue'
-import type { ComponentPublicInstance } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
 import { useI18n } from '@/utils/i18n'
-
-interface ComponentWithEmit extends ComponentPublicInstance {
-  emit: (event: string, ...args: any[]) => any
-}
 
 const props = defineProps<{
   step: Step
@@ -165,7 +160,7 @@ function initializeHandlers() {
       const element = getElement(path)
 
       if (element) {
-        applyHandler(element, handlerType as string, path)
+        applyHandler(element, handlerType as string)
       } else {
         allHandled = false
       }
@@ -178,7 +173,7 @@ function initializeHandlers() {
   }
 }
 
-function applyHandler(element: HTMLElement, handlerType: string, path: string) {
+function applyHandler(element: HTMLElement, handlerType: string) {
   const eventHandlers = {
     [TaggingHandlerType.SubmitToNext]: {
       type: 'submit',
@@ -191,7 +186,7 @@ function applyHandler(element: HTMLElement, handlerType: string, path: string) {
   }
 
   if (handlerType === TaggingHandlerType.CancelForbidden) {
-    handleCancelForbidden(element, path)
+    handleCancelForbidden(element)
     return
   } else if (handlerType === TaggingHandlerType.SubmitToNext || handlerType === TaggingHandlerType.ClickToNext) {
     const { type, handler } = eventHandlers[handlerType]
@@ -215,28 +210,60 @@ watch(
   { immediate: true, deep: true }
 )
 
-function handleCancelForbidden(element: HTMLElement, path: string) {
-  try {
-    const instance = getInstance(path) as ComponentWithEmit
+function handleCancelForbidden(element: HTMLElement) {
+  const renameModal = getInstance('rename-modal') as any
 
-    if (instance && typeof instance.emit === 'function') {
-      const originalEmit = instance.emit
+  if (!renameModal) {
+    return
+  }
 
-      instance.emit = function (event: string, ...args: any[]) {
-        if (event === 'cancelled') {
-          return
-        }
-        return originalEmit.call(this, event, ...args)
+  if (renameModal?.ctx && typeof renameModal.ctx.emit === 'function') {
+    const originalEmit = renameModal.ctx.emit
+
+    renameModal.ctx.emit = function (event: string, ...args: any[]) {
+      if (event === 'cancelled') {
+        return
       }
 
-      eventListeners.value.push({
-        element,
-        type: 'emitOverride',
-        handler: originalEmit
-      })
+      return originalEmit.call(this, event, ...args)
     }
-  } catch (error) {
-    console.warn('拦截取消事件失败:', error)
+
+    eventListeners.value.push({
+      element,
+      type: 'emitOverride',
+      handler: originalEmit
+    })
+  } else {
+    const paths = ['ctx', 'component', 'vnode.component']
+
+    for (const propPath of paths) {
+      let target = renameModal
+      const parts = propPath.split('.')
+
+      for (const part of parts) {
+        target = target?.[part]
+        if (!target) break
+      }
+
+      if (target && typeof target.emit === 'function') {
+        const originalEmit = target.emit
+
+        target.emit = function (event: string, ...args: any) {
+          if (event === 'cancelled') {
+            return
+          }
+
+          return originalEmit.call(this, event, ...args)
+        }
+
+        eventListeners.value.push({
+          element,
+          type: 'emitOverride',
+          handler: originalEmit
+        })
+        return
+      }
+    }
   }
 }
 
