@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TAG_CONTEXT_KEY, tagApi, type TagContext, type TagNode } from '.'
-import { reactive, provide, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, provide, onMounted, onBeforeUnmount, type VNode } from 'vue'
 
 const root = reactive<TagNode>({
   name: '__root__',
@@ -83,10 +83,39 @@ const getInstance = (path: string) => {
   return foundNode?.instance?.subTree?.children?.[0] || null
 }
 
+/**
+ * Retrieve all tagged elements and their corresponding nodes.
+ * @returns { elementToNode, nodeToPath }
+ * - `elementToNode`: A map of tagged elements to their corresponding nodes.
+ * - `nodeToPath`: A map of nodes to their corresponding paths.
+ */
+const getAllTagElements = () => {
+  const elementToNode = new Map<HTMLElement, TagNode>()
+  const nodeToPath = new Map<TagNode, string>()
+
+  const traverse = (node: TagNode, currentPath: string[]) => {
+    const pathStr = currentPath.join(' ')
+    nodeToPath.set(node, pathStr)
+    const subTree = node.instance?.subTree
+    if (subTree && Array.isArray(subTree.children)) {
+      subTree.children.forEach((child: VNode) => {
+        if (child.el instanceof HTMLElement) {
+          elementToNode.set(child.el, node)
+        }
+      })
+    }
+    node.children.forEach((child) => traverse(child, [...currentPath, child.name]))
+  }
+
+  root.children.forEach((child) => traverse(child, [child.name]))
+  return { elementToNode, nodeToPath }
+}
+
 onMounted(() => {
   tagApi.value = {
     getElement,
-    getInstance
+    getInstance,
+    getAllTagElements
   }
 })
 
