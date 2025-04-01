@@ -6,9 +6,11 @@ import type { MarkdownStringFlag } from '../../common'
 import DefinitionItem from '../definition/DefinitionItem.vue'
 import CodeLink from './CodeLink'
 import CodeBlock from './CodeBlock.vue'
+import CodeBlockEx from './CodeBlockEx.vue'
 import CodeChange from './CodeChange.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
+import UseMcpTool from './UseMcpTool.vue' 
 
 const props = withDefaults(
   defineProps<{
@@ -54,6 +56,17 @@ const basicComponents = {
    */
   'diagnostic-item': DiagnosticItem
 }
+
+const mcpComponents = {
+  /**
+   * Usage:
+   *  ```html
+   * <use-mcp-tool server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'/>
+   * ```
+  */
+  'use-mcp-tool': UseMcpTool,
+}
+
 const advancedComponents = {
   ...basicComponents,
   /**
@@ -67,6 +80,12 @@ const advancedComponents = {
 }
 
 const components = computed(() => {
+  if (props.flag === 'mcp') {
+    return {
+      codeBlock: CodeBlockEx,
+      custom: mcpComponents
+    }
+  }
   const customComponents = props.flag === 'advanced' ? advancedComponents : basicComponents
   return {
     codeBlock: CodeBlock,

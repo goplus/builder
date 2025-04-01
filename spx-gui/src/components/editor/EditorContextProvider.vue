@@ -12,7 +12,7 @@ export type EditorCtx = {
   runtime: Runtime
 }
 
-const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
+export const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
 
 export function useEditorCtx() {
   const ctx = inject(editorCtxKey)
