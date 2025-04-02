@@ -14,9 +14,9 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
-	"github.com/goplus/builder/spx-backend/internal/chat91DictCnGemini"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/qnydeepseek"
 	"github.com/joho/godotenv"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
@@ -39,12 +39,12 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db                       *gorm.DB
-	kodo                     *kodoConfig
-	aigcClient               *aigc.AigcClient
-	casdoorClient            casdoorClient
-	anthropicClient          *anthropic.Client
-	chat91DictCnGeminiClient *chat91DictCnGemini.Chat91DictCnGeminiClient
+	db                *gorm.DB
+	kodo              *kodoConfig
+	aigcClient        *aigc.AigcClient
+	casdoorClient     casdoorClient
+	anthropicClient   *anthropic.Client
+	qnyDeepSeekClient *qnydeepseek.Client
 }
 
 // New creates a new controller.
@@ -71,15 +71,15 @@ func New(ctx context.Context) (*Controller, error) {
 		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
 		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
 	)
-	chat91DictCnGeminiClient := chat91DictCnGemini.NewChat91DictCnGeminiClient(mustEnv(logger, "CHAT91DICTCN_GEMINI_ENDPOINT"))
+	qnyDeepSeekClient := qnydeepseek.NewClient(mustEnv(logger, "QINIU_API_KEY"))
 
 	return &Controller{
-		db:                       db,
-		kodo:                     kodoConfig,
-		aigcClient:               aigcClient,
-		casdoorClient:            casdoorClient,
-		anthropicClient:          anthropicClient,
-		chat91DictCnGeminiClient: chat91DictCnGeminiClient,
+		db:                db,
+		kodo:              kodoConfig,
+		aigcClient:        aigcClient,
+		casdoorClient:     casdoorClient,
+		anthropicClient:   anthropicClient,
+		qnyDeepSeekClient: qnyDeepSeekClient,
 	}, nil
 }
 
