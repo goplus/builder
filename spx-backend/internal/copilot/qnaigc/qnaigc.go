@@ -18,7 +18,8 @@ type Qiniu struct {
 
 // BaseOption contains the base URL for the API client
 type BaseOption struct {
-	baseURL string
+	baseURL   string
+	modelName string
 }
 
 // NewQiniu creates a new Qiniu client instance with the provided API key.
@@ -30,6 +31,10 @@ func New(apiKey string, opts ...Option) *Qiniu {
 	}
 	if base.baseURL == "" {
 		base.baseURL = defaultBaseURL
+	}
+
+	if base.modelName == "" {
+		base.modelName = defaultModel
 	}
 
 	return &Qiniu{
@@ -45,6 +50,12 @@ type Option func(*BaseOption)
 func WithBaseURL(url string) Option {
 	return func(c *BaseOption) {
 		c.baseURL = url
+	}
+}
+
+func WithModel(model string) Option {
+	return func(c *BaseOption) {
+		c.modelName = model
 	}
 }
 
@@ -73,7 +84,7 @@ func (d *Qiniu) Message(ctx context.Context, params *types.Params) (*types.Resul
 
 	// Set default model if not provided
 	if params.Model == "" {
-		params.Model = defaultModel
+		params.Model = d.options.modelName
 	}
 
 	// Create API request payload
@@ -134,7 +145,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 
 	// Set default model if not provided
 	if params.Model == "" {
-		params.Model = defaultModel
+		params.Model = d.options.modelName
 	}
 
 	// Create API request payload

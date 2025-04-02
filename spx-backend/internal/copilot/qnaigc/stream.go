@@ -85,6 +85,7 @@ func (r *StreamReader) Read(p []byte) (n int, err error) {
 		// Write content to buffer and break the loop
 		content := []byte(streamResp.Choices[0].Delta.Content)
 		r.buffer.Write(content)
+
 		break
 	}
 

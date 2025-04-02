@@ -71,9 +71,10 @@ func New(ctx context.Context) (*Controller, error) {
 	var provider = types.Provider(mustEnv(logger, "COPILOT_PROVIDER"))
 	if provider == types.Qiniu {
 		cpt, err = copilot.NewCopilot(&copilot.Config{
-			Provider:     provider,
-			QiniuAPIKey:  mustEnv(logger, "QINIU_API_KEY"),
-			QiniuBaseURL: mustEnv(logger, "QINIU_ENDPOINT"),
+			Provider:       provider,
+			QiniuAPIKey:    mustEnv(logger, "QINIU_API_KEY"),
+			QiniuBaseURL:   mustEnv(logger, "QINIU_ENDPOINT"),
+			QiniuModelName: mustEnv(logger, "QINIU_MODEL_NAME"),
 		})
 	} else if provider == types.Anthropic {
 		cpt, err = copilot.NewCopilot(&copilot.Config{

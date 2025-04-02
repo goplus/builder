@@ -80,6 +80,11 @@ func (s *streamWrapper) processEvents(ctx context.Context) {
 			}
 		}
 	}
+
+	// Check for any errors
+	if err := s.stream.Err(); err != nil {
+		s.setError(err)
+	}
 }
 
 // appendData adds new data to the buffer in a thread-safe manner.

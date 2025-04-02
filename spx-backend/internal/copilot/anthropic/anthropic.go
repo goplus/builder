@@ -94,8 +94,8 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 		params.Model = anthropic.ModelClaude3_5SonnetLatest
 	}
 
-	// Make API call to Anthropic's Claude model
-	ret, err := a.anthropicClient.Messages.New(ctx, anthropic.MessageNewParams{
+	// Create request parameters
+	req := anthropic.MessageNewParams{
 		Model:     anthropic.F(params.Model),
 		MaxTokens: anthropic.F(int64(types.MAX_TOKENS)),
 		System: anthropic.F([]anthropic.TextBlockParam{
@@ -103,7 +103,10 @@ func (a *Anthropic) Message(ctx context.Context, params *types.Params) (*types.R
 		}),
 		Messages:    anthropic.F(messages),
 		Temperature: anthropic.F(0.1), // Lower temperature for more deterministic outputs
-	})
+	}
+
+	// Make API call to Anthropic's Claude model
+	ret, err := a.anthropicClient.Messages.New(ctx, req)
 	if err != nil {
 		logger.Printf("failed to generate message: %v", err)
 		return nil, err
@@ -158,15 +161,18 @@ func (a *Anthropic) StreamMessage(ctx context.Context, params *types.Params) (io
 		params.Model = anthropic.ModelClaude3_5SonnetLatest
 	}
 
-	stream := a.anthropicClient.Messages.NewStreaming(ctx, anthropic.MessageNewParams{
+	// Create request parameters
+	req := anthropic.MessageNewParams{
 		Model:     anthropic.F(params.Model),
 		MaxTokens: anthropic.F(int64(types.MAX_TOKENS)),
 		System: anthropic.F([]anthropic.TextBlockParam{
 			system,
 		}),
 		Messages:    anthropic.F(messages),
-		Temperature: anthropic.F(0.1),
-	})
+		Temperature: anthropic.F(0.1), // Lower temperature for more deterministic outputs
+	}
+
+	stream := a.anthropicClient.Messages.NewStreaming(ctx, req)
 
 	wrapper := &streamWrapper{
 		stream: stream,

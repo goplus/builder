@@ -33,6 +33,7 @@ type Config struct {
 
 	QiniuAPIKey      string
 	QiniuBaseURL     string
+	QiniuModelName   string
 	AnthropicAPIKey  string
 	AnthropicBaseURL string
 }
@@ -51,7 +52,7 @@ func NewCopilot(cfg *Config) (AICopilot, error) {
 	var copilot AICopilot
 	switch cfg.Provider {
 	case types.Qiniu:
-		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL))
+		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL), qnaigc.WithModel(cfg.QiniuModelName))
 	case types.Anthropic:
 		copilot = anthropic.New(cfg.AnthropicAPIKey, anthropic.WithBaseURL(cfg.AnthropicBaseURL))
 	default:
@@ -66,10 +67,14 @@ func NewCopilot(cfg *Config) (AICopilot, error) {
 // appropriate AI provider based on the Provider field in the params.
 // Returns an error if the specified provider is not supported.
 func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
+	systemPrompt := SystemPrompt
+	if len(params.Tools) > 0 {
+		systemPrompt = SystemPromptWithTools(params.Tools)
+	}
 	// Add system prompt message
 	params.System = types.Content{
 		Type: types.ContentTypeText,
-		Text: SystemPrompt,
+		Text: systemPrompt,
 	}
 	// Send message to the AI provider
 	return c.copilot.Message(ctx, params)
@@ -79,10 +84,14 @@ func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Res
 // appropriate AI provider based on the Provider field in the params.
 // Returns an error if the specified provider is not supported.
 func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
+	systemPrompt := SystemPrompt
+	if len(params.Tools) > 0 {
+		systemPrompt = SystemPromptWithTools(params.Tools)
+	}
 	// Add system prompt message
 	params.System = types.Content{
 		Type: types.ContentTypeText,
-		Text: SystemPrompt,
+		Text: systemPrompt,
 	}
 	// Send message to the AI provider
 	return c.copilot.StreamMessage(ctx, params)
