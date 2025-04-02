@@ -88,6 +88,10 @@ export type StoryLine = {
   levels: Level[]
 }
 
+export type MaybeSavedStoryLine = Omit<StoryLine, 'id'> & {
+  id?: string
+}
+
 export type StoryLineStudy = {
   storyLineId: string
   lastFinishedLevelIndex: number // 故事线状态，其值为当前最新已完成的关卡下标
