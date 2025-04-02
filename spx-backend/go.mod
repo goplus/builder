@@ -1,6 +1,7 @@
 module github.com/goplus/builder/spx-backend
 
 go 1.22.0
+
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
