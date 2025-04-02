@@ -33,10 +33,6 @@ export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
   return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
 }
 
-export function useCopilotStore() {
-  return localStorageRef('global-copilot', false)
-}
-
 export function useMcpDebuggerStore() {
   return localStorageRef('mcp-debugger', false)
 }

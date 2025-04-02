@@ -54,7 +54,6 @@ const basicComponents = {
    */
   'diagnostic-item': DiagnosticItem
 }
-
 const advancedComponents = {
   ...basicComponents,
   /**
