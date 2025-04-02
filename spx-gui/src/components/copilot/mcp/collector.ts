@@ -41,21 +41,7 @@ export class ToolResultCollector {
   constructor(private options = { 
     debounceTime: 500,
     storagePrefix: 'mcp_tool_'
-  }) {
-    // 从存储恢复任务状态
-    this.restoreTasksFromStorage()
-    
-    // 监视队列变化
-    watch(
-      () => [...this.executionQueue.value], // 创建数组副本以检测变化
-      (newQueue) => {
-        if (newQueue.length > 0 && !this.isProcessing.value) {
-          this.processQueue()
-        }
-      },
-      { deep: true, immediate: true }
-    )
-  }
+  }) {}
   
   /**
    * 获取或创建工具任务
@@ -125,21 +111,6 @@ export class ToolResultCollector {
     
     // 通知任务完成
     this.submitTaskResult(taskId, { error: errorMessage })
-  }
-  
-  /**
-   * 重置任务状态
-   */
-  resetTask(taskId: string): void {
-    if (!this.tasks[taskId]) {
-      console.error(`Task ${taskId} not found`)
-      return
-    }
-    
-    this.tasks[taskId].status = 'pending'
-    this.tasks[taskId].result = undefined
-    this.tasks[taskId].errorMessage = undefined
-    this.saveTaskToStorage(taskId)
   }
 
   clearAllTasks(): void {
@@ -235,7 +206,7 @@ export class ToolResultCollector {
   /**
    * 处理执行队列
    */
-  private async processQueue(): Promise<void> {
+  async processQueue(): Promise<void> {
     // 如果已在处理或队列为空，返回
     if (this.isProcessing.value || this.executionQueue.value.length === 0) {
       return
@@ -328,33 +299,6 @@ export class ToolResultCollector {
       }))
     } catch (e) {
       console.error(`Error saving task ${taskId}:`, e)
-    }
-  }
-  
-  /**
-   * 从存储恢复所有任务
-   */
-  private restoreTasksFromStorage(): void {
-    try {
-      // 查找所有相关的存储项
-      const prefix = this.options.storagePrefix
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i)
-        if (key && key.startsWith(prefix)) {
-          const stored = sessionStorage.getItem(key)
-          
-          if (stored) {
-            const data = JSON.parse(stored)
-            
-            // 如果任务已成功，将其添加到结果列表
-            if (data.status === 'success' && data.result) {
-              // 稍后会根据需要重新创建完整的任务
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Error restoring tasks from storage:', e)
     }
   }
 }

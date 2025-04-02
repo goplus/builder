@@ -91,11 +91,11 @@ export class Copilot extends Disposable implements ICopilot {
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
 
-    const ts = convertToApiTools(registeredTools.value)
+    const tools = convertToApiTools(registeredTools.value)
     // Use generateStreamMessage directly
     const stream = await generateStreamMessage(messages, {
         signal: options?.signal,
-        tools: ts,
+        tools: tools,
     })
 
     // Forward each chunk from the stream

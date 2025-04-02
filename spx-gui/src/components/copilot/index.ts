@@ -134,8 +134,6 @@ export class CopilotController extends Disposable {
       this.currentChatRef.value.ctrl.abort()
       this.currentChatRef.value = null
     }
-
-    toolResultCollector.clearAllTasks()
   }
 
   async askProblem(problem: string) {
@@ -189,6 +187,8 @@ export class CopilotController extends Disposable {
       })
       await this.getCopilotAnswer()
     }finally {
+      await toolResultCollector.processQueue()
+      toolResultCollector.clearAllTasks()
       this.endResponding()
       // 处理已排队的结果
       if (this.queuedToolResults.value.length > 0) {
