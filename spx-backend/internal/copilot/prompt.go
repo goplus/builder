@@ -25,11 +25,11 @@ var customElementCodeLink string
 //go:embed custom_element_code_change.md
 var customElementCodeChange string
 
-//go:embed system_prompt.md
-var systemPromptTpl string
-
 //go:embed system_prompt_with_tools.md
 var systemPromptWithToolsTpl string
+
+//go:embed system_prompt.md
+var systemPromptTpl string
 
 // systemPromptTplData holds all data needed to populate the system prompt template.
 // This includes language definitions, documentation, and available tools.
