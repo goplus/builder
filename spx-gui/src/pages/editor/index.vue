@@ -14,10 +14,15 @@
         <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
           <ProjectEditor />
           <LevelPlayer
-            v-if="isGuidanceMode && storyLineInfo"
+            v-if="guidanceMode === GuidanceMode.Guidance && storyLineInfo"
             class="level-player"
             :story-line-info="storyLineInfo"
             :current-level-index="currentLevelIndex"
+          />
+          <GuidanceEditor
+            v-if="guidanceMode === GuidanceMode.GuidanceEditor && maybeSavedStoryLineInfo"
+            class="guidance-editor"
+            :story-line="maybeSavedStoryLineInfo"
           />
         </EditorContextProvider>
       </main>
@@ -47,7 +52,8 @@ import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context
 import { usePublishProject } from '@/components/project'
 import { ListFilter } from '@/models/list-filter'
 import LevelPlayer from '@/components/guidance/LevelPlayer.vue'
-import { getStoryLine, type StoryLine } from '@/apis/guidance'
+import GuidanceEditor from '@/components/guidance/editor/GuidanceEditor.vue'
+import { getStoryLine, type StoryLine, storyLineJson, type MaybeSavedStoryLine } from '@/apis/guidance'
 import TagNode from '@/utils/tagging/TagNode.vue'
 
 const props = defineProps<{
@@ -60,27 +66,52 @@ const currentLevelIndex = computed(() => {
   return parseInt(getStringParam(router, 'levelIndex') ?? '0')
 })
 
-const isGuidanceMode = computed(() => {
-  return getStringParam(router, 'guide') !== null
-})
+enum GuidanceMode {
+  None = 'none',
+  Guidance = 'guidance',
+  GuidanceEditor = 'guidanceEditor'
+}
+const guidanceMode = ref<GuidanceMode>(GuidanceMode.None)
 const storyLineInfo = ref<StoryLine | null>(null)
+const maybeSavedStoryLineInfo = ref<MaybeSavedStoryLine | null>(null)
 
 watch(
-  isGuidanceMode,
-  (value) => {
-    if (value) {
-      handleGuidance()
-    }
+  () => ({
+    guide: getStringParam(router, 'guide'),
+    guidanceEditor: getStringParam(router, 'guidanceEditor'),
+    storyLineId: getStringParam(router, 'storyLineId'),
+    levelIndex: getStringParam(router, 'levelIndex')
+  }),
+  () => {
+    handleGuidance()
   },
   { immediate: true }
 )
+
 async function handleGuidance() {
-  const storyLineId: string | null = getStringParam(router, 'storyLineId')
-  if (storyLineId != null) {
-    const data: StoryLine = await getStoryLine(storyLineId)
-    if (data) {
-      storyLineInfo.value = data
+  if (getStringParam(router, 'guide') != null) {
+    guidanceMode.value = GuidanceMode.Guidance
+    const storyLineId: string | null = getStringParam(router, 'storyLineId')
+    if (storyLineId != null) {
+      storyLineInfo.value = storyLineJson
+      const data: StoryLine = await getStoryLine(storyLineId)
+      if (data) {
+        storyLineInfo.value = data
+      }
     }
+  } else if (getStringParam(router, 'guidanceEditor') != null) {
+    guidanceMode.value = GuidanceMode.GuidanceEditor
+    const storyLineId: string | null = getStringParam(router, 'storyLineId')
+    // for test
+    maybeSavedStoryLineInfo.value = storyLineJson
+    if (storyLineId != null) {
+      const data: StoryLine = await getStoryLine(storyLineId)
+      if (data) {
+        maybeSavedStoryLineInfo.value = data
+      }
+    }
+  } else {
+    guidanceMode.value = GuidanceMode.None
   }
 }
 

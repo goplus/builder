@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useTag } from '../../utils/tagging'
 import { useElementRect } from '../../utils/dom'
 
