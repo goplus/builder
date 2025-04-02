@@ -1,17 +1,31 @@
 <template>
   <div class="guidance-editor-container">
-    <div v-show="isShowIcon" ref="editorIconRef" class="guidance-editor-icon" :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }">
+    <div
+      v-show="isShowIcon"
+      ref="editorIconRef"
+      class="guidance-editor-icon"
+      :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }"
+    >
       <img src="../icons/edit.svg" alt="guidance-editor" />
     </div>
     <div v-show="!isShowIcon" class="guidance-editor-content">
-      <StoryLineEditor v-show="editorStatus === editorStatusType.STORYLINE" v-model:story-line="storyLine" @level-change="handleLevelChange" @minimize="isShowIcon = true"/>
-      <LevelEditor v-show="editorStatus === editorStatusType.LEVELEDITOR" v-model:level="storyLine.levels[levelIndex]" @back="editorStatus = editorStatusType.STORYLINE"/>
+      <StoryLineEditor
+        v-show="editorStatus === editorStatusType.STORYLINE"
+        v-model:story-line="storyLine"
+        @level-change="handleLevelChange"
+        @minimize="isShowIcon = true"
+      />
+      <LevelEditor
+        v-show="editorStatus === editorStatusType.LEVELEDITOR"
+        v-model:level="storyLine.levels[levelIndex]"
+        @back="editorStatus = editorStatusType.STORYLINE"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
 import LevelEditor from './LevelEditor.vue'
@@ -46,10 +60,14 @@ const editorIconPos = ref<Pos>({
   y: 0
 })
 const editorIconRef = ref<HTMLElement | null>(null)
-useDrag(editorIconRef, () => editorIconPos.value, (pos: Pos) => editorIconPos.value = pos, {
-  onClick: () => isShowIcon.value = false
-})
-
+useDrag(
+  editorIconRef,
+  () => editorIconPos.value,
+  (pos: Pos) => (editorIconPos.value = pos),
+  {
+    onClick: () => (isShowIcon.value = false)
+  }
+)
 </script>
 
 <style lang="scss" scoped>
