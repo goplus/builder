@@ -7,41 +7,24 @@
     </UIMessageProvider>
   </UIConfigProvider>
 
-  <CopilotChat v-show="isCopilotActive" :controller="copilotController" @close="closeCopilot" />
+  <!--  MCP Debugger  -->
   <UIMcpDebugger :is-visible="isMcpDebuggerVisible" @close="closeMcpDebugger" />
 </template>
 
 <script setup lang="ts">
-import { computed, provide } from 'vue'
-import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger,  type Config } from '@/components/ui'
+import { computed } from 'vue'
+import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger, type Config } from '@/components/ui'
 import { useI18n } from './utils/i18n'
-import { useCopilotStore, useMcpDebuggerStore } from '@/utils/utils'
-import { CopilotChat, CopilotController } from '@/components/copilot'
-// import UseMcpTool from '@/components/editor/code-editor/ui/markdown/UseMcpTool.vue'
+import { useMcpDebuggerStore } from '@/utils/utils'
 
-import { Copilot } from '@/components/copilot/copilot'
+const { t } = useI18n()
 
-const i18n = useI18n()
-const { t } = i18n
 // Ensure the injected state is reactive
-const isCopilotActive = useCopilotStore()
 const isMcpDebuggerVisible = useMcpDebuggerStore()
-
-let copilot = new Copilot(i18n)
-let copilotController = new CopilotController(copilot)
-
-copilotController.init()
-
-provide('copilotController', copilotController)
 
 // Close the debugger panel
 function closeMcpDebugger() {
   isMcpDebuggerVisible.value = false // Update the state
-}
-
-function closeCopilot() {
-  console.log("closeCopilot")
-  isCopilotActive.value = false // Update the state
 }
 
 const config = computed<Config>(() => ({

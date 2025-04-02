@@ -143,4 +143,3 @@ export const initRouter = (app: App) => {
   app.use(router)
 }
 
-export default router
