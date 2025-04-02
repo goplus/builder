@@ -62,15 +62,22 @@ type CollectingItem = {
   desc: LocaleMessage | null
 }
 
+export type ProgressCollectorInfoForDesc = {
+  finishedNum: number
+  totalNum: number
+}
+
+export type ProgressCollectorDescFn = (info: ProgressCollectorInfoForDesc) => LocaleMessage
+
 export class ProgressCollector {
   private collecting: CollectingItem[] = []
   private handler?: ProgressHandler
 
-  constructor(private descBase?: LocaleMessage | null) {}
+  constructor(private descFn?: ProgressCollectorDescFn | null) {}
 
   /** Creates a new ProgressCollector which collects progress and reports with given reporter. */
-  static collectorFor(reporter: ProgressReporter, descBase?: LocaleMessage | null) {
-    const collector = new ProgressCollector(descBase)
+  static collectorFor(reporter: ProgressReporter, descFn?: ProgressCollectorDescFn | null) {
+    const collector = new ProgressCollector(descFn)
     collector.onProgress((p) => reporter.report(p))
     return collector
   }
@@ -80,13 +87,10 @@ export class ProgressCollector {
   }
 
   private getDesc() {
-    if (this.descBase == null) return null
+    if (this.descFn == null) return null
     const finishedNum = this.collecting.filter((i) => i.progress.percentage >= 1).length
     const totalNum = this.collecting.length
-    return {
-      en: `${this.descBase.en} (${finishedNum}/${totalNum})`,
-      zh: `${this.descBase.zh}（${finishedNum}/${totalNum}）`
-    }
+    return this.descFn({ finishedNum, totalNum })
   }
 
   private getProgress() {
