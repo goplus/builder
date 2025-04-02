@@ -166,8 +166,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { mcpConnectionStatus } from '@/components/copilot/mcp/transport'
-import { tools, mcpRequestHistory } from '@/components/copilot/mcp/server'
-import { client } from '@/components/copilot/mcp/client'
+import { mcpRequestHistory } from '@/components/copilot/mcp/server'
+import { registeredTools } from '@/components/copilot/mcp/registry'
+import { getMcpClient } from '@/components/copilot/mcp/client'
 import { UITooltip } from '@/components/ui'
 
 /**
@@ -184,6 +185,7 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const tools = registeredTools.value
 // State management
 const selectedTool = ref('')
 const paramValues = ref<Record<string, any>>({})
@@ -293,7 +295,7 @@ function onToolChange() {
  * @returns Tool description or empty string if tool not found
  */
 function getToolDescription(toolName: string) {
-  const tool = tools.find((t) => t.name === toolName)
+  const tool = registeredTools.value.find((t) => t.name === toolName)
   return tool ? tool.description : ''
 }
 
@@ -308,7 +310,7 @@ async function sendRequest() {
 
   try {
     const cleanParams = { ...paramValues.value }
-    await client.callTool({
+    await getMcpClient().callTool({
       name: selectedTool.value,
       arguments: cleanParams
     })

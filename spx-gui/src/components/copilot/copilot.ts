@@ -5,9 +5,9 @@ import type { ICopilot, Chat } from '@/components/copilot/index'
 import {
   type MCPMarkdownString,
 } from '@/components/editor/code-editor/common'
-import { tools } from './mcp/server'  
+import { registeredTools } from './mcp/registry'
 
-function convertToApiTools(serverTools: typeof tools): Tool[] {
+function convertToApiTools(serverTools: typeof registeredTools.value): Tool[] {
   return serverTools.map(tool => {
     const properties: { [key: string]: any } = {};
     if (tool.inputSchema.properties) {
@@ -91,7 +91,7 @@ export class Copilot extends Disposable implements ICopilot {
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
 
-    const ts = convertToApiTools(tools)
+    const ts = convertToApiTools(registeredTools.value)
     // Use generateStreamMessage directly
     const stream = await generateStreamMessage(messages, {
         signal: options?.signal,

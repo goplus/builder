@@ -1,5 +1,5 @@
 import { reactive, ref, watch } from 'vue'
-import { client } from './client'
+import { getMcpClient } from './client'
 
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
 
@@ -263,7 +263,7 @@ export class ToolResultCollector {
           const args = JSON.parse(task.args)
           
           // 调用 MCP 工具
-          const result = await client.callTool({
+          const result = await getMcpClient().callTool({
             name: task.tool,
             arguments: args
           })
