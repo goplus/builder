@@ -5,8 +5,6 @@
 <script lang="ts">
 import { inject } from 'vue'
 import { Runtime } from '@/models/runtime'
-import { editorService } from '@/pages/editor/context'
-import { onMounted, onUnmounted } from 'vue'
 
 export type EditorCtx = {
   project: Project
@@ -14,7 +12,7 @@ export type EditorCtx = {
   runtime: Runtime
 }
 
-export const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
+const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
 
 export function useEditorCtx() {
   const ctx = inject(editorCtxKey)
@@ -42,12 +40,4 @@ const editorCtx = computedShallowReactive<EditorCtx>(() => ({
 }))
 
 provide(editorCtxKey, editorCtx)
-
-onMounted(() => {
-  editorService.registerEditorCtx(editorCtx)
-})
-
-onUnmounted(() => {
-  editorService.unregisterEditorCtx()
-})
 </script>

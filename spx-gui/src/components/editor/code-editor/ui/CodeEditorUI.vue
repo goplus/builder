@@ -2,7 +2,7 @@
 export type CodeEditorUICtx = {
   ui: CodeEditorUI
 }
-export const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
+const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
 export function useCodeEditorUICtx() {
   const ctx = inject(codeEditorUICtxInjectionKey)
   if (ctx == null) throw new Error('useCodeEditorUICtx should be called inside of CodeEditorUI')

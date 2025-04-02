@@ -61,10 +61,7 @@ ${JSON.stringify(getCodeInfo(ctx, code, focusLine))}
     return this.getCodeInfoText(ctx, currentCodeFileName, textDocument.getValue(), currentFocusLine)
   }
 
-  private makeContextMessage({ textDocument, openedTextDocuments, cursorPosition, selection }: ChatContext): Message | null {
-    if (textDocument == null) {
-      return null
-    }
+  private makeContextMessage({ textDocument, openedTextDocuments, cursorPosition, selection }: ChatContext): Message {
     const currentCodeFileName = textDocumentId2CodeFileName(textDocument.id)
     const ctx: CodeSampleContext = { quota: maxCodeLength }
     const otherOpenedTextDocuments = openedTextDocuments.filter((td) => !textDocumentIdEq(td.id, textDocument.id))
@@ -130,11 +127,7 @@ ${codeInfoText}
   }
 
   async *getChatCompletion(ctx: ChatContext, chat: Chat): AsyncIterableIterator<string> {
-    const contextMessage = this.makeContextMessage(ctx)
-    const messages = []
-    if (contextMessage != null) {
-      messages.push(contextMessage)
-    }
+    const messages = [this.makeContextMessage(ctx)]
     const toSkip = chat.messages.length - maxChatMessageCount
 
     // skip chat messages in range `[1, toSkip]`
