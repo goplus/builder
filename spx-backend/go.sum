@@ -173,8 +173,8 @@ github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:
 github.com/qiniu/dyn v1.3.0/go.mod h1:E8oERcm8TtwJiZvkQPbcAh0RL8jO1G0VXJMW3FAWdkk=
 github.com/qiniu/go-cdk-driver v0.1.1 h1:13Eo4ynoxJERPc/xkWsxwLMOrWXSMXn1tgcdEnaRqbs=
 github.com/qiniu/go-cdk-driver v0.1.1/go.mod h1:ZSkKYAwi6jFKPBSTKEeg9UrSsc72fLHb4dDqZikcI0g=
-github.com/qiniu/go-sdk/v7 v7.25.2 h1:URwgZpxySdiwu2yQpHk93X4LXWHyFRp1x3Vmlk/YWvo=
-github.com/qiniu/go-sdk/v7 v7.25.2/go.mod h1:dmKtJ2ahhPWFVi9o1D5GemmWoh/ctuB9peqTowyTO8o=
+github.com/qiniu/go-sdk/v7 v7.25.3 h1:eYHh02q4i5MrlEn3qy823w7moieymFzb4dsP38Y43AI=
+github.com/qiniu/go-sdk/v7 v7.25.3/go.mod h1:dmKtJ2ahhPWFVi9o1D5GemmWoh/ctuB9peqTowyTO8o=
 github.com/qiniu/x v1.10.5/go.mod h1:03Ni9tj+N2h2aKnAz+6N0Xfl8FwMEDRC2PAlxekASDs=
 github.com/qiniu/x v1.13.12 h1:UyAwja6dgKUOYWZMzzc02wLodwnZ7wmK/0XzRd0e78g=
 github.com/qiniu/x v1.13.12/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
