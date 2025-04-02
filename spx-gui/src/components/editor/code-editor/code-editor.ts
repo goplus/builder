@@ -32,7 +32,11 @@ import {
   InsertTextFormat,
   CompletionItemKind,
   type IAPIReferenceProvider,
-  type APIReferenceContext
+  type APIReferenceContext,
+  type ClozeTestContext,
+  type IClozeTestProvider,
+  type ClozeAreaType,
+  type ClozeArea
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -64,7 +68,6 @@ import {
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { ListFilter } from '@/models/list-filter'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
@@ -193,6 +196,51 @@ class DiagnosticsProvider
       diagnostics.push({ ...diagnostic, range })
     }
     return diagnostics
+  }
+}
+
+class ClozeAreaProvider
+  extends Emitter<{
+    didChangeClozeAreas: []
+  }>
+  implements IClozeTestProvider
+{
+  constructor() {
+    super()
+  }
+  async provideClozeAreas(ctx: ClozeTestContext): Promise<ClozeArea[]> {
+    const clozeAreas: ClozeArea[] = [
+      {
+        range: {
+          start: { line: 2, column: 2 },
+          end: { line: 2, column: 8 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 4, column: 0 },
+          end: { line: 6, column: 0 }
+        },
+        type: 'editable' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 13, column: 2 },
+          end: { line: 13, column: 8 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 15, column: 10 },
+          end: { line: 15, column: 16 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      }
+    ]
+
+    return clozeAreas
   }
 }
 
@@ -465,7 +513,7 @@ export class CodeEditor extends Disposable {
   private resourceReferencesProvider: ResourceReferencesProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
-
+  private clozeAreaProvider: ClozeAreaProvider
   constructor(
     private project: Project,
     private runtime: Runtime,
@@ -483,6 +531,7 @@ export class CodeEditor extends Disposable {
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
+    this.clozeAreaProvider = new ClozeAreaProvider()
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -584,6 +633,7 @@ export class CodeEditor extends Disposable {
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
     ui.registerDocumentBase(this.documentBase)
+    ui.registerClozeTestProvider(this.clozeAreaProvider)
   }
 
   detachUI(ui: ICodeEditorUI) {
