@@ -6,7 +6,7 @@ import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import type { AssetModel } from '@/models/common/asset'
-import { fromNativeFile, fromBlob } from '@/models/common/file'
+import { fromNativeFile } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
@@ -15,7 +15,7 @@ import { Animation } from '@/models/animation'
 import { saveFiles } from '@/models/common/cloud'
 import { Monitor } from '@/models/widget/monitor'
 import * as assetName from '@/models/common/asset-name'
-import { Costume } from '@/models/costume'
+import type { Costume } from '@/models/costume'
 import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
@@ -94,61 +94,6 @@ export function useAddSpriteFromLocalFile(autoSelect = true) {
       await sprite.autoFit()
     })
     if (autoSelect) selectAsset(project, sprite)
-    return sprite
-  }
-}
-
-/**
- * Creates a composable function to add a sprite with a square canvas drawing.
- *
- * This function enables programmatic sprite creation by drawing a square
- * on an HTML canvas with specified size and color, then converting it to a sprite.
- *
- * @param project - The current project to which the sprite will be added
- * @param spriteName - The name to assign to the new sprite
- * @param size - The size of the square in pixels
- * @param color - The color of the square (CSS color format)
- * @returns A function that when called creates and adds a square sprite to the project
- *
- * @example
- * // Create a red square sprite with 100px size
- * const addRedSquare = useAddSpriteFromCanvos(project, 'RedSquare', 100, 'red')
- * await addRedSquare()
- */
-export function useAddSpriteFromCanvos(project: Project, spriteName: string, size: number, color: string) {
-  /**
-   * Creates and adds a square sprite to the current project.
-   *
-   * @returns A promise that resolves to the created Sprite instance
-   * @throws Error if EditorCtx is not available
-   */
-  return async function addSpriteFromCanvos(): Promise<Sprite> {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
-
-    // Set canvas dimensions
-    canvas.width = size
-    canvas.height = size
-
-    // Draw a square
-    ctx.fillStyle = color
-    ctx.fillRect(0, 0, size, size)
-
-    // Convert canvas to Blob
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob!)
-      }, 'image/png')
-    })
-
-    // Create file from Blob
-    const file = fromBlob(spriteName, blob)
-
-    // Create sprite with costume
-    const sprite = Sprite.create(spriteName)
-    const costume = new Costume(spriteName, file)
-    sprite.addCostume(costume)
-    project.addSprite(sprite)
     return sprite
   }
 }

@@ -160,10 +160,6 @@ export class CopilotController extends Disposable {
       this.currentChatRef.value.ctrl.abort()
       this.currentChatRef.value = null
     }
-    if (!this.ui) {
-      console.warn("CopilotController: No UI availablet");
-      return;
-    }
     this.ui.setIsCopilotActive(false)
   }
 
