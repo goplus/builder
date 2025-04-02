@@ -60,7 +60,7 @@
         <UIDivider />
         <div class="img-content">
           <div class="img-preview">
-            <UIImg class="thumbnail" style="height: 100%; width: 100%;" :src="form.value.backgroundImage" :loading="bgLoading" size="contain" />
+            <UIImg class="thumbnail" style="height: 100%; width: 100%;" :src="form.value.backgroundImage || './icons/no-img.svg'" :loading="bgLoading" size="contain" />
           </div>
         </div>
       </UICard>
