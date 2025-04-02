@@ -6,7 +6,7 @@ import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import type { AssetModel } from '@/models/common/asset'
-import { fromNativeFile } from '@/models/common/file'
+import { fromNativeFile, fromBlob } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
@@ -15,7 +15,7 @@ import { Animation } from '@/models/animation'
 import { saveFiles } from '@/models/common/cloud'
 import { Monitor } from '@/models/widget/monitor'
 import * as assetName from '@/models/common/asset-name'
-import type { Costume } from '@/models/costume'
+import { Costume } from '@/models/costume'
 import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
@@ -96,6 +96,44 @@ export function useAddSpriteFromLocalFile(autoSelect = true) {
     if (autoSelect) selectAsset(project, sprite)
     return sprite
   }
+}
+
+export async function genSpriteFromCanvos(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvos(name, width, height, color)
+  const sprite = Sprite.create(name)
+  const costume = new Costume(name, canvas)
+  sprite.addCostume(costume)
+  return sprite
+}
+
+export async function genBackdropFromCanvos(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvos(name, width, height, color)
+  const backdrop = await Backdrop.create(name, canvas)
+  return backdrop
+}
+
+async function genAssetFromCanvos(name: string, width:number, height: number, color: string) {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')!
+
+  // Set canvas dimensions
+  canvas.width = width
+  canvas.height = height
+
+  // Draw a square
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, width, height)
+
+  // Convert canvas to Blob
+  const blob = await new Promise<Blob>((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob!)
+    }, 'image/png')
+  })
+
+  // Create file from Blob
+  const file = fromBlob(name, blob)
+  return file
 }
 
 export function useAddCostumeFromLocalFile(autoSelect = true) {

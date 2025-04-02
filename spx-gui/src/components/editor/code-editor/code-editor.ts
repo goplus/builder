@@ -65,6 +65,21 @@ import {
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
+import * as z from 'zod'
+import { registerTools, unregisterProviderTools } from '@/components/copilot/mcp/registry'
+import { 
+  insertCodeToolDescription, 
+  InsertCodeArgsSchema, 
+  addSpriteFromCanvasToolDescription, 
+  AddSpriteFromCanvasArgsSchema,
+  addStageBackdropFromCanvasToolDescription,
+  AddStageBackdropFromCanvasArgsSchema,
+  RunGameArgsSchema,
+  runGameToolDescription,
+  StopGameArgsSchema,
+  stopGameToolDescription,
+} from '@/components/copilot/mcp/definitions'
+import { genSpriteFromCanvos, genBackdropFromCanvos } from '@/components/asset/index'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
@@ -489,6 +504,12 @@ class ContextMenuProvider implements IContextMenuProvider {
   }
 }
 
+type InsertCodeOptions = z.infer<typeof InsertCodeArgsSchema>
+type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
+type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
+type RunGameOptions = z.infer<typeof RunGameArgsSchema>
+type StopGameOptions = z.infer<typeof StopGameArgsSchema>
+
 export class CodeEditor extends Disposable {
   private copilot: Copilot
   private documentBase: DocumentBase
@@ -516,6 +537,198 @@ export class CodeEditor extends Disposable {
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
+  }
+
+  registerMCPTools(): void {
+    // 注册 insert_code 工具
+    registerTools([
+      {
+        description: insertCodeToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = InsertCodeArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args) => {
+            const result = this.insertCode(args)
+            return result
+          }
+        }
+      },
+      {
+        description: addSpriteFromCanvasToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = AddSpriteFromCanvasArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${addSpriteFromCanvasToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: AddSpriteFromCanvaOptions) => {
+            return this.addSpriteFromCanvas(args)
+          }
+        }
+      },
+      {
+        description: addStageBackdropFromCanvasToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = AddStageBackdropFromCanvasArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${addStageBackdropFromCanvasToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: AddStageBackdropFromCanvasOptions) => {
+            return this.addBackdropFromCanvas(args)
+          }
+        }
+      },
+      {
+        description: runGameToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = RunGameArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${runGameToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: RunGameOptions) => {
+            return this.runGame(args)
+          }
+        }
+      },
+      {
+        description: stopGameToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = StopGameArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${stopGameToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: StopGameOptions) => {
+            return this.stopGame(args)
+          }
+        }
+      }
+    ], 'code-editor')
+  }
+
+  async insertCode(args: InsertCodeOptions) {
+    // 解构参数
+    const code = args.code
+    const file = args.file
+    const iRange = args.insertRange
+    
+    try {
+      // 
+      const targetDoc = this.getTextDocument({ uri: file })
+      if (!targetDoc) {
+        throw new Error(`File not found: ${file}`)
+      }
+
+      const ui = this.getAttachedUI()
+      if (ui == null) {
+        throw new Error('No UI attached to the code editor')
+      }
+      // 打开文件
+      ui.open({ uri: file })
+      ui.insertBlockText(code, {
+        start: { line: iRange.startLine, column: 0 },
+        end: { line: iRange.endLine, column: 0 }
+      })
+
+      return {
+        success: true,
+        message: `Code successfully inserted into ${file}`,
+      }
+    } catch (error) {
+      console.error('Error inserting code:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
+      }
+    }
+  }
+
+  async addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
+    const sprite = await genSpriteFromCanvos(args.spriteName, args.size, args.size, args.color)
+    this.project.addSprite(sprite)
+    this.project.saveToCloud()
+    return {
+      success: true,
+      message: `Successfully added sprite "${args.spriteName}" to project "${this.project.name}"`
+    }
+  }
+
+  async addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
+    const backdrop = await genBackdropFromCanvos(args.backdropName, 800, 600, args.color)
+    this.project.stage.addBackdrop(backdrop)
+    this.project.saveToCloud()
+    return {
+      success: true,
+      message: `Successfully added sprite "${args.backdropName}" to project "${this.project.name}"`
+    }
+  }
+
+  async runGame(args: RunGameOptions) {
+    if (this.project.name != args.projectName) {
+      return {
+        success: false,
+        message: `Failed to runGame: Project name mismatch. Expected "${args.projectName}", but got "${this.project.name}"`
+      }
+    }
+    try {
+      this.runtime.setRunning({ mode: 'debug', initializing: true })
+      return {
+        success: true,
+        message: `Successfully runned the project "${this.project.name}"`
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Failed to runGame:`, errorMessage)
+  
+      return {
+        success: false,
+        message: `Failed to runGame: ${errorMessage}`
+      }
+    }
+  }
+
+  async stopGame(args: StopGameOptions) {
+    if (this.project.name != args.projectName) {
+      return {
+        success: false,
+        message: `Failed to stopGame: Project name mismatch. Expected "${args.projectName}", but got "${this.project.name}"`
+      }
+    }
+    try {
+      this.runtime.setRunning({ mode: 'none' })
+      return {
+        success: true,
+        message: `Successfully stopped the project "${this.project.name}"`
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error(`Failed to stopGame:`, errorMessage)
+  
+      return {
+        success: false,
+        message: `Failed to stopGame: ${errorMessage}`
+      }
+    }
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -630,10 +843,12 @@ export class CodeEditor extends Disposable {
   }
 
   init() {
+    this.registerMCPTools()
     this.lspClient.init()
   }
 
   dispose(): void {
+    unregisterProviderTools('code-editor')
     this.uis = []
     this.lspClient.dispose()
     this.documentBase.dispose()

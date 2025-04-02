@@ -81,6 +81,28 @@ export function registerTool<T = any, R = any>(
   }
 }
 
+
+/**
+ * 批量注册工具
+ * 
+ * @param tools 工具列表
+ * @param provider 提供者标识
+ * @returns 批量注销函数
+ */
+export function registerTools(
+  tools: Array<{
+    description: ToolDescription,
+    implementation: ToolImplementation
+  }>,
+  provider: string
+) {
+  // 注册所有工具并收集注销函数
+  tools.map(({ description, implementation }) => 
+    registerTool(description, implementation, provider)
+  )
+}
+
+
 /**
  * 注销工具
  * 
@@ -106,6 +128,31 @@ export function unregisterTool(toolName: string, provider?: string): boolean {
   // 注销工具
   delete registry[toolName]
   return true
+}
+
+
+/**
+ * 批量注销特定提供者的所有工具
+ * 
+ * @param provider 提供者标识
+ * @returns 注销的工具数量
+ */
+export function unregisterProviderTools(provider: string): number {
+  let count = 0
+  
+  // 获取该提供者注册的所有工具
+  Object.entries(registry).forEach(([toolName, tool]) => {
+    if (tool.provider === provider) {
+      delete registry[toolName]
+      count++
+    }
+  })
+  
+  if (count > 0) {
+    console.log(`Unregistered ${count} tools from provider "${provider}"`)
+  }
+  
+  return count
 }
 
 /**

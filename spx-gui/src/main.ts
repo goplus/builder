@@ -15,6 +15,9 @@ import { initRouter } from './router'
 import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
+import { initMcpClient } from './components/copilot/mcp/client'
+import { initMcpServer } from './components/copilot/mcp/server'
+import { initBasicTools } from './components/copilot/mcp/basic'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -26,6 +29,11 @@ const initApiClient = async () => {
   setTokenProvider(userStore.ensureAccessToken)
 }
 
+const initMcp = async () => {
+  initMcpClient()
+  initMcpServer()
+}
+
 async function initApp() {
   const app = createApp(App)
 
@@ -33,6 +41,8 @@ async function initApp() {
   initApiClient()
   initRouter(app)
   initI18n(app)
+  initMcp()
+  initBasicTools()
 
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
