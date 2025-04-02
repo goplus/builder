@@ -70,8 +70,34 @@
               </div>
             </div>
           </UIForm>
+          <UIDivider />
+          <div class="base-info-header">
+            <span>{{ $t({ zh: '当前关卡的节点任务列表', en: 'NodeList of current level' }) }}</span>
+            <UIButton type="primary" @click="handleCreateTask">
+              {{ $t({ zh: '添加节点任务', en: 'Add nodeTask' }) }}
+            </UIButton>
+          </div>
+          <div class="node-list">
+            <div v-for="(node, index) in form.value.nodeTasks" :key="node.name.en" class="node-item">
+              <div class="node-top">
+                <div class="node-top-left">
+                  <div class="num">{{ index + 1 }}</div>
+                  <div class="text">{{ $t(node.name) }}</div>
+                  <div class="status">未完成</div>
+                </div>
+                <div class="node-top-right">
+                  <div><img src="../icons/edit-level.svg" alt="edit nodetask" @click="handleNodeEdit(index)" /></div>
+                  <div><img src="../icons/delete.svg" alt="delete nodetask" @click="handleRemoveNode(index)" /></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </UICard>
-        <NodeTaskEditor v-show="selectedTab === 'nodeTask'" v-model:nodeTasks="form.value.nodeTasks" />
+        <NodeTaskEditor
+          v-show="selectedTab === 'nodeTask'"
+          v-model:node-task="currentNodeTaskInfo"
+          @update:currentStep="handleToStep"
+        />
         <!-- <StepEditor v-show="selectedTab === 'step'" :steps="form.value.nodeTasks" /> -->
       </div>
     </div>
@@ -92,7 +118,8 @@ import {
   UIDivider,
   UIButton
 } from '@/components/ui'
-import type { Level } from '@/apis/guidance'
+import type { Level, NodeTask } from '@/apis/guidance'
+import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectImg } from '@/utils/file'
@@ -101,12 +128,22 @@ import { saveFile, universalUrlToWebUrl } from '@/models/common/cloud'
 import { useMessage } from '@/components/ui/message'
 import NodeTaskEditor from './NodeTaskEditor.vue'
 // import StepEditor from './StepEditor.vue';
+
 const props = defineProps<{
   level: Level
 }>()
+const emit = defineEmits<{
+  (e: 'update:level', data: Level): void
+  (e: 'back'): void
+}>()
+
+const { t } = useI18n()
+const m = useMessage()
+const loading = ref<boolean>(false)
+const currentNodeTaskInfo = ref<NodeTask>(props.level.nodeTasks[0])
+const currentStepInfo = ref<Step>(props.level.nodeTasks[0].steps[0])
 
 const selectedTab = ref<'level' | 'nodeTask' | 'step'>('level')
-
 const form = useForm({
   titleZh: [props.level.title.zh],
   titleEn: [props.level.title.en],
@@ -118,11 +155,6 @@ const form = useForm({
   nodeTasks: [props.level.nodeTasks],
   placement: [props.level.placement]
 })
-
-const emit = defineEmits<{
-  (e: 'update:level', data: Level): void
-  (e: 'back'): void
-}>()
 
 function handleOpt(option: string): void {
   switch (option) {
@@ -154,9 +186,6 @@ function handleOpt(option: string): void {
       break
   }
 }
-const { t } = useI18n()
-const loading = ref<boolean>(false)
-const m = useMessage()
 async function handleUploadImg() {
   const { isOnline } = useNetwork()
   try {
@@ -172,6 +201,85 @@ async function handleUploadImg() {
   } catch (error) {
     console.error('Error uploading image:', error)
   }
+}
+
+function handleCreateTask() {
+  const newTask: NodeTask = {
+    name: {
+      zh: '',
+      en: ''
+    },
+    video: '',
+    steps: [
+      {
+        title: {
+          zh: '',
+          en: ''
+        }, // 步骤名称
+        description: {
+          zh: '',
+          en: ''
+        }, // 步骤描述
+        tip: {
+          zh: '',
+          en: ''
+        }, // 互动提示（需要条件触发）
+        duration: 0, // 用户当前步骤卡顿距离给提示的时长（单位：秒）
+        target: '', // 目标元素语义化标注的key（用于高亮元素）
+        taggingHandler: { '': TaggingHandlerType.ClickToNext }, // 元素的语义化标注 及其 处理方式
+        type: 'coding', // 存在两种类型的步骤，分别是Following步骤和Coding步骤
+        isCheck: false, // 该步骤是否涉及快照比对
+        isApiControl: false, // 是否需要去控制API Reference的展示
+        apis: [''], // 该步骤中需要展示的API Reference的definition列表
+        isAssetControl: false, // 是否需要去控制素材的展示
+        assets: [''], // 该步骤中需要被展示的素材的id列表
+        isSpriteControl: false, // 是否需要去控制精灵的展示
+        sprites: [''], // 该步骤中需要被展示的精灵的id列表
+        isSoundControl: false, // 是否需要去控制声音的展示
+        sounds: [''], // 该步骤中需要被展示的声音的id列表
+        isCostumeControl: false, // 是否需要去控制造型的展示
+        costumes: [''], // 该步骤中需要被展示的造型的id列表
+        isAnimationControl: false, // 是否需要去控制动画的展示
+        animations: [''], // 该步骤中需要被展示的动画的id列表
+        isWidgetControl: false, // 是否需要去控制组件的展示
+        widgets: [''], // 该步骤中需要被展示的组件的id列表
+        isBackdropControl: false, // 是否需要去控制背景的展示
+        backdrops: [''], // 该步骤中需要被展示的背景的id列表
+        snapshot: {
+          startSnapshot: '', // 初始快照
+          endSnapshot: '' // 结束快照
+        },
+        coding: {
+          // coding任务独有的数据结构
+          path: '', // 编码文件路径
+          codeMasks: [
+            {
+              startPos: { line: 0, column: 0 }, // 答案展示的开始位置
+              endPos: { line: 0, column: 0 } // 答案展示的结束位置
+            }
+          ], // 完形填空的mask数组，一个mask对应一个空的答案
+          startPosition: { line: 0, column: 0 }, // 答案展示的开始位置
+          endPosition: { line: 0, column: 0 } // 答案展示的结束位置
+        }
+      }
+    ],
+    triggerTime: 0
+  }
+  form.value.nodeTasks.push(newTask)
+}
+
+function handleRemoveNode(index: number) {
+  form.value.nodeTasks.splice(index, 1)
+}
+
+function handleNodeEdit(index: number) {
+  currentNodeTaskInfo.value = form.value.nodeTasks[index]
+  selectedTab.value = 'nodeTask'
+}
+
+function handleToStep(index: number) {
+  currentStepInfo.value = currentNodeTaskInfo.value.steps[index]
+  selectedTab.value = 'step'
 }
 </script>
 
@@ -210,9 +318,7 @@ button {
   }
 }
 .base-info {
-  /* margin: auto; */
   box-sizing: border-box;
-  height: 500px;
   min-height: 500px;
 
   padding: 20px;
@@ -230,16 +336,79 @@ button {
     padding: 0 10px;
     margin: 20px;
     height: 100%;
-    height: 400px;
+    min-height: 200px;
   }
   .base-info-header {
     font-size: 20px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin: 20px 0;
     padding: 0 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+.node-list {
+  margin: 20px 0;
+  min-height: 200px;
+  .node-item {
+    width: 100%;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    margin-top: 20px;
+    padding: 15px 30px;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
+    }
+    .node-top {
+      display: flex;
+      height: 50px;
+      justify-content: space-between;
+      .node-top-left {
+        display: flex;
+        align-items: center;
+        .status {
+          font-size: 15px;
+          color: #0ec1d0;
+          margin-left: 10px;
+          background-color: #d4f9ff;
+          padding: 5px 10px;
+          border-radius: 5px;
+        }
+        .text {
+          font-size: 16px;
+        }
+        .num {
+          font-size: 20px;
+          font-weight: bold;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: #0ec1d0;
+          color: #fff;
+          margin-right: 10px;
+        }
+      }
+      .node-top-right {
+        display: flex;
+        align-items: center;
+        div {
+          padding: 0 10px;
+          cursor: pointer;
+          img {
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+    }
   }
 }
 </style>

@@ -17,7 +17,7 @@
       />
       <LevelEditor
         v-show="editorStatus === editorStatusType.LEVELEDITOR"
-        v-model:level="storyLine.levels[levelIndex]"
+        v-model:level="currentLevel"
         @back="editorStatus = editorStatusType.STORYLINE"
       />
     </div>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
 import LevelEditor from './LevelEditor.vue'
@@ -33,33 +33,35 @@ import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
 
-const props = defineProps<{
-  storyLine: MaybeSavedStoryLine
-}>()
-
-const storyLine = ref<MaybeSavedStoryLine>(props.storyLine)
-
 enum editorStatusType {
   STORYLINE,
   LEVELEDITOR
 }
-
+const props = defineProps<{
+  storyLine: MaybeSavedStoryLine
+}>()
 const editorStatus = ref<editorStatusType>(editorStatusType.STORYLINE)
-
 const levelIndex = ref<number>(0)
-
-function handleLevelChange(index: number) {
-  levelIndex.value = index
-  if (editorStatus.value === editorStatusType.STORYLINE) {
-    editorStatus.value = editorStatusType.LEVELEDITOR
-  }
-}
-
 const editorIconPos = ref<Pos>({
   x: 0,
   y: 0
 })
+
 const editorIconRef = ref<HTMLElement | null>(null)
+const storyLine = ref<MaybeSavedStoryLine>(props.storyLine)
+
+function handleLevelChange(index: number) {
+  levelIndex.value = index
+  editorStatus.value = editorStatusType.LEVELEDITOR
+}
+
+const currentLevel = computed({
+  get: () => storyLine.value.levels[levelIndex.value],
+  set: (newValue) => {
+    storyLine.value.levels[levelIndex.value] = newValue
+  }
+})
+
 useDrag(
   editorIconRef,
   () => editorIconPos.value,

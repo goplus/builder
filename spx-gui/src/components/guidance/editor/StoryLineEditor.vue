@@ -208,19 +208,18 @@ async function uploadImg() {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 100%;
+  min-height: 300px;
+
   .story-line-editor-content {
     width: 60%;
-    height: 100%;
+    height: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    // overflow: auto;
+
     .base-info {
-      // position: absolute;
       box-sizing: border-box;
-      height: 100%;
-      min-height: 500px;
+      min-height: 400px;
       width: 100%;
       padding: 20px;
       margin-top: 20px;
@@ -249,7 +248,7 @@ async function uploadImg() {
         align-items: center;
       }
       .level-list {
-        min-height: 500px;
+        min-height: 300px;
         .level-item {
           width: 100%;
           height: 200px;
