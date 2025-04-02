@@ -1,5 +1,5 @@
 import { reactive, ref, watch } from 'vue'
-import { client } from '@/mcp/client'
+import { client } from './client'
 
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
 
@@ -50,7 +50,6 @@ export class ToolResultCollector {
       () => [...this.executionQueue.value], // 创建数组副本以检测变化
       (newQueue) => {
         if (newQueue.length > 0 && !this.isProcessing.value) {
-          console.log("Watch triggered, queue length:", newQueue.length)
           this.processQueue()
         }
       },
@@ -169,8 +168,6 @@ export class ToolResultCollector {
       // 从任务集合中删除
       delete this.tasks[id]
     }
-    
-    console.log(`Cleared ${taskIds.length} tasks`)
   }
   
   /**
@@ -239,12 +236,10 @@ export class ToolResultCollector {
    * 处理执行队列
    */
   private async processQueue(): Promise<void> {
-    console.log("processQueue")
     // 如果已在处理或队列为空，返回
     if (this.isProcessing.value || this.executionQueue.value.length === 0) {
       return
     }
-    console.log("processQueue2")
     
     this.isProcessing.value = true
     
@@ -346,7 +341,6 @@ export class ToolResultCollector {
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i)
         if (key && key.startsWith(prefix)) {
-          const taskId = key.substring(prefix.length)
           const stored = sessionStorage.getItem(key)
           
           if (stored) {
@@ -355,7 +349,6 @@ export class ToolResultCollector {
             // 如果任务已成功，将其添加到结果列表
             if (data.status === 'success' && data.result) {
               // 稍后会根据需要重新创建完整的任务
-              console.log(`Restored completed task ${taskId} from storage`)
             }
           }
         }

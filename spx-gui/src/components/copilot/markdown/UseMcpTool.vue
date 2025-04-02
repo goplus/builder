@@ -2,9 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
-import CodeBlockEx from './CodeBlockEx.vue'
-import { toolResultCollector } from '@/mcp/tool-result-collector'
-
+import CodeBlock from './CodeBlock.vue'
+import { toolResultCollector } from '@/components/copilot/mcp/collector'
 const props = defineProps<{
   id: string
   /** 服务器名称 */
@@ -14,10 +13,8 @@ const props = defineProps<{
   /** 工具参数（JSON格式字符串） */
   arguments: string
 }>()
-
 const i18n = useI18n()
 const { t } = i18n
-
 // 简化：直接使用工具收集器跟踪状态
 const taskInfo = computed(() => toolResultCollector.getOrCreateTask({
   id: props.id,
@@ -25,10 +22,8 @@ const taskInfo = computed(() => toolResultCollector.getOrCreateTask({
   server: props.server,
   args: props.arguments
 }))
-
 // 界面状态
 const isExpanded = ref(false)
-
 // 格式化参数
 const formattedArguments = computed(() => {
   try {
@@ -38,7 +33,6 @@ const formattedArguments = computed(() => {
     return props.arguments
   }
 })
-
 // 格式化结果
 const formattedResult = computed(() => {
   if (!taskInfo.value.result) return ''
@@ -48,7 +42,6 @@ const formattedResult = computed(() => {
     return String(taskInfo.value.result)
   }
 })
-
 // 状态样式
 const statusClass = computed(() => {
   return {
@@ -58,7 +51,6 @@ const statusClass = computed(() => {
     'is-error': taskInfo.value.status === 'error'
   }
 })
-
 // 状态文字
 const statusText = computed(() => {
   switch (taskInfo.value.status) {
@@ -74,7 +66,6 @@ const statusText = computed(() => {
       return ''
   }
 })
-
 // 简化：执行工具只需调用收集器的执行方法
 async function executeTool() {
   if (taskInfo.value.status === 'running') return
@@ -82,16 +73,13 @@ async function executeTool() {
   // 委托给工具收集器执行
   toolResultCollector.executeTask(taskInfo.value.id)
 }
-
 // 切换展开/折叠状态
 function toggleExpand() {
   isExpanded.value = !isExpanded.value
 }
-
 function statusRunning() {
   return taskInfo.value.status === 'running'
 }
-
 // 组件挂载时自动执行工具
 onMounted(() => {
   // 如果工具还未执行且不是错误状态，自动执行
@@ -115,7 +103,7 @@ onMounted(() => {
         <span class="tool-icon custom-icon">{{ isExpanded ? '▼' : '▶' }}</span>
         <span class="tool-name">{{ tool }}</span>
       </div>
-      
+
       <div class="tool-actions">
         <span class="tool-status" :class="statusClass">{{ statusText }}</span>
         <UIButton 
@@ -132,18 +120,18 @@ onMounted(() => {
         </UIButton>
       </div>
     </div>
-    
+
     <div v-if="isExpanded" class="tool-content">
       <div class="args-section">
         <div class="section-label">{{ t({ en: 'Arguments', zh: '参数' }) }}</div>
-        <CodeBlockEx :code="formattedArguments" language="json" />
+        <CodeBlock :code="formattedArguments" language="json" />
       </div>
-      
+
       <div v-if="taskInfo.status === 'success'" class="result-section">
         <div class="section-label">{{ t({ en: 'Result', zh: '结果' }) }}</div>
-        <CodeBlockEx :code="formattedResult" language="json" />
+        <CodeBlock :code="formattedResult" language="json" />
       </div>
-      
+
       <div v-if="taskInfo.status === 'error'" class="error-section">
         <div class="section-label">{{ t({ en: 'Error', zh: '错误' }) }}</div>
         <div class="error-message">{{ taskInfo.errorMessage }}</div>

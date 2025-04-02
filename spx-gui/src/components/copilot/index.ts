@@ -6,7 +6,7 @@ import {
   makeMCPMarkdownString,
 } from '@/components/editor/code-editor/common'
 export { default as CopilotChat } from './CopilotChat.vue'
-import { toolResultCollector,type ToolResult } from '@/mcp/tool-result-collector'
+import { toolResultCollector,type ToolResult } from '@/components/copilot/mcp/collector'
 
 export type MessageRole = 'user' | 'copilot'
 

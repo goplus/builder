@@ -165,9 +165,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { mcpConnectionStatus } from '@/mcp/transport'
-import { tools, mcpRequestHistory } from '@/mcp/server'
-import { client } from '@/mcp/client'
+import { mcpConnectionStatus } from '@/components/copilot/mcp/transport'
+import { tools, mcpRequestHistory } from '@/components/copilot/mcp/server'
+import { client } from '@/components/copilot/mcp/client'
 import { UITooltip } from '@/components/ui'
 
 /**

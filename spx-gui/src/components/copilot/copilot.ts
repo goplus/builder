@@ -5,7 +5,7 @@ import type { ICopilot, Chat } from '@/components/copilot/index'
 import {
   type MCPMarkdownString,
 } from '@/components/editor/code-editor/common'
-import { tools } from '@/mcp/server'  
+import { tools } from './mcp/server'  
 
 function convertToApiTools(serverTools: typeof tools): Tool[] {
   return serverTools.map(tool => {

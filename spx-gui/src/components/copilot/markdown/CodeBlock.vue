@@ -4,41 +4,34 @@ import { useI18n } from '@/utils/i18n'
 import highlight from 'highlight.js'
 import { useSlotText } from '@/utils/vnode'
 import 'highlight.js/styles/github.css' // 可以选择其他样式
-import CodeView from './CodeView.vue'
+import CodeView from '@/components/copilot/markdown/CodeView.vue'
 import { UIIcon } from '@/components/ui'
-
 const props = defineProps<{
   code?: string
   language?: string
   title?: string
   collapsed?: boolean
 }>()
-
 const { t } = useI18n()
 const copySuccess = ref(false)
 const copyTimeout = ref<number | null>(null)
 const codeRef = ref<HTMLElement | null>(null)
 const isCollapsed = ref(props.collapsed ?? false)
-
 const slotCode = useSlotText()
 const codeText = computed(() => props.code || slotCode.value)
 const displayTitle = computed(() => props.title || props.language || t({ en: 'Code', zh: '代码' }))
-
-
 // 处理代码高亮
 onMounted(() => {
   if (codeRef.value) {
     highlight.highlightElement(codeRef.value)
   }
 })
-
 // 清理定时器
 onBeforeUnmount(() => {
   if (copyTimeout.value) {
     clearTimeout(copyTimeout.value)
   }
 })
-
 // 复制代码
 function handleCopy(event: MouseEvent) {
   event.stopPropagation()
@@ -61,7 +54,6 @@ function handleCopy(event: MouseEvent) {
       console.error('Failed to copy code:', error)
     })
 }
-
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
 }
@@ -78,7 +70,7 @@ function toggleCollapse() {
           <span class="title">{{ displayTitle }}</span>
           <span v-if="language" class="language-badge">{{ language }}</span>
         </div>
-        
+
         <div class="header-right">
           <button class="copy-button" @click.stop="handleCopy($event)">
             <span v-if="copySuccess" class="success-text">
@@ -91,7 +83,7 @@ function toggleCollapse() {
           </button>
         </div>
       </div>
-      
+
       <transition name="slide">
         <div v-show="!isCollapsed" class="code-content">
           <CodeView class="code" :language="language" mode="block" line-numbers>{{ codeText }}</CodeView>
@@ -206,7 +198,6 @@ function toggleCollapse() {
     opacity: 0;
   }
 }
-
 /* 移动设备适配 */
 @media (max-width: 768px) {
   .collapsible-code-block {

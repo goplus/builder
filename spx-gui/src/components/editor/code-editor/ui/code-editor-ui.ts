@@ -23,8 +23,7 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range,
-  textDocumentId2ResourceModelId
+  selection2Range
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -409,15 +408,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
   setIsCopilotActive(active: boolean) {
     this.isCopilotActiveRef.value = active
-  }
-
-  selectTextDocument(textDocument: TextDocumentIdentifier) {
-    const resourceModelId = textDocumentId2ResourceModelId(textDocument, this.project)
-    if (resourceModelId == null) {
-      return null
-    }
-    this.project.select(resourceModelId)
-    // this.setActiveTextDocument(textDocument)
   }
 
   init(editor: MonacoEditor) {
