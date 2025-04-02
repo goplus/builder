@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"testing"
@@ -627,5 +628,500 @@ func TestCheckCodeParams(t *testing.T) {
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, msg, "context too long")
+	})
+}
+
+func TestCreateStorylineParams(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("InvalidBackgroundImage", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid background image")
+	})
+
+	t.Run("InvalidName", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid name")
+	})
+
+	t.Run("InvalidTitle", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid title")
+	})
+
+	t.Run("InvalidTag", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid tag")
+	})
+
+	t.Run("InvalidDescription", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid description")
+	})
+
+	t.Run("InvalidLevels", func(t *testing.T) {
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "",
+		}
+
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, msg, "invalid levels")
+	})
+}
+
+func TestControllerCreateStoryline(t *testing.T) {
+	//db, _, closeDB, err := modeltest.NewMockDB()
+	//require.NoError(t, err)
+	//closeDB()
+	//userDBColumns, err := modeltest.ExtractDBColumns(db, model.Storyline{})
+	//require.NoError(t, err)
+	//generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.Storyline{})
+	//require.NoError(t, err)
+
+	t.Run("Normal", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
+
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		title, err := json.Marshal(params.Title)
+
+		description, err := json.Marshal(params.Description)
+
+		dbMock.ExpectBegin()
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Create(&model.Storyline{
+				OwnerID:         mAuthedUser.ID,
+				BackgroundImage: params.BackgroundImage,
+				Name:            params.Name,
+				Title:           string(title),
+				Description:     string(description),
+				Tag:             model.ParseStorylineTag(params.Tag),
+				Levels:          params.Levels,
+			}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		dbMock.ExpectCommit()
+
+		result, err := ctrl.CreateStoryline(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, params.BackgroundImage, result.BackgroundImage)
+		assert.Equal(t, params.Name, result.Name)
+		assert.Equal(t, params.Title, result.Title)
+		assert.Equal(t, params.Description, result.Description)
+		assert.Equal(t, params.Tag, result.Tag)
+		assert.Equal(t, params.Levels, result.Levels)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		params := &CreateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "111",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "123",
+		}
+
+		_, err := ctrl.CreateStoryline(context.Background(), params)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	})
+}
+
+func TestControllerUpdateStoryline(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	storylineDBColumns, err := modeltest.ExtractDBColumns(db, model.Storyline{})
+	require.NoError(t, err)
+	generateStorylineDBRows, err := modeltest.NewDBRowsGenerator(db, model.Storyline{})
+	require.NoError(t, err)
+
+	t.Run("Normal", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
+
+		mStoryline := model.Storyline{
+			Model:       model.Model{ID: 1},
+			OwnerID:     mAuthedUser.ID,
+			Name:        "testName1",
+			Title:       "{\"en\":\"111\",\"zh\":\"111\"}",
+			Description: "{\"en\":\"111\",\"zh\":\"111\"}",
+			Tag:         1,
+			Levels:      "123",
+		}
+
+		params := &UpdateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "222",
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", 1).
+			First(&model.Storyline{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(storylineDBColumns).AddRows(generateStorylineDBRows(mStoryline)...))
+
+		dbMock.ExpectBegin()
+
+		title, err := json.Marshal(params.Title)
+		require.NoError(t, err)
+
+		description, err := json.Marshal(params.Description)
+		require.NoError(t, err)
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Model(&model.Storyline{Model: mStoryline.Model}).
+			Updates(map[string]any{
+				"background_image": params.BackgroundImage,
+				"name":             params.Name,
+				"title":            string(title),
+				"description":      string(description),
+				"tag":              model.ParseStorylineTag(params.Tag),
+				"levels":           params.Levels,
+			}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[6] = sqlmock.AnyArg() // UpdatedAt
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+
+		dbMock.ExpectCommit()
+
+		result, err := ctrl.UpdateStoryline(ctx, "1", params)
+		require.NoError(t, err)
+		assert.Equal(t, params.BackgroundImage, result.BackgroundImage)
+		assert.Equal(t, params.Name, result.Name)
+		assert.Equal(t, params.Title, result.Title)
+		assert.Equal(t, params.Description, result.Description)
+		assert.Equal(t, params.Tag, result.Tag)
+		assert.Equal(t, params.Levels, result.Levels)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("StorylineNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		_, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
+
+		storylineId := 1
+
+		params := &UpdateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "222",
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", storylineId).
+			First(&model.Storyline{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		_, err := ctrl.UpdateStoryline(ctx, "1", params)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		params := &UpdateStorylineParams{
+			BackgroundImage: "test.jpg",
+			Name:            "testName",
+			Title: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Description: LocaleMessage{
+				En: "222",
+				Zh: "222",
+			},
+			Tag:    "easy",
+			Levels: "222",
+		}
+
+		_, err := ctrl.UpdateStoryline(context.Background(), "1", params)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	})
+}
+
+func TestControllerDeleteStoryline(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	storylineDBColumns, err := modeltest.ExtractDBColumns(db, model.Storyline{})
+	require.NoError(t, err)
+	generateStorylineDBRows, err := modeltest.NewDBRowsGenerator(db, model.Storyline{})
+	require.NoError(t, err)
+
+	t.Run("Normal", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
+
+		mStoryline := model.Storyline{
+			Model:   model.Model{ID: 1},
+			OwnerID: mAuthedUser.ID,
+		}
+		dbMock.ExpectBegin()
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", 1).
+			First(&model.Storyline{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(storylineDBColumns).AddRows(generateStorylineDBRows(mStoryline)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Where("storyline_id = ?", mStoryline.ID).
+			Delete(&model.UserStorylineRelationship{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Delete(&model.Storyline{Model: mStoryline.Model}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+
+		dbMock.ExpectCommit()
+
+		err := ctrl.DeleteStoryline(ctx, "1")
+		require.NoError(t, err)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("StorylineNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+
+		storylineId := 1
+
+		dbMock.ExpectBegin()
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", storylineId).
+			First(&model.Storyline{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		dbMock.ExpectRollback()
+
+		err := ctrl.DeleteStoryline(ctx, "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		err := ctrl.DeleteStoryline(context.Background(), "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
 }
