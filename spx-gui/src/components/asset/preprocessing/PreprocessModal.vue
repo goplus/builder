@@ -1,88 +1,90 @@
 <template>
-  <UIFormModal
-    style="width: 780px"
-    :visible="props.visible && ready"
-    :title="$t(title)"
-    :body-style="{ padding: '0' }"
-    @update:visible="emit('cancelled')"
-  >
-    <main class="main">
-      <TagNode name="preprocess-modal-sider">
-        <div class="sider">
-          <TagNode name="origin-img">
-            <ProcessItem
-              :img-src="originalThumbnail"
-              :name="$t({ en: 'Original', zh: '原图' })"
-              :applied="false"
-              :active="activeMethod == null"
-              @click="handleMethodClick(null)"
-            />
-          </TagNode>
-          <TagNode
-            v-for="method in supportedMethods"
-            :key="method.value"
-            :name="method.name.en.toLocaleLowerCase().split(' ').join('-')"
-          >
-            <ProcessItem
-              :img-src="method.thumbnail"
-              :name="$t(method.name)"
-              :applied="isMethodApplied(method.value)"
-              :active="activeMethod === method.value"
-              @click="handleMethodClick(method.value)"
-            />
-          </TagNode>
-        </div>
-      </TagNode>
+  <TagNode name="preprocess-modal">
+    <UIFormModal
+      style="width: 780px"
+      :visible="props.visible && ready"
+      :title="$t(title)"
+      :body-style="{ padding: '0' }"
+      @update:visible="emit('cancelled')"
+    >
+      <main class="main">
+        <TagNode name="preprocess-modal-sider">
+          <div class="sider">
+            <TagNode name="origin-img">
+              <ProcessItem
+                :img-src="originalThumbnail"
+                :name="$t({ en: 'Original', zh: '原图' })"
+                :applied="false"
+                :active="activeMethod == null"
+                @click="handleMethodClick(null)"
+              />
+            </TagNode>
+            <TagNode
+              v-for="method in supportedMethods"
+              :key="method.value"
+              :name="method.name.en.toLocaleLowerCase().split(' ').join('-')"
+            >
+              <ProcessItem
+                :img-src="method.thumbnail"
+                :name="$t(method.name)"
+                :applied="isMethodApplied(method.value)"
+                :active="activeMethod === method.value"
+                @click="handleMethodClick(method.value)"
+              />
+            </TagNode>
+          </div>
+        </TagNode>
 
-      <TagNode name="preprocess-modal-detail">
-        <div class="detail">
-          <ProcessDetail v-show="activeMethod == null">
-            <template #header>
-              {{ $t({ en: 'Original', zh: '原图' }) }}
-            </template>
-            <ImgPreview v-for="(file, i) in files" :key="i" :file="file" :multiple="files.length > 1" />
-          </ProcessDetail>
-          <component
-            :is="method.component"
-            v-for="method in supportedMethods"
-            :key="method.value"
-            :active="activeMethod === method.value"
-            :input="getMethodInput(method.value)"
-            :applied="isMethodApplied(method.value)"
-            @applied="(output) => handleMethodApplied(method.value, output)"
-            @cancel="handleMethodCancel(method.value)"
-          />
-        </div>
-      </TagNode>
-    </main>
-    <footer class="footer">
-      <div class="footer-main">
-        <h4 class="footer-title">{{ $t({ en: 'Costumes', zh: '造型' }) }}</h4>
-        <div class="costume-wrapper">
-          <ul class="costume-list">
-            <CostumeItem
-              v-for="costume in costumes"
-              :key="costume.id"
-              :costume="costume"
-              :checked="isCostumeSelected(costume)"
-              @click="handleCostumeClick(costume)"
+        <TagNode name="preprocess-modal-detail">
+          <div class="detail">
+            <ProcessDetail v-show="activeMethod == null">
+              <template #header>
+                {{ $t({ en: 'Original', zh: '原图' }) }}
+              </template>
+              <ImgPreview v-for="(file, i) in files" :key="i" :file="file" :multiple="files.length > 1" />
+            </ProcessDetail>
+            <component
+              :is="method.component"
+              v-for="method in supportedMethods"
+              :key="method.value"
+              :active="activeMethod === method.value"
+              :input="getMethodInput(method.value)"
+              :applied="isMethodApplied(method.value)"
+              @applied="(output) => handleMethodApplied(method.value, output)"
+              @cancel="handleMethodCancel(method.value)"
             />
-          </ul>
+          </div>
+        </TagNode>
+      </main>
+      <footer class="footer">
+        <div class="footer-main">
+          <h4 class="footer-title">{{ $t({ en: 'Costumes', zh: '造型' }) }}</h4>
+          <div class="costume-wrapper">
+            <ul class="costume-list">
+              <CostumeItem
+                v-for="costume in costumes"
+                :key="costume.id"
+                :costume="costume"
+                :checked="isCostumeSelected(costume)"
+                @click="handleCostumeClick(costume)"
+              />
+            </ul>
+          </div>
         </div>
-      </div>
-      <TagNode name="confrim-add-button">
-        <UIButton
-          class="submit-btn"
-          size="large"
-          :disabled="selectedCostumes.length === 0"
-          :loading="handleConfirm.isLoading.value"
-          @click="handleConfirm.fn"
-        >
-          {{ $t(confirmText) }}
-        </UIButton>
-      </TagNode>
-    </footer>
-  </UIFormModal>
+        <TagNode name="confrim-add-button">
+          <UIButton
+            class="submit-btn"
+            size="large"
+            :disabled="selectedCostumes.length === 0"
+            :loading="handleConfirm.isLoading.value"
+            @click="handleConfirm.fn"
+          >
+            {{ $t(confirmText) }}
+          </UIButton>
+        </TagNode>
+      </footer>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <script lang="ts" setup>

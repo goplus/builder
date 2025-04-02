@@ -81,66 +81,68 @@ const handleSubmit = useMessageHandle(
 </script>
 
 <template>
-  <UIFormModal
-    :title="$t({ en: `Publish ${project.name}`, zh: `发布 ${project.name}` })"
-    :style="{ width: '560px' }"
-    :visible="props.visible"
-    @update:visible="handleCancel"
-  >
-    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <p v-if="project.visibility === Visibility.Private" class="tip">
-        {{
-          $t({
-            en: 'Published projects will be visible to all Go+ Builder users.',
-            zh: '发布后的项目将对所有 Go+ Builder 用户可见。'
-          })
-        }}
-      </p>
-      <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
-      </div>
-      <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
-        <UITextInput
-          v-model:value="form.value.releaseDescription"
-          type="textarea"
-          :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
-        />
-      </UIFormItem>
-      <UIFormItem :label="$t({ en: 'Project description', zh: '项目描述' })" path="projectDescription">
-        <UITextInput
-          ref="aboutProjectInput"
-          v-model:value="form.value.projectDescription"
-          type="textarea"
-          :placeholder="
+  <TagNode name="project-publish-modal">
+    <UIFormModal
+      :title="$t({ en: `Publish ${project.name}`, zh: `发布 ${project.name}` })"
+      :style="{ width: '560px' }"
+      :visible="props.visible"
+      @update:visible="handleCancel"
+    >
+      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+        <p v-if="project.visibility === Visibility.Private" class="tip">
+          {{
             $t({
-              en: 'What is this project about? How did you make it?',
-              zh: '这个项目是关于什么的？你是如何创作的？'
+              en: 'Published projects will be visible to all Go+ Builder users.',
+              zh: '发布后的项目将对所有 Go+ Builder 用户可见。'
             })
-          "
-        />
-      </UIFormItem>
-      <UIFormItem :label="$t({ en: 'Play instructions', zh: '操作说明' })" path="projectInstructions">
-        <UITextInput
-          v-model:value="form.value.projectInstructions"
-          type="textarea"
-          :placeholder="
-            $t({
-              en: 'Tell others how to play in your project',
-              zh: '告诉其他用户在项目中如何操作'
-            })
-          "
-        />
-      </UIFormItem>
-      <footer class="footer">
-        <UIButton type="boring" @click="handleCancel">
-          {{ $t({ en: 'Cancel', zh: '取消' }) }}
-        </UIButton>
-        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
-      </footer>
-    </UIForm>
-  </UIFormModal>
+          }}
+        </p>
+        <div class="thumbnail-wrapper">
+          <UIImg class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
+        </div>
+        <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
+          <UITextInput
+            v-model:value="form.value.releaseDescription"
+            type="textarea"
+            :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
+          />
+        </UIFormItem>
+        <UIFormItem :label="$t({ en: 'Project description', zh: '项目描述' })" path="projectDescription">
+          <UITextInput
+            ref="aboutProjectInput"
+            v-model:value="form.value.projectDescription"
+            type="textarea"
+            :placeholder="
+              $t({
+                en: 'What is this project about? How did you make it?',
+                zh: '这个项目是关于什么的？你是如何创作的？'
+              })
+            "
+          />
+        </UIFormItem>
+        <UIFormItem :label="$t({ en: 'Play instructions', zh: '操作说明' })" path="projectInstructions">
+          <UITextInput
+            v-model:value="form.value.projectInstructions"
+            type="textarea"
+            :placeholder="
+              $t({
+                en: 'Tell others how to play in your project',
+                zh: '告诉其他用户在项目中如何操作'
+              })
+            "
+          />
+        </UIFormItem>
+        <footer class="footer">
+          <UIButton type="boring" @click="handleCancel">
+            {{ $t({ en: 'Cancel', zh: '取消' }) }}
+          </UIButton>
+          <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+            {{ $t({ en: 'Publish', zh: '发布' }) }}
+          </UIButton>
+        </footer>
+      </UIForm>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <style lang="scss" scoped>

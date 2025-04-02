@@ -1,44 +1,50 @@
 <template>
-  <UIFormModal
-    :title="$t({ en: 'Add to asset library', zh: '添加到素材库' })"
-    :visible="visible"
-    @update:visible="emit('cancelled')"
-  >
-    <TagNode name="asset-add-form">
-      <UIForm :form="form" @submit="handleSubmit.fn">
-        <main class="main">
-          <div class="sider">
-            <BackdropPreview v-if="asset instanceof Backdrop" class="preview" :backdrop="asset" />
-            <SpritePreview v-if="asset instanceof Sprite" class="preview" :sprite="asset" />
-            <SoundPreview v-if="asset instanceof Sound" class="preview" :sound="asset" />
-          </div>
-          <div class="inputs">
-            <UIFormItem path="name">
-              <UITextInput v-model:value="form.value.name" />
-              <template #tip>{{ $t(nameTip) }}</template>
-            </UIFormItem>
-            <UIFormItem v-if="addPublicLibraryEnabled" :label="$t({ en: 'Category', zh: '素材类别' })" path="category">
-              <UIRadioGroup v-model:value="form.value.category">
-                <UIRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
-              </UIRadioGroup>
-            </UIFormItem>
-            <UIFormItem
-              v-if="addPublicLibraryEnabled"
-              :label="$t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
-              path="visibility"
-            >
-              <UICheckbox v-model:checked="form.value.visibilityPublic" />
-            </UIFormItem>
-          </div>
-        </main>
-        <footer class="footer">
-          <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-            {{ $t({ en: 'Add', zh: '添加' }) }}
-          </UIButton>
-        </footer>
-      </UIForm>
-    </TagNode>
-  </UIFormModal>
+  <TagNode name="asset-add-modal">
+    <UIFormModal
+      :title="$t({ en: 'Add to asset library', zh: '添加到素材库' })"
+      :visible="visible"
+      @update:visible="emit('cancelled')"
+    >
+      <TagNode name="asset-add-form">
+        <UIForm :form="form" @submit="handleSubmit.fn">
+          <main class="main">
+            <div class="sider">
+              <BackdropPreview v-if="asset instanceof Backdrop" class="preview" :backdrop="asset" />
+              <SpritePreview v-if="asset instanceof Sprite" class="preview" :sprite="asset" />
+              <SoundPreview v-if="asset instanceof Sound" class="preview" :sound="asset" />
+            </div>
+            <div class="inputs">
+              <UIFormItem path="name">
+                <UITextInput v-model:value="form.value.name" />
+                <template #tip>{{ $t(nameTip) }}</template>
+              </UIFormItem>
+              <UIFormItem
+                v-if="addPublicLibraryEnabled"
+                :label="$t({ en: 'Category', zh: '素材类别' })"
+                path="category"
+              >
+                <UIRadioGroup v-model:value="form.value.category">
+                  <UIRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
+                </UIRadioGroup>
+              </UIFormItem>
+              <UIFormItem
+                v-if="addPublicLibraryEnabled"
+                :label="$t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
+                path="visibility"
+              >
+                <UICheckbox v-model:checked="form.value.visibilityPublic" />
+              </UIFormItem>
+            </div>
+          </main>
+          <footer class="footer">
+            <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+              {{ $t({ en: 'Add', zh: '添加' }) }}
+            </UIButton>
+          </footer>
+        </UIForm>
+      </TagNode>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <script setup lang="ts">

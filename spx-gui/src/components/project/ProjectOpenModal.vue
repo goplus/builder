@@ -35,25 +35,27 @@ const queryRet = useQuery(
 </script>
 
 <template>
-  <UIFormModal
-    :title="$t({ en: 'Open project', zh: '打开项目' })"
-    :style="{ width: '1024px' }"
-    :visible="props.visible"
-    @update:visible="emit('cancelled')"
-  >
-    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
-      <ul class="project-list">
-        <ProjectItem
-          v-for="project in slotProps.data.data"
-          :key="project.id"
-          :project="project"
-          context="edit"
-          @selected="emit('resolved')"
-        />
-      </ul>
-    </ListResultWrapper>
-    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
-  </UIFormModal>
+  <TagNode name="project-open-modal">
+    <UIFormModal
+      :title="$t({ en: 'Open project', zh: '打开项目' })"
+      :style="{ width: '1024px' }"
+      :visible="props.visible"
+      @update:visible="emit('cancelled')"
+    >
+      <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
+        <ul class="project-list">
+          <ProjectItem
+            v-for="project in slotProps.data.data"
+            :key="project.id"
+            :project="project"
+            context="edit"
+            @selected="emit('resolved')"
+          />
+        </ul>
+      </ListResultWrapper>
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <style scoped lang="scss">

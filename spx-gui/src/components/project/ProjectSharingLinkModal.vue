@@ -1,25 +1,27 @@
 <template>
-  <UIFormModal
-    :title="$t({ en: 'Project sharing link', zh: '项目分享链接' })"
-    :visible="props.visible"
-    :auto-focus="false"
-    @update:visible="emit('cancelled')"
-  >
-    <div class="desc">
-      {{
-        $t({
-          en: 'A sharing link to the project has been created. Feel free to copy it below to share the project with others.',
-          zh: '项目的分享链接已生成。请复制下方链接，与他人分享该项目。'
-        })
-      }}
-    </div>
-    <div class="link">
-      <UITextInput :value="projectSharingLink" :readonly="true" @focus="$event.target.select()" />
-      <UIButton class="copy-button" :loading="handleCopy.isLoading.value" @click="handleCopy.fn">
-        {{ $t({ en: 'Copy', zh: '复制' }) }}
-      </UIButton>
-    </div>
-  </UIFormModal>
+  <TagNode name="project-sharing-link-modal">
+    <UIFormModal
+      :title="$t({ en: 'Project sharing link', zh: '项目分享链接' })"
+      :visible="props.visible"
+      :auto-focus="false"
+      @update:visible="emit('cancelled')"
+    >
+      <div class="desc">
+        {{
+          $t({
+            en: 'A sharing link to the project has been created. Feel free to copy it below to share the project with others.',
+            zh: '项目的分享链接已生成。请复制下方链接，与他人分享该项目。'
+          })
+        }}
+      </div>
+      <div class="link">
+        <UITextInput :value="projectSharingLink" :readonly="true" @focus="$event.target.select()" />
+        <UIButton class="copy-button" :loading="handleCopy.isLoading.value" @click="handleCopy.fn">
+          {{ $t({ en: 'Copy', zh: '复制' }) }}
+        </UIButton>
+      </div>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <script setup lang="ts">

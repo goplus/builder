@@ -1,37 +1,39 @@
 <template>
-  <UIFormModal
-    style="width: 560px"
-    :title="$t({ en: 'Remove animation', zh: '删除动画' })"
-    :visible="visible"
-    @update:visible="emit('cancelled')"
-  >
-    <div>
+  <TagNode name="animation-remove-modal">
+    <UIFormModal
+      style="width: 560px"
+      :title="$t({ en: 'Remove animation', zh: '删除动画' })"
+      :visible="visible"
+      @update:visible="emit('cancelled')"
+    >
       <div>
-        {{
-          $t({
-            en: `Animation ${animation.name} will be removed. Do you want to preserve the costumes?`,
-            zh: `动画 ${animation.name} 将被删除。是否保留其中的造型？`
-          })
-        }}
+        <div>
+          {{
+            $t({
+              en: `Animation ${animation.name} will be removed. Do you want to preserve the costumes?`,
+              zh: `动画 ${animation.name} 将被删除。是否保留其中的造型？`
+            })
+          }}
+        </div>
+        <UICheckbox v-model:checked="preserveCostumes" class="checkbox">
+          {{
+            $t({
+              en: "Preserve (the costumes will be moved to the sprite's costume list)",
+              zh: '保留（造型将被移动到精灵的造型列表中）'
+            })
+          }}
+        </UICheckbox>
       </div>
-      <UICheckbox v-model:checked="preserveCostumes" class="checkbox">
-        {{
-          $t({
-            en: "Preserve (the costumes will be moved to the sprite's costume list)",
-            zh: '保留（造型将被移动到精灵的造型列表中）'
-          })
-        }}
-      </UICheckbox>
-    </div>
-    <div class="action">
-      <UIButton type="boring" @click="emit('cancelled')">
-        {{ $t({ en: 'Cancel', zh: '取消' }) }}
-      </UIButton>
-      <UIButton type="primary" @click="handleConfirm">
-        {{ $t({ en: 'Confirm', zh: '确认' }) }}
-      </UIButton>
-    </div>
-  </UIFormModal>
+      <div class="action">
+        <UIButton type="boring" @click="emit('cancelled')">
+          {{ $t({ en: 'Cancel', zh: '取消' }) }}
+        </UIButton>
+        <UIButton type="primary" @click="handleConfirm">
+          {{ $t({ en: 'Confirm', zh: '确认' }) }}
+        </UIButton>
+      </div>
+    </UIFormModal>
+  </TagNode>
 </template>
 <script setup lang="ts">
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'

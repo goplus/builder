@@ -43,35 +43,37 @@ const handleSubmit = useMessageHandle(async () => {
 </script>
 
 <template>
-  <UIFormModal
-    :title="$t({ en: 'Edit profile', zh: '编辑个人信息' })"
-    :style="{ width: '560px' }"
-    :visible="props.visible"
-    @update:visible="handleCancel"
-  >
-    <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <UIImg class="avatar" :src="user.avatar" />
-    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
-        <UITextInput :value="user.displayName" disabled />
-      </UIFormItem>
-      <UIFormItem :label="$t({ en: 'About me', zh: '关于我' })" path="description">
-        <UITextInput
-          v-model:value="form.value.description"
-          type="textarea"
-          :placeholder="$t({ en: 'Tell us something about you', zh: '介绍一下自己' })"
-        />
-      </UIFormItem>
-      <footer class="footer">
-        <UIButton type="boring" @click="handleCancel">
-          {{ $t({ en: 'Cancel', zh: '取消' }) }}
-        </UIButton>
-        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-          {{ $t({ en: 'Confirm', zh: '确认' }) }}
-        </UIButton>
-      </footer>
-    </UIForm>
-  </UIFormModal>
+  <TagNode name="edit-profile-modal">
+    <UIFormModal
+      :title="$t({ en: 'Edit profile', zh: '编辑个人信息' })"
+      :style="{ width: '560px' }"
+      :visible="props.visible"
+      @update:visible="handleCancel"
+    >
+      <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
+      <UIImg class="avatar" :src="user.avatar" />
+      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+        <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
+          <UITextInput :value="user.displayName" disabled />
+        </UIFormItem>
+        <UIFormItem :label="$t({ en: 'About me', zh: '关于我' })" path="description">
+          <UITextInput
+            v-model:value="form.value.description"
+            type="textarea"
+            :placeholder="$t({ en: 'Tell us something about you', zh: '介绍一下自己' })"
+          />
+        </UIFormItem>
+        <footer class="footer">
+          <UIButton type="boring" @click="handleCancel">
+            {{ $t({ en: 'Cancel', zh: '取消' }) }}
+          </UIButton>
+          <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+            {{ $t({ en: 'Confirm', zh: '确认' }) }}
+          </UIButton>
+        </footer>
+      </UIForm>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <style lang="scss" scoped>

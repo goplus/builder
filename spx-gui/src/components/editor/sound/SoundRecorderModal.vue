@@ -1,12 +1,14 @@
 <template>
-  <UIFormModal
-    :visible="visible"
-    :title="$t({ en: 'Record Sound', zh: '录制声音' })"
-    center-title
-    @update:visible="handleFormModalVisibleUpdate"
-  >
-    <SoundRecorder :project="project" @saved="handleSaved" @record-started="recordStarted = true" />
-  </UIFormModal>
+  <TagNode name="sound-recorder-modal">
+    <UIFormModal
+      :visible="visible"
+      :title="$t({ en: 'Record Sound', zh: '录制声音' })"
+      center-title
+      @update:visible="handleFormModalVisibleUpdate"
+    >
+      <SoundRecorder :project="project" @saved="handleSaved" @record-started="recordStarted = true" />
+    </UIFormModal>
+  </TagNode>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'

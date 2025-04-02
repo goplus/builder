@@ -1,27 +1,34 @@
 <template>
-  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
-    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <div class="alert">
-        {{
-          $t({
-            en: 'Congratulations on completing the course! You can create a project with the whole code of this course and freely create or share it with other users.',
-            zh: '恭喜您完成本课程！您可以创建一个具有本课程完整代码的项目，并在上面自由创作或者分享给其他用户。'
-          })
-        }}
-      </div>
-      <UIFormItem path="name">
-        <UITextInput
-          v-model:value="form.value.name"
-          :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
-        />
-      </UIFormItem>
-      <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-          {{ $t({ en: 'Create', zh: '创建' }) }}
-        </UIButton>
-      </footer>
-    </UIForm>
-  </UIFormModal>
+  <TagNode name="whole-story-line-project-create-modal">
+    <UIFormModal
+      class="project-create-modal"
+      :title="$t(title)"
+      :visible="props.visible"
+      @update:visible="handleCancel"
+    >
+      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+        <div class="alert">
+          {{
+            $t({
+              en: 'Congratulations on completing the course! You can create a project with the whole code of this course and freely create or share it with other users.',
+              zh: '恭喜您完成本课程！您可以创建一个具有本课程完整代码的项目，并在上面自由创作或者分享给其他用户。'
+            })
+          }}
+        </div>
+        <UIFormItem path="name">
+          <UITextInput
+            v-model:value="form.value.name"
+            :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
+          />
+        </UIFormItem>
+        <footer class="footer">
+          <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+            {{ $t({ en: 'Create', zh: '创建' }) }}
+          </UIButton>
+        </footer>
+      </UIForm>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <script setup lang="ts">

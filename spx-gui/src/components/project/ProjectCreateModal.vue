@@ -1,27 +1,34 @@
 <template>
-  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
-    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
-      <div class="alert">
-        {{
-          $t({
-            en: 'The project name cannot be modified after it is created.',
-            zh: '项目名创建后无法修改。'
-          })
-        }}
-      </div>
-      <UIFormItem path="name">
-        <UITextInput
-          v-model:value="form.value.name"
-          :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
-        />
-      </UIFormItem>
-      <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
-          {{ $t({ en: 'Create', zh: '创建' }) }}
-        </UIButton>
-      </footer>
-    </UIForm>
-  </UIFormModal>
+  <TagNode name="project-create-modal">
+    <UIFormModal
+      class="project-create-modal"
+      :title="$t(title)"
+      :visible="props.visible"
+      @update:visible="handleCancel"
+    >
+      <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
+        <div class="alert">
+          {{
+            $t({
+              en: 'The project name cannot be modified after it is created.',
+              zh: '项目名创建后无法修改。'
+            })
+          }}
+        </div>
+        <UIFormItem path="name">
+          <UITextInput
+            v-model:value="form.value.name"
+            :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
+          />
+        </UIFormItem>
+        <footer class="footer">
+          <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+            {{ $t({ en: 'Create', zh: '创建' }) }}
+          </UIButton>
+        </footer>
+      </UIForm>
+    </UIFormModal>
+  </TagNode>
 </template>
 
 <script setup lang="ts">
