@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, nextTick, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, nextTick, ref, watch, computed } from 'vue'
 import { useTag } from '@/utils/tagging'
 import { TaggingHandlerType, type Step } from '@/apis/guidance'
 import type { HighlightRect } from '@/components/common/MaskWithHighlight.vue'
@@ -95,22 +95,7 @@ interface GuidePositions {
 
 const currentGuidePositions = ref<GuidePositions | null>(null)
 
-// 设置事件键盘监听器，禁用escape和enter键
-function setupKeyboardEventListeners() {
-  document.addEventListener('keydown', preventEscapeAndEnter)
-}
-
-// 防止按下escape和enter键
-function preventEscapeAndEnter(event: KeyboardEvent) {
-  if (event.key === 'Escape' || event.key === 'Enter') {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-}
-
 onMounted(() => {
-  setupKeyboardEventListeners()
-
   nextTick(() => {
     currentGuidePositions.value = calculateGuidePositions(props.slotInfo)
   })
@@ -122,8 +107,6 @@ onBeforeUnmount(() => {
     element.removeEventListener('click', handleTargetElementClick)
     element.removeEventListener('submit', handleTargetElementSubmit)
   }
-
-  document.removeEventListener('keydown', preventEscapeAndEnter)
 })
 
 function getTargetElement(): HTMLElement | null {
@@ -145,41 +128,32 @@ watch(
   }
 )
 
+const targetElements = computed(() => {
+  if (!props.step.taggingHandler || props.step.type !== 'following') return []
+
+  return Object.entries(props.step.taggingHandler)
+    .filter(([path]) => !!path)
+    .map(([path, handlerType]) => {
+      const element = getElement(path)
+      return { path, handlerType, element, exists: !!element }
+    })
+})
+
 watch(
-  () => props.step.taggingHandler,
-  () => {
-    initializeHandlers()
+  targetElements,
+  (elements) => {
+    clearAllEventListeners()
+
+    const missingElements = elements.filter((e) => !e.exists)
+
+    if (missingElements.length === 0) {
+      elements.forEach(({ path, handlerType, element }) => {
+        applyHandler(element!, handlerType, path)
+      })
+    }
   },
   { immediate: true, deep: true }
 )
-
-let pollTimer: ReturnType<typeof setTimeout> | null = null
-
-function initializeHandlers() {
-  clearAllEventListeners()
-
-  if (props.step.taggingHandler && props.step.type === 'following') {
-    const handlers = props.step.taggingHandler
-    let allHandled = true
-
-    Object.entries(handlers).forEach(([path, handlerType]) => {
-      if (!path) return
-
-      const element = getElement(path)
-
-      if (element) {
-        applyHandler(element, handlerType as string, path)
-      } else {
-        allHandled = false
-      }
-    })
-
-    if (!allHandled) {
-      if (pollTimer) clearTimeout(pollTimer)
-      pollTimer = setTimeout(initializeHandlers, 300)
-    }
-  }
-}
 
 function applyHandler(element: HTMLElement, handlerType: string, path: string) {
   const eventHandlers = {
