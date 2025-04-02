@@ -1059,6 +1059,7 @@ func TestControllerDeleteStoryline(t *testing.T) {
 			First(&model.Storyline{}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(storylineDBColumns).AddRows(generateStorylineDBRows(mStoryline)...))
@@ -1068,6 +1069,7 @@ func TestControllerDeleteStoryline(t *testing.T) {
 			Delete(&model.UserStorylineRelationship{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 0))
