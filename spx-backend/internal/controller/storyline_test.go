@@ -1078,6 +1078,7 @@ func TestControllerDeleteStoryline(t *testing.T) {
 			Delete(&model.Storyline{Model: mStoryline.Model}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
