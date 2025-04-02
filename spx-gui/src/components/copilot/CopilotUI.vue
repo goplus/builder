@@ -17,88 +17,15 @@ const emit = defineEmits<{
 const bodyRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 
-const executedMcpTools = ref(new Set<string>())
-provide('executedMcpTools', executedMcpTools)
-
-const cachedRounds = ref<any[]>([])
-  watch(
-  () => props.controller.currentChat?.rounds,
-  (newRounds) => {
-    if (!newRounds) {
-      cachedRounds.value = []
-      return
-    }
-    
-    // 更新缓存，只添加新的轮次
-    if (cachedRounds.value.length < newRounds.length) {
-      // 有新的轮次添加
-      for (let i = cachedRounds.value.length; i < newRounds.length; i++) {
-        // 使用 markRaw 标记对象，防止深层响应式转换
-        const newRound = { ...newRounds[i] }
-        
-        // 特别处理 answer 部分，避免深层响应式
-        if (newRound.answer) {
-          const answerValue = newRound.answer.value;
-          newRound.answer = {
-            ...newRound.answer,
-            // 确保 value 保持其原始类型
-            value: answerValue
-          };
-          // 标记整个 answer 对象为非响应式
-          newRound.answer = markRaw(newRound.answer);
-        }
-        
-        cachedRounds.value.push(markRaw(newRound))
-      }
-    } else if (newRounds.length === cachedRounds.value.length) {
-      // 轮次数量相同，但最后一个可能更新了
-      const lastIndex = newRounds.length - 1
-      if (newRounds[lastIndex]?.state !== cachedRounds.value[lastIndex]?.state ||
-          newRounds[lastIndex]?.answer !== cachedRounds.value[lastIndex]?.answer) {
-        
-        const updatedRound = {...newRounds[lastIndex]};
-        if (updatedRound.answer) {
-          const answerValue = updatedRound.answer.value;
-          updatedRound.answer = {
-            ...updatedRound.answer,
-            value: answerValue // Keep the original value without marking it raw
-          };
-          // Mark the entire answer object as raw after setting properties
-          updatedRound.answer = markRaw(updatedRound.answer);
-        }
-        cachedRounds.value[lastIndex] = markRaw(updatedRound);
-      }
-    } else if (newRounds.length < cachedRounds.value.length) {
-      // 轮次减少了，重新设置整个缓存
-      cachedRounds.value = newRounds.map(round => {
-        const newRound = { ...round }
-
-        if (newRound.answer) {
-          const answerValue = newRound.answer.value;
-          newRound.answer = {
-            ...newRound.answer,
-            // 确保 value 保持其原始类型
-            value: answerValue
-          };
-          // 标记整个 answer 对象为非响应式
-          newRound.answer = markRaw(newRound.answer);
-        }
-        
-        cachedRounds.value.push(markRaw(newRound))
-      })
-    }
-  },
-  { deep: true }
-)
-
 function handleClose() {
   props.controller.endChat()
-  executedMcpTools.value.clear()
   emit('close')
 }
 
 const rounds = computed(() => {
-  return cachedRounds.value.length > 0 ? cachedRounds.value : null
+  const chat = props.controller.currentChat
+  if (chat == null || chat.rounds.length === 0) return null
+  return chat.rounds
 })
 
 function handleRetry() {

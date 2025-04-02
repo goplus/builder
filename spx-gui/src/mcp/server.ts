@@ -203,7 +203,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error(`Unknown tool: ${name}`)
     }
   } catch (error: any) {
-    const errorMessage = `Unknown tool: ${name}`
+    const errorMessage = error.message || 'An error occurred while processing the request'
     // Update request history with error
     mcpRequestHistory.value[0].response = errorMessage
     mcpRequestHistory.value[0].error = true

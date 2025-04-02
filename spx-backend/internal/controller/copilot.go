@@ -15,6 +15,7 @@ const (
 
 type GenerateMessageParams struct {
 	Messages []types.Message `json:"messages"`
+	Tools    []types.Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
 }
 
 func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
@@ -43,6 +44,7 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 	// Generate stream message using copilot
 	stream, err := ctrl.copilot.StreamMessage(ctx, &types.Params{
 		Messages: params.Messages,
+		Tools:    params.Tools,
 	})
 	if err != nil {
 		logger.Errorf("failed to generate message: %v", err)
@@ -64,6 +66,7 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 	// Generate message using copilot
 	generatedContent, err := ctrl.copilot.Message(ctx, &types.Params{
 		Messages: params.Messages,
+		Tools:    params.Tools,
 	})
 	if err != nil {
 		logger.Errorf("failed to generate message: %v", err)

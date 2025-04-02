@@ -1,15 +1,12 @@
-<!-- filepath: /home/wuxinyi/go/src/github.com/goplus/builder/spx-gui/src/components/editor/code-editor/ui/markdown/UseMcpTool.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
 import CodeBlockEx from './CodeBlockEx.vue'
-import { client } from '@/mcp/client'
-import type { CopilotController } from '@/components/copilot'
-
-const copilotController = inject('copilotController', null) as CopilotController | null
+import { toolResultCollector } from '@/mcp/tool-result-collector'
 
 const props = defineProps<{
+  id: string
   /** 服务器名称 */
   server?: string
   /** 工具名称 */
@@ -21,23 +18,16 @@ const props = defineProps<{
 const i18n = useI18n()
 const { t } = i18n
 
-// 工具调用状态
-const status = ref<'pending' | 'running' | 'success' | 'error'>('pending')
-const result = ref<any>(null)
-const errorMessage = ref<string | null>(null)
+// 简化：直接使用工具收集器跟踪状态
+const taskInfo = computed(() => toolResultCollector.getOrCreateTask({
+  id: props.id,
+  tool: props.tool.trim(),
+  server: props.server,
+  args: props.arguments
+}))
+
+// 界面状态
 const isExpanded = ref(false)
-const isExecuting = ref(false)
-const autoExecute = ref(true) 
-
-const executedMcpTools = inject('executedMcpTools', ref(new Set<string>()))
-
-const toolExecutionId = computed(() => {
-  return `${props.tool}_${props.arguments}`
-})
-
-const isAlreadyExecuted = computed(() => {
-  return executedMcpTools.value.has(toolExecutionId.value)
-})
 
 // 格式化参数
 const formattedArguments = computed(() => {
@@ -51,23 +41,27 @@ const formattedArguments = computed(() => {
 
 // 格式化结果
 const formattedResult = computed(() => {
-  if (!result.value) return ''
-  return JSON.stringify(result.value, null, 2)
+  if (!taskInfo.value.result) return ''
+  try {
+    return JSON.stringify(taskInfo.value.result, null, 2)
+  } catch (e) {
+    return String(taskInfo.value.result)
+  }
 })
 
 // 状态样式
 const statusClass = computed(() => {
   return {
-    'is-pending': status.value === 'pending',
-    'is-running': status.value === 'running',
-    'is-success': status.value === 'success',
-    'is-error': status.value === 'error'
+    'is-pending': taskInfo.value.status === 'pending',
+    'is-running': taskInfo.value.status === 'running',
+    'is-success': taskInfo.value.status === 'success',
+    'is-error': taskInfo.value.status === 'error'
   }
 })
 
 // 状态文字
 const statusText = computed(() => {
-  switch (status.value) {
+  switch (taskInfo.value.status) {
     case 'pending':
       return t({ en: 'Ready to execute', zh: '准备执行' })
     case 'running':
@@ -81,53 +75,12 @@ const statusText = computed(() => {
   }
 })
 
-// 执行工具调用
+// 简化：执行工具只需调用收集器的执行方法
 async function executeTool() {
-  if (isExecuting.value) return
-
-  if (isAlreadyExecuted.value) {
-    console.log(`Tool ${props.tool} already executed, skipping`)
-    return
-  }
-
-  isExecuting.value = true
-  status.value = 'running'
+  if (taskInfo.value.status === 'running') return
   
-  try {
-    // 解析参数
-    const args = JSON.parse(props.arguments)
-    
-    // 调用 MCP 工具
-    result.value = await client.callTool({
-      name: props.tool.trim(),
-      arguments: args
-    })
-    
-    status.value = 'success'
-    errorMessage.value = null
-    executedMcpTools.value.add(toolExecutionId.value)
-
-    if (copilotController && status.value === 'success') {
-      await sendResultToCopilot()
-    }
-  } catch (error) {
-    status.value = 'error'
-    errorMessage.value = error instanceof Error ? error.message : String(error)
-    result.value = null
-  } finally {
-    isExecuting.value = false
-  }
-}
-
-async function sendResultToCopilot() {
-  if (!copilotController || !result.value) return
-  
-  try {
-    const formattedToolResult = `[use-mcp-tool for '${props.server}'] Tool '${props.tool}' execution result: ${formattedResult.value}`;
-    await copilotController.toolExecResult(formattedToolResult)
-  } catch (error) {
-    console.error('Failed to send result to Copilot:', error)
-  }
+  // 委托给工具收集器执行
+  toolResultCollector.executeTask(taskInfo.value.id)
 }
 
 // 切换展开/折叠状态
@@ -135,26 +88,28 @@ function toggleExpand() {
   isExpanded.value = !isExpanded.value
 }
 
-// 尝试自动解析参数，确保格式有效
-onMounted(() => {
-  try {
-    JSON.parse(props.arguments)
+function statusRunning() {
+  return taskInfo.value.status === 'running'
+}
 
-    if (autoExecute.value) {
+// 组件挂载时自动执行工具
+onMounted(() => {
+  // 如果工具还未执行且不是错误状态，自动执行
+  if (taskInfo.value.status === 'pending') {
+    try {
+      // 验证参数
+      JSON.parse(props.arguments)
       executeTool()
+    } catch (e) {
+      // 参数不是有效的JSON，标记为错误
+      toolResultCollector.markTaskError(taskInfo.value.id, 'Invalid JSON arguments')
     }
-  } catch (e) {
-    errorMessage.value = t({ 
-      en: 'Invalid JSON arguments', 
-      zh: '无效的 JSON 参数' 
-    })
-    status.value = 'error'
   }
 })
 </script>
 
 <template>
-  <div class="mcp-tool" :class="[statusClass]">
+  <div class="mcp-tool" :class="statusClass">
     <div class="tool-header" @click="toggleExpand">
       <div class="tool-info">
         <span class="tool-icon custom-icon">{{ isExpanded ? '▼' : '▶' }}</span>
@@ -164,13 +119,13 @@ onMounted(() => {
       <div class="tool-actions">
         <span class="tool-status" :class="statusClass">{{ statusText }}</span>
         <UIButton 
-          v-if="(!autoExecute && status === 'pending') || status === 'error'"
+          v-if="taskInfo.status === 'error'"
           type="primary"
           size="small"
-          :loading="isExecuting"
+          :loading="statusRunning()"
           @click.stop="executeTool"
         >
-          {{ status === 'error' 
+          {{ taskInfo.status === 'error' 
               ? t({ en: 'Retry', zh: '重试' }) 
               : t({ en: 'Execute', zh: '执行' }) 
           }}
@@ -184,14 +139,14 @@ onMounted(() => {
         <CodeBlockEx :code="formattedArguments" language="json" />
       </div>
       
-      <div v-if="status === 'success'" class="result-section">
+      <div v-if="taskInfo.status === 'success'" class="result-section">
         <div class="section-label">{{ t({ en: 'Result', zh: '结果' }) }}</div>
         <CodeBlockEx :code="formattedResult" language="json" />
       </div>
       
-      <div v-if="status === 'error'" class="error-section">
+      <div v-if="taskInfo.status === 'error'" class="error-section">
         <div class="section-label">{{ t({ en: 'Error', zh: '错误' }) }}</div>
-        <div class="error-message">{{ errorMessage }}</div>
+        <div class="error-message">{{ taskInfo.errorMessage }}</div>
       </div>
     </div>
   </div>
