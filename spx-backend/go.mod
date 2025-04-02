@@ -10,7 +10,7 @@ require (
 	github.com/goplus/yap v0.8.3 //gop:class
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.1
-	github.com/qiniu/go-sdk/v7 v7.25.2
+	github.com/qiniu/go-sdk/v7 v7.25.3
 	github.com/qiniu/x v1.13.12
 	github.com/stretchr/testify v1.10.0
 	gocloud.dev v0.36.0 // indirect
