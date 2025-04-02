@@ -215,8 +215,6 @@ func (c *Client) ContrastCode(ctx context.Context, content, code1, code2 string)
 		MaxTokens:   50,
 	}
 
-	fmt.Println(req)
-
 	resp, err := c.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return false, fmt.Errorf("API call failed: %w", err)
