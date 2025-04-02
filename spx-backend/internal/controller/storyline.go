@@ -274,7 +274,7 @@ func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParams) (
 		return false, fmt.Errorf("rate limit exceeded: %w", err)
 	}
 
-	result, err := ctrl.chat91DictCnGeminiClient.ContrastCode(ctx, param.Context, param.UserCode, param.ExpectedCode)
+	result, err := ctrl.qnyDeepSeekClient.ContrastCode(ctx, param.Context, param.UserCode, param.ExpectedCode)
 	if err != nil {
 		return result, fmt.Errorf("failed to compare code: %w", err)
 	}
