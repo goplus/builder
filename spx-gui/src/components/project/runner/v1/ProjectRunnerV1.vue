@@ -96,7 +96,7 @@ async function getProjectData(signal: AbortSignal | undefined, reporter: Progres
   const zip = new JSZip()
   const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
     en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
-    zh: `加载项目文件中（${info.finishedNum}/${info.totalNum}）...`
+    zh: `正在加载项目文件（${info.finishedNum}/${info.totalNum}）...`
   }))
   Object.entries(files).forEach(([path, file], i) => {
     if (file == null) return
