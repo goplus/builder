@@ -357,6 +357,12 @@ func (p *CreateStorylineParams) Validate() (ok bool, msg string) {
 	if p.Name == "" {
 		return false, "invalid name"
 	}
+	if p.Title.En == "" || p.Title.Zh == "" {
+		return false, "invalid title"
+	}
+	if p.Description.En != "" && p.Description.Zh == "" || p.Description.En == "" && p.Description.Zh != "" {
+		return false, "invalid description"
+	}
 	if p.Tag == "" {
 		return false, "invalid tag"
 	}
@@ -409,46 +415,45 @@ func (ctrl *Controller) CreateStoryline(ctx context.Context, params *CreateStory
 }
 
 type UpdateStorylineParams struct {
-	BackgroundImage *string        `json:"backgroundImage"`
-	Name            *string        `json:"name"`
-	Title           *LocaleMessage `json:"title"`
-	Description     *LocaleMessage `json:"description"`
-	Tag             *string        `json:"tag"`
-	Levels          *string        `json:"levels"`
+	BackgroundImage string        `json:"backgroundImage"`
+	Name            string        `json:"name"`
+	Title           LocaleMessage `json:"title"`
+	Description     LocaleMessage `json:"description"`
+	Tag             string        `json:"tag"`
+	Levels          string        `json:"levels"`
 }
 
 // Diff returns the difference between the params and the storyline model.
 func (p *UpdateStorylineParams) Diff(mStoryline *model.Storyline) map[string]any {
 	updates := map[string]any{}
-	if p.BackgroundImage != nil && *p.BackgroundImage != mStoryline.BackgroundImage {
-		updates["background_image"] = *p.BackgroundImage
+	if p.BackgroundImage != mStoryline.BackgroundImage {
+		updates["background_image"] = p.BackgroundImage
 	}
-	if p.Name != nil && *p.Name != mStoryline.Name {
-		updates["name"] = *p.Name
+	if p.Name != mStoryline.Name {
+		updates["name"] = p.Name
 	}
-	if p.Title != nil {
-		title, err := json.Marshal(*p.Title)
-		if err != nil {
-			return nil
-		}
-		if string(title) != mStoryline.Title {
-			updates["title"] = string(title)
-		}
+
+	title, err := json.Marshal(p.Title)
+	if err != nil {
+		return nil
 	}
-	if p.Description != nil {
-		description, err := json.Marshal(*p.Description)
-		if err != nil {
-			return nil
-		}
-		if string(description) != mStoryline.Description {
-			updates["description"] = string(description)
-		}
+	if string(title) != mStoryline.Title {
+		updates["title"] = string(title)
 	}
-	if p.Tag != nil && model.ParseStorylineTag(*p.Tag) != mStoryline.Tag {
-		updates["tag"] = model.ParseStorylineTag(*p.Tag)
+
+	description, err := json.Marshal(p.Description)
+	if err != nil {
+		return nil
 	}
-	if p.Levels != nil && *p.Levels != mStoryline.Levels {
-		updates["levels"] = *p.Levels
+	if string(description) != mStoryline.Description {
+		updates["description"] = string(description)
+	}
+
+	if model.ParseStorylineTag(p.Tag) != mStoryline.Tag {
+		updates["tag"] = model.ParseStorylineTag(p.Tag)
+	}
+	if p.Levels != mStoryline.Levels {
+		updates["levels"] = p.Levels
 	}
 	return updates
 }
