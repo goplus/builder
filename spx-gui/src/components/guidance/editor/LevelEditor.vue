@@ -96,16 +96,19 @@
         <NodeTaskEditor
           v-show="selectedTab === 'nodeTask'"
           v-model:node-task="currentNodeTaskInfo"
-          @update:currentStep="handleToStep"
+          @select-currentStep="handleToStep"
         />
-        <!-- <StepEditor v-show="selectedTab === 'step'" :steps="form.value.nodeTasks" /> -->
+        <StepEditor 
+          v-show="selectedTab === 'step'"
+          v-model:step="currentStepInfo"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import {
   UIForm,
   UIFormItem,
@@ -127,7 +130,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { saveFile, universalUrlToWebUrl } from '@/models/common/cloud'
 import { useMessage } from '@/components/ui/message'
 import NodeTaskEditor from './NodeTaskEditor.vue'
-// import StepEditor from './StepEditor.vue';
+import StepEditor from './StepEditor.vue';
 
 const props = defineProps<{
   level: Level
@@ -155,6 +158,42 @@ const form = useForm({
   nodeTasks: [props.level.nodeTasks],
   placement: [props.level.placement]
 })
+
+watch(
+  () => props.level,
+  (newVal) => {
+    form.value.titleZh = newVal.title.zh
+    form.value.titleEn = newVal.title.en
+    form.value.descriptionZh = newVal.description.zh
+    form.value.descriptionEn = newVal.description.en
+    form.value.cover = newVal.cover
+    form.value.video = newVal.video
+    form.value.achievement = newVal.achievement
+    form.value.nodeTasks = newVal.nodeTasks
+    form.value.placement = newVal.placement
+  }
+)
+watch(
+  () => form.value,
+  (newVal) => {
+    emit('update:level', {
+      title: {
+        zh: newVal.titleZh,
+        en: newVal.titleEn
+      },
+      description: {
+        zh: newVal.descriptionZh,
+        en: newVal.descriptionEn
+      },
+      cover: newVal.cover,
+      video: newVal.video,
+      achievement: newVal.achievement,
+      nodeTasks: newVal.nodeTasks,
+      placement: newVal.placement
+    })
+  },
+  { deep: true }
+)
 
 function handleOpt(option: string): void {
   switch (option) {
@@ -226,7 +265,7 @@ function handleCreateTask() {
         }, // 互动提示（需要条件触发）
         duration: 0, // 用户当前步骤卡顿距离给提示的时长（单位：秒）
         target: '', // 目标元素语义化标注的key（用于高亮元素）
-        taggingHandler: { '': TaggingHandlerType.ClickToNext }, // 元素的语义化标注 及其 处理方式
+        taggingHandler: {}, // 元素的语义化标注 及其 处理方式
         type: 'coding', // 存在两种类型的步骤，分别是Following步骤和Coding步骤
         isCheck: false, // 该步骤是否涉及快照比对
         isApiControl: false, // 是否需要去控制API Reference的展示

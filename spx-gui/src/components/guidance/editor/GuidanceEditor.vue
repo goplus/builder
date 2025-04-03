@@ -1,14 +1,14 @@
 <template>
-  <div class="guidance-editor-container">
-    <div
-      v-show="isShowIcon"
-      ref="editorIconRef"
-      class="guidance-editor-icon"
-      :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }"
-    >
-      <img src="../icons/edit.svg" alt="guidance-editor" />
-    </div>
-    <div v-show="!isShowIcon" class="guidance-editor-content">
+  <div
+    v-show="isShowIcon"
+    ref="editorIconRef"
+    class="guidance-editor-icon"
+    :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }"
+  >
+    <img src="../icons/edit.svg" alt="guidance-editor" />
+  </div>
+  <div class="guidance-editor-container" v-show="!isShowIcon">
+    <div class="guidance-editor-content">
       <StoryLineEditor
         v-show="editorStatus === editorStatusType.STORYLINE"
         v-model:story-line="storyLine"
@@ -25,13 +25,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, provide } from 'vue'
 import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
 import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
+
+provide('isShowIcon', isShowIcon)
 
 enum editorStatusType {
   STORYLINE,
@@ -83,6 +85,9 @@ useDrag(
 }
 
 .guidance-editor-icon {
+  position: fixed;
+  top: 50px;
+  left: 50px;
   margin-left: 10px;
   margin-top: 10px;
   background-color: #fff;
