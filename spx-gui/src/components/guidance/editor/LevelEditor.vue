@@ -244,59 +244,7 @@ function handleCreateTask() {
       en: ''
     },
     video: '',
-    steps: [
-      {
-        title: {
-          zh: '',
-          en: ''
-        }, // 步骤名称
-        description: {
-          zh: '',
-          en: ''
-        }, // 步骤描述
-        tip: {
-          zh: '',
-          en: ''
-        }, // 互动提示（需要条件触发）
-        duration: 0, // 用户当前步骤卡顿距离给提示的时长（单位：秒）
-        target: '', // 目标元素语义化标注的key（用于高亮元素）
-        taggingHandler: {}, // 元素的语义化标注 及其 处理方式
-        type: 'coding', // 存在两种类型的步骤，分别是Following步骤和Coding步骤
-        isCheck: false, // 该步骤是否涉及快照比对
-        isApiControl: false, // 是否需要去控制API Reference的展示
-        apis: [''], // 该步骤中需要展示的API Reference的definition列表
-        isAssetControl: false, // 是否需要去控制素材的展示
-        assets: [''], // 该步骤中需要被展示的素材的id列表
-        isSpriteControl: false, // 是否需要去控制精灵的展示
-        sprites: [''], // 该步骤中需要被展示的精灵的id列表
-        isSoundControl: false, // 是否需要去控制声音的展示
-        sounds: [''], // 该步骤中需要被展示的声音的id列表
-        isCostumeControl: false, // 是否需要去控制造型的展示
-        costumes: [''], // 该步骤中需要被展示的造型的id列表
-        isAnimationControl: false, // 是否需要去控制动画的展示
-        animations: [''], // 该步骤中需要被展示的动画的id列表
-        isWidgetControl: false, // 是否需要去控制组件的展示
-        widgets: [''], // 该步骤中需要被展示的组件的id列表
-        isBackdropControl: false, // 是否需要去控制背景的展示
-        backdrops: [''], // 该步骤中需要被展示的背景的id列表
-        snapshot: {
-          startSnapshot: '', // 初始快照
-          endSnapshot: '' // 结束快照
-        },
-        coding: {
-          // coding任务独有的数据结构
-          path: '', // 编码文件路径
-          codeMasks: [
-            {
-              startPos: { line: 0, column: 0 }, // 答案展示的开始位置
-              endPos: { line: 0, column: 0 } // 答案展示的结束位置
-            }
-          ], // 完形填空的mask数组，一个mask对应一个空的答案
-          startPosition: { line: 0, column: 0 }, // 答案展示的开始位置
-          endPosition: { line: 0, column: 0 } // 答案展示的结束位置
-        }
-      }
-    ],
+    steps: [],
     triggerTime: 0
   }
   form.value.nodeTasks.push(newTask)
