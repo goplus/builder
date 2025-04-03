@@ -7,7 +7,7 @@
   >
     <img src="../icons/edit.svg" alt="guidance-editor" />
   </div>
-  <div class="guidance-editor-container" v-show="!isShowIcon">
+  <div v-show="!isShowIcon" class="guidance-editor-container">
     <div class="guidance-editor-content">
       <StoryLineEditor
         v-show="editorStatus === editorStatusType.STORYLINE"

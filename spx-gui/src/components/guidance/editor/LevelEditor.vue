@@ -96,12 +96,9 @@
         <NodeTaskEditor
           v-show="selectedTab === 'nodeTask'"
           v-model:node-task="currentNodeTaskInfo"
-          @select-currentStep="handleToStep"
+          @select-current-step="handleToStep"
         />
-        <StepEditor 
-          v-show="selectedTab === 'step'"
-          v-model:step="currentStepInfo"
-        />
+        <StepEditor v-show="selectedTab === 'step'" v-model:step="currentStepInfo" />
       </div>
     </div>
   </div>
@@ -122,7 +119,7 @@ import {
   UIButton
 } from '@/components/ui'
 import type { Level, NodeTask } from '@/apis/guidance'
-import { TaggingHandlerType, type Step } from '@/apis/guidance'
+import { type Step } from '@/apis/guidance'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectImg } from '@/utils/file'
@@ -130,7 +127,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { saveFile, universalUrlToWebUrl } from '@/models/common/cloud'
 import { useMessage } from '@/components/ui/message'
 import NodeTaskEditor from './NodeTaskEditor.vue'
-import StepEditor from './StepEditor.vue';
+import StepEditor from './StepEditor.vue'
 
 const props = defineProps<{
   level: Level
@@ -214,12 +211,10 @@ function handleOpt(option: string): void {
         nodeTasks: form.value.nodeTasks,
         placement: form.value.placement
       })
-      console.log('Saving form data:', form.value)
       break
     case 'back':
       // Go back to the previous page
       emit('back')
-      console.log('Going back')
       break
     default:
       break

@@ -31,7 +31,7 @@
             </UIButton>
           </div>
           <div class="node-list">
-            <div class="node-item" v-for="(step, index) in form.value.nodeTask.steps" :key="step.title.en">
+            <div v-for="(step, index) in form.value.nodeTask.steps" :key="step.title.en" class="node-item">
               <div class="node-top">
                 <div class="node-top-left">
                   <div class="num">{{ index + 1 }}</div>
