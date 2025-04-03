@@ -18,6 +18,9 @@ type Storyline struct {
 	// Tag is tag of the storyline.
 	Tag StorylineTag `gorm:"column:tag"`
 
+	// OwnerID is the ID of the project owner.
+	OwnerID int64 `gorm:"column:owner_id;index;index:,composite:owner_id_name,unique"`
+
 	// Levels is the JSON string of levels.
 	Levels string `gorm:"column:levels"`
 }

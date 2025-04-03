@@ -65,6 +65,7 @@ const router = useRouter()
 const currentLevelIndex = computed(() => {
   return parseInt(getStringParam(router, 'levelIndex') ?? '0')
 })
+
 enum GuidanceMode {
   None = 'none',
   Guidance = 'guidance',
@@ -75,14 +76,18 @@ const storyLineInfo = ref<StoryLine | null>(null)
 const maybeSavedStoryLineInfo = ref<MaybeSavedStoryLine | null>(null)
 
 watch(
-  guidanceMode,
-  (value) => {
-    if (value) {
-      handleGuidance()
-    }
+  () => ({
+    guide: getStringParam(router, 'guide'),
+    guidanceEditor: getStringParam(router, 'guidanceEditor'),
+    storyLineId: getStringParam(router, 'storyLineId'),
+    levelIndex: getStringParam(router, 'levelIndex')
+  }),
+  () => {
+    handleGuidance()
   },
   { immediate: true }
 )
+
 async function handleGuidance() {
   if (getStringParam(router, 'guide') != null) {
     guidanceMode.value = GuidanceMode.Guidance
@@ -92,12 +97,9 @@ async function handleGuidance() {
       const data: StoryLine = await getStoryLine(storyLineId)
       if (data) {
         storyLineInfo.value = data
-        // storyLineInfo.value = storyLineJson
       }
     }
-  }
-
-  if (getStringParam(router, 'guidanceEditor') != null) {
+  } else if (getStringParam(router, 'guidanceEditor') != null) {
     guidanceMode.value = GuidanceMode.GuidanceEditor
     const storyLineId: string | null = getStringParam(router, 'storyLineId')
     // for test
@@ -108,6 +110,8 @@ async function handleGuidance() {
         maybeSavedStoryLineInfo.value = data
       }
     }
+  } else {
+    guidanceMode.value = GuidanceMode.None
   }
 }
 

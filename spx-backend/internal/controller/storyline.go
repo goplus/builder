@@ -274,7 +274,7 @@ func (ctrl *Controller) CheckCode(ctx context.Context, param *CheckCodeParams) (
 		return false, fmt.Errorf("rate limit exceeded: %w", err)
 	}
 
-	result, err := ctrl.chat91DictCnGeminiClient.ContrastCode(ctx, param.Context, param.UserCode, param.ExpectedCode)
+	result, err := ctrl.qnyDeepSeekClient.ContrastCode(ctx, param.Context, param.UserCode, param.ExpectedCode)
 	if err != nil {
 		return result, fmt.Errorf("failed to compare code: %w", err)
 	}
@@ -339,4 +339,202 @@ func (ctrl *Controller) ListStoryline(ctx context.Context, params *ListStoryline
 		Total: total,
 		Data:  storylineDTOs,
 	}, nil
+}
+
+type CreateStorylineParams struct {
+	BackgroundImage string        `json:"backgroundImage"`
+	Name            string        `json:"name"`
+	Title           LocaleMessage `json:"title"`
+	Description     LocaleMessage `json:"description"`
+	Tag             string        `json:"tag"`
+	Levels          string        `json:"levels"`
+}
+
+func (p *CreateStorylineParams) Validate() (ok bool, msg string) {
+	if p.BackgroundImage == "" {
+		return false, "invalid background image"
+	}
+	if p.Name == "" {
+		return false, "invalid name"
+	}
+	if p.Title.En == "" || p.Title.Zh == "" {
+		return false, "invalid title"
+	}
+	if p.Description.En != "" && p.Description.Zh == "" || p.Description.En == "" && p.Description.Zh != "" {
+		return false, "invalid description"
+	}
+	if p.Tag == "" {
+		return false, "invalid tag"
+	}
+	if p.Levels == "" {
+		return false, "invalid levels"
+	}
+	return true, ""
+}
+
+// CreateStoryline Create a storyline
+func (ctrl *Controller) CreateStoryline(ctx context.Context, params *CreateStorylineParams) (*StorylineDTO, error) {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
+		return nil, ErrUnauthorized
+	}
+
+	if ok, msg := params.Validate(); !ok {
+		return nil, fmt.Errorf("invalid params: %s", msg)
+	}
+
+	title, err := json.Marshal(params.Title)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
+	description, err := json.Marshal(params.Description)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
+	mStoryline := model.Storyline{
+		OwnerID:         mAuthedUser.ID,
+		BackgroundImage: params.BackgroundImage,
+		Name:            params.Name,
+		Title:           string(title),
+		Description:     string(description),
+		Tag:             model.ParseStorylineTag(params.Tag),
+		Levels:          params.Levels,
+	}
+
+	if err := ctrl.db.WithContext(ctx).
+		Create(&mStoryline).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to create storyline: %w", err)
+	}
+
+	storylineDTO := toStorylineDTO(mStoryline)
+
+	return &storylineDTO, nil
+}
+
+type UpdateStorylineParams struct {
+	BackgroundImage string        `json:"backgroundImage"`
+	Name            string        `json:"name"`
+	Title           LocaleMessage `json:"title"`
+	Description     LocaleMessage `json:"description"`
+	Tag             string        `json:"tag"`
+	Levels          string        `json:"levels"`
+}
+
+// Diff returns the difference between the params and the storyline model.
+func (p *UpdateStorylineParams) Diff(mStoryline *model.Storyline) map[string]any {
+	updates := map[string]any{}
+	if p.BackgroundImage != mStoryline.BackgroundImage {
+		updates["background_image"] = p.BackgroundImage
+	}
+	if p.Name != mStoryline.Name {
+		updates["name"] = p.Name
+	}
+
+	title, err := json.Marshal(p.Title)
+	if err != nil {
+		return nil
+	}
+	if string(title) != mStoryline.Title {
+		updates["title"] = string(title)
+	}
+
+	description, err := json.Marshal(p.Description)
+	if err != nil {
+		return nil
+	}
+	if string(description) != mStoryline.Description {
+		updates["description"] = string(description)
+	}
+
+	if model.ParseStorylineTag(p.Tag) != mStoryline.Tag {
+		updates["tag"] = model.ParseStorylineTag(p.Tag)
+	}
+	if p.Levels != mStoryline.Levels {
+		updates["levels"] = p.Levels
+	}
+	return updates
+}
+
+// UpdateStoryline Update the storyline
+func (ctrl *Controller) UpdateStoryline(ctx context.Context, id string, params *UpdateStorylineParams) (*StorylineDTO, error) {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
+		return nil, ErrUnauthorized
+	}
+
+	if id == "" {
+		return nil, ErrBadRequest
+	}
+
+	storylineId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
+	mStoryline, err := ctrl.ensureStoryline(ctx, storylineId)
+	if err != nil {
+		return nil, err
+	}
+
+	if mAuthedUser.ID != mStoryline.OwnerID {
+		return nil, ErrForbidden
+	}
+
+	updates := params.Diff(mStoryline)
+
+	if len(updates) == 0 {
+		return nil, ErrBadRequest
+	}
+
+	if err := ctrl.db.WithContext(ctx).
+		Model(mStoryline).
+		Updates(updates).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to update storyline: %w", err)
+	}
+
+	storylineDTO := toStorylineDTO(*mStoryline)
+
+	return &storylineDTO, nil
+}
+
+// DeleteStoryline Delete the storyline
+func (ctrl *Controller) DeleteStoryline(ctx context.Context, id string) error {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
+		return ErrUnauthorized
+	}
+
+	if id == "" {
+		return ErrBadRequest
+	}
+
+	storylineId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return ErrBadRequest
+	}
+
+	return ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var mStoryline model.Storyline
+		if err := tx.Where("id = ?", storylineId).First(&mStoryline).Error; err != nil {
+			return fmt.Errorf("failed to get storyline %d: %w", storylineId, err)
+		}
+
+		if mAuthedUser.ID != mStoryline.OwnerID {
+			return ErrForbidden
+		}
+
+		if err := tx.Where("storyline_id = ?", storylineId).Delete(&model.UserStorylineRelationship{}).Error; err != nil {
+			return fmt.Errorf("failed to delete user-storyline relationships: %w", err)
+		}
+
+		if err := tx.Delete(&mStoryline).Error; err != nil {
+			return fmt.Errorf("failed to delete storyline: %w", err)
+		}
+
+		return nil
+	})
 }

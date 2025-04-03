@@ -35,7 +35,7 @@ export const TAG_CONTEXT_KEY = Symbol('tag_context')
 export const tagApi = ref<{
   getElement: (path: string) => HTMLElement | null
   getInstance: (path: string) => unknown
-  getAllTagElements: () => any;
+  getAllTagElements: () => any
 } | null>(null)
 
 export function useTag() {
@@ -63,17 +63,17 @@ export function useTag() {
   return {
     getElement,
     getInstance,
-    getAllTagElements,
+    getAllTagElements
   }
 }
 
 /**
  * Initialize the tagging system.
- * @param app 
+ * @param app
  * @example
  * ```ts
  * import { initTagging } from './utils/tagging'
- * 
+ *
  * initTagging(app)
  * ```
  */
