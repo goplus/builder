@@ -1,54 +1,77 @@
 <template>
-  <div class="guidance-editor-container">
-    <div v-show="isShowIcon" ref="editorIconRef" class="guidance-editor-icon" :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }">
-      <img src="../icons/edit.svg" alt="guidance-editor" />
-    </div>
-    <div v-show="!isShowIcon" class="guidance-editor-content">
-      <StoryLineEditor v-show="editorStatus === editorStatusType.STORYLINE" v-model:story-line="storyLine" @level-change="handleLevelChange" @minimize="isShowIcon = true"/>
-      <!-- <LevelEditor v-show="editorStatus === editorStatusType.LEVELEDITOR" :level="level" /> -->
+  <div
+    v-show="isShowIcon"
+    ref="editorIconRef"
+    class="guidance-editor-icon"
+    :style="{ transform: `translate(${editorIconPos.x}px, ${editorIconPos.y}px)` }"
+  >
+    <img src="../icons/edit.svg" alt="guidance-editor" />
+  </div>
+  <div v-show="!isShowIcon" class="guidance-editor-container">
+    <div class="guidance-editor-content">
+      <StoryLineEditor
+        v-show="editorStatus === editorStatusType.STORYLINE"
+        v-model:story-line="storyLine"
+        @level-change="handleLevelChange"
+        @minimize="isShowIcon = true"
+      />
+      <LevelEditor
+        v-show="editorStatus === editorStatusType.LEVELEDITOR"
+        v-model:level="currentLevel"
+        @back="editorStatus = editorStatusType.STORYLINE"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref, computed, provide } from 'vue'
 import { type MaybeSavedStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
-// import LevelEditor from './LevelEditor.vue'
+import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
 
-const props = defineProps<{
-  storyLine: MaybeSavedStoryLine
-}>()
-
-const storyLine = ref<MaybeSavedStoryLine>(props.storyLine)
+provide('isShowIcon', isShowIcon)
 
 enum editorStatusType {
   STORYLINE,
   LEVELEDITOR
 }
-
+const props = defineProps<{
+  storyLine: MaybeSavedStoryLine
+}>()
 const editorStatus = ref<editorStatusType>(editorStatusType.STORYLINE)
-
 const levelIndex = ref<number>(0)
-// const level = computed(() => {
-//   return storyLine.value.levels[levelIndex.value]
-// })
-function handleLevelChange(index: number) {
-  levelIndex.value = index
-}
-
 const editorIconPos = ref<Pos>({
   x: 0,
   y: 0
 })
+
 const editorIconRef = ref<HTMLElement | null>(null)
-useDrag(editorIconRef, () => editorIconPos.value, (pos: Pos) => editorIconPos.value = pos, {
-  onClick: () => isShowIcon.value = false
+const storyLine = ref<MaybeSavedStoryLine>(props.storyLine)
+
+function handleLevelChange(index: number) {
+  levelIndex.value = index
+  editorStatus.value = editorStatusType.LEVELEDITOR
+}
+
+const currentLevel = computed({
+  get: () => storyLine.value.levels[levelIndex.value],
+  set: (newValue) => {
+    storyLine.value.levels[levelIndex.value] = newValue
+  }
 })
 
+useDrag(
+  editorIconRef,
+  () => editorIconPos.value,
+  (pos: Pos) => (editorIconPos.value = pos),
+  {
+    onClick: () => (isShowIcon.value = false)
+  }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -62,6 +85,9 @@ useDrag(editorIconRef, () => editorIconPos.value, (pos: Pos) => editorIconPos.va
 }
 
 .guidance-editor-icon {
+  position: fixed;
+  top: 50px;
+  left: 50px;
   margin-left: 10px;
   margin-top: 10px;
   background-color: #fff;
