@@ -17,7 +17,6 @@ export const initBasicTools = async () => {
         description: createProjectToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = CreateProjectArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${createProjectToolDescription.name}: ${result.error}`)

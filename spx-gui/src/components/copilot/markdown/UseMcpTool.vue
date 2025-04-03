@@ -4,27 +4,30 @@ import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
 import CodeBlock from './CodeBlock.vue'
 import { toolResultCollector } from '@/components/copilot/mcp/collector'
+
+// Component props
 const props = defineProps<{
-  id: string
-  /** 服务器名称 */
-  server?: string
-  /** 工具名称 */
-  tool: string
-  /** 工具参数（JSON格式字符串） */
-  arguments: string
+  id: string           // Unique identifier for this tool execution
+  server?: string      // Optional server name
+  tool: string         // Tool name to execute
+  arguments: string    // Tool arguments in JSON string format
 }>()
+
 const i18n = useI18n()
 const { t } = i18n
-// 简化：直接使用工具收集器跟踪状态
+
+// Track tool execution state via the collector
 const taskInfo = computed(() => toolResultCollector.getOrCreateTask({
   id: props.id,
   tool: props.tool.trim(),
   server: props.server,
   args: props.arguments
 }))
-// 界面状态
+
+// UI state
 const isExpanded = ref(false)
-// 格式化参数
+
+// Format arguments for display
 const formattedArguments = computed(() => {
   try {
     const args = JSON.parse(props.arguments)
@@ -33,7 +36,8 @@ const formattedArguments = computed(() => {
     return props.arguments
   }
 })
-// 格式化结果
+
+// Format result for display
 const formattedResult = computed(() => {
   if (!taskInfo.value.result) return ''
   try {
@@ -42,7 +46,8 @@ const formattedResult = computed(() => {
     return String(taskInfo.value.result)
   }
 })
-// 状态样式
+
+// CSS classes based on execution status
 const statusClass = computed(() => {
   return {
     'is-pending': taskInfo.value.status === 'pending',
@@ -51,7 +56,8 @@ const statusClass = computed(() => {
     'is-error': taskInfo.value.status === 'error'
   }
 })
-// 状态文字
+
+// Human-readable status text
 const statusText = computed(() => {
   switch (taskInfo.value.status) {
     case 'pending':
@@ -66,30 +72,43 @@ const statusText = computed(() => {
       return ''
   }
 })
-// 简化：执行工具只需调用收集器的执行方法
+
+/**
+ * Execute the tool via the collector
+ * Delegates execution responsibility to the toolResultCollector
+ */
 async function executeTool() {
   if (taskInfo.value.status === 'running') return
   
-  // 委托给工具收集器执行
+  // Delegate to the tool collector for execution
   toolResultCollector.executeTask(taskInfo.value.id)
 }
-// 切换展开/折叠状态
+
+/**
+ * Toggle expanded/collapsed view state
+ */
 function toggleExpand() {
   isExpanded.value = !isExpanded.value
 }
+
+/**
+ * Check if tool is currently running
+ * @returns {boolean} True if tool is in running state
+ */
 function statusRunning() {
   return taskInfo.value.status === 'running'
 }
-// 组件挂载时自动执行工具
+
+// Auto-execute tool when component mounts
 onMounted(() => {
-  // 如果工具还未执行且不是错误状态，自动执行
+  // Only execute if pending and not previously failed
   if (taskInfo.value.status === 'pending') {
     try {
-      // 验证参数
+      // Validate arguments JSON
       JSON.parse(props.arguments)
       executeTool()
     } catch (e) {
-      // 参数不是有效的JSON，标记为错误
+      // Mark task as failed if arguments are invalid
       toolResultCollector.markTaskError(taskInfo.value.id, 'Invalid JSON arguments')
     }
   }
@@ -141,36 +160,45 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
+/**
+ * MCP Tool component container
+ * Visual representation of a tool execution with status indicators
+ */
 .mcp-tool {
   border: 1px solid var(--ui-color-grey-300);
   border-radius: 6px;
   margin: 12px 0;
   overflow: hidden;
   
+  /* Status-specific styling */
   &.is-pending {
-    border-color: grey;
+    border-color: var(--ui-color-grey-400);
   }
   
   &.is-running {
-    border-color: blue;
-    background-color: blue;
+    border-color: var(--ui-color-blue-400);
+    background-color: var(--ui-color-blue-50);
   }
   
   &.is-success {
-    border-color: green;
-    background-color: green;
+    border-color: var(--ui-color-green-400);
+    background-color: var(--ui-color-green-50);
   }
   
   &.is-error {
-    border-color: red;
-    background-color: red;
+    border-color: var(--ui-color-red-400);
+    background-color: var(--ui-color-red-50);
   }
   
+  /**
+   * Tool header with expand/collapse control
+   * Contains tool name and status indicators
+   */
   .tool-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 10px;
+    padding: 8px 12px;
     cursor: pointer;
     background-color: rgba(255, 255, 255, 0.5);
     
@@ -178,54 +206,68 @@ onMounted(() => {
       background-color: rgba(255, 255, 255, 0.8);
     }
     
+    /**
+     * Left section with tool identifier
+     */
     .tool-info {
       display: flex;
       align-items: center;
       gap: 8px;
       
+      /* Expand/collapse indicator */
       .tool-icon {
         color: var(--ui-color-grey-700);
         font-size: 16px;
       }
       
+      /* Tool name display */
       .tool-name {
         font-weight: 500;
         font-size: 14px;
-        color: var(--ui-color-grey-900);
+        color: var (--ui-color-grey-900);
       }
     }
     
+    /**
+     * Right section with status and actions
+     */
     .tool-actions {
       display: flex;
       align-items: center;
       gap: 12px;
       
+      /* Status text indicator */
       .tool-status {
         font-size: 12px;
-        color: gray;
+        color: var(--ui-color-grey-600);
         
         &.is-running {
-          color: blue;
+          color: var(--ui-color-blue-600);
         }
         
         &.is-success {
-          color: green;
+          color: var(--ui-color-green-600);
           font-weight: 500;
         }
         
         &.is-error {
-          color: red;
+          color: var(--ui-color-red-600);
           font-weight: 500;
         }
       }
     }
   }
   
+  /**
+   * Expandable content section
+   * Contains arguments, results, and error information
+   */
   .tool-content {
     padding: 12px 16px;
     border-top: 1px solid var(--ui-color-grey-200);
     background-color: rgba(255, 255, 255, 0.7);
     
+    /* Section headers */
     .section-label {
       font-weight: 500;
       margin-bottom: 6px;
@@ -233,6 +275,7 @@ onMounted(() => {
       font-size: 12px;
     }
     
+    /* Section spacing */
     .args-section,
     .result-section,
     .error-section {
@@ -243,6 +286,7 @@ onMounted(() => {
       }
     }
     
+    /* Error message display */
     .error-message {
       padding: 8px 12px;
       border-radius: 4px;
@@ -254,6 +298,9 @@ onMounted(() => {
     }
   }
   
+  /**
+   * Custom icon styling for consistent display
+   */
   .custom-icon {
     font-size: 10px;
     display: inline-flex;
@@ -261,6 +308,33 @@ onMounted(() => {
     height: 16px;
     align-items: center;
     justify-content: center;
+  }
+}
+
+/**
+ * Responsive styling for smaller devices
+ */
+@media (max-width: 768px) {
+  .mcp-tool {
+    .tool-header {
+      padding: 6px 10px;
+      
+      .tool-info {
+        .tool-name {
+          font-size: 13px;
+        }
+      }
+      
+      .tool-actions {
+        .tool-status {
+          font-size: 11px;
+        }
+      }
+    }
+    
+    .tool-content {
+      padding: 10px 12px;
+    }
   }
 }
 </style>

@@ -1,14 +1,22 @@
-/**
- * MCP Client implementation for XBuilder
- * @module client
- */
-
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { clientTransport, setClientConnected } from './transport'
 
+/**
+ * Flag indicating if the client has been initialized
+ * Prevents redundant initialization
+ */
 let isInitialized = false
+
+/**
+ * Promise tracking current connection attempt
+ * Used to prevent multiple concurrent connection attempts
+ */
 let connectionPromise: Promise<void> | null = null
 
+/**
+ * Client configuration
+ * Defines client metadata and capabilities
+ */
 const CLIENT_CONFIG = {
   client: {
     name: 'xbuilder-action',
@@ -23,15 +31,27 @@ const CLIENT_CONFIG = {
   }
 }
 
+/**
+ * Active client instance
+ * Singleton reference to the MCP client
+ */
 let client: Client | null = null
 
+/**
+ * Initialize the MCP client
+ * Creates client instance and establishes connection
+ * 
+ * @param {boolean} [force=false] - Force reinitialization even if already initialized
+ * @returns {Promise<Client>} Connected MCP client instance
+ * @throws {Error} If connection fails
+ */
 export async function initMcpClient(force = false): Promise<Client> {
-  // 如果已初始化且不是强制模式，返回现有客户端
+  // Return existing client if already initialized and not forced
   if (isInitialized && client && !force) {
     return client
   }
   
-  // 如果当前有连接进行中，直接返回该 Promise
+  // If connection is in progress, wait for it to complete
   if (connectionPromise && !force) {
     return connectionPromise.then(() => {
       if (!client) throw new Error('Client initialization failed')
@@ -39,10 +59,10 @@ export async function initMcpClient(force = false): Promise<Client> {
     })
   }
   
-  // 创建新的客户端实例
+  // Create new client instance with configuration
   client = new Client(CLIENT_CONFIG.client, CLIENT_CONFIG.options)
   
-  // 连接到 MCP 服务器
+  // Establish connection to transport layer
   connectionPromise = client
     .connect(clientTransport)
     .then(() => {
@@ -52,18 +72,24 @@ export async function initMcpClient(force = false): Promise<Client> {
     .catch((error) => {
       console.error('MCP Client connection failed:', error)
       setClientConnected(false)
-      throw error // 重新抛出错误以便调用者处理
+      throw error 
     })
     .finally(() => {
       connectionPromise = null
     })
   
-  // 等待连接完成
+  // Wait for connection to complete
   await connectionPromise
   
   return client
 }
 
+/**
+ * Get the initialized MCP client
+ * 
+ * @returns {Client} The active MCP client instance
+ * @throws {Error} If client is not initialized
+ */
 export function getMcpClient(): Client {
   if (!client || !isInitialized) {
     throw new Error('MCP Client not initialized. Call initMcpClient() first.')

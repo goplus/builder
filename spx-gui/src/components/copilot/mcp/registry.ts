@@ -103,8 +103,6 @@ export function registerTool<T = any, R = any>(
 ): void {
   const toolName = tool.name
   
-  console.log(`Registering tool "${toolName}" from provider "${provider}"`)
-  
   // Check for existing tool registration
   if (registry[toolName] && registry[toolName].provider !== provider) {
     console.warn(
@@ -134,8 +132,6 @@ export function registerTools(
   }>,
   provider: string
 ): void {
-  console.log(`Registering ${tools.length} tools from provider "${provider}"`)
-  
   // Register all tools
   tools.forEach(({ description, implementation }) => 
     registerTool(description, implementation, provider)
@@ -161,9 +157,6 @@ export function unregisterTool(toolName: string, provider?: string): boolean {
     return false
   }
   
-  // Log unregistration
-  console.log(`Unregistering tool "${toolName}"${provider ? ` from provider "${provider}"` : ''}`)
-  
   // Remove tool from registry
   delete registry[toolName]
   return true
@@ -185,10 +178,6 @@ export function unregisterProviderTools(provider: string): number {
       count++
     }
   })
-  
-  if (count > 0) {
-    console.log(`Unregistered ${count} tools from provider "${provider}"`)
-  }
   
   return count
 }
