@@ -7,6 +7,7 @@ import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
 import { getProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
+import { genAssetFromCanvos } from '@/components/asset'
 
 type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
 
@@ -68,7 +69,7 @@ async function createProject(options: CreateProjectOptions) {
   project.setVisibility(Visibility.Private)
 
   try {
-    const thumbnail = await project.createCanvos("stage.png",800, 600, '#000000')
+    const thumbnail = await genAssetFromCanvos("stage.png",800, 600, '#000000')
     project.setThumbnail(thumbnail)
     await project.saveToCloud()
 

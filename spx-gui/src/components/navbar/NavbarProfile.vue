@@ -46,9 +46,11 @@
           {{ $t({ en: 'Disable advanced library features', zh: '禁用高级素材库功能' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup>
+      <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem @click="handleUseMcpDebuggerUtils">
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
+        <UIMenuItem @click="handleAskCopilotEdit">
+            {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -70,12 +72,28 @@ import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
+import { useDeveloperMode } from '@/utils/developer-mode'
+import { useCopilotChat } from '@/components/copilot/init'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
+const { isDeveloperMode } = useDeveloperMode()
 const router = useRouter()
+const { toggle: toggleCopilotChat } = useCopilotChat()
 
 const userInfo = computed(() => userStore.getSignedInUser())
+
+const handleAskCopilotEdit = useMessageHandle(
+  async () => {
+    const isVisible = toggleCopilotChat()
+    return isVisible
+  },
+  undefined,
+  (isVisible) => ({
+    en: isVisible ? 'Copilot Edit opened' : 'Copilot Edit closed',
+    zh: isVisible ? 'Copilot Edit 已打开' : 'Copilot Edit 已关闭'
+  })
+).fn
 
 function handleUserPage() {
   router.push(getUserPageRoute(userInfo.value!.name))

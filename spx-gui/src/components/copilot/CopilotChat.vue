@@ -1,22 +1,21 @@
 <script setup lang="ts">
+import { inject } from 'vue'
 import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import type { CopilotController } from '@/components/copilot'
+import { useCopilotChat } from './init'
 
-const props = defineProps<{
-  controller: CopilotController,
-}>()
+const controller = inject('copilotController') as CopilotController | undefined
 
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+// 获取聊天可见性控制
+const { isVisible, close: closeChat } = useCopilotChat()
 </script>
 
 <template>
-  <aside class="copilot-chat-container">
+  <aside v-if="isVisible && controller" class="copilot-chat-container">
       <CopilotUI
-        :controller="props.controller"
+        :controller="controller"
         class="copilot-ui"
-        @close="emit('close')"
+        @close="closeChat"
       />
   </aside>
 </template>

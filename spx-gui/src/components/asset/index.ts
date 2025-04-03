@@ -112,7 +112,7 @@ export async function genBackdropFromCanvos(name: string, width: number, height:
   return backdrop
 }
 
-async function genAssetFromCanvos(name: string, width:number, height: number, color: string) {
+export async function genAssetFromCanvos(name: string, width:number, height: number, color: string) {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
 
