@@ -1,63 +1,76 @@
 import { reactive, ref } from 'vue'
 import { getMcpClient } from './client'
 
+/** Status lifecycle of a tool task */
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
 
 /**
- * 工具任务信息
+ * Tool task information
+ * Contains all data related to a specific tool execution
  */
 export interface ToolTask {
-  id: string         // 任务ID
-  tool: string       // 工具名称
-  server?: string    // 服务器名称
-  args: string       // 原始参数字符串
-  status: TaskStatus // 任务状态
-  result?: any       // 执行结果
-  errorMessage?: string // 错误信息
-  timestamp?: number    // 执行时间戳
+  id: string         // Unique task identifier
+  tool: string       // Name of the tool to execute
+  server?: string    // Server name (optional)
+  args: string       // Arguments as JSON string
+  status: TaskStatus // Current execution status
+  result?: any       // Execution result if available
+  errorMessage?: string // Error information if failed
+  timestamp?: number    // Execution timestamp
 }
 
 /**
- * 工具结果接口
+ * Tool execution result
+ * Contains the outcome of a tool execution
  */
 export interface ToolResult {
-  id: string        // 工具ID
-  tool: string      // 工具名称
-  server?: string   // 服务器名称
-  result: any       // 执行结果
-  timestamp: number // 执行时间戳
+  id: string        // Task identifier
+  tool: string      // Name of the executed tool
+  server?: string   // Server name (optional)
+  result: any       // Execution result or error information
+  timestamp: number // When the result was produced
 }
 
+/**
+ * Manages the lifecycle of tool executions
+ * Provides queuing, persistence, and result collection
+ */
 export class ToolResultCollector {
-  // 使用 reactive 来管理任务状态，确保组件可以直接使用
+  // Reactive state for task management
   private tasks = reactive<Record<string, ToolTask>>({})
   private executionQueue = ref<string[]>([])
   private isProcessing = ref(false)
   private resultCallback: ((results: ToolResult[]) => void) | null = null
   
-  // 存储的任务结果
+  // Collection of execution results
   private results: ToolResult[] = []
   
+  /**
+   * Creates a new collector with optional configuration
+   * @param options Configuration options
+   */
   constructor(private options = { 
     debounceTime: 500,
     storagePrefix: 'mcp_tool_'
   }) {}
   
   /**
-   * 获取或创建工具任务
+   * Retrieves an existing task or creates a new one
+   * @param taskInfo Information for task creation
+   * @returns The task object
    */
   getOrCreateTask(taskInfo: Omit<ToolTask, 'status'>): ToolTask {
     const id = taskInfo.id
     
-    // 如果任务已存在，返回它
+    // Return existing task if available
     if (this.tasks[id]) {
       return this.tasks[id]
     }
     
-    // 从存储中恢复任务
+    // Try to recover from session storage
     const storedTask = this.getStoredTask(id)
     
-    // 创建新任务
+    // Create new task with restored or default values
     this.tasks[id] = {
       id,
       tool: taskInfo.tool,
@@ -73,31 +86,32 @@ export class ToolResultCollector {
   }
   
   /**
-   * 执行工具任务
+   * Schedules a task for execution
+   * @param taskId ID of the task to execute
    */
   executeTask(taskId: string): void {
-    // 检查任务是否存在
+    // Validate task existence
     if (!this.tasks[taskId]) {
       console.error(`Task ${taskId} not found`)
       return
     }
     
-    // 如果任务已在执行或已在队列中，返回
+    // Skip if already running or queued
     if (this.tasks[taskId].status === 'running' || 
         this.executionQueue.value.includes(taskId)) {
       return
     }
     
-    // 更新任务状态
+    // Update status and add to execution queue
     this.tasks[taskId].status = 'pending'
     this.saveTaskToStorage(taskId)
-    
-    // 添加到执行队列
     this.executionQueue.value.push(taskId)
   }
   
   /**
-   * 标记任务为错误状态
+   * Marks a task as failed with error information
+   * @param taskId ID of the failed task
+   * @param errorMessage Error description
    */
   markTaskError(taskId: string, errorMessage: string): void {
     if (!this.tasks[taskId]) {
@@ -110,22 +124,25 @@ export class ToolResultCollector {
     this.saveTaskToStorage(taskId)
   }
 
+  /**
+   * Removes all tasks and clears the execution queue
+   */
   clearAllTasks(): void {
-    // 停止当前处理
+    // Stop processing
     this.isProcessing.value = false
     
-    // 清空队列
+    // Clear the execution queue
     this.executionQueue.value = []
     
-    // 获取所有任务ID
+    // Get all task IDs
     const taskIds = Object.keys(this.tasks)
     
-    // 清空结果
+    // Clear results collection
     this.results = []
     
-    // 清空任务和存储
+    // Remove all tasks from storage and memory
     for (const id of taskIds) {
-      // 从存储中删除
+      // Remove from storage
       try {
         const key = `${this.options.storagePrefix}${id}`
         sessionStorage.removeItem(key)
@@ -133,16 +150,17 @@ export class ToolResultCollector {
         console.error(`Error removing task ${id} from storage:`, e)
       }
       
-      // 从任务集合中删除
+      // Remove from collection
       delete this.tasks[id]
     }
   }
   
   /**
-   * 处理执行队列
+   * Processes all queued tasks sequentially
+   * @returns Promise resolving to array of results from processed tasks
    */
   async processQueue(): Promise<ToolResult[]> {
-    // 如果已在处理或队列为空，返回
+    // Skip if already processing or queue is empty
     if (this.isProcessing.value || this.executionQueue.value.length === 0) {
       return []
     }
@@ -151,7 +169,7 @@ export class ToolResultCollector {
     const processedResults: ToolResult[] = []
     try {
       while (this.executionQueue.value.length > 0) {
-        // 取出队首任务
+        // Get next task from queue
         const taskId = this.executionQueue.value.shift()!
         const task = this.tasks[taskId]
         
@@ -160,28 +178,27 @@ export class ToolResultCollector {
           continue
         }
         
-        // 更新任务状态为运行中
+        // Set status to running
         task.status = 'running'
         this.saveTaskToStorage(taskId)
         
         try {
-          // 解析参数
+          // Parse arguments and call the tool
           const args = JSON.parse(task.args)
           
-          // 调用 MCP 工具
           const result = await getMcpClient().callTool({
             name: task.tool,
             arguments: args
           })
           
-          // 更新任务状态
+          // Update task with success information
           task.status = 'success'
           task.result = result
           task.errorMessage = undefined
           task.timestamp = Date.now()
           this.saveTaskToStorage(taskId)
           
-          // 创建结果对象
+          // Create result object
           const toolResult: ToolResult = {
             id: task.id,
             tool: task.tool,
@@ -190,17 +207,17 @@ export class ToolResultCollector {
             timestamp: task.timestamp
           }
           
-          // 添加到处理结果和总结果列表
+          // Store in results collections
           processedResults.push(toolResult)
           this.results.push(toolResult)
         } catch (error) {
-          // 处理错误
+          // Update task with error information
           task.status = 'error'
           task.errorMessage = error instanceof Error ? error.message : String(error)
           task.timestamp = Date.now()
           this.saveTaskToStorage(taskId)
           
-          // 提交错误结果
+          // Create error result object
           const errorResult: ToolResult = {
             id: task.id,
             tool: task.tool,
@@ -209,7 +226,7 @@ export class ToolResultCollector {
             timestamp: task.timestamp
           }
           
-          // 添加到处理结果和总结果列表
+          // Store in results collections
           processedResults.push(errorResult)
           this.results.push(errorResult)
         }
@@ -222,7 +239,10 @@ export class ToolResultCollector {
   }
   
   /**
-   * 从存储获取任务
+   * Retrieves a task from session storage
+   * @param taskId ID of the task to retrieve
+   * @returns Partial task data or null if not found
+   * @private
    */
   private getStoredTask(taskId: string): Partial<ToolTask> | null {
     try {
@@ -240,7 +260,9 @@ export class ToolResultCollector {
   }
   
   /**
-   * 保存任务到存储
+   * Persists task data to session storage
+   * @param taskId ID of the task to save
+   * @private
    */
   private saveTaskToStorage(taskId: string): void {
     const task = this.tasks[taskId]
@@ -260,5 +282,7 @@ export class ToolResultCollector {
   }
 }
 
-// 导出单例
+/**
+ * Singleton instance for application-wide tool result collection
+ */
 export const toolResultCollector = new ToolResultCollector()

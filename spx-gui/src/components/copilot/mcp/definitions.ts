@@ -1,7 +1,14 @@
 import { z } from 'zod'
 import { createToolDescription } from './registry'
 
-// 项目相关工具
+/**
+ * Project Management Tools
+ * Tools for creating and managing XBuilder projects
+ */
+
+/**
+ * Schema for validating project creation parameters
+ */
 export const CreateProjectArgsSchema = z.object({
   projectName: z
     .string()
@@ -10,6 +17,10 @@ export const CreateProjectArgsSchema = z.object({
     )
 })
 
+/**
+ * Tool description for project creation functionality
+ * Allows creating a new SPX project with default structure
+ */
 export const createProjectToolDescription = createToolDescription(
   'create_project',
   'Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.',
@@ -17,11 +28,22 @@ export const createProjectToolDescription = createToolDescription(
   'project'
 )
 
-// 游戏控制工具
+/**
+ * Game Execution Tools
+ * Tools for controlling project execution in the runtime environment
+ */
+
+/**
+ * Schema for validating game execution parameters
+ */
 export const RunGameArgsSchema = z.object({
   projectName: z.string().describe('The name of the project to run in XBuilder.')
 })
 
+/**
+ * Tool description for running project gameplay
+ * Executes the current project in the runtime environment
+ */
 export const runGameToolDescription = createToolDescription(
   'run_game',
   'Run the current Go+ XBuilder SPX project in the XBuilder environment.',
@@ -29,10 +51,17 @@ export const runGameToolDescription = createToolDescription(
   'game'
 )
 
+/**
+ * Schema for validating game termination parameters
+ */
 export const StopGameArgsSchema = z.object({
   projectName: z.string().describe('The name of the project to stop in XBuilder.')
 })
 
+/**
+ * Tool description for stopping project gameplay
+ * Terminates the execution of the current project
+ */
 export const stopGameToolDescription = createToolDescription(
   'stop_game',
   'Stop the current Go+ XBuilder SPX project in the XBuilder environment.',
@@ -40,7 +69,15 @@ export const stopGameToolDescription = createToolDescription(
   'game'
 )
 
-// 精灵相关工具
+/**
+ * Sprite Management Tools
+ * Tools for creating and manipulating visual sprites in projects
+ */
+
+/**
+ * Schema for validating sprite creation parameters
+ * Used when creating sprites from canvas drawings
+ */
 export const AddSpriteFromCanvasArgsSchema = z.object({
   spriteName: z
     .string()
@@ -49,6 +86,10 @@ export const AddSpriteFromCanvasArgsSchema = z.object({
   color: z.string().describe('The color of the square (CSS color format)')
 })
 
+/**
+ * Tool description for adding sprites from canvas
+ * Creates a new sprite from a canvas drawing
+ */
 export const addSpriteFromCanvasToolDescription = createToolDescription(
   'add_sprite_from_canvos',
   'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
@@ -56,7 +97,15 @@ export const addSpriteFromCanvasToolDescription = createToolDescription(
   'sprite'
 )
 
-// 舞台相关工具
+/**
+ * Stage Management Tools
+ * Tools for modifying the stage and its properties
+ */
+
+/**
+ * Schema for validating stage backdrop creation parameters
+ * Used when creating backdrops from canvas drawings
+ */
 export const AddStageBackdropFromCanvasArgsSchema = z.object({
   backdropName: z
     .string()
@@ -64,6 +113,10 @@ export const AddStageBackdropFromCanvasArgsSchema = z.object({
   color: z.string().describe('The color of the backdrop (CSS color format)')
 })
 
+/**
+ * Tool description for adding stage backdrops from canvas
+ * Creates a new backdrop from a canvas drawing
+ */
 export const addStageBackdropFromCanvasToolDescription = createToolDescription(
   'add_stage_backdrop_from_canvos',
   'Add a new visual backdrop from the canvas to the current Go+ XBuilder project stage.',
@@ -71,7 +124,15 @@ export const addStageBackdropFromCanvasToolDescription = createToolDescription(
   'stage'
 )
 
-// 代码相关工具
+/**
+ * Code Management Tools
+ * Tools for manipulating source code in project files
+ */
+
+/**
+ * Schema for validating code insertion parameters
+ * Defines where and how code should be inserted or replaced
+ */
 export const InsertCodeArgsSchema = z.object({
   file: z.string().describe('The Spx file path where the code will be inserted. This should be a valid file path. example: "file:///stage.spx"'),
   code: z.string().describe('The SPX language code segment to be inserted into the Go+ XBuilder project file.'),
@@ -90,19 +151,13 @@ export const InsertCodeArgsSchema = z.object({
     .describe('Optional range defining which existing SPX code should be replaced with the new code.')
 })
 
+/**
+ * Tool description for code insertion functionality
+ * Allows inserting or replacing code in project files
+ */
 export const insertCodeToolDescription = createToolDescription(
   'insert_code',
   'Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.',
   InsertCodeArgsSchema,
   'code'
 )
-
-// 导出所有工具描述
-export const standardToolDescriptions = [
-  createProjectToolDescription,
-  runGameToolDescription,
-  stopGameToolDescription,
-  addSpriteFromCanvasToolDescription,
-  addStageBackdropFromCanvasToolDescription,
-  insertCodeToolDescription
-]

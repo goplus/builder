@@ -7,39 +7,78 @@ const ToolInputSchema = ToolSchema.shape.inputSchema
 type ToolInput = z.infer<typeof ToolInputSchema>
 
 /**
- * 工具描述接口
+ * Tool description interface
+ * Defines the metadata for a tool that can be registered with MCP
  */
 export interface ToolDescription {
+  /** Unique identifier for the tool */
   name: string
+  
+  /** Human-readable description of the tool's functionality */
   description: string
+  
+  /** JSON schema for validating tool input arguments */
   inputSchema: ToolInput
+  
+  /** Optional category for grouping related tools */
   category?: string
 }
 
 /**
- * 工具实现接口
+ * Tool implementation interface
+ * Defines the contract for tool execution logic
+ * 
+ * @template T - The validated input type
+ * @template R - The result type
  */
 export interface ToolImplementation<T = any, R = any> {
+  /**
+   * Validates and transforms input arguments
+   * @param args - Raw input arguments
+   * @returns Validated arguments
+   * @throws If validation fails
+   */
   validate: (args: any) => T
+  
+  /**
+   * Executes the tool with validated arguments
+   * @param args - Validated input arguments
+   * @returns Tool execution result
+   */
   execute: (args: T) => Promise<R>
 }
 
 /**
- * 工具注册信息
+ * Registered tool entry
+ * Contains all information for a registered tool
  */
 export interface RegisteredTool {
+  /** Tool description metadata */
   description: ToolDescription
+  
+  /** Tool implementation logic */
   implementation: ToolImplementation
-  provider: string // 提供此工具的组件/模块名
+  
+  /** Identifier of the component/module that provided this tool */
+  provider: string
 }
 
-// 工具注册表
+/**
+ * Internal tool registry
+ * Maps tool names to their registration information
+ */
 const registry = reactive<Record<string, RegisteredTool>>({})
 
-// 注册的工具列表 (提供给 ListTools 请求)
+/**
+ * List of registered tool descriptions
+ * Exposed for ListTools MCP request
+ */
 export const registeredTools = ref<ToolDescription[]>([])
 
-// 监听注册表变化并更新工具列表
+/**
+ * Watch registry changes and update the tool list
+ * Ensures registeredTools stays synchronized with the registry
+ */
 watch(
   registry,
   () => {
@@ -49,12 +88,13 @@ watch(
 )
 
 /**
- * 注册工具实现
+ * Register a tool implementation
  * 
- * @param tool 工具描述
- * @param implementation 工具实现
- * @param provider 提供者标识
- * @returns 注销函数
+ * @template T - The validated input type
+ * @template R - The result type
+ * @param tool - Tool metadata description
+ * @param implementation - Tool implementation
+ * @param provider - Provider identifier
  */
 export function registerTool<T = any, R = any>(
   tool: ToolDescription, 
@@ -63,9 +103,9 @@ export function registerTool<T = any, R = any>(
 ): void {
   const toolName = tool.name
   
-  console.error(`Registering tool "${toolName}" from provider "${provider}"`)
+  console.log(`Registering tool "${toolName}" from provider "${provider}"`)
   
-  // 检查是否已存在相同工具
+  // Check for existing tool registration
   if (registry[toolName] && registry[toolName].provider !== provider) {
     console.warn(
       `Tool "${toolName}" already registered by provider "${registry[toolName].provider}". ` +
@@ -73,7 +113,7 @@ export function registerTool<T = any, R = any>(
     )
   }
   
-  // 注册工具
+  // Register the tool
   registry[toolName] = {
     description: tool,
     implementation,
@@ -81,13 +121,11 @@ export function registerTool<T = any, R = any>(
   }
 }
 
-
 /**
- * 批量注册工具
+ * Register multiple tools at once
  * 
- * @param tools 工具列表
- * @param provider 提供者标识
- * @returns 批量注销函数
+ * @param tools - Array of tool descriptions and implementations
+ * @param provider - Provider identifier
  */
 export function registerTools(
   tools: Array<{
@@ -95,52 +133,52 @@ export function registerTools(
     implementation: ToolImplementation
   }>,
   provider: string
-) {
-  // 注册所有工具并收集注销函数
-  tools.map(({ description, implementation }) => 
+): void {
+  console.log(`Registering ${tools.length} tools from provider "${provider}"`)
+  
+  // Register all tools
+  tools.forEach(({ description, implementation }) => 
     registerTool(description, implementation, provider)
   )
 }
 
-
 /**
- * 注销工具
+ * Unregister a specific tool
  * 
- * @param toolName 工具名称
- * @param provider 提供者标识（可选，如提供则仅在提供者匹配时注销）
- * @returns 是否成功注销
+ * @param toolName - Name of the tool to unregister
+ * @param provider - Optional provider identifier for verification
+ * @returns Whether unregistration was successful
  */
 export function unregisterTool(toolName: string, provider?: string): boolean {
-  // 如果工具不存在，返回 false
+  // Check if tool exists
   if (!registry[toolName]) {
     return false
   }
   
-  // 如果指定了提供者，则只有当提供者匹配时才注销
+  // If provider specified, verify it matches
   if (provider && registry[toolName].provider !== provider) {
     console.warn(`Tool "${toolName}" is registered by "${registry[toolName].provider}", not "${provider}", skipping unregister`)
     return false
   }
   
-  // 记录日志
-  console.error(`Unregistering tool "${toolName}"${provider ? ` from provider "${provider}"` : ''}`)
+  // Log unregistration
+  console.log(`Unregistering tool "${toolName}"${provider ? ` from provider "${provider}"` : ''}`)
   
-  // 注销工具
+  // Remove tool from registry
   delete registry[toolName]
   return true
 }
 
-
 /**
- * 批量注销特定提供者的所有工具
+ * Unregister all tools from a specific provider
  * 
- * @param provider 提供者标识
- * @returns 注销的工具数量
+ * @param provider - Provider identifier
+ * @returns Number of tools unregistered
  */
 export function unregisterProviderTools(provider: string): number {
   let count = 0
   
-  // 获取该提供者注册的所有工具
+  // Find and remove all tools from the provider
   Object.entries(registry).forEach(([toolName, tool]) => {
     if (tool.provider === provider) {
       delete registry[toolName]
@@ -156,23 +194,25 @@ export function unregisterProviderTools(provider: string): number {
 }
 
 /**
- * 根据名称获取工具实现
+ * Get a tool implementation by name
  * 
- * @param name 工具名
- * @returns 工具实现或undefined
+ * @param name - Tool name
+ * @returns Tool implementation or undefined if not found
  */
 export function getToolImplementation(name: string): ToolImplementation | undefined {
   return registry[name]?.implementation
 }
 
 /**
- * 创建工具描述辅助函数
+ * Create a tool description with the given parameters
+ * Helper function to simplify tool description creation
  * 
- * @param name 工具名
- * @param description 描述
- * @param schema zod验证模式
- * @param category 类别（可选）
- * @returns 工具描述对象
+ * @template T - Zod schema type
+ * @param name - Tool name
+ * @param description - Tool description
+ * @param schema - Zod validation schema
+ * @param category - Optional tool category
+ * @returns Tool description object
  */
 export function createToolDescription<T extends z.ZodType>(
   name: string, 
@@ -189,31 +229,31 @@ export function createToolDescription<T extends z.ZodType>(
 }
 
 /**
- * 检查工具是否已注册
+ * Check if a tool is registered
  * 
- * @param name 工具名称
- * @returns 是否已注册
+ * @param name - Tool name
+ * @returns Whether the tool is registered
  */
 export function isToolRegistered(name: string): boolean {
   return !!registry[name]
 }
 
 /**
- * 获取所有已注册工具的名称
+ * Get names of all registered tools
  * 
- * @returns 工具名称数组
+ * @returns Array of tool names
  */
 export function getRegisteredToolNames(): string[] {
   return Object.keys(registry)
 }
 
 /**
- * 执行已注册的工具
+ * Execute a registered tool
  * 
- * @param name 工具名称
- * @param args 工具参数
- * @returns 执行结果
- * @throws 如果工具未注册或执行失败
+ * @param name - Tool name
+ * @param args - Tool arguments
+ * @returns Tool execution result
+ * @throws If tool is not registered or execution fails
  */
 export async function executeRegisteredTool(name: string, args: any): Promise<any> {
   const tool = registry[name]
@@ -223,10 +263,10 @@ export async function executeRegisteredTool(name: string, args: any): Promise<an
   }
   
   try {
-    // 验证参数
+    // Validate arguments
     const validatedArgs = tool.implementation.validate(args)
     
-    // 执行工具
+    // Execute tool
     return await tool.implementation.execute(validatedArgs)
   } catch (error) {
     console.error(`Error executing tool "${name}":`, error)

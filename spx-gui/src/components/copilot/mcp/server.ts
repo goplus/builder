@@ -4,43 +4,56 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { serverTransport, setServerConnected } from './transport'
 import { registeredTools, executeRegisteredTool } from './registry'
 
-// 连接状态管理
+/**
+ * Server connection state
+ * Tracks initialization and connection status
+ */
 let isServerInitialized = false
 let serverConnectionPromise: Promise<void> | null = null
 let server: Server | null = null
 
 /**
  * Interface for request history items
+ * Tracks tool invocations and their results
  */
 export interface RequestHistoryItem {
+  /** Tool name that was called */
   tool: string
+  
+  /** Parameters passed to the tool */
   params: any
+  
+  /** Response or error message */
   response: string
+  
+  /** Timestamp of the request */
   time: string
+  
+  /** Whether the request resulted in an error */
   error?: boolean
 }
 
 /**
  * Reactive request history store
+ * Contains chronological list of tool invocations
  */
 export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
 
 /**
- * 初始化 MCP 服务器
- * 创建服务器实例，注册请求处理器并建立连接
+ * Initialize the MCP server
+ * Creates server instance, registers request handlers and establishes connection
  * 
- * @async
- * @param {boolean} [force=false] - 是否强制重新初始化
- * @returns {Promise<Server>} MCP 服务器实例
- * @throws {Error} 连接失败时抛出错误
+ * @param {boolean} [force=false] - Force reinitialization even if already initialized
+ * @returns {Promise<Server>} MCP server instance
+ * @throws {Error} If connection fails
  */
 export async function initMcpServer(force = false): Promise<Server> {
-  // 如果已初始化且不是强制模式，返回现有服务器
+  // Return existing server if already initialized and not forced
   if (isServerInitialized && server && !force) {
     return server
   }
   
-  // 如果当前有连接进行中，直接返回该 Promise
+  // If connection is in progress, wait for it to complete
   if (serverConnectionPromise && !force) {
     return serverConnectionPromise.then(() => {
       if (!server) throw new Error('Server initialization failed')
@@ -48,7 +61,7 @@ export async function initMcpServer(force = false): Promise<Server> {
     })
   }
   
-  // 创建服务器实例
+  // Create new server instance with metadata
   server = new Server(
     {
       name: 'spx',
@@ -56,23 +69,23 @@ export async function initMcpServer(force = false): Promise<Server> {
     },
     {
       capabilities: {
-        tools: {} // Tool execution capability
+        tools: {} // Enable tool execution capability
       }
     }
   )
   
-  // 注册工具列表请求处理器
+  // Register handler for tool discovery
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: registeredTools.value
     }
   })
   
-  // 注册工具执行请求处理器
+  // Register handler for tool execution
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const timestamp = new Date().toLocaleTimeString()
   
-    // Record the request
+    // Record the request in history
     mcpRequestHistory.value.unshift({
       tool: request.params.name,
       params: request.params.arguments,
@@ -83,31 +96,37 @@ export async function initMcpServer(force = false): Promise<Server> {
     try {
       const { name, arguments: parameters } = request.params
       
-      // 执行已注册的工具
+      // Execute registered tool implementation
       const result = await executeRegisteredTool(name, parameters)
       
-      // 格式化响应
+      // Format response for display
       const response = JSON.stringify(result, null, 2)
       
-      // 更新请求历史
+      // Update request history with success result
       mcpRequestHistory.value[0].response = response
       
+      // Return formatted response
       return {
         content: [{ type: 'text', text: response }]
       }
     } catch (error: any) {
+      // Format error message
       const errorMessage = error.message || 'An error occurred while processing the request'
-      // Update request history with error
+      
+      // Update request history with error information
       mcpRequestHistory.value[0].response = errorMessage
       mcpRequestHistory.value[0].error = true
+      
+      // Propagate error to client
       throw new Error(errorMessage)
     }
   })
   
-  // 连接到 MCP 服务器传输层
+  // Establish connection to transport layer
   serverConnectionPromise = server
     .connect(serverTransport)
     .then(() => {
+      // Mark initialization as complete
       isServerInitialized = true
       setServerConnected(true)
     })
@@ -117,10 +136,11 @@ export async function initMcpServer(force = false): Promise<Server> {
       throw error
     })
     .finally(() => {
+      // Clear connection promise when done
       serverConnectionPromise = null
     })
   
-  // 等待连接完成
+  // Wait for connection to complete
   await serverConnectionPromise
   
   return server
