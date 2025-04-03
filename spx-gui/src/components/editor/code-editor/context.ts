@@ -31,6 +31,8 @@ export type CodeEditorCtx = {
   rename(id: TextDocumentIdentifier, position: Position, newName: string): Promise<void>
   /** Update code for resource renaming, should be called before model name update. */
   renameResource(resource: ResourceIdentifier, newName: string): Promise<void>
+
+  listFilter: ListFilter
 }
 
 const codeEditorCtxInjectionKey: InjectionKey<CodeEditorCtx> = Symbol('code-editor-ctx')
@@ -217,6 +219,10 @@ export function useProvideCodeEditorCtx(
     renameResource(resource: ResourceIdentifier, newName: string) {
       if (editorRef.value == null) throw new Error('Code editor not initialized')
       return editorRef.value.renameResource(resource, newName)
+    },
+    get listFilter() {
+      if (editorRef.value == null) throw new Error('Code editor not initialized')
+      return editorRef.value.filter // 假设CodeEditor有一个public filter属性
     }
   })
 

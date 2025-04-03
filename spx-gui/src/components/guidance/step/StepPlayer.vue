@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { onMounted, watch, nextTick } from 'vue'
 
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MaskWithHighlight from '@/components/common/MaskWithHighlight.vue'
@@ -20,9 +20,10 @@ import type { Step } from '@/apis/guidance'
 import CodingStep from './CodingStep.vue'
 import FollowingStep from './FollowingStep.vue'
 import { getFiles } from '@/models/common/cloud'
+import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
 
 const editorCtx = useEditorCtx()
-const filter = editorCtx.listFilter
+const codeEditorCtx = useCodeEditorCtx()
 
 const props = defineProps<{
   step: Step
@@ -67,10 +68,6 @@ async function initializeStep(step: Step) {
   }
 }
 
-onBeforeUnmount(() => {
-  filter.reset()
-})
-
 async function loadSnapshot(snapshotStr: string): Promise<void> {
   if (!snapshotStr) return
 
@@ -85,16 +82,21 @@ async function loadSnapshot(snapshotStr: string): Promise<void> {
 }
 
 function setFilterControls() {
-  filter.setFilter('apiReference', props.step.isApiControl, props.step.apis)
-  filter.setFilter('asset', props.step.isAssetControl, props.step.assets)
-  filter.setFilter('sprite', props.step.isSpriteControl, props.step.sprites)
-  filter.setFilter('sound', props.step.isSoundControl, props.step.sounds)
-  filter.setFilter('costume', props.step.isCostumeControl, props.step.costumes)
-  filter.setFilter('animation', props.step.isAnimationControl, props.step.animations)
-  filter.setFilter('widget', props.step.isWidgetControl, props.step.widgets)
-  filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
-}
+  const codeFilter = codeEditorCtx.listFilter // 用于API引用筛选
+  const editorFilter = editorCtx.listFilter // 用于其他素材筛选
 
+  codeFilter.reset()
+  editorFilter.reset()
+
+  codeFilter.setFilter('apiReference', props.step.isApiControl, props.step.apis)
+  editorFilter.setFilter('asset', props.step.isAssetControl, props.step.assets)
+  editorFilter.setFilter('sprite', props.step.isSpriteControl, props.step.sprites)
+  editorFilter.setFilter('sound', props.step.isSoundControl, props.step.sounds)
+  editorFilter.setFilter('costume', props.step.isCostumeControl, props.step.costumes)
+  editorFilter.setFilter('animation', props.step.isAnimationControl, props.step.animations)
+  editorFilter.setFilter('widget', props.step.isWidgetControl, props.step.widgets)
+  editorFilter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
+}
 async function handleStepCompleted() {
   emit('stepCompleted')
 }
