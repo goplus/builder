@@ -67,18 +67,6 @@ export const createCopilot = {
     
     // 注册全局属性和方法
     app.provide('copilotController', controller)
-    app.provide('isCopilotChatVisible', readonly(isCopilotChatVisible))
-    
-    // 添加全局方法
-    app.config.globalProperties.$copilot = {
-      controller,
-      toggleChat: () => {
-        isCopilotChatVisible.value = !isCopilotChatVisible.value
-        return isCopilotChatVisible.value
-      },
-      openChat: () => { isCopilotChatVisible.value = true },
-      closeChat: () => { isCopilotChatVisible.value = false }
-    }
   }
 }
 
