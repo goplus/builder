@@ -5,29 +5,52 @@ import { initMcpClient } from './mcp/client'
 import { initMcpServer } from './mcp/server'
 import { useI18n } from '@/utils/i18n'
 
-// Copilot Chat 可见性状态
+/**
+ * Reactive reference tracking Copilot Chat visibility state
+ * Controls whether the chat interface is displayed to the user
+ */
 const isCopilotChatVisible = ref(false)
 
-// 延迟初始化标志
+// Module state flags and instances
+/**
+ * Flag indicating whether Copilot module has been initialized
+ * Prevents redundant initialization
+ */
 let isInitialized = false
+
+/**
+ * Instance of the Copilot class
+ * Handles core functionality for AI assistant interaction
+ */
 let copilot: Copilot | null = null
+
+/**
+ * Instance of the CopilotController class
+ * Provides high-level API for controlling Copilot functionality
+ */
 let controller: CopilotController | null = null
 
 /**
- * 初始化 Copilot 模块
- * 包括 Copilot 实例、Controller、MCP 客户端和服务器
+ * Initializes the Copilot module and all related functionality
+ * 
+ * This function handles the creation of Copilot instances and initializes
+ * the required services. It implements lazy initialization and ensures
+ * that resources are only created once.
+ * 
+ * @returns {Promise<CopilotController>} The initialized controller instance
+ * @throws {Error} If initialization fails
  */
 export async function initCopilot() {
   if (isInitialized) return controller
   
   try {
-    // 同步初始化 Copilot
+    // Create and initialize Copilot instances
     const i18n = useI18n()
     copilot = new Copilot(i18n)
     controller = new CopilotController(copilot)
     controller.init()
     
-    // 异步初始化 MCP （不阻塞主流程）
+    // Asynchronously initialize MCP connections without blocking
     initMcpConnections().catch(error => {
       console.error('Failed to initialize MCP connections:', error)
     })
@@ -42,12 +65,18 @@ export async function initCopilot() {
 }
 
 /**
- * 初始化 MCP 连接
- * 分离为独立函数以便异步处理
+ * Initializes MCP client and server connections
+ * 
+ * Establishes connections to the Model Context Protocol services,
+ * allowing communication between AI models and the application.
+ * 
+ * @private
+ * @async
+ * @throws {Error} If MCP connection initialization fails
  */
 async function initMcpConnections() {
   try {
-    // 并行初始化客户端和服务器
+    // Initialize client and server connections in parallel
     await Promise.all([
       initMcpClient(),
       initMcpServer()
@@ -59,19 +88,32 @@ async function initMcpConnections() {
 }
 
 /**
- * 提供 Copilot 功能的 Vue 插件
+ * Vue plugin for Copilot integration
+ * 
+ * Provides application-level Copilot functionality by injecting
+ * the controller into Vue's dependency injection system.
  */
 export const createCopilot = {
+  /**
+   * Plugin installation method
+   * 
+   * @param {App} app - Vue application instance
+   */
   async install(app: App) {
     const controller = await initCopilot()
     
-    // 注册全局属性和方法
+    // Make controller available throughout the application
     app.provide('copilotController', controller)
   }
 }
 
 /**
- * 获取 Copilot 聊天控制功能
+ * Composition function to access Copilot Chat functionality
+ * 
+ * Provides reactive state and methods to control the Copilot Chat interface.
+ * Ensures Copilot is initialized when needed.
+ * 
+ * @returns {Object} Object containing chat visibility state and control methods
  */
 export function useCopilotChat() {
   if (!isInitialized) {
@@ -79,12 +121,28 @@ export function useCopilotChat() {
   }
   
   return {
+    /**
+     * Read-only reactive reference to chat visibility state
+     */
     isVisible: readonly(isCopilotChatVisible),
+    
+    /**
+     * Toggles chat visibility between shown and hidden states
+     * @returns {boolean} New visibility state after toggle
+     */
     toggle: () => {
       isCopilotChatVisible.value = !isCopilotChatVisible.value
       return isCopilotChatVisible.value
     },
+    
+    /**
+     * Shows the chat interface
+     */
     open: () => { isCopilotChatVisible.value = true },
+    
+    /**
+     * Hides the chat interface
+     */
     close: () => { isCopilotChatVisible.value = false }
   }
 }

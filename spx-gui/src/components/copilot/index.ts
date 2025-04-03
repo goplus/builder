@@ -6,19 +6,23 @@ import {
   makeMCPMarkdownString,
 } from '@/components/editor/code-editor/common'
 export { default as CopilotChat } from './CopilotChat.vue'
-import { toolResultCollector,type ToolResult } from '@/components/copilot/mcp/collector'
+import { toolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
 
+/** Message role identifiers */
 export type MessageRole = 'user' | 'copilot'
 
+/** Structure of a single chat message */
 export type ChatMessage = {
   role: MessageRole
   content: MCPMarkdownString
 }
 
+/** Chat session structure */
 export type Chat = {
   messages: ChatMessage[]
 }
 
+/** Core Copilot interface for AI completions */
 export interface ICopilot extends Disposable {
   getChatCompletion(chat: Chat,
     options?: {
@@ -26,6 +30,7 @@ export interface ICopilot extends Disposable {
     }): AsyncIterableIterator<string>
 }
 
+/** Conversation round state */
 export enum RoundState {
   Loading,
   Completed,
@@ -33,9 +38,13 @@ export enum RoundState {
   Failed
 }
 
+/** 
+ * Structure of a conversation round
+ * Represents a single Q&A exchange with the AI
+ */
 export type Round = {
   problem: MCPMarkdownString
-  /**
+  /** 
    * Answer provided by the copilot.
    * `null` means the answer is still loading or the round is cancelled by the user.
    */
@@ -46,66 +55,49 @@ export type Round = {
   ctrl: AbortController
 }
 
+/** Internal chat state representation */
 type InternalChat = {
   rounds: Round[]
   ctrl: AbortController
 }
 
+/**
+ * Controller for Copilot functionality
+ * Manages conversation state and tool result handling
+ */
 export class CopilotController extends Disposable {
-  private isResponding = ref(false)
-  private queuedToolResults = ref<string[]>([])
-
+  /**
+   * Creates a new controller with the specified Copilot implementation
+   * @param copilot The implementation of ICopilot to use
+   */
   constructor(private copilot: ICopilot) {
     super()
-    
-    // 注册工具结果处理器
-    toolResultCollector.onResultsReady((results) => {
-      this.handleToolResults(results)
-    })
-    
-    // 监听响应状态
-    watch(this.isResponding, (isResponding) => {
-      // 如果响应完成，且有排队的工具结果
-      if (!isResponding && this.queuedToolResults.value.length > 0) {
-        this.sendQueuedResults()
-      }
-    })
   }
 
-  // 处理工具结果
+  /**
+   * Process results from tool executions
+   * @param results Array of tool execution results
+   */
   private handleToolResults(results: ToolResult[]) {
-    // 排序结果（按时间戳）
+    // Sort results by timestamp
     const sortedResults = [...results].sort((a, b) => a.timestamp - b.timestamp)
     
-    // 格式化为文本
+    // Format results as text
     const formattedResults = sortedResults.map(r => 
       `[use-mcp-tool for '${r.server || ""}'] Tool '${r.tool}' execution result: ${JSON.stringify(r.result, null, 2)}`
     )
     
-    // 如果 Copilot 正在响应，将结果排队
-    if (this.isResponding.value) {
-      this.queuedToolResults.value.push(...formattedResults)
-    } else {
-      // 否则直接发送
-      this.sendBatchResults(formattedResults)
-    }
+    this.sendBatchResults(formattedResults)
   }
   
-  // 发送排队的结果
-  private async sendQueuedResults() {
-    if (this.queuedToolResults.value.length === 0) return
-    
-    const results = [...this.queuedToolResults.value]
-    this.queuedToolResults.value = []
-    
-    await this.sendBatchResults(results)
-  }
-  
-  // 批量发送工具结果
+  /**
+   * Send a batch of tool results as a single message
+   * @param results Tool execution results to send
+   */
   private async sendBatchResults(results: string[]) {
     if (results.length === 0) return
     
-    // 合并多个结果为一条消息
+    // Combine multiple results into a single message
     const combinedResult = results.length === 1
       ? results[0]
       : `Multiple tool execution results:\n\n${results.join('\n\n')}`
@@ -113,11 +105,18 @@ export class CopilotController extends Disposable {
     await this.askProblem(combinedResult)
   }
 
+  /** Current active chat reference */
   private currentChatRef = ref<InternalChat | null>(null)
+  
+  /** Current active chat or null if none exists */
   get currentChat(): InternalChat | null {
     return this.currentChatRef.value ?? null
   }
 
+  /**
+   * Start a new chat session with an initial question
+   * @param problem Initial user question
+   */
   async startChat(problem: string) {
       const currentChat = this.currentChat
       if (currentChat != null) currentChat.ctrl.abort()
@@ -129,6 +128,7 @@ export class CopilotController extends Disposable {
       await this.startRound(makeMCPMarkdownString(problem))
   }
 
+  /** Terminate the current chat session */
   endChat() {
     if (this.currentChatRef.value != null) {
       this.currentChatRef.value.ctrl.abort()
@@ -136,20 +136,15 @@ export class CopilotController extends Disposable {
     }
   }
 
+  /**
+   * Send a follow-up question in the current chat
+   * @param problem User question text
+   */
   async askProblem(problem: string) {
     await this.startRound(makeMCPMarkdownString(problem))
   }
 
-  // 标记 Copilot 开始响应
-  private startResponding() {
-    this.isResponding.value = true
-  }
-  
-  // 标记 Copilot 结束响应
-  private endResponding() {
-    this.isResponding.value = false
-  }
-
+  /** Cancel the current conversation round */
   cancelCurrentRound() {
     const currentRound = this.ensureCurrentRound()
     if (currentRound.state !== RoundState.Loading)
@@ -157,6 +152,7 @@ export class CopilotController extends Disposable {
     currentRound.ctrl.abort(new Cancelled())
   }
 
+  /** Retry the most recent conversation round */
   async retryCurrentRound() {
     const rounds = this.currentChat?.rounds
     if (rounds == null || rounds.length === 0) throw new Error('No active round')
@@ -164,6 +160,10 @@ export class CopilotController extends Disposable {
     await this.startRound(round.problem)
   }
 
+  /**
+   * Get the current active round or throw if none exists
+   * @returns The current round
+   */
   private ensureCurrentRound() {
     const currentChat = this.currentChat
     if (currentChat == null) throw new Error('No active chat')
@@ -172,10 +172,13 @@ export class CopilotController extends Disposable {
     return currentRound
   }
 
+  /**
+   * Start a new conversation round
+   * @param problem User question as markdown
+   */
   private async startRound(problem: MCPMarkdownString) {
     const currentChat = this.currentChat
     if (currentChat == null) throw new Error('No active chat')
-    this.startResponding()
     try {
       currentChat.rounds.push({
         problem,
@@ -186,17 +189,17 @@ export class CopilotController extends Disposable {
         error: null
       })
       await this.getCopilotAnswer()
-    }finally {
-      await toolResultCollector.processQueue()
+    } finally {
+      const result = await toolResultCollector.processQueue()
+      this.handleToolResults(result)
       toolResultCollector.clearAllTasks()
-      this.endResponding()
-      // 处理已排队的结果
-      if (this.queuedToolResults.value.length > 0) {
-        await this.sendQueuedResults()
-      }
     }
   }
 
+  /**
+   * Format current chat history for API consumption
+   * @returns Formatted chat history
+   */
   private ensureChat(): Chat {
     const currentChat = this.currentChat
     if (currentChat == null) throw new Error('No active chat')
@@ -211,12 +214,12 @@ export class CopilotController extends Disposable {
     }
   }
 
+  /**
+   * Request and process Copilot's answer for the current round
+   */
   private async getCopilotAnswer() {
     const currentRound = this.ensureCurrentRound()
 
-    currentRound.ctrl.signal
-
-    // 后续使用 context 调用 API
     try {
       const stream = await this.copilot.getChatCompletion(this.ensureChat(), {
         signal: currentRound.ctrl.signal
@@ -227,10 +230,6 @@ export class CopilotController extends Disposable {
         // Update the current round's answer as chunks arrive
         currentRound.answer = makeMCPMarkdownString(accumulatedText)
       }
-
-      // const processedText = await this.processMcpToolCalls(accumulatedText);
-      // currentRound.answer = makeBasicMarkdownString(processedText);
-      // Set final state once streaming is complete
       currentRound.state = RoundState.Completed
     } catch (e) {
       if (e instanceof Cancelled) {
@@ -242,6 +241,9 @@ export class CopilotController extends Disposable {
     }
   }
 
+  /** 
+   * Initialize controller and register cleanup
+   */
   init() {
     this.addDisposer(() => {
       this.currentChat?.ctrl.abort()
@@ -249,6 +251,11 @@ export class CopilotController extends Disposable {
   }
 }
 
+/**
+ * Create a child AbortController that aborts when parent aborts
+ * @param parent Parent AbortController
+ * @returns Child AbortController
+ */
 function getChildAbortController(parent: AbortController) {
   const ctrl = new AbortController()
   function onParentAbort() {

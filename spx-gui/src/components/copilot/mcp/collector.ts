@@ -1,4 +1,4 @@
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref } from 'vue'
 import { getMcpClient } from './client'
 
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
@@ -108,9 +108,6 @@ export class ToolResultCollector {
     this.tasks[taskId].status = 'error'
     this.tasks[taskId].errorMessage = errorMessage
     this.saveTaskToStorage(taskId)
-    
-    // 通知任务完成
-    this.submitTaskResult(taskId, { error: errorMessage })
   }
 
   clearAllTasks(): void {
@@ -142,78 +139,16 @@ export class ToolResultCollector {
   }
   
   /**
-   * 注册结果处理回调
-   */
-  onResultsReady(callback: (results: ToolResult[]) => void): void {
-    this.resultCallback = callback
-    
-    // 检查是否有待处理的结果
-    this.processPendingResults()
-  }
-  
-  /**
-   * 提交任务结果
-   */
-  private submitTaskResult(taskId: string, result: any): void {
-    const task = this.tasks[taskId]
-    if (!task) return
-    
-    // 添加到结果列表
-    this.results.push({
-      id: task.id,
-      tool: task.tool,
-      server: task.server,
-      result: result,
-      timestamp: Date.now()
-    })
-    
-    // 处理结果
-    this.processPendingResults()
-  }
-  
-  /**
-   * 处理待处理的结果
-   */
-  private processPendingResults(): void {
-    if (!this.resultCallback || this.results.length === 0) {
-      return
-    }
-    
-    // 检查所有任务是否已完成
-    const pendingTasks = Object.values(this.tasks).filter(
-      task => task.status === 'pending' || task.status === 'running'
-    )
-    
-    // 如果还有正在执行的任务，等待
-    if (pendingTasks.length > 0) {
-      return
-    }
-    
-    // 复制结果并清空
-    const results = [...this.results]
-    this.results = []
-    
-    // 调用回调
-    setTimeout(() => {
-      try {
-        this.resultCallback!(results)
-      } catch (error) {
-        console.error('Error in result callback:', error)
-      }
-    }, this.options.debounceTime)
-  }
-  
-  /**
    * 处理执行队列
    */
-  async processQueue(): Promise<void> {
+  async processQueue(): Promise<ToolResult[]> {
     // 如果已在处理或队列为空，返回
     if (this.isProcessing.value || this.executionQueue.value.length === 0) {
-      return
+      return []
     }
     
     this.isProcessing.value = true
-    
+    const processedResults: ToolResult[] = []
     try {
       while (this.executionQueue.value.length > 0) {
         // 取出队首任务
@@ -246,8 +181,18 @@ export class ToolResultCollector {
           task.timestamp = Date.now()
           this.saveTaskToStorage(taskId)
           
-          // 提交结果
-          this.submitTaskResult(taskId, result)
+          // 创建结果对象
+          const toolResult: ToolResult = {
+            id: task.id,
+            tool: task.tool,
+            server: task.server,
+            result: result,
+            timestamp: task.timestamp
+          }
+          
+          // 添加到处理结果和总结果列表
+          processedResults.push(toolResult)
+          this.results.push(toolResult)
         } catch (error) {
           // 处理错误
           task.status = 'error'
@@ -256,12 +201,24 @@ export class ToolResultCollector {
           this.saveTaskToStorage(taskId)
           
           // 提交错误结果
-          this.submitTaskResult(taskId, { error: task.errorMessage })
+          const errorResult: ToolResult = {
+            id: task.id,
+            tool: task.tool,
+            server: task.server,
+            result: { error: task.errorMessage },
+            timestamp: task.timestamp
+          }
+          
+          // 添加到处理结果和总结果列表
+          processedResults.push(errorResult)
+          this.results.push(errorResult)
         }
       }
     } finally {
       this.isProcessing.value = false
     }
+    
+    return processedResults;
   }
   
   /**

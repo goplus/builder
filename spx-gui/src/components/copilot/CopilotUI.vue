@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, provide, markRaw } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { UIIcon } from '@/components/ui'
 import CopilotInput from '@/components/copilot/CopilotInput.vue'
