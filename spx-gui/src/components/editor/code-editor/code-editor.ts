@@ -199,7 +199,7 @@ class DiagnosticsProvider
   }
 }
 
-class ClozeAreaProvider
+class ClozeTestProvider
   extends Emitter<{
     didChangeClozeAreas: []
   }>
@@ -213,31 +213,73 @@ class ClozeAreaProvider
       {
         range: {
           start: { line: 2, column: 2 },
-          end: { line: 2, column: 8 }
+          end: { line: 2, column: 7 }
         },
         type: 'editableSingleLine' as ClozeAreaType
       },
       {
         range: {
-          start: { line: 4, column: 0 },
-          end: { line: 6, column: 0 }
-        },
-        type: 'editable' as ClozeAreaType
-      },
-      {
-        range: {
-          start: { line: 13, column: 2 },
-          end: { line: 13, column: 8 }
+          start: { line: 2, column: 21 },
+          end: { line: 2, column: 22 }
         },
         type: 'editableSingleLine' as ClozeAreaType
       },
       {
         range: {
-          start: { line: 15, column: 10 },
-          end: { line: 15, column: 16 }
+          start: { line: 3, column: 2 },
+          end: { line: 3, column: 11 }
         },
         type: 'editableSingleLine' as ClozeAreaType
-      }
+      },
+      {
+        range: {
+          start: { line: 6, column: 1 },
+          end: { line: 6, column: 13 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 7, column: 2 },
+          end: { line: 7, column: 5 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 10, column: 1 },
+          end: { line: 10, column: 6 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 10, column: 7 },
+          end: { line: 10, column: 14 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 11, column: 2 },
+          end: { line: 11, column: 12 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      {
+        range: {
+          start: { line: 12, column: 2 },
+          end: { line: 12, column: 6 }
+        },
+        type: 'editableSingleLine' as ClozeAreaType
+      },
+      // {
+      //   range: {
+      //     start: { line: 4, column: 0 },
+      //     end: { line: 6, column: 0 }
+      //   },
+      //   type: 'editable' as ClozeAreaType
+      // }
     ]
 
     return clozeAreas
@@ -513,7 +555,7 @@ export class CodeEditor extends Disposable {
   private resourceReferencesProvider: ResourceReferencesProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
-  private clozeAreaProvider: ClozeAreaProvider
+  private clozeTestProvider: ClozeTestProvider
   constructor(
     private project: Project,
     private runtime: Runtime,
@@ -531,7 +573,7 @@ export class CodeEditor extends Disposable {
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
-    this.clozeAreaProvider = new ClozeAreaProvider()
+    this.clozeTestProvider = new ClozeTestProvider()
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -633,7 +675,7 @@ export class CodeEditor extends Disposable {
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
     ui.registerDocumentBase(this.documentBase)
-    ui.registerClozeTestProvider(this.clozeAreaProvider)
+    ui.registerClozeTestProvider(this.clozeTestProvider)
   }
 
   detachUI(ui: ICodeEditorUI) {
