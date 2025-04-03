@@ -1,6 +1,11 @@
 <template>
   <NSwitch v-bind="props" @update:value="(v) => emit('update:value', v)">
-    <slot></slot>
+    <template #checked>
+      <slot name="checked" />
+    </template>
+    <template #unchecked>
+      <slot name="unchecked" />
+    </template>
   </NSwitch>
 </template>
 

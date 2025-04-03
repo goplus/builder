@@ -45,6 +45,7 @@ import {
   type ChatTopicReview
 } from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
+import { InputHelperController } from './input-helper'
 
 export * from './hover'
 export * from './completion'
@@ -192,6 +193,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
+  inputHelperController = new InputHelperController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -566,9 +568,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.contextMenuController.init()
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
+    this.inputHelperController.init()
   }
 
   dispose() {
+    this.inputHelperController.dispose()
     this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()
     this.contextMenuController.dispose()
