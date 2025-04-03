@@ -222,7 +222,7 @@ export function useProvideCodeEditorCtx(
     },
     get listFilter() {
       if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.filter // 假设CodeEditor有一个public filter属性
+      return editorRef.value.filter
     }
   })
 

@@ -554,7 +554,7 @@ export class CodeEditor extends Disposable {
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
   private clozeTestProvider: ClozeTestProvider
-  private filter: ListFilter
+  public filter: ListFilter
 
   constructor(
     private project: Project,
