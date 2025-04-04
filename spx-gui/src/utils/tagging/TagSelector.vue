@@ -55,10 +55,7 @@ function handleClick(event: MouseEvent) {
         currentPath.value = path
         emit('selected', path)
       } else {
-        const tagElement = target
-        const vnode = tagElement.__vnode
-
-        const onClickHandler = vnode.props?.onClick
+        const onClickHandler = node.instance?.subTree?.children[0]?.props?.onClick
         if (onClickHandler) {
           nextTick(() => {
             onClickHandler()
