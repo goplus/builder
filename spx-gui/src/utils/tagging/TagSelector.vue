@@ -12,6 +12,7 @@ let elementToNode: Map<HTMLElement, TagNode> | null = null
 let nodeToPath: Map<TagNode, string> | null = null
 const currentPath = ref<string | null>(null)
 const currentElementRef = ref<HTMLElement | null>(null)
+const isShiftPressed = ref<boolean>(false)
 
 function findNearestTagElement(el: HTMLElement): HTMLElement | null {
   let current: HTMLElement | null = el
@@ -50,8 +51,19 @@ function handleClick(event: MouseEvent) {
     const node = elementToNode?.get(tagElement)
     if (node) {
       const path = nodeToPath?.get(node) || 'unknown path'
-      currentPath.value = path
-      emit('selected', path)
+      if (isShiftPressed.value) {
+        currentPath.value = path
+        emit('selected', path)
+      } else {
+        const onClickHandler = node.instance?.subTree?.children[0]?.props?.onClick
+        if (onClickHandler) {
+          nextTick(() => {
+            onClickHandler()
+          })
+        } else {
+          console.log('No onClick handler found on the component.')
+        }
+      }
     }
   }
 }
@@ -67,17 +79,35 @@ function createMaskToTaggedElement(element: HTMLElement | null) {
   })
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Shift') {
+    isShiftPressed.value = true
+    event.preventDefault()
+  }
+}
+
+function handleKeyup(event: KeyboardEvent) {
+  if (event.key === 'Shift') {
+    isShiftPressed.value = false
+    event.preventDefault()
+  }
+}
+
 onMounted(() => {
   const { elementToNode: eToNode, nodeToPath: nToPath } = getAllTagElements()
   elementToNode = eToNode
   nodeToPath = nToPath
   window.addEventListener('mouseover', handleMouseOver)
   window.addEventListener('click', handleClick, true)
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('keyup', handleKeyup)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('mouseover', handleMouseOver)
   window.removeEventListener('click', handleClick, true)
+  window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('keyup', handleKeyup)
   elementToNode = null
   nodeToPath = null
   currentPath.value = null
