@@ -129,6 +129,14 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     } else {
       apiReferenceItems = await this.getFallbackItems(ctx)
     }
+    // apply filter
+    const { enabled, items } = this.filter.getFilter('apiReference')
+    if (enabled && items.length > 0) {
+      return apiReferenceItems.filter((item) => {
+        const itemIdentifier = stringifyDefinitionId(item.definition)
+        return items.includes(itemIdentifier)
+      })
+    }
     return apiReferenceItems
   }
 }
