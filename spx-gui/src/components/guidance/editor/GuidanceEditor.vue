@@ -32,8 +32,12 @@ import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
+function setIsShowIcon(value: boolean) {
+  isShowIcon.value = value
+}
 
 provide('isShowIcon', isShowIcon)
+provide('setIsShowIcon', setIsShowIcon)
 
 enum editorStatusType {
   STORYLINE,

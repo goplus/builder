@@ -80,14 +80,14 @@ function createMaskToTaggedElement(element: HTMLElement | null) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Shift') {
+  if (event.altKey) {
     isShiftPressed.value = true
     event.preventDefault()
   }
 }
 
 function handleKeyup(event: KeyboardEvent) {
-  if (event.key === 'Shift') {
+  if (event.altKey) {
     isShiftPressed.value = false
     event.preventDefault()
   }

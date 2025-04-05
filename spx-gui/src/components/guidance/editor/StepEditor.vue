@@ -44,6 +44,7 @@
                 style="width: 150px; margin-left: 20px"
                 @click="
                   () => {
+                    selectTarget = 'target'
                     isShowTagSelector = true
                     isShowIcon = true
                   }
@@ -52,7 +53,40 @@
                 {{ $t({ en: 'Select', zh: '选择' }) }}
               </UIButton>
             </UIFormItem>
-            <!-- TODO: taggingHandler -->
+            <UIFormItem :label="$t({ zh: '元素处理方式', en: 'Target handler' })">
+              <div class="form-item-content">
+                <div v-for="(value, key) in form.value.step.taggingHandler" :key="key" class="content-header" style="align-items: center;">
+                  <UITextInput
+                    v-model:value="key as string"
+                    :placeholder="t({ zh: '目标元素key', en: 'Target key' })"
+                    readonly
+                    style="margin-right: 10px; width: 200px"
+                  />
+                  <UIRadioGroup v-model:value="form.value.step.taggingHandler[key]">
+                    <UIRadio :value="TaggingHandlerType.ClickToNext" :label="$t({ zh: '点击', en: 'Click to next' })" />
+                    <UIRadio :value="TaggingHandlerType.SubmitToNext" :label="$t({ zh: '提交', en: 'Submit to next' })" />
+                  </UIRadioGroup>
+                  <UIButton
+                    type="danger"
+                    icon="trash"
+                    style="width: 100px; margin-left: 20px"
+                    @click="() => {
+                      delete form.value.step.taggingHandler[key]
+                    }"
+                  >
+                    {{ $t({ en: 'Delete', zh: '删除' }) }}
+                  </UIButton>
+                </div>
+                <UIButton type="primary" icon="plus" style="width: 80px" @click="() => {
+                          selectTarget = 'taggingHandler'
+                          isShowTagSelector = true
+                          isShowIcon = true
+                        }
+                      ">
+                  {{ $t({ en: 'Add', zh: '添加' }) }}
+                </UIButton>
+              </div>
+            </UIFormItem>
             <UIFormItem :label="$t({ zh: '是否检查结束快照', en: 'Check ending snapshot' })">
               <UISwitch v-model:value="form.value.step.isCheck" :label="$t({ zh: '是', en: 'yes' })" />
             </UIFormItem>
@@ -280,7 +314,7 @@
                 </div>
               </div>
             </UIFormItem>
-            <UIFormItem :label="$t({ zh: '结束快照', en: 'Ending snapshot' })">
+            <UIFormItem :label="$t({ zh: '初始快照', en: 'Initial snapshot' })">
               <UITextInput
                 v-model:value="form.value.step.snapshot.startSnapshot"
                 readonly
@@ -325,10 +359,56 @@
               <UIFormItem :label="$t({ zh: '文件路径', en: 'File path' })">
                 <UITextInput v-model:value="form.value.step.coding.path" placeholder="请输入文件路径" />
               </UIFormItem>
-              <!-- TODO: 多个挖空 -->
-              <!-- <UIFormItem :label="$t({ zh: '代码填空', en: 'Code token masks' })">
-                  
-                </UIFormItem> -->
+              <UIFormItem :label="$t({ zh: '代码填空', en: 'Code token masks' })">
+                <div class="form-item-content">
+                  <div v-for="(item, index) in form.value.step.coding.codeMasks" :key="item.startPos.line+item.startPos.column" class="content-header">
+                    <div class="header-wrap">
+                      <div>{{ $t({en: 'Starting position', zh: '起始位置'}) }}</div>
+                      <span>{{ $t({zh: '行号', en: 'Line'}) }}</span>
+                      <UINumberInput
+                        v-model:value="form.value.step.coding.codeMasks[index].startPos.line"
+                        :placeholder="t({ zh: '请输入起始行号', en: 'Please enter the starting line number' })"
+                      />
+                      <span>{{ $t({zh: '列号', en: 'Column'}) }}</span>
+                      <UINumberInput
+                        v-model:value="form.value.step.coding.codeMasks[index].startPos.column"
+                        :placeholder="t({ zh: '请输入起始列号', en: 'Please enter the starting column number' })"
+                      />
+                    </div>
+                    <div class="header-wrap">
+                      <div>{{ $t({en: 'Ending position', zh: '结束位置'}) }}</div>
+                      <span>{{ $t({zh: '行号', en: 'Line'}) }}</span>
+                      <UINumberInput
+                        v-model:value="form.value.step.coding.codeMasks[index].endPos.line"
+                        :placeholder="t({ zh: '请输入结束行号', en: 'Please enter the ending line number' })"
+                      />
+                      <span>{{ $t({zh: '列号', en: 'Column'}) }}</span>
+                      <UINumberInput
+                        v-model:value="form.value.step.coding.codeMasks[index].endPos.column"
+                        :placeholder="t({ zh: '请输入结束列号', en: 'Please enter the ending column number' })"
+                      />
+                    </div>
+                    
+                    <UIButton
+                      type="danger"
+                      icon="trash"
+                      style="width: 120px; margin-left: 20px"
+                      @click="
+                        () => {
+                          if (form.value.step.coding) {
+                            form.value.step.coding.codeMasks.splice(index, 1)
+                          }
+                        }
+                      "
+                    >
+                      {{ $t({ en: 'Delete', zh: '删除' }) }}
+                    </UIButton>
+                  </div>
+                  <UIButton type="primary" icon="plus" style="width: 80px" @click="handleControlContent('mask')">
+                    {{ $t({ en: 'Add', zh: '添加' }) }}
+                  </UIButton>
+                </div>
+              </UIFormItem>
               <UIFormItem :label="$t({ zh: '答案代码块开始坐标', en: 'Start position of answer' })">
                 <div>
                   line:
@@ -368,13 +448,7 @@
     </div>
     <TagSelector
       v-if="isShowTagSelector"
-      @selected="
-        (path: string) => {
-          form.value.step.target = path
-          isShowTagSelector = false
-          isShowIcon = false
-        }
-      "
+      @selected="handleSelect"
     />
   </div>
 </template>
@@ -392,12 +466,17 @@ import {
   UISwitch
 } from '@/components/ui'
 import { useForm } from '@/components/ui/form'
-import type { Step } from '@/apis/guidance'
+import { type Step, TaggingHandlerType } from '@/apis/guidance'
 import { useI18n } from '@/utils/i18n'
-import { watch, ref, inject } from 'vue'
+import { watch, ref, inject, computed } from 'vue'
 import TagSelector from '@/utils/tagging/TagSelector.vue'
+import { saveFiles } from '@/models/common/cloud'
+import { editor } from 'monaco-editor'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+
 
 const isShowIcon = inject<boolean>('isShowIcon')
+const setIsShowIcon = inject<(value: boolean) => void>('setIsShowIcon')
 
 const props = defineProps<{
   step: Step
@@ -413,6 +492,21 @@ const form = useForm({
 })
 
 const isShowTagSelector = ref<boolean>(false)
+const selectTarget = ref<string | null>(null)
+function handleSelect(path: string) {
+  if (selectTarget.value === 'target') {
+    form.value.step.target = path
+  } else if (selectTarget.value === 'taggingHandler') {
+    const tagName = path.split(' ').pop()
+    if (tagName && !form.value.step.taggingHandler[tagName]) {
+      form.value.step.taggingHandler[tagName] = TaggingHandlerType.ClickToNext
+    }
+  }
+  isShowTagSelector.value = false
+  if (setIsShowIcon) {
+    setIsShowIcon(false)
+  }
+}
 
 function handleControlContent(type: string) {
   switch (type) {
@@ -437,16 +531,35 @@ function handleControlContent(type: string) {
     case 'widget':
       form.value.step.widgets.push('')
       break
+    case 'mask':
+      form.value.step.coding?.codeMasks.push({
+        startPos: {
+          line: 0,
+          column: 0
+        },
+        endPos: {
+          line: 0,
+          column: 0
+        }
+      })
+      break
     default:
       break
   }
 }
-
-function handleSnapshot(type: string) {
-  // TODO: 需要实现获取快照的功能
-  // if (type === 'start') {
-  // } else {
-  // }
+const editorCtx = useEditorCtx()
+const project = computed(() => {
+  return editorCtx.project
+})
+async function handleSnapshot(type: string) {
+  const gameFiles = project.value.exportGameFiles()
+  const { fileCollection } = await saveFiles(gameFiles)
+  const snapShotStr = JSON.stringify(fileCollection)
+  if (type === 'start') {
+    form.value.step.snapshot.startSnapshot = snapShotStr
+  } else {
+    form.value.step.snapshot.endSnapshot = snapShotStr
+  }
 }
 
 watch(
@@ -596,13 +709,23 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  .form-item-content {
+}
+
+.form-item-content {
     margin-top: 10px;
     .content-header {
       margin-bottom: 10px;
       display: flex;
       width: 500px;
+      .header-wrap {
+        width: 250px;
+        margin: 10px 0;
+        margin-right: 10px;
+      }
     }
   }
-}
+
+  .header-opt {
+    display: flex;
+  }
 </style>
