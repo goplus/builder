@@ -3,7 +3,6 @@ import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import type { ClozeTestController } from '.'
 import type { monaco } from '../../monaco'
 import { onMounted, onUnmounted, watchEffect, ref } from 'vue'
-
 const codeEditorCtx = useCodeEditorUICtx()
 
 const props = defineProps<{
@@ -39,7 +38,6 @@ onUnmounted(() => {
 // 渲染遮罩层和挖空
 watchEffect((onCleanUp) => {  
   const clozeAreas = props.controller.clozeAreas
-  
   if (clozeAreas == null) return
   const clozeDecorations: monaco.editor.IModelDeltaDecoration[] = []
 
@@ -114,9 +112,7 @@ watchEffect((onCleanUp) => {
   }
 
   const decorationsCollection = getDecorationsCollection()
-  
   decorationsCollection.set(clozeDecorations)
-  
   onCleanUp(() => decorationsCollection.clear())
 })
 
@@ -130,7 +126,6 @@ watchEffect((onCleanUp) => {
   const listener = editor.onKeyDown((e: monaco.IKeyboardEvent) => {
     const position = editor.getPosition()
     if (!position) return
-    
     // 检查当前光标是否在填空区域内
     const currentArea = clozeAreas.find((area) => {
       const { start, end } = area.range
@@ -331,7 +326,4 @@ watchEffect((onCleanUp) => {
   left: 0 !important;
   background-color: rgb(85 85 85 / 29%) !important;
 }
-// .code-editor .right-sidebar {
-//   background-color: rgb(85 85 85 / 29%) !important;
-// }
 </style>
