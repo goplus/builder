@@ -92,6 +92,14 @@ class APIReferenceProvider implements IAPIReferenceProvider {
       overviewSet.add(item.overview)
       fallbackItems.push(item)
     }
+    // apply filter
+    const { enabled, items } = this.filter.getFilter('apiReference')
+    if (enabled && items.length > 0) {
+      return fallbackItems.filter((item) => {
+        const itemIdentifier = stringifyDefinitionId(item.definition)
+        return items.includes(itemIdentifier)
+      })
+    }
     return fallbackItems
   }
 
@@ -121,7 +129,6 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     } else {
       apiReferenceItems = await this.getFallbackItems(ctx)
     }
-
     // apply filter
     const { enabled, items } = this.filter.getFilter('apiReference')
     if (enabled && items.length > 0) {
@@ -130,7 +137,6 @@ class APIReferenceProvider implements IAPIReferenceProvider {
         return items.includes(itemIdentifier)
       })
     }
-
     return apiReferenceItems
   }
 }
@@ -272,7 +278,7 @@ class ClozeTestProvider
           end: { line: 12, column: 6 }
         },
         type: 'editableSingleLine' as ClozeAreaType
-      },
+      }
       // {
       //   range: {
       //     start: { line: 4, column: 0 },
@@ -556,14 +562,17 @@ export class CodeEditor extends Disposable {
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
   private clozeTestProvider: ClozeTestProvider
+  public filter: ListFilter
+
   constructor(
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
     private i18n: I18n,
-    private filter: ListFilter
+    filter: ListFilter
   ) {
     super()
+    this.filter = filter
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
