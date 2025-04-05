@@ -37,7 +37,6 @@ import {
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
-import { ClozeTestController, type IClozeTestProvider } from './close-test'
 import {
   CopilotController,
   type ICopilot,
@@ -65,7 +64,6 @@ export interface ICodeEditorUI {
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
   registerCopilot(copilot: ICopilot): void
   registerDocumentBase(documentBase: IDocumentBase): void
-  registerClozeTestProvider(provider: IClozeTestProvider): void
 
   /** Execute a command */
   executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R>
@@ -132,9 +130,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
   }
-  registerClozeTestProvider(provider: IClozeTestProvider): void {
-    this.clozeTestController.registerProvider(provider)
-  }
 
   private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
   getCommandInfo<A extends any[], R>(command: Command<A, R>): CommandInfo<A, R> | null {
@@ -199,7 +194,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
   documentBase: IDocumentBase | null = null
-  clozeTestController = new ClozeTestController(this)
 
   /** Temporary text document IDs */
   private tempTextDocumentIds = shallowReactive<TextDocumentIdentifier[]>([])
@@ -568,7 +562,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.contextMenuController.init()
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
-    this.clozeTestController.init()
   }
 
   dispose() {

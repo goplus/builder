@@ -47,7 +47,7 @@ onMounted(async () => {
 
 watch(
   () => props.step,
-  async (newStep) => {
+  async (newStep) => {  
     await initializeStep(newStep)
   },
   { deep: true }
@@ -95,7 +95,7 @@ function setFilterControls() {
   filter.setFilter('backdrop', props.step.isBackdropControl, props.step.backdrops)
 }
 
-async function handleStepCompleted() {
+async function handleStepCompleted() { 
   emit('stepCompleted')
 }
 </script>
