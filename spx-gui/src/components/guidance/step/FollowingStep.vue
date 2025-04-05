@@ -198,7 +198,6 @@ function handleCancelForbidden(element: HTMLElement, path: string) {
       if (event === 'cancelled') {
         return
       }
-
       return originalEmit.call(this, event, ...args)
     }
 
@@ -208,7 +207,7 @@ function handleCancelForbidden(element: HTMLElement, path: string) {
       handler: originalEmit
     })
   } else {
-    const paths = ['ctx', 'component', 'vnode.component']
+    const paths = ['component', 'vnode.component']
 
     for (const propPath of paths) {
       let target = modal
@@ -226,7 +225,6 @@ function handleCancelForbidden(element: HTMLElement, path: string) {
           if (event === 'cancelled') {
             return
           }
-
           return originalEmit.call(this, event, ...args)
         }
 
