@@ -65,10 +65,10 @@ import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
-import ClozeTestUI from './close-test/ClozeTestUI.vue'
+import ClozeTestUI from './cloze-test/ClozeTestUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
-import { ClozeTestController } from './close-test'
+import { ClozeTestController } from './cloze-test'
 const props = defineProps<{
   codeFilePath: string
 }>()

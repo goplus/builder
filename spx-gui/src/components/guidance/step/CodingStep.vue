@@ -151,7 +151,7 @@ export class ClozeTestProvider
     this.emit('didChangeClozeAreas', [])
   }
 
-  async provideClozeAreas(ctx: ClozeTestContext): Promise<ClozeArea[]> {
+  provideClozeAreas(ctx: ClozeTestContext): ClozeArea[] {
     return this._clozeAreas || []
   }
 }
@@ -167,9 +167,9 @@ import { useLevelPlayerCtx } from '../LevelPlayer.vue'
 import CodingDialog from './CodingDialog.vue'
 import { useDrag } from '@/utils/dom'
 import { checkCode } from '@/apis/guidance'
-import { type ClozeArea, ClozeAreaType } from '@/components/editor/code-editor/ui/close-test'
+import { type ClozeArea, ClozeAreaType } from '@/components/editor/code-editor/ui/cloze-test'
 import Emitter from '@/utils/emitter'
-import type { IClozeTestProvider, ClozeTestContext } from '@/components/editor/code-editor/ui/close-test'
+import type { IClozeTestProvider, ClozeTestContext } from '@/components/editor/code-editor/ui/cloze-test'
 
 const editorCtx = useEditorCtx()
 

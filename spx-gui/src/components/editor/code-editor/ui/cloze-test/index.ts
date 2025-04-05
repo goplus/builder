@@ -27,7 +27,7 @@ export interface IClozeTestProvider
   extends Emitter<{
     didChangeClozeAreas: []
   }> {
-  provideClozeAreas(ctx: ClozeTestContext): Promise<ClozeArea[]>
+  provideClozeAreas(ctx: ClozeTestContext): ClozeArea[]
   setClozeAreas(areas: ClozeArea[]): void
 }
 

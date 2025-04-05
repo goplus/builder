@@ -27,7 +27,7 @@ export function useEditorCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, ref } from 'vue'
+import { provide, type InjectionKey, ref, type Ref } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
 import { computedShallowReactive } from '@/utils/utils'
@@ -46,7 +46,7 @@ const clozeTestVisible = ref(false)
 const getClozeTestVisible = () => clozeTestVisible.value
 const setClozeTestVisible = (visible: boolean) => clozeTestVisible.value = visible 
 
-const clozeTestProvider = ref<ClozeTestProvider | null>(null)
+const clozeTestProvider= ref(null) as Ref<ClozeTestProvider | null>
 const getClozeTestProvider = () => clozeTestProvider.value 
 const setClozeTestProvider = (provider: ClozeTestProvider | null) => {
   clozeTestProvider.value = provider
