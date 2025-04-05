@@ -201,7 +201,6 @@ class DiagnosticsProvider
   }
 }
 
-
 class HoverProvider implements IHoverProvider {
   constructor(
     private lspClient: SpxLSPClient,
