@@ -348,11 +348,11 @@
               </UIButton>
             </UIFormItem>
             <UIFormItem
-              v-if="form.value.step.isCheck && form.value.step.snapshot.endSnapshot"
+              v-if="form.value.step.isCheck"
               :label="$t({ zh: '结束快照', en: 'Ending snapshot' })"
             >
               <UITextInput
-                v-model:value="form.value.step.snapshot.endSnapshot"
+                v-model:value="form.value.step.snapshot.endSnapshot!"
                 readonly
                 type="textarea"
                 style="width: 600px"
@@ -513,9 +513,8 @@ function handleSelect(path: string) {
   if (selectTarget.value === 'target') {
     form.value.step.target = path
   } else if (selectTarget.value === 'taggingHandler') {
-    const tagName = path.split(' ').pop()
-    if (tagName && !form.value.step.taggingHandler[tagName]) {
-      form.value.step.taggingHandler[tagName] = TaggingHandlerType.ClickToNext
+    if (path && !form.value.step.taggingHandler[path]) {
+      form.value.step.taggingHandler[path] = TaggingHandlerType.ClickToNext
     }
   }
   isShowTagSelector.value = false

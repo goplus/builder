@@ -42,14 +42,13 @@
                     <UIImg
                       :src="form.value.cover || './icons/no-img.svg'"
                       style="height: 120px; width: 200px"
-                      :loading="loading"
                       size="contain"
                     />
                     <UIButton
                       type="primary"
                       icon="file"
                       style="width: 120px; margin-left: 20px"
-                      @click="handleUploadImg"
+                      @click="handleUploadImg('cover')"
                     >
                       {{ $t({ en: 'Upload', zh: '上传' }) }}
                     </UIButton>
@@ -66,6 +65,53 @@
                     type="textarea"
                     placeholder="Please enter the description of the level"
                   />
+                </UIFormItem>
+                <UIFormItem label="成就标题">
+                  <UITextInput
+                    v-model:value="form.value.achievement.title.zh"
+                    placeholder="请输入成就标题"
+                  />
+                </UIFormItem>
+                <UIFormItem label="Achievement title">
+                  <UITextInput
+                    v-model:value="form.value.achievement.title.en"
+                    placeholder="Please enter the achievement title"
+                  />
+                </UIFormItem>
+                <UIFormItem :label="t({zh: '关卡成就图片;', en: 'Level achievement image'})">
+                  <UIImg
+                    :src="form.value.achievement.icon || './icons/no-img.svg'"
+                    style="height: 120px; width: 200px"
+                    size="contain"
+                  />
+                  <UIButton
+                    type="primary"
+                    icon="file"
+                    style="width: 120px; margin-left: 20px"
+                    @click="handleUploadImg('achievement')"
+                  >
+                    {{ $t({ en: 'Upload', zh: '上传' }) }}
+                  </UIButton>
+                </UIFormItem>
+                <UIFormItem :label="t({zh: '关卡坐标', en: 'Level placement'})">
+                  <div style="display: flex; align-items: center">
+                    <div style="margin-right: 10px;">
+                      x
+                      <UINumberInput
+                        v-model:value="form.value.placement.x"
+                        :placeholder="t({zh: '请输入关卡坐标 x', en: 'Please enter the level coordinates x'})"
+                      />
+                    </div>
+                    <div>
+                      y
+                      <UINumberInput
+                        v-model:value="form.value.placement.y"
+                        :placeholder="t({zh: '请输入关卡坐标 y', en: 'Please enter the level coordinates y'})"
+                      />
+                    </div>
+                  </div>
+                  
+                  
                 </UIFormItem>
               </div>
             </div>
@@ -116,7 +162,8 @@ import {
   UITab,
   UITabs,
   UIDivider,
-  UIButton
+  UIButton,
+  UINumberInput
 } from '@/components/ui'
 import type { Level, NodeTask } from '@/apis/guidance'
 import { type Step } from '@/apis/guidance'
@@ -139,7 +186,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const m = useMessage()
-const loading = ref<boolean>(false)
 const currentNodeTaskInfo = ref<NodeTask>(props.level.nodeTasks[0])
 const currentStepInfo = ref<Step>(props.level.nodeTasks[0].steps[0])
 
@@ -168,7 +214,8 @@ watch(
     form.value.achievement = newVal.achievement
     form.value.nodeTasks = newVal.nodeTasks
     form.value.placement = newVal.placement
-  }
+  },
+  { deep: true }
 )
 watch(
   () => form.value,
@@ -220,17 +267,21 @@ function handleOpt(option: string): void {
       break
   }
 }
-async function handleUploadImg() {
+async function handleUploadImg(type: string) {
   const { isOnline } = useNetwork()
   try {
     const img = await selectImg()
     const file = fromNativeFile(img)
     if (isOnline) {
-      loading.value = true
+      // loading.value = true
       const fileUrl = await m.withLoading(saveFile(file), t({ en: 'Uploading image...', zh: '正在上传图片...' }))
       const url = await universalUrlToWebUrl(fileUrl)
-      form.value.cover = url
-      loading.value = false
+      if (type === 'cover') {
+        form.value.cover = url
+      } else if (type === 'achievement') {
+        form.value.achievement.icon = url
+      }
+      // loading.value = false
     }
   } catch (error) {
     console.error('Error uploading image:', error)
@@ -317,7 +368,7 @@ button {
   .content-center {
     padding: 0 10px;
     margin: 20px;
-    height: 100%;
+    //height: 100%;
     min-height: 200px;
   }
   .base-info-header {

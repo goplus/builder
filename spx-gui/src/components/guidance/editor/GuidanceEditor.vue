@@ -14,7 +14,7 @@
         v-model:story-line="storyLine"
         @level-change="handleLevelChange"
         @minimize="isShowIcon = true"
-        @save="handleSave"
+        @save="handleSave.fn"
       />
       <LevelEditor
         v-show="editorStatus === editorStatusType.LEVELEDITOR"
@@ -27,11 +27,12 @@
 
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
-import { type MaybeSavedStoryLine } from '@/apis/guidance'
+import { type MaybeSavedStoryLine, createStoryLine, updateStoryLine } from '@/apis/guidance'
 import StoryLineEditor from './StoryLineEditor.vue'
 import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
+import { useMessageHandle } from '@/utils/exception'
 const isShowIcon = ref<boolean>(true)
 function setIsShowIcon(value: boolean) {
   isShowIcon.value = value
@@ -69,10 +70,39 @@ const currentLevel = computed({
   }
 })
 
-function handleSave() {
-  // TODO: save the story line
-  
-}
+const handleSave = useMessageHandle(
+  async () => {
+    console.log('storyLine.value', storyLine.value)
+    if (storyLine.value.id) {
+      await updateStoryLine({
+        id: storyLine.value.id,
+        backgroundImage: storyLine.value.backgroundImage,
+        title: storyLine.value.title,
+        name: storyLine.value.name,
+        description: storyLine.value.description,
+        tag: storyLine.value.tag,
+        levels: JSON.stringify(storyLine.value.levels),
+      })
+    } else {
+      await createStoryLine({
+        backgroundImage: storyLine.value.backgroundImage,
+        title: storyLine.value.title,
+        name: storyLine.value.name,
+        description: storyLine.value.description,
+        tag: storyLine.value.tag,
+        levels: JSON.stringify(storyLine.value.levels),
+      })
+    }
+  },
+  {
+    en: 'Failed to save story line',
+    zh: '保存故事线失败'
+  },
+  () => ({
+    en: 'Story line saved',
+    zh: '故事线保存成功'
+  })
+)
 
 useDrag(
   editorIconRef,

@@ -107,17 +107,17 @@ export type CreateStoryLineInput = {
     title: LocaleMessage
     description: LocaleMessage
     tag: 'easy' | 'medium' | 'hard'
-    levels: Level[]
+    levels: string
 }
 
 export type UpdateStoryLineInput = {
     id: string
-    name?: string
-    backgroundImage?: string
-    title?: LocaleMessage
-    description?: LocaleMessage
-    tag?: 'easy' | 'medium' | 'hard'
-    levels?: Level[]
+    name: string
+    backgroundImage: string
+    title: LocaleMessage
+    description: LocaleMessage
+    tag: 'easy' | 'medium' | 'hard'
+    levels: string
 }
 
 type Placement = {
