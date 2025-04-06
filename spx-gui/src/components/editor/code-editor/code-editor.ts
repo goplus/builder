@@ -64,7 +64,6 @@ import {
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { ListFilter } from '@/models/list-filter'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
@@ -88,6 +87,14 @@ class APIReferenceProvider implements IAPIReferenceProvider {
       if (overviewSet.has(item.overview)) continue // Skip duplicated items, e.g., `Sprite.onStart` & `Game.onStart`
       overviewSet.add(item.overview)
       fallbackItems.push(item)
+    }
+    // apply filter
+    const { enabled, items } = this.filter.getFilter('apiReference')
+    if (enabled && items.length > 0) {
+      return fallbackItems.filter((item) => {
+        const itemIdentifier = stringifyDefinitionId(item.definition)
+        return items.includes(itemIdentifier)
+      })
     }
     return fallbackItems
   }
@@ -118,7 +125,6 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     } else {
       apiReferenceItems = await this.getFallbackItems(ctx)
     }
-
     // apply filter
     const { enabled, items } = this.filter.getFilter('apiReference')
     if (enabled && items.length > 0) {
@@ -127,7 +133,6 @@ class APIReferenceProvider implements IAPIReferenceProvider {
         return items.includes(itemIdentifier)
       })
     }
-
     return apiReferenceItems
   }
 }
@@ -465,15 +470,17 @@ export class CodeEditor extends Disposable {
   private resourceReferencesProvider: ResourceReferencesProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
+  public filter: ListFilter
 
   constructor(
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
     private i18n: I18n,
-    private filter: ListFilter
+    filter: ListFilter
   ) {
     super()
+    this.filter = filter
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)

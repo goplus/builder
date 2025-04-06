@@ -53,6 +53,7 @@ export * from './context-menu'
 export * from './diagnostics'
 export * from './api-reference'
 export * from './copilot'
+export * from './cloze-test'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void

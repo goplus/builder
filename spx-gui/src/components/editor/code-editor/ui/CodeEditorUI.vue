@@ -65,9 +65,10 @@ import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
+import ClozeTestUI from './cloze-test/ClozeTestUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
-
+import { ClozeTestController } from './cloze-test'
 const props = defineProps<{
   codeFilePath: string
 }>()
@@ -126,6 +127,18 @@ const uiRef = computed(() => {
     renameResource
   )
 })
+
+const clozeTestController = new ClozeTestController(uiRef.value)
+clozeTestController.init()
+watch(
+  () => editorCtx.getClozeTestProvider(),
+  () => {
+    clozeTestController.registerProvider(editorCtx.getClozeTestProvider())
+  },
+  {
+    immediate: true
+  }
+)
 
 const initialFontSize = 12
 const fontSize = localStorageRef('spx-gui-code-font-size', initialFontSize)
@@ -274,6 +287,7 @@ function zoomReset() {
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
+    <ClozeTestUI v-if="editorCtx.getClozeTestVisible()" :controller="clozeTestController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

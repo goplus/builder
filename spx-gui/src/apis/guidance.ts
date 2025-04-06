@@ -101,6 +101,25 @@ export type UpdateStoryLineStudyInput = {
   lastFinishedLevelIndex: number // 当前最新完成的关卡下标
 }
 
+export type CreateStoryLineInput = {
+    name: string
+    backgroundImage: string
+    title: LocaleMessage
+    description: LocaleMessage
+    tag: 'easy' | 'medium' | 'hard'
+    levels: Level[]
+}
+
+export type UpdateStoryLineInput = {
+    id: string
+    name?: string
+    backgroundImage?: string
+    title?: LocaleMessage
+    description?: LocaleMessage
+    tag?: 'easy' | 'medium' | 'hard'
+    levels?: Level[]
+}
+
 type Placement = {
   /** X position in percentage */
   x: number
@@ -445,4 +464,16 @@ export async function createStoryLineStudy(storyLineId: string): Promise<StoryLi
 
 export async function updateStoryLineStudy(input: UpdateStoryLineStudyInput): Promise<StoryLineStudy> {
   return client.put(`/storyline/${encodeURIComponent(input.id)}/study`, input) as Promise<StoryLineStudy>
+}
+
+export async function createStoryLine(input: CreateStoryLineInput): Promise<StoryLine> {
+  return client.post(`/storyline`, input) as Promise<StoryLine>
+}
+
+export async function updateStoryLine(input: UpdateStoryLineInput): Promise<StoryLine> {
+  return client.put(`/storyline/${encodeURIComponent(input.id)}`, input) as Promise<StoryLine>
+}
+
+export async function deleteStoryLine(storyLineId: string): Promise<void> {
+  return client.delete(`/storyline/${encodeURIComponent(storyLineId)}`) as Promise<void>
 }

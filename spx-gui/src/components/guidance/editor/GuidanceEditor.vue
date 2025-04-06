@@ -14,6 +14,7 @@
         v-model:story-line="storyLine"
         @level-change="handleLevelChange"
         @minimize="isShowIcon = true"
+        @save="handleSave"
       />
       <LevelEditor
         v-show="editorStatus === editorStatusType.LEVELEDITOR"
@@ -32,8 +33,12 @@ import LevelEditor from './LevelEditor.vue'
 import { useDrag } from '@/utils/dom'
 import type { Pos } from '../LevelPlayer.vue'
 const isShowIcon = ref<boolean>(true)
+function setIsShowIcon(value: boolean) {
+  isShowIcon.value = value
+}
 
 provide('isShowIcon', isShowIcon)
+provide('setIsShowIcon', setIsShowIcon)
 
 enum editorStatusType {
   STORYLINE,
@@ -63,6 +68,11 @@ const currentLevel = computed({
     storyLine.value.levels[levelIndex.value] = newValue
   }
 })
+
+function handleSave() {
+  // TODO: save the story line
+  
+}
 
 useDrag(
   editorIconRef,

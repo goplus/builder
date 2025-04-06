@@ -6,11 +6,11 @@
           {{ $t({ zh: '返回故事线', en: 'Back' }) }}
         </UIButton>
       </div>
-      <div>
+      <!-- <div>
         <UIButton type="primary" @click="handleOpt('save')">
           {{ $t({ zh: '保存', en: 'Save' }) }}
         </UIButton>
-      </div>
+      </div> -->
     </div>
     <div class="editor-info">
       <div class="editor-info-header">

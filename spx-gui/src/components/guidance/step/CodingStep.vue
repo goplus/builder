@@ -133,6 +133,29 @@
   </div>
 </template>
 
+<script lang="ts">
+export class ClozeTestProvider
+  extends Emitter<{
+    didChangeClozeAreas: []
+  }>
+  implements IClozeTestProvider
+{
+  private _clozeAreas: ClozeArea[] | null = null
+
+  constructor() {
+    super()
+  }
+
+  setClozeAreas(areas: ClozeArea[]) {
+    this._clozeAreas = areas
+    this.emit('didChangeClozeAreas', [])
+  }
+
+  provideClozeAreas(ctx: ClozeTestContext): ClozeArea[] {
+    return this._clozeAreas || []
+  }
+}
+</script>
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -144,6 +167,9 @@ import { useLevelPlayerCtx } from '../LevelPlayer.vue'
 import CodingDialog from './CodingDialog.vue'
 import { useDrag } from '@/utils/dom'
 import { checkCode } from '@/apis/guidance'
+import { type ClozeArea, ClozeAreaType } from '@/components/editor/code-editor/ui/cloze-test'
+import Emitter from '@/utils/emitter'
+import type { IClozeTestProvider, ClozeTestContext } from '@/components/editor/code-editor/ui/cloze-test'
 
 const editorCtx = useEditorCtx()
 
@@ -422,7 +448,12 @@ function handleRetryBtnClick() {
   handleCheckFloatingBtnClick()
 }
 
+const clozeTestProvider = new ClozeTestProvider()
+
 onMounted(() => {
+  editorCtx.setClozeTestVisible(true)
+  editorCtx.setClozeTestProvider(clozeTestProvider)
+  updateClozeAreas()
   if (props.step.coding && props.step.snapshot.endSnapshot) {
     answer.value = getAnswerFromEndSnapshot(
       props.step.coding.path,
@@ -437,6 +468,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  editorCtx.setClozeTestVisible(false)
+  editorCtx.setClozeTestProvider(null)
   if (timeoutTimer) {
     clearTimeout(timeoutTimer)
   }
@@ -446,6 +479,7 @@ watch(
   () => props.step,
   () => {
     checkDialogVisible.value = false
+    updateClozeAreas()
     if (props.step.coding && props.step.snapshot.endSnapshot) {
       answer.value = getAnswerFromEndSnapshot(
         props.step.coding.path,
@@ -487,6 +521,82 @@ async function copyAnswerCode() {
     }, 1000)
   } catch (err) {
     console.error('复制失败:', err)
+  }
+}
+
+// 转换codeMasks为clozeAreas的格式
+function convertCodeMasksToClozeAreas(path: string, endSnapshot: string, codeMasks: Mask[]): ClozeArea[] {
+  const targetFile = getTargetFileContent(path, endSnapshot)
+  const encodedContent = targetFile.replace('data:;,', '')
+  const decodedContent = decodeURIComponent(encodedContent)
+  const lines = decodedContent.split(/\r?\n/)
+
+  return codeMasks.map((mask) => {
+    // 确定区域类型
+    const type = mask.startPos.line === mask.endPos.line ? ClozeAreaType.EditableSingleLine : ClozeAreaType.Editable
+
+    if (type === ClozeAreaType.EditableSingleLine) {
+      // 对于单行填空，需要处理tab的影响
+      const line = lines[mask.startPos.line - 1] || ''
+
+      // 处理开始位置的列号
+      let realStartColumn = 1
+      let visualColumn = 1
+
+      for (let i = 0; i < line.length && visualColumn < mask.startPos.column; i++) {
+        if (line[i] === '\t') {
+          // tab宽度为4，向下取整到下一个tab stop
+          const tabWidth = 4 - ((visualColumn - 1) % 4)
+          visualColumn += tabWidth
+        } else {
+          visualColumn++
+        }
+        realStartColumn++
+      }
+
+      // 处理结束位置的列号
+      const textLength = mask.endPos.column - mask.startPos.column + 1
+
+      return {
+        range: {
+          start: {
+            line: mask.startPos.line,
+            column: realStartColumn
+          },
+          end: {
+            line: mask.endPos.line,
+            column: realStartColumn + textLength
+          }
+        },
+        type: type
+      }
+    } else {
+      // 对于多行编辑区域
+      return {
+        range: {
+          start: {
+            line: mask.startPos.line,
+            column: 0
+          },
+          end: {
+            line: mask.endPos.line,
+            column: 0
+          }
+        },
+        type: type
+      }
+    }
+  })
+}
+
+function updateClozeAreas() {
+  if (props.step.coding && props.step.snapshot.endSnapshot) {
+    const clozeAreas = convertCodeMasksToClozeAreas(
+      props.step.coding.path,
+      props.step.snapshot.endSnapshot,
+      props.step.coding.codeMasks
+    )
+    clozeTestProvider.setClozeAreas(clozeAreas)
   }
 }
 </script>
