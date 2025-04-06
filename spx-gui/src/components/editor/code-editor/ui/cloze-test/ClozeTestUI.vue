@@ -2,7 +2,7 @@
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import type { ClozeTestController } from '.'
 import type { monaco } from '../../monaco'
-import { watchEffect } from 'vue'
+import { onMounted, onUnmounted, watchEffect, ref } from 'vue'
 const codeEditorCtx = useCodeEditorUICtx()
 
 const props = defineProps<{
@@ -15,8 +15,28 @@ function getDecorationsCollection() {
   return dc
 }
 
+const styleElement = ref<HTMLStyleElement | null>(null)
+
+onMounted(() => {
+  // 创建样式元素
+  styleElement.value = document.createElement('style')
+  styleElement.value.textContent = `
+    .code-editor .monaco-editor {
+      margin: 0 !important;
+    }
+  `
+  document.head.appendChild(styleElement.value)
+})
+onUnmounted(() => {
+  // 移除样式元素
+  if (styleElement.value) {
+    document.head.removeChild(styleElement.value)
+    styleElement.value = null
+  }
+})
+
 // 渲染遮罩层和挖空
-watchEffect((onCleanUp) => {
+watchEffect((onCleanUp) => {  
   const clozeAreas = props.controller.clozeAreas
   if (clozeAreas == null) return
   const clozeDecorations: monaco.editor.IModelDeltaDecoration[] = []
@@ -305,12 +325,5 @@ watchEffect((onCleanUp) => {
   width: 100% !important;
   left: 0 !important;
   background-color: rgb(85 85 85 / 29%) !important;
-}
-.code-editor .right-sidebar {
-  background-color: rgb(85 85 85 / 29%) !important;
-}
-
-.code-editor .monaco-editor {
-  margin: 0 !important;
 }
 </style>

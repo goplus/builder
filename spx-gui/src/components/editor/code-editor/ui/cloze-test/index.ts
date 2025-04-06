@@ -27,13 +27,14 @@ export interface IClozeTestProvider
   extends Emitter<{
     didChangeClozeAreas: []
   }> {
-  provideClozeAreas(ctx: ClozeTestContext): Promise<ClozeArea[]>
+  provideClozeAreas(ctx: ClozeTestContext): ClozeArea[]
+  setClozeAreas(areas: ClozeArea[]): void
 }
 
 export class ClozeTestController extends Disposable {
   private providerRef = shallowRef<IClozeTestProvider | null>(null)
 
-  registerProvider(provider: IClozeTestProvider) {
+  registerProvider(provider: IClozeTestProvider | null) { 
     this.providerRef.value = provider
   }
 
@@ -55,7 +56,6 @@ export class ClozeTestController extends Disposable {
 
   init() {
     const refreshClozeAreas = debounce(() => this.clozeAreasMgr.start(), 100)
-
     this.addDisposer(
       watch(
         this.providerRef,

@@ -42,13 +42,9 @@
             <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
               <!-- fixed asset-list height to keep the layout stable -->
               <ul class="asset-list" style="height: 436px">
-                <ItemComponent
-                  v-for="asset in slotProps.data.data"
-                  :key="asset.id"
-                  :asset="asset"
-                  :selected="isSelected(asset)"
-                  @click="handleAssetClick(asset)"
-                />
+                <TagNode v-for="asset in slotProps.data.data" :key="asset.id" :name="'asset-' + asset.id">
+                  <ItemComponent :asset="asset" :selected="isSelected(asset)" @click="handleAssetClick(asset)" />
+                </TagNode>
               </ul>
             </ListResultWrapper>
 
