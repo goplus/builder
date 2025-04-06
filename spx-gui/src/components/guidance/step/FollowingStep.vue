@@ -187,54 +187,65 @@ function clearAllEventListeners() {
 function handleCancelForbidden(element: HTMLElement, path: string) {
   const modal = getInstance(path) as any
 
-  if (!modal) {
-    return
-  }
+  if (!modal) return
+
+  let target = null
+  let originalEmit = null
 
   if (modal?.ctx && typeof modal.ctx.emit === 'function') {
-    const originalEmit = modal.ctx.emit
-
-    modal.ctx.emit = function (event: string, ...args: any[]) {
-      if (event === 'cancelled') {
-        return
-      }
-      return originalEmit.call(this, event, ...args)
-    }
-
-    eventListeners.value.push({
-      element,
-      type: 'emitOverride',
-      handler: originalEmit
-    })
+    target = modal.ctx
+    originalEmit = modal.ctx.emit
   } else {
     const paths = ['component', 'vnode.component']
-
     for (const propPath of paths) {
-      let target = modal
+      let currentTarget = modal
       const parts = propPath.split('.')
 
       for (const part of parts) {
-        target = target?.[part]
-        if (!target) break
+        currentTarget = currentTarget?.[part]
+        if (!currentTarget) break
       }
 
-      if (target && typeof target.emit === 'function') {
-        const originalEmit = target.emit
+      if (currentTarget && typeof currentTarget.emit === 'function') {
+        target = currentTarget
+        originalEmit = currentTarget.emit
+        break
+      }
+    }
+  }
 
-        target.emit = function (event: string, ...args: any) {
-          if (event === 'cancelled') {
-            return
-          }
-          return originalEmit.call(this, event, ...args)
+  if (target && originalEmit) {
+    let hasCancelledEvent = false
+
+    const emitsOption = target.$options?.emits || target.type?.emits || target.constructor?.options?.emits || null
+
+    if (emitsOption) {
+      if (Array.isArray(emitsOption)) {
+        hasCancelledEvent = emitsOption.includes('cancelled')
+      } else if (typeof emitsOption === 'object') {
+        hasCancelledEvent = 'cancelled' in emitsOption
+      }
+    }
+
+    const componentName = target.type?.name || target.$options?.name || target.constructor?.name || null
+
+    if (componentName && ['Modal', 'Dialog', 'Popover', 'UIFormModal'].includes(componentName)) {
+      hasCancelledEvent = true
+    }
+
+    if (hasCancelledEvent) {
+      target.emit = function (event: string, ...args: any[]) {
+        if (event === 'cancelled') {
+          return
         }
-
-        eventListeners.value.push({
-          element,
-          type: 'emitOverride',
-          handler: originalEmit
-        })
-        return
+        return originalEmit.call(this, event, ...args)
       }
+
+      eventListeners.value.push({
+        element,
+        type: 'emitOverride',
+        handler: originalEmit
+      })
     }
   }
 }
