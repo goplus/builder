@@ -48,7 +48,7 @@ onMounted(async () => {
 
 watch(
   () => props.step,
-  async (newStep) => {  
+  async (newStep) => {
     await initializeStep(newStep)
   },
   { deep: true }

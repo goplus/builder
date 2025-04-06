@@ -165,7 +165,7 @@ const targetElement = computed(() => (targetPath.value ? getElement(targetPath.v
 watch(
   targetElement,
   (element) => {
-    clearAllEventListeners() 
+    clearAllEventListeners()
 
     if (!element || !targetPath.value) return
 
