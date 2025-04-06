@@ -352,7 +352,7 @@
               :label="$t({ zh: '结束快照', en: 'Ending snapshot' })"
             >
               <UITextInput
-                v-model:value="form.value.step.snapshot.endSnapshot!"
+                v-model:value="form.value.step.snapshot.endSnapshot"
                 readonly
                 type="textarea"
                 style="width: 600px"

@@ -72,7 +72,6 @@ const currentLevel = computed({
 
 const handleSave = useMessageHandle(
   async () => {
-    console.log('storyLine.value', storyLine.value)
     if (storyLine.value.id) {
       await updateStoryLine({
         id: storyLine.value.id,

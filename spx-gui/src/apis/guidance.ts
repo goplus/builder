@@ -44,7 +44,7 @@ export type Step = {
   backdrops: string[] // 该步骤中需要被展示的背景的id列表
   snapshot: {
     startSnapshot: string // 初始快照
-    endSnapshot?: string // 结束快照
+    endSnapshot: string // 结束快照
   }
   coding?: {
     // coding任务独有的数据结构
