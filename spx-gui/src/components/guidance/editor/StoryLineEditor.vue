@@ -141,6 +141,7 @@ const emit = defineEmits<{
   'update:storyLine': [MaybeSavedStoryLine]
   minimize: [boolean]
   levelChange: [number]
+  save: [boolean]
 }>()
 
 const form = useForm({
@@ -175,6 +176,8 @@ const handleSubmit = async () => {
       backgroundImage: form.value.backgroundImage,
       levels: form.value.levels
     })
+
+    emit('save', true)
   }
 }
 

@@ -140,7 +140,6 @@ watch(
   }
 )
 
-
 const initialFontSize = 12
 const fontSize = localStorageRef('spx-gui-code-font-size', initialFontSize)
 

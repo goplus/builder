@@ -36,7 +36,7 @@ onUnmounted(() => {
 })
 
 // 渲染遮罩层和挖空
-watchEffect((onCleanUp) => {  
+watchEffect((onCleanUp) => {
   const clozeAreas = props.controller.clozeAreas
   if (clozeAreas == null) return
   const clozeDecorations: monaco.editor.IModelDeltaDecoration[] = []

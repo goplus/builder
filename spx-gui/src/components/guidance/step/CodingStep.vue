@@ -525,30 +525,24 @@ async function copyAnswerCode() {
 }
 
 // 转换codeMasks为clozeAreas的格式
-function convertCodeMasksToClozeAreas(
-  path: string,
-  endSnapshot: string,
-  codeMasks: Mask[]
-): ClozeArea[] {
+function convertCodeMasksToClozeAreas(path: string, endSnapshot: string, codeMasks: Mask[]): ClozeArea[] {
   const targetFile = getTargetFileContent(path, endSnapshot)
   const encodedContent = targetFile.replace('data:;,', '')
   const decodedContent = decodeURIComponent(encodedContent)
   const lines = decodedContent.split(/\r?\n/)
-  
+
   return codeMasks.map((mask) => {
     // 确定区域类型
-    const type = mask.startPos.line === mask.endPos.line 
-      ? ClozeAreaType.EditableSingleLine 
-      : ClozeAreaType.Editable
-    
+    const type = mask.startPos.line === mask.endPos.line ? ClozeAreaType.EditableSingleLine : ClozeAreaType.Editable
+
     if (type === ClozeAreaType.EditableSingleLine) {
       // 对于单行填空，需要处理tab的影响
       const line = lines[mask.startPos.line - 1] || ''
-      
+
       // 处理开始位置的列号
       let realStartColumn = 1
       let visualColumn = 1
-      
+
       for (let i = 0; i < line.length && visualColumn < mask.startPos.column; i++) {
         if (line[i] === '\t') {
           // tab宽度为4，向下取整到下一个tab stop
@@ -559,10 +553,10 @@ function convertCodeMasksToClozeAreas(
         }
         realStartColumn++
       }
-      
+
       // 处理结束位置的列号
       const textLength = mask.endPos.column - mask.startPos.column + 1
-      
+
       return {
         range: {
           start: {

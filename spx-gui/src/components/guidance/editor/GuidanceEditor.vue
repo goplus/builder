@@ -14,6 +14,7 @@
         v-model:story-line="storyLine"
         @level-change="handleLevelChange"
         @minimize="isShowIcon = true"
+        @save="handleSave"
       />
       <LevelEditor
         v-show="editorStatus === editorStatusType.LEVELEDITOR"
@@ -67,6 +68,11 @@ const currentLevel = computed({
     storyLine.value.levels[levelIndex.value] = newValue
   }
 })
+
+function handleSave() {
+  // TODO: save the story line
+  
+}
 
 useDrag(
   editorIconRef,

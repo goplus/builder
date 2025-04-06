@@ -55,34 +55,51 @@
             </UIFormItem>
             <UIFormItem :label="$t({ zh: '元素处理方式', en: 'Target handler' })">
               <div class="form-item-content">
-                <div v-for="(value, key) in form.value.step.taggingHandler" :key="key" class="content-header" style="align-items: center;">
+                <div
+                  v-for="(value, key) in form.value.step.taggingHandler"
+                  :key="key"
+                  class="content-header"
+                  style="align-items: center"
+                >
                   <UITextInput
-                    v-model:value="key as string"
+                    v-if="typeof key === 'string'"
+                    :value="key"
+                    :readonly="true"
                     :placeholder="t({ zh: '目标元素key', en: 'Target key' })"
-                    readonly
                     style="margin-right: 10px; width: 200px"
                   />
                   <UIRadioGroup v-model:value="form.value.step.taggingHandler[key]">
                     <UIRadio :value="TaggingHandlerType.ClickToNext" :label="$t({ zh: '点击', en: 'Click to next' })" />
-                    <UIRadio :value="TaggingHandlerType.SubmitToNext" :label="$t({ zh: '提交', en: 'Submit to next' })" />
+                    <UIRadio
+                      :value="TaggingHandlerType.SubmitToNext"
+                      :label="$t({ zh: '提交', en: 'Submit to next' })"
+                    />
                   </UIRadioGroup>
                   <UIButton
                     type="danger"
                     icon="trash"
                     style="width: 100px; margin-left: 20px"
-                    @click="() => {
-                      delete form.value.step.taggingHandler[key]
-                    }"
+                    @click="
+                      () => {
+                        delete form.value.step.taggingHandler[key]
+                      }
+                    "
                   >
                     {{ $t({ en: 'Delete', zh: '删除' }) }}
                   </UIButton>
                 </div>
-                <UIButton type="primary" icon="plus" style="width: 80px" @click="() => {
-                          selectTarget = 'taggingHandler'
-                          isShowTagSelector = true
-                          isShowIcon = true
-                        }
-                      ">
+                <UIButton
+                  type="primary"
+                  icon="plus"
+                  style="width: 80px"
+                  @click="
+                    () => {
+                      selectTarget = 'taggingHandler'
+                      isShowTagSelector = true
+                      isShowIcon = true
+                    }
+                  "
+                >
                   {{ $t({ en: 'Add', zh: '添加' }) }}
                 </UIButton>
               </div>
@@ -361,34 +378,38 @@
               </UIFormItem>
               <UIFormItem :label="$t({ zh: '代码填空', en: 'Code token masks' })">
                 <div class="form-item-content">
-                  <div v-for="(item, index) in form.value.step.coding.codeMasks" :key="item.startPos.line+item.startPos.column" class="content-header">
+                  <div
+                    v-for="(item, index) in form.value.step.coding.codeMasks"
+                    :key="item.startPos.line + item.startPos.column"
+                    class="content-header"
+                  >
                     <div class="header-wrap">
-                      <div>{{ $t({en: 'Starting position', zh: '起始位置'}) }}</div>
-                      <span>{{ $t({zh: '行号', en: 'Line'}) }}</span>
+                      <div>{{ $t({ en: 'Starting position', zh: '起始位置' }) }}</div>
+                      <span>{{ $t({ zh: '行号', en: 'Line' }) }}</span>
                       <UINumberInput
                         v-model:value="form.value.step.coding.codeMasks[index].startPos.line"
                         :placeholder="t({ zh: '请输入起始行号', en: 'Please enter the starting line number' })"
                       />
-                      <span>{{ $t({zh: '列号', en: 'Column'}) }}</span>
+                      <span>{{ $t({ zh: '列号', en: 'Column' }) }}</span>
                       <UINumberInput
                         v-model:value="form.value.step.coding.codeMasks[index].startPos.column"
                         :placeholder="t({ zh: '请输入起始列号', en: 'Please enter the starting column number' })"
                       />
                     </div>
                     <div class="header-wrap">
-                      <div>{{ $t({en: 'Ending position', zh: '结束位置'}) }}</div>
-                      <span>{{ $t({zh: '行号', en: 'Line'}) }}</span>
+                      <div>{{ $t({ en: 'Ending position', zh: '结束位置' }) }}</div>
+                      <span>{{ $t({ zh: '行号', en: 'Line' }) }}</span>
                       <UINumberInput
                         v-model:value="form.value.step.coding.codeMasks[index].endPos.line"
                         :placeholder="t({ zh: '请输入结束行号', en: 'Please enter the ending line number' })"
                       />
-                      <span>{{ $t({zh: '列号', en: 'Column'}) }}</span>
+                      <span>{{ $t({ zh: '列号', en: 'Column' }) }}</span>
                       <UINumberInput
                         v-model:value="form.value.step.coding.codeMasks[index].endPos.column"
                         :placeholder="t({ zh: '请输入结束列号', en: 'Please enter the ending column number' })"
                       />
                     </div>
-                    
+
                     <UIButton
                       type="danger"
                       icon="trash"
@@ -446,10 +467,7 @@
         </UICard>
       </UIForm>
     </div>
-    <TagSelector
-      v-if="isShowTagSelector"
-      @selected="handleSelect"
-    />
+    <TagSelector v-if="isShowTagSelector" @selected="handleSelect" />
   </div>
 </template>
 
@@ -471,9 +489,7 @@ import { useI18n } from '@/utils/i18n'
 import { watch, ref, inject, computed } from 'vue'
 import TagSelector from '@/utils/tagging/TagSelector.vue'
 import { saveFiles } from '@/models/common/cloud'
-import { editor } from 'monaco-editor'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-
 
 const isShowIcon = inject<boolean>('isShowIcon')
 const setIsShowIcon = inject<(value: boolean) => void>('setIsShowIcon')
@@ -712,20 +728,20 @@ watch(
 }
 
 .form-item-content {
-    margin-top: 10px;
-    .content-header {
-      margin-bottom: 10px;
-      display: flex;
-      width: 500px;
-      .header-wrap {
-        width: 250px;
-        margin: 10px 0;
-        margin-right: 10px;
-      }
+  margin-top: 10px;
+  .content-header {
+    margin-bottom: 10px;
+    display: flex;
+    width: 500px;
+    .header-wrap {
+      width: 250px;
+      margin: 10px 0;
+      margin-right: 10px;
     }
   }
+}
 
-  .header-opt {
-    display: flex;
-  }
+.header-opt {
+  display: flex;
+}
 </style>
