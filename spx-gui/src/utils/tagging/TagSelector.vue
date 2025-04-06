@@ -50,7 +50,7 @@ function handleClick(event: MouseEvent) {
     const node = elementToNode?.get(tagElement)
     if (node) {
       const path = nodeToPath?.get(node) || 'unknown path'
-      if (event.shiftKey) {
+      if (event.altKey) {
         currentPath.value = path
         emit('selected', path)
       } else {
