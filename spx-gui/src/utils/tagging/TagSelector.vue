@@ -50,8 +50,19 @@ function handleClick(event: MouseEvent) {
     const node = elementToNode?.get(tagElement)
     if (node) {
       const path = nodeToPath?.get(node) || 'unknown path'
-      currentPath.value = path
-      emit('selected', path)
+      if (event.altKey) {
+        currentPath.value = path
+        emit('selected', path)
+      } else {
+        const onClickHandler = node.instance?.subTree?.children[0]?.props?.onClick
+        if (onClickHandler) {
+          nextTick(() => {
+            onClickHandler()
+          })
+        } else {
+          console.log('No onClick handler found on the component.')
+        }
+      }
     }
   }
 }
@@ -102,6 +113,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
   transition: all 0.2s;
   box-sizing: border-box;
+  z-index: 9999;
 }
 
 .current-path {
