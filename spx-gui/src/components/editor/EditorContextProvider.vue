@@ -44,10 +44,10 @@ const listFilter = new ListFilter()
 const clozeTestVisible = ref(false)
 
 const getClozeTestVisible = () => clozeTestVisible.value
-const setClozeTestVisible = (visible: boolean) => clozeTestVisible.value = visible 
+const setClozeTestVisible = (visible: boolean) => (clozeTestVisible.value = visible)
 
-const clozeTestProvider= ref(null) as Ref<ClozeTestProvider | null>
-const getClozeTestProvider = () => clozeTestProvider.value 
+const clozeTestProvider = ref(null) as Ref<ClozeTestProvider | null>
+const getClozeTestProvider = () => clozeTestProvider.value
 const setClozeTestProvider = (provider: ClozeTestProvider | null) => {
   clozeTestProvider.value = provider
 }

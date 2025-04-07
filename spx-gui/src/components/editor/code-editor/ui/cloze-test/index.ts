@@ -34,7 +34,7 @@ export interface IClozeTestProvider
 export class ClozeTestController extends Disposable {
   private providerRef = shallowRef<IClozeTestProvider | null>(null)
 
-  registerProvider(provider: IClozeTestProvider | null) { 
+  registerProvider(provider: IClozeTestProvider | null) {
     this.providerRef.value = provider
   }
 

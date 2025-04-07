@@ -80,7 +80,7 @@
       <UICard class="base-info">
         <div class="base-info-header">
           <span>{{ $t({ zh: '关卡列表', en: 'Level list' }) }}</span>
-          <UIButton type="primary">
+          <UIButton type="primary" @click="handleAddLevel">
             {{ $t({ zh: '添加关卡', en: 'Add level' }) }}
           </UIButton>
         </div>
@@ -95,7 +95,7 @@
               </div>
               <div class="level-top-right">
                 <div @click="emit('levelChange', index)"><img src="../icons/edit-level.svg" alt="" /></div>
-                <div><img src="../icons/delete.svg" alt="" /></div>
+                <div @click="form.value.levels.splice(index, 1)"><img src="../icons/delete.svg" alt="" /></div>
               </div>
             </div>
             <div class="level-center">
@@ -141,6 +141,7 @@ const emit = defineEmits<{
   'update:storyLine': [MaybeSavedStoryLine]
   minimize: [boolean]
   levelChange: [number]
+  save: []
 }>()
 
 const form = useForm({
@@ -175,7 +176,23 @@ const handleSubmit = async () => {
       backgroundImage: form.value.backgroundImage,
       levels: form.value.levels
     })
+    emit('save')
   }
+}
+
+function handleAddLevel() {
+  form.value.levels.push({
+    title: { zh: '', en: '' },
+    description: { zh: '', en: '' },
+    nodeTasks: [],
+    cover: '',
+    video: '',
+    placement: {
+      x: 0,
+      y: 0
+    },
+    achievement: { icon: '', title: { zh: '', en: '' } },
+  })
 }
 
 function handleOpt() {
@@ -248,10 +265,10 @@ async function uploadImg() {
         align-items: center;
       }
       .level-list {
-        min-height: 300px;
+        min-height: 200px;
         .level-item {
           width: 100%;
-          height: 200px;
+          height: 150px;
           box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
           border: 1px solid #e5e7eb;
           border-radius: 20px;

@@ -32,7 +32,7 @@ import {
   InsertTextFormat,
   CompletionItemKind,
   type IAPIReferenceProvider,
-  type APIReferenceContext,
+  type APIReferenceContext
 } from './ui/code-editor-ui'
 import {
   type Action,
