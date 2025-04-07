@@ -133,8 +133,6 @@ clozeTestController.init()
 watch(
   () => editorCtx.getClozeTestProvider(),
   () => {
-    console.log('注册一下 ClozeTestProvider');
-    
     clozeTestController.registerProvider(editorCtx.getClozeTestProvider())
   },
   {
