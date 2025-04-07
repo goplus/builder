@@ -98,7 +98,7 @@ export async function initMcpServer(force = false): Promise<Server> {
       
       // Execute registered tool implementation
       const result = await executeRegisteredTool(name, parameters)
-      
+    
       // Format response for display
       const response = JSON.stringify(result, null, 2)
       

@@ -29,7 +29,7 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
-function selectAsset(project: Project, asset: AssetModel | undefined) {
+export function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
   else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
   else if (asset instanceof Backdrop) {

@@ -178,3 +178,12 @@ export const listFilesToolDescription = createToolDescription(
   ListFilesArgsSchema,
   'filesystem'
 )
+
+export const GetDiagnosticsArgsSchema = z.object({})
+
+export const getDiagnosticsToolDescription = createToolDescription(
+  'get_diagnostics',
+  'Get the diagnostics of the current Go+ XBuilder project, including errors and warnings in the code.',
+  GetDiagnosticsArgsSchema,
+  'diagnostics'
+)

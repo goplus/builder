@@ -80,8 +80,10 @@ import {
   stopGameToolDescription,
   ListFilesArgsSchema,
   listFilesToolDescription,
+  GetDiagnosticsArgsSchema,
+  getDiagnosticsToolDescription
 } from '@/components/copilot/mcp/definitions'
-import { genSpriteFromCanvos, genBackdropFromCanvos } from '@/components/asset/index'
+import { genSpriteFromCanvos, genBackdropFromCanvos, selectAsset } from '@/components/asset/index'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
@@ -512,6 +514,7 @@ type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanv
 type RunGameOptions = z.infer<typeof RunGameArgsSchema>
 type StopGameOptions = z.infer<typeof StopGameArgsSchema>
 type ListFilesOptions = z.infer<typeof ListFilesArgsSchema>
+type DiagnosticsOptions = z.infer<typeof GetDiagnosticsArgsSchema>
 
 export class CodeEditor extends Disposable {
   private copilot: Copilot
@@ -549,7 +552,6 @@ export class CodeEditor extends Disposable {
         description: insertCodeToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = InsertCodeArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
@@ -566,7 +568,6 @@ export class CodeEditor extends Disposable {
         description: addSpriteFromCanvasToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = AddSpriteFromCanvasArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${addSpriteFromCanvasToolDescription.name}: ${result.error}`)
@@ -582,7 +583,6 @@ export class CodeEditor extends Disposable {
         description: addStageBackdropFromCanvasToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = AddStageBackdropFromCanvasArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${addStageBackdropFromCanvasToolDescription.name}: ${result.error}`)
@@ -598,7 +598,6 @@ export class CodeEditor extends Disposable {
         description: runGameToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = RunGameArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${runGameToolDescription.name}: ${result.error}`)
@@ -614,7 +613,6 @@ export class CodeEditor extends Disposable {
         description: stopGameToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = StopGameArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${stopGameToolDescription.name}: ${result.error}`)
@@ -630,7 +628,6 @@ export class CodeEditor extends Disposable {
         description: listFilesToolDescription,
         implementation: {
           validate: (args) => {
-            // 使用 zod 验证参数
             const result = ListFilesArgsSchema.safeParse(args)
             if (!result.success) {
               throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
@@ -638,16 +635,90 @@ export class CodeEditor extends Disposable {
             return result.data
           },
           execute: async (args: ListFilesOptions) => {
-            return this.listFiles(args)
+            return this.listFiles()
+          }
+        }
+      },
+      {
+        description: getDiagnosticsToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = GetDiagnosticsArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: DiagnosticsOptions) => {
+            return this.getDiagnostics()
           }
         }
       }
     ], 'code-editor')
   }
 
+  async getDiagnostics() {
+    try {
+      // 获取所有项目文件
+      const files = await this.listFiles()
+      
+      // 使用 Promise.all 并行处理所有文件的诊断
+      const diagnosticsPromises = files.map(async (file) => {
+        try {
+          const textDocument = this.getTextDocument({ uri: file.uri })
+          if (!textDocument) {
+            console.warn(`File not found: ${file.uri}`)
+            return []
+          }
+          
+          // 获取文件的诊断信息
+          const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
+            textDocument,
+            signal: new AbortController().signal
+          })
+          
+          // 将诊断信息格式化为所需结构
+          return diagnostics.map((diag) => ({
+            file: file.uri,
+            name: file.name,
+            line: diag.range.start.line,
+            column: diag.range.start.column,
+            message: diag.message
+          }))
+        } catch (error) {
+          console.error(`Error getting diagnostics for ${file.uri}:`, error)
+          return [{
+            file: file.uri,
+            name: file.name,
+            line: 0,
+            column: 0,
+            message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
+          }]
+        }
+      })
+      
+      // 等待所有诊断处理完成
+      const allDiagnostics = await Promise.all(diagnosticsPromises)
+      
+      // 合并所有文件的诊断结果
+      const messages = allDiagnostics.flat()
+      return {
+        success: true,
+        message: `Successfully get diagnostics`,
+        data: messages
+      }
+    } catch (error) {
+      console.error('Failed to get diagnostics:', error)
+      return {
+        success: false,
+        message: `Failed to get diagnostics: ${error instanceof Error ? error.message : String(error)}`
+      }
+    }
+  }
+
   // * - `file:///main.spx`
   // * - `file:///<spriteName>.spx`
-  async listFiles(args: ListFilesOptions) {
+  async listFiles() {
     const files = []
     files.push({
       name: 'main.spx',
@@ -707,6 +778,8 @@ export class CodeEditor extends Disposable {
   async addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
     const sprite = await genSpriteFromCanvos(args.spriteName, args.size, args.size, args.color)
     this.project.addSprite(sprite)
+    await sprite.autoFit()
+    selectAsset(this.project, sprite)
     this.project.saveToCloud()
     return {
       success: true,
@@ -717,6 +790,7 @@ export class CodeEditor extends Disposable {
   async addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
     const backdrop = await genBackdropFromCanvos(args.backdropName, 800, 600, args.color)
     this.project.stage.addBackdrop(backdrop)
+    selectAsset(this.project, backdrop)
     this.project.saveToCloud()
     return {
       success: true,
