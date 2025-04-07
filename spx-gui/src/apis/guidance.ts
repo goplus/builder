@@ -44,7 +44,7 @@ export type Step = {
   backdrops: string[] // 该步骤中需要被展示的背景的id列表
   snapshot: {
     startSnapshot: string // 初始快照
-    endSnapshot: string // 结束快照
+    endSnapshot?: string // 结束快照
   }
   coding?: {
     // coding任务独有的数据结构
@@ -107,7 +107,7 @@ export type CreateStoryLineInput = {
     title: LocaleMessage
     description: LocaleMessage
     tag: 'easy' | 'medium' | 'hard'
-    levels: string
+    levels: Level[]
 }
 
 export type UpdateStoryLineInput = {
@@ -117,7 +117,7 @@ export type UpdateStoryLineInput = {
     title: LocaleMessage
     description: LocaleMessage
     tag: 'easy' | 'medium' | 'hard'
-    levels: string
+    levels: Level[]
 }
 
 type Placement = {
@@ -467,11 +467,19 @@ export async function updateStoryLineStudy(input: UpdateStoryLineStudyInput): Pr
 }
 
 export async function createStoryLine(input: CreateStoryLineInput): Promise<StoryLine> {
-  return client.post(`/storyline`, input) as Promise<StoryLine>
+  let serializedLevels = ''
+  if (input.levels && Array.isArray(input.levels)) {
+    serializedLevels = JSON.stringify(input.levels)
+  }
+  return client.post(`/storyline`, {...input, levels: serializedLevels}) as Promise<StoryLine>
 }
 
 export async function updateStoryLine(input: UpdateStoryLineInput): Promise<StoryLine> {
-  return client.put(`/storyline/${encodeURIComponent(input.id)}`, input) as Promise<StoryLine>
+  let serializedLevels = ''
+  if (input.levels && Array.isArray(input.levels)) {
+    serializedLevels = JSON.stringify(input.levels)
+  }
+  return client.put(`/storyline/${encodeURIComponent(input.id)}`, {...input, levels: serializedLevels}) as Promise<StoryLine>
 }
 
 export async function deleteStoryLine(storyLineId: string): Promise<void> {

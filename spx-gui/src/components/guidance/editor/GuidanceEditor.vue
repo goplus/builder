@@ -80,7 +80,7 @@ const handleSave = useMessageHandle(
         name: storyLine.value.name,
         description: storyLine.value.description,
         tag: storyLine.value.tag,
-        levels: JSON.stringify(storyLine.value.levels),
+        levels: storyLine.value.levels,
       })
     } else {
       await createStoryLine({
@@ -89,7 +89,7 @@ const handleSave = useMessageHandle(
         name: storyLine.value.name,
         description: storyLine.value.description,
         tag: storyLine.value.tag,
-        levels: JSON.stringify(storyLine.value.levels),
+        levels: storyLine.value.levels,
       })
     }
   },
