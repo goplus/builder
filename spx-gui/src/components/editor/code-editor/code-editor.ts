@@ -81,7 +81,9 @@ import {
   ListFilesArgsSchema,
   listFilesToolDescription,
   GetDiagnosticsArgsSchema,
-  getDiagnosticsToolDescription
+  getDiagnosticsToolDescription,
+  GetFileCodeArgsSchema,
+  getFileCodeToolDescription
 } from '@/components/copilot/mcp/definitions'
 import { genSpriteFromCanvos, genBackdropFromCanvos, selectAsset } from '@/components/asset/index'
 
@@ -651,6 +653,27 @@ export class CodeEditor extends Disposable {
           },
           execute: async (args: DiagnosticsOptions) => {
             return this.getDiagnostics()
+          }
+        }
+      },
+      {
+        description: getFileCodeToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = GetFileCodeArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
+            const file = this.getTextDocument({ uri: args.file })
+            if (file == null) return null
+            return {
+              success: true,
+              message: `Successfully get code from ${args.file}`,
+              data: file.getValue()
+            }
           }
         }
       }

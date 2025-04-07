@@ -187,3 +187,13 @@ export const getDiagnosticsToolDescription = createToolDescription(
   GetDiagnosticsArgsSchema,
   'diagnostics'
 )
+
+export const GetFileCodeArgsSchema = z.object({
+  file: z.string().describe('The Spx file path to get the code from. This should be a valid file path. example: "file:///stage.spx"')
+})
+export const getFileCodeToolDescription = createToolDescription(
+  'get_file_code',
+  'Get the code from a specific Spx file in the current Go+ XBuilder project.',
+  GetFileCodeArgsSchema,
+  'code'
+)
