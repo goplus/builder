@@ -36,9 +36,10 @@ onUnmounted(() => {
 })
 
 // 渲染遮罩层和挖空
-watchEffect((onCleanUp) => {  
+watchEffect((onCleanUp) => {   
   const clozeAreas = props.controller.clozeAreas
   if (clozeAreas == null) return
+  
   const clozeDecorations: monaco.editor.IModelDeltaDecoration[] = []
 
   const editor = codeEditorCtx.ui.editor
@@ -126,6 +127,7 @@ watchEffect((onCleanUp) => {
   const listener = editor.onKeyDown((e: monaco.IKeyboardEvent) => {
     const position = editor.getPosition()
     if (!position) return
+    
     // 检查当前光标是否在填空区域内
     const currentArea = clozeAreas.find((area) => {
       const { start, end } = area.range
@@ -207,8 +209,16 @@ watchEffect((onCleanUp) => {
             endLineNumber: position.lineNumber,
             endColumn: position.column + 1
           })
+          if(e.browserEvent.key.length > 1){
+            e.preventDefault()
+            e.stopPropagation()
+            return
+          }
+          
+          // 如果当前位置的字符是空格，替换为当前字符
           if (currentChar === ' ') {
             e.preventDefault()
+            e.stopPropagation()
             editor.executeEdits('', [
               {
                 range: {
@@ -225,6 +235,32 @@ watchEffect((onCleanUp) => {
               lineNumber: position.lineNumber,
               column: position.column + 1
             })
+          }else{
+            // 当前位置的字符不是空格
+            const lastChar = model.getValueInRange({
+              startLineNumber: position.lineNumber,
+              startColumn: end.column - 1,
+              endLineNumber: position.lineNumber,
+              endColumn: end.column
+            })
+            // 如果当前填空区域最后一位不是空格，禁用键入行为，否则最后一个字符会超出填空区域
+            if (lastChar !== ' ') {
+              e.preventDefault()
+              e.stopPropagation()
+            }else{
+              // 键入行为正常运行，删除填空区域最后的空格
+              editor.executeEdits('', [
+                {
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: end.column - 1,
+                    endLineNumber: position.lineNumber,
+                    endColumn: end.column
+                  },
+                  text: ''
+                }
+              ])
+            }
           }
         }
       }

@@ -39,6 +39,7 @@ export function getPublishedContent(project: ProjectData) {
 
 export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
   const { owner, name, id, hidden } = metadata
+  
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
 

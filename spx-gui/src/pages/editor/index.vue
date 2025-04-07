@@ -15,7 +15,6 @@
           <ProjectEditor />
           <LevelPlayer
             v-if="guidanceMode === GuidanceMode.Guidance && storyLineInfo"
-            class="level-player"
             :story-line-info="storyLineInfo"
             :current-level-index="currentLevelIndex"
           />
@@ -93,7 +92,6 @@ async function handleGuidance() {
     guidanceMode.value = GuidanceMode.Guidance
     const storyLineId: string | null = getStringParam(router, 'storyLineId')
     if (storyLineId != null) {
-      storyLineInfo.value = storyLineJson
       const data: StoryLine = await getStoryLine(storyLineId)
       if (data) {
         storyLineInfo.value = data
@@ -337,9 +335,5 @@ function openProject(projectName: string) {
   display: flex;
   gap: var(--ui-gap-middle);
   padding: 16px;
-}
-
-.level-player {
-  z-index: 10;
 }
 </style>
