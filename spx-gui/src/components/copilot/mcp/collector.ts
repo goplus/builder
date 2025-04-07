@@ -40,7 +40,6 @@ export class ToolResultCollector {
   private tasks = reactive<Record<string, ToolTask>>({})
   private executionQueue = ref<string[]>([])
   private isProcessing = ref(false)
-  private resultCallback: ((results: ToolResult[]) => void) | null = null
   
   // Collection of execution results
   private results: ToolResult[] = []

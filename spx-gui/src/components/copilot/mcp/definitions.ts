@@ -161,3 +161,20 @@ export const insertCodeToolDescription = createToolDescription(
   InsertCodeArgsSchema,
   'code'
 )
+
+/**
+ * Schema for validating file listing parameters
+ * Defines how to list files in a project or directory
+ */
+export const ListFilesArgsSchema = z.object({})
+
+/**
+ * Tool description for listing files in a project
+ * Allows retrieving file structure information from the project
+ */
+export const listFilesToolDescription = createToolDescription(
+  'list_files',
+  'List files in the current Go+ XBuilder project, optionally filtering by path or pattern.',
+  ListFilesArgsSchema,
+  'filesystem'
+)

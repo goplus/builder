@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { MCPMarkdownString } from '@/components/editor/code-editor/common'
-import MarkdownView from '@/components/editor/code-editor/ui/markdown/MarkdownView.vue'
+import MarkdownView from '@/components/copilot/markdown/MarkdownView.vue'
 import  { useUserStore} from '@/stores/user'
 
 const props = defineProps<{

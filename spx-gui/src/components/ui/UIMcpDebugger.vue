@@ -185,7 +185,7 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const tools = registeredTools.value
+const tools = computed(() => registeredTools.value)
 // State management
 const selectedTool = ref('')
 const paramValues = ref<Record<string, any>>({})
@@ -233,7 +233,7 @@ function toggleSection(index: number, section: 'params' | 'response') {
 const toolParams = computed(() => {
   if (!selectedTool.value) return []
 
-  const tool = tools.find((t) => t.name === selectedTool.value)
+  const tool = tools.value.find((t) => t.name === selectedTool.value)
   if (!tool) return []
 
   const parameters = tool.inputSchema?.properties || {}

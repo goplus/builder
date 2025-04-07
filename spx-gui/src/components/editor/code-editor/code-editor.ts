@@ -78,6 +78,8 @@ import {
   runGameToolDescription,
   StopGameArgsSchema,
   stopGameToolDescription,
+  ListFilesArgsSchema,
+  listFilesToolDescription,
 } from '@/components/copilot/mcp/definitions'
 import { genSpriteFromCanvos, genBackdropFromCanvos } from '@/components/asset/index'
 
@@ -509,6 +511,7 @@ type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
 type RunGameOptions = z.infer<typeof RunGameArgsSchema>
 type StopGameOptions = z.infer<typeof StopGameArgsSchema>
+type ListFilesOptions = z.infer<typeof ListFilesArgsSchema>
 
 export class CodeEditor extends Disposable {
   private copilot: Copilot
@@ -622,9 +625,47 @@ export class CodeEditor extends Disposable {
             return this.stopGame(args)
           }
         }
+      },
+      {
+        description: listFilesToolDescription,
+        implementation: {
+          validate: (args) => {
+            // 使用 zod 验证参数
+            const result = ListFilesArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: ListFilesOptions) => {
+            return this.listFiles(args)
+          }
+        }
       }
     ], 'code-editor')
   }
+
+  // * - `file:///main.spx`
+  // * - `file:///<spriteName>.spx`
+  async listFiles(args: ListFilesOptions) {
+    const files = []
+    files.push({
+      name: 'main.spx',
+      uri: 'file:///main.spx'
+    })
+    
+    // Add sprite files
+    const sprites = this.project.sprites
+    for (const sprite of sprites) {
+      files.push({
+        name: `${sprite.name}.spx`,
+        uri: `file:///${sprite.name}.spx`
+      })
+    }
+
+    return files
+  }
+
 
   async insertCode(args: InsertCodeOptions) {
     // 解构参数

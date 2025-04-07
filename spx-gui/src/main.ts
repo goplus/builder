@@ -15,7 +15,6 @@ import { initRouter } from './router'
 import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
-import { initBasicTools } from './components/copilot/mcp/basic'
 import { initDeveloperMode } from './utils/developer-mode'
 
 dayjs.extend(localizedFormat)
@@ -35,7 +34,6 @@ async function initApp() {
   initApiClient()
   initRouter(app)
   initI18n(app)
-  initBasicTools()
   initDeveloperMode()
 
   app.use(VueKonva as any, {

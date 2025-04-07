@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
 import CodeBlock from './CodeBlock.vue'
@@ -23,6 +23,13 @@ const taskInfo = computed(() => toolResultCollector.getOrCreateTask({
   server: props.server,
   args: props.arguments
 }))
+
+const taskStatus = computed(() => taskInfo.value.status)
+
+// 使用 watch 来记录状态变化，以便调试
+watch(taskStatus, (newStatus, oldStatus) => {
+  console.log(`[${props.id}] Status changed: ${oldStatus} -> ${newStatus}`)
+}, { immediate: true })
 
 // UI state
 const isExpanded = ref(false)
@@ -50,16 +57,16 @@ const formattedResult = computed(() => {
 // CSS classes based on execution status
 const statusClass = computed(() => {
   return {
-    'is-pending': taskInfo.value.status === 'pending',
-    'is-running': taskInfo.value.status === 'running',
-    'is-success': taskInfo.value.status === 'success',
-    'is-error': taskInfo.value.status === 'error'
+    'is-pending': taskStatus.value === 'pending',
+    'is-running': taskStatus.value === 'running',
+    'is-success': taskStatus.value === 'success',
+    'is-error': taskStatus.value === 'error'
   }
 })
 
 // Human-readable status text
 const statusText = computed(() => {
-  switch (taskInfo.value.status) {
+  switch (taskStatus.value) {
     case 'pending':
       return t({ en: 'Ready to execute', zh: '准备执行' })
     case 'running':
@@ -78,7 +85,7 @@ const statusText = computed(() => {
  * Delegates execution responsibility to the toolResultCollector
  */
 async function executeTool() {
-  if (taskInfo.value.status === 'running') return
+  if (taskStatus.value === 'running') return
   
   // Delegate to the tool collector for execution
   toolResultCollector.executeTask(taskInfo.value.id)
@@ -96,13 +103,13 @@ function toggleExpand() {
  * @returns {boolean} True if tool is in running state
  */
 function statusRunning() {
-  return taskInfo.value.status === 'running'
+  return taskStatus.value === 'running'
 }
 
 // Auto-execute tool when component mounts
 onMounted(() => {
   // Only execute if pending and not previously failed
-  if (taskInfo.value.status === 'pending') {
+  if (taskStatus.value === 'pending') {
     try {
       // Validate arguments JSON
       JSON.parse(props.arguments)
@@ -120,7 +127,7 @@ onMounted(() => {
     <div class="tool-header" @click="toggleExpand">
       <div class="tool-info">
         <span class="tool-icon custom-icon">{{ isExpanded ? '▼' : '▶' }}</span>
-        <span class="tool-name">{{ tool }}</span>
+        <span class="tool-name">{{ tool }} | {{ id }}</span>
       </div>
 
       <div class="tool-actions">

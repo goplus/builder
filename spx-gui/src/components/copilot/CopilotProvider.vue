@@ -1,24 +1,34 @@
 <script lang="ts">
-import type { InjectionKey, Ref, ComputedRef } from 'vue'
+import type { InjectionKey } from 'vue'
 
+/**
+ * Copilot context interface
+ * Defines the shared state and controls for the Copilot system
+ */
 export type CopilotCtx = {
-  controller: Ref<CopilotController | null>
-  copilot: Ref<ICopilot | null>
-  initialized: Ref<boolean>
-  visible: Ref<boolean>
+  controller: CopilotController | null
+  copilot: ICopilot | null
+  visible: boolean
   controls: {
     open: () => Promise<boolean>
     close: () => void
     toggle: () => Promise<boolean>
   }
-  error: Ref<Error | null>
 }
 
-const copilotCtxInjectionKey: InjectionKey<ComputedRef<CopilotCtx>> = Symbol('copilot-ctx')
+/**
+ * Injection key for Copilot context
+ */
+const copilotCtxInjectionKey: InjectionKey<CopilotCtx> = Symbol('copilot-ctx')
+
+/**
+ * Hook to access Copilot context
+ * @throws Error if used outside CopilotProvider
+ */
 export function useCopilotCtx() {
   const ctx = inject(copilotCtxInjectionKey)
   if (ctx == null) throw new Error('useCopilotCtx should be called inside of CopilotProvider')
-  return ctx.value
+  return ctx
 }
 </script>
 
@@ -29,28 +39,29 @@ export function useCopilotCtx() {
  * Provides Copilot context and services to all child components.
  * Handles initialization of Copilot, MCP connections, and UI rendering.
  */
-import { watch, inject, ref, provide, readonly, onMounted, onBeforeUnmount, computed } from 'vue'
+import { inject, ref, provide, onBeforeUnmount, computed } from 'vue'
+import { computedShallowReactive } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { Copilot } from './copilot'
 import { CopilotController, type ICopilot } from './index'
 import { initMcpClient } from './mcp/client'
 import { initMcpServer } from './mcp/server'
 import CopilotUI from './CopilotUI.vue'
+import { z } from 'zod'
+import { useUserStore } from '@/stores/user'
+import { registerTools } from './mcp/registry'
+import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
+import { getProject, Visibility } from '@/apis/project'
+import { useRouter } from 'vue-router'
+import { getProjectEditorRoute } from '@/router'
+import { Project } from '@/models/project'
+import { genAssetFromCanvos } from '@/components/asset'
 
-// Component state
-const controller = ref<CopilotController | null>(null)
-const copilot = ref<ICopilot | null>(null)
-const initialized = ref(false)
-const initializing = ref(false)
-const error = ref<Error | null>(null)
+// Component state using refs
 const visible = ref(false)
-
-// Get i18n in component context
-const i18n = useI18n()
-
+const router = useRouter()
 /**
  * Initialize MCP client and server connections in background
- * This doesn't block the UI or throw errors
  */
 async function initMcpConnections() {
   try {
@@ -65,63 +76,84 @@ async function initMcpConnections() {
   }
 }
 
-/**
- * Internal function that ensures Copilot is initialized
- * Returns true if initialization was successful, false otherwise
- */
-async function ensureInitialized(): Promise<boolean> {
-  // Already initialized, nothing to do
-  if (initialized.value) {
-    return true
-  }
-  
-  // Already initializing, wait for it to complete
-  if (initializing.value) {
-    // Wait until initialization is complete
-    return new Promise((resolve) => {
-      const unwatch = watch(initialized, (isInitialized) => {
-        if (isInitialized) {
-          unwatch()
-          resolve(true)
+
+type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
+
+const initBasicTools = async () => {
+    return registerTools([
+      {
+        description: createProjectToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = CreateProjectArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${createProjectToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: CreateProjectOptions) => {            
+            return createProject(args)
+          }
         }
-      })
-      
-      // Also watch for errors
-      const errorUnwatch = watch(error, (err) => {
-        if (err) {
-          errorUnwatch()
-          unwatch()
-          resolve(false)
-        }
-      })
-    })
+      }
+    ], 'basic-tools')
   }
-  
-  // Start initialization
-  initializing.value = true
-  error.value = null
-  
+
+async function createProject(options: CreateProjectOptions) {
+  const projectName = options.projectName
+
+  // Check if user is signed in
+  const userStore = useUserStore()
+  const signedInUser = computed(() => userStore.getSignedInUser())
+  if (signedInUser.value == null) {
+    return {
+      success: false,
+      message: 'Please sign in to create a project'
+    }
+  }
+
+  const username = signedInUser.value.name
+
   try {
-    // Create instances
-    const copilotInstance = new Copilot(i18n)
-    copilot.value = copilotInstance
+    // Check if project already exists
+    const project = await getProject(username, options.projectName)
+    if (project != null) {
+      return {
+        success: false,
+        message: `Project "${projectName}" already exists`
+      }
+    }
+  } catch (e) {
+    // Handle error checking project existence
+    // return {
+    //   success: false,
+    //   message: `Failed to check if project exists: ${e instanceof Error ? e.message : String(e)}`
+    // }
+  }
+
+  const project = new Project(username, projectName)
+  project.setVisibility(Visibility.Private)
+
+  try {
+    const thumbnail = await genAssetFromCanvos("stage.png",800, 600, '#000000')
+    project.setThumbnail(thumbnail)
+    await project.saveToCloud()
+
+    const projectRoute = getProjectEditorRoute(projectName)
     
-    const controllerInstance = new CopilotController(copilotInstance)
-    controller.value = controllerInstance
-    controllerInstance.init()
-    
-    // Initialize MCP connections in background
-    initMcpConnections()
-    
-    initialized.value = true
-    return true
-  } catch (err) {
-    const errorObj = err instanceof Error ? err : new Error('Failed to initialize Copilot')
-    error.value = errorObj
-    console.error('Copilot initialization error:', err)
-    return false
-  } finally {
-    initializing.value = false
+    router.push(projectRoute)
+    return {
+      success: true,
+      message: `Project "${projectName}" created successfully`
+    }
+  } catch (error) {
+    // Handle project creation error
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    return {
+      success: false,
+      message: `Failed to create project: ${errorMessage}`
+    }
   }
 }
 
@@ -133,12 +165,6 @@ const controls = {
    * Open the chat UI, ensuring Copilot is initialized first
    */
   open: async (): Promise<boolean> => {
-    const isReady = await ensureInitialized()
-    if (!isReady) {
-      console.warn('Cannot open Copilot UI: initialization failed')
-      return false
-    }
-    
     visible.value = true
     return true
   },
@@ -164,6 +190,18 @@ const controls = {
   }
 }
 
+// Get i18n in component context
+const i18n = useI18n()
+const copilot = new Copilot(i18n)
+const copilotController = new CopilotController(copilot)
+initMcpConnections()
+  .then(() => {
+    initBasicTools()
+    copilotController.init()
+  })
+  .catch((err) => {
+    console.error('Error initializing MCP connections:', err)
+  })
 /**
  * Handle UI close event from CopilotUI
  */
@@ -175,15 +213,6 @@ function handleCloseUI() {
  * Clean up resources when component is destroyed
  */
 onBeforeUnmount(() => {
-  // Dispose controller
-  if (controller.value) {
-    controller.value.dispose()
-    controller.value = null
-  }
-  
-  // Reset state
-  copilot.value = null
-  initialized.value = false
   visible.value = false
 })
 
@@ -192,35 +221,24 @@ onBeforeUnmount(() => {
  * Only true when everything is initialized and visible is true
  */
 const shouldShowCopilotUI = computed(() => {
-  return initialized.value && controller.value !== null && visible.value
+  return visible.value
 })
 
 /**
- * Create the consolidated context object
+ * Create the consolidated context object using computedShallowReactive
+ * This is similar to how CodeEditorUI creates its context
  */
- const copilotCtx = computed(() => {
-  return {
-    controller: readonly(controller),
-    copilot: readonly(copilot),
-    initialized: readonly(initialized),
-    visible: readonly(visible),
-    controls,
-    error: readonly(error)
-  }
-})
+const copilotCtx = computedShallowReactive<CopilotCtx>(() => ({
+  controller: copilotController,
+  copilot: copilot,
+  visible: visible.value,
+  controls
+}))
 
 /**
  * Provide the consolidated context to descendants
  */
- provide(copilotCtxInjectionKey, copilotCtx)
-
-/**
- * Auto-initialize on mount
- */
-onMounted(() => {
-  // Start initialization but don't wait for it
-  ensureInitialized()
-})
+provide(copilotCtxInjectionKey, copilotCtx)
 
 /**
  * Expose API to parent components
@@ -238,7 +256,7 @@ defineExpose({
     <!-- Render CopilotUI directly when needed -->
     <aside v-if="shouldShowCopilotUI" class="copilot-chat-container">
       <CopilotUI
-        :controller="controller.value"
+        :controller="copilotController"
         class="copilot-ui"
         @close="handleCloseUI"
       />

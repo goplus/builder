@@ -66,12 +66,14 @@ type InternalChat = {
  * Manages conversation state and tool result handling
  */
 export class CopilotController extends Disposable {
+  private copilot: ICopilot
   /**
    * Creates a new controller with the specified Copilot implementation
    * @param copilot The implementation of ICopilot to use
    */
-  constructor(private copilot: ICopilot) {
+  constructor(copilot: ICopilot) {
     super()
+    this.copilot = copilot
   }
 
   /**
@@ -134,6 +136,8 @@ export class CopilotController extends Disposable {
       this.currentChatRef.value.ctrl.abort()
       this.currentChatRef.value = null
     }
+
+    toolResultCollector.clearAllTasks()
   }
 
   /**
@@ -192,7 +196,6 @@ export class CopilotController extends Disposable {
     } finally {
       const result = await toolResultCollector.processQueue()
       this.handleToolResults(result)
-      toolResultCollector.clearAllTasks()
     }
   }
 
@@ -230,6 +233,8 @@ export class CopilotController extends Disposable {
         // Update the current round's answer as chunks arrive
         currentRound.answer = makeMCPMarkdownString(accumulatedText)
       }
+
+      console.log('Copilot answer:', accumulatedText)
       currentRound.state = RoundState.Completed
     } catch (e) {
       if (e instanceof Cancelled) {
