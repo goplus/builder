@@ -113,6 +113,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
   transition: all 0.2s;
   box-sizing: border-box;
+  z-index: 9999;
 }
 
 .current-path {
