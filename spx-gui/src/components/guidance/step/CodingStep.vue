@@ -451,9 +451,9 @@ function handleRetryBtnClick() {
 const clozeTestProvider = new ClozeTestProvider()
 
 onMounted(() => {
-  editorCtx.setClozeTestVisible(true)
-  editorCtx.setClozeTestProvider(clozeTestProvider)
   updateClozeAreas()
+  editorCtx.setClozeTestProvider(clozeTestProvider)
+  editorCtx.setClozeTestVisible(true)
   if (props.step.coding && props.step.snapshot.endSnapshot) {
     answer.value = getAnswerFromEndSnapshot(
       props.step.coding.path,
