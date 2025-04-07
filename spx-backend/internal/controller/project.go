@@ -33,6 +33,7 @@ type ProjectDTO struct {
 	LikeCount     int64                `json:"likeCount"`
 	ReleaseCount  int64                `json:"releaseCount"`
 	RemixCount    int64                `json:"remixCount"`
+	Hidden        int8                 `json:"hidden"`
 }
 
 // toProjectDTO converts the model project to its DTO.
@@ -67,6 +68,7 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 		LikeCount:     mProject.LikeCount,
 		ReleaseCount:  mProject.ReleaseCount,
 		RemixCount:    mProject.RemixCount,
+		Hidden:        mProject.Hidden,
 	}
 }
 
