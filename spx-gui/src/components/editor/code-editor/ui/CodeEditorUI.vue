@@ -124,22 +124,10 @@ const uiRef = computed(() => {
     codeEditorCtx.getMonaco(),
     codeEditorCtx.getTextDocument,
     rename,
-    renameResource
+    renameResource,
+    editorCtx.getClozeTestProvider()
   )
 })
-
-const clozeTestController = new ClozeTestController(uiRef.value)
-clozeTestController.init()
-watch(
-  () => editorCtx.getClozeTestProvider(),
-  () => {
-    clozeTestController.registerProvider(editorCtx.getClozeTestProvider())
-  },
-  {
-    immediate: true
-  }
-)
-
 
 const initialFontSize = 12
 const fontSize = localStorageRef('spx-gui-code-font-size', initialFontSize)
@@ -288,7 +276,7 @@ function zoomReset() {
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
-    <ClozeTestUI v-if="editorCtx.getClozeTestVisible()" :controller="clozeTestController" />
+    <ClozeTestUI v-if="editorCtx.getClozeTestVisible()" :controller="uiRef.clozeTestController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

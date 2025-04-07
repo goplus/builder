@@ -45,6 +45,8 @@ import {
   type ChatTopicReview
 } from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
+import { ClozeTestController } from './cloze-test'
+import type { ClozeTestProvider } from '@/components/guidance/step/CodingStep.vue'
 
 export * from './hover'
 export * from './completion'
@@ -180,7 +182,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     public monaco: Monaco,
     private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
     private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>,
-    private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
+    private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>,
+    private clozeTestProvider: ClozeTestProvider | null
   ) {
     super()
   }
@@ -193,6 +196,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
+  clozeTestController = new ClozeTestController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -562,9 +566,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.contextMenuController.init()
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
+    this.clozeTestController.init()
+    this.clozeTestController.registerProvider(this.clozeTestProvider)
   }
 
   dispose() {
+    this.clozeTestController.dispose()
     this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()
     this.contextMenuController.dispose()
