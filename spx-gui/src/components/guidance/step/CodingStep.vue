@@ -170,7 +170,6 @@ import { checkCode } from '@/apis/guidance'
 import { type ClozeArea, ClozeAreaType } from '@/components/editor/code-editor/ui/cloze-test'
 import Emitter from '@/utils/emitter'
 import type { IClozeTestProvider, ClozeTestContext } from '@/components/editor/code-editor/ui/cloze-test'
-import { log } from 'console'
 
 const editorCtx = useEditorCtx()
 
@@ -448,7 +447,9 @@ function handleNextBtnClick() {
 function handleRetryBtnClick() {
   handleCheckFloatingBtnClick()
 }
+
 const clozeTestProvider = new ClozeTestProvider()
+
 onMounted(() => {
   updateClozeAreas()
   editorCtx.setClozeTestProvider(clozeTestProvider)
@@ -601,7 +602,6 @@ function updateClozeAreas() {
       props.step.snapshot.endSnapshot,
       props.step.coding.codeMasks
     )
-    
     clozeTestProvider.setClozeAreas(clozeAreas)
   }
 }

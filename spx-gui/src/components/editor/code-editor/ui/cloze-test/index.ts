@@ -43,7 +43,7 @@ export class ClozeTestController extends Disposable {
   }
 
   private clozeAreasMgr = new TaskManager(async (signal) => {
-    const provider = this.providerRef.value   
+    const provider = this.providerRef.value
     if (provider == null) throw new Error('No cloze test provider registered')
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) throw new Error('No active text document')
@@ -59,9 +59,9 @@ export class ClozeTestController extends Disposable {
     this.addDisposer(
       watch(
         this.providerRef,
-        async (provider, _, onCleanup) => {        
-          if (provider == null) return 
-          await refreshClozeAreas()
+        (provider, _, onCleanup) => {  
+          if (provider == null) return
+          refreshClozeAreas()
           onCleanup(provider.on('didChangeClozeAreas', refreshClozeAreas))
         },
         { immediate: true }

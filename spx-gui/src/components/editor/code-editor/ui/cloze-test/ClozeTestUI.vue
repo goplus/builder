@@ -36,10 +36,9 @@ onUnmounted(() => {
 })
 
 // 渲染遮罩层和挖空
-watchEffect((onCleanUp) => {   
+watchEffect((onCleanUp) => {
   const clozeAreas = props.controller.clozeAreas
   if (clozeAreas == null) return
-  
   const clozeDecorations: monaco.editor.IModelDeltaDecoration[] = []
 
   const editor = codeEditorCtx.ui.editor
@@ -127,7 +126,6 @@ watchEffect((onCleanUp) => {
   const listener = editor.onKeyDown((e: monaco.IKeyboardEvent) => {
     const position = editor.getPosition()
     if (!position) return
-    
     // 检查当前光标是否在填空区域内
     const currentArea = clozeAreas.find((area) => {
       const { start, end } = area.range
