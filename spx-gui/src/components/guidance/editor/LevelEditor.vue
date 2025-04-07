@@ -335,7 +335,8 @@ button {
 .editor-info {
   flex: 1;
   display: flex;
-  width: 1200px;
+  // width: 1200px;
+  width: 60%;
   flex-direction: column;
   gap: 16px;
   position: absolute;
