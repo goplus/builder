@@ -17,7 +17,6 @@ import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initBasicTools } from './components/copilot/mcp/basic'
 import { initDeveloperMode } from './utils/developer-mode'
-import { createCopilot } from './components/copilot/init'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -39,7 +38,6 @@ async function initApp() {
   initBasicTools()
   initDeveloperMode()
 
-  app.use(createCopilot)
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })

@@ -5,7 +5,7 @@ import {
   type MCPMarkdownString,
   makeMCPMarkdownString,
 } from '@/components/editor/code-editor/common'
-export { default as CopilotChat } from './CopilotChat.vue'
+export { default as CopilotProvider } from './CopilotProvider.vue'
 import { toolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
 
 /** Message role identifiers */

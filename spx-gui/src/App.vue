@@ -2,20 +2,21 @@
   <UIConfigProvider :config="config">
     <UIMessageProvider>
       <UIModalProvider>
-        <RouterView />
+        <CopilotProvider>
+          <RouterView />
+        </CopilotProvider>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
 
-  <!--  MCP Debugger  -->
-  <CopilotChat />
+  <!--  MCP Debugger  -->  
   <UIMcpDebugger :is-visible="isMcpDebuggerVisible" @close="closeMcpDebugger" />
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, UIMcpDebugger, type Config } from '@/components/ui'
-import CopilotChat from '@/components/copilot/CopilotChat.vue'
+import CopilotProvider from '@/components/copilot/CopilotProvider.vue'
 import { useI18n } from './utils/i18n'
 import { useMcpDebuggerStore } from '@/utils/utils'
 

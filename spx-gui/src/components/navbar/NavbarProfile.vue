@@ -49,6 +49,7 @@
       <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem @click="handleUseMcpDebuggerUtils">
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
+        </UIMenuItem>
         <UIMenuItem @click="handleAskCopilotEdit">
             {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
         </UIMenuItem>
@@ -73,19 +74,19 @@ import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useDeveloperMode } from '@/utils/developer-mode'
-import { useCopilotChat } from '@/components/copilot/init'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const { isDeveloperMode } = useDeveloperMode()
 const router = useRouter()
-const { toggle: toggleCopilotChat } = useCopilotChat()
+const { controls } = useCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
 
 const handleAskCopilotEdit = useMessageHandle(
   async () => {
-    const isVisible = toggleCopilotChat()
+    const isVisible = controls.toggle()
     return isVisible
   },
   undefined,

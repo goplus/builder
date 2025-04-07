@@ -31,12 +31,13 @@ export const initBasicTools = async () => {
     ], 'basic-tools')
   }
 
-const userStore = useUserStore()
+
 
 async function createProject(options: CreateProjectOptions) {
   const projectName = options.projectName
 
   // Check if user is signed in
+  const userStore = useUserStore()
   const signedInUser = computed(() => userStore.getSignedInUser())
   if (signedInUser.value == null) {
     return {

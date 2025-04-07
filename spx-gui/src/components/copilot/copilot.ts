@@ -92,6 +92,7 @@ export class Copilot extends Disposable implements ICopilot {
     })
 
     const tools = convertToApiTools(registeredTools.value)
+    console.log("tools", tools)
     // Use generateStreamMessage directly
     const stream = await generateStreamMessage(messages, {
         signal: options?.signal,
