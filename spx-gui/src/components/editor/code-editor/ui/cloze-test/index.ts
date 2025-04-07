@@ -59,7 +59,7 @@ export class ClozeTestController extends Disposable {
     this.addDisposer(
       watch(
         this.providerRef,
-        (provider, _, onCleanup) => {
+        (provider, _, onCleanup) => {  
           if (provider == null) return
           refreshClozeAreas()
           onCleanup(provider.on('didChangeClozeAreas', refreshClozeAreas))

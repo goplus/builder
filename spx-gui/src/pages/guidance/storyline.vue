@@ -9,7 +9,7 @@
           v-for="(level, index) in storyLine?.levels"
           :key="index"
           class="level"
-          :class="{ locked: !userStore.isSignedIn() || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0) }"
+          :class="{ locked: !userStore.isSignedIn() || !storyLineStudy || index > (storyLineStudy?.lastFinishedLevelIndex ?? 0) }"
           :style="{ left: `${level.placement.x}%`, top: `${level.placement.y}%` }"
           @click="handleLevelClick(index)"
         >

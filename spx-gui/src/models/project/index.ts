@@ -94,7 +94,7 @@ export class Project extends Disposable {
   remixedFrom?: string | null
   name?: string
   version = 0
-  hidden = 0
+  hidden?: number
   visibility?: Visibility
   description?: string
   instructions?: string
