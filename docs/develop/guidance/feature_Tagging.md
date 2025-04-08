@@ -49,3 +49,21 @@ const highlightElementStyle = () => {
 }
 </script>
 ```
+
+## 在 StepEditor 中使用（消费方）
+
+```vue
+<template>
+  <!-- 省略其他代码 -->
+  <TagSelector v-if="isShowTagSelector" @selected="handleSelected" />
+</template>
+
+<script lang="ts" setup>
+import { ref } from "vue";
+
+const isShowTagSelector = ref(false);
+const handleSelected = (path: string) => {
+  // 处理选中事件
+};
+</script>
+```
