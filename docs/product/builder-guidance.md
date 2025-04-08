@@ -1,133 +1,104 @@
-# Builder Wizard
+# Builder Wizard 
 
-The Builder Wizard is designed to introduce new users with no programming background to the Builder product and the Go+ language by guiding them through the creation of a fun, fully functional, and story-driven game project. Using various interactive and step-by-step guidance methods, users will be able to quickly get started. Upon completing the wizard, users will have a mini-game that they can further customize and publish to the community.
+the Builder Wizard uses a variety of interactive, follow-up guides to guide new users with zero programming Foundation to quickly get started with Builder products and Go + languages by designing an interesting, functional and storytelling game project. After the user completes this wizard, you can get a small game, can play freely on it and publish to the community. 
 
-The wizard serves as an entry-level course, teaching basic Go+ syntax and how to use Go+ Builder effectively. The design of the wizard is highly extensible, meaning that future project-based and task-based courses can adopt this structure. Additional storylines can be introduced to enrich the Builder course system. Furthermore, we plan to develop an efficiency tool to assist course designers in creating high-quality courses for Builder.
+Wizard is an entry-level course that teaches Go + basic grammar and a quick get started with Go + Builder. In fact, the product design of the wizard part has high scalability. This design can be adopted for all kinds of project-based and task-based courses in the future, that is, multiple story lines can be introduced to enrich the Builder's curriculum system in the future. We will also develop an efficiency tool for developing Builder courses in the future to facilitate curriculum designers to create excellent courses. 
 
-Go+ Builder enables game development through text-based programming, which differs significantly from block-based programming. Throughout the wizard, most tasks require users to write Go+ code. To reduce the cognitive burden on beginners, the Builder Wizard primarily utilizes video tutorials and fill-in-the-blank coding exercises as guidance. Additionally, UI tutorials will help users get familiar with the Builder IDE.
+Go + Builder uses text programming to develop games, which is very different from building block programming. In the whole wizard process, most of the tasks that users need to complete are to write Go + code. At the same time, in order to reduce the mental burden of users with zero programming Foundation, Builder Wizard takes watching video + code cloze as the main guiding method. In addition, there will also be a UI guide to help users get started with the Builder's IDE. 
 
-## Basic Concepts
+# Basic Concepts 
 
-### Storyline
+## Story Line 
 
-The Builder Wizard introduces a storyline concept, using a narrative (e.g., "Niu Xiaoqi Rescues the Princess") as the main thread throughout the wizard. Upon completion, users will have created a mini-game with an engaging storyline.
+the Builder Wizard introduces the concept of story line. A story plot is used as the main line (Niu Xiaqi saves the princess) throughout the Wizard. After completing the Wizard, users can get a small game with story line. 
 
-The storyline is divided into multiple levels, displayed as a level list on the UI using a map format (e.g., a castle, a warrior's path, etc.):
+The whole story line is divided into multiple levels, which are embodied as a list of levels on UI and displayed in the form of maps (Castle, warrior cow small seven road map, etc.): 
 
-- Levels have a strict sequential order; completing a level unlocks the next one.
-- Completing specific levels grants corresponding achievements. These achievements are specific to the wizard but remain tied to the user, such as "Flower Guardian Niu Xiaoqi," "Hero Niu Xiaoqi," and "Dragon Slayer Niu Xiaoqi."
-- Completing specific levels grants exclusive assets (linked with the asset library). During the wizard, users will add various assets (e.g., sprites, sounds, scenes). High-quality assets required for the game are provided and unlocked upon level completion, allowing users to use them in their own Builder projects.
-- A level in the map should contain the following information:
-  - **title**: Level title
-  - **image**: Level cover image
++ there is a strict sequence between the levels. Only after the previous level is completed can the next level be unlocked.
++ Complete the designated level to obtain the corresponding achievement: the achievement here is not the achievement in the sense of the global user, but the achievement under this wizard, but it still needs to be bound with the user, such as "flower protector Niu Xiaoqi", "Hero Niu Xiaoqi", "Dragon Slayer soldier Niu Xiaoqi", etc. 
++ Complete the specified checkpoint and obtain the specified limited materials (linked with the material Library): During the process of completing the Wizard, the user will add various materials (Wizard materials, sound materials, scene materials, etc.). The exquisite materials needed are provided by us. After the user completes a certain checkpoint, the materials used by the checkpoint will be sent to the user free of charge, and the user can use them in his own material library in the future, add it to your own Builder project. 
 
-A new project (let's call it Project A) is created when the user starts the first level of a storyline for the first time. Each storyline corresponds to a separate Project A, with its name and description constructed from the storyline's information. Users will always work within Project A when accessing levels of the same storyline.
+When A user enters A story line for the first time, he or she creates A Project under the story line (assuming it is called A, and basic information is provided by default). Different story lines are independent. A story line corresponds to an A, and basic information such as Name and Description of the is constructed using the information corresponding to the story line. The Project opened by the user after entering the level (including the completed level and the uncompleted level) is A. 
 
-A new project (Project B) is created when the user completes the final level of the storyline. Project B contains the full game from the storyline, allowing users to modify and expand it. A storyline corresponds to one Project B, and users can replay the final level multiple times, but Project B is only created on the first completion.
+When the user completes the last level, the user can choose to create a Project (suppose it is called B),B will contain the complete Project content of the entire story line, and the user can freely play on B later. You can complete the same story line multiple times (in fact, you can complete the last level of a story line multiple times). After completing the last level of the story line, you can name your own Project and choose whether to create Project B.
 
-Project A is stored in the cloud but is not shown in the user's project list. However, Project B is a normal project displayed in the user's list. This distinction requires additional metadata to mark whether a project is "normal" (visible in the user's project list) or "special" (hidden from the list).
+The Project A constructed when the user enters A story line for the first time is saved to the cloud. This A is not an ordinary Project under the user account. The difference from ordinary Project is that A is not displayed in the user's Project list, but B is an ordinary Project under the user account (that is, additional information needs to be introduced into the existing Project to mark whether it is "ordinary". "Normal" is displayed in the user's project list, and "Special" is not displayed in the user's project list). 
 
-## Levels
+## Level 
 
-Levels represent the concrete implementation of the storyline, acting as independent operational tasks. They have a strict sequential logic to maintain the storyline's coherence and ensure a progressive learning curve in programming concepts.
+the level is the specific display form of the story line and is an independent operation task in the story line. There is a strong logical sequence between each level (to ensure the coherence of the story line and the gradual progress of programming knowledge, from shallow to deep). 
 
-When users enter a level, their corresponding Project A is opened (created upon entering the first level). All operations, such as writing code and adding assets, are automatically saved to Project A in the cloud. A pop-up will introduce the level, listing the tasks to be completed. After clicking "Start," users proceed step-by-step through the tasks by watching tutorial videos and completing steps:
+The user clicks to enter A level to open the user's Project A below the story line (all the user's operations (writing code and adding material) in this level will be automatically saved to cloud Project A), and then the level introduction of this level will pop up to introduce the tasks to be completed (the titles of each node task of this level will be presented in the form of A list). After the user clicks "start, start to enter each node task in turn and watch the video to complete the steps, namely: 
 
-- A level consists of multiple task nodes in a strict sequential order; users must complete each node before progressing.
-- Each task node includes a video that must be watched before proceeding to the next step.
-- Each task node has one or more steps; completing all steps within a node marks it as complete. Completing all nodes unlocks the next level.
++ A checkpoint has multiple node tasks, and the node tasks have a strict sequence. Users can enter the next node task only after completing the node task. 
++ A node task has a video, and the step can be completed only after watching the video. 
++ A node task has one or more steps. You can complete the node task after completing all the steps. When all node tasks are completed, this level will unlock the next level.
 
-Users cannot fast-forward videos but can pause them. While watching a video, users are restricted from modifying their Builder project. Modifications are only allowed when users reach the corresponding steps. Users may also skip videos to proceed directly to the first step.
+The progress bar of the video watched by the user is not allowed to drag and drop, only to pause, and when the user is watching the video, the user should be prohibited from changing the current Builder project, and only when the user enters the step can the Builder project be changed in our open area. The user can also skip the currently viewed video and go straight to the first step. 
 
-Each level only provides the necessary spx API for that specific level:
+A level provides only the spx API required by the level: 
 
-- **Reasons for this approach:**
-  - Simplifies implementation by removing UI-based API selection guidance.
-  - Keeps the entire spx API area and code editor open to the user for a more realistic development experience.
-  - Reduces cognitive load by only showing relevant APIs.
-  - The required APIs are explicitly specified within each coding step.
++ consider this: 
+  - simplify the implementation and eliminate the use of UI highlighting to guide users to click the API. 
+  - The entire spx API area and code editing area can be opened to users, User operations are closer to the actual development 
+  - only provide what is needed, reducing the mental burden of the API required for users to query. 
+  - Which API will be used in the coding step, and the content under this step will clearly indicate 
 
-## Steps
+this behavior of "hiding" the original editor list is also reflected elsewhere in the Wizard: 
 
-Steps are the smallest unit of user operations and are categorized into **Coding Steps** and **Guided Steps** (other types can be introduced in the future).
++ hide the wizard material list in IDE 
++ hiding sound material list in IDE 
++ hiding of stage background material list in IDE 
++ hide the list of sprite animations in IDE (shape + bone animation) 
++ hiding of control list in IDE 
++ hide material list in material Library 
+
+## Steps 
+
+A step is the minimum unit for a user to complete an operation. It is divided into a Coding step and a follow-up step (other steps can also be extended later). 
 
 ### Coding Steps
 
-Users write code in the editor with access to the relevant spx API area. The editor highlights the target code area while other areas are blocked. To ease the learning curve, a "fill-in-the-blank" approach is used.
+The open code editing area and the spx API area allow users to write code. You need to locate the location of the code editing area and highlight it (other areas are masked to prohibit user operations). In order to reduce the difficulty of users as much as possible, the "cloze" method is used. 
 
-Fill-in-the-blank coding requires storing both an **initial snapshot** and a **final snapshot** of the step:
+Cloze: The Coding step needs to store an initial snapshot of the step and an end snapshot of the step (both are only the Game (Game content) of the Project): 
 
-- The final snapshot contains the correct code the user needs to add.
-- The initial snapshot has placeholders where the correct code is missing.
++ some of the code in the snapshot at the end of the step is the answer code, that is, the code that you need to add in this step. 
++ The part corresponding to the answer code in the initial snapshot of the step is the to-be-completed code (Template code) that has been dug up. At the beginning of this step, Builder will reload the initial snapshot of the step to replace the current Game content of the editor. The user can complete the step by completing the provided template code and detecting it. 
 
-At the start of the step, the Builder reloads the initial snapshot, replacing the editor content. Users complete the missing code, and upon passing validation, they complete the step.
+The Coding step provides the following interactive options: 
 
-**Coding Step Interactions:**
++ code detection: After the user clicks the code detection, the current snapshot of the editor will be compared with the snapshot at the end of the step (formatted string comparison). After passing the comparison, it is counted as passing the test. If the comparison is not passed, the back-end interface is called to compare with the large model. 
++ View Answer: View Answer Code 
++ view content step details: contains guidance for this step 
 
-- **Code Validation**: Compares the current editor snapshot with the final snapshot (using formatted string comparison). If the comparison fails, the backend AI model is used for validation.
-- **View Answer**: Displays the correct answer.
+### Following Steps 
 
-### Guided Steps
+mainly by means of UI guide, guide the user to follow the operation. 
 
-Guided steps use UI-based assistance to help users complete actions.
+Possible scenarios for following steps: 
 
-**Use Cases for Guided Steps:**
++ guide the user to switch to code editing for a specified Sprite or stage 
++ guide the user to the stage (add background, add controls)
++ Guide the user to add a sound 
++ guide the user to add a wizard 
++ guide the user graphical operation Wizard 
++ guide the user to add sprite animation (SHAPE group animation and skeleton animation) 
++ guide the user to run the project 
 
-- Switching to the code editor for a specific sprite or stage.
-- Modifying the stage (adding backgrounds, controls).
-- Adding sound effects.
-- Adding sprites.
-- Editing sprite properties.
-- Creating sprite animations (costume-based and skeletal animations).
-- Running the project.
+UI guidance guides users to complete follow-up operations through various means in the guidance: 
 
-Guided steps utilize various techniques to assist users:
++ UI Highlight 
++ arrow Guidance 
++ graphic presentation 
++ elf Material Chart 
++ layer (Restrict user actions) 
 
-- UI highlights
-- Arrows for direction
-- Text and images
-- Sprite images
-- Overlays (restricting user actions)
+granularity of follow-up steps: An operation that adds a sprite should actually be divided into at least four follow-up steps: 
 
-**Granularity of Guided Steps:**
++ guide the user to click the Add wizard button (+ sign) 
++ guide the user to click "Select from material Library" 
++ guide the user to click on the specified wizard material 
++ guide the user to click the confirmation button 
 
-For example, adding a sprite should be broken down into four steps:
-
-1. Click the **Add Sprite** button (+ icon).
-2. Click **Choose from Asset Library**.
-3. Click the specific sprite asset.
-4. Click the **Confirm** button.
-
-Some guided steps alter the Builder project state, while others do not. Steps that change the project state require a final snapshot for validation.
-
-### Snapshot Comparison
-
-After the user completes the code fill-in-the-blank in the coding step and clicks "Check Code," or after completing the follow-along step that changes the Builder project state, a snapshot comparison needs to be triggered to check if the user can pass the step. There are multiple ways to implement snapshot comparison:
-
-- Perform a string comparison on all or part of the snapshot.
-- Perform a regex comparison on all or part of the snapshot.
-- Use a large model to complete the comparison.
-
-### Basic Step Information Structure
-
-1. **title**: Step name  
-2. **index**: Step order  
-3. **description**: Step description  
-4. **tip**: Interactive hint (triggered by conditions)  
-5. **duration**: The time delay before the tip appears if the user is stuck on the step, e.g., 5 seconds  
-6. **feedback**: Feedback information after the user completes the check  
-7. **target**: The ID or class string of the target element, used to highlight the target element while masking other areas to prevent user operations  
-8. **content**: Description content of the step  
-9. **placement**: Position of the step tooltip relative to the target element [“left”, “top”, “right”, “bottom”]  
-10. **type**: Step type (Coding step, Follow-along step)  
-11. **isCheck**: Whether the step involves snapshot comparison  
-12. **startSnapshot**: Initial snapshot of the step (present in all steps; when a step is entered, the Builder project loads this snapshot by default)  
-    - **Potential Issue**: Loading snapshots might conflict with IDE information  
-13. **endSnapshot**: Final snapshot of the step (only available when `isCheck` is `true`)  
-
-### Unique Information Structure for Coding Steps
-
-1. **path**: Path of the code file, describing the file’s location in the current snapshot. For example, if coding needs to be done in *Sprite A*, the path would be `"sprite/A"`.  
-2. **tokenMask**: Content of the fill-in-the-blank placeholders  
-   - **tokenStartPos**: Start position of the blank  
-   - **tokenEndPos**: End position of the blank  
+according to the above "granularity", it can be found that some follow-up steps will change the status of the Builder project, while others will not change. For those follow-up steps that will change the status of the Builder project, the changed status needs to be detected to determine whether the user can pass the step, that is, a step end snapshot needs to be stored for snapshot comparison (formatted string comparison).
