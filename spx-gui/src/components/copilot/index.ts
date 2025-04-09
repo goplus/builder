@@ -1,10 +1,7 @@
 import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
-import {
-  type MCPMarkdownString,
-  makeMCPMarkdownString,
-} from '@/components/editor/code-editor/common'
+import { type MCPMarkdownString, makeMCPMarkdownString } from '@/components/editor/code-editor/common'
 export { default as CopilotProvider } from './CopilotProvider.vue'
 import { toolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
 
@@ -24,10 +21,12 @@ export type Chat = {
 
 /** Core Copilot interface for AI completions */
 export interface ICopilot extends Disposable {
-  getChatCompletion(chat: Chat,
+  getChatCompletion(
+    chat: Chat,
     options?: {
       signal?: AbortSignal
-    }): AsyncIterableIterator<string>
+    }
+  ): AsyncIterableIterator<string>
 }
 
 /** Conversation round state */
@@ -38,13 +37,13 @@ export enum RoundState {
   Failed
 }
 
-/** 
+/**
  * Structure of a conversation round
  * Represents a single Q&A exchange with the AI
  */
 export type Round = {
   problem: MCPMarkdownString
-  /** 
+  /**
    * Answer provided by the copilot.
    * `null` means the answer is still loading or the round is cancelled by the user.
    */
@@ -83,33 +82,33 @@ export class CopilotController extends Disposable {
   private handleToolResults(results: ToolResult[]) {
     // Sort results by timestamp
     const sortedResults = [...results].sort((a, b) => a.timestamp - b.timestamp)
-    
+
     // Format results as text
-    const formattedResults = sortedResults.map(r => 
-      `[use-mcp-tool for '${r.server || ""}'] Tool '${r.tool}' execution result: ${JSON.stringify(r.result, null, 2)}`
+    const formattedResults = sortedResults.map(
+      (r) =>
+        `[use-mcp-tool for '${r.server || ''}'] Tool '${r.tool}' execution result: ${JSON.stringify(r.result, null, 2)}`
     )
-    
+
     this.sendBatchResults(formattedResults)
   }
-  
+
   /**
    * Send a batch of tool results as a single message
    * @param results Tool execution results to send
    */
   private async sendBatchResults(results: string[]) {
     if (results.length === 0) return
-    
+
     // Combine multiple results into a single message
-    const combinedResult = results.length === 1
-      ? results[0]
-      : `Multiple tool execution results:\n\n${results.join('\n\n')}`
-      
+    const combinedResult =
+      results.length === 1 ? results[0] : `Multiple tool execution results:\n\n${results.join('\n\n')}`
+
     await this.askProblem(combinedResult)
   }
 
   /** Current active chat reference */
   private currentChatRef = ref<InternalChat | null>(null)
-  
+
   /** Current active chat or null if none exists */
   get currentChat(): InternalChat | null {
     return this.currentChatRef.value ?? null
@@ -120,14 +119,14 @@ export class CopilotController extends Disposable {
    * @param problem Initial user question
    */
   async startChat(problem: string) {
-      const currentChat = this.currentChat
-      if (currentChat != null) currentChat.ctrl.abort()
-  
-      this.currentChatRef.value = {
-        rounds: [],
-        ctrl: new AbortController()
-      }
-      await this.startRound(makeMCPMarkdownString(problem))
+    const currentChat = this.currentChat
+    if (currentChat != null) currentChat.ctrl.abort()
+
+    this.currentChatRef.value = {
+      rounds: [],
+      ctrl: new AbortController()
+    }
+    await this.startRound(makeMCPMarkdownString(problem))
   }
 
   /** Terminate the current chat session */
@@ -226,7 +225,7 @@ export class CopilotController extends Disposable {
     try {
       const stream = await this.copilot.getChatCompletion(this.ensureChat(), {
         signal: currentRound.ctrl.signal
-      });
+      })
       let accumulatedText = ''
       for await (const chunk of stream) {
         accumulatedText += chunk
@@ -245,7 +244,7 @@ export class CopilotController extends Disposable {
     }
   }
 
-  /** 
+  /**
    * Initialize controller and register cleanup
    */
   init() {

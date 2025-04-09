@@ -43,7 +43,7 @@ export type CopilotCtx = {
     open: () => Promise<boolean>
     close: () => void
     toggle: () => Promise<boolean>
-    mcpDebugger: { // 添加 MCP 调试器控制
+    mcpDebugger: {
       open: () => Promise<boolean>
       close: () => void
       toggle: () => Promise<boolean>
@@ -70,7 +70,7 @@ export function useCopilotCtx() {
 <script setup lang="ts">
 /**
  * CopilotProvider Component
- * 
+ *
  * Provides Copilot context and services to all child components.
  * Handles initialization of Copilot, MCP connections, and UI rendering.
  */
@@ -91,7 +91,7 @@ import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
 import { getProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
-import { genAssetFromCanvos } from '@/models/common/asset'
+import { genAssetFromCanvas } from '@/models/common/asset'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
@@ -134,7 +134,8 @@ const mcpHistory = {
 type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
 
 const initBasicTools = async () => {
-    return registerTools([
+  return registerTools(
+    [
       {
         description: createProjectToolDescription,
         implementation: {
@@ -145,13 +146,15 @@ const initBasicTools = async () => {
             }
             return result.data
           },
-          execute: async (args: CreateProjectOptions) => {            
+          execute: async (args: CreateProjectOptions) => {
             return createProject(args)
           }
         }
       }
-    ], 'basic-tools')
-  }
+    ],
+    'basic-tools'
+  )
+}
 
 async function createProject(options: CreateProjectOptions) {
   const projectName = options.projectName
@@ -185,12 +188,12 @@ async function createProject(options: CreateProjectOptions) {
   project.setVisibility(Visibility.Private)
 
   try {
-    const thumbnail = await genAssetFromCanvos("stage.png",800, 600, '#000000')
+    const thumbnail = await genAssetFromCanvas('stage.png', 800, 600, '#000000')
     project.setThumbnail(thumbnail)
     await project.saveToCloud()
 
     const projectRoute = getProjectEditorRoute(projectName)
-    
+
     router.push(projectRoute)
     return {
       success: true,
@@ -218,14 +221,14 @@ const controls = {
     visible.value = true
     return true
   },
-  
+
   /**
    * Close the chat UI
    */
   close: () => {
-    visible.value = false 
+    visible.value = false
   },
-  
+
   /**
    * Toggle chat UI visibility
    * Ensures Copilot is initialized before showing UI
@@ -238,57 +241,61 @@ const controls = {
       return await controls.open()
     }
   },
-  
+
   /**
    * McpDebugger Controls
    */
   mcpDebugger: {
-    open: async (): Promise<boolean> =>{
+    open: async (): Promise<boolean> => {
       mcpDebuggerVisible.value = true
       return true
     },
-    
+
     close: () => {
       mcpDebuggerVisible.value = false
     },
-    
+
     toggle: async (): Promise<boolean> => {
-    if (mcpDebuggerVisible.value) {
-      controls.mcpDebugger.close()
-      return false
-    } else {
-      return await controls.mcpDebugger.open()
+      if (mcpDebuggerVisible.value) {
+        controls.mcpDebugger.close()
+        return false
+      } else {
+        return await controls.mcpDebugger.open()
+      }
     }
-  }
   }
 }
 
 // Create transports
 const { clientTransport, serverTransport } = createMcpTransports()
-    
+
 // Create client
 const client = ref<Client | null>(null)
-createMcpClient(clientTransport).then(c => {
-  client.value = c
-  mcpConnectionStatus.client = true
-  mcpConnectionStatus.lastUpdate = Date.now()
-  toolResultCollector.setMcpClient(c)
-}).catch(e => {
-  console.error('Failed to create MCP client:', e)
-})
+createMcpClient(clientTransport)
+  .then((c) => {
+    client.value = c
+    mcpConnectionStatus.client = true
+    mcpConnectionStatus.lastUpdate = Date.now()
+    toolResultCollector.setMcpClient(c)
+  })
+  .catch((e) => {
+    console.error('Failed to create MCP client:', e)
+  })
 
 // Create server
 const server = ref<Server | null>(null)
 createMcpServer(serverTransport, {
   history: mcpHistory,
   registeredTools
-}).then(s => {
-  server.value = s
-  mcpConnectionStatus.server = true
-  mcpConnectionStatus.lastUpdate = Date.now()
-}).catch(e => {
-  console.error('Failed to create MCP server:', e)
 })
+  .then((s) => {
+    server.value = s
+    mcpConnectionStatus.server = true
+    mcpConnectionStatus.lastUpdate = Date.now()
+  })
+  .catch((e) => {
+    console.error('Failed to create MCP server:', e)
+  })
 
 initBasicTools()
 // Get i18n in component context
@@ -332,7 +339,7 @@ const copilotCtx = computedShallowReactive<CopilotCtx>(() => ({
     client: client as any,
     server: server as any,
     status: mcpConnectionStatus,
-    history: mcpHistory,
+    history: mcpHistory
   },
   controls
 }))
@@ -354,21 +361,14 @@ defineExpose({
   <div class="copilot-provider">
     <!-- Render child content with context as slot props -->
     <slot :context="copilotCtx" />
-    
+
     <!-- Render CopilotUI directly when needed -->
     <aside v-if="shouldShowCopilotUI" class="copilot-chat-container">
-      <CopilotUI
-        :controller="copilotController"
-        class="copilot-ui"
-        @close="handleCloseUI"
-      />
+      <CopilotUI :controller="copilotController" class="copilot-ui" @close="handleCloseUI" />
     </aside>
-    
+
     <!-- Render MCP Debugger when needed -->
-    <McpDebugger 
-      :is-visible="mcpDebuggerVisible" 
-      @close="controls.mcpDebugger.close"
-    />
+    <McpDebugger :is-visible="mcpDebuggerVisible" @close="controls.mcpDebugger.close" />
   </div>
 </template>
 
@@ -388,11 +388,11 @@ defineExpose({
   left: 0;
   width: 25%;
   height: 100vh;
-  
+
   /* Visual styling */
   background-color: white;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  
+
   /* Layout */
   display: flex;
   flex-direction: column;

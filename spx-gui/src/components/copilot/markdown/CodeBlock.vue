@@ -9,17 +9,17 @@ import { UIIcon } from '@/components/ui'
 
 // Component props
 const props = defineProps<{
-  code?: string        // Code content as string
-  language?: string    // Programming language for syntax highlighting
-  title?: string       // Custom title for the code block
-  collapsed?: boolean  // Whether the code block should be initially collapsed
+  code?: string // Code content as string
+  language?: string // Programming language for syntax highlighting
+  title?: string // Custom title for the code block
+  collapsed?: boolean // Whether the code block should be initially collapsed
 }>()
 
 const { t } = useI18n()
 
 // Reactive state
-const copySuccess = ref(false)        // Tracks copy operation success state
-const copyTimeout = ref<number | null>(null)  // Reference to timeout for resetting copy success state
+const copySuccess = ref(false) // Tracks copy operation success state
+const copyTimeout = ref<number | null>(null) // Reference to timeout for resetting copy success state
 const codeRef = ref<HTMLElement | null>(null) // Reference to code element for highlighting
 const isCollapsed = ref(props.collapsed ?? false) // Collapse state with default from props
 
@@ -50,17 +50,18 @@ onBeforeUnmount(() => {
  */
 function handleCopy(event: MouseEvent) {
   event.stopPropagation()
-  
+
   // Clear any existing timeout
   if (copyTimeout.value) {
     clearTimeout(copyTimeout.value)
   }
-  
+
   // Copy text to clipboard
-  navigator.clipboard.writeText(codeText.value)
+  navigator.clipboard
+    .writeText(codeText.value)
     .then(() => {
       copySuccess.value = true
-      
+
       // Reset success state after 3 seconds
       copyTimeout.value = window.setTimeout(() => {
         copySuccess.value = false
@@ -80,38 +81,38 @@ function toggleCollapse() {
 </script>
 
 <template>
-    <div class="collapsible-code-block" :class="{ 'is-collapsed': isCollapsed }">
-      <!-- Header with title, language badge and controls -->
-      <div class="code-header" @click="toggleCollapse">
-        <div class="header-left">
-          <span class="collapse-icon">
-            <span class="tool-icon custom-icon">{{ isCollapsed ? '▼' : '▶' }}</span>
-          </span>
-          <span class="title">{{ displayTitle }}</span>
-          <span v-if="language" class="language-badge">{{ language }}</span>
-        </div>
-
-        <div class="header-right">
-          <button class="copy-button" @click.stop="handleCopy($event)">
-            <span v-if="copySuccess" class="success-text">
-              {{ t({ en: 'Copied!', zh: '已复制!' }) }}
-            </span>
-            <span v-else>
-              <UIIcon type="copy" :size="14" />
-              {{ t({ en: 'Copy', zh: '复制' }) }}
-            </span>
-          </button>
-        </div>
+  <div class="collapsible-code-block" :class="{ 'is-collapsed': isCollapsed }">
+    <!-- Header with title, language badge and controls -->
+    <div class="code-header" @click="toggleCollapse">
+      <div class="header-left">
+        <span class="collapse-icon">
+          <span class="tool-icon custom-icon">{{ isCollapsed ? '▼' : '▶' }}</span>
+        </span>
+        <span class="title">{{ displayTitle }}</span>
+        <span v-if="language" class="language-badge">{{ language }}</span>
       </div>
 
-      <!-- Collapsible code content with animation -->
-      <transition name="slide">
-        <div v-show="!isCollapsed" class="code-content">
-          <CodeView class="code" :language="language" mode="block" line-numbers>{{ codeText }}</CodeView>
-        </div>
-      </transition>
+      <div class="header-right">
+        <button class="copy-button" @click.stop="handleCopy($event)">
+          <span v-if="copySuccess" class="success-text">
+            {{ t({ en: 'Copied!', zh: '已复制!' }) }}
+          </span>
+          <span v-else>
+            <UIIcon type="copy" :size="14" />
+            {{ t({ en: 'Copy', zh: '复制' }) }}
+          </span>
+        </button>
+      </div>
     </div>
-  </template>
+
+    <!-- Collapsible code content with animation -->
+    <transition name="slide">
+      <div v-show="!isCollapsed" class="code-content">
+        <CodeView class="code" :language="language" mode="block" line-numbers>{{ codeText }}</CodeView>
+      </div>
+    </transition>
+  </div>
+</template>
 
 <style lang="scss" scoped>
 /**
@@ -124,14 +125,14 @@ function toggleCollapse() {
   margin: 16px 0;
   background-color: var(--ui-color-grey-50, #f8f9fa);
   overflow: hidden;
-  
+
   /* Remove bottom border when collapsed */
   &.is-collapsed {
     .code-header {
       border-bottom: none;
     }
   }
-  
+
   /**
    * Header section with controls
    * Contains title, language badge, and copy button
@@ -145,11 +146,11 @@ function toggleCollapse() {
     border-bottom: 1px solid var (--ui-color-grey-200, #e9ecef);
     cursor: pointer;
     user-select: none;
-    
+
     &:hover {
       background-color: var(--ui-color-grey-150, #ebedef);
     }
-    
+
     /**
      * Left section of header
      * Contains collapse icon, title and language badge
@@ -158,7 +159,7 @@ function toggleCollapse() {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       /* Collapse indicator icon */
       .collapse-icon {
         display: flex;
@@ -168,14 +169,14 @@ function toggleCollapse() {
         height: 18px;
         color: var(--ui-color-grey-600, #868e96);
       }
-      
+
       /* Block title */
       .title {
         font-weight: 500;
         font-size: 13px;
         color: var(--ui-color-grey-800, #343a40);
       }
-      
+
       /* Language indicator badge */
       .language-badge {
         font-size: 11px;
@@ -187,7 +188,7 @@ function toggleCollapse() {
         text-transform: lowercase;
       }
     }
-    
+
     /**
      * Right section of header
      * Contains copy button
@@ -195,7 +196,7 @@ function toggleCollapse() {
     .header-right {
       display: flex;
       align-items: center;
-      
+
       /* Copy code button */
       .copy-button {
         display: flex;
@@ -208,12 +209,12 @@ function toggleCollapse() {
         cursor: pointer;
         color: var(--ui-color-grey-600, #868e96);
         border-radius: 4px;
-        
+
         &:hover {
           background-color: var(--ui-color-grey-200, #e9ecef);
           color: var(--ui-color-grey-800, #343a40);
         }
-        
+
         /* Success indicator */
         .success-text {
           color: var(--ui-color-green-600, #37b24d);
@@ -221,12 +222,12 @@ function toggleCollapse() {
       }
     }
   }
-  
+
   /* Content wrapper */
   .code-content {
     overflow: hidden;
   }
-  
+
   /**
    * Animation for collapsing/expanding
    * Uses max-height transition for smooth sliding effect
@@ -237,7 +238,7 @@ function toggleCollapse() {
     max-height: 1000px; // Large enough to accommodate most code blocks
     opacity: 1;
   }
-  
+
   .slide-enter-from,
   .slide-leave-to {
     max-height: 0;
@@ -253,14 +254,14 @@ function toggleCollapse() {
   .collapsible-code-block {
     .code-header {
       padding: 8px 12px;
-      
+
       .header-left {
         gap: 6px;
-        
+
         .title {
           font-size: 12px;
         }
-        
+
         .language-badge {
           font-size: 10px;
           padding: 1px 4px;

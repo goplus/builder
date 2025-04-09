@@ -67,17 +67,11 @@ import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import * as z from 'zod'
 import { registerTools, unregisterProviderTools } from '@/components/copilot/mcp/registry'
-import { 
-  insertCodeToolDescription, 
-  InsertCodeArgsSchema, 
-  addSpriteFromCanvasToolDescription, 
+import {
+  insertCodeToolDescription,
+  InsertCodeArgsSchema,
   AddSpriteFromCanvasArgsSchema,
-  addStageBackdropFromCanvasToolDescription,
   AddStageBackdropFromCanvasArgsSchema,
-  RunGameArgsSchema,
-  runGameToolDescription,
-  StopGameArgsSchema,
-  stopGameToolDescription,
   ListFilesArgsSchema,
   listFilesToolDescription,
   GetDiagnosticsArgsSchema,
@@ -86,7 +80,7 @@ import {
   getFileCodeToolDescription
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
-import { genSpriteFromCanvos, genBackdropFromCanvos } from '@/models/common/asset'
+import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
@@ -514,10 +508,6 @@ class ContextMenuProvider implements IContextMenuProvider {
 type InsertCodeOptions = z.infer<typeof InsertCodeArgsSchema>
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
-type RunGameOptions = z.infer<typeof RunGameArgsSchema>
-type StopGameOptions = z.infer<typeof StopGameArgsSchema>
-type ListFilesOptions = z.infer<typeof ListFilesArgsSchema>
-type DiagnosticsOptions = z.infer<typeof GetDiagnosticsArgsSchema>
 
 export class CodeEditor extends Disposable {
   private copilot: Copilot
@@ -550,142 +540,85 @@ export class CodeEditor extends Disposable {
 
   registerMCPTools(): void {
     // 注册 insert_code 工具
-    registerTools([
-      {
-        description: insertCodeToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = InsertCodeArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
+    registerTools(
+      [
+        {
+          description: insertCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = InsertCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args) => {
+              const result = this.insertCode(args)
+              return result
             }
-            return result.data
-          },
-          execute: async (args) => {
-            const result = this.insertCode(args)
-            return result
           }
-        }
-      },
-      {
-        description: addSpriteFromCanvasToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = AddSpriteFromCanvasArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${addSpriteFromCanvasToolDescription.name}: ${result.error}`)
+        },
+        {
+          description: listFilesToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = ListFilesArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.listFiles()
             }
-            return result.data
-          },
-          execute: async (args: AddSpriteFromCanvaOptions) => {
-            return this.addSpriteFromCanvas(args)
           }
-        }
-      },
-      {
-        description: addStageBackdropFromCanvasToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = AddStageBackdropFromCanvasArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${addStageBackdropFromCanvasToolDescription.name}: ${result.error}`)
+        },
+        {
+          description: getDiagnosticsToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetDiagnosticsArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.getDiagnostics()
             }
-            return result.data
-          },
-          execute: async (args: AddStageBackdropFromCanvasOptions) => {
-            return this.addBackdropFromCanvas(args)
           }
-        }
-      },
-      {
-        description: runGameToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = RunGameArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${runGameToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: RunGameOptions) => {
-            return this.runGame(args)
-          }
-        }
-      },
-      {
-        description: stopGameToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = StopGameArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${stopGameToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: StopGameOptions) => {
-            return this.stopGame(args)
-          }
-        }
-      },
-      {
-        description: listFilesToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = ListFilesArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: ListFilesOptions) => {
-            return this.listFiles()
-          }
-        }
-      },
-      {
-        description: getDiagnosticsToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = GetDiagnosticsArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: DiagnosticsOptions) => {
-            return this.getDiagnostics()
-          }
-        }
-      },
-      {
-        description: getFileCodeToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = GetFileCodeArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
-            const file = this.getTextDocument({ uri: args.file })
-            if (file == null) return null
-            return {
-              success: true,
-              message: `Successfully get code from ${args.file}`,
-              data: file.getValue()
+        },
+        {
+          description: getFileCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetFileCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
+              const file = this.getTextDocument({ uri: args.file })
+              if (file == null) return null
+              return {
+                success: true,
+                message: `Successfully get code from ${args.file}`,
+                data: file.getValue()
+              }
             }
           }
         }
-      }
-    ], 'code-editor')
+      ],
+      'code-editor'
+    )
   }
 
   async getDiagnostics() {
     try {
       // 获取所有项目文件
       const files = await this.listFiles()
-      
+
       // 使用 Promise.all 并行处理所有文件的诊断
       const diagnosticsPromises = files.map(async (file) => {
         try {
@@ -694,13 +627,13 @@ export class CodeEditor extends Disposable {
             console.warn(`File not found: ${file.uri}`)
             return []
           }
-          
+
           // 获取文件的诊断信息
           const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
             textDocument,
             signal: new AbortController().signal
           })
-          
+
           // 将诊断信息格式化为所需结构
           return diagnostics.map((diag) => ({
             file: file.uri,
@@ -711,19 +644,21 @@ export class CodeEditor extends Disposable {
           }))
         } catch (error) {
           console.error(`Error getting diagnostics for ${file.uri}:`, error)
-          return [{
-            file: file.uri,
-            name: file.name,
-            line: 0,
-            column: 0,
-            message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
-          }]
+          return [
+            {
+              file: file.uri,
+              name: file.name,
+              line: 0,
+              column: 0,
+              message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ]
         }
       })
-      
+
       // 等待所有诊断处理完成
       const allDiagnostics = await Promise.all(diagnosticsPromises)
-      
+
       // 合并所有文件的诊断结果
       const messages = allDiagnostics.flat()
       return {
@@ -748,7 +683,7 @@ export class CodeEditor extends Disposable {
       name: 'main.spx',
       uri: 'file:///main.spx'
     })
-    
+
     // Add sprite files
     const sprites = this.project.sprites
     for (const sprite of sprites) {
@@ -761,15 +696,14 @@ export class CodeEditor extends Disposable {
     return files
   }
 
-
   async insertCode(args: InsertCodeOptions) {
     // 解构参数
     const code = args.code
     const file = args.file
     const iRange = args.insertRange
-    
+
     try {
-      // 
+      //
       const targetDoc = this.getTextDocument({ uri: file })
       if (!targetDoc) {
         throw new Error(`File not found: ${file}`)
@@ -788,7 +722,7 @@ export class CodeEditor extends Disposable {
 
       return {
         success: true,
-        message: `Code successfully inserted into ${file}`,
+        message: `Code successfully inserted into ${file}`
       }
     } catch (error) {
       console.error('Error inserting code:', error)
@@ -800,7 +734,7 @@ export class CodeEditor extends Disposable {
   }
 
   async addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
-    const sprite = await genSpriteFromCanvos(args.spriteName, args.size, args.size, args.color)
+    const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
     this.project.addSprite(sprite)
     await sprite.autoFit()
     selectAsset(this.project, sprite)
@@ -812,61 +746,13 @@ export class CodeEditor extends Disposable {
   }
 
   async addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
-    const backdrop = await genBackdropFromCanvos(args.backdropName, 800, 600, args.color)
+    const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
     this.project.stage.addBackdrop(backdrop)
     selectAsset(this.project, backdrop)
     this.project.saveToCloud()
     return {
       success: true,
       message: `Successfully added sprite "${args.backdropName}" to project "${this.project.name}"`
-    }
-  }
-
-  async runGame(args: RunGameOptions) {
-    if (this.project.name != args.projectName) {
-      return {
-        success: false,
-        message: `Failed to runGame: Project name mismatch. Expected "${args.projectName}", but got "${this.project.name}"`
-      }
-    }
-    try {
-      this.runtime.setRunning({ mode: 'debug', initializing: true })
-      return {
-        success: true,
-        message: `Successfully runned the project "${this.project.name}"`
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error(`Failed to runGame:`, errorMessage)
-  
-      return {
-        success: false,
-        message: `Failed to runGame: ${errorMessage}`
-      }
-    }
-  }
-
-  async stopGame(args: StopGameOptions) {
-    if (this.project.name != args.projectName) {
-      return {
-        success: false,
-        message: `Failed to stopGame: Project name mismatch. Expected "${args.projectName}", but got "${this.project.name}"`
-      }
-    }
-    try {
-      this.runtime.setRunning({ mode: 'none' })
-      return {
-        success: true,
-        message: `Successfully stopped the project "${this.project.name}"`
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error(`Failed to stopGame:`, errorMessage)
-  
-      return {
-        success: false,
-        message: `Failed to stopGame: ${errorMessage}`
-      }
     }
   }
 

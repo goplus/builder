@@ -13,13 +13,13 @@ type ToolInput = z.infer<typeof ToolInputSchema>
 export interface ToolDescription {
   /** Unique identifier for the tool */
   name: string
-  
+
   /** Human-readable description of the tool's functionality */
   description: string
-  
+
   /** JSON schema for validating tool input arguments */
   inputSchema: ToolInput
-  
+
   /** Optional category for grouping related tools */
   category?: string
 }
@@ -27,7 +27,7 @@ export interface ToolDescription {
 /**
  * Tool implementation interface
  * Defines the contract for tool execution logic
- * 
+ *
  * @template T - The validated input type
  * @template R - The result type
  */
@@ -39,7 +39,7 @@ export interface ToolImplementation<T = any, R = any> {
    * @throws If validation fails
    */
   validate: (args: any) => T
-  
+
   /**
    * Executes the tool with validated arguments
    * @param args - Validated input arguments
@@ -55,10 +55,10 @@ export interface ToolImplementation<T = any, R = any> {
 export interface RegisteredTool {
   /** Tool description metadata */
   description: ToolDescription
-  
+
   /** Tool implementation logic */
   implementation: ToolImplementation
-  
+
   /** Identifier of the component/module that provided this tool */
   provider: string
 }
@@ -82,14 +82,14 @@ export const registeredTools = ref<ToolDescription[]>([])
 watch(
   registry,
   () => {
-    registeredTools.value = Object.values(registry).map(t => t.description)
+    registeredTools.value = Object.values(registry).map((t) => t.description)
   },
   { deep: true }
 )
 
 /**
  * Register a tool implementation
- * 
+ *
  * @template T - The validated input type
  * @template R - The result type
  * @param tool - Tool metadata description
@@ -97,20 +97,20 @@ watch(
  * @param provider - Provider identifier
  */
 export function registerTool<T = any, R = any>(
-  tool: ToolDescription, 
+  tool: ToolDescription,
   implementation: ToolImplementation<T, R>,
   provider: string
 ): void {
   const toolName = tool.name
-  
+
   // Check for existing tool registration
   if (registry[toolName] && registry[toolName].provider !== provider) {
     console.warn(
       `Tool "${toolName}" already registered by provider "${registry[toolName].provider}". ` +
-      `Overriding with implementation from "${provider}".`
+        `Overriding with implementation from "${provider}".`
     )
   }
-  
+
   // Register the tool
   registry[toolName] = {
     description: tool,
@@ -121,26 +121,24 @@ export function registerTool<T = any, R = any>(
 
 /**
  * Register multiple tools at once
- * 
+ *
  * @param tools - Array of tool descriptions and implementations
  * @param provider - Provider identifier
  */
 export function registerTools(
   tools: Array<{
-    description: ToolDescription,
+    description: ToolDescription
     implementation: ToolImplementation
   }>,
   provider: string
 ): void {
   // Register all tools
-  tools.forEach(({ description, implementation }) => 
-    registerTool(description, implementation, provider)
-  )
+  tools.forEach(({ description, implementation }) => registerTool(description, implementation, provider))
 }
 
 /**
  * Unregister a specific tool
- * 
+ *
  * @param toolName - Name of the tool to unregister
  * @param provider - Optional provider identifier for verification
  * @returns Whether unregistration was successful
@@ -150,13 +148,15 @@ export function unregisterTool(toolName: string, provider?: string): boolean {
   if (!registry[toolName]) {
     return false
   }
-  
+
   // If provider specified, verify it matches
   if (provider && registry[toolName].provider !== provider) {
-    console.warn(`Tool "${toolName}" is registered by "${registry[toolName].provider}", not "${provider}", skipping unregister`)
+    console.warn(
+      `Tool "${toolName}" is registered by "${registry[toolName].provider}", not "${provider}", skipping unregister`
+    )
     return false
   }
-  
+
   // Remove tool from registry
   delete registry[toolName]
   return true
@@ -164,13 +164,13 @@ export function unregisterTool(toolName: string, provider?: string): boolean {
 
 /**
  * Unregister all tools from a specific provider
- * 
+ *
  * @param provider - Provider identifier
  * @returns Number of tools unregistered
  */
 export function unregisterProviderTools(provider: string): number {
   let count = 0
-  
+
   // Find and remove all tools from the provider
   Object.entries(registry).forEach(([toolName, tool]) => {
     if (tool.provider === provider) {
@@ -178,13 +178,13 @@ export function unregisterProviderTools(provider: string): number {
       count++
     }
   })
-  
+
   return count
 }
 
 /**
  * Get a tool implementation by name
- * 
+ *
  * @param name - Tool name
  * @returns Tool implementation or undefined if not found
  */
@@ -195,7 +195,7 @@ export function getToolImplementation(name: string): ToolImplementation | undefi
 /**
  * Create a tool description with the given parameters
  * Helper function to simplify tool description creation
- * 
+ *
  * @template T - Zod schema type
  * @param name - Tool name
  * @param description - Tool description
@@ -204,8 +204,8 @@ export function getToolImplementation(name: string): ToolImplementation | undefi
  * @returns Tool description object
  */
 export function createToolDescription<T extends z.ZodType>(
-  name: string, 
-  description: string, 
+  name: string,
+  description: string,
   schema: T,
   category?: string
 ): ToolDescription {
@@ -219,7 +219,7 @@ export function createToolDescription<T extends z.ZodType>(
 
 /**
  * Check if a tool is registered
- * 
+ *
  * @param name - Tool name
  * @returns Whether the tool is registered
  */
@@ -229,7 +229,7 @@ export function isToolRegistered(name: string): boolean {
 
 /**
  * Get names of all registered tools
- * 
+ *
  * @returns Array of tool names
  */
 export function getRegisteredToolNames(): string[] {
@@ -238,7 +238,7 @@ export function getRegisteredToolNames(): string[] {
 
 /**
  * Execute a registered tool
- * 
+ *
  * @param name - Tool name
  * @param args - Tool arguments
  * @returns Tool execution result
@@ -246,15 +246,15 @@ export function getRegisteredToolNames(): string[] {
  */
 export async function executeRegisteredTool(name: string, args: any): Promise<any> {
   const tool = registry[name]
-  
+
   if (!tool) {
     throw new Error(`Tool "${name}" not registered`)
   }
-  
+
   try {
     // Validate arguments
     const validatedArgs = tool.implementation.validate(args)
-    
+
     // Execute tool
     return await tool.implementation.execute(validatedArgs)
   } catch (error) {

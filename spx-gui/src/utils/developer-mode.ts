@@ -15,7 +15,7 @@ export function initDeveloperMode() {
     // Retrieve setting from local storage
     const storedValue = localStorage.getItem(DEV_MODE_STORAGE_KEY)
     isDeveloperMode.value = storedValue === 'true'
-    
+
     // Set up console command listeners
     setupConsoleCommands()
   } catch (e) {
@@ -35,13 +35,13 @@ function setupConsoleCommands() {
     localStorage.setItem(DEV_MODE_STORAGE_KEY, 'true')
     return true
   }
-  
+
   window.__xb_disable_dev_mode = () => {
     isDeveloperMode.value = false
     localStorage.setItem(DEV_MODE_STORAGE_KEY, 'false')
     return false
   }
-  
+
   window.__xb_dev_mode_status = () => {
     return isDeveloperMode.value
   }
@@ -50,7 +50,7 @@ function setupConsoleCommands() {
 /**
  * Check if developer mode is enabled
  * Composition function to access developer mode state
- * 
+ *
  * @returns Object containing reactive developer mode state
  */
 export function useDeveloperMode() {
@@ -67,13 +67,13 @@ declare global {
      * @returns Current developer mode state (true)
      */
     __xb_enable_dev_mode: () => boolean
-    
+
     /**
      * Disable developer mode
      * @returns Current developer mode state (false)
      */
     __xb_disable_dev_mode: () => boolean
-    
+
     /**
      * Check current developer mode status
      * @returns Current developer mode state

@@ -3,9 +3,9 @@ import { computed } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import CodeBlock from './CodeBlock.vue'
-import UseMcpTool from './UseMcpTool.vue' 
+import UseMcpTool from './UseMcpTool.vue'
 
-const props =  defineProps<{
+const props = defineProps<{
   value: string | LocaleMessage
 }>()
 
@@ -17,16 +17,15 @@ const basicComponents = {
    *  ```html
    * <use-mcp-tool server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'/>
    * ```
-  */
-  'use-mcp-tool': UseMcpTool,
+   */
+  'use-mcp-tool': UseMcpTool
 }
 
-
 const components = computed(() => {
-    return {
-      codeBlock: CodeBlock,
-      custom: basicComponents
-    }
+  return {
+    codeBlock: CodeBlock,
+    custom: basicComponents
+  }
 })
 const markdownValue = computed(() => (typeof props.value === 'string' ? props.value : i18n.t(props.value)))
 </script>

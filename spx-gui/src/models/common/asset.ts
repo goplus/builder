@@ -89,21 +89,21 @@ export async function asset2Sound({ files: fileCollection, ...metadata }: AssetD
   return sound
 }
 
-export async function genSpriteFromCanvos(name: string, width: number, height: number, color: string) {
-  const canvas = await genAssetFromCanvos(name, width, height, color)
+export async function genSpriteFromCanvas(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvas(name, width, height, color)
   const sprite = Sprite.create(name)
   const costume = new Costume(name, canvas)
   sprite.addCostume(costume)
   return sprite
 }
 
-export async function genBackdropFromCanvos(name: string, width: number, height: number, color: string) {
-  const canvas = await genAssetFromCanvos(name, width, height, color)
+export async function genBackdropFromCanvas(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvas(name, width, height, color)
   const backdrop = await Backdrop.create(name, canvas)
   return backdrop
 }
 
-export async function genAssetFromCanvos(name: string, width:number, height: number, color: string) {
+export async function genAssetFromCanvas(name: string, width: number, height: number, color: string) {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
 

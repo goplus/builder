@@ -5,7 +5,7 @@
 import { client } from './common'
 
 export enum ToolType {
-  Function = "function"
+  Function = 'function'
 }
 
 export type FunctionDefinition = {

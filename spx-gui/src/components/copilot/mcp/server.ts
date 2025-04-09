@@ -2,7 +2,7 @@ import { type Ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { type Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
-import { registeredTools, executeRegisteredTool } from './registry'
+import { executeRegisteredTool } from './registry'
 
 /**
  * Interface for request history items
@@ -11,16 +11,16 @@ import { registeredTools, executeRegisteredTool } from './registry'
 export interface RequestHistoryItem {
   /** Tool name that was called */
   tool: string
-  
+
   /** Parameters passed to the tool */
   params: any
-  
+
   /** Response or error message */
   response: string
-  
+
   /** Timestamp of the request */
   time: string
-  
+
   /** Whether the request resulted in an error */
   error?: boolean
 }
@@ -46,13 +46,12 @@ export interface McpServerContext {
 /**
  * Initialize the MCP server
  * Creates server instance, registers request handlers and establishes connection
- * 
+ *
  * @param {boolean} [force=false] - Force reinitialization even if already initialized
  * @returns {Promise<Server>} MCP server instance
  * @throws {Error} If connection fails
  */
-export async function createMcpServer(transport: Transport,
-  context: McpServerContext): Promise<Server> {
+export async function createMcpServer(transport: Transport, context: McpServerContext): Promise<Server> {
   const { history, registeredTools } = context
   // Create new server instance with metadata
   const server = new Server(
@@ -66,18 +65,18 @@ export async function createMcpServer(transport: Transport,
       }
     }
   )
-  
+
   // Register handler for tool discovery
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: registeredTools.value
     }
   })
-  
+
   // Register handler for tool execution
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const timestamp = new Date().toLocaleTimeString()
-  
+
     // Record the request in history
     history.addRequest({
       tool: request.params.name,
@@ -85,19 +84,19 @@ export async function createMcpServer(transport: Transport,
       response: 'Pending...',
       time: timestamp
     })
-  
+
     try {
       const { name, arguments: parameters } = request.params
-      
+
       // Execute registered tool implementation
       const result = await executeRegisteredTool(name, parameters)
-    
+
       // Format response for display
       const response = JSON.stringify(result, null, 2)
-      
+
       // Update request history with success result
       history.updateLastResponse(response)
-      
+
       // Return formatted response
       return {
         content: [{ type: 'text', text: response }]
@@ -105,19 +104,19 @@ export async function createMcpServer(transport: Transport,
     } catch (error: any) {
       // Format error message
       const errorMessage = error.message || 'An error occurred while processing the request'
-      
+
       // Update request history with error information
       history.updateLastResponse(errorMessage, true)
-      
+
       // Propagate error to client
       throw new Error(errorMessage)
     }
   })
-  
+
   // Connect to the transport
-  server.connect(transport).catch(error => {
+  server.connect(transport).catch((error) => {
     console.error('MCP Server connection failed:', error)
   })
-  
+
   return server
 }

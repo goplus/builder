@@ -1,38 +1,34 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
-import { generateStreamMessage, type Message,type Tool, ToolType } from '@/apis/copilot'
+import { generateStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
 import type { ICopilot, Chat } from '@/components/copilot/index'
-import {
-  type MCPMarkdownString,
-} from '@/components/editor/code-editor/common'
+import { type MCPMarkdownString } from '@/components/editor/code-editor/common'
 import { registeredTools } from './mcp/registry'
 
 function convertToApiTools(serverTools: typeof registeredTools.value): Tool[] {
-  return serverTools.map(tool => {
-    const properties: { [key: string]: any } = {};
+  return serverTools.map((tool) => {
+    const properties: { [key: string]: any } = {}
     if (tool.inputSchema.properties) {
       Object.entries(tool.inputSchema.properties).forEach(([key, value]) => {
-        properties[key] = value as any;
-      });
+        properties[key] = value as any
+      })
     }
 
-    const required = Array.isArray(tool.inputSchema.required) 
-    ? tool.inputSchema.required 
-    : [];
-    
+    const required = Array.isArray(tool.inputSchema.required) ? tool.inputSchema.required : []
+
     return {
       type: ToolType.Function,
       function: {
         name: tool.name,
         description: tool.description,
         parameters: {
-          type: "object",
+          type: 'object',
           properties,
           required: required
         }
       }
-    };
-  });
+    }
+  })
 }
 
 const maxChatMessageCount = 10
@@ -44,9 +40,7 @@ export type ChatMessage = {
 }
 
 export class Copilot extends Disposable implements ICopilot {
-  constructor(
-    private i18n: I18n,
-  ) {
+  constructor(private i18n: I18n) {
     super()
   }
 
@@ -74,10 +68,12 @@ export class Copilot extends Disposable implements ICopilot {
     }
   }
 
-  async *getChatCompletion(chat: Chat,
+  async *getChatCompletion(
+    chat: Chat,
     options?: {
       signal?: AbortSignal
-    }): AsyncIterableIterator<string> {
+    }
+  ): AsyncIterableIterator<string> {
     const messages: Message[] = []
     const toSkip = chat.messages.length - maxChatMessageCount
 
@@ -92,11 +88,10 @@ export class Copilot extends Disposable implements ICopilot {
     })
 
     const tools = convertToApiTools(registeredTools.value)
-    console.log("tools", tools)
     // Use generateStreamMessage directly
     const stream = await generateStreamMessage(messages, {
-        signal: options?.signal,
-        tools: tools,
+      signal: options?.signal,
+      tools: tools
     })
 
     // Forward each chunk from the stream

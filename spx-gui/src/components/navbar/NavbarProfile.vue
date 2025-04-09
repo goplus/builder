@@ -51,7 +51,7 @@
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
         </UIMenuItem>
         <UIMenuItem @click="handleAskCopilotEdit">
-            {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
+          {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>

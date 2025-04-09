@@ -134,7 +134,11 @@ export const addStageBackdropFromCanvasToolDescription = createToolDescription(
  * Defines where and how code should be inserted or replaced
  */
 export const InsertCodeArgsSchema = z.object({
-  file: z.string().describe('The Spx file path where the code will be inserted. This should be a valid file path. example: "file:///stage.spx"'),
+  file: z
+    .string()
+    .describe(
+      'The Spx file path where the code will be inserted. This should be a valid file path. example: "file:///stage.spx"'
+    ),
   code: z.string().describe('The SPX language code segment to be inserted into the Go+ XBuilder project file.'),
   insertRange: z
     .object({
@@ -144,7 +148,10 @@ export const InsertCodeArgsSchema = z.object({
     .describe('The line range in the SPX file where new code will be inserted.'),
   replaceRange: z
     .object({
-      startLine: z.number().optional().describe('The starting line number in the SPX file where existing code will be replaced.'),
+      startLine: z
+        .number()
+        .optional()
+        .describe('The starting line number in the SPX file where existing code will be replaced.'),
       endLine: z.number().optional().describe('The ending line number in the SPX file where code replacement will end.')
     })
     .optional()
@@ -189,7 +196,9 @@ export const getDiagnosticsToolDescription = createToolDescription(
 )
 
 export const GetFileCodeArgsSchema = z.object({
-  file: z.string().describe('The Spx file path to get the code from. This should be a valid file path. example: "file:///stage.spx"')
+  file: z
+    .string()
+    .describe('The Spx file path to get the code from. This should be a valid file path. example: "file:///stage.spx"')
 })
 export const getFileCodeToolDescription = createToolDescription(
   'get_file_code',

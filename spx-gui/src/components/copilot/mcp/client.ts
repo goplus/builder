@@ -22,17 +22,17 @@ const CLIENT_CONFIG = {
 /**
  * Initialize the MCP client
  * Creates client instance and establishes connection
- * 
+ *
  * @param {boolean} [force=false] - Force reinitialization even if already initialized
  * @returns {Promise<Client>} Connected MCP client instance
  * @throws {Error} If connection fails
  */
-export async function createMcpClient(transport: Transport): Promise<Client> {  
+export async function createMcpClient(transport: Transport): Promise<Client> {
   // Create new client instance with configuration
   const client = new Client(CLIENT_CONFIG.client, CLIENT_CONFIG.options)
-  
+
   // Establish connection to transport layer
   await client.connect(transport)
-  
+
   return client
 }

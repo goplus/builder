@@ -1,5 +1,4 @@
 import { reactive, ref } from 'vue'
-import { useCopilotCtx } from '../CopilotProvider.vue'
 
 /** Status lifecycle of a tool task */
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
@@ -9,14 +8,14 @@ export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
  * Contains all data related to a specific tool execution
  */
 export interface ToolTask {
-  id: string         // Unique task identifier
-  tool: string       // Name of the tool to execute
-  server?: string    // Server name (optional)
-  args: string       // Arguments as JSON string
+  id: string // Unique task identifier
+  tool: string // Name of the tool to execute
+  server?: string // Server name (optional)
+  args: string // Arguments as JSON string
   status: TaskStatus // Current execution status
-  result?: any       // Execution result if available
+  result?: any // Execution result if available
   errorMessage?: string // Error information if failed
-  timestamp?: number    // Execution timestamp
+  timestamp?: number // Execution timestamp
 }
 
 /**
@@ -24,10 +23,10 @@ export interface ToolTask {
  * Contains the outcome of a tool execution
  */
 export interface ToolResult {
-  id: string        // Task identifier
-  tool: string      // Name of the executed tool
-  server?: string   // Server name (optional)
-  result: any       // Execution result or error information
+  id: string // Task identifier
+  tool: string // Name of the executed tool
+  server?: string // Server name (optional)
+  result: any // Execution result or error information
   timestamp: number // When the result was produced
 }
 
@@ -41,18 +40,20 @@ export class ToolResultCollector {
   private executionQueue = ref<string[]>([])
   private isProcessing = ref(false)
   private mcpClient: any | null = null
-  
+
   // Collection of execution results
   private results: ToolResult[] = []
-  
+
   /**
    * Creates a new collector with optional configuration
    * @param options Configuration options
    */
-  constructor(private options = { 
-    debounceTime: 500,
-    storagePrefix: 'mcp_tool_'
-  }) {}
+  constructor(
+    private options = {
+      debounceTime: 500,
+      storagePrefix: 'mcp_tool_'
+    }
+  ) {}
 
   /**
    * Sets the MCP client for executing tasks
@@ -61,7 +62,7 @@ export class ToolResultCollector {
   setMcpClient(client: any) {
     this.mcpClient = client
   }
-  
+
   /**
    * Retrieves an existing task or creates a new one
    * @param taskInfo Information for task creation
@@ -69,15 +70,15 @@ export class ToolResultCollector {
    */
   getOrCreateTask(taskInfo: Omit<ToolTask, 'status'>): ToolTask {
     const id = taskInfo.id
-    
+
     // Return existing task if available
     if (this.tasks[id]) {
       return this.tasks[id]
     }
-    
+
     // Try to recover from session storage
     const storedTask = this.getStoredTask(id)
-    
+
     // Create new task with restored or default values
     this.tasks[id] = {
       id,
@@ -89,10 +90,10 @@ export class ToolResultCollector {
       errorMessage: storedTask?.errorMessage,
       timestamp: storedTask?.timestamp
     }
-    
+
     return this.tasks[id]
   }
-  
+
   /**
    * Schedules a task for execution
    * @param taskId ID of the task to execute
@@ -103,19 +104,18 @@ export class ToolResultCollector {
       console.error(`Task ${taskId} not found`)
       return
     }
-    
+
     // Skip if already running or queued
-    if (this.tasks[taskId].status === 'running' || 
-        this.executionQueue.value.includes(taskId)) {
+    if (this.tasks[taskId].status === 'running' || this.executionQueue.value.includes(taskId)) {
       return
     }
-    
+
     // Update status and add to execution queue
     this.tasks[taskId].status = 'pending'
     this.saveTaskToStorage(taskId)
     this.executionQueue.value.push(taskId)
   }
-  
+
   /**
    * Marks a task as failed with error information
    * @param taskId ID of the failed task
@@ -126,7 +126,7 @@ export class ToolResultCollector {
       console.error(`Task ${taskId} not found`)
       return
     }
-    
+
     this.tasks[taskId].status = 'error'
     this.tasks[taskId].errorMessage = errorMessage
     this.saveTaskToStorage(taskId)
@@ -138,16 +138,16 @@ export class ToolResultCollector {
   clearAllTasks(): void {
     // Stop processing
     this.isProcessing.value = false
-    
+
     // Clear the execution queue
     this.executionQueue.value = []
-    
+
     // Get all task IDs
     const taskIds = Object.keys(this.tasks)
-    
+
     // Clear results collection
     this.results = []
-    
+
     // Remove all tasks from storage and memory
     for (const id of taskIds) {
       // Remove from storage
@@ -157,12 +157,12 @@ export class ToolResultCollector {
       } catch (e) {
         console.error(`Error removing task ${id} from storage:`, e)
       }
-      
+
       // Remove from collection
       delete this.tasks[id]
     }
   }
-  
+
   /**
    * Processes all queued tasks sequentially
    * @returns Promise resolving to array of results from processed tasks
@@ -172,8 +172,7 @@ export class ToolResultCollector {
     if (this.isProcessing.value || this.executionQueue.value.length === 0) {
       return []
     }
-    
-    
+
     this.isProcessing.value = true
     const processedResults: ToolResult[] = []
     if (this.mcpClient == null) {
@@ -185,32 +184,32 @@ export class ToolResultCollector {
         // Get next task from queue
         const taskId = this.executionQueue.value.shift()!
         const task = this.tasks[taskId]
-        
+
         if (!task) {
           console.error(`Task ${taskId} not found in queue`)
           continue
         }
-        
+
         // Set status to running
         task.status = 'running'
         this.saveTaskToStorage(taskId)
-        
+
         try {
           // Parse arguments and call the tool
           const args = JSON.parse(task.args)
-          
+
           const result = await this.mcpClient.callTool({
             name: task.tool,
             arguments: args
           })
-          
+
           // Update task with success information
           task.status = 'success'
           task.result = result
           task.errorMessage = undefined
           task.timestamp = Date.now()
           this.saveTaskToStorage(taskId)
-          
+
           // Create result object
           const toolResult: ToolResult = {
             id: task.id,
@@ -219,7 +218,7 @@ export class ToolResultCollector {
             result: result,
             timestamp: task.timestamp
           }
-          
+
           // Store in results collections
           processedResults.push(toolResult)
           this.results.push(toolResult)
@@ -229,7 +228,7 @@ export class ToolResultCollector {
           task.errorMessage = error instanceof Error ? error.message : String(error)
           task.timestamp = Date.now()
           this.saveTaskToStorage(taskId)
-          
+
           // Create error result object
           const errorResult: ToolResult = {
             id: task.id,
@@ -238,7 +237,7 @@ export class ToolResultCollector {
             result: { error: task.errorMessage },
             timestamp: task.timestamp
           }
-          
+
           // Store in results collections
           processedResults.push(errorResult)
           this.results.push(errorResult)
@@ -247,10 +246,10 @@ export class ToolResultCollector {
     } finally {
       this.isProcessing.value = false
     }
-    
-    return processedResults;
+
+    return processedResults
   }
-  
+
   /**
    * Retrieves a task from session storage
    * @param taskId ID of the task to retrieve
@@ -261,17 +260,17 @@ export class ToolResultCollector {
     try {
       const key = `${this.options.storagePrefix}${taskId}`
       const stored = sessionStorage.getItem(key)
-      
+
       if (stored) {
         return JSON.parse(stored)
       }
     } catch (e) {
       console.error(`Error restoring task ${taskId}:`, e)
     }
-    
+
     return null
   }
-  
+
   /**
    * Persists task data to session storage
    * @param taskId ID of the task to save
@@ -280,15 +279,18 @@ export class ToolResultCollector {
   private saveTaskToStorage(taskId: string): void {
     const task = this.tasks[taskId]
     if (!task) return
-    
+
     try {
       const key = `${this.options.storagePrefix}${taskId}`
-      sessionStorage.setItem(key, JSON.stringify({
-        status: task.status,
-        result: task.result,
-        errorMessage: task.errorMessage,
-        timestamp: task.timestamp || Date.now()
-      }))
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({
+          status: task.status,
+          result: task.result,
+          errorMessage: task.errorMessage,
+          timestamp: task.timestamp || Date.now()
+        })
+      )
     } catch (e) {
       console.error(`Error saving task ${taskId}:`, e)
     }
