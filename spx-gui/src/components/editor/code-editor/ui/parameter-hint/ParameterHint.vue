@@ -1,23 +1,3 @@
-<script lang="ts">
-function getInputHelperCls(suffix?: string) {
-  return ['code-editor-input-helper', suffix].filter(Boolean).join('-')
-}
-
-/**
- * Check if the element stands for icon of a input helper.
- * If so, return the id of the input helper item.
- */
- export function checkInputHelper(el: HTMLElement): string | null {
-  const clss = el.classList
-  if (!clss.contains(getInputHelperCls('icon'))) return null
-  const idClsPrefix = getInputHelperCls('id-')
-  for (const cls of clss) {
-    if (cls.startsWith(idClsPrefix)) return cls.slice(idClsPrefix.length)
-  }
-  return null
-}
-</script>
-
 <script setup lang="ts">
 import { onUnmounted, watchEffect, ref, computed } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
@@ -25,16 +5,16 @@ import type { monaco } from '../../monaco'
 import { toAbsolutePosition } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { InputHelperType, type InputHelperController, type InputHelperItem } from '.'
-import StringInput from './StringInput.vue'
-import NumberInput from './NumberInput.vue'
-import BooleanInput from './BooleanInput.vue'
-import { ValueType, type Value } from './common'
 
 const props = defineProps<{
   controller: InputHelperController
 }>()
 
 const codeEditorUICtx = useCodeEditorUICtx()
+
+function getInlayHintCls(suffix?: string) {
+  return ['code-editor-inlay-hint', suffix].filter(Boolean).join('-')
+}
 
 let dc: monaco.editor.IEditorDecorationsCollection | null = null
 function getDecorationsCollection() {

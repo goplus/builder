@@ -5,7 +5,7 @@ import { TaskManager } from '@/utils/task'
 import type { Position, Range } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 import type { TextDocument } from '../../text-document'
-import { checkModifiable } from './InputHelperUI.vue'
+import { checkInputHelper } from './InputHelperUI.vue'
 
 export enum InputHelperType {
   String = 'string',
@@ -53,14 +53,14 @@ export class InputHelperController extends Disposable {
     ].filter(item => item !== null) as InputHelperItem[]
   }
 
-  private diagnosticsMgr = new TaskManager(async () => {
+  private mgr = new TaskManager(async () => {
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) throw new Error('No active text document')
     return this.getItems(textDocument)
   })
 
   get items() {
-    return this.diagnosticsMgr.result.data
+    return this.mgr.result.data
   }
 
   private inputingRef = shallowRef<InputHelperItem | null>(null)
@@ -78,7 +78,7 @@ export class InputHelperController extends Disposable {
 
   init() {
     const { editor } = this.ui
-    const refreshDiagnostics = debounce(() => this.diagnosticsMgr.start(), 100)
+    const refreshDiagnostics = debounce(() => this.mgr.start(), 100)
 
     this.addDisposer(
       watch(
@@ -99,7 +99,7 @@ export class InputHelperController extends Disposable {
       'mousedown',
       (e) => {
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkModifiable(e.target)
+        const rrId = checkInputHelper(e.target)
         if (rrId == null) return
         e.preventDefault()
         e.stopPropagation()
@@ -113,7 +113,7 @@ export class InputHelperController extends Disposable {
       (e) => {
         if (clickingId == null) return
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkModifiable(e.target)
+        const rrId = checkInputHelper(e.target)
         if (rrId != null && rrId === clickingId) {
           e.preventDefault()
           e.stopPropagation()

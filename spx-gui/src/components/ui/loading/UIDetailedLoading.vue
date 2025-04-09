@@ -48,7 +48,7 @@ watch(
     </div>
     <div class="text">
       <slot></slot>
-      <span>{{ (percentage * 100).toFixed(0) }}%</span>
+      <span>{{ Math.floor(percentage * 100) }}%</span>
     </div>
   </div>
 </template>
