@@ -2,18 +2,12 @@
 import { computed } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
-import type { MarkdownStringFlag } from '@/components/editor/code-editor/common'
 import CodeBlock from './CodeBlock.vue'
 import UseMcpTool from './UseMcpTool.vue' 
 
-const props = withDefaults(
-  defineProps<{
-    flag?: MarkdownStringFlag
-    /** Markdown string with MDX support. */
-    value: string | LocaleMessage
-  }>(),
-  { flag: 'basic' as MarkdownStringFlag }
-)
+const props =  defineProps<{
+  value: string | LocaleMessage
+}>()
 
 const i18n = useI18n()
 

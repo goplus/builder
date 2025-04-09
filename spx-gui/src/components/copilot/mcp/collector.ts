@@ -1,5 +1,5 @@
 import { reactive, ref } from 'vue'
-import { getMcpClient } from './client'
+import { useCopilotCtx } from '../CopilotProvider.vue'
 
 /** Status lifecycle of a tool task */
 export type TaskStatus = 'pending' | 'running' | 'success' | 'error'
@@ -40,6 +40,7 @@ export class ToolResultCollector {
   private tasks = reactive<Record<string, ToolTask>>({})
   private executionQueue = ref<string[]>([])
   private isProcessing = ref(false)
+  private mcpClient: any | null = null
   
   // Collection of execution results
   private results: ToolResult[] = []
@@ -52,6 +53,14 @@ export class ToolResultCollector {
     debounceTime: 500,
     storagePrefix: 'mcp_tool_'
   }) {}
+
+  /**
+   * Sets the MCP client for executing tasks
+   * @param client The MCP client instance
+   */
+  setMcpClient(client: any) {
+    this.mcpClient = client
+  }
   
   /**
    * Retrieves an existing task or creates a new one
@@ -164,8 +173,13 @@ export class ToolResultCollector {
       return []
     }
     
+    
     this.isProcessing.value = true
     const processedResults: ToolResult[] = []
+    if (this.mcpClient == null) {
+      console.error('MCP client not initialized')
+      return []
+    }
     try {
       while (this.executionQueue.value.length > 0) {
         // Get next task from queue
@@ -185,7 +199,7 @@ export class ToolResultCollector {
           // Parse arguments and call the tool
           const args = JSON.parse(task.args)
           
-          const result = await getMcpClient().callTool({
+          const result = await this.mcpClient.callTool({
             name: task.tool,
             arguments: args
           })

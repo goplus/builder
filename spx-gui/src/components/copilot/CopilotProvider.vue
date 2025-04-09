@@ -1,6 +1,20 @@
 <script lang="ts">
 import type { InjectionKey } from 'vue'
 
+export type McpConnectionStatus = {
+  client: boolean
+  server: boolean
+  lastUpdate: number
+}
+
+export type RequestHistoryItem = {
+  tool: string
+  params: any
+  response: string
+  time: string
+  error?: boolean
+}
+
 /**
  * Copilot context interface
  * Defines the shared state and controls for the Copilot system
@@ -9,10 +23,31 @@ export type CopilotCtx = {
   controller: CopilotController | null
   copilot: ICopilot | null
   visible: boolean
+  mcpDebuggerVisible: boolean
+  mcp: {
+    client: Ref<Client | null>
+    server: Ref<Server | null>
+    status: {
+      client: boolean
+      server: boolean
+      lastUpdate: number
+    }
+    history: {
+      requests: Ref<RequestHistoryItem[]>
+      addRequest: (item: RequestHistoryItem) => void
+      updateLastResponse: (response: string, isError?: boolean) => void
+      clear: () => void
+    }
+  }
   controls: {
     open: () => Promise<boolean>
     close: () => void
     toggle: () => Promise<boolean>
+    mcpDebugger: { // 添加 MCP 调试器控制
+      open: () => Promise<boolean>
+      close: () => void
+      toggle: () => Promise<boolean>
+    }
   }
 }
 
@@ -39,43 +74,62 @@ export function useCopilotCtx() {
  * Provides Copilot context and services to all child components.
  * Handles initialization of Copilot, MCP connections, and UI rendering.
  */
-import { inject, ref, provide, onBeforeUnmount, computed } from 'vue'
+import { reactive, inject, ref, provide, onBeforeUnmount, computed, type Ref } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { Copilot } from './copilot'
 import { CopilotController, type ICopilot } from './index'
-import { initMcpClient } from './mcp/client'
-import { initMcpServer } from './mcp/server'
+import { createMcpClient } from './mcp/client'
+import { createMcpServer } from './mcp/server'
+import { createMcpTransports } from './mcp/transport'
+import { registeredTools, registerTools } from './mcp/registry'
 import CopilotUI from './CopilotUI.vue'
 import { z } from 'zod'
 import { useUserStore } from '@/stores/user'
-import { registerTools } from './mcp/registry'
 import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
 import { getProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
-import { genAssetFromCanvos } from '@/components/asset'
+import { genAssetFromCanvos } from '@/models/common/asset'
+import McpDebugger from './mcp/McpDebugger.vue'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { toolResultCollector } from '@/components/copilot/mcp/collector'
 
 // Component state using refs
 const visible = ref(false)
+const mcpDebuggerVisible = ref(false)
 const router = useRouter()
-/**
- * Initialize MCP client and server connections in background
- */
-async function initMcpConnections() {
-  try {
-    await Promise.all([
-      initMcpClient(),
-      initMcpServer()
-    ])
-    return true
-  } catch (err) {
-    console.error('MCP initialization error:', err)
-    return false
+
+// MCP connection status
+const mcpConnectionStatus = reactive<McpConnectionStatus>({
+  client: false,
+  server: false,
+  lastUpdate: Date.now()
+})
+
+// MCP request history
+const mcpRequests = ref<RequestHistoryItem[]>([])
+
+// History management methods
+const mcpHistory = {
+  requests: mcpRequests,
+  addRequest: (item: RequestHistoryItem) => {
+    mcpRequests.value.unshift(item)
+  },
+  updateLastResponse: (response: string, isError = false) => {
+    if (mcpRequests.value.length > 0) {
+      mcpRequests.value[0].response = response
+      if (isError) {
+        mcpRequests.value[0].error = true
+      }
+    }
+  },
+  clear: () => {
+    mcpRequests.value = []
   }
 }
-
 
 type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
 
@@ -125,10 +179,6 @@ async function createProject(options: CreateProjectOptions) {
     }
   } catch (e) {
     // Handle error checking project existence
-    // return {
-    //   success: false,
-    //   message: `Failed to check if project exists: ${e instanceof Error ? e.message : String(e)}`
-    // }
   }
 
   const project = new Project(username, projectName)
@@ -158,7 +208,7 @@ async function createProject(options: CreateProjectOptions) {
 }
 
 /**
- * Chat visibility controls with automatic initialization
+ * Visibility controls with automatic initialization
  */
 const controls = {
   /**
@@ -187,21 +237,65 @@ const controls = {
     } else {
       return await controls.open()
     }
+  },
+  
+  /**
+   * McpDebugger Controls
+   */
+  mcpDebugger: {
+    open: async (): Promise<boolean> =>{
+      mcpDebuggerVisible.value = true
+      return true
+    },
+    
+    close: () => {
+      mcpDebuggerVisible.value = false
+    },
+    
+    toggle: async (): Promise<boolean> => {
+    if (mcpDebuggerVisible.value) {
+      controls.mcpDebugger.close()
+      return false
+    } else {
+      return await controls.mcpDebugger.open()
+    }
+  }
   }
 }
 
+// Create transports
+const { clientTransport, serverTransport } = createMcpTransports()
+    
+// Create client
+const client = ref<Client | null>(null)
+createMcpClient(clientTransport).then(c => {
+  client.value = c
+  mcpConnectionStatus.client = true
+  mcpConnectionStatus.lastUpdate = Date.now()
+  toolResultCollector.setMcpClient(c)
+}).catch(e => {
+  console.error('Failed to create MCP client:', e)
+})
+
+// Create server
+const server = ref<Server | null>(null)
+createMcpServer(serverTransport, {
+  history: mcpHistory,
+  registeredTools
+}).then(s => {
+  server.value = s
+  mcpConnectionStatus.server = true
+  mcpConnectionStatus.lastUpdate = Date.now()
+}).catch(e => {
+  console.error('Failed to create MCP server:', e)
+})
+
+initBasicTools()
 // Get i18n in component context
 const i18n = useI18n()
 const copilot = new Copilot(i18n)
 const copilotController = new CopilotController(copilot)
-initMcpConnections()
-  .then(() => {
-    initBasicTools()
-    copilotController.init()
-  })
-  .catch((err) => {
-    console.error('Error initializing MCP connections:', err)
-  })
+copilotController.init()
 /**
  * Handle UI close event from CopilotUI
  */
@@ -214,6 +308,7 @@ function handleCloseUI() {
  */
 onBeforeUnmount(() => {
   visible.value = false
+  mcpDebuggerVisible.value = false // 确保 MCP 调试器也被关闭
 })
 
 /**
@@ -232,6 +327,13 @@ const copilotCtx = computedShallowReactive<CopilotCtx>(() => ({
   controller: copilotController,
   copilot: copilot,
   visible: visible.value,
+  mcpDebuggerVisible: mcpDebuggerVisible.value,
+  mcp: {
+    client: client as any,
+    server: server as any,
+    status: mcpConnectionStatus,
+    history: mcpHistory,
+  },
   controls
 }))
 
@@ -261,6 +363,12 @@ defineExpose({
         @close="handleCloseUI"
       />
     </aside>
+    
+    <!-- Render MCP Debugger when needed -->
+    <McpDebugger 
+      :is-visible="mcpDebuggerVisible" 
+      @close="controls.mcpDebugger.close"
+    />
   </div>
 </template>
 

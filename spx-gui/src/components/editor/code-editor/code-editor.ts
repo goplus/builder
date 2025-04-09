@@ -85,7 +85,8 @@ import {
   GetFileCodeArgsSchema,
   getFileCodeToolDescription
 } from '@/components/copilot/mcp/definitions'
-import { genSpriteFromCanvos, genBackdropFromCanvos, selectAsset } from '@/components/asset/index'
+import { selectAsset } from '@/components/asset/index'
+import { genSpriteFromCanvos, genBackdropFromCanvos } from '@/models/common/asset'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(

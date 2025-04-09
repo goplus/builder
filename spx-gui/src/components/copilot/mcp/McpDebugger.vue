@@ -165,10 +165,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { mcpConnectionStatus } from '@/components/copilot/mcp/transport'
-import { mcpRequestHistory } from '@/components/copilot/mcp/server'
+import { useCopilotCtx } from '../CopilotProvider.vue'
 import { registeredTools } from '@/components/copilot/mcp/registry'
-import { getMcpClient } from '@/components/copilot/mcp/client'
 import { UITooltip } from '@/components/ui'
 
 /**
@@ -179,6 +177,11 @@ interface McpDebuggerPanelProps {
   isVisible: boolean // Controls the visibility of the debugger panel
 }
 
+const ctx = useCopilotCtx()
+
+const mcpConnectionStatus = ctx.mcp.status
+const mcpRequestHistory = ctx.mcp.history.requests
+const mcpClient = computed(() => ctx.mcp.client.value)
 // Component props and emits
 const props = defineProps<McpDebuggerPanelProps>()
 const emit = defineEmits<{
@@ -306,11 +309,16 @@ function getToolDescription(toolName: string) {
 async function sendRequest() {
   if (!selectedTool.value || !isFormValid.value) return
 
+  if (!mcpClient.value) {
+    console.error('MCP client is not initialized')
+    return
+  }
+
   isLoading.value = true
 
   try {
     const cleanParams = { ...paramValues.value }
-    await getMcpClient().callTool({
+    await mcpClient.value.callTool({
       name: selectedTool.value,
       arguments: cleanParams
     })

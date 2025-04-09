@@ -1,47 +1,19 @@
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import { ref } from 'vue'
+import { type Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 
 /**
- * Create a pair of linked transports for MCP communication
- * @type {[InMemoryTransport, InMemoryTransport]}
+ * Create paired MCP transports for client and server
+ * Factory function instead of singleton
+ * 
+ * @returns Object containing client and server transport instances
  */
-const transportPair = InMemoryTransport.createLinkedPair()
-
-/**
- * Transport instance for the MCP client
- * @type {InMemoryTransport}
- */
-export const clientTransport: InMemoryTransport = transportPair[0]
-
-/**
- * Transport instance for the MCP server
- * @type {InMemoryTransport}
- */
-export const serverTransport: InMemoryTransport = transportPair[1]
-
-/**
- * Object containing reactive connection status for both client and server
- * @type {Object}
- * @property {Ref<boolean>} client - Client connection status
- * @property {Ref<boolean>} server - Server connection status
- */
-export const mcpConnectionStatus = {
-  client: ref(false),
-  server: ref(false)
-}
-
-/**
- * Updates the client connection status
- * @param {boolean} status - The new connection status
- */
-export function setClientConnected(status: boolean) {
-  mcpConnectionStatus.client.value = status
-}
-
-/**
- * Updates the server connection status
- * @param {boolean} status - The new connection status
- */
-export function setServerConnected(status: boolean) {
-  mcpConnectionStatus.server.value = status
+export function createMcpTransports(): { 
+  clientTransport: Transport, 
+  serverTransport: Transport 
+} {
+  const transportPair = InMemoryTransport.createLinkedPair()
+  return {
+    clientTransport: transportPair[0],
+    serverTransport: transportPair[1]
+  }
 }

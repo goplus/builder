@@ -65,7 +65,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useSpxVersion, useMcpDebuggerStore } from '@/utils/utils'
+import { useSpxVersion } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
@@ -105,8 +105,6 @@ function handleProjects() {
 }
 
 const spxVersion = useSpxVersion()
-
-const mcpDebuggerVisible = useMcpDebuggerStore()
 
 const handleUseSpxV1 = useMessageHandle(
   async () => {
@@ -152,8 +150,8 @@ const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 const handleUseMcpDebuggerUtils = useMessageHandle(
   async () => {
-    mcpDebuggerVisible.value = !mcpDebuggerVisible.value // Toggle visibility
-    return mcpDebuggerVisible.value
+    const isVisible = controls.mcpDebugger.toggle()
+    return isVisible
   },
   undefined,
   (isVisible) => ({

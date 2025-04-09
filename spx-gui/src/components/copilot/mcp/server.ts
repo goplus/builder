@@ -1,16 +1,8 @@
-import { ref } from 'vue'
+import { type Ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
-import { serverTransport, setServerConnected } from './transport'
+import { type Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import { registeredTools, executeRegisteredTool } from './registry'
-
-/**
- * Server connection state
- * Tracks initialization and connection status
- */
-let isServerInitialized = false
-let serverConnectionPromise: Promise<void> | null = null
-let server: Server | null = null
 
 /**
  * Interface for request history items
@@ -34,10 +26,22 @@ export interface RequestHistoryItem {
 }
 
 /**
- * Reactive request history store
- * Contains chronological list of tool invocations
+ * Interface for history management
  */
-export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
+export interface HistoryManager {
+  requests: Ref<RequestHistoryItem[]>
+  addRequest: (item: RequestHistoryItem) => void
+  updateLastResponse: (response: string, isError?: boolean) => void
+  clear: () => void
+}
+
+/**
+ * Context for MCP server creation
+ */
+export interface McpServerContext {
+  history: HistoryManager
+  registeredTools: Ref<any[]>
+}
 
 /**
  * Initialize the MCP server
@@ -47,22 +51,11 @@ export const mcpRequestHistory = ref<RequestHistoryItem[]>([])
  * @returns {Promise<Server>} MCP server instance
  * @throws {Error} If connection fails
  */
-export async function initMcpServer(force = false): Promise<Server> {
-  // Return existing server if already initialized and not forced
-  if (isServerInitialized && server && !force) {
-    return server
-  }
-  
-  // If connection is in progress, wait for it to complete
-  if (serverConnectionPromise && !force) {
-    return serverConnectionPromise.then(() => {
-      if (!server) throw new Error('Server initialization failed')
-      return server
-    })
-  }
-  
+export async function createMcpServer(transport: Transport,
+  context: McpServerContext): Promise<Server> {
+  const { history, registeredTools } = context
   // Create new server instance with metadata
-  server = new Server(
+  const server = new Server(
     {
       name: 'spx',
       version: '0.1.0'
@@ -86,7 +79,7 @@ export async function initMcpServer(force = false): Promise<Server> {
     const timestamp = new Date().toLocaleTimeString()
   
     // Record the request in history
-    mcpRequestHistory.value.unshift({
+    history.addRequest({
       tool: request.params.name,
       params: request.params.arguments,
       response: 'Pending...',
@@ -103,7 +96,7 @@ export async function initMcpServer(force = false): Promise<Server> {
       const response = JSON.stringify(result, null, 2)
       
       // Update request history with success result
-      mcpRequestHistory.value[0].response = response
+      history.updateLastResponse(response)
       
       // Return formatted response
       return {
@@ -114,34 +107,17 @@ export async function initMcpServer(force = false): Promise<Server> {
       const errorMessage = error.message || 'An error occurred while processing the request'
       
       // Update request history with error information
-      mcpRequestHistory.value[0].response = errorMessage
-      mcpRequestHistory.value[0].error = true
+      history.updateLastResponse(errorMessage, true)
       
       // Propagate error to client
       throw new Error(errorMessage)
     }
   })
   
-  // Establish connection to transport layer
-  serverConnectionPromise = server
-    .connect(serverTransport)
-    .then(() => {
-      // Mark initialization as complete
-      isServerInitialized = true
-      setServerConnected(true)
-    })
-    .catch((error) => {
-      console.error('MCP Server connection failed:', error)
-      setServerConnected(false)
-      throw error
-    })
-    .finally(() => {
-      // Clear connection promise when done
-      serverConnectionPromise = null
-    })
-  
-  // Wait for connection to complete
-  await serverConnectionPromise
+  // Connect to the transport
+  server.connect(transport).catch(error => {
+    console.error('MCP Server connection failed:', error)
+  })
   
   return server
 }

@@ -234,7 +234,6 @@ export class CopilotController extends Disposable {
         currentRound.answer = makeMCPMarkdownString(accumulatedText)
       }
 
-      console.log('Copilot answer:', accumulatedText)
       currentRound.state = RoundState.Completed
     } catch (e) {
       if (e instanceof Cancelled) {
