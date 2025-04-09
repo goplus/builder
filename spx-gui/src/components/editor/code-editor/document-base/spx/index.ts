@@ -288,7 +288,7 @@ export const setCostume: DefinitionDocumentationItem = {
     name: 'Sprite.setCostume',
     overloadId: '0'
   },
-  insertText: 'setCostume ${1:name}',
+  insertText: 'setCostume "foo"',
   overview: 'setCostume name',
   detail: makeBasicMarkdownString({
     en: 'Set the current costume by specifying name, e.g., `setCostume "happy"`',
@@ -562,7 +562,7 @@ export const glide0: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '0'
   },
-  insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
+  insertText: 'glide 10, 20, 1',
   overview: 'glide x, y, seconds',
   detail: makeBasicMarkdownString({
     en: 'Move to given position (X, Y) with glide animation and given duration, e.g., `glide 100, 100, 2`',

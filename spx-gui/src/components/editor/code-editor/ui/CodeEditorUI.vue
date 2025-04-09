@@ -68,6 +68,7 @@ import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
+import ParameterHintUI from './parameter-hint/ParameterHintUI.vue'
 
 const props = defineProps<{
   codeFilePath: string
@@ -272,6 +273,7 @@ function zoomReset() {
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
     <InputHelperUI :controller="uiRef.inputHelperController" />
+    <ParameterHintUI :controller="uiRef.parameterHintController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

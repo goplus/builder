@@ -20,7 +20,7 @@ const blockDefinitionKinds = [DefinitionKind.Command, DefinitionKind.Listen, Def
 const handleInsert = useMessageHandle(
   () => {
     if (blockDefinitionKinds.includes(props.item.kind)) {
-      codeEditorCtx.ui.insertBlockSnippet(props.item.insertText)
+      codeEditorCtx.ui.insertBlockText(props.item.insertText)
     } else {
       codeEditorCtx.ui.insertInlineSnippet(props.item.insertText)
     }

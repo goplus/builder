@@ -1,8 +1,8 @@
 import { debounce } from 'lodash'
-import { shallowRef, watch } from 'vue'
+import { watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
-import type { Position, Range } from '../../common'
+import type { Range } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 import type { TextDocument } from '../../text-document'
 
@@ -16,32 +16,49 @@ export class ParameterHintController extends Disposable {
     super()
   }
 
-  private getItem(keyword: string, textDocument: TextDocument): ParameterHintItem | null {
+  private getItemsForFunc(name: string, args: string[], textDocument: TextDocument): ParameterHintItem[] {
     const content = textDocument.getValue()
-    const keywordIdx = content.indexOf(keyword)
-    if (keywordIdx === -1) return null
-    const stringOffset = keywordIdx + keyword.length + 1
-    const stringStart = textDocument.getPositionAt(stringOffset)
-    const stringEnd: Position = {
-      line: stringStart.line,
-      column: textDocument.getLineContent(stringStart.line).length + 1
-    }
-    return {
-      id: `${type}-${keywordIdx}`,
-      type,
-      range: {
-        start: stringStart,
-        end: stringEnd
+    const items: ParameterHintItem[] = []
+    let index = 0
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const funcIndex = content.indexOf(name, index)
+      if (funcIndex === -1) break
+      let offset = funcIndex + name.length + 1
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i]
+        const startAt = offset
+        let endAt = offset + 1
+        while (content[endAt] !== ',' && content[endAt] !== '\n' && content[endAt] !== '{' && content[endAt] != null) {
+          endAt++
+        }
+        items.push({
+          name: arg,
+          range: {
+            start: textDocument.getPositionAt(startAt),
+            end: textDocument.getPositionAt(endAt)
+          }
+        })
+        offset = endAt
+        while (content[offset] === ' ' || content[offset] === ',') {
+          offset++
+        }
       }
+      index = funcIndex + name.length
     }
+    return items
   }
 
   private getItems(textDocument: TextDocument) {
-    return [
-      this.getItem('setString', textDocument),
-      this.getItem('setNumber', textDocument),
-      this.getItem('setBoolean', textDocument)
-    ].filter(item => item !== null) as ParameterHintItem[]
+    return (window as any).paramItems = [
+      ...this.getItemsForFunc('say', ['message'], textDocument),
+      ...this.getItemsForFunc('setHeading', ['direction'], textDocument),
+      ...this.getItemsForFunc('nextBackdrop', ['wait'], textDocument),
+      ...this.getItemsForFunc('glide', ['x', 'y', 'seconds'], textDocument),
+      ...this.getItemsForFunc('if', ['condition', 'then'], textDocument),
+      ...this.getItemsForFunc('println', ['msg'], textDocument),
+      ...this.getItemsForFunc('setCostume', ['name'], textDocument)
+    ]
   }
 
   private mgr = new TaskManager(async () => {
@@ -54,26 +71,13 @@ export class ParameterHintController extends Disposable {
     return this.mgr.result.data
   }
 
-  private inputingRef = shallowRef<ParameterHintItem | null>(null)
-  get inputing() {
-    return this.inputingRef.value
-  }
-
-  startInputing(rrId: string) {
-    this.inputingRef.value = this.items?.find((item) => item.id === rrId) ?? null
-  }
-  stopInputing() {
-    this.inputingRef.value = null
-    this.ui.editor.focus()
-  }
-
   init() {
-    const refreshDiagnostics = debounce(() => this.mgr.start(), 100)
+    const refresh = debounce(() => this.mgr.start(), 100)
 
     this.addDisposer(
       watch(
         () => [this.ui.project.filesHash, this.ui.activeTextDocument],
-        () => refreshDiagnostics(),
+        () => refresh(),
         { immediate: true }
       )
     )

@@ -1,5 +1,5 @@
 import { uniqueId } from 'lodash'
-import { ref, shallowReactive, shallowRef } from 'vue'
+import { ref, shallowReactive, shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
@@ -23,7 +23,8 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range
+  selection2Range,
+  containsPosition
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -46,6 +47,7 @@ import {
 } from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
 import { InputHelperController } from './input-helper'
+import { ParameterHintController } from './parameter-hint'
 
 export * from './hover'
 export * from './completion'
@@ -194,6 +196,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
   inputHelperController = new InputHelperController(this)
+  parameterHintController = new ParameterHintController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -317,6 +320,15 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return insert(content, range)
   }
 
+  private newlyInsertedRangeRef = shallowRef<Range | null>(null)
+  get newlyInsertedRange() {
+    return this.newlyInsertedRangeRef.value
+  }
+  private setNewlyInsertedRange(range: Range | null) {
+    console.debug('setNewlyInsertedRange', range)
+    this.newlyInsertedRangeRef.value = range
+  }
+
   private async insertBlockContent(type: 'text' | 'snippet', content: string, range: Range) {
     const textDocument = this.activeTextDocument
     if (textDocument == null) return
@@ -338,17 +350,26 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       // 1. Select inserted content
       const cursorPos = this.editor.getPosition()
       if (cursorPos == null) return
-      this.editor.setSelection(toMonacoRange({ start: rg.start, end: fromMonacoPosition(cursorPos) }))
+      const insertedRange: Range = { start: rg.start, end: fromMonacoPosition(cursorPos) }
+      this.editor.setSelection(toMonacoRange(insertedRange))
       // 2. Indent selected content
       this.editor.trigger('insertBlockContent', 'editor.action.reindentselectedlines', null)
       // 3. Clear selection, move cursor to end of the selection
       const selection = this.editor.getSelection()
-      if (selection == null) return
-      this.editor.setSelection({
-        startLineNumber: selection.endLineNumber,
-        startColumn: selection.endColumn,
-        endLineNumber: selection.endLineNumber,
-        endColumn: selection.endColumn
+      if (selection != null) {
+        this.editor.setSelection({
+          startLineNumber: selection.endLineNumber,
+          startColumn: selection.endColumn,
+          endLineNumber: selection.endLineNumber,
+          endColumn: selection.endColumn
+        })
+      }
+      this.setNewlyInsertedRange({
+        start: insertedRange.start,
+        end: {
+          line: insertedRange.end.line,
+          column: insertedRange.end.column + 1 // TODO: why?
+        }
       })
     }
 
@@ -561,6 +582,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
 
+    this.addDisposer(watch(
+      () => this.cursorPosition,
+      (pos) => {
+        if (pos == null) return
+        if (this.newlyInsertedRange == null) return
+        if (containsPosition(this.newlyInsertedRange, pos)) return
+        this.setNewlyInsertedRange(null)
+      }
+    ))
+
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
@@ -569,9 +600,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
     this.inputHelperController.init()
+    this.parameterHintController.init()
   }
 
   dispose() {
+    this.parameterHintController.dispose()
     this.inputHelperController.dispose()
     this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()

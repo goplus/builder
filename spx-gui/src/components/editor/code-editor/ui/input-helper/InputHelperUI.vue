@@ -1,5 +1,5 @@
 <script lang="ts">
-function getInputHelperCls(suffix?: string) {
+function getCls(suffix?: string) {
   return ['code-editor-input-helper', suffix].filter(Boolean).join('-')
 }
 
@@ -9,8 +9,8 @@ function getInputHelperCls(suffix?: string) {
  */
  export function checkInputHelper(el: HTMLElement): string | null {
   const clss = el.classList
-  if (!clss.contains(getInputHelperCls('icon'))) return null
-  const idClsPrefix = getInputHelperCls('id-')
+  if (!clss.contains(getCls('icon'))) return null
+  const idClsPrefix = getCls('id-')
   for (const cls of clss) {
     if (cls.startsWith(idClsPrefix)) return cls.slice(idClsPrefix.length)
   }
@@ -46,13 +46,17 @@ onUnmounted(() => {
   dc?.clear()
 })
 
-watchEffect(() => {
-  const items = props.controller.items
+watchEffect((onCleanUp) => {
+  const { items, hovered, activeItems } = props.controller
   if (items == null) return
 
-  const decorations = items.map<monaco.editor.IModelDeltaDecoration>((item) => {
-    const clss = ['icon', `type-${item.type}`, `id-${item.id}`]
-    return {
+  const iconDecorations: monaco.editor.IModelDeltaDecoration[] = []
+  for (const item of items) {
+    const isHovered = hovered != null && hovered.id === item.id
+    const isActive = activeItems.some((activeItem) => activeItem.id === item.id)
+    if (!isHovered && !isActive) continue
+    const clss = ['icon', `id-${item.id}`]
+    iconDecorations.push({
       range: {
         startLineNumber: item.range.start.line,
         startColumn: item.range.start.column,
@@ -61,16 +65,36 @@ watchEffect(() => {
       },
       options: {
         isWholeLine: false,
-        before: {
+        after: {
           content: ' ',
-          attachedData: item,
-          inlineClassName: clss.map(getInputHelperCls).join(' '),
+          inlineClassName: clss.map(getCls).join(' '),
           inlineClassNameAffectsLetterSpacing: true
         }
       }
-    }
+    })
+  }
+  const bgDecorations: monaco.editor.IModelDeltaDecoration[] = []
+  for (const item of items) {
+    const clss = ['bg', `id-${item.id}`]
+    bgDecorations.push({
+      range: {
+        startLineNumber: item.range.start.line,
+        startColumn: item.range.start.column,
+        endLineNumber: item.range.end.line,
+        endColumn: item.range.end.column
+      },
+      options: {
+        isWholeLine: false,
+        inlineClassName: clss.map(getCls).join(' ')
+      }
+    })
+  }
+  const collection = getDecorationsCollection()
+  collection.append(iconDecorations)
+  collection.append(bgDecorations)
+  onCleanUp(() => {
+    collection.clear()
   })
-  getDecorationsCollection().set(decorations)
 })
 
 function getStringValue(str: string): Value<string> {
@@ -226,8 +250,7 @@ function handleCancelInput() {
 
 .code-editor-input-helper-icon {
   &::after {
-    // TODO: different icon for different type of resource. https://github.com/goplus/builder/issues/1259
-    content: url(./resource.svg);
+    content: url(./edit.svg);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -236,18 +259,39 @@ function handleCancelInput() {
     transform: translate(-50%, -50%) scale(0.8);
     filter: opacity(0.6);
     cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.2);
   }
   &:hover::after {
     filter: opacity(1);
   }
-  &.code-editor-input-helper-type-string::after {
-    content: url(./string.svg);
-  }
-  &.code-editor-input-helper-type-number::after {
-    content: url(./number.svg);
-  }
-  &.code-editor-input-helper-type-boolean::after {
-    content: url(./boolean.svg);
+}
+
+.code-editor-input-helper-bg {
+  /* position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; */
+
+  /* &::after {
+    // TODO: different icon for different type of resource. https://github.com/goplus/builder/issues/1259
+    content: url(./edit.svg);
+    width: 16px;
+    height: 16px;
+    transform: translate(-50%, -50%) scale(0.8);
+    filter: opacity(0.6);
+    cursor: pointer;
+    display: inline-block;
+    width: 0;
+    overflow: hidden;
+  } */
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+    /* &::after {
+      display: inline;
+      width: auto;
+    } */
   }
 }
 </style>

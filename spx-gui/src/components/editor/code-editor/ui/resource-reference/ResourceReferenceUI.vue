@@ -71,7 +71,7 @@ watchEffect(() => {
       }
     }
   })
-  getDecorationsCollection().set(decorations)
+  // getDecorationsCollection().set(decorations)
 })
 
 const dropdownVisible = ref(false)
