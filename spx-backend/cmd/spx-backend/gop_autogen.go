@@ -225,12 +225,13 @@ func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *delete_asset_id) Classfname() string {
 	return "delete_asset_#id"
 }
-func (this *delete_asset_id) Classclone() interface{} {
+func (this *delete_asset_id) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/delete_project_#owner_#name.yap:10
 func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/delete_asset_#id.yap:15:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/delete_project_#owner_#name.yap:10:1
 	ctx := &this.Context
@@ -258,12 +259,13 @@ func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
 func (this *delete_project_owner_name) Classfname() string {
 	return "delete_project_#owner_#name"
 }
-func (this *delete_project_owner_name) Classclone() interface{} {
+func (this *delete_project_owner_name) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:10
 func (this *delete_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/delete_project_#owner_#name.yap:20:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
@@ -291,12 +293,13 @@ func (this *delete_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 func (this *delete_project_owner_name_liking) Classfname() string {
 	return "delete_project_#owner_#name_liking"
 }
-func (this *delete_project_owner_name_liking) Classclone() interface{} {
+func (this *delete_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/delete_user_#username_following.yap:6
 func (this *delete_user_username_following) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/delete_project_#owner_#name_liking.yap:20:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/delete_user_#username_following.yap:6:1
 	ctx := &this.Context
@@ -322,12 +325,13 @@ func (this *delete_user_username_following) Main(_gop_arg0 *yap.Context) {
 func (this *delete_user_username_following) Classfname() string {
 	return "delete_user_#username_following"
 }
-func (this *delete_user_username_following) Classclone() interface{} {
+func (this *delete_user_username_following) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_asset_#id.yap:6
 func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/delete_user_#username_following.yap:15:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_asset_#id.yap:6:1
 	ctx := &this.Context
@@ -346,12 +350,13 @@ func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *get_asset_id) Classfname() string {
 	return "get_asset_#id"
 }
-func (this *get_asset_id) Classclone() interface{} {
+func (this *get_asset_id) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_assets_list.yap:10
 func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_asset_#id.yap:13:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_assets_list.yap:10:1
 	ctx := &this.Context
@@ -458,12 +463,13 @@ func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_assets_list) Classfname() string {
 	return "get_assets_list"
 }
-func (this *get_assets_list) Classclone() interface{} {
+func (this *get_assets_list) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:10
 func (this *get_project_release_owner_project_release) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_assets_list.yap:66:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:10:1
 	ctx := &this.Context
@@ -486,12 +492,13 @@ func (this *get_project_release_owner_project_release) Main(_gop_arg0 *yap.Conte
 func (this *get_project_release_owner_project_release) Classfname() string {
 	return "get_project-release_#owner_#project_#release"
 }
-func (this *get_project_release_owner_project_release) Classclone() interface{} {
+func (this *get_project_release_owner_project_release) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_project-releases_list.yap:10
 func (this *get_project_releases_list) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:19:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_project-releases_list.yap:10:1
 	ctx := &this.Context
@@ -555,12 +562,13 @@ func (this *get_project_releases_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_project_releases_list) Classfname() string {
 	return "get_project-releases_list"
 }
-func (this *get_project_releases_list) Classclone() interface{} {
+func (this *get_project_releases_list) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_project_#owner_#name.yap:10
 func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_project-releases_list.yap:42:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_project_#owner_#name.yap:10:1
 	ctx := &this.Context
@@ -581,12 +589,13 @@ func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
 func (this *get_project_owner_name) Classfname() string {
 	return "get_project_#owner_#name"
 }
-func (this *get_project_owner_name) Classclone() interface{} {
+func (this *get_project_owner_name) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:10
 func (this *get_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_project_#owner_#name.yap:18:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
@@ -620,12 +629,13 @@ func (this *get_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 func (this *get_project_owner_name_liking) Classfname() string {
 	return "get_project_#owner_#name_liking"
 }
-func (this *get_project_owner_name_liking) Classclone() interface{} {
+func (this *get_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_projects_list.yap:13
 func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_project_#owner_#name_liking.yap:21:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_projects_list.yap:13:1
 	ctx := &this.Context
@@ -798,12 +808,13 @@ func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_projects_list) Classfname() string {
 	return "get_projects_list"
 }
-func (this *get_projects_list) Classclone() interface{} {
+func (this *get_projects_list) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_user_#username.yap:6
 func (this *get_user_username) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_projects_list.yap:106:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_user_#username.yap:6:1
 	ctx := &this.Context
@@ -822,12 +833,13 @@ func (this *get_user_username) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_username) Classfname() string {
 	return "get_user_#username"
 }
-func (this *get_user_username) Classclone() interface{} {
+func (this *get_user_username) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_user_#username_following.yap:6
 func (this *get_user_username_following) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_user_#username.yap:13:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_user_#username_following.yap:6:1
 	ctx := &this.Context
@@ -859,12 +871,13 @@ func (this *get_user_username_following) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_username_following) Classfname() string {
 	return "get_user_#username_following"
 }
-func (this *get_user_username_following) Classclone() interface{} {
+func (this *get_user_username_following) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_users_list.yap:10
 func (this *get_users_list) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_user_#username_following.yap:16:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_users_list.yap:10:1
 	ctx := &this.Context
@@ -926,12 +939,13 @@ func (this *get_users_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_users_list) Classfname() string {
 	return "get_users_list"
 }
-func (this *get_users_list) Classclone() interface{} {
+func (this *get_users_list) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/get_util_upinfo.yap:6
 func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_users_list.yap:41:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/get_util_upinfo.yap:6:1
 	ctx := &this.Context
@@ -957,12 +971,13 @@ func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
 func (this *get_util_upinfo) Classfname() string {
 	return "get_util_upinfo"
 }
-func (this *get_util_upinfo) Classclone() interface{} {
+func (this *get_util_upinfo) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_aigc_matting.yap:10
 func (this *post_aigc_matting) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/get_util_upinfo.yap:16:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_aigc_matting.yap:10:1
 	ctx := &this.Context
@@ -1004,12 +1019,13 @@ func (this *post_aigc_matting) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_matting) Classfname() string {
 	return "post_aigc_matting"
 }
-func (this *post_aigc_matting) Classclone() interface{} {
+func (this *post_aigc_matting) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_asset.yap:10
 func (this *post_asset) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_aigc_matting.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_asset.yap:10:1
 	ctx := &this.Context
@@ -1051,12 +1067,13 @@ func (this *post_asset) Main(_gop_arg0 *yap.Context) {
 func (this *post_asset) Classfname() string {
 	return "post_asset"
 }
-func (this *post_asset) Classclone() interface{} {
+func (this *post_asset) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_copilot_message.yap:10
 func (this *post_copilot_message) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_asset.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_copilot_message.yap:10:1
 	ctx := &this.Context
@@ -1098,12 +1115,13 @@ func (this *post_copilot_message) Main(_gop_arg0 *yap.Context) {
 func (this *post_copilot_message) Classfname() string {
 	return "post_copilot_message"
 }
-func (this *post_copilot_message) Classclone() interface{} {
+func (this *post_copilot_message) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_copilot_stream_message.yap:10
 func (this *post_copilot_stream_message) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_copilot_message.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_copilot_stream_message.yap:10:1
 	ctx := &this.Context
@@ -1149,12 +1167,13 @@ func (this *post_copilot_stream_message) Main(_gop_arg0 *yap.Context) {
 func (this *post_copilot_stream_message) Classfname() string {
 	return "post_copilot_stream_message"
 }
-func (this *post_copilot_stream_message) Classclone() interface{} {
+func (this *post_copilot_stream_message) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_project-release.yap:10
 func (this *post_project_release) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_copilot_stream_message.yap:33:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_project-release.yap:10:1
 	ctx := &this.Context
@@ -1196,12 +1215,13 @@ func (this *post_project_release) Main(_gop_arg0 *yap.Context) {
 func (this *post_project_release) Classfname() string {
 	return "post_project-release"
 }
-func (this *post_project_release) Classclone() interface{} {
+func (this *post_project_release) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_project.yap:10
 func (this *post_project) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_project-release.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_project.yap:10:1
 	ctx := &this.Context
@@ -1243,12 +1263,13 @@ func (this *post_project) Main(_gop_arg0 *yap.Context) {
 func (this *post_project) Classfname() string {
 	return "post_project"
 }
-func (this *post_project) Classclone() interface{} {
+func (this *post_project) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:10
 func (this *post_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_project.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:10:1
 	ctx := &this.Context
@@ -1276,12 +1297,13 @@ func (this *post_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 func (this *post_project_owner_name_liking) Classfname() string {
 	return "post_project_#owner_#name_liking"
 }
-func (this *post_project_owner_name_liking) Classclone() interface{} {
+func (this *post_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:10
 func (this *post_project_owner_name_view) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_project_#owner_#name_liking.yap:20:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:10:1
 	ctx := &this.Context
@@ -1309,12 +1331,13 @@ func (this *post_project_owner_name_view) Main(_gop_arg0 *yap.Context) {
 func (this *post_project_owner_name_view) Classfname() string {
 	return "post_project_#owner_#name_view"
 }
-func (this *post_project_owner_name_view) Classclone() interface{} {
+func (this *post_project_owner_name_view) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_user_#username_following.yap:6
 func (this *post_user_username_following) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:20:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_user_#username_following.yap:6:1
 	ctx := &this.Context
@@ -1340,12 +1363,13 @@ func (this *post_user_username_following) Main(_gop_arg0 *yap.Context) {
 func (this *post_user_username_following) Classfname() string {
 	return "post_user_#username_following"
 }
-func (this *post_user_username_following) Classclone() interface{} {
+func (this *post_user_username_following) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/post_util_fileurls.yap:10
 func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_user_#username_following.yap:15:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_util_fileurls.yap:10:1
 	ctx := &this.Context
@@ -1380,12 +1404,13 @@ func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
 func (this *post_util_fileurls) Classfname() string {
 	return "post_util_fileurls"
 }
-func (this *post_util_fileurls) Classclone() interface{} {
+func (this *post_util_fileurls) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/put_asset_#id.yap:10
 func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_util_fileurls.yap:26:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/put_asset_#id.yap:10:1
 	ctx := &this.Context
@@ -1427,12 +1452,13 @@ func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *put_asset_id) Classfname() string {
 	return "put_asset_#id"
 }
-func (this *put_asset_id) Classclone() interface{} {
+func (this *put_asset_id) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/put_project_#owner_#name.yap:10
 func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/put_asset_#id.yap:29:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/put_project_#owner_#name.yap:10:1
 	ctx := &this.Context
@@ -1476,12 +1502,13 @@ func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
 func (this *put_project_owner_name) Classfname() string {
 	return "put_project_#owner_#name"
 }
-func (this *put_project_owner_name) Classclone() interface{} {
+func (this *put_project_owner_name) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 //line cmd/spx-backend/put_user.yap:10
 func (this *put_user) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/put_project_#owner_#name.yap:30:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/put_user.yap:10:1
 	ctx := &this.Context
@@ -1523,10 +1550,11 @@ func (this *put_user) Main(_gop_arg0 *yap.Context) {
 func (this *put_user) Classfname() string {
 	return "put_user"
 }
-func (this *put_user) Classclone() interface{} {
+func (this *put_user) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
 func main() {
+//line cmd/spx-backend/put_user.yap:29:1
 	new(AppV2).Main()
 }
