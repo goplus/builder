@@ -321,7 +321,7 @@ function handleCloseUI() {
  */
 onBeforeUnmount(() => {
   visible.value = false
-  mcpDebuggerVisible.value = false // 确保 MCP 调试器也被关闭
+  mcpDebuggerVisible.value = false
 })
 
 /**

@@ -16,15 +16,15 @@ const props = defineProps<{
 const i18n = useI18n()
 const { t } = i18n
 
-// 获取 Copilot 上下文
+// Ensure the tool name is trimmed
 const copilotCtx = useCopilotCtx()
 
-// 确保 MCP collector 已初始化
+// Check if the MCP collector is initialized
 if (!copilotCtx?.mcp?.collector) {
   throw new Error('MCP collector is not initialized')
 }
 
-// 从上下文中获取 collector
+// Get the collector from the context
 const collector = computed(() => copilotCtx.mcp.collector!)
 
 // Track tool execution state via the collector
@@ -39,7 +39,7 @@ const taskInfo = computed(() => {
 
 const taskStatus = computed(() => taskInfo.value.status)
 
-// 使用 watch 来记录状态变化，以便调试
+// Watch for status changes and log them
 watch(
   taskStatus,
   (newStatus, oldStatus) => {
@@ -104,7 +104,7 @@ const statusText = computed(() => {
 async function executeTool() {
   if (taskStatus.value === 'running') return
 
-  // 使用上下文中的 collector 来执行任务
+  // execute the task
   collector.value.executeTask(taskInfo.value.id)
 }
 

@@ -534,7 +534,7 @@ export class CodeEditor extends Disposable {
   }
 
   registerMCPTools(): void {
-    // 注册 insert_code 工具
+    // Register tools for code editor
     this.registry.registerTools(
       [
         {
@@ -611,10 +611,8 @@ export class CodeEditor extends Disposable {
 
   async getDiagnostics() {
     try {
-      // 获取所有项目文件
       const files = await this.listFiles()
 
-      // 使用 Promise.all 并行处理所有文件的诊断
       const diagnosticsPromises = files.map(async (file) => {
         try {
           const textDocument = this.getTextDocument({ uri: file.uri })
@@ -623,13 +621,11 @@ export class CodeEditor extends Disposable {
             return []
           }
 
-          // 获取文件的诊断信息
           const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
             textDocument,
             signal: new AbortController().signal
           })
 
-          // 将诊断信息格式化为所需结构
           return diagnostics.map((diag) => ({
             file: file.uri,
             name: file.name,
@@ -651,10 +647,8 @@ export class CodeEditor extends Disposable {
         }
       })
 
-      // 等待所有诊断处理完成
       const allDiagnostics = await Promise.all(diagnosticsPromises)
 
-      // 合并所有文件的诊断结果
       const messages = allDiagnostics.flat()
       return {
         success: true,
@@ -692,13 +686,11 @@ export class CodeEditor extends Disposable {
   }
 
   async insertCode(args: InsertCodeOptions) {
-    // 解构参数
     const code = args.code
     const file = args.file
     const iRange = args.insertRange
 
     try {
-      //
       const targetDoc = this.getTextDocument({ uri: file })
       if (!targetDoc) {
         throw new Error(`File not found: ${file}`)

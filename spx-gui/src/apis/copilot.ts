@@ -21,7 +21,7 @@ export type SchemaProperty = {
   enumDescriptions?: string[]
   format?: string
   default?: any
-  // 其他可能的JSON Schema属性
+
   [key: string]: any
 }
 
@@ -31,7 +31,7 @@ export type ToolParameters = {
     [key: string]: SchemaProperty
   }
   required?: string[]
-  // 其他可能的JSON Schema属性
+  
   [key: string]: any
 }
 
