@@ -221,10 +221,7 @@ async function createProject(options: CreateProjectOptions) {
  * @param maxAttempts Maximum number of attempts to check tool registration
  * @param interval Time interval between each check in milliseconds
  */
-async function waitToolRegister(
-    maxAttempts: number,
-    interval = 300
-    ): Promise<void> {
+async function waitToolRegister(maxAttempts: number, interval = 300): Promise<void> {
   try {
     // Check if the tool is already registered
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -235,7 +232,7 @@ async function waitToolRegister(
       }
 
       // Wait for the specified interval before checking again
-      await new Promise(resolve => setTimeout(resolve, interval))
+      await new Promise((resolve) => setTimeout(resolve, interval))
     }
 
     // If the tool is still not registered after maxAttempts, throw an error

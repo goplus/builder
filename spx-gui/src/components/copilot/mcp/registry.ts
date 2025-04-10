@@ -207,11 +207,9 @@ export class ToolRegistry {
    * @returns Whether the provider has registered tools
    */
   isProviderRegistered(provider: string): boolean {
-    const hasRegisteredTools = Object.values(this.registry).some(tool => 
-      tool.provider === provider
-    );
-    
-    return hasRegisteredTools;
+    const hasRegisteredTools = Object.values(this.registry).some((tool) => tool.provider === provider)
+
+    return hasRegisteredTools
   }
 
   /**
