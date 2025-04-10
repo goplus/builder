@@ -222,9 +222,7 @@ async function createProject(options: CreateProjectOptions) {
  * @param interval Time interval between each check in milliseconds
  */
 async function waitToolRegister(
-    /** Estimated time cost in milliseconds */
     maxAttempts: number,
-    /** Interval in milliseconds for each report */
     interval = 300
     ): Promise<void> {
   try {
