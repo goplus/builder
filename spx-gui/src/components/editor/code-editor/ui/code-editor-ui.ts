@@ -64,8 +64,6 @@ export interface ICodeEditorUI {
   registerCopilot(copilot: ICopilot): void
   registerDocumentBase(documentBase: IDocumentBase): void
 
-  insertBlockText(text: string, range: Range): Promise<void>
-
   /** Execute a command */
   executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R>
   /** Register a command with given name & handler */

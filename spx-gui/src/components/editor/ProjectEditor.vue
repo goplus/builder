@@ -23,7 +23,7 @@ import EditorPanels from './panels/EditorPanels.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import { onMounted, onBeforeUnmount } from 'vue'
-import { registerTools, unregisterProviderTools } from '@/components/copilot/mcp/registry'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 import {
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
@@ -39,18 +39,16 @@ import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asse
 import { computed } from 'vue'
 import type { z } from 'zod'
 
-// 注入必要的依赖
 const editorCtx = useEditorCtx()
+const copilotCtx = useCopilotCtx()
 const project = computed(() => editorCtx.project)
 const runtime = computed(() => editorCtx.runtime)
 
-// 工具参数类型定义
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
 type RunGameOptions = z.infer<typeof RunGameArgsSchema>
 type StopGameOptions = z.infer<typeof StopGameArgsSchema>
 
-// 从代码编辑器迁移过来的方法
 async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
   project.value.addSprite(sprite)
@@ -122,9 +120,9 @@ async function stopGame(args: StopGameOptions) {
   }
 }
 
-// 注册 MCP 工具
+// Register the tools with the provided descriptions and implementations
 function registerProjectTools() {
-  registerTools(
+  copilotCtx.mcp.registry?.registerTools(
     [
       {
         description: addSpriteFromCanvasToolDescription,
@@ -193,14 +191,14 @@ function registerProjectTools() {
   )
 }
 
-// 在组件挂载时注册工具
+// Register the tools when the component is mounted
 onMounted(() => {
   registerProjectTools()
 })
 
-// 在组件卸载前取消注册
+// Unregister the tools when the component is unmounted
 onBeforeUnmount(() => {
-  unregisterProviderTools('project-editor')
+  copilotCtx.mcp.registry?.unregisterProviderTools('project-editor')
 })
 </script>
 

@@ -278,8 +278,7 @@ export class Project extends Disposable {
     this.thumbnail = await screenshotTaker('thumbnail', signal)
   }
 
-  public async setThumbnail(thumbnail: File) {
-    if (!this.hasUnsyncedChanges && !!this.thumbnail) return
+  public setThumbnail(thumbnail: File) {
     this.thumbnail = thumbnail
   }
 

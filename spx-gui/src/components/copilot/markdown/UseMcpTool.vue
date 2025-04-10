@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
 import CodeBlock from './CodeBlock.vue'
-import { toolResultCollector } from '@/components/copilot/mcp/collector'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 // Component props
 const props = defineProps<{
@@ -16,15 +16,26 @@ const props = defineProps<{
 const i18n = useI18n()
 const { t } = i18n
 
+// 获取 Copilot 上下文
+const copilotCtx = useCopilotCtx()
+
+// 确保 MCP collector 已初始化
+if (!copilotCtx?.mcp?.collector) {
+  throw new Error('MCP collector is not initialized')
+}
+
+// 从上下文中获取 collector
+const collector = computed(() => copilotCtx.mcp.collector!)
+
 // Track tool execution state via the collector
-const taskInfo = computed(() =>
-  toolResultCollector.getOrCreateTask({
+const taskInfo = computed(() => {
+  return collector.value.getOrCreateTask({
     id: props.id,
     tool: props.tool.trim(),
     server: props.server,
     args: props.arguments
   })
-)
+})
 
 const taskStatus = computed(() => taskInfo.value.status)
 
@@ -88,13 +99,13 @@ const statusText = computed(() => {
 
 /**
  * Execute the tool via the collector
- * Delegates execution responsibility to the toolResultCollector
+ * Delegates execution responsibility to the collector
  */
 async function executeTool() {
   if (taskStatus.value === 'running') return
 
-  // Delegate to the tool collector for execution
-  toolResultCollector.executeTask(taskInfo.value.id)
+  // 使用上下文中的 collector 来执行任务
+  collector.value.executeTask(taskInfo.value.id)
 }
 
 /**
@@ -122,7 +133,7 @@ onMounted(() => {
       executeTool()
     } catch (e) {
       // Mark task as failed if arguments are invalid
-      toolResultCollector.markTaskError(taskInfo.value.id, 'Invalid JSON arguments')
+      collector.value.markTaskError(taskInfo.value.id, 'Invalid JSON arguments')
     }
   }
 })

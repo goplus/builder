@@ -2,7 +2,7 @@ import { type Ref } from 'vue'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { type Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
-import { executeRegisteredTool } from './registry'
+import { ToolRegistry } from './registry'
 
 /**
  * Interface for request history items
@@ -40,7 +40,7 @@ export interface HistoryManager {
  */
 export interface McpServerContext {
   history: HistoryManager
-  registeredTools: Ref<any[]>
+  registry: ToolRegistry
 }
 
 /**
@@ -52,7 +52,7 @@ export interface McpServerContext {
  * @throws {Error} If connection fails
  */
 export async function createMcpServer(transport: Transport, context: McpServerContext): Promise<Server> {
-  const { history, registeredTools } = context
+  const { history, registry } = context
   // Create new server instance with metadata
   const server = new Server(
     {
@@ -69,7 +69,7 @@ export async function createMcpServer(transport: Transport, context: McpServerCo
   // Register handler for tool discovery
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools: registeredTools.value
+      tools: registry.tools.value
     }
   })
 
@@ -89,7 +89,7 @@ export async function createMcpServer(transport: Transport, context: McpServerCo
       const { name, arguments: parameters } = request.params
 
       // Execute registered tool implementation
-      const result = await executeRegisteredTool(name, parameters)
+      const result = await registry.executeRegisteredTool(name, parameters)
 
       // Format response for display
       const response = JSON.stringify(result, null, 2)

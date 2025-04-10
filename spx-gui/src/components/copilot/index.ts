@@ -3,7 +3,7 @@ import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { type MCPMarkdownString, makeMCPMarkdownString } from '@/components/editor/code-editor/common'
 export { default as CopilotProvider } from './CopilotProvider.vue'
-import { toolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
+import { ToolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
 
 /** Message role identifiers */
 export type MessageRole = 'user' | 'copilot'
@@ -66,13 +66,15 @@ type InternalChat = {
  */
 export class CopilotController extends Disposable {
   private copilot: ICopilot
+  private collctor: ToolResultCollector
   /**
    * Creates a new controller with the specified Copilot implementation
    * @param copilot The implementation of ICopilot to use
    */
-  constructor(copilot: ICopilot) {
+  constructor(copilot: ICopilot, collctor: ToolResultCollector) {
     super()
     this.copilot = copilot
+    this.collctor = collctor
   }
 
   /**
@@ -136,7 +138,7 @@ export class CopilotController extends Disposable {
       this.currentChatRef.value = null
     }
 
-    toolResultCollector.clearAllTasks()
+    this.collctor.clearAllTasks()
   }
 
   /**
@@ -193,7 +195,7 @@ export class CopilotController extends Disposable {
       })
       await this.getCopilotAnswer()
     } finally {
-      const result = await toolResultCollector.processQueue()
+      const result = await this.collctor.processQueue()
       this.handleToolResults(result)
     }
   }

@@ -3,9 +3,9 @@ import type { I18n } from '@/utils/i18n'
 import { generateStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
 import type { ICopilot, Chat } from '@/components/copilot/index'
 import { type MCPMarkdownString } from '@/components/editor/code-editor/common'
-import { registeredTools } from './mcp/registry'
+import type { ToolDescription, ToolRegistry } from './mcp/registry'
 
-function convertToApiTools(serverTools: typeof registeredTools.value): Tool[] {
+function convertToApiTools(serverTools: ToolDescription[]): Tool[] {
   return serverTools.map((tool) => {
     const properties: { [key: string]: any } = {}
     if (tool.inputSchema.properties) {
@@ -40,7 +40,7 @@ export type ChatMessage = {
 }
 
 export class Copilot extends Disposable implements ICopilot {
-  constructor(private i18n: I18n) {
+  constructor(private i18n: I18n, private registry: ToolRegistry) {
     super()
   }
 
@@ -87,7 +87,7 @@ export class Copilot extends Disposable implements ICopilot {
       if (i > toSkip) messages.push(this.chatMessage2Message(message))
     })
 
-    const tools = convertToApiTools(registeredTools.value)
+    const tools = convertToApiTools(this.registry.tools.value)
     // Use generateStreamMessage directly
     const stream = await generateStreamMessage(messages, {
       signal: options?.signal,

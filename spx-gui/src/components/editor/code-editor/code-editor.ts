@@ -66,12 +66,10 @@ import {
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import * as z from 'zod'
-import { registerTools, unregisterProviderTools } from '@/components/copilot/mcp/registry'
+import { ToolRegistry } from '@/components/copilot/mcp/registry'
 import {
   insertCodeToolDescription,
   InsertCodeArgsSchema,
-  AddSpriteFromCanvasArgsSchema,
-  AddStageBackdropFromCanvasArgsSchema,
   ListFilesArgsSchema,
   listFilesToolDescription,
   GetDiagnosticsArgsSchema,
@@ -79,8 +77,6 @@ import {
   GetFileCodeArgsSchema,
   getFileCodeToolDescription
 } from '@/components/copilot/mcp/definitions'
-import { selectAsset } from '@/components/asset/index'
-import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
@@ -506,8 +502,6 @@ class ContextMenuProvider implements IContextMenuProvider {
 }
 
 type InsertCodeOptions = z.infer<typeof InsertCodeArgsSchema>
-type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
-type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
 
 export class CodeEditor extends Disposable {
   private copilot: Copilot
@@ -524,7 +518,8 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n
+    private i18n: I18n,
+    private registry: ToolRegistry
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
@@ -540,7 +535,7 @@ export class CodeEditor extends Disposable {
 
   registerMCPTools(): void {
     // 注册 insert_code 工具
-    registerTools(
+    this.registry.registerTools(
       [
         {
           description: insertCodeToolDescription,
@@ -708,18 +703,16 @@ export class CodeEditor extends Disposable {
       if (!targetDoc) {
         throw new Error(`File not found: ${file}`)
       }
-
-      const ui = this.getAttachedUI()
-      if (ui == null) {
-        throw new Error('No UI attached to the code editor')
+      
+      const edit = {
+        range: {
+          start: { line: iRange.startLine, column:  0 },
+          end: { line: iRange.endLine, column: 0 }
+        },
+        newText: code
       }
-      // 打开文件
-      ui.open({ uri: file })
-      ui.insertBlockText(code, {
-        start: { line: iRange.startLine, column: 0 },
-        end: { line: iRange.endLine, column: 0 }
-      })
 
+      targetDoc.pushEdits([edit])
       return {
         success: true,
         message: `Code successfully inserted into ${file}`
@@ -730,29 +723,6 @@ export class CodeEditor extends Disposable {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
       }
-    }
-  }
-
-  async addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
-    const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
-    this.project.addSprite(sprite)
-    await sprite.autoFit()
-    selectAsset(this.project, sprite)
-    this.project.saveToCloud()
-    return {
-      success: true,
-      message: `Successfully added sprite "${args.spriteName}" to project "${this.project.name}"`
-    }
-  }
-
-  async addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
-    const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
-    this.project.stage.addBackdrop(backdrop)
-    selectAsset(this.project, backdrop)
-    this.project.saveToCloud()
-    return {
-      success: true,
-      message: `Successfully added sprite "${args.backdropName}" to project "${this.project.name}"`
     }
   }
 
@@ -873,7 +843,7 @@ export class CodeEditor extends Disposable {
   }
 
   dispose(): void {
-    unregisterProviderTools('code-editor')
+    this.registry.unregisterProviderTools('code-editor')
     this.uis = []
     this.lspClient.dispose()
     this.documentBase.dispose()

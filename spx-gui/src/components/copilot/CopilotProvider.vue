@@ -37,7 +37,9 @@ export type CopilotCtx = {
       addRequest: (item: RequestHistoryItem) => void
       updateLastResponse: (response: string, isError?: boolean) => void
       clear: () => void
-    }
+    },
+    collector: ToolResultCollector | null
+    registry: ToolRegistry | null
   }
   controls: {
     open: () => Promise<boolean>
@@ -82,7 +84,8 @@ import { CopilotController, type ICopilot } from './index'
 import { createMcpClient } from './mcp/client'
 import { createMcpServer } from './mcp/server'
 import { createMcpTransports } from './mcp/transport'
-import { registeredTools, registerTools } from './mcp/registry'
+import { ToolRegistry } from './mcp/registry'
+import { ToolResultCollector } from './mcp/collector'
 import CopilotUI from './CopilotUI.vue'
 import { z } from 'zod'
 import { useUserStore } from '@/stores/user'
@@ -95,7 +98,6 @@ import { genAssetFromCanvas } from '@/models/common/asset'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { toolResultCollector } from '@/components/copilot/mcp/collector'
 
 // Component state using refs
 const visible = ref(false)
@@ -133,8 +135,11 @@ const mcpHistory = {
 
 type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
 
+const registry = new ToolRegistry()
+const collector = new ToolResultCollector()
+
 const initBasicTools = async () => {
-  return registerTools(
+  return registry.registerTools(
     [
       {
         description: createProjectToolDescription,
@@ -276,7 +281,7 @@ createMcpClient(clientTransport)
     client.value = c
     mcpConnectionStatus.client = true
     mcpConnectionStatus.lastUpdate = Date.now()
-    toolResultCollector.setMcpClient(c)
+    collector.setMcpClient(c)
   })
   .catch((e) => {
     console.error('Failed to create MCP client:', e)
@@ -286,7 +291,7 @@ createMcpClient(clientTransport)
 const server = ref<Server | null>(null)
 createMcpServer(serverTransport, {
   history: mcpHistory,
-  registeredTools
+  registry: registry
 })
   .then((s) => {
     server.value = s
@@ -300,8 +305,9 @@ createMcpServer(serverTransport, {
 initBasicTools()
 // Get i18n in component context
 const i18n = useI18n()
-const copilot = new Copilot(i18n)
-const copilotController = new CopilotController(copilot)
+const copilot = new Copilot(i18n, registry)
+
+const copilotController = new CopilotController(copilot, collector)
 copilotController.init()
 /**
  * Handle UI close event from CopilotUI
@@ -339,7 +345,9 @@ const copilotCtx = computedShallowReactive<CopilotCtx>(() => ({
     client: client as any,
     server: server as any,
     status: mcpConnectionStatus,
-    history: mcpHistory
+    history: mcpHistory,
+    collector: collector,
+    registry: registry,
   },
   controls
 }))
