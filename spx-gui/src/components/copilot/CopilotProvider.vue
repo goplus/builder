@@ -37,7 +37,7 @@ export type CopilotCtx = {
       addRequest: (item: RequestHistoryItem) => void
       updateLastResponse: (response: string, isError?: boolean) => void
       clear: () => void
-    },
+    }
     collector: ToolResultCollector | null
     registry: ToolRegistry | null
   }
@@ -347,7 +347,7 @@ const copilotCtx = computedShallowReactive<CopilotCtx>(() => ({
     status: mcpConnectionStatus,
     history: mcpHistory,
     collector: collector,
-    registry: registry,
+    registry: registry
   },
   controls
 }))

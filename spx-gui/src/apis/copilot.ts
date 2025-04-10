@@ -31,7 +31,7 @@ export type ToolParameters = {
     [key: string]: SchemaProperty
   }
   required?: string[]
-  
+
   [key: string]: any
 }
 

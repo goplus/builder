@@ -70,10 +70,10 @@ export interface RegisteredTool {
 export class ToolRegistry {
   /** Internal tool registry mapping tool names to their registration information */
   private registry: Record<string, RegisteredTool> = reactive({})
-  
+
   /** List of registered tool descriptions exposed for ListTools MCP request */
   public tools: Ref<ToolDescription[]> = ref([])
-  
+
   constructor() {
     // Watch registry changes and update the tool list
     watch(
@@ -84,7 +84,7 @@ export class ToolRegistry {
       { deep: true }
     )
   }
-  
+
   /**
    * Register a tool implementation
    *
@@ -131,9 +131,7 @@ export class ToolRegistry {
     provider: string
   ): void {
     // Register all tools
-    tools.forEach(({ description, implementation }) => 
-      this.registerTool(description, implementation, provider)
-    )
+    tools.forEach(({ description, implementation }) => this.registerTool(description, implementation, provider))
   }
 
   /**

@@ -39,7 +39,10 @@ export type ChatMessage = {
 }
 
 export class Copilot extends Disposable implements ICopilot {
-  constructor(private i18n: I18n, private registry: ToolRegistry) {
+  constructor(
+    private i18n: I18n,
+    private registry: ToolRegistry
+  ) {
     super()
   }
 

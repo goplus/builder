@@ -695,10 +695,10 @@ export class CodeEditor extends Disposable {
       if (!targetDoc) {
         throw new Error(`File not found: ${file}`)
       }
-      
+
       const edit = {
         range: {
-          start: { line: iRange.startLine, column:  0 },
+          start: { line: iRange.startLine, column: 0 },
           end: { line: iRange.endLine, column: 0 }
         },
         newText: code

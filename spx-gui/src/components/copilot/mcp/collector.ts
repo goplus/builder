@@ -39,7 +39,7 @@ export class ToolResultCollector {
   private tasks = reactive<Record<string, ToolTask>>({})
   private executionQueue = ref<string[]>([])
   private isProcessing = ref(false)
-  private mcpClient: any = null 
+  private mcpClient: any = null
 
   // Collection of execution results
   private results: ToolResult[] = []
@@ -296,4 +296,3 @@ export class ToolResultCollector {
     }
   }
 }
-
