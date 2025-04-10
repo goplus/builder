@@ -40,6 +40,10 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
+      - name: Run format check
+        working-directory: spx-gui
+        run: npm run format-check
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:

@@ -8,6 +8,8 @@
     "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
+    "format-check": "prettier --check ./src",
+    "format": "prettier --write ./src",
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore",
     "test": "vitest"
   },

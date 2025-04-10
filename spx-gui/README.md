@@ -44,7 +44,13 @@ npm run dev
 
 #### Format
 
-- Install extension Prettier to format your code. Format on PR for changed files is required. You can also turn on the feature Format on Save in VSCode.
+Use the NPM script `format` to format your code with Prettier:
+
+```shell
+npm run format
+```
+
+Format on PR for changed files is required. You can also turn on the feature Format on Save in VSCode.
 
 ### Component Standards
 
