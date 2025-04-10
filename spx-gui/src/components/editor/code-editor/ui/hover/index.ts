@@ -150,6 +150,20 @@ export class HoverController extends Emitter<{
     return null
   }
 
+  private getInputHelperHover(position: Position): InternalHover | null {
+    const inputHelperController = this.ui.inputHelperController
+    if (inputHelperController.items == null) return null
+    for (const helper of inputHelperController.items) {
+      if (!containsPosition(helper.range, position)) continue
+      return {
+        contents: [makeBasicMarkdownString(`<input-helper-preview helper="${helper.helper}" />`)],
+        range: helper.range,
+        actions: []
+      }
+    }
+    return null
+  }
+
   init() {
     const { monaco, editor, resourceReferenceController } = this.ui
 
