@@ -129,23 +129,22 @@
                 <div v-if="param.type === 'object'" class="nested-params">
                   <div v-for="(nestedParam, key) in param.properties" :key="key" class="form-group nested">
                     <label :for="`${param.name}-${key}`">{{ nestedParam.description || key }}:</label>
-
+                    {{ ensureNestedObjectExists(param.name) }}
                     <input
                       v-if="nestedParam.type === 'string'"
                       :id="`${param.name}-${key}`"
                       v-model="paramValues[param.name][key]"
                       type="text"
                       class="param-input"
-                      :required="param.required && param.requiredProperties.includes(key)"
+                      :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
                     />
-
                     <input
                       v-if="nestedParam.type === 'number'"
                       :id="`${param.name}-${key}`"
                       v-model.number="paramValues[param.name][key]"
                       type="number"
                       class="param-input"
-                      :required="param.required && param.requiredProperties.includes(key)"
+                      :required="param.required && param.requiredProperties && param.requiredProperties.includes(key)"
                     />
                   </div>
                 </div>
@@ -166,9 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { mcpConnectionStatus } from '@/mcp/transport'
-import { tools, mcpRequestHistory } from '@/mcp/server'
-import { client } from '@/mcp/client'
+import { useCopilotCtx } from '../CopilotProvider.vue'
 import { UITooltip } from '@/components/ui'
 
 /**
@@ -179,12 +176,18 @@ interface McpDebuggerPanelProps {
   isVisible: boolean // Controls the visibility of the debugger panel
 }
 
+const ctx = useCopilotCtx()
+
+const mcpConnectionStatus = ctx.mcp.status
+const mcpRequestHistory = ctx.mcp.history.requests
+const mcpClient = computed(() => ctx.mcp.client.value)
 // Component props and emits
 const props = defineProps<McpDebuggerPanelProps>()
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const tools = computed(() => ctx.mcp.registry?.tools.value || [])
 // State management
 const selectedTool = ref('')
 const paramValues = ref<Record<string, any>>({})
@@ -232,11 +235,11 @@ function toggleSection(index: number, section: 'params' | 'response') {
 const toolParams = computed(() => {
   if (!selectedTool.value) return []
 
-  const tool = tools.find((t) => t.name === selectedTool.value)
+  const tool = tools.value.find((t) => t.name === selectedTool.value)
   if (!tool) return []
 
-  const parameters = tool.parameters?.properties || {}
-  const required = tool.parameters?.required || []
+  const parameters = tool.inputSchema?.properties || {}
+  const required: string[] = Array.isArray(tool.inputSchema?.required) ? tool.inputSchema.required : []
 
   return Object.entries(parameters).map(([name, schema]: [string, any]) => ({
     name,
@@ -294,7 +297,7 @@ function onToolChange() {
  * @returns Tool description or empty string if tool not found
  */
 function getToolDescription(toolName: string) {
-  const tool = tools.find((t) => t.name === toolName)
+  const tool = ctx.mcp.registry?.tools.value.find((t) => t.name === toolName)
   return tool ? tool.description : ''
 }
 
@@ -305,12 +308,16 @@ function getToolDescription(toolName: string) {
 async function sendRequest() {
   if (!selectedTool.value || !isFormValid.value) return
 
+  if (!mcpClient.value) {
+    console.error('MCP client is not initialized')
+    return
+  }
+
   isLoading.value = true
 
   try {
     const cleanParams = { ...paramValues.value }
-
-    await client.callTool({
+    await mcpClient.value.callTool({
       name: selectedTool.value,
       arguments: cleanParams
     })
@@ -331,6 +338,17 @@ async function sendRequest() {
 function onClose() {
   emit('close')
 }
+
+/**
+ * Helper function to ensure the nested object exists
+ * @param paramName - Name of the parent parameter
+ */
+function ensureNestedObjectExists(paramName: string) {
+  // Ensure the parent object exists
+  if (!paramValues.value[paramName]) {
+    paramValues.value[paramName] = {}
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -339,7 +357,7 @@ function onClose() {
   top: 50px;
   right: 0;
   width: 25%;
-  height: auto;
+  height: calc(100vh - 50px);
   background: white;
   border-radius: 8px 0 0 8px;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);

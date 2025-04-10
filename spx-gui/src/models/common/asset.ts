@@ -4,6 +4,8 @@ import { Sound } from '../sound'
 import { Sprite } from '../sprite'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
+import { fromBlob } from '@/models/common/file'
+import { Costume } from '@/models/costume'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 
@@ -85,4 +87,42 @@ export async function asset2Sound({ files: fileCollection, ...metadata }: AssetD
   const sound = sounds[0]
   sound.setAssetMetadata(metadata)
   return sound
+}
+
+export async function genSpriteFromCanvas(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvas(name, width, height, color)
+  const sprite = Sprite.create(name)
+  const costume = new Costume(name, canvas)
+  sprite.addCostume(costume)
+  return sprite
+}
+
+export async function genBackdropFromCanvas(name: string, width: number, height: number, color: string) {
+  const canvas = await genAssetFromCanvas(name, width, height, color)
+  const backdrop = await Backdrop.create(name, canvas)
+  return backdrop
+}
+
+export async function genAssetFromCanvas(name: string, width: number, height: number, color: string) {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')!
+
+  // Set canvas dimensions
+  canvas.width = width
+  canvas.height = height
+
+  // Draw a square
+  ctx.fillStyle = color
+  ctx.fillRect(0, 0, width, height)
+
+  // Convert canvas to Blob
+  const blob = await new Promise<Blob>((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob!)
+    }, 'image/png')
+  })
+
+  // Create file from Blob
+  const file = fromBlob(name, blob)
+  return file
 }

@@ -38,6 +38,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const props = defineProps<{
   projectName: string
@@ -52,6 +53,7 @@ const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())
+const copilotCtx = useCopilotCtx()
 
 const router = useRouter()
 
@@ -107,7 +109,11 @@ const runtimeQueryRet = useQuery(async (ctx) => {
   return runtime
 })
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet)
+if (copilotCtx.mcp.registry == null) {
+  throw new Error('Copilot registry not initialized')
+}
+
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, copilotCtx.mcp.registry)
 
 const allQueryRet = useQuery(
   (ctx) =>

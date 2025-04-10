@@ -46,9 +46,12 @@
           {{ $t({ en: 'Disable advanced library features', zh: '禁用高级素材库功能' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup>
+      <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem @click="handleUseMcpDebuggerUtils">
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleAskCopilotEdit">
+          {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -62,7 +65,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useSpxVersion, useMcpDebuggerStore } from '@/utils/utils'
+import { useSpxVersion } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
@@ -70,12 +73,28 @@ import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
+import { useDeveloperMode } from '@/utils/developer-mode'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
+const { isDeveloperMode } = useDeveloperMode()
 const router = useRouter()
+const { controls } = useCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
+
+const handleAskCopilotEdit = useMessageHandle(
+  async () => {
+    const isVisible = controls.toggle()
+    return isVisible
+  },
+  undefined,
+  (isVisible) => ({
+    en: isVisible ? 'Copilot Edit opened' : 'Copilot Edit closed',
+    zh: isVisible ? 'Copilot Edit 已打开' : 'Copilot Edit 已关闭'
+  })
+).fn
 
 function handleUserPage() {
   router.push(getUserPageRoute(userInfo.value!.name))
@@ -86,8 +105,6 @@ function handleProjects() {
 }
 
 const spxVersion = useSpxVersion()
-
-const mcpDebuggerVisible = useMcpDebuggerStore()
 
 const handleUseSpxV1 = useMessageHandle(
   async () => {
@@ -133,8 +150,8 @@ const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 const handleUseMcpDebuggerUtils = useMessageHandle(
   async () => {
-    mcpDebuggerVisible.value = !mcpDebuggerVisible.value // Toggle visibility
-    return mcpDebuggerVisible.value
+    const isVisible = controls.mcpDebugger.toggle()
+    return isVisible
   },
   undefined,
   (isVisible) => ({

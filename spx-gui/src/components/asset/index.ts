@@ -15,7 +15,7 @@ import { Animation } from '@/models/animation'
 import { saveFiles } from '@/models/common/cloud'
 import { Monitor } from '@/models/widget/monitor'
 import * as assetName from '@/models/common/asset-name'
-import type { Costume } from '@/models/costume'
+import { Costume } from '@/models/costume'
 import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
@@ -29,7 +29,7 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
-function selectAsset(project: Project, asset: AssetModel | undefined) {
+export function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
   else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
   else if (asset instanceof Backdrop) {

@@ -65,6 +65,18 @@ import {
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
+import * as z from 'zod'
+import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import {
+  insertCodeToolDescription,
+  InsertCodeArgsSchema,
+  ListFilesArgsSchema,
+  listFilesToolDescription,
+  GetDiagnosticsArgsSchema,
+  getDiagnosticsToolDescription,
+  GetFileCodeArgsSchema,
+  getFileCodeToolDescription
+} from '@/components/copilot/mcp/definitions'
 
 class APIReferenceProvider implements IAPIReferenceProvider {
   constructor(
@@ -489,6 +501,8 @@ class ContextMenuProvider implements IContextMenuProvider {
   }
 }
 
+type InsertCodeOptions = z.infer<typeof InsertCodeArgsSchema>
+
 export class CodeEditor extends Disposable {
   private copilot: Copilot
   private documentBase: DocumentBase
@@ -504,7 +518,8 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n
+    private i18n: I18n,
+    private registry: ToolRegistry
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
@@ -516,6 +531,191 @@ export class CodeEditor extends Disposable {
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
+  }
+
+  registerMCPTools(): void {
+    // Register tools for code editor
+    this.registry.registerTools(
+      [
+        {
+          description: insertCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = InsertCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args) => {
+              const result = this.insertCode(args)
+              return result
+            }
+          }
+        },
+        {
+          description: listFilesToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = ListFilesArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.listFiles()
+            }
+          }
+        },
+        {
+          description: getDiagnosticsToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetDiagnosticsArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.getDiagnostics()
+            }
+          }
+        },
+        {
+          description: getFileCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetFileCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
+              const file = this.getTextDocument({ uri: args.file })
+              if (file == null) return null
+              return {
+                success: true,
+                message: `Successfully get code from ${args.file}`,
+                data: file.getValue()
+              }
+            }
+          }
+        }
+      ],
+      'code-editor'
+    )
+  }
+
+  async getDiagnostics() {
+    try {
+      const files = await this.listFiles()
+
+      const diagnosticsPromises = files.map(async (file) => {
+        try {
+          const textDocument = this.getTextDocument({ uri: file.uri })
+          if (!textDocument) {
+            console.warn(`File not found: ${file.uri}`)
+            return []
+          }
+
+          const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
+            textDocument,
+            signal: new AbortController().signal
+          })
+
+          return diagnostics.map((diag) => ({
+            file: file.uri,
+            name: file.name,
+            line: diag.range.start.line,
+            column: diag.range.start.column,
+            message: diag.message
+          }))
+        } catch (error) {
+          console.error(`Error getting diagnostics for ${file.uri}:`, error)
+          return [
+            {
+              file: file.uri,
+              name: file.name,
+              line: 0,
+              column: 0,
+              message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
+            }
+          ]
+        }
+      })
+
+      const allDiagnostics = await Promise.all(diagnosticsPromises)
+
+      const messages = allDiagnostics.flat()
+      return {
+        success: true,
+        message: `Successfully get diagnostics`,
+        data: messages
+      }
+    } catch (error) {
+      console.error('Failed to get diagnostics:', error)
+      return {
+        success: false,
+        message: `Failed to get diagnostics: ${error instanceof Error ? error.message : String(error)}`
+      }
+    }
+  }
+
+  // * - `file:///main.spx`
+  // * - `file:///<spriteName>.spx`
+  async listFiles() {
+    const files = []
+    files.push({
+      name: 'main.spx',
+      uri: 'file:///main.spx'
+    })
+
+    // Add sprite files
+    const sprites = this.project.sprites
+    for (const sprite of sprites) {
+      files.push({
+        name: `${sprite.name}.spx`,
+        uri: `file:///${sprite.name}.spx`
+      })
+    }
+
+    return files
+  }
+
+  async insertCode(args: InsertCodeOptions) {
+    const code = args.code
+    const file = args.file
+    const iRange = args.insertRange
+
+    try {
+      const targetDoc = this.getTextDocument({ uri: file })
+      if (!targetDoc) {
+        throw new Error(`File not found: ${file}`)
+      }
+
+      const edit = {
+        range: {
+          start: { line: iRange.startLine, column: 0 },
+          end: { line: iRange.endLine, column: 0 }
+        },
+        newText: code
+      }
+
+      targetDoc.pushEdits([edit])
+      return {
+        success: true,
+        message: `Code successfully inserted into ${file}`
+      }
+    } catch (error) {
+      console.error('Error inserting code:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
+      }
+    }
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -630,10 +830,12 @@ export class CodeEditor extends Disposable {
   }
 
   init() {
+    this.registerMCPTools()
     this.lspClient.init()
   }
 
   dispose(): void {
+    this.registry.unregisterProviderTools('code-editor')
     this.uis = []
     this.lspClient.dispose()
     this.documentBase.dispose()

@@ -16,7 +16,7 @@ import (
 const (
 	defaultBaseURL  = "https://api.qnaigc.com/v1"
 	defaultTimeout  = 15 * time.Second
-	defaultModel    = "deepseek-v3-0324"
+	defaultModel    = "deepseek-v3"
 	maxRetries      = 3
 	retryDelay      = 500 * time.Millisecond
 	userAgent       = "XBuilder Copilot/1.0"

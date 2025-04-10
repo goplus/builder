@@ -278,6 +278,10 @@ export class Project extends Disposable {
     this.thumbnail = await screenshotTaker('thumbnail', signal)
   }
 
+  public setThumbnail(thumbnail: File) {
+    this.thumbnail = thumbnail
+  }
+
   constructor(owner?: string, name?: string) {
     super()
     const reactiveThis = reactive(this) as this

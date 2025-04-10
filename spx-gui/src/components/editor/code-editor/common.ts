@@ -204,7 +204,7 @@ export interface ITextDocument
   pushEdits(edits: TextEdit[]): void
 }
 
-export type MarkdownStringFlag = 'basic' | 'advanced'
+export type MarkdownStringFlag = 'basic' | 'advanced' | 'mcp'
 
 /**
  * Markdown string with MDX support.
@@ -235,6 +235,12 @@ export type AdvancedMarkdownString = MarkdownString<'advanced'>
 
 export function makeAdvancedMarkdownString(value: string | LocaleMessage): AdvancedMarkdownString {
   return { value, flag: 'advanced' }
+}
+
+export type MCPMarkdownString = MarkdownString<'mcp'>
+
+export function makeMCPMarkdownString(value: string | LocaleMessage): MCPMarkdownString {
+  return { value, flag: 'mcp' }
 }
 
 export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' | 'copy' | 'copilot'
