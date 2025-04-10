@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { MCPMarkdownString } from '@/components/editor/code-editor/common'
 import MarkdownView from '@/components/copilot/markdown/MarkdownView.vue'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
-  content: MCPMarkdownString
+  content: string
 }>()
 
 const userInfo = useUserStore().getSignedInUser() || { avatar: '' }
@@ -13,7 +12,7 @@ const userInfo = useUserStore().getSignedInUser() || { avatar: '' }
 <template>
   <section class="user-message">
     <img class="avatar" :src="userInfo?.avatar || ''" />
-    <MarkdownView class="content" v-bind="props.content" />
+    <MarkdownView class="content" :value="props.content" />
   </section>
 </template>
 

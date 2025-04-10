@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
-import { type MCPMarkdownString, makeMCPMarkdownString } from '@/components/editor/code-editor/common'
 export { default as CopilotProvider } from './CopilotProvider.vue'
 import { ToolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
 
@@ -11,7 +10,7 @@ export type MessageRole = 'user' | 'copilot'
 /** Structure of a single chat message */
 export type ChatMessage = {
   role: MessageRole
-  content: MCPMarkdownString
+  content: string
 }
 
 /** Chat session structure */
@@ -42,13 +41,13 @@ export enum RoundState {
  * Represents a single Q&A exchange with the AI
  */
 export type Round = {
-  problem: MCPMarkdownString
+  problem: string
   /**
    * Answer provided by the copilot.
    * `null` means the answer is still loading or the round is cancelled by the user.
    */
-  answer: MCPMarkdownString | null
-  toolExecResult: MCPMarkdownString | null
+  answer: string | null
+  toolExecResult: string | null
   error: ActionException | null
   state: RoundState
   ctrl: AbortController
@@ -128,7 +127,7 @@ export class CopilotController extends Disposable {
       rounds: [],
       ctrl: new AbortController()
     }
-    await this.startRound(makeMCPMarkdownString(problem))
+    await this.startRound(problem)
   }
 
   /** Terminate the current chat session */
@@ -146,7 +145,7 @@ export class CopilotController extends Disposable {
    * @param problem User question text
    */
   async askProblem(problem: string) {
-    await this.startRound(makeMCPMarkdownString(problem))
+    await this.startRound(problem)
   }
 
   /** Cancel the current conversation round */
@@ -181,7 +180,7 @@ export class CopilotController extends Disposable {
    * Start a new conversation round
    * @param problem User question as markdown
    */
-  private async startRound(problem: MCPMarkdownString) {
+  private async startRound(problem: string) {
     const currentChat = this.currentChat
     if (currentChat == null) throw new Error('No active chat')
     try {
@@ -232,7 +231,7 @@ export class CopilotController extends Disposable {
       for await (const chunk of stream) {
         accumulatedText += chunk
         // Update the current round's answer as chunks arrive
-        currentRound.answer = makeMCPMarkdownString(accumulatedText)
+        currentRound.answer = accumulatedText
       }
 
       currentRound.state = RoundState.Completed

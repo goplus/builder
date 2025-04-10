@@ -2,7 +2,6 @@ import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { generateStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
 import type { ICopilot, Chat } from '@/components/copilot/index'
-import { type MCPMarkdownString } from '@/components/editor/code-editor/common'
 import type { ToolDescription, ToolRegistry } from './mcp/registry'
 
 function convertToApiTools(serverTools: ToolDescription[]): Tool[] {
@@ -36,7 +35,7 @@ export type MessageRole = 'user' | 'copilot'
 
 export type ChatMessage = {
   role: MessageRole
-  content: MCPMarkdownString
+  content: string
 }
 
 export class Copilot extends Disposable implements ICopilot {
@@ -45,7 +44,7 @@ export class Copilot extends Disposable implements ICopilot {
   }
 
   private chatMessage2Message({ role, content }: ChatMessage): Message {
-    const contentText = typeof content.value === 'string' ? content.value : this.i18n.t(content.value)
+    const contentText = typeof content === 'string' ? content : this.i18n.t(content)
     return {
       role,
       content: {
