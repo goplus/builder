@@ -19,7 +19,8 @@ import {
   isModifiableKind,
   type CodeEditorUI,
   builtInCommandModifyResourceReference,
-  builtInCommandRenameResource
+  builtInCommandRenameResource,
+  builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
 import { fromMonacoPosition, supportGoTo } from '../common'
 
@@ -75,6 +76,12 @@ export class HoverController extends Emitter<{
 
     const resourceReferenceHover = this.getResourceReferenceHover(position)
     if (resourceReferenceHover != null) return resourceReferenceHover
+
+    const inputHelperHover = this.getInputHelperHover(position)
+    if (inputHelperHover != null) {
+      console.debug('inputHelperHover', inputHelperHover)
+      return inputHelperHover
+    }
 
     const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
     if (providedHover == null) return null
@@ -153,12 +160,20 @@ export class HoverController extends Emitter<{
   private getInputHelperHover(position: Position): InternalHover | null {
     const inputHelperController = this.ui.inputHelperController
     if (inputHelperController.items == null) return null
-    for (const helper of inputHelperController.items) {
-      if (!containsPosition(helper.range, position)) continue
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) return null
+    for (const item of inputHelperController.items) {
+      if (!containsPosition(item.range, position)) continue
+      const value = textDocument.getValueInRange(item.range)
+      const actions: Action[] = []
+      actions.push({
+        command: builtInCommandInvokeInputHelper,
+        arguments: [item]
+      })
       return {
-        contents: [makeBasicMarkdownString(`<input-helper-preview helper="${helper.helper}" />`)],
-        range: helper.range,
-        actions: []
+        contents: [makeBasicMarkdownString(`<input-helper-preview typ="${item.type}" value="${encodeURIComponent(value)}" />`)],
+        range: item.range,
+        actions
       }
     }
     return null
@@ -179,6 +194,7 @@ export class HoverController extends Emitter<{
       const position = target.position
       const currentHover = this.hover
       if (currentHover != null && containsPosition(currentHover.range, position)) return
+      if (this.ui.newlyInsertedRange != null && containsPosition(this.ui.newlyInsertedRange, position)) return
       this.hoverMgr.start(position)
     }, 50)
 

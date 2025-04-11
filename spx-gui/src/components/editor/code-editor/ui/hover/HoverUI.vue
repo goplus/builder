@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
-import { toAbsolutePosition } from '../common'
+import { toAbsolutePosition, useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import type { HoverController } from '.'
 import HoverCard from './HoverCard.vue'
@@ -34,6 +34,25 @@ watchEffect(() => {
     height: aPos.height
   }
 })
+
+useDecorations(() => {
+  const hover = props.controller.hover
+  if (hover == null) return []
+  return [
+    {
+      range: {
+        startLineNumber: hover.range.start.line,
+        startColumn: hover.range.start.column,
+        endLineNumber: hover.range.end.line,
+        endColumn: hover.range.end.column
+      },
+      options: {
+        isWholeLine: false,
+        inlineClassName: 'code-editor-hovered-text'
+      }
+    }
+  ]
+})
 </script>
 
 <template>
@@ -48,4 +67,8 @@ watchEffect(() => {
   </UIDropdown>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss">
+.code-editor-hovered-text {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+</style>

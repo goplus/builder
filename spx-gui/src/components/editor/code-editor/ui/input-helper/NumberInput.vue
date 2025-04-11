@@ -70,8 +70,8 @@ function handleWheel(e: WheelEvent) {
     @wheel="handleWheel"
   >
     <UIRadioGroup :value="valueRef.type" @update:value="handleValueType">
-      <UIRadio value="literal" label="Literal" />
-      <UIRadio value="identifier" label="Identifier" />
+      <UIRadio value="literal" label="Value" />
+      <UIRadio value="identifier" label="Reference" />
     </UIRadioGroup>
     <UIDivider style="margin: 0.6em 0;" />
     <UINumberInput v-if="valueRef.type === 'literal'" placeholder="Enter literal value" :value="valueRef.value" @update:value="handleLiteralValue" />

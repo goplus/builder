@@ -10,9 +10,11 @@ import type { monaco } from '../../monaco'
 import { fromMonacoPosition } from '../common'
 
 export enum InputHelperType {
+  Resource = 'resource',
   String = 'string',
   Number = 'number',
   Boolean = 'boolean',
+  Color = 'color',
   Enum = 'enum',
 }
 
@@ -34,6 +36,7 @@ type HoverTarget =
 const stringPattern = /"([^"]*)"|\bstr\w+/g
 const numberPattern = /\b\d+\b|\bnum\w+/g
 const booleanPattern = /\btrue\b|\bfalse\b|\bbool\w+/g
+const colorPattern = /RGBA\(.*\)/g
 
 export class InputHelperController extends Disposable {
   constructor(private ui: CodeEditorUI) {
@@ -71,7 +74,8 @@ export class InputHelperController extends Disposable {
     return (window as any).items = [
       ...this.getItemsForType(InputHelperType.String, stringPattern, textDocument),
       ...this.getItemsForType(InputHelperType.Number, numberPattern, textDocument),
-      ...this.getItemsForType(InputHelperType.Boolean, booleanPattern, textDocument)
+      ...this.getItemsForType(InputHelperType.Boolean, booleanPattern, textDocument),
+      ...this.getItemsForType(InputHelperType.Color, colorPattern, textDocument)
     ]
   }
 

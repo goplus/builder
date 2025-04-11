@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UIDropdownModal, UIRadioGroup, UIRadio, UITextInput, UISelect, UISelectOption, UIDivider } from '@/components/ui'
+import { UIDropdownModal, UIRadioGroup, UIRadio, UISelect, UISelectOption, UITextInput, UIDivider } from '@/components/ui'
 import { ValueType, type Value } from './common'
 
 const props = defineProps<{
@@ -15,16 +15,14 @@ const emit = defineEmits<{
 const valueRef = ref(props.value)
 
 const identifiers = [
-  'foo',
-  'bar',
-  'baz',
+  'color1'
 ]
 
 function handleValueType(type: string | null) {
   if (type === ValueType.Literal) {
     valueRef.value = {
       type: ValueType.Literal,
-      value: ''
+      value: "rgba(0, 0, 0, 1)"
     }
   } else if (type === ValueType.Identifier) {
     valueRef.value = {
@@ -34,7 +32,8 @@ function handleValueType(type: string | null) {
   }
 }
 
-function handleLiteralValue(value: string) {
+function handleLiteralValue(value: string | null) {
+  if (value == null) return
   valueRef.value = {
     type: ValueType.Literal,
     value,
@@ -62,7 +61,7 @@ function handleWheel(e: WheelEvent) {
 <template>
   <UIDropdownModal
     class="resource-selector"
-    :title="$t({ en: 'String value input', zh: '字符串值输入' })"
+    :title="$t({ en: 'Color value input', zh: '颜色值输入' })"
     style="width: 408px; max-height: 316px"
     @cancel="emit('cancel')"
     @confirm="handleConfirm"

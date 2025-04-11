@@ -19,15 +19,16 @@ function getCls(suffix?: string) {
 </script>
 
 <script setup lang="ts">
-import { onUnmounted, watchEffect, ref, computed } from 'vue'
+import { onUnmounted, watchEffect, ref, computed, nextTick, watch } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
 import type { monaco } from '../../monaco'
-import { toAbsolutePosition } from '../common'
+import { toAbsolutePosition, toMonacoRange, useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { InputHelperType, type InputHelperController, type InputHelperItem } from '.'
 import StringInput from './StringInput.vue'
 import NumberInput from './NumberInput.vue'
 import BooleanInput from './BooleanInput.vue'
+import ColorInput from './ColorInput.vue'
 import { ValueType, type Value } from './common'
 
 const props = defineProps<{
@@ -36,25 +37,24 @@ const props = defineProps<{
 
 const codeEditorUICtx = useCodeEditorUICtx()
 
-let dc: monaco.editor.IEditorDecorationsCollection | null = null
-function getDecorationsCollection() {
-  if (dc == null) dc = codeEditorUICtx.ui.editor.createDecorationsCollection([])
-  return dc
-}
-
-onUnmounted(() => {
-  dc?.clear()
+watch(() => props.controller.activeItems, async (activeItems) => {
+  if (activeItems.length === 0) return
+  await nextTick()
+  props.controller['ui'].editor.setSelection(toMonacoRange({
+    start: activeItems[0].range.end,
+    end: activeItems[0].range.end
+  }))
 })
 
-watchEffect((onCleanUp) => {
+useDecorations(() => {
   const { items, hovered, activeItems } = props.controller
-  if (items == null) return
+  if (items == null) return []
 
   const iconDecorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const item of items) {
-    const isHovered = hovered != null && hovered.id === item.id
+    // const isHovered = hovered != null && hovered.id === item.id
     const isActive = activeItems.some((activeItem) => activeItem.id === item.id)
-    if (!isHovered && !isActive) continue
+    if (!isActive) continue
     const clss = ['icon', `id-${item.id}`]
     iconDecorations.push({
       range: {
@@ -76,6 +76,8 @@ watchEffect((onCleanUp) => {
   const bgDecorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const item of items) {
     const clss = ['bg', `id-${item.id}`]
+    const isActive = activeItems.some((activeItem) => activeItem.id === item.id)
+    if (isActive) clss.push('active')
     bgDecorations.push({
       range: {
         startLineNumber: item.range.start.line,
@@ -89,12 +91,8 @@ watchEffect((onCleanUp) => {
       }
     })
   }
-  const collection = getDecorationsCollection()
-  collection.append(iconDecorations)
-  collection.append(bgDecorations)
-  onCleanUp(() => {
-    collection.clear()
-  })
+  return [...iconDecorations, ...bgDecorations]
+  // return [...bgDecorations]
 })
 
 function getStringValue(str: string): Value<string> {
@@ -144,6 +142,13 @@ function getBooleanValue(str: string): Value<boolean> {
   }
 }
 
+function getColorValue(str: string): Value<string> {
+  return {
+    type: ValueType.Literal,
+    value: str.toLowerCase()
+  }
+}
+
 function getValue(item: InputHelperItem): Value | null {
   const td = codeEditorUICtx.ui.activeTextDocument
   if (td == null) return null
@@ -155,6 +160,8 @@ function getValue(item: InputHelperItem): Value | null {
       return getNumberValue(str)
     case 'boolean':
       return getBooleanValue(str)
+    case 'color':
+      return getColorValue(str)
     default:
       throw new Error(`Unsupported type: ${item.type}`)
   }
@@ -234,6 +241,12 @@ function handleCancelInput() {
       @submit="handleCurrentValueChange"
       @cancel="handleCancelInput"
     />
+    <ColorInput
+      v-if="controller.inputing != null && controller.inputing.type === InputHelperType.Color && currentValue != null"
+      :value="currentValue"
+      @submit="handleCurrentValueChange"
+      @cancel="handleCancelInput"
+    />
   </UIDropdown>
 </template>
 
@@ -287,7 +300,11 @@ function handleCancelInput() {
   } */
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  &.code-editor-input-helper-active {
+    background-color: rgba(0, 0, 0, 0.3);
+    /* color: var(--ui-color-hint-1) !important; */
     /* &::after {
       display: inline;
       width: auto;

@@ -46,7 +46,7 @@ import {
   type ChatTopicReview
 } from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
-import { InputHelperController } from './input-helper'
+import { InputHelperController, type InputHelperItem } from './input-helper'
 import { ParameterHintController } from './parameter-hint'
 
 export * from './hover'
@@ -99,6 +99,7 @@ export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentR
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
 export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
   'spx.modifyResourceReference'
+export const builtInCommandInvokeInputHelper: Command<[InputHelperItem], void> = 'spx.invokeInputHelper'
 
 export type InternalAction<A extends any[] = any, R = any> = {
   title: string
@@ -562,6 +563,14 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       title: { en: 'Modify', zh: '修改' },
       handler: (rr) => {
         this.resourceReferenceController.startModifying(rr.id)
+      }
+    })
+
+    this.registerCommand(builtInCommandInvokeInputHelper, {
+      icon: 'modify',
+      title: { en: 'Modify', zh: '修改' },
+      handler: (item) => {
+        this.inputHelperController.startInputing(item.id)
       }
     })
 
