@@ -20,7 +20,7 @@ function getCls(suffix?: string) {
 
 <script setup lang="ts">
 import { onUnmounted, watchEffect, ref, computed, nextTick, watch } from 'vue'
-import { UIDropdown, type DropdownPos } from '@/components/ui'
+import { UIDropdown, type DropdownPos, UIIconButton, UIIcon } from '@/components/ui'
 import type { monaco } from '../../monaco'
 import { toAbsolutePosition, toMonacoRange, useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -30,6 +30,7 @@ import NumberInput from './NumberInput.vue'
 import BooleanInput from './BooleanInput.vue'
 import ColorInput from './ColorInput.vue'
 import { ValueType, type Value } from './common'
+import { timeout } from '@/utils/utils'
 
 const props = defineProps<{
   controller: InputHelperController
@@ -37,9 +38,11 @@ const props = defineProps<{
 
 const codeEditorUICtx = useCodeEditorUICtx()
 
-watch(() => props.controller.activeItems, async (activeItems) => {
+watch(() => props.controller['ui'].newlyInsertedRange, async () => {
+  await timeout(100)
+  const activeItems = props.controller.activeItems
+  console.debug('activeItems', activeItems)
   if (activeItems.length === 0) return
-  await nextTick()
   props.controller['ui'].editor.setSelection(toMonacoRange({
     start: activeItems[0].range.end,
     end: activeItems[0].range.end
@@ -78,6 +81,8 @@ useDecorations(() => {
     const clss = ['bg', `id-${item.id}`]
     const isActive = activeItems.some((activeItem) => activeItem.id === item.id)
     if (isActive) clss.push('active')
+    const isActiveInputing = item.id === props.controller.activeInputing?.id
+    if (isActiveInputing) clss.push('active-inputing')
     bgDecorations.push({
       range: {
         startLineNumber: item.range.start.line,
@@ -91,8 +96,8 @@ useDecorations(() => {
       }
     })
   }
-  return [...iconDecorations, ...bgDecorations]
-  // return [...bgDecorations]
+  // return [...iconDecorations, ...bgDecorations]
+  return [...bgDecorations]
 })
 
 function getStringValue(str: string): Value<string> {
@@ -213,6 +218,67 @@ watchEffect(() => {
 function handleCancelInput() {
   props.controller.stopInputing()
 }
+
+// =======
+
+const activeDropdownVisible = ref(false)
+const activeDropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
+const activeCurrentValue = computed<Value<any> | null>(() => {
+  const { activeInputing } = props.controller
+  if (activeInputing == null) return null
+  return getValue(activeInputing)
+})
+
+async function handleActiveCurrentValueChange(newValue: Value<any>) {
+  const { activeInputing } = props.controller
+  if (activeInputing == null) return
+  const td = codeEditorUICtx.ui.activeTextDocument
+  if (td == null) return
+  const newText = newValue.type === ValueType.Literal
+    ? JSON.stringify(newValue.value)
+    : newValue.name
+  td.pushEdits([{
+    range: activeInputing.range,
+    newText
+  }])
+  await nextTick()
+  props.controller.inputNextActiveItem()
+}
+
+watchEffect(() => {
+  const { activeInputing } = props.controller
+  if (activeInputing == null) {
+    activeDropdownVisible.value = false
+    return
+  }
+  const aPos = toAbsolutePosition({
+    line: activeInputing.range.start.line,
+    column: activeInputing.range.start.column + 1
+  }, codeEditorUICtx.ui.editor)
+  if (aPos == null) {
+    activeDropdownVisible.value = false
+    return
+  }
+  activeDropdownVisible.value = true
+  activeDropdownPos.value = {
+    x: aPos.left,
+    y: aPos.top,
+    width: 0,
+    height: aPos.height
+  }
+})
+
+function handleCancelActiveInput() {
+  // props.controller.setActiveInputing(null)
+}
+
+function handleActiveInputPrev() {
+  props.controller.inputPrevActiveItem()
+}
+
+function handleActiveInputNext() {
+  props.controller.inputNextActiveItem()
+}
 </script>
 
 <template>
@@ -247,6 +313,41 @@ function handleCancelInput() {
       @submit="handleCurrentValueChange"
       @cancel="handleCancelInput"
     />
+  </UIDropdown>
+  <UIDropdown
+    :visible="activeDropdownVisible"
+    trigger="manual"
+    :pos="activeDropdownPos"
+    placement="bottom"
+  >
+    <div class="active-dropdown">
+      <UIIcon class="arrow-icon" type="arrowDown" style="transform: rotate(90deg);" @click="handleActiveInputPrev" />
+      <StringInput
+        v-if="controller.activeInputing != null && controller.activeInputing.type === InputHelperType.String && activeCurrentValue != null"
+        :value="activeCurrentValue"
+        @submit="handleActiveCurrentValueChange"
+        @cancel="handleCancelActiveInput"
+      />
+      <NumberInput
+        v-if="controller.activeInputing != null && controller.activeInputing.type === InputHelperType.Number && activeCurrentValue != null"
+        :value="activeCurrentValue"
+        @submit="handleActiveCurrentValueChange"
+        @cancel="handleCancelActiveInput"
+      />
+      <BooleanInput
+        v-if="controller.activeInputing != null && controller.activeInputing.type === InputHelperType.Boolean && activeCurrentValue != null"
+        :value="activeCurrentValue"
+        @submit="handleActiveCurrentValueChange"
+        @cancel="handleCancelActiveInput"
+      />
+      <ColorInput
+        v-if="controller.activeInputing != null && controller.activeInputing.type === InputHelperType.Color && activeCurrentValue != null"
+        :value="activeCurrentValue"
+        @submit="handleActiveCurrentValueChange"
+        @cancel="handleCancelActiveInput"
+      />
+      <UIIcon class="arrow-icon" type="arrowDown" style="transform: rotate(-90deg);" @click="handleActiveInputNext" />
+    </div>
   </UIDropdown>
 </template>
 
@@ -303,12 +404,40 @@ function handleCancelInput() {
     background-color: rgba(0, 0, 0, 0.3);
   }
   &.code-editor-input-helper-active {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.1);
     /* color: var(--ui-color-hint-1) !important; */
     /* &::after {
       display: inline;
       width: auto;
     } */
+  }
+  &.code-editor-input-helper-active-inputing {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+.active-dropdown {
+  display: flex;
+  flex-direction: row;
+  /* align-items: center; */
+  justify-content: center;
+
+  .arrow-icon {
+    margin-top: 10px;
+    width: 32px;
+    height: 32px;
+  }
+
+  :deep(.header) {
+    display: none;
+  }
+  :deep(.divider) {
+    visibility: hidden;
+  }
+  :deep(button.type-boring) {
+    display: none;
   }
 }
 </style>

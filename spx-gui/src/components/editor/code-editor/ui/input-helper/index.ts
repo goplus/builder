@@ -7,7 +7,7 @@ import type { CodeEditorUI } from '../code-editor-ui'
 import type { TextDocument } from '../../text-document'
 import { checkInputHelper } from './InputHelperUI.vue'
 import type { monaco } from '../../monaco'
-import { fromMonacoPosition } from '../common'
+import { fromMonacoPosition, toMonacoPosition } from '../common'
 
 export enum InputHelperType {
   Resource = 'resource',
@@ -103,6 +103,49 @@ export class InputHelperController extends Disposable {
     return items.filter((item) => containsPosition(newlyInsertedRange, item.range.start) && containsPosition(newlyInsertedRange, item.range.end))
   }
 
+  private activeInputingIndexRef = shallowRef<number | null>(null)
+  // get activeInputing() {
+  //   return this.activeInputingRef.value
+  // }
+  // setActiveInputing(item: InputHelperItem | null) {
+  //   this.activeInputingRef.value = item
+  // }
+
+  get activeInputing() {
+    const position = this.ui.cursorPosition
+    if (position == null) return null
+    const items = this.activeItems
+    return items.find((item) => containsPosition(item.range, position)) ?? null
+  }
+
+  inputPrevActiveItem() {
+    const items = this.activeItems
+    if (items.length === 0) return
+    const currentInputing = this.activeInputing
+    if (currentInputing == null) return
+    const idx = items.findIndex((item) => item.id === currentInputing.id)
+    if (idx <= 0) return
+    const prevIdx = idx - 1
+    const prevItem = items[prevIdx]
+    this.ui.editor.setPosition(toMonacoPosition(prevItem.range.start))
+  }
+
+  inputNextActiveItem() {
+    const items = this.activeItems
+    if (items.length === 0) return
+    const currentInputing = this.activeInputing
+    if (currentInputing == null) return
+    const idx = items.findIndex((item) => item.id === currentInputing.id)
+    if (idx < 0) return
+    if (idx >= items.length - 1) {
+      this.ui['setNewlyInsertedRange'](null)
+      return
+    }
+    const nextIdx = idx + 1
+    const nextItem = items[nextIdx]
+    this.ui.editor.setPosition(toMonacoPosition(nextItem.range.start))
+  }
+
   private inputingRef = shallowRef<InputHelperItem | null>(null)
   get inputing() {
     return this.inputingRef.value
@@ -118,7 +161,7 @@ export class InputHelperController extends Disposable {
 
   init() {
     const { monaco, editor } = this.ui
-    const refreshDiagnostics = debounce(() => this.mgr.start(), 100)
+    const refreshDiagnostics = () => this.mgr.start()
 
     this.addDisposer(
       watch(

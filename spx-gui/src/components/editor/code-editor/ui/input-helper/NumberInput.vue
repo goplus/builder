@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { UIDropdownModal, UIRadioGroup, UIRadio, UISelect, UISelectOption, UINumberInput, UIDivider } from '@/components/ui'
 import { ValueType, type Value } from './common'
 
@@ -19,6 +19,10 @@ const identifiers = [
   'bar',
   'baz',
 ]
+
+watch(() => props.value, (newValue) => {
+  valueRef.value = newValue
+})
 
 function handleValueType(type: string | null) {
   if (type === ValueType.Literal) {
@@ -64,7 +68,7 @@ function handleWheel(e: WheelEvent) {
   <UIDropdownModal
     class="resource-selector"
     :title="$t({ en: 'Number value input', zh: '数字值输入' })"
-    style="width: 408px; max-height: 316px"
+    style="width: 208px; max-height: 316px"
     @cancel="emit('cancel')"
     @confirm="handleConfirm"
     @wheel="handleWheel"

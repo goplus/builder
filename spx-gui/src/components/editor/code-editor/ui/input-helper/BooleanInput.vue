@@ -64,7 +64,7 @@ function handleWheel(e: WheelEvent) {
   <UIDropdownModal
     class="resource-selector"
     :title="$t({ en: 'Boolean value input', zh: '布尔值输入' })"
-    style="width: 408px; max-height: 316px"
+    style="width: 208px; max-height: 316px"
     @cancel="emit('cancel')"
     @confirm="handleConfirm"
     @wheel="handleWheel"
