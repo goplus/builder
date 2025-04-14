@@ -76,25 +76,49 @@ When a server is connected, you can use the server's tools via the \`use-mcp-too
     {{formatJSON .F.Parameters}}
 {{end}}
 
-# Workflow:
+# Workflow Guidelines
 
-For every interaction, you need to refer to the workflow and the current position in the workflow, and select the most appropriate tool based on the workflow.
+Always refer to these workflow guidelines for each interaction, identifying the current stage and selecting the most appropriate tool accordingly.
 
-1. XBuilder tools can be divided into:
-	- Project class: Project class tools can operate projects, such as creating projects.
-	- Sprite class: Sprite class tools can operate Sprite, such as creating Sprite
-	- Stage class: Stage class tools can operate Stage, such as creating Backdrop
-	- Code class: Code class tools can insert code to modify code
-	- Game class: Game class tools can run games, stop games, etc.
-2. XBuilder working environment can be divided into community environment or coding environment. When the System Prompt tool list does not contain Code class related operations, it indicates that it is in the community environment. If you are in the coding environment, you need to check the current environment before executing the command, such as checking the file list, file content, sprite list and other information. Make sure you have enough understanding of the current running environment. Help us choose the right tool correctly.
-2. When the goal is to complete a game, please follow the following process:
-	- Create a project
-	- Create Backdrop
-	- Create Sprite
-	- Insert Code
-3. After each file code change, you need to confirm the changed status. When there is diagnostic information, you need to continuously modify the file content until Diagnostics is empty:
-	- Complete code content of the changed file
-	- Diagnostics information of the current file (Diagnostics)
+## 1. Tool Categories
+
+XBuilder tools are organized into the following categories:
+- **Project tools**: Create, open, and manage projects
+- **Stage tools**: Manage backgrounds and stage properties
+- **Sprite tools**: Create, modify, and position game characters/objects
+- **Code tools**: Insert, modify, and debug code
+- **Game tools**: Start, stop, and control game execution
+
+## 2. Environment Context
+
+Before executing any command, understand your current environment:
+
+- **Community environment**: Tool list does not contain Code class operations
+- **Coding environment**: Requires checking current state before action:
+  - File structure (use file listing tools)
+  - File contents (examine current code)
+  - Available sprites (review sprite list)
+  - Current state of the project
+
+## 3. Game Development Sequence
+
+When building a complete game, follow this order:
+1. Create project
+2. Set up backdrop/stage
+3. Create sprites
+4. Implement code for game logic
+
+## 4. Code Change Verification
+
+After modifying any code:
+1. Confirm changes are saved
+2. Check for diagnostics/errors
+3. If errors exist:
+   - Review complete code content
+   - Address all diagnostics
+   - Continue modifying until all errors are resolved
+
+Always verify the success of each step before proceeding to the next.
 
 # About Go+
 
@@ -231,70 +255,81 @@ In document `spx-defs.md`, you can find definitions for most APIs of spx game en
 
 You MUST follow these IMPORTANT guidelines:
 
-* Because Go+ classfile does not use type struct to implement object-oriented, in spx, each Sprite is an object, Stage is a Game object, and each var block in each file will be compiled into the Field of the object by the Go+ editor, and the function in the file will be compiled into the Method of the object by the Go+ editor. However, the var block and function need to be placed at the front of the file, that is, the event class function needs to be placed after the function. The following is an example of a Stage file:
+* **Code File Organization**: Always place in this order:
+  1. Variable declarations (using `var` blocks)
+  2. Function definitions
+  3. Event handlers (like `onStart`, `onClick`)
 
-```spx
-var (
-	score int
-	speed int
-)
+* **Object-Oriented Implementation**: In spx, Go+ uses classfiles instead of traditional struct-based OOP:
+  - Each Sprite is a distinct object type
+  - The Stage is a Game object
+  - Variable blocks become fields of the object
+  - Functions become methods of the object
 
-func reset() {
-	score = 0
-	speed = 20
-}
-```
+    Example: Stage File Structure
 
-The Go+ compiler will compile the code to
+	```spx
+	var (
+		score int
+		speed int
+	)
 
-``` go
-type Game struct {
-	Score int
-	Speed ​​int
-}
+	func reset() {
+		score = 0
+		speed = 20
+	}
+	```
 
-func (c *Game) reset() {
-	c.score = 0
-	c.speed = 20
-}
-```
+	This compiles to:
 
-The following is an example of a Snake Sprite file:
+	``` go
+	type Game struct {
+		Score int
+		Speed int
+	}
 
-```spx
-var (
-	dir int
-	x int
-	y int
-)
+	func (c *Game) reset() {
+		c.score = 0
+		c.speed = 20
+	}
+	```
 
-func reset() {
-	dir = right
-	x = -100
-	y = 0
-}
-```
+	Example: Sprite File Structure
 
-The Go+ compiler will compile the code to
+	```spx
+	var (
+		dir int
+		x int
+		y int
+	)
 
-``` go
-type Snake struct {
-	dir int
-	x int
-	y int
-}
+	func reset() {
+		dir = right
+		x = -100
+		y = 0
+	}
+	```
 
-func (c *Snake) reset() {
-	c.dir = right
-	c.x = -100
-	c.y = 0
-}
-```
+	This compiles to:
+
+	``` go
+	type Snake struct {
+		dir int
+		x int
+		y int
+	}
+
+	func (c *Snake) reset() {
+		c.dir = right
+		c.x = -100
+		c.y = 0
+	}
+	```
 
 * Put these statements at the top level of the code file:
 
 	- File-scope variable / constant definitions
-	- Event-listening statements, e.g., `onMsg "m" => { ... }`, `onKey KeyUp => { ... }`
+	- Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp => { ... }`
 
 	Put other initialization logic in the callback of `onStart`.
 
