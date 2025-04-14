@@ -47,7 +47,8 @@ export interface McpServerContext {
  * Initialize the MCP server
  * Creates server instance, registers request handlers and establishes connection
  *
- * @param {boolean} [force=false] - Force reinitialization even if already initialized
+ * @param {Transport} transport - The transport layer to connect to
+ * @param {McpServerContext} context - Context containing history and registry
  * @returns {Promise<Server>} MCP server instance
  * @throws {Error} If connection fails
  */

@@ -23,7 +23,7 @@ const CLIENT_CONFIG = {
  * Initialize the MCP client
  * Creates client instance and establishes connection
  *
- * @param {boolean} [force=false] - Force reinitialization even if already initialized
+ * @param {Transport} transport - The transport layer to connect to
  * @returns {Promise<Client>} Connected MCP client instance
  * @throws {Error} If connection fails
  */
