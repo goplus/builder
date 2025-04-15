@@ -1,5 +1,6 @@
 <script lang="ts">
 import type { InjectionKey } from 'vue'
+import { until } from '@/utils/utils'
 
 export type McpConnectionStatus = {
   client: boolean
@@ -200,7 +201,7 @@ async function createProject(options: CreateProjectOptions) {
     const projectRoute = getProjectEditorRoute(projectName)
 
     router.push(projectRoute)
-    await waitToolRegister(10)
+    await waitToolRegister()
     return {
       success: true,
       message: `Project "${projectName}" created successfully`
@@ -221,26 +222,8 @@ async function createProject(options: CreateProjectOptions) {
  * @param maxAttempts Maximum number of attempts to check tool registration
  * @param interval Time interval between each check in milliseconds
  */
-async function waitToolRegister(maxAttempts: number, interval = 300): Promise<void> {
-  try {
-    // Check if the tool is already registered
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const registered = registry.isProviderRegistered('code-editor')
-
-      if (registered) {
-        return Promise.resolve()
-      }
-
-      // Wait for the specified interval before checking again
-      await new Promise((resolve) => setTimeout(resolve, interval))
-    }
-
-    // If the tool is still not registered after maxAttempts, throw an error
-    throw new Error(`Tool registration failed after ${maxAttempts} attempts`)
-  } catch (error) {
-    console.error('Tool registration error:', error)
-    return Promise.reject(error)
-  }
+async function waitToolRegister(): Promise<void> {
+  return until(() => registry.isToolRegistered('insert_code'))
 }
 
 /**
