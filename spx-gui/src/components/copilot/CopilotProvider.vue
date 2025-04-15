@@ -219,8 +219,6 @@ async function createProject(options: CreateProjectOptions) {
 
 /**
  * Wait for tool registration
- * @param maxAttempts Maximum number of attempts to check tool registration
- * @param interval Time interval between each check in milliseconds
  */
 async function waitToolRegister(): Promise<void> {
   return until(() => registry.isToolRegistered('insert_code'))
