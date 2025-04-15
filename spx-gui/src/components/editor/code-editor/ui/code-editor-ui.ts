@@ -207,8 +207,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
 
   closeTempTextDocuments() {
-    this.setActiveTextDocument(this.mainTextDocumentId)
     this.tempTextDocumentIds.splice(0)
+    if (!this.isDisposed) this.setActiveTextDocument(this.mainTextDocumentId)
   }
 
   /** Current active text document ID */
