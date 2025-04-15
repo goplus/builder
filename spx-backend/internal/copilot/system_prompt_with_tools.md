@@ -84,7 +84,7 @@ Always refer to these workflow guidelines for each interaction, identifying the 
 
 XBuilder tools are organized into the following categories:
 - **Project tools**: Create, open, and manage projects
-- **Stage tools**: Manage backgrounds and stage properties
+- **Stage tools**: Manage backdrop and stage properties
 - **Sprite tools**: Create, modify, and position game characters/objects
 - **Code tools**: Insert, modify, and debug code
 - **Game tools**: Start, stop, and control game execution
@@ -329,7 +329,7 @@ You MUST follow these IMPORTANT guidelines:
 * Put these statements at the top level of the code file:
 
 	- File-scope variable / constant definitions
-	- Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp => { ... }`
+	- Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp, => { ... }`
 
 	Put other initialization logic in the callback of `onStart`.
 

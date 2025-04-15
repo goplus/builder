@@ -161,10 +161,81 @@ In document `spx-defs.md`, you can find definitions for most APIs of spx game en
 
 You MUST follow these IMPORTANT guidelines:
 
+* **Code File Organization**: Always place in this order:
+  1. Variable declarations (using `var` blocks)
+  2. Function definitions
+  3. Event handlers (like `onStart`, `onClick`)
+
+* **Object-Oriented Implementation**: In spx, Go+ uses classfiles instead of traditional struct-based OOP:
+  - Each Sprite is a distinct object type
+  - The Stage is a Game object
+  - Variable blocks become fields of the object
+  - Functions become methods of the object
+
+    Example: Stage File Structure
+
+	```spx
+	var (
+		score int
+		speed int
+	)
+
+	func reset() {
+		score = 0
+		speed = 20
+	}
+	```
+
+	This compiles to:
+
+	``` go
+	type Game struct {
+		Score int
+		Speed int
+	}
+
+	func (c *Game) reset() {
+		c.score = 0
+		c.speed = 20
+	}
+	```
+
+	Example: Sprite File Structure
+
+	```spx
+	var (
+		dir int
+		x int
+		y int
+	)
+
+	func reset() {
+		dir = right
+		x = -100
+		y = 0
+	}
+	```
+
+	This compiles to:
+
+	``` go
+	type Snake struct {
+		dir int
+		x int
+		y int
+	}
+
+	func (c *Snake) reset() {
+		c.dir = right
+		c.x = -100
+		c.y = 0
+	}
+	```
+
 * Put these statements at the top level of the code file:
 
 	- File-scope variable / constant definitions
-	- Event-listening statements, e.g., `onMsg "m" => { ... }`, `onKey KeyUp => { ... }`
+	- Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp, => { ... }`
 
 	Put other initialization logic in the callback of `onStart`.
 
