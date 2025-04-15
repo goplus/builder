@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, watchEffect } from 'vue'
-import { MonacoKeyCode, type monaco } from '../../monaco'
+import { type monaco } from '../../monaco'
 import MarkdownView from '../markdown/MarkdownView.vue'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
 import type { CompletionController, InternalCompletionItem } from '.'
 import CompletionItemComp from './CompletionItem.vue'
@@ -11,6 +12,7 @@ const props = defineProps<{
   items: InternalCompletionItem[]
 }>()
 
+const codeEditorUICtx = useCodeEditorUICtx()
 const activeIdx = ref(0)
 const activeItem = computed<InternalCompletionItem | null>(() => props.items[activeIdx.value] ?? null)
 
@@ -34,21 +36,22 @@ function prevent(e: monaco.IKeyboardEvent) {
 }
 
 watchEffect((onCleanup) => {
+  const KeyCode = codeEditorUICtx.ui.monaco.KeyCode
   const unlisten = props.controller.on('editorKeydown', (e) => {
     switch (e.keyCode) {
-      case MonacoKeyCode.DownArrow:
+      case KeyCode.DownArrow:
         prevent(e)
         moveActiveDown()
         break
-      case MonacoKeyCode.UpArrow:
+      case KeyCode.UpArrow:
         prevent(e)
         moveActiveUp()
         break
-      case MonacoKeyCode.Escape:
+      case KeyCode.Escape:
         prevent(e)
         props.controller.stopCompletion()
         break
-      case MonacoKeyCode.Enter: {
+      case KeyCode.Enter: {
         prevent(e)
         const item = props.items[activeIdx.value]
         if (item != null) applyItem(item)

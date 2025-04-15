@@ -9,7 +9,6 @@
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
 
 // Base URL for the static assets. For example, `monaco-editor` files
-export const staticBaseUrl = import.meta.env.VITE_STATIC_BASE_URL as string
 export const usercontentBaseUrl = import.meta.env.VITE_USERCONTENT_BASE_URL as string
 export const usercontentUploadBaseUrl = import.meta.env.VITE_USERCONTENT_UPLOAD_BASE_URL as string
 
