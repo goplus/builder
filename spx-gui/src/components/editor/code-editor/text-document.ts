@@ -13,7 +13,7 @@ import {
   type TextEdit,
   getTextDocumentId
 } from './common'
-import { toMonacoPosition, toMonacoRange, fromMonacoPosition } from './ui/common'
+import { toMonacoPosition, toMonacoRange, fromMonacoPosition, fromMonacoRange } from './ui/common'
 import type { Monaco, monaco } from './monaco'
 
 enum CodeChangeKind {
@@ -188,6 +188,10 @@ export class TextDocument
       start: { line: position.line, column: word.startColumn },
       end: { line: position.line, column: word.endColumn }
     }
+  }
+
+  getFullRange(): Range {
+    return fromMonacoRange(this.monacoTextModel.getFullModelRange())
   }
 
   pushEdits(edits: TextEdit[]): void {

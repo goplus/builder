@@ -5,7 +5,6 @@ import Emitter from '@/utils/emitter'
 import { ResourceReferenceKind, type BaseContext, type ResourceReference } from '../../common'
 import { toMonacoRange } from '../common'
 import type { CodeEditorUI } from '../code-editor-ui'
-import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
 
 export type ResourceReferencesContext = BaseContext
@@ -101,42 +100,6 @@ export class ResourceReferenceController extends Emitter<{
         },
         { immediate: true }
       )
-    )
-
-    const editorEl = editor.getDomNode()
-    if (editorEl == null) throw new Error('No editor dom node')
-
-    let clickingId: string | null = null
-
-    // Attach event to the dom element with `capture` instead of listening to monaco-editor,
-    // to avoid cursor-change when user clicking on interactive resource reference icon
-    editorEl.addEventListener(
-      'mousedown',
-      (e) => {
-        if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkModifiable(e.target)
-        if (rrId == null) return
-        e.preventDefault()
-        e.stopPropagation()
-        clickingId = rrId
-      },
-      { capture: true, signal: this.getSignal() }
-    )
-
-    editorEl.addEventListener(
-      'mouseup',
-      (e) => {
-        if (clickingId == null) return
-        if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkModifiable(e.target)
-        if (rrId != null && rrId === clickingId) {
-          e.preventDefault()
-          e.stopPropagation()
-          this.startModifying(rrId)
-        }
-        clickingId = null
-      },
-      { capture: true, signal: this.getSignal() }
     )
 
     this.addDisposable(editor.onMouseDown(() => this.stopModifying()))

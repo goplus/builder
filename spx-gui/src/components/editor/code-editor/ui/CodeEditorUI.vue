@@ -65,6 +65,8 @@ import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
+import InputHelperUI from './input-helper/InputHelperUI.vue'
+import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 
@@ -270,6 +272,8 @@ function zoomReset() {
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
+    <InputHelperUI :controller="uiRef.inputHelperController" />
+    <InlayHintUI :controller="uiRef.inlayHintController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

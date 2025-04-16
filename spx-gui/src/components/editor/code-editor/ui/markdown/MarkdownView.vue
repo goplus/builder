@@ -9,6 +9,7 @@ import CodeBlock from './CodeBlock.vue'
 import CodeChange from './CodeChange.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
+import InputValuePreview from './InputValuePreview.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -52,7 +53,14 @@ const basicComponents = {
    *   Diagnostic message here (Markdown supported)
    * </diagnostic-item>
    */
-  'diagnostic-item': DiagnosticItem
+  'diagnostic-item': DiagnosticItem,
+  /**
+   * Usage:
+   * ```html
+   * <input-value-preview typ="number" value="1" />
+   * ```
+   */
+  'input-value-preview': InputValuePreview
 }
 const advancedComponents = {
   ...basicComponents,
