@@ -201,6 +201,18 @@ export class ToolRegistry {
   }
 
   /**
+   * Check if a provider has registered any tools
+   *
+   * @param provider - Provider identifier
+   * @returns Whether the provider has registered tools
+   */
+  isProviderRegistered(provider: string): boolean {
+    const hasRegisteredTools = Object.values(this.registry).some((tool) => tool.provider === provider)
+
+    return hasRegisteredTools
+  }
+
+  /**
    * Get names of all registered tools
    *
    * @returns Array of tool names

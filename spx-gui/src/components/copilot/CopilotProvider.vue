@@ -1,5 +1,6 @@
 <script lang="ts">
 import type { InjectionKey } from 'vue'
+import { until } from '@/utils/utils'
 
 export type McpConnectionStatus = {
   client: boolean
@@ -200,6 +201,7 @@ async function createProject(options: CreateProjectOptions) {
     const projectRoute = getProjectEditorRoute(projectName)
 
     router.push(projectRoute)
+    await waitToolRegister()
     return {
       success: true,
       message: `Project "${projectName}" created successfully`
@@ -213,6 +215,13 @@ async function createProject(options: CreateProjectOptions) {
       message: `Failed to create project: ${errorMessage}`
     }
   }
+}
+
+/**
+ * Wait for tool registration
+ */
+async function waitToolRegister(): Promise<void> {
+  return until(() => registry.isToolRegistered('insert_code'))
 }
 
 /**
