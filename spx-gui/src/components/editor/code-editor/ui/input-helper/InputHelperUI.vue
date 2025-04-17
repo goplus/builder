@@ -151,7 +151,7 @@ function handleCancelInput() {
       v-if="props.controller.inputingSlot != null"
       :slot-kind="props.controller.inputingSlot.kind"
       :input="props.controller.inputingSlot.input"
-      :pre-defined-names="props.controller.inputingSlot.preDefinedNames"
+      :predefined-names="props.controller.inputingSlot.predefinedNames"
       @cancel="handleCancelInput"
       @submit="handleSubmitInput"
     />

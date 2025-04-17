@@ -558,12 +558,12 @@ export function getResourceIdentifier(resource: ResourceModel): ResourceIdentifi
 
 export enum InputSlotKind {
   /**
-   * The slot accepts value, which may be a in-place value or a pre-defined identifier.
+   * The slot accepts value, which may be a in-place value or a predefined identifier.
    * For example: `123` in `println 123`
    */
   Value = 'value',
   /**
-   * The slot accepts address, which must be a pre-defined identifier.
+   * The slot accepts address, which must be a predefined identifier.
    * For example: `x` in `x = 123`
    */
   Address = 'address'
@@ -576,10 +576,10 @@ export enum InputKind {
    */
   InPlace = 'in-place',
   /**
-   * (Reference to) user pre-defined identifier
+   * (Reference to) user predefined identifier
    * For example: var `costume1`, const `name2`, field `num3`
    */
-  PreDefined = 'pre-defined'
+  Predefined = 'predefined'
 }
 
 export enum InputType {
@@ -631,9 +631,9 @@ export type Input<T extends InputTypedValue = InputTypedValue> =
       value: T['value']
     }
   | {
-      kind: InputKind.PreDefined
+      kind: InputKind.Predefined
       type: T['type']
-      /** Name for user pre-defined identifer */
+      /** Name for user predefined identifer */
       name: string
     }
 
@@ -644,8 +644,8 @@ export type InputSlot = {
   input: Input
   /** Range in code for the slot */
   range: Range
-  /** Names for user pre-defined identifiers available for the slot */
-  preDefinedNames: string[]
+  /** Names for user predefined identifiers available for the slot */
+  predefinedNames: string[]
 }
 
 export function positionEq(a: Position | null, b: Position | null) {

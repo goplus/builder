@@ -10,7 +10,7 @@ const props = defineProps<{
   // TODO: provide different input UI based on `slotKind`
   slotKind: InputSlotKind
   input: Input<T>
-  preDefinedNames: string[]
+  predefinedNames: string[]
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +33,7 @@ function getDefaultValue(): T['value'] {
 
 const kind = ref(InputKind.InPlace)
 const inPlaceValue = shallowRef<any>(getDefaultValue()) // use `any` to avoid type error in template
-const preDefinedName = ref<string | null>(null)
+const predefinedName = ref<string | null>(null)
 
 watch(
   () => props.input,
@@ -42,7 +42,7 @@ watch(
     if (input.kind === InputKind.InPlace) {
       inPlaceValue.value = input.value
     } else {
-      preDefinedName.value = input.name
+      predefinedName.value = input.name
     }
   },
   { immediate: true }
@@ -57,10 +57,10 @@ function handleConfirm() {
       value: inPlaceValue.value
     }
   } else {
-    const name = preDefinedName.value
+    const name = predefinedName.value
     if (name == null) return
     newInput = {
-      kind: InputKind.PreDefined,
+      kind: InputKind.Predefined,
       type: props.input.type,
       name
     }
@@ -79,7 +79,7 @@ function handleConfirm() {
   >
     <UIRadioGroup v-model:value="kind">
       <UIRadio :value="InputKind.InPlace" label="Value" />
-      <UIRadio :value="InputKind.PreDefined" label="Reference" />
+      <UIRadio :value="InputKind.Predefined" label="Reference" />
     </UIRadioGroup>
     <UIDivider style="margin: 0.6em 0" />
     <template v-if="kind === InputKind.InPlace">
@@ -87,8 +87,8 @@ function handleConfirm() {
       <StringInput v-if="input.type === InputType.String" v-model:value="inPlaceValue" />
       <BooleanInput v-if="input.type === InputType.Boolean" v-model:value="inPlaceValue" />
     </template>
-    <UISelect v-if="kind === InputKind.PreDefined" v-model:value="preDefinedName">
-      <UISelectOption v-for="name in preDefinedNames" :key="name" :value="name">{{ name }}</UISelectOption>
+    <UISelect v-if="kind === InputKind.Predefined" v-model:value="predefinedName">
+      <UISelectOption v-for="name in predefinedNames" :key="name" :value="name">{{ name }}</UISelectOption>
     </UISelect>
   </UIDropdownModal>
 </template>

@@ -172,7 +172,7 @@ class InputHelperProvider implements IInputHelperProvider {
             type: InputType.String,
             value: 'msg'
           },
-          preDefinedNames: ['foo', 'bar', 'msg']
+          predefinedNames: ['foo', 'bar', 'msg']
         }
       ]
     }

@@ -29,8 +29,8 @@ export namespace spxGetInputSlots {
     input: Input
     /** Range in code for the slot */
     range: lsp.Range
-    /** Names for available user-pre-defined identifiers */
-    preDefinedNames: string[]
+    /** Names for available user-predefined identifiers */
+    predefinedNames: string[]
   }
   export type Result = SpxInputSlot[] | null
 }
