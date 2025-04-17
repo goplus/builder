@@ -214,10 +214,13 @@ export class ToolRegistry {
    *
    * @param name - Tool name
    * @param args - Tool arguments
-   * @returns Tool execution result
+   * @returns Tool execution result with at least success and message fields
    * @throws If tool is not registered or execution fails
    */
-  async executeRegisteredTool(name: string, args: any): Promise<any> {
+  async executeRegisteredTool(
+    name: string,
+    args: any
+  ): Promise<{ success: boolean; message: string; [key: string]: any }> {
     const tool = this.registry[name]
 
     if (!tool) {

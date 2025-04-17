@@ -140,21 +140,11 @@ export const InsertCodeArgsSchema = z.object({
       'The Spx file path where the code will be inserted. This should be a valid file path. example: "file:///stage.spx"'
     ),
   code: z.string().describe('The SPX language code segment to be inserted into the Go+ XBuilder project file.'),
-  insertRange: z
-    .object({
-      startLine: z.number().describe('The starting line number in the SPX file where code insertion will begin.'),
-      endLine: z.number().describe('The ending line number in the SPX file where code insertion will complete.')
-    })
-    .describe('The line range in the SPX file where new code will be inserted.'),
   replaceRange: z
     .object({
-      startLine: z
-        .number()
-        .optional()
-        .describe('The starting line number in the SPX file where existing code will be replaced.'),
-      endLine: z.number().optional().describe('The ending line number in the SPX file where code replacement will end.')
+      startLine: z.number().describe('The starting line number in the SPX file where existing code will be replaced.'),
+      endLine: z.number().describe('The ending line number in the SPX file where code replacement will end.')
     })
-    .optional()
     .describe('Optional range defining which existing SPX code should be replaced with the new code.')
 })
 

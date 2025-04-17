@@ -96,11 +96,11 @@ export async function createMcpServer(transport: Transport, context: McpServerCo
       const response = JSON.stringify(result, null, 2)
 
       // Update request history with success result
-      history.updateLastResponse(response)
+      history.updateLastResponse(response, !result.success)
 
       // Return formatted response
       return {
-        content: [{ type: 'text', text: response }]
+        content: [{ type: 'text', text: result.message }]
       }
     } catch (error: any) {
       // Format error message

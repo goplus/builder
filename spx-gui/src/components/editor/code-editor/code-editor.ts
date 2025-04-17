@@ -596,10 +596,11 @@ export class CodeEditor extends Disposable {
             execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
               const file = this.getTextDocument({ uri: args.file })
               if (file == null) return null
+
+              const content = file.getValue()
               return {
                 success: true,
-                message: `Successfully get code from ${args.file}`,
-                data: file.getValue()
+                message: `Successfully get code from ${args.file} <file-content file="${args.file}">${content}</file-content>`
               }
             }
           }
@@ -609,16 +610,18 @@ export class CodeEditor extends Disposable {
     )
   }
 
-  async getDiagnostics() {
+  async getDiagnostics(args?: { file?: string }) {
     try {
-      const files = await this.listFiles()
+      const files = args?.file
+        ? [{ name: args.file.split('/').pop() || args.file, uri: args.file }]
+        : (await this.listFiles()).data
 
       const diagnosticsPromises = files.map(async (file) => {
         try {
           const textDocument = this.getTextDocument({ uri: file.uri })
           if (!textDocument) {
             console.warn(`File not found: ${file.uri}`)
-            return []
+            return { file: file.uri, name: file.name, diagnostics: [] }
           }
 
           const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
@@ -626,34 +629,49 @@ export class CodeEditor extends Disposable {
             signal: new AbortController().signal
           })
 
-          return diagnostics.map((diag) => ({
+          return {
             file: file.uri,
             name: file.name,
-            line: diag.range.start.line,
-            column: diag.range.start.column,
-            message: diag.message
-          }))
+            diagnostics: diagnostics.map((diag) => ({
+              line: diag.range.start.line,
+              column: diag.range.start.column,
+              message: diag.message
+            }))
+          }
         } catch (error) {
           console.error(`Error getting diagnostics for ${file.uri}:`, error)
-          return [
-            {
-              file: file.uri,
-              name: file.name,
-              line: 0,
-              column: 0,
-              message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
-            }
-          ]
+          return {
+            file: file.uri,
+            name: file.name,
+            diagnostics: [
+              {
+                line: 0,
+                column: 0,
+                message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
+              }
+            ]
+          }
         }
       })
 
       const allDiagnostics = await Promise.all(diagnosticsPromises)
 
-      const messages = allDiagnostics.flat()
+      const formattedDiagnostics = allDiagnostics
+        .map((fileResult) => {
+          const diagnosticMessages = fileResult.diagnostics
+            .map((diag) => `- ${diag.message} ${fileResult.name} [${diag.line},${diag.column}]`)
+            .join('\n')
+
+          return `<pre is="file-diagnostics" file="${fileResult.file}">\n${
+            fileResult.diagnostics.length > 0 ? diagnosticMessages : '- No diagnostics'
+          }\n</pre>`
+        })
+        .join('\n\n')
+
       return {
         success: true,
-        message: `Successfully get diagnostics`,
-        data: messages
+        message: formattedDiagnostics,
+        data: allDiagnostics
       }
     } catch (error) {
       console.error('Failed to get diagnostics:', error)
@@ -682,13 +700,19 @@ export class CodeEditor extends Disposable {
       })
     }
 
-    return files
+    const formattedList = files.map((file) => `- ${file.uri}`).join('\n')
+    const message = `<file-list>\n${formattedList}\n</file-list>`
+    return {
+      success: true,
+      message: message,
+      data: files
+    }
   }
 
   async insertCode(args: InsertCodeOptions) {
     const code = args.code
     const file = args.file
-    const iRange = args.insertRange
+    const iRange = args.replaceRange
 
     try {
       const targetDoc = this.getTextDocument({ uri: file })
@@ -699,21 +723,35 @@ export class CodeEditor extends Disposable {
       const edit = {
         range: {
           start: { line: iRange.startLine, column: 0 },
-          end: { line: iRange.endLine, column: 0 }
+          end: { line: iRange.endLine + 1, column: 0 }
         },
         newText: code
       }
 
       targetDoc.pushEdits([edit])
+
+      const diagnostics = this.getDiagnostics({ file })
+      const finallyCode = targetDoc.getValue()
+      const finallyFileContent = `<pre is="final-file-content" file="${file}">${finallyCode}</pre>`
+      let message = `Code successfully inserted into ${file}.
+        
+      Here is the full, updated content of the file that was saved:\n
+       ${finallyFileContent}
+      \n\nIMPORTANT: For any future changes to this file, use the final-file-content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.`
+
+      const diagnosticsResult = await diagnostics
+      if (diagnosticsResult.data && diagnosticsResult.data.length > 0) {
+        message += `\n\nNew problems detected after saving the file:\n${diagnosticsResult.message}`
+      }
       return {
         success: true,
-        message: `Code successfully inserted into ${file}`
+        message: message
       }
     } catch (error) {
       console.error('Error inserting code:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
+        message: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
       }
     }
   }

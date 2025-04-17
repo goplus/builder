@@ -171,10 +171,35 @@ You MUST follow these IMPORTANT guidelines:
   - The Stage is a Game object
   - Variable blocks become fields of the object
   - Functions become methods of the object
+  - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables with initial values in subsequent `var` blocks after the first one.
 
     Example: Stage File Structure
 
 	```spx
+	var (
+		score int
+		speed int
+	)
+
+	var (
+		fo0 = 2
+		bar = 3
+	)
+
+	func reset() {
+		score = 0
+		speed = 20
+	}
+	```
+
+	can not define to:
+
+	```spx
+	var (
+		fo0 = 2
+		bar = 3
+	)
+
 	var (
 		score int
 		speed int
@@ -193,6 +218,11 @@ You MUST follow these IMPORTANT guidelines:
 		Score int
 		Speed int
 	}
+
+	var (
+		fo0 = 2
+		bar = 3
+	)
 
 	func (c *Game) reset() {
 		c.score = 0
@@ -231,6 +261,8 @@ You MUST follow these IMPORTANT guidelines:
 		c.y = 0
 	}
 	```
+
+	Node: 
 
 * Put these statements at the top level of the code file:
 

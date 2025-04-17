@@ -4,6 +4,9 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import CodeBlock from './CodeBlock.vue'
 import UseMcpTool from './UseMcpTool.vue'
+import ToolEcecResult from './ToolExecResult.vue'
+import FileContent from './FileContent.vue'
+import FileDiagnostics from './FileDiagnostics.vue'
 
 const props = defineProps<{
   value: string | LocaleMessage
@@ -15,10 +18,39 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
+   * <file-diagnostics file="src/main.ts">
+   *        - Error: Missing semicolon
+   *        - Warning: Unused variable
+   * </file-diagnostics>
+   * ```
+   */
+  'file-diagnostics': FileDiagnostics,
+  /**
+   * Usage:
+   *  ```html
+   * <file-content file="src/main.spx">
+   *      onStart => {}
+   * </file-content>
+   * ```
+   */
+  'file-content': FileContent,
+  'final-file-content': FileContent,
+  /**
+   * Usage:
+   *  ```html
    * <use-mcp-tool server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'/>
    * ```
    */
-  'use-mcp-tool': UseMcpTool
+  'use-mcp-tool': UseMcpTool,
+  /**
+   * Usage:
+   *  ```html
+   * <tool-exec-result server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'>
+   *        result
+   * </tool-exec-result>
+   * ```
+   */
+  'tool-exec-result': ToolEcecResult
 }
 
 const components = computed(() => {

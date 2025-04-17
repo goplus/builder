@@ -4,7 +4,7 @@ import "fmt"
 
 // Constants for the maximum length of content text and other limits.
 const (
-	MAX_CONTENT_TEXT_LENGTH = 5000
+	MAX_CONTENT_TEXT_LENGTH = 10000
 	MAX_MESSAGE_COUNT       = 50
 	MAX_TOKENS              = 1024
 )

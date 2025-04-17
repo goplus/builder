@@ -152,7 +152,7 @@ func (d *Qiniu) StreamMessage(ctx context.Context, params *types.Params) (io.Rea
 	req := &ChatCompletionRequest{
 		Model:       params.Model,
 		Messages:    messages,
-		Temperature: 0.7,
+		Temperature: 0.2,
 		MaxTokens:   types.MAX_TOKENS,
 		Stream:      true,
 	}
