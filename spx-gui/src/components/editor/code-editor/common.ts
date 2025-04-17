@@ -201,6 +201,7 @@ export interface ITextDocument
   getLineContent(line: number): string
   getWordAtPosition(position: Position): WordAtPosition | null
   getDefaultRange(position: Position): Range
+  getFullRange(): Range
   pushEdits(edits: TextEdit[]): void
 }
 
@@ -435,6 +436,13 @@ export function fromLSPPosition(pos: lsp.Position): Position {
   }
 }
 
+export function toLSPRange(range: Range): lsp.Range {
+  return {
+    start: toLSPPosition(range.start),
+    end: toLSPPosition(range.end)
+  }
+}
+
 export function fromLSPRange(range: lsp.Range): Range {
   return {
     start: fromLSPPosition(range.start),
@@ -546,6 +554,98 @@ export function getResourceURI(resource: ResourceModel): string {
 
 export function getResourceIdentifier(resource: ResourceModel): ResourceIdentifier {
   return { uri: getResourceURI(resource) }
+}
+
+export enum InputSlotKind {
+  /**
+   * The slot accepts value, which may be a in-place value or a predefined identifier.
+   * For example: `123` in `println 123`
+   */
+  Value = 'value',
+  /**
+   * The slot accepts address, which must be a predefined identifier.
+   * For example: `x` in `x = 123`
+   */
+  Address = 'address'
+}
+
+export enum InputKind {
+  /**
+   * In-place value
+   * For example: `"hello world"`, `123`, `true`, spx `Left`, spx `RGB(0,0,0)`
+   */
+  InPlace = 'in-place',
+  /**
+   * (Reference to) user predefined identifier
+   * For example: var `costume1`, const `name2`, field `num3`
+   */
+  Predefined = 'predefined'
+}
+
+export enum InputType {
+  /** Integer */
+  Integer = 'integer',
+  /** Decimal */
+  Decimal = 'decimal',
+  /** String */
+  String = 'string',
+  /** Boolean */
+  Boolean = 'boolean',
+  /** Resource name (`SpriteName`, `SoundName`, etc.) in spx */
+  SpxResourceName = 'spx-resource-name',
+  /** `Direction` in spx */
+  SpxDirection = 'spx-direction',
+  /** `Color` in spx */
+  SpxColor = 'spx-color',
+  /** `EffectKind` in spx */
+  SpxEffectKind = 'spx-effect-kind',
+  /** `Key` in spx */
+  SpxKey = 'spx-key',
+  /** `PlayAction` in spx */
+  SpxPlayAction = 'spx-play-action',
+  /** `specialObj` in spx */
+  SpxSpecialObj = 'spx-special-obj',
+  /** Unknown type */
+  Unknown = 'unknown'
+}
+
+export type InputTypedValue =
+  | { type: InputType.Integer; value: number }
+  | { type: InputType.Decimal; value: number }
+  | { type: InputType.String; value: string }
+  | { type: InputType.Boolean; value: boolean }
+  | { type: InputType.SpxResourceName; value: ResourceURI }
+  | { type: InputType.SpxDirection; value: number }
+  | { type: InputType.SpxColor; value: [r: number, g: number, b: number, a: number] }
+  | { type: InputType.SpxEffectKind; value: number }
+  | { type: InputType.SpxKey; value: number }
+  | { type: InputType.SpxPlayAction; value: number }
+  | { type: InputType.SpxSpecialObj; value: number }
+  | { type: InputType.Unknown; value: void }
+
+export type Input<T extends InputTypedValue = InputTypedValue> =
+  | {
+      kind: InputKind.InPlace
+      type: T['type']
+      /** In-place value */
+      value: T['value']
+    }
+  | {
+      kind: InputKind.Predefined
+      type: T['type']
+      /** Name for user predefined identifer */
+      name: string
+    }
+
+export type InputSlot = {
+  /** Kind of the slot */
+  kind: InputSlotKind
+  /** Current input in the slot */
+  input: Input
+  /** Range in code for the slot */
+  range: Range
+  /** Names for user predefined identifiers available for the slot */
+  predefinedNames: string[]
 }
 
 export function positionEq(a: Position | null, b: Position | null) {

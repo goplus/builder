@@ -1,29 +1,20 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue'
 import { DiagnosticSeverity, type Diagnostic } from '../../common'
 import type { monaco } from '../../monaco'
-import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
+import { useDecorations } from '../common'
 import type { DiagnosticsController } from '.'
 
 const props = defineProps<{
   controller: DiagnosticsController
 }>()
 
-const codeEditorCtx = useCodeEditorUICtx()
-
-let dc: monaco.editor.IEditorDecorationsCollection | null = null
-function getDecorationsCollection() {
-  if (dc == null) dc = codeEditorCtx.ui.editor.createDecorationsCollection([])
-  return dc
-}
-
 function getDiagnosticCls(severity: DiagnosticSeverity, suffix?: string) {
   return ['code-editor-diagnostic', severity, suffix].filter(Boolean).join('-')
 }
 
-watchEffect((onCleanUp) => {
+useDecorations(() => {
   const diagnostics = props.controller.diagnostics
-  if (diagnostics == null) return
+  if (diagnostics == null) return []
 
   const inlineDecorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const diagnostic of diagnostics) {
@@ -69,11 +60,7 @@ watchEffect((onCleanUp) => {
       }
     })
   }
-
-  const decorationsCollection = getDecorationsCollection()
-  decorationsCollection.append(inlineDecorations)
-  decorationsCollection.append(lineDecorations)
-  onCleanUp(() => decorationsCollection.clear())
+  return [...inlineDecorations, ...lineDecorations]
 })
 </script>
 

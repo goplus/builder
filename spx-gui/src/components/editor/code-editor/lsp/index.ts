@@ -13,11 +13,12 @@ import {
   type Position,
   type ResourceReference,
   type TextDocumentIdentifier,
-  containsPosition
+  containsPosition,
+  type InputSlot
 } from '../common'
 import { Spxlc } from './spxls/client'
 import type { Files as SpxlsFiles } from './spxls'
-import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
+import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
@@ -119,6 +120,12 @@ export class SpxLSPClient extends Disposable {
     )
   }
 
+  async workspaceExecuteCommandSpxGetInputSlots(
+    ...params: spxGetInputSlots.Arguments
+  ): Promise<spxGetInputSlots.Result> {
+    return this.executeCommand<spxGetInputSlots.Arguments, spxGetInputSlots.Result>(spxGetInputSlots.command, ...params)
+  }
+
   async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
     const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
@@ -171,6 +178,11 @@ export class SpxLSPClient extends Disposable {
     return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
   }
 
+  async textDocumentInlayHint(params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.InlayHint[] | null>(lsp.InlayHintRequest.method, params)
+  }
+
   // Higher-level APIs
 
   async getResourceReferences(textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
@@ -206,5 +218,14 @@ export class SpxLSPClient extends Disposable {
     if (completionResult == null) return []
     if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
     return completionResult as CompletionItem[]
+  }
+
+  async getInputSlots(textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
+    const result = await this.workspaceExecuteCommandSpxGetInputSlots({ textDocument })
+    if (result == null) return []
+    return result.map((item) => ({
+      ...item,
+      range: fromLSPRange(item.range)
+    }))
   }
 }

@@ -15,6 +15,8 @@ import {
   type IDiagnosticsProvider,
   type IResourceReferencesProvider,
   type ResourceReferencesContext,
+  type IInputHelperProvider,
+  type InputHelperContext,
   builtInCommandCopilotExplain,
   ChatExplainKind,
   builtInCommandCopilotReview,
@@ -32,7 +34,11 @@ import {
   InsertTextFormat,
   CompletionItemKind,
   type IAPIReferenceProvider,
-  type APIReferenceContext
+  type APIReferenceContext,
+  type IInlayHintProvider,
+  type InlayHintItem,
+  type InlayHintContext,
+  InlayHintKind
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -61,7 +67,13 @@ import {
   fromLSPDiagnostic,
   isTextDocumentStageCode,
   DiagnosticSeverity,
-  textDocumentIdEq
+  textDocumentIdEq,
+  fromLSPPosition,
+  toLSPRange,
+  InputKind,
+  InputType,
+  type InputSlot,
+  InputSlotKind
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -141,6 +153,60 @@ class ResourceReferencesProvider implements IResourceReferencesProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
     return this.lspClient.getResourceReferences(ctx.textDocument.id)
+  }
+}
+
+class InputHelperProvider implements IInputHelperProvider {
+  constructor(private lspClient: SpxLSPClient) {}
+  async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          kind: InputSlotKind.Value,
+          range: {
+            start: { line: 3, column: 12 },
+            end: { line: 3, column: 17 }
+          },
+          input: {
+            kind: InputKind.InPlace,
+            type: InputType.String,
+            value: 'msg'
+          },
+          predefinedNames: ['foo', 'bar', 'msg']
+        }
+      ]
+    }
+    return this.lspClient.getInputSlots(ctx.textDocument.id)
+  }
+}
+
+class InlayHintProvider implements IInlayHintProvider {
+  constructor(private lspClient: SpxLSPClient) {}
+  async provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]> {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          position: { line: 3, column: 12 },
+          label: 'message',
+          kind: InlayHintKind.Parameter
+        }
+      ]
+    }
+    const lspInlayHints = await this.lspClient.textDocumentInlayHint({
+      textDocument: ctx.textDocument.id,
+      range: toLSPRange(ctx.textDocument.getFullRange())
+    })
+    const result: InlayHintItem[] = []
+    if (lspInlayHints == null) return result
+    for (const ih of lspInlayHints) {
+      const kind = ih.kind ?? lsp.InlayHintKind.Parameter
+      if (kind === lsp.InlayHintKind.Parameter && typeof ih.label === 'string') {
+        const label = ih.label
+        const position = fromLSPPosition(ih.position)
+        result.push({ label, kind: InlayHintKind.Parameter, position })
+      }
+    }
+    return result
   }
 }
 
@@ -511,6 +577,8 @@ export class CodeEditor extends Disposable {
   private completionProvider: CompletionProvider
   private contextMenuProvider: ContextMenuProvider
   private resourceReferencesProvider: ResourceReferencesProvider
+  private inputHelperProvider: InputHelperProvider
+  private inlayHintProvider: InlayHintProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
 
@@ -529,6 +597,8 @@ export class CodeEditor extends Disposable {
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
+    this.inputHelperProvider = new InputHelperProvider(this.lspClient)
+    this.inlayHintProvider = new InlayHintProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
@@ -816,6 +886,8 @@ export class CodeEditor extends Disposable {
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
+    ui.registerInputHelperProvider(this.inputHelperProvider)
+    ui.registerInlayHintProvider(this.inlayHintProvider)
     ui.registerDocumentBase(this.documentBase)
   }
 
@@ -840,6 +912,7 @@ export class CodeEditor extends Disposable {
     this.lspClient.dispose()
     this.documentBase.dispose()
     this.copilot.dispose()
+    this.diagnosticsProvider.dispose()
     super.dispose()
   }
 }

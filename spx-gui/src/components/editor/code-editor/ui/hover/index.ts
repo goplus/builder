@@ -19,7 +19,8 @@ import {
   isModifiableKind,
   type CodeEditorUI,
   builtInCommandModifyResourceReference,
-  builtInCommandRenameResource
+  builtInCommandRenameResource,
+  builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
 import { fromMonacoPosition, supportGoTo } from '../common'
 
@@ -75,6 +76,9 @@ export class HoverController extends Emitter<{
 
     const resourceReferenceHover = this.getResourceReferenceHover(position)
     if (resourceReferenceHover != null) return resourceReferenceHover
+
+    const inputHelperHover = this.getInputHelperHover(position)
+    if (inputHelperHover != null) return inputHelperHover // TODO: merge with other hovers
 
     const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
     if (providedHover == null) return null
@@ -150,6 +154,32 @@ export class HoverController extends Emitter<{
     return null
   }
 
+  private getInputHelperHover(position: Position): InternalHover | null {
+    const inputHelperController = this.ui.inputHelperController
+    if (inputHelperController.slots == null) return null
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) return null
+    for (const item of inputHelperController.slots) {
+      if (!containsPosition(item.range, position)) continue
+      const value = textDocument.getValueInRange(item.range)
+      const actions: Action[] = []
+      actions.push({
+        command: builtInCommandInvokeInputHelper,
+        arguments: [item]
+      })
+      return {
+        contents: [
+          makeBasicMarkdownString(
+            `<input-value-preview typ="${item.input.type}" value="${encodeURIComponent(value)}" />`
+          )
+        ],
+        range: item.range,
+        actions
+      }
+    }
+    return null
+  }
+
   init() {
     const { monaco, editor, resourceReferenceController } = this.ui
 
@@ -165,6 +195,7 @@ export class HoverController extends Emitter<{
       const position = target.position
       const currentHover = this.hover
       if (currentHover != null && containsPosition(currentHover.range, position)) return
+      if (this.ui.newlyInsertedRange != null && containsPosition(this.ui.newlyInsertedRange, position)) return
       this.hoverMgr.start(position)
     }, 50)
 
