@@ -170,8 +170,10 @@ You MUST follow these IMPORTANT guidelines:
   - Each Sprite is a distinct object type
   - The Stage is a Game object
   - Variable blocks become fields of the object
-  - Functions become methods of the object
+  - Functions become methods of the object and please make sure to place the function definition before all event handlers (such as `onStart`, `onClick`)
+  - Sprite can directly access the Game Field because the Sprite struct embeds the Game struct
   - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables with initial values in subsequent `var` blocks after the first one.
+  - In particular, the clone command Make a clone of current sprite is actually copy current Sprite struct. If you want to get the cloned object, you can get the object through `onClone => {object := this}`
 
     Example: Stage File Structure
 
@@ -215,6 +217,7 @@ You MUST follow these IMPORTANT guidelines:
 
 	``` go
 	type Game struct {
+		spx.Game
 		Score int
 		Speed int
 	}
@@ -224,9 +227,9 @@ You MUST follow these IMPORTANT guidelines:
 		bar = 3
 	)
 
-	func (c *Game) reset() {
-		c.score = 0
-		c.speed = 20
+	func (this *Game) reset() {
+		this.score = 0
+		this.speed = 20
 	}
 	```
 
@@ -250,19 +253,19 @@ You MUST follow these IMPORTANT guidelines:
 
 	``` go
 	type Snake struct {
+		spx.SpriteImpl
+		*Game
 		dir int
 		x int
 		y int
 	}
 
-	func (c *Snake) reset() {
-		c.dir = right
-		c.x = -100
-		c.y = 0
+	func (this *Snake) reset() {
+		this.dir = right
+		this.x = -100
+		this.y = 0
 	}
 	```
-
-	Node: 
 
 * Put these statements at the top level of the code file:
 
