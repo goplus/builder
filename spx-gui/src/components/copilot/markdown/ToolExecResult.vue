@@ -10,7 +10,7 @@ defineProps<{
 
 const isExpanded = ref(false)
 
-// 用于控制显示与隐藏
+// Used to control display visibility
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }

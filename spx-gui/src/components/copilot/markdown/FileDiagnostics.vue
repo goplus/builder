@@ -5,12 +5,12 @@ import MarkdownView from './MarkdownView.vue'
 
 const props = defineProps<{
   /**
-   * 文件路径
+   * File path
    */
   file?: string
   
   /**
-   * 诊断内容（可选，也可以从插槽获取）
+   * Diagnostic content (optional, can also be obtained from slot)
    */
   content?: string
 }>()
@@ -18,27 +18,27 @@ const props = defineProps<{
 const slotText = useSlotText()
 const diagnosticContent = computed(() => props.content || slotText.value)
 
-// 从文件路径提取文件名
+// Extract filename from file path
 const fileName = computed(() => {
   if (!props.file) return 'Unknown file'
   return props.file.split('/').pop() || props.file
 })
 
-// 控制诊断信息是否展开
+// Control whether diagnostic information is expanded
 const isExpanded = ref(false)
 
-// 分析诊断信息中的错误数量
+// Analyze the number of errors in the diagnostic information
 const errorCount = computed(() => {
   const content = diagnosticContent.value
   if (!content) return 0
   
-  // 计算诊断行数
+  // Count diagnostic lines
   const lines = content.split('\n').filter(line => line.trim().startsWith('-'))
-  // 不计算"No diagnostics"行
+  // Don't count "No diagnostics" lines
   return lines.filter(line => !line.includes('No diagnostics')).length
 })
 
-// 切换展开/折叠状态
+// Toggle expand/collapse state
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }
@@ -59,7 +59,7 @@ const toggleExpand = () => {
     </div>
     
     <div v-show="isExpanded" class="diagnostics-content">
-      <!-- 使用 MarkdownView 渲染诊断内容 -->
+      <!-- Use MarkdownView to render diagnostic content -->
       <MarkdownView :value="diagnosticContent" />
     </div>
   </div>
@@ -142,7 +142,7 @@ const toggleExpand = () => {
       background-color: var(--ui-color-error-bg-light);
     }
     
-    // 确保 Markdown 内容样式正确
+    // Ensure Markdown content styles are correct
     :deep(ul) {
       margin: 0;
       padding-left: 20px;

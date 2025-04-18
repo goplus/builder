@@ -90,7 +90,6 @@ export class CopilotController extends Disposable {
       const serverName = result.server || ''
       const toolName = result.tool
 
-      // 将结果转换为适当的格式
       let resultContent: string
 
       if (typeof result.result === 'object' && result.result !== null) {
@@ -110,14 +109,11 @@ export class CopilotController extends Disposable {
         resultContent = JSON.stringify(result.result, null, 2)
       }
 
-      console.log(resultContent)
-
       return `<tool-exec-result server="${serverName}" tool="${toolName}">
 ${resultContent}
 </tool-exec-result>`
     })
 
-    // 组合多个结果为一个消息
     const combinedResult = `${formattedResults.join('\n\n')}`
 
     this.askProblem(combinedResult)

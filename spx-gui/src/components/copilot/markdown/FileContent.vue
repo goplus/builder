@@ -5,12 +5,12 @@ import CodeBlock from './CodeBlock.vue'
 
 const props = defineProps<{
   /**
-   * 文件内容
+   * File content
    */
   content?: string
   
   /**
-   * 文件路径 - 可选，如果提供，会从中提取文件名
+   * File path - optional, if provided, the filename will be extracted from it
    */
   file?: string
 }>()
@@ -18,7 +18,7 @@ const props = defineProps<{
 const slotCode = useSlotText()
 const getContent = computed(() => props.content || slotCode.value)
 
-// 根据文件路径或名称确定显示的文件名
+// Determine display filename based on file path
 const displayFilename = computed(() => {
   if (props.file) {
     return props.file;
@@ -27,9 +27,10 @@ const displayFilename = computed(() => {
   return null;
 });
 
-// 根据文件名确定语言
+// Set language for syntax highlighting
 const determinedLanguage = "spx"
 
+// Default collapsed state for the code block
 const initialCollapsed = ref(true)
 </script>
 
