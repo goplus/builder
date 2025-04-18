@@ -68,8 +68,8 @@ import { type Monaco } from './monaco'
 import * as z from 'zod'
 import { ToolRegistry } from '@/components/copilot/mcp/registry'
 import {
-  insertCodeToolDescription,
-  InsertCodeArgsSchema,
+  writeToFileToolDescription,
+  WriteToFileArgsSchema,
   ListFilesArgsSchema,
   listFilesToolDescription,
   GetDiagnosticsArgsSchema,
@@ -501,7 +501,7 @@ class ContextMenuProvider implements IContextMenuProvider {
   }
 }
 
-type InsertCodeOptions = z.infer<typeof InsertCodeArgsSchema>
+type WriteToFileOptions = z.infer<typeof WriteToFileArgsSchema>
 
 export class CodeEditor extends Disposable {
   private copilot: Copilot
@@ -538,17 +538,17 @@ export class CodeEditor extends Disposable {
     this.registry.registerTools(
       [
         {
-          description: insertCodeToolDescription,
+          description: writeToFileToolDescription,
           implementation: {
             validate: (args) => {
-              const result = InsertCodeArgsSchema.safeParse(args)
+              const result = WriteToFileArgsSchema.safeParse(args)
               if (!result.success) {
-                throw new Error(`Invalid arguments for ${insertCodeToolDescription.name}: ${result.error}`)
+                throw new Error(`Invalid arguments for ${writeToFileToolDescription.name}: ${result.error}`)
               }
               return result.data
             },
             execute: async (args) => {
-              const result = this.insertCode(args)
+              const result = this.writeToFile(args)
               return result
             }
           }
@@ -709,10 +709,9 @@ export class CodeEditor extends Disposable {
     }
   }
 
-  async insertCode(args: InsertCodeOptions) {
-    const code = args.code
+  async writeToFile(args: WriteToFileOptions) {
+    const code = args.content
     const file = args.file
-    const iRange = args.replaceRange
 
     try {
       const targetDoc = this.getTextDocument({ uri: file })
@@ -720,17 +719,12 @@ export class CodeEditor extends Disposable {
         throw new Error(`File not found: ${file}`)
       }
 
-      const edit = {
-        range: {
-          start: { line: iRange.startLine, column: 0 },
-          end: { line: iRange.endLine + 1, column: 0 }
-        },
-        newText: code
-      }
+      this.getAttachedUI()?.open(targetDoc.id)
 
-      targetDoc.pushEdits([edit])
+      targetDoc.setValue(code)
 
-      const diagnostics = this.getDiagnostics({ file })
+      const diagnostics = await this.getDiagnostics({ file })
+      const files = await this.listFiles()
       const finallyCode = targetDoc.getValue()
       const finallyFileContent = `<pre is="final-file-content" file="${file}">${finallyCode}</pre>`
       let message = `Code successfully inserted into ${file}.
@@ -739,9 +733,12 @@ export class CodeEditor extends Disposable {
        ${finallyFileContent}
       \n\nIMPORTANT: For any future changes to this file, use the final-file-content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.`
 
-      const diagnosticsResult = await diagnostics
-      if (diagnosticsResult.data && diagnosticsResult.data.length > 0) {
-        message += `\n\nNew problems detected after saving the file:\n${diagnosticsResult.message}`
+      if (files.data && files.data.length > 0) {
+        message += `\n\nHere is the list of files in the project:\n${files.message}`
+      }
+
+      if (diagnostics.data && diagnostics.data.length > 0) {
+        message += `\n\nNew problems detected after saving the file, If you have defined a function, please make sure to place the function definition before all event handlers (such as onStart, onClick):\n${diagnostics.message}`
       }
       return {
         success: true,

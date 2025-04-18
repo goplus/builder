@@ -29,10 +29,6 @@ import {
   AddSpriteFromCanvasArgsSchema,
   addStageBackdropFromCanvasToolDescription,
   AddStageBackdropFromCanvasArgsSchema,
-  RunGameArgsSchema,
-  runGameToolDescription,
-  StopGameArgsSchema,
-  stopGameToolDescription
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
@@ -42,12 +38,9 @@ import type { z } from 'zod'
 const editorCtx = useEditorCtx()
 const copilotCtx = useCopilotCtx()
 const project = computed(() => editorCtx.project)
-const runtime = computed(() => editorCtx.runtime)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
-type RunGameOptions = z.infer<typeof RunGameArgsSchema>
-type StopGameOptions = z.infer<typeof StopGameArgsSchema>
 
 async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
@@ -69,54 +62,6 @@ async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   return {
     success: true,
     message: `Successfully added backdrop "${args.backdropName}" to project "${project.value.name}"`
-  }
-}
-
-async function runGame(args: RunGameOptions) {
-  if (project.value.name != args.projectName) {
-    return {
-      success: false,
-      message: `Failed to runGame: Project name mismatch. Expected "${args.projectName}", but got "${project.value.name}"`
-    }
-  }
-  try {
-    runtime.value.setRunning({ mode: 'debug', initializing: true })
-    return {
-      success: true,
-      message: `Successfully runned the project "${project.value.name}"`
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error(`Failed to runGame:`, errorMessage)
-
-    return {
-      success: false,
-      message: `Failed to runGame: ${errorMessage}`
-    }
-  }
-}
-
-async function stopGame(args: StopGameOptions) {
-  if (project.value.name != args.projectName) {
-    return {
-      success: false,
-      message: `Failed to stopGame: Project name mismatch. Expected "${args.projectName}", but got "${project.value.name}"`
-    }
-  }
-  try {
-    runtime.value.setRunning({ mode: 'none' })
-    return {
-      success: true,
-      message: `Successfully stopped the project "${project.value.name}"`
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error(`Failed to stopGame:`, errorMessage)
-
-    return {
-      success: false,
-      message: `Failed to stopGame: ${errorMessage}`
-    }
   }
 }
 
@@ -153,36 +98,6 @@ function registerProjectTools() {
           },
           execute: async (args: AddStageBackdropFromCanvasOptions) => {
             return addBackdropFromCanvas(args)
-          }
-        }
-      },
-      {
-        description: runGameToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = RunGameArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${runGameToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: RunGameOptions) => {
-            return runGame(args)
-          }
-        }
-      },
-      {
-        description: stopGameToolDescription,
-        implementation: {
-          validate: (args) => {
-            const result = StopGameArgsSchema.safeParse(args)
-            if (!result.success) {
-              throw new Error(`Invalid arguments for ${stopGameToolDescription.name}: ${result.error}`)
-            }
-            return result.data
-          },
-          execute: async (args: StopGameOptions) => {
-            return stopGame(args)
           }
         }
       }
