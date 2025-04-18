@@ -1,5 +1,5 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import type { DefinitionIdentifier, Input, InputSlotKind, ResourceIdentifier } from '../../common'
+import type { DefinitionIdentifier, Input, InputSlotKind, InputType, ResourceIdentifier } from '../../common'
 
 export namespace spxGetDefinitions {
   export const command = 'spx.getDefinitions'
@@ -25,12 +25,14 @@ export namespace spxGetInputSlots {
   type SpxInputSlot = {
     /** Kind of the slot */
     kind: InputSlotKind
+    /** Input type accepted by the slot. */
+    acceptType: InputType
     /** Current input in the slot */
     input: Input
-    /** Range in code for the slot */
-    range: lsp.Range
     /** Names for available user-predefined identifiers */
     predefinedNames: string[]
+    /** Range in code for the slot */
+    range: lsp.Range
   }
   export type Result = SpxInputSlot[] | null
 }
