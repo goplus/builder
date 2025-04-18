@@ -163,16 +163,17 @@ class InputHelperProvider implements IInputHelperProvider {
       return [
         {
           kind: InputSlotKind.Value,
-          range: {
-            start: { line: 3, column: 12 },
-            end: { line: 3, column: 17 }
-          },
+          acceptType: InputType.String,
           input: {
             kind: InputKind.InPlace,
             type: InputType.String,
             value: 'msg'
           },
-          predefinedNames: ['foo', 'bar', 'msg']
+          predefinedNames: ['foo', 'bar', 'msg'],
+          range: {
+            start: { line: 3, column: 12 },
+            end: { line: 3, column: 17 }
+          }
         }
       ]
     }

@@ -640,12 +640,14 @@ export type Input<T extends InputTypedValue = InputTypedValue> =
 export type InputSlot = {
   /** Kind of the slot */
   kind: InputSlotKind
+  /** Input type accepted by the slot. */
+  acceptType: InputType
   /** Current input in the slot */
   input: Input
-  /** Range in code for the slot */
-  range: Range
   /** Names for user predefined identifiers available for the slot */
   predefinedNames: string[]
+  /** Range in code for the slot */
+  range: Range
 }
 
 export function positionEq(a: Position | null, b: Position | null) {
