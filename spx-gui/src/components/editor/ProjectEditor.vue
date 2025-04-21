@@ -28,7 +28,7 @@ import {
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
   addStageBackdropFromCanvasToolDescription,
-  AddStageBackdropFromCanvasArgsSchema,
+  AddStageBackdropFromCanvasArgsSchema
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'

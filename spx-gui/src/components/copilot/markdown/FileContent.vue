@@ -8,7 +8,7 @@ const props = defineProps<{
    * File content
    */
   content?: string
-  
+
   /**
    * File path - optional, if provided, the filename will be extracted from it
    */
@@ -21,14 +21,14 @@ const getContent = computed(() => props.content || slotCode.value)
 // Determine display filename based on file path
 const displayFilename = computed(() => {
   if (props.file) {
-    return props.file;
+    return props.file
   }
-  
-  return null;
-});
+
+  return null
+})
 
 // Set language for syntax highlighting
-const determinedLanguage = "spx"
+const determinedLanguage = 'spx'
 
 // Default collapsed state for the code block
 const initialCollapsed = ref(true)
@@ -47,7 +47,7 @@ const initialCollapsed = ref(true)
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--ui-color-grey-300);
-  
+
   .filename {
     padding: 0.5rem 1rem;
     background-color: var(--ui-color-grey-200);

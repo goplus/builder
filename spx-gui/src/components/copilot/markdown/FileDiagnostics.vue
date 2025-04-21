@@ -8,7 +8,7 @@ const props = defineProps<{
    * File path
    */
   file?: string
-  
+
   /**
    * Diagnostic content (optional, can also be obtained from slot)
    */
@@ -31,11 +31,11 @@ const isExpanded = ref(false)
 const errorCount = computed(() => {
   const content = diagnosticContent.value
   if (!content) return 0
-  
+
   // Count diagnostic lines
-  const lines = content.split('\n').filter(line => line.trim().startsWith('-'))
+  const lines = content.split('\n').filter((line) => line.trim().startsWith('-'))
   // Don't count "No diagnostics" lines
-  return lines.filter(line => !line.includes('No diagnostics')).length
+  return lines.filter((line) => !line.includes('No diagnostics')).length
 })
 
 // Toggle expand/collapse state
@@ -57,7 +57,7 @@ const toggleExpand = () => {
         <span class="toggle-icon">{{ isExpanded ? '▲' : '▼' }}</span>
       </div>
     </div>
-    
+
     <div v-show="isExpanded" class="diagnostics-content">
       <!-- Use MarkdownView to render diagnostic content -->
       <MarkdownView :value="diagnosticContent" />
@@ -71,11 +71,11 @@ const toggleExpand = () => {
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--ui-color-grey-300);
-  
+
   &.has-errors {
     border-color: var(--ui-color-error-light);
   }
-  
+
   .diagnostics-header {
     display: flex;
     justify-content: space-between;
@@ -84,29 +84,29 @@ const toggleExpand = () => {
     background-color: var(--ui-color-grey-200);
     cursor: pointer;
     user-select: none;
-    
+
     .has-errors & {
       background-color: var(--ui-color-error-bg);
     }
-    
+
     &:hover {
       background-color: var(--ui-color-grey-300);
-      
+
       .has-errors & {
         background-color: var(--ui-color-error-hover);
       }
     }
-    
+
     .file-info {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .file-name {
         font-weight: 600;
         font-family: var(--ui-font-family-code);
       }
-      
+
       .error-count {
         color: var(--ui-color-error-main);
         font-size: 0.85rem;
@@ -114,44 +114,44 @@ const toggleExpand = () => {
         background-color: var(--ui-color-error-bg);
         border-radius: 4px;
       }
-      
+
       .no-errors {
         color: var(--ui-color-success-main);
         font-size: 0.85rem;
       }
     }
-    
+
     .expand-toggle {
       display: flex;
       align-items: center;
       gap: 4px;
       font-size: 0.85rem;
       color: var(--ui-color-grey-700);
-      
+
       .toggle-icon {
         font-size: 0.8rem;
       }
     }
   }
-  
+
   .diagnostics-content {
     padding: 12px;
     background-color: var(--ui-color-grey-100);
-    
+
     .has-errors & {
       background-color: var(--ui-color-error-bg-light);
     }
-    
+
     // Ensure Markdown content styles are correct
     :deep(ul) {
       margin: 0;
       padding-left: 20px;
     }
-    
+
     :deep(li) {
       margin-bottom: 4px;
     }
-    
+
     :deep(code) {
       background-color: var(--ui-color-grey-200);
       padding: 2px 4px;
