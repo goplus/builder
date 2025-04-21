@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
-
-	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 )
 
 // For details about maintaining `*_defs.md` files, see:
@@ -38,11 +36,11 @@ var SystemPrompt string
 // systemPromptTplData holds all data needed to populate the system prompt template.
 // This includes language definitions, documentation, and available tools.
 type systemPromptTplData struct {
-	GopDefs                 string       // Go+ language documentation
-	SpxDefs                 string       // SPX framework documentation
-	CustomElementCodeLink   string       // Custom element code linking documentation
-	CustomElementCodeChange string       // Custom element code change documentation
-	Tools                   []types.Tool // Available tools for the AI assistant
+	GopDefs                 string // Go+ language documentation
+	SpxDefs                 string // SPX framework documentation
+	CustomElementCodeLink   string // Custom element code linking documentation
+	CustomElementCodeChange string // Custom element code change documentation
+	Tools                   []Tool // Available tools for the AI assistant
 }
 
 // init initializes the package by:
@@ -50,7 +48,7 @@ type systemPromptTplData struct {
 // 2. Preparing the template data with all documentation and tools
 // 3. Rendering the system prompt template with the prepared data
 // The function will panic if any step fails, as proper initialization is critical.
-func SystemPromptWithTools(tools []types.Tool) string {
+func SystemPromptWithTools(tools []Tool) string {
 	// Create a new template with the provided tools
 	tplData := systemPromptTplData{
 		GopDefs:                 gopDefs,
