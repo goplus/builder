@@ -18,19 +18,19 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <file-diagnostics file="src/main.ts">
+   * <pre is="file-diagnostics" file="src/main.ts">
    *        - Error: Missing semicolon
    *        - Warning: Unused variable
-   * </file-diagnostics>
+   * </pre>
    * ```
    */
   'file-diagnostics': FileDiagnostics,
   /**
    * Usage:
    *  ```html
-   * <file-content file="src/main.spx">
+   * <pre is="file-content" file="src/main.spx">
    *      onStart => {}
-   * </file-content>
+   * </pre>
    * ```
    */
   'file-content': FileContent,
@@ -45,9 +45,9 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <tool-exec-result server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'>
+   * <pre is="tool-exec-result" server="xbuilder-action" tool="create_project" arguments='{"projectName": "SnakeGame"}'>
    *        result
-   * </tool-exec-result>
+   * </pre>
    * ```
    */
   'tool-exec-result': ToolEcecResult

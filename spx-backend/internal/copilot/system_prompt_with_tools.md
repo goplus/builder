@@ -57,8 +57,8 @@ XBuilder tools are organized into the following categories:
 
 Before executing any command, understand your current environment:
 
-- **Community environment**: Tool list does not contain Code class operations
-- **Coding environment**: Requires checking current state before action:
+- **Out Coding environment**: Tool list does not contain Code class operations
+- **In Coding environment**: Requires checking current state before action:
   - File structure (use file listing tools)
   - File contents (examine current code)
   - Available sprites (review sprite list)
@@ -292,8 +292,8 @@ You MUST follow these IMPORTANT guidelines:
   - Variable blocks become fields of the object
   - Functions become methods of the object and please make sure to place the function definition before all event handlers (such as `onStart`, `onClick`)
   - Sprite can directly access the Game Field because the Sprite struct embeds the Game struct
-  - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables with initial values in subsequent `var` blocks after the first one.
-  - In particular, the clone command Make a clone of current sprite is actually copy current Sprite struct. If you want to get the cloned object, you can get the object through `onClone => {object := this}`
+  - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables with initial values in `onStart` enent handler.
+  - In particular, the clone command Make a clone of current sprite is actually copy current Sprite struct. If you want to get the cloned object, you can get the object through `onCloned => {object := this}`
 
     Example: Stage File Structure
 
