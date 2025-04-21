@@ -30,7 +30,7 @@ type FunctionDefinition struct {
 	// or you can pass in a struct which serializes to the proper JSON schema.
 	// The jsonschema package is provided for convenience, but you should
 	// consider another specialized library if you require more complex schemas.
-	Parameters interface{} `json:"parameters"`
+	Parameters any `json:"parameters"`
 }
 
 // Result represents the response message from the AI provider.

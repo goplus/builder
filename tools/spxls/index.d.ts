@@ -10,7 +10,6 @@ export interface Spxls {
   handleMessage(message: RequestMessage | NotificationMessage): Error | null
 }
 
-
 declare global {
   /**
    * Creates a new instance of the spx language server.
@@ -23,6 +22,21 @@ declare global {
    *                        handle these messages according to the LSP specification.
    */
   function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): Spxls | Error
+
+  /**
+   * Sets custom package data that will be used with higher priority than the embedded package data.
+   *
+   * @param data - Custom package data as a Uint8Array containing a valid pkgdata.zip file.
+   */
+  function SetCustomPkgdataZip(data: Uint8Array): Error | null
+
+  /**
+   * Sets the auto-imported packages for the classfile specified by id.
+   *
+   * @param id - The identifier of the classfile.
+   * @param packages - A map where keys are package names and values are the full import paths.
+   */
+  function SetClassfileAutoImportedPackages(id: string, packages: Record<string, string>): Error | null
 }
 
 /**

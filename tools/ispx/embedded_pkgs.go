@@ -4,6 +4,7 @@ package main
 
 //go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/spx
 //go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/hajimehoshi/ebiten/v2
+//go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/builder/tools/ai
 
 // All packages available in the ispx Wasm runtime.
 //
@@ -178,6 +179,7 @@ import (
 	// _ "github.com/goplus/igop/pkg/testing/slogtest"
 
 	// Embedded third-party packages.
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/goplus/builder/tools/ai"
 	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/goplus/spx"
 	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
 )

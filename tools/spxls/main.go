@@ -2,4 +2,7 @@
 
 package main
 
-import _ "github.com/goplus/goxlsw"
+import (
+	_ "github.com/goplus/builder/tools/ai"
+	_ "github.com/goplus/goxlsw"
+)

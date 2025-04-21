@@ -12,6 +12,7 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -46,6 +47,7 @@ type Controller struct {
 	casdoorClient casdoorClient
 	copilot       *copilot.Copilot
 	workflow      *workflow.Workflow
+	aiInteraction *aiinteraction.AIInteraction
 }
 
 // New creates a new controller.
@@ -72,6 +74,10 @@ func New(ctx context.Context) (*Controller, error) {
 	openaiAPIKey := mustEnv(logger, "OPENAI_API_KEY")
 	openaiAPIEndpoint := mustEnv(logger, "OPENAI_API_ENDPOINT")
 	openaiModelID := mustEnv(logger, "OPENAI_MODEL_ID")
+	openaiClient := openai.NewClient(
+		option.WithAPIKey(openaiAPIKey),
+		option.WithBaseURL(openaiAPIEndpoint),
+	)
 
 	openaiPremiumAPIKey := envOrDefault("OPENAI_PREMIUM_API_KEY", openaiAPIKey)
 	openaiPremiumAPIEndpoint := envOrDefault("OPENAI_PREMIUM_API_ENDPOINT", openaiAPIEndpoint)
@@ -89,6 +95,12 @@ func New(ctx context.Context) (*Controller, error) {
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
 
+	aiInteraction, err := aiinteraction.New(openaiClient, openaiModelID)
+	if err != nil {
+		logger.Printf("failed to create ai interaction service: %v", err)
+		return nil, err
+	}
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoConfig,
@@ -96,6 +108,7 @@ func New(ctx context.Context) (*Controller, error) {
 		casdoorClient: casdoorClient,
 		copilot:       cpt,
 		workflow:      stdflow,
+		aiInteraction: aiInteraction,
 	}, nil
 }
 

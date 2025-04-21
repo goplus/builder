@@ -10,6 +10,8 @@ import { ProgressCollector, type Progress } from '@/utils/progress'
 import wasmExecUrl from '@/assets/wasm/wasm_exec.js?url'
 import ispxWasmUrl from '@/assets/wasm/ispx.wasm?url'
 import ispxRunnerHtml from './ispx/runner.html?raw'
+import { apiBaseUrl } from '@/utils/env'
+import { useUserStore } from '@/stores/user'
 
 // preload resources (for example, wasm files) to accelerate the loading
 export function preload() {
@@ -29,6 +31,8 @@ const emit = defineEmits<{
 }>()
 
 interface IframeWindow extends Window {
+  setAIInteractionAPIEndpoint: (endpoint: string) => void
+  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
   startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => void
   console: typeof console
 }
@@ -65,6 +69,11 @@ watch(iframe, () => {
     // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
     await timeout(50)
 
+    iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+
+    const userStore = useUserStore()
+    await userStore.ensureAccessToken()
+    iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
     iframeWindow.startWithZipBuffer(props.zipData)
     startWithZipBufferReporter.report(1)
     const canvas = iframeWindow.document.querySelector('canvas')

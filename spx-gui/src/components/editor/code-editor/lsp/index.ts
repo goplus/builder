@@ -7,6 +7,7 @@ import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import wasmExecScriptUrl from '@/assets/wasm/wasm_exec.js?url'
 import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
+import spxlsPkgdataZipUrl from '@/assets/wasm/spxls-pkgdata.zip?url'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
@@ -40,6 +41,10 @@ async function loadGoWasm(wasmUrl: string) {
   const go = new Go()
   const { instance } = await WebAssembly.instantiateStreaming(fetch(wasmUrl), go.importObject)
   go.run(instance)
+  const spxlsPkgdataZipResp = await fetch(spxlsPkgdataZipUrl)
+  const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
+  SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
+  SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
 }
 
 export class SpxLSPClient extends Disposable {
