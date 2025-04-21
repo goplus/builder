@@ -4,11 +4,11 @@ go 1.22.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
 	github.com/casdoor/casdoor-go-sdk v1.5.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/goplus/yap v0.8.4 //gop:class
 	github.com/joho/godotenv v1.5.1
+	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/go-sdk/v7 v7.25.3
 	github.com/qiniu/x v1.13.17
@@ -22,6 +22,13 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/alex-ant/gomath v0.0.0-20160516115720-89013a210a82 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.30.3 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.3 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.27.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.15 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.17 // indirect
+	github.com/aws/smithy-go v1.20.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gammazero/toposort v0.1.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
@@ -36,11 +43,11 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.189.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect

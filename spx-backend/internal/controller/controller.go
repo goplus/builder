@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -14,10 +13,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
-	"github.com/goplus/builder/spx-backend/internal/copilot/types"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/joho/godotenv"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
 	qiniuLog "github.com/qiniu/x/log"
@@ -43,7 +43,7 @@ type Controller struct {
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
 	casdoorClient casdoorClient
-	copilot       copilot.AICopilot
+	copilot       *copilot.Copilot
 }
 
 // New creates a new controller.
@@ -67,24 +67,12 @@ func New(ctx context.Context) (*Controller, error) {
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
 
-	var cpt copilot.AICopilot
-	var provider = types.Provider(mustEnv(logger, "COPILOT_PROVIDER"))
-	if provider == types.Qiniu {
-		cpt, err = copilot.NewCopilot(&copilot.Config{
-			Provider:       provider,
-			QiniuAPIKey:    mustEnv(logger, "QINIU_API_KEY"),
-			QiniuBaseURL:   mustEnv(logger, "QINIU_ENDPOINT"),
-			QiniuModelName: mustEnv(logger, "QINIU_MODEL_NAME"),
-		})
-	} else if provider == types.Anthropic {
-		cpt, err = copilot.NewCopilot(&copilot.Config{
-			Provider:         provider,
-			AnthropicAPIKey:  mustEnv(logger, "ANTHROPIC_API_KEY"),
-			AnthropicBaseURL: mustEnv(logger, "ANTHROPIC_ENDPOINT"),
-		})
-	} else {
-		err = fmt.Errorf(" unknown provider: %v", provider)
-	}
+	openaiClient := openai.NewClient(
+		option.WithAPIKey(mustEnv(logger, "OPENAI_API_KEY")),
+		option.WithBaseURL(mustEnv(logger, "OPENAI_API_ENDPOINT")),
+	)
+	openaiModelID := mustEnv(logger, "OPENAI_MODEL_ID")
+	cpt, err := copilot.New(openaiClient, openaiModelID)
 	if err != nil {
 		logger.Printf("failed to create copilot: %v", err)
 		return nil, err

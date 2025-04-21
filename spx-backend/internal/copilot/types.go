@@ -1,13 +1,6 @@
-package types
+package copilot
 
 import "fmt"
-
-// Constants for the maximum length of content text and other limits.
-const (
-	MAX_CONTENT_TEXT_LENGTH = 5000
-	MAX_MESSAGE_COUNT       = 50
-	MAX_TOKENS              = 1024
-)
 
 type ToolType string
 
@@ -15,19 +8,8 @@ const (
 	ToolTypeFunction ToolType = "function"
 )
 
-// Provider represents the AI provider for the message.
-type Provider string
-
-// Supported AI providers.
-const (
-	Qiniu     Provider = "qiniu"
-	Anthropic Provider = "anthropic"
-)
-
 // Params represents the input parameters for the message request.
 type Params struct {
-	Model string `json:"model"`
-
 	Messages []Message `json:"messages"`
 	System   Content   `json:"system"`
 	Tools    []Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
@@ -121,7 +103,7 @@ type Content struct {
 // It ensures that:
 // 1. Content Type is present and valid
 // 2. Text is not empty
-// 3. Text length does not exceed MAX_CONTENT_TEXT_LENGTH
+// 3. Text length does not exceed MaxContentLength
 func (c *Content) Validate() (ok bool, msg string) {
 	if c.Type == "" {
 		return false, "missing content type"
@@ -132,7 +114,7 @@ func (c *Content) Validate() (ok bool, msg string) {
 	if c.Text == "" {
 		return false, "missing text"
 	}
-	if len(c.Text) > MAX_CONTENT_TEXT_LENGTH {
+	if len(c.Text) > MaxContentLength {
 		return false, "text too long"
 	}
 	return true, ""
