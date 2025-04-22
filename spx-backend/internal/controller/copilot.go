@@ -5,21 +5,20 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/goplus/builder/spx-backend/internal/copilot/types"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
-const (
-	MAX_MESSAGE_COUNT = 50
-)
+// MaxMessageCount is the maximum number of messages allowed in a single request.
+const MaxMessageCount = 50
 
 type GenerateMessageParams struct {
-	Messages []types.Message `json:"messages"`
-	Tools    []types.Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
+	Messages []copilot.Message `json:"messages"`
+	Tools    []copilot.Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
 }
 
 func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
-	if len(p.Messages) > MAX_MESSAGE_COUNT {
+	if len(p.Messages) > MaxMessageCount {
 		return false, "too many messages"
 	}
 	for i, m := range p.Messages {
@@ -30,7 +29,7 @@ func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
 	return true, ""
 }
 
-type GenerateMessageResult types.Message
+type GenerateMessageResult copilot.Message
 
 // GenerateStream generates response message based on input messages.
 func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *GenerateMessageParams) (io.ReadCloser, error) {
@@ -42,7 +41,7 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 	}
 
 	// Generate stream message using copilot
-	stream, err := ctrl.copilot.StreamMessage(ctx, &types.Params{
+	stream, err := ctrl.copilot.StreamMessage(ctx, &copilot.Params{
 		Messages: params.Messages,
 		Tools:    params.Tools,
 	})
@@ -64,7 +63,7 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 	}
 
 	// Generate message using copilot
-	generatedContent, err := ctrl.copilot.Message(ctx, &types.Params{
+	generatedContent, err := ctrl.copilot.Message(ctx, &copilot.Params{
 		Messages: params.Messages,
 		Tools:    params.Tools,
 	})

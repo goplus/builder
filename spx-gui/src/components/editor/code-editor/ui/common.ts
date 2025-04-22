@@ -1,3 +1,4 @@
+import { watchEffect } from 'vue'
 import type * as monaco from 'monaco-editor'
 import { Cancelled } from '@/utils/exception'
 import type { ResourceModel } from '@/models/common/resource-model'
@@ -6,6 +7,7 @@ import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
 import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
 import type { Monaco, MonacoEditor } from '../monaco'
+import { useCodeEditorUICtx } from './CodeEditorUI.vue'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -95,4 +97,17 @@ export function toAbsolutePosition(position: Position, editor: MonacoEditor): Ab
     left: editorPos.left + scrolledVisiblePos.left,
     height: scrolledVisiblePos.height
   }
+}
+
+export function useDecorations(getDecorations: () => monaco.editor.IModelDeltaDecoration[]) {
+  const codeEditorUICtx = useCodeEditorUICtx()
+  let dc: monaco.editor.IEditorDecorationsCollection | null = null
+
+  watchEffect((onCleanup) => {
+    const decorations = getDecorations()
+    if (decorations.length === 0) return
+    const collection = (dc = dc ?? codeEditorUICtx.ui.editor.createDecorationsCollection([]))
+    collection.set(decorations)
+    onCleanup(() => collection.clear())
+  })
 }

@@ -4,95 +4,134 @@ package copilot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
-	"github.com/goplus/builder/spx-backend/internal/copilot/anthropic"
-	"github.com/goplus/builder/spx-backend/internal/copilot/qnaigc"
-	"github.com/goplus/builder/spx-backend/internal/copilot/types"
+	"github.com/openai/openai-go"
 )
 
-// AICopilot defines the interface for AI-powered code assistance operations.
-// Implementations of this interface can provide code suggestions, explanations,
-// and other programming assistance features.
-type AICopilot interface {
-	// Message sends a request to the AI provider and returns the response.
-	// ctx provides context for the request, which can be used for cancellation and timeout.
-	// params contains the request parameters including the provider selection and message content.
-	Message(ctx context.Context, params *types.Params) (*types.Result, error)
-	// StreamMessage sends a request to the AI provider and returns a stream of responses.
-	// ctx provides context for the request, which can be used for cancellation and timeout.
-	// params contains the request parameters including the provider selection and message content.
-	StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error)
-}
+const (
+	// MaxContentLength defines the maximum length of content text.
+	MaxContentLength = 5000
 
-// Config defines the configuration parameters for the Copilot service.
-// It includes API keys for different AI providers.
-type Config struct {
-	Provider types.Provider
+	// MaxTokens defines the maximum number of tokens for the AI response.
+	MaxTokens = 1024
 
-	QiniuAPIKey      string
-	QiniuBaseURL     string
-	QiniuModelName   string
-	AnthropicAPIKey  string
-	AnthropicBaseURL string
-}
+	// Temperature defines the sampling Temperature for the AI response.
+	Temperature = 0.7
+)
 
-// Copilot implements the AICopilot interface and manages multiple AI providers.
-// It serves as a facade for different AI implementations, selecting the appropriate
-// provider based on the request parameters.
+// Copilot provides code suggestions, explanations, and other programming
+// assistance features using AI models.
 type Copilot struct {
-	copilot AICopilot // AI provider implementation
+	openaiClient  openai.Client
+	openaiModelID string
 }
 
-// NewCopilot creates and initializes a new Copilot instance with all supported
-// AI providers. It returns an AICopilot interface that can be used to interact
-// with the selected AI provider.
-func NewCopilot(cfg *Config) (AICopilot, error) {
-	var copilot AICopilot
-	switch cfg.Provider {
-	case types.Qiniu:
-		copilot = qnaigc.New(cfg.QiniuAPIKey, qnaigc.WithBaseURL(cfg.QiniuBaseURL), qnaigc.WithModel(cfg.QiniuModelName))
-	case types.Anthropic:
-		copilot = anthropic.New(cfg.AnthropicAPIKey, anthropic.WithBaseURL(cfg.AnthropicBaseURL))
-	default:
-		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
+// New creates a new instance of [Copilot] with the specified OpenAI client and model ID.
+func New(openaiClient openai.Client, openaiModelID string) (*Copilot, error) {
+	if openaiModelID == "" {
+		return nil, errors.New("missing openai model id")
 	}
-	return &Copilot{
-		copilot: copilot,
+	copilot := &Copilot{
+		openaiClient:  openaiClient,
+		openaiModelID: openaiModelID,
+	}
+	return copilot, nil
+}
+
+// buildChatCompletionParams builds an [openai.ChatCompletionNewParams] for the
+// chat completion request.
+func (c *Copilot) buildChatCompletionNewParams(params *Params) (openai.ChatCompletionNewParams, error) {
+	messages := make([]openai.ChatCompletionMessageParamUnion, 0, len(params.Messages)+1)
+
+	// Add system prompt message.
+	systemPrompt := SystemPrompt
+	if len(params.Tools) > 0 {
+		systemPrompt = SystemPromptWithTools(params.Tools)
+	}
+	if systemPrompt != "" {
+		messages = append(messages, openai.SystemMessage(systemPrompt))
+	}
+
+	// Add user messages.
+	for _, msg := range params.Messages {
+		var message openai.ChatCompletionMessageParamUnion
+		switch msg.Role {
+		case RoleUser:
+			message = openai.UserMessage(msg.Content.Text)
+		case RoleCopilot:
+			message = openai.AssistantMessage(msg.Content.Text)
+		default:
+			return openai.ChatCompletionNewParams{}, fmt.Errorf("unsupported role: %s", msg.Role)
+		}
+		messages = append(messages, message)
+	}
+
+	return openai.ChatCompletionNewParams{
+		Messages:    messages,
+		Model:       c.openaiModelID,
+		MaxTokens:   openai.Opt(int64(MaxTokens)),
+		Temperature: openai.Opt(Temperature),
 	}, nil
 }
 
-// Message implements the AICopilot interface. It routes the request to the
-// appropriate AI provider based on the Provider field in the params.
-// Returns an error if the specified provider is not supported.
-func (c *Copilot) Message(ctx context.Context, params *types.Params) (*types.Result, error) {
-	systemPrompt := SystemPrompt
-	if len(params.Tools) > 0 {
-		systemPrompt = SystemPromptWithTools(params.Tools)
+// Message sends a request to the AI provider and returns the response.
+func (c *Copilot) Message(ctx context.Context, params *Params) (*Result, error) {
+	body, err := c.buildChatCompletionNewParams(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build chat completion params: %w", err)
 	}
-	// Add system prompt message
-	params.System = types.Content{
-		Type: types.ContentTypeText,
-		Text: systemPrompt,
+
+	chatCompletion, err := c.openaiClient.Chat.Completions.New(ctx, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chat completion: %w", err)
 	}
-	// Send message to the AI provider
-	return c.copilot.Message(ctx, params)
+	if len(chatCompletion.Choices) == 0 {
+		return nil, errors.New("no choices returned from ai")
+	}
+
+	assistantMsg := chatCompletion.Choices[0].Message
+	return &Result{
+		Message: Message{
+			Role: RoleCopilot,
+			Content: Content{
+				Type: ContentTypeText,
+				Text: assistantMsg.Content,
+			},
+		},
+	}, nil
 }
 
-// Message implements the AICopilot interface. It routes the request to the
-// appropriate AI provider based on the Provider field in the params.
-// Returns an error if the specified provider is not supported.
-func (c *Copilot) StreamMessage(ctx context.Context, params *types.Params) (io.ReadCloser, error) {
-	systemPrompt := SystemPrompt
-	if len(params.Tools) > 0 {
-		systemPrompt = SystemPromptWithTools(params.Tools)
+// StreamMessage sends a request to the AI provider and returns a stream of responses.
+func (c *Copilot) StreamMessage(ctx context.Context, params *Params) (io.ReadCloser, error) {
+	body, err := c.buildChatCompletionNewParams(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build chat completion params: %w", err)
 	}
-	// Add system prompt message
-	params.System = types.Content{
-		Type: types.ContentTypeText,
-		Text: systemPrompt,
+
+	chatCompletionStream := c.openaiClient.Chat.Completions.NewStreaming(ctx, body)
+	if err := chatCompletionStream.Err(); err != nil {
+		return nil, fmt.Errorf("failed to create chat completion stream: %w", err)
 	}
-	// Send message to the AI provider
-	return c.copilot.StreamMessage(ctx, params)
+
+	pr, pw := io.Pipe()
+	go func() (err error) {
+		defer func() {
+			pw.CloseWithError(err)
+			chatCompletionStream.Close()
+		}()
+		for chatCompletionStream.Next() {
+			chunk := chatCompletionStream.Current()
+			if len(chunk.Choices) == 0 {
+				continue
+			}
+			if _, err := pw.Write([]byte(chunk.Choices[0].Delta.Content)); err != nil {
+				return fmt.Errorf("failed to write to pipe: %w", err)
+			}
+		}
+		return chatCompletionStream.Err()
+	}()
+	return pr, nil
 }

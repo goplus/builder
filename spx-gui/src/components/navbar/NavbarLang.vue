@@ -20,8 +20,6 @@ const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 
 function toggleLang() {
   i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
-  // Refresh the page to apply the new language for monaco editor
-  location.reload()
 }
 </script>
 

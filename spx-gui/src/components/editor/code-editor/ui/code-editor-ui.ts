@@ -1,5 +1,5 @@
 import { uniqueId } from 'lodash'
-import { ref, shallowReactive, shallowRef } from 'vue'
+import { ref, shallowReactive, shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
@@ -23,7 +23,8 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range
+  selection2Range,
+  containsPosition
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -45,6 +46,8 @@ import {
   type ChatTopicReview
 } from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
+import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
+import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
 
 export * from './hover'
 export * from './completion'
@@ -52,12 +55,16 @@ export * from './resource-reference'
 export * from './context-menu'
 export * from './diagnostics'
 export * from './api-reference'
+export * from './input-helper'
+export * from './inlay-hint'
 export * from './copilot'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void
   registerCompletionProvider(provider: ICompletionProvider): void
   registerResourceReferencesProvider(provider: IResourceReferencesProvider): void
+  registerInputHelperProvider(provider: IInputHelperProvider): void
+  registerInlayHintProvider(provider: IInlayHintProvider): void
   registerContextMenuProvider(provider: IContextMenuProvider): void
   registerDiagnosticsProvider(provider: IDiagnosticsProvider): void
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
@@ -96,6 +103,7 @@ export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentR
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
 export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
   'spx.modifyResourceReference'
+export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'spx.invokeInputHelper'
 
 export type InternalAction<A extends any[] = any, R = any> = {
   title: string
@@ -113,6 +121,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
   registerResourceReferencesProvider(provider: IResourceReferencesProvider): void {
     this.resourceReferenceController.registerProvider(provider)
+  }
+  registerInputHelperProvider(provider: IInputHelperProvider): void {
+    this.inputHelperController.registerProvider(provider)
+  }
+  registerInlayHintProvider(provider: IInlayHintProvider): void {
+    this.inlayHintController.registerProvider(provider)
   }
   registerContextMenuProvider(provider: IContextMenuProvider): void {
     this.contextMenuController.registerProvider(provider)
@@ -192,6 +206,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
+  inputHelperController = new InputHelperController(this)
+  inlayHintController = new InlayHintController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -207,8 +223,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
 
   closeTempTextDocuments() {
-    this.setActiveTextDocument(this.mainTextDocumentId)
     this.tempTextDocumentIds.splice(0)
+    if (!this.isDisposed) this.setActiveTextDocument(this.mainTextDocumentId)
   }
 
   /** Current active text document ID */
@@ -283,7 +299,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     // TODO: Use better way to insert snippet
     const contribution = editor.getContribution('snippetController2')
     if (contribution == null) throw new Error('Snippet contribution not found')
-    ;(contribution as any).insert(snippet)
+    ;(contribution as any).insert(snippet) // About `contribution.insert`: https://github.com/microsoft/vscode/blob/942d11fff1a3a4f0faa918b59803f699ec61b9b6/src/vs/editor/contrib/snippet/browser/snippetController2.ts#L104
     this.editor.focus()
   }
 
@@ -315,6 +331,14 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return insert(content, range)
   }
 
+  private newlyInsertedRangeRef = shallowRef<Range | null>(null)
+  get newlyInsertedRange() {
+    return this.newlyInsertedRangeRef.value
+  }
+  private setNewlyInsertedRange(range: Range | null) {
+    this.newlyInsertedRangeRef.value = range
+  }
+
   private async insertBlockContent(type: 'text' | 'snippet', content: string, range: Range) {
     const textDocument = this.activeTextDocument
     if (textDocument == null) return
@@ -327,6 +351,20 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
       if (type === 'snippet') {
         await this.insertSnippet(cnt, rg)
+
+        // TODO: more reliable way for snippet content
+        const insertedLineNum = cnt.split('\n').length
+        const insertStartPos = rg.start
+        const insertEndLine = insertStartPos.line + insertedLineNum - 1
+        const insertEndLineContent = textDocument.getLineContent(insertEndLine)
+        const insertEndPos: Position = {
+          line: insertStartPos.line + insertedLineNum - 1,
+          column: insertEndLineContent.length + 1
+        }
+        this.setNewlyInsertedRange({
+          start: insertStartPos,
+          end: insertEndPos
+        })
         return
       }
 
@@ -336,17 +374,27 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       // 1. Select inserted content
       const cursorPos = this.editor.getPosition()
       if (cursorPos == null) return
-      this.editor.setSelection(toMonacoRange({ start: rg.start, end: fromMonacoPosition(cursorPos) }))
+      const insertedRange: Range = { start: rg.start, end: fromMonacoPosition(cursorPos) }
+      this.editor.setSelection(toMonacoRange(insertedRange))
       // 2. Indent selected content
       this.editor.trigger('insertBlockContent', 'editor.action.reindentselectedlines', null)
       // 3. Clear selection, move cursor to end of the selection
       const selection = this.editor.getSelection()
-      if (selection == null) return
-      this.editor.setSelection({
-        startLineNumber: selection.endLineNumber,
-        startColumn: selection.endColumn,
-        endLineNumber: selection.endLineNumber,
-        endColumn: selection.endColumn
+      if (selection != null) {
+        this.editor.setSelection({
+          startLineNumber: selection.endLineNumber,
+          startColumn: selection.endColumn,
+          endLineNumber: selection.endLineNumber,
+          endColumn: selection.endColumn
+        })
+      }
+
+      this.setNewlyInsertedRange({
+        start: insertedRange.start,
+        end: {
+          line: insertedRange.end.line,
+          column: insertedRange.end.column
+        }
       })
     }
 
@@ -534,11 +582,20 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
 
+    // TODO: remove `modifyResourceReference`, use `invokeInputHelper` instead
     this.registerCommand(builtInCommandModifyResourceReference, {
       icon: 'modify',
       title: { en: 'Modify', zh: '修改' },
       handler: (rr) => {
         this.resourceReferenceController.startModifying(rr.id)
+      }
+    })
+
+    this.registerCommand(builtInCommandInvokeInputHelper, {
+      icon: 'modify',
+      title: { en: 'Modify', zh: '修改' },
+      handler: (item) => {
+        this.inputHelperController.startInputing(item.id)
       }
     })
 
@@ -559,6 +616,17 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
 
+    // Clear newly inserted range when cursor position moved out of it
+    this.addDisposer(
+      watch(
+        () => this.cursorPosition,
+        (pos) => {
+          if (pos == null || this.newlyInsertedRange == null) return
+          if (!containsPosition(this.newlyInsertedRange, pos)) this.setNewlyInsertedRange(null)
+        }
+      )
+    )
+
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
@@ -566,9 +634,13 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.contextMenuController.init()
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
+    this.inputHelperController.init()
+    this.inlayHintController.init()
   }
 
   dispose() {
+    this.inlayHintController.dispose()
+    this.inputHelperController.dispose()
     this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()
     this.contextMenuController.dispose()

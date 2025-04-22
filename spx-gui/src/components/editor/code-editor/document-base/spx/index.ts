@@ -41,6 +41,10 @@ export const clone1: DefinitionDocumentationItem = {
     name: 'Sprite.clone',
     overloadId: '1'
   },
+  // TODO:
+  // 1. use in-place value as argument
+  // 2. use plain text instead of code snippet
+  // 3. inlay hint in APIReference
   insertText: 'clone ${1:data}',
   overview: 'clone data',
   detail: makeBasicMarkdownString({

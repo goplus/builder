@@ -1,8 +1,9 @@
 module github.com/goplus/builder/ispx
 
 go 1.23.0
+
 require (
-	github.com/goplus/igop v0.36.0
+	github.com/goplus/igop v0.38.0
 	github.com/goplus/reflectx v1.3.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
@@ -18,14 +19,14 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
-	github.com/goplus/gogen v1.16.9 // indirect
-	github.com/goplus/gop v1.3.8 // indirect
-	github.com/goplus/mod v0.13.17 // indirect
+	github.com/goplus/gogen v1.17.1 // indirect
+	github.com/goplus/gop v1.3.9 // indirect
+	github.com/goplus/mod v0.15.1 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.13.12 // indirect
+	github.com/qiniu/x v1.13.17 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/timandy/routine v1.1.4 // indirect
