@@ -91,8 +91,8 @@ export const AddSpriteFromCanvasArgsSchema = z.object({
  * Creates a new sprite from a canvas drawing
  */
 export const addSpriteFromCanvasToolDescription = createToolDescription(
-  'add_sprite_from_canvos',
-  'Add a new visual sprite or component from the canvos to the current Go+ XBuilder project workspace.',
+  'add_sprite_from_canvas',
+  'Add a sprite (File) to the current Go+ XBuilder project workspace through canvas',
   AddSpriteFromCanvasArgsSchema,
   'sprite'
 )
@@ -118,8 +118,8 @@ export const AddStageBackdropFromCanvasArgsSchema = z.object({
  * Creates a new backdrop from a canvas drawing
  */
 export const addStageBackdropFromCanvasToolDescription = createToolDescription(
-  'add_stage_backdrop_from_canvos',
-  'Add a new visual backdrop from the canvas to the current Go+ XBuilder project stage.',
+  'add_stage_backdrop_from_canvas',
+  'Add a backdrop to the Stage and automatically use that backdrop',
   AddStageBackdropFromCanvasArgsSchema,
   'stage'
 )
@@ -130,42 +130,26 @@ export const addStageBackdropFromCanvasToolDescription = createToolDescription(
  */
 
 /**
- * Schema for validating code insertion parameters
- * Defines where and how code should be inserted or replaced
+ * Schema for validating file write parameters
+ * Defines the file to write and its complete content
  */
-export const InsertCodeArgsSchema = z.object({
+export const WriteToFileArgsSchema = z.object({
   file: z
     .string()
     .describe(
-      'The Spx file path where the code will be inserted. This should be a valid file path. example: "file:///stage.spx"'
+      'The Spx file path where the content will be written. This should be a valid file path. example: "file:///stage.spx"'
     ),
-  code: z.string().describe('The SPX language code segment to be inserted into the Go+ XBuilder project file.'),
-  insertRange: z
-    .object({
-      startLine: z.number().describe('The starting line number in the SPX file where code insertion will begin.'),
-      endLine: z.number().describe('The ending line number in the SPX file where code insertion will complete.')
-    })
-    .describe('The line range in the SPX file where new code will be inserted.'),
-  replaceRange: z
-    .object({
-      startLine: z
-        .number()
-        .optional()
-        .describe('The starting line number in the SPX file where existing code will be replaced.'),
-      endLine: z.number().optional().describe('The ending line number in the SPX file where code replacement will end.')
-    })
-    .optional()
-    .describe('Optional range defining which existing SPX code should be replaced with the new code.')
+  content: z.string().describe('The complete content to write to the file, replacing any existing content.')
 })
 
 /**
- * Tool description for code insertion functionality
- * Allows inserting or replacing code in project files
+ * Tool description for writing complete file content
+ * Allows overwriting a file with new content
  */
-export const insertCodeToolDescription = createToolDescription(
-  'insert_code',
-  'Insert or replace SPX language code at specific locations in project files within the Go+ XBuilder environment.',
-  InsertCodeArgsSchema,
+export const writeToFileToolDescription = createToolDescription(
+  'write_to_file',
+  'Write complete content to a specific file in the Go+ XBuilder project, replacing any existing content.',
+  WriteToFileArgsSchema,
   'code'
 )
 

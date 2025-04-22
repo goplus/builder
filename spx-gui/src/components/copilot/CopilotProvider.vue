@@ -204,7 +204,7 @@ async function createProject(options: CreateProjectOptions) {
     await waitToolRegister()
     return {
       success: true,
-      message: `Project "${projectName}" created successfully`
+      message: `Project "${projectName}" created successfully; please create Sprite and Stage Backdrop before inserting the code`
     }
   } catch (error) {
     // Handle project creation error
@@ -403,7 +403,7 @@ defineExpose({
   position: fixed;
   top: 0;
   left: 0;
-  width: 25%;
+  width: 15%;
   height: 100vh;
 
   /* Visual styling */

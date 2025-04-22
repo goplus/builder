@@ -81,30 +81,42 @@ export class CopilotController extends Disposable {
    * @param results Array of tool execution results
    */
   private handleToolResults(results: ToolResult[]) {
+    if (results.length === 0) return
     // Sort results by timestamp
     const sortedResults = [...results].sort((a, b) => a.timestamp - b.timestamp)
 
-    // Format results as text
-    const formattedResults = sortedResults.map(
-      (r) =>
-        `[use-mcp-tool for '${r.server || ''}'] Tool '${r.tool}' execution result: ${JSON.stringify(r.result, null, 2)}`
-    )
+    // Format results using tool-exec-result tags
+    const formattedResults = sortedResults.map((result) => {
+      const serverName = result.server || ''
+      const toolName = result.tool
 
-    this.sendBatchResults(formattedResults)
-  }
+      let resultContent: string
 
-  /**
-   * Send a batch of tool results as a single message
-   * @param results Tool execution results to send
-   */
-  private async sendBatchResults(results: string[]) {
-    if (results.length === 0) return
+      if (typeof result.result === 'object' && result.result !== null) {
+        if (
+          Array.isArray(result.result.content) &&
+          result.result.content.length > 0 &&
+          result.result.content[0].type === 'text' &&
+          typeof result.result.content[0].text === 'string'
+        ) {
+          resultContent = result.result.content[0].text
+        } else {
+          resultContent = JSON.stringify(result.result, null, 2)
+        }
+      } else if (typeof result.result === 'string') {
+        resultContent = result.result
+      } else {
+        resultContent = JSON.stringify(result.result, null, 2)
+      }
 
-    // Combine multiple results into a single message
-    const combinedResult =
-      results.length === 1 ? results[0] : `Multiple tool execution results:\n\n${results.join('\n\n')}`
+      return `<tool-exec-result server="${serverName}" tool="${toolName}">
+${resultContent}
+</tool-exec-result>`
+    })
 
-    await this.askProblem(combinedResult)
+    const combinedResult = `${formattedResults.join('\n\n')}`
+
+    this.askProblem(combinedResult)
   }
 
   /** Current active chat reference */
