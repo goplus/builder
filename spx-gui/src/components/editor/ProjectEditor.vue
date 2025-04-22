@@ -31,9 +31,13 @@ import {
   AddStageBackdropFromCanvasArgsSchema
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
-import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
+import { genSpriteFromCanvas, genBackdropFromCanvas, sprite2Asset, sound2Asset, backdrop2Asset } from '@/models/common/asset'
 import { computed } from 'vue'
 import type { z } from 'zod'
+import type { Sprite } from '@/models/sprite'
+import { Visibility, addAsset } from '@/apis/asset'
+import type { Sound } from '@/models/sound'
+import type { Backdrop } from '@/models/backdrop'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useCopilotCtx()
@@ -115,6 +119,39 @@ onMounted(() => {
 onBeforeUnmount(() => {
   copilotCtx.mcp.registry?.unregisterProviderTools('project-editor')
 })
+
+;(window as any).releaseSprite = async function (sprite: Sprite) {
+  const params = await sprite2Asset(sprite)
+  const assetMetadata = sprite.assetMetadata!
+  await addAsset({
+    ...params,
+    displayName: assetMetadata.displayName,
+    category: assetMetadata.category,
+    visibility: Visibility.Public
+  })
+}
+
+;(window as any).releaseSound = async function (sound: Sound) {
+  const params = await sound2Asset(sound)
+  const assetMetadata = sound.assetMetadata!
+  await addAsset({
+    ...params,
+    displayName: assetMetadata.displayName,
+    category: assetMetadata.category,
+    visibility: Visibility.Public
+  })
+}
+
+;(window as any).releaseBackdrop = async function (backdrop: Backdrop) {
+  const params = await backdrop2Asset(backdrop)
+  const assetMetadata = backdrop.assetMetadata!
+  await addAsset({
+    ...params,
+    displayName: assetMetadata.displayName,
+    category: assetMetadata.category,
+    visibility: Visibility.Public
+  })
+}
 </script>
 
 <style scoped lang="scss">
