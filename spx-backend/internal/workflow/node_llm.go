@@ -46,7 +46,7 @@ func (ln *LLMNode) GetType() NodeType {
 
 // Prompt renders the system prompt template with environment data
 // Uses Go's template engine to replace variables and apply formatting functions
-func (ln *LLMNode) Prompt(env Env) string {
+func (ln *LLMNode) Prompt(env Env) (string, error) {
 	// Define custom template functions
 	funcMap := template.FuncMap{
 		"formatJSON": func(v interface{}) string {
@@ -61,17 +61,17 @@ func (ln *LLMNode) Prompt(env Env) string {
 	// Parse the system prompt template
 	tpl, err := template.New("system-prompt").Funcs(funcMap).Parse(ln.system)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	// Execute the template with the environment data
 	var sb strings.Builder
 	if err := tpl.Execute(&sb, env); err != nil {
-		panic(err)
+		return "", err
 	}
 
 	prompt := sb.String()
-	return prompt
+	return prompt, nil
 }
 
 // Execute processes the node by:
@@ -79,10 +79,15 @@ func (ln *LLMNode) Prompt(env Env) string {
 // 2. Calling the LLM via Copilot
 // 3. Streaming the response to both the response writer and pipe for next node
 func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
+	// Render the system prompt with the environment data
+	prompt, err := ln.Prompt(r.env)
+	if err != nil {
+		return err
+	}
 	// Prepare parameters for the LLM call
 	params := &copilot.Params{
 		System: copilot.Content{
-			Text: ln.Prompt(r.env),
+			Text: prompt,
 		},
 	}
 
