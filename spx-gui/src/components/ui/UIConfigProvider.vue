@@ -77,7 +77,8 @@ const themeOverrides: GlobalThemeOverrides = {
     heightLarge: uiVariables.lineHeight[3]
   },
   Popover: {
-    space: '8px' // TODO: some var like gap?
+    space: '8px', // TODO: some var like gap?
+    arrowOffset: '30px'
   },
   Tooltip: {
     borderRadius: uiVariables.borderRadius[1],

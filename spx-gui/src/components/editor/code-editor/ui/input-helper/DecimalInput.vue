@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const modelValue = useDebouncedModel<number | null>(
   () => props.value,
-  (v) => emit('update:value', Math.floor(v ?? getDefaultValue()))
+  (v) => emit('update:value', v ?? getDefaultValue())
 )
 </script>
 

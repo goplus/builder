@@ -19,8 +19,7 @@ import {
   useAddMonitor,
   useAddCostumeFromLocalFile
 } from '@/components/asset'
-import { parseResourceURI } from '../../../common'
-import type { InternalResourceReference } from '..'
+import { parseResourceURI, type ResourceIdentifier } from '../../../common'
 
 export type CreateMethod<T> = {
   /** Label for the create method */
@@ -196,8 +195,8 @@ class CostumeSelector implements IResourceSelector<Costume> {
   }
 }
 
-export function createResourceSelector(project: Project, rr: InternalResourceReference): IResourceSelector<any> {
-  const parsed = parseResourceURI(rr.resource.uri)
+export function createResourceSelector(project: Project, resourceId: ResourceIdentifier): IResourceSelector<any> {
+  const parsed = parseResourceURI(resourceId.uri)
   switch (parsed[0].type) {
     case 'sound':
       return new SoundSelector(project, parsed[0].name)

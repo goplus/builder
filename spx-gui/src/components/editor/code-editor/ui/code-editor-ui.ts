@@ -23,8 +23,7 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range,
-  containsPosition
+  selection2Range
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -48,6 +47,7 @@ import {
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
+import { SnippetParser } from './snippet'
 
 export * from './hover'
 export * from './completion'
@@ -101,6 +101,7 @@ export const builtInCommandGoToDefinition: Command<[TextDocumentPosition | TextD
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'spx.goToResource'
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'spx.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
+// TODO: remove command `spx.modifyResourceReference` & related implementation
 export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
   'spx.modifyResourceReference'
 export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'spx.invokeInputHelper'
@@ -196,6 +197,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
+    this.snippetParser = new SnippetParser(project, this)
   }
 
   id = uniqueId('code-editor-ui-')
@@ -331,17 +333,21 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return insert(content, range)
   }
 
-  private newlyInsertedRangeRef = shallowRef<Range | null>(null)
-  get newlyInsertedRange() {
-    return this.newlyInsertedRangeRef.value
-  }
-  private setNewlyInsertedRange(range: Range | null) {
-    this.newlyInsertedRangeRef.value = range
+  /** The newly inserted line number, staring from 1 */
+  private newlyInsertedLineRef = shallowRef<number | null>(null)
+
+  /** Check if the given position is in the newly inserted range */
+  isNewlyInserted(position: Position) {
+    const line = this.newlyInsertedLineRef.value
+    if (line == null) return false
+    return position.line === line
   }
 
   private async insertBlockContent(type: 'text' | 'snippet', content: string, range: Range) {
     const textDocument = this.activeTextDocument
     if (textDocument == null) return
+
+    let insertAtLine = range.start.line
 
     const insert = async (cnt: string, rg: Range) => {
       // Ensure trailing newline if the insertion occurs at the end of the file
@@ -351,20 +357,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
       if (type === 'snippet') {
         await this.insertSnippet(cnt, rg)
-
-        // TODO: more reliable way for snippet content
-        const insertedLineNum = cnt.split('\n').length
-        const insertStartPos = rg.start
-        const insertEndLine = insertStartPos.line + insertedLineNum - 1
-        const insertEndLineContent = textDocument.getLineContent(insertEndLine)
-        const insertEndPos: Position = {
-          line: insertStartPos.line + insertedLineNum - 1,
-          column: insertEndLineContent.length + 1
-        }
-        this.setNewlyInsertedRange({
-          start: insertStartPos,
-          end: insertEndPos
-        })
+        this.newlyInsertedLineRef.value = insertAtLine
         return
       }
 
@@ -389,13 +382,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         })
       }
 
-      this.setNewlyInsertedRange({
-        start: insertedRange.start,
-        end: {
-          line: insertedRange.end.line,
-          column: insertedRange.end.column
-        }
-      })
+      this.newlyInsertedLineRef.value = insertAtLine
     }
 
     const pos = range.end
@@ -412,6 +399,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
     const lineEndPos = { line: pos.line, column: lineCnt.length + 1 }
     this.editor.setPosition(toMonacoPosition(lineEndPos))
+    insertAtLine += 1
     content = '\n' + content.replace(/\n$/, '')
     return insert(content, { start: lineEndPos, end: lineEndPos })
   }
@@ -456,6 +444,13 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
   setIsCopilotActive(active: boolean) {
     this.isCopilotActiveRef.value = active
+  }
+
+  private snippetParser: SnippetParser
+
+  /** Parse given snippet string & resolve Builder built-in variables */
+  parseSnippet(snippet: string) {
+    return this.snippetParser.parse(snippet)
   }
 
   init(editor: MonacoEditor) {
@@ -621,8 +616,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       watch(
         () => this.cursorPosition,
         (pos) => {
-          if (pos == null || this.newlyInsertedRange == null) return
-          if (!containsPosition(this.newlyInsertedRange, pos)) this.setNewlyInsertedRange(null)
+          if (pos == null || this.isNewlyInserted(pos)) return
+          this.newlyInsertedLineRef.value = null
         }
       )
     )

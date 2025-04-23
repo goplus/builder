@@ -1,4 +1,4 @@
-import { memoize } from 'lodash'
+import { debounce, escape, memoize } from 'lodash'
 import dayjs from 'dayjs'
 import {
   shallowReactive,
@@ -11,7 +11,8 @@ import {
   onUnmounted,
   onDeactivated,
   ref,
-  onActivated
+  onActivated,
+  toValue
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import type { Disposable } from './disposable'
@@ -301,4 +302,27 @@ export function useActivated() {
   onDeactivated(() => (activatedRef.value = false))
   onUnmounted(() => (activatedRef.value = false))
   return activatedRef
+}
+
+export function escapeHTML(str: string) {
+  return escape(str)
+}
+
+/**
+ * Create a new value reference for given source with debounce.
+ * Changes to the source will be reflected in the new value reference.
+ * Changes to the new value reference will be reflected in the source with debounce.
+ * The new value reference can be used as model (`v-model`) for input components.
+ */
+export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T) => void, wait = 300) {
+  const valueRef = ref<T>(toValue(source))
+  watch(source, (newSourceValue) => (valueRef.value = newSourceValue))
+  watch(
+    valueRef,
+    debounce(() => {
+      if (valueRef.value === toValue(source)) return
+      onChange(valueRef.value)
+    }, wait)
+  )
+  return valueRef
 }

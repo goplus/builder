@@ -48,7 +48,7 @@ export class ResourceReferenceController extends Emitter<{
   }
   private selectorComputed = computed(() => {
     if (this.modifying == null) return null
-    return createResourceSelector(this.ui.project, this.modifying)
+    return createResourceSelector(this.ui.project, this.modifying.resource)
   })
   get selector() {
     return this.selectorComputed.value

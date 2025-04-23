@@ -1,43 +1,39 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
+import type { Action } from '../../common'
 import type { InternalAction } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
-import MarkdownView from '../markdown/MarkdownView.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
-import type { HoverController, InternalHover } from '.'
 import ActionButton from './ActionButton.vue'
 
 const props = defineProps<{
-  hover: InternalHover
-  controller: HoverController
+  actions: Action[]
+}>()
+
+const emit = defineEmits<{
+  action: []
 }>()
 
 const codeEditorCtx = useCodeEditorUICtx()
 
 const actions = computed(() => {
-  return props.hover.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
+  return props.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
 })
 
 const handleAction = useMessageHandle(
   async (action: InternalAction) => {
     await codeEditorCtx.ui.executeCommand(action.command, ...action.arguments)
-    props.controller.hideHover()
+    emit('action')
   },
   { en: 'Failed to execute command', zh: '执行命令失败' }
 ).fn
 </script>
 
 <template>
-  <CodeEditorCard
-    class="hover-card"
-    @mouseenter="controller.emit('cardMouseEnter')"
-    @mouseleave="controller.emit('cardMouseLeave')"
-  >
+  <CodeEditorCard class="hover-card">
     <ul class="body">
-      <li v-for="(content, i) in hover.contents" :key="i" class="content">
-        <MarkdownView v-bind="content" />
-      </li>
+      <slot></slot>
     </ul>
     <footer v-if="actions.length > 0" class="footer">
       <ActionButton
@@ -64,15 +60,11 @@ const handleAction = useMessageHandle(
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 328px;
   min-height: 0;
   max-height: 300px;
   overflow-y: auto;
   scrollbar-width: thin;
-}
-
-.content {
-  width: 328px;
-  padding: 6px 8px;
 }
 
 .footer {

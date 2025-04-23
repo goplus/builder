@@ -470,7 +470,7 @@
 			"patterns": [
 				{
 					"comment": "Flow control keywords",
-					"match": "\\b(break|case|continue|default|defer|else|fallthrough|for|go|goto|if|range|return|select|switch)\\b",
+					"match": "\\b(break|case|continue|default|defer|else|fallthrough|for|go|if|range|return|select|switch)\\b",
 					"name": "keyword.control.gop"
 				},
 				{
