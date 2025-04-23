@@ -11,7 +11,6 @@ import (
 )
 
 type Workflow struct {
-	Idx int          `json:"idx"`
 	Env workflow.Env `json:"env"`
 }
 
