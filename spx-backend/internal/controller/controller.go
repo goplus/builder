@@ -15,6 +15,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/joho/godotenv"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -44,6 +45,7 @@ type Controller struct {
 	aigcClient    *aigc.AigcClient
 	casdoorClient casdoorClient
 	copilot       *copilot.Copilot
+	workflow      *workflow.Workflow
 }
 
 // New creates a new controller.
@@ -78,13 +80,53 @@ func New(ctx context.Context) (*Controller, error) {
 		return nil, err
 	}
 
+	stdflow := NewWorkflow("stdflow", cpt, db)
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
 		copilot:       cpt,
+		workflow:      stdflow,
 	}, nil
+}
+
+func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
+	chatNode := NewMessageNode(copilot)
+	flow := workflow.NewWorkflow(name)
+	flow.Start(workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("reference_id") == nil
+		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(chatNode))).
+		Else(workflow.NewSearch(db).SetNext(chatNode)))
+	return flow
+}
+
+func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {
+	system := `We are using Go+'s XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform. 
+Reference project names, it is best to give multiple (>3), including whether it is camel case, whether it is underlined, whether the first letter is capitalized, etc.
+Please use the search tool to search.
+
+## search
+Description: Request to search project in XBuilder.
+Parameters:
+- keys: (required) Project name. The character set includes letters, numbers and underscores. If there are multiple names, use | to separate them, for example: key1|key2|key3.
+Usage:
+<search>
+<keys>key1|key2|key3</keys>
+</search>
+
+## Notes
+1. Use the provided search keywords to query whether there are reference projects on the XBuilder platform.
+2. If there are multiple keywords, you can use the "|" symbol to connect them together.
+3. The commitment results do not contain any XML tags.`
+	return workflow.NewLLMNode(copilot, system)
+}
+
+func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	return workflow.NewLLMNode(copit, system)
 }
 
 // kodoConfig is the configuration for Kodo.

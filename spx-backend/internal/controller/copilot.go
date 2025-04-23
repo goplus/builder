@@ -13,6 +13,7 @@ import (
 const MaxMessageCount = 50
 
 type GenerateMessageParams struct {
+	System   string            `json:"system,omitempty"` // System prompt to use
 	Messages []copilot.Message `json:"messages"`
 	Tools    []copilot.Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
 }
@@ -38,6 +39,11 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 	// Check if copilot is initialized
 	if ctrl.copilot == nil {
 		return nil, fmt.Errorf("copilot is not initialized")
+	}
+
+	params.System = copilot.SystemPrompt
+	if len(params.Tools) > 0 {
+		params.System = copilot.SystemPromptWithTools(params.Tools)
 	}
 
 	// Generate stream message using copilot
