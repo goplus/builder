@@ -12,17 +12,21 @@ import (
 )
 
 var (
+	// Type assertion to ensure LLMNode implements the INode interface
 	_ INode = (*LLMNode)(nil)
 )
 
+// LLMNode represents a node that interacts with a language model via Copilot
+// It processes inputs through templates and streams the LLM response
 type LLMNode struct {
-	copilot *copilot.Copilot
+	copilot *copilot.Copilot // Reference to the copilot client used to communicate with the LLM
 
-	system string
-	id     string
-	next   INode
+	system string // System prompt template to be rendered with environment data
+	id     string // Unique identifier for this node
+	next   INode  // Reference to the next node in the workflow
 }
 
+// NewLLMNode creates a new LLM node with the given copilot client and system prompt
 func NewLLMNode(copilot *copilot.Copilot, system string) *LLMNode {
 	return &LLMNode{
 		copilot: copilot,
@@ -30,15 +34,20 @@ func NewLLMNode(copilot *copilot.Copilot, system string) *LLMNode {
 	}
 }
 
+// GetId returns the unique identifier for this node
 func (ln *LLMNode) GetId() string {
 	return ln.id
 }
 
+// GetType returns the node type classification (LLM type)
 func (ln *LLMNode) GetType() NodeType {
 	return NodeTypeLLM
 }
 
+// Prompt renders the system prompt template with environment data
+// Uses Go's template engine to replace variables and apply formatting functions
 func (ln *LLMNode) Prompt(env Env) string {
+	// Define custom template functions
 	funcMap := template.FuncMap{
 		"formatJSON": func(v interface{}) string {
 			indented, err := json.MarshalIndent(v, "", "\t")
@@ -55,6 +64,7 @@ func (ln *LLMNode) Prompt(env Env) string {
 		panic(err)
 	}
 
+	// Execute the template with the environment data
 	var sb strings.Builder
 	if err := tpl.Execute(&sb, env); err != nil {
 		panic(err)
@@ -64,12 +74,19 @@ func (ln *LLMNode) Prompt(env Env) string {
 	return prompt
 }
 
+// Execute processes the node by:
+// 1. Rendering the system prompt with environment data
+// 2. Calling the LLM via Copilot
+// 3. Streaming the response to both the response writer and pipe for next node
 func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
+	// Prepare parameters for the LLM call
 	params := &copilot.Params{
 		System: copilot.Content{
 			Text: ln.Prompt(r.env),
 		},
 	}
+
+	// Get conversation history from environment if available
 	msgs := r.env.Get("messages")
 	if msgs != nil {
 		if messages, ok := msgs.([]copilot.Message); ok {
@@ -77,19 +94,25 @@ func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
 		}
 	}
 
+	// Stream the message from the LLM
 	read, err := ln.copilot.StreamMessage(ctx, params)
 	if err != nil {
 		return err
 	}
+
+	// Write the response to both response writer and pipe for next node
 	mw := io.MultiWriter(w.w, w.pip)
 	_, err = io.Copy(mw, read)
 	return err
 }
 
+// Next returns the next node to execute in the workflow
 func (ln *LLMNode) Next(ctx context.Context, env Env) INode {
 	return ln.next
 }
 
+// SetNext sets the next node in the workflow chain
+// Returns this node to enable method chaining
 func (ln *LLMNode) SetNext(next INode) INode {
 	ln.next = next
 	return ln

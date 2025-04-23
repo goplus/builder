@@ -28,9 +28,6 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 		return nil, fmt.Errorf("workflow is not initialized")
 	}
 
-	// Create workflow runner with the specified index
-	runner := ctrl.workflow.Runner(params.Workflow.Idx)
-
 	// Environment setup
 	env := params.Workflow.Env
 	if env == nil {
@@ -41,8 +38,11 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 	env.Add("GopDefs", copilot.GopDefs)
 	env.Add("SpxDefs", copilot.SpxDefs)
 
+	// Create workflow runner with the specified index
+	runner := ctrl.workflow.Runner(env)
+
 	// Generate stream message using workflow
-	stream, err := runner.Execute(ctx, env)
+	stream, err := runner.Execute(ctx)
 	if err != nil {
 		logger.Errorf("failed to generate message: %v", err)
 		return nil, err
