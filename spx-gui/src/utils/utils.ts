@@ -30,7 +30,7 @@ export const isSound = (url: string): boolean => {
 
 /** Manage spx version. */
 export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
-  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
+  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v2')
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
