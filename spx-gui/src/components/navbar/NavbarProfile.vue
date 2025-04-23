@@ -26,10 +26,10 @@
       </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
-          {{ $t({ en: 'Use default SPX', zh: '使用默认 SPX' }) }}
+          {{ $t({ en: 'Use SPX v1', zh: '使用 SPX v1' }) }}
         </UIMenuItem>
         <UIMenuItem v-if="spxVersion === 'v1'" @click="handleUseSpxV2">
-          {{ $t({ en: 'Use new SPX (in beta)', zh: '启用新 SPX（测试中）' }) }}
+          {{ $t({ en: 'Use SPX v2', zh: '使用 SPX v2' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="userInfo.advancedLibraryEnabled">
@@ -66,12 +66,11 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useSpxVersion } from '@/utils/utils'
-import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useDeveloperMode } from '@/utils/developer-mode'
 import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
@@ -112,33 +111,19 @@ const handleUseSpxV1 = useMessageHandle(
   },
   undefined,
   {
-    en: 'Back to the default version of SPX',
-    zh: '已切换回默认版本 SPX'
+    en: 'Switched to SPX v1',
+    zh: '已切换为 SPX v1'
   }
 ).fn
 
-const i18n = useI18n()
-const withConfirm = useConfirmDialog()
-
 const handleUseSpxV2 = useMessageHandle(
   async () => {
-    await withConfirm({
-      type: 'info',
-      title: i18n.t({
-        en: 'Use new version of SPX',
-        zh: '启用新版本 SPX'
-      }),
-      content: i18n.t({
-        en: 'The new version of SPX is still in beta. You can switch back to the default version anytime if you encounter issues.',
-        zh: '新版本 SPX 还在测试中，如果遇到问题可以随时退回到默认版本。'
-      })
-    })
     spxVersion.value = 'v2'
   },
   undefined,
   {
-    en: 'Now using the new version of SPX',
-    zh: '已启用新版本 SPX'
+    en: 'Switched to SPX v2',
+    zh: '已切换为 SPX v2'
   }
 ).fn
 
