@@ -50,8 +50,8 @@ function adjustDrawingOptions(canvas: HTMLCanvasElement, firstFrame: Frame) {
   const scale = Math.min(canvas.width / firstFrame.width, canvas.height / firstFrame.height)
   drawingOptionsRef.value = {
     scale,
-    offsetX: (canvas.width - firstFrame.width * scale) / 2,
-    offsetY: (canvas.height - firstFrame.height * scale) / 2
+    offsetX: (canvas.width - firstFrame.width * scale) / 2 + firstFrame.x * scale,
+    offsetY: (canvas.height - firstFrame.height * scale) / 2 + firstFrame.y * scale
   }
 }
 
