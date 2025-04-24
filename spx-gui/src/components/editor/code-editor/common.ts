@@ -48,6 +48,14 @@ export enum ResourceReferenceKind {
  */
 export type ResourceURI = string
 
+/**
+ * URI of the resource context. Examples:
+ * - `spx://resources/sprites`
+ * - `spx://resources/sounds`
+ * - `spx://resources/sprites/<sName>/costumes`
+ */
+export type ResourceContextURI = string
+
 const resourceURIPrefix = 'spx://resources/'
 
 export function isResourceUri(uri: string): uri is ResourceURI {
@@ -637,11 +645,34 @@ export type Input<T extends InputTypedValue = InputTypedValue> =
       name: string
     }
 
+export type InputSlotAccept =
+  | {
+      /** Input type accepted by the slot */
+      type:
+        | InputType.Integer
+        | InputType.Decimal
+        | InputType.String
+        | InputType.Boolean
+        | InputType.SpxDirection
+        | InputType.SpxColor
+        | InputType.SpxEffectKind
+        | InputType.SpxKey
+        | InputType.SpxPlayAction
+        | InputType.SpxSpecialObj
+        | InputType.Unknown
+    }
+  | {
+      /** Input type accepted by the slot */
+      type: InputType.SpxResourceName
+      /** Resource context */
+      resourceContext: ResourceContextURI
+    }
+
 export type InputSlot = {
   /** Kind of the slot */
   kind: InputSlotKind
-  /** Input type accepted by the slot. */
-  acceptType: InputType
+  /** Info describing what inputs are accepted by the slot */
+  accept: InputSlotAccept
   /** Current input in the slot */
   input: Input
   /** Names for user predefined identifiers available for the slot */

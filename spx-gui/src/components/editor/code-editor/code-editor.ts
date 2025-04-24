@@ -163,7 +163,7 @@ class InputHelperProvider implements IInputHelperProvider {
       return [
         {
           kind: InputSlotKind.Value,
-          acceptType: InputType.String,
+          accept: { type: InputType.String },
           input: {
             kind: InputKind.InPlace,
             type: InputType.String,
