@@ -47,8 +47,6 @@ export class Collector {
   // Collection of execution results
   private results: ToolResult[] = []
 
-  
-
   /**
    * Creates a new collector with optional configuration
    * @param options Configuration options
@@ -67,7 +65,7 @@ export class Collector {
   getEnvironment(): Record<string, any> {
     return { ...this.env }
   }
-  
+
   /**
    * Set an environment variable
    * @param key Variable name
@@ -76,12 +74,12 @@ export class Collector {
   setEnvironmentVar(key: string, value: any): void {
     this.env[key] = value
   }
-  
+
   /**
    * Clear all environment variables
    */
   clearEnvironment(): void {
-    Object.keys(this.env).forEach(key => {
+    Object.keys(this.env).forEach((key) => {
       delete this.env[key]
     })
   }

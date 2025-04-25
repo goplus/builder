@@ -23,14 +23,14 @@ const basicComponents = {
    * <workflow wname="workflowname"/>
    * ```
    */
-  'workflow': Workflow,
+  workflow: Workflow,
   /**
    * Usage:
    *  ```html
    * <]env kname="MY_ENV" value="my_value"/>
    * ```
    */
-   'env': Env,
+  env: Env,
   /**
    * Usage:
    *  ```html

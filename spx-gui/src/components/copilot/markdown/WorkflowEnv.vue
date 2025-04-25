@@ -6,13 +6,13 @@ const props = defineProps<{
   /**
    * Environment variable name
    */
-   kname?: string,
-  
+  kname?: string
+
   /**
    * Environment variable value
    */
-  value?: any,
-  
+  value?: any
+
   /**
    * Any other attribute will be treated as environment variables
    */
@@ -21,7 +21,6 @@ const props = defineProps<{
 
 // Get the copilot context which contains the collector
 const copilotCtx = useCopilotCtx()
-
 
 // Check if the MCP collector is initialized
 if (!copilotCtx?.mcp?.collector) {
@@ -33,9 +32,9 @@ const collector = computed(() => copilotCtx.mcp.collector!)
 
 // Process environment variables on component mount
 onMounted(() => {
-    if (!collector.value) {
-      throw new Error('Collector not available')
-    }
+  if (!collector.value) {
+    throw new Error('Collector not available')
+  }
 
   // If a specific name/value pair is provided
   if (props.kname && props.value !== undefined) {
@@ -47,5 +46,5 @@ onMounted(() => {
 
 <template>
   <!-- Render nothing, this is a processing component -->
-  <span style="display: none;"></span>
+  <span style="display: none"></span>
 </template>

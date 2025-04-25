@@ -93,12 +93,14 @@ export async function* workflowStreamMessage(
   try {
     const stream = await client.postTextStream(
       '/workflow/stream/message',
-      { 
-        messages, 
+      {
+        messages,
         tools: options?.tools,
-        workflow: options?.workflow ? {
-          env: options.workflow.env || {}
-        } : undefined
+        workflow: options?.workflow
+          ? {
+              env: options.workflow.env || {}
+            }
+          : undefined
       },
       {
         timeout: 15 * 1000,

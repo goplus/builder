@@ -6,8 +6,8 @@ defineProps<{
   /**
    * Workflow name
    */
-  wname?: string,
-  
+  wname?: string
+
   /**
    * Workflow description (optional)
    */
@@ -38,7 +38,7 @@ const toggleEnvPanel = () => {
 const formatEnvValue = (value: any): string => {
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
-  
+
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value)
@@ -46,7 +46,7 @@ const formatEnvValue = (value: any): string => {
       return String(value)
     }
   }
-  
+
   return String(value)
 }
 
@@ -65,13 +65,13 @@ const envCount = computed(() => {
         <span v-else class="workflow-name">Workflow</span>
         <span v-if="description" class="workflow-description">{{ description }}</span>
       </div>
-      
+
       <div class="env-button" :class="{ active: showEnvPanel }" @click="toggleEnvPanel">
         <div class="env-icon">Env</div>
         <div v-if="envCount > 0" class="env-count">{{ envCount }}</div>
       </div>
     </div>
-    
+
     <!-- Environment variables panel -->
     <div v-if="showEnvPanel" class="env-panel">
       <div v-if="envCount > 0" class="env-variables">
@@ -90,9 +90,7 @@ const envCount = computed(() => {
           </tbody>
         </table>
       </div>
-      <div v-else class="env-empty">
-        No environment variables set
-      </div>
+      <div v-else class="env-empty">No environment variables set</div>
     </div>
   </div>
 </template>
@@ -104,7 +102,7 @@ const envCount = computed(() => {
   border-radius: 8px;
   overflow: hidden;
   background-color: var(--ui-color-grey-100);
-  
+
   .workflow-header {
     display: flex;
     justify-content: space-between;
@@ -112,23 +110,23 @@ const envCount = computed(() => {
     padding: 8px 12px;
     background-color: var(--ui-color-grey-200);
     border-bottom: 1px solid var(--ui-color-grey-300);
-    
+
     .workflow-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      
+
       .workflow-name {
         font-weight: 600;
         color: var(--ui-color-grey-900);
       }
-      
+
       .workflow-description {
         color: var(--ui-color-grey-700);
         font-size: 0.9em;
       }
     }
-    
+
     .env-button {
       display: flex;
       align-items: center;
@@ -136,16 +134,16 @@ const envCount = computed(() => {
       cursor: pointer;
       padding: 4px 8px;
       border-radius: 4px;
-      
+
       &:hover {
         background-color: var(--ui-color-grey-300);
       }
-      
+
       &.active {
         background-color: var(--ui-color-primary-100);
         color: var(--ui-color-primary-700);
       }
-      
+
       .env-icon {
         height: 24px;
         width: 24px;
@@ -157,13 +155,13 @@ const envCount = computed(() => {
         background-color: var(--ui-color-grey-400);
         color: var(--ui-color-grey-900);
         border-radius: 4px;
-        
+
         .active & {
           background-color: var(--ui-color-primary-200);
           color: var(--ui-color-primary-900);
         }
       }
-      
+
       .env-count {
         font-size: 0.8rem;
         font-weight: 600;
@@ -179,50 +177,51 @@ const envCount = computed(() => {
       }
     }
   }
-  
+
   .env-panel {
     padding: 8px;
     background-color: var(--ui-color-grey-150);
     border-bottom: 1px solid var(--ui-color-grey-300);
-    
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.9em;
-      
-      th, td {
+
+      th,
+      td {
         text-align: left;
         padding: 6px 8px;
       }
-      
+
       th {
         background-color: var(--ui-color-grey-200);
         font-weight: 600;
         color: var(--ui-color-grey-800);
       }
-      
+
       tr:nth-child(odd) {
         background-color: var(--ui-color-grey-100);
       }
-      
+
       tr:hover {
         background-color: var(--ui-color-grey-200);
       }
-      
+
       .env-name {
         font-family: var(--ui-font-family-code);
         color: var(--ui-color-primary-700);
         width: 30%;
         word-break: break-all;
       }
-      
+
       .env-value {
         font-family: var(--ui-font-family-code);
         color: var(--ui-color-grey-800);
         word-break: break-all;
       }
     }
-    
+
     .env-empty {
       padding: 12px;
       text-align: center;
