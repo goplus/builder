@@ -177,14 +177,7 @@ import (
 	// _ "github.com/goplus/igop/pkg/testing/quick"
 	// _ "github.com/goplus/igop/pkg/testing/slogtest"
 
-	// Embedded packages required by Go+.
-	_ "github.com/goplus/igop/pkg/github.com/goplus/gop/builtin"
-	_ "github.com/goplus/igop/pkg/github.com/goplus/gop/builtin/iox"
-	_ "github.com/goplus/igop/pkg/github.com/goplus/gop/builtin/ng"
-	_ "github.com/goplus/igop/pkg/github.com/goplus/gop/builtin/stringslice"
-	_ "github.com/goplus/igop/pkg/github.com/qiniu/x/stringutil"
-
 	// Embedded third-party packages.
-	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
-	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/goplus/spx"
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
 )

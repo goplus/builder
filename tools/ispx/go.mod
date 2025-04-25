@@ -1,10 +1,10 @@
-module github.com/goplus/builder/ispx
+module github.com/goplus/builder/tools/ispx
 
 go 1.23.0
 
 require (
-	github.com/goplus/igop v0.39.1
-	github.com/goplus/reflectx v1.3.2
+	github.com/goplus/igop v0.40.0
+	github.com/goplus/reflectx v1.4.0
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
 )
