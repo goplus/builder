@@ -1495,7 +1495,7 @@ export const spriteOnClick: DefinitionDocumentationItem = {
   })
 }
 
-export const onAnyKey: DefinitionDocumentationItem = {
+export const gameOnAnyKey: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1508,6 +1508,14 @@ export const onAnyKey: DefinitionDocumentationItem = {
     en: 'Listen to any key pressed',
     zh: '任意按键被按下时执行'
   })
+}
+
+export const spriteOnAnyKey: DefinitionDocumentationItem = {
+  ...gameOnAnyKey,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onAnyKey'
+  }
 }
 
 export const gameOnKey0: DefinitionDocumentationItem = {
