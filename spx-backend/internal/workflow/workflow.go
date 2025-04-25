@@ -64,7 +64,7 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 		defer pw.Close() // Ensure the pipe is closed when execution completes
 
 		// Write the workflow opening tag with the name
-		fmt.Fprintf(pw, "<workflow name=\"%s\">", c.workflow.name)
+		fmt.Fprintf(pw, "<workflow wname=\"%s\"></workflow>\n", c.workflow.name)
 
 		// Initialize an empty buffer for the first node's input
 		var read io.Reader = &bytes.Buffer{}
@@ -72,8 +72,6 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 
 		// Process each node in sequence until reaching a terminal node
 		for {
-			fmt.Fprintf(pw, "\n")
-
 			// Create a new request for each node with the current environment and input
 			r := &Request{
 				env: c.env,
@@ -100,7 +98,7 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 
 			// Update the workflow environment with the node's output values
 			for k, v := range w.output {
-				fmt.Fprintf(pw, "<env %s=\"%v\"/>", k, v)
+				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"/>\n", k, v)
 				c.env.Add(k, v)
 			}
 
@@ -114,9 +112,6 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 			// Update the input stream for the next node to be this node's output
 			read = w.pip
 		}
-
-		// Write the workflow closing tag
-		fmt.Fprintf(pw, "\n</workflow>")
 	}()
 
 	// Return the read end of the pipe for streaming access to the output

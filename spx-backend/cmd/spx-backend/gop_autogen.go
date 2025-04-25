@@ -127,6 +127,10 @@ type post_util_fileurls struct {
 	yap.Handler
 	*AppV2
 }
+type post_workflow_stream_message struct {
+	yap.Handler
+	*AppV2
+}
 type put_asset_id struct {
 	yap.Handler
 	*AppV2
@@ -196,7 +200,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_copilot_stream_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_copilot_stream_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_workflow_stream_message), new(put_asset_id), new(put_project_owner_name), new(put_user))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -1408,9 +1412,61 @@ func (this *post_util_fileurls) Classclone() yap.HandlerProto {
 	_gop_ret := *this
 	return &_gop_ret
 }
+//line cmd/spx-backend/post_workflow_stream_message.yap:10
+func (this *post_workflow_stream_message) Main(_gop_arg0 *yap.Context) {
+//line cmd/spx-backend/post_util_fileurls.yap:26:1
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_workflow_stream_message.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_workflow_stream_message.yap:11:1
+	if
+//line cmd/spx-backend/post_workflow_stream_message.yap:11:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+//line cmd/spx-backend/post_workflow_stream_message.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:15:1
+	params := &controller.WorkflowMessageParams{}
+//line cmd/spx-backend/post_workflow_stream_message.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_workflow_stream_message.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:19:1
+	if
+//line cmd/spx-backend/post_workflow_stream_message.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_workflow_stream_message.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_workflow_stream_message.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:24:1
+	read, err := this.ctrl.WorkflowMessageStream(ctx.Context(), params)
+//line cmd/spx-backend/post_workflow_stream_message.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_workflow_stream_message.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_workflow_stream_message.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:30:1
+	defer read.Close()
+//line cmd/spx-backend/post_workflow_stream_message.yap:32:1
+	buf := make([]byte, 4096)
+//line cmd/spx-backend/post_workflow_stream_message.yap:33:1
+	this.Stream__2(read, buf)
+}
+func (this *post_workflow_stream_message) Classfname() string {
+	return "post_workflow_stream_message"
+}
+func (this *post_workflow_stream_message) Classclone() yap.HandlerProto {
+	_gop_ret := *this
+	return &_gop_ret
+}
 //line cmd/spx-backend/put_asset_#id.yap:10
 func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
-//line cmd/spx-backend/post_util_fileurls.yap:26:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:33:1
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/put_asset_#id.yap:10:1
 	ctx := &this.Context

@@ -6,7 +6,7 @@ defineProps<{
   /**
    * Workflow name
    */
-  name?: string,
+  wname?: string,
   
   /**
    * Workflow description (optional)
@@ -61,7 +61,7 @@ const envCount = computed(() => {
     <!-- Workflow header with name and environment -->
     <div class="workflow-header">
       <div class="workflow-title">
-        <span v-if="name" class="workflow-name">{{ name }}</span>
+        <span v-if="wname" class="workflow-name">{{ wname }}</span>
         <span v-else class="workflow-name">Workflow</span>
         <span v-if="description" class="workflow-description">{{ description }}</span>
       </div>
@@ -93,11 +93,6 @@ const envCount = computed(() => {
       <div v-else class="env-empty">
         No environment variables set
       </div>
-    </div>
-    
-    <!-- Workflow content - renders nested components -->
-    <div class="workflow-content">
-      <slot></slot>
     </div>
   </div>
 </template>
@@ -234,10 +229,6 @@ const envCount = computed(() => {
       color: var(--ui-color-grey-600);
       font-style: italic;
     }
-  }
-  
-  .workflow-content {
-    padding: 12px;
   }
 }
 </style>

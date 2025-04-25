@@ -20,23 +20,17 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <pre is="workflow" name="MyWorkflow" description="This is a workflow">
-   *        - name: MyWorkflow
-   *        - description: This is a workflow
-   * </pre>
+   * <workflow wname="workflowname"/>
    * ```
    */
   'workflow': Workflow,
   /**
    * Usage:
    *  ```html
-   * <pre is="env" name="MY_ENV" value="my_value">
-   *        - name: MY_ENV
-   *        - value: my_value
-   * </pre>
+   * <]env kname="MY_ENV" value="my_value"/>
    * ```
    */
-  'env': Env,
+   'env': Env,
   /**
    * Usage:
    *  ```html

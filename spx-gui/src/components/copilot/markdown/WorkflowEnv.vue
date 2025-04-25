@@ -6,7 +6,7 @@ const props = defineProps<{
   /**
    * Environment variable name
    */
-  name?: string,
+   kname?: string,
   
   /**
    * Environment variable value
@@ -36,15 +36,10 @@ onMounted(() => {
     if (!collector.value) {
       throw new Error('Collector not available')
     }
-  
-  const allProps = { ...props }
-  
-  // Remove Vue internal properties
-  delete allProps.name
-  
+
   // If a specific name/value pair is provided
-  if (props.name && props.value !== undefined) {
-    collector.value.setEnvironmentVar(props.name, props.value)
+  if (props.kname && props.value !== undefined) {
+    collector.value.setEnvironmentVar(props.kname, props.value)
     return
   }
 })

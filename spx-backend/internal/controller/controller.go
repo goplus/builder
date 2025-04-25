@@ -121,12 +121,12 @@ Usage:
 1. Use the provided search keywords to query whether there are reference projects on the XBuilder platform.
 2. If there are multiple keywords, you can use the "|" symbol to connect them together.
 3. The commitment results do not contain any XML tags.`
-	return workflow.NewLLMNode(copilot, system)
+	return workflow.NewLLMNode(copilot, system, false)
 }
 
 func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
 	system := copilot.SystemPromptWithToolsTpl
-	return workflow.NewLLMNode(copit, system)
+	return workflow.NewLLMNode(copit, system, true)
 }
 
 // kodoConfig is the configuration for Kodo.
