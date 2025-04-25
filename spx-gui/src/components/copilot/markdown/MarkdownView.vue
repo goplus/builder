@@ -7,6 +7,8 @@ import UseMcpTool from './UseMcpTool.vue'
 import ToolEcecResult from './ToolExecResult.vue'
 import FileContent from './FileContent.vue'
 import FileDiagnostics from './FileDiagnostics.vue'
+import Workflow from './WorkflowContainer.vue'
+import Env from './WorkflowEnv.vue'
 
 const props = defineProps<{
   value: string | LocaleMessage
@@ -15,6 +17,26 @@ const props = defineProps<{
 const i18n = useI18n()
 
 const basicComponents = {
+  /**
+   * Usage:
+   *  ```html
+   * <pre is="workflow" name="MyWorkflow" description="This is a workflow">
+   *        - name: MyWorkflow
+   *        - description: This is a workflow
+   * </pre>
+   * ```
+   */
+  'workflow': Workflow,
+  /**
+   * Usage:
+   *  ```html
+   * <pre is="env" name="MY_ENV" value="my_value">
+   *        - name: MY_ENV
+   *        - value: my_value
+   * </pre>
+   * ```
+   */
+  'env': Env,
   /**
    * Usage:
    *  ```html

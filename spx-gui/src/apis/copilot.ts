@@ -79,3 +79,38 @@ export async function* generateStreamMessage(
     throw error
   }
 }
+
+export async function* workflowStreamMessage(
+  messages: Message[],
+  options?: {
+    signal?: AbortSignal
+    tools?: Tool[]
+    workflow?: {
+      env?: Record<string, any>
+    }
+  }
+): AsyncIterableIterator<string> {
+  try {
+    const stream = await client.postTextStream(
+      '/workflow/stream/message',
+      { 
+        messages, 
+        tools: options?.tools,
+        workflow: options?.workflow ? {
+          env: options.workflow.env || {}
+        } : undefined
+      },
+      {
+        timeout: 15 * 1000,
+        signal: options?.signal
+      }
+    )
+
+    for await (const chunk of stream) {
+      yield chunk
+    }
+  } catch (error) {
+    console.error('Streaming error:', error)
+    throw error
+  }
+}

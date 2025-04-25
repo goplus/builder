@@ -1,6 +1,6 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
-import { generateStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
+import { workflowStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
 import type { ICopilot, Chat } from '@/components/copilot/index'
 import type { ToolDescription, ToolRegistry } from './mcp/registry'
 
@@ -91,7 +91,7 @@ export class Copilot extends Disposable implements ICopilot {
 
     const tools = convertToApiTools(this.registry.tools.value)
     // Use generateStreamMessage directly
-    const stream = await generateStreamMessage(messages, {
+    const stream = await workflowStreamMessage(messages, {
       signal: options?.signal,
       tools: tools
     })
