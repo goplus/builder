@@ -29,10 +29,13 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 	}
 
 	// Environment setup
-	env := params.Workflow.Env
-	if env == nil {
+	var env workflow.Env
+	if params.Workflow != nil && params.Workflow.Env != nil {
+		env = params.Workflow.Env
+	} else {
 		env = workflow.NewEnv()
 	}
+
 	env.Add("messages", params.Messages)
 	env.Add("tools", params.Tools)
 	env.Add("GopDefs", copilot.GopDefs)
