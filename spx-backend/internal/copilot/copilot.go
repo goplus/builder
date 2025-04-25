@@ -47,12 +47,8 @@ func (c *Copilot) buildChatCompletionNewParams(params *Params) (openai.ChatCompl
 	messages := make([]openai.ChatCompletionMessageParamUnion, 0, len(params.Messages)+1)
 
 	// Add system prompt message.
-	systemPrompt := SystemPrompt
-	if len(params.Tools) > 0 {
-		systemPrompt = SystemPromptWithTools(params.Tools)
-	}
-	if systemPrompt != "" {
-		messages = append(messages, openai.SystemMessage(systemPrompt))
+	if params.System.Text != "" {
+		messages = append(messages, openai.SystemMessage(params.System.Text))
 	}
 
 	// Add user messages.

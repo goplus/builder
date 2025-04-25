@@ -897,6 +897,17 @@ paths:
                         content:
                           type: text
                           text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
 
       responses:
         "201":
@@ -910,6 +921,93 @@ paths:
                     content:
                       type: text
                       text: Hello!
+
+  /copilot/stream/message:
+    post:
+      tags:
+        - Copilot
+      summary: Generate a stream message
+      description: Generate a stream message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
+      responses:
+        "201":
+          description: Stream Message successfully generated.
+          content:
+            application/stream:
+
+  /workflow/stream/message:
+    post:
+      tags:
+        - Workflow
+      summary: Generate a stream message from workflow
+      description: Generate a stream message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
+                workflow:
+                  $ref: "#/components/schemas/Workflow"
+                  description: env of the workflow.
+      responses:
+        "201":
+          description: Stream Message successfully generated.
+          content:
+            application/stream:
 
   /util/upinfo:
     get:
@@ -1316,6 +1414,45 @@ components:
               description: Text content of the message.
               examples:
                 - Hello!
+
+    CopilotTool:
+      type: object
+      properties:
+        type:
+          type: string
+          description: type of the tool.
+          enum:
+            - function
+          examples:
+            - function
+        function:
+          type: object
+          properties:
+            name:
+              type: string
+              description: name of the function.
+              enum:
+                - create_project
+              examples:
+                - create_project
+            description:
+              type: string
+              description: description of the function.
+              examples:
+                - create project 
+            parameters:
+              type: object
+              description: parameters of the function with json raw.
+              examples:
+                - {"name": "NiuXiaoQi"}
+    Workflow:
+      type: object
+      properties:
+        env:
+          type: object
+          description: env of the workflow.
+          examples:
+            - {"reference_id": "275"}
 
   parameters:
     SortOrder:

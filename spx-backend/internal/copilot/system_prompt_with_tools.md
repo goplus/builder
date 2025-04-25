@@ -146,6 +146,14 @@ When a server is connected, you can use the server's tools via the \`use-mcp-too
     {{formatJSON .F.Parameters}}
 {{end}}
 
+### Reference project
+
+We found a project on the XBuilder platform that we can refer to
+
+{{ range $fileName, $codeContent := .reference.Files }}
+<CodeBlock file="{{ $fileName }}"> {{ $codeContent }} </CodeBlock>
+{{ end }}
+
 # About Go+
 
 The Go+ programming language is

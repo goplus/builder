@@ -40,8 +40,14 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 		return nil, fmt.Errorf("copilot is not initialized")
 	}
 
+	systemPrompt := copilot.SystemPrompt
+	if len(params.Tools) > 0 {
+		systemPrompt = copilot.SystemPromptWithTools(params.Tools)
+	}
+
 	// Generate stream message using copilot
 	stream, err := ctrl.copilot.StreamMessage(ctx, &copilot.Params{
+		System:   copilot.Content{Text: systemPrompt},
 		Messages: params.Messages,
 		Tools:    params.Tools,
 	})
@@ -62,8 +68,14 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		return nil, fmt.Errorf("copilot is not initialized")
 	}
 
+	systemPrompt := copilot.SystemPrompt
+	if len(params.Tools) > 0 {
+		systemPrompt = copilot.SystemPromptWithTools(params.Tools)
+	}
+
 	// Generate message using copilot
 	generatedContent, err := ctrl.copilot.Message(ctx, &copilot.Params{
+		System:   copilot.Content{Text: systemPrompt},
 		Messages: params.Messages,
 		Tools:    params.Tools,
 	})

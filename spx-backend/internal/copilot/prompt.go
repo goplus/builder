@@ -12,10 +12,10 @@ import (
 // spx-gui/src/components/editor/code-editor/document-base/helpers.ts
 
 //go:embed gop_defs.md
-var gopDefs string
+var GopDefs string
 
 //go:embed spx_defs.md
-var spxDefs string
+var SpxDefs string
 
 //go:embed custom_element_code_link.md
 var customElementCodeLink string
@@ -24,7 +24,7 @@ var customElementCodeLink string
 var customElementCodeChange string
 
 //go:embed system_prompt_with_tools.md
-var systemPromptWithToolsTpl string
+var SystemPromptWithToolsTpl string
 
 //go:embed system_prompt.md
 var systemPromptTpl string
@@ -51,8 +51,8 @@ type systemPromptTplData struct {
 func SystemPromptWithTools(tools []Tool) string {
 	// Create a new template with the provided tools
 	tplData := systemPromptTplData{
-		GopDefs:                 gopDefs,
-		SpxDefs:                 spxDefs,
+		GopDefs:                 GopDefs,
+		SpxDefs:                 SpxDefs,
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 		Tools:                   tools,
@@ -70,7 +70,7 @@ func SystemPromptWithTools(tools []Tool) string {
 	}
 
 	// Parse the system prompt template
-	tpl, err := template.New("system-prompt").Funcs(funcMap).Parse(systemPromptWithToolsTpl)
+	tpl, err := template.New("system-prompt").Funcs(funcMap).Parse(SystemPromptWithToolsTpl)
 	if err != nil {
 		panic(err)
 	}
@@ -85,8 +85,8 @@ func SystemPromptWithTools(tools []Tool) string {
 
 func init() {
 	tplData := systemPromptTplData{
-		GopDefs:                 gopDefs,
-		SpxDefs:                 spxDefs,
+		GopDefs:                 GopDefs,
+		SpxDefs:                 SpxDefs,
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 	}

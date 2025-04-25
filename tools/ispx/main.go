@@ -11,7 +11,7 @@ import (
 	"os"
 	"syscall/js"
 
-	"github.com/goplus/builder/ispx/zipfs"
+	"github.com/goplus/builder/tools/ispx/zipfs"
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
 	_ "github.com/goplus/reflectx/icall/icall8192"
@@ -20,7 +20,7 @@ import (
 
 var dataChannel = make(chan []byte)
 
-func loadData(this js.Value, args []js.Value) interface{} {
+func loadData(this js.Value, args []js.Value) any {
 	inputArray := args[0]
 
 	// Convert Uint8Array to Go byte slice
@@ -73,12 +73,11 @@ func main() {
 		return fs.Chrooted(path), nil
 	})
 
-	ctx := igop.NewContext(0)
+	ctx := igop.NewContext(igop.DisableImethodForReflect)
 	ctx.Lookup = func(root, path string) (dir string, found bool) {
 		log.Fatalf("Failed to resolve package import %q. This package is not available in the current environment.", path)
 		return
 	}
-
 	ctx.SetPanic(logWithPanicInfo)
 
 	// NOTE(everyone): Keep sync with the config in spx [gop.mod](https://github.com/goplus/spx/blob/main/gop.mod)
@@ -95,7 +94,7 @@ import (
 
 func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 	widget := GetWidget_(sg, name)
-	if result, ok := widget.(interface{}).(*T); ok {
+	if result, ok := widget.(any).(*T); ok {
 		return result
 	} else {
 		panic("GetWidget: type mismatch")
@@ -105,17 +104,17 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 		log.Fatalln("Failed to register package patch for github.com/goplus/spx:", err)
 	}
 
-	ctx.RegisterExternal("fmt.Print", func(frame *igop.Frame, a ...interface{}) (n int, err error) {
+	ctx.RegisterExternal("fmt.Print", func(frame *igop.Frame, a ...any) (n int, err error) {
 		msg := fmt.Sprint(a...)
 		logWithCallerInfo(msg, frame)
 		return len(msg), nil
 	})
-	ctx.RegisterExternal("fmt.Printf", func(frame *igop.Frame, format string, a ...interface{}) (n int, err error) {
+	ctx.RegisterExternal("fmt.Printf", func(frame *igop.Frame, format string, a ...any) (n int, err error) {
 		msg := fmt.Sprintf(format, a...)
 		logWithCallerInfo(msg, frame)
 		return len(msg), nil
 	})
-	ctx.RegisterExternal("fmt.Println", func(frame *igop.Frame, a ...interface{}) (n int, err error) {
+	ctx.RegisterExternal("fmt.Println", func(frame *igop.Frame, a ...any) (n int, err error) {
 		msg := fmt.Sprintln(a...)
 		logWithCallerInfo(msg, frame)
 		return len(msg), nil
