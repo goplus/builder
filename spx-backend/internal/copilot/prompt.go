@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // For details about maintaining `*_defs.md` files, see:
@@ -36,11 +38,12 @@ var SystemPrompt string
 // systemPromptTplData holds all data needed to populate the system prompt template.
 // This includes language definitions, documentation, and available tools.
 type systemPromptTplData struct {
-	GopDefs                 string // Go+ language documentation
-	SpxDefs                 string // SPX framework documentation
-	CustomElementCodeLink   string // Custom element code linking documentation
-	CustomElementCodeChange string // Custom element code change documentation
-	Tools                   []Tool // Available tools for the AI assistant
+	GopDefs                 string         // Go+ language documentation
+	SpxDefs                 string         // SPX framework documentation
+	CustomElementCodeLink   string         // Custom element code linking documentation
+	CustomElementCodeChange string         // Custom element code change documentation
+	Tools                   []Tool         // Available tools for the AI assistant
+	Reference               *model.Project // Reference to the project model for context
 }
 
 // init initializes the package by:

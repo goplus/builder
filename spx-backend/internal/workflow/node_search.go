@@ -35,7 +35,7 @@ func NewSearch(db *gorm.DB) *Search {
 // It can search by ID from environment or by extracting search keys from input text
 func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 	// First check if a reference_id exists in the environment
-	v := r.env.Get("reference_id")
+	v := r.env.Get("ReferenceID")
 	if v != nil {
 		// If ID exists, perform direct ID-based search
 		id := v.(string)
@@ -43,7 +43,7 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 
 		// Add search result to the environment
 		if result != nil {
-			r.env.Add("reference", result)
+			r.env.Add("Reference", result)
 		}
 		return nil
 	}
@@ -75,8 +75,8 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 
 		// Add search result to the environment and output
 		if result != nil {
-			r.env.Add("reference", result)
-			w.output["reference_id"] = result.ID
+			r.env.Add("Reference", result)
+			w.output["ReferenceID"] = result.ID
 		}
 	} else {
 		// No search pattern found, report error

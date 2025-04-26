@@ -37,7 +37,7 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 	}
 
 	env.Add("messages", params.Messages)
-	env.Add("tools", params.Tools)
+	env.Add("Tools", params.Tools)
 	env.Add("GopDefs", copilot.GopDefs)
 	env.Add("SpxDefs", copilot.SpxDefs)
 
