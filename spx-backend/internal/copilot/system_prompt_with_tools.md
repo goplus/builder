@@ -145,15 +145,15 @@ When a server is connected, you can use the server's tools via the \`use-mcp-too
     Input Schema:
     {{formatJSON .F.Parameters}}
 {{end}}
-
+{{ if .Reference }}
 ### Reference project
 
 We found a project on the XBuilder platform that we can refer to
 
-{{ range $fileName, $codeContent := .reference.Files }}
+{{ range $fileName, $codeContent := .Reference.Files }}
 <CodeBlock file="{{ $fileName }}"> {{ $codeContent }} </CodeBlock>
 {{ end }}
-
+{{ end }}
 # About Go+
 
 The Go+ programming language is
