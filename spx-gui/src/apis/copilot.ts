@@ -2,7 +2,6 @@
  * @desc Copilot-related APIs of spx-backend
  */
 
-import { time } from 'console'
 import { client } from './common'
 
 export enum ToolType {
