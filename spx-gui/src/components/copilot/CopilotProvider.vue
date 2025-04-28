@@ -39,7 +39,7 @@ export type CopilotCtx = {
       updateLastResponse: (response: string, isError?: boolean) => void
       clear: () => void
     }
-    collector: ToolResultCollector | null
+    collector: Collector | null
     registry: ToolRegistry | null
   }
   controls: {
@@ -86,7 +86,7 @@ import { createMcpClient } from './mcp/client'
 import { createMcpServer } from './mcp/server'
 import { createMcpTransports } from './mcp/transport'
 import { ToolRegistry } from './mcp/registry'
-import { ToolResultCollector } from './mcp/collector'
+import { Collector } from './mcp/collector'
 import CopilotUI from './CopilotUI.vue'
 import { z } from 'zod'
 import { useUserStore } from '@/stores/user'
@@ -137,7 +137,7 @@ const mcpHistory = {
 type CreateProjectOptions = z.infer<typeof CreateProjectArgsSchema>
 
 const registry = new ToolRegistry()
-const collector = new ToolResultCollector()
+const collector = new Collector()
 
 const initBasicTools = async () => {
   return registry.registerTools(

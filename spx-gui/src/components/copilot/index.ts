@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 export { default as CopilotProvider } from './CopilotProvider.vue'
-import { ToolResultCollector, type ToolResult } from '@/components/copilot/mcp/collector'
+import { Collector, type ToolResult } from '@/components/copilot/mcp/collector'
 
 /** Message role identifiers */
 export type MessageRole = 'user' | 'copilot'
@@ -16,6 +16,7 @@ export type ChatMessage = {
 /** Chat session structure */
 export type Chat = {
   messages: ChatMessage[]
+  env?: Record<string, any>
 }
 
 /** Core Copilot interface for AI completions */
@@ -65,12 +66,12 @@ type InternalChat = {
  */
 export class CopilotController extends Disposable {
   private copilot: ICopilot
-  private collctor: ToolResultCollector
+  private collctor: Collector
   /**
    * Creates a new controller with the specified Copilot implementation
    * @param copilot The implementation of ICopilot to use
    */
-  constructor(copilot: ICopilot, collctor: ToolResultCollector) {
+  constructor(copilot: ICopilot, collctor: Collector) {
     super()
     this.copilot = copilot
     this.collctor = collctor
@@ -150,6 +151,7 @@ ${resultContent}
     }
 
     this.collctor.clearAllTasks()
+    this.collctor.clearEnvironment()
   }
 
   /**
@@ -225,7 +227,8 @@ ${resultContent}
       return roundMessages
     })
     return {
-      messages
+      messages,
+      env: this.collctor.getEnvironment()
     }
   }
 

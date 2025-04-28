@@ -21,16 +21,18 @@ var (
 type LLMNode struct {
 	copilot *copilot.Copilot // Reference to the copilot client used to communicate with the LLM
 
-	system string // System prompt template to be rendered with environment data
-	id     string // Unique identifier for this node
-	next   INode  // Reference to the next node in the workflow
+	system  string // System prompt template to be rendered with environment data
+	id      string // Unique identifier for this node
+	next    INode  // Reference to the next node in the workflow
+	written bool   // Enables writing to the response writer
 }
 
 // NewLLMNode creates a new LLM node with the given copilot client and system prompt
-func NewLLMNode(copilot *copilot.Copilot, system string) *LLMNode {
+func NewLLMNode(copilot *copilot.Copilot, system string, written bool) *LLMNode {
 	return &LLMNode{
 		copilot: copilot,
 		system:  system,
+		written: written,
 	}
 }
 
@@ -106,7 +108,10 @@ func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
 	}
 
 	// Write the response to both response writer and pipe for next node
-	mw := io.MultiWriter(w.w, w.pip)
+	var mw io.Writer = w.pip
+	if ln.written {
+		mw = io.MultiWriter(w.w, w.pip)
+	}
 	_, err = io.Copy(mw, read)
 	return err
 }

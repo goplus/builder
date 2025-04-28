@@ -34,7 +34,10 @@ export interface ToolResult {
  * Manages the lifecycle of tool executions
  * Provides queuing, persistence, and result collection
  */
-export class ToolResultCollector {
+export class Collector {
+  // Environment variables collection
+  private env = reactive<Record<string, any>>({})
+
   // Reactive state for task management
   private tasks = reactive<Record<string, ToolTask>>({})
   private executionQueue = ref<string[]>([])
@@ -54,6 +57,32 @@ export class ToolResultCollector {
       storagePrefix: 'mcp_tool_'
     }
   ) {}
+
+  /**
+   * Get all environment variables
+   * @returns Current environment variables
+   */
+  getEnvironment(): Record<string, any> {
+    return { ...this.env }
+  }
+
+  /**
+   * Set an environment variable
+   * @param key Variable name
+   * @param value Variable value
+   */
+  setEnvironmentVar(key: string, value: any): void {
+    this.env[key] = value
+  }
+
+  /**
+   * Clear all environment variables
+   */
+  clearEnvironment(): void {
+    Object.keys(this.env).forEach((key) => {
+      delete this.env[key]
+    })
+  }
 
   /**
    * Sets the MCP client for executing tasks
