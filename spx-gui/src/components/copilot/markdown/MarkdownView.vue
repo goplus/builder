@@ -27,7 +27,7 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <]env kname="MY_ENV" value="my_value"/>
+   * <env kname="MY_ENV" value="my_value"/>
    * ```
    */
   env: Env,

@@ -2,6 +2,7 @@
  * @desc Copilot-related APIs of spx-backend
  */
 
+import { time } from 'console'
 import { client } from './common'
 
 export enum ToolType {
@@ -50,8 +51,10 @@ export type Tool = {
   function: FunctionDefinition
 }
 
+const timeout = 15 * 1000
+
 export async function generateMessage(messages: Message[], signal?: AbortSignal) {
-  return (await client.post('/copilot/message', { messages }, { timeout: 15 * 1000, signal })) as Message
+  return (await client.post('/copilot/message', { messages }, { timeout: timeout, signal })) as Message
 }
 
 export async function* generateStreamMessage(
@@ -66,7 +69,7 @@ export async function* generateStreamMessage(
       '/copilot/stream/message',
       { messages, tools: options?.tools },
       {
-        timeout: 15 * 1000,
+        timeout: timeout,
         signal: options?.signal
       }
     )
@@ -103,7 +106,7 @@ export async function* workflowStreamMessage(
           : undefined
       },
       {
-        timeout: 15 * 1000,
+        timeout: timeout,
         signal: options?.signal
       }
     )
