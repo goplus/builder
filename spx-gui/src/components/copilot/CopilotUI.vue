@@ -9,7 +9,7 @@ import type { CopilotController } from './index'
 const props = defineProps<{
   controller: CopilotController
   position?: 'left' | 'bottom' | 'right'
-  positionOptions?: Array<{ id: string, label: string, icon: string }>
+  positionOptions?: Array<{ id: string; label: string; icon: string }>
   showPositionMenu?: boolean
 }>()
 
@@ -118,7 +118,7 @@ useBottomSticky(bodyRef)
   .title {
     flex: 1;
   }
-  
+
   // 右侧控制区
   .controls {
     display: flex;

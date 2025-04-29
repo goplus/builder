@@ -231,7 +231,7 @@ const copilotPosition = ref<DockPosition>('left')
 const showCopilotPositionMenu = ref(false)
 
 const toggleCopilotPositionMenu = () => {
-  showCopilotPositionMenu.value = !showCopilotPositionMenu.value;
+  showCopilotPositionMenu.value = !showCopilotPositionMenu.value
 }
 
 const hidePositionMenus = () => {
@@ -287,8 +287,8 @@ const positionOptions = [
 ]
 
 const positionMenuStyle = computed(() => {
-  const headerHeight = 48;
-  
+  const headerHeight = 48
+
   switch (copilotPosition.value) {
     case 'left':
       return {
@@ -332,7 +332,7 @@ const handleDragStart = (event: MouseEvent) => {
   copilotSize.dragging = true
   copilotSize.startX = event.clientX
   copilotSize.startY = event.clientY
-  
+
   if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
     // Convert percentage width to pixels before starting the drag
     if (copilotSize.width.endsWith('%')) {
@@ -347,40 +347,40 @@ const handleDragStart = (event: MouseEvent) => {
   } else {
     copilotSize.startHeight = parseFloat(copilotSize.height)
   }
-  
+
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
-  
+
   document.body.style.cursor = copilotPosition.value === 'bottom' ? 'ns-resize' : 'ew-resize'
   document.body.style.userSelect = 'none'
 }
 
 const handleDragMove = (event: MouseEvent) => {
   if (!copilotSize.dragging) return
-  
+
   if (copilotPosition.value === 'left') {
     const deltaX = event.clientX - copilotSize.startX
     const newWidth = copilotSize.startWidth + deltaX
-    const minWidth = 100 
-    const maxWidth = window.innerWidth * 0.4 
+    const minWidth = 100
+    const maxWidth = window.innerWidth * 0.4
     if (newWidth >= minWidth && newWidth <= maxWidth) {
       copilotSize.width = `${newWidth}px`
     }
   } else if (copilotPosition.value === 'right') {
     const deltaX = copilotSize.startX - event.clientX
     const newWidth = copilotSize.startWidth + deltaX
-    const minWidth = 100 
+    const minWidth = 100
     const maxWidth = window.innerWidth * 0.4
-    
+
     if (newWidth >= minWidth && newWidth <= maxWidth) {
       copilotSize.width = `${newWidth}px`
     }
   } else if (copilotPosition.value === 'bottom') {
     const deltaY = copilotSize.startY - event.clientY
     const newHeight = copilotSize.startHeight + deltaY
-    const minHeight = 150 
-    const maxHeight = window.innerHeight * 0.6 
-    
+    const minHeight = 150
+    const maxHeight = window.innerHeight * 0.6
+
     if (newHeight >= minHeight && newHeight <= maxHeight) {
       copilotSize.height = `${newHeight}px`
     }
@@ -389,26 +389,29 @@ const handleDragMove = (event: MouseEvent) => {
 
 const handleDragEnd = () => {
   copilotSize.dragging = false
-  
+
   document.removeEventListener('mousemove', handleDragMove)
   document.removeEventListener('mouseup', handleDragEnd)
-  
+
   const container = document.querySelector('.copilot-chat-container') as HTMLElement
   if (container) {
     container.classList.remove('dragging')
   }
-  
+
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
 }
 
-watch(() => copilotPosition.value, () => {
-  if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
-    copilotSize.width = '15%'
-  } else {
-    copilotSize.height = '300px'
+watch(
+  () => copilotPosition.value,
+  () => {
+    if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
+      copilotSize.width = '15%'
+    } else {
+      copilotSize.height = '300px'
+    }
   }
-})
+)
 
 /**
  * Visibility controls with automatic initialization
@@ -575,23 +578,19 @@ defineExpose({
     <slot :context="copilotCtx" />
 
     <!-- Render CopilotUI with position control -->
-    <aside 
-      v-if="shouldShowCopilotUI" 
+    <aside
+      v-if="shouldShowCopilotUI"
       class="copilot-chat-container"
       :style="copilotContainerStyle"
-      :class="[`position-${copilotPosition}`, {'dragging': copilotSize.dragging}]"
+      :class="[`position-${copilotPosition}`, { dragging: copilotSize.dragging }]"
     >
       <!-- Resize handle for drag resizing -->
-      <div 
-        class="resize-handle" 
-        :class="`resize-${copilotPosition}`"
-        @mousedown="handleDragStart"
-      ></div>
-      
+      <div class="resize-handle" :class="`resize-${copilotPosition}`" @mousedown="handleDragStart"></div>
+
       <!-- Main Copilot UI component -->
-      <CopilotUI 
-        :controller="copilotController" 
-        class="copilot-ui" 
+      <CopilotUI
+        :controller="copilotController"
+        class="copilot-ui"
         :position="copilotPosition"
         :position-options="positionOptions"
         :show-position-menu="showCopilotPositionMenu"
@@ -600,16 +599,12 @@ defineExpose({
         @change-position="changeCopilotPosition"
       />
 
-      <div 
-        v-show="showCopilotPositionMenu" 
-        class="position-menu"
-        :style="positionMenuStyle"
-      >
+      <div v-show="showCopilotPositionMenu" class="position-menu" :style="positionMenuStyle">
         <div class="position-menu-header">
           <span>Dock side</span>
           <div class="position-options-container">
-            <button 
-              v-for="option in positionOptions" 
+            <button
+              v-for="option in positionOptions"
               :key="option.id"
               class="position-icon-button"
               :class="{ active: copilotPosition === option.id }"
@@ -640,7 +635,7 @@ defineExpose({
 .copilot-chat-container {
   /* Positioning and dimensions */
   position: fixed;
-  
+
   /* Visual styling */
   background-color: white;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
@@ -654,11 +649,11 @@ defineExpose({
   &.position-left {
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &.position-right {
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &.position-bottom {
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   }
@@ -679,19 +674,19 @@ defineExpose({
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  
+
   &.position-left {
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &.position-right {
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   &.position-bottom {
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   .debugger-header {
     display: flex;
     justify-content: space-between;
@@ -699,22 +694,22 @@ defineExpose({
     padding: 8px 12px;
     background-color: var(--ui-color-grey-100);
     border-bottom: 1px solid var(--ui-color-grey-300);
-    
+
     .debugger-title {
       font-weight: 500;
       font-size: 14px;
     }
-    
+
     .debugger-controls {
       display: flex;
       gap: 8px;
-      
+
       .position-selector {
         position: relative;
       }
     }
   }
-  
+
   .debugger-content {
     flex: 1;
     overflow: auto;
@@ -733,23 +728,23 @@ defineExpose({
   padding: 8px 12px;
   top: 48px; /* Directly set top offset */
   right: 12px; /* Right align to button */
-  
+
   .position-menu-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    
+
     span {
       font-size: 14px;
       font-weight: 500;
       color: #000000; /* Changed from var(--ui-color-grey-700) to black */
     }
-    
+
     .position-options-container {
       display: flex;
       gap: 8px;
     }
-    
+
     .position-icon-button {
       display: flex;
       align-items: center;
@@ -760,35 +755,35 @@ defineExpose({
       background-color: transparent;
       border-radius: 4px;
       cursor: pointer;
-      
+
       &:hover {
         background-color: var(--ui-color-grey-100);
       }
-      
+
       &.active {
         background-color: var(--ui-color-primary-50);
-        color: #1976D2; /* Changed to blue for active state */
-        
+        color: #1976d2; /* Changed to blue for active state */
+
         :deep(.icon) {
-          color: #1976D2; /* Use color instead of fill for the icon */
+          color: #1976d2; /* Use color instead of fill for the icon */
         }
-        
+
         :deep(svg) {
-          fill: #1976D2 !important; /* Use !important to override any default styles */
-          stroke: #1976D2 !important; /* Add stroke color in case the SVG uses stroke */
+          fill: #1976d2 !important; /* Use !important to override any default styles */
+          stroke: #1976d2 !important; /* Add stroke color in case the SVG uses stroke */
           path {
-            fill: #1976D2 !important;
-            stroke: #1976D2 !important;
+            fill: #1976d2 !important;
+            stroke: #1976d2 !important;
           }
         }
       }
-      
+
       i {
         font-size: 16px;
       }
     }
   }
-  
+
   /* Adjust width for bottom position */
   .position-bottom & {
     max-width: 250px;
@@ -796,7 +791,8 @@ defineExpose({
 }
 
 /* Button styles */
-.position-button, .close-button {
+.position-button,
+.close-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -806,7 +802,7 @@ defineExpose({
   background-color: transparent;
   border-radius: 4px;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--ui-color-grey-200);
   }
@@ -815,7 +811,8 @@ defineExpose({
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .copilot-chat-container {
-    &.position-left, &.position-right {
+    &.position-left,
+    &.position-right {
       width: 300px;
     }
   }
@@ -823,7 +820,8 @@ defineExpose({
 
 @media (max-width: 768px) {
   .copilot-chat-container {
-    &.position-left, &.position-right {
+    &.position-left,
+    &.position-right {
       width: 100%;
     }
   }
@@ -833,7 +831,7 @@ defineExpose({
 .resize-handle {
   position: absolute;
   z-index: 1001;
-  
+
   &.resize-left {
     top: 0;
     right: -2px; /* Modified: Place the drag edge on the right edge */
@@ -841,7 +839,7 @@ defineExpose({
     height: 100%;
     cursor: ew-resize;
   }
-  
+
   &.resize-right {
     top: 0;
     left: -2px; /* Modified: Place the drag edge on the left edge */
@@ -849,17 +847,17 @@ defineExpose({
     height: 100%;
     cursor: ew-resize;
   }
-  
+
   &.resize-bottom {
-    top: -2px; 
+    top: -2px;
     left: 0;
     width: 100%;
     height: 4px;
     cursor: ns-resize;
   }
-  
+
   &:hover {
-    background-color: rgba(0, 0, 0, 0.2); 
+    background-color: rgba(0, 0, 0, 0.2);
   }
 }
 
