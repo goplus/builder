@@ -93,14 +93,80 @@ func New(ctx context.Context) (*Controller, error) {
 }
 
 func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
+	editNode := NewCodeEditNode(copilot)
 	chatNode := NewMessageNode(copilot)
 	flow := workflow.NewWorkflow(name)
+
+	projectCreate := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("project_id") == nil
+		}, NewCreateProject(copilot).SetNext(editNode)).
+		Else(editNode)
+
+	classifierNode := workflow.NewClassifierNode(copilot, ``).
+		AddCase("project_create", projectCreate).
+		AddCase("code_edit", editNode).
+		Default(chatNode)
+
+	classifier := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("classification") == nil
+		}, classifierNode).
+		If(func(env workflow.Env) bool {
+			return env.Get("classification") == "project_create"
+		}, projectCreate).
+		If(func(env workflow.Env) bool {
+			return env.Get("classification") == "code_edit"
+		}, editNode).
+		Else(chatNode)
+
 	flow.Start(workflow.NewIfStmt().
 		If(func(env workflow.Env) bool {
 			return env.Get("reference_id") == nil
-		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(chatNode))).
-		Else(workflow.NewSearch(db).SetNext(chatNode)))
+		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(classifier))).
+		Else(workflow.NewSearch(db).SetNext(classifier)))
+
 	return flow
+}
+
+func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role:    copilot.RoleUser,
+					Content: copilot.Content{Text: "Please call the tool to create a project first."},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
+}
+
+func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role: copilot.RoleUser,
+					Content: copilot.Content{Text: `Based on the current project file list and background information, 
+please confirm whether you need to create sprites or backgrounds. If not, call the tool to insert the code, 
+but please solve the diagnostic errors in the existing files first.`},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
 }
 
 func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {

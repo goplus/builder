@@ -36,10 +36,10 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 		env = workflow.NewEnv()
 	}
 
-	env.Add("messages", params.Messages)
-	env.Add("Tools", params.Tools)
-	env.Add("GopDefs", copilot.GopDefs)
-	env.Add("SpxDefs", copilot.SpxDefs)
+	env.Set("messages", params.Messages)
+	env.Set("Tools", params.Tools)
+	env.Set("GopDefs", copilot.GopDefs)
+	env.Set("SpxDefs", copilot.SpxDefs)
 
 	// Create workflow runner with the specified index
 	runner := ctrl.workflow.Runner(env)

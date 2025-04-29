@@ -22,6 +22,8 @@ var (
 type Search struct {
 	db   *gorm.DB // Database connection for performing queries
 	next INode    // Reference to the next node in the workflow
+
+	prepare func(env Env) Env // Function to prepare the environment before execution
 }
 
 // NewSearch creates a new search node with the given database connection
@@ -43,7 +45,7 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 
 		// Add search result to the environment
 		if result != nil {
-			r.env.Add("Reference", result)
+			r.env.Set("Reference", result)
 		}
 		return nil
 	}
@@ -75,7 +77,7 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 
 		// Add search result to the environment and output
 		if result != nil {
-			r.env.Add("Reference", result)
+			r.env.Set("Reference", result)
 			w.output["ReferenceID"] = result.ID
 		}
 	} else {
@@ -106,6 +108,19 @@ func (p *Search) Next(ctx context.Context, env Env) INode {
 // Returns this node to enable method chaining
 func (p *Search) SetNext(node INode) INode {
 	p.next = node
+	return p
+}
+
+// Prepare sets up the environment for the node before execution
+func (p *Search) Prepare(ctx context.Context, env Env) Env {
+	if p.prepare != nil {
+		return p.prepare(env)
+	}
+	return env
+}
+
+func (p *Search) WithPrepare(f func(env Env) Env) *Search {
+	p.prepare = f
 	return p
 }
 
