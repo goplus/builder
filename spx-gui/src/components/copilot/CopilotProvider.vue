@@ -334,7 +334,16 @@ const handleDragStart = (event: MouseEvent) => {
   copilotSize.startY = event.clientY
   
   if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
-    copilotSize.startWidth = parseFloat(copilotSize.width)
+    // Convert percentage width to pixels before starting the drag
+    if (copilotSize.width.endsWith('%')) {
+      const containerWidth = window.innerWidth
+      const percentValue = parseFloat(copilotSize.width)
+      copilotSize.startWidth = (containerWidth * percentValue) / 100
+      // Update the width to pixel value before starting the drag
+      copilotSize.width = `${copilotSize.startWidth}px`
+    } else {
+      copilotSize.startWidth = parseFloat(copilotSize.width)
+    }
   } else {
     copilotSize.startHeight = parseFloat(copilotSize.height)
   }
