@@ -8,10 +8,15 @@ import logoSrc from '../editor/code-editor/ui/copilot/logo.png'
 import type { CopilotController } from './index'
 const props = defineProps<{
   controller: CopilotController
+  position?: 'left' | 'bottom' | 'right'
+  positionOptions?: Array<{ id: string, label: string, icon: string }>
+  showPositionMenu?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'togglePositionMenu'): void
+  (e: 'changePosition', position: 'left' | 'bottom' | 'right'): void
 }>()
 
 const bodyRef = ref<HTMLElement | null>(null)
@@ -48,7 +53,12 @@ useBottomSticky(bodyRef)
 <template>
   <div class="copilot-ui">
     <header class="header">
-      {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
+      <div class="title">
+        {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
+      </div>
+      <button class="position-button" @click="$emit('togglePositionMenu')">
+        <UIIcon class="icon" type="more" />
+      </button>
       <button class="close">
         <UIIcon class="icon" type="close" @click="handleClose" />
       </button>
@@ -103,6 +113,39 @@ useBottomSticky(bodyRef)
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  // 左侧标题
+  .title {
+    flex: 1;
+  }
+  
+  // 右侧控制区
+  .controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .position-button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    border-radius: 50%;
+    color: var(--ui-color-grey-700);
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: var(--ui-color-grey-400);
+    }
+    &:active {
+      background-color: var(--ui-color-grey-500);
+    }
+  }
 
   .close {
     width: 24px;

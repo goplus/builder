@@ -51,6 +51,9 @@ import success from './success.svg?raw'
 import apply from './apply.svg?raw'
 import insert from './insert.svg?raw'
 import copy from './copy.svg?raw'
+import dockLeft from './dock-left.svg?raw'
+import dockRight from './dock-right.svg?raw'
+import dockBottom from './dock-bottom.svg?raw'
 
 const typeIconMap = {
   file,
@@ -98,7 +101,10 @@ const typeIconMap = {
   success,
   apply,
   insert,
-  copy
+  copy,
+  dockLeft,
+  dockRight,
+  dockBottom
 }
 
 export type Type = keyof typeof typeIconMap
