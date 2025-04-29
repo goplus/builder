@@ -79,6 +79,7 @@ import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import * as z from 'zod'
 import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import { Collector } from '@/components/copilot/mcp/collector'
 import {
   writeToFileToolDescription,
   WriteToFileArgsSchema,
@@ -588,7 +589,8 @@ export class CodeEditor extends Disposable {
     private runtime: Runtime,
     private monaco: Monaco,
     private i18n: I18n,
-    private registry: ToolRegistry
+    private registry: ToolRegistry,
+    private collector: Collector
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
@@ -940,6 +942,7 @@ export class CodeEditor extends Disposable {
   init() {
     this.registerMCPTools()
     this.lspClient.init()
+    this.collector.setEnvironmentVar("project_id", this.project.id)
   }
 
   dispose(): void {

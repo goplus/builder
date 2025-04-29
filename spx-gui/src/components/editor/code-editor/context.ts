@@ -18,6 +18,7 @@ import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
 import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import { Collector } from '@/components/copilot/mcp/collector'
 
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void
@@ -140,7 +141,8 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 export function useProvideCodeEditorCtx(
   projectRet: QueryRet<Project>,
   runtimeRet: QueryRet<Runtime>,
-  registry: ToolRegistry
+  registry: ToolRegistry,
+  collector: Collector
 ): QueryRet<unknown> {
   const i18n = useI18n()
 
@@ -169,7 +171,7 @@ export function useProvideCodeEditorCtx(
         composeQuery(ctx, monacoQueryRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, runtime, monaco, i18n, registry)
+      const codeEditor = new CodeEditor(project, runtime, monaco, i18n, registry, collector)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },
