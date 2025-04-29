@@ -114,6 +114,11 @@ func (ln *NodeClassifier) Next(ctx context.Context, env Env) INode {
 		return node
 	}
 
+	// Return the default node if no matching case is found
+	if ln.def != nil {
+		return ln.def
+	}
+
 	// Return nil if no matching case is found
 	return nil
 }
