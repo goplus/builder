@@ -942,7 +942,7 @@ export class CodeEditor extends Disposable {
   init() {
     this.registerMCPTools()
     this.lspClient.init()
-    this.collector.setEnvironmentVar("project_id", this.project.id)
+    this.collector.setEnvironmentVar('project_id', this.project.id)
   }
 
   dispose(): void {
