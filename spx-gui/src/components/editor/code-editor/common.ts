@@ -2,6 +2,13 @@ import { mapValues } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
+import {
+  exprForSpxDirection,
+  exprForSpxEffectKind,
+  exprForSpxKey,
+  exprForSpxPlayAction,
+  exprForSpxSpecialObj
+} from '@/utils/spx'
 import type { Project } from '@/models/project'
 import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
@@ -164,6 +171,16 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
     name: query === '' ? undefined : decodeURIComponent(query),
     overloadId: hash === '' ? undefined : decodeURIComponent(hash)
   }
+}
+
+/**
+ * Definition kinds that are considered as block content.
+ * See details in https://github.com/goplus/builder/issues/1258.
+ */
+export const blockDefinitionKinds = [DefinitionKind.Command, DefinitionKind.Listen, DefinitionKind.Statement]
+
+export function isBlockDefinitionKind(kind: DefinitionKind) {
+  return blockDefinitionKinds.includes(kind)
 }
 
 export enum DiagnosticSeverity {
@@ -345,8 +362,10 @@ export type DefinitionDocumentationItem = {
   categories: DefinitionDocumentationCategory[]
   kind: DefinitionKind
   definition: DefinitionIdentifier
-  /** Text to insert when completion / snippet is applied */
-  insertText: string
+  /** Snippet text to insert when completion / snippet is applied */
+  insertSnippet: string
+  /** Parameter hints for the inserted snippet, indexed by [TabStop / Placeholder](https://macromates.com/manual/en/snippets#tab_stops) in snippet */
+  insertSnippetParameterHints?: string[]
   /** Brief explanation for the definition, typically the signature string */
   overview: string
   /** Detailed explanation for the definition, overview not included */
@@ -622,22 +641,39 @@ export type InputTypedValue =
   | { type: InputType.Decimal; value: number }
   | { type: InputType.String; value: string }
   | { type: InputType.Boolean; value: boolean }
-  | { type: InputType.SpxResourceName; value: ResourceURI }
+  | {
+      type: InputType.SpxResourceName
+      /** Resource URI */
+      value: ResourceURI
+    }
   | { type: InputType.SpxDirection; value: number }
   | { type: InputType.SpxColor; value: [r: number, g: number, b: number, a: number] }
-  | { type: InputType.SpxEffectKind; value: number }
-  | { type: InputType.SpxKey; value: number }
-  | { type: InputType.SpxPlayAction; value: number }
-  | { type: InputType.SpxSpecialObj; value: number }
+  | {
+      type: InputType.SpxEffectKind
+      /** Value of `EffectKind` in spx */
+      value: number
+    }
+  | {
+      type: InputType.SpxKey
+      /** Value of `Key` in spx */
+      value: number
+    }
+  | {
+      type: InputType.SpxPlayAction
+      /** Value of `PlayAction` in spx */
+      value: number
+    }
+  | {
+      type: InputType.SpxSpecialObj
+      /** Value of `specialObj` in spx */
+      value: number
+    }
   | { type: InputType.Unknown; value: void }
 
 export type Input<T extends InputTypedValue = InputTypedValue> =
-  | {
+  | ({
       kind: InputKind.InPlace
-      type: T['type']
-      /** In-place value */
-      value: T['value']
-    }
+    } & T)
   | {
       kind: InputKind.Predefined
       type: T['type']
@@ -681,9 +717,49 @@ export type InputSlot = {
   range: Range
 }
 
+export function exprForInput(input: Input) {
+  if (input.kind === InputKind.Predefined) {
+    return input.name
+  }
+  switch (input.type) {
+    case InputType.Integer:
+    case InputType.Decimal:
+      return input.value + ''
+    case InputType.String:
+      return JSON.stringify(input.value)
+    case InputType.Boolean:
+      return input.value ? 'true' : 'false'
+    case InputType.SpxResourceName: {
+      const parsed = parseResourceURI(input.value)
+      const last = parsed.pop()
+      if (last == null) return null
+      return JSON.stringify(last.name)
+    }
+    case InputType.SpxDirection:
+      return exprForSpxDirection(input.value)
+    case InputType.SpxColor:
+      return `rgba(${input.value.join(',')})`
+    case InputType.SpxEffectKind:
+      return exprForSpxEffectKind(input.value)
+    case InputType.SpxKey:
+      return exprForSpxKey(input.value)
+    case InputType.SpxPlayAction:
+      return exprForSpxPlayAction(input.value)
+    case InputType.SpxSpecialObj:
+      return exprForSpxSpecialObj(input.value)
+    default:
+      return null
+  }
+}
+
 export function positionEq(a: Position | null, b: Position | null) {
   if (a == null || b == null) return a == b
   return a.line === b.line && a.column === b.column
+}
+
+export function rangeEq(a: Range | null, b: Range | null) {
+  if (a == null || b == null) return a == b
+  return positionEq(a.start, b.start) && positionEq(a.end, b.end)
 }
 
 const textDocumentURIPrefix = 'file:///'

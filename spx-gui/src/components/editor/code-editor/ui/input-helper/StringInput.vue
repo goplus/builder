@@ -6,16 +6,22 @@ export function getDefaultValue() {
 
 <script setup lang="ts">
 import { UITextInput } from '@/components/ui'
+import { useDebouncedModel } from '@/utils/utils'
 
-defineProps<{
+const props = defineProps<{
   value: string
 }>()
 
 const emit = defineEmits<{
   'update:value': [string]
 }>()
+
+const modelValue = useDebouncedModel(
+  () => props.value,
+  (v) => emit('update:value', v)
+)
 </script>
 
 <template>
-  <UITextInput :value="value" @update:value="(v) => emit('update:value', v)" />
+  <UITextInput v-model:value="modelValue" />
 </template>

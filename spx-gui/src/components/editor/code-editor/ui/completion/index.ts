@@ -139,17 +139,21 @@ export class CompletionController extends Emitter<{
   }
 
   async applyCompletionItem(item: InternalCompletionItem) {
-    const { cursorPosition } = this.ui
+    const cursorPosition = this.ui.cursorPosition
     if (this.completion == null) return
     const { wordStart, position } = this.completion
     if (!positionEq(cursorPosition, position)) return
     const range = { start: wordStart, end: position }
+    // TODO: Support newly inserted functionality (for input helper) here
     switch (item.insertTextFormat) {
       case InsertTextFormat.PlainText:
         await this.ui.insertText(item.insertText, range)
         break
-      case InsertTextFormat.Snippet:
-        await this.ui.insertSnippet(item.insertText, range)
+      case InsertTextFormat.Snippet: {
+        const parsed = this.ui.parseSnippet(item.insertText)
+        await this.ui.insertSnippet(parsed.toTextmateString(), range)
+        break
+      }
     }
     this.stopCompletion()
   }

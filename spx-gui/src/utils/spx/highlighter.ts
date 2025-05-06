@@ -1,4 +1,5 @@
-import { createHighlighter } from 'shiki'
+import { createHighlighterCore } from 'shiki/core'
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import gopLang from './gop-tm-language.json'
 import defaultLightTheme from './default-light-theme.json'
 
@@ -8,19 +9,20 @@ export const tabSize = 4
 export const insertSpaces = false
 export const theme = defaultLightTheme.name
 
-export type Highlighter = Awaited<ReturnType<typeof createHighlighter>>
+export type Highlighter = Awaited<ReturnType<typeof createHighlighterCore>>
 
 let highlighterPromise: Promise<Highlighter> | null = null
 
 export function getHighlighter(): Promise<Highlighter> {
   if (highlighterPromise == null) {
-    highlighterPromise = createHighlighter({
+    highlighterPromise = createHighlighterCore({
       langs: [gopLang as any],
       langAlias: {
         gop: 'GoPlus',
         spx: 'gop'
       },
-      themes: [defaultLightTheme as any]
+      themes: [defaultLightTheme as any],
+      engine: createJavaScriptRegexEngine()
     })
   }
   return highlighterPromise

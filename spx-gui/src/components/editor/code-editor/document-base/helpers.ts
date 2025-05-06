@@ -4,13 +4,20 @@
  *       They are expected to be generated, then copy-pasted to spx-backend code as part of prompt for Copilot.
  */
 
+import { SnippetParser } from '@/utils/snippet-parser'
 import { type DefinitionDocumentationItem } from '../common'
 import * as gopDefinitions from './gop'
 import * as spxDefinitions from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
 
+let parser: SnippetParser
+
 function sampleOf(ddi: DefinitionDocumentationItem) {
-  return ddi.overview === ddi.definition.name ? undefined : ddi.overview
+  parser ??= new SnippetParser()
+  const parsed = parser.parse(ddi.insertSnippet)
+  const sample = parsed.toString().replace(/{\n\s*\n}/g, '{}')
+  if (sample === ddi.definition.name) return undefined
+  return sample
 }
 
 function descOf(ddi: DefinitionDocumentationItem) {

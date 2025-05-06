@@ -1,12 +1,15 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return 0
+  return key0
 }
 </script>
 
 <script setup lang="ts">
 import { useDebouncedModel } from '@/utils/utils'
+import { key0 } from '@/utils/spx'
 import { UINumberInput } from '@/components/ui'
+
+// TODO: Update UI for this component
 
 const props = defineProps<{
   value: number

@@ -86,6 +86,13 @@ export type AbsolutePosition = {
   height: number
 }
 
+/**
+ * Convert a position in the editor to an absolute position in the viewport.
+ * **Known issue:**
+ * If there's a decoration start from given position, `toAbsolutePosition` now returns the absolute position of the decoration
+ * instead of the absolute position of the exact column, which is rendered after the decoration.
+ * This is not ideal for most cases. TODO: get accurate position.
+ */
 export function toAbsolutePosition(position: Position, editor: MonacoEditor): AbsolutePosition | null {
   const mPos = toMonacoPosition(position)
   const editorPos = editor.getDomNode()?.getBoundingClientRect()

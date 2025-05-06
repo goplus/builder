@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import DefinitionIcon from '../definition/DefinitionIcon.vue'
 import type { InternalCompletionItem } from '.'
 import { createMatches } from './fuzzy'
 
@@ -42,7 +41,6 @@ watchEffect(() => {
 
 <template>
   <li ref="wrapperRef" class="completion-item" :class="{ active }" :title="item.label">
-    <DefinitionIcon class="icon" :kind="item.kind" />
     <code class="code"
       ><span v-for="(part, i) in parts" :key="i" :class="{ matched: part.isMatched }">{{ part.content }}</span></code
     >

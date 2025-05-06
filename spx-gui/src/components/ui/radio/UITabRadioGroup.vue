@@ -1,8 +1,9 @@
 <template>
-  <div class="ui-tag-radio-group">
+  <div class="ui-tab-radio-group">
     <slot />
   </div>
 </template>
+
 <script lang="ts">
 export const radioGroupValueKey: InjectionKey<ComputedRef<string | undefined>> = Symbol('radioGroupValue')
 export const updateRadioValueKey: InjectionKey<(value: string) => void> = Symbol('updateRadioValue')
@@ -31,8 +32,13 @@ provide(updateRadioValueKey, updateValue)
 </script>
 
 <style scoped lang="scss">
-.ui-tag-radio-group {
+.ui-tab-radio-group {
   display: flex;
-  gap: 12px;
+  padding: 2px;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 8px;
+  background: var(--ui-color-grey-400);
 }
 </style>

@@ -7,9 +7,9 @@ import { debounce } from 'lodash'
 import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { TaskManager } from '@/utils/task'
-import { containsPosition, type BaseContext, type InputSlot } from '../../common'
+import { positionEq, type BaseContext, type InputSlot } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
-import { checkInputHelper } from './InputHelperUI.vue'
+import { checkInputHelperIcon } from './InputHelperUI.vue'
 
 export type InputHelperContext = BaseContext
 
@@ -45,14 +45,9 @@ export class InputHelperController extends Disposable {
   }
 
   get activeSlots() {
-    const newlyInsertedRange = this.ui.newlyInsertedRange
-    if (newlyInsertedRange == null) return []
     const slots = this.slots
     if (slots == null) return []
-    return slots.filter(
-      (slot) =>
-        containsPosition(newlyInsertedRange, slot.range.start) && containsPosition(newlyInsertedRange, slot.range.end)
-    )
+    return slots.filter((slot) => this.ui.isNewlyInserted(slot.range.start) && this.ui.isNewlyInserted(slot.range.end))
   }
 
   private inputingSlotRef = shallowRef<InternalInputSlot | null>(null)
@@ -67,6 +62,10 @@ export class InputHelperController extends Disposable {
     this.inputingSlotRef.value = null
     this.ui.editor.focus()
   }
+  toggleInputing(slotId: string) {
+    if (this.inputingSlot?.id === slotId) this.stopInputing()
+    else this.startInputing(slotId)
+  }
 
   init() {
     const { editor } = this.ui
@@ -77,6 +76,22 @@ export class InputHelperController extends Disposable {
         () => [this.ui.project.filesHash, this.ui.activeTextDocument],
         () => refreshSlots(),
         { immediate: true }
+      )
+    )
+
+    this.addDisposer(
+      watch(
+        () => this.slots,
+        (slots) => {
+          if (this.inputingSlot != null && slots != null && !slots.includes(this.inputingSlot)) {
+            const inputingStart = this.inputingSlot.range.start
+            // When user inputing in the input helper, the code will be updated, which causes slots
+            // to be updated. Here we try to find the corresponding slot in the new slot array.
+            const updatedSlot = slots.find((s) => positionEq(s.range.start, inputingStart))
+            if (updatedSlot != null) this.startInputing(updatedSlot.id)
+            else this.stopInputing()
+          }
+        }
       )
     )
 
@@ -91,11 +106,11 @@ export class InputHelperController extends Disposable {
       'mousedown',
       (e) => {
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkInputHelper(e.target)
-        if (rrId == null) return
+        const id = checkInputHelperIcon(e.target)
+        if (id == null) return
         e.preventDefault()
         e.stopPropagation()
-        clickingId = rrId
+        clickingId = id
       },
       { capture: true, signal: this.getSignal() }
     )
@@ -105,17 +120,24 @@ export class InputHelperController extends Disposable {
       (e) => {
         if (clickingId == null) return
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkInputHelper(e.target)
-        if (rrId != null && rrId === clickingId) {
+        const id = checkInputHelperIcon(e.target)
+        if (id != null && id === clickingId) {
           e.preventDefault()
           e.stopPropagation()
-          this.startInputing(rrId)
+          this.toggleInputing(id)
         }
         clickingId = null
       },
       { capture: true, signal: this.getSignal() }
     )
 
+    this.addDisposable(
+      editor.onKeyDown((e) => {
+        if (e.keyCode === this.ui.monaco.KeyCode.Escape) {
+          this.stopInputing()
+        }
+      })
+    )
     this.addDisposable(editor.onMouseDown(() => this.stopInputing()))
   }
 }

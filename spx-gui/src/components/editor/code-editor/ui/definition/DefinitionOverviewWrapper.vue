@@ -1,20 +1,16 @@
 <script setup lang="ts">
-import { useSlotText } from '@/utils/vnode'
 import type { DefinitionKind } from '../../common'
 import CodeView from '../markdown/CodeView.vue'
-import DefinitionIcon from './DefinitionIcon.vue'
 
 defineProps<{
   kind?: DefinitionKind
+  inlayHints?: string
 }>()
-
-const childrenText = useSlotText('default', true)
 </script>
 
 <template>
-  <div class="definition-overview-wrapper" :title="childrenText">
-    <DefinitionIcon v-if="kind != null" class="icon" :kind="kind" />
-    <CodeView class="code" mode="inline"><slot></slot></CodeView>
+  <div class="definition-overview-wrapper">
+    <CodeView class="code" mode="inline" :inlay-hints="inlayHints"><slot></slot></CodeView>
   </div>
 </template>
 
@@ -25,12 +21,6 @@ const childrenText = useSlotText('default', true)
 
   font-size: 12px;
   line-height: 1.75;
-
-  .icon {
-    flex: 0 0 auto;
-    margin-top: 2px;
-    margin-right: 4px;
-  }
 
   .code {
     flex: 1 1 0;

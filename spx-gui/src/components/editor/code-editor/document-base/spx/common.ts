@@ -19,7 +19,7 @@ export function defineConst(
       package: packageSpx,
       name
     },
-    insertText: name,
+    insertSnippet: name,
     overview: name,
     detail: makeBasicMarkdownString(desc)
   }
