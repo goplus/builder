@@ -11,7 +11,7 @@ require (
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/go-sdk/v7 v7.25.3
-	github.com/qiniu/x v1.13.19
+	github.com/qiniu/x v1.14.0
 	github.com/stretchr/testify v1.10.0
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.5.7
