@@ -631,6 +631,7 @@ defineExpose({
               :title="option.label"
               @click.stop="changeCopilotPosition(option.id as DockPosition)"
             >
+            <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
               <span class="icon" v-html="getDockIcon(option.id)"></span>
             </button>
           </div>
