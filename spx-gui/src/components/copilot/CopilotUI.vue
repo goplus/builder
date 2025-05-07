@@ -114,12 +114,10 @@ useBottomSticky(bodyRef)
   align-items: center;
   justify-content: space-between;
 
-  // 左侧标题
   .title {
     flex: 1;
   }
 
-  // 右侧控制区
   .controls {
     display: flex;
     gap: 8px;
