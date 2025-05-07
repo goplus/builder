@@ -270,7 +270,7 @@ export function usePageTitle(
   const i18n = useI18n()
   function setTitle(parts: LocaleMessage | LocaleMessage[]) {
     if (!Array.isArray(parts)) parts = [parts]
-    document.title = [...parts.map((p) => i18n.t(p)), 'Go+ Builder'].join(' - ')
+    document.title = [...parts.map((p) => i18n.t(p)), 'XBuilder'].join(' - ')
   }
 
   if (typeof titleParts !== 'function') {

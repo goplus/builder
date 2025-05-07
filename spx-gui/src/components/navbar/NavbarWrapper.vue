@@ -72,7 +72,6 @@ withDefaults(
 .right {
   flex-basis: 30%;
   display: flex;
-  gap: 8px;
 }
 
 .center {
@@ -84,6 +83,7 @@ withDefaults(
 }
 
 .right {
+  gap: 8px;
   justify-content: flex-end;
 }
 </style>

@@ -92,8 +92,8 @@ const handleSubmit = useMessageHandle(
       <p v-if="project.visibility === Visibility.Private" class="tip">
         {{
           $t({
-            en: 'Published projects will be visible to all Go+ Builder users.',
-            zh: '发布后的项目将对所有 Go+ Builder 用户可见。'
+            en: 'Published projects will be visible to all XBuilder users.',
+            zh: '发布后的项目将对所有 XBuilder 用户可见。'
           })
         }}
       </p>
