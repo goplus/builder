@@ -77,7 +77,7 @@ export function useCopilotCtx() {
  * Provides Copilot context and services to all child components.
  * Handles initialization of Copilot, MCP connections, and UI rendering.
  */
-import { reactive, inject, ref, provide, onBeforeUnmount, computed, type Ref } from 'vue'
+import { reactive, inject, ref, provide, onBeforeUnmount, computed, type Ref, watch } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { Copilot } from './copilot'
@@ -99,6 +99,9 @@ import { genAssetFromCanvas } from '@/models/common/asset'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import dockLeft from './dock-left.svg?raw'
+import dockRight from './dock-right.svg?raw'
+import dockBottom from './dock-bottom.svg?raw'
 
 // Component state using refs
 const visible = ref(false)
@@ -224,6 +227,194 @@ async function waitToolRegister(): Promise<void> {
   return until(() => registry.isToolRegistered('insert_code'))
 }
 
+type DockPosition = 'left' | 'bottom' | 'right'
+const copilotPosition = ref<DockPosition>('left')
+
+const showCopilotPositionMenu = ref(false)
+
+const toggleCopilotPositionMenu = () => {
+  showCopilotPositionMenu.value = !showCopilotPositionMenu.value
+}
+
+const hidePositionMenus = () => {
+  showCopilotPositionMenu.value = false
+}
+
+const changeCopilotPosition = (position: DockPosition) => {
+  copilotPosition.value = position
+  hidePositionMenus()
+}
+
+const copilotContainerStyle = computed(() => {
+  switch (copilotPosition.value) {
+    case 'left':
+      return {
+        top: '0',
+        left: '0',
+        width: copilotSize.width,
+        height: '100vh',
+        flexDirection: 'column' as const
+      }
+    case 'right':
+      return {
+        top: '0',
+        right: '0',
+        width: copilotSize.width,
+        height: '100vh',
+        flexDirection: 'column' as const
+      }
+    case 'bottom':
+      return {
+        bottom: '0',
+        left: '0',
+        width: '100%',
+        height: copilotSize.height,
+        flexDirection: 'row' as const
+      }
+    default:
+      return {
+        top: '0',
+        left: '0',
+        width: copilotSize.width,
+        height: '100vh',
+        flexDirection: 'column' as const
+      }
+  }
+})
+
+const positionOptions = [
+  { id: 'left', label: 'Left', icon: 'dockLeft' as const },
+  { id: 'bottom', label: 'Bottom', icon: 'dockBottom' as const },
+  { id: 'right', label: 'Right', icon: 'dockRight' as const }
+]
+
+const positionMenuStyle = computed(() => {
+  const headerHeight = 48
+
+  switch (copilotPosition.value) {
+    case 'left':
+      return {
+        top: `${headerHeight}px`,
+        left: '12px',
+        zIndex: 1002
+      }
+    case 'right':
+      return {
+        top: `${headerHeight}px`,
+        right: '12px',
+        zIndex: 1002
+      }
+    case 'bottom':
+      return {
+        top: `${headerHeight}px`,
+        right: '12px',
+        zIndex: 1002,
+        width: '250px' // Set specific width for bottom position
+      }
+    default:
+      return {
+        top: `${headerHeight}px`,
+        left: '12px',
+        zIndex: 1002
+      }
+  }
+})
+
+const copilotSize = reactive({
+  width: '15%',
+  height: '300px',
+  dragging: false,
+  startX: 0,
+  startY: 0,
+  startWidth: 0,
+  startHeight: 0
+})
+
+const handleDragStart = (event: MouseEvent) => {
+  copilotSize.dragging = true
+  copilotSize.startX = event.clientX
+  copilotSize.startY = event.clientY
+
+  if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
+    // Convert percentage width to pixels before starting the drag
+    if (copilotSize.width.endsWith('%')) {
+      const containerWidth = window.innerWidth
+      const percentValue = parseFloat(copilotSize.width)
+      copilotSize.startWidth = (containerWidth * percentValue) / 100
+      // Update the width to pixel value before starting the drag
+      copilotSize.width = `${copilotSize.startWidth}px`
+    } else {
+      copilotSize.startWidth = parseFloat(copilotSize.width)
+    }
+  } else {
+    copilotSize.startHeight = parseFloat(copilotSize.height)
+  }
+
+  document.addEventListener('mousemove', handleDragMove)
+  document.addEventListener('mouseup', handleDragEnd)
+
+  document.body.style.cursor = copilotPosition.value === 'bottom' ? 'ns-resize' : 'ew-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const handleDragMove = (event: MouseEvent) => {
+  if (!copilotSize.dragging) return
+
+  if (copilotPosition.value === 'left') {
+    const deltaX = event.clientX - copilotSize.startX
+    const newWidth = copilotSize.startWidth + deltaX
+    const minWidth = 100
+    const maxWidth = window.innerWidth * 0.4
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      copilotSize.width = `${newWidth}px`
+    }
+  } else if (copilotPosition.value === 'right') {
+    const deltaX = copilotSize.startX - event.clientX
+    const newWidth = copilotSize.startWidth + deltaX
+    const minWidth = 100
+    const maxWidth = window.innerWidth * 0.4
+
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      copilotSize.width = `${newWidth}px`
+    }
+  } else if (copilotPosition.value === 'bottom') {
+    const deltaY = copilotSize.startY - event.clientY
+    const newHeight = copilotSize.startHeight + deltaY
+    const minHeight = 150
+    const maxHeight = window.innerHeight * 0.6
+
+    if (newHeight >= minHeight && newHeight <= maxHeight) {
+      copilotSize.height = `${newHeight}px`
+    }
+  }
+}
+
+const handleDragEnd = () => {
+  copilotSize.dragging = false
+
+  document.removeEventListener('mousemove', handleDragMove)
+  document.removeEventListener('mouseup', handleDragEnd)
+
+  const container = document.querySelector('.copilot-chat-container') as HTMLElement
+  if (container) {
+    container.classList.remove('dragging')
+  }
+
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+watch(
+  () => copilotPosition.value,
+  () => {
+    if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
+      copilotSize.width = '15%'
+    } else {
+      copilotSize.height = '300px'
+    }
+  }
+)
+
 /**
  * Visibility controls with automatic initialization
  */
@@ -276,6 +467,15 @@ const controls = {
       } else {
         return await controls.mcpDebugger.open()
       }
+    }
+  },
+  position: {
+    copilot: {
+      set: (position: DockPosition) => {
+        copilotPosition.value = position
+      },
+      get: () => copilotPosition.value,
+      toggle: toggleCopilotPositionMenu
     }
   }
 }
@@ -342,6 +542,24 @@ const shouldShowCopilotUI = computed(() => {
 })
 
 /**
+ *
+ * @param position The position of the dock
+ * @returns The icon for the dock position
+ */
+const getDockIcon = (position: string) => {
+  switch (position) {
+    case 'left':
+      return dockLeft
+    case 'right':
+      return dockRight
+    case 'bottom':
+      return dockBottom
+    default:
+      return dockLeft
+  }
+}
+
+/**
  * Create the consolidated context object using computedShallowReactive
  * This is similar to how CodeEditorUI creates its context
  */
@@ -379,9 +597,46 @@ defineExpose({
     <!-- Render child content with context as slot props -->
     <slot :context="copilotCtx" />
 
-    <!-- Render CopilotUI directly when needed -->
-    <aside v-if="shouldShowCopilotUI" class="copilot-chat-container">
-      <CopilotUI :controller="copilotController" class="copilot-ui" @close="handleCloseUI" />
+    <!-- Render CopilotUI with position control -->
+    <aside
+      v-if="shouldShowCopilotUI"
+      class="copilot-chat-container"
+      :style="copilotContainerStyle"
+      :class="[`position-${copilotPosition}`, { dragging: copilotSize.dragging }]"
+    >
+      <!-- Resize handle for drag resizing -->
+      <div class="resize-handle" :class="`resize-${copilotPosition}`" @mousedown="handleDragStart"></div>
+
+      <!-- Main Copilot UI component -->
+      <CopilotUI
+        :controller="copilotController"
+        class="copilot-ui"
+        :position="copilotPosition"
+        :position-options="positionOptions"
+        :show-position-menu="showCopilotPositionMenu"
+        @close="handleCloseUI"
+        @toggle-position-menu="toggleCopilotPositionMenu"
+        @change-position="changeCopilotPosition"
+      />
+
+      <div v-show="showCopilotPositionMenu" class="position-menu" :style="positionMenuStyle">
+        <div class="position-menu-header">
+          <span>Dock side</span>
+          <div class="position-options-container">
+            <button
+              v-for="option in positionOptions"
+              :key="option.id"
+              class="position-icon-button"
+              :class="{ active: copilotPosition === option.id }"
+              :title="option.label"
+              @click.stop="changeCopilotPosition(option.id as DockPosition)"
+            >
+              <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
+              <span class="icon" v-html="getDockIcon(option.id)"></span>
+            </button>
+          </div>
+        </div>
+      </div>
     </aside>
 
     <!-- Render MCP Debugger when needed -->
@@ -401,19 +656,28 @@ defineExpose({
 .copilot-chat-container {
   /* Positioning and dimensions */
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 15%;
-  height: 100vh;
 
   /* Visual styling */
   background-color: white;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 
   /* Layout */
   display: flex;
-  flex-direction: column;
   z-index: 1000;
+  transition: all 0.3s ease;
+
+  /* Position-specific styles */
+  &.position-left {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.position-right {
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.position-bottom {
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
 
   .copilot-ui {
     flex: 1;
@@ -422,16 +686,208 @@ defineExpose({
   }
 }
 
+/* Debugger container styles */
+.debugger-container {
+  position: fixed;
+  z-index: 1001;
+  background-color: white;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+
+  &.position-left {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.position-right {
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.position-bottom {
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .debugger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--ui-color-grey-100);
+    border-bottom: 1px solid var(--ui-color-grey-300);
+
+    .debugger-title {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .debugger-controls {
+      display: flex;
+      gap: 8px;
+
+      .position-selector {
+        position: relative;
+      }
+    }
+  }
+
+  .debugger-content {
+    flex: 1;
+    overflow: auto;
+  }
+}
+
+/* Position menu styles */
+.position-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid var(--ui-color-grey-300);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  min-width: 220px;
+  padding: 8px 12px;
+  top: 48px; /* Directly set top offset */
+  right: 12px; /* Right align to button */
+
+  .position-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    span {
+      font-size: 14px;
+      font-weight: 500;
+      color: #000000; /* Changed from var(--ui-color-grey-700) to black */
+    }
+
+    .position-options-container {
+      display: flex;
+      gap: 8px;
+    }
+
+    .position-icon-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background-color: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--ui-color-grey-100);
+      }
+
+      &.active {
+        background-color: var(--ui-color-primary-50);
+        color: #1976d2; /* Set blue color at parent level that will cascade to children */
+
+        .icon {
+          color: inherit; /* Inherit color from parent */
+        }
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        :deep(svg) {
+          width: 16px;
+          height: 16px;
+          max-width: 16px;
+          max-height: 16px;
+        }
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  /* Adjust width for bottom position */
+  .position-bottom & {
+    max-width: 250px;
+  }
+}
+
+/* Button styles */
+.position-button,
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background-color: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--ui-color-grey-200);
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .copilot-chat-container {
-    width: 300px;
+    &.position-left,
+    &.position-right {
+      width: 300px;
+    }
   }
 }
 
 @media (max-width: 768px) {
   .copilot-chat-container {
-    width: 100%;
+    &.position-left,
+    &.position-right {
+      width: 100%;
+    }
   }
+}
+
+/* Add drag edge styles */
+.resize-handle {
+  position: absolute;
+  z-index: 1001;
+
+  &.resize-left {
+    top: 0;
+    right: -2px; /* Modified: Place the drag edge on the right edge */
+    width: 4px;
+    height: 100%;
+    cursor: ew-resize;
+  }
+
+  &.resize-right {
+    top: 0;
+    left: -2px; /* Modified: Place the drag edge on the left edge */
+    width: 4px;
+    height: 100%;
+    cursor: ew-resize;
+  }
+
+  &.resize-bottom {
+    top: -2px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    cursor: ns-resize;
+  }
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+}
+
+.copilot-chat-container.dragging {
+  transition: none;
+  user-select: none;
 }
 </style>
