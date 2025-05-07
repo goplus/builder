@@ -631,7 +631,7 @@ defineExpose({
               :title="option.label"
               @click.stop="changeCopilotPosition(option.id as DockPosition)"
             >
-            <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
+              <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
               <span class="icon" v-html="getDockIcon(option.id)"></span>
             </button>
           </div>
@@ -787,12 +787,6 @@ defineExpose({
 
         .icon {
           color: inherit; /* Inherit color from parent */
-
-          :deep(svg) {
-            /* Use currentColor to inherit from parent element */
-            fill: currentColor;
-            stroke: currentColor;
-          }
         }
       }
 
