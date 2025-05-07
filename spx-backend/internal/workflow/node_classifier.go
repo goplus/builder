@@ -13,7 +13,27 @@ import (
 )
 
 var (
-	ClassifierPrompt = ``
+	ClassifierPrompt = `You are a specialized problem classifier. Your task is to analyze the user's input and determine what type of question or problem they're asking about.
+
+Based on the input, identify the most appropriate category from the following classification options:
+{{range $key, $_ := .cases}}
+- {{$key}}
+{{end}}
+
+Important instructions:
+1. Carefully understand the user's question or problem
+2. Select ONLY from the classification options listed above
+3. If none of the options match the user's input, use: <classifier name="other" />
+4. Return ONLY an XML tag in this exact format: <classifier name="selected_classification" />
+5. Do not include any explanation, greeting, or additional text
+6. Do not wrap your response in markdown code blocks
+7. Just return the single XML tag with the appropriate classification
+
+Example proper responses:
+<classifier name="math_problem" />
+<classifier name="other" />
+
+Remember: Your entire response should consist of only the XML classifier tag with either one of the provided classification options or "other" if no options match.`
 )
 
 type NodeClassifier struct {

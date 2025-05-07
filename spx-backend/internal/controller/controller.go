@@ -157,8 +157,8 @@ func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
 			if messages, ok := msgs.([]copilot.Message); ok {
 				messages = append(messages, copilot.Message{
 					Role: copilot.RoleUser,
-					Content: copilot.Content{Text: `Based on the current project file list and background information, 
-please confirm whether you need to create sprites or backgrounds. If not, call the tool to insert the code, 
+					Content: copilot.Content{Text: `Based on the current project file list and backdrop information, 
+please confirm whether you need to create sprites or backdrops. If not, call the tool to insert the code, 
 but please solve the diagnostic errors in the existing files first.`},
 				})
 				env.Set("messages", messages)
