@@ -99,7 +99,9 @@ import { genAssetFromCanvas } from '@/models/common/asset'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { UIIcon } from '@/components/ui'
+import dockLeft from './dock-left.svg?raw'
+import dockRight from './dock-right.svg?raw'
+import dockBottom from './dock-bottom.svg?raw'
 
 // Component state using refs
 const visible = ref(false)
@@ -540,6 +542,24 @@ const shouldShowCopilotUI = computed(() => {
 })
 
 /**
+ *
+ * @param position The position of the dock
+ * @returns The icon for the dock position
+ */
+const getDockIcon = (position: string) => {
+  switch (position) {
+    case 'left':
+      return dockLeft
+    case 'right':
+      return dockRight
+    case 'bottom':
+      return dockBottom
+    default:
+      return dockLeft
+  }
+}
+
+/**
  * Create the consolidated context object using computedShallowReactive
  * This is similar to how CodeEditorUI creates its context
  */
@@ -611,7 +631,7 @@ defineExpose({
               :title="option.label"
               @click.stop="changeCopilotPosition(option.id as DockPosition)"
             >
-              <UIIcon class="icon" :type="option.icon" />
+              <span class="icon" v-html="getDockIcon(option.id)"></span>
             </button>
           </div>
         </div>
@@ -762,19 +782,29 @@ defineExpose({
 
       &.active {
         background-color: var(--ui-color-primary-50);
-        color: #1976d2; /* Changed to blue for active state */
+        color: #1976d2; /* Set blue color at parent level that will cascade to children */
 
-        :deep(.icon) {
-          color: #1976d2; /* Use color instead of fill for the icon */
+        .icon {
+          color: inherit; /* Inherit color from parent */
+
+          :deep(svg) {
+            /* Use currentColor to inherit from parent element */
+            fill: currentColor;
+            stroke: currentColor;
+          }
         }
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         :deep(svg) {
-          fill: #1976d2 !important; /* Use !important to override any default styles */
-          stroke: #1976d2 !important; /* Add stroke color in case the SVG uses stroke */
-          path {
-            fill: #1976d2 !important;
-            stroke: #1976d2 !important;
-          }
+          width: 16px;
+          height: 16px;
+          max-width: 16px;
+          max-height: 16px;
         }
       }
 
