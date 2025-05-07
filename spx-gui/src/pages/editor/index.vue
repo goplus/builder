@@ -113,16 +113,7 @@ if (copilotCtx.mcp.registry == null) {
   throw new Error('Copilot registry not initialized')
 }
 
-if (copilotCtx.mcp.collector == null) {
-  throw new Error('Copilot collector not initialized')
-}
-
-const codeEditorQueryRet = useProvideCodeEditorCtx(
-  projectQueryRet,
-  runtimeQueryRet,
-  copilotCtx.mcp.registry,
-  copilotCtx.mcp.collector
-)
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, copilotCtx.mcp.registry)
 
 const allQueryRet = useQuery(
   (ctx) =>

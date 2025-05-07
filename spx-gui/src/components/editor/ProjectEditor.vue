@@ -109,6 +109,7 @@ function registerProjectTools() {
 // Register the tools when the component is mounted
 onMounted(() => {
   registerProjectTools()
+  copilotCtx.mcp.collector?.setEnvironmentVar('project_id', project.value.id)
 })
 
 // Unregister the tools when the component is unmounted
