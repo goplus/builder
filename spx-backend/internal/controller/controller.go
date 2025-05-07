@@ -145,7 +145,7 @@ func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
 			if messages, ok := msgs.([]copilot.Message); ok {
 				messages = append(messages, copilot.Message{
 					Role: copilot.RoleUser,
-					// TODO: Use i18n to select auxiliary user message based on the provided language
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
 					Content: copilot.Content{Text: "请使用已提供的工具来创建项目"},
 				})
 				env.Set("messages", messages)
@@ -165,7 +165,7 @@ func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
 			if messages, ok := msgs.([]copilot.Message); ok {
 				messages = append(messages, copilot.Message{
 					Role: copilot.RoleUser,
-					// TODO: Use i18n to select auxiliary user message based on the provided language
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
 					Content: copilot.Content{Text: `根据当前项目文件列表和背景信息，请确认是否需要创建精灵或背景。如无需，请调用工具插入代码，但请先解决现有文件中的诊断错误`},
 				})
 				env.Set("messages", messages)

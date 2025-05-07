@@ -661,12 +661,8 @@ defineExpose({
         </div>
       </div>
 
-       <!-- Render environment panel -->
-      <EnvPanel 
-        v-if="showEnvPanel" 
-        :style="positionMenuStyle"  
-        @close="toggleEnvPanel"
-      />
+      <!-- Render environment panel -->
+      <EnvPanel v-if="showEnvPanel" :style="positionMenuStyle" @close="toggleEnvPanel" />
     </aside>
 
     <!-- Render MCP Debugger when needed -->

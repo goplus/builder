@@ -52,13 +52,13 @@ const basicComponents = {
    * ```
    */
   'tool-exec-result': ToolEcecResult,
-    /**
+  /**
    * Usage:
    *  ```html
    * <workflow-env ename="MY_ENV" evalue="my_value"/>
    * ```
    */
-   'env': Env,
+  env: Env
 }
 
 const components = computed(() => {

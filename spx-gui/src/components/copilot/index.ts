@@ -249,8 +249,6 @@ ${resultContent}
         currentRound.answer = accumulatedText
       }
 
-      console.log('Copilot answer:',currentRound.problem, currentRound.answer)
-
       currentRound.state = RoundState.Completed
     } catch (e) {
       if (e instanceof Cancelled) {

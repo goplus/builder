@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
@@ -100,7 +99,6 @@ func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
 	if msgs != nil {
 		if messages, ok := msgs.([]copilot.Message); ok {
 			params.Messages = messages
-			log.Println(messages[len(messages)-1].Content.Text)
 		}
 	}
 

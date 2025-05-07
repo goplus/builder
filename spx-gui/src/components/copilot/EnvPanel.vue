@@ -7,9 +7,7 @@
       </button>
     </div>
     <div class="env-panel-content">
-      <div v-if="Object.keys(environment).length === 0" class="empty-state">
-        No environment variables available
-      </div>
+      <div v-if="Object.keys(environment).length === 0" class="empty-state">No environment variables available</div>
       <table v-else class="env-table">
         <thead>
           <tr>
@@ -52,7 +50,6 @@ const environment = computed(() => {
 
 <style lang="scss" scoped>
 .env-panel {
-
   .env-panel-header {
     display: flex;
     justify-content: space-between;
@@ -82,7 +79,7 @@ const environment = computed(() => {
       &:hover {
         background-color: var(--ui-color-grey-200);
       }
-      
+
       .icon {
         width: 16px;
         height: 16px;
@@ -105,8 +102,9 @@ const environment = computed(() => {
     .env-table {
       width: 100%;
       border-collapse: collapse;
-      
-      th, td {
+
+      th,
+      td {
         text-align: left;
         padding: 8px;
         border-bottom: 1px solid var(--ui-color-grey-200);

@@ -95,8 +95,8 @@ export class Copilot extends Disposable implements ICopilot {
       signal: options?.signal,
       tools: tools,
       workflow: {
-        env: chat.env,
-      },
+        env: chat.env
+      }
     })
 
     // Forward each chunk from the stream

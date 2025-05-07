@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 )
 
 // Workflow represents a sequence of connected nodes that perform a series of operations
@@ -99,7 +98,6 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 			// Update the workflow environment with the node's output values
 			for k, v := range w.output {
 				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"></env>\n", k, v)
-				log.Printf("node: %s, env: %s = %v\n", node.GetType(), k, v)
 				c.env.Set(k, v)
 			}
 
