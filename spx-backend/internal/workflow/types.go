@@ -37,6 +37,7 @@ const (
 	NodeTypeLLM        NodeType = "llm"        // Language model processing node
 	NodeTypeSearch     NodeType = "search"     // Search operation node
 	NodeTypeClassifier NodeType = "classifier" // Classifier node for decision-making
+	NodeTypeIf         NodeType = "if"         // Conditional branching node
 )
 
 // Request encapsulates input data and context for a workflow node

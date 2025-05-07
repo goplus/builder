@@ -123,7 +123,7 @@ func (ln *NodeClassifier) Classifier(ctx context.Context, read io.Reader) (strin
 // Next returns the node corresponding to the classification result
 func (ln *NodeClassifier) Next(ctx context.Context, env Env) INode {
 	// Get classification from environment
-	classification, ok := env.Get("classification").(string)
+	classification, ok := env.Get("Classification").(string)
 	if !ok {
 		// Default case if classification is missing or not a string
 		return nil
@@ -198,15 +198,15 @@ func (ln *NodeClassifier) Execute(ctx context.Context, w *Response, r *Request) 
 	if err != nil {
 		return err
 	}
-
+	defer read.Close()
 	// Classify the response to determine the case
 	caseName, err := ln.Classifier(ctx, read)
 	if err != nil {
 		return err
 	}
 
-	// Add the classification result to the output
-	w.output["classification"] = caseName
+	// Add the Classification result to the output
+	w.output["Classification"] = caseName
 
 	return err
 }

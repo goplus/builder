@@ -82,8 +82,7 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 		}
 	} else {
 		// No search pattern found, report error
-		w.output["error"] = "No search pattern found in the input"
-		fmt.Fprintf(w.w, "<error>No search pattern found in the input</error>")
+		w.output["ReferenceID"] = "0"
 	}
 
 	return nil

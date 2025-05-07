@@ -67,10 +67,11 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 		// Initialize an empty buffer for the first node's input
 		var read io.Reader = &bytes.Buffer{}
 		node := c.workflow.start
-		env := node.Prepare(ctx, c.env)
 
 		// Process each node in sequence until reaching a terminal node
 		for {
+			// Prepare the environment for the current node
+			env := node.Prepare(ctx, c.env)
 			// Create a new request for each node with the current environment and input
 			r := &Request{
 				env: env,
@@ -97,8 +98,8 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 
 			// Update the workflow environment with the node's output values
 			for k, v := range w.output {
-				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"/>\n", k, v)
-				log.Printf("env: %s = %v\n", k, v)
+				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"></env>\n", k, v)
+				log.Printf("node: %s, env: %s = %v\n", node.GetType(), k, v)
 				c.env.Set(k, v)
 			}
 

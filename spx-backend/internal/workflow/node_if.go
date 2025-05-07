@@ -42,7 +42,7 @@ func (p *IfStmt) GetId() string {
 
 // GetType returns the node type classification
 func (p *IfStmt) GetType() NodeType {
-	return NodeTypeLLM
+	return NodeTypeIf
 }
 
 // Next determines the next node to execute based on condition evaluation

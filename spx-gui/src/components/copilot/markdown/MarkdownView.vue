@@ -19,13 +19,6 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <env kname="MY_ENV" value="my_value"/>
-   * ```
-   */
-  env: Env,
-  /**
-   * Usage:
-   *  ```html
    * <pre is="file-diagnostics" file="src/main.ts">
    *        - Error: Missing semicolon
    *        - Warning: Unused variable
@@ -58,7 +51,14 @@ const basicComponents = {
    * </pre>
    * ```
    */
-  'tool-exec-result': ToolEcecResult
+  'tool-exec-result': ToolEcecResult,
+    /**
+   * Usage:
+   *  ```html
+   * <workflow-env ename="MY_ENV" evalue="my_value"/>
+   * ```
+   */
+   'env': Env,
 }
 
 const components = computed(() => {

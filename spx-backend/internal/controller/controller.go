@@ -117,13 +117,13 @@ func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.W
 
 	classifier := workflow.NewIfStmt().
 		If(func(env workflow.Env) bool {
-			return env.Get("classification") == nil
+			return env.Get("Classification") == nil
 		}, classifierNode).
 		If(func(env workflow.Env) bool {
-			return env.Get("classification") == "project_create"
+			return env.Get("Classification") == "project_create"
 		}, projectCreate).
 		If(func(env workflow.Env) bool {
-			return env.Get("classification") == "code_edit"
+			return env.Get("Classification") == "code_edit"
 		}, editNode).
 		Else(chatNode)
 
@@ -144,8 +144,9 @@ func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
 		if msgs != nil {
 			if messages, ok := msgs.([]copilot.Message); ok {
 				messages = append(messages, copilot.Message{
-					Role:    copilot.RoleUser,
-					Content: copilot.Content{Text: "Please call the tool to create a project first."},
+					Role: copilot.RoleUser,
+					// TODO: Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: "请使用已提供的工具来创建项目"},
 				})
 				env.Set("messages", messages)
 			}
@@ -164,9 +165,8 @@ func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
 			if messages, ok := msgs.([]copilot.Message); ok {
 				messages = append(messages, copilot.Message{
 					Role: copilot.RoleUser,
-					Content: copilot.Content{Text: `Based on the current project file list and backdrop information, 
-please confirm whether you need to create sprites or backdrops. If not, call the tool to insert the code, 
-but please solve the diagnostic errors in the existing files first.`},
+					// TODO: Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: `根据当前项目文件列表和背景信息，请确认是否需要创建精灵或背景。如无需，请调用工具插入代码，但请先解决现有文件中的诊断错误`},
 				})
 				env.Set("messages", messages)
 			}
