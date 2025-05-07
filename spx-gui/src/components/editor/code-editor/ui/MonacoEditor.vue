@@ -46,6 +46,7 @@ watchEffect(async (onClenaup) => {
     scrollBeyondLastLine: false,
     overviewRulerLanes: 0,
     renderLineHighlight: 'none',
+    occurrencesHighlight: 'off',
     bracketPairColorization: {
       enabled: false
     },

@@ -69,12 +69,19 @@ func New(ctx context.Context) (*Controller, error) {
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
 
-	openaiClient := openai.NewClient(
-		option.WithAPIKey(mustEnv(logger, "OPENAI_API_KEY")),
-		option.WithBaseURL(mustEnv(logger, "OPENAI_API_ENDPOINT")),
-	)
+	openaiAPIKey := mustEnv(logger, "OPENAI_API_KEY")
+	openaiAPIEndpoint := mustEnv(logger, "OPENAI_API_ENDPOINT")
 	openaiModelID := mustEnv(logger, "OPENAI_MODEL_ID")
-	cpt, err := copilot.New(openaiClient, openaiModelID)
+
+	openaiPremiumAPIKey := envOrDefault("OPENAI_PREMIUM_API_KEY", openaiAPIKey)
+	openaiPremiumAPIEndpoint := envOrDefault("OPENAI_PREMIUM_API_ENDPOINT", openaiAPIEndpoint)
+	openaiPremiumModelID := envOrDefault("OPENAI_PREMIUM_MODEL_ID", openaiModelID)
+	openaiPremiumClient := openai.NewClient(
+		option.WithAPIKey(openaiPremiumAPIKey),
+		option.WithBaseURL(openaiPremiumAPIEndpoint),
+	)
+
+	cpt, err := copilot.New(openaiPremiumClient, openaiPremiumModelID)
 	if err != nil {
 		logger.Printf("failed to create copilot: %v", err)
 		return nil, err
@@ -100,7 +107,7 @@ func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.W
 	projectCreate := workflow.NewIfStmt().
 		If(func(env workflow.Env) bool {
 			return env.Get("project_id") == nil
-		}, NewCreateProject(copilot).SetNext(editNode)).
+		}, NewCreateProject(copilot)).
 		Else(editNode)
 
 	classifierNode := workflow.NewClassifierNode(copilot, ``).
@@ -122,7 +129,7 @@ func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.W
 
 	flow.Start(workflow.NewIfStmt().
 		If(func(env workflow.Env) bool {
-			return env.Get("reference_id") == nil
+			return env.Get("ReferenceID") == nil
 		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(classifier))).
 		Else(workflow.NewSearch(db).SetNext(classifier)))
 
@@ -240,6 +247,15 @@ func mustEnv(logger *qiniuLog.Logger, key string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		logger.Fatalf("Missing required environment variable: %s", key)
+	}
+	return value
+}
+
+// envOrDefault gets the environment variable value or returns the default value.
+func envOrDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
 	return value
 }

@@ -7,7 +7,6 @@ import UseMcpTool from './UseMcpTool.vue'
 import ToolEcecResult from './ToolExecResult.vue'
 import FileContent from './FileContent.vue'
 import FileDiagnostics from './FileDiagnostics.vue'
-import Workflow from './WorkflowContainer.vue'
 import Env from './WorkflowEnv.vue'
 
 const props = defineProps<{
@@ -17,13 +16,6 @@ const props = defineProps<{
 const i18n = useI18n()
 
 const basicComponents = {
-  /**
-   * Usage:
-   *  ```html
-   * <workflow wname="workflowname"/>
-   * ```
-   */
-  workflow: Workflow,
   /**
    * Usage:
    *  ```html

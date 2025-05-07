@@ -19,15 +19,18 @@ useDecorations(() => {
           startLineNumber: item.position.line,
           startColumn: item.position.column,
           endLineNumber: item.position.line,
-          endColumn: item.position.column + 1 // TODO: any bettter way?
+          // Monaco requires non-empty range for decorations, so we need to expand it to 1 column
+          // TOOD: any better way?
+          endColumn: item.position.column + 1
         },
         options: {
           isWholeLine: false,
+          beforeContentClassName: 'code-editor-inlay-hint-label',
           before: {
-            content: `${item.label}: `,
+            content: `${item.label}:`,
             attachedData: item,
             inlineClassName: 'code-editor-inlay-hint-label',
-            inlineClassNameAffectsLetterSpacing: true
+            inlineClassNameAffectsLetterSpacing: false
           }
         }
       })

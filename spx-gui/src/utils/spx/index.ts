@@ -121,3 +121,89 @@ export function getGopIdentifierNameTip(target?: LocaleMessage) {
     zh: `${target.zh}名称只能包含中英文字符、数字及下划线`
   }
 }
+
+export const specialDirections = [
+  { name: 'Right', value: 90 },
+  { name: 'Left', value: -90 },
+  { name: 'Up', value: 0 },
+  { name: 'Down', value: 180 }
+]
+
+export function exprForSpxDirection(value: number) {
+  value = Math.round(value)
+  const direction = specialDirections.find((d) => d.value === value)
+  if (direction != null) return direction.name
+  return value + ''
+}
+
+// TODO: update effectKinds for spx2
+export const effectKinds = [
+  { name: 'ColorEffect', value: 0 },
+  { name: 'BrightnessEffect', value: 1 },
+  { name: 'GhostEffect', value: 2 }
+]
+
+export function exprForSpxEffectKind(value: number) {
+  const effect = effectKinds.find((e) => e.value === value)
+  if (effect == null) return null
+  return effect.name
+}
+
+export const keyA = 0
+export const keyZ = 25
+export const key0 = 43
+export const key9 = 52
+export const keyF1 = 57
+export const keyF12 = 68
+export const keys = [
+  { name: 'Up', value: 31 },
+  { name: 'Down', value: 28 },
+  { name: 'Left', value: 29 },
+  { name: 'Right', value: 30 },
+  { name: 'Space', value: 116 },
+  { name: 'Enter', value: 54 },
+  { name: 'Backspace', value: 34 },
+  { name: 'Tab', value: 117 },
+  { name: 'Shift', value: 120 },
+  { name: 'Control', value: 119 },
+  { name: 'Alt', value: 118 },
+  { name: 'Escape', value: 56 }
+]
+
+export function exprForSpxKey(value: number): string | null {
+  if (value >= keyA && value <= keyZ) return 'Key' + String.fromCharCode(value - keyA + 65)
+  if (value >= key0 && value <= key9) return 'Key' + String.fromCharCode(value - key0 + 48)
+  if (value >= keyF1 && value <= keyF12) return 'Key' + String.fromCharCode(value - keyF1 + 112)
+  const key = keys.find((k) => k.value === value)
+  if (key != null) return 'Key' + key.name
+  return null
+}
+
+export const playActions = [
+  { name: 'PlayRewind', value: 0 },
+  { name: 'PlayContinue', value: 1 },
+  { name: 'PlayPause', value: 2 },
+  { name: 'PlayResume', value: 3 },
+  { name: 'PlayStop', value: 4 }
+]
+
+export function exprForSpxPlayAction(value: number) {
+  const action = playActions.find((a) => a.value === value)
+  if (action == null) return null
+  return action.name
+}
+
+export const specialObjs = [
+  { name: 'Mouse', value: -5 },
+  { name: 'Edge', value: 15 },
+  { name: 'EdgeLeft', value: 1 },
+  { name: 'EdgeTop', value: 2 },
+  { name: 'EdgeRight', value: 4 },
+  { name: 'EdgeBottom', value: 8 }
+]
+
+export function exprForSpxSpecialObj(value: number) {
+  const obj = specialObjs.find((o) => o.value === value)
+  if (obj == null) return null
+  return obj.name
+}

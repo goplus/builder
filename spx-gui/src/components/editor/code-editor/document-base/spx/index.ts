@@ -9,7 +9,7 @@ export const sprite: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite'
   },
-  insertText: 'Sprite',
+  insertSnippet: 'Sprite',
   overview: 'Sprite',
   detail: makeBasicMarkdownString({
     en: 'Type for sprite',
@@ -25,7 +25,7 @@ export const clone0: DefinitionDocumentationItem = {
     name: 'Sprite.clone',
     overloadId: '0'
   },
-  insertText: 'clone',
+  insertSnippet: 'clone',
   overview: 'clone',
   detail: makeBasicMarkdownString({
     en: 'Make a clone of current sprite',
@@ -41,15 +41,12 @@ export const clone1: DefinitionDocumentationItem = {
     name: 'Sprite.clone',
     overloadId: '1'
   },
-  // TODO:
-  // 1. use in-place value as argument
-  // 2. use plain text instead of code snippet
-  // 3. inlay hint in APIReference
-  insertText: 'clone ${1:data}',
+  insertSnippet: 'clone ${1:1}',
+  insertSnippetParameterHints: ['data'],
   overview: 'clone data',
   detail: makeBasicMarkdownString({
-    en: 'Make a clone of current sprite with given data, e.g., `clone 123` (you can get the data `123` by `onCloned`)',
-    zh: '复制当前精灵并传递数据，如：`clone 123`（你可以通过 `onCloned` 获得数据 `123`）'
+    en: 'Make a clone of current sprite with given data',
+    zh: '复制当前精灵并传递数据'
   })
 }
 
@@ -61,7 +58,7 @@ export const onCloned0: DefinitionDocumentationItem = {
     name: 'Sprite.onCloned',
     overloadId: '0'
   },
-  insertText: 'onCloned data => {\n\t${1}\n}',
+  insertSnippet: 'onCloned data => {\n\t$0\n}',
   overview: 'onCloned data => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite cloned, optionally receiving data',
@@ -87,7 +84,7 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '0'
   },
-  insertText: 'onTouchStart sprite => {\n\t${1}\n}',
+  insertSnippet: 'onTouchStart sprite => {\n\t$0\n}',
   overview: 'onTouchStart sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any other sprites, optionally receiving the sprite',
@@ -113,7 +110,8 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '2'
   },
-  insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
+  insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'onTouchStart name, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name, optionally receiving the sprite',
@@ -139,7 +137,8 @@ export const onTouchStart4: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '4'
   },
-  insertText: 'onTouchStart [${1:}], sprite => {\n\t${2}\n}',
+  insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
+  insertSnippetParameterHints: ['sprites'],
   overview: 'onTouchStart names, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any sprite of given names, optionally receiving the sprite',
@@ -165,7 +164,7 @@ export const onMoving0: DefinitionDocumentationItem = {
     name: 'Sprite.onMoving',
     overloadId: '0'
   },
-  insertText: 'onMoving info => {\n\t${1}\n}',
+  insertSnippet: 'onMoving info => {\n\t$0\n}',
   overview: 'onMoving info => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite moving (position change), optionally receiving the moving info',
@@ -191,7 +190,7 @@ export const onTurning0: DefinitionDocumentationItem = {
     name: 'Sprite.onTurning',
     overloadId: '0'
   },
-  insertText: 'onTurning info => {\n\t${1}\n}',
+  insertSnippet: 'onTurning info => {\n\t$0\n}',
   overview: 'onTurning info => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite turning (heading change), optionally receiving the turning info',
@@ -216,7 +215,7 @@ export const die: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.die'
   },
-  insertText: 'die',
+  insertSnippet: 'die',
   overview: 'die',
   detail: makeBasicMarkdownString({
     en: 'Let current sprite die. Animation bound to state "die" will be played.',
@@ -231,7 +230,7 @@ export const hide: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.hide'
   },
-  insertText: 'hide',
+  insertSnippet: 'hide',
   overview: 'hide',
   detail: makeBasicMarkdownString({
     en: 'Make current sprite invisible',
@@ -246,7 +245,7 @@ export const show: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.show'
   },
-  insertText: 'show',
+  insertSnippet: 'show',
   overview: 'show',
   detail: makeBasicMarkdownString({
     en: 'Make current sprite visible',
@@ -261,7 +260,7 @@ export const visible: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.visible'
   },
-  insertText: 'visible',
+  insertSnippet: 'visible',
   overview: 'visible',
   detail: makeBasicMarkdownString({
     en: 'If current sprite visible',
@@ -276,7 +275,7 @@ export const costumeName: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.costumeName'
   },
-  insertText: 'costumeName',
+  insertSnippet: 'costumeName',
   overview: 'costumeName',
   detail: makeBasicMarkdownString({
     en: 'The name of the current costume',
@@ -292,11 +291,12 @@ export const setCostume: DefinitionDocumentationItem = {
     name: 'Sprite.setCostume',
     overloadId: '0'
   },
-  insertText: 'setCostume ${1:name}',
+  insertSnippet: 'setCostume ${1:"${BUILDER_FIRST_COSTUME_NAME:c1}"}',
+  insertSnippetParameterHints: ['costume'],
   overview: 'setCostume name',
   detail: makeBasicMarkdownString({
-    en: 'Set the current costume by specifying name, e.g., `setCostume "happy"`',
-    zh: '通过指定名称设置当前造型，如：`setCostume "happy"`'
+    en: 'Set the current costume by specifying name',
+    zh: '通过指定名称设置当前造型'
   })
 }
 
@@ -307,11 +307,12 @@ export const animate: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.animate'
   },
-  insertText: 'animate ${1:name}',
+  insertSnippet: 'animate ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['animation'],
   overview: 'animate name',
   detail: makeBasicMarkdownString({
-    en: 'Play animation with given name, e.g., `animate "jump"`',
-    zh: '通过指定名称播放动画，如：`animate "jump"`'
+    en: 'Play animation with given name',
+    zh: '通过指定名称播放动画'
   })
 }
 
@@ -323,11 +324,12 @@ export const say0: DefinitionDocumentationItem = {
     name: 'Sprite.say',
     overloadId: '0'
   },
-  insertText: 'say ${1:""}',
+  insertSnippet: 'say ${1:""}',
+  insertSnippetParameterHints: ['word'],
   overview: 'say word',
   detail: makeBasicMarkdownString({
-    en: 'Make the sprite say some word, e.g., `say "Hello!"`',
-    zh: '使精灵说出一些话，如：`say "Hello!"`'
+    en: 'Make the sprite say some word',
+    zh: '使精灵说出一些话'
   })
 }
 
@@ -339,11 +341,12 @@ export const say1: DefinitionDocumentationItem = {
     name: 'Sprite.say',
     overloadId: '1'
   },
-  insertText: 'say ${1:""}, ${2:seconds}',
+  insertSnippet: 'say ${1:""}, ${2:1}',
+  insertSnippetParameterHints: ['word', 'seconds'],
   overview: 'say word, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Make the sprite say some word with duration, e.g., `say "Hello!", 2`',
-    zh: '使精灵说出一些话并指定持续时间，如：`say "Hello!", 2`'
+    en: 'Make the sprite say some word with duration',
+    zh: '使精灵说出一些话并指定持续时间'
   })
 }
 
@@ -355,11 +358,12 @@ export const think0: DefinitionDocumentationItem = {
     name: 'Sprite.think',
     overloadId: '0'
   },
-  insertText: 'think ${1:""}',
+  insertSnippet: 'think ${1:""}',
+  insertSnippetParameterHints: ['word'],
   overview: 'think word',
   detail: makeBasicMarkdownString({
-    en: 'Make the sprite think of some word, e.g., `think "Wow!"`',
-    zh: '使精灵思考一些内容，如：`think "Wow!"`'
+    en: 'Make the sprite think of some word',
+    zh: '使精灵思考一些内容'
   })
 }
 
@@ -371,23 +375,26 @@ export const think1: DefinitionDocumentationItem = {
     name: 'Sprite.think',
     overloadId: '1'
   },
-  insertText: 'think ${1:""}, ${2:seconds}',
+  insertSnippet: 'think ${1:""}, ${2:1}',
+  insertSnippetParameterHints: ['word', 'seconds'],
   overview: 'think word, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Make the sprite think of some word with duration, e.g., `think "Wow!", 2`',
-    zh: '使精灵思考一些内容并指定持续时间，如：`think "Wow!", 2`'
+    en: 'Make the sprite think of some word with duration',
+    zh: '使精灵思考一些内容并指定持续时间'
   })
 }
 
 export const distanceTo0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
+  hiddenFromList: true, // similar to `distanceTo1`, but `distanceTo1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.distanceTo',
     overloadId: '0'
   },
-  insertText: 'distanceTo(${1:sprite})',
+  insertSnippet: 'distanceTo(${1:${BUILDER_OTHER_SPRITE_NAME:S1}})',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'distanceTo(sprite)',
   detail: makeBasicMarkdownString({
     en: 'Get the distance from current sprite to given sprite',
@@ -403,11 +410,12 @@ export const distanceTo1: DefinitionDocumentationItem = {
     name: 'Sprite.distanceTo',
     overloadId: '1'
   },
-  insertText: 'distanceTo(${1:name})',
+  insertSnippet: 'distanceTo(${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"})',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'distanceTo(name)',
   detail: makeBasicMarkdownString({
-    en: 'Get the distance from current sprite to the sprite with given name, e.g., `distanceTo("Enemy")`',
-    zh: '获取当前精灵到指定名字的精灵的距离，如：`distanceTo("Enemy")`'
+    en: 'Get the distance from current sprite to the sprite with given name',
+    zh: '获取当前精灵到指定名字的精灵的距离'
   })
 }
 
@@ -419,11 +427,12 @@ export const distanceTo2: DefinitionDocumentationItem = {
     name: 'Sprite.distanceTo',
     overloadId: '2'
   },
-  insertText: 'distanceTo(${1:obj})',
+  insertSnippet: 'distanceTo(${1:Mouse})',
+  insertSnippetParameterHints: ['object'],
   overview: 'distanceTo(obj)',
   detail: makeBasicMarkdownString({
-    en: 'Get the distance from current sprite to given object, e.g., `distanceTo(Mouse)`',
-    zh: '获取当前精灵到指定对象的距离，如：`distanceTo(Mouse)`'
+    en: 'Get the distance from current sprite to given object',
+    zh: '获取当前精灵到指定对象的距离'
   })
 }
 
@@ -435,11 +444,12 @@ export const move0: DefinitionDocumentationItem = {
     name: 'Sprite.move',
     overloadId: '0'
   },
-  insertText: 'move ${1:distance}',
+  insertSnippet: 'move ${1:100}',
+  insertSnippetParameterHints: ['distance'],
   overview: 'move distance',
   detail: makeBasicMarkdownString({
-    en: 'Move given distance toward current heading, e.g., `move 10`',
-    zh: '向当前朝向移动指定的距离，如：`move 10`'
+    en: 'Move given distance toward current heading',
+    zh: '向当前朝向移动指定的距离'
   }),
   hiddenFromList: true // not recommended to use
 }
@@ -452,11 +462,12 @@ export const move1: DefinitionDocumentationItem = {
     name: 'Sprite.move',
     overloadId: '1'
   },
-  insertText: 'move ${1:distance}',
+  insertSnippet: 'move ${1:100}',
+  insertSnippetParameterHints: ['distance'],
   overview: 'move distance',
   detail: makeBasicMarkdownString({
-    en: 'Move given distance toward current heading, e.g., `move 10`',
-    zh: '向当前朝向移动指定的距离，如：`move 10`'
+    en: 'Move given distance toward current heading',
+    zh: '向当前朝向移动指定的距离'
   }),
   hiddenFromList: true // duplicate with `move0`
 }
@@ -469,11 +480,12 @@ export const step0: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '0'
   },
-  insertText: 'step ${1:distance}',
+  insertSnippet: 'step ${1:100}',
+  insertSnippetParameterHints: ['distance'],
   overview: 'step distance',
   detail: makeBasicMarkdownString({
-    en: 'Step given distance toward current heading. Animation bound to state "step" will be played, e.g., `step 10`',
-    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放，如：`step 10`'
+    en: 'Step given distance toward current heading. Animation bound to state "step" will be played',
+    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
   })
 }
 
@@ -485,11 +497,12 @@ export const step1: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '1'
   },
-  insertText: 'step ${1:distance}, ${2:animation}',
+  insertSnippet: 'step ${1:100}, ${2:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['distance', 'animation'],
   overview: 'step distance, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step given distance toward current heading and animation with given name will be played, e.g., `step 10, "run"`',
-    zh: '向当前朝向行走指定的距离，并播放指定名称的动画，如：`step 10, "run"`'
+    en: 'Step given distance toward current heading and animation with given name will be played',
+    zh: '向当前朝向行走指定的距离，并播放指定名称的动画'
   })
 }
 
@@ -501,7 +514,8 @@ export const step2: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '2'
   },
-  insertText: 'step ${1:distance}',
+  insertSnippet: 'step ${1:100}',
+  insertSnippetParameterHints: ['distance'],
   overview: 'step distance',
   detail: makeBasicMarkdownString({
     en: 'Step given distance toward current heading. Animation bound to state "step" will be played',
@@ -518,12 +532,14 @@ export const goto0: DefinitionDocumentationItem = {
     name: 'Sprite.goto',
     overloadId: '0'
   },
-  insertText: 'goto ${1:sprite}',
+  insertSnippet: 'goto ${1:sprite}',
   overview: 'goto sprite',
   detail: makeBasicMarkdownString({
-    en: 'Move to given sprite, e.g., `goto Enemy`',
-    zh: '移动到指定精灵，如：`goto Enemy`'
-  })
+    en: 'Move to given sprite',
+    zh: '移动到指定精灵'
+  }),
+  hiddenFromList: true // similar to `goto1`, but `goto1` is more recommended
+  // TODO: unhide this (& similar items) when [work class embed](https://github.com/goplus/gop/pull/2301) is supported
 }
 
 export const goto1: DefinitionDocumentationItem = {
@@ -534,10 +550,11 @@ export const goto1: DefinitionDocumentationItem = {
     name: 'Sprite.goto',
     overloadId: '1'
   },
-  insertText: 'goto ${1:name}',
+  insertSnippet: 'goto ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'goto name',
   detail: makeBasicMarkdownString({
-    en: 'Move to the sprite with given name, e.g., `goto "Enemy"`',
+    en: 'Move to the sprite with given name',
     zh: '移动到指定名字的精灵，如：`goto "Enemy"`'
   })
 }
@@ -550,11 +567,12 @@ export const goto2: DefinitionDocumentationItem = {
     name: 'Sprite.goto',
     overloadId: '2'
   },
-  insertText: 'goto ${1:obj}',
+  insertSnippet: 'goto ${1:Mouse}',
+  insertSnippetParameterHints: ['object'],
   overview: 'goto obj',
   detail: makeBasicMarkdownString({
-    en: 'Move to given obj, e.g., `goto Mouse`',
-    zh: '移动到指定对象，如：`goto Mouse`'
+    en: 'Move to given obj',
+    zh: '移动到指定对象'
   })
 }
 
@@ -566,11 +584,12 @@ export const glide0: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '0'
   },
-  insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
+  insertSnippet: 'glide ${1:100}, ${2:100}, ${3:1}',
+  insertSnippetParameterHints: ['x', 'y', 'seconds'],
   overview: 'glide x, y, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given position (X, Y) with glide animation and given duration, e.g., `glide 100, 100, 2`',
-    zh: '滑行到指定位置（X，Y）并指定时长，如：`glide 100, 100, 2`'
+    en: 'Move to given position (X, Y) with glide animation and given duration',
+    zh: '滑行到指定位置（X，Y）并指定时长'
   })
 }
 
@@ -582,12 +601,14 @@ export const glide1: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '1'
   },
-  insertText: 'glide {$1:sprite}, ${2:seconds}',
+  insertSnippet: 'glide {$1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
+  insertSnippetParameterHints: ['sprite', 'seconds'],
   overview: 'glide sprite, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given sprite with glide animation and given duration, e.g., `glide Enemy, 2`',
-    zh: '滑行到指定精灵并指定时长，如：`glide Enemy, 2`'
-  })
+    en: 'Move to given sprite with glide animation and given duration',
+    zh: '滑行到指定精灵并指定时长'
+  }),
+  hiddenFromList: true // similar to `glide2`, but `glide2` is more recommended
 }
 
 export const glide2: DefinitionDocumentationItem = {
@@ -598,11 +619,12 @@ export const glide2: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '2'
   },
-  insertText: 'glide ${1:name}, ${2:seconds}',
+  insertSnippet: 'glide ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
+  insertSnippetParameterHints: ['sprite', 'seconds'],
   overview: 'glide name, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to the sprite with given name with glide animation and given duration, e.g., `glide "Enemy", 2`',
-    zh: '滑行到指定名称的精灵并指定时长，如：`glide "Enemy", 2`'
+    en: 'Move to the sprite with given name with glide animation and given duration',
+    zh: '滑行到指定名称的精灵并指定时长'
   })
 }
 
@@ -614,11 +636,12 @@ export const glide3: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '3'
   },
-  insertText: 'glide ${1:obj}, ${2:seconds}',
+  insertSnippet: 'glide ${1:Mouse}, ${2:1}',
+  insertSnippetParameterHints: ['object', 'seconds'],
   overview: 'glide obj, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given obj with glide animation and given duration, e.g., `glide Mouse, 2`',
-    zh: '滑行到指定对象并指定时长，如：`glide Mouse, 2`'
+    en: 'Move to given obj with glide animation and given duration',
+    zh: '滑行到指定对象并指定时长'
   })
 }
 
@@ -629,11 +652,12 @@ export const setXYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setXYpos'
   },
-  insertText: 'setXYpos ${1:x}, ${2:y}',
+  insertSnippet: 'setXYpos ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['x', 'y'],
   overview: 'setXYpos x, y',
   detail: makeBasicMarkdownString({
-    en: "Set the sprite's position, e.g., `setXYpos 100, 100`",
-    zh: '设置精灵位置，如：`setXYpos 100, 100`'
+    en: "Set the sprite's position",
+    zh: '设置精灵位置'
   })
 }
 
@@ -644,11 +668,12 @@ export const changeXYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeXYpos'
   },
-  insertText: 'changeXYpos ${1:dX}, ${2:dY}',
+  insertSnippet: 'changeXYpos ${1:10}, ${2:10}',
+  insertSnippetParameterHints: ['dX', 'dY'],
   overview: 'changeXYpos dX, dY',
   detail: makeBasicMarkdownString({
-    en: "Change the sprite's position, e.g., `changeXYpos 10, 20` changing X position by 10 and Y position by 20",
-    zh: '改变精灵位置，如：`changeXYpos 10, 10` 使水平位置增加 10，垂直位置增加 10'
+    en: "Change the sprite's position",
+    zh: '改变精灵位置'
   })
 }
 
@@ -659,7 +684,7 @@ export const xpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.xpos'
   },
-  insertText: 'xpos',
+  insertSnippet: 'xpos',
   overview: 'xpos',
   detail: makeBasicMarkdownString({
     en: 'Get current X position',
@@ -674,11 +699,12 @@ export const setXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setXpos'
   },
-  insertText: 'setXpos ${1:x}',
+  insertSnippet: 'setXpos ${1:0}',
+  insertSnippetParameterHints: ['x'],
   overview: 'setXpos x',
   detail: makeBasicMarkdownString({
-    en: "Set the sprite's X position, e.g., `setXpos 100`",
-    zh: '设置精灵的水平位置，如：`setXpos 100`'
+    en: "Set the sprite's X position",
+    zh: '设置精灵的水平位置'
   })
 }
 
@@ -689,11 +715,12 @@ export const changeXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeXpos'
   },
-  insertText: 'changeXpos ${1:dX}',
+  insertSnippet: 'changeXpos ${1:10}',
+  insertSnippetParameterHints: ['dX'],
   overview: 'changeXpos dX',
   detail: makeBasicMarkdownString({
-    en: "Change the sprite's X position, e.g., `changeXpos 10` changing X position by 10",
-    zh: '改变精灵的水平位置，如：`changeXpos 10` 使水平位置增加 10'
+    en: "Change the sprite's X position",
+    zh: '改变精灵的水平位置'
   })
 }
 
@@ -704,7 +731,7 @@ export const ypos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.ypos'
   },
-  insertText: 'ypos',
+  insertSnippet: 'ypos',
   overview: 'ypos',
   detail: makeBasicMarkdownString({
     en: 'Get current Y position',
@@ -719,11 +746,12 @@ export const setYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setYpos'
   },
-  insertText: 'setYpos ${1:y}',
+  insertSnippet: 'setYpos ${1:0}',
+  insertSnippetParameterHints: ['y'],
   overview: 'setYpos y',
   detail: makeBasicMarkdownString({
-    en: "Set the sprite's Y position, e.g., `setYpos 100`",
-    zh: '设置精灵的垂直位置，如：`setYpos 100`'
+    en: "Set the sprite's Y position",
+    zh: '设置精灵的垂直位置'
   })
 }
 
@@ -734,11 +762,12 @@ export const changeYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeYpos'
   },
-  insertText: 'changeYpos ${1:dY}',
+  insertSnippet: 'changeYpos ${1:10}',
+  insertSnippetParameterHints: ['dY'],
   overview: 'changeYpos dY',
   detail: makeBasicMarkdownString({
-    en: "Change the sprite's Y position, e.g., `changeYpos 10` changing Y position by 10",
-    zh: '改变精灵的垂直位置，如：`changeYpos 10` 使垂直位置增加 10'
+    en: "Change the sprite's Y position",
+    zh: '改变精灵的垂直位置'
   })
 }
 
@@ -749,11 +778,12 @@ export const setRotationStyle: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setRotationStyle'
   },
-  insertText: 'setRotationStyle ${1:style}',
+  insertSnippet: 'setRotationStyle ${1:LeftRight}',
+  insertSnippetParameterHints: ['style'],
   overview: 'setRotationStyle style',
   detail: makeBasicMarkdownString({
-    en: 'Set the rotation style of the sprite, e.g., `setRotationStyle LeftRight`',
-    zh: '设置精灵的旋转方式，如：`setRotationStyle LeftRight`'
+    en: 'Set the rotation style of the sprite',
+    zh: '设置精灵的旋转方式'
   })
 }
 
@@ -764,7 +794,7 @@ export const heading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.heading'
   },
-  insertText: 'heading',
+  insertSnippet: 'heading',
   overview: 'heading',
   detail: makeBasicMarkdownString({
     en: 'Get current heading direction',
@@ -780,11 +810,12 @@ export const turn0: DefinitionDocumentationItem = {
     name: 'Sprite.turn',
     overloadId: '0'
   },
-  insertText: 'turn ${1:degree}',
+  insertSnippet: 'turn ${1:10}',
+  insertSnippetParameterHints: ['degree'],
   overview: 'turn degree',
   detail: makeBasicMarkdownString({
-    en: 'Turn with given degree relative to current heading, e.g., `turn 90`',
-    zh: '相对当前朝向转动给定的角度，如：`turn 90`'
+    en: 'Turn with given degree relative to current heading',
+    zh: '相对当前朝向转动给定的角度'
   })
 }
 
@@ -796,11 +827,12 @@ export const turn1: DefinitionDocumentationItem = {
     name: 'Sprite.turn',
     overloadId: '1'
   },
-  insertText: 'turn ${1:direction}',
+  insertSnippet: 'turn ${1:90}',
+  insertSnippetParameterHints: ['degree'],
   overview: 'turn direction',
   detail: makeBasicMarkdownString({
-    en: 'Turn with given direction relative to current heading, e.g., `turn Left`',
-    zh: '指定相对方向转动，如：`turn Left`'
+    en: 'Turn with given direction relative to current heading',
+    zh: '指定相对方向转动'
   })
 }
 
@@ -812,12 +844,13 @@ export const turnTo0: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '0'
   },
-  insertText: 'turnTo ${1:sprite}',
+  insertSnippet: 'turnTo ${1:sprite}',
   overview: 'turnTo sprite',
   detail: makeBasicMarkdownString({
     en: 'Turn heading to given sprite',
     zh: '将朝向转到指定精灵'
-  })
+  }),
+  hiddenFromList: true // similar to `turnTo1`, but `turnTo1` is more recommended
 }
 
 export const turnTo1: DefinitionDocumentationItem = {
@@ -828,11 +861,12 @@ export const turnTo1: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '1'
   },
-  insertText: 'turnTo ${1:name}',
-  overview: 'turnTo name',
+  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'turnTo sprite',
   detail: makeBasicMarkdownString({
-    en: 'Turn heading to given sprite by name, e.g., `turnTo "Enemy"`',
-    zh: '将朝向转到指定名字的精灵，如：`turnTo "Enemy"`'
+    en: 'Turn heading to given sprite by name',
+    zh: '将朝向转到指定名字的精灵'
   })
 }
 
@@ -844,11 +878,12 @@ export const turnTo2: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '2'
   },
-  insertText: 'turnTo ${1:degree}',
-  overview: 'turnTo degree',
+  insertSnippet: 'turnTo ${1:90}',
+  insertSnippetParameterHints: ['direction'],
+  overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
-    en: 'Turn heading to given degree, e.g., `turnTo 90`',
-    zh: '将朝向转到指定角度，如：`turnTo 90`'
+    en: 'Turn heading to given direction',
+    zh: '将朝向转到指定角度'
   })
 }
 
@@ -860,12 +895,14 @@ export const turnTo3: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '3'
   },
-  insertText: 'turnTo ${1:direction}',
+  insertSnippet: 'turnTo ${1:Left}',
+  insertSnippetParameterHints: ['direction'],
   overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
-    en: 'Turn heading to given direction, e.g., `turnTo Left`',
-    zh: '将朝向转到指定方向，如：`turnTo Left`'
-  })
+    en: 'Turn heading to given direction',
+    zh: '将朝向转到指定方向'
+  }),
+  hiddenFromList: true // similar to `turnTo2`, but `turnTo2` is more recommended
 }
 
 export const turnTo4: DefinitionDocumentationItem = {
@@ -876,11 +913,12 @@ export const turnTo4: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '4'
   },
-  insertText: 'turnTo ${1:obj}',
+  insertSnippet: 'turnTo ${1:Mouse}',
+  insertSnippetParameterHints: ['object'],
   overview: 'turnTo obj',
   detail: makeBasicMarkdownString({
-    en: 'Turn heading to given object, e.g., `turnTo Mouse`',
-    zh: '将朝向转到指定对象，如：`turnTo Mouse`'
+    en: 'Turn heading to given object',
+    zh: '将朝向转到指定对象'
   })
 }
 
@@ -891,11 +929,12 @@ export const setHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setHeading'
   },
-  insertText: 'setHeading ${1:direction}',
+  insertSnippet: 'setHeading ${1:90}',
+  insertSnippetParameterHints: ['direction'],
   overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
-    en: 'Set heading to given value, e.g., `setHeading 90`',
-    zh: '设置朝向为给定值，如：`setHeading 90`'
+    en: 'Set heading to given value',
+    zh: '设置朝向为给定值'
   })
 }
 
@@ -906,11 +945,12 @@ export const changeHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeHeading'
   },
-  insertText: 'changeHeading ${1:dDirection}',
+  insertSnippet: 'changeHeading ${1:10}',
+  insertSnippetParameterHints: ['dDirection'],
   overview: 'changeHeading dDirection',
   detail: makeBasicMarkdownString({
-    en: 'Change heading with given direction change, e.g., `changeHeading 90`',
-    zh: '以给定的角度改变朝向，如：`changeHeading 90`'
+    en: 'Change heading with given direction change',
+    zh: '以给定的角度改变朝向'
   })
 }
 
@@ -921,7 +961,7 @@ export const size: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.size'
   },
-  insertText: 'size',
+  insertSnippet: 'size',
   overview: 'size',
   detail: makeBasicMarkdownString({
     en: 'Get the size of current sprite',
@@ -936,11 +976,12 @@ export const setSize: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setSize'
   },
-  insertText: 'setSize ${1:size}',
+  insertSnippet: 'setSize ${1:2}',
+  insertSnippetParameterHints: ['size'],
   overview: 'setSize size',
   detail: makeBasicMarkdownString({
-    en: 'Set the size of current sprite, e.g., `setSize 2`',
-    zh: '设置当前精灵的大小，如：`setSize 2`'
+    en: 'Set the size of current sprite',
+    zh: '设置当前精灵的大小'
   })
 }
 
@@ -951,13 +992,16 @@ export const changeSize: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeSize'
   },
-  insertText: 'changeSize ${1:dSize}',
+  insertSnippet: 'changeSize ${1:1}',
+  insertSnippetParameterHints: ['dSize'],
   overview: 'changeSize dSize',
   detail: makeBasicMarkdownString({
-    en: 'Change the size of current sprite, e.g., `changeSize 1`',
-    zh: '改变当前精灵的大小，如：`changeSize 1`'
+    en: 'Change the size of current sprite',
+    zh: '改变当前精灵的大小'
   })
 }
+
+// TODO: Sprite.setEffect|changeEffect, Game.setEffect|changeEffect
 
 export const touching0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
@@ -967,7 +1011,8 @@ export const touching0: DefinitionDocumentationItem = {
     name: 'Sprite.touching',
     overloadId: '0'
   },
-  insertText: 'touching(${1:name})',
+  insertSnippet: 'touching(${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"})',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'touching(name)',
   detail: makeBasicMarkdownString({
     en: 'Check if current sprite touching sprite with given name',
@@ -983,12 +1028,13 @@ export const touching1: DefinitionDocumentationItem = {
     name: 'Sprite.touching',
     overloadId: '1'
   },
-  insertText: 'touching(${1:sprite})',
+  insertSnippet: 'touching(${1:sprite})',
   overview: 'touching(sprite)',
   detail: makeBasicMarkdownString({
     en: 'Check if current sprite touching given sprite',
     zh: '检查当前精灵是否与指定精灵接触'
-  })
+  }),
+  hiddenFromList: true // similar to `touching0`, but `touching0` is more recommended
 }
 
 export const touching2: DefinitionDocumentationItem = {
@@ -999,11 +1045,12 @@ export const touching2: DefinitionDocumentationItem = {
     name: 'Sprite.touching',
     overloadId: '2'
   },
-  insertText: 'touching(${1:obj})',
+  insertSnippet: 'touching(${1:Edge})',
+  insertSnippetParameterHints: ['object'],
   overview: 'touching(obj)',
   detail: makeBasicMarkdownString({
-    en: 'Check if current sprite touching given object, e.g., `touching(Mouse)`',
-    zh: '检查当前精灵是否与指定对象接触，如：`touching(Mouse)`'
+    en: 'Check if current sprite touching given object',
+    zh: '检查当前精灵是否与指定对象接触'
   })
 }
 
@@ -1014,7 +1061,7 @@ export const bounceOffEdge: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.bounceOffEdge'
   },
-  insertText: 'bounceOffEdge',
+  insertSnippet: 'bounceOffEdge',
   overview: 'bounceOffEdge',
   detail: makeBasicMarkdownString({
     en: 'Check & bounce off current sprite if touching the edge',
@@ -1029,11 +1076,11 @@ export const mouseHitItem: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.mouseHitItem'
   },
-  insertText: 'mouseHitItem',
+  insertSnippet: 'mouseHitItem',
   overview: 'mouseHitItem',
   detail: makeBasicMarkdownString({
-    en: 'Get the topmost sprite which is hit by mouse, e.g., `hitSprite, ok := mouseHitItem`',
-    zh: '获取鼠标点击的最上层精灵，如：`hitSprite, ok := mouseHitItem`'
+    en: 'Get the topmost sprite which is hit by mouse',
+    zh: '获取鼠标点击的最上层精灵'
   })
 }
 
@@ -1044,7 +1091,7 @@ export const backdropName: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.backdropName'
   },
-  insertText: 'backdropName',
+  insertSnippet: 'backdropName',
   overview: 'backdropName',
   detail: makeBasicMarkdownString({
     en: 'Get the name of the current backdrop',
@@ -1059,7 +1106,7 @@ export const backdropIndex: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.backdropIndex'
   },
-  insertText: 'backdropIndex',
+  insertSnippet: 'backdropIndex',
   overview: 'backdropIndex',
   detail: makeBasicMarkdownString({
     en: 'Get the index of the current backdrop',
@@ -1075,11 +1122,12 @@ export const startBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '0'
   },
-  insertText: 'startBackdrop ${1:name}',
+  insertSnippet: 'startBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}',
+  insertSnippetParameterHints: ['backdrop'],
   overview: 'startBackdrop name',
   detail: makeBasicMarkdownString({
-    en: 'Set the current backdrop by specifying name, e.g., `startBackdrop "backdrop1"`',
-    zh: '通过指定名称切换背景，如：`startBackdrop "backdrop1"`'
+    en: 'Set the current backdrop by specifying name',
+    zh: '通过指定名称切换背景'
   })
 }
 
@@ -1091,11 +1139,12 @@ export const startBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '1'
   },
-  insertText: 'startBackdrop ${1:name}, ${2:true}',
+  insertSnippet: 'startBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}, ${2:true}',
+  insertSnippetParameterHints: ['backdrop', 'wait'],
   overview: 'startBackdrop name, true',
   detail: makeBasicMarkdownString({
-    en: 'Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) works to complete, e.g., `startBackdrop "backdrop1", true`',
-    zh: '通过指定名称切换背景，并等待关联的（`onBackdrop`）行为结束，如：`startBackdrop "backdrop1", true`'
+    en: 'Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) works to complete',
+    zh: '通过指定名称切换背景，并等待关联的（`onBackdrop`）行为结束'
   })
 }
 
@@ -1107,7 +1156,7 @@ export const nextBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.nextBackdrop',
     overloadId: '0'
   },
-  insertText: 'nextBackdrop',
+  insertSnippet: 'nextBackdrop',
   overview: 'nextBackdrop',
   detail: makeBasicMarkdownString({
     en: 'Switch to the next backdrop',
@@ -1123,7 +1172,8 @@ export const nextBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.nextBackdrop',
     overloadId: '1'
   },
-  insertText: 'nextBackdrop ${2:true}',
+  insertSnippet: 'nextBackdrop ${2:true}',
+  insertSnippetParameterHints: ['wait'],
   overview: 'nextBackdrop true',
   detail: makeBasicMarkdownString({
     en: 'Switch to the next backdrop, with waiting for related (`onBackdrop`) works to complete',
@@ -1139,7 +1189,7 @@ export const prevBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.prevBackdrop',
     overloadId: '0'
   },
-  insertText: 'prevBackdrop',
+  insertSnippet: 'prevBackdrop',
   overview: 'prevBackdrop',
   detail: makeBasicMarkdownString({
     en: 'Switch to the previous backdrop',
@@ -1155,7 +1205,8 @@ export const prevBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.prevBackdrop',
     overloadId: '1'
   },
-  insertText: 'prevBackdrop ${1:true}',
+  insertSnippet: 'prevBackdrop ${1:true}',
+  insertSnippetParameterHints: ['wait'],
   overview: 'prevBackdrop true',
   detail: makeBasicMarkdownString({
     en: 'Switch to the previous backdrop, with waiting for related (`onBackdrop`) works to complete',
@@ -1170,11 +1221,12 @@ export const keyPressed: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.keyPressed'
   },
-  insertText: 'keyPressed ${1:key}',
+  insertSnippet: 'keyPressed ${1:KeyA}',
+  insertSnippetParameterHints: ['key'],
   overview: 'keyPressed(key)',
   detail: makeBasicMarkdownString({
-    en: 'Check if given key is currently pressed, e.g., `keyPressed(KeyA)`',
-    zh: '检查给定的按键当前是否被按下，如：`keyPressed(KeyA)`'
+    en: 'Check if given key is currently pressed',
+    zh: '检查给定的按键当前是否被按下'
   })
 }
 
@@ -1185,7 +1237,7 @@ export const mouseX: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.mouseX'
   },
-  insertText: 'mouseX',
+  insertSnippet: 'mouseX',
   overview: 'mouseX',
   detail: makeBasicMarkdownString({
     en: 'Get X position of the mouse',
@@ -1200,7 +1252,7 @@ export const mouseY: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.mouseY'
   },
-  insertText: 'mouseY',
+  insertSnippet: 'mouseY',
   overview: 'mouseY',
   detail: makeBasicMarkdownString({
     en: 'Get Y position of the mouse',
@@ -1215,7 +1267,7 @@ export const mousePressed: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.mousePressed'
   },
-  insertText: 'mousePressed',
+  insertSnippet: 'mousePressed',
   overview: 'mousePressed',
   detail: makeBasicMarkdownString({
     en: 'Check if the mouse is currently pressed',
@@ -1230,11 +1282,12 @@ export const wait: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.wait'
   },
-  insertText: 'wait ${1:seconds}',
+  insertSnippet: 'wait ${1:1}',
+  insertSnippetParameterHints: ['seconds'],
   overview: 'wait seconds',
   detail: makeBasicMarkdownString({
-    en: 'Block current execution (coroutine) for given seconds, e.g., `wait 0.5`',
-    zh: '阻塞当前的执行，并指定阻塞的秒数，如：`wait 0.5`'
+    en: 'Block current execution (coroutine) for given seconds',
+    zh: '阻塞当前的执行，并指定阻塞的秒数'
   })
 }
 
@@ -1246,12 +1299,14 @@ export const play0: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '0'
   },
-  insertText: 'play ${1:sound}',
+  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}',
+  insertSnippetParameterHints: ['sound'],
   overview: 'play sound',
   detail: makeBasicMarkdownString({
-    en: 'Play given sound, e.g., `play explosion`',
-    zh: '播放指定声音，如：`play explosion`'
-  })
+    en: 'Play given sound',
+    zh: '播放指定声音'
+  }),
+  hiddenFromList: true // similar to `play3`, but `play3` is more recommended
 }
 
 export const play1: DefinitionDocumentationItem = {
@@ -1262,12 +1317,14 @@ export const play1: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '1'
   },
-  insertText: 'play ${1:sound}, ${2:wait}',
+  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:true}',
+  insertSnippetParameterHints: ['sound', 'wait'],
   overview: 'play sound, wait',
   detail: makeBasicMarkdownString({
-    en: 'Play given sound with waiting, e.g., `play explosion, true`',
-    zh: '播放指定声音并等待播放完成，如：`play explosion, true`'
-  })
+    en: 'Play given sound with waiting',
+    zh: '播放指定声音并等待播放完成'
+  }),
+  hiddenFromList: true // similar to `play4`, but `play4` is more recommended
 }
 
 export const play2: DefinitionDocumentationItem = {
@@ -1278,12 +1335,14 @@ export const play2: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '2'
   },
-  insertText: 'play ${1:sound}, ${2:options}',
+  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:options}',
+  insertSnippetParameterHints: ['sound', 'options'],
   overview: 'play sound, options',
   detail: makeBasicMarkdownString({
-    en: 'Play given sound with options, e.g., `play explosion, { Loop: true }`',
-    zh: '播放指定声音并指定选项，如：`play explosion, { Loop: true }`'
-  })
+    en: 'Play given sound with options',
+    zh: '播放指定声音并指定选项'
+  }),
+  hiddenFromList: true // similar to `play5`, but `play5` is more recommended
 }
 
 export const play3: DefinitionDocumentationItem = {
@@ -1294,11 +1353,12 @@ export const play3: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '3'
   },
-  insertText: 'play ${1:"sound"}',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
   overview: 'play name',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name, e.g., `play "explosion"`',
-    zh: '播放声音（指定名字），如：`play "explosion"`'
+    en: 'Play sound with given name',
+    zh: '播放声音（指定名字）'
   })
 }
 
@@ -1310,11 +1370,12 @@ export const play4: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '4'
   },
-  insertText: 'play ${1:"sound"}, ${2:wait}',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:true}',
+  insertSnippetParameterHints: ['sound', 'wait'],
   overview: 'play name, wait',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name and waiting, e.g., `play "explosion", true`',
-    zh: '播放声音（指定名字）并等待播放完成，如：`play "explosion", true`'
+    en: 'Play sound with given name and wait',
+    zh: '播放声音（指定名字）并等待播放完成'
   })
 }
 
@@ -1326,11 +1387,12 @@ export const play5: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '5'
   },
-  insertText: 'play ${1:"sound"}, ${2:options}',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:options}',
+  insertSnippetParameterHints: ['sound', 'options'],
   overview: 'play name, options',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name and options, e.g., `play "explosion", { Loop: true }`',
-    zh: '播放声音（指定名字）并指定选项，如：`play "explosion", { Loop: true }`'
+    en: 'Play sound with given name and options',
+    zh: '播放声音（指定名字）并指定选项'
   })
 }
 
@@ -1341,7 +1403,7 @@ export const stopAllSounds: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.stopAllSounds'
   },
-  insertText: 'stopAllSounds',
+  insertSnippet: 'stopAllSounds',
   overview: 'stopAllSounds',
   detail: makeBasicMarkdownString({
     en: 'Stop all playing sounds',
@@ -1356,7 +1418,7 @@ export const volume: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.volume'
   },
-  insertText: 'volume',
+  insertSnippet: 'volume',
   overview: 'volume',
   detail: makeBasicMarkdownString({
     en: 'Get the volume for sounds',
@@ -1371,11 +1433,12 @@ export const setVolume: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.setVolume'
   },
-  insertText: 'setVolume ${1:volume}',
+  insertSnippet: 'setVolume ${1:100}',
+  insertSnippetParameterHints: ['volume'],
   overview: 'setVolume volume',
   detail: makeBasicMarkdownString({
-    en: 'Set the volume for sounds, e.g., `setVolume 100`',
-    zh: '设置声音的音量，如：`setVolume 100`'
+    en: 'Set the volume for sounds',
+    zh: '设置声音的音量'
   })
 }
 
@@ -1386,11 +1449,12 @@ export const changeVolume: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.changeVolume'
   },
-  insertText: 'changeVolume ${1:dVolume}',
+  insertSnippet: 'changeVolume ${1:10}',
+  insertSnippetParameterHints: ['dVolume'],
   overview: 'changeVolume dVolume',
   detail: makeBasicMarkdownString({
-    en: 'Change the volume for sounds with given volume change, e.g., `changeVolume 10`',
-    zh: '根据给定的音量变化改变声音的音量，如：`changeVolume 10`'
+    en: 'Change the volume for sounds with given volume change',
+    zh: '根据给定的音量变化改变声音的音量'
   })
 }
 
@@ -1402,11 +1466,12 @@ export const broadcast0: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '0'
   },
-  insertText: 'broadcast ${1:"msg"}',
+  insertSnippet: 'broadcast ${1:"ping"}',
+  insertSnippetParameterHints: ['msg'],
   overview: 'broadcast msg',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message, e.g., `broadcast "msg"`',
-    zh: '广播一条消息，如：`broadcast "msg"`'
+    en: 'Broadcast a message',
+    zh: '广播一条消息'
   })
 }
 
@@ -1418,11 +1483,12 @@ export const broadcast1: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '1'
   },
-  insertText: 'broadcast ${1:"msg"}, ${2:true}',
+  insertSnippet: 'broadcast ${1:"ping"}, ${2:true}',
+  insertSnippetParameterHints: ['msg', 'wait'],
   overview: 'broadcast msg, true',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with waiting for related (`onMsg`) works to complete, e.g., `broadcast "msg", true`',
-    zh: '广播一条消息并等待关联的（`onMsg`）行为结束，如：`broadcast "msg", true`'
+    en: 'Broadcast a message with waiting for related (`onMsg`) works to complete',
+    zh: '广播一条消息并等待关联的（`onMsg`）行为结束'
   })
 }
 
@@ -1434,11 +1500,12 @@ export const broadcast2: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '2'
   },
-  insertText: 'broadcast ${1:"msg"}, ${2:data}, ${3:true}',
+  insertSnippet: 'broadcast ${1:"ping"}, ${2:1}, ${3:true}',
+  insertSnippetParameterHints: ['msg', 'data', 'wait'],
   overview: 'broadcast msg, data, true',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with data and waiting for related (`onMsg`) works to complete, e.g., `broadcast "msg", data, true`',
-    zh: '广播一条带数据的消息并等待关联的（`onMsg`）行为结束，如：`broadcast "msg", data, true`'
+    en: 'Broadcast a message with data and waiting for related (`onMsg`) works to complete',
+    zh: '广播一条带数据的消息并等待关联的（`onMsg`）行为结束'
   })
 }
 
@@ -1449,7 +1516,7 @@ export const gameOnStart: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.onStart'
   },
-  insertText: 'onStart => {\n\t${1}\n}',
+  insertSnippet: 'onStart => {\n\t$0\n}',
   overview: 'onStart => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to game start',
@@ -1472,7 +1539,7 @@ export const gameOnClick: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.onClick'
   },
-  insertText: 'onClick => {\n\t${1}\n}',
+  insertSnippet: 'onClick => {\n\t$0\n}',
   overview: 'onClick => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to stage clicked',
@@ -1487,7 +1554,7 @@ export const spriteOnClick: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.onClick'
   },
-  insertText: 'onClick => {\n\t${1}\n}',
+  insertSnippet: 'onClick => {\n\t$0\n}',
   overview: 'onClick => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite clicked',
@@ -1502,7 +1569,7 @@ export const gameOnAnyKey: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.onAnyKey'
   },
-  insertText: 'onAnyKey key => {\n\t${1}\n}',
+  insertSnippet: 'onAnyKey key => {\n\t$0\n}',
   overview: 'onAnyKey key => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to any key pressed',
@@ -1526,11 +1593,12 @@ export const gameOnKey0: DefinitionDocumentationItem = {
     name: 'Game.onKey',
     overloadId: '0'
   },
-  insertText: 'onKey ${1:key}, => {\n\t${2}\n}',
+  insertSnippet: 'onKey ${1:KeyA}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['key'],
   overview: 'onKey key, => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to given key pressed, e.g., `onKey KeyA, => {}`',
-    zh: '指定按键被按下时执行，如：`onKey KeyA, => {}`'
+    en: 'Listen to given key pressed',
+    zh: '指定按键被按下时执行'
   })
 }
 
@@ -1542,7 +1610,8 @@ export const gameOnKey1: DefinitionDocumentationItem = {
     name: 'Game.onKey',
     overloadId: '1'
   },
-  insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
+  insertSnippet: 'onKey ${1:[KeyA]}, key => {\n\t$0\n}',
+  insertSnippetParameterHints: ['keys'],
   overview: 'onKey keys, key => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to given keys pressed, optionally receiving the key pressed',
@@ -1595,7 +1664,7 @@ export const gameOnMsg0: DefinitionDocumentationItem = {
     name: 'Game.onMsg',
     overloadId: '0'
   },
-  insertText: 'onMsg (msg, data) => {\n\t${1}\n}',
+  insertSnippet: 'onMsg (msg, data) => {\n\t$0\n}',
   overview: 'onMsg (msg, data) => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to any message broadcasted, get the broadcasted message and data',
@@ -1611,7 +1680,8 @@ export const gameOnMsg1: DefinitionDocumentationItem = {
     name: 'Game.onMsg',
     overloadId: '1'
   },
-  insertText: 'onMsg ${1:msg}, => {\n\t${2}\n}',
+  insertSnippet: 'onMsg ${1:"ping"}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['msg'],
   overview: 'onMsg msg, => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to specific message broadcasted',
@@ -1645,7 +1715,7 @@ export const onBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.onBackdrop',
     overloadId: '0'
   },
-  insertText: 'onBackdrop backdrop => {\n\t${1}\n}',
+  insertSnippet: 'onBackdrop backdrop => {\n\t$0\n}',
   overview: 'onBackdrop backdrop => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to backdrop switching',
@@ -1661,7 +1731,8 @@ export const onBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.onBackdrop',
     overloadId: '1'
   },
-  insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}',
+  insertSnippet: 'onBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['backdrop'],
   overview: 'onBackdrop backdrop, => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to switching to specific backdrop',
@@ -1677,11 +1748,12 @@ export const rand0: DefinitionDocumentationItem = {
     name: 'rand',
     overloadId: '0'
   },
-  insertText: 'rand(${1:from}, ${2:to})',
+  insertSnippet: 'rand(${1:1}, ${2:10})',
+  insertSnippetParameterHints: ['from', 'to'],
   overview: 'rand(from, to)',
   detail: makeBasicMarkdownString({
-    en: 'Generate a random integer, e.g., `rand(1, 10)`',
-    zh: '生成一个随机整数，如：`rand(1, 10)`'
+    en: 'Generate a random integer',
+    zh: '生成一个随机整数'
   })
 }
 
@@ -1693,11 +1765,12 @@ export const rand1: DefinitionDocumentationItem = {
     name: 'rand',
     overloadId: '1'
   },
-  insertText: 'rand(${1:from}, ${2:to})',
+  insertSnippet: 'rand(${1:1.5}, ${2:9.9})',
+  insertSnippetParameterHints: ['from', 'to'],
   overview: 'rand(from, to)',
   detail: makeBasicMarkdownString({
-    en: 'Generate a random number, e.g., `rand(1.5, 9.9)`',
-    zh: '生成一个随机数，如：`rand(1.5, 9.9)`'
+    en: 'Generate a random number',
+    zh: '生成一个随机数'
   })
 }
 
@@ -1709,7 +1782,8 @@ export const exit0: DefinitionDocumentationItem = {
     name: 'exit',
     overloadId: '0'
   },
-  insertText: 'exit ${1:code}',
+  insertSnippet: 'exit ${1:0}',
+  insertSnippetParameterHints: ['code'],
   overview: 'exit code',
   detail: makeBasicMarkdownString({
     en: 'Exit the game with given code',
@@ -1726,7 +1800,7 @@ export const exit1: DefinitionDocumentationItem = {
     name: 'exit',
     overloadId: '1'
   },
-  insertText: 'exit',
+  insertSnippet: 'exit',
   overview: 'exit',
   detail: makeBasicMarkdownString({
     en: 'Exit the game',
@@ -1741,11 +1815,12 @@ export const getWidget: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.getWidget'
   },
-  insertText: 'getWidget(${1:Monitor}, ${2:name})',
+  insertSnippet: 'getWidget(${1:${BUILDER_FIRST_WIDGET_TYPE:Monitor}}, ${2:"${BUILDER_FIRST_WIDGET_NAME:w1}"})',
+  insertSnippetParameterHints: ['type', 'name'],
   overview: 'getWidget(T, name)',
   detail: makeBasicMarkdownString({
-    en: 'Get the widget by given type & name, e.g., `getWidget(Monitor, "score")`',
-    zh: '通过给定的类型和名称获取控件，如：`getWidget(Monitor, "score")`'
+    en: 'Get the widget by given type & name',
+    zh: '通过给定的类型和名称获取控件'
   })
 }
 
@@ -1756,11 +1831,11 @@ export const widgetVisible: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.visible'
   },
-  insertText: 'visible',
+  insertSnippet: 'visible',
   overview: 'visible',
   detail: makeBasicMarkdownString({
-    en: 'If current widget visible, e.g., `w.visible`',
-    zh: '当前控件是否可见，如：`w.visible`'
+    en: 'If current widget visible',
+    zh: '当前控件是否可见'
   })
 }
 
@@ -1771,11 +1846,11 @@ export const widgetHide: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.hide'
   },
-  insertText: 'hide',
+  insertSnippet: 'hide',
   overview: 'hide',
   detail: makeBasicMarkdownString({
-    en: 'Make current widget invisible, e.g., `w.hide`',
-    zh: '使当前控件不可见，如：`w.hide`'
+    en: 'Make current widget invisible',
+    zh: '使当前控件不可见'
   })
 }
 
@@ -1786,11 +1861,11 @@ export const widgetShow: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.show'
   },
-  insertText: 'show',
+  insertSnippet: 'show',
   overview: 'show',
   detail: makeBasicMarkdownString({
-    en: 'Make current widget visible, e.g., `w.show`',
-    zh: '使当前控件可见，如：`w.show`'
+    en: 'Make current widget visible',
+    zh: '使当前控件可见'
   })
 }
 
@@ -1801,11 +1876,12 @@ export const widgetSetXYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.setXYpos'
   },
-  insertText: 'setXYpos ${1:x}, ${2:y}',
+  insertSnippet: 'setXYpos ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['x', 'y'],
   overview: 'setXYpos x, y',
   detail: makeBasicMarkdownString({
-    en: "Set the widget's position, e.g., `w.setXYpos 100, 100`",
-    zh: '设置控件位置，如：`w.setXYpos 100, 100`'
+    en: "Set the widget's position",
+    zh: '设置控件位置'
   })
 }
 
@@ -1816,11 +1892,12 @@ export const widgetChangeXYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.changeXYpos'
   },
-  insertText: 'changeXYpos ${1:dX}, ${2:dY}',
+  insertSnippet: 'changeXYpos ${1:10}, ${2:10}',
+  insertSnippetParameterHints: ['dX', 'dY'],
   overview: 'changeXYpos dX, dY',
   detail: makeBasicMarkdownString({
-    en: "Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20",
-    zh: '改变控件位置，如：`w.changeXYpos 10, 10` 使控件 `w` 的水平位置增加 10，垂直位置增加 10'
+    en: "Change the widget's position",
+    zh: '改变控件位置'
   })
 }
 
@@ -1831,11 +1908,11 @@ export const widgetXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.xpos'
   },
-  insertText: 'xpos',
+  insertSnippet: 'xpos',
   overview: 'xpos',
   detail: makeBasicMarkdownString({
-    en: 'Get current X position, e.g., `w.xpos`',
-    zh: '获取当前水平位置，如：`w.xpos`'
+    en: 'Get current X position',
+    zh: '获取当前水平位置'
   })
 }
 
@@ -1846,11 +1923,12 @@ export const widgetSetXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.setXpos'
   },
-  insertText: 'setXpos ${1:x}',
+  insertSnippet: 'setXpos ${1:0}',
+  insertSnippetParameterHints: ['x'],
   overview: 'setXpos x',
   detail: makeBasicMarkdownString({
-    en: "Set the widget's X position, e.g., `w.setXpos 100`",
-    zh: '设置控件的水平位置，如：`w.setXpos 100`'
+    en: "Set the widget's X position",
+    zh: '设置控件的水平位置'
   })
 }
 
@@ -1861,11 +1939,12 @@ export const widgetChangeXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.changeXpos'
   },
-  insertText: 'changeXpos ${1:dX}',
+  insertSnippet: 'changeXpos ${1:10}',
+  insertSnippetParameterHints: ['dX'],
   overview: 'changeXpos dX',
   detail: makeBasicMarkdownString({
-    en: "Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10",
-    zh: '改变控件的水平位置，如：`w.changeXpos 10` 使控件 `w` 的水平位置增加 10'
+    en: "Change the widget's X position",
+    zh: '改变控件的水平位置'
   })
 }
 
@@ -1876,11 +1955,11 @@ export const widgetYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.ypos'
   },
-  insertText: 'ypos',
+  insertSnippet: 'ypos',
   overview: 'ypos',
   detail: makeBasicMarkdownString({
-    en: 'Get current Y position, e.g., `w.ypos`',
-    zh: '获取当前垂直位置，如：`w.ypos`'
+    en: 'Get current Y position',
+    zh: '获取当前垂直位置'
   })
 }
 
@@ -1891,11 +1970,12 @@ export const widgetSetYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.setYpos'
   },
-  insertText: 'setYpos ${1:y}',
+  insertSnippet: 'setYpos ${1:0}',
+  insertSnippetParameterHints: ['y'],
   overview: 'setYpos y',
   detail: makeBasicMarkdownString({
-    en: "Set the widget's Y position, e.g., `w.setYpos 100`",
-    zh: '设置控件的垂直位置，如：`w.setYpos 100`'
+    en: "Set the widget's Y position",
+    zh: '设置控件的垂直位置'
   })
 }
 
@@ -1906,11 +1986,12 @@ export const widgetChangeYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.changeYpos'
   },
-  insertText: 'changeYpos ${1:dY}',
+  insertSnippet: 'changeYpos ${1:10}',
+  insertSnippetParameterHints: ['dY'],
   overview: 'changeYpos dY',
   detail: makeBasicMarkdownString({
-    en: "Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10",
-    zh: '改变控件的垂直位置，如：`w.changeYpos 10` 使控件 `w` 的垂直位置增加 10'
+    en: "Change the widget's Y position",
+    zh: '改变控件的垂直位置'
   })
 }
 
@@ -1921,11 +2002,11 @@ export const widgetSize: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.size'
   },
-  insertText: 'size',
+  insertSnippet: 'size',
   overview: 'size',
   detail: makeBasicMarkdownString({
-    en: 'Get current size, e.g., `w.size`',
-    zh: '获取当前大小，如：`w.size`'
+    en: 'Get current size',
+    zh: '获取当前大小'
   })
 }
 
@@ -1936,11 +2017,12 @@ export const widgetSetSize: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.setSize'
   },
-  insertText: 'setSize ${1:size}',
+  insertSnippet: 'setSize ${1:2}',
+  insertSnippetParameterHints: ['size'],
   overview: 'setSize size',
   detail: makeBasicMarkdownString({
-    en: 'Set the size of current widget, e.g., `w.setSize 2`',
-    zh: '设置当前控件的大小，如：`w.setSize 2`'
+    en: 'Set the size of current widget',
+    zh: '设置当前控件的大小'
   })
 }
 
@@ -1951,11 +2033,12 @@ export const widgetChangeSize: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Widget.changeSize'
   },
-  insertText: 'changeSize ${1:dSize}',
+  insertSnippet: 'changeSize ${1:0.1}',
+  insertSnippetParameterHints: ['dSize'],
   overview: 'changeSize dSize',
   detail: makeBasicMarkdownString({
-    en: 'Change the size of current widget, e.g., `w.changeSize 1`',
-    zh: '改变当前控件的大小，如：`w.changeSize 1`'
+    en: 'Change the size of current widget',
+    zh: '改变当前控件的大小'
   })
 }
 
@@ -1966,7 +2049,7 @@ export const monitor: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Monitor'
   },
-  insertText: 'Monitor',
+  insertSnippet: 'Monitor',
   overview: 'Monitor',
   detail: makeBasicMarkdownString({
     en: 'Type for monitor widget',
@@ -2095,7 +2178,7 @@ export const movingInfoOldX: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.OldX'
   },
-  insertText: 'oldX',
+  insertSnippet: 'oldX',
   overview: 'oldX',
   detail: makeBasicMarkdownString({
     en: 'The horizontal position before moving',
@@ -2110,7 +2193,7 @@ export const movingInfoOldY: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.OldY'
   },
-  insertText: 'oldY',
+  insertSnippet: 'oldY',
   overview: 'oldY',
   detail: makeBasicMarkdownString({
     en: 'The vertical position before moving',
@@ -2125,7 +2208,7 @@ export const movingInfoNewX: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.NewX'
   },
-  insertText: 'newX',
+  insertSnippet: 'newX',
   overview: 'newX',
   detail: makeBasicMarkdownString({
     en: 'The horizontal position after moving',
@@ -2140,7 +2223,7 @@ export const movingInfoNewY: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.NewY'
   },
-  insertText: 'newY',
+  insertSnippet: 'newY',
   overview: 'newY',
   detail: makeBasicMarkdownString({
     en: 'The vertical position after moving',
@@ -2155,7 +2238,7 @@ export const movingInfoDx: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.dx'
   },
-  insertText: 'dx',
+  insertSnippet: 'dx',
   overview: 'dx',
   detail: makeBasicMarkdownString({
     en: 'The horizontal distance moved',
@@ -2170,7 +2253,7 @@ export const movingInfoDy: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'MovingInfo.dy'
   },
-  insertText: 'dy',
+  insertSnippet: 'dy',
   overview: 'dy',
   detail: makeBasicMarkdownString({
     en: 'The vertical distance moved',
@@ -2185,7 +2268,7 @@ export const turningInfoOldDir: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'TurningInfo.OldDir'
   },
-  insertText: 'OldDir',
+  insertSnippet: 'OldDir',
   overview: 'OldDir',
   detail: makeBasicMarkdownString({
     en: 'The heading before turning',
@@ -2200,7 +2283,7 @@ export const turningInfoNewDir: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'TurningInfo.NewDir'
   },
-  insertText: 'NewDir',
+  insertSnippet: 'NewDir',
   overview: 'NewDir',
   detail: makeBasicMarkdownString({
     en: 'The heading after turning',
@@ -2215,7 +2298,7 @@ export const turningInfoDir: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'TurningInfo.dir'
   },
-  insertText: 'dir',
+  insertSnippet: 'dir',
   overview: 'dir',
   detail: makeBasicMarkdownString({
     en: 'The angle rotated',

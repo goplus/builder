@@ -3,7 +3,7 @@ import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
-import { packageSpx } from '@/utils/spx'
+import { key0, packageSpx } from '@/utils/spx'
 import { RuntimeOutputKind, type Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
@@ -156,26 +156,92 @@ class ResourceReferencesProvider implements IResourceReferencesProvider {
   }
 }
 
+const mockFns = [
+  {
+    name: 'broadcast',
+    params: ['msg', 'wait']
+  },
+  {
+    name: 'onTouchStart',
+    params: ['sprite']
+  }
+]
+
 class InputHelperProvider implements IInputHelperProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
     if (process.env.NODE_ENV === 'development') {
-      return [
+      // TODO: remove mock code here
+      const slots: InputSlot[] = []
+      const content = ctx.textDocument.getValue()
+      ;[
         {
-          kind: InputSlotKind.Value,
-          accept: { type: InputType.String },
-          input: {
-            kind: InputKind.InPlace,
-            type: InputType.String,
-            value: 'msg'
-          },
-          predefinedNames: ['foo', 'bar', 'msg'],
-          range: {
-            start: { line: 3, column: 12 },
-            end: { line: 3, column: 17 }
+          pattern: /"panda"/g,
+          type: InputType.SpxResourceName,
+          parse: (v: string) => `spx://resources/sprites/Fighter/costumes/${v.slice(1, -1)}`
+        },
+        { pattern: /"[^"]*"/g, type: InputType.String, parse: (v: string) => v.slice(1, -1) },
+        { pattern: /\btrue\b|\bfalse\b/g, type: InputType.Boolean, parse: (v: string) => v === 'true' },
+        { pattern: /\b\d+\b/g, type: InputType.Integer, parse: (v: string) => parseInt(v, 10) },
+        { pattern: /\bColorEffect\b/g, type: InputType.SpxEffectKind, parse: () => 0 },
+        { pattern: /\bKey0\b/g, type: InputType.SpxKey, parse: () => key0 },
+        { pattern: /\bKey1\b/g, type: InputType.SpxKey, parse: () => key0 + 1 }
+      ].forEach(({ pattern, type, parse }) => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const match = pattern.exec(content)
+          if (match == null) break
+          const start = match.index
+          const end = start + match[0].length
+          const range: Range = {
+            start: ctx.textDocument.getPositionAt(start),
+            end: ctx.textDocument.getPositionAt(end)
           }
+          if (slots.some((slot) => containsPosition(slot.range, range.start))) continue
+          const value = parse(match[0])
+          const accept =
+            type === InputType.SpxResourceName
+              ? { type: InputType.SpxResourceName, resourceContext: 'spx://resources/sprites/Fighter/costumes' }
+              : { type }
+          slots.push({
+            kind: InputSlotKind.Value,
+            accept,
+            input: {
+              kind: InputKind.InPlace,
+              type,
+              value
+            } as any,
+            predefinedNames: ['foo', 'bar', 'baz'],
+            range
+          })
         }
-      ]
+      })
+      ;[{ pattern: /\bfoo\b|\bbar\b|\bbaz\b/g, type: InputType.String }].forEach(({ pattern, type }) => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const match = pattern.exec(content)
+          if (match == null) break
+          const start = match.index
+          const end = start + match[0].length
+          const range: Range = {
+            start: ctx.textDocument.getPositionAt(start),
+            end: ctx.textDocument.getPositionAt(end)
+          }
+          if (slots.some((slot) => containsPosition(slot.range, range.start))) continue
+          slots.push({
+            kind: InputSlotKind.Value,
+            accept: { type: type as InputType.String },
+            input: {
+              kind: InputKind.Predefined,
+              type: type,
+              name: match[0]
+            },
+            predefinedNames: ['foo', 'bar', 'baz'],
+            range
+          })
+        }
+      })
+      return slots
     }
     return this.lspClient.getInputSlots(ctx.textDocument.id)
   }
@@ -185,13 +251,32 @@ class InlayHintProvider implements IInlayHintProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]> {
     if (process.env.NODE_ENV === 'development') {
-      return [
-        {
-          position: { line: 3, column: 12 },
-          label: 'message',
-          kind: InlayHintKind.Parameter
+      // TODO: remove mock code here
+      const items: InlayHintItem[] = []
+      const content = ctx.textDocument.getValue()
+      const lines = content.split('\n')
+      for (const fn of mockFns) {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
+          if (!line.trim().startsWith(fn.name + ' ')) continue
+          for (let j = line.indexOf(fn.name) + fn.name.length, idx = 0; j < line.length; j++) {
+            if (line[j] === ' ') {
+              const param = fn.params[idx]
+              if (param != null) {
+                items.push({
+                  position: { line: i + 1, column: j + 2 },
+                  label: fn.params[idx],
+                  kind: InlayHintKind.Parameter
+                })
+              } else {
+                break
+              }
+              idx++
+            }
+          }
         }
-      ]
+      }
+      return items
     }
     const lspInlayHints = await this.lspClient.textDocumentInlayHint({
       textDocument: ctx.textDocument.id,
@@ -470,7 +555,7 @@ class CompletionProvider implements ICompletionProvider {
 
         if (definition != null) {
           result.kind = definition.kind
-          result.insertText = definition.insertText
+          result.insertText = definition.insertSnippet
           result.insertTextFormat = InsertTextFormat.Snippet
           result.documentation = definition.detail
         }

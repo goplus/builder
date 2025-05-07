@@ -5,13 +5,20 @@ import { UIIcon } from '@/components/ui'
 import CopilotInput from '@/components/copilot/CopilotInput.vue'
 import CopilotRound from '@/components/copilot/CopilotRound.vue'
 import logoSrc from '../editor/code-editor/ui/copilot/logo.png'
+import envSvg from './env.svg?raw'
 import type { CopilotController } from './index'
 const props = defineProps<{
   controller: CopilotController
+  position?: 'left' | 'bottom' | 'right'
+  positionOptions?: Array<{ id: string; label: string; icon: string }>
+  showPositionMenu?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'togglePositionMenu'): void
+  (e: 'changePosition', position: 'left' | 'bottom' | 'right'): void
+  (e: 'toggleEnvPanel'): void
 }>()
 
 const bodyRef = ref<HTMLElement | null>(null)
@@ -20,6 +27,10 @@ const inputRef = ref<InstanceType<typeof CopilotInput>>()
 function handleClose() {
   props.controller.endChat()
   emit('close')
+}
+
+function handleEnvClick() {
+  emit('toggleEnvPanel')
 }
 
 const rounds = computed(() => {
@@ -48,7 +59,16 @@ useBottomSticky(bodyRef)
 <template>
   <div class="copilot-ui">
     <header class="header">
-      {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
+      <div class="title">
+        {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
+      </div>
+      <button class="env-button" @click="handleEnvClick">
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <span class="icon" v-html="envSvg"></span>
+      </button>
+      <button class="position-button" @click="$emit('togglePositionMenu')">
+        <UIIcon class="icon" type="more" />
+      </button>
       <button class="close">
         <UIIcon class="icon" type="close" @click="handleClose" />
       </button>
@@ -103,6 +123,38 @@ useBottomSticky(bodyRef)
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  .title {
+    flex: 1;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .env-button,
+  .position-button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    border-radius: 50%;
+    color: var(--ui-color-grey-700);
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: var(--ui-color-grey-400);
+    }
+    &:active {
+      background-color: var(--ui-color-grey-500);
+    }
+  }
 
   .close {
     width: 24px;

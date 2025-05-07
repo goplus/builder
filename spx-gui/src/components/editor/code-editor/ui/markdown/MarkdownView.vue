@@ -57,7 +57,7 @@ const basicComponents = {
   /**
    * Usage:
    * ```html
-   * <input-value-preview typ="number" value="1" />
+   * <input-value-preview input="{...}" />
    * ```
    */
   'input-value-preview': InputValuePreview

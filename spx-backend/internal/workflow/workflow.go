@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 )
 
 // Workflow represents a sequence of connected nodes that perform a series of operations
@@ -63,9 +64,6 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 	go func() {
 		defer pw.Close() // Ensure the pipe is closed when execution completes
 
-		// Write the workflow opening tag with the name
-		fmt.Fprintf(pw, "<workflow wname=\"%s\"></workflow>\n", c.workflow.name)
-
 		// Initialize an empty buffer for the first node's input
 		var read io.Reader = &bytes.Buffer{}
 		node := c.workflow.start
@@ -100,6 +98,7 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 			// Update the workflow environment with the node's output values
 			for k, v := range w.output {
 				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"/>\n", k, v)
+				log.Printf("env: %s = %v\n", k, v)
 				c.env.Set(k, v)
 			}
 

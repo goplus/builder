@@ -80,6 +80,7 @@ const handleApply = useMessageHandle(
       </div>
       <div class="body">
         <div class="code-wrapper">
+          <!-- TODO: Consider using [transformerNotationDiff](https://shiki.style/packages/transformers#transformernotationdiff) instead -->
           <CodeView class="code" :language="language" mode="block" deletion>{{ codeToDelete }}</CodeView>
           <CodeView class="code" :language="language" mode="block" addition>{{ codeToAdd }}</CodeView>
         </div>

@@ -19,7 +19,6 @@ const props = defineProps<{
 .definition-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .definition-item + .definition-item {

@@ -5,17 +5,23 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
+import { useDebouncedModel } from '@/utils/utils'
 import { UINumberInput } from '@/components/ui'
 
-defineProps<{
+const props = defineProps<{
   value: number
 }>()
 
 const emit = defineEmits<{
   'update:value': [number]
 }>()
+
+const modelValue = useDebouncedModel<number | null>(
+  () => props.value,
+  (v) => emit('update:value', Math.floor(v ?? getDefaultValue()))
+)
 </script>
 
 <template>
-  <UINumberInput :value="value" @update:value="(v) => emit('update:value', v ?? getDefaultValue())" />
+  <UINumberInput v-model:value="modelValue" />
 </template>

@@ -36,6 +36,8 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 		env = workflow.NewEnv()
 	}
 
+	logger.Infof("workflow env: %v", env)
+
 	env.Set("messages", params.Messages)
 	env.Set("Tools", params.Tools)
 	env.Set("GopDefs", copilot.GopDefs)

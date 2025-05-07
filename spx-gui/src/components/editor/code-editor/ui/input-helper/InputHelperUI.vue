@@ -7,7 +7,7 @@ function getCls(suffix?: string) {
  * Check if the element stands for icon of a input helper.
  * If so, return the id of the input helper item.
  */
-export function checkInputHelper(el: HTMLElement): string | null {
+export function checkInputHelperIcon(el: HTMLElement): string | null {
   const clss = el.classList
   if (!clss.contains(getCls('icon'))) return null
   const idClsPrefix = getCls('id-')
@@ -19,14 +19,15 @@ export function checkInputHelper(el: HTMLElement): string | null {
 </script>
 
 <script setup lang="ts">
-import { watchEffect, ref, nextTick, watch } from 'vue'
+import { ref, watchPostEffect } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
-import { InputKind, type Input } from '../../common'
+import { type Input, exprForInput } from '../../common'
 import type { monaco } from '../../monaco'
-import { toAbsolutePosition, toMonacoRange, useDecorations } from '../common'
+import { toMonacoRange, useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
-import { type InputHelperController } from '.'
 import InputHelper from './InputHelper.vue'
+import { type InputHelperController } from '.'
 
 const props = defineProps<{
   controller: InputHelperController
@@ -34,105 +35,90 @@ const props = defineProps<{
 
 const codeEditorUICtx = useCodeEditorUICtx()
 
-watch(
-  () => props.controller.activeSlots,
-  async (activeItems) => {
-    if (activeItems.length === 0) return
-    await nextTick()
-    // TODO: Optimize implementation here
-    props.controller['ui'].editor.setSelection(
-      toMonacoRange({
-        start: activeItems[0].range.end,
-        end: activeItems[0].range.end
-      })
-    )
-  }
-)
-
 useDecorations(() => {
-  const { slots, activeSlots } = props.controller
-  if (slots == null) return []
+  const { activeSlots, inputingSlot } = props.controller
+  const decorations: monaco.editor.IModelDeltaDecoration[] = []
 
-  const iconDecorations: monaco.editor.IModelDeltaDecoration[] = []
-  for (const slot of slots) {
-    const isActive = activeSlots.some((s) => s.id === slot.id)
-    if (!isActive) continue
-    const clss = ['icon', `id-${slot.id}`]
-    iconDecorations.push({
-      range: {
-        startLineNumber: slot.range.start.line,
-        startColumn: slot.range.start.column,
-        endLineNumber: slot.range.end.line,
-        endColumn: slot.range.end.column
+  for (const slot of activeSlots) {
+    decorations.push(
+      {
+        range: toMonacoRange(slot.range),
+        options: {
+          isWholeLine: false,
+          after: {
+            content: '\u200B', // Use zero-width space as content to make the character zero size
+            inlineClassName: ['icon', `id-${slot.id}`].map(getCls).join(' '),
+            inlineClassNameAffectsLetterSpacing: true
+          }
+        }
       },
-      options: {
-        isWholeLine: false,
-        after: {
-          content: ' ',
-          inlineClassName: clss.map(getCls).join(' '),
-          inlineClassNameAffectsLetterSpacing: true
+      {
+        range: toMonacoRange(slot.range),
+        options: {
+          isWholeLine: false,
+          className: getCls('active-bg')
         }
       }
-    })
+    )
   }
-  const bgDecorations: monaco.editor.IModelDeltaDecoration[] = []
-  for (const slot of slots) {
-    const clss = ['bg', `id-${slot.id}`]
-    const isActive = activeSlots.some((s) => s.id === slot.id)
-    if (isActive) clss.push('active')
-    bgDecorations.push({
-      range: {
-        startLineNumber: slot.range.start.line,
-        startColumn: slot.range.start.column,
-        endLineNumber: slot.range.end.line,
-        endColumn: slot.range.end.column
-      },
+
+  if (inputingSlot != null) {
+    decorations.push({
+      range: toMonacoRange(inputingSlot.range),
       options: {
         isWholeLine: false,
-        inlineClassName: clss.map(getCls).join(' ')
+        className: getCls('inputing-bg')
       }
     })
   }
-  return [...iconDecorations, ...bgDecorations]
+
+  return decorations
 })
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
 
-function handleSubmitInput(newInput: Input) {
+// Use post effect to ensure the effect executed after effect of `useDecorations`
+watchPostEffect(async () => {
   const { inputingSlot } = props.controller
-  if (inputingSlot == null) return
-  const td = codeEditorUICtx.ui.activeTextDocument
-  if (td == null) return
-  const newText = newInput.kind === InputKind.InPlace ? JSON.stringify(newInput.value) : newInput.name
-  td.pushEdits([
-    {
-      range: inputingSlot.range,
-      newText
-    }
-  ])
-  dropdownVisible.value = false
-}
-
-watchEffect(() => {
-  const { inputingSlot: inputing } = props.controller
-  if (inputing == null) {
+  if (inputingSlot == null) {
     dropdownVisible.value = false
     return
   }
-  const aPos = toAbsolutePosition(inputing.range.start, codeEditorUICtx.ui.editor)
-  if (aPos == null) {
-    dropdownVisible.value = false
-    return
-  }
+  const editor = codeEditorUICtx.ui.editor
+  editor.render(true) // ensure the decoration is rendered
+  const decorationEl = editor.getDomNode()?.querySelector('.' + getCls('inputing-bg'))
+  if (decorationEl == null) throw new Error('Decoration element not found')
+  const rect = decorationEl.getBoundingClientRect()
   dropdownVisible.value = true
   dropdownPos.value = {
-    x: aPos.left,
-    y: aPos.top,
-    width: 0,
-    height: aPos.height
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height
   }
 })
+
+const handleInputUpdate = useMessageHandle(
+  (newInput: Input) => {
+    const { inputingSlot } = props.controller
+    if (inputingSlot == null) return
+    const td = codeEditorUICtx.ui.activeTextDocument
+    if (td == null) return
+    const newCode = exprForInput(newInput)
+    if (newCode == null) throw new Error('Invalid input')
+    td.pushEdits([
+      {
+        range: inputingSlot.range,
+        newText: newCode
+      }
+    ])
+  },
+  {
+    en: 'Failed to update code',
+    zh: '更新代码失败'
+  }
+).fn
 
 function handleCancelInput() {
   props.controller.stopInputing()
@@ -144,16 +130,18 @@ function handleCancelInput() {
     :visible="dropdownVisible"
     trigger="manual"
     :pos="dropdownPos"
-    placement="bottom-start"
-    :offset="{ x: 0, y: 4 }"
+    placement="bottom"
+    show-arrow
+    :offset="{ x: 0, y: 10 }"
   >
     <InputHelper
       v-if="props.controller.inputingSlot != null"
       :slot-kind="props.controller.inputingSlot.kind"
+      :accept="props.controller.inputingSlot.accept"
       :input="props.controller.inputingSlot.input"
       :predefined-names="props.controller.inputingSlot.predefinedNames"
+      @update:input="handleInputUpdate"
       @cancel="handleCancelInput"
-      @submit="handleSubmitInput"
     />
   </UIDropdown>
 </template>
@@ -161,38 +149,33 @@ function handleCancelInput() {
 <style lang="scss">
 .code-editor-input-helper-icon {
   position: relative;
-  // TODO: consider zooming of editor
-  width: 14px;
-  height: 18px;
   display: inline-block;
-  margin-right: 2px;
-  vertical-align: top;
-}
-
-.code-editor-input-helper-icon {
-  &::after {
-    content: url(./edit.svg);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 16px;
-    height: 16px;
-    transform: translate(-50%, -50%) scale(0.8);
-    filter: opacity(0.6);
-    cursor: pointer;
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-  &:hover::after {
-    filter: opacity(1);
-  }
-}
-
-.code-editor-input-helper-bg {
+  aspect-ratio: 1 / 1;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  cursor: pointer;
+  background-color: var(--ui-color-grey-400);
+  transition: background-color 0.2s;
   &:hover {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--ui-color-grey-500);
   }
-  &.code-editor-input-helper-active {
-    background-color: rgba(0, 0, 0, 0.3);
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url(./pen.svg) no-repeat center center;
+    background-size: 80% 80%;
   }
+}
+
+.code-editor-input-helper-inputing-bg {
+  border-radius: 2px;
+  background-color: var(--ui-color-grey-600);
+}
+
+.code-editor-input-helper-active-bg {
+  border-radius: 2px 0 0 2px;
+  background-color: var(--ui-color-grey-600);
 }
 </style>

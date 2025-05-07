@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { ref, watchPostEffect } from 'vue'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
-import { toAbsolutePosition, useDecorations } from '../common'
+import { useDecorations } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
-import type { HoverController } from '.'
+import MarkdownView from '../markdown/MarkdownView.vue'
 import HoverCard from './HoverCard.vue'
+import HoverCardContent from './HoverCardContent.vue'
+import type { HoverController } from '.'
 
 const props = defineProps<{
   controller: HoverController
@@ -14,24 +16,27 @@ const codeEditorUICtx = useCodeEditorUICtx()
 
 const dropdownVisible = ref(false)
 const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
+const hoveredTextCls = 'code-editor-hovered-text'
 
-watchEffect(() => {
+// Use post effect to ensure the effect executed after effect of `useDecorations`
+watchPostEffect(async () => {
   const hover = props.controller.hover
   if (hover == null) {
     dropdownVisible.value = false
     return
   }
-  const aPos = toAbsolutePosition(hover.range.start, codeEditorUICtx.ui.editor)
-  if (aPos == null) {
-    dropdownVisible.value = false
-    return
-  }
+
+  const editor = codeEditorUICtx.ui.editor
+  editor.render(true) // ensure the decoration is rendered
+  const decorationEl = editor.getDomNode()?.getElementsByClassName(hoveredTextCls)[0]
+  if (decorationEl == null) throw new Error('Decoration element not found')
+  const rect = decorationEl.getBoundingClientRect()
   dropdownVisible.value = true
   dropdownPos.value = {
-    x: aPos.left,
-    y: aPos.top,
-    width: 0,
-    height: aPos.height
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height
   }
 })
 
@@ -48,7 +53,7 @@ useDecorations(() => {
       },
       options: {
         isWholeLine: false,
-        inlineClassName: 'code-editor-hovered-text'
+        className: hoveredTextCls
       }
     }
   ]
@@ -60,16 +65,29 @@ useDecorations(() => {
     :visible="dropdownVisible"
     trigger="manual"
     :pos="dropdownPos"
-    placement="top-start"
-    :offset="{ x: 0, y: 4 }"
+    placement="top"
+    show-arrow
+    :offset="{ x: 0, y: 10 }"
   >
-    <HoverCard v-if="controller.hover != null" :hover="controller.hover" :controller="controller" />
+    <HoverCard
+      v-if="controller.hover != null"
+      :contents="controller.hover.contents"
+      :actions="controller.hover.actions"
+      @mouseenter="controller.emit('cardMouseEnter')"
+      @mouseleave="controller.emit('cardMouseLeave')"
+      @action="controller.hideHover()"
+    >
+      <HoverCardContent v-for="(content, i) in controller.hover.contents" :key="i">
+        <MarkdownView v-bind="content" />
+      </HoverCardContent>
+    </HoverCard>
   </UIDropdown>
 </template>
 
 <style lang="scss">
 // TODO: special style for hovered text?
-/* .code-editor-hovered-text {
-  background-color: rgba(0, 0, 0, 0.2);
-} */
+.code-editor-hovered-text {
+  border-radius: 2px;
+  background-color: var(--ui-color-grey-600);
+}
 </style>
