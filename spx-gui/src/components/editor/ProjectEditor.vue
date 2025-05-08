@@ -54,6 +54,7 @@ async function addMonitor(args: AddMonitorOptions) {
   monitor.setX(args.x)
   monitor.setY(args.y)
   monitor.setSize(args.size)
+  monitor.setVisible(args.visible !== undefined ? args.visible : true)
   project.value.stage.addWidget(monitor)
   project.value.saveToCloud()
   return {
