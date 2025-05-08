@@ -204,7 +204,7 @@ export const AddMonitorArgsSchema = z.object({
 })
 export const addMonitorToolDescription = createToolDescription(
   'add_monitor',
-  'Add a monitor to the current Go+ XBuilder project workspace.',
+  'Add a monitor to the current XBuilder project workspace.',
   AddMonitorArgsSchema,
   'monitor'
 )
