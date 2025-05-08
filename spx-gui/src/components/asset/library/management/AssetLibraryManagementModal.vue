@@ -171,6 +171,17 @@ const handleRemove = useMessageHandle(
     zh: '删除素材失败'
   }
 ).fn
+
+;(window as any).removeAll = async function () {
+  const { data } = await listAsset({
+    pageSize: 100,
+    pageIndex: 1,
+    type: props.type
+  })
+  for (const asset of data) {
+    await deleteAsset(asset.id)
+  }
+}
 </script>
 
 <template>
