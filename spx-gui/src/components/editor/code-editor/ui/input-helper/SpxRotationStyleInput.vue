@@ -25,7 +25,7 @@ const modelValue = computed({
   },
   set(name) {
     const kind = rotationStyles.find((k) => k.name === name)
-    if (kind == null) throw new Error(`Invalid play action: ${name}`)
+    if (kind == null) throw new Error(`Invalid rotation style: ${name}`)
     emit('update:value', kind.value)
   }
 })
