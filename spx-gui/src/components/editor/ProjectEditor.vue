@@ -28,12 +28,15 @@ import {
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
   addStageBackdropFromCanvasToolDescription,
-  AddStageBackdropFromCanvasArgsSchema
+  AddStageBackdropFromCanvasArgsSchema,
+  addMonitorToolDescription,
+  AddMonitorArgsSchema
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 import { computed } from 'vue'
 import type { z } from 'zod'
+import { Monitor } from '@/models/widget/monitor'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useCopilotCtx()
@@ -41,6 +44,23 @@ const project = computed(() => editorCtx.project)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
+type AddMonitorOptions = z.infer<typeof AddMonitorArgsSchema>
+
+async function addMonitor(args: AddMonitorOptions) {
+  const monitor = await Monitor.create()
+  monitor.setName(args.monitorName)
+  monitor.setLabel(args.label)
+  monitor.setVariableName(args.variableName)
+  monitor.setX(args.x)
+  monitor.setY(args.y)
+  monitor.setSize(args.size)
+  project.value.stage.addWidget(monitor)
+  project.value.saveToCloud()
+  return {
+    success: true,
+    message: `Successfully added monitor "${monitor.name}" to project "${project.value.name}"`
+  }
+}
 
 async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
@@ -98,6 +118,21 @@ function registerProjectTools() {
           },
           execute: async (args: AddStageBackdropFromCanvasOptions) => {
             return addBackdropFromCanvas(args)
+          }
+        }
+      },
+      {
+        description: addMonitorToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = AddMonitorArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${addMonitorToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: AddMonitorOptions) => {
+            return addMonitor(args)
           }
         }
       }

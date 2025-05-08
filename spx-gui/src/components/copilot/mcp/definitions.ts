@@ -190,3 +190,21 @@ export const getFileCodeToolDescription = createToolDescription(
   GetFileCodeArgsSchema,
   'code'
 )
+
+export const AddMonitorArgsSchema = z.object({
+  monitorName: z
+    .string()
+    .describe('The identifier of the specific monitor to add to the current SPX workspace.'),
+  label: z.string().describe('The label of the monitor.'),
+  variableName: z.string().describe('The name of the variable to monitor.'),
+  x: z.number().describe('The x position of the monitor.'),
+  y: z.number().describe('The y position of the monitor.'),
+  size: z.number().describe('The size of the monitor.'),
+  visible: z.boolean().describe('Whether the monitor is visible or not.')
+})
+export const addMonitorToolDescription = createToolDescription(
+  'add_monitor',
+  'Add a monitor to the current Go+ XBuilder project workspace.',
+  AddMonitorArgsSchema,
+  'monitor'
+)
