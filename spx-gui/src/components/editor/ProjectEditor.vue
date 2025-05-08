@@ -30,7 +30,9 @@ import {
   addStageBackdropFromCanvasToolDescription,
   AddStageBackdropFromCanvasArgsSchema,
   addMonitorToolDescription,
-  AddMonitorArgsSchema
+  AddMonitorArgsSchema,
+  listMonitorsToolDescription,
+  ListMonitorsArgsSchema
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
@@ -45,6 +47,23 @@ const project = computed(() => editorCtx.project)
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
 type AddMonitorOptions = z.infer<typeof AddMonitorArgsSchema>
+
+async function listMonitors() {
+  const monitors = project.value.stage.widgets.filter((widget) => widget instanceof Monitor)
+  return {
+    success: true,
+    message: `Successfully listed ${monitors.length} monitors in project "${project.value.name}"`,
+    monitors: monitors.map((monitor) => ({
+      name: monitor.name,
+      label: monitor.label,
+      variableName: monitor.variableName,
+      x: monitor.x,
+      y: monitor.y,
+      size: monitor.size,
+      visible: monitor.visible
+    }))
+  }
+}
 
 async function addMonitor(args: AddMonitorOptions) {
   const monitor = await Monitor.create()
@@ -134,6 +153,21 @@ function registerProjectTools() {
           },
           execute: async (args: AddMonitorOptions) => {
             return addMonitor(args)
+          }
+        }
+      },
+      {
+        description: listMonitorsToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = ListMonitorsArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${listMonitorsToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async () => {
+            return listMonitors()
           }
         }
       }

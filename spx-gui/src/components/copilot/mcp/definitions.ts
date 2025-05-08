@@ -206,3 +206,11 @@ export const addMonitorToolDescription = createToolDescription(
   AddMonitorArgsSchema,
   'monitor'
 )
+
+export const ListMonitorsArgsSchema = z.object({})
+export const listMonitorsToolDescription = createToolDescription(
+  'list_monitors',
+  'List all monitors in the current XBuilder project workspace.',
+  ListMonitorsArgsSchema,
+  'monitor'
+)
