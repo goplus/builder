@@ -107,6 +107,8 @@ export async function genAssetFromCanvas(name: string, width: number, height: nu
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
 
+  // check if the name ends with .png
+  const fileName = name.toLowerCase().endsWith('.png') ? name : `${name}.png`;
   // Set canvas dimensions
   canvas.width = width
   canvas.height = height
@@ -123,6 +125,6 @@ export async function genAssetFromCanvas(name: string, width: number, height: nu
   })
 
   // Create file from Blob
-  const file = fromBlob(name, blob)
+  const file = fromBlob(fileName, blob)
   return file
 }
