@@ -30,9 +30,8 @@ function handleClick(e: MouseEvent) {
 
 <style lang="scss" scoped>
 .context-menu-trigger {
-  position: absolute;
-  left: 0;
-  top: 0;
+  position: fixed;
+  margin-left: -20px;
   display: flex;
   padding: 0;
   border: none;
