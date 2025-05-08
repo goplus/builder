@@ -68,12 +68,12 @@ type RawProjectConfig = RawStageConfig & {
   zorder?: ZorderItem[]
   run?: RunConfig
   /**
-   * Sprite order info, used by Go+ Builder to determine the order of sprites.
+   * Sprite order info, used by Builder to determine the order of sprites.
    * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
    */
   builder_spriteOrder?: string[]
   /**
-   * Sound order info, used by Go+ Builder to determine the order of sounds.
+   * Sound order info, used by Builder to determine the order of sounds.
    * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
    */
   builder_soundOrder?: string[]

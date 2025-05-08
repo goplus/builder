@@ -9,7 +9,7 @@ import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
 /**
  * How to update the default project:
- * 1. Use Go+ Builder to create / open a project.
+ * 1. Use XBuilder to create / open a project.
  * 2. Edit it as needed.
  * 3. Export the project file (`.gbp`).
  * 4. Replace `./default-project.gbp` with the exported file.

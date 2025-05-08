@@ -13,7 +13,7 @@ export const CreateProjectArgsSchema = z.object({
   projectName: z
     .string()
     .describe(
-      'The project name (English characters only) where the new Go+ XBuilder SPX project will be created and initialized.'
+      'The project name (English characters only) where the new XBuilder SPX project will be created and initialized.'
     )
 })
 
@@ -23,7 +23,7 @@ export const CreateProjectArgsSchema = z.object({
  */
 export const createProjectToolDescription = createToolDescription(
   'create_project',
-  'Create a new SPX language project for Go+ XBuilder with the specified name and initialize default project structure.',
+  'Create a new SPX language project for XBuilder with the specified name and initialize default project structure.',
   CreateProjectArgsSchema,
   'project'
 )
@@ -46,7 +46,7 @@ export const RunGameArgsSchema = z.object({
  */
 export const runGameToolDescription = createToolDescription(
   'run_game',
-  'Run the current Go+ XBuilder SPX project in the XBuilder environment.',
+  'Run the current XBuilder SPX project in the XBuilder environment.',
   RunGameArgsSchema,
   'game'
 )
@@ -64,7 +64,7 @@ export const StopGameArgsSchema = z.object({
  */
 export const stopGameToolDescription = createToolDescription(
   'stop_game',
-  'Stop the current Go+ XBuilder SPX project in the XBuilder environment.',
+  'Stop the current XBuilder SPX project in the XBuilder environment.',
   StopGameArgsSchema,
   'game'
 )
@@ -92,7 +92,7 @@ export const AddSpriteFromCanvasArgsSchema = z.object({
  */
 export const addSpriteFromCanvasToolDescription = createToolDescription(
   'add_sprite_from_canvas',
-  'Add a sprite (File) to the current Go+ XBuilder project workspace through canvas',
+  'Add a sprite (File) to the current XBuilder project workspace through canvas',
   AddSpriteFromCanvasArgsSchema,
   'sprite'
 )
@@ -148,7 +148,7 @@ export const WriteToFileArgsSchema = z.object({
  */
 export const writeToFileToolDescription = createToolDescription(
   'write_to_file',
-  'Write complete content to a specific file in the Go+ XBuilder project, replacing any existing content.',
+  'Write complete content to a specific file in the XBuilder project, replacing any existing content.',
   WriteToFileArgsSchema,
   'code'
 )
@@ -165,7 +165,7 @@ export const ListFilesArgsSchema = z.object({})
  */
 export const listFilesToolDescription = createToolDescription(
   'list_files',
-  'List files in the current Go+ XBuilder project, optionally filtering by path or pattern.',
+  'List files in the current XBuilder project, optionally filtering by path or pattern.',
   ListFilesArgsSchema,
   'filesystem'
 )
@@ -174,7 +174,7 @@ export const GetDiagnosticsArgsSchema = z.object({})
 
 export const getDiagnosticsToolDescription = createToolDescription(
   'get_diagnostics',
-  'Get the diagnostics of the current Go+ XBuilder project, including errors and warnings in the code.',
+  'Get the diagnostics of the current XBuilder project, including errors and warnings in the code.',
   GetDiagnosticsArgsSchema,
   'diagnostics'
 )
@@ -186,7 +186,7 @@ export const GetFileCodeArgsSchema = z.object({
 })
 export const getFileCodeToolDescription = createToolDescription(
   'get_file_code',
-  'Get the code from a specific Spx file in the current Go+ XBuilder project.',
+  'Get the code from a specific Spx file in the current XBuilder project.',
   GetFileCodeArgsSchema,
   'code'
 )

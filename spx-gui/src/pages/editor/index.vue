@@ -49,7 +49,7 @@ usePageTitle(() => ({
   zh: `编辑 ${props.projectName}`
 }))
 
-const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
+const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())

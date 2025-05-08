@@ -14,7 +14,7 @@ function handleJoin() {
   <CommunityCard class="guest-banner">
     <div class="main">
       <h1 class="title">
-        {{ $t({ en: 'Join Go+ Builder', zh: '加入 Go+ Builder' }) }}
+        {{ $t({ en: 'Join XBuilder', zh: '加入 XBuilder' }) }}
       </h1>
       <h4 class="sub-title">
         {{ $t({ en: 'Build and share your projects', zh: '创作并分享你的作品' }) }}
