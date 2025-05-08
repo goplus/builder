@@ -108,7 +108,7 @@ export async function genAssetFromCanvas(name: string, width: number, height: nu
   const ctx = canvas.getContext('2d')!
 
   // check if the name ends with .png
-  const fileName = name.toLowerCase().endsWith('.png') ? name : `${name}.png`;
+  const fileName = name.toLowerCase().endsWith('.png') ? name : `${name}.png`
   // Set canvas dimensions
   canvas.width = width
   canvas.height = height
