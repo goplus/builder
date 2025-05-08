@@ -192,9 +192,7 @@ export const getFileCodeToolDescription = createToolDescription(
 )
 
 export const AddMonitorArgsSchema = z.object({
-  monitorName: z
-    .string()
-    .describe('The identifier of the specific monitor to add to the current SPX workspace.'),
+  monitorName: z.string().describe('The identifier of the specific monitor to add to the current SPX workspace.'),
   label: z.string().describe('The label of the monitor.'),
   variableName: z.string().describe('The name of the variable to monitor.'),
   x: z.number().describe('The x position of the monitor.'),
