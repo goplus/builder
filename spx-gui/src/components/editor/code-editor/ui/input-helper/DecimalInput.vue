@@ -23,5 +23,5 @@ const modelValue = useDebouncedModel<number | null>(
 </script>
 
 <template>
-  <UINumberInput v-model:value="modelValue" />
+  <UINumberInput v-model:value="modelValue" :style="{ alignSelf: 'stretch' }" />
 </template>

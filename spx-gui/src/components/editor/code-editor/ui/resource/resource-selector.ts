@@ -19,7 +19,7 @@ import {
   useAddMonitor,
   useAddCostumeFromLocalFile
 } from '@/components/asset'
-import { parseResourceURI, type ResourceIdentifier } from '../../../common'
+import { parseResourceContextURI, type ResourceContextURI } from '../../common'
 
 export type CreateMethod<T> = {
   /** Label for the create method */
@@ -35,8 +35,6 @@ export interface IResourceSelector<T extends SelectableResource> {
   title: LocaleMessage
   /** List of all selectable resources */
   items: T[]
-  /** Current selected resource name */
-  currentItemName: string
   /** Methods to create new resources */
   useCreateMethods(): Array<CreateMethod<T>>
 }
@@ -47,10 +45,7 @@ class SoundSelector implements IResourceSelector<Sound> {
     return this.project.sounds
   }
 
-  constructor(
-    private project: Project,
-    public currentItemName: string
-  ) {}
+  constructor(private project: Project) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddSoundFromLocalFile(false)
@@ -79,10 +74,7 @@ class SpriteSelector implements IResourceSelector<Sprite> {
     return this.project.sprites
   }
 
-  constructor(
-    private project: Project,
-    public currentItemName: string
-  ) {}
+  constructor(private project: Project) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddSpriteFromLocalFile(false)
@@ -108,8 +100,7 @@ class AnimationSelector implements IResourceSelector<Animation> {
 
   constructor(
     private project: Project,
-    private sprite: Sprite,
-    public currentItemName: string
+    private sprite: Sprite
   ) {}
 
   useCreateMethods() {
@@ -129,10 +120,7 @@ class BackdropSelector implements IResourceSelector<Backdrop> {
     return this.project.stage.backdrops
   }
 
-  constructor(
-    private project: Project,
-    public currentItemName: string
-  ) {}
+  constructor(private project: Project) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddBackdropFromLocalFile(false)
@@ -156,10 +144,7 @@ class WidgetSelector implements IResourceSelector<Widget> {
     return this.project.stage.widgets
   }
 
-  constructor(
-    private project: Project,
-    public currentItemName: string
-  ) {}
+  constructor(private project: Project) {}
 
   useCreateMethods() {
     const addMonitor = useAddMonitor(false)
@@ -180,8 +165,7 @@ class CostumeSelector implements IResourceSelector<Costume> {
 
   constructor(
     private project: Project,
-    private sprite: Sprite,
-    public currentItemName: string
+    private sprite: Sprite
   ) {}
 
   useCreateMethods() {
@@ -195,30 +179,34 @@ class CostumeSelector implements IResourceSelector<Costume> {
   }
 }
 
-export function createResourceSelector(project: Project, resourceId: ResourceIdentifier): IResourceSelector<any> {
-  const parsed = parseResourceURI(resourceId.uri)
-  switch (parsed[0].type) {
+export function createResourceSelector(
+  project: Project,
+  contextURI: ResourceContextURI
+): IResourceSelector<SelectableResource> {
+  const { parent, type } = parseResourceContextURI(contextURI)
+  const parts = [...parent, { type, name: null }]
+  switch (parts[0].type) {
     case 'sound':
-      return new SoundSelector(project, parsed[0].name)
+      return new SoundSelector(project)
     case 'sprite': {
-      const spriteName = parsed[0].name
-      if (parsed.length === 1) return new SpriteSelector(project, spriteName)
+      const spriteName = parts[0].name
+      if (parts.length === 1) return new SpriteSelector(project)
       const sprite = project.sprites.find((s) => s.name === spriteName)
       if (sprite == null) throw new Error(`Sprite not found: ${spriteName}`)
-      switch (parsed[1].type) {
+      switch (parts[1].type) {
         case 'animation':
-          return new AnimationSelector(project, sprite, parsed[1].name)
+          return new AnimationSelector(project, sprite)
         case 'costume':
-          return new CostumeSelector(project, sprite, parsed[1].name)
+          return new CostumeSelector(project, sprite)
         default:
-          throw new Error(`Unexpected sub-resource type: ${parsed[1].type}`)
+          throw new Error(`Unexpected sub-resource type: ${parts[1].type}`)
       }
     }
     case 'backdrop':
-      return new BackdropSelector(project, parsed[0].name)
+      return new BackdropSelector(project)
     case 'widget':
-      return new WidgetSelector(project, parsed[0].name)
+      return new WidgetSelector(project)
     default:
-      throw new Error(`Unexpected resource type: ${parsed[0].type}`)
+      throw new Error(`Unexpected resource type: ${parts[0].type}`)
   }
 }

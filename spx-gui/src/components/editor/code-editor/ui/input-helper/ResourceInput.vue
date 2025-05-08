@@ -1,36 +1,32 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return 'spx://resources/sprites/unknown'
+  return null
 }
 </script>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { getResourceURI, type ResourceContextURI, type ResourceURI } from '../../common'
-import { createResourceSelector, type CreateMethod, type SelectableResource } from '../resource-reference/selector'
+import { getResourceNameWithType, getResourceURI, type ResourceContextURI, type ResourceURI } from '../../common'
+import { createResourceSelector, type CreateMethod, type SelectableResource } from '../resource/resource-selector'
 import ResourceItem from '../resource/ResourceItem.vue'
 
 const props = defineProps<{
-  context: ResourceContextURI // TODO: provide resource list based on context
-  value: ResourceURI
+  context: ResourceContextURI
+  value: ResourceURI | null
 }>()
 
 const emit = defineEmits<{
-  'update:value': [ResourceURI]
+  'update:value': [ResourceURI | null]
 }>()
 
 const editorCtx = useEditorCtx()
-
-const selector = createResourceSelector(editorCtx.project, {
-  uri: props.value
-})
-
+const selector = createResourceSelector(editorCtx.project, props.context)
 const createMethods = selector.useCreateMethods()
 
-const selected = ref(selector.currentItemName)
+const selected = ref(nameFor(props.value))
 function select(item: SelectableResource) {
   selected.value = item.name
   emit('update:value', getResourceURI(item))
@@ -44,6 +40,17 @@ const handleCreateWith = useMessageHandle(
   },
   { en: 'Failed to create', zh: '创建失败' }
 ).fn
+
+onMounted(() => {
+  if (selected.value == null && selector.items.length > 0) {
+    select(selector.items[0])
+  }
+})
+
+function nameFor(uri: ResourceURI | null): string | null {
+  if (uri == null) return null
+  return getResourceNameWithType(uri).name
+}
 </script>
 
 <template>
@@ -72,6 +79,7 @@ const handleCreateWith = useMessageHandle(
 
 <style lang="scss" scoped>
 .items {
+  width: 376px;
   flex: 1 1 0;
   display: flex;
   flex-wrap: wrap;

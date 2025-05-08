@@ -32,9 +32,9 @@ const modelValue = computed({
 </script>
 
 <template>
-  <UISelect v-model:value="modelValue">
+  <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
     <UISelectOption v-for="kind in playActions" :key="kind.value" :value="kind.name">
-      {{ kind.name }}
+      {{ $t(kind.text) }}
     </UISelectOption>
   </UISelect>
 </template>

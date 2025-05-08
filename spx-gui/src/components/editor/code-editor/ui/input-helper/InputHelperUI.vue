@@ -133,9 +133,11 @@ function handleCancelInput() {
     placement="bottom"
     show-arrow
     :offset="{ x: 0, y: 10 }"
+    @update:visible="handleCancelInput"
   >
     <InputHelper
       v-if="props.controller.inputingSlot != null"
+      :key="props.controller.inputingSlot.id"
       :slot-kind="props.controller.inputingSlot.kind"
       :accept="props.controller.inputingSlot.accept"
       :input="props.controller.inputingSlot.input"

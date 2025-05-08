@@ -1,8 +1,9 @@
 <template>
   <div class="ui-select">
-    <span class="label">{{ selectedRef?.label ?? placeholder }}</span>
+    <span class="label" :class="{ placeholder: selectedRef == null }">{{ selectedRef?.label ?? placeholder }}</span>
     <UIIcon class="arrow" type="arrowDown" />
     <select ref="selectRef" class="select" :value="value" @change="handleSelectChange">
+      <option v-if="selectedRef == null" disabled value="">{{ placeholder }}</option>
       <slot></slot>
     </select>
   </div>
@@ -38,7 +39,7 @@ const selectRef = ref<HTMLSelectElement | null>(null)
 async function syncSelected() {
   const select = await untilNotNull(() => selectRef.value)
   const selectedOption = select.selectedOptions[0]
-  if (selectedOption == null) {
+  if (selectedOption == null || selectedOption.value === '') {
     selectedRef.value = null
     return
   }
@@ -93,6 +94,10 @@ watch(() => props.value, syncSelected, {
   overflow-x: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+
+  &.placeholder {
+    color: var(--ui-color-grey-700);
+  }
 }
 
 .arrow {

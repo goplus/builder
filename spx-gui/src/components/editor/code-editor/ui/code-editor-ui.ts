@@ -29,11 +29,7 @@ import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
-import {
-  ResourceReferenceController,
-  type IResourceReferencesProvider,
-  type InternalResourceReference
-} from './resource-reference'
+import { ResourceReferenceController, type IResourceReferencesProvider } from './resource-reference'
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
@@ -101,9 +97,6 @@ export const builtInCommandGoToDefinition: Command<[TextDocumentPosition | TextD
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'spx.goToResource'
 export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'spx.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
-// TODO: remove command `spx.modifyResourceReference` & related implementation
-export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
-  'spx.modifyResourceReference'
 export const builtInCommandInvokeInputHelper: Command<[InternalInputSlot], void> = 'spx.invokeInputHelper'
 
 export type InternalAction<A extends any[] = any, R = any> = {
@@ -333,7 +326,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return insert(content, range)
   }
 
-  /** The newly inserted line number, staring from 1 */
+  /** The newly inserted line number, starting from 1 */
   private newlyInsertedLineRef = shallowRef<number | null>(null)
 
   /** Check if the given position is in the newly inserted range */
@@ -574,15 +567,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           this.project.select({ type: 'stage' })
           this.project.stage.selectWidget(resourceModel.id)
         }
-      }
-    })
-
-    // TODO: remove `modifyResourceReference`, use `invokeInputHelper` instead
-    this.registerCommand(builtInCommandModifyResourceReference, {
-      icon: 'modify',
-      title: { en: 'Modify', zh: '修改' },
-      handler: (rr) => {
-        this.resourceReferenceController.startModifying(rr.id)
       }
     })
 
