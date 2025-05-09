@@ -13,10 +13,10 @@ import (
 
 const (
 	// MaxContentLength defines the maximum length of content text.
-	MaxContentLength = 5000
+	MaxContentLength = 10000
 
 	// MaxTokens defines the maximum number of tokens for the AI response.
-	MaxTokens = 1024
+	MaxTokens = 10240
 
 	// Temperature defines the sampling Temperature for the AI response.
 	Temperature = 0.7
