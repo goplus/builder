@@ -32,7 +32,7 @@ import {
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
 
 const editorCtx = useEditorCtx()
@@ -105,6 +105,10 @@ function registerProjectTools() {
     'project-editor'
   )
 }
+
+watchEffect(() => {
+  copilotCtx.mcp.collector?.setEnvironmentVar('project_id', project.value.id)
+})
 
 // Register the tools when the component is mounted
 onMounted(() => {

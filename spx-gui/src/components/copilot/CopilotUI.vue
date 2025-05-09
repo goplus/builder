@@ -5,6 +5,7 @@ import { UIIcon } from '@/components/ui'
 import CopilotInput from '@/components/copilot/CopilotInput.vue'
 import CopilotRound from '@/components/copilot/CopilotRound.vue'
 import logoSrc from '../editor/code-editor/ui/copilot/logo.png'
+import envSvg from './env.svg?raw'
 import type { CopilotController } from './index'
 const props = defineProps<{
   controller: CopilotController
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'togglePositionMenu'): void
   (e: 'changePosition', position: 'left' | 'bottom' | 'right'): void
+  (e: 'toggleEnvPanel'): void
 }>()
 
 const bodyRef = ref<HTMLElement | null>(null)
@@ -25,6 +27,10 @@ const inputRef = ref<InstanceType<typeof CopilotInput>>()
 function handleClose() {
   props.controller.endChat()
   emit('close')
+}
+
+function handleEnvClick() {
+  emit('toggleEnvPanel')
 }
 
 const rounds = computed(() => {
@@ -56,6 +62,10 @@ useBottomSticky(bodyRef)
       <div class="title">
         {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
       </div>
+      <button class="env-button" @click="handleEnvClick">
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <span class="icon" v-html="envSvg"></span>
+      </button>
       <button class="position-button" @click="$emit('togglePositionMenu')">
         <UIIcon class="icon" type="more" />
       </button>
@@ -123,6 +133,7 @@ useBottomSticky(bodyRef)
     gap: 8px;
   }
 
+  .env-button,
   .position-button {
     width: 24px;
     height: 24px;

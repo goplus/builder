@@ -51,6 +51,11 @@ export type CopilotCtx = {
       close: () => void
       toggle: () => Promise<boolean>
     }
+    env: {
+      open: () => void
+      close: () => void
+      toggle: () => void
+    }
   }
 }
 
@@ -102,11 +107,17 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import dockLeft from './dock-left.svg?raw'
 import dockRight from './dock-right.svg?raw'
 import dockBottom from './dock-bottom.svg?raw'
+import EnvPanel from './EnvPanel.vue'
 
 // Component state using refs
 const visible = ref(false)
 const mcpDebuggerVisible = ref(false)
+const showEnvPanel = ref(false)
 const router = useRouter()
+
+const toggleEnvPanel = () => {
+  showEnvPanel.value = !showEnvPanel.value
+}
 
 // MCP connection status
 const mcpConnectionStatus = reactive<McpConnectionStatus>({
@@ -224,7 +235,7 @@ async function createProject(options: CreateProjectOptions) {
  * Wait for tool registration
  */
 async function waitToolRegister(): Promise<void> {
-  return until(() => registry.isToolRegistered('insert_code'))
+  return until(() => registry.isToolRegistered('write_to_file'))
 }
 
 type DockPosition = 'left' | 'bottom' | 'right'
@@ -469,6 +480,17 @@ const controls = {
       }
     }
   },
+  env: {
+    open: () => {
+      showEnvPanel.value = true
+    },
+    close: () => {
+      showEnvPanel.value = false
+    },
+    toggle: () => {
+      toggleEnvPanel()
+    }
+  },
   position: {
     copilot: {
       set: (position: DockPosition) => {
@@ -617,6 +639,7 @@ defineExpose({
         @close="handleCloseUI"
         @toggle-position-menu="toggleCopilotPositionMenu"
         @change-position="changeCopilotPosition"
+        @toggle-env-panel="toggleEnvPanel"
       />
 
       <div v-show="showCopilotPositionMenu" class="position-menu" :style="positionMenuStyle">
@@ -637,6 +660,9 @@ defineExpose({
           </div>
         </div>
       </div>
+
+      <!-- Render environment panel -->
+      <EnvPanel v-if="showEnvPanel" :style="positionMenuStyle" @close="toggleEnvPanel" />
     </aside>
 
     <!-- Render MCP Debugger when needed -->
@@ -735,6 +761,17 @@ defineExpose({
     flex: 1;
     overflow: auto;
   }
+}
+
+.env-panel {
+  position: absolute;
+  background-color: white;
+  border: 1px solid var(--ui-color-grey-300);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  min-width: 220px;
+  padding: 8px 12px;
 }
 
 /* Position menu styles */

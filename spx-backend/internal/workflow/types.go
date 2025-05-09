@@ -21,6 +21,10 @@ type INode interface {
 	// Next determines the following node in the workflow based on the execution context
 	// Returns nil if this is the final node in the workflow
 	Next(ctx context.Context, env Env) INode
+
+	// Prepare initializes the node with the given environment context
+	// This method is called before the node's execution
+	Prepare(ctx context.Context, env Env) Env
 }
 
 // NodeType represents the classification of workflow node
@@ -28,10 +32,12 @@ type INode interface {
 type NodeType string
 
 const (
-	NodeTypeStart  NodeType = "start"  // Entry point of the workflow
-	NodeTypeEnd    NodeType = "end"    // Terminal node of the workflow
-	NodeTypeLLM    NodeType = "llm"    // Language model processing node
-	NodeTypeSearch NodeType = "search" // Search operation node
+	NodeTypeStart      NodeType = "start"      // Entry point of the workflow
+	NodeTypeEnd        NodeType = "end"        // Terminal node of the workflow
+	NodeTypeLLM        NodeType = "llm"        // Language model processing node
+	NodeTypeSearch     NodeType = "search"     // Search operation node
+	NodeTypeClassifier NodeType = "classifier" // Classifier node for decision-making
+	NodeTypeIf         NodeType = "if"         // Conditional branching node
 )
 
 // Request encapsulates input data and context for a workflow node
@@ -66,9 +72,9 @@ func (e Env) Get(key string) interface{} {
 	return nil
 }
 
-// Add stores a key-value pair in the environment
+// Set stores a key-value pair in the environment
 // Overwrites any existing value for the same key
-func (e Env) Add(key string, value interface{}) {
+func (e Env) Set(key string, value interface{}) {
 	e[key] = value
 }
 

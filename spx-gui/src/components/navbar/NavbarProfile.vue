@@ -50,8 +50,8 @@
         <UIMenuItem @click="handleUseMcpDebuggerUtils">
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
         </UIMenuItem>
-        <UIMenuItem @click="handleAskCopilotEdit">
-          {{ $t({ en: 'Ask Copilot Edit', zh: '向 Copilot Edit 提问' }) }}
+        <UIMenuItem @click="handleAskCopilotAgent">
+          {{ $t({ en: 'Ask Copilot Agent', zh: '向 Copilot Agent 提问' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -83,15 +83,15 @@ const { controls } = useCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
 
-const handleAskCopilotEdit = useMessageHandle(
+const handleAskCopilotAgent = useMessageHandle(
   async () => {
     const isVisible = controls.toggle()
     return isVisible
   },
   undefined,
   (isVisible) => ({
-    en: isVisible ? 'Copilot Edit opened' : 'Copilot Edit closed',
-    zh: isVisible ? 'Copilot Edit 已打开' : 'Copilot Edit 已关闭'
+    en: isVisible ? 'Copilot Agent opened' : 'Copilot Agent closed',
+    zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
   })
 ).fn
 

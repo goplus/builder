@@ -63,18 +63,17 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 	go func() {
 		defer pw.Close() // Ensure the pipe is closed when execution completes
 
-		// Write the workflow opening tag with the name
-		fmt.Fprintf(pw, "<workflow wname=\"%s\"></workflow>\n", c.workflow.name)
-
 		// Initialize an empty buffer for the first node's input
 		var read io.Reader = &bytes.Buffer{}
 		node := c.workflow.start
 
 		// Process each node in sequence until reaching a terminal node
 		for {
+			// Prepare the environment for the current node
+			env := node.Prepare(ctx, c.env)
 			// Create a new request for each node with the current environment and input
 			r := &Request{
-				env: c.env,
+				env: env,
 				rd:  read,
 			}
 
@@ -98,8 +97,8 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 
 			// Update the workflow environment with the node's output values
 			for k, v := range w.output {
-				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"/>\n", k, v)
-				c.env.Add(k, v)
+				fmt.Fprintf(pw, "<env kname=\"%s\" value=\"%v\"></env>\n", k, v)
+				c.env.Set(k, v)
 			}
 
 			// Determine the next node based on execution state

@@ -21,10 +21,11 @@ var (
 type LLMNode struct {
 	copilot *copilot.Copilot // Reference to the copilot client used to communicate with the LLM
 
-	system  string // System prompt template to be rendered with environment data
-	id      string // Unique identifier for this node
-	next    INode  // Reference to the next node in the workflow
-	written bool   // Enables writing to the response writer
+	system  string            // System prompt template to be rendered with environment data
+	id      string            // Unique identifier for this node
+	next    INode             // Reference to the next node in the workflow
+	written bool              // Enables writing to the response writer
+	prepare func(env Env) Env // Function to prepare the environment before execution
 }
 
 // NewLLMNode creates a new LLM node with the given copilot client and system prompt
@@ -107,6 +108,8 @@ func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
 		return err
 	}
 
+	defer read.Close()
+
 	// Write the response to both response writer and pipe for next node
 	var mw io.Writer = w.pip
 	if ln.written {
@@ -125,5 +128,18 @@ func (ln *LLMNode) Next(ctx context.Context, env Env) INode {
 // Returns this node to enable method chaining
 func (ln *LLMNode) SetNext(next INode) INode {
 	ln.next = next
+	return ln
+}
+
+// Prepare sets up the environment for the node before execution
+func (ln *LLMNode) Prepare(ctx context.Context, env Env) Env {
+	if ln.prepare != nil {
+		return ln.prepare(env)
+	}
+	return env
+}
+
+func (ln *LLMNode) WithPrepare(f func(env Env) Env) *LLMNode {
+	ln.prepare = f
 	return ln
 }

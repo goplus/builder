@@ -93,7 +93,10 @@ export class Copilot extends Disposable implements ICopilot {
     // Use generateStreamMessage directly
     const stream = await workflowStreamMessage(messages, {
       signal: options?.signal,
-      tools: tools
+      tools: tools,
+      workflow: {
+        env: chat.env
+      }
     })
 
     // Forward each chunk from the stream

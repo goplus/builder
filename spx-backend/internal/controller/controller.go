@@ -100,14 +100,80 @@ func New(ctx context.Context) (*Controller, error) {
 }
 
 func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
+	editNode := NewCodeEditNode(copilot)
 	chatNode := NewMessageNode(copilot)
 	flow := workflow.NewWorkflow(name)
+
+	projectCreate := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("project_id") == nil
+		}, NewCreateProject(copilot)).
+		Else(editNode)
+
+	classifierNode := workflow.NewClassifierNode(copilot, ``).
+		AddCase("project_create", projectCreate).
+		AddCase("code_edit", editNode).
+		Default(chatNode)
+
+	classifier := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == nil
+		}, classifierNode).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "project_create"
+		}, projectCreate).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "code_edit"
+		}, editNode).
+		Else(chatNode)
+
 	flow.Start(workflow.NewIfStmt().
 		If(func(env workflow.Env) bool {
-			return env.Get("reference_id") == nil
-		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(chatNode))).
-		Else(workflow.NewSearch(db).SetNext(chatNode)))
+			return env.Get("ReferenceID") == nil
+		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(classifier))).
+		Else(workflow.NewSearch(db).SetNext(classifier)))
+
 	return flow
+}
+
+func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role: copilot.RoleUser,
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: "请使用已提供的工具来创建项目"},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
+}
+
+func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role: copilot.RoleUser,
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: `根据当前项目文件列表和背景信息，请确认是否需要创建精灵或背景。如无需，请调用工具插入代码，但请先解决现有文件中的诊断错误`},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
 }
 
 func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {
