@@ -7,6 +7,7 @@ import {
   exprForSpxEffectKind,
   exprForSpxKey,
   exprForSpxPlayAction,
+  exprForSpxRotationStyle,
   exprForSpxSpecialObj
 } from '@/utils/spx'
 import type { Project } from '@/models/project'
@@ -65,7 +66,8 @@ export type ResourceContextURI = string
 
 const resourceURIPrefix = 'spx://resources/'
 
-export function isResourceUri(uri: string): uri is ResourceURI {
+/** Check if given URI is a resource URI or a resource context URI */
+export function isResourceUri(uri: string): boolean {
   return uri.startsWith(resourceURIPrefix)
 }
 
@@ -510,27 +512,60 @@ export type ResourceNameWithType = {
   name: string
 }
 
-export function parseResourceURI(uri: string): ResourceNameWithType[] {
+/** Map from `ResourceURI` part to `ResourceType` */
+const resourceTypeMap: Record<string, ResourceType | undefined> = {
+  sounds: 'sound',
+  sprites: 'sprite',
+  backdrops: 'backdrop',
+  widgets: 'widget',
+  animations: 'animation',
+  costumes: 'costume'
+}
+
+export function parseResourceURI(uri: ResourceURI): ResourceNameWithType[] {
   if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
   const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
   const parsed: ResourceNameWithType[] = []
   for (let i = 0; i < parts.length; ) {
-    const type = (
-      {
-        sounds: 'sound',
-        sprites: 'sprite',
-        backdrops: 'backdrop',
-        widgets: 'widget',
-        animations: 'animation',
-        costumes: 'costume'
-      } as const
-    )[parts[i]]
+    const type = resourceTypeMap[parts[i]]
     const name = parts[i + 1]
     if (type == null || name == null) throw new Error(`Invalid resource uri: ${uri}`)
     parsed.push({ name, type })
     i += 2
   }
   return parsed
+}
+
+export function getResourceNameWithType(uri: ResourceURI): ResourceNameWithType {
+  const parsed = parseResourceURI(uri)
+  if (parsed.length === 0) throw new Error(`Invalid resource uri: ${uri}`)
+  return parsed.pop()!
+}
+
+export type ResourceContext = {
+  parent: ResourceNameWithType[]
+  type: ResourceType
+}
+
+export function parseResourceContextURI(uri: ResourceContextURI): ResourceContext {
+  if (!isResourceUri(uri)) throw new Error(`Invalid resource context URI: ${uri}`)
+  const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
+  const parent: ResourceNameWithType[] = []
+  let lastType: ResourceType | undefined
+  for (let i = 0; i < parts.length; ) {
+    const type = resourceTypeMap[parts[i]]
+    if (type == null) throw new Error(`Invalid resource context uri: ${uri}`)
+    const name = parts[i + 1]
+    if (name != null) {
+      parent.push({ name, type })
+    } else {
+      lastType = type
+      break
+    }
+    i += 2
+  }
+  if (lastType == null) throw new Error(`Invalid resource context uri: ${uri}`)
+  return { parent, type: lastType }
 }
 
 export function getResourceModel(project: Project, resourceId: ResourceIdentifier): ResourceModel | null {
@@ -632,6 +667,8 @@ export enum InputType {
   SpxPlayAction = 'spx-play-action',
   /** `specialObj` in spx */
   SpxSpecialObj = 'spx-special-obj',
+  /** `RotationStyle` in spx */
+  SpxRotationStyle = 'spx-rotation-style',
   /** Unknown type */
   Unknown = 'unknown'
 }
@@ -668,6 +705,11 @@ export type InputTypedValue =
       /** Value of `specialObj` in spx */
       value: number
     }
+  | {
+      type: InputType.SpxRotationStyle
+      /** Value of `RotationStyle` in spx */
+      value: number
+    }
   | { type: InputType.Unknown; value: void }
 
 export type Input<T extends InputTypedValue = InputTypedValue> =
@@ -695,6 +737,7 @@ export type InputSlotAccept =
         | InputType.SpxKey
         | InputType.SpxPlayAction
         | InputType.SpxSpecialObj
+        | InputType.SpxRotationStyle
         | InputType.Unknown
     }
   | {
@@ -729,16 +772,12 @@ export function exprForInput(input: Input) {
       return JSON.stringify(input.value)
     case InputType.Boolean:
       return input.value ? 'true' : 'false'
-    case InputType.SpxResourceName: {
-      const parsed = parseResourceURI(input.value)
-      const last = parsed.pop()
-      if (last == null) return null
-      return JSON.stringify(last.name)
-    }
+    case InputType.SpxResourceName:
+      return JSON.stringify(getResourceNameWithType(input.value).name)
     case InputType.SpxDirection:
       return exprForSpxDirection(input.value)
     case InputType.SpxColor:
-      return `rgba(${input.value.join(',')})`
+      return `RGBA(${input.value.join(',')})`
     case InputType.SpxEffectKind:
       return exprForSpxEffectKind(input.value)
     case InputType.SpxKey:
@@ -747,6 +786,8 @@ export function exprForInput(input: Input) {
       return exprForSpxPlayAction(input.value)
     case InputType.SpxSpecialObj:
       return exprForSpxSpecialObj(input.value)
+    case InputType.SpxRotationStyle:
+      return exprForSpxRotationStyle(input.value)
     default:
       return null
   }
@@ -760,6 +801,10 @@ export function positionEq(a: Position | null, b: Position | null) {
 export function rangeEq(a: Range | null, b: Range | null) {
   if (a == null || b == null) return a == b
   return positionEq(a.start, b.start) && positionEq(a.end, b.end)
+}
+
+export function rangeContains(a: Range, b: Range) {
+  return containsPosition(a, b.start) && containsPosition(a, b.end)
 }
 
 const textDocumentURIPrefix = 'file:///'

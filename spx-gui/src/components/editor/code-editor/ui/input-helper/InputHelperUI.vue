@@ -119,10 +119,6 @@ const handleInputUpdate = useMessageHandle(
     zh: '更新代码失败'
   }
 ).fn
-
-function handleCancelInput() {
-  props.controller.stopInputing()
-}
 </script>
 
 <template>
@@ -130,18 +126,19 @@ function handleCancelInput() {
     :visible="dropdownVisible"
     trigger="manual"
     :pos="dropdownPos"
-    placement="bottom"
-    show-arrow
-    :offset="{ x: 0, y: 10 }"
+    placement="bottom-start"
+    :offset="{ x: 0, y: 4 }"
+    @update:visible="controller.stopInputing()"
   >
     <InputHelper
       v-if="props.controller.inputingSlot != null"
+      :key="props.controller.inputingSlot.id"
       :slot-kind="props.controller.inputingSlot.kind"
       :accept="props.controller.inputingSlot.accept"
       :input="props.controller.inputingSlot.input"
       :predefined-names="props.controller.inputingSlot.predefinedNames"
       @update:input="handleInputUpdate"
-      @cancel="handleCancelInput"
+      @submit="controller.stopInputing()"
     />
   </UIDropdown>
 </template>

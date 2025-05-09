@@ -22,9 +22,12 @@ const codeEditorUICtx = useCodeEditorUICtx()
 const handleInsert = useMessageHandle(
   () => {
     const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
-    const snippet = parsed.toTextmateString()
-    if (isBlockDefinitionKind(props.item.kind)) codeEditorUICtx.ui.insertBlockSnippet(snippet)
-    else codeEditorUICtx.ui.insertInlineSnippet(snippet)
+    // Now we have feature InputHelper for APIReferenceItem insertion.
+    // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
+    // so we transform snippet to text and insert it directly.
+    const text = parsed.toString()
+    if (isBlockDefinitionKind(props.item.kind)) codeEditorUICtx.ui.insertBlockText(text)
+    else codeEditorUICtx.ui.insertInlineText(text)
   },
   {
     en: 'Failed to insert',
@@ -120,6 +123,7 @@ function handlePostHoverAction() {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--ui-color-hint-2);
   }
 }
 </style>

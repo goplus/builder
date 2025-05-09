@@ -1,12 +1,12 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return effectKinds[0].value
+  return rotationStyles[0].value
 }
 </script>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { effectKinds } from '@/utils/spx'
+import { rotationStyles } from '@/utils/spx'
 import { UISelect, UISelectOption } from '@/components/ui'
 
 // TODO: Update UI for this component
@@ -21,11 +21,11 @@ const emit = defineEmits<{
 
 const modelValue = computed({
   get() {
-    return effectKinds.find((k) => k.value === props.value)?.name ?? null
+    return rotationStyles.find((k) => k.value === props.value)?.name ?? null
   },
   set(name) {
-    const kind = effectKinds.find((k) => k.name === name)
-    if (kind == null) throw new Error(`Invalid effect kind: ${name}`)
+    const kind = rotationStyles.find((k) => k.name === name)
+    if (kind == null) throw new Error(`Invalid rotation style: ${name}`)
     emit('update:value', kind.value)
   }
 })
@@ -33,7 +33,7 @@ const modelValue = computed({
 
 <template>
   <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
-    <UISelectOption v-for="kind in effectKinds" :key="kind.value" :value="kind.name">
+    <UISelectOption v-for="kind in rotationStyles" :key="kind.value" :value="kind.name">
       {{ $t(kind.text) }}
     </UISelectOption>
   </UISelect>

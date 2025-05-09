@@ -5,17 +5,59 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
-import { UISwitch } from '@/components/ui'
+import { computed } from 'vue'
+import { UIRadioGroup, UIRadio } from '@/components/ui'
 
-defineProps<{
+const props = defineProps<{
   value: boolean
 }>()
 
 const emit = defineEmits<{
   'update:value': [boolean]
 }>()
+
+const modelValue = computed({
+  get() {
+    return props.value + ''
+  },
+  set(vStr) {
+    emit('update:value', vStr === 'true')
+  }
+})
 </script>
 
 <template>
-  <UISwitch :value="value" @update:value="(v) => emit('update:value', v)" />
+  <UIRadioGroup v-model:value="modelValue" class="boolean-input" :style="{ alignSelf: 'stretch' }">
+    <UIRadio class="option" value="true">
+      <code>true</code>
+    </UIRadio>
+    <UIRadio class="option" value="false">
+      <code>false</code>
+    </UIRadio>
+  </UIRadioGroup>
 </template>
+
+<style lang="scss" scoped>
+.boolean-input {
+  display: flex;
+  padding: 5px 0px;
+  align-items: center;
+  gap: 12px;
+}
+
+.option {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  border-radius: 12px;
+  transition: 0.2s;
+  border: 1px solid var(--ui-color-grey-400);
+
+  &.n-radio--checked {
+    border: 1px solid var(--ui-color-primary-500);
+  }
+}
+</style>

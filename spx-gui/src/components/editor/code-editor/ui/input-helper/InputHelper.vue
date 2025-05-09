@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
+import { humanizeResourceType } from '@/models/common/resource-model'
 import { UITabRadioGroup, UITabRadio, UISelect, UISelectOption } from '@/components/ui'
 import {
   InputKind,
@@ -7,7 +8,8 @@ import {
   InputType,
   type InputTypedValue,
   InputSlotKind,
-  type InputSlotAccept
+  type InputSlotAccept,
+  parseResourceContextURI
 } from './../../common'
 import BooleanInput, * as booleanInput from './BooleanInput.vue'
 import IntegerInput, * as integerInput from './IntegerInput.vue'
@@ -15,11 +17,12 @@ import DecimalInput, * as decimalInput from './DecimalInput.vue'
 import StringInput, * as stringInput from './StringInput.vue'
 import ResourceInput, * as resourceInput from './ResourceInput.vue'
 import SpxDirectionInput, * as spxDirectionInput from './SpxDirectionInput.vue'
-import SpxColorInput, * as spxColorInput from './SpxColorInput.vue'
+import SpxColorInput, * as spxColorInput from './spx-color-input/SpxColorInput.vue'
 import SpxEffectKindInput, * as spxEffectKindInput from './SpxEffectKindInput.vue'
 import SpxKeyInput, * as spxKeyInput from './SpxKeyInput.vue'
 import SpxPlayActionInput, * as spxPlayActionInput from './SpxPlayActionInput.vue'
 import SpxSpecialObjInput, * as spxSpecialObjInput from './SpxSpecialObjInput.vue'
+import SpxRotationStyleInput, * as spxRotationStyleInput from './SpxRotationStyleInput.vue'
 
 const props = defineProps<{
   slotKind: InputSlotKind
@@ -30,11 +33,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:input': [input: Input]
-  cancel: []
+  submit: []
 }>()
 
-function getDefaultValue(): InputTypedValue['value'] {
-  switch (props.input.type) {
+// `accept` from LS may change during input (which is not desired), we save a snapshot to keep it stable
+const acceptSnapshot = (() => {
+  let accept = props.accept
+  if (accept.type === InputType.Unknown && props.input.type !== InputType.Unknown) {
+    // If accept type is unknown, we use the input type instead to provide a in-place value input
+    if (props.input.type === InputType.SpxResourceName) {
+      // We do not use type `SpxResourceName` from input, because:
+      // * If `kind: InPlace`, we will not be here as LS will not give a in-place input with `type: SpxResourceName` for slot with `type: Unknown`
+      // * If `kind: Predefined`, there's no way to get the resource context here
+    } else {
+      accept = { type: props.input.type }
+    }
+  }
+  return accept
+})()
+
+function getDefaultValue(): InputTypedValue['value'] | null {
+  switch (acceptSnapshot.type) {
     case InputType.Integer:
       return integerInput.getDefaultValue()
     case InputType.Decimal:
@@ -57,22 +76,17 @@ function getDefaultValue(): InputTypedValue['value'] {
       return spxPlayActionInput.getDefaultValue()
     case InputType.SpxSpecialObj:
       return spxSpecialObjInput.getDefaultValue()
+    case InputType.SpxRotationStyle:
+      return spxRotationStyleInput.getDefaultValue()
+    case InputType.Unknown:
+      return null
     default:
       throw new Error('Unsupported type')
   }
 }
 
-const inputKinds = computed(() => {
-  const kinds: InputKind[] = []
-  if (props.slotKind === InputSlotKind.Value) {
-    kinds.push(InputKind.InPlace)
-  }
-  kinds.push(InputKind.Predefined)
-  return kinds
-})
-
 const inPlaceValueTitle = computed(() => {
-  switch (props.accept.type) {
+  switch (acceptSnapshot.type) {
     case InputType.Integer:
     case InputType.Decimal:
       return { en: 'Input a number', zh: '输入数字' }
@@ -80,8 +94,11 @@ const inPlaceValueTitle = computed(() => {
       return { en: 'Input text', zh: '输入文本' }
     case InputType.Boolean:
       return { en: 'Input a boolean', zh: '输入布尔值' }
-    case InputType.SpxResourceName:
-      return { en: 'Select a resource', zh: '选择资源' } // TODO: different title for different resource types
+    case InputType.SpxResourceName: {
+      const { type } = parseResourceContextURI(acceptSnapshot.resourceContext)
+      const humanizedType = humanizeResourceType(type)
+      return { en: `Select a ${humanizedType.en}`, zh: `选择${humanizedType.zh}` }
+    }
     case InputType.SpxDirection:
       return { en: 'Select a direction', zh: '选择方向' }
     case InputType.SpxColor:
@@ -94,6 +111,8 @@ const inPlaceValueTitle = computed(() => {
       return { en: 'Select a play action', zh: '选择播放动作' }
     case InputType.SpxSpecialObj:
       return { en: 'Select a special object', zh: '选择特殊对象' }
+    case InputType.SpxRotationStyle:
+      return { en: 'Select a rotation style', zh: '选择旋转方式' }
     default:
       return { en: 'Input a value', zh: '输入值' }
   }
@@ -119,9 +138,10 @@ watch(
 function updateInput() {
   let newInput: Input
   if (kind.value === InputKind.InPlace) {
+    if (inPlaceValue.value == null) return
     newInput = {
       kind: InputKind.InPlace,
-      type: props.input.type,
+      type: acceptSnapshot.type,
       value: inPlaceValue.value
     }
   } else {
@@ -129,7 +149,7 @@ function updateInput() {
     if (name == null) return
     newInput = {
       kind: InputKind.Predefined,
-      type: props.input.type,
+      type: acceptSnapshot.type,
       name
     }
   }
@@ -146,7 +166,7 @@ function handleKindUpdate(newKind: InputKind) {
   updateInput()
 }
 
-function handleInPlaceValueUpdate(newValue: InputTypedValue['value']) {
+function handleInPlaceValueUpdate(newValue: InputTypedValue['value'] | null) {
   inPlaceValue.value = newValue
   updateInput()
 }
@@ -155,19 +175,11 @@ function handlePredefinedNameUpdate(name: string | null) {
   predefinedName.value = name
   updateInput()
 }
-
-function handleKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('cancel')
-}
 </script>
 
 <template>
-  <div class="input-helper" tabindex="0" @keydown="handleKeyDown">
-    <UITabRadioGroup
-      v-show="inputKinds.length > 1"
-      :value="kind"
-      @update:value="(v) => handleKindUpdate(v as InputKind)"
-    >
+  <div class="input-helper">
+    <UITabRadioGroup class="kind-select" :value="kind" @update:value="(v) => handleKindUpdate(v as InputKind)">
       <UITabRadio :value="InputKind.InPlace">
         {{ $t(inPlaceValueTitle) }}
       </UITabRadio>
@@ -177,63 +189,89 @@ function handleKeyDown(e: KeyboardEvent) {
     </UITabRadioGroup>
     <template v-if="kind === InputKind.InPlace">
       <IntegerInput
-        v-if="accept.type === InputType.Integer"
+        v-if="acceptSnapshot.type === InputType.Integer"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <DecimalInput
-        v-if="accept.type === InputType.Decimal"
+        v-if="acceptSnapshot.type === InputType.Decimal"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <StringInput
-        v-if="accept.type === InputType.String"
+        v-if="acceptSnapshot.type === InputType.String"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <BooleanInput
-        v-if="accept.type === InputType.Boolean"
+        v-if="acceptSnapshot.type === InputType.Boolean"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <ResourceInput
-        v-if="accept.type === InputType.SpxResourceName"
-        :context="accept.resourceContext"
+        v-if="acceptSnapshot.type === InputType.SpxResourceName"
+        :context="acceptSnapshot.resourceContext"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxDirectionInput
-        v-if="accept.type === InputType.SpxDirection"
+        v-if="acceptSnapshot.type === InputType.SpxDirection"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxColorInput
-        v-if="accept.type === InputType.SpxColor"
+        v-if="acceptSnapshot.type === InputType.SpxColor"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxEffectKindInput
-        v-if="accept.type === InputType.SpxEffectKind"
+        v-if="acceptSnapshot.type === InputType.SpxEffectKind"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxKeyInput
-        v-if="accept.type === InputType.SpxKey"
+        v-if="acceptSnapshot.type === InputType.SpxKey"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxPlayActionInput
-        v-if="accept.type === InputType.SpxPlayAction"
+        v-if="acceptSnapshot.type === InputType.SpxPlayAction"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxSpecialObjInput
-        v-if="accept.type === InputType.SpxSpecialObj"
+        v-if="acceptSnapshot.type === InputType.SpxSpecialObj"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
+      <SpxRotationStyleInput
+        v-if="acceptSnapshot.type === InputType.SpxRotationStyle"
+        :value="inPlaceValue"
+        @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
+      />
+      <div v-if="acceptSnapshot.type === InputType.Unknown" class="unknown-type">
+        {{ $t({ en: 'Value not supported', zh: '不支持输入值' }) }}
+      </div>
     </template>
-    <UISelect v-if="kind === InputKind.Predefined" :value="predefinedName" @update:value="handlePredefinedNameUpdate">
+    <UISelect
+      v-if="kind === InputKind.Predefined"
+      class="predefined-select"
+      :placeholder="$t({ en: 'Choose a variable', zh: '选择变量' })"
+      :value="predefinedName"
+      @update:value="handlePredefinedNameUpdate"
+    >
       <UISelectOption v-for="name in predefinedNames" :key="name" :value="name">
         {{ name }}
       </UISelectOption>
@@ -243,10 +281,25 @@ function handleKeyDown(e: KeyboardEvent) {
 
 <style lang="scss" scoped>
 .input-helper {
-  width: 344px;
-  padding: 20px 16px;
+  min-width: 344px;
+  padding: 20px 16px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 20px;
+}
+
+.kind-select {
+  width: 312px;
+}
+
+.predefined-select {
+  align-self: stretch;
+}
+
+.unknown-type {
+  line-height: 32px;
+  text-align: center;
+  color: var(--ui-color-hint-2);
 }
 </style>

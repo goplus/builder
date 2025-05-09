@@ -827,8 +827,8 @@ export const turn1: DefinitionDocumentationItem = {
     name: 'Sprite.turn',
     overloadId: '1'
   },
-  insertSnippet: 'turn ${1:90}',
-  insertSnippetParameterHints: ['degree'],
+  insertSnippet: 'turn ${1:Right}',
+  insertSnippetParameterHints: ['direction'],
   overview: 'turn direction',
   detail: makeBasicMarkdownString({
     en: 'Turn with given direction relative to current heading',
@@ -1221,7 +1221,7 @@ export const keyPressed: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Game.keyPressed'
   },
-  insertSnippet: 'keyPressed ${1:KeyA}',
+  insertSnippet: 'keyPressed(${1:KeyA})',
   insertSnippetParameterHints: ['key'],
   overview: 'keyPressed(key)',
   detail: makeBasicMarkdownString({
@@ -1335,7 +1335,7 @@ export const play2: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '2'
   },
-  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:options}',
+  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:{}}',
   insertSnippetParameterHints: ['sound', 'options'],
   overview: 'play sound, options',
   detail: makeBasicMarkdownString({
@@ -1387,7 +1387,7 @@ export const play5: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '5'
   },
-  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:options}',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:{}}',
   insertSnippetParameterHints: ['sound', 'options'],
   overview: 'play name, options',
   detail: makeBasicMarkdownString({

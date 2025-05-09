@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:value': [string]
+  submit: []
 }>()
 
 const modelValue = useDebouncedModel(
@@ -23,5 +24,5 @@ const modelValue = useDebouncedModel(
 </script>
 
 <template>
-  <UITextInput v-model:value="modelValue" />
+  <UITextInput v-model:value="modelValue" autofocus @keyup.enter="emit('submit')" />
 </template>

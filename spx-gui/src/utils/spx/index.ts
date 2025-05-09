@@ -138,9 +138,9 @@ export function exprForSpxDirection(value: number) {
 
 // TODO: update effectKinds for spx2
 export const effectKinds = [
-  { name: 'ColorEffect', value: 0 },
-  { name: 'BrightnessEffect', value: 1 },
-  { name: 'GhostEffect', value: 2 }
+  { name: 'ColorEffect', value: 0, text: { en: 'Color Effect', zh: '颜色' } },
+  { name: 'BrightnessEffect', value: 1, text: { en: 'Brightness Effect', zh: '亮度' } },
+  { name: 'GhostEffect', value: 2, text: { en: 'Ghost Effect', zh: '幽灵' } }
 ]
 
 export function exprForSpxEffectKind(value: number) {
@@ -149,42 +149,84 @@ export function exprForSpxEffectKind(value: number) {
   return effect.name
 }
 
-export const keyA = 0
-export const keyZ = 25
-export const key0 = 43
-export const key9 = 52
-export const keyF1 = 57
-export const keyF12 = 68
-export const keys = [
-  { name: 'Up', value: 31 },
-  { name: 'Down', value: 28 },
-  { name: 'Left', value: 29 },
-  { name: 'Right', value: 30 },
-  { name: 'Space', value: 116 },
-  { name: 'Enter', value: 54 },
-  { name: 'Backspace', value: 34 },
-  { name: 'Tab', value: 117 },
-  { name: 'Shift', value: 120 },
-  { name: 'Control', value: 119 },
-  { name: 'Alt', value: 118 },
-  { name: 'Escape', value: 56 }
+export type KeyDefinition = {
+  /** Name in spx */
+  name: string
+  /** Value in spx */
+  value: number
+  /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
+  webKeyValue: string
+  /** Text for UI */
+  text: LocaleMessage
+}
+
+const alphabetKeys = Array.from<unknown, KeyDefinition>({ length: 26 }, (_, i) => {
+  const lowerCase = String.fromCharCode(i + 97)
+  const upperCase = String.fromCharCode(i + 65)
+  return {
+    name: `Key${upperCase}`,
+    value: i,
+    webKeyValue: lowerCase,
+    text: { en: upperCase, zh: upperCase }
+  }
+})
+
+const numberKeys = Array.from<unknown, KeyDefinition>({ length: 10 }, (_, i) => {
+  const num = i + ''
+  return {
+    name: `Key${num}`,
+    value: i + 43,
+    webKeyValue: num,
+    text: { en: num, zh: num }
+  }
+})
+
+const functionKeys = Array.from<unknown, KeyDefinition>({ length: 12 }, (_, i) => {
+  const fN = `F${i + 1}`
+  return {
+    name: `Key${fN}`,
+    value: i + 57,
+    webKeyValue: fN,
+    text: { en: fN, zh: fN }
+  }
+})
+
+const arrowKeys = [
+  { name: 'KeyUp', value: 31, webKeyValue: 'ArrowUp', text: { en: 'Up', zh: '上' } },
+  { name: 'KeyDown', value: 28, webKeyValue: 'ArrowDown', text: { en: 'Down', zh: '下' } },
+  { name: 'KeyLeft', value: 29, webKeyValue: 'ArrowLeft', text: { en: 'Left', zh: '左' } },
+  { name: 'KeyRight', value: 30, webKeyValue: 'ArrowRight', text: { en: 'Right', zh: '右' } }
 ]
 
+const specialKeys: KeyDefinition[] = [
+  { name: 'KeySpace', value: 116, webKeyValue: ' ', text: { en: 'Space', zh: '空格' } },
+  { name: 'KeyEnter', value: 54, webKeyValue: 'Enter', text: { en: 'Enter', zh: '回车' } },
+  { name: 'KeyBackspace', value: 34, webKeyValue: 'Backspace', text: { en: 'Backspace', zh: '退格' } },
+  { name: 'KeyTab', value: 117, webKeyValue: 'Tab', text: { en: 'Tab', zh: 'Tab' } },
+  { name: 'KeyShift', value: 120, webKeyValue: 'Shift', text: { en: 'Shift', zh: 'Shift' } },
+  { name: 'KeyControl', value: 119, webKeyValue: 'Control', text: { en: 'Control', zh: 'Ctrl' } },
+  { name: 'KeyAlt', value: 118, webKeyValue: 'Alt', text: { en: 'Alt', zh: 'Alt' } },
+  { name: 'KeyEscape', value: 56, webKeyValue: 'Escape', text: { en: 'Escape', zh: 'Esc' } }
+]
+
+export const keys = [...alphabetKeys, ...numberKeys, ...functionKeys, ...arrowKeys, ...specialKeys]
+
+/** Map from value (in spx) to key definition */
+export const valueKeyMap = keys.reduce((map, key) => {
+  map.set(key.value, key)
+  return map
+}, new Map<number, KeyDefinition>())
+
 export function exprForSpxKey(value: number): string | null {
-  if (value >= keyA && value <= keyZ) return 'Key' + String.fromCharCode(value - keyA + 65)
-  if (value >= key0 && value <= key9) return 'Key' + String.fromCharCode(value - key0 + 48)
-  if (value >= keyF1 && value <= keyF12) return 'Key' + String.fromCharCode(value - keyF1 + 112)
-  const key = keys.find((k) => k.value === value)
-  if (key != null) return 'Key' + key.name
-  return null
+  return valueKeyMap.get(value)?.name ?? null
 }
 
 export const playActions = [
-  { name: 'PlayRewind', value: 0 },
-  { name: 'PlayContinue', value: 1 },
-  { name: 'PlayPause', value: 2 },
-  { name: 'PlayResume', value: 3 },
-  { name: 'PlayStop', value: 4 }
+  { name: 'PlayRewind', value: 0, text: { en: 'Play from start', zh: '从头播放' } },
+  { name: 'PlayContinue', value: 1, text: { en: 'Continue', zh: '继续' } },
+  { name: 'PlayPause', value: 2, text: { en: 'Pause', zh: '暂停播放' } },
+  { name: 'PlayResume', value: 3, text: { en: 'Resume', zh: '继续播放' } },
+  { name: 'PlayStop', value: 4, text: { en: 'Stop', zh: '停止播放' } }
 ]
 
 export function exprForSpxPlayAction(value: number) {
@@ -194,16 +236,28 @@ export function exprForSpxPlayAction(value: number) {
 }
 
 export const specialObjs = [
-  { name: 'Mouse', value: -5 },
-  { name: 'Edge', value: 15 },
-  { name: 'EdgeLeft', value: 1 },
-  { name: 'EdgeTop', value: 2 },
-  { name: 'EdgeRight', value: 4 },
-  { name: 'EdgeBottom', value: 8 }
+  { name: 'Mouse', value: -5, text: { en: 'Mouse', zh: '鼠标' } },
+  { name: 'Edge', value: 15, text: { en: 'Edge', zh: '边缘' } },
+  { name: 'EdgeLeft', value: 1, text: { en: 'Edge Left', zh: '左边缘' } },
+  { name: 'EdgeTop', value: 2, text: { en: 'Edge Top', zh: '上边缘' } },
+  { name: 'EdgeRight', value: 4, text: { en: 'Edge Right', zh: '右边缘' } },
+  { name: 'EdgeBottom', value: 8, text: { en: 'Edge Bottom', zh: '下边缘' } }
 ]
 
 export function exprForSpxSpecialObj(value: number) {
   const obj = specialObjs.find((o) => o.value === value)
   if (obj == null) return null
   return obj.name
+}
+
+export const rotationStyles = [
+  { name: 'None', value: 0, text: { en: "Don't Rotate", zh: '不旋转' } },
+  { name: 'Normal', value: 1, text: { en: 'Normal', zh: '正常旋转' } },
+  { name: 'LeftRight', value: 2, text: { en: 'Left-Right', zh: '左右翻转' } }
+]
+
+export function exprForSpxRotationStyle(value: number) {
+  const style = rotationStyles.find((s) => s.value === value)
+  if (style == null) return null
+  return style.name
 }
