@@ -55,7 +55,7 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <env ename="MY_ENV" evalue="my_value"></env>
+   * <env kname="MY_ENV" value="my_value"></env>
    * ```
    */
   env: Env
