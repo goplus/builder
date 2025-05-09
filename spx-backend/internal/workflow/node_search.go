@@ -81,7 +81,7 @@ func (p *Search) Execute(ctx context.Context, w *Response, r *Request) error {
 			w.output["ReferenceID"] = result.ID
 		}
 	} else {
-		// No search pattern found, report error
+		// If no search pattern is found, set a default value for ReferenceID
 		w.output["ReferenceID"] = "0"
 	}
 

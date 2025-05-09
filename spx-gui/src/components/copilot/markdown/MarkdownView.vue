@@ -55,7 +55,7 @@ const basicComponents = {
   /**
    * Usage:
    *  ```html
-   * <workflow-env ename="MY_ENV" evalue="my_value"/>
+   * <env ename="MY_ENV" evalue="my_value"></env>
    * ```
    */
   env: Env
