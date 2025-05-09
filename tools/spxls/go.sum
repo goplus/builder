@@ -1,3 +1,5 @@
+github.com/aofei/fork.goplus.goxlsw v0.0.0-20250509011347-a89bb93362d6 h1:nDEHrUMpPbb21k/3n15I+ruERQuS4xBb9AijGpjuD+Y=
+github.com/aofei/fork.goplus.goxlsw v0.0.0-20250509011347-a89bb93362d6/go.mod h1:+8BYma7xTI6OELlJ+dFA5B6VadexAsazHjTvxfSdqjE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
@@ -6,8 +8,8 @@ github.com/goplus/gogen v1.18.0 h1:B0PJE/4e8lfRDmrGJbElEB1weokD1vyOyyXb5eZdjfk=
 github.com/goplus/gogen v1.18.0/go.mod h1:owX2e1EyU5WD+Nm6oH2m/GXjLdlBYcwkLO4wN8HHXZI=
 github.com/goplus/gop v1.4.0 h1:YYNkrkydWfiK8ZhHAoUC8XiLV4rcdF/tcLBuu362rlI=
 github.com/goplus/gop v1.4.0/go.mod h1:n7gnzj6eoaF4i/BwsEvSUmRrrIq3OCjJdUTqOV5ZWCk=
-github.com/goplus/goxlsw v0.3.2-0.20250508074533-1186c8fb3f26 h1:d77gq5aMX+uoJBOu8vvVaXIuEWbL74W66Erfzhowotg=
-github.com/goplus/goxlsw v0.3.2-0.20250508074533-1186c8fb3f26/go.mod h1:+8BYma7xTI6OELlJ+dFA5B6VadexAsazHjTvxfSdqjE=
+github.com/goplus/goxlsw v0.3.2-0.20250509063211-9ab016cdb224 h1:bzcsqlL7NSyCNeuY3D6BTB/JsFNVde2coCixsXvhrW0=
+github.com/goplus/goxlsw v0.3.2-0.20250509063211-9ab016cdb224/go.mod h1:+8BYma7xTI6OELlJ+dFA5B6VadexAsazHjTvxfSdqjE=
 github.com/goplus/mod v0.16.1 h1:2O+rKubJTn+Fighz3kckwpW87STSZ6s3m/YECfXuNhE=
 github.com/goplus/mod v0.16.1/go.mod h1:8d1P+pBavZfNQtJo4A742DgsLTtSf26BQn51owhmNqI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

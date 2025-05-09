@@ -2,7 +2,7 @@ module github.com/goplus/builder/tools/spxls
 
 go 1.23.4
 
-require github.com/goplus/goxlsw v0.3.2-0.20250508074533-1186c8fb3f26
+require github.com/goplus/goxlsw v0.3.2-0.20250509063211-9ab016cdb224
 
 require (
 	github.com/goplus/gogen v1.18.0 // indirect
