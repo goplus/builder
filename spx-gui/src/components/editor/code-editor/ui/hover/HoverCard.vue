@@ -60,7 +60,8 @@ const handleAction = useMessageHandle(
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 328px;
+  min-width: 250px;
+  max-width: 328px;
   min-height: 0;
   max-height: 300px;
   overflow-y: auto;

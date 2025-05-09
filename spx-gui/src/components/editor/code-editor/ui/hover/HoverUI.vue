@@ -65,9 +65,8 @@ useDecorations(() => {
     :visible="dropdownVisible"
     trigger="manual"
     :pos="dropdownPos"
-    placement="top"
-    show-arrow
-    :offset="{ x: 0, y: 10 }"
+    placement="top-start"
+    :offset="{ x: 0, y: 4 }"
   >
     <HoverCard
       v-if="controller.hover != null"

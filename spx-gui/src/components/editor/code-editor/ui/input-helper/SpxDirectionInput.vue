@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:value': [number]
+  submit: []
 }>()
 
 const modelValue = useDebouncedModel<number | null>(
@@ -120,7 +121,15 @@ function handleCircleClick(e: MouseEvent) {
     </svg>
   </div>
   <div class="input-container">
-    <UINumberInput v-model:value="modelValue" class="input" :min="-180" :max="180" :style="{ alignSelf: 'stretch' }" />
+    <UINumberInput
+      v-model:value="modelValue"
+      class="input"
+      :min="-180"
+      :max="180"
+      :style="{ alignSelf: 'stretch' }"
+      autofocus
+      @keyup.enter="emit('submit')"
+    />
   </div>
 </template>
 

@@ -20,6 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:value': [ColorValue]
+  submit: []
 }>()
 
 const hue = ref(0)
@@ -71,13 +72,27 @@ watch([hue, saturation, brightness, alpha], onChange)
     <UIDivider />
     <section class="inputs">
       <!-- TODO: Eyedropper -->
-      <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1">
+      <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="emit('submit')">
         <template #prefix>H</template>
       </UINumberInput>
-      <UINumberInput v-model:value="saturation" class="input" :min="0" :max="100" :step="1">
+      <UINumberInput
+        v-model:value="saturation"
+        class="input"
+        :min="0"
+        :max="100"
+        :step="1"
+        @keyup.enter="emit('submit')"
+      >
         <template #prefix>S</template>
       </UINumberInput>
-      <UINumberInput v-model:value="brightness" class="input" :min="0" :max="100" :step="1">
+      <UINumberInput
+        v-model:value="brightness"
+        class="input"
+        :min="0"
+        :max="100"
+        :step="1"
+        @keyup.enter="emit('submit')"
+      >
         <template #prefix>B</template>
       </UINumberInput>
     </section>

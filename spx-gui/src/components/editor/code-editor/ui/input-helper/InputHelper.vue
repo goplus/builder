@@ -33,7 +33,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:input': [input: Input]
-  cancel: []
+  submit: []
 }>()
 
 // `accept` from LS may change during input (which is not desired), we save a snapshot to keep it stable
@@ -192,62 +192,74 @@ function handlePredefinedNameUpdate(name: string | null) {
         v-if="acceptSnapshot.type === InputType.Integer"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <DecimalInput
         v-if="acceptSnapshot.type === InputType.Decimal"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <StringInput
         v-if="acceptSnapshot.type === InputType.String"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <BooleanInput
         v-if="acceptSnapshot.type === InputType.Boolean"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <ResourceInput
         v-if="acceptSnapshot.type === InputType.SpxResourceName"
         :context="acceptSnapshot.resourceContext"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxDirectionInput
         v-if="acceptSnapshot.type === InputType.SpxDirection"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxColorInput
         v-if="acceptSnapshot.type === InputType.SpxColor"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxEffectKindInput
         v-if="acceptSnapshot.type === InputType.SpxEffectKind"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxKeyInput
         v-if="acceptSnapshot.type === InputType.SpxKey"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxPlayActionInput
         v-if="acceptSnapshot.type === InputType.SpxPlayAction"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxSpecialObjInput
         v-if="acceptSnapshot.type === InputType.SpxSpecialObj"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <SpxRotationStyleInput
         v-if="acceptSnapshot.type === InputType.SpxRotationStyle"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
       />
       <div v-if="acceptSnapshot.type === InputType.Unknown" class="unknown-type">
         {{ $t({ en: 'Value not supported', zh: '不支持输入值' }) }}
