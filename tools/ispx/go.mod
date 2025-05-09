@@ -3,7 +3,7 @@ module github.com/goplus/builder/tools/ispx
 go 1.23.0
 
 require (
-	github.com/goplus/igop v0.43.0
+	github.com/goplus/igop v0.43.1
 	github.com/goplus/reflectx v1.4.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
@@ -29,9 +29,9 @@ require (
 	github.com/qiniu/x v1.14.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
-	github.com/timandy/routine v1.1.4 // indirect
+	github.com/timandy/routine v1.1.5 // indirect
 	github.com/visualfc/funcval v0.1.4 // indirect
-	github.com/visualfc/gid v0.2.0 // indirect
+	github.com/visualfc/gid v0.3.0 // indirect
 	github.com/visualfc/goembed v0.3.2 // indirect
 	github.com/visualfc/xtype v0.2.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
