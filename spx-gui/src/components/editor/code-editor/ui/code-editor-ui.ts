@@ -375,7 +375,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         })
       }
 
-      this.newlyInsertedLineRef.value = insertAtLine
+      // Selection change causes cursor position change, which clears newlyInsertedLine unintentionally.
+      // Add a timeout to avoid that. TODO: more reliable way to handle this.
+      setTimeout(() => {
+        this.newlyInsertedLineRef.value = insertAtLine
+      }, 50)
     }
 
     const pos = range.end
@@ -600,7 +604,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       watch(
         () => this.cursorPosition,
         (pos) => {
-          if (pos == null || this.isNewlyInserted(pos)) return
+          if (pos == null || this.newlyInsertedLineRef.value == null || this.isNewlyInserted(pos)) return
           this.newlyInsertedLineRef.value = null
         }
       )
