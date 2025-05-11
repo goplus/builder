@@ -261,7 +261,7 @@ function zoomReset() {
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
-      class="monaco-editor"
+      class="monaco-editor-conflict-free"
       :monaco="codeEditorCtx.getMonaco()"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -335,7 +335,7 @@ function zoomReset() {
   }
 }
 
-.monaco-editor {
+.monaco-editor-conflict-free {
   flex: 1 1 0;
   min-width: 0;
   margin: 12px 0;
