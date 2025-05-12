@@ -67,7 +67,8 @@ const categoriesViewInfo = [
       { id: subCategories.look.behavior, label: { en: 'Behavior', zh: '行为' } },
       { id: subCategories.look.costume, label: { en: 'Costume', zh: '造型' } },
       { id: subCategories.look.animation, label: { en: 'Animation', zh: '动画' } },
-      { id: subCategories.look.backdrop, label: { en: 'Backdrop', zh: '背景' } }
+      { id: subCategories.look.backdrop, label: { en: 'Backdrop', zh: '背景' } },
+      { id: subCategories.look.effect, label: { en: 'Graphic Effect', zh: '特效' } }
     ]
   },
   {

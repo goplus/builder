@@ -107,11 +107,11 @@ export const println: DefinitionDocumentationItem = {
     package: 'fmt',
     name: 'println'
   },
-  insertSnippet: 'println ${1:""}',
+  insertSnippet: 'println ${1:"Hello, World!"}',
   insertSnippetParameterHints: ['msg'],
   overview: 'println msg, ...',
   detail: makeBasicMarkdownString({
-    en: 'Print line, e.g., `println "Hello, world!"`',
-    zh: '打印行，如 `println "Hello, world!"`'
+    en: 'Print given message',
+    zh: '打印给定信息'
   })
 }

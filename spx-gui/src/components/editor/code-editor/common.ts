@@ -153,7 +153,7 @@ export type DefinitionIdentifier = {
 }
 
 /** gop:<package>?<name>#<overloadId> */
-type DefinitionIdString = string
+export type DefinitionIdString = string
 
 export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionIdString {
   let idStr = 'gop:'
@@ -315,7 +315,8 @@ export const subCategories = {
     behavior: 'behavior',
     costume: 'costume',
     animation: 'animation',
-    backdrop: 'backdrop'
+    backdrop: 'backdrop',
+    effect: 'effect'
   },
   sensing: {
     distance: 'distance',
