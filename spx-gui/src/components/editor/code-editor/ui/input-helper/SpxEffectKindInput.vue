@@ -1,6 +1,6 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return effectKinds[0].value
+  return effectKinds[0].name
 }
 </script>
 
@@ -12,28 +12,26 @@ import { UISelect, UISelectOption } from '@/components/ui'
 // TODO: Update UI for this component
 
 const props = defineProps<{
-  value: number
+  value: string
 }>()
 
 const emit = defineEmits<{
-  'update:value': [number]
+  'update:value': [string]
 }>()
 
 const modelValue = computed({
   get() {
-    return effectKinds.find((k) => k.value === props.value)?.name ?? null
+    return props.value
   },
   set(name) {
-    const kind = effectKinds.find((k) => k.name === name)
-    if (kind == null) throw new Error(`Invalid effect kind: ${name}`)
-    emit('update:value', kind.value)
+    emit('update:value', name)
   }
 })
 </script>
 
 <template>
   <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
-    <UISelectOption v-for="kind in effectKinds" :key="kind.value" :value="kind.name">
+    <UISelectOption v-for="kind in effectKinds" :key="kind.name" :value="kind.name">
       {{ $t(kind.text) }}
     </UISelectOption>
   </UISelect>

@@ -9,6 +9,16 @@ import { stripExt } from '../path'
 import { toWav } from '../audio'
 import { toJpeg } from '../img'
 import type { LocaleMessage } from '../i18n'
+import {
+  builderRGB2CSSColorString,
+  builderRGBA2CSSColorString,
+  builderHSB2CSSColorString,
+  builderHSBA2CSSColorString,
+  type BuilderRGB,
+  type BuilderRGBA,
+  type BuilderHSB,
+  type BuilderHSBA
+} from '../color'
 
 export const packageSpx = 'github.com/goplus/spx'
 
@@ -136,24 +146,43 @@ export function exprForSpxDirection(value: number) {
   return value + ''
 }
 
+/** Name for color constructors */
+export type ColorConstructor = 'RGB' | 'RGBA' | 'HSB' | 'HSBA'
+
+export type ColorValue = {
+  /** Constructor for color */
+  constructor: ColorConstructor
+  /** Arguments passed to the constructor */
+  args: number[]
+}
+
+export function exprForSpxColor(value: ColorValue) {
+  return `${value.constructor}(${value.args.join(',')})`
+}
+
+export function cssColorStringForSpxColor(value: ColorValue) {
+  if (value.constructor === 'RGB') {
+    return builderRGB2CSSColorString(value.args as BuilderRGB)
+  } else if (value.constructor === 'RGBA') {
+    return builderRGBA2CSSColorString(value.args as BuilderRGBA)
+  } else if (value.constructor === 'HSB') {
+    return builderHSB2CSSColorString(value.args as BuilderHSB)
+  } else if (value.constructor === 'HSBA') {
+    return builderHSBA2CSSColorString(value.args as BuilderHSBA)
+  }
+  return ''
+}
+
 // TODO: update effectKinds for spx2
 export const effectKinds = [
-  { name: 'ColorEffect', value: 0, text: { en: 'Color Effect', zh: '颜色' } },
-  { name: 'BrightnessEffect', value: 1, text: { en: 'Brightness Effect', zh: '亮度' } },
-  { name: 'GhostEffect', value: 2, text: { en: 'Ghost Effect', zh: '幽灵' } }
+  { name: 'ColorEffect', text: { en: 'Color Effect', zh: '颜色' } },
+  { name: 'BrightnessEffect', text: { en: 'Brightness Effect', zh: '亮度' } },
+  { name: 'GhostEffect', text: { en: 'Ghost Effect', zh: '幽灵' } }
 ]
-
-export function exprForSpxEffectKind(value: number) {
-  const effect = effectKinds.find((e) => e.value === value)
-  if (effect == null) return null
-  return effect.name
-}
 
 export type KeyDefinition = {
   /** Name in spx */
   name: string
-  /** Value in spx */
-  value: number
   /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
   webKeyValue: string
   /** Text for UI */
@@ -165,7 +194,6 @@ const alphabetKeys = Array.from<unknown, KeyDefinition>({ length: 26 }, (_, i) =
   const upperCase = String.fromCharCode(i + 65)
   return {
     name: `Key${upperCase}`,
-    value: i,
     webKeyValue: lowerCase,
     text: { en: upperCase, zh: upperCase }
   }
@@ -175,7 +203,6 @@ const numberKeys = Array.from<unknown, KeyDefinition>({ length: 10 }, (_, i) => 
   const num = i + ''
   return {
     name: `Key${num}`,
-    value: i + 43,
     webKeyValue: num,
     text: { en: num, zh: num }
   }
@@ -185,79 +212,56 @@ const functionKeys = Array.from<unknown, KeyDefinition>({ length: 12 }, (_, i) =
   const fN = `F${i + 1}`
   return {
     name: `Key${fN}`,
-    value: i + 57,
     webKeyValue: fN,
     text: { en: fN, zh: fN }
   }
 })
 
 const arrowKeys = [
-  { name: 'KeyUp', value: 31, webKeyValue: 'ArrowUp', text: { en: 'Up', zh: '上' } },
-  { name: 'KeyDown', value: 28, webKeyValue: 'ArrowDown', text: { en: 'Down', zh: '下' } },
-  { name: 'KeyLeft', value: 29, webKeyValue: 'ArrowLeft', text: { en: 'Left', zh: '左' } },
-  { name: 'KeyRight', value: 30, webKeyValue: 'ArrowRight', text: { en: 'Right', zh: '右' } }
+  { name: 'KeyUp', webKeyValue: 'ArrowUp', text: { en: 'Up', zh: '上' } },
+  { name: 'KeyDown', webKeyValue: 'ArrowDown', text: { en: 'Down', zh: '下' } },
+  { name: 'KeyLeft', webKeyValue: 'ArrowLeft', text: { en: 'Left', zh: '左' } },
+  { name: 'KeyRight', webKeyValue: 'ArrowRight', text: { en: 'Right', zh: '右' } }
 ]
 
 const specialKeys: KeyDefinition[] = [
-  { name: 'KeySpace', value: 116, webKeyValue: ' ', text: { en: 'Space', zh: '空格' } },
-  { name: 'KeyEnter', value: 54, webKeyValue: 'Enter', text: { en: 'Enter', zh: '回车' } },
-  { name: 'KeyBackspace', value: 34, webKeyValue: 'Backspace', text: { en: 'Backspace', zh: '退格' } },
-  { name: 'KeyTab', value: 117, webKeyValue: 'Tab', text: { en: 'Tab', zh: 'Tab' } },
-  { name: 'KeyShift', value: 120, webKeyValue: 'Shift', text: { en: 'Shift', zh: 'Shift' } },
-  { name: 'KeyControl', value: 119, webKeyValue: 'Control', text: { en: 'Control', zh: 'Ctrl' } },
-  { name: 'KeyAlt', value: 118, webKeyValue: 'Alt', text: { en: 'Alt', zh: 'Alt' } },
-  { name: 'KeyEscape', value: 56, webKeyValue: 'Escape', text: { en: 'Escape', zh: 'Esc' } }
+  { name: 'KeySpace', webKeyValue: ' ', text: { en: 'Space', zh: '空格' } },
+  { name: 'KeyEnter', webKeyValue: 'Enter', text: { en: 'Enter', zh: '回车' } },
+  { name: 'KeyBackspace', webKeyValue: 'Backspace', text: { en: 'Backspace', zh: '退格' } },
+  { name: 'KeyTab', webKeyValue: 'Tab', text: { en: 'Tab', zh: 'Tab' } },
+  { name: 'KeyShift', webKeyValue: 'Shift', text: { en: 'Shift', zh: 'Shift' } },
+  { name: 'KeyControl', webKeyValue: 'Control', text: { en: 'Control', zh: 'Ctrl' } },
+  { name: 'KeyAlt', webKeyValue: 'Alt', text: { en: 'Alt', zh: 'Alt' } },
+  { name: 'KeyEscape', webKeyValue: 'Escape', text: { en: 'Escape', zh: 'Esc' } }
 ]
 
 export const keys = [...alphabetKeys, ...numberKeys, ...functionKeys, ...arrowKeys, ...specialKeys]
 
-/** Map from value (in spx) to key definition */
-export const valueKeyMap = keys.reduce((map, key) => {
-  map.set(key.value, key)
+/** Map from name (in spx) to key definition */
+export const nameKeyMap = keys.reduce((map, key) => {
+  map.set(key.name, key)
   return map
-}, new Map<number, KeyDefinition>())
-
-export function exprForSpxKey(value: number): string | null {
-  return valueKeyMap.get(value)?.name ?? null
-}
+}, new Map<string, KeyDefinition>())
 
 export const playActions = [
-  { name: 'PlayRewind', value: 0, text: { en: 'Play from start', zh: '从头播放' } },
-  { name: 'PlayContinue', value: 1, text: { en: 'Continue', zh: '继续' } },
-  { name: 'PlayPause', value: 2, text: { en: 'Pause', zh: '暂停播放' } },
-  { name: 'PlayResume', value: 3, text: { en: 'Resume', zh: '继续播放' } },
-  { name: 'PlayStop', value: 4, text: { en: 'Stop', zh: '停止播放' } }
+  { name: 'PlayRewind', text: { en: 'Play from start', zh: '从头播放' } },
+  { name: 'PlayContinue', text: { en: 'Continue', zh: '继续' } },
+  { name: 'PlayPause', text: { en: 'Pause', zh: '暂停播放' } },
+  { name: 'PlayResume', text: { en: 'Resume', zh: '继续播放' } },
+  { name: 'PlayStop', text: { en: 'Stop', zh: '停止播放' } }
 ]
-
-export function exprForSpxPlayAction(value: number) {
-  const action = playActions.find((a) => a.value === value)
-  if (action == null) return null
-  return action.name
-}
 
 export const specialObjs = [
-  { name: 'Mouse', value: -5, text: { en: 'Mouse', zh: '鼠标' } },
-  { name: 'Edge', value: 15, text: { en: 'Edge', zh: '边缘' } },
-  { name: 'EdgeLeft', value: 1, text: { en: 'Edge Left', zh: '左边缘' } },
-  { name: 'EdgeTop', value: 2, text: { en: 'Edge Top', zh: '上边缘' } },
-  { name: 'EdgeRight', value: 4, text: { en: 'Edge Right', zh: '右边缘' } },
-  { name: 'EdgeBottom', value: 8, text: { en: 'Edge Bottom', zh: '下边缘' } }
+  { name: 'Mouse', text: { en: 'Mouse', zh: '鼠标' } },
+  { name: 'Edge', text: { en: 'Edge', zh: '边缘' } },
+  { name: 'EdgeLeft', text: { en: 'Edge Left', zh: '左边缘' } },
+  { name: 'EdgeTop', text: { en: 'Edge Top', zh: '上边缘' } },
+  { name: 'EdgeRight', text: { en: 'Edge Right', zh: '右边缘' } },
+  { name: 'EdgeBottom', text: { en: 'Edge Bottom', zh: '下边缘' } }
 ]
-
-export function exprForSpxSpecialObj(value: number) {
-  const obj = specialObjs.find((o) => o.value === value)
-  if (obj == null) return null
-  return obj.name
-}
 
 export const rotationStyles = [
-  { name: 'None', value: 0, text: { en: "Don't Rotate", zh: '不旋转' } },
-  { name: 'Normal', value: 1, text: { en: 'Normal', zh: '正常旋转' } },
-  { name: 'LeftRight', value: 2, text: { en: 'Left-Right', zh: '左右翻转' } }
+  { name: 'None', text: { en: "Don't Rotate", zh: '不旋转' } },
+  { name: 'Normal', text: { en: 'Normal', zh: '正常旋转' } },
+  { name: 'LeftRight', text: { en: 'Left-Right', zh: '左右翻转' } }
 ]
-
-export function exprForSpxRotationStyle(value: number) {
-  const style = rotationStyles.find((s) => s.value === value)
-  if (style == null) return null
-  return style.name
-}

@@ -12,3 +12,5 @@ require (
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
 )
+
+replace github.com/goplus/goxlsw => github.com/aofei/fork.goplus.goxlsw v0.0.0-20250512015729-ebbe56844557

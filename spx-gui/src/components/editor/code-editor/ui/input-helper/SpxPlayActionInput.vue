@@ -1,6 +1,6 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return playActions[0].value
+  return playActions[0].name
 }
 </script>
 
@@ -12,28 +12,26 @@ import { UISelect, UISelectOption } from '@/components/ui'
 // TODO: Update UI for this component
 
 const props = defineProps<{
-  value: number
+  value: string
 }>()
 
 const emit = defineEmits<{
-  'update:value': [number]
+  'update:value': [string]
 }>()
 
 const modelValue = computed({
   get() {
-    return playActions.find((k) => k.value === props.value)?.name ?? null
+    return props.value
   },
   set(name) {
-    const kind = playActions.find((k) => k.name === name)
-    if (kind == null) throw new Error(`Invalid play action: ${name}`)
-    emit('update:value', kind.value)
+    emit('update:value', name)
   }
 })
 </script>
 
 <template>
   <UISelect v-model:value="modelValue" :style="{ alignSelf: 'stretch' }">
-    <UISelectOption v-for="kind in playActions" :key="kind.value" :value="kind.name">
+    <UISelectOption v-for="kind in playActions" :key="kind.name" :value="kind.name">
       {{ $t(kind.text) }}
     </UISelectOption>
   </UISelect>

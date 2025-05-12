@@ -1,11 +1,28 @@
 /* eslint-disable prefer-const */
 
+/** r, g, b in range of 0-255 */
+export type RGB = [r: number, g: number, b: number]
+/** r, g, b, a in range of 0-255 */
+export type RGBA = [r: number, g: number, b: number, a: number]
+/** hue, saturation, and brightness are in the range of 0-360, 0-100, and 0-100 respectively */
+export type HSB = [hue: number, saturation: number, brightness: number]
+/** hue, saturation, brightness, and alpha are in the range of 0-360, 0-100, 0-100, and 0-100 respectively */
+export type HSBA = [hue: number, saturation: number, brightness: number, alpha: number]
+/** r, g, b in range of 0-255 */
+export type BuilderRGB = RGB
+/** r, g, b, a in range of 0-255 */
+export type BuilderRGBA = RGBA
+/** hue100, saturation, brightness in range of 0-100 */
+export type BuilderHSB = [hue100: number, saturation: number, brightness: number]
+/** hue100, saturation, brightness, alpha in range of 0-100 */
+export type BuilderHSBA = [hue100: number, saturation: number, brightness: number, alpha: number]
+
 /**
  * Converts HSB (Hue, Saturation, Brightness) color model to RGB (Red, Green, Blue) color model.
  * hue, saturation, and brightness are in the range of 0-360, 0-100, and 0-100 respectively.
  * r, g, and b are in the range of 0-255.
  */
-export function hsb2rgb(hsb: [hue: number, saturation: number, brightness: number]): [r: number, g: number, b: number] {
+export function hsb2rgb(hsb: HSB): RGB {
   let [hue, saturation, brightness] = hsb
   hue = hue % 360
   saturation = saturation / 100
@@ -46,7 +63,7 @@ export function hsb2rgb(hsb: [hue: number, saturation: number, brightness: numbe
  * r, g, and b are in the range of 0-255.
  * hue, saturation, and brightness are in the range of 0-360, 0-100, and 0-100 respectively.
  */
-export function rgb2hsb(rgb: [r: number, g: number, b: number]): [hue: number, saturation: number, brightness: number] {
+export function rgb2hsb(rgb: RGB): HSB {
   const [r, g, b] = rgb
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)
@@ -74,12 +91,16 @@ export function rgb2hsb(rgb: [r: number, g: number, b: number]): [hue: number, s
   return [hue, saturation, brightness]
 }
 
-export type BuilderHSB = [hue100: number, saturation: number, brightness: number]
-
-export function builderHSB2rgb(hsb: BuilderHSB): [r: number, g: number, b: number] {
+export function builderHSB2rgb(hsb: BuilderHSB): RGB {
   const [hue100, saturation, brightness] = hsb
   const hue = (hue100 / 100) * 360
   return hsb2rgb([hue, saturation, brightness])
+}
+
+export function builderHSBA2rgba(hsb: BuilderHSBA): RGBA {
+  const [hue100, saturation, brightness, alpha100] = hsb
+  const alpha = Math.round((alpha100 / 100) * 255)
+  return [...builderHSB2rgb([hue100, saturation, brightness]), alpha]
 }
 
 export function rgb2builderHSB(rgb: [r: number, g: number, b: number]): BuilderHSB {
@@ -88,7 +109,43 @@ export function rgb2builderHSB(rgb: [r: number, g: number, b: number]): BuilderH
   return [hue100, saturation, brightness]
 }
 
-export function getCSSColorString(hsb: BuilderHSB): string {
-  const [r, g, b] = builderHSB2rgb(hsb)
+export function rgba2builderHSBA(rgba: [r: number, g: number, b: number, a: number]): BuilderHSBA {
+  const [r, g, b, a] = rgba
+  const alpha100 = Math.round((a / 255) * 100)
+  return [...rgb2builderHSB([r, g, b]), alpha100]
+}
+
+export function builderRGB2BuilderHSB(rgb: BuilderRGB) {
+  return rgb2builderHSB(rgb)
+}
+
+export function builderRGBA2BuilderHSBA(rgba: BuilderRGBA) {
+  return rgba2builderHSBA(rgba)
+}
+
+export function rgb2CSSColorString(rgb: RGB): string {
+  const [r, g, b] = rgb
   return `rgb(${r}, ${g}, ${b})`
+}
+
+export function rgba2CSSColorString(rgba: RGBA): string {
+  const [r, g, b, a255] = rgba
+  const a = Math.round((a255 / 255) * 100) / 100
+  return `rgba(${r}, ${g}, ${b}, ${a})`
+}
+
+export function builderRGB2CSSColorString(rgb: BuilderRGB): string {
+  return rgb2CSSColorString(rgb)
+}
+
+export function builderRGBA2CSSColorString(rgba: BuilderRGBA): string {
+  return rgba2CSSColorString(rgba)
+}
+
+export function builderHSB2CSSColorString(hsb: BuilderHSB): string {
+  return rgb2CSSColorString(builderHSB2rgb(hsb))
+}
+
+export function builderHSBA2CSSColorString(hsba: BuilderHSBA): string {
+  return rgba2CSSColorString(builderHSBA2rgba(hsba))
 }

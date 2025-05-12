@@ -1,6 +1,6 @@
 <script lang="ts">
 export function getDefaultValue() {
-  return keys[0].value
+  return keys[0].name
 }
 
 /** Map from value of `KeyboardEvent.key` to key definition */
@@ -14,19 +14,19 @@ const webKeyValueKeyMap = keys.reduce((map, key) => {
 import { debounce } from 'lodash'
 import { computed, shallowRef } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import { keys, valueKeyMap, type KeyDefinition } from '@/utils/spx'
+import { keys, nameKeyMap, type KeyDefinition } from '@/utils/spx'
 import { UITextInput } from '@/components/ui'
 
 const props = defineProps<{
-  value: number
+  value: string
 }>()
 
 const emit = defineEmits<{
-  'update:value': [number]
+  'update:value': [string]
 }>()
 
 const i18n = useI18n()
-const key = shallowRef(valueKeyMap.get(props.value) ?? null)
+const key = shallowRef(nameKeyMap.get(props.value) ?? null)
 const text = computed(() => {
   if (key.value == null) return ''
   return i18n.t(key.value.text)
@@ -34,7 +34,7 @@ const text = computed(() => {
 
 const emitChange = debounce(() => {
   if (key.value == null) return
-  emit('update:value', key.value.value)
+  emit('update:value', key.value.name)
 }, 300)
 
 function handleKeyDown(e: KeyboardEvent) {

@@ -2,14 +2,7 @@ import { mapValues } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
-import {
-  exprForSpxDirection,
-  exprForSpxEffectKind,
-  exprForSpxKey,
-  exprForSpxPlayAction,
-  exprForSpxRotationStyle,
-  exprForSpxSpecialObj
-} from '@/utils/spx'
+import { exprForSpxDirection, type ColorValue, exprForSpxColor } from '@/utils/spx'
 import type { Project } from '@/models/project'
 import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
@@ -684,31 +677,34 @@ export type InputTypedValue =
       value: ResourceURI
     }
   | { type: InputType.SpxDirection; value: number }
-  | { type: InputType.SpxColor; value: [r: number, g: number, b: number, a: number] }
+  | {
+      type: InputType.SpxColor
+      value: ColorValue
+    }
   | {
       type: InputType.SpxEffectKind
-      /** Value of `EffectKind` in spx */
-      value: number
+      /** Name of `EffectKind` in spx, e.g., `ColorEffect` */
+      value: string
     }
   | {
       type: InputType.SpxKey
-      /** Value of `Key` in spx */
-      value: number
+      /** Name of `Key` in spx, e.g., `Key0` */
+      value: string
     }
   | {
       type: InputType.SpxPlayAction
-      /** Value of `PlayAction` in spx */
-      value: number
+      /** Name of `PlayAction` in spx, e.g., `PlayPause` */
+      value: string
     }
   | {
       type: InputType.SpxSpecialObj
-      /** Value of `specialObj` in spx */
-      value: number
+      /** Name of `specialObj` in spx, e.g., `Mouse` */
+      value: string
     }
   | {
       type: InputType.SpxRotationStyle
-      /** Value of `RotationStyle` in spx */
-      value: number
+      /** Name of `RotationStyle` in spx, e.g., `Normal` */
+      value: string
     }
   | { type: InputType.Unknown; value: void }
 
@@ -777,17 +773,13 @@ export function exprForInput(input: Input) {
     case InputType.SpxDirection:
       return exprForSpxDirection(input.value)
     case InputType.SpxColor:
-      return `RGBA(${input.value.join(',')})`
+      return exprForSpxColor(input.value)
     case InputType.SpxEffectKind:
-      return exprForSpxEffectKind(input.value)
     case InputType.SpxKey:
-      return exprForSpxKey(input.value)
     case InputType.SpxPlayAction:
-      return exprForSpxPlayAction(input.value)
     case InputType.SpxSpecialObj:
-      return exprForSpxSpecialObj(input.value)
     case InputType.SpxRotationStyle:
-      return exprForSpxRotationStyle(input.value)
+      return input.value
     default:
       return null
   }

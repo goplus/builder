@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { valueKeyMap } from '@/utils/spx'
+import { cssColorStringForSpxColor, nameKeyMap } from '@/utils/spx'
 import { type Input, InputKind, InputType, getResourceModel, exprForInput } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import ResourceItem from '../resource/ResourceItem.vue'
@@ -30,15 +30,16 @@ const resourceModel = computed(() => {
 const key = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== InputType.SpxKey) return null
-  return valueKeyMap.get(parsedInput.value.value) ?? null
+  return nameKeyMap.get(parsedInput.value.value) ?? null
 })
 
 const color = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== InputType.SpxColor) return null
-  const [r, g, b, a] = parsedInput.value.value
-  return `rgba(${r}, ${g}, ${b}, ${a / 255})`
+  return cssColorStringForSpxColor(parsedInput.value.value)
 })
+
+// TODO: text for enums
 
 const expr = computed(() => {
   if (parsedInput.value == null) return ''
