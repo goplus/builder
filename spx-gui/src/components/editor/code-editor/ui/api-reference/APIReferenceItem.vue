@@ -76,7 +76,7 @@ function handlePostHoverAction() {
 </script>
 
 <template>
-  <UIDropdown ref="hoverDropdown" placement="bottom-start" show-arrow :offset="{ x: 0, y: 10 }">
+  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }">
     <template #trigger>
       <li class="api-reference-item" @click="handleInsert">
         <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{

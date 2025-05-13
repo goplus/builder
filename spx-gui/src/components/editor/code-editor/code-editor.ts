@@ -1,3 +1,4 @@
+import { once } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
@@ -88,62 +89,177 @@ import {
   getFileCodeToolDescription
 } from '@/components/copilot/mcp/definitions'
 
-class APIReferenceProvider implements IAPIReferenceProvider {
-  constructor(
-    private documentBase: DocumentBase,
-    private lspClient: SpxLSPClient
-  ) {}
+/** Definition ID string for APIReference items */
+const apiReferenceItems = [
+  'gop:fmt?println',
+  'gop:github.com/goplus/spx?rand#0',
+  'gop:github.com/goplus/spx?rand#1',
+  'gop:github.com/goplus/spx?exit#1',
 
-  private async getFallbackItems(ctx: APIReferenceContext) {
-    const isStage = isTextDocumentStageCode(ctx.textDocument.id)
-    const allItems = await this.documentBase.getAllDocumentations()
-    const overviewSet = new Set<string>()
-    const fallbackItems: DefinitionDocumentationItem[] = []
-    for (const item of allItems) {
-      if (item.hiddenFromList) continue
-      if (item.definition.package === packageSpx) {
-        const parts = (item.definition.name ?? '').split('.')
-        if (parts.length > 1) {
-          const namespace = parts[0] // `Sprite` / `Game` / ...
-          if (namespace !== 'Game' && namespace !== 'Sprite') continue
-          if (namespace === 'Sprite' && isStage) continue
-        }
-      }
-      if (overviewSet.has(item.overview)) continue // Skip duplicated items, e.g., `Sprite.onStart` & `Game.onStart`
-      overviewSet.add(item.overview)
-      fallbackItems.push(item)
-    }
-    return fallbackItems
+  'gop:github.com/goplus/spx?Game.onStart',
+  'gop:github.com/goplus/spx?Game.onClick',
+  'gop:github.com/goplus/spx?Game.onKey#0',
+  'gop:github.com/goplus/spx?Game.onAnyKey',
+  'gop:github.com/goplus/spx?Game.onMsg#1',
+
+  'gop:github.com/goplus/spx?Game.mouseX',
+  'gop:github.com/goplus/spx?Game.mouseY',
+  'gop:github.com/goplus/spx?Game.keyPressed',
+  'gop:github.com/goplus/spx?Game.getWidget',
+  'gop:github.com/goplus/spx?Mouse',
+
+  'gop:github.com/goplus/spx?Game.onBackdrop#1',
+  'gop:github.com/goplus/spx?Game.backdropName',
+  'gop:github.com/goplus/spx?Game.backdropIndex',
+  'gop:github.com/goplus/spx?Game.prevBackdrop#0',
+  'gop:github.com/goplus/spx?Game.nextBackdrop#0',
+  'gop:github.com/goplus/spx?Game.startBackdrop#0',
+
+  'gop:github.com/goplus/spx?Game.broadcast#0',
+
+  'gop:github.com/goplus/spx?Game.play#3',
+  'gop:github.com/goplus/spx?Game.play#4',
+  'gop:github.com/goplus/spx?Game.play#5',
+  'gop:github.com/goplus/spx?Game.stopAllSounds',
+  'gop:github.com/goplus/spx?PlayContinue',
+  'gop:github.com/goplus/spx?PlayPause',
+  'gop:github.com/goplus/spx?PlayResume',
+  'gop:github.com/goplus/spx?PlayRewind',
+  'gop:github.com/goplus/spx?PlayStop',
+
+  'gop:github.com/goplus/spx?Game.volume',
+  'gop:github.com/goplus/spx?Game.setVolume',
+  'gop:github.com/goplus/spx?Game.changeVolume',
+
+  'gop:github.com/goplus/spx?Game.setEffect',
+  'gop:github.com/goplus/spx?Game.changeEffect',
+
+  'gop:github.com/goplus/spx?Game.wait',
+
+  'gop:github.com/goplus/spx?Sprite.onStart',
+  'gop:github.com/goplus/spx?Sprite.onClick',
+  'gop:github.com/goplus/spx?Sprite.onKey#0',
+  'gop:github.com/goplus/spx?Sprite.onAnyKey',
+  'gop:github.com/goplus/spx?Sprite.onMsg#1',
+
+  'gop:github.com/goplus/spx?Sprite.animate',
+
+  'gop:github.com/goplus/spx?Sprite.bounceOffEdge',
+
+  'gop:github.com/goplus/spx?Sprite.heading',
+  'gop:github.com/goplus/spx?Sprite.turn#0',
+  'gop:github.com/goplus/spx?Sprite.turnTo#2',
+  'gop:github.com/goplus/spx?Sprite.turnTo#1',
+  'gop:github.com/goplus/spx?Sprite.turnTo#4',
+  'gop:github.com/goplus/spx?Sprite.setHeading',
+  'gop:github.com/goplus/spx?Sprite.changeHeading',
+  'gop:github.com/goplus/spx?Up',
+  'gop:github.com/goplus/spx?Down',
+  'gop:github.com/goplus/spx?Left',
+  'gop:github.com/goplus/spx?Right',
+
+  'gop:github.com/goplus/spx?Sprite.size',
+  'gop:github.com/goplus/spx?Sprite.setSize',
+  'gop:github.com/goplus/spx?Sprite.changeSize',
+
+  'gop:github.com/goplus/spx?Sprite.xpos',
+  'gop:github.com/goplus/spx?Sprite.ypos',
+  'gop:github.com/goplus/spx?Sprite.step#0',
+  'gop:github.com/goplus/spx?Sprite.glide#0',
+  'gop:github.com/goplus/spx?Sprite.glide#2',
+  'gop:github.com/goplus/spx?Sprite.glide#3',
+  'gop:github.com/goplus/spx?Sprite.goto#1',
+  'gop:github.com/goplus/spx?Sprite.goto#2',
+  'gop:github.com/goplus/spx?Sprite.setXYpos',
+  'gop:github.com/goplus/spx?Sprite.changeXYpos',
+
+  'gop:github.com/goplus/spx?Sprite.clone#0',
+
+  'gop:github.com/goplus/spx?Sprite.costumeName',
+  'gop:github.com/goplus/spx?Sprite.setCostume#0',
+
+  'gop:github.com/goplus/spx?Sprite.setRotationStyle',
+  'gop:github.com/goplus/spx?None',
+  'gop:github.com/goplus/spx?Normal',
+  'gop:github.com/goplus/spx?LeftRight',
+
+  'gop:github.com/goplus/spx?Sprite.die',
+
+  'gop:github.com/goplus/spx?Sprite.touching#0',
+  'gop:github.com/goplus/spx?Sprite.touching#2',
+  'gop:github.com/goplus/spx?Sprite.distanceTo#1',
+  'gop:github.com/goplus/spx?Sprite.distanceTo#2',
+
+  'gop:github.com/goplus/spx?Edge',
+  'gop:github.com/goplus/spx?EdgeBottom',
+  'gop:github.com/goplus/spx?EdgeLeft',
+  'gop:github.com/goplus/spx?EdgeRight',
+  'gop:github.com/goplus/spx?EdgeTop',
+
+  'gop:github.com/goplus/spx?Sprite.visible',
+  'gop:github.com/goplus/spx?Sprite.show',
+  'gop:github.com/goplus/spx?Sprite.hide',
+  'gop:github.com/goplus/spx?Sprite.gotoBack',
+  'gop:github.com/goplus/spx?Sprite.gotoFront',
+  'gop:github.com/goplus/spx?Sprite.goBackLayers',
+
+  'gop:github.com/goplus/spx?Sprite.onCloned#0',
+  'gop:github.com/goplus/spx?Sprite.onMoving#0',
+  'gop:github.com/goplus/spx?Sprite.onTouchStart#0',
+  'gop:github.com/goplus/spx?Sprite.onTouchStart#2',
+  'gop:github.com/goplus/spx?Sprite.onTurning#0',
+
+  'gop:github.com/goplus/spx?Sprite.say#0',
+  'gop:github.com/goplus/spx?Sprite.say#1',
+  'gop:github.com/goplus/spx?Sprite.think#0',
+  'gop:github.com/goplus/spx?Sprite.think#1',
+
+  'gop:github.com/goplus/spx?Sprite.setEffect',
+  'gop:github.com/goplus/spx?Sprite.changeEffect'
+
+  // TODO: definitions like `if-else` / `var`?
+]
+
+class APIReferenceProvider implements IAPIReferenceProvider {
+  constructor(private documentBase: DocumentBase) {}
+
+  private parseName(name: string | undefined): [receiver: string | null, method: string] {
+    const parts = (name ?? '').split('.')
+    if (parts.length > 1) return [parts[0], parts[1]]
+    return [null, parts[0]]
   }
 
-  async provideAPIReference(ctx: APIReferenceContext, position: Position | null) {
-    // TODO: get items from lsp server even no position provided, see details in https://github.com/goplus/builder/issues/1421
-    if (position == null) return this.getFallbackItems(ctx)
+  private getStageAPIReferenceItems = once(async () => {
+    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
+    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    return allItems.filter((item) => {
+      if (item.definition.package !== packageSpx) return true
+      const [receiver] = this.parseName(item.definition.name)
+      return receiver == null || receiver === 'Game'
+    })
+  })
 
-    const definitions = await this.lspClient
-      .workspaceExecuteCommandSpxGetDefinitions({
-        textDocument: ctx.textDocument.id,
-        position: toLSPPosition(position)
-      })
-      .catch((e) => {
-        console.warn('Failed to get definitions', e)
-        return null
-      })
-    ctx.signal.throwIfAborted()
-    let apiReferenceItems: DefinitionDocumentationItem[]
-    if (definitions != null && definitions.length > 0) {
-      const maybeDocumentationItems = await Promise.all(
-        definitions.map(async (def) => {
-          const doc = await this.documentBase.getDocumentation(def)
-          if (doc == null || doc.hiddenFromList) return null
-          return doc
-        })
-      )
-      apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
-    } else {
-      apiReferenceItems = await this.getFallbackItems(ctx)
-    }
-    return apiReferenceItems
+  private getSpriteAPIReferenceItems = once(async () => {
+    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
+    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    const spriteMethods = allItems.reduce((set, item) => {
+      const [receiver, method] = this.parseName(item.definition.name)
+      if (receiver === 'Sprite') set.add(method)
+      return set
+    }, new Set<string>())
+    return allItems.filter((item) => {
+      if (item.definition.package !== packageSpx) return true
+      const [receiver, method] = this.parseName(item.definition.name)
+      if (receiver == null || receiver === 'Sprite') return true
+      if (receiver === 'Game' && !spriteMethods.has(method)) return true // Skip Game methods overridden by Sprite
+      return false
+    })
+  })
+
+  async provideAPIReference(ctx: APIReferenceContext) {
+    const isStage = isTextDocumentStageCode(ctx.textDocument.id)
+    if (isStage) return this.getStageAPIReferenceItems()
+    return this.getSpriteAPIReferenceItems()
   }
 }
 
@@ -569,7 +685,7 @@ export class CodeEditor extends Disposable {
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
-    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient)
+    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase)
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)

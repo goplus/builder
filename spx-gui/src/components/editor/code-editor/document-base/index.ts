@@ -1,5 +1,10 @@
 import { Disposable } from '@/utils/disposable'
-import { type DefinitionIdentifier, type DefinitionDocumentationItem, stringifyDefinitionId } from '../common'
+import {
+  type DefinitionIdentifier,
+  type DefinitionDocumentationItem,
+  stringifyDefinitionId,
+  type DefinitionIdString
+} from '../common'
 import * as gopDefinitionsByName from './gop'
 import * as spxDefinitionsByName from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
@@ -23,8 +28,10 @@ export class DocumentBase extends Disposable {
     this.storage.set(key, documentation)
   }
 
-  async getDocumentation(defId: DefinitionIdentifier): Promise<DefinitionDocumentationItem | null> {
-    const key = stringifyDefinitionId(defId)
+  async getDocumentation(
+    defId: DefinitionIdentifier | DefinitionIdString
+  ): Promise<DefinitionDocumentationItem | null> {
+    const key = typeof defId === 'string' ? defId : stringifyDefinitionId(defId)
     return this.storage.get(key) ?? null
   }
 
