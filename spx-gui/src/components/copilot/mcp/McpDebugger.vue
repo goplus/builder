@@ -126,6 +126,19 @@
                   :required="param.required"
                 />
 
+                <div v-if="param.type === 'boolean'" class="bool-input-container">
+                  <label class="bool-label">
+                    <input
+                      :id="param.name"
+                      v-model="paramValues[param.name]"
+                      type="checkbox"
+                      class="bool-input"
+                      :required="param.required"
+                    />
+                    <span class="bool-text">{{ param.description || '启用' }}</span>
+                  </label>
+                </div>
+
                 <div v-if="param.type === 'object'" class="nested-params">
                   <div v-for="(nestedParam, key) in param.properties" :key="key" class="form-group nested">
                     <label :for="`${param.name}-${key}`">{{ nestedParam.description || key }}:</label>

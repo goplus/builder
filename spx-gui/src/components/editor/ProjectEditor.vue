@@ -28,12 +28,17 @@ import {
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
   addStageBackdropFromCanvasToolDescription,
-  AddStageBackdropFromCanvasArgsSchema
+  AddStageBackdropFromCanvasArgsSchema,
+  addMonitorToolDescription,
+  AddMonitorArgsSchema,
+  listMonitorsToolDescription,
+  ListMonitorsArgsSchema
 } from '@/components/copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
+import { Monitor } from '@/models/widget/monitor'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useCopilotCtx()
@@ -41,6 +46,41 @@ const project = computed(() => editorCtx.project)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
+type AddMonitorOptions = z.infer<typeof AddMonitorArgsSchema>
+
+async function listMonitors() {
+  const monitors = project.value.stage.widgets.filter((widget) => widget instanceof Monitor)
+  return {
+    success: true,
+    message: `Successfully listed ${monitors.length} monitors in project "${project.value.name}"`,
+    monitors: monitors.map((monitor) => ({
+      name: monitor.name,
+      label: monitor.label,
+      variableName: monitor.variableName,
+      x: monitor.x,
+      y: monitor.y,
+      size: monitor.size,
+      visible: monitor.visible
+    }))
+  }
+}
+
+async function addMonitor(args: AddMonitorOptions) {
+  const monitor = await Monitor.create()
+  const size = args.size === 0 ? 1 : args.size
+  monitor.setName(args.monitorName)
+  monitor.setLabel(args.label)
+  monitor.setVariableName(args.variableName)
+  monitor.setX(args.x)
+  monitor.setY(args.y)
+  monitor.setSize(size)
+  monitor.setVisible(args.visible !== undefined ? args.visible : true)
+  project.value.stage.addWidget(monitor)
+  return {
+    success: true,
+    message: `Successfully added monitor "${monitor.name}" to project "${project.value.name}"`
+  }
+}
 
 async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
@@ -98,6 +138,36 @@ function registerProjectTools() {
           },
           execute: async (args: AddStageBackdropFromCanvasOptions) => {
             return addBackdropFromCanvas(args)
+          }
+        }
+      },
+      {
+        description: addMonitorToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = AddMonitorArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${addMonitorToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: AddMonitorOptions) => {
+            return addMonitor(args)
+          }
+        }
+      },
+      {
+        description: listMonitorsToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = ListMonitorsArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${listMonitorsToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async () => {
+            return listMonitors()
           }
         }
       }
