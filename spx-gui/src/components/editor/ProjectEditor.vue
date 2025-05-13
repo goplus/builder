@@ -67,7 +67,7 @@ async function listMonitors() {
 
 async function addMonitor(args: AddMonitorOptions) {
   const monitor = await Monitor.create()
-  const size = args.size === 0 ? 1 : args.size;
+  const size = args.size === 0 ? 1 : args.size
   monitor.setName(args.monitorName)
   monitor.setLabel(args.label)
   monitor.setVariableName(args.variableName)
