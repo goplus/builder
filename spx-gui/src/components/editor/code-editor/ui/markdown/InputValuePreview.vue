@@ -1,6 +1,28 @@
+<script lang="ts">
+export function hasPreviewForInputType(type: InputType) {
+  return [
+    InputType.Integer,
+    InputType.Decimal,
+    InputType.String,
+    InputType.Boolean,
+    InputType.SpxResourceName,
+    InputType.SpxColor,
+    InputType.SpxKey
+  ].includes(type)
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
-import { valueKeyMap } from '@/utils/spx'
+import {
+  cssColorStringForSpxColor,
+  effectKinds,
+  nameKeyMap,
+  playActions,
+  rotationStyles,
+  specialDirections,
+  specialObjs
+} from '@/utils/spx'
 import { type Input, InputKind, InputType, getResourceModel, exprForInput } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import ResourceItem from '../resource/ResourceItem.vue'
@@ -30,14 +52,38 @@ const resourceModel = computed(() => {
 const key = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== InputType.SpxKey) return null
-  return valueKeyMap.get(parsedInput.value.value) ?? null
+  return nameKeyMap.get(parsedInput.value.value) ?? null
 })
 
 const color = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== InputType.SpxColor) return null
-  const [r, g, b, a] = parsedInput.value.value
-  return `rgba(${r}, ${g}, ${b}, ${a / 255})`
+  return cssColorStringForSpxColor(parsedInput.value.value)
+})
+
+const enumText = computed(() => {
+  if (parsedInput.value == null) return null
+  if (parsedInput.value.type === InputType.SpxDirection) {
+    const value = parsedInput.value.value
+    return specialDirections.find((d) => d.value === value)?.text ?? null
+  }
+  if (parsedInput.value.type === InputType.SpxEffectKind) {
+    const value = parsedInput.value.value
+    return effectKinds.find((d) => d.name === value)?.text ?? null
+  }
+  if (parsedInput.value.type === InputType.SpxPlayAction) {
+    const value = parsedInput.value.value
+    return playActions.find((d) => d.name === value)?.text ?? null
+  }
+  if (parsedInput.value.type === InputType.SpxSpecialObj) {
+    const value = parsedInput.value.value
+    return specialObjs.find((d) => d.name === value)?.text ?? null
+  }
+  if (parsedInput.value.type === InputType.SpxRotationStyle) {
+    const value = parsedInput.value.value
+    return rotationStyles.find((d) => d.name === value)?.text ?? null
+  }
+  return null
 })
 
 const expr = computed(() => {
@@ -54,6 +100,7 @@ const expr = computed(() => {
       <i class="color-preview" :style="{ backgroundColor: color }"></i>
       <span class="expr">{{ expr }}</span>
     </div>
+    <div v-else-if="enumText != null" class="text">{{ $t(enumText) }}</div>
     <span v-else class="expr">{{ expr }}</span>
   </div>
 </template>

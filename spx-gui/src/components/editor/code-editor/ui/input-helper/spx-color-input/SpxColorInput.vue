@@ -1,17 +1,45 @@
 <script lang="ts">
-// TODO: Use HSB color model instead of RGB for spx2
-export type ColorValue = [r: number, g: number, b: number, a: number]
-
 export function getDefaultValue(): ColorValue {
-  return [255, 0, 0, 1]
+  return {
+    constructor: 'HSB',
+    args: [50, 100, 100]
+  }
+}
+
+function spxColor2HSBA(value: ColorValue): BuilderHSBA {
+  switch (value.constructor) {
+    case 'HSB':
+      return [...(value.args as BuilderHSB), 100]
+    case 'HSBA':
+      return value.args as BuilderHSBA
+    case 'RGB': {
+      const hsb = builderRGB2BuilderHSB(value.args as BuilderRGB)
+      return [...hsb, 100]
+    }
+    case 'RGBA': {
+      const hsba = builderRGBA2BuilderHSBA(value.args as BuilderRGBA)
+      return hsba
+    }
+    default:
+      throw new Error(`Unsupported color constructor: ${value.constructor}`)
+  }
 }
 </script>
 
 <script setup lang="ts">
 import { debounce } from 'lodash'
 import { onMounted, ref, watch } from 'vue'
+import { type ColorValue } from '@/utils/spx'
 import { UINumberInput, UIDivider } from '@/components/ui'
-import { builderHSB2rgb, rgb2builderHSB, getCSSColorString } from '@/utils/color'
+import {
+  builderHSB2CSSColorString,
+  type BuilderHSB,
+  type BuilderHSBA,
+  builderRGB2BuilderHSB,
+  type BuilderRGB,
+  builderRGBA2BuilderHSBA,
+  type BuilderRGBA
+} from '@/utils/color'
 import ColorSlider from './ColorSlider.vue'
 
 const props = defineProps<{
@@ -29,19 +57,26 @@ const brightness = ref(0)
 const alpha = ref(0)
 
 onMounted(() => {
-  const [r, g, b, a] = props.value
-  const hsb = rgb2builderHSB([r, g, b])
-  hue.value = hsb[0]
-  saturation.value = hsb[1]
-  brightness.value = hsb[2]
+  const [h, s, b, a] = spxColor2HSBA(props.value)
+  hue.value = h
+  saturation.value = s
+  brightness.value = b
   alpha.value = a
 })
 
 const onChange = debounce(() => {
-  const [r, g, b] = builderHSB2rgb([hue.value, saturation.value, brightness.value])
-  const a = alpha.value
-  if (r === props.value[0] && g === props.value[1] && b === props.value[2] && a === props.value[3]) return
-  emit('update:value', [r, g, b, a])
+  const [h, s, b, a] = [hue.value, saturation.value, brightness.value, alpha.value]
+  let value: ColorValue = {
+    constructor: 'HSB',
+    args: [h, s, b]
+  }
+  if (a < 100) {
+    value = {
+      constructor: 'HSBA',
+      args: [h, s, b, a]
+    }
+  }
+  emit('update:value', value)
 }, 300)
 
 watch([hue, saturation, brightness, alpha], onChange)
@@ -54,19 +89,28 @@ watch([hue, saturation, brightness, alpha], onChange)
         <h5 class="slider-title">
           {{ $t({ en: 'Hue: ', zh: '色相：' }) }}<span class="slider-value">{{ hue }}</span>
         </h5>
-        <ColorSlider v-model:value="hue" :get-color="(v: number) => getCSSColorString([v, saturation, brightness])" />
+        <ColorSlider
+          v-model:value="hue"
+          :get-color="(v: number) => builderHSB2CSSColorString([v, saturation, brightness])"
+        />
       </div>
       <div class="slider-wrapper">
         <h5 class="slider-title">
           {{ $t({ en: 'Saturation: ', zh: '饱和度：' }) }}<span class="slider-value">{{ saturation }}</span>
         </h5>
-        <ColorSlider v-model:value="saturation" :get-color="(v: number) => getCSSColorString([hue, v, brightness])" />
+        <ColorSlider
+          v-model:value="saturation"
+          :get-color="(v: number) => builderHSB2CSSColorString([hue, v, brightness])"
+        />
       </div>
       <div class="slider-wrapper">
         <h5 class="slider-title">
           {{ $t({ en: 'Brightness: ', zh: '亮度：' }) }}<span class="slider-value">{{ brightness }}</span>
         </h5>
-        <ColorSlider v-model:value="brightness" :get-color="(v: number) => getCSSColorString([hue, saturation, v])" />
+        <ColorSlider
+          v-model:value="brightness"
+          :get-color="(v: number) => builderHSB2CSSColorString([hue, saturation, v])"
+        />
       </div>
     </section>
     <UIDivider />
