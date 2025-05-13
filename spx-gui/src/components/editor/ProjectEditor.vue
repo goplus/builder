@@ -67,15 +67,15 @@ async function listMonitors() {
 
 async function addMonitor(args: AddMonitorOptions) {
   const monitor = await Monitor.create()
+  const size = args.size === 0 ? 1 : args.size;
   monitor.setName(args.monitorName)
   monitor.setLabel(args.label)
   monitor.setVariableName(args.variableName)
   monitor.setX(args.x)
   monitor.setY(args.y)
-  monitor.setSize(args.size)
+  monitor.setSize(size)
   monitor.setVisible(args.visible !== undefined ? args.visible : true)
   project.value.stage.addWidget(monitor)
-  project.value.saveToCloud()
   return {
     success: true,
     message: `Successfully added monitor "${monitor.name}" to project "${project.value.name}"`
