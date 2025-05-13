@@ -176,8 +176,8 @@ github.com/qiniu/go-cdk-driver v0.1.1/go.mod h1:ZSkKYAwi6jFKPBSTKEeg9UrSsc72fLHb
 github.com/qiniu/go-sdk/v7 v7.25.3 h1:eYHh02q4i5MrlEn3qy823w7moieymFzb4dsP38Y43AI=
 github.com/qiniu/go-sdk/v7 v7.25.3/go.mod h1:dmKtJ2ahhPWFVi9o1D5GemmWoh/ctuB9peqTowyTO8o=
 github.com/qiniu/x v1.10.5/go.mod h1:03Ni9tj+N2h2aKnAz+6N0Xfl8FwMEDRC2PAlxekASDs=
-github.com/qiniu/x v1.14.5 h1:ktKzmJdEsXWogY4hfstyzjfu0FidtboJba+e3lmbsDg=
-github.com/qiniu/x v1.14.5/go.mod h1:AiovSOCaRijaf3fj+0CBOpR1457pn24b0Vdb1JpwhII=
+github.com/qiniu/x v1.14.6 h1:JY8jOumYFshuqNAjVkF6zsYhbcwM8A199ALkUOvJPks=
+github.com/qiniu/x v1.14.6/go.mod h1:AiovSOCaRijaf3fj+0CBOpR1457pn24b0Vdb1JpwhII=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
