@@ -133,10 +133,10 @@ export function getGopIdentifierNameTip(target?: LocaleMessage) {
 }
 
 export const specialDirections = [
-  { name: 'Right', value: 90 },
-  { name: 'Left', value: -90 },
-  { name: 'Up', value: 0 },
-  { name: 'Down', value: 180 }
+  { name: 'Right', value: 90, text: { en: 'Right', zh: '右' } },
+  { name: 'Left', value: -90, text: { en: 'Left', zh: '左' } },
+  { name: 'Up', value: 0, text: { en: 'Up', zh: '上' } },
+  { name: 'Down', value: 180, text: { en: 'Down', zh: '下' } }
 ]
 
 export function exprForSpxDirection(value: number) {

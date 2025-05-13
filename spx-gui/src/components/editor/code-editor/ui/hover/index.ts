@@ -24,6 +24,7 @@ import {
   builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
 import { fromMonacoPosition, supportGoTo } from '../common'
+import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -180,7 +181,7 @@ export class HoverController extends Emitter<{
       if (!containsPosition(item.range, position)) continue
       const input = item.input
       const contents: DefinitionDocumentationString[] = []
-      if (input.kind === InputKind.InPlace) {
+      if (input.kind === InputKind.InPlace && hasPreviewForInputType(input.type)) {
         // Preview for in-place inputs only
         contents.push(makeBasicMarkdownString(`<input-value-preview input="${escapeHTML(JSON.stringify(input))}" />`))
       }
