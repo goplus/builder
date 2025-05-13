@@ -1,12 +1,14 @@
 <template>
   <div class="wrapper">
-    <CommunityNavbar></CommunityNavbar>
+    <CommunityNavbar />
     <router-view />
+    <CommunityFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
+import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 </script>
 
 <style lang="scss" scoped>
