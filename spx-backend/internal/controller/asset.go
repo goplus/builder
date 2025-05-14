@@ -126,14 +126,15 @@ func (ctrl *Controller) CreateAsset(ctx context.Context, params *CreateAssetPara
 type ListAssetsOrderBy string
 
 const (
-	ListAssetsOrderByCreatedAt ListAssetsOrderBy = "createdAt"
-	ListAssetsOrderByUpdatedAt ListAssetsOrderBy = "updatedAt"
+	ListAssetsOrderByCreatedAt   ListAssetsOrderBy = "createdAt"
+	ListAssetsOrderByUpdatedAt   ListAssetsOrderBy = "updatedAt"
+	ListAssetsOrderByDisplayName ListAssetsOrderBy = "displayName"
 )
 
 // IsValid reports whether the order by condition is valid.
 func (ob ListAssetsOrderBy) IsValid() bool {
 	switch ob {
-	case ListAssetsOrderByCreatedAt, ListAssetsOrderByUpdatedAt:
+	case ListAssetsOrderByCreatedAt, ListAssetsOrderByUpdatedAt, ListAssetsOrderByDisplayName:
 		return true
 	}
 	return false
@@ -246,6 +247,8 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	}
 	var queryOrderByColumn string
 	switch params.OrderBy {
+	case ListAssetsOrderByDisplayName:
+		queryOrderByColumn = "asset.display_name"
 	case ListAssetsOrderByCreatedAt:
 	case ListAssetsOrderByUpdatedAt:
 		queryOrderByColumn = "asset.updated_at"
@@ -254,7 +257,7 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 		queryOrderByColumn = "asset.created_at"
 	}
 	if queryOrderByColumn == "asset.display_name" {
-		queryOrderByColumn = "CONVERT(display_name USING gbk);"
+		queryOrderByColumn = "CONVERT(display_name USING gbk)"
 	}
 	query = query.Order(fmt.Sprintf("%s %s, asset.id", queryOrderByColumn, params.SortOrder))
 
