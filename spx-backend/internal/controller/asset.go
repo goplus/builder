@@ -253,11 +253,11 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	case ListAssetsOrderByUpdatedAt:
 		queryOrderByColumn = "asset.updated_at"
 	}
-	if queryOrderByColumn == "" {
-		queryOrderByColumn = "asset.created_at"
-	}
 	if queryOrderByColumn == "asset.display_name" {
 		queryOrderByColumn = "CONVERT(display_name USING gbk)"
+	}
+	if queryOrderByColumn == "" {
+		queryOrderByColumn = "asset.created_at"
 	}
 	query = query.Order(fmt.Sprintf("%s %s, asset.id", queryOrderByColumn, params.SortOrder))
 
