@@ -9,7 +9,7 @@ Package,Name,Sample,Description
 ,if_else_statement,if condition {} else {},If else statement
 ,if_statement,if condition {},If statement
 ,import_declaration,"import ""package""","Import package declaration, e.g., `import ""fmt""`"
-fmt,println,"println """"","Print line, e.g., `println ""Hello, world!""`"
+fmt,println,"println ""Hello, World!""",Print given message
 ,var_declaration,var name type,"Variable declaration, e.g., `var count int`"
 
 ```

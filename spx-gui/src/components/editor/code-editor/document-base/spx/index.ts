@@ -857,23 +857,6 @@ export const turn0: DefinitionDocumentationItem = {
     name: 'Sprite.turn',
     overloadId: '0'
   },
-  insertSnippet: 'turn ${1:10}',
-  insertSnippetParameterHints: ['degree'],
-  overview: 'turn degree',
-  detail: makeBasicMarkdownString({
-    en: 'Turn by given degree. For example, if initially heading at 30 degrees, turning 10 degrees will result in heading 40 degrees',
-    zh: '转动指定角度。如本来朝向 30 度方向，转 10 度后变为 40 度'
-  })
-}
-
-export const turn1: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turn',
-    overloadId: '1'
-  },
   insertSnippet: 'turn ${1:Right}',
   insertSnippetParameterHints: ['direction'],
   overview: 'turn direction',
@@ -925,7 +908,7 @@ export const turnTo2: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '2'
   },
-  insertSnippet: 'turnTo ${1:90}',
+  insertSnippet: 'turnTo ${1:Left}',
   insertSnippetParameterHints: ['direction'],
   overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
@@ -941,24 +924,6 @@ export const turnTo3: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '3'
-  },
-  insertSnippet: 'turnTo ${1:Left}',
-  insertSnippetParameterHints: ['direction'],
-  overview: 'turnTo direction',
-  detail: makeBasicMarkdownString({
-    en: 'Turn to given direction',
-    zh: '转向指定方向'
-  }),
-  hiddenFromList: true // similar to `turnTo2`, but `turnTo2` is more recommended
-}
-
-export const turnTo4: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turnTo',
-    overloadId: '4'
   },
   insertSnippet: 'turnTo ${1:Mouse}',
   insertSnippetParameterHints: ['object'],
@@ -976,7 +941,7 @@ export const setHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setHeading'
   },
-  insertSnippet: 'setHeading ${1:90}',
+  insertSnippet: 'setHeading ${1:Right}',
   insertSnippetParameterHints: ['direction'],
   overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
@@ -992,7 +957,7 @@ export const changeHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeHeading'
   },
-  insertSnippet: 'changeHeading ${1:10}',
+  insertSnippet: 'changeHeading ${1:90}',
   insertSnippetParameterHints: ['degree'],
   overview: 'changeHeading degree',
   detail: makeBasicMarkdownString({
@@ -1160,6 +1125,22 @@ export const touching2: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'If sprite touching given object',
     zh: '精灵是否与指定对象接触'
+  })
+}
+
+export const touchingColor: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.touchingColor'
+  },
+  insertSnippet: 'touchingColor(${1:HSB(50,100,100)})',
+  insertSnippetParameterHints: ['color'],
+  overview: 'touchingColor(color)',
+  detail: makeBasicMarkdownString({
+    en: 'If sprite touching given color',
+    zh: '精灵是否与指定颜色接触'
   })
 }
 
@@ -1397,6 +1378,83 @@ export const wait: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Wait for given seconds',
     zh: '等待指定时长，单位秒'
+  })
+}
+
+export const forever: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'forever'
+  },
+  insertSnippet: 'forever => {\n\t$0\n}',
+  overview: 'forever => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat forever',
+    zh: '重复执行'
+  })
+}
+
+export const repeat: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'repeat'
+  },
+  insertSnippet: 'repeat ${1:10}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['times'],
+  overview: 'repeat times, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat for given times',
+    zh: '重复执行一定次数'
+  })
+}
+
+export const repeatUntil: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'repeatUntil'
+  },
+  insertSnippet: 'repeatUntil ${1:false}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['condition'],
+  overview: 'repeatUntil condition, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat until given condition is met',
+    zh: '重复执行直到满足给定条件'
+  })
+}
+
+export const timer: DefinitionDocumentationItem = {
+  categories: [categories.control.time],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Game.timer'
+  },
+  insertSnippet: 'timer',
+  overview: 'timer',
+  detail: makeBasicMarkdownString({
+    en: 'Current timer value',
+    zh: '当前计时器值'
+  })
+}
+
+export const resetTimer: DefinitionDocumentationItem = {
+  categories: [categories.control.time],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.resetTimer'
+  },
+  insertSnippet: 'resetTimer',
+  overview: 'resetTimer',
+  detail: makeBasicMarkdownString({
+    en: 'Reset the timer to zero',
+    zh: '将计时器重置为零'
   })
 }
 
@@ -1930,6 +1988,38 @@ export const getWidget: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Get the widget by given type & name',
     zh: '通过给定的类型和名字获取控件'
+  })
+}
+
+export const HSB: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Function,
+  definition: {
+    package: packageSpx,
+    name: 'hSB'
+  },
+  insertSnippet: 'HSB(${1:50},${2:100},${3:100})',
+  insertSnippetParameterHints: ['hue', 'saturation', 'brightness'],
+  overview: 'HSB(hue, saturation, brightness)',
+  detail: makeBasicMarkdownString({
+    en: 'Define HSB color',
+    zh: '定义 HSB 颜色'
+  })
+}
+
+export const HSBA: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Function,
+  definition: {
+    package: packageSpx,
+    name: 'hSBA'
+  },
+  insertSnippet: 'HSBA(${1:50},${2:100},${3:100},${4:100})',
+  insertSnippetParameterHints: ['hue', 'saturation', 'brightness', 'alpha'],
+  overview: 'HSBA(hue, saturation, brightness, alpha)',
+  detail: makeBasicMarkdownString({
+    en: 'Define HSBA color',
+    zh: '定义 HSBA 颜色'
   })
 }
 
