@@ -19,7 +19,7 @@ export function checkInputHelperIcon(el: HTMLElement): string | null {
 </script>
 
 <script setup lang="ts">
-import { ref, watchPostEffect } from 'vue'
+import { onDeactivated, ref, watchPostEffect } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown, type DropdownPos } from '@/components/ui'
 import { type Input, exprForInput } from '../../common'
@@ -119,6 +119,15 @@ const handleInputUpdate = useMessageHandle(
     zh: '更新代码失败'
   }
 ).fn
+
+// We use `KeepAlive` (in `ProjectEditor`) to cache result of different editors (e.g. `SoundEditor`, `SpriteEditor`, `StageEditor`).
+// So we need to stop inputing when the component is deactivated.
+// Similar logic is required for other code-editor UI features like completion, hover, etc.
+// While bugs are rarely triggered in later cases, as popups are automatically closed on user interaction.
+// TODO: More reliable way to handle this for all code-editor UI features.
+onDeactivated(() => {
+  props.controller.stopInputing()
+})
 </script>
 
 <template>
