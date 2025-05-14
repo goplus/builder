@@ -158,6 +158,7 @@ const queryRet = useQuery(
       pageIndex: page.value,
       type: props.type,
       keyword: keyword.value,
+      orderBy: 'displayName',
       category: c === categoryAll.value || c === cPersonal ? undefined : c,
       owner: c === cPersonal ? undefined : '*',
       visibility: c === cPersonal ? undefined : Visibility.Public
