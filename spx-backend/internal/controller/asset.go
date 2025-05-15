@@ -248,13 +248,10 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	var queryOrderByColumn string
 	switch params.OrderBy {
 	case ListAssetsOrderByDisplayName:
-		queryOrderByColumn = "asset.display_name"
+		queryOrderByColumn = "CONVERT(asset.display_name USING gbk)"
 	case ListAssetsOrderByCreatedAt:
 	case ListAssetsOrderByUpdatedAt:
 		queryOrderByColumn = "asset.updated_at"
-	}
-	if queryOrderByColumn == "asset.display_name" {
-		queryOrderByColumn = "CONVERT(asset.display_name USING gbk)"
 	}
 	if queryOrderByColumn == "" {
 		queryOrderByColumn = "asset.created_at"
