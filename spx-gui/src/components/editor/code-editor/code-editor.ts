@@ -95,6 +95,13 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?rand#0',
   'gop:github.com/goplus/spx?rand#1',
   'gop:github.com/goplus/spx?exit#1',
+  'gop:github.com/goplus/spx?forever',
+  'gop:github.com/goplus/spx?repeat',
+  'gop:github.com/goplus/spx?repeatUntil',
+
+  'gop:github.com/goplus/spx?Game.wait',
+  'gop:github.com/goplus/spx?Game.timer',
+  'gop:github.com/goplus/spx?Game.resetTimer',
 
   'gop:github.com/goplus/spx?Game.onStart',
   'gop:github.com/goplus/spx?Game.onClick',
@@ -134,8 +141,6 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Game.setEffect',
   'gop:github.com/goplus/spx?Game.changeEffect',
 
-  'gop:github.com/goplus/spx?Game.wait',
-
   'gop:github.com/goplus/spx?Sprite.onStart',
   'gop:github.com/goplus/spx?Sprite.onClick',
   'gop:github.com/goplus/spx?Sprite.onKey#0',
@@ -150,7 +155,7 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.turn#0',
   'gop:github.com/goplus/spx?Sprite.turnTo#2',
   'gop:github.com/goplus/spx?Sprite.turnTo#1',
-  'gop:github.com/goplus/spx?Sprite.turnTo#4',
+  'gop:github.com/goplus/spx?Sprite.turnTo#3',
   'gop:github.com/goplus/spx?Sprite.setHeading',
   'gop:github.com/goplus/spx?Sprite.changeHeading',
   'gop:github.com/goplus/spx?Up',

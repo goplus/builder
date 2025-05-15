@@ -857,23 +857,6 @@ export const turn0: DefinitionDocumentationItem = {
     name: 'Sprite.turn',
     overloadId: '0'
   },
-  insertSnippet: 'turn ${1:10}',
-  insertSnippetParameterHints: ['degree'],
-  overview: 'turn degree',
-  detail: makeBasicMarkdownString({
-    en: 'Turn by given degree. For example, if initially heading at 30 degrees, turning 10 degrees will result in heading 40 degrees',
-    zh: '转动指定角度。如本来朝向 30 度方向，转 10 度后变为 40 度'
-  })
-}
-
-export const turn1: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turn',
-    overloadId: '1'
-  },
   insertSnippet: 'turn ${1:Right}',
   insertSnippetParameterHints: ['direction'],
   overview: 'turn direction',
@@ -925,7 +908,7 @@ export const turnTo2: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '2'
   },
-  insertSnippet: 'turnTo ${1:90}',
+  insertSnippet: 'turnTo ${1:Left}',
   insertSnippetParameterHints: ['direction'],
   overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
@@ -941,24 +924,6 @@ export const turnTo3: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '3'
-  },
-  insertSnippet: 'turnTo ${1:Left}',
-  insertSnippetParameterHints: ['direction'],
-  overview: 'turnTo direction',
-  detail: makeBasicMarkdownString({
-    en: 'Turn to given direction',
-    zh: '转向指定方向'
-  }),
-  hiddenFromList: true // similar to `turnTo2`, but `turnTo2` is more recommended
-}
-
-export const turnTo4: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turnTo',
-    overloadId: '4'
   },
   insertSnippet: 'turnTo ${1:Mouse}',
   insertSnippetParameterHints: ['object'],
@@ -976,7 +941,7 @@ export const setHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.setHeading'
   },
-  insertSnippet: 'setHeading ${1:90}',
+  insertSnippet: 'setHeading ${1:Right}',
   insertSnippetParameterHints: ['direction'],
   overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
@@ -992,7 +957,7 @@ export const changeHeading: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.changeHeading'
   },
-  insertSnippet: 'changeHeading ${1:10}',
+  insertSnippet: 'changeHeading ${1:90}',
   insertSnippetParameterHints: ['degree'],
   overview: 'changeHeading degree',
   detail: makeBasicMarkdownString({
@@ -1160,6 +1125,22 @@ export const touching2: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'If sprite touching given object',
     zh: '精灵是否与指定对象接触'
+  })
+}
+
+export const touchingColor: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.touchingColor'
+  },
+  insertSnippet: 'touchingColor(${1:HSB(50,100,100)})',
+  insertSnippetParameterHints: ['color'],
+  overview: 'touchingColor(color)',
+  detail: makeBasicMarkdownString({
+    en: 'If sprite touching given color',
+    zh: '精灵是否与指定颜色接触'
   })
 }
 
@@ -1400,7 +1381,84 @@ export const wait: DefinitionDocumentationItem = {
   })
 }
 
-export const play0: DefinitionDocumentationItem = {
+export const forever: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'forever'
+  },
+  insertSnippet: 'forever => {\n\t$0\n}',
+  overview: 'forever => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat forever',
+    zh: '重复执行'
+  })
+}
+
+export const repeat: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'repeat'
+  },
+  insertSnippet: 'repeat ${1:10}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['times'],
+  overview: 'repeat times, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat for given times',
+    zh: '重复执行一定次数'
+  })
+}
+
+export const repeatUntil: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'repeatUntil'
+  },
+  insertSnippet: 'repeatUntil ${1:false}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['condition'],
+  overview: 'repeatUntil condition, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Repeat until given condition is met',
+    zh: '重复执行直到满足给定条件'
+  })
+}
+
+export const timer: DefinitionDocumentationItem = {
+  categories: [categories.control.time],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Game.timer'
+  },
+  insertSnippet: 'timer',
+  overview: 'timer',
+  detail: makeBasicMarkdownString({
+    en: 'Current timer value',
+    zh: '当前计时器值'
+  })
+}
+
+export const resetTimer: DefinitionDocumentationItem = {
+  categories: [categories.control.time],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.resetTimer'
+  },
+  insertSnippet: 'resetTimer',
+  overview: 'resetTimer',
+  detail: makeBasicMarkdownString({
+    en: 'Reset the timer to zero',
+    zh: '将计时器重置为零'
+  })
+}
+
+export const gamePlay0: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1418,7 +1476,7 @@ export const play0: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play3`, but `play3` is more recommended
 }
 
-export const play1: DefinitionDocumentationItem = {
+export const gamePlay1: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1436,7 +1494,7 @@ export const play1: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play4`, but `play4` is more recommended
 }
 
-export const play2: DefinitionDocumentationItem = {
+export const gamePlay2: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1454,7 +1512,7 @@ export const play2: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play5`, but `play5` is more recommended
 }
 
-export const play3: DefinitionDocumentationItem = {
+export const gamePlay3: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1471,7 +1529,7 @@ export const play3: DefinitionDocumentationItem = {
   })
 }
 
-export const play4: DefinitionDocumentationItem = {
+export const gamePlay4: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1488,7 +1546,7 @@ export const play4: DefinitionDocumentationItem = {
   })
 }
 
-export const play5: DefinitionDocumentationItem = {
+export const gamePlay5: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1503,6 +1561,60 @@ export const play5: DefinitionDocumentationItem = {
     en: 'Control sound playback',
     zh: '控制声音播放行为'
   })
+}
+
+export const spritePlay0: DefinitionDocumentationItem = {
+  ...gamePlay0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '0'
+  }
+}
+
+export const spritePlay1: DefinitionDocumentationItem = {
+  ...gamePlay1,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '1'
+  }
+}
+
+export const spritePlay2: DefinitionDocumentationItem = {
+  ...gamePlay2,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '2'
+  }
+}
+
+export const spritePlay3: DefinitionDocumentationItem = {
+  ...gamePlay3,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '3'
+  }
+}
+
+export const spritePlay4: DefinitionDocumentationItem = {
+  ...gamePlay4,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '4'
+  }
+}
+
+export const spritePlay5: DefinitionDocumentationItem = {
+  ...gamePlay5,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '5'
+  }
 }
 
 export const stopAllSounds: DefinitionDocumentationItem = {
@@ -1520,7 +1632,7 @@ export const stopAllSounds: DefinitionDocumentationItem = {
   })
 }
 
-export const volume: DefinitionDocumentationItem = {
+export const gameVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Read,
   definition: {
@@ -1530,12 +1642,27 @@ export const volume: DefinitionDocumentationItem = {
   insertSnippet: 'volume',
   overview: 'volume',
   detail: makeBasicMarkdownString({
-    en: 'The volume for sounds',
-    zh: '声音音量'
+    en: 'The volume for stage sounds',
+    zh: '舞台声音音量'
   })
 }
 
-export const setVolume: DefinitionDocumentationItem = {
+export const spriteVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.volume'
+  },
+  insertSnippet: 'volume',
+  overview: 'volume',
+  detail: makeBasicMarkdownString({
+    en: 'The volume for sprite sounds',
+    zh: '精灵声音音量'
+  })
+}
+
+export const gameSetVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Command,
   definition: {
@@ -1546,12 +1673,28 @@ export const setVolume: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['volume'],
   overview: 'setVolume volume',
   detail: makeBasicMarkdownString({
-    en: 'Set the volume for sounds',
-    zh: '设置声音音量'
+    en: 'Set the volume for stage sounds',
+    zh: '设置舞台声音音量'
   })
 }
 
-export const changeVolume: DefinitionDocumentationItem = {
+export const spriteSetVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setVolume'
+  },
+  insertSnippet: 'setVolume ${1:100}',
+  insertSnippetParameterHints: ['volume'],
+  overview: 'setVolume volume',
+  detail: makeBasicMarkdownString({
+    en: 'Set the volume for sprite sounds',
+    zh: '设置精灵的声音音量'
+  })
+}
+
+export const gameChangeVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Command,
   definition: {
@@ -1562,8 +1705,24 @@ export const changeVolume: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['dVolume'],
   overview: 'changeVolume dVolume',
   detail: makeBasicMarkdownString({
-    en: 'Change the volume for sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
-    zh: '调整声音音量。例如，初始音量为 100，调整 10 后音量为 110'
+    en: 'Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
+    zh: '调整舞台声音音量。例如，初始音量为 100，调整 10 后音量为 110'
+  })
+}
+
+export const spriteChangeVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.changeVolume'
+  },
+  insertSnippet: 'changeVolume ${1:10}',
+  insertSnippetParameterHints: ['dVolume'],
+  overview: 'changeVolume dVolume',
+  detail: makeBasicMarkdownString({
+    en: 'Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
+    zh: '调整精灵声音音量。例如，初始音量为 100，调整 10 后音量为 110'
   })
 }
 
@@ -1930,6 +2089,38 @@ export const getWidget: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Get the widget by given type & name',
     zh: '通过给定的类型和名字获取控件'
+  })
+}
+
+export const HSB: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Function,
+  definition: {
+    package: packageSpx,
+    name: 'hSB'
+  },
+  insertSnippet: 'HSB(${1:50}, ${2:100}, ${3:100})',
+  insertSnippetParameterHints: ['hue', 'saturation', 'brightness'],
+  overview: 'HSB(hue, saturation, brightness)',
+  detail: makeBasicMarkdownString({
+    en: 'Define HSB color',
+    zh: '定义 HSB 颜色'
+  })
+}
+
+export const HSBA: DefinitionDocumentationItem = {
+  categories: [],
+  kind: DefinitionKind.Function,
+  definition: {
+    package: packageSpx,
+    name: 'hSBA'
+  },
+  insertSnippet: 'HSBA(${1:50}, ${2:100}, ${3:100}, ${4:100})',
+  insertSnippetParameterHints: ['hue', 'saturation', 'brightness', 'alpha'],
+  overview: 'HSBA(hue, saturation, brightness, alpha)',
+  detail: makeBasicMarkdownString({
+    en: 'Define HSBA color',
+    zh: '定义 HSBA 颜色'
   })
 }
 
