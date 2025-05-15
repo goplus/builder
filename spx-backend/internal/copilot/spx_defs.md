@@ -9,8 +9,8 @@ backdropName,,Name of the current backdrop
 broadcast,"broadcast ""ping""",Broadcast a message
 broadcast,"broadcast ""ping"", true",Broadcast a message with waiting for related (`onMsg`) behaviors to complete
 broadcast,"broadcast ""ping"", 1, true","Broadcast a message along with extra data, with waiting for related (`onMsg`) behaviors to complete"
-changeVolume,changeVolume 10,"Change the volume for sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110"
+changeVolume,changeVolume 10,"Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onClick,onClick => {},Listen to stage clicked
 onKey,"onKey KeyA, => {}",Listen to given key pressed
@@ -18,7 +18,12 @@ onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
 onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
 onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
 onStart,onStart => {},Listen to game start
+play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name and wait
+play,"play ""s1"", { Action: PlayStop }",Control sound playback
 setEffect,"setEffect ColorEffect, 100",Set graphic effect of the stage
+setVolume,setVolume 100,Set the volume for stage sounds
+volume,,The volume for stage sounds
 getWidget,"getWidget(Monitor, ""w1"")",Get the widget by given type & name
 keyPressed,keyPressed(KeyA),Check if given key is currently pressed
 mouseHitItem,,The sprite which is hit by mouse
@@ -29,18 +34,13 @@ nextBackdrop,,Switch to the next backdrop
 nextBackdrop,nextBackdrop true,"Switch to the next backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
 onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
-play,"play ""s1""",Play sound with given name
-play,"play ""s1"", true",Play sound with given name and wait
-play,"play ""s1"", { Action: PlayStop }",Control sound playback
 prevBackdrop,,Switch to the previous backdrop
 prevBackdrop,prevBackdrop true,"Switch to the previous backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
 resetTimer,,Reset the timer to zero
-setVolume,setVolume 100,Set the volume for sounds
 startBackdrop,"startBackdrop ""bg1""",Set the current backdrop by specifying name
 startBackdrop,"startBackdrop ""bg1"", true","Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) behaviors to complete"
 stopAllSounds,,Stop all playing sounds
 timer,,Current timer value
-volume,,The volume for sounds
 wait,wait 1,Wait for given seconds
 
 ```
@@ -90,6 +90,7 @@ setYpos,setYpos 0,Set the sprite's Y position
 show,,Make the sprite visible
 size,,"Size of the sprite. Value is relative to initial size. For example, 2 means current size is twice the initial size"
 changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110"
+changeVolume,changeVolume 10,"Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onClick,onClick => {},Listen to sprite clicked
 onKey,"onKey KeyA, => {}",Listen to given key pressed
@@ -97,7 +98,12 @@ onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
 onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
 onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
 onStart,onStart => {},Listen to game start
+play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name and wait
+play,"play ""s1"", { Action: PlayStop }",Control sound playback
 setEffect,"setEffect ColorEffect, 100",Set graphic effect of the sprite
+setVolume,setVolume 100,Set the volume for sprite sounds
+volume,,The volume for sprite sounds
 step,step 100,"Step toward current heading. Animation for state ""step"" will be played"
 step,"step 100, ""a1""",Step toward current heading. Animation with given name will be played
 think,"think ""Emmm...""",Think of some word
@@ -119,8 +125,8 @@ ypos,,The sprite's Y position
 
 ```csv
 Name,Sample,Description
-hSB,"HSB(50,100,100)",Define HSB color
-hSBA,"HSBA(50,100,100,100)",Define HSBA color
+hSB,"HSB(50, 100, 100)",Define HSB color
+hSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
 Down,,"Down direction, i.e., 180 degree"
 Edge,,Edge of the stage
 EdgeBottom,,Bottom edge of the stage
@@ -165,7 +171,7 @@ Prev,,Previous item
 rand,"rand(1, 10)",Generate a random integer
 rand,"rand(1.5, 9.9)",Generate a random number
 repeat,"repeat 10, => {}",Repeat for given times
-repeatUntil,"repeatUntil => false, => {}",Repeat until given condition is met
+repeatUntil,"repeatUntil false, => {}",Repeat until given condition is met
 Right,,"Right direction, i.e., 90 degree"
 Sprite,,Type for sprite
 TurningInfo.dir,dir,The degree changed by turning

@@ -1458,7 +1458,7 @@ export const resetTimer: DefinitionDocumentationItem = {
   })
 }
 
-export const play0: DefinitionDocumentationItem = {
+export const gamePlay0: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1476,7 +1476,7 @@ export const play0: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play3`, but `play3` is more recommended
 }
 
-export const play1: DefinitionDocumentationItem = {
+export const gamePlay1: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1494,7 +1494,7 @@ export const play1: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play4`, but `play4` is more recommended
 }
 
-export const play2: DefinitionDocumentationItem = {
+export const gamePlay2: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1512,7 +1512,7 @@ export const play2: DefinitionDocumentationItem = {
   hiddenFromList: true // similar to `play5`, but `play5` is more recommended
 }
 
-export const play3: DefinitionDocumentationItem = {
+export const gamePlay3: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1529,7 +1529,7 @@ export const play3: DefinitionDocumentationItem = {
   })
 }
 
-export const play4: DefinitionDocumentationItem = {
+export const gamePlay4: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1546,7 +1546,7 @@ export const play4: DefinitionDocumentationItem = {
   })
 }
 
-export const play5: DefinitionDocumentationItem = {
+export const gamePlay5: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
@@ -1561,6 +1561,60 @@ export const play5: DefinitionDocumentationItem = {
     en: 'Control sound playback',
     zh: '控制声音播放行为'
   })
+}
+
+export const spritePlay0: DefinitionDocumentationItem = {
+  ...gamePlay0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '0'
+  }
+}
+
+export const spritePlay1: DefinitionDocumentationItem = {
+  ...gamePlay1,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '1'
+  }
+}
+
+export const spritePlay2: DefinitionDocumentationItem = {
+  ...gamePlay2,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '2'
+  }
+}
+
+export const spritePlay3: DefinitionDocumentationItem = {
+  ...gamePlay3,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '3'
+  }
+}
+
+export const spritePlay4: DefinitionDocumentationItem = {
+  ...gamePlay4,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '4'
+  }
+}
+
+export const spritePlay5: DefinitionDocumentationItem = {
+  ...gamePlay5,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.play',
+    overloadId: '5'
+  }
 }
 
 export const stopAllSounds: DefinitionDocumentationItem = {
@@ -1578,7 +1632,7 @@ export const stopAllSounds: DefinitionDocumentationItem = {
   })
 }
 
-export const volume: DefinitionDocumentationItem = {
+export const gameVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Read,
   definition: {
@@ -1588,12 +1642,27 @@ export const volume: DefinitionDocumentationItem = {
   insertSnippet: 'volume',
   overview: 'volume',
   detail: makeBasicMarkdownString({
-    en: 'The volume for sounds',
-    zh: '声音音量'
+    en: 'The volume for stage sounds',
+    zh: '舞台声音音量'
   })
 }
 
-export const setVolume: DefinitionDocumentationItem = {
+export const spriteVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.volume'
+  },
+  insertSnippet: 'volume',
+  overview: 'volume',
+  detail: makeBasicMarkdownString({
+    en: 'The volume for sprite sounds',
+    zh: '精灵声音音量'
+  })
+}
+
+export const gameSetVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Command,
   definition: {
@@ -1604,12 +1673,28 @@ export const setVolume: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['volume'],
   overview: 'setVolume volume',
   detail: makeBasicMarkdownString({
-    en: 'Set the volume for sounds',
-    zh: '设置声音音量'
+    en: 'Set the volume for stage sounds',
+    zh: '设置舞台声音音量'
   })
 }
 
-export const changeVolume: DefinitionDocumentationItem = {
+export const spriteSetVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setVolume'
+  },
+  insertSnippet: 'setVolume ${1:100}',
+  insertSnippetParameterHints: ['volume'],
+  overview: 'setVolume volume',
+  detail: makeBasicMarkdownString({
+    en: 'Set the volume for sprite sounds',
+    zh: '设置精灵的声音音量'
+  })
+}
+
+export const gameChangeVolume: DefinitionDocumentationItem = {
   categories: [categories.sound.volume],
   kind: DefinitionKind.Command,
   definition: {
@@ -1620,8 +1705,24 @@ export const changeVolume: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['dVolume'],
   overview: 'changeVolume dVolume',
   detail: makeBasicMarkdownString({
-    en: 'Change the volume for sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
-    zh: '调整声音音量。例如，初始音量为 100，调整 10 后音量为 110'
+    en: 'Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
+    zh: '调整舞台声音音量。例如，初始音量为 100，调整 10 后音量为 110'
+  })
+}
+
+export const spriteChangeVolume: DefinitionDocumentationItem = {
+  categories: [categories.sound.volume],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.changeVolume'
+  },
+  insertSnippet: 'changeVolume ${1:10}',
+  insertSnippetParameterHints: ['dVolume'],
+  overview: 'changeVolume dVolume',
+  detail: makeBasicMarkdownString({
+    en: 'Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110',
+    zh: '调整精灵声音音量。例如，初始音量为 100，调整 10 后音量为 110'
   })
 }
 
@@ -1998,7 +2099,7 @@ export const HSB: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'hSB'
   },
-  insertSnippet: 'HSB(${1:50},${2:100},${3:100})',
+  insertSnippet: 'HSB(${1:50}, ${2:100}, ${3:100})',
   insertSnippetParameterHints: ['hue', 'saturation', 'brightness'],
   overview: 'HSB(hue, saturation, brightness)',
   detail: makeBasicMarkdownString({
@@ -2014,7 +2115,7 @@ export const HSBA: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'hSBA'
   },
-  insertSnippet: 'HSBA(${1:50},${2:100},${3:100},${4:100})',
+  insertSnippet: 'HSBA(${1:50}, ${2:100}, ${3:100}, ${4:100})',
   insertSnippetParameterHints: ['hue', 'saturation', 'brightness', 'alpha'],
   overview: 'HSBA(hue, saturation, brightness, alpha)',
   detail: makeBasicMarkdownString({
