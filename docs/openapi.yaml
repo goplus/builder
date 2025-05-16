@@ -1009,6 +1009,26 @@ paths:
           content:
             application/stream:
 
+  /ai/interaction/turn:
+    post:
+      tags:
+        - AI Interaction
+      summary: Perform an AI interaction turn
+      description: Send a message and context to the AI, receive a response including text and an optional command.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIInteractionRequest"
+      responses:
+        "200":
+          description: Successful AI interaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIInteractionResponse"
+
   /util/upinfo:
     get:
       tags:
@@ -1342,6 +1362,165 @@ components:
           description: Hash of the asset files.
         visibility:
           $ref: "#/components/schemas/Visibility"
+
+    AIInteractionRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The core user input message.
+          examples:
+            - What should I do next?
+        context:
+          type: object
+          additionalProperties: true
+          description: Specific context for the current user input.
+          examples:
+            - position: [10, 20]
+              health: 80
+        role:
+          type: string
+          description: Persona the AI should adopt.
+          examples:
+            - Guide
+        roleContext:
+          type: object
+          additionalProperties: true
+          description: Additional context specific to the role.
+          examples:
+            - style: friendly
+              knowledgeScope: game rules
+        knowledgeBase:
+          type: object
+          additionalProperties: true
+          description: Background knowledge provided to the AI.
+          examples:
+            - worldName: TestWorld
+              gravity: 9.8
+        commandSpecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionCommandSpec"
+          description: Commands the AI is allowed to call.
+        previousCommandResult:
+          $ref: "#/components/schemas/AIInteractionCommandResult"
+          nullable: true
+          description: Outcome of the command executed in the previous turn.
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionTurn"
+          description: Record of previous interactions in this session.
+
+    AIInteractionResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Textual part of the AI's response.
+          examples:
+            - Okay, I suggest moving to (1, 1).
+        commandName:
+          type: string
+          description: Name of the command the AI wants to execute.
+          examples:
+            - MakeMove
+        commandArgs:
+          type: object
+          additionalProperties: true
+          description: Arguments for the command to be executed.
+          examples:
+            - Row: 1
+              Col: 1
+              Result: ""
+
+    AIInteractionTurn:
+      type: object
+      properties:
+        requestContent:
+          type: string
+          description: User's input text for the turn.
+          examples:
+            - It's your turn.
+        responseText:
+          type: string
+          description: AI's text output for the turn.
+          examples:
+            - Okay, let me see...
+        responseCommandName:
+          type: string
+          description: Command requested by the AI in the response.
+          examples:
+            - MakeMove
+        responseCommandArgs:
+          type: object
+          additionalProperties: true
+          description: Arguments for the command requested by the AI.
+          examples:
+            - Row: 1
+              Col: 1
+              Result: ""
+        executedCommandResult:
+          $ref: "#/components/schemas/AIInteractionCommandResult"
+          nullable: true
+          description: Result of executing the command requested in the response.
+
+    AIInteractionCommandSpec:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Unique identifier for the command.
+          examples:
+            - Move
+        description:
+          type: string
+          description: Explanation of what the command does.
+          examples:
+            - Move the character
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionCommandParamSpec"
+          description: Parameters the command accepts.
+
+    AIInteractionCommandParamSpec:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Parameter name.
+          examples:
+            - Direction
+        type:
+          type: string
+          description: Go type name of the parameter.
+          examples:
+            - string
+        description:
+          type: string
+          description: Purpose of the parameter.
+          examples:
+            - "Direction to move: up, down, left, right"
+
+    AIInteractionCommandResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the command execution was successful.
+          examples:
+            - true
+        errorMessage:
+          type: string
+          description: Error details if execution failed.
+          examples:
+            - Invalid move parameters
+        isBreak:
+          type: boolean
+          description: Indicates if the interaction should be terminated.
+          examples:
+            - false
 
     UpInfo:
       type: object
