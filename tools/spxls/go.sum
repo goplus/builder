@@ -2,12 +2,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/goplus/gogen v1.18.0 h1:B0PJE/4e8lfRDmrGJbElEB1weokD1vyOyyXb5eZdjfk=
-github.com/goplus/gogen v1.18.0/go.mod h1:owX2e1EyU5WD+Nm6oH2m/GXjLdlBYcwkLO4wN8HHXZI=
+github.com/goplus/gogen v1.18.1 h1:ys18IiQwQ4QeQ3Mmk4vzql0Yfr6r+hkkQdjaL/M0Isc=
+github.com/goplus/gogen v1.18.1/go.mod h1:owX2e1EyU5WD+Nm6oH2m/GXjLdlBYcwkLO4wN8HHXZI=
 github.com/goplus/gop v1.4.5 h1:es5JLDqzPjFmrrdd8KlfVTkC1EzZXtPTXRKKauopOyo=
 github.com/goplus/gop v1.4.5/go.mod h1:UoIsexuSGeFHRMswGd6mJwgJS+9AjrwLfTOt4uzcp+Q=
-github.com/goplus/goxlsw v0.3.2-0.20250513093009-52e6fd9a0867 h1:bsAy44pRDI7eR3fXQt0AORU3wVi+WDuWXKBwXNGsRmk=
-github.com/goplus/goxlsw v0.3.2-0.20250513093009-52e6fd9a0867/go.mod h1:zTURo/Me5tBpgxlO6MKKeSjFm4v5ZgzTw1JJE9Yd5YQ=
+github.com/goplus/goxlsw v0.4.0 h1:q4Ul8NnpyIs3hPfrSpUARQ2uIZ8JhGT58hEOd/aiDhA=
+github.com/goplus/goxlsw v0.4.0/go.mod h1:XsWNhckoe9cZ7lJlBIPTPPbZBddaxGlKaFxh68Q86xg=
 github.com/goplus/mod v0.16.1 h1:2O+rKubJTn+Fighz3kckwpW87STSZ6s3m/YECfXuNhE=
 github.com/goplus/mod v0.16.1/go.mod h1:8d1P+pBavZfNQtJo4A742DgsLTtSf26BQn51owhmNqI=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

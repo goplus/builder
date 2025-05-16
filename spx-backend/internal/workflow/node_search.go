@@ -127,7 +127,8 @@ func (p *Search) WithPrepare(f func(env Env) Env) *Search {
 // Returns the first matching public project found
 func (p *Search) search(ctx context.Context, keys []string) *model.Project {
 	var proj model.Project
-	p.db.WithContext(ctx).Where("project.name In ?", keys).Where("project.visibility = ?", model.VisibilityPublic).Limit(1).First(&proj)
+	p.db.WithContext(ctx).Where("project.name In ?", keys).
+		Where("project.visibility = ?", model.VisibilityPublic).Order("project.view_count desc").Limit(1).First(&proj)
 	return &proj
 }
 
