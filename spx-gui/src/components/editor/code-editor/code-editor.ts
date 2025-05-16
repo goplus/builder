@@ -542,6 +542,8 @@ class CompletionProvider implements ICompletionProvider {
       textDocument: ctx.textDocument.id,
       position: toLSPPosition(position)
     })
+    const lineContent = ctx.textDocument.getLineContent(position.line)
+    const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
       items.map(async (item) => {
         const result: CompletionItem = {
@@ -566,9 +568,15 @@ class CompletionProvider implements ICompletionProvider {
 
         if (definition != null) {
           result.kind = definition.kind
-          result.insertText = definition.insertSnippet
-          result.insertTextFormat = InsertTextFormat.Snippet
           result.documentation = definition.detail
+          if (isLineEnd) {
+            // Typically the insertSnippet in definition stands for whole call expression of the API,
+            // the insertText from LS stands for identifier of the API.
+            // If the inputting happens at the end of the line, we assume the user prefers the call expression.
+            // TODO: More reliable mechanism to determine the preference.
+            result.insertText = definition.insertSnippet
+            result.insertTextFormat = InsertTextFormat.Snippet
+          }
         }
 
         if (item.documentation != null) {
