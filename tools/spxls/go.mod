@@ -2,7 +2,10 @@ module github.com/goplus/builder/tools/spxls
 
 go 1.23.4
 
-require github.com/goplus/goxlsw v0.4.0
+require (
+	github.com/goplus/builder/tools/ai v0.0.0
+	github.com/goplus/goxlsw v0.4.0
+)
 
 require (
 	github.com/goplus/gogen v1.18.1 // indirect
@@ -12,3 +15,5 @@ require (
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
 )
+
+replace github.com/goplus/builder/tools/ai => ../ai

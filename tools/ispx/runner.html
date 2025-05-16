@@ -8,7 +8,7 @@
 
         (async () => {
             const go = new Go();
-            const { instance } = await WebAssembly.instantiateStreaming(fetch("ispx.wasm"), go.importObject)
+            const { instance } = await WebAssembly.instantiateStreaming(fetch("ispx.wasm"), go.importObject);
             go.run(instance);
 
             window.startWithZipBuffer = (buffer) => {
@@ -18,7 +18,7 @@
                 const view = new Uint8Array(buffer);
                 // goLoadData is injected in the Go code
                 goLoadData(view);
-            }
+            };
 
             window.dispatchEvent(new Event('wasmReady'));
         })()

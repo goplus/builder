@@ -63,7 +63,7 @@ func SystemPromptWithTools(tools []Tool) string {
 
 	// Define template functions for formatting
 	funcMap := template.FuncMap{
-		"formatJSON": func(v interface{}) string {
+		"formatJSON": func(v any) string {
 			indented, err := json.MarshalIndent(v, "", "\t")
 			if err != nil {
 				return fmt.Sprintf("Error formatting JSON: %v", err)
