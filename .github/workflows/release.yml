@@ -49,4 +49,3 @@ jobs:
           done
           echo "Deployment polling timed out!"
           exit 1
- 
