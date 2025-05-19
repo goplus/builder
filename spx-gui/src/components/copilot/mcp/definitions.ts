@@ -214,3 +214,23 @@ export const listMonitorsToolDescription = createToolDescription(
   ListMonitorsArgsSchema,
   'monitor'
 )
+
+export const addSpriteFromAssetArgsSchema = z.object({
+  assetId: z.string().describe('The ID of the asset to add to the current SPX workspace.')
+})
+export const addSpriteFromAssetToolDescription = createToolDescription(
+  'add_sprite_from_asset',
+  'Add a sprite (File) to the current XBuilder project workspace through asset',
+  addSpriteFromAssetArgsSchema,
+  'sprite'
+)
+
+export const searchSpriteFromAssetArgsSchema = z.object({
+  keyword: z.string().describe('The keyword to search for in the asset database.')
+})
+export const searchSpriteFromAssetToolDescription = createToolDescription(
+  'search_sprite_from_asset',
+  'Search for a sprite (File) in the asset database using a keyword.',
+  searchSpriteFromAssetArgsSchema,
+  'sprite'
+)
