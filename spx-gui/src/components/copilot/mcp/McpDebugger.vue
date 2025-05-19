@@ -87,7 +87,7 @@
         </div>
 
         <div class="debug-section">
-          <h4>{{ $t({ en: 'Request tool', zh: '请求工具' }) }}</h4>
+          <h4>{{ $t({ en: 'Request Tools', zh: '请求工具' }) }}</h4>
           <div class="tool-form">
             <div class="form-group">
               <label for="toolSelect">{{ $t({ en: 'Select tool', zh: '选择工具' }) }}:</label>
