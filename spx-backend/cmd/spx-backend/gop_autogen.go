@@ -204,7 +204,37 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_ai_interaction_turn), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_copilot_stream_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_workflow_stream_message), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	_gop_obj0 := &delete_asset_id{AppV2: this}
+	_gop_obj1 := &delete_project_owner_name{AppV2: this}
+	_gop_obj2 := &delete_project_owner_name_liking{AppV2: this}
+	_gop_obj3 := &delete_user_username_following{AppV2: this}
+	_gop_obj4 := &get_asset_id{AppV2: this}
+	_gop_obj5 := &get_assets_list{AppV2: this}
+	_gop_obj6 := &get_project_release_owner_project_release{AppV2: this}
+	_gop_obj7 := &get_project_releases_list{AppV2: this}
+	_gop_obj8 := &get_project_owner_name{AppV2: this}
+	_gop_obj9 := &get_project_owner_name_liking{AppV2: this}
+	_gop_obj10 := &get_projects_list{AppV2: this}
+	_gop_obj11 := &get_user_username{AppV2: this}
+	_gop_obj12 := &get_user_username_following{AppV2: this}
+	_gop_obj13 := &get_users_list{AppV2: this}
+	_gop_obj14 := &get_util_upinfo{AppV2: this}
+	_gop_obj15 := &post_ai_interaction_turn{AppV2: this}
+	_gop_obj16 := &post_aigc_matting{AppV2: this}
+	_gop_obj17 := &post_asset{AppV2: this}
+	_gop_obj18 := &post_copilot_message{AppV2: this}
+	_gop_obj19 := &post_copilot_stream_message{AppV2: this}
+	_gop_obj20 := &post_project_release{AppV2: this}
+	_gop_obj21 := &post_project{AppV2: this}
+	_gop_obj22 := &post_project_owner_name_liking{AppV2: this}
+	_gop_obj23 := &post_project_owner_name_view{AppV2: this}
+	_gop_obj24 := &post_user_username_following{AppV2: this}
+	_gop_obj25 := &post_util_fileurls{AppV2: this}
+	_gop_obj26 := &post_workflow_stream_message{AppV2: this}
+	_gop_obj27 := &put_asset_id{AppV2: this}
+	_gop_obj28 := &put_project_owner_name{AppV2: this}
+	_gop_obj29 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _gop_obj0, _gop_obj1, _gop_obj2, _gop_obj3, _gop_obj4, _gop_obj5, _gop_obj6, _gop_obj7, _gop_obj8, _gop_obj9, _gop_obj10, _gop_obj11, _gop_obj12, _gop_obj13, _gop_obj14, _gop_obj15, _gop_obj16, _gop_obj17, _gop_obj18, _gop_obj19, _gop_obj20, _gop_obj21, _gop_obj22, _gop_obj23, _gop_obj24, _gop_obj25, _gop_obj26, _gop_obj27, _gop_obj28, _gop_obj29)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -974,39 +1004,32 @@ func (this *post_ai_interaction_turn) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
 //line cmd/spx-backend/post_ai_interaction_turn.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_ai_interaction_turn.yap:11:1
-	if
-//line cmd/spx-backend/post_ai_interaction_turn.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:15:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:18:1
 	params := &controller.AIInteractionTurnParams{}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:16:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:17:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
-	if
-//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:20:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:22:1
+	if
+//line cmd/spx-backend/post_ai_interaction_turn.yap:22:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_ai_interaction_turn.yap:23:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:21:1
-		return
-	}
 //line cmd/spx-backend/post_ai_interaction_turn.yap:24:1
-	result, err := this.ctrl.PerformAIInteractionTurn(ctx.Context(), params)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:25:1
-	if err != nil {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:26:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:27:1
 		return
 	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:27:1
+	result, err := this.ctrl.PerformAIInteractionTurn(ctx.Context(), params)
+//line cmd/spx-backend/post_ai_interaction_turn.yap:28:1
+	if err != nil {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:29:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_ai_interaction_turn.yap:30:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:32:1
 	this.Json__1(result)
 }
 func (this *post_ai_interaction_turn) Classfname() string {
@@ -1634,6 +1657,5 @@ func (this *put_user) Classclone() yap.HandlerProto {
 	return &_gop_ret
 }
 func main() {
-//line cmd/spx-backend/put_user.yap:29:1
 	new(AppV2).Main()
 }
