@@ -104,7 +104,7 @@ const copyAnimation = useMessageHandle(
   },
   {
     en: 'Failed to copy animation',
-    zh: '复制造型失败'
+    zh: '复制动画失败'
   }
 ).fn
 
