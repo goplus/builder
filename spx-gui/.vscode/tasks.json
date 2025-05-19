@@ -26,6 +26,17 @@
         "panel": "dedicated"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "install spx",
+      "detail": "Install spx component for spx-gui",
+      "type": "shell",
+      "command": "bash install-spx.sh",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
     }
   ]
 }
