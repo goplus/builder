@@ -4,20 +4,18 @@ import { UILink } from '@/components/ui'
 </script>
 
 <template>
-  <footer class="community-footer">
+  <footer v-if="showLicense" class="community-footer">
     <span class="part">{{ $t({ en: '© 2025 Qiniu Cloud.', zh: '© 2025 七牛云' }) }}</span>
-    <template v-if="showLicense">
-      <UILink
-        class="part"
-        type="boring"
-        target="_blank"
-        href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=31011502000961"
-        ><img class="icon" src="./license-icon.png" />沪公网安备 31011502000961 号</UILink
-      >
-      <UILink class="part" type="boring" target="_blank" href="https://beian.miit.gov.cn/"
-        >沪 ICP 备 11037377 号-5</UILink
-      >
-    </template>
+    <UILink
+      class="part"
+      type="boring"
+      target="_blank"
+      href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=31011502000961"
+      ><img class="icon" src="./license-icon.png" />沪公网安备 31011502000961 号</UILink
+    >
+    <UILink class="part" type="boring" target="_blank" href="https://beian.miit.gov.cn/"
+      >沪 ICP 备 11037377 号-5</UILink
+    >
   </footer>
 </template>
 
