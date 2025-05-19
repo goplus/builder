@@ -182,6 +182,15 @@ export class Sprite extends Disposable {
     animation.setSprite(this)
     this.animations.push(animation)
   }
+  /** Move a animation within the animations array */
+  moveAnimation(from: number, to: number) {
+    if (from < 0 || from >= this.animations.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.animations.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const animation = this.animations[from]
+    this.animations.splice(from, 1)
+    this.animations.splice(to, 0, animation)
+  }
 
   private animationBindings: Record<State, string | undefined>
   getAnimationBoundStates(animationId: string) {
@@ -191,10 +200,17 @@ export class Sprite extends Disposable {
     })
     return states
   }
-  setAnimationBoundStates(animationId: string, states: State[]) {
+  setAnimationBoundStates(
+    animationId: string,
+    states: State[],
+    /** Whether to overwrite existing bindings */
+    overwrite: boolean = true
+  ) {
     Object.entries(this.animationBindings).forEach(([state, bound]) => {
-      if (states.includes(state as State)) this.animationBindings[state as State] = animationId
-      else if (bound === animationId) this.animationBindings[state as State] = undefined
+      if (states.includes(state as State)) {
+        if (bound != null && bound !== animationId && !overwrite) return
+        this.animationBindings[state as State] = animationId
+      } else if (bound === animationId) this.animationBindings[state as State] = undefined
     })
   }
   getDefaultAnimation() {

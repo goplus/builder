@@ -96,6 +96,18 @@ export class Stage extends Disposable {
     }
   }
 
+  /** Move a backdrop within the backdrops array, without changing the default backdrop */
+  moveBackdrop(from: number, to: number) {
+    if (from < 0 || from >= this.backdrops.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.backdrops.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const backdrop = this.backdrops[from]
+    const defaultBackdropId = this.defaultBackdrop?.id ?? null
+    this.backdrops.splice(from, 1)
+    this.backdrops.splice(to, 0, backdrop)
+    if (defaultBackdropId != null) this.setDefaultBackdrop(defaultBackdropId)
+  }
+
   widgets: Widget[]
   /** Zorder for widgets, will be merged with sprites in model `Project` */
   widgetsZorder: string[]
@@ -126,6 +138,18 @@ export class Stage extends Disposable {
 
     this.widgetsZorder = this.widgetsZorder.filter((v) => v !== id)
     this.autoSelectWidget()
+  }
+  /**
+   * Move a widget within the widgets array, without changing the widget zorder
+   * TODO: Consider merging this with set-widget-zorder
+   */
+  moveWidget(from: number, to: number) {
+    if (from < 0 || from >= this.widgets.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.widgets.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const widget = this.widgets[from]
+    this.widgets.splice(from, 1)
+    this.widgets.splice(to, 0, widget)
   }
   private setWidgetZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.widgetsZorder.findIndex((v) => v === id)

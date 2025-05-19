@@ -18,7 +18,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList>
+      <PanelList :sortable="{ list: sounds }" @sorted="handleSorted">
         <UIEmpty v-if="sounds.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
         </UIEmpty>
@@ -96,6 +96,17 @@ const handleRecord = useMessageHandle(() => addSoundFromRecording(editorCtx.proj
   en: 'Failed to record sound',
   zh: '录音失败'
 }).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update sound order', zh: '更新声音顺序' } }
+    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSound(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update sound order',
+    zh: '更新声音顺序失败'
+  }
+).fn
 </script>
 
 <style scoped lang="scss"></style>

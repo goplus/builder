@@ -9,7 +9,7 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
-import UIBlockItem from './UIBlockItem.vue'
+import UIBlockItem, { type DroppableState } from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 const props = withDefaults(
@@ -17,10 +17,12 @@ const props = withDefaults(
     name: string
     selectable?: false | { selected: boolean }
     color?: 'sprite' | 'primary'
+    droppable?: DroppableState | false
   }>(),
   {
     selectable: false,
-    color: 'sprite'
+    color: 'sprite',
+    droppable: false
   }
 )
 

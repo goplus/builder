@@ -17,7 +17,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <PanelList>
+      <PanelList :sortable="{ list: sprites }" @sorted="handleSorted">
         <UIEmpty v-if="sprites.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
         </UIEmpty>
@@ -27,6 +27,7 @@
           :sprite="sprite"
           :selectable="{ selected: isSelected(sprite) }"
           operable
+          droppable
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
@@ -110,6 +111,17 @@ const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(edi
   en: 'Failed to add sound from asset library',
   zh: '从素材库添加失败'
 }).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update sprite order', zh: '更新精灵顺序' } }
+    await editorCtx.project.history.doAction(action, () => editorCtx.project.moveSprite(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update sprite order',
+    zh: '更新精灵顺序失败'
+  }
+).fn
 </script>
 
 <style scoped lang="scss">

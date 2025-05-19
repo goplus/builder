@@ -1,5 +1,10 @@
 <template>
-  <EditorList color="stage" :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })">
+  <EditorList
+    color="stage"
+    :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })"
+    :sortable="{ list: stage.backdrops }"
+    @sorted="handleSorted"
+  >
     <BackdropItem
       v-for="backdrop in stage.backdrops"
       :key="backdrop.id"
@@ -58,4 +63,15 @@ const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(edi
   en: 'Failed to add from asset library',
   zh: '从素材库添加失败'
 }).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update backdrop order', zh: '更新背景顺序' } }
+    await editorCtx.project.history.doAction(action, () => stage.value.moveBackdrop(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update backdrop order',
+    zh: '更新背景顺序失败'
+  }
+).fn
 </script>

@@ -80,7 +80,9 @@ function nameFor(uri: ResourceURI | null): string | null {
 <style lang="scss" scoped>
 .items {
   width: 376px;
-  flex: 1 1 0;
+  max-height: 280px;
+  overflow-y: auto;
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;

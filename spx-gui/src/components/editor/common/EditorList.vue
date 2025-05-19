@@ -24,14 +24,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useSortable } from '@/utils/sortable'
+import { useDragSortable } from '@/utils/sortable'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
     color: Color
     addText: string
-    sortable?: boolean
+    sortable?: { list: unknown[] } | false
   }>(),
   {
     sortable: false
@@ -45,11 +45,11 @@ const emit = defineEmits<{
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))
 
-const itemsWrapper = ref<HTMLElement>()
-const sortableItemsWrapper = computed(() => (props.sortable ? itemsWrapper.value : null))
+const itemsWrapper = ref<HTMLElement | null>(null)
+const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
 
-useSortable(sortableItemsWrapper, {
-  ghostClass: 'ghost-sortable-item',
+useDragSortable(sortableList, itemsWrapper, {
+  ghostClass: 'sortable-ghost-item',
   onSorted(oldIdx, newIdx) {
     emit('sorted', oldIdx, newIdx)
   }
@@ -78,8 +78,14 @@ useSortable(sortableItemsWrapper, {
   flex-direction: column;
   gap: 8px;
 
-  :deep(.ghost-sortable-item) {
-    opacity: 0.3;
+  :deep(.sortable-ghost-item) {
+    // Shadow-like effect
+    // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
+    border-color: var(--ui-color-grey-300) !important;
+    background-color: var(--ui-color-grey-400) !important;
+    * {
+      visibility: hidden;
+    }
   }
 }
 

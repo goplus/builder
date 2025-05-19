@@ -10,7 +10,13 @@
       </UIButton>
     </template>
   </UIEmpty>
-  <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
+  <EditorList
+    v-else
+    color="stage"
+    :add-text="$t({ en: 'Add widget', zh: '添加控件' })"
+    :sortable="{ list: stage.widgets }"
+    @sorted="handleSorted"
+  >
     <WidgetItem
       v-for="widget in stage.widgets"
       :key="widget.id"
@@ -56,6 +62,17 @@ const handleAddMonitor = useMessageHandle(() => addMonitor(editorCtx.project), {
   en: 'Failed to add widget',
   zh: '添加控件失败'
 }).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update widget order', zh: '更新控件顺序' } }
+    await editorCtx.project.history.doAction(action, () => stage.value.moveWidget(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update widget order',
+    zh: '更新控件顺序失败'
+  }
+).fn
 
 onMounted(() => {
   stage.value.autoSelectWidget()
