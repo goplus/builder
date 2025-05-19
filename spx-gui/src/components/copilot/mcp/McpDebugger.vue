@@ -9,7 +9,7 @@
       </div>
       <div class="mcp-debugger-content">
         <div class="debug-section">
-          <h4>连接状态</h4>
+          <h4>{{ $t({ en: 'Connection Status', zh: '连接状态' }) }}</h4>
           <div class="status-container">
             <div class="status-indicator overall">
               <span
@@ -17,16 +17,21 @@
                 :class="{ active: mcpConnectionStatus.server && mcpConnectionStatus.client }"
               ></span>
               <span class="status-text">
-                MCP 状态: {{ mcpConnectionStatus.server && mcpConnectionStatus.client ? '已连接' : '未连接' }}
+                {{ $t({ en: 'MCP Status', zh: 'MCP 状态' }) }}:
+                {{
+                  mcpConnectionStatus.server && mcpConnectionStatus.client
+                    ? $t({ en: 'Connected', zh: '已连接' })
+                    : $t({ en: 'Not Connected', zh: '未连接' })
+                }}
               </span>
             </div>
           </div>
         </div>
 
         <div class="debug-section">
-          <h4>请求历史</h4>
+          <h4>{{ $t({ en: 'Request History', zh: '请求历史' }) }}</h4>
           <div v-if="mcpRequestHistory.length === 0" class="empty-state">
-            <p>暂无请求记录</p>
+            <p>{{ $t({ en: 'No request record yet', zh: '暂无请求记录' }) }}</p>
           </div>
           <div v-else class="request-history">
             <div
@@ -48,7 +53,7 @@
               <div v-show="expandedItems[index]" class="request-details">
                 <div class="request-section">
                   <div class="section-header" data-type="params" @click.stop="toggleSection(index, 'params')">
-                    <span>请求参数</span>
+                    <span>{{ $t({ en: 'Request parameters', zh: '请求参数' }) }}</span>
                     <span class="expand-icon">{{ expandedSections[index]?.params ? '▼' : '▶' }}</span>
                   </div>
                   <pre v-show="expandedSections[index]?.params" class="params">{{
@@ -63,7 +68,11 @@
                     :class="{ error: request.error }"
                     @click.stop="toggleSection(index, 'response')"
                   >
-                    <span>{{ request.error ? '错误响应' : '响应结果' }}</span>
+                    <span>{{
+                      request.error
+                        ? $t({ en: 'Error response', zh: '错误响应' })
+                        : $t({ en: 'Response result', zh: '响应结果' })
+                    }}</span>
                     <span class="expand-icon">{{ expandedSections[index]?.response ? '▼' : '▶' }}</span>
                   </div>
                   <pre
@@ -78,12 +87,12 @@
         </div>
 
         <div class="debug-section">
-          <h4>请求工具</h4>
+          <h4>{{ $t({ en: 'Request tool', zh: '请求工具' }) }}</h4>
           <div class="tool-form">
             <div class="form-group">
-              <label for="toolSelect">选择工具:</label>
+              <label for="toolSelect">{{ $t({ en: 'Select tool', zh: '选择工具' }) }}:</label>
               <select id="toolSelect" v-model="selectedTool" class="tool-select" @change="onToolChange">
-                <option value="" disabled>-- 请选择工具 --</option>
+                <option value="" disabled>-- {{ $t({ en: 'Please select a tool', zh: '请选择工具' }) }} --</option>
                 <option v-for="tool in tools" :key="tool.name" :value="tool.name">
                   {{ tool.name }}
                 </option>
@@ -95,7 +104,7 @@
             </div>
 
             <div v-if="selectedTool && toolParams.length > 0" class="tool-params">
-              <h5>参数:</h5>
+              <h5>{{ $t({ en: 'Parameter', zh: '参数' }) }}:</h5>
               <div v-for="param in toolParams" :key="param.name" class="form-group">
                 <label :for="param.name" class="param-label">
                   <span v-if="param.required" class="required-asterisk">*</span>
@@ -135,7 +144,7 @@
                       class="bool-input"
                       :required="param.required"
                     />
-                    <span class="bool-text">{{ param.description || '启用' }}</span>
+                    <span class="bool-text">{{ param.description || $t({ en: 'Enable', zh: '启用' }) }}</span>
                   </label>
                 </div>
 
@@ -166,7 +175,7 @@
 
             <div class="form-actions">
               <button class="send-button" :disabled="!isFormValid || !selectedTool" @click="sendRequest">
-                发送请求
+                {{ $t({ en: 'Send request', zh: '发送请求' }) }}
               </button>
             </div>
           </div>
