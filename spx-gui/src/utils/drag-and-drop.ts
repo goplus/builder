@@ -11,6 +11,14 @@ export type DragSortableOptions = {
 
 const draggingItemRef = ref<unknown | null>(null)
 
+// This class is added to all child items when dragging is ongoing to prevent hover effects.
+// There's a `:hover` bug with drag-and-drop in Chrome & Safari, see details in:
+// * https://github.com/SortableJS/Sortable/issues/232
+// * https://issues.chromium.org/issues/41129937
+// This causes unintended hover style on sibling items when dragging.
+// As a workaround, we add a class to all children, then disable `:hover` effect in children (`UIBlockItem`, etc.) style.
+const disableHoverClass = 'drag-and-drop-disable-hover'
+
 export function useDragSortable(
   listSource: WatchSource<unknown[] | null>,
   wrapperSource: WatchSource<HTMLElement | undefined | null>,
@@ -26,7 +34,6 @@ export function useDragSortable(
 
     const sortable = Sortable.create(wrapper, {
       scroll: true,
-      scrollSensitivity: 30,
       revertOnSpill: true,
       animation: 200,
       ghostClass: options.ghostClass,
@@ -34,9 +41,11 @@ export function useDragSortable(
         const idx = Array.from(wrapper.children).indexOf(e.item)
         if (idx === -1) return
         draggingItemRef.value = list[idx]
+        for (const child of wrapper.children) child.classList.add(disableHoverClass)
       },
       onEnd(e) {
         draggingItemRef.value = null
+        for (const child of wrapper.children) child.classList.remove(disableHoverClass)
         const { oldDraggableIndex, newDraggableIndex } = e
         if (oldDraggableIndex == null || newDraggableIndex == null) return
         if (oldDraggableIndex === newDraggableIndex) return

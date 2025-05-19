@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useDragSortable } from '@/utils/sortable'
+import { useDragSortable } from '@/utils/drag-and-drop'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(
@@ -73,7 +73,12 @@ useDragSortable(sortableList, itemsWrapper, {
 .items {
   flex: 1 1 0;
   overflow-y: auto;
-  padding: 12px 16px;
+  margin: 0 6px;
+  // Here we keep the horizontal padding no more than `10px`,
+  // as SortableJS uses `10` as `spacer` when deciding whether to put dragging item to the end of the list.
+  // Padding no more than `10px` disables the `_ghostIsLast` check.
+  // See details in https://github.com/SortableJS/Sortable/blob/ddd059717333d07b5b1125b7e1dc89514734bcf0/src/Sortable.js#L1822
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -81,7 +86,7 @@ useDragSortable(sortableList, itemsWrapper, {
   :deep(.sortable-ghost-item) {
     // Shadow-like effect
     // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
-    border-color: var(--ui-color-grey-300) !important;
+    border-color: var(--ui-color-grey-400) !important;
     background-color: var(--ui-color-grey-400) !important;
     * {
       visibility: hidden;
@@ -91,7 +96,7 @@ useDragSortable(sortableList, itemsWrapper, {
 
 .add {
   flex: 0 0 auto;
-  width: 120px;
+  justify-self: stretch;
   height: 44px;
   display: flex;
   align-items: center;

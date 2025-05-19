@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useDragSortable } from '@/utils/sortable'
+import { useDragSortable } from '@/utils/drag-and-drop'
 
 const props = withDefaults(
   defineProps<{
@@ -49,7 +49,7 @@ useDragSortable(sortableList, listWrapper, {
   :deep(.sortable-ghost-item) {
     // Shadow-like effect
     // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
-    border-color: var(--ui-color-grey-300) !important;
+    border-color: var(--ui-color-grey-400) !important;
     background-color: var(--ui-color-grey-400) !important;
     * {
       visibility: hidden;
