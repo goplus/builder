@@ -79,7 +79,8 @@ const style = computed(() => ({
     border-color: var(--color-background-faint);
     background-color: var(--color-background-faint);
 
-    &.block-item-interactive:hover:not(.block-item-active) {
+    // About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts`
+    &.block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.block-item-active) {
       border-color: var(--color-background);
       background-color: var(--color-background);
     }
@@ -96,7 +97,8 @@ const style = computed(() => ({
     border-color: var(--ui-color-grey-300);
     background-color: var(--ui-color-grey-300);
 
-    &.block-item-interactive:hover:not(.block-item-active) {
+    // About `.drag-and-drop-disable-hover`: see `src/utils/drag-and-drop.ts`
+    &.block-item-interactive:hover:not(.drag-and-drop-disable-hover):not(.block-item-active) {
       border-color: var(--ui-color-grey-400);
       background-color: var(--ui-color-grey-400);
     }
