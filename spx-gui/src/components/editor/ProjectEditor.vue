@@ -104,7 +104,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
 
 /**
  * Adds a sprite to the project from an existing asset library.
- * 
+ *
  * @param {AddSpriteFromAssetOptions} args - The options for adding the sprite.
  * @param {string} args.assetId - The ID of the asset to convert into a sprite.
  * @returns {Promise<{success: boolean, message: string}>} A promise resolving to an object indicating success and a message.
@@ -124,7 +124,7 @@ async function addSpriteFromAsset(args: AddSpriteFromAssetOptions) {
 
 /**
  * Searches for sprites in the asset library based on a keyword.
- * 
+ *
  * @param {SearchSpriteFromAssetOptions} args - The options for searching sprites.
  * @param {string} args.keyword - The keyword to search for.
  * @returns {Promise<{success: boolean, message: string, sprites: Array<{id: string, displayName: string}>}>} A promise resolving to an object indicating success, a message, and the list of found sprites.
