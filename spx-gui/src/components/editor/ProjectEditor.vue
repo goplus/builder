@@ -102,6 +102,13 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   }
 }
 
+/**
+ * Adds a sprite to the project from an existing asset library.
+ * 
+ * @param {AddSpriteFromAssetOptions} args - The options for adding the sprite.
+ * @param {string} args.assetId - The ID of the asset to convert into a sprite.
+ * @returns {Promise<{success: boolean, message: string}>} A promise resolving to an object indicating success and a message.
+ */
 async function addSpriteFromAsset(args: AddSpriteFromAssetOptions) {
   const asset = await getAsset(args.assetId)
   const sprite = await asset2Sprite(asset)
@@ -115,6 +122,13 @@ async function addSpriteFromAsset(args: AddSpriteFromAssetOptions) {
   }
 }
 
+/**
+ * Searches for sprites in the asset library based on a keyword.
+ * 
+ * @param {SearchSpriteFromAssetOptions} args - The options for searching sprites.
+ * @param {string} args.keyword - The keyword to search for.
+ * @returns {Promise<{success: boolean, message: string, sprites: Array<{id: string, displayName: string}>}>} A promise resolving to an object indicating success, a message, and the list of found sprites.
+ */
 async function searchSpriteFromAsset(args: SearchSpriteFromAssetOptions) {
   const assets = await listAsset({
     pageSize: 3,
@@ -132,7 +146,7 @@ async function searchSpriteFromAsset(args: SearchSpriteFromAssetOptions) {
   }))
   return {
     success: true,
-    message: `Successfully list sprite with keyword "${args.keyword}" to project "${project.value.name}"`,
+    message: `Successfully listed sprites matching "${args.keyword}" in project "${project.value.name}"`,
     sprites: sprites
   }
 }
