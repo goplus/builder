@@ -28,5 +28,5 @@ export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
 
 export const spxVersion = import.meta.env.VITE_SPX_VERSION as string
 
-/** Whether to show the license information in the footer. */
+/** Whether to show the license information (including copyright) in the footer. */
 export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'
