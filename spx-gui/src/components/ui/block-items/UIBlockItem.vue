@@ -4,6 +4,7 @@
       'block-item',
       active && 'block-item-active',
       interactive && 'block-item-interactive',
+      droppable && `block-item-droppable-${droppable}`,
       `block-item-${variant}`,
       `block-item-${size}`
     ]"
@@ -17,6 +18,13 @@
 import { computed } from 'vue'
 import type { Color } from '..'
 
+/**
+ * State for UIBlockItem as a droppable target.
+ * - `accept`: the item of current dragging is acceptable
+ * - `over`: the acceptable item is currently being dragged over
+ */
+export type DroppableState = 'accept' | 'over'
+
 const props = withDefaults(
   defineProps<{
     active?: boolean
@@ -24,12 +32,14 @@ const props = withDefaults(
     variant?: 'standard' | 'colorful'
     size?: 'medium' | 'large'
     interactive?: boolean
+    droppable?: DroppableState | false
   }>(),
   {
     variant: 'standard',
     size: 'medium',
     color: 'primary',
-    interactive: true
+    interactive: true,
+    droppable: false
   }
 )
 
@@ -78,6 +88,8 @@ const style = computed(() => ({
       border-color: var(--color-outline);
       background-color: var(--color-background);
     }
+
+    // TODO: droppable-related styles for colorful variant
   }
 
   &.block-item-standard {
@@ -93,6 +105,39 @@ const style = computed(() => ({
       border-color: var(--color-outline);
       background-color: var(--color-background);
     }
+
+    &.block-item-active.block-item-draggable {
+      cursor: grab;
+    }
+
+    &.block-item-droppable-accept {
+      border-color: var(--ui-color-grey-400);
+      background-color: var(--ui-color-grey-400);
+    }
+
+    &.block-item-droppable-over {
+      animation: droppable-shaking 0.2s ease-in-out 2;
+      border-color: var(--color-outline);
+      background-color: var(--ui-color-grey-400);
+    }
+  }
+}
+
+@keyframes droppable-shaking {
+  0% {
+    transform: scale(1.07) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.07) rotate(5deg);
+  }
+  50% {
+    transform: scale(1.07) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.07) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1.07) rotate(0deg);
   }
 }
 </style>

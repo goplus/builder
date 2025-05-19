@@ -145,6 +145,18 @@ export class Project extends Disposable {
       this.zorder = [...this.zorder, sprite.id]
     }
   }
+  /**
+   * Move a sprite within the sprites array, without changing the sprite zorder.
+   * TODO: Consider merging this with set-sprite-zorder
+   */
+  moveSprite(from: number, to: number) {
+    if (from < 0 || from >= this.sprites.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.sprites.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const sprite = this.sprites[from]
+    this.sprites.splice(from, 1)
+    this.sprites.splice(to, 0, sprite)
+  }
   // TODO: Test this method
   private setSpriteZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.zorder.findIndex((v) => v === id)
@@ -192,6 +204,15 @@ export class Project extends Disposable {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
+  }
+  /** Move a sound within the sounds array, without changing the sound zorder */
+  moveSound(from: number, to: number) {
+    if (from < 0 || from >= this.sounds.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.sounds.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const sound = this.sounds[from]
+    this.sounds.splice(from, 1)
+    this.sounds.splice(to, 0, sound)
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {

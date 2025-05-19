@@ -2,7 +2,7 @@
   <EditorList
     color="sprite"
     :add-text="$t({ en: 'Add costume', zh: '添加造型' })"
-    :sortable="sortable"
+    :sortable="{ list: sprite.costumes }"
     @sorted="handleSorted"
   >
     <CostumeItem
@@ -43,7 +43,6 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const sortable = computed(() => editorCtx.userInfo.advancedLibraryEnabled)
 const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
@@ -57,8 +56,14 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.spr
   zh: '从本地文件添加失败'
 }).fn
 
-function handleSorted(oldIdx: number, newIdx: number) {
-  const action = { name: { en: 'Sort costumes', zh: '调整造型顺序' } }
-  editorCtx.project.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
-}
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update costume order', zh: '更新造型顺序' } }
+    await editorCtx.project.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update costume order',
+    zh: '更新造型顺序失败'
+  }
+).fn
 </script>

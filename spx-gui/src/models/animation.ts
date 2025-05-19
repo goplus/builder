@@ -106,6 +106,17 @@ export class Animation extends Disposable {
     return reactive(this) as this
   }
 
+  clone(preserveId = false) {
+    const animation = new Animation(this.name, {
+      id: preserveId ? this.id : undefined,
+      duration: this.duration,
+      sound: this.sound ?? undefined
+    })
+    const costumes = this.costumes.map((c) => c.clone(preserveId))
+    animation.setCostumes(costumes)
+    return animation
+  }
+
   /**
    * Create instance with default inits
    * NOTE: the "default" means default behavior for builder, not the default behavior of spx
