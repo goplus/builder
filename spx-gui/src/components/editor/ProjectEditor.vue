@@ -102,7 +102,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   }
 }
 
-async function addSpriteFromAsset(args:AddSpriteFromAssetOptions) {
+async function addSpriteFromAsset(args: AddSpriteFromAssetOptions) {
   const asset = await getAsset(args.assetId)
   const sprite = await asset2Sprite(asset)
   project.value.addSprite(sprite)
@@ -115,25 +115,25 @@ async function addSpriteFromAsset(args:AddSpriteFromAssetOptions) {
   }
 }
 
-async function searchSpriteFromAsset(args:SearchSpriteFromAssetOptions) {
+async function searchSpriteFromAsset(args: SearchSpriteFromAssetOptions) {
   const assets = await listAsset({
-      pageSize: 3,
-      pageIndex: 1,
-      type: AssetType.Sprite,
-      keyword: args.keyword,
-      orderBy: 'displayName',
-      owner: '*',
-      visibility: Visibility.Public
-    })
+    pageSize: 3,
+    pageIndex: 1,
+    type: AssetType.Sprite,
+    keyword: args.keyword,
+    orderBy: 'displayName',
+    owner: '*',
+    visibility: Visibility.Public
+  })
 
-     const sprites = assets.data.map(asset => ({
+  const sprites = assets.data.map((asset) => ({
     id: asset.id,
     displayName: asset.displayName
   }))
   return {
     success: true,
     message: `Successfully list sprite with keyword "${args.keyword}" to project "${project.value.name}"`,
-    sprites: sprites,
+    sprites: sprites
   }
 }
 
