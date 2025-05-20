@@ -252,7 +252,6 @@ export class Stage extends Disposable {
       mapMode: getMapMode(map?.mode),
       collisionByShape: collisionByShape
     })
-    console.log('collisionByShape', stage.collisionByShape)
     const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)

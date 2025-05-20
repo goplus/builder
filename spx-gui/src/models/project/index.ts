@@ -391,7 +391,6 @@ export class Project extends Disposable {
   exportGameFiles(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
-    console.log("collisionByShape--->",stageConfig.collisionByShape)
     const { widgets, ...restStageConfig } = stageConfig
     const zorderNames = this.zorder.map((id) => {
       const sprite = this.sprites.find((s) => s.id === id)
