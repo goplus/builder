@@ -100,13 +100,13 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?repeatUntil',
 
   'gop:github.com/goplus/spx?Game.wait',
+  'gop:github.com/goplus/spx?Game.waitUntil',
   'gop:github.com/goplus/spx?Game.timer',
   'gop:github.com/goplus/spx?Game.resetTimer',
 
   'gop:github.com/goplus/spx?Game.onStart',
   'gop:github.com/goplus/spx?Game.onClick',
   'gop:github.com/goplus/spx?Game.onKey#0',
-  'gop:github.com/goplus/spx?Game.onAnyKey',
   'gop:github.com/goplus/spx?Game.onMsg#1',
 
   'gop:github.com/goplus/spx?Game.mouseX',
@@ -114,6 +114,10 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Game.keyPressed',
   'gop:github.com/goplus/spx?Game.getWidget',
   'gop:github.com/goplus/spx?Mouse',
+
+  'gop:github.com/goplus/spx?Game.ask',
+  'gop:github.com/goplus/spx?Sprite.ask',
+  'gop:github.com/goplus/spx?Game.answer',
 
   'gop:github.com/goplus/spx?Game.onBackdrop#1',
   'gop:github.com/goplus/spx?Game.backdropName',
@@ -126,7 +130,6 @@ const apiReferenceItems = [
 
   'gop:github.com/goplus/spx?Game.play#3',
   'gop:github.com/goplus/spx?Game.play#4',
-  'gop:github.com/goplus/spx?Game.play#5',
   'gop:github.com/goplus/spx?Game.stopAllSounds',
   'gop:github.com/goplus/spx?PlayContinue',
   'gop:github.com/goplus/spx?PlayPause',
@@ -135,11 +138,12 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?PlayStop',
 
   'gop:github.com/goplus/spx?Game.volume',
-  'gop:github.com/goplus/spx?Game.setVolume',
   'gop:github.com/goplus/spx?Game.changeVolume',
+  'gop:github.com/goplus/spx?Game.setVolume',
 
-  'gop:github.com/goplus/spx?Game.setEffect',
   'gop:github.com/goplus/spx?Game.changeEffect',
+  'gop:github.com/goplus/spx?Game.setEffect',
+  'gop:github.com/goplus/spx?Game.clearGraphicEffects',
 
   'gop:github.com/goplus/spx?Sprite.onStart',
   'gop:github.com/goplus/spx?Sprite.onClick',
@@ -156,16 +160,16 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.turnTo#2',
   'gop:github.com/goplus/spx?Sprite.turnTo#1',
   'gop:github.com/goplus/spx?Sprite.turnTo#3',
-  'gop:github.com/goplus/spx?Sprite.setHeading',
   'gop:github.com/goplus/spx?Sprite.changeHeading',
+  'gop:github.com/goplus/spx?Sprite.setHeading',
   'gop:github.com/goplus/spx?Up',
   'gop:github.com/goplus/spx?Down',
   'gop:github.com/goplus/spx?Left',
   'gop:github.com/goplus/spx?Right',
 
   'gop:github.com/goplus/spx?Sprite.size',
-  'gop:github.com/goplus/spx?Sprite.setSize',
   'gop:github.com/goplus/spx?Sprite.changeSize',
+  'gop:github.com/goplus/spx?Sprite.setSize',
 
   'gop:github.com/goplus/spx?Sprite.xpos',
   'gop:github.com/goplus/spx?Sprite.ypos',
@@ -175,8 +179,10 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.glide#3',
   'gop:github.com/goplus/spx?Sprite.goto#1',
   'gop:github.com/goplus/spx?Sprite.goto#2',
-  'gop:github.com/goplus/spx?Sprite.setXYpos',
-  'gop:github.com/goplus/spx?Sprite.changeXYpos',
+  'gop:github.com/goplus/spx?Sprite.changeXpos',
+  'gop:github.com/goplus/spx?Sprite.setXpos',
+  'gop:github.com/goplus/spx?Sprite.changeYpos',
+  'gop:github.com/goplus/spx?Sprite.setYpos',
 
   'gop:github.com/goplus/spx?Sprite.clone#0',
 
@@ -204,8 +210,8 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.visible',
   'gop:github.com/goplus/spx?Sprite.show',
   'gop:github.com/goplus/spx?Sprite.hide',
-  'gop:github.com/goplus/spx?Sprite.gotoBack',
   'gop:github.com/goplus/spx?Sprite.gotoFront',
+  'gop:github.com/goplus/spx?Sprite.gotoBack',
   'gop:github.com/goplus/spx?Sprite.goBackLayers',
 
   'gop:github.com/goplus/spx?Sprite.onCloned#0',
@@ -219,8 +225,9 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.think#0',
   'gop:github.com/goplus/spx?Sprite.think#1',
 
+  'gop:github.com/goplus/spx?Sprite.changeEffect',
   'gop:github.com/goplus/spx?Sprite.setEffect',
-  'gop:github.com/goplus/spx?Sprite.changeEffect'
+  'gop:github.com/goplus/spx?Sprite.clearGraphicEffects'
 
   // TODO: definitions like `if-else` / `var`?
 ]

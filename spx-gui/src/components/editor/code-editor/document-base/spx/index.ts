@@ -482,6 +482,53 @@ export const distanceTo2: DefinitionDocumentationItem = {
   })
 }
 
+export const gameAsk: DefinitionDocumentationItem = {
+  categories: [categories.sensing.ask],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.ask'
+  },
+  insertSnippet: 'ask ${1:"What is your name?"}',
+  insertSnippetParameterHints: ['question'],
+  overview: 'ask question',
+  detail: makeBasicMarkdownString({
+    en: 'Ask player a question and wait for player to answer',
+    zh: '向玩家提问并等待玩家回答'
+  })
+}
+
+export const spriteAsk: DefinitionDocumentationItem = {
+  categories: [categories.sensing.ask],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.ask'
+  },
+  insertSnippet: 'ask ${1:"What is your name?"}',
+  insertSnippetParameterHints: ['question'],
+  overview: 'ask question',
+  detail: makeBasicMarkdownString({
+    en: 'Ask player a question and wait for player to answer',
+    zh: '向玩家提问并等待玩家回答'
+  })
+}
+
+export const answer: DefinitionDocumentationItem = {
+  categories: [categories.sensing.ask],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Game.answer'
+  },
+  insertSnippet: 'answer',
+  overview: 'answer',
+  detail: makeBasicMarkdownString({
+    en: 'The answer from the player',
+    zh: '玩家的回答'
+  })
+}
+
 export const move0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
@@ -1045,6 +1092,21 @@ export const gameChangeEffect: DefinitionDocumentationItem = {
   })
 }
 
+export const gameClearGraphicEffects: DefinitionDocumentationItem = {
+  categories: [categories.look.effect],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.clearGraphicEffects'
+  },
+  insertSnippet: 'clearGraphicEffects',
+  overview: 'clearGraphicEffects',
+  detail: makeBasicMarkdownString({
+    en: 'Clear all graphic effects of the stage',
+    zh: '清除所有舞台特效'
+  })
+}
+
 export const spriteSetEffect: DefinitionDocumentationItem = {
   categories: [categories.look.effect],
   kind: DefinitionKind.Command,
@@ -1074,6 +1136,21 @@ export const spriteChangeEffect: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110',
     zh: '调整精灵特效。例如，初始特效值 100，改变 10 后将变为 110'
+  })
+}
+
+export const spriteClearGraphicEffects: DefinitionDocumentationItem = {
+  categories: [categories.look.effect],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.clearGraphicEffects'
+  },
+  insertSnippet: 'clearGraphicEffects',
+  overview: 'clearGraphicEffects',
+  detail: makeBasicMarkdownString({
+    en: 'Clear all graphic effects of the sprite',
+    zh: '清除所有精灵特效'
   })
 }
 
@@ -1378,6 +1455,22 @@ export const wait: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Wait for given seconds',
     zh: '等待指定时长，单位秒'
+  })
+}
+
+export const waitUntil: DefinitionDocumentationItem = {
+  categories: [categories.control.time],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.waitUntil'
+  },
+  insertSnippet: 'waitUntil ${1:true}',
+  insertSnippetParameterHints: ['condition'],
+  overview: 'waitUntil condition',
+  detail: makeBasicMarkdownString({
+    en: 'Wait until given condition is met',
+    zh: '等待直到满足给定条件'
   })
 }
 

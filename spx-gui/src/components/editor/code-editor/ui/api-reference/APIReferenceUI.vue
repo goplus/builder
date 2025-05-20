@@ -103,7 +103,8 @@ const categoriesViewInfo = [
     subCategories: [
       { id: subCategories.sensing.distance, label: { en: 'Distance', zh: '距离' } },
       { id: subCategories.sensing.mouse, label: { en: 'Mouse', zh: '鼠标' } },
-      { id: subCategories.sensing.keyboard, label: { en: 'Keyboard', zh: '键盘' } }
+      { id: subCategories.sensing.keyboard, label: { en: 'Keyboard', zh: '键盘' } },
+      { id: subCategories.sensing.ask, label: { en: 'Ask', zh: '提问' } }
     ]
   },
   {
@@ -254,7 +255,7 @@ function handleCategoryClick(id: string) {
       </ul>
       <ul ref="itemsWrapperRef" class="items-wrapper">
         <li v-for="c in categoriesForItems" :key="c.id" :data-category-id="c.id" class="category-wrapper">
-          <ul v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
+          <section v-for="sc in c.subCategories" :key="sc.id" class="subcategory-wrapper">
             <h5 class="title">{{ $t(sc.label) }}</h5>
             <ul class="items">
               <APIReferenceItemComp
@@ -263,7 +264,7 @@ function handleCategoryClick(id: string) {
                 :item="item"
               />
             </ul>
-          </ul>
+          </section>
         </li>
       </ul>
     </template>
@@ -323,7 +324,6 @@ function handleCategoryClick(id: string) {
   scrollbar-width: thin;
 
   .subcategory-wrapper {
-    padding-bottom: 20px;
     border-bottom: 1px dashed var(--ui-color-grey-500);
   }
 
@@ -344,6 +344,7 @@ function handleCategoryClick(id: string) {
   }
 
   .items {
+    padding-bottom: 20px;
     display: flex;
     flex-direction: column;
     gap: var(--ui-gap-middle);
