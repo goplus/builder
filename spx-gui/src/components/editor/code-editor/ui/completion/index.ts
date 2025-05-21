@@ -11,6 +11,7 @@ import {
 import { type monaco } from '../../monaco'
 import type { CodeEditorUI } from '../code-editor-ui'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
+import { debounce } from 'lodash'
 
 export type CompletionContext = BaseContext
 
@@ -92,11 +93,10 @@ export class CompletionController extends Emitter<{
     return items
   }
 
-  private startCompletion() {
-    this.completionMgr.start()
-  }
+  private startCompletion = debounce(() => this.completionMgr.start(), 100)
 
   stopCompletion() {
+    this.startCompletion.cancel()
     this.completionMgr.stop()
   }
 
