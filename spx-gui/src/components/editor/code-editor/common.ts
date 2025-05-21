@@ -314,7 +314,8 @@ export const subCategories = {
   sensing: {
     distance: 'distance',
     mouse: 'mouse',
-    keyboard: 'keyboard'
+    keyboard: 'keyboard',
+    ask: 'ask'
   },
   sound: {
     playControl: 'play-control',
