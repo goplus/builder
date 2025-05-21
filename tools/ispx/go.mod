@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/igop v0.44.0
+	github.com/goplus/igop v0.45.0
 	github.com/goplus/mod v0.16.1
 	github.com/goplus/reflectx v1.4.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
