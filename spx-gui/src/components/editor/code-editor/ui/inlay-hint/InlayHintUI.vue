@@ -9,7 +9,7 @@ const props = defineProps<{
 
 useDecorations(() => {
   const items = props.controller.items
-  if (items == null) return []
+  if (items == null) return null
 
   const decorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const item of items) {

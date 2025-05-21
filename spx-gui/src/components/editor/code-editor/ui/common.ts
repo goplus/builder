@@ -1,4 +1,4 @@
-import { watchEffect } from 'vue'
+import { onUnmounted, watchEffect } from 'vue'
 import type * as monaco from 'monaco-editor'
 import { Cancelled } from '@/utils/exception'
 import type { ResourceModel } from '@/models/common/resource-model'
@@ -106,15 +106,22 @@ export function toAbsolutePosition(position: Position, editor: MonacoEditor): Ab
   }
 }
 
-export function useDecorations(getDecorations: () => monaco.editor.IModelDeltaDecoration[]) {
+export function useDecorations(
+  /**
+   * Returns decorations to be rendered in the editor.
+   * @returns Array of decorations or `null` if decorations aren't ready yet
+   */
+  getDecorations: () => monaco.editor.IModelDeltaDecoration[] | null
+) {
   const codeEditorUICtx = useCodeEditorUICtx()
-  let dc: monaco.editor.IEditorDecorationsCollection | null = null
+  let collection: monaco.editor.IEditorDecorationsCollection | null = null
 
-  watchEffect((onCleanup) => {
+  watchEffect(() => {
     const decorations = getDecorations()
-    if (decorations.length === 0) return
-    const collection = (dc = dc ?? codeEditorUICtx.ui.editor.createDecorationsCollection([]))
+    if (decorations == null) return
+
+    collection = collection ?? codeEditorUICtx.ui.editor.createDecorationsCollection([])
     collection.set(decorations)
-    onCleanup(() => collection.clear())
   })
+  onUnmounted(() => collection?.clear())
 }

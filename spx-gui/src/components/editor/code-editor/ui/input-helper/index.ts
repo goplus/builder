@@ -46,7 +46,7 @@ export class InputHelperController extends Disposable {
 
   get activeSlots() {
     const slots = this.slots
-    if (slots == null) return []
+    if (slots == null) return null
     return slots.filter((slot) => this.ui.isNewlyInserted(slot.range.start) && this.ui.isNewlyInserted(slot.range.end))
   }
 

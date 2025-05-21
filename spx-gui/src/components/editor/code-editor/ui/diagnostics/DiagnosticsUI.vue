@@ -14,7 +14,7 @@ function getDiagnosticCls(severity: DiagnosticSeverity, suffix?: string) {
 
 useDecorations(() => {
   const diagnostics = props.controller.diagnostics
-  if (diagnostics == null) return []
+  if (diagnostics == null) return null
 
   const inlineDecorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const diagnostic of diagnostics) {
