@@ -42,7 +42,7 @@ watchPostEffect(async () => {
 
 useDecorations(() => {
   const hover = props.controller.hover
-  if (hover == null) return []
+  if (hover == null) return null
   return [
     {
       range: {
