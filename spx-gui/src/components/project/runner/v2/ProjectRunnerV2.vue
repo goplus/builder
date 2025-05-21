@@ -26,19 +26,32 @@ const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumb
 const failed = ref(false)
 
 interface IframeWindow extends Window {
-  startGame(buffer: ArrayBuffer, assetURLs: Record<string, string>): Promise<void>
+  startGame(buffer: ArrayBuffer, assetURLs: Record<string, string>, onSpxReady?: () => void): Promise<void>
+  /**
+   * NOTE: This method is not recommended to be used now.
+   * We reload the iframe to stop the game instead.
+   */
   stopGame(): Promise<void>
   console: typeof console
+  /**
+   * This property is used to detect if the iframe is reloaded.
+   * It is set to `true` before reloading and reset to `false` after reloaded.
+   */
+  __xb_is_stale?: boolean
 }
 
 const iframeRef = ref<HTMLIFrameElement>()
-const iframeWindowRef = ref<IframeWindow>()
+const iframeWindowRef = ref<IframeWindow | null>(null)
 
 watch(iframeRef, (iframe) => {
   if (iframe == null) return
   const iframeWindow = iframe.contentWindow as IframeWindow | null
   if (iframeWindow == null) throw new Error('iframeWindow expected')
 
+  handleIframeWindow(iframeWindow)
+})
+
+function handleIframeWindow(iframeWindow: IframeWindow) {
   // TODO: Clean up console logs in the runner page
   iframeWindow.console.log = function (...args: unknown[]) {
     // eslint-disable-next-line no-console
@@ -51,8 +64,6 @@ watch(iframeRef, (iframe) => {
   }
 
   iframeWindow.addEventListener('runnerReady', () => {
-    // eslint-disable-next-line no-console
-    console.debug('[ProjectRunnerV2]', 'runnerReady')
     iframeWindowRef.value = iframeWindow
   })
 
@@ -62,7 +73,7 @@ watch(iframeRef, (iframe) => {
       failed.value = true
     }
   })
-})
+}
 
 async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) {
   const collector = ProgressCollector.collectorFor(reporter)
@@ -94,21 +105,6 @@ async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) 
   zipReporter.report(1)
 
   return { filesHash, zipped }
-}
-
-function withLog(methodName: string, promise: Promise<unknown>) {
-  // eslint-disable-next-line no-console
-  console.debug('[ProjectRunnerV2]', methodName)
-  promise.then(
-    () => {
-      // eslint-disable-next-line no-console
-      console.debug('[ProjectRunnerV2]', `${methodName} done`)
-    },
-    (err) => {
-      console.error('[ProjectRunnerV2]', `${methodName} failed`, err)
-    }
-  )
-  return promise
 }
 
 const registered = registerPlayer(() => {
@@ -173,7 +169,7 @@ defineExpose({
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10 * 1000)
-    await withLog('startGame', iframeWindow.startGame(projectData.zipped, assetURLs))
+    await iframeWindow.startGame(projectData.zipped, assetURLs)
     signal?.throwIfAborted()
     startGameReporter.report(1)
 
@@ -183,8 +179,24 @@ defineExpose({
   async stop() {
     const iframeWindow = iframeWindowRef.value
     if (iframeWindow == null) return
-    await withLog('stopGame', iframeWindow.stopGame())
+    iframeWindow.__xb_is_stale = true
+    iframeWindow.location.reload()
     registered.onStopped()
+
+    // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
+    // We need to wait for the reloaded iframe to be ready to reattach listeners.
+    // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
+    // TODO: Find a better way to archieve iframe reloading.
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      await timeout(100)
+      const newIframeWindow = iframeRef.value?.contentWindow as IframeWindow | null | undefined
+      if (newIframeWindow == null) continue
+      if (!newIframeWindow.__xb_is_stale) {
+        handleIframeWindow(newIframeWindow as IframeWindow)
+        return
+      }
+    }
   },
   async rerun() {
     await this.stop()
