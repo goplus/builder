@@ -11,9 +11,13 @@ import { addPrefetchLink } from '@/utils/dom'
 import { toNativeFile } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
+import { apiBaseUrl } from '@/utils/env'
+import { useUserStore } from '@/stores/user'
 
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
+
+const userStore = useUserStore()
 
 const props = defineProps<{ project: Project }>()
 
@@ -26,6 +30,8 @@ const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumb
 const failed = ref(false)
 
 interface IframeWindow extends Window {
+  setAIInteractionAPIEndpoint: (endpoint: string) => void
+  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
   startGame(buffer: ArrayBuffer, assetURLs: Record<string, string>, onSpxReady?: () => void): Promise<void>
   /**
    * NOTE: This method is not recommended to be used now.
@@ -169,7 +175,13 @@ defineExpose({
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10 * 1000)
-    await iframeWindow.startGame(projectData.zipped, assetURLs)
+    await iframeWindow.startGame(projectData.zipped, assetURLs, () => {
+      // Set up API endpoint for AI Interaction.
+      iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+
+      // Set up token provider for AI Interaction.
+      iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
+    })
     signal?.throwIfAborted()
     startGameReporter.report(1)
 
