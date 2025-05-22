@@ -7,7 +7,7 @@ import (
 
 func TestDefaultKnowledgeBase(t *testing.T) {
 	originalKB := DefaultKnowledgeBase()
-	defer SetDefaultKnowledgeBase(originalKB)
+	t.Cleanup(func() { SetDefaultKnowledgeBase(originalKB) })
 	SetDefaultKnowledgeBase(nil)
 
 	if got := DefaultKnowledgeBase(); got != nil {
