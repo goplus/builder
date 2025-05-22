@@ -182,6 +182,7 @@ export function useProvideCodeEditorCtx(
   watchEffect((onCleanUp) => {
     const editor = editorRef.value
     if (editor == null) return
+    if (editor.isDisposed) return // TODO: debug
     editor.init()
     onCleanUp(() => editor.dispose())
   })
