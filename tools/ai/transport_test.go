@@ -20,7 +20,7 @@ func (m *mockTransport) Interact(ctx context.Context, req Request) (Response, er
 
 func TestDefaultTransport(t *testing.T) {
 	originalTransport := DefaultTransport()
-	defer SetDefaultTransport(originalTransport)
+	t.Cleanup(func() { SetDefaultTransport(originalTransport) })
 	SetDefaultTransport(nil)
 
 	initialTransport := DefaultTransport()

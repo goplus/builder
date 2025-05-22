@@ -47,6 +47,11 @@ func (p *Player) transport() Transport {
 	return DefaultTransport()
 }
 
+// taskRunner returns the [TaskRunner] instance used for executing tasks.
+func (p *Player) taskRunner() TaskRunner {
+	return DefaultTaskRunner()
+}
+
 // SetRole defines the character/persona that the AI should adopt during
 // interactions. The optional context provides extra context about the role.
 func (p *Player) SetRole__0(role string, context map[string]any) {
@@ -95,6 +100,12 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 // on command execution results until the AI signals completion (no command) or
 // an [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
+	p.taskRunner()(func() { p.think(msg, context) })
+}
+func (p *Player) Think__1(msg string) {
+	p.Think__0(msg, nil)
+}
+func (p *Player) think(msg string, context map[string]any) {
 	const (
 		transportTimeout    = 15 * time.Second      // Timeout for each transport call.
 		maxTransportRetries = 3                     // Maximum number of retries for each AI transport call.
@@ -236,9 +247,6 @@ func (p *Player) Think__0(msg string, context map[string]any) {
 			"total interaction turns in this call": i + 1,
 		}
 	}
-}
-func (p *Player) Think__1(msg string) {
-	p.Think__0(msg, nil)
 }
 
 // OnErr registers a handler that is called when an AI interaction fails. If no
