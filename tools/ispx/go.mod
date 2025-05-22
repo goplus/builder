@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/igop v0.45.0
+	github.com/goplus/igop v0.46.0
 	github.com/goplus/mod v0.16.1
 	github.com/goplus/reflectx v1.4.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
@@ -21,13 +21,13 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
-	github.com/goplus/gogen v1.18.0 // indirect
-	github.com/goplus/gop v1.4.5 // indirect
+	github.com/goplus/gogen v1.18.1 // indirect
+	github.com/goplus/gop v1.4.6 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.14.0 // indirect
+	github.com/qiniu/x v1.14.6 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/timandy/routine v1.1.5 // indirect
