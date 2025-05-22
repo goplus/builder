@@ -118,7 +118,10 @@ export function useDecorations(
 
   watchEffect(() => {
     const decorations = getDecorations()
-    if (decorations == null) return
+    if (decorations == null) {
+      collection?.clear()
+      return
+    }
 
     collection = collection ?? codeEditorUICtx.ui.editor.createDecorationsCollection([])
     collection.set(decorations)
