@@ -17,14 +17,15 @@ import {
   containsPosition,
   type InputSlot
 } from '../common'
-import { Spxlc } from './spxls/client'
-import type { Files as SpxlsFiles } from './spxls'
+import { Spxlc, type IConnection } from './spxls/client'
+import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
   parseDocumentLinkForDefinition
 } from './spxls/methods'
+import type { IWorkerHandler } from './worker'
 
 function loadScript(url: string) {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,29 @@ function loadScript(url: string) {
   })
 }
 
+/** Connection between LS client and server when the server runs in a Web Worker. */
+class WorkerConnection implements IConnection {
+  private worker: IWorkerHandler
+  constructor() {
+    this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+  }
+  sendMessage(message: RequestMessage | NotificationMessage) {
+    this.worker.postMessage({ type: 'lsp', message })
+  }
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.worker.addEventListener('message', (event) => {
+      const message = event.data
+      handler(message.message)
+    })
+  }
+  sendFiles(files: SpxlsFiles): void {
+    this.worker.postMessage({ type: 'files', files })
+  }
+  dispose() {
+    this.worker.terminate()
+  }
+}
+
 // 10 seconds cooldown between language server restarts.
 const LS_RESTART_COOLDOWN = 10_000
 
@@ -44,7 +68,7 @@ export class SpxLSPClient extends Disposable {
     super()
   }
 
-  private files: SpxlsFiles = {}
+  private connection = new WorkerConnection()
   private isFilesStale = shallowRef(true)
 
   async loadFiles(signal: AbortSignal) {
@@ -68,7 +92,7 @@ export class SpxLSPClient extends Disposable {
       })
     )
     signal.throwIfAborted()
-    this.files = loadedFiles
+    this.connection.sendFiles(loadedFiles)
     this.isFilesStale.value = false
   }
 
@@ -84,7 +108,7 @@ export class SpxLSPClient extends Disposable {
   private lsRestartedAt = 0
 
   private async prepareRequest() {
-    this.prepareLanguageServer()
+    // this.prepareLanguageServer()
 
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
@@ -97,10 +121,17 @@ export class SpxLSPClient extends Disposable {
     return spxlc
   }
 
-  async init() {
+  init() {
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    await this.loadWasmScript()
-    await this.prepareLanguageServer()
+    this.spxlcRef.value = new Spxlc(this.connection)
+    // await this.loadWasmScript()
+    // await this.prepareLanguageServer()
+  }
+
+  dispose() {
+    this.spxlcRef.value?.dispose()
+    this.connection.dispose()
+    super.dispose()
   }
 
   private async prepareLanguageServer() {
@@ -114,7 +145,7 @@ export class SpxLSPClient extends Disposable {
 
     try {
       await this.loadLSWasm()
-      this.spxlcRef.value = new Spxlc(() => this.files)
+      this.spxlcRef.value = new Spxlc(this.connection)
       this.isLSRunning.value = true
     } catch (e) {
       console.error('[LSP] Failed to start language server:', e)

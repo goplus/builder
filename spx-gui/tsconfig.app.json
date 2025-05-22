@@ -15,6 +15,12 @@
       "@/*": [
         "src/*"
       ]
-    }
+    },
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable",
+      "webworker"
+    ]
   }
 }
