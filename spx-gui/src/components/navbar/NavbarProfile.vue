@@ -24,7 +24,7 @@
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup>
+      <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
           {{ $t({ en: 'Use SPX v1', zh: '使用 SPX v1' }) }}
         </UIMenuItem>
