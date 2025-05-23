@@ -2068,7 +2068,7 @@ export const spriteOnMsg1: DefinitionDocumentationItem = {
   }
 }
 
-export const onBackdrop0: DefinitionDocumentationItem = {
+export const gameOnBackdrop0: DefinitionDocumentationItem = {
   categories: [categories.event.stage],
   kind: DefinitionKind.Listen,
   definition: {
@@ -2084,7 +2084,7 @@ export const onBackdrop0: DefinitionDocumentationItem = {
   })
 }
 
-export const onBackdrop1: DefinitionDocumentationItem = {
+export const gameOnBackdrop1: DefinitionDocumentationItem = {
   categories: [categories.event.stage],
   kind: DefinitionKind.Listen,
   definition: {
@@ -2099,6 +2099,24 @@ export const onBackdrop1: DefinitionDocumentationItem = {
     en: 'Listen to switching to specific backdrop',
     zh: '切换到指定背景时执行'
   })
+}
+
+export const spriteOnBackdrop0: DefinitionDocumentationItem = {
+  ...gameOnBackdrop0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onBackdrop',
+    overloadId: '0'
+  }
+}
+
+export const spriteOnBackdrop1: DefinitionDocumentationItem = {
+  ...gameOnBackdrop1,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onBackdrop',
+    overloadId: '1'
+  }
 }
 
 export const rand0: DefinitionDocumentationItem = {

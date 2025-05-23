@@ -4,14 +4,19 @@
 
 ```csv
 Name,Sample,Description
+answer,,The answer from the player
 backdropIndex,,Index of the current backdrop
 backdropName,,Name of the current backdrop
 broadcast,"broadcast ""ping""",Broadcast a message
 broadcast,"broadcast ""ping"", true",Broadcast a message with waiting for related (`onMsg`) behaviors to complete
 broadcast,"broadcast ""ping"", 1, true","Broadcast a message along with extra data, with waiting for related (`onMsg`) behaviors to complete"
+ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
 changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
+clearGraphicEffects,,Clear all graphic effects of the stage
 onAnyKey,onAnyKey key => {},Listen to any key pressed
+onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
+onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
 onClick,onClick => {},Listen to stage clicked
 onKey,"onKey KeyA, => {}",Listen to given key pressed
 onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
@@ -32,8 +37,6 @@ mouseX,,X position of the mouse
 mouseY,,Y position of the mouse
 nextBackdrop,,Switch to the next backdrop
 nextBackdrop,nextBackdrop true,"Switch to the next backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
-onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
-onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
 prevBackdrop,,Switch to the previous backdrop
 prevBackdrop,prevBackdrop true,"Switch to the previous backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
 resetTimer,,Reset the timer to zero
@@ -42,6 +45,7 @@ startBackdrop,"startBackdrop ""bg1"", true","Set the current backdrop by specify
 stopAllSounds,,Stop all playing sounds
 timer,,Current timer value
 wait,wait 1,Wait for given seconds
+waitUntil,waitUntil true,Wait until given condition is met
 
 ```
 
@@ -89,9 +93,13 @@ setXpos,setXpos 0,Set the sprite's X position
 setYpos,setYpos 0,Set the sprite's Y position
 show,,Make the sprite visible
 size,,"Size of the sprite. Value is relative to initial size. For example, 2 means current size is twice the initial size"
+ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
 changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
+clearGraphicEffects,,Clear all graphic effects of the sprite
 onAnyKey,onAnyKey key => {},Listen to any key pressed
+onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
+onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
 onClick,onClick => {},Listen to sprite clicked
 onKey,"onKey KeyA, => {}",Listen to given key pressed
 onKey,"onKey [KeyA], key => {}",Listen to given keys pressed

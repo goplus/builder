@@ -148,7 +148,6 @@ const apiReferenceItems = [
   'gop:github.com/goplus/spx?Sprite.onStart',
   'gop:github.com/goplus/spx?Sprite.onClick',
   'gop:github.com/goplus/spx?Sprite.onKey#0',
-  'gop:github.com/goplus/spx?Sprite.onAnyKey',
   'gop:github.com/goplus/spx?Sprite.onMsg#1',
 
   'gop:github.com/goplus/spx?Sprite.animate',
