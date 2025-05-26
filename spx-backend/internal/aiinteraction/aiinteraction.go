@@ -21,7 +21,11 @@ const (
 	maxTokens = 1024
 
 	// temperature defines the sampling temperature for the AI response.
-	temperature = 0.2
+	//
+	// NOTE: Although this is set to 1.4, DeepSeek-V3 internally subtracts 0.7,
+	// resulting in a final model temperature of 0.7. See
+	// https://huggingface.co/deepseek-ai/DeepSeek-V3-0324#temperature.
+	temperature = 1.4
 )
 
 // AIInteraction represents the structure for interacting with the AI.
@@ -114,11 +118,16 @@ func buildConversationMessages(request *Request) ([]openai.ChatCompletionMessage
 
 // parseAIResponse extracts the text and command from an AI response.
 func parseAIResponse(responseText string) (*Response, error) {
+	const (
+		commandPrefix = "COMMAND: "
+		argsPrefix    = "ARGS: "
+	)
+
 	response := &Response{
 		Text: responseText,
 	}
 
-	cmdIndex := strings.Index(responseText, "COMMAND:")
+	cmdIndex := strings.Index(responseText, commandPrefix)
 	if cmdIndex == -1 {
 		return response, nil
 	}
@@ -128,18 +137,14 @@ func parseAIResponse(responseText string) (*Response, error) {
 	lines := strings.Split(responseText[cmdIndex:], "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "COMMAND:") {
-			response.CommandName = strings.TrimSpace(strings.TrimPrefix(line, "COMMAND:"))
-		} else if strings.HasPrefix(line, "ARGS:") {
-			argsStr := strings.TrimPrefix(line, "ARGS:")
-			argsStr = strings.TrimSpace(argsStr)
-
-			if argsStr != "" {
-				var args map[string]any
-				if err := json.Unmarshal([]byte(argsStr), &args); err != nil {
+		if cmdName, ok := strings.CutPrefix(line, commandPrefix); ok {
+			response.CommandName = strings.TrimSpace(cmdName)
+		} else if cmdArgs, ok := strings.CutPrefix(line, argsPrefix); ok {
+			cmdArgs = strings.TrimSpace(cmdArgs)
+			if cmdArgs != "" {
+				if err := json.Unmarshal([]byte(cmdArgs), &response.CommandArgs); err != nil {
 					return nil, fmt.Errorf("failed to parse command arguments: %w", err)
 				}
-				response.CommandArgs = args
 			}
 		}
 	}
