@@ -4,6 +4,7 @@
  */
 
 import { File, fromBlob, toNativeFile } from '@/models/common/file'
+import { upFirst } from '../utils'
 import { getMimeFromExt } from '../file'
 import { stripExt } from '../path'
 import { toWav } from '../audio'
@@ -113,8 +114,17 @@ export async function adaptImg(file: File): Promise<File> {
   return fromBlob(jpegFileName, jpegBlob)
 }
 
+// About Gop identifier:
+// ```
+// identifier     = letter { letter | unicode_digit } .
+// letter         = unicode_letter | "_" .
+// unicode_letter = /* a Unicode code point categorized as "Letter" */ .
+// unicode_digit  = /* a Unicode code point categorized as "Number, decimal digit" */ .
+// ```
+// See details in https://github.com/goplus/xgo/blob/fc370dac5207d1d1fda7a669bed5bd9508bf1b59/doc/spec-mini.md#identifiers
+
 export function validateGopIdentifierName(name: string) {
-  const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
+  const regex = /^[\p{L}_][\p{L}\p{Nd}_]*$/u
   if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
   if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
   if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
@@ -123,13 +133,26 @@ export function validateGopIdentifierName(name: string) {
 export function getGopIdentifierNameTip(target?: LocaleMessage) {
   if (target == null)
     return {
-      en: 'The name can only contain Chinese / English letters, digits, and the character _.',
-      zh: '名称只能包含中英文字符、数字及下划线'
+      en: 'The name can only contain letters, digits, and the character _.',
+      zh: '名称只能包含中文、英文字母、数字及下划线'
     }
   return {
-    en: `The ${target.en} name can only contain Chinese / English letters, digits, and the character _.`,
-    zh: `${target.zh}名称只能包含中英文字符、数字及下划线`
+    en: `The ${target.en} name can only contain letters, digits, and the character _.`,
+    zh: `${target.zh}名称只能包含中文、英文字母、数字及下划线`
   }
+}
+
+export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
+  src = src
+    .replace(/[^\p{L}\p{Nd}]+/gu, '_')
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^[^\p{L}]+/gu, '') // remove invalid starting such as numbers
+  const parts = src.split('_').filter((p) => !!p)
+  if (parts.length === 0) return ''
+  const [firstpart, ...otherParts] = parts
+  const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
+  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 
 export const specialDirections = [

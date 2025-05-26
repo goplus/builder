@@ -1,5 +1,6 @@
+import { lowFirst, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getGopIdentifierNameTip, normalizeGopIdentifierAssetName, validateGopIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
@@ -117,31 +118,10 @@ export function validateWidgetName(name: string, stage: Stage | null) {
     return { en: `Widget with name ${name} already exists`, zh: '存在同名的控件' }
 }
 
-function upFirst(str: string) {
-  return str[0].toUpperCase() + str.slice(1)
-}
-
-function lowFirst(str: string) {
-  return str[0].toLowerCase() + str.slice(1)
-}
-
 /** Convert any string to valid asset name, empty string may be returned */
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
-  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
-}
-
-export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
-  src = src
-    .replace(/[^a-zA-Z0-9_]+/g, '_')
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^[^a-zA-Z]+/, '') // remove invalid starting such as numbers
-  const parts = src.split('_').filter((p) => !!p)
-  if (parts.length === 0) return ''
-  const [firstpart, ...otherParts] = parts
-  const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
   return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 
