@@ -326,3 +326,11 @@ export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T
   )
   return valueRef
 }
+
+export function upFirst(str: string) {
+  return str[0].toUpperCase() + str.slice(1)
+}
+
+export function lowFirst(str: string) {
+  return str[0].toLowerCase() + str.slice(1)
+}
