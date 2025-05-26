@@ -37,7 +37,7 @@ const codeEditorUICtx = useCodeEditorUICtx()
 
 useDecorations(() => {
   const { activeSlots, inputingSlot } = props.controller
-  if (activeSlots == null) return null
+  if (activeSlots == null) return []
 
   const decorations: monaco.editor.IModelDeltaDecoration[] = []
 

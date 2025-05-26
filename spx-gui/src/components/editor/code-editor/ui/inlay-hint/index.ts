@@ -37,7 +37,7 @@ export class InlayHintController extends Disposable {
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) throw new Error('No active text document')
     return await provider.provideInlayHints({ textDocument, signal })
-  })
+  }, true)
 
   get items() {
     return this.mgr.result.data
