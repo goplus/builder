@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
 	github.com/goplus/igop v0.46.0
-	github.com/goplus/mod v0.16.1
+	github.com/goplus/mod v0.17.0
 	github.com/goplus/reflectx v1.4.2
 	github.com/goplus/spx v1.1.1-0.20250214074125-e9e1f6362499
 	github.com/hajimehoshi/ebiten/v2 v2.8.0-alpha.3
@@ -27,7 +27,7 @@ require (
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.14.6 // indirect
+	github.com/qiniu/x v1.15.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/timandy/routine v1.1.5 // indirect
