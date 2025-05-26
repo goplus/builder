@@ -38,7 +38,7 @@ export class InputHelperController extends Disposable {
     if (textDocument == null) throw new Error('No active text document')
     const items = await provider.provideInputSlots({ textDocument, signal })
     return items.map<InternalInputSlot>((item, i) => ({ ...item, id: i + '' }))
-  })
+  }, true)
 
   get slots() {
     return this.mgr.result.data

@@ -34,7 +34,7 @@ export class ResourceReferenceController extends Emitter<{
     if (textDocument == null) throw new Error('No active text document')
     const items = await provider.provideResourceReferences({ textDocument, signal })
     return items.map<InternalResourceReference>((item, i) => ({ ...item, id: i + '' }))
-  })
+  }, true)
 
   get items() {
     return this.itemsMgr.result.data
