@@ -36,8 +36,8 @@ func TestRenderSystemPrompt(t *testing.T) {
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
 				assert.Contains(t, result, "You are playing the role of: TestRole")
-				assert.Contains(t, result, "TestCommand: A test command")
-				assert.Contains(t, result, "Param1 (string): First parameter")
+				assert.Contains(t, result, `"name":"TestCommand","description":"A test command"`)
+				assert.Contains(t, result, `"name":"Param1","type":"string","description":"First parameter"`)
 				assert.NotContains(t, result, "Role context:")
 				assert.NotContains(t, result, "Knowledge base:")
 				assert.NotContains(t, result, "Result of the previous command:")
@@ -97,9 +97,9 @@ func TestRenderSystemPrompt(t *testing.T) {
 				knowledgeBaseJSON, _ := json.Marshal(knowledgeBase)
 				assert.Contains(t, result, string(knowledgeBaseJSON))
 
-				assert.Contains(t, result, "WriteTest: Write a unit test")
-				assert.Contains(t, result, "TestName (string): Name of the test")
-				assert.Contains(t, result, "Coverage (float64): Desired test coverage")
+				assert.Contains(t, result, `"name":"WriteTest","description":"Write a unit test"`)
+				assert.Contains(t, result, `"name":"TestName","type":"string","description":"Name of the test"`)
+				assert.Contains(t, result, `"name":"Coverage","type":"float64","description":"Desired test coverage"`)
 
 				assert.Contains(t, result, "Result of the previous command: SUCCESS")
 				assert.NotContains(t, result, "The interaction was terminated by the command")
@@ -169,10 +169,10 @@ func TestRenderSystemPrompt(t *testing.T) {
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
 				assert.Contains(t, result, "Special\"Role\nWith\\Chars")
-				assert.Contains(t, result, "Special\"Command")
-				assert.Contains(t, result, "Command with \"quotes\" and \n newlines")
-				assert.Contains(t, result, "Special\"Param")
-				assert.Contains(t, result, "Parameter with \"quotes\" and \n newlines")
+				assert.Contains(t, result, `"name":"Special\"Command"`)
+				assert.Contains(t, result, `"description":"Command with \"quotes\" and \n newlines"`)
+				assert.Contains(t, result, `"name":"Special\"Param"`)
+				assert.Contains(t, result, `"description":"Parameter with \"quotes\" and \n newlines"`)
 			},
 		},
 	} {

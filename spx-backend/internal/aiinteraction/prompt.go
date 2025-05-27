@@ -23,7 +23,7 @@ type promptTemplateData struct {
 	Role                  string
 	RoleContext           string
 	KnowledgeBase         string
-	CommandSpecs          []CommandSpec
+	CommandSpecs          string
 	PreviousCommandResult *CommandResult
 }
 
@@ -31,7 +31,6 @@ type promptTemplateData struct {
 func renderSystemPrompt(request *Request) (string, error) {
 	data := promptTemplateData{
 		Role:                  request.Role,
-		CommandSpecs:          request.CommandSpecs,
 		PreviousCommandResult: request.PreviousCommandResult,
 	}
 	if len(request.RoleContext) > 0 {
@@ -47,6 +46,13 @@ func renderSystemPrompt(request *Request) (string, error) {
 			return "", fmt.Errorf("failed to marshal knowledge base: %w", err)
 		}
 		data.KnowledgeBase = string(knowledgeBaseJSON)
+	}
+	if len(request.CommandSpecs) > 0 {
+		commandSpecsJSON, err := json.Marshal(request.CommandSpecs)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal command specs: %w", err)
+		}
+		data.CommandSpecs = string(commandSpecsJSON)
 	}
 
 	var sb strings.Builder
