@@ -19,7 +19,7 @@ const emit = defineEmits<{
   submit: []
 }>()
 
-const modelValue = useDebouncedModel<number | null>(
+const [modelValue, flush] = useDebouncedModel<number | null>(
   () => props.value,
   (v) => emit('update:value', Math.floor(nomalizeDegree(v ?? getDefaultValue())))
 )
@@ -35,6 +35,11 @@ function handleCircleClick(e: MouseEvent) {
   const centerY = rect.height / 2
   const angle = Math.atan2(x - centerX, centerY - y) * (180 / Math.PI)
   modelValue.value = Math.floor(nomalizeDegree(angle))
+}
+
+function handleSubmit() {
+  flush()
+  emit('submit')
 }
 </script>
 
@@ -128,7 +133,7 @@ function handleCircleClick(e: MouseEvent) {
       :max="180"
       :style="{ alignSelf: 'stretch' }"
       autofocus
-      @keyup.enter="emit('submit')"
+      @keyup.enter="handleSubmit"
     />
   </div>
 </template>

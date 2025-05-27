@@ -80,6 +80,11 @@ const onChange = debounce(() => {
 }, 300)
 
 watch([hue, saturation, brightness, alpha], onChange)
+
+function handleSubmit() {
+  onChange.flush()
+  emit('submit')
+}
 </script>
 
 <template>
@@ -116,27 +121,13 @@ watch([hue, saturation, brightness, alpha], onChange)
     <UIDivider />
     <section class="inputs">
       <!-- TODO: Eyedropper -->
-      <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="emit('submit')">
+      <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>H</template>
       </UINumberInput>
-      <UINumberInput
-        v-model:value="saturation"
-        class="input"
-        :min="0"
-        :max="100"
-        :step="1"
-        @keyup.enter="emit('submit')"
-      >
+      <UINumberInput v-model:value="saturation" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>S</template>
       </UINumberInput>
-      <UINumberInput
-        v-model:value="brightness"
-        class="input"
-        :min="0"
-        :max="100"
-        :step="1"
-        @keyup.enter="emit('submit')"
-      >
+      <UINumberInput v-model:value="brightness" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>B</template>
       </UINumberInput>
     </section>
