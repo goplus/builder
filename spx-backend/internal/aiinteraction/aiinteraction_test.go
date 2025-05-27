@@ -80,7 +80,7 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-		assert.Len(t, messages, 1)
+		require.Len(t, messages, 1)
 
 		userMsg := messages[0].OfUser
 		require.NotNil(t, userMsg)
@@ -101,7 +101,7 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-		assert.Len(t, messages, 1)
+		require.Len(t, messages, 1)
 
 		userMsg := messages[0].OfUser
 		require.NotNil(t, userMsg)
@@ -132,7 +132,7 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-		assert.Len(t, messages, 3)
+		require.Len(t, messages, 3)
 
 		userMsg1 := messages[0].OfUser
 		require.NotNil(t, userMsg1)
@@ -163,7 +163,7 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-		assert.Len(t, messages, 3)
+		require.Len(t, messages, 3)
 
 		aiMsg := messages[1].OfAssistant
 		require.NotNil(t, aiMsg)
@@ -215,7 +215,7 @@ func TestBuildConversationMessages(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedLen := maxHistoryTurns*2 + 1
-		assert.Len(t, messages, expectedLen)
+		require.Len(t, messages, expectedLen)
 
 		firstMsg := messages[0].OfUser
 		require.NotNil(t, firstMsg)
@@ -247,12 +247,78 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-		assert.Len(t, messages, 3)
+		require.Len(t, messages, 3)
 
 		lastMsg := messages[2].OfUser
 		require.NotNil(t, lastMsg)
 		assert.Contains(t, lastMsg.Content.OfString.Value, "Complex request")
 		assert.Contains(t, lastMsg.Content.OfString.Value, "Context: ")
 		assert.Contains(t, lastMsg.Content.OfString.Value, "\"context\":\"additional\"")
+	})
+
+	t.Run("ContinuationTurnWithHistory", func(t *testing.T) {
+		request := &Request{
+			Content:          "This should be ignored",
+			ContinuationTurn: 1,
+			History: []Turn{
+				{
+					RequestContent: "Previous message",
+					ResponseText:   "Previous response",
+				},
+			},
+		}
+
+		messages, err := buildConversationMessages(request)
+		require.NoError(t, err)
+		require.Len(t, messages, 2)
+
+		userMsg := messages[0].OfUser
+		require.NotNil(t, userMsg)
+		assert.Equal(t, "Previous message", userMsg.Content.OfString.Value)
+
+		aiMsg := messages[1].OfAssistant
+		require.NotNil(t, aiMsg)
+		assert.Equal(t, "Previous response", aiMsg.Content.OfString.Value)
+	})
+
+	t.Run("ContinuationTurnWithoutHistory", func(t *testing.T) {
+		request := &Request{
+			Content:          "This should be ignored",
+			ContinuationTurn: 2,
+		}
+
+		messages, err := buildConversationMessages(request)
+		require.NoError(t, err)
+		require.Empty(t, messages)
+	})
+
+	t.Run("ContinuationTurnWithContext", func(t *testing.T) {
+		request := &Request{
+			Content:          "This should be ignored",
+			ContinuationTurn: 1,
+			Context:          map[string]any{"key": "value"},
+			History: []Turn{
+				{
+					RequestContent:      "Previous message",
+					ResponseText:        "Previous response",
+					ResponseCommandName: "TestCommand",
+					ResponseCommandArgs: map[string]any{"arg": "value"},
+				},
+			},
+		}
+
+		messages, err := buildConversationMessages(request)
+		require.NoError(t, err)
+		require.Len(t, messages, 2)
+
+		userMsg := messages[0].OfUser
+		require.NotNil(t, userMsg)
+		assert.Equal(t, "Previous message", userMsg.Content.OfString.Value)
+
+		aiMsg := messages[1].OfAssistant
+		require.NotNil(t, aiMsg)
+		assert.Contains(t, aiMsg.Content.OfString.Value, "Previous response")
+		assert.Contains(t, aiMsg.Content.OfString.Value, "COMMAND: TestCommand")
+		assert.Contains(t, aiMsg.Content.OfString.Value, "\"arg\":\"value\"")
 	})
 }

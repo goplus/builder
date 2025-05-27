@@ -454,7 +454,7 @@ func TestControllerListAssets(t *testing.T) {
 		result, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})

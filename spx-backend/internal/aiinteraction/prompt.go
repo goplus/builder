@@ -25,6 +25,7 @@ type promptTemplateData struct {
 	KnowledgeBase         string
 	CommandSpecs          string
 	PreviousCommandResult *CommandResult
+	ContinuationTurn      int
 }
 
 // renderSystemPrompt renders the system prompt template with the given request data.
@@ -32,6 +33,7 @@ func renderSystemPrompt(request *Request) (string, error) {
 	data := promptTemplateData{
 		Role:                  request.Role,
 		PreviousCommandResult: request.PreviousCommandResult,
+		ContinuationTurn:      request.ContinuationTurn,
 	}
 	if len(request.RoleContext) > 0 {
 		roleContextJSON, err := json.Marshal(request.RoleContext)

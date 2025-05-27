@@ -242,7 +242,7 @@ func TestControllerListUsers(t *testing.T) {
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 		assert.Equal(t, mUsers[1].Username, result.Data[1].Username)
 
@@ -294,7 +294,7 @@ func TestControllerListUsers(t *testing.T) {
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -345,7 +345,7 @@ func TestControllerListUsers(t *testing.T) {
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -401,7 +401,7 @@ func TestControllerListUsers(t *testing.T) {
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 		assert.Equal(t, mUsers[1].Username, result.Data[1].Username)
 

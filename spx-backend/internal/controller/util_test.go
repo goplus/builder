@@ -45,7 +45,7 @@ func TestControllerMakeFileURLs(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, fileURLs)
-		assert.Len(t, fileURLs.ObjectURLs, 1)
+		require.Len(t, fileURLs.ObjectURLs, 1)
 	})
 
 	t.Run("EmptyObjects", func(t *testing.T) {

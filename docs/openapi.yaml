@@ -1411,6 +1411,18 @@ components:
           items:
             $ref: "#/components/schemas/AIInteractionTurn"
           description: Record of previous interactions in this session.
+        continuationTurn:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+          description: |
+            Current turn number in a multi-turn interaction.
+
+            A value of 0 means this is the initial turn from user input. Values > 0 indicate continuation turns where
+            the AI should decide next steps based on previous command results.
+          examples:
+            - 0
 
     AIInteractionResponse:
       type: object

@@ -42,3 +42,9 @@ You must not omit the command unless you are absolutely certain that the interac
 Result of the previous command: {{if not .PreviousCommandResult.Success}}ERROR: {{.PreviousCommandResult.ErrorMessage}}.{{else}}SUCCESS.{{end}} 
 {{if .PreviousCommandResult.IsBreak}}The interaction was terminated by the command.{{end}}
 {{end}}
+
+{{if gt .ContinuationTurn 0}}
+## Continuation Turn
+
+This is continuation turn {{.ContinuationTurn}} following the initial user input at turn 0. Based on the previous command result, determine if further actions are needed to complete the user's request.
+{{end}}
