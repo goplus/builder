@@ -38,6 +38,7 @@ interface IframeWindow extends Window {
    * We reload the iframe to stop the game instead.
    */
   stopGame(): Promise<void>
+  onGameError: (callback: (err: string) => void) => void
   console: typeof console
   /**
    * This property is used to detect if the iframe is reloaded.
@@ -69,16 +70,20 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
     emit('console', 'warn', args)
   }
 
-  iframeWindow.addEventListener('runnerReady', () => {
+  function handleRunnerReady() {
     iframeWindowRef.value = iframeWindow
-  })
-
-  // TODO: Use APIs provided by runner, e.g., `onError` as more reliable way to detect runner failure
-  iframeWindow.addEventListener('error', (e) => {
-    if (e.message.includes('Go program has already exited')) {
+    iframeWindow.onGameError((err: string) => {
+      console.warn('ProjectRunner game error:', err)
       failed.value = true
-    }
-  })
+    })
+  }
+
+  // Handle the case where the `runnerReady` event may have already been dispatched
+  // before this function is called. We check if the runner is ready by verifying
+  // that `startGame` is defined. If so, we call `handleRunnerReady` immediately;
+  // otherwise, we listen for the `runnerReady` event.
+  if (typeof iframeWindow.startGame !== 'undefined') handleRunnerReady()
+  else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
 }
 
 async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) {
