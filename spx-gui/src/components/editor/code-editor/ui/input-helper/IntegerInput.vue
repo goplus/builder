@@ -17,12 +17,17 @@ const emit = defineEmits<{
   submit: []
 }>()
 
-const modelValue = useDebouncedModel<number | null>(
+const [modelValue, flush] = useDebouncedModel<number | null>(
   () => props.value,
   (v) => emit('update:value', Math.floor(v ?? getDefaultValue()))
 )
+
+function handleSubmit() {
+  flush()
+  emit('submit')
+}
 </script>
 
 <template>
-  <UINumberInput v-model:value="modelValue" :style="{ alignSelf: 'stretch' }" autofocus @keyup.enter="emit('submit')" />
+  <UINumberInput v-model:value="modelValue" :style="{ alignSelf: 'stretch' }" autofocus @keyup.enter="handleSubmit" />
 </template>

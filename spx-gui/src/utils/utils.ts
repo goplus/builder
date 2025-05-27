@@ -316,15 +316,13 @@ export function escapeHTML(str: string) {
  */
 export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T) => void, wait = 300) {
   const valueRef = ref<T>(toValue(source))
+  const debouncedOnChange = debounce(() => {
+    if (valueRef.value === toValue(source)) return
+    onChange(valueRef.value)
+  }, wait)
   watch(source, (newSourceValue) => (valueRef.value = newSourceValue))
-  watch(
-    valueRef,
-    debounce(() => {
-      if (valueRef.value === toValue(source)) return
-      onChange(valueRef.value)
-    }, wait)
-  )
-  return valueRef
+  watch(valueRef, debouncedOnChange)
+  return [valueRef, () => debouncedOnChange.flush()] as const
 }
 
 export function upFirst(str: string) {
