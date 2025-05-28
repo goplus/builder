@@ -1,6 +1,14 @@
 import { nextTick, watch } from 'vue'
 import { describe, it, expect, vitest } from 'vitest'
-import { isImage, isSound, nomalizeDegree, memoizeAsync, localStorageRef, humanizeListWithLimit } from './utils'
+import {
+  isImage,
+  isSound,
+  nomalizeDegree,
+  memoizeAsync,
+  localStorageRef,
+  humanizeListWithLimit,
+  humanizeFileSize
+} from './utils'
 import { sleep } from './test'
 
 describe('isImage', () => {
@@ -236,5 +244,26 @@ describe('humanizeListWithLimit', () => {
       en: 'A, B and 2 more',
       zh: '甲、乙等 4 个'
     })
+  })
+})
+
+describe('humanizeFileSize', () => {
+  it('should work well', () => {
+    expect(humanizeFileSize(0)).toEqual({ en: '0 B', zh: '0 B' })
+    expect(humanizeFileSize(1023)).toEqual({ en: '1023 B', zh: '1023 B' })
+    expect(humanizeFileSize(1024)).toEqual({ en: '1 KB', zh: '1 KB' })
+    expect(humanizeFileSize(2048)).toEqual({ en: '2 KB', zh: '2 KB' })
+    expect(humanizeFileSize(1048576)).toEqual({ en: '1 MB', zh: '1 MB' })
+    expect(humanizeFileSize(2097152)).toEqual({ en: '2 MB', zh: '2 MB' })
+    expect(humanizeFileSize(1073741824)).toEqual({ en: '1 GB', zh: '1 GB' })
+    expect(humanizeFileSize(2147483648)).toEqual({ en: '2 GB', zh: '2 GB' })
+    expect(humanizeFileSize(1099511627776)).toEqual({ en: '1 TB', zh: '1 TB' })
+    expect(humanizeFileSize(10995116277760000)).toEqual({ en: '10000 TB', zh: '10000 TB' })
+  })
+  it('should round file size correctly', () => {
+    expect(humanizeFileSize(1500)).toEqual({ en: '1.46 KB', zh: '1.46 KB' })
+    expect(humanizeFileSize(1536)).toEqual({ en: '1.5 KB', zh: '1.5 KB' })
+    expect(humanizeFileSize(10485760)).toEqual({ en: '10 MB', zh: '10 MB' })
+    expect(humanizeFileSize(10737418240)).toEqual({ en: '10 GB', zh: '10 GB' })
   })
 })
