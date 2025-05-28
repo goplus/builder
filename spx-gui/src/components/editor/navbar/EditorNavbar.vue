@@ -142,7 +142,7 @@ const handleImportProjectFile = useMessageHandle(
       }),
       confirmText: i18n.t({ en: 'Continue', zh: '继续' })
     })
-    const file = await selectFile({ accept: '.gbp' })
+    const file = await selectFile({ accept: ['gbp'] })
     const action = { name: importProjectFileMessage }
     await props.project?.history.doAction(action, () => props.project!.loadGbpFile(file))
   },

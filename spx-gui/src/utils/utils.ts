@@ -264,6 +264,22 @@ export function humanizeListWithLimit(list: LocaleMessage[], maxNum: number = 3)
   }
 }
 
+export function humanizeFileSize(
+  /** File size in bytes */
+  size: number
+) {
+  const base = 1024
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  for (let i = 0; i < units.length; i++) {
+    if (size < base || i === units.length - 1) {
+      const text = `${parseFloat(size.toFixed(2)) + ''} ${units[i]}`
+      return { en: text, zh: text }
+    }
+    size /= base
+  }
+  throw new Error('Unreachable code in humanizeFileSize')
+}
+
 export function usePageTitle(
   titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
 ) {
