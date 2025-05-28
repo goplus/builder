@@ -235,7 +235,7 @@ ${resultContent}
       workflow: {
         id: workflowID.value || '',
         env: this.collctor.getEnvironment()
-      } 
+      }
     }
   }
 
