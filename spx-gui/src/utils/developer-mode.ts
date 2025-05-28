@@ -49,10 +49,9 @@ function setupConsoleCommands() {
     return isDeveloperMode.value
   }
 
-  window.__xb_setWorkflowID = (id: string) => {
+  window.__xb_set_workflow_id = (id: string) => {
     if (isDeveloperMode.value) {
       workflowID.value = id
-      console.log(`Workflow ID set to: ${id}`)
     } else {
       console.warn('Developer mode is not enabled. Cannot set workflow ID.')
     }
@@ -96,6 +95,6 @@ declare global {
      * Set the workflow ID for debugging
      * @param workflowID - The workflow ID to set
      */
-    __xb_setWorkflowID: (workflowID: string) => void
+    __xb_set_workflow_id: (workflowID: string) => void
   }
 }
