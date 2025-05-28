@@ -88,6 +88,7 @@ export async function* workflowStreamMessage(
     signal?: AbortSignal
     tools?: Tool[]
     workflow?: {
+      id?: string
       env?: Record<string, any>
     }
   }
@@ -100,6 +101,7 @@ export async function* workflowStreamMessage(
         tools: options?.tools,
         workflow: options?.workflow
           ? {
+              id: options.workflow.id,
               env: options.workflow.env || {}
             }
           : undefined

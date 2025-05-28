@@ -3,6 +3,7 @@ import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 export { default as CopilotProvider } from './CopilotProvider.vue'
 import { Collector, type ToolResult } from '@/components/copilot/mcp/collector'
+import { workflowID } from '@/utils/developer-mode'
 
 /** Message role identifiers */
 export type MessageRole = 'user' | 'copilot'
@@ -16,7 +17,10 @@ export type ChatMessage = {
 /** Chat session structure */
 export type Chat = {
   messages: ChatMessage[]
-  env?: Record<string, any>
+  workflow?: {
+    id?: string
+    env?: Record<string, any>
+  }
 }
 
 /** Core Copilot interface for AI completions */
@@ -228,7 +232,10 @@ ${resultContent}
     })
     return {
       messages,
-      env: this.collctor.getEnvironment()
+      workflow: {
+        id: workflowID.value || '',
+        env: this.collctor.getEnvironment()
+      } 
     }
   }
 
