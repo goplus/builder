@@ -152,46 +152,51 @@ defineExpose({
   async run(signal?: AbortSignal) {
     loading.value = true
     failed.value = false
-    const collector = new ProgressCollector()
-    collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
-    const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
-    const getProjectDataReporter = collector.getSubReporter(
-      { en: 'Loading project data...', zh: '加载项目数据中...' },
-      5
-    )
-    const startGameReporter = collector.getSubReporter(
-      { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
-      5
-    )
+    try {
+      const collector = new ProgressCollector()
+      collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
+      const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
+      const getProjectDataReporter = collector.getSubReporter(
+        { en: 'Loading project data...', zh: '加载项目数据中...' },
+        5
+      )
+      const startGameReporter = collector.getSubReporter(
+        { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
+        5
+      )
 
-    registered.onStart()
+      registered.onStart()
 
-    const iframeWindow = await untilNotNull(iframeWindowRef)
-    signal?.throwIfAborted()
-    iframeLoadReporter.report(1)
+      const iframeWindow = await untilNotNull(iframeWindowRef)
+      signal?.throwIfAborted()
+      iframeLoadReporter.report(1)
 
-    const projectData = await getProjectData(getProjectDataReporter, signal)
+      const projectData = await getProjectData(getProjectDataReporter, signal)
 
-    // Ensure the latest progress update to be rendered to UI
-    // This is necessary because now spx runs in the same thread as the main thread of editor.
-    // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
-    // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
-    await timeout(50)
+      // Ensure the latest progress update to be rendered to UI
+      // This is necessary because now spx runs in the same thread as the main thread of editor.
+      // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
+      // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
+      await timeout(50)
 
-    // TODO: get progress for engine-loading, which is now included in `startGame`
-    startGameReporter.startAutoReport(10 * 1000)
-    await iframeWindow.startGame(projectData.zipped, assetURLs, () => {
-      // Set up API endpoint for AI Interaction.
-      iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+      // TODO: get progress for engine-loading, which is now included in `startGame`
+      startGameReporter.startAutoReport(10 * 1000)
+      await iframeWindow.startGame(projectData.zipped, assetURLs, () => {
+        // Set up API endpoint for AI Interaction.
+        iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
-      // Set up token provider for AI Interaction.
-      iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
-    })
-    signal?.throwIfAborted()
-    startGameReporter.report(1)
-
-    loading.value = false
-    return projectData.filesHash
+        // Set up token provider for AI Interaction.
+        iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
+      })
+      signal?.throwIfAborted()
+      startGameReporter.report(1)
+      return projectData.filesHash
+    } catch (err) {
+      console.warn('ProjectRunner run game error:', err)
+      failed.value = true
+    } finally {
+      loading.value = false
+    }
   },
   async stop() {
     const iframeWindow = iframeWindowRef.value
@@ -199,6 +204,7 @@ defineExpose({
     iframeWindow.__xb_is_stale = true
     iframeWindow.location.reload()
     registered.onStopped()
+    iframeWindowRef.value = null
 
     // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
     // We need to wait for the reloaded iframe to be ready to reattach listeners.
