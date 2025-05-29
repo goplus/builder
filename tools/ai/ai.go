@@ -146,6 +146,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			CommandSpecs:          currentCommandSpecs,
 			KnowledgeBase:         currentKnowledgeBase,
 			PreviousCommandResult: currentPrevCmdResult,
+			ContinuationTurn:      i,
 		}
 
 		// Call AI transport with retries.
@@ -242,10 +243,8 @@ func (p *Player) think(msg string, context map[string]any) {
 
 		// Prepare for the next iteration of the loop. The AI will decide the next step
 		// based on the p.previousCommandResult.
-		currentMsg = "feel free to continue if needed based on the last executed command result"
-		currentContext = map[string]any{
-			"total interaction turns in this call": i + 1,
-		}
+		currentMsg = ""
+		currentContext = nil
 	}
 }
 

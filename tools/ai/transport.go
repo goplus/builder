@@ -39,6 +39,14 @@ type Request struct {
 
 	// History contains the record of previous interactions in this session.
 	History []Turn `json:"history,omitempty"`
+
+	// ContinuationTurn indicates the current turn number in a multi-turn
+	// interaction.
+	//
+	// A value of 0 means this is the initial turn from user input. Values
+	// > 0 indicate continuation turns where the AI should decide next
+	// steps based on previous command results.
+	ContinuationTurn int `json:"continuationTurn,omitempty"`
 }
 
 // Response encapsulates the response received from the AI via the [Transport].

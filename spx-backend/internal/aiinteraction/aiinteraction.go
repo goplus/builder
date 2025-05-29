@@ -104,7 +104,15 @@ func buildConversationMessages(request *Request) ([]openai.ChatCompletionMessage
 		}
 	}
 
+	if request.ContinuationTurn > 0 {
+		// No user input is expected during a continuation turn.
+		return messages, nil
+	}
+
 	userMessage := request.Content
+	if userMessage == "" {
+		return nil, errors.New("missing user content in request")
+	}
 	if len(request.Context) > 0 {
 		contextJSON, err := json.Marshal(request.Context)
 		if err != nil {

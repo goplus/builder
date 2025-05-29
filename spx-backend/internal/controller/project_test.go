@@ -1157,7 +1157,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 		assert.Equal(t, mProjects[1].Name, result.Data[1].Name)
 
@@ -1223,7 +1223,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1289,7 +1289,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1359,7 +1359,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1432,7 +1432,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 		assert.Equal(t, mProjects[1].Name, result.Data[1].Name)
 
@@ -1584,7 +1584,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
