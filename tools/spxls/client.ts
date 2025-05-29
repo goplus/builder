@@ -1,7 +1,6 @@
 import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
-import { useDeveloperMode } from '@/utils/developer-mode'
+import { isDeveloperMode } from '@/utils/developer-mode'
 
-const { isDeveloperMode } = useDeveloperMode()
 /**
  * Client wrapper for the spxls.
  */
