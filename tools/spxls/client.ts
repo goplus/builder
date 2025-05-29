@@ -93,7 +93,7 @@ export class Spxlc {
       }
     }).then(
       result => {
-        if (isDeveloperMode.value) {
+        if (process.env.NODE_ENV === 'development' || isDeveloperMode.value) {
           const time = performance.now() - sendAt
           if (time > 20) console.warn(`[LSP] ${method} took ${Math.round(time)}ms, params:`, params)
         }
