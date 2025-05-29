@@ -4,7 +4,7 @@ import { ref } from 'vue'
 const DEV_MODE_STORAGE_KEY = 'xb_dev_mode_enabled'
 
 // Create reactive state for developer mode
-const isDeveloperMode = ref(false)
+export const isDeveloperMode = ref(false)
 
 /**
  * Initialize developer mode state
@@ -44,18 +44,6 @@ function setupConsoleCommands() {
 
   window.__xb_dev_mode_status = () => {
     return isDeveloperMode.value
-  }
-}
-
-/**
- * Check if developer mode is enabled
- * Composition function to access developer mode state
- *
- * @returns Object containing reactive developer mode state
- */
-export function useDeveloperMode() {
-  return {
-    isDeveloperMode
   }
 }
 

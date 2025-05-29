@@ -72,12 +72,11 @@ import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
-import { useDeveloperMode } from '@/utils/developer-mode'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
-const { isDeveloperMode } = useDeveloperMode()
 const router = useRouter()
 const { controls } = useCopilotCtx()
 
