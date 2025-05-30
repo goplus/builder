@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/goplus/yap v0.8.4 //gop:class
 	github.com/joho/godotenv v1.5.1
-	github.com/openai/openai-go v1.1.0
+	github.com/openai/openai-go v1.2.0
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/go-sdk/v7 v7.25.3
 	github.com/qiniu/x v1.15.0
