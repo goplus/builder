@@ -116,7 +116,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
+export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
   return new File(name, async () => {
     const webUrl = await universalUrlToWebUrl(url)
     const resp = await fetch(webUrl)

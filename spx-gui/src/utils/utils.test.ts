@@ -7,7 +7,8 @@ import {
   memoizeAsync,
   localStorageRef,
   humanizeListWithLimit,
-  humanizeFileSize
+  humanizeFileSize,
+  isCrossOriginUrl
 } from './utils'
 import { sleep } from './test'
 
@@ -265,5 +266,30 @@ describe('humanizeFileSize', () => {
     expect(humanizeFileSize(1536)).toEqual({ en: '1.5 KB', zh: '1.5 KB' })
     expect(humanizeFileSize(10485760)).toEqual({ en: '10 MB', zh: '10 MB' })
     expect(humanizeFileSize(10737418240)).toEqual({ en: '10 GB', zh: '10 GB' })
+  })
+})
+
+describe('isCrossOriginUrl', () => {
+  it('should work well', () => {
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example2.com')).toBe(true)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'http://example.com')).toBe(true)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example.com:8080')).toBe(true)
+  })
+  it('should handle relative URLs', () => {
+    expect(isCrossOriginUrl('/image.png', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('image.png', 'https://example.com')).toBe(false)
+  })
+  it('should work well with object URLs', () => {
+    expect(
+      isCrossOriginUrl('blob:https://example.com/12345678-1234-1234-1234-123456789012', 'https://example.com')
+    ).toBe(false)
+    expect(
+      isCrossOriginUrl('blob:https://example.com/12345678-1234-1234-1234-123456789012', 'https://example2.com')
+    ).toBe(true)
+  })
+  it('should work well with data URLs', () => {
+    expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example2.com')).toBe(false)
   })
 })

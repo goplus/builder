@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
     test: { environment: 'happy-dom' },
     server: {
       headers: {
-        'Cross-Origin-Embedder-Policy': 'credentialless',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
         'Cross-Origin-Opener-Policy': 'same-origin',
       },
     },
@@ -68,7 +68,7 @@ export default defineConfig(({ mode }) => {
             },
             {
               key: 'Cross-Origin-Embedder-Policy',
-              value: 'credentialless'
+              value: 'require-corp'
             },
             {
               key: 'Cross-Origin-Opener-Policy',

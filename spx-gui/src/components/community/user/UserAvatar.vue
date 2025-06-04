@@ -2,14 +2,15 @@
   <UserLink
     class="user-avatar"
     :class="`size-${size}`"
-    :style="userInfo != null ? { backgroundImage: `url(${userInfo.avatar})` } : null"
+    :style="userInfo != null ? { backgroundImage: `url(${avatarUrl})` } : null"
     :user="userInfo?.username ?? null"
   ></UserLink>
 </template>
 
 <script setup lang="ts">
-import UserLink from './UserLink.vue'
+import { useExternalUrl } from '@/utils/utils'
 import { useUser } from '@/stores/user'
+import UserLink from './UserLink.vue'
 
 export type Size = 'small' | 'medium'
 
@@ -24,6 +25,7 @@ const props = withDefaults(
 )
 
 const { data: userInfo } = useUser(() => props.user)
+const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
 </script>
 
 <style lang="scss" scoped>
