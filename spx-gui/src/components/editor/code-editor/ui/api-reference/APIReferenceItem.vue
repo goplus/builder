@@ -15,6 +15,7 @@ import type { APIReferenceItem } from '.'
 
 const props = defineProps<{
   item: APIReferenceItem
+  interactionDisabled: boolean
 }>()
 
 const codeEditorUICtx = useCodeEditorUICtx()
@@ -76,7 +77,7 @@ function handlePostHoverAction() {
 </script>
 
 <template>
-  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }">
+  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li class="api-reference-item" @click="handleInsert">
         <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
