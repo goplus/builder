@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type User } from '@/apis/user'
+import { useExternalUrl } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
@@ -16,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const isSignedInUser = computed(() => props.user.username === useUserStore().getSignedInUser()?.name)
+const avatarUrl = useExternalUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
@@ -29,7 +31,7 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
 <template>
   <CommunityCard class="user-header">
     <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <UIImg class="avatar" :src="user.avatar" />
+    <UIImg class="avatar" :src="avatarUrl" />
     <div class="content">
       <div class="info">
         <h2 class="name">

@@ -7,7 +7,7 @@
   <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
     <template #trigger>
       <div class="avatar">
-        <img class="avatar-img" :src="userInfo.avatar" />
+        <img class="avatar-img" :src="avatarUrl ?? undefined" />
       </div>
     </template>
     <UIMenu class="user-menu">
@@ -65,7 +65,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useSpxVersion } from '@/utils/utils'
+import { useExternalUrl, useSpxVersion } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
@@ -81,6 +81,7 @@ const router = useRouter()
 const { controls } = useCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
+const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
 
 const handleAskCopilotAgent = useMessageHandle(
   async () => {

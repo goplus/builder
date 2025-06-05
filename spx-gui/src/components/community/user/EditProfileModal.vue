@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useExternalUrl } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { type User } from '@/apis/user'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
+const avatarUrl = useExternalUrl(() => props.user.avatar)
 
 const form = useForm({
   description: [props.user.description, validateDescription]
@@ -50,7 +52,7 @@ const handleSubmit = useMessageHandle(async () => {
     @update:visible="handleCancel"
   >
     <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
-    <UIImg class="avatar" :src="user.avatar" />
+    <UIImg class="avatar" :src="avatarUrl" />
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
         <UITextInput :value="user.displayName" disabled />
