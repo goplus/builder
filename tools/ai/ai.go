@@ -186,6 +186,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			// sequence from AI's perspective. Record this "no command" turn.
 			noCmdTurn := Turn{
 				RequestContent: request.Content,
+				RequestContext: request.Context,
 				ResponseText:   resp.Text,
 			}
 			p.mu.Lock()
@@ -226,6 +227,7 @@ func (p *Player) think(msg string, context map[string]any) {
 		// Update history and player's state.
 		currentTurn := Turn{
 			RequestContent:        request.Content,
+			RequestContext:        request.Context,
 			ResponseText:          resp.Text,
 			ResponseCommandName:   resp.CommandName,
 			ResponseCommandArgs:   resp.CommandArgs,

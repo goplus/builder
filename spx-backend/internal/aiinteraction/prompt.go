@@ -25,6 +25,7 @@ type promptTemplateData struct {
 	KnowledgeBase         string
 	CommandSpecs          string
 	PreviousCommandResult *CommandResult
+	History               string
 	ContinuationTurn      int
 }
 
@@ -55,6 +56,13 @@ func renderSystemPrompt(request *Request) (string, error) {
 			return "", fmt.Errorf("failed to marshal command specs: %w", err)
 		}
 		data.CommandSpecs = string(commandSpecsJSON)
+	}
+	if len(request.History) > 0 {
+		historyJSON, err := json.Marshal(request.History)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal history: %w", err)
+		}
+		data.History = string(historyJSON)
 	}
 
 	var sb strings.Builder
