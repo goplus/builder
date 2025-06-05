@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExternalUrl } from '@/utils/utils'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { BasicMarkdownString } from '../../common'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -8,11 +9,12 @@ defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const avatarUrl = useExternalUrl(() => editorCtx.userInfo.avatar)
 </script>
 
 <template>
   <section class="user-message">
-    <img class="avatar" :src="editorCtx.userInfo.avatar" />
+    <img class="avatar" :src="avatarUrl ?? undefined" />
     <MarkdownView class="content" v-bind="content" />
   </section>
 </template>
