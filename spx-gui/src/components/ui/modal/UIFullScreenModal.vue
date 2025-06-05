@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
-import { usePopupContainer } from '../utils'
+import { useModalContainer } from '../utils'
 
 defineProps<{
   visible?: boolean
@@ -21,7 +21,7 @@ const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
 
-const attachTo = usePopupContainer()
+const attachTo = useModalContainer()
 </script>
 <style lang="scss" scoped>
 .container {
