@@ -166,7 +166,7 @@ export async function composeQuery<T>(
   queryRet: QueryRet<T>,
   subReportParams?: SubReporterParams
 ): Promise<T> {
-  if (ctx.source === 'refetch') {
+  if (ctx.source === 'refetch' || queryRet.error != null) {
     queryRet.refetch(ctx.signal)
   } else {
     toValue(queryRet.isLoading) // Trigger dependency collection
