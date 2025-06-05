@@ -6,11 +6,11 @@
 
 <script setup lang="ts">
 import { UIBackdropItem, UICornerIcon } from '@/components/ui'
-import type { ExportedScratchFile } from '@/utils/scratch'
+import type { ExportedScratchCostume } from '@/utils/scratch'
 import { ref, watchEffect } from 'vue'
 
 const props = defineProps<{
-  asset: ExportedScratchFile
+  asset: ExportedScratchCostume
   selected: boolean
 }>()
 
