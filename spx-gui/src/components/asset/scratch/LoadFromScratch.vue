@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { shallowReactive, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
@@ -46,7 +46,7 @@ import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
-import type { ExportedScratchSprite } from '@/utils/scratch'
+import type { ExportedScratchCostume, ExportedScratchSound, ExportedScratchSprite } from '@/utils/scratch'
 import { type Project } from '@/models/project'
 import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
@@ -63,48 +63,42 @@ const emit = defineEmits<{
   imported: [AssetModel[]]
 }>()
 
-const selected = ref<{
-  backdrops: Set<ExportedScratchFile>
-  sounds: Set<ExportedScratchFile>
-  sprites: Set<ExportedScratchSprite>
-}>({
-  backdrops: new Set(),
-  sounds: new Set(),
-  sprites: new Set()
-})
+const selected = {
+  backdrops: shallowReactive(new Set<ExportedScratchCostume>()),
+  sounds: shallowReactive(new Set<ExportedScratchSound>()),
+  sprites: shallowReactive(new Set<ExportedScratchSprite>())
+}
 
 watch(
   () => props.scratchAssets,
   () => {
-    selected.value = {
-      backdrops: new Set(),
-      sounds: new Set(),
-      sprites: new Set()
-    }
+    selected.backdrops.clear()
+    selected.sounds.clear()
+    selected.sprites.clear()
   }
 )
 
 const selectSprite = (sprite: ExportedScratchSprite) => {
-  if (selected.value.sprites.has(sprite)) {
-    selected.value.sprites.delete(sprite)
+  if (selected.sprites.has(sprite)) {
+    selected.sprites.delete(sprite)
   } else {
-    selected.value.sprites.add(sprite)
+    selected.sprites.add(sprite)
   }
 }
 
-const selectSound = (sound: ExportedScratchFile) => {
-  if (selected.value.sounds.has(sound)) {
-    selected.value.sounds.delete(sound)
+const selectSound = (sound: ExportedScratchSound) => {
+  if (selected.sounds.has(sound)) {
+    selected.sounds.delete(sound)
   } else {
-    selected.value.sounds.add(sound)
+    selected.sounds.add(sound)
   }
 }
 
-const selectBackdrop = (backdrop: ExportedScratchFile) => {
-  if (selected.value.backdrops.has(backdrop)) {
-    selected.value.backdrops.delete(backdrop)
+const selectBackdrop = (backdrop: ExportedScratchCostume) => {
+  if (selected.backdrops.has(backdrop)) {
+    selected.backdrops.delete(backdrop)
   } else {
-    selected.value.backdrops.add(backdrop)
+    selected.backdrops.add(backdrop)
   }
 }
 
@@ -116,7 +110,9 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = await Promise.all(
     asset.costumes.map((costume) =>
       Costume.create(costume.name, scratchToSpxFile(costume), {
-        bitmapResolution: costume.bitmapResolution
+        bitmapResolution: costume.bitmapResolution,
+        x: costume.rotationCenterX,
+        y: costume.rotationCenterY
       })
     )
   )
@@ -129,14 +125,14 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   return sprite
 }
 
-const importSound = async (asset: ExportedScratchFile) => {
+const importSound = async (asset: ExportedScratchSound) => {
   const file = scratchToSpxFile(asset)
   const sound = await Sound.create(asset.name, file)
   props.project.addSound(sound)
   return sound
 }
 
-const importBackdrop = async (asset: ExportedScratchFile) => {
+const importBackdrop = async (asset: ExportedScratchCostume) => {
   const file = scratchToSpxFile(asset)
   const backdrop = await Backdrop.create(asset.name, file, {
     bitmapResolution: asset.bitmapResolution
@@ -147,7 +143,7 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
 
 const importSelected = useMessageHandle(
   async () => {
-    const { sprites, sounds, backdrops } = selected.value
+    const { sprites, sounds, backdrops } = selected
     const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
     const imported = await props.project.history.doAction(action, () =>
       Promise.all([
