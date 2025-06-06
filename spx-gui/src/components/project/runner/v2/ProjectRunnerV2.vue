@@ -205,6 +205,7 @@ defineExpose({
     iframeWindow.location.reload()
     registered.onStopped()
     iframeWindowRef.value = null
+    progressRef.value = { percentage: 0, desc: null }
 
     // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
     // We need to wait for the reloaded iframe to be ready to reattach listeners.

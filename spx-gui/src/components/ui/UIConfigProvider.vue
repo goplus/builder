@@ -91,7 +91,12 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadow: uiVariables.boxShadow.small,
     color: uiVariables.color.grey[1000],
     textColor: uiVariables.color.grey[100],
-    padding: '7px 8px'
+    padding: '7px 8px',
+    peers: {
+      Popover: {
+        arrowOffset: '12px' // TODO: `UITooltip` should be smart enough to use a smaller `arrowOffset` when the trigger element size is small
+      }
+    }
   },
   Input: {
     border: 'none',
