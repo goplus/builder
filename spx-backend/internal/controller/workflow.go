@@ -11,6 +11,7 @@ import (
 )
 
 type Workflow struct {
+	ID  string       `json:"id"`
 	Env workflow.Env `json:"env"`
 }
 
@@ -23,8 +24,12 @@ type WorkflowMessageParams struct {
 func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 
+	flow := ctrl.stdflow
+	if params.Workflow.ID == "stdflow_without_ref" {
+		flow = ctrl.stdflowWithoutRef
+	}
 	// Check if workflow is initialized
-	if ctrl.workflow == nil {
+	if flow == nil {
 		return nil, fmt.Errorf("workflow is not initialized")
 	}
 
@@ -42,7 +47,7 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 	env.Set("SpxDefs", copilot.SpxDefs)
 
 	// Create workflow runner with the specified index
-	runner := ctrl.workflow.Runner(env)
+	runner := flow.Runner(env)
 
 	// Generate stream message using workflow
 	stream, err := runner.Execute(ctx)

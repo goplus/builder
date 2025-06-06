@@ -95,7 +95,8 @@ export class Copilot extends Disposable implements ICopilot {
       signal: options?.signal,
       tools: tools,
       workflow: {
-        env: chat.env
+        env: chat.workflow?.env,
+        id: chat.workflow?.id
       }
     })
 
