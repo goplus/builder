@@ -1,10 +1,10 @@
 module github.com/goplus/builder/tools/spxls
 
-go 1.23.4
+go 1.24.0
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/goxlsw v0.4.2
+	github.com/goplus/goxlsw v0.5.0
 )
 
 require (

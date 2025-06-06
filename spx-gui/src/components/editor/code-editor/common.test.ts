@@ -4,8 +4,8 @@ import { stringifyDefinitionId, parseDefinitionId, parseResourceURI, parseResour
 describe('stringifyDefinitionId', () => {
   it('should stringify definition identifier', () => {
     expect(stringifyDefinitionId({ package: 'fmt', name: 'Println' })).toBe('gop:fmt?Println')
-    expect(stringifyDefinitionId({ package: 'github.com/goplus/spx', name: 'Sprite.Clone', overloadId: '1' })).toBe(
-      'gop:github.com/goplus/spx?Sprite.Clone#1'
+    expect(stringifyDefinitionId({ package: 'github.com/goplus/spx/v2', name: 'Sprite.Clone', overloadId: '1' })).toBe(
+      'gop:github.com/goplus/spx/v2?Sprite.Clone#1'
     )
     expect(stringifyDefinitionId({ name: 'for_statement_with_single_condition' })).toBe(
       'gop:?for_statement_with_single_condition'
@@ -17,8 +17,8 @@ describe('stringifyDefinitionId', () => {
 describe('parseDefinitionId', () => {
   it('should parse definition identifier correctly', () => {
     expect(parseDefinitionId('gop:fmt?Println')).toEqual({ package: 'fmt', name: 'Println' })
-    expect(parseDefinitionId('gop:github.com/goplus/spx?Sprite.Clone#1')).toEqual({
-      package: 'github.com/goplus/spx',
+    expect(parseDefinitionId('gop:github.com/goplus/spx/v2?Sprite.Clone#1')).toEqual({
+      package: 'github.com/goplus/spx/v2',
       name: 'Sprite.Clone',
       overloadId: '1'
     })
@@ -31,7 +31,7 @@ describe('parseDefinitionId', () => {
   it('should stringify & parse correctly', () => {
     ;[
       { package: 'fmt', name: 'Println' },
-      { package: 'github.com/goplus/spx', name: 'Sprite.Clone', overloadId: '1' },
+      { package: 'github.com/goplus/spx/v2', name: 'Sprite.Clone', overloadId: '1' },
       { name: 'for_statement_with_single_condition' },
       { package: 'main', name: 'foo' }
     ].forEach((defId) => {
