@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, shallowRef, watch, type CSSProperties } from 'vue'
-import { untilNotNull } from '@/utils/utils'
+import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { Project } from '@/models/project'
 import { UIButton, UIModalClose } from '@/components/ui'
@@ -36,6 +36,11 @@ watch(
     updateModalTransformStyle()
     initialLoading.value = true
     const projectRunner = await untilNotNull(projectRunnerRef)
+
+    // Add timeout to ensure the scale transition is finished before running the project
+    // Otherwise the loading animation will play with incorrect scale
+    await timeout(400)
+
     projectRunner.run().finally(() => {
       initialLoading.value = false
     })
@@ -99,8 +104,8 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   transform: scale(0);
   opacity: 0;
   transition:
-    transform 0.5s ease-in-out,
-    opacity 0.2s ease-in-out 0.2s;
+    transform 0.4s ease-in-out,
+    opacity 0.2s ease-in-out 0.1s;
 
   &.visible {
     display: block;
