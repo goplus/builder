@@ -3,7 +3,7 @@ package aiinteraction
 // Request represents a request for AI interaction.
 type Request struct {
 	// Content is the core user input message.
-	Content string `json:"content"`
+	Content string `json:"content,omitempty"`
 
 	// Context provides specific context for the current user input.
 	Context map[string]any `json:"context,omitempty"`
@@ -50,7 +50,10 @@ type Response struct {
 // Turn represents a single turn in the AI interaction.
 type Turn struct {
 	// RequestContent is the user's input text for the turn.
-	RequestContent string `json:"requestContent"`
+	RequestContent string `json:"requestContent,omitempty"`
+
+	// RequestContext is the context for the user's input text for the turn.
+	RequestContext map[string]any `json:"context,omitempty"`
 
 	// ResponseText is the AI's text output for the turn.
 	ResponseText string `json:"responseText"`
@@ -71,10 +74,10 @@ type CommandSpec struct {
 	Name string `json:"name"`
 
 	// Description explains what the command does.
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 
 	// Parameters defines the parameters the command accepts.
-	Parameters []CommandParamSpec `json:"parameters"`
+	Parameters []CommandParamSpec `json:"parameters,omitempty"`
 }
 
 // CommandParamSpec defines a parameter for a command.
@@ -86,7 +89,7 @@ type CommandParamSpec struct {
 	Type string `json:"type"`
 
 	// Description explains the purpose of the parameter.
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 }
 
 // CommandResult contains the result of executing a command.
@@ -98,5 +101,5 @@ type CommandResult struct {
 	ErrorMessage string `json:"errorMessage,omitempty"`
 
 	// IsBreak indicates if the interaction should be terminated.
-	IsBreak bool `json:"isBreak"`
+	IsBreak bool `json:"isBreak,omitempty"`
 }
