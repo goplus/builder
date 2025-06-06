@@ -164,7 +164,9 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  display: grid;
+  // Now runner is centered in X axis, while stretched in Y axis.
+  // TODO: It will be ideal to stretch and center the runner in both axes and maintain its aspect ratio.
+  display: flex;
   justify-content: center;
   background-color: var(--ui-color-grey-300);
 }
