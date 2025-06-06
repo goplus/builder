@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
-import type { ProjectRelease } from './project-release'
+import { parseProjectReleaseFullName, stringifyProjectReleaseFullName, type ProjectRelease } from './project-release'
 
 export { Visibility, ownerAll }
 
@@ -187,13 +187,25 @@ export async function unlikeProject(owner: string, name: string) {
   return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
 }
 
-export type RemixSource = [owner: string, project: string, release?: string]
+export function parseProjectFullName(fullName: string) {
+  const [encodedOwner, encodedProject] = fullName.split('/')
+  const owner = decodeURIComponent(encodedOwner)
+  const project = decodeURIComponent(encodedProject)
+  return { owner, project }
+}
+
+export function stringifyProjectFullName(owner: string, project: string) {
+  const encodedOwner = encodeURIComponent(owner)
+  const encodedProject = encodeURIComponent(project)
+  return `${encodedOwner}/${encodedProject}`
+}
 
 export function parseRemixSource(rs: string) {
-  const [owner, project, release = null] = rs.split('/')
-  return { owner, project, release }
+  return rs.split('/').length === 3 ? parseProjectReleaseFullName(rs) : parseProjectFullName(rs)
 }
 
 export function stringifyRemixSource(owner: string, project: string, release?: string) {
-  return [owner, project, release].filter((s) => s != null).join('/')
+  return release != null
+    ? stringifyProjectReleaseFullName(owner, project, release)
+    : stringifyProjectFullName(owner, project)
 }

@@ -1,4 +1,5 @@
 import { debounce } from 'lodash'
+import { escapeHTML } from '@/utils/utils'
 import Emitter from '@/utils/emitter'
 import { TaskManager } from '@/utils/task'
 import {
@@ -10,18 +11,20 @@ import {
   makeBasicMarkdownString,
   getResourceModel,
   type ITextDocument,
-  containsPosition
+  containsPosition,
+  InputKind,
+  rangeEq
 } from '../../common'
 import type { monaco } from '../../monaco'
 import {
   builtInCommandCopilotFixProblem,
   builtInCommandGoToResource,
-  isModifiableKind,
   type CodeEditorUI,
-  builtInCommandModifyResourceReference,
-  builtInCommandRenameResource
+  builtInCommandRenameResource,
+  builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
 import { fromMonacoPosition, supportGoTo } from '../common'
+import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -73,13 +76,38 @@ export class HoverController extends Emitter<{
     const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
     if (diagnosticsHover != null) return diagnosticsHover
 
-    const resourceReferenceHover = this.getResourceReferenceHover(position)
-    if (resourceReferenceHover != null) return resourceReferenceHover
-
     const providedHover = await this.provider.provideHover({ textDocument, signal }, position)
-    if (providedHover == null) return null
-    const range = providedHover.range ?? textDocument.getDefaultRange(position)
-    return { ...providedHover, range }
+    let providedInternalHover: InternalHover | null = null
+    if (providedHover != null) {
+      const range = providedHover.range ?? textDocument.getDefaultRange(position)
+      providedInternalHover = { ...providedHover, range }
+    }
+    const resourceReferenceHover = this.getResourceReferenceHover(position)
+    const inputHelperHover = this.getInputHelperHover(position)
+
+    let hover: InternalHover | null = null
+    ;[
+      // These three items from high priority to low priority are checked in order:
+      // * Contents from higher-priority item will be used
+      // * Actions from all items (with the same range) will be merged
+      inputHelperHover,
+      resourceReferenceHover,
+      providedInternalHover
+    ].forEach((hoverItem) => {
+      if (hoverItem == null) return
+      if (hover == null) {
+        hover = {
+          contents: [],
+          range: hoverItem.range,
+          actions: []
+        }
+      }
+      if (!rangeEq(hoverItem.range, hover.range)) return
+      if (hover.contents.length === 0) hover.contents = hoverItem.contents
+      hover.actions.push(...hoverItem.actions)
+    })
+
+    return hover
   })
 
   get hover() {
@@ -131,20 +159,41 @@ export class HoverController extends Emitter<{
           arguments: [reference.resource]
         })
       }
-      if (isModifiableKind(reference.kind)) {
-        actions.push({
-          command: builtInCommandModifyResourceReference,
-          arguments: [reference]
-        })
-      }
       actions.push({
         command: builtInCommandRenameResource,
         arguments: [reference.resource]
       })
       return {
-        contents: [makeBasicMarkdownString(`<resource-preview resource="${reference.resource.uri}" />`)],
+        contents: [],
         range: reference.range,
         actions
+      }
+    }
+    return null
+  }
+
+  private getInputHelperHover(position: Position): InternalHover | null {
+    const inputHelperController = this.ui.inputHelperController
+    if (inputHelperController.slots == null) return null
+    const textDocument = this.ui.activeTextDocument
+    if (textDocument == null) return null
+    for (const item of inputHelperController.slots) {
+      if (!containsPosition(item.range, position)) continue
+      const input = item.input
+      const contents: DefinitionDocumentationString[] = []
+      if (input.kind === InputKind.InPlace && hasPreviewForInputType(input.type)) {
+        // Preview for in-place inputs only
+        contents.push(makeBasicMarkdownString(`<input-value-preview input="${escapeHTML(JSON.stringify(input))}" />`))
+      }
+      return {
+        contents,
+        range: item.range,
+        actions: [
+          {
+            command: builtInCommandInvokeInputHelper,
+            arguments: [item]
+          }
+        ]
       }
     }
     return null
@@ -165,12 +214,21 @@ export class HoverController extends Emitter<{
       const position = target.position
       const currentHover = this.hover
       if (currentHover != null && containsPosition(currentHover.range, position)) return
+
+      // Do not trigger hover when input helper is active
+      if (this.ui.inputHelperController.inputingSlot != null) return
+
       this.hoverMgr.start(position)
     }, 50)
 
     this.addDisposable(
       editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => {
         if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
+          handleMouseEnter({ type: 'other' })
+          return
+        }
+        if (e.target.range.isEmpty()) {
+          // target with type `CONTENT_TEXT` & empty range stands for special contents, like decorations
           handleMouseEnter({ type: 'other' })
           return
         }

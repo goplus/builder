@@ -1,5 +1,6 @@
 <template>
   <NInputNumber
+    ref="nInput"
     class="ui-number-input"
     :placeholder="placeholder || ''"
     :show-button="false"
@@ -19,15 +20,16 @@
 </template>
 
 <script setup lang="ts">
-import { useSlots } from 'vue'
+import { onMounted, ref, useSlots } from 'vue'
 import { NInputNumber } from 'naive-ui'
 
-defineProps<{
+const props = defineProps<{
   value: number | null
   disabled?: boolean
   min?: number
   max?: number
   placeholder?: string
+  autofocus?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +37,12 @@ const emit = defineEmits<{
 }>()
 
 const slots = useSlots()
+
+// It's wierd that the prop `autofocus` of `NInput` does not work as expected, so we handle it manually.
+const nInput = ref<InstanceType<typeof NInputNumber> | null>(null)
+onMounted(() => {
+  if (props.autofocus && nInput.value != null) nInput.value.focus()
+})
 </script>
 
 <style lang="scss" scoped>

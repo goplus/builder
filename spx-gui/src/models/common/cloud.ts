@@ -1,9 +1,12 @@
 import * as qiniu from 'qiniu-js'
+import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
+import { humanizeFileSize } from '@/utils/utils'
+import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
 import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
-import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
+import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 import { File, toNativeFile, toText, type Files, isText } from './file'
@@ -113,7 +116,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
+export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
   return new File(name, async () => {
     const webUrl = await universalUrlToWebUrl(url)
     const resp = await fetch(webUrl)
@@ -181,6 +184,13 @@ export const universalUrlToWebUrl = (() => {
     if (cached != null) return cached
 
     const webUrl = await makeObjectUrl(universalUrl)
+    if (!webUrl.startsWith(usercontentBaseUrl)) {
+      console.warn(`\
+Expect webUrl (${webUrl}) to start with usercontentBaseUrl (${usercontentBaseUrl}). \
+The env variable \`VITE_USERCONTENT_BASE_URL\` may be misconfigured. \
+See details in file \`.env\`.
+`)
+    }
     cache.set(universalUrl, webUrl)
     return webUrl
   }
@@ -224,7 +234,7 @@ type KodoUploadRes = {
 
 async function uploadToKodo(file: File, signal?: AbortSignal): Promise<UniversalUrl> {
   const nativeFile = await toNativeFile(file)
-  const { token, maxSize, bucket, region } = await getUpInfo()
+  const { token, maxSize, bucket, region } = await getUpInfoWithCache()
   if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
   const observable = qiniu.upload(
     nativeFile,
@@ -265,14 +275,40 @@ type UpInfo = Omit<RawUpInfo, 'expires'> & {
 let upInfo: UpInfo | null = null
 let fetchingUpInfo: Promise<UpInfo> | null = null
 
-async function getUpInfo() {
+async function getUpInfoWithCache() {
   if (upInfo != null && upInfo.expiresAt > Date.now()) return upInfo
   if (fetchingUpInfo != null) return fetchingUpInfo
-  return (fetchingUpInfo = getRawUpInfo().then(({ expires, ...others }) => {
+  return (fetchingUpInfo = getUpInfo().then(({ expires, ...others }) => {
     const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
     const expiresAt = Date.now() + expires * 1000 - bufferTime
     upInfo = { ...others, expiresAt: expiresAt }
     fetchingUpInfo = null
     return upInfo
   }))
+}
+
+async function validateFileSizeForUpload(files: globalThis.File[]) {
+  const upInfo = await getUpInfoWithCache()
+  const oversizedFileNames = Array.from(files!)
+    .filter((file) => file.size > upInfo.maxSize)
+    .map((file) => file.name)
+  if (oversizedFileNames.length > 0) {
+    const maxSizeText = humanizeFileSize(upInfo.maxSize)
+    throw new DefaultException({
+      en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxSizeText.en})`,
+      zh: `文件 ${oversizedFileNames.join('、')} 尺寸超限（最大 ${maxSizeText.zh}）`
+    })
+  }
+}
+
+export async function selectFileWithUploadLimit(options: FileSelectOptions) {
+  const file = await selectFile(options)
+  await validateFileSizeForUpload([file])
+  return file
+}
+
+export async function selectFilesWithUploadLimit(options: FileSelectOptions) {
+  const files = await selectFiles(options)
+  await validateFileSizeForUpload(files)
+  return files
 }

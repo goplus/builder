@@ -1,4 +1,5 @@
-import { ref, watch, type WatchSource } from 'vue'
+import { ref, toValue, watch, type WatchSource } from 'vue'
+import { throttle } from 'lodash'
 import { getCleanupSignal } from './disposable'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
@@ -68,4 +69,48 @@ export function useHovered(elSource: WatchSource<HTMLElement | null>) {
     { immediate: true }
   )
   return hovered
+}
+
+/**
+ * When content of given element changes, `useBottomSticky` ensures the element's scroll position
+ * - sticky to bottom if it's already scrolled to bottom
+ * - not changed if it's not scrolled to bottom
+ */
+export function useBottomSticky(elSource: WatchSource<HTMLElement | null>) {
+  let isScrolledToBottom = true
+
+  const handleScroll = throttle((e: Event) => {
+    const el = e.target as HTMLElement
+    isScrolledToBottom = el.scrollHeight < el.scrollTop + el.clientHeight + 1
+  }, 50)
+
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el == null) return
+      el.addEventListener('scroll', handleScroll)
+      onCleanup(() => el.removeEventListener('scroll', handleScroll))
+    },
+    { immediate: true }
+  )
+
+  const onContentChange = () => {
+    if (!isScrolledToBottom) return
+    const el = toValue<HTMLElement | null>(elSource)
+    if (el == null) return
+
+    el.scrollTop = el.scrollHeight
+  }
+
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el != null) {
+        const observer = new MutationObserver(onContentChange)
+        observer.observe(el, { childList: true, subtree: true })
+        onCleanup(() => observer.disconnect())
+      }
+    },
+    { immediate: true }
+  )
 }

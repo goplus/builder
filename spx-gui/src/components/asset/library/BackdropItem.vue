@@ -4,11 +4,13 @@
     :img-loading="!imgSrc || imgLoading"
     :name="asset.displayName"
     :selectable="{ selected }"
-  />
+  >
+    <UICornerIcon v-show="selected" type="check" />
+  </UIBackdropItem>
 </template>
 
 <script setup lang="ts">
-import { UIBackdropItem } from '@/components/ui'
+import { UIBackdropItem, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/common/asset'

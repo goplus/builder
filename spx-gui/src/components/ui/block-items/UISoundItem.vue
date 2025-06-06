@@ -9,14 +9,13 @@
       {{ name }}
     </UIBlockItemTitle>
     <div class="duration">{{ duration }}</div>
-    <UICornerIcon v-show="selected" type="check" />
+    <slot></slot>
   </UIBlockItem>
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
-import UICornerIcon from './UICornerIcon.vue'
 
 const props = withDefaults(
   defineProps<{

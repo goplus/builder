@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-radio-group-container">
+  <div class="ui-tag-radio-group">
     <slot />
   </div>
 </template>
@@ -31,7 +31,7 @@ provide(updateRadioValueKey, updateValue)
 </script>
 
 <style scoped lang="scss">
-.ui-radio-group-container {
+.ui-tag-radio-group {
   display: flex;
   gap: 12px;
 }

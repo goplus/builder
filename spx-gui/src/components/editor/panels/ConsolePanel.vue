@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { throttle } from 'lodash'
 import dayjs from 'dayjs'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useBottomSticky } from '@/utils/dom'
 import { useI18n } from '@/utils/i18n'
 import type { RuntimeOutput } from '@/models/runtime'
 import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
@@ -13,19 +13,8 @@ const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const runtime = computed(() => editorCtx.runtime)
 
-let isScrolledToBottom = true
-
-const handleScroll = throttle((e: Event) => {
-  const el = e.target as HTMLElement
-  isScrolledToBottom = el.scrollHeight < el.scrollTop + el.clientHeight + 1
-}, 50)
-
-function handleOutput(outputEl: unknown, i: number) {
-  if (i !== runtime.value.outputs.length - 1) return
-  if (!isScrolledToBottom) return
-  if (outputEl == null) return
-  ;(outputEl as HTMLElement).scrollIntoView({ behavior: 'instant' })
-}
+const outputContainerRef = ref<HTMLElement | null>(null)
+useBottomSticky(outputContainerRef)
 
 function humanizeTime(time: number) {
   const d = dayjs(time)
@@ -53,7 +42,7 @@ function getOutputSourceLocationText(output: RuntimeOutput) {
     <UICardHeader>
       {{ $t({ en: 'Console', zh: '控制台' }) }}
     </UICardHeader>
-    <ul class="output-container" @scroll="handleScroll">
+    <ul ref="outputContainerRef" class="output-container">
       <UIEmpty v-if="runtime.outputs.length === 0" size="small">
         <template v-if="runtime.running.mode === 'debug' && runtime.running.initializing">
           {{ $t({ en: 'Initializing...', zh: '初始化中...' }) }}
@@ -62,13 +51,7 @@ function getOutputSourceLocationText(output: RuntimeOutput) {
           {{ $t({ en: 'No output', zh: '无输出' }) }}
         </template>
       </UIEmpty>
-      <li
-        v-for="(output, i) in runtime.outputs"
-        :key="i"
-        :ref="(el) => handleOutput(el, i)"
-        class="output"
-        :class="`kind-${output.kind}`"
-      >
+      <li v-for="(output, i) in runtime.outputs" :key="i" class="output" :class="`kind-${output.kind}`">
         <span class="time">{{ humanizeTime(output.time) }}</span>
         <CodeLink v-if="getOutputSourceLocation(output) != null" class="link" v-bind="getOutputSourceLocation(output)!">
           {{ getOutputSourceLocationText(output) }}

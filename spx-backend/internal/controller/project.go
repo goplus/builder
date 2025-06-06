@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -20,7 +21,7 @@ type ProjectDTO struct {
 	ModelDTO
 
 	Owner         string               `json:"owner"`
-	RemixedFrom   string               `json:"remixedFrom,omitempty"`
+	RemixedFrom   *RemixSource         `json:"remixedFrom,omitempty"`
 	LatestRelease *ProjectReleaseDTO   `json:"latestRelease,omitempty"`
 	Name          string               `json:"name"`
 	Version       int                  `json:"version"`
@@ -37,14 +38,13 @@ type ProjectDTO struct {
 
 // toProjectDTO converts the model project to its DTO.
 func toProjectDTO(mProject model.Project) ProjectDTO {
-	var remixedFrom string
+	var remixedFrom *RemixSource
 	if mProject.RemixedFromRelease != nil {
-		remixedFrom = fmt.Sprintf(
-			"%s/%s/%s",
-			mProject.RemixedFromRelease.Project.Owner.Username,
-			mProject.RemixedFromRelease.Project.Name,
-			mProject.RemixedFromRelease.Name,
-		)
+		remixedFrom = &RemixSource{
+			Owner:   mProject.RemixedFromRelease.Project.Owner.Username,
+			Project: mProject.RemixedFromRelease.Project.Name,
+			Release: &mProject.RemixedFromRelease.Name,
+		}
 	}
 	var latestRelease *ProjectReleaseDTO
 	if mProject.LatestRelease != nil {
@@ -70,27 +70,150 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 	}
 }
 
-var (
-	// projectNameRE is the regular expression for project name.
-	projectNameRE = regexp.MustCompile(`^[\w-]{1,100}$`)
+// projectNameRE is the regular expression for project name.
+var projectNameRE = regexp.MustCompile(`^[\w-]{1,100}$`)
 
-	// projectFullNameRE is the regular expression for project full name.
-	projectFullNameRE = regexp.MustCompile(`^([\w-]{1,100})\/([\w-]{1,100})$`)
-)
+// ProjectFullName holds the full name of a project.
+type ProjectFullName struct{ Owner, Project string }
+
+// ParseProjectFullName parses the project full name from a string.
+func ParseProjectFullName(fullName string) (ProjectFullName, error) {
+	var pfn ProjectFullName
+	return pfn, pfn.UnmarshalText([]byte(fullName))
+}
+
+// String implements [fmt.Stringer].
+func (pfn ProjectFullName) String() string {
+	text, _ := pfn.MarshalText()
+	return string(text)
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (pfn ProjectFullName) MarshalText() ([]byte, error) {
+	if pfn.Owner == "" || pfn.Project == "" {
+		return []byte{}, nil
+	}
+	escapedOwner := url.PathEscape(pfn.Owner)
+	escapedProject := url.PathEscape(pfn.Project)
+	return fmt.Appendf(nil, "%s/%s", escapedOwner, escapedProject), nil
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (pfn *ProjectFullName) UnmarshalText(text []byte) error {
+	parts := strings.Split(string(text), "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid project full name: %s", text)
+	}
+
+	escapedOwner := parts[0]
+	owner, err := url.PathUnescape(escapedOwner)
+	if err != nil {
+		return fmt.Errorf("failed to unescape owner in project full name %q: %w", text, err)
+	}
+
+	escapedProject := parts[1]
+	project, err := url.PathUnescape(escapedProject)
+	if err != nil {
+		return fmt.Errorf("failed to unescape project in project full name %q: %w", text, err)
+	}
+
+	pfn.Owner = owner
+	pfn.Project = project
+	return nil
+}
+
+// IsValid reports whether the project full name is valid.
+func (pfn ProjectFullName) IsValid() bool {
+	if pfn.Owner == "" || pfn.Project == "" {
+		return false
+	}
+	return projectNameRE.MatchString(pfn.Project)
+}
+
+// RemixSource is the source of a remix. It's either a [ProjectFullName] or a
+// [ProjectReleaseFullName] under the hood.
+type RemixSource struct {
+	Owner   string
+	Project string
+	Release *string
+}
+
+// ParseRemixSource parses the remix source from a string.
+func ParseRemixSource(source string) (RemixSource, error) {
+	var rs RemixSource
+	return rs, rs.UnmarshalText([]byte(source))
+}
+
+// String implements [fmt.Stringer].
+func (rs RemixSource) String() string {
+	text, _ := rs.MarshalText()
+	return string(text)
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (rs RemixSource) MarshalText() ([]byte, error) {
+	pfn := ProjectFullName{
+		Owner:   rs.Owner,
+		Project: rs.Project,
+	}
+	if rs.Release != nil {
+		return ProjectReleaseFullName{
+			ProjectFullName: pfn,
+			Release:         *rs.Release,
+		}.MarshalText()
+	}
+	return pfn.MarshalText()
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (rs *RemixSource) UnmarshalText(data []byte) error {
+	if strings.Count(string(data), "/") == 2 {
+		var prfn ProjectReleaseFullName
+		if err := prfn.UnmarshalText(data); err != nil {
+			return err
+		}
+		rs.Owner = prfn.Owner
+		rs.Project = prfn.Project
+		rs.Release = &prfn.Release
+	} else {
+		var pfn ProjectFullName
+		if err := pfn.UnmarshalText(data); err != nil {
+			return err
+		}
+		rs.Owner = pfn.Owner
+		rs.Project = pfn.Project
+	}
+	return nil
+}
+
+// IsValid reports whether the remix source is valid.
+func (rs RemixSource) IsValid() bool {
+	pfn := ProjectFullName{
+		Owner:   rs.Owner,
+		Project: rs.Project,
+	}
+	if rs.Release != nil {
+		return ProjectReleaseFullName{
+			ProjectFullName: pfn,
+			Release:         *rs.Release,
+		}.IsValid()
+	}
+	return pfn.IsValid()
+}
 
 // ensureProject ensures the project exists and the user has access to it.
-func (ctrl *Controller) ensureProject(ctx context.Context, owner, name string, ownedOnly bool) (*model.Project, error) {
+func (ctrl *Controller) ensureProject(ctx context.Context, fullName ProjectFullName, ownedOnly bool) (*model.Project, error) {
 	var mProject model.Project
 	if err := ctrl.db.WithContext(ctx).
 		Preload("Owner").
 		Preload("RemixedFromRelease.Project.Owner").
 		Preload("LatestRelease.Project.Owner").
 		Joins("JOIN user ON user.id = project.owner_id").
-		Where("user.username = ?", owner).
-		Where("project.name = ?", name).
+		Where("user.username = ?", fullName.Owner).
+		Where("project.name = ?", fullName.Project).
 		First(&mProject).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
+		return nil, fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
 	if ownedOnly || mProject.Visibility == model.VisibilityPrivate {
@@ -104,7 +227,7 @@ func (ctrl *Controller) ensureProject(ctx context.Context, owner, name string, o
 
 // CreateProjectParams holds parameters for creating project.
 type CreateProjectParams struct {
-	RemixSource  string               `json:"remixSource"`
+	RemixSource  *RemixSource         `json:"remixSource"`
 	Name         string               `json:"name"`
 	Files        model.FileCollection `json:"files"`
 	Visibility   string               `json:"visibility"`
@@ -115,9 +238,7 @@ type CreateProjectParams struct {
 
 // Validate validates the parameters.
 func (p *CreateProjectParams) Validate() (ok bool, msg string) {
-	if p.RemixSource != "" &&
-		!projectFullNameRE.MatchString(p.RemixSource) &&
-		!projectReleaseFullNameRE.MatchString(p.RemixSource) {
+	if p.RemixSource != nil && !p.RemixSource.IsValid() {
 		return false, "invalid remixSource"
 	}
 	if p.Name == "" {
@@ -148,19 +269,15 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		Instructions: params.Instructions,
 		Thumbnail:    params.Thumbnail,
 	}
-	if params.RemixSource != "" {
-		parts := strings.Split(params.RemixSource, "/")
-		ownerUsername := parts[0]
-		projectName := parts[1]
-
+	if params.RemixSource != nil {
 		var mRemixSourceProject model.Project
 		if err := ctrl.db.WithContext(ctx).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", ownerUsername).
-			Where("project.name = ?", projectName).
+			Where("user.username = ?", params.RemixSource.Owner).
+			Where("project.name = ?", params.RemixSource.Project).
 			First(&mRemixSourceProject).
 			Error; err != nil {
-			return nil, fmt.Errorf("failed to get project %s/%s: %w", ownerUsername, projectName, err)
+			return nil, fmt.Errorf("failed to get project %q: %w", params.RemixSource, err)
 		}
 		if mRemixSourceProject.Visibility == model.VisibilityPrivate {
 			return nil, ErrNotExist
@@ -169,16 +286,15 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		releaseQuery := ctrl.db.WithContext(ctx).
 			Model(&model.ProjectRelease{}).
 			Where("project_id = ?", mRemixSourceProject.ID)
-		if len(parts) == 3 {
-			releaseName := parts[2]
-			releaseQuery = releaseQuery.Where("name = ?", releaseName)
+		if params.RemixSource.Release != nil {
+			releaseQuery = releaseQuery.Where("name = ?", *params.RemixSource.Release)
 		} else {
 			releaseQuery = releaseQuery.Order("created_at DESC") // latest release
 		}
 
 		var mRemixSourceProjectRelease model.ProjectRelease
 		if err := releaseQuery.First(&mRemixSourceProjectRelease).Error; err != nil {
-			return nil, fmt.Errorf("failed to get release of project %s/%s: %w", ownerUsername, projectName, err)
+			return nil, fmt.Errorf("failed to get release of project %q: %w", params.RemixSource, err)
 		}
 
 		mProject.RemixedFromReleaseID = sql.NullInt64{
@@ -287,7 +403,7 @@ type ListProjectsParams struct {
 	// project or project release.
 	//
 	// Applied only if non-nil.
-	RemixedFrom *string
+	RemixedFrom *RemixSource
 
 	// Keyword filters projects by name pattern.
 	//
@@ -344,9 +460,7 @@ func NewListProjectsParams() *ListProjectsParams {
 
 // Validate validates the parameters.
 func (p *ListProjectsParams) Validate() (ok bool, msg string) {
-	if p.RemixedFrom != nil &&
-		!projectFullNameRE.MatchString(*p.RemixedFrom) &&
-		!projectReleaseFullNameRE.MatchString(*p.RemixedFrom) {
+	if p.RemixedFrom != nil && !p.RemixedFrom.IsValid() {
 		return false, "invalid remixedFrom"
 	}
 	if p.Visibility != nil && model.ParseVisibility(*p.Visibility).String() != *p.Visibility {
@@ -382,18 +496,14 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
 	}
 	if params.RemixedFrom != nil {
-		parts := strings.Split(*params.RemixedFrom, "/")
-		ownerUsername := parts[0]
-		projectName := parts[1]
 		query = query.
 			Joins("JOIN project_release ON project_release.id = project.remixed_from_release_id").
 			Joins("JOIN project AS remixed_from_project ON remixed_from_project.id = project_release.project_id").
 			Joins("JOIN user AS remixed_from_user ON remixed_from_user.id = remixed_from_project.owner_id").
-			Where("remixed_from_user.username = ?", ownerUsername).
-			Where("remixed_from_project.name = ?", projectName)
-		if len(parts) == 3 {
-			releaseName := parts[2]
-			query = query.Where("project_release.name = ?", releaseName)
+			Where("remixed_from_user.username = ?", params.RemixedFrom.Owner).
+			Where("remixed_from_project.name = ?", params.RemixedFrom.Project)
+		if params.RemixedFrom.Release != nil {
+			query = query.Where("project_release.name = ?", *params.RemixedFrom.Release)
 		}
 	}
 	if params.Keyword != nil {
@@ -495,8 +605,8 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 }
 
 // GetProject gets project by owner and name.
-func (ctrl *Controller) GetProject(ctx context.Context, owner, name string) (*ProjectDTO, error) {
-	mProject, err := ctrl.ensureProject(ctx, owner, name, false)
+func (ctrl *Controller) GetProject(ctx context.Context, fullName ProjectFullName) (*ProjectDTO, error) {
+	mProject, err := ctrl.ensureProject(ctx, fullName, false)
 	if err != nil {
 		return nil, err
 	}
@@ -543,13 +653,13 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 }
 
 // UpdateProject updates a project.
-func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, params *UpdateProjectParams) (*ProjectDTO, error) {
+func (ctrl *Controller) UpdateProject(ctx context.Context, fullName ProjectFullName, params *UpdateProjectParams) (*ProjectDTO, error) {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return nil, ErrUnauthorized
 	}
 
-	mProject, err := ctrl.ensureProject(ctx, owner, name, true)
+	mProject, err := ctrl.ensureProject(ctx, fullName, true)
 	if err != nil {
 		return nil, err
 	}
@@ -587,7 +697,7 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 
 			return nil
 		}); err != nil {
-			return nil, fmt.Errorf("failed to update project: %w", err)
+			return nil, fmt.Errorf("failed to update project %q: %w", fullName, err)
 		}
 	}
 	projectDTO := toProjectDTO(*mProject)
@@ -595,13 +705,13 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 }
 
 // DeleteProject deletes a project.
-func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) error {
+func (ctrl *Controller) DeleteProject(ctx context.Context, fullName ProjectFullName) error {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return ErrUnauthorized
 	}
 
-	mProject, err := ctrl.ensureProject(ctx, owner, name, true)
+	mProject, err := ctrl.ensureProject(ctx, fullName, true)
 	if err != nil {
 		return err
 	}
@@ -681,13 +791,13 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to delete project: %w", err)
+		return fmt.Errorf("failed to delete project %q: %w", fullName, err)
 	}
 	return nil
 }
 
 // RecordProjectView records a view for the specified project as the authenticated user.
-func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name string) error {
+func (ctrl *Controller) RecordProjectView(ctx context.Context, fullName ProjectFullName) error {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return ErrUnauthorized
@@ -696,11 +806,11 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 	var mProject model.Project
 	if err := ctrl.db.WithContext(ctx).
 		Joins("JOIN user ON user.id = project.owner_id").
-		Where("user.username = ?", owner).
-		Where("project.name = ?", name).
+		Where("user.username = ?", fullName.Owner).
+		Where("project.name = ?", fullName.Project).
 		First(&mProject).
 		Error; err != nil {
-		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
+		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
 	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
@@ -732,13 +842,13 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to record project view: %w", err)
+		return fmt.Errorf("failed to record view for project %q: %w", fullName, err)
 	}
 	return nil
 }
 
 // LikeProject likes the specified project as the authenticated user.
-func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) error {
+func (ctrl *Controller) LikeProject(ctx context.Context, fullName ProjectFullName) error {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return ErrUnauthorized
@@ -747,11 +857,11 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 	var mProject model.Project
 	if err := ctrl.db.WithContext(ctx).
 		Joins("JOIN user ON user.id = project.owner_id").
-		Where("user.username = ?", owner).
-		Where("project.name = ?", name).
+		Where("user.username = ?", fullName.Owner).
+		Where("project.name = ?", fullName.Project).
 		First(&mProject).
 		Error; err != nil {
-		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
+		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
 	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
@@ -779,13 +889,13 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to like project: %w", err)
+		return fmt.Errorf("failed to like project %q: %w", fullName, err)
 	}
 	return nil
 }
 
 // HasLikedProject checks if the authenticated user has liked the specified project.
-func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string) (bool, error) {
+func (ctrl *Controller) HasLikedProject(ctx context.Context, fullName ProjectFullName) (bool, error) {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return false, nil
@@ -794,11 +904,11 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string)
 	var mProject model.Project
 	if err := ctrl.db.WithContext(ctx).
 		Joins("JOIN user ON user.id = project.owner_id").
-		Where("user.username = ?", owner).
-		Where("project.name = ?", name).
+		Where("user.username = ?", fullName.Owner).
+		Where("project.name = ?", fullName.Project).
 		First(&mProject).
 		Error; err != nil {
-		return false, fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
+		return false, fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
 	if err := ctrl.db.WithContext(ctx).
@@ -811,13 +921,13 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check if user %s has liked project %s/%s: %w", mAuthedUser.Username, owner, name, err)
+		return false, fmt.Errorf("failed to check if user %q has liked project %q: %w", mAuthedUser.Username, fullName, err)
 	}
 	return true, nil
 }
 
 // UnlikeProject unlikes the specified project as the authenticated user.
-func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) error {
+func (ctrl *Controller) UnlikeProject(ctx context.Context, fullName ProjectFullName) error {
 	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
 	if !isAuthed {
 		return ErrUnauthorized
@@ -826,11 +936,11 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) e
 	var mProject model.Project
 	if err := ctrl.db.WithContext(ctx).
 		Joins("JOIN user ON user.id = project.owner_id").
-		Where("user.username = ?", owner).
-		Where("project.name = ?", name).
+		Where("user.username = ?", fullName.Owner).
+		Where("project.name = ?", fullName.Project).
 		First(&mProject).
 		Error; err != nil {
-		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
+		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
 	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
@@ -858,7 +968,7 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) e
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to unlike project: %w", err)
+		return fmt.Errorf("failed to unlike project %q: %w", fullName, err)
 	}
 	return nil
 }

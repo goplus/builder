@@ -1,29 +1,34 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
-import { UITooltip } from '@/components/ui'
-import { DefinitionKind } from '../../common'
+import { UIDropdown } from '@/components/ui'
+import { type Action, isBlockDefinitionKind } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import { ChatExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
+import HoverCard from '../hover/HoverCard.vue'
+import HoverCardContent from '../hover/HoverCardContent.vue'
 import type { APIReferenceItem } from '.'
 
 const props = defineProps<{
   item: APIReferenceItem
+  interactionDisabled: boolean
 }>()
 
-const codeEditorCtx = useCodeEditorUICtx()
-
-const blockDefinitionKinds = [DefinitionKind.Command, DefinitionKind.Listen, DefinitionKind.Statement]
+const codeEditorUICtx = useCodeEditorUICtx()
 
 const handleInsert = useMessageHandle(
   () => {
-    if (blockDefinitionKinds.includes(props.item.kind)) {
-      codeEditorCtx.ui.insertBlockSnippet(props.item.insertText)
-    } else {
-      codeEditorCtx.ui.insertInlineSnippet(props.item.insertText)
-    }
+    const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
+    // Now we have feature InputHelper for APIReferenceItem insertion.
+    // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
+    // so we transform snippet to text and insert it directly.
+    const text = parsed.toString()
+    if (isBlockDefinitionKind(props.item.kind)) codeEditorUICtx.ui.insertBlockText(text)
+    else codeEditorUICtx.ui.insertInlineText(text)
   },
   {
     en: 'Failed to insert',
@@ -31,96 +36,95 @@ const handleInsert = useMessageHandle(
   }
 ).fn
 
-const handleExplain = useMessageHandle(
-  () =>
-    codeEditorCtx.ui.executeCommand(builtInCommandCopilotExplain, {
-      kind: ChatExplainKind.Definition,
-      overview: props.item.overview,
-      definition: props.item.definition
-    }),
-  { en: 'Failed to explain', zh: '解释失败' }
-).fn
+const parsed = computed(() => {
+  const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
+  const overview = parsed.toString().replace(/{\n\s*\n}/g, '{}') // compress lambda expression
+  const inlayHints: lsp.InlayHint[] = []
+  ;(props.item.insertSnippetParameterHints ?? []).forEach((label, i) => {
+    const placeholder = parsed.placeholders[i]
+    const offset = parsed.offset(placeholder)
+    inlayHints.push({
+      label,
+      position: { line: 0, character: offset },
+      kind: lsp.InlayHintKind.Parameter
+    })
+  })
+  const inlayHintsStr = JSON.stringify(inlayHints)
+  return { overview, inlayHints: inlayHintsStr }
+})
+
+const hoverDropdown = ref<InstanceType<typeof UIDropdown> | null>(null)
+
+const hoverCardActions = computed<Action[]>(() => {
+  return [
+    {
+      command: builtInCommandCopilotExplain,
+      arguments: [
+        {
+          kind: ChatExplainKind.Definition,
+          overview: props.item.overview,
+          definition: props.item.definition
+        }
+      ]
+    }
+  ]
+})
+
+function handlePostHoverAction() {
+  // TODO: proper typing for UIDropdown exposed
+  ;(hoverDropdown.value as any)?.setVisible(false)
+}
 </script>
 
 <template>
-  <li class="api-reference-item" @click="handleInsert">
-    <DefinitionOverviewWrapper class="overview" :kind="item.kind">{{ item.overview }}</DefinitionOverviewWrapper>
-    <DefinitionDetailWrapper>
-      <MarkdownView v-bind="item.detail" />
-    </DefinitionDetailWrapper>
-    <UITooltip>
-      <template #trigger>
-        <button class="explain-btn" type="button" @click.stop="handleExplain">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M6.88865 2.89368C6.5761 2.97182 6.38607 3.28853 6.46421 3.60108C6.54234 3.91362 6.85906 4.10365 7.1716 4.02551L6.88865 2.89368ZM6.12299 11.6768L6.24316 11.106H6.24316L6.12299 11.6768ZM3.94284 11.2178L4.06301 10.647L3.94284 11.2178ZM10.9364 7.07624C10.9364 7.3984 11.1976 7.65957 11.5197 7.65957C11.8419 7.65957 12.1031 7.3984 12.1031 7.07624H10.9364ZM8.08563 12.1367C8.40089 12.0703 8.60265 11.7609 8.53628 11.4457C8.46991 11.1304 8.16054 10.9287 7.84529 10.995L8.08563 12.1367ZM7.43841 11.6768L7.31824 11.106H7.31824L7.43841 11.6768ZM6.61528 11.7647L6.66364 11.1833H6.66363L6.61528 11.7647ZM6.94612 11.7647L6.89777 11.1833H6.89776L6.94612 11.7647ZM2.16509 10.1984L1.62986 10.4304H1.62987L2.16509 10.1984ZM2.67294 10.8244L2.33567 11.3003L2.33567 11.3003L2.67294 10.8244ZM10.4651 2.82412L10.2929 3.38144V3.38144L10.4651 2.82412ZM11.3031 3.47843L11.802 3.17616V3.17616L11.3031 3.47843ZM2.04244 4.38249L2.62547 4.40141L2.04244 4.38249ZM3.79216 3.55126C4.10741 3.61763 4.41678 3.41587 4.48315 3.10061C4.54952 2.78536 4.34776 2.47599 4.0325 2.40962L3.79216 3.55126ZM3.79885 2.95736L3.69725 3.53177H3.69725L3.79885 2.95736ZM6.44679 5.12592C6.44679 5.44809 6.70796 5.70926 7.03012 5.70926C7.35229 5.70926 7.61346 5.44809 7.61346 5.12592H6.44679ZM6.3706 2.91395L6.69686 2.43038L6.3706 2.91395ZM5.59275 2.38913L5.26649 2.87269L5.59275 2.38913ZM4.50339 10.0357L4.64148 9.46893L4.64148 9.46893L4.50339 10.0357ZM4.64895 10.0712L4.51086 10.6379H4.51086L4.64895 10.0712ZM6.14591 12.0387C6.26929 12.3363 6.61057 12.4775 6.90817 12.3541C7.20578 12.2308 7.34701 11.8895 7.22363 11.5919L6.14591 12.0387ZM2.62499 8.87473V4.4983H1.45832V8.87473H2.62499ZM7.1716 4.02551L8.68602 3.64691L8.40306 2.51508L6.88865 2.89368L7.1716 4.02551ZM6.24316 11.106L4.06301 10.647L3.82266 11.7887L6.00282 12.2476L6.24316 11.106ZM10.9364 5.40396V7.07624H12.1031V5.40396H10.9364ZM7.84529 10.995L7.31824 11.106L7.55859 12.2476L8.08563 12.1367L7.84529 10.995ZM6.00281 12.2476C6.23482 12.2965 6.39847 12.332 6.56692 12.346L6.66363 11.1833C6.5842 11.1767 6.50229 11.1605 6.24316 11.106L6.00281 12.2476ZM7.31824 11.106C7.05911 11.1605 6.9772 11.1767 6.89777 11.1833L6.99448 12.346C7.16293 12.332 7.32659 12.2965 7.55859 12.2476L7.31824 11.106ZM6.56692 12.346C6.70919 12.3578 6.85221 12.3578 6.99449 12.346L6.89776 11.1833C6.81986 11.1898 6.74155 11.1898 6.66364 11.1833L6.56692 12.346ZM1.45832 8.87473C1.45832 9.21251 1.45795 9.49732 1.47534 9.73253C1.49327 9.97508 1.53207 10.2048 1.62986 10.4304L2.70031 9.96647C2.67467 9.90732 2.65176 9.8215 2.63883 9.64654C2.62536 9.46424 2.62499 9.22959 2.62499 8.87473H1.45832ZM4.06301 10.647C3.71577 10.5739 3.48622 10.5252 3.31061 10.4745C3.14206 10.4258 3.0628 10.3857 3.01021 10.3484L2.33567 11.3003C2.53632 11.4425 2.75311 11.5278 2.98677 11.5953C3.21335 11.6608 3.49213 11.7191 3.82266 11.7887L4.06301 10.647ZM1.62987 10.4304C1.78115 10.7795 2.02528 11.0804 2.33567 11.3003L3.01021 10.3484C2.87392 10.2518 2.76673 10.1197 2.70031 9.96647L1.62987 10.4304ZM8.68602 3.64691C9.20347 3.51755 9.55443 3.43036 9.82643 3.38738C10.0941 3.34507 10.2176 3.35816 10.2929 3.38144L10.6374 2.26679C10.3133 2.16664 9.98354 2.1814 9.64431 2.23501C9.3094 2.28794 8.89975 2.39091 8.40306 2.51508L8.68602 3.64691ZM12.1031 5.40396C12.1031 4.89199 12.1036 4.4696 12.0737 4.13184C12.0435 3.78974 11.9778 3.46624 11.802 3.17616L10.8042 3.78071C10.8451 3.84813 10.8877 3.96471 10.9116 4.23466C10.9359 4.50896 10.9364 4.87058 10.9364 5.40396H12.1031ZM10.2929 3.38144C10.5064 3.44745 10.6884 3.58951 10.8042 3.78071L11.802 3.17616C11.5382 2.7407 11.1238 2.41714 10.6374 2.26679L10.2929 3.38144ZM2.62499 4.4983C2.62499 4.43233 2.62507 4.41375 2.62547 4.40141L1.45942 4.36358C1.45824 4.39975 1.45832 4.44221 1.45832 4.4983H2.62499ZM4.0325 2.40962C3.97762 2.39807 3.93609 2.38924 3.90045 2.38294L3.69725 3.53177C3.70941 3.53392 3.7276 3.53767 3.79216 3.55126L4.0325 2.40962ZM2.62547 4.40141C2.6435 3.8457 3.14975 3.43493 3.69725 3.53177L3.90045 2.38294C2.65349 2.16238 1.50048 3.09792 1.45942 4.36358L2.62547 4.40141ZM7.61346 5.12592V4.15452H6.44679V5.12592H7.61346ZM6.69686 2.43038L5.91901 1.90557L5.26649 2.87269L6.04434 3.39751L6.69686 2.43038ZM3.45371 3.21618V9.44208H4.62038V3.21618H3.45371ZM4.3653 10.6024L4.51086 10.6379L4.78704 9.5044L4.64148 9.46893L4.3653 10.6024ZM4.51086 10.6379C5.24801 10.8175 5.85534 11.3378 6.14591 12.0387L7.22363 11.5919C6.79062 10.5474 5.88555 9.77204 4.78703 9.5044L4.51086 10.6379ZM3.45371 9.44208C3.45371 9.99278 3.83026 10.4721 4.36531 10.6024L4.64148 9.46893C4.62909 9.46592 4.62038 9.45482 4.62038 9.44208H3.45371ZM5.91901 1.90557C4.86893 1.19708 3.45371 1.94945 3.45371 3.21618H4.62038C4.62038 2.88419 4.99128 2.68701 5.26649 2.87269L5.91901 1.90557ZM7.61346 4.15452C7.61346 3.46319 7.26995 2.81705 6.69686 2.43038L6.04434 3.39751C6.29597 3.56728 6.44679 3.85098 6.44679 4.15452H7.61346Z"
-              fill="#57606A"
-            />
-            <path
-              d="M9.94598 7.86012C10.0214 7.49096 10.5489 7.49096 10.6243 7.86012C10.791 8.67544 11.4282 9.3126 12.2435 9.47925C12.6126 9.5547 12.6126 10.0822 12.2435 10.1576C11.4282 10.3243 10.791 10.9614 10.6243 11.7767C10.5489 12.1459 10.0214 12.1459 9.94598 11.7767C9.77934 10.9614 9.14218 10.3243 8.32686 10.1576C7.9577 10.0822 7.9577 9.5547 8.32685 9.47925C9.14218 9.3126 9.77934 8.67544 9.94598 7.86012Z"
-              fill="#57606A"
-              stroke="#57606A"
-              stroke-width="0.157866"
-            />
-          </svg>
-        </button>
-      </template>
-      {{
-        $t({
-          en: 'Explain',
-          zh: '解释'
-        })
-      }}
-    </UITooltip>
-  </li>
+  <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
+    <template #trigger>
+      <li class="api-reference-item" @click="handleInsert">
+        <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
+          parsed.overview
+        }}</DefinitionOverviewWrapper>
+      </li>
+    </template>
+    <HoverCard :actions="hoverCardActions" @action="handlePostHoverAction">
+      <HoverCardContent>
+        <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
+          parsed.overview
+        }}</DefinitionOverviewWrapper>
+        <DefinitionDetailWrapper>
+          <MarkdownView v-bind="item.detail" />
+        </DefinitionDetailWrapper>
+      </HoverCardContent>
+    </HoverCard>
+  </UIDropdown>
 </template>
 
 <style lang="scss" scoped>
 .api-reference-item {
-  padding: 6px 8px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: stretch;
-  gap: 4px;
+  padding: 1px 7px;
+  align-self: flex-start;
+  max-width: 100%;
   border-radius: var(--ui-border-radius-1);
+  border: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
   transition: 0.2s;
   cursor: pointer;
 
   &:hover {
-    background-color: var(--ui-color-grey-300);
-
-    .explain-btn {
-      visibility: visible;
-    }
+    background: var(--ui-color-grey-300);
+    box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
   }
 }
 
 .overview {
   word-break: break-all;
   padding: 2px 0 1px;
-}
 
-.explain-btn {
-  position: absolute;
-  right: 8px;
-  top: 6px;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  border: 1px solid var(--ui-color-grey-500);
-  background-color: var(--ui-color-grey-100);
-  transition: 0.2s;
-  cursor: pointer;
-  visibility: hidden;
-
-  &:hover {
-    background-color: var(--ui-color-grey-400);
-    border-color: var(--ui-color-grey-400);
+  :deep(> code) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--ui-color-hint-2);
   }
 }
 </style>

@@ -8,67 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFmtCodeParamsValidate(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		params := &FmtCodeParams{
-			Body: "package main\n\nfunc main() {}\n",
-		}
-		ok, msg := params.Validate()
-		assert.True(t, ok)
-		assert.Empty(t, msg)
-	})
-
-	t.Run("EmptyBody", func(t *testing.T) {
-		params := &FmtCodeParams{}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "missing body", msg)
-	})
-}
-
-func TestControllerFmtCode(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		ctrl, _, closeDB := newTestController(t)
-		closeDB()
-
-		formattedCode, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
-			Body: "package main\n\nfunc main() {}\n",
-		})
-		require.NoError(t, err)
-		require.NotNil(t, formattedCode)
-		require.NotEmpty(t, formattedCode.Body)
-		require.Nil(t, formattedCode.Error)
-		assert.Equal(t, "\n", formattedCode.Body)
-	})
-
-	t.Run("FormatError", func(t *testing.T) {
-		ctrl, _, closeDB := newTestController(t)
-		closeDB()
-
-		formattedCode, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
-			Body: "package main\n\nfunc main() {",
-		})
-		require.NoError(t, err)
-		require.NotNil(t, formattedCode)
-		require.Empty(t, formattedCode.Body)
-		require.NotNil(t, formattedCode.Error)
-		assert.Equal(t, 3, formattedCode.Error.Line)
-		assert.Equal(t, 15, formattedCode.Error.Column)
-		assert.Equal(t, "expected '}', found 'EOF'", formattedCode.Error.Msg)
-	})
-
-	t.Run("InvalidBody", func(t *testing.T) {
-		ctrl, _, closeDB := newTestController(t)
-		closeDB()
-
-		_, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
-			Body: "-- prog.go --\n-- prog.go --",
-		})
-		require.Error(t, err)
-		assert.EqualError(t, err, `duplicate file name "prog.go"`)
-	})
-}
-
 func TestControllerGetUpInfo(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
@@ -106,7 +45,7 @@ func TestControllerMakeFileURLs(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, fileURLs)
-		assert.Len(t, fileURLs.ObjectURLs, 1)
+		require.Len(t, fileURLs.ObjectURLs, 1)
 	})
 
 	t.Run("EmptyObjects", func(t *testing.T) {

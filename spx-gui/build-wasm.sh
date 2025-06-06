@@ -1,12 +1,16 @@
 #!/bin/bash
 set -e
 
-echo Run this script from 'spx-gui' directory
+echo "Run this script from 'spx-gui' directory"
 
-cd ../tools/ispx
-source ./build.sh
-cp ./main.wasm ../../spx-gui/src/assets/ispx/main.wasm
+# Copy Go wasm_exec.js
+cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" src/assets/wasm/wasm_exec.js
 
-cd ../spxls
-source ./build.sh
-cp ./spxls.wasm ../../spx-gui/src/assets/spxls.wasm
+# Build and copy ispx.wasm
+( cd ../tools/ispx && ./build.sh )
+cp ../tools/ispx/ispx.wasm src/assets/wasm/ispx.wasm
+
+# Build and copy spxls.wasm and spxls-pkgdata.zip
+( cd ../tools/spxls && ./build.sh )
+cp ../tools/spxls/spxls.wasm src/assets/wasm/spxls.wasm
+cp ../tools/spxls/spxls-pkgdata.zip src/assets/wasm/spxls-pkgdata.zip

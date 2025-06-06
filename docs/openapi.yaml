@@ -897,6 +897,17 @@ paths:
                         content:
                           type: text
                           text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
 
       responses:
         "201":
@@ -910,6 +921,113 @@ paths:
                     content:
                       type: text
                       text: Hello!
+
+  /copilot/stream/message:
+    post:
+      tags:
+        - Copilot
+      summary: Generate a stream message
+      description: Generate a stream message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
+      responses:
+        "201":
+          description: Stream Message successfully generated.
+          content:
+            application/stream:
+
+  /workflow/stream/message:
+    post:
+      tags:
+        - Workflow
+      summary: Generate a stream message from workflow
+      description: Generate a stream message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+                tools:
+                  type: array
+                  description: Use Mcp tools.
+                  items:
+                    $ref: "#/components/schemas/CopilotTool"
+                  examples:
+                    - - type: function
+                        function:
+                          name: create_project
+                          description: Create a new project.
+                          parameters: {"name": "My Project"}
+                workflow:
+                  $ref: "#/components/schemas/Workflow"
+                  description: env of the workflow.
+      responses:
+        "201":
+          description: Stream Message successfully generated.
+          content:
+            application/stream:
+
+  /ai/interaction/turn:
+    post:
+      tags:
+        - AI Interaction
+      summary: Perform an AI interaction turn
+      description: Send a message and context to the AI, receive a response including text and an optional command.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIInteractionRequest"
+      responses:
+        "200":
+          description: Successful AI interaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIInteractionResponse"
 
   /util/upinfo:
     get:
@@ -961,56 +1079,6 @@ paths:
                     examples:
                       - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
                     description: Map from universal URLs to signed web URLs for the objects.
-
-  /util/fmtcode:
-    post:
-      tags:
-        - Utils
-      summary: Format code (deprecated)
-      description: Format the provided code and optionally fix import statements. This API is deprecated; use `spxls` (`textDocument/formatting`) instead.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - body
-              properties:
-                body:
-                  type: string
-                  description: Code body to format.
-                fixImports:
-                  type: boolean
-                  default: false
-                  description: Whether to fix import statements during formatting.
-      responses:
-        "201":
-          description: Successfully formatted the code.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  body:
-                    type: string
-                    description: Formatted code body.
-                  error:
-                    type: object
-                    properties:
-                      line:
-                        type: integer
-                        format: int32
-                        description: Line number where the error occurred.
-                      column:
-                        type: integer
-                        format: int32
-                        description: Column number where the error occurred.
-                      msg:
-                        type: string
-                        description: Message describing the formatting error.
-                    description: Details of any formatting errors encountered.
 
 components:
   securitySchemes:
@@ -1295,6 +1363,177 @@ components:
         visibility:
           $ref: "#/components/schemas/Visibility"
 
+    AIInteractionRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The core user input message.
+          examples:
+            - What should I do next?
+        context:
+          type: object
+          additionalProperties: true
+          description: Specific context for the current user input.
+          examples:
+            - position: [10, 20]
+              health: 80
+        role:
+          type: string
+          description: Persona the AI should adopt.
+          examples:
+            - Guide
+        roleContext:
+          type: object
+          additionalProperties: true
+          description: Additional context specific to the role.
+          examples:
+            - style: friendly
+              knowledgeScope: game rules
+        knowledgeBase:
+          type: object
+          additionalProperties: true
+          description: Background knowledge provided to the AI.
+          examples:
+            - worldName: TestWorld
+              gravity: 9.8
+        commandSpecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionCommandSpec"
+          description: Commands the AI is allowed to call.
+        previousCommandResult:
+          $ref: "#/components/schemas/AIInteractionCommandResult"
+          nullable: true
+          description: Outcome of the command executed in the previous turn.
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionTurn"
+          description: Record of previous interactions in this session.
+        continuationTurn:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+          description: |
+            Current turn number in a multi-turn interaction.
+
+            A value of 0 means this is the initial turn from user input. Values > 0 indicate continuation turns where
+            the AI should decide next steps based on previous command results.
+          examples:
+            - 0
+
+    AIInteractionResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Textual part of the AI's response.
+          examples:
+            - Okay, I suggest moving to (1, 1).
+        commandName:
+          type: string
+          description: Name of the command the AI wants to execute.
+          examples:
+            - MakeMove
+        commandArgs:
+          type: object
+          additionalProperties: true
+          description: Arguments for the command to be executed.
+          examples:
+            - Row: 1
+              Col: 1
+              Result: ""
+
+    AIInteractionTurn:
+      type: object
+      properties:
+        requestContent:
+          type: string
+          description: User's input text for the turn.
+          examples:
+            - It's your turn.
+        responseText:
+          type: string
+          description: AI's text output for the turn.
+          examples:
+            - Okay, let me see...
+        responseCommandName:
+          type: string
+          description: Command requested by the AI in the response.
+          examples:
+            - MakeMove
+        responseCommandArgs:
+          type: object
+          additionalProperties: true
+          description: Arguments for the command requested by the AI.
+          examples:
+            - Row: 1
+              Col: 1
+              Result: ""
+        executedCommandResult:
+          $ref: "#/components/schemas/AIInteractionCommandResult"
+          nullable: true
+          description: Result of executing the command requested in the response.
+
+    AIInteractionCommandSpec:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Unique identifier for the command.
+          examples:
+            - Move
+        description:
+          type: string
+          description: Explanation of what the command does.
+          examples:
+            - Move the character
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionCommandParamSpec"
+          description: Parameters the command accepts.
+
+    AIInteractionCommandParamSpec:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Parameter name.
+          examples:
+            - Direction
+        type:
+          type: string
+          description: Go type name of the parameter.
+          examples:
+            - string
+        description:
+          type: string
+          description: Purpose of the parameter.
+          examples:
+            - "Direction to move: up, down, left, right"
+
+    AIInteractionCommandResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the command execution was successful.
+          examples:
+            - true
+        errorMessage:
+          type: string
+          description: Error details if execution failed.
+          examples:
+            - Invalid move parameters
+        isBreak:
+          type: boolean
+          description: Indicates if the interaction should be terminated.
+          examples:
+            - false
+
     UpInfo:
       type: object
       properties:
@@ -1366,6 +1605,45 @@ components:
               description: Text content of the message.
               examples:
                 - Hello!
+
+    CopilotTool:
+      type: object
+      properties:
+        type:
+          type: string
+          description: type of the tool.
+          enum:
+            - function
+          examples:
+            - function
+        function:
+          type: object
+          properties:
+            name:
+              type: string
+              description: name of the function.
+              enum:
+                - create_project
+              examples:
+                - create_project
+            description:
+              type: string
+              description: description of the function.
+              examples:
+                - create project 
+            parameters:
+              type: object
+              description: parameters of the function with json raw.
+              examples:
+                - {"name": "NiuXiaoQi"}
+    Workflow:
+      type: object
+      properties:
+        env:
+          type: object
+          description: env of the workflow.
+          examples:
+            - {"reference_id": "275"}
 
   parameters:
     SortOrder:

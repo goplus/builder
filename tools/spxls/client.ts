@@ -1,4 +1,5 @@
 import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
+import { isDeveloperMode } from '@/utils/developer-mode'
 
 /**
  * Client wrapper for the spxls.
@@ -91,7 +92,7 @@ export class Spxlc {
       }
     }).then(
       result => {
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || isDeveloperMode.value) {
           const time = performance.now() - sendAt
           if (time > 20) console.warn(`[LSP] ${method} took ${Math.round(time)}ms, params:`, params)
         }

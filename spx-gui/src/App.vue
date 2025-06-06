@@ -2,7 +2,9 @@
   <UIConfigProvider :config="config">
     <UIMessageProvider>
       <UIModalProvider>
-        <RouterView />
+        <CopilotProvider>
+          <RouterView />
+        </CopilotProvider>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
@@ -11,6 +13,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
+import CopilotProvider from '@/components/copilot/CopilotProvider.vue'
 import { useI18n } from './utils/i18n'
 
 const { t } = useI18n()

@@ -3,8 +3,8 @@ package controller
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -16,10 +16,320 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func TestParseProjectReleaseFullName(t *testing.T) {
+	got, err := ParseProjectReleaseFullName("user/project/v1.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, "user", got.Owner)
+	assert.Equal(t, "project", got.Project)
+	assert.Equal(t, "v1.0.0", got.Release)
+}
+
+func TestProjectReleaseFullNameString(t *testing.T) {
+	prfn := ProjectReleaseFullName{
+		ProjectFullName: ProjectFullName{
+			Owner:   "user",
+			Project: "project",
+		},
+		Release: "v1.0.0",
+	}
+	got := prfn.String()
+	assert.Equal(t, "user/project/v1.0.0", got)
+}
+
+func TestProjectReleaseFullNameMarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		prfn ProjectReleaseFullName
+		want string
+	}{
+		{
+			name: "normal case",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "user",
+					Project: "project",
+				},
+				Release: "v1.0.0",
+			},
+			want: "user/project/v1.0.0",
+		},
+		{
+			name: "with special characters",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "user/name",
+					Project: "project-name",
+				},
+				Release: "v1.0.0-beta",
+			},
+			want: "user%2Fname/project-name/v1.0.0-beta",
+		},
+		{
+			name: "with complex version",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "v1.0.0-rc.1+build.123",
+			},
+			want: "owner/project/v1.0.0-rc.1+build.123",
+		},
+		{
+			name: "empty owner",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "",
+					Project: "project",
+				},
+				Release: "v1.0.0",
+			},
+			want: "",
+		},
+		{
+			name: "empty project",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "",
+				},
+				Release: "v1.0.0",
+			},
+			want: "",
+		},
+		{
+			name: "empty release",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "",
+			},
+			want: "",
+		},
+		{
+			name: "empty",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "",
+					Project: "",
+				},
+				Release: "",
+			},
+			want: "",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.prfn.MarshalText()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestProjectReleaseFullNameUnmarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		text    string
+		want    ProjectReleaseFullName
+		wantErr bool
+	}{
+		{
+			name: "normal case",
+			text: "user/project/v1.0.0",
+			want: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "user",
+					Project: "project",
+				},
+				Release: "v1.0.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "with escaped characters",
+			text: "user%2Fname/project-name/v1.0.0-beta",
+			want: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "user/name",
+					Project: "project-name",
+				},
+				Release: "v1.0.0-beta",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "invalid format - missing parts",
+			text:    "user/project",
+			want:    ProjectReleaseFullName{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid format - too many parts",
+			text:    "user/name/project/v1.0.0",
+			want:    ProjectReleaseFullName{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid escaping",
+			text:    "user%2/project/v1.0.0",
+			want:    ProjectReleaseFullName{},
+			wantErr: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var got ProjectReleaseFullName
+			err := got.UnmarshalText([]byte(tt.text))
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestProjectReleaseFullNameIsValid(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		prfn ProjectReleaseFullName
+		want bool
+	}{
+		{
+			name: "valid",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "v1.0.0",
+			},
+			want: true,
+		},
+		{
+			name: "valid with prerelease",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "v1.0.0-alpha",
+			},
+			want: true,
+		},
+		{
+			name: "valid with complex version",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "v1.0.0-beta.1+build.123",
+			},
+			want: true,
+		},
+		{
+			name: "invalid release format - missing v prefix",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "1.0.0",
+			},
+			want: false,
+		},
+		{
+			name: "invalid release format - bad semver",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "vabc",
+			},
+			want: false,
+		},
+		{
+			name: "project with invalid characters",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project/name",
+				},
+				Release: "v1.0.0",
+			},
+			want: false,
+		},
+		{
+			name: "project too long",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: strings.Repeat("a", 101),
+				},
+				Release: "v1.0.0",
+			},
+			want: false,
+		},
+		{
+			name: "empty owner",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "",
+					Project: "project",
+				},
+				Release: "v1.0.0",
+			},
+			want: false,
+		},
+		{
+			name: "empty project",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "",
+				},
+				Release: "v1.0.0",
+			},
+			want: false,
+		},
+		{
+			name: "empty release",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "owner",
+					Project: "project",
+				},
+				Release: "",
+			},
+			want: false,
+		},
+		{
+			name: "empty",
+			prfn: ProjectReleaseFullName{
+				ProjectFullName: ProjectFullName{
+					Owner:   "",
+					Project: "",
+				},
+				Release: "",
+			},
+			want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.prfn.IsValid()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestCreateProjectReleaseParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: "user/project",
+			ProjectFullName: ProjectFullName{Owner: "user", Project: "project"},
 			Name:            "v1.0.0",
 			Description:     "First release",
 			Thumbnail:       "http://example.com/thumbnail.jpg",
@@ -31,7 +341,7 @@ func TestCreateProjectReleaseParams(t *testing.T) {
 
 	t.Run("InvalidProjectFullName", func(t *testing.T) {
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: "invalid/project/name",
+			ProjectFullName: ProjectFullName{},
 			Name:            "v1.0.0",
 			Description:     "First release",
 		}
@@ -42,7 +352,7 @@ func TestCreateProjectReleaseParams(t *testing.T) {
 
 	t.Run("InvalidReleaseName", func(t *testing.T) {
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: "user/project",
+			ProjectFullName: ProjectFullName{Owner: "user", Project: "project"},
 			Name:            "invalid-version",
 			Description:     "First release",
 		}
@@ -53,7 +363,7 @@ func TestCreateProjectReleaseParams(t *testing.T) {
 
 	t.Run("MissingDescription", func(t *testing.T) {
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: "user/project",
+			ProjectFullName: ProjectFullName{Owner: "user", Project: "project"},
 			Name:            "v1.0.0",
 		}
 		ok, msg := params.Validate()
@@ -96,7 +406,7 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 		}
 
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: fmt.Sprintf("%s/%s", mAuthedUser.Username, mProject.Name),
+			ProjectFullName: ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name},
 			Name:            "v1.0.0",
 			Description:     "Test release",
 			Thumbnail:       "http://example.com/thumbnail.jpg",
@@ -217,7 +527,7 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 		mProjectName := "nonexistent"
 
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: fmt.Sprintf("%s/%s", mAuthedUser.Username, mProjectName),
+			ProjectFullName: ProjectFullName{Owner: mAuthedUser.Username, Project: mProjectName},
 			Name:            "v1.0.0",
 		}
 
@@ -262,8 +572,7 @@ func TestListProjectReleasesParams(t *testing.T) {
 
 	t.Run("InvalidProjectFullName", func(t *testing.T) {
 		params := NewListProjectReleasesParams()
-		invalidName := "invalid/project/name"
-		params.ProjectFullName = &invalidName
+		params.ProjectFullName = &ProjectFullName{}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid projectFullName", msg)
@@ -381,9 +690,16 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
-		projectReleaseDTO, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, "testproject", "v1.0.0")
+		projectReleaseFullName := ProjectReleaseFullName{
+			ProjectFullName: ProjectFullName{
+				Owner:   mAuthedUser.Username,
+				Project: "testproject",
+			},
+			Release: "v1.0.0",
+		}
+		projectReleaseDTO, err := ctrl.GetProjectRelease(ctx, projectReleaseFullName)
 		require.NoError(t, err)
-		assert.Equal(t, mAuthedUser.Username+"/testproject", projectReleaseDTO.ProjectFullName)
+		assert.Equal(t, ProjectFullName{Owner: mAuthedUser.Username, Project: "testproject"}, projectReleaseDTO.ProjectFullName)
 		assert.Equal(t, "v1.0.0", projectReleaseDTO.Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -410,7 +726,13 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectDBColumns))
 
-		_, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, mProjectName, "v1.0.0")
+		_, err := ctrl.GetProjectRelease(ctx, ProjectReleaseFullName{
+			ProjectFullName: ProjectFullName{
+				Owner:   mAuthedUser.Username,
+				Project: mProjectName,
+			},
+			Release: "v1.0.0",
+		})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -462,7 +784,13 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectReleaseDBColumns))
 
-		_, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, mProject.Name, "v1.0.0")
+		_, err := ctrl.GetProjectRelease(ctx, ProjectReleaseFullName{
+			ProjectFullName: ProjectFullName{
+				Owner:   mAuthedUser.Username,
+				Project: mProject.Name,
+			},
+			Release: "v1.0.0",
+		})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 

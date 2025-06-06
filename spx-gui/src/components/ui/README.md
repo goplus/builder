@@ -1,4 +1,4 @@
-# UI Library for Go+ builder
+# UI Library for XBuilder
 
 ### Development
 

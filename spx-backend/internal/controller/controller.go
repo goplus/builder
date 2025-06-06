@@ -9,14 +9,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anthropics/anthropic-sdk-go"
-	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/joho/godotenv"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
 	qiniuLog "github.com/qiniu/x/log"
@@ -38,11 +41,13 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db              *gorm.DB
-	kodo            *kodoConfig
-	aigcClient      *aigc.AigcClient
-	casdoorClient   casdoorClient
-	anthropicClient *anthropic.Client
+	db            *gorm.DB
+	kodo          *kodoConfig
+	aigcClient    *aigc.AigcClient
+	casdoorClient casdoorClient
+	copilot       *copilot.Copilot
+	workflow      *workflow.Workflow
+	aiInteraction *aiinteraction.AIInteraction
 }
 
 // New creates a new controller.
@@ -65,18 +70,149 @@ func New(ctx context.Context) (*Controller, error) {
 	kodoConfig := newKodoConfig(logger)
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
-	anthropicClient := anthropic.NewClient(
-		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
-		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
+
+	openaiAPIKey := mustEnv(logger, "OPENAI_API_KEY")
+	openaiAPIEndpoint := mustEnv(logger, "OPENAI_API_ENDPOINT")
+	openaiModelID := mustEnv(logger, "OPENAI_MODEL_ID")
+	openaiClient := openai.NewClient(
+		option.WithAPIKey(openaiAPIKey),
+		option.WithBaseURL(openaiAPIEndpoint),
 	)
 
+	openaiPremiumAPIKey := envOrDefault("OPENAI_PREMIUM_API_KEY", openaiAPIKey)
+	openaiPremiumAPIEndpoint := envOrDefault("OPENAI_PREMIUM_API_ENDPOINT", openaiAPIEndpoint)
+	openaiPremiumModelID := envOrDefault("OPENAI_PREMIUM_MODEL_ID", openaiModelID)
+	openaiPremiumClient := openai.NewClient(
+		option.WithAPIKey(openaiPremiumAPIKey),
+		option.WithBaseURL(openaiPremiumAPIEndpoint),
+	)
+
+	cpt, err := copilot.New(openaiPremiumClient, openaiPremiumModelID)
+	if err != nil {
+		logger.Printf("failed to create copilot: %v", err)
+		return nil, err
+	}
+
+	stdflow := NewWorkflow("stdflow", cpt, db)
+
+	aiInteraction, err := aiinteraction.New(openaiClient, openaiModelID)
+	if err != nil {
+		logger.Printf("failed to create ai interaction service: %v", err)
+		return nil, err
+	}
+
 	return &Controller{
-		db:              db,
-		kodo:            kodoConfig,
-		aigcClient:      aigcClient,
-		casdoorClient:   casdoorClient,
-		anthropicClient: anthropicClient,
+		db:            db,
+		kodo:          kodoConfig,
+		aigcClient:    aigcClient,
+		casdoorClient: casdoorClient,
+		copilot:       cpt,
+		workflow:      stdflow,
+		aiInteraction: aiInteraction,
 	}, nil
+}
+
+func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
+	editNode := NewCodeEditNode(copilot)
+	chatNode := NewMessageNode(copilot)
+	flow := workflow.NewWorkflow(name)
+
+	projectCreate := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("project_id") == nil
+		}, NewCreateProject(copilot)).
+		Else(editNode)
+
+	classifierNode := workflow.NewClassifierNode(copilot, ``).
+		AddCase("project_create", projectCreate).
+		AddCase("code_edit", editNode).
+		Default(chatNode)
+
+	classifier := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == nil
+		}, classifierNode).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "project_create"
+		}, projectCreate).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "code_edit"
+		}, editNode).
+		Else(chatNode)
+
+	flow.Start(workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("ReferenceID") == nil
+		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(classifier))).
+		Else(workflow.NewSearch(db).SetNext(classifier)))
+
+	return flow
+}
+
+func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role: copilot.RoleUser,
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: "请使用已提供的工具来创建项目"},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
+}
+
+func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	node := workflow.NewLLMNode(copit, system, true)
+	node.WithPrepare(func(env workflow.Env) workflow.Env {
+		msgs := env.Get("messages")
+		if msgs != nil {
+			if messages, ok := msgs.([]copilot.Message); ok {
+				messages = append(messages, copilot.Message{
+					Role: copilot.RoleUser,
+					// TODO(wyvern): Use i18n to select auxiliary user message based on the provided language
+					Content: copilot.Content{Text: `根据当前项目文件列表和背景信息，请确认是否需要创建精灵或背景。如无需，请调用工具插入代码，但请先解决现有文件中的诊断错误`},
+				})
+				env.Set("messages", messages)
+			}
+		}
+		return env
+	})
+	return node
+}
+
+func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {
+	system := `We are using Go+'s XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform. 
+Reference project names, it is best to give multiple (>3), including whether it is camel case, whether it is underlined, whether the first letter is capitalized, etc.
+Please use the search tool to search.
+
+## search
+Description: Request to search project in XBuilder.
+Parameters:
+- keys: (required) Project name. The character set includes letters, numbers and underscores. If there are multiple names, use | to separate them, for example: key1|key2|key3.
+Usage:
+<search>
+<keys>key1|key2|key3</keys>
+</search>
+
+## Notes
+1. Use the provided search keywords to query whether there are reference projects on the XBuilder platform.
+2. If there are multiple keywords, you can use the "|" symbol to connect them together.
+3. The commitment results do not contain any XML tags.`
+	return workflow.NewLLMNode(copilot, system, false)
+}
+
+func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
+	system := copilot.SystemPromptWithToolsTpl
+	return workflow.NewLLMNode(copit, system, true)
 }
 
 // kodoConfig is the configuration for Kodo.
@@ -124,6 +260,15 @@ func mustEnv(logger *qiniuLog.Logger, key string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		logger.Fatalf("Missing required environment variable: %s", key)
+	}
+	return value
+}
+
+// envOrDefault gets the environment variable value or returns the default value.
+func envOrDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
 	return value
 }

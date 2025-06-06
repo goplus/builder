@@ -16,16 +16,10 @@ const emit = defineEmits<{
 const retryable = computed(() => {
   return props.isLastRound && [RoundState.Cancelled, RoundState.Failed].includes(props.round.state)
 })
-
-function handleWrapper(wrapper: unknown) {
-  if (!props.isLastRound) return
-  if (wrapper == null) return
-  ;(wrapper as HTMLElement).scrollIntoView({ behavior: 'smooth' })
-}
 </script>
 
 <template>
-  <section :ref="handleWrapper" class="copilot-round">
+  <section class="copilot-round">
     <UserMessage :content="round.problem" />
     <MarkdownView v-if="round.answer != null" class="answer" v-bind="round.answer" />
     <div v-else class="abnormal">

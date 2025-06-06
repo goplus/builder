@@ -8,5 +8,6 @@
 
 <style lang="scss" scoped>
 .definition-detail-wrapper {
+  margin-top: 2px;
 }
 </style>

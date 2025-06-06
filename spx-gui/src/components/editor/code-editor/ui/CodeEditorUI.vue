@@ -63,8 +63,9 @@ import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
 import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
-import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
+import InputHelperUI from './input-helper/InputHelperUI.vue'
+import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 
@@ -260,7 +261,7 @@ function zoomReset() {
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
-      class="monaco-editor"
+      class="monaco-editor-conflict-free"
       :monaco="codeEditorCtx.getMonaco()"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
@@ -268,8 +269,9 @@ function zoomReset() {
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
-    <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
+    <InputHelperUI :controller="uiRef.inputHelperController" />
+    <InlayHintUI :controller="uiRef.inlayHintController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
@@ -333,7 +335,7 @@ function zoomReset() {
   }
 }
 
-.monaco-editor {
+.monaco-editor-conflict-free {
   flex: 1 1 0;
   min-width: 0;
   margin: 12px 0;

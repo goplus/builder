@@ -1,6 +1,7 @@
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
+import { type ProgressHandler } from './progress'
 import { useQuery, composeQuery, type QueryContext } from './query'
 import { withSetup } from './test'
 
@@ -118,5 +119,57 @@ describe('composeQuery', () => {
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toEqual(['ok', 'ok'])
     expect(ret3.error.value).toBe(null)
+  })
+
+  it('should work well with progress', async () => {
+    let report1!: ProgressHandler, report2!: ProgressHandler
+    let resolve1!: () => void, resolve2!: () => void
+    const [ret1, ret2, ret3] = withSetup(() => {
+      const ret1 = useQuery(async (ctx: QueryContext) => {
+        report1 = (p) => ctx.reporter.report(p)
+        await new Promise<void>((r) => (resolve1 = r))
+      })
+      const ret2 = useQuery(async (ctx: QueryContext) => {
+        report2 = (p) => ctx.reporter.report(p)
+        await new Promise<void>((r) => (resolve2 = r))
+      })
+      const ret3 = useQuery(async (ctx: QueryContext) => {
+        await Promise.all([
+          composeQuery(ctx, ret1, [{ en: '1', zh: '1' }, 1]),
+          composeQuery(ctx, ret2, [{ en: '2', zh: '2' }, 3])
+        ])
+      })
+      return [ret1, ret2, ret3] as const
+    })
+
+    report1({ percentage: 0.4, desc: null })
+    await nextTick()
+    expect(ret1.progress.value.percentage).toBeCloseTo(0.4)
+    expect(ret2.progress.value.percentage).toBeCloseTo(0)
+    expect(ret3.progress.value.percentage).toBeCloseTo(0.1)
+    expect(ret3.progress.value.desc).toEqual({ en: '1', zh: '1' })
+
+    report2({ percentage: 0.8, desc: null })
+    await nextTick()
+    expect(ret1.progress.value.percentage).toBeCloseTo(0.4)
+    expect(ret2.progress.value.percentage).toBeCloseTo(0.8)
+    expect(ret3.progress.value.percentage).toBeCloseTo(0.7)
+    expect(ret3.progress.value.desc).toEqual({ en: '1', zh: '1' })
+
+    report1({ percentage: 1, desc: null })
+    resolve1()
+    await nextTick()
+    expect(ret1.progress.value.percentage).toBeCloseTo(1)
+    expect(ret2.progress.value.percentage).toBeCloseTo(0.8)
+    expect(ret3.progress.value.percentage).toBeCloseTo(0.85)
+    expect(ret3.progress.value.desc).toEqual({ en: '2', zh: '2' })
+
+    report2({ percentage: 1, desc: null })
+    resolve2()
+    await nextTick()
+    expect(ret1.progress.value.percentage).toBeCloseTo(1)
+    expect(ret2.progress.value.percentage).toBeCloseTo(1)
+    expect(ret3.progress.value.percentage).toBeCloseTo(1)
+    expect(ret3.progress.value.desc).toBeNull()
   })
 })

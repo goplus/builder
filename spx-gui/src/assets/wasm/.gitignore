@@ -1,0 +1,4 @@
+# This directory is populated by executing the `@/build-wasm.sh` script at build time.
+*
+*/*
+!.gitignore

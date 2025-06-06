@@ -10,7 +10,13 @@
       </UIButton>
     </template>
   </UIEmpty>
-  <EditorList v-else color="sprite" :add-text="$t({ en: 'Add animation', zh: '添加动画' })">
+  <EditorList
+    v-else
+    color="sprite"
+    :add-text="$t({ en: 'Add animation', zh: '添加动画' })"
+    :sortable="{ list: sprite.animations }"
+    @sorted="handleSorted"
+  >
     <AnimationItem
       v-for="animation in sprite.animations"
       :key="animation.id"
@@ -72,6 +78,17 @@ const handleGroupCostumes = useMessageHandle(
   {
     en: 'Failed to group costumes as animation',
     zh: '将造型合并为动画失败'
+  }
+).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update animation order', zh: '更新动画顺序' } }
+    await editorCtx.project.history.doAction(action, () => props.sprite.moveAnimation(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update animation order',
+    zh: '更新动画顺序失败'
   }
 ).fn
 </script>

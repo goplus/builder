@@ -5,19 +5,21 @@ import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
 import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
-import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
-import spxlsWasmUrl from '@/assets/spxls.wasm?url'
+import wasmExecScriptUrl from '@/assets/wasm/wasm_exec.js?url'
+import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
+import spxlsPkgdataZipUrl from '@/assets/wasm/spxls-pkgdata.zip?url'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
   type Position,
   type ResourceReference,
   type TextDocumentIdentifier,
-  containsPosition
+  containsPosition,
+  type InputSlot
 } from '../common'
 import { Spxlc } from './spxls/client'
 import type { Files as SpxlsFiles } from './spxls'
-import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
+import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
@@ -34,12 +36,8 @@ function loadScript(url: string) {
   })
 }
 
-async function loadGoWasm(wasmUrl: string) {
-  await loadScript(wasmExecScriptUrl)
-  const go = new Go()
-  const { instance } = await WebAssembly.instantiateStreaming(fetch(wasmUrl), go.importObject)
-  go.run(instance)
-}
+// 10 seconds cooldown between language server restarts.
+const LS_RESTART_COOLDOWN = 10_000
 
 export class SpxLSPClient extends Disposable {
   constructor(private project: Project) {
@@ -48,7 +46,6 @@ export class SpxLSPClient extends Disposable {
 
   private files: SpxlsFiles = {}
   private isFilesStale = shallowRef(true)
-  private spxlcRef = shallowRef<Spxlc | null>(null)
 
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
@@ -75,7 +72,20 @@ export class SpxLSPClient extends Disposable {
     this.isFilesStale.value = false
   }
 
+  private loadWasmScriptPromise: Promise<unknown> | null = null
+
+  private async loadWasmScript() {
+    return (this.loadWasmScriptPromise = this.loadWasmScriptPromise ?? loadScript(wasmExecScriptUrl))
+  }
+
+  private spxlcRef = shallowRef<Spxlc | null>(null)
+  private isLSRunning = shallowRef(false)
+  private isLSRestarting = false
+  private lsRestartedAt = 0
+
   private async prepareRequest() {
+    this.prepareLanguageServer()
+
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
       // Typically requests are triggered earlier than file-loading:
@@ -89,8 +99,46 @@ export class SpxLSPClient extends Disposable {
 
   async init() {
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    await loadGoWasm(spxlsWasmUrl)
-    this.spxlcRef.value = new Spxlc(() => this.files)
+    await this.loadWasmScript()
+    await this.prepareLanguageServer()
+  }
+
+  private async prepareLanguageServer() {
+    if (this.isLSRunning.value || this.isLSRestarting) return
+    this.isLSRestarting = true
+
+    // Apply cooldown between restarts.
+    const cooldown = LS_RESTART_COOLDOWN - (Date.now() - this.lsRestartedAt)
+    if (cooldown > 0) await timeout(cooldown)
+    this.lsRestartedAt = Date.now()
+
+    try {
+      await this.loadLSWasm()
+      this.spxlcRef.value = new Spxlc(() => this.files)
+      this.isLSRunning.value = true
+    } catch (e) {
+      console.error('[LSP] Failed to start language server:', e)
+    } finally {
+      this.isLSRestarting = false
+    }
+  }
+
+  private async loadLSWasm() {
+    await this.loadWasmScript()
+    const [wasmResp, spxlsPkgdataZipResp] = await Promise.all([fetch(spxlsWasmUrl), fetch(spxlsPkgdataZipUrl)])
+
+    const go = new Go()
+    const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
+    go.run(instance).finally(() => {
+      console.warn('[LSP] Language server process exited.')
+      this.isLSRunning.value = false
+      this.spxlcRef.value = null
+    })
+
+    // Load additional resources.
+    const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
+    SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
+    SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
   }
 
   private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
@@ -117,6 +165,12 @@ export class SpxLSPClient extends Disposable {
       spxRenameResources.command,
       ...params
     )
+  }
+
+  async workspaceExecuteCommandSpxGetInputSlots(
+    ...params: spxGetInputSlots.Arguments
+  ): Promise<spxGetInputSlots.Result> {
+    return this.executeCommand<spxGetInputSlots.Arguments, spxGetInputSlots.Result>(spxGetInputSlots.command, ...params)
   }
 
   async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
@@ -171,6 +225,11 @@ export class SpxLSPClient extends Disposable {
     return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
   }
 
+  async textDocumentInlayHint(params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.InlayHint[] | null>(lsp.InlayHintRequest.method, params)
+  }
+
   // Higher-level APIs
 
   async getResourceReferences(textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
@@ -206,5 +265,14 @@ export class SpxLSPClient extends Disposable {
     if (completionResult == null) return []
     if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
     return completionResult as CompletionItem[]
+  }
+
+  async getInputSlots(textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
+    const result = await this.workspaceExecuteCommandSpxGetInputSlots({ textDocument })
+    if (result == null) return []
+    return result.map((item) => ({
+      ...item,
+      range: fromLSPRange(item.range)
+    }))
   }
 }

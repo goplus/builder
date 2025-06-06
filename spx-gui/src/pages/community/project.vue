@@ -7,7 +7,7 @@ import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/l
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { usePageTitle } from '@/utils/utils'
-import { ownerAll, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
+import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
@@ -85,7 +85,7 @@ watch(
   { immediate: true }
 )
 
-const runnerState = ref<'initial' | 'running'>('initial')
+const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 watch(
   () => [props.owner, props.name],
   () => {
@@ -138,6 +138,7 @@ const ensureSignedIn = useEnsureSignedIn()
 
 const handleRun = useMessageHandle(
   async () => {
+    runnerState.value = 'loading'
     await projectRunnerRef.value?.run()
     runnerState.value = 'running'
   },
@@ -205,7 +206,7 @@ const releasesRet = useQuery(
   async () => {
     const { owner, name } = props
     const { data } = await listReleases({
-      projectFullName: `${owner}/${name}`,
+      projectFullName: stringifyProjectFullName(owner, name),
       orderBy: 'createdAt',
       sortOrder: 'desc',
       pageIndex: 1,
@@ -257,7 +258,7 @@ const remixesRet = useQuery(
     const { data: projects } = await listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      remixedFrom: `${props.owner}/${props.name}`,
+      remixedFrom: stringifyRemixSource(props.owner, props.name),
       pageIndex: 1,
       pageSize: remixNumInRow.value,
       orderBy: 'likeCount',

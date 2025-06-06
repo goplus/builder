@@ -40,10 +40,14 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
+      - name: Run format check
+        working-directory: spx-gui
+        run: npm run format-check
+
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.23.4
+          go-version: 1.24.x
 
       - name: Build WASM
         working-directory: spx-gui
@@ -65,25 +69,23 @@ jobs:
       - name: Set up Go & Go+
         uses: goplus/setup-goplus@v1
         with:
-          go-version: 1.21.3
-          gop-version: 1.2.5
+          go-version: 1.24.x
+          gop-version: 1.4.6
 
       - name: Run unit test cases
         working-directory: spx-backend
         run: go test -v -race ./...
 
-  tools-spxls-test:
+  tools-ai-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.23.4
+          go-version: 1.24.x
 
       - name: Run unit test cases
-        working-directory: tools/spxls
-        env:
-          GODEBUG: gotypesalias=1
-        run: go test -v -race $(go list ./internal/... | grep -v github.com/goplus/builder/tools/spxls/internal/pkgdata/gen)
+        working-directory: tools/ai
+        run: go test -v -race ./...

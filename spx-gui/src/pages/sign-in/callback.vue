@@ -5,7 +5,6 @@
 </template>
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
-import { useI18n } from '@/utils/i18n'
 import { useUserStore } from '@/stores/user'
 
 const title = { en: 'Signing in...', zh: '登录中...' }
@@ -13,14 +12,9 @@ const title = { en: 'Signing in...', zh: '登录中...' }
 usePageTitle(title)
 
 const userStore = useUserStore()
-const i18n = useI18n()
 
 try {
   const params = new URLSearchParams(location.search)
-  const lang = params.get('language')
-  if (lang === 'en' || lang === 'zh') {
-    i18n.setLang(lang)
-  }
 
   await userStore.completeSignIn()
 

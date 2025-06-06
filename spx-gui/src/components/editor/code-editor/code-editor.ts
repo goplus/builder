@@ -1,3 +1,4 @@
+import { once } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
@@ -15,6 +16,8 @@ import {
   type IDiagnosticsProvider,
   type IResourceReferencesProvider,
   type ResourceReferencesContext,
+  type IInputHelperProvider,
+  type InputHelperContext,
   builtInCommandCopilotExplain,
   ChatExplainKind,
   builtInCommandCopilotReview,
@@ -32,7 +35,11 @@ import {
   InsertTextFormat,
   CompletionItemKind,
   type IAPIReferenceProvider,
-  type APIReferenceContext
+  type APIReferenceContext,
+  type IInlayHintProvider,
+  type InlayHintItem,
+  type InlayHintContext,
+  InlayHintKind
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -61,62 +68,209 @@ import {
   fromLSPDiagnostic,
   isTextDocumentStageCode,
   DiagnosticSeverity,
-  textDocumentIdEq
+  textDocumentIdEq,
+  fromLSPPosition,
+  toLSPRange,
+  type InputSlot,
+  rangeContains
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
+import * as z from 'zod'
+import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import {
+  writeToFileToolDescription,
+  WriteToFileArgsSchema,
+  ListFilesArgsSchema,
+  listFilesToolDescription,
+  GetDiagnosticsArgsSchema,
+  getDiagnosticsToolDescription,
+  GetFileCodeArgsSchema,
+  getFileCodeToolDescription
+} from '@/components/copilot/mcp/definitions'
+
+/** Definition ID string for APIReference items */
+const apiReferenceItems = [
+  'gop:fmt?println',
+  `gop:${packageSpx}?rand#0`,
+  `gop:${packageSpx}?rand#1`,
+  `gop:${packageSpx}?exit#1`,
+  `gop:${packageSpx}?forever`,
+  `gop:${packageSpx}?repeat`,
+  `gop:${packageSpx}?repeatUntil`,
+
+  `gop:${packageSpx}?Game.wait`,
+  `gop:${packageSpx}?Game.waitUntil`,
+  `gop:${packageSpx}?Game.timer`,
+  `gop:${packageSpx}?Game.resetTimer`,
+
+  `gop:${packageSpx}?Game.onStart`,
+  `gop:${packageSpx}?Game.onClick`,
+  `gop:${packageSpx}?Game.onKey#0`,
+  `gop:${packageSpx}?Game.onMsg#1`,
+
+  `gop:${packageSpx}?Game.mouseX`,
+  `gop:${packageSpx}?Game.mouseY`,
+  `gop:${packageSpx}?Game.keyPressed`,
+  `gop:${packageSpx}?Game.getWidget`,
+  `gop:${packageSpx}?Mouse`,
+
+  `gop:${packageSpx}?Game.ask`,
+  `gop:${packageSpx}?Sprite.ask`,
+  `gop:${packageSpx}?Game.answer`,
+
+  `gop:${packageSpx}?Game.onBackdrop#1`,
+  `gop:${packageSpx}?Game.backdropName`,
+  `gop:${packageSpx}?Game.backdropIndex`,
+  `gop:${packageSpx}?Game.prevBackdrop#0`,
+  `gop:${packageSpx}?Game.nextBackdrop#0`,
+  `gop:${packageSpx}?Game.startBackdrop#0`,
+
+  `gop:${packageSpx}?Game.broadcast#0`,
+
+  `gop:${packageSpx}?Game.play#3`,
+  `gop:${packageSpx}?Game.play#4`,
+  `gop:${packageSpx}?Game.stopAllSounds`,
+  `gop:${packageSpx}?PlayContinue`,
+  `gop:${packageSpx}?PlayPause`,
+  `gop:${packageSpx}?PlayResume`,
+  `gop:${packageSpx}?PlayRewind`,
+  `gop:${packageSpx}?PlayStop`,
+
+  `gop:${packageSpx}?Game.volume`,
+  `gop:${packageSpx}?Game.changeVolume`,
+  `gop:${packageSpx}?Game.setVolume`,
+
+  `gop:${packageSpx}?Game.changeEffect`,
+  `gop:${packageSpx}?Game.setEffect`,
+  `gop:${packageSpx}?Game.clearGraphicEffects`,
+
+  `gop:${packageSpx}?Sprite.onStart`,
+  `gop:${packageSpx}?Sprite.onClick`,
+  `gop:${packageSpx}?Sprite.onKey#0`,
+  `gop:${packageSpx}?Sprite.onMsg#1`,
+
+  `gop:${packageSpx}?Sprite.animate`,
+
+  `gop:${packageSpx}?Sprite.bounceOffEdge`,
+
+  `gop:${packageSpx}?Sprite.heading`,
+  `gop:${packageSpx}?Sprite.turn#0`,
+  `gop:${packageSpx}?Sprite.turnTo#2`,
+  `gop:${packageSpx}?Sprite.turnTo#1`,
+  `gop:${packageSpx}?Sprite.turnTo#3`,
+  `gop:${packageSpx}?Sprite.changeHeading`,
+  `gop:${packageSpx}?Sprite.setHeading`,
+  `gop:${packageSpx}?Up`,
+  `gop:${packageSpx}?Down`,
+  `gop:${packageSpx}?Left`,
+  `gop:${packageSpx}?Right`,
+
+  `gop:${packageSpx}?Sprite.size`,
+  `gop:${packageSpx}?Sprite.changeSize`,
+  `gop:${packageSpx}?Sprite.setSize`,
+
+  `gop:${packageSpx}?Sprite.xpos`,
+  `gop:${packageSpx}?Sprite.ypos`,
+  `gop:${packageSpx}?Sprite.step#0`,
+  `gop:${packageSpx}?Sprite.glide#0`,
+  `gop:${packageSpx}?Sprite.glide#2`,
+  `gop:${packageSpx}?Sprite.glide#3`,
+  `gop:${packageSpx}?Sprite.goto#1`,
+  `gop:${packageSpx}?Sprite.goto#2`,
+  `gop:${packageSpx}?Sprite.changeXpos`,
+  `gop:${packageSpx}?Sprite.setXpos`,
+  `gop:${packageSpx}?Sprite.changeYpos`,
+  `gop:${packageSpx}?Sprite.setYpos`,
+
+  `gop:${packageSpx}?Sprite.clone#0`,
+
+  `gop:${packageSpx}?Sprite.costumeName`,
+  `gop:${packageSpx}?Sprite.setCostume#0`,
+
+  `gop:${packageSpx}?Sprite.setRotationStyle`,
+  `gop:${packageSpx}?None`,
+  `gop:${packageSpx}?Normal`,
+  `gop:${packageSpx}?LeftRight`,
+
+  `gop:${packageSpx}?Sprite.die`,
+
+  `gop:${packageSpx}?Sprite.touching#0`,
+  `gop:${packageSpx}?Sprite.touching#2`,
+  `gop:${packageSpx}?Sprite.distanceTo#1`,
+  `gop:${packageSpx}?Sprite.distanceTo#2`,
+
+  `gop:${packageSpx}?Edge`,
+  `gop:${packageSpx}?EdgeBottom`,
+  `gop:${packageSpx}?EdgeLeft`,
+  `gop:${packageSpx}?EdgeRight`,
+  `gop:${packageSpx}?EdgeTop`,
+
+  `gop:${packageSpx}?Sprite.visible`,
+  `gop:${packageSpx}?Sprite.show`,
+  `gop:${packageSpx}?Sprite.hide`,
+  `gop:${packageSpx}?Sprite.gotoFront`,
+  `gop:${packageSpx}?Sprite.gotoBack`,
+  `gop:${packageSpx}?Sprite.goBackLayers`,
+
+  `gop:${packageSpx}?Sprite.onCloned#0`,
+  `gop:${packageSpx}?Sprite.onMoving#0`,
+  `gop:${packageSpx}?Sprite.onTouchStart#0`,
+  `gop:${packageSpx}?Sprite.onTouchStart#2`,
+  `gop:${packageSpx}?Sprite.onTurning#0`,
+
+  `gop:${packageSpx}?Sprite.say#0`,
+  `gop:${packageSpx}?Sprite.say#1`,
+  `gop:${packageSpx}?Sprite.think#0`,
+  `gop:${packageSpx}?Sprite.think#1`,
+
+  `gop:${packageSpx}?Sprite.changeEffect`,
+  `gop:${packageSpx}?Sprite.setEffect`,
+  `gop:${packageSpx}?Sprite.clearGraphicEffects`
+
+  // TODO: definitions like `if-else` / `var`?
+]
 
 class APIReferenceProvider implements IAPIReferenceProvider {
-  constructor(
-    private documentBase: DocumentBase,
-    private lspClient: SpxLSPClient
-  ) {}
+  constructor(private documentBase: DocumentBase) {}
 
-  private async getFallbackItems(ctx: APIReferenceContext) {
-    const isStage = isTextDocumentStageCode(ctx.textDocument.id)
-    const allItems = await this.documentBase.getAllDocumentations()
-    const overviewSet = new Set<string>()
-    const fallbackItems: DefinitionDocumentationItem[] = []
-    for (const item of allItems) {
-      if (item.hiddenFromList) continue
-      if (item.definition.package === packageSpx) {
-        const namespace = (item.definition.name ?? '').split('.')[0] // `Sprite` / `Game` / ...
-        if (isStage && namespace === 'Sprite') continue
-      }
-      if (overviewSet.has(item.overview)) continue // Skip duplicated items, e.g., `Sprite.onStart` & `Game.onStart`
-      overviewSet.add(item.overview)
-      fallbackItems.push(item)
-    }
-    return fallbackItems
+  private parseName(name: string | undefined): [receiver: string | null, method: string] {
+    const parts = (name ?? '').split('.')
+    if (parts.length > 1) return [parts[0], parts[1]]
+    return [null, parts[0]]
   }
 
-  async provideAPIReference(ctx: APIReferenceContext, position: Position | null) {
-    if (position == null) return this.getFallbackItems(ctx)
+  private getStageAPIReferenceItems = once(async () => {
+    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
+    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    return allItems.filter((item) => {
+      if (item.definition.package !== packageSpx) return true
+      const [receiver] = this.parseName(item.definition.name)
+      return receiver == null || receiver === 'Game'
+    })
+  })
 
-    const definitions = await this.lspClient
-      .workspaceExecuteCommandSpxGetDefinitions({
-        textDocument: ctx.textDocument.id,
-        position: toLSPPosition(position)
-      })
-      .catch((e) => {
-        console.warn('Failed to get definitions', e)
-        return null
-      })
-    ctx.signal.throwIfAborted()
-    let apiReferenceItems: DefinitionDocumentationItem[]
-    if (definitions != null && definitions.length > 0) {
-      const maybeDocumentationItems = await Promise.all(
-        definitions.map(async (def) => {
-          const doc = await this.documentBase.getDocumentation(def)
-          if (doc == null || doc.hiddenFromList) return null
-          return doc
-        })
-      )
-      apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
-    } else {
-      apiReferenceItems = await this.getFallbackItems(ctx)
-    }
-    return apiReferenceItems
+  private getSpriteAPIReferenceItems = once(async () => {
+    const maybeItems = await Promise.all(apiReferenceItems.map((id) => this.documentBase.getDocumentation(id)))
+    const allItems = maybeItems.filter((i) => i != null) as DefinitionDocumentationItem[]
+    const spriteMethods = allItems.reduce((set, item) => {
+      const [receiver, method] = this.parseName(item.definition.name)
+      if (receiver === 'Sprite') set.add(method)
+      return set
+    }, new Set<string>())
+    return allItems.filter((item) => {
+      if (item.definition.package !== packageSpx) return true
+      const [receiver, method] = this.parseName(item.definition.name)
+      if (receiver == null || receiver === 'Sprite') return true
+      if (receiver === 'Game' && !spriteMethods.has(method)) return true // Skip Game methods overridden by Sprite
+      return false
+    })
+  })
+
+  async provideAPIReference(ctx: APIReferenceContext) {
+    const isStage = isTextDocumentStageCode(ctx.textDocument.id)
+    if (isStage) return this.getStageAPIReferenceItems()
+    return this.getSpriteAPIReferenceItems()
   }
 }
 
@@ -124,6 +278,38 @@ class ResourceReferencesProvider implements IResourceReferencesProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
     return this.lspClient.getResourceReferences(ctx.textDocument.id)
+  }
+}
+
+class InputHelperProvider implements IInputHelperProvider {
+  constructor(private lspClient: SpxLSPClient) {}
+  async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
+    const slots = await this.lspClient.getInputSlots(ctx.textDocument.id)
+    return slots.filter((slot) => {
+      if (slots.some((s) => s !== slot && rangeContains(s.range, slot.range))) return false
+      return true
+    })
+  }
+}
+
+class InlayHintProvider implements IInlayHintProvider {
+  constructor(private lspClient: SpxLSPClient) {}
+  async provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]> {
+    const lspInlayHints = await this.lspClient.textDocumentInlayHint({
+      textDocument: ctx.textDocument.id,
+      range: toLSPRange(ctx.textDocument.getFullRange())
+    })
+    const result: InlayHintItem[] = []
+    if (lspInlayHints == null) return result
+    for (const ih of lspInlayHints) {
+      const kind = ih.kind ?? lsp.InlayHintKind.Parameter
+      if (kind === lsp.InlayHintKind.Parameter && typeof ih.label === 'string') {
+        const label = ih.label
+        const position = fromLSPPosition(ih.position)
+        result.push({ label, kind: InlayHintKind.Parameter, position })
+      }
+    }
+    return result
   }
 }
 
@@ -362,6 +548,8 @@ class CompletionProvider implements ICompletionProvider {
       textDocument: ctx.textDocument.id,
       position: toLSPPosition(position)
     })
+    const lineContent = ctx.textDocument.getLineContent(position.line)
+    const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
       items.map(async (item) => {
         const result: CompletionItem = {
@@ -386,9 +574,15 @@ class CompletionProvider implements ICompletionProvider {
 
         if (definition != null) {
           result.kind = definition.kind
-          result.insertText = definition.insertText
-          result.insertTextFormat = InsertTextFormat.Snippet
           result.documentation = definition.detail
+          if (isLineEnd) {
+            // Typically the insertSnippet in definition stands for whole call expression of the API,
+            // the insertText from LS stands for identifier of the API.
+            // If the inputting happens at the end of the line, we assume the user prefers the call expression.
+            // TODO: More reliable mechanism to determine the preference.
+            result.insertText = definition.insertSnippet
+            result.insertTextFormat = InsertTextFormat.Snippet
+          }
         }
 
         if (item.documentation != null) {
@@ -484,6 +678,8 @@ class ContextMenuProvider implements IContextMenuProvider {
   }
 }
 
+type WriteToFileOptions = z.infer<typeof WriteToFileArgsSchema>
+
 export class CodeEditor extends Disposable {
   private copilot: Copilot
   private documentBase: DocumentBase
@@ -492,6 +688,8 @@ export class CodeEditor extends Disposable {
   private completionProvider: CompletionProvider
   private contextMenuProvider: ContextMenuProvider
   private resourceReferencesProvider: ResourceReferencesProvider
+  private inputHelperProvider: InputHelperProvider
+  private inlayHintProvider: InlayHintProvider
   private diagnosticsProvider: DiagnosticsProvider
   private hoverProvider: HoverProvider
 
@@ -499,18 +697,241 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n
+    private i18n: I18n,
+    private registry: ToolRegistry
   ) {
     super()
     this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
-    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase, this.lspClient)
+    this.apiReferenceProvider = new APIReferenceProvider(this.documentBase)
     this.completionProvider = new CompletionProvider(this.lspClient, this.documentBase)
     this.contextMenuProvider = new ContextMenuProvider(this.lspClient, this.documentBase)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
+    this.inputHelperProvider = new InputHelperProvider(this.lspClient)
+    this.inlayHintProvider = new InlayHintProvider(this.lspClient)
     this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient, this.project)
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
+  }
+
+  registerMCPTools(): void {
+    // Register tools for code editor
+    this.registry.registerTools(
+      [
+        {
+          description: writeToFileToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = WriteToFileArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${writeToFileToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args) => {
+              const result = this.writeToFile(args)
+              return result
+            }
+          }
+        },
+        {
+          description: listFilesToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = ListFilesArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${listFilesToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.listFiles()
+            }
+          }
+        },
+        {
+          description: getDiagnosticsToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetDiagnosticsArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getDiagnosticsToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async () => {
+              return this.getDiagnostics()
+            }
+          }
+        },
+        {
+          description: getFileCodeToolDescription,
+          implementation: {
+            validate: (args) => {
+              const result = GetFileCodeArgsSchema.safeParse(args)
+              if (!result.success) {
+                throw new Error(`Invalid arguments for ${getFileCodeToolDescription.name}: ${result.error}`)
+              }
+              return result.data
+            },
+            execute: async (args: z.infer<typeof GetFileCodeArgsSchema>) => {
+              const file = this.getTextDocument({ uri: args.file })
+              if (file == null) return null
+
+              const content = file.getValue()
+              return {
+                success: true,
+                message: `Successfully get code from ${args.file} <file-content file="${args.file}">${content}</file-content>`
+              }
+            }
+          }
+        }
+      ],
+      'code-editor'
+    )
+  }
+
+  async getDiagnostics(args?: { file?: string }) {
+    try {
+      const files = args?.file
+        ? [{ name: args.file.split('/').pop() || args.file, uri: args.file }]
+        : (await this.listFiles()).data
+
+      const diagnosticsPromises = files.map(async (file) => {
+        try {
+          const textDocument = this.getTextDocument({ uri: file.uri })
+          if (!textDocument) {
+            console.warn(`File not found: ${file.uri}`)
+            return { file: file.uri, name: file.name, diagnostics: [] }
+          }
+
+          const diagnostics = await this.diagnosticsProvider.provideDiagnostics({
+            textDocument,
+            signal: new AbortController().signal
+          })
+
+          return {
+            file: file.uri,
+            name: file.name,
+            diagnostics: diagnostics.map((diag) => ({
+              line: diag.range.start.line,
+              column: diag.range.start.column,
+              message: diag.message
+            }))
+          }
+        } catch (error) {
+          console.error(`Error getting diagnostics for ${file.uri}:`, error)
+          return {
+            file: file.uri,
+            name: file.name,
+            diagnostics: [
+              {
+                line: 0,
+                column: 0,
+                message: `Error analyzing file: ${error instanceof Error ? error.message : String(error)}`
+              }
+            ]
+          }
+        }
+      })
+
+      const allDiagnostics = await Promise.all(diagnosticsPromises)
+
+      const formattedDiagnostics = allDiagnostics
+        .map((fileResult) => {
+          const diagnosticMessages = fileResult.diagnostics
+            .map((diag) => `- ${diag.message} ${fileResult.name} [${diag.line},${diag.column}]`)
+            .join('\n')
+
+          return `<pre is="file-diagnostics" file="${fileResult.file}">\n${
+            fileResult.diagnostics.length > 0 ? diagnosticMessages : '- No diagnostics'
+          }\n</pre>`
+        })
+        .join('\n\n')
+
+      return {
+        success: true,
+        message: formattedDiagnostics,
+        data: allDiagnostics
+      }
+    } catch (error) {
+      console.error('Failed to get diagnostics:', error)
+      return {
+        success: false,
+        message: `Failed to get diagnostics: ${error instanceof Error ? error.message : String(error)}`
+      }
+    }
+  }
+
+  // * - `file:///main.spx`
+  // * - `file:///<spriteName>.spx`
+  async listFiles() {
+    const files = []
+    files.push({
+      name: 'main.spx',
+      uri: 'file:///main.spx'
+    })
+
+    // Add sprite files
+    const sprites = this.project.sprites
+    for (const sprite of sprites) {
+      files.push({
+        name: `${sprite.name}.spx`,
+        uri: `file:///${sprite.name}.spx`
+      })
+    }
+
+    const formattedList = files.map((file) => `- ${file.uri}`).join('\n')
+    const message = `<file-list>\n${formattedList}\n</file-list>`
+    return {
+      success: true,
+      message: message,
+      data: files
+    }
+  }
+
+  async writeToFile(args: WriteToFileOptions) {
+    const code = args.content
+    const file = args.file
+
+    try {
+      const targetDoc = this.getTextDocument({ uri: file })
+      if (!targetDoc) {
+        throw new Error(`File not found: ${file}`)
+      }
+
+      this.getAttachedUI()?.open(targetDoc.id)
+
+      targetDoc.setValue(code)
+
+      const diagnostics = await this.getDiagnostics({ file })
+      const files = await this.listFiles()
+      const finallyCode = targetDoc.getValue()
+      const finallyFileContent = `<pre is="final-file-content" file="${file}">${finallyCode}</pre>`
+      let message = `Code successfully inserted into ${file}.
+        
+      Here is the full, updated content of the file that was saved:\n
+       ${finallyFileContent}
+      \n\nIMPORTANT: For any future changes to this file, use the final-file-content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.`
+
+      if (files.data && files.data.length > 0) {
+        message += `\n\nHere is the list of files in the project:\n${files.message}`
+      }
+
+      if (diagnostics.data && diagnostics.data.length > 0) {
+        message += `\n\nNew problems detected after saving the file, If you have defined a function, please make sure to place the function definition before all event handlers (such as onStart, onClick):\n${diagnostics.message}`
+      }
+      return {
+        success: true,
+        message: message
+      }
+    } catch (error) {
+      console.error('Error inserting code:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred during code insertion'
+      }
+    }
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -611,6 +1032,8 @@ export class CodeEditor extends Disposable {
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
+    ui.registerInputHelperProvider(this.inputHelperProvider)
+    ui.registerInlayHintProvider(this.inlayHintProvider)
     ui.registerDocumentBase(this.documentBase)
   }
 
@@ -625,14 +1048,17 @@ export class CodeEditor extends Disposable {
   }
 
   init() {
+    this.registerMCPTools()
     this.lspClient.init()
   }
 
   dispose(): void {
+    this.registry.unregisterProviderTools('code-editor')
     this.uis = []
     this.lspClient.dispose()
     this.documentBase.dispose()
     this.copilot.dispose()
+    this.diagnosticsProvider.dispose()
     super.dispose()
   }
 }

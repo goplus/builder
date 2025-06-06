@@ -2,50 +2,13 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"time"
 
-	"github.com/goplus/builder/spx-backend/internal/fmtcode"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
 )
-
-// FmtCodeParams holds parameters for formatting code.
-type FmtCodeParams struct {
-	Body       string `json:"body"`
-	FixImports bool   `json:"fixImports"`
-}
-
-// Validate validates the parameters.
-func (p *FmtCodeParams) Validate() (ok bool, msg string) {
-	if p.Body == "" {
-		return false, "missing body"
-	}
-	return true, ""
-}
-
-// FormattedCode holds the formatted code.
-type FormattedCode struct {
-	Body  string               `json:"body"`
-	Error *fmtcode.FormatError `json:"error,omitempty"`
-}
-
-// FmtCode formats the code.
-func (ctrl *Controller) FmtCode(ctx context.Context, params *FmtCodeParams) (*FormattedCode, error) {
-	logger := log.GetReqLogger(ctx)
-	formattedBody, err := fmtcode.FmtCode(ctx, params.Body, params.FixImports)
-	if err != nil {
-		var fmtErr *fmtcode.FormatError
-		if ok := errors.As(err, &fmtErr); ok {
-			return &FormattedCode{Error: fmtErr}, nil
-		}
-		logger.Printf("failed to format code: %v", err)
-		return nil, err
-	}
-	return &FormattedCode{Body: formattedBody}, nil
-}
 
 // UpInfo holds the information for uploading files.
 type UpInfo struct {

@@ -2,6 +2,7 @@ import { mapValues } from 'lodash'
 import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
+import { exprForSpxDirection, type ColorValue, exprForSpxColor } from '@/utils/spx'
 import type { Project } from '@/models/project'
 import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
@@ -48,9 +49,18 @@ export enum ResourceReferenceKind {
  */
 export type ResourceURI = string
 
+/**
+ * URI of the resource context. Examples:
+ * - `spx://resources/sprites`
+ * - `spx://resources/sounds`
+ * - `spx://resources/sprites/<sName>/costumes`
+ */
+export type ResourceContextURI = string
+
 const resourceURIPrefix = 'spx://resources/'
 
-export function isResourceUri(uri: string): uri is ResourceURI {
+/** Check if given URI is a resource URI or a resource context URI */
+export function isResourceUri(uri: string): boolean {
   return uri.startsWith(resourceURIPrefix)
 }
 
@@ -117,7 +127,7 @@ export type DefinitionIdentifier = {
    * If `main`, it's the current user package.
    * Exmples:
    * - `fmt`
-   * - `github.com/goplus/spx`
+   * - `github.com/goplus/spx/v2`
    * - `main`
    */
   package?: string
@@ -136,7 +146,7 @@ export type DefinitionIdentifier = {
 }
 
 /** gop:<package>?<name>#<overloadId> */
-type DefinitionIdString = string
+export type DefinitionIdString = string
 
 export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionIdString {
   let idStr = 'gop:'
@@ -156,6 +166,16 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
     name: query === '' ? undefined : decodeURIComponent(query),
     overloadId: hash === '' ? undefined : decodeURIComponent(hash)
   }
+}
+
+/**
+ * Definition kinds that are considered as block content.
+ * See details in https://github.com/goplus/builder/issues/1258.
+ */
+export const blockDefinitionKinds = [DefinitionKind.Command, DefinitionKind.Listen, DefinitionKind.Statement]
+
+export function isBlockDefinitionKind(kind: DefinitionKind) {
+  return blockDefinitionKinds.includes(kind)
 }
 
 export enum DiagnosticSeverity {
@@ -201,10 +221,11 @@ export interface ITextDocument
   getLineContent(line: number): string
   getWordAtPosition(position: Position): WordAtPosition | null
   getDefaultRange(position: Position): Range
+  getFullRange(): Range
   pushEdits(edits: TextEdit[]): void
 }
 
-export type MarkdownStringFlag = 'basic' | 'advanced'
+export type MarkdownStringFlag = 'basic' | 'advanced' | 'mcp'
 
 /**
  * Markdown string with MDX support.
@@ -237,13 +258,19 @@ export function makeAdvancedMarkdownString(value: string | LocaleMessage): Advan
   return { value, flag: 'advanced' }
 }
 
+export type MCPMarkdownString = MarkdownString<'mcp'>
+
+export function makeMCPMarkdownString(value: string | LocaleMessage): MCPMarkdownString {
+  return { value, flag: 'mcp' }
+}
+
 export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' | 'copy' | 'copilot'
 
 /**
  * Documentation string for a definition. Typically:
  * ```mdx
  * <OverviewWrapper>func turn(dDirection float64)</OverviewWrapper>
- * <Detail id="github.com/goplus/spx|Sprite.turn[0]" />
+ * <Detail id="github.com/goplus/spx/v2|Sprite.turn[0]" />
  * ```
  */
 export type DefinitionDocumentationString = BasicMarkdownString | AdvancedMarkdownString
@@ -281,12 +308,14 @@ export const subCategories = {
     behavior: 'behavior',
     costume: 'costume',
     animation: 'animation',
-    backdrop: 'backdrop'
+    backdrop: 'backdrop',
+    effect: 'effect'
   },
   sensing: {
     distance: 'distance',
     mouse: 'mouse',
-    keyboard: 'keyboard'
+    keyboard: 'keyboard',
+    ask: 'ask'
   },
   sound: {
     playControl: 'play-control',
@@ -330,8 +359,10 @@ export type DefinitionDocumentationItem = {
   categories: DefinitionDocumentationCategory[]
   kind: DefinitionKind
   definition: DefinitionIdentifier
-  /** Text to insert when completion / snippet is applied */
-  insertText: string
+  /** Snippet text to insert when completion / snippet is applied */
+  insertSnippet: string
+  /** Parameter hints for the inserted snippet, indexed by [TabStop / Placeholder](https://macromates.com/manual/en/snippets#tab_stops) in snippet */
+  insertSnippetParameterHints?: string[]
   /** Brief explanation for the definition, typically the signature string */
   overview: string
   /** Detailed explanation for the definition, overview not included */
@@ -429,6 +460,13 @@ export function fromLSPPosition(pos: lsp.Position): Position {
   }
 }
 
+export function toLSPRange(range: Range): lsp.Range {
+  return {
+    start: toLSPPosition(range.start),
+    end: toLSPPosition(range.end)
+  }
+}
+
 export function fromLSPRange(range: lsp.Range): Range {
   return {
     start: fromLSPPosition(range.start),
@@ -469,27 +507,60 @@ export type ResourceNameWithType = {
   name: string
 }
 
-export function parseResourceURI(uri: string): ResourceNameWithType[] {
+/** Map from `ResourceURI` part to `ResourceType` */
+const resourceTypeMap: Record<string, ResourceType | undefined> = {
+  sounds: 'sound',
+  sprites: 'sprite',
+  backdrops: 'backdrop',
+  widgets: 'widget',
+  animations: 'animation',
+  costumes: 'costume'
+}
+
+export function parseResourceURI(uri: ResourceURI): ResourceNameWithType[] {
   if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
   const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
   const parsed: ResourceNameWithType[] = []
   for (let i = 0; i < parts.length; ) {
-    const type = (
-      {
-        sounds: 'sound',
-        sprites: 'sprite',
-        backdrops: 'backdrop',
-        widgets: 'widget',
-        animations: 'animation',
-        costumes: 'costume'
-      } as const
-    )[parts[i]]
+    const type = resourceTypeMap[parts[i]]
     const name = parts[i + 1]
     if (type == null || name == null) throw new Error(`Invalid resource uri: ${uri}`)
     parsed.push({ name, type })
     i += 2
   }
   return parsed
+}
+
+export function getResourceNameWithType(uri: ResourceURI): ResourceNameWithType {
+  const parsed = parseResourceURI(uri)
+  if (parsed.length === 0) throw new Error(`Invalid resource uri: ${uri}`)
+  return parsed.pop()!
+}
+
+export type ResourceContext = {
+  parent: ResourceNameWithType[]
+  type: ResourceType
+}
+
+export function parseResourceContextURI(uri: ResourceContextURI): ResourceContext {
+  if (!isResourceUri(uri)) throw new Error(`Invalid resource context URI: ${uri}`)
+  const parts = uri.slice(resourceURIPrefix.length).split('/').map(decodeURIComponent)
+  const parent: ResourceNameWithType[] = []
+  let lastType: ResourceType | undefined
+  for (let i = 0; i < parts.length; ) {
+    const type = resourceTypeMap[parts[i]]
+    if (type == null) throw new Error(`Invalid resource context uri: ${uri}`)
+    const name = parts[i + 1]
+    if (name != null) {
+      parent.push({ name, type })
+    } else {
+      lastType = type
+      break
+    }
+    i += 2
+  }
+  if (lastType == null) throw new Error(`Invalid resource context uri: ${uri}`)
+  return { parent, type: lastType }
 }
 
 export function getResourceModel(project: Project, resourceId: ResourceIdentifier): ResourceModel | null {
@@ -542,9 +613,192 @@ export function getResourceIdentifier(resource: ResourceModel): ResourceIdentifi
   return { uri: getResourceURI(resource) }
 }
 
+export enum InputSlotKind {
+  /**
+   * The slot accepts value, which may be a in-place value or a predefined identifier.
+   * For example: `123` in `println 123`
+   */
+  Value = 'value',
+  /**
+   * The slot accepts address, which must be a predefined identifier.
+   * For example: `x` in `x = 123`
+   */
+  Address = 'address'
+}
+
+export enum InputKind {
+  /**
+   * In-place value
+   * For example: `"hello world"`, `123`, `true`, spx `Left`, spx `RGB(0,0,0)`
+   */
+  InPlace = 'in-place',
+  /**
+   * (Reference to) user predefined identifier
+   * For example: var `costume1`, const `name2`, field `num3`
+   */
+  Predefined = 'predefined'
+}
+
+export enum InputType {
+  /** Integer */
+  Integer = 'integer',
+  /** Decimal */
+  Decimal = 'decimal',
+  /** String */
+  String = 'string',
+  /** Boolean */
+  Boolean = 'boolean',
+  /** Resource name (`SpriteName`, `SoundName`, etc.) in spx */
+  SpxResourceName = 'spx-resource-name',
+  /** `Direction` in spx */
+  SpxDirection = 'spx-direction',
+  /** `Color` in spx */
+  SpxColor = 'spx-color',
+  /** `EffectKind` in spx */
+  SpxEffectKind = 'spx-effect-kind',
+  /** `Key` in spx */
+  SpxKey = 'spx-key',
+  /** `PlayAction` in spx */
+  SpxPlayAction = 'spx-play-action',
+  /** `specialObj` in spx */
+  SpxSpecialObj = 'spx-special-obj',
+  /** `RotationStyle` in spx */
+  SpxRotationStyle = 'spx-rotation-style',
+  /** Unknown type */
+  Unknown = 'unknown'
+}
+
+export type InputTypedValue =
+  | { type: InputType.Integer; value: number }
+  | { type: InputType.Decimal; value: number }
+  | { type: InputType.String; value: string }
+  | { type: InputType.Boolean; value: boolean }
+  | {
+      type: InputType.SpxResourceName
+      /** Resource URI */
+      value: ResourceURI
+    }
+  | { type: InputType.SpxDirection; value: number }
+  | {
+      type: InputType.SpxColor
+      value: ColorValue
+    }
+  | {
+      type: InputType.SpxEffectKind
+      /** Name of `EffectKind` in spx, e.g., `ColorEffect` */
+      value: string
+    }
+  | {
+      type: InputType.SpxKey
+      /** Name of `Key` in spx, e.g., `Key0` */
+      value: string
+    }
+  | {
+      type: InputType.SpxPlayAction
+      /** Name of `PlayAction` in spx, e.g., `PlayPause` */
+      value: string
+    }
+  | {
+      type: InputType.SpxSpecialObj
+      /** Name of `specialObj` in spx, e.g., `Mouse` */
+      value: string
+    }
+  | {
+      type: InputType.SpxRotationStyle
+      /** Name of `RotationStyle` in spx, e.g., `Normal` */
+      value: string
+    }
+  | { type: InputType.Unknown; value: void }
+
+export type Input<T extends InputTypedValue = InputTypedValue> =
+  | ({
+      kind: InputKind.InPlace
+    } & T)
+  | {
+      kind: InputKind.Predefined
+      type: T['type']
+      /** Name for user predefined identifer */
+      name: string
+    }
+
+export type InputSlotAccept =
+  | {
+      /** Input type accepted by the slot */
+      type:
+        | InputType.Integer
+        | InputType.Decimal
+        | InputType.String
+        | InputType.Boolean
+        | InputType.SpxDirection
+        | InputType.SpxColor
+        | InputType.SpxEffectKind
+        | InputType.SpxKey
+        | InputType.SpxPlayAction
+        | InputType.SpxSpecialObj
+        | InputType.SpxRotationStyle
+        | InputType.Unknown
+    }
+  | {
+      /** Input type accepted by the slot */
+      type: InputType.SpxResourceName
+      /** Resource context */
+      resourceContext: ResourceContextURI
+    }
+
+export type InputSlot = {
+  /** Kind of the slot */
+  kind: InputSlotKind
+  /** Info describing what inputs are accepted by the slot */
+  accept: InputSlotAccept
+  /** Current input in the slot */
+  input: Input
+  /** Names for user predefined identifiers available for the slot */
+  predefinedNames: string[]
+  /** Range in code for the slot */
+  range: Range
+}
+
+export function exprForInput(input: Input) {
+  if (input.kind === InputKind.Predefined) {
+    return input.name
+  }
+  switch (input.type) {
+    case InputType.Integer:
+    case InputType.Decimal:
+      return input.value + ''
+    case InputType.String:
+      return JSON.stringify(input.value)
+    case InputType.Boolean:
+      return input.value ? 'true' : 'false'
+    case InputType.SpxResourceName:
+      return JSON.stringify(getResourceNameWithType(input.value).name)
+    case InputType.SpxDirection:
+      return exprForSpxDirection(input.value)
+    case InputType.SpxColor:
+      return exprForSpxColor(input.value)
+    case InputType.SpxEffectKind:
+    case InputType.SpxKey:
+    case InputType.SpxPlayAction:
+    case InputType.SpxSpecialObj:
+    case InputType.SpxRotationStyle:
+      return input.value
+    default:
+      return null
+  }
+}
+
 export function positionEq(a: Position | null, b: Position | null) {
   if (a == null || b == null) return a == b
   return a.line === b.line && a.column === b.column
+}
+
+export function rangeEq(a: Range | null, b: Range | null) {
+  if (a == null || b == null) return a == b
+  return positionEq(a.start, b.start) && positionEq(a.end, b.end)
+}
+
+export function rangeContains(a: Range, b: Range) {
+  return containsPosition(a, b.start) && containsPosition(a, b.end)
 }
 
 const textDocumentURIPrefix = 'file:///'

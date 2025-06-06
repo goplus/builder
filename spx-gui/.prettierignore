@@ -5,3 +5,4 @@ src/components/ui/reset.css
 src/components/editor/code-editor/ui/completion/fuzzy/*
 src/utils/spx/default-light-theme.json
 src/utils/spx/gop-tm-language.json
+src/utils/snippet-parser/*

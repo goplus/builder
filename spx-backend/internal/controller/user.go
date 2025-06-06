@@ -206,7 +206,7 @@ func (ctrl *Controller) GetUser(ctx context.Context, username string) (*UserDTO,
 		Where("username = ?", username).
 		First(&mUser).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get user %s: %w", username, err)
+		return nil, fmt.Errorf("failed to get user %q: %w", username, err)
 	}
 
 	casdoorUser, err := ctrl.casdoorClient.GetUser(mUser.Username)
@@ -222,7 +222,7 @@ func (ctrl *Controller) GetUser(ctx context.Context, username string) (*UserDTO,
 	}
 	if len(mUserUpdates) > 0 {
 		if err := ctrl.db.WithContext(ctx).Model(&mUser).Updates(mUserUpdates).Error; err != nil {
-			return nil, fmt.Errorf("failed to update user %s: %w", mUser.Username, err)
+			return nil, fmt.Errorf("failed to update user %q: %w", mUser.Username, err)
 		}
 	}
 
@@ -258,7 +258,7 @@ func (ctrl *Controller) UpdateAuthedUser(ctx context.Context, params *UpdateAuth
 	updates := params.Diff(mAuthedUser)
 	if len(updates) > 0 {
 		if err := ctrl.db.WithContext(ctx).Model(mAuthedUser).Updates(updates).Error; err != nil {
-			return nil, fmt.Errorf("failed to update authenticated user %s: %w", mAuthedUser.Username, err)
+			return nil, fmt.Errorf("failed to update authenticated user %q: %w", mAuthedUser.Username, err)
 		}
 	}
 	userDTO := toUserDTO(*mAuthedUser)
@@ -280,7 +280,7 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 		Where("username = ?", targetUsername).
 		First(&mTargetUser).
 		Error; err != nil {
-		return fmt.Errorf("failed to get target user %s: %w", targetUsername, err)
+		return fmt.Errorf("failed to get target user %q: %w", targetUsername, err)
 	}
 
 	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mAuthedUser.ID, mTargetUser.ID)
@@ -308,7 +308,7 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to follow user %s: %w", targetUsername, err)
+		return fmt.Errorf("failed to follow user %q: %w", targetUsername, err)
 	}
 	return nil
 }
@@ -328,7 +328,7 @@ func (ctrl *Controller) IsFollowingUser(ctx context.Context, targetUsername stri
 		Where("username = ?", targetUsername).
 		First(&mTargetUser).
 		Error; err != nil {
-		return false, fmt.Errorf("failed to get target user %s: %w", targetUsername, err)
+		return false, fmt.Errorf("failed to get target user %q: %w", targetUsername, err)
 	}
 
 	if err := ctrl.db.WithContext(ctx).
@@ -341,7 +341,7 @@ func (ctrl *Controller) IsFollowingUser(ctx context.Context, targetUsername stri
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check if user %s is following user %s: %w", mAuthedUser.Username, targetUsername, err)
+		return false, fmt.Errorf("failed to check if user %q is following user %q: %w", mAuthedUser.Username, targetUsername, err)
 	}
 	return true, nil
 }
@@ -361,7 +361,7 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 		Where("username = ?", targetUsername).
 		First(&mTargetUser).
 		Error; err != nil {
-		return fmt.Errorf("failed to get target user %s: %w", targetUsername, err)
+		return fmt.Errorf("failed to get target user %q: %w", targetUsername, err)
 	}
 
 	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mAuthedUser.ID, mTargetUser.ID)
@@ -389,7 +389,7 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to unfollow user %s: %w", targetUsername, err)
+		return fmt.Errorf("failed to unfollow user %q: %w", targetUsername, err)
 	}
 	return nil
 }

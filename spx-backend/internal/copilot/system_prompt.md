@@ -161,10 +161,116 @@ In document `spx-defs.md`, you can find definitions for most APIs of spx game en
 
 You MUST follow these IMPORTANT guidelines:
 
+* **Code File Organization**: Always place in this order:
+  1. Variable declarations (using `var` blocks)
+  2. Function definitions
+  3. Event handlers (like `onStart`, `onClick`)
+
+* **Object-Oriented Implementation**: In spx, Go+ uses classfiles instead of traditional struct-based OOP:
+  - Each Sprite is a distinct object type
+  - The Stage is a Game object
+  - Variable blocks become fields of the object
+  - Functions become methods of the object and please make sure to place the function definition before all event handlers (such as `onStart`, `onClick`)
+  - Sprite can directly access the Game Field because the Sprite struct embeds the Game struct
+  - The first `var` block cannot assign values since it is compiled into struct fields, but you can define variables in first `var` block and with assign values in `onStart` event handler.
+  - In particular, the clone command Make a clone of current sprite is actually copy current Sprite struct. If you want to get the cloned object, you can get the object through `onCloned => {object := this}`
+
+    Example: Stage File Structure
+
+	```spx
+	var (
+		score int
+		speed int
+	)
+
+	var (
+		fo0 = 2
+		bar = 3
+	)
+
+	func reset() {
+		score = 0
+		speed = 20
+	}
+	```
+
+	can not define to:
+
+	```spx
+	var (
+		fo0 = 2
+		bar = 3
+	)
+
+	var (
+		score int
+		speed int
+	)
+
+	func reset() {
+		score = 0
+		speed = 20
+	}
+	```
+
+	This compiles to:
+
+	``` go
+	type Game struct {
+		spx.Game
+		Score int
+		Speed int
+	}
+
+	var (
+		fo0 = 2
+		bar = 3
+	)
+
+	func (this *Game) reset() {
+		this.score = 0
+		this.speed = 20
+	}
+	```
+
+	Example: Sprite File Structure
+
+	```spx
+	var (
+		dir int
+		x int
+		y int
+	)
+
+	func reset() {
+		dir = right
+		x = -100
+		y = 0
+	}
+	```
+
+	This compiles to:
+
+	``` go
+	type Snake struct {
+		spx.SpriteImpl
+		*Game
+		dir int
+		x int
+		y int
+	}
+
+	func (this *Snake) reset() {
+		this.dir = right
+		this.x = -100
+		this.y = 0
+	}
+	```
+
 * Put these statements at the top level of the code file:
 
 	- File-scope variable / constant definitions
-	- Event-listening statements, e.g., `onMsg "m" => { ... }`, `onKey KeyUp => { ... }`
+	- Event-listening statements, e.g., `onMsg "m", => { ... }`, `onKey KeyUp, => { ... }`
 
 	Put other initialization logic in the callback of `onStart`.
 

@@ -7,7 +7,7 @@
   <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
     <template #trigger>
       <div class="avatar">
-        <img class="avatar-img" :src="userInfo.avatar" />
+        <img class="avatar-img" :src="avatarUrl ?? undefined" />
       </div>
     </template>
     <UIMenu class="user-menu">
@@ -24,12 +24,34 @@
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup>
+      <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
-          {{ $t({ en: 'Use default SPX', zh: '使用默认 SPX' }) }}
+          {{ $t({ en: 'Use SPX v1', zh: '使用 SPX v1' }) }}
         </UIMenuItem>
         <UIMenuItem v-if="spxVersion === 'v1'" @click="handleUseSpxV2">
-          {{ $t({ en: 'Use new SPX (in beta)', zh: '启用新 SPX（测试中）' }) }}
+          {{ $t({ en: 'Use SPX v2', zh: '使用 SPX v2' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="userInfo.advancedLibraryEnabled">
+        <UIMenuItem @click="manageAssets(AssetType.Sprite)">
+          {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Sound)">
+          {{ $t({ en: 'Manage sounds', zh: '管理声音' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
+          {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleDisableAdvancedLibrary">
+          {{ $t({ en: 'Disable advanced library features', zh: '禁用高级素材库功能' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="isDeveloperMode">
+        <UIMenuItem @click="handleUseMcpDebuggerUtils">
+          {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleAskCopilotAgent">
+          {{ $t({ en: 'Ask Copilot Agent', zh: '向 Copilot Agent 提问' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -43,18 +65,35 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useSpxVersion } from '@/utils/utils'
-import { useI18n } from '@/utils/i18n'
+import { useExternalUrl, useSpxVersion } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
+import { AssetType } from '@/apis/asset'
 import { useUserStore } from '@/stores/user'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
+import { useAssetLibraryManagement } from '@/components/asset'
+import { isDeveloperMode } from '@/utils/developer-mode'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const router = useRouter()
+const { controls } = useCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
+const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
+
+const handleAskCopilotAgent = useMessageHandle(
+  async () => {
+    const isVisible = controls.toggle()
+    return isVisible
+  },
+  undefined,
+  (isVisible) => ({
+    en: isVisible ? 'Copilot Agent opened' : 'Copilot Agent closed',
+    zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
+  })
+).fn
 
 function handleUserPage() {
   router.push(getUserPageRoute(userInfo.value!.name))
@@ -72,34 +111,38 @@ const handleUseSpxV1 = useMessageHandle(
   },
   undefined,
   {
-    en: 'Back to the default version of SPX',
-    zh: '已切换回默认版本 SPX'
+    en: 'Switched to SPX v1',
+    zh: '已切换为 SPX v1'
   }
 ).fn
 
-const i18n = useI18n()
-const withConfirm = useConfirmDialog()
-
 const handleUseSpxV2 = useMessageHandle(
   async () => {
-    await withConfirm({
-      type: 'info',
-      title: i18n.t({
-        en: 'Use new version of SPX',
-        zh: '启用新版本 SPX'
-      }),
-      content: i18n.t({
-        en: 'The new version of SPX is still in beta. You can switch back to the default version anytime if you encounter issues.',
-        zh: '新版本 SPX 还在测试中，如果遇到问题可以随时退回到默认版本。'
-      })
-    })
     spxVersion.value = 'v2'
   },
   undefined,
   {
-    en: 'Now using the new version of SPX',
-    zh: '已启用新版本 SPX'
+    en: 'Switched to SPX v2',
+    zh: '已切换为 SPX v2'
   }
+).fn
+
+function handleDisableAdvancedLibrary() {
+  userStore.disableAdvancedLibrary()
+}
+
+const manageAssetLibrary = useAssetLibraryManagement()
+const manageAssets = useMessageHandle(manageAssetLibrary).fn
+const handleUseMcpDebuggerUtils = useMessageHandle(
+  async () => {
+    const isVisible = controls.mcpDebugger.toggle()
+    return isVisible
+  },
+  undefined,
+  (isVisible) => ({
+    en: `MCP Debugger Utils ${isVisible ? 'enabled' : 'disabled'}`,
+    zh: `MCP 调试工具${isVisible ? '已启用' : '已禁用'}`
+  })
 ).fn
 
 function handleSignOut() {

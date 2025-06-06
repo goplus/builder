@@ -10,14 +10,15 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgSrc == null" />
     </template>
+    <UICornerIcon v-show="selected" type="check" />
   </UISpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { UIImg, UISpriteItem } from '@/components/ui'
+import { UIImg, UISpriteItem, UICornerIcon } from '@/components/ui'
 import { useHovered } from '@/utils/dom'
-import type { ExportedScratchFile, ExportedScratchSprite } from '@/utils/scratch'
+import type { ExportedScratchCostume, ExportedScratchSprite } from '@/utils/scratch'
 import { fromBlob } from '@/models/common/file'
 import { Costume } from '@/models/costume'
 import { defaultFps } from '@/models/animation'
@@ -43,10 +44,12 @@ watchEffect((onCleanup) => {
 const wrapperRef = ref<InstanceType<typeof UISpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
-function adaptCostume(c: ExportedScratchFile) {
+function adaptCostume(c: ExportedScratchCostume) {
   const file = fromBlob(c.name, c.blob)
   return new Costume(c.name, file, {
-    bitmapResolution: c.bitmapResolution
+    bitmapResolution: c.bitmapResolution,
+    x: c.rotationCenterX,
+    y: c.rotationCenterY
   })
 }
 

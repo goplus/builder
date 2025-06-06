@@ -4,11 +4,12 @@ package main
 
 //go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/spx
 //go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/hajimehoshi/ebiten/v2
+//go:generate go run github.com/goplus/igop/cmd/qexp@latest -outdir pkg github.com/goplus/builder/tools/ai
 
 // All packages available in the ispx Wasm runtime.
 //
 // NOTE: Any changes to this file must also be synchronized with
-// `github.com/goplus/builder/tools/spxls/internal/pkgdata/gen/main.go`.
+// `github.com/goplus/goxlsw/internal/pkgdata/gen/main.go`.
 import (
 	// Embedded stdlib packages.
 	_ "github.com/goplus/igop/pkg/archive/tar"
@@ -71,6 +72,7 @@ import (
 	_ "github.com/goplus/igop/pkg/io"
 	_ "github.com/goplus/igop/pkg/io/fs"
 	_ "github.com/goplus/igop/pkg/io/ioutil"
+	_ "github.com/goplus/igop/pkg/iter"
 	_ "github.com/goplus/igop/pkg/log"
 	_ "github.com/goplus/igop/pkg/log/slog"
 	_ "github.com/goplus/igop/pkg/maps"
@@ -79,6 +81,7 @@ import (
 	_ "github.com/goplus/igop/pkg/math/bits"
 	_ "github.com/goplus/igop/pkg/math/cmplx"
 	_ "github.com/goplus/igop/pkg/math/rand"
+	_ "github.com/goplus/igop/pkg/math/rand/v2"
 	_ "github.com/goplus/igop/pkg/mime"
 	_ "github.com/goplus/igop/pkg/net/http"
 	_ "github.com/goplus/igop/pkg/net/netip"
@@ -106,6 +109,7 @@ import (
 	_ "github.com/goplus/igop/pkg/unicode"
 	_ "github.com/goplus/igop/pkg/unicode/utf16"
 	_ "github.com/goplus/igop/pkg/unicode/utf8"
+	_ "github.com/goplus/igop/pkg/unique"
 
 	// Excluded stdlib packages.
 	// _ "github.com/goplus/igop/pkg/container/heap"
@@ -140,6 +144,7 @@ import (
 	// _ "github.com/goplus/igop/pkg/go/scanner"
 	// _ "github.com/goplus/igop/pkg/go/token"
 	// _ "github.com/goplus/igop/pkg/go/types"
+	// _ "github.com/goplus/igop/pkg/go/version"
 	// _ "github.com/goplus/igop/pkg/index/suffixarray"
 	// _ "github.com/goplus/igop/pkg/log/syslog"
 	// _ "github.com/goplus/igop/pkg/mime/multipart"
@@ -160,12 +165,12 @@ import (
 	// _ "github.com/goplus/igop/pkg/os/exec"
 	// _ "github.com/goplus/igop/pkg/os/signal"
 	// _ "github.com/goplus/igop/pkg/os/user"
-	// _ "github.com/goplus/igop/pkg/plugin"
 	// _ "github.com/goplus/igop/pkg/runtime/coverage"
 	// _ "github.com/goplus/igop/pkg/runtime/debug"
 	// _ "github.com/goplus/igop/pkg/runtime/metrics"
 	// _ "github.com/goplus/igop/pkg/runtime/pprof"
 	// _ "github.com/goplus/igop/pkg/runtime/trace"
+	// _ "github.com/goplus/igop/pkg/structs"
 	// _ "github.com/goplus/igop/pkg/syscall"
 	// _ "github.com/goplus/igop/pkg/testing"
 	// _ "github.com/goplus/igop/pkg/testing/fstest"
@@ -174,6 +179,7 @@ import (
 	// _ "github.com/goplus/igop/pkg/testing/slogtest"
 
 	// Embedded third-party packages.
-	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
-	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/goplus/builder/tools/ai"
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/goplus/spx"
+	_ "github.com/goplus/builder/tools/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
 )

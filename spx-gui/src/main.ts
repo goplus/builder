@@ -15,6 +15,7 @@ import { initRouter } from './router'
 import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
+import { initDeveloperMode } from './utils/developer-mode'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -33,6 +34,7 @@ async function initApp() {
   initApiClient()
   initRouter(app)
   initI18n(app)
+  initDeveloperMode()
 
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }

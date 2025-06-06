@@ -1,6 +1,15 @@
 import { nextTick, watch } from 'vue'
 import { describe, it, expect, vitest } from 'vitest'
-import { isImage, isSound, nomalizeDegree, memoizeAsync, localStorageRef, humanizeListWithLimit } from './utils'
+import {
+  isImage,
+  isSound,
+  nomalizeDegree,
+  memoizeAsync,
+  localStorageRef,
+  humanizeListWithLimit,
+  humanizeFileSize,
+  isCrossOriginUrl
+} from './utils'
 import { sleep } from './test'
 
 describe('isImage', () => {
@@ -66,13 +75,13 @@ describe('nomalizeDegree', () => {
   it('should work well', () => {
     expect(nomalizeDegree(0)).toBe(0)
     expect(nomalizeDegree(90)).toBe(90)
-    expect(nomalizeDegree(180)).toBe(-180)
+    expect(nomalizeDegree(180)).toBe(180)
     expect(nomalizeDegree(270)).toBe(-90)
     expect(nomalizeDegree(360)).toBe(0)
     expect(nomalizeDegree(450)).toBe(90)
     expect(nomalizeDegree(720)).toBe(0)
     expect(nomalizeDegree(-90)).toBe(-90)
-    expect(nomalizeDegree(-180)).toBe(-180)
+    expect(nomalizeDegree(-180)).toBe(180)
     expect(nomalizeDegree(-270)).toBe(90)
     expect(nomalizeDegree(-360)).toBe(0)
     expect(nomalizeDegree(-450)).toBe(-90)
@@ -236,5 +245,51 @@ describe('humanizeListWithLimit', () => {
       en: 'A, B and 2 more',
       zh: '甲、乙等 4 个'
     })
+  })
+})
+
+describe('humanizeFileSize', () => {
+  it('should work well', () => {
+    expect(humanizeFileSize(0)).toEqual({ en: '0 B', zh: '0 B' })
+    expect(humanizeFileSize(1023)).toEqual({ en: '1023 B', zh: '1023 B' })
+    expect(humanizeFileSize(1024)).toEqual({ en: '1 KB', zh: '1 KB' })
+    expect(humanizeFileSize(2048)).toEqual({ en: '2 KB', zh: '2 KB' })
+    expect(humanizeFileSize(1048576)).toEqual({ en: '1 MB', zh: '1 MB' })
+    expect(humanizeFileSize(2097152)).toEqual({ en: '2 MB', zh: '2 MB' })
+    expect(humanizeFileSize(1073741824)).toEqual({ en: '1 GB', zh: '1 GB' })
+    expect(humanizeFileSize(2147483648)).toEqual({ en: '2 GB', zh: '2 GB' })
+    expect(humanizeFileSize(1099511627776)).toEqual({ en: '1 TB', zh: '1 TB' })
+    expect(humanizeFileSize(10995116277760000)).toEqual({ en: '10000 TB', zh: '10000 TB' })
+  })
+  it('should round file size correctly', () => {
+    expect(humanizeFileSize(1500)).toEqual({ en: '1.46 KB', zh: '1.46 KB' })
+    expect(humanizeFileSize(1536)).toEqual({ en: '1.5 KB', zh: '1.5 KB' })
+    expect(humanizeFileSize(10485760)).toEqual({ en: '10 MB', zh: '10 MB' })
+    expect(humanizeFileSize(10737418240)).toEqual({ en: '10 GB', zh: '10 GB' })
+  })
+})
+
+describe('isCrossOriginUrl', () => {
+  it('should work well', () => {
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example2.com')).toBe(true)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'http://example.com')).toBe(true)
+    expect(isCrossOriginUrl('https://example.com/image.png', 'https://example.com:8080')).toBe(true)
+  })
+  it('should handle relative URLs', () => {
+    expect(isCrossOriginUrl('/image.png', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('image.png', 'https://example.com')).toBe(false)
+  })
+  it('should work well with object URLs', () => {
+    expect(
+      isCrossOriginUrl('blob:https://example.com/12345678-1234-1234-1234-123456789012', 'https://example.com')
+    ).toBe(false)
+    expect(
+      isCrossOriginUrl('blob:https://example.com/12345678-1234-1234-1234-123456789012', 'https://example2.com')
+    ).toBe(true)
+  })
+  it('should work well with data URLs', () => {
+    expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example.com')).toBe(false)
+    expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example2.com')).toBe(false)
   })
 })

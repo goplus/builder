@@ -1,9 +1,13 @@
 <template>
-  <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
+  <EditorList
+    color="sprite"
+    :add-text="$t({ en: 'Add costume', zh: '添加造型' })"
+    :sortable="{ list: sprite.costumes }"
+    @sorted="handleSorted"
+  >
     <CostumeItem
       v-for="costume in sprite.costumes"
       :key="costume.id"
-      :sprite="sprite"
       :costume="costume"
       removable
       :selectable="{ selected: selected?.id === costume.id }"
@@ -51,4 +55,15 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.spr
   en: 'Failed to add from local file',
   zh: '从本地文件添加失败'
 }).fn
+
+const handleSorted = useMessageHandle(
+  async (oldIdx: number, newIdx: number) => {
+    const action = { name: { en: 'Update costume order', zh: '更新造型顺序' } }
+    await editorCtx.project.history.doAction(action, () => props.sprite.moveCostume(oldIdx, newIdx))
+  },
+  {
+    en: 'Failed to update costume order',
+    zh: '更新造型顺序失败'
+  }
+).fn
 </script>

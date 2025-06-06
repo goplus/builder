@@ -1,5 +1,10 @@
 <template>
-  <NConfigProvider class="ui-config-provider" :theme-overrides="themeOverrides" :style="cssVariables">
+  <NConfigProvider
+    ref="nConfigProvider"
+    class="ui-config-provider"
+    :theme-overrides="themeOverrides"
+    :style="cssVariables"
+  >
     <slot></slot>
   </NConfigProvider>
 </template>
@@ -10,6 +15,7 @@ import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
 import { getCssVars } from './tokens/utils'
+import { providePopupContainer, provideModalContainer, provideRootContainer } from '.'
 
 const uiVariablesKey: InjectionKey<typeof uiVariables> = Symbol('theme-variables')
 
@@ -77,7 +83,8 @@ const themeOverrides: GlobalThemeOverrides = {
     heightLarge: uiVariables.lineHeight[3]
   },
   Popover: {
-    space: '8px' // TODO: some var like gap?
+    space: '8px', // TODO: some var like gap?
+    arrowOffset: '30px'
   },
   Tooltip: {
     borderRadius: uiVariables.borderRadius[1],
@@ -124,7 +131,7 @@ const themeOverrides: GlobalThemeOverrides = {
 
 <script setup lang="ts">
 import { NConfigProvider } from 'naive-ui'
-import { provide } from 'vue'
+import { computed, provide, ref } from 'vue'
 
 const props = defineProps<{
   config?: Config
@@ -135,6 +142,12 @@ provide(
   configKey,
   computedShallowReactive(() => props.config ?? {})
 )
+
+const nConfigProvider = ref<InstanceType<typeof NConfigProvider> | null>(null)
+const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
+provideRootContainer(nConfigProviderEl)
+providePopupContainer(nConfigProviderEl)
+provideModalContainer(nConfigProviderEl)
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>

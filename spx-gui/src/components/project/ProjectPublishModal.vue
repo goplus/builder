@@ -8,6 +8,7 @@ import { createRelease } from '@/apis/project-release'
 import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
+import { stringifyProjectFullName } from '@/apis/project'
 
 const props = defineProps<{
   project: Project
@@ -69,7 +70,7 @@ const handleSubmit = useMessageHandle(
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
-      projectFullName: `${project.owner!}/${project.name!}`,
+      projectFullName: stringifyProjectFullName(project.owner!, project.name!),
       name: generateReleaseName(),
       description: form.value.releaseDescription,
       thumbnail: thumbnailUniversalUrl
@@ -91,8 +92,8 @@ const handleSubmit = useMessageHandle(
       <p v-if="project.visibility === Visibility.Private" class="tip">
         {{
           $t({
-            en: 'Published projects will be visible to all Go+ Builder users.',
-            zh: '发布后的项目将对所有 Go+ Builder 用户可见。'
+            en: 'Published projects will be visible to all XBuilder users.',
+            zh: '发布后的项目将对所有 XBuilder 用户可见。'
           })
         }}
       </p>
@@ -151,7 +152,7 @@ const handleSubmit = useMessageHandle(
   margin-bottom: 24px;
   width: 100%;
   height: 224px;
-  background: url(@/assets/stage-bg.svg) center / cover no-repeat;
+  background: url(@/assets/images/stage-bg.svg) center / cover no-repeat;
   border-radius: var(--ui-border-radius-1);
   overflow: hidden;
 

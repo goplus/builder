@@ -6,9 +6,9 @@ set -e
 
 yum -y install wget tar gzip
 
-wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
-tar -C /usr/local -xzf ./go1.23.4.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
+tar -C /usr/local -xzf ./go1.24.4.linux-amd64.tar.gz
 /usr/local/go/bin/go version
 
 npm install
-source ./install-spx.sh
+./install-spx.sh

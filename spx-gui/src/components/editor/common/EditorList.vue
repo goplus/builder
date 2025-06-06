@@ -1,9 +1,9 @@
 <template>
   <div class="editor-list" :style="cssVars">
     <div class="sider">
-      <ul class="items">
+      <div ref="itemsWrapper" class="items">
         <slot></slot>
-      </ul>
+      </div>
       <UIDropdownWithTooltip>
         <template #dropdown-content>
           <slot name="add-options"></slot>
@@ -23,16 +23,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useDragSortable } from '@/utils/drag-and-drop'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
-const props = defineProps<{
-  color: Color
-  addText: string
+const props = withDefaults(
+  defineProps<{
+    color: Color
+    addText: string
+    sortable?: { list: unknown[] } | false
+  }>(),
+  {
+    sortable: false
+  }
+)
+
+const emit = defineEmits<{
+  sorted: [oldIdx: number, newIdx: number]
 }>()
 
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))
+
+const itemsWrapper = ref<HTMLElement | null>(null)
+const sortableList = computed(() => (props.sortable ? props.sortable.list : null))
+
+useDragSortable(sortableList, itemsWrapper, {
+  ghostClass: 'sortable-ghost-item',
+  onSorted(oldIdx, newIdx) {
+    emit('sorted', oldIdx, newIdx)
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -52,15 +73,30 @@ const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.co
 .items {
   flex: 1 1 0;
   overflow-y: auto;
-  padding: 12px 16px;
+  margin: 0 6px;
+  // Here we keep the horizontal padding no more than `10px`,
+  // as SortableJS uses `10` as `spacer` when deciding whether to put dragging item to the end of the list.
+  // Padding no more than `10px` disables the `_ghostIsLast` check.
+  // See details in https://github.com/SortableJS/Sortable/blob/ddd059717333d07b5b1125b7e1dc89514734bcf0/src/Sortable.js#L1822
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  :deep(.sortable-ghost-item) {
+    // Shadow-like effect
+    // TODO: Use other tools like svg-filter to achieve shadow-like effect, to avoid coupling here with `UIBlockItem`
+    border-color: var(--ui-color-grey-400) !important;
+    background-color: var(--ui-color-grey-400) !important;
+    * {
+      visibility: hidden;
+    }
+  }
 }
 
 .add {
   flex: 0 0 auto;
-  width: 120px;
+  justify-self: stretch;
   height: 44px;
   display: flex;
   align-items: center;

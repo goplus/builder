@@ -28,7 +28,12 @@ default:
 }
 
 if remixedFrom := ${remixedFrom}; remixedFrom != "" {
-	params.RemixedFrom = &remixedFrom
+	rs, err := controller.ParseRemixSource(remixedFrom)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixedFrom")
+		return
+	}
+	params.RemixedFrom = &rs
 }
 
 if keyword := ${keyword}; keyword != "" {

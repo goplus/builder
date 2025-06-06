@@ -2,7 +2,7 @@
  * @file Gbp file related helper
  * @desc load-from & export-to gbp file
  * Gbp file is a zip file with a specific structure that contains
- * metadata and files for a Go+ builder project.
+ * metadata and files for a Builder project.
  * https://github.com/goplus/builder/issues/464
  */
 

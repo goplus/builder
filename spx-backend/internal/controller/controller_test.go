@@ -91,6 +91,18 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 	}, dbMock, closeDB
 }
 
+func TestEnvOrDefault(t *testing.T) {
+	t.Setenv("ENV_VAR", "custom")
+
+	t.Run("Valid", func(t *testing.T) {
+		assert.Equal(t, "custom", envOrDefault("ENV_VAR", "default"))
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		assert.Equal(t, "default", envOrDefault("INVALID_ENV_VAR", "default"))
+	})
+}
+
 func TestSortOrder(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		assert.True(t, SortOrderAsc.IsValid())
@@ -129,10 +141,6 @@ func TestPagination(t *testing.T) {
 	})
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
+func ptr[T any](v T) *T {
+	return &v
 }

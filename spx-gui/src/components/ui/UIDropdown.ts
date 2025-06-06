@@ -47,6 +47,8 @@ export type Props = {
   visible?: boolean
   pos?: Pos
   offset?: Offset
+  showArrow?: boolean
+  disabled?: boolean
 }
 
 export type Events = {
@@ -55,7 +57,7 @@ export type Events = {
 }
 
 export default defineComponent<Props, Events>(
-  (props, { slots, emit }) => {
+  (props, { slots, emit, expose }) => {
     const attachTo = usePopupContainer()
     const nPopoverRef = ref<InstanceType<typeof NPopover>>()
 
@@ -119,6 +121,7 @@ export default defineComponent<Props, Events>(
       return h('div', {
         class: 'virtual-trigger',
         style: {
+          pointerEvents: 'none',
           position: 'fixed',
           left: props.pos.x + 'px',
           top: props.pos.y + 'px',
@@ -148,6 +151,9 @@ export default defineComponent<Props, Events>(
       nPopoverRef.value?.syncPosition()
     })
 
+    // TODO: proper typing for UIDropdown exposed
+    expose({ setVisible })
+
     return function render() {
       return h(
         NPopover,
@@ -155,7 +161,7 @@ export default defineComponent<Props, Events>(
           ref: nPopoverRef,
           class: popoverWrapperClass,
           style: {
-            overflow: 'hidden',
+            overflow: props.showArrow! ? 'visible' : 'hidden',
             borderRadius: 'var(--ui-border-radius-1)',
             backgroundColor: 'var(--ui-color-grey-100)',
             boxShadow: 'var(--ui-box-shadow-big)',
@@ -167,8 +173,9 @@ export default defineComponent<Props, Events>(
           x: popoverPos.value?.x,
           y: popoverPos.value?.y,
           to: attachTo.value,
-          showArrow: false,
+          showArrow: props.showArrow!,
           raw: true,
+          disabled: props.disabled,
           onUpdateShow: handleUpdateShow,
           onClickoutside: handleClickOutside
         },
@@ -206,6 +213,11 @@ export default defineComponent<Props, Events>(
         type: Object as PropType<Offset>,
         required: false,
         default: () => ({ x: 0, y: 8 })
+      },
+      showArrow: {
+        type: Boolean,
+        required: false,
+        default: false
       }
     },
     emits: ['update:visible', 'clickOutside']

@@ -267,7 +267,7 @@ watchEffect((onCleanup) => {
   align-items: center;
   justify-content: center;
 
-  background-image: url(@/assets/stage-bg.svg);
+  background-image: url(@/assets/images/stage-bg.svg);
   background-position: center;
   background-repeat: repeat;
   background-size: contain;

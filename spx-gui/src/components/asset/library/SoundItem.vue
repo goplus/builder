@@ -3,6 +3,7 @@
     <template #player>
       <SoundPlayer :src="audioSrc" color="primary" />
     </template>
+    <UICornerIcon v-show="selected" type="check" />
   </UISoundItem>
 </template>
 
@@ -13,7 +14,7 @@ import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
 import { asset2Sound } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import { useAudioDuration } from '@/utils/audio'
-import { UISoundItem } from '@/components/ui'
+import { UISoundItem, UICornerIcon } from '@/components/ui'
 
 const props = defineProps<{
   asset: AssetData

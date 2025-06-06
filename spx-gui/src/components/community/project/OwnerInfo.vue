@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExternalUrl } from '@/utils/utils'
 import { useUser } from '@/stores/user'
 import UserLink from '../user/UserLink.vue'
 
@@ -7,11 +8,12 @@ const props = defineProps<{
 }>()
 
 const { data: user } = useUser(() => props.owner)
+const avatarUrl = useExternalUrl(() => user.value?.avatar)
 </script>
 
 <template>
   <UserLink class="owner-info" :user="user?.username ?? null">
-    <i class="avatar" :style="user != null ? { backgroundImage: `url(${user.avatar})` } : null"></i>
+    <i class="avatar" :style="user != null ? { backgroundImage: `url(${avatarUrl})` } : null"></i>
     {{ user?.displayName }}
   </UserLink>
 </template>

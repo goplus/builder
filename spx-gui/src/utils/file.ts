@@ -1,6 +1,6 @@
 import { computed, ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
-import { Cancelled, DefaultException } from './exception'
+import { Cancelled } from './exception'
 
 /**
  * Map file extension to mime type.
@@ -46,16 +46,21 @@ export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
 export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 
 export type FileSelectOptions = {
-  accept?: string
-  multiple?: boolean
+  /** File extensions to accept, without dot (`.`), e.g. `['png', 'jpg']` */
+  accept?: string[]
 }
 
-const maxFileSize = 25 << 20 // 25 MiB
-function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
+function _selectFile({
+  accept = [],
+  multiple = false
+}: FileSelectOptions & {
+  /** Whether to allow selecting multiple files, defaults to `false` */
+  multiple?: boolean
+}) {
   return new Promise<globalThis.File[]>((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = accept
+    input.accept = accept.map((ext) => `.${ext}`).join(',')
     input.multiple = multiple
 
     let settled = false
@@ -71,20 +76,7 @@ function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
       { once: true }
     )
     input.onchange = async () => {
-      // TODO: we should not check size for `.gbp` or scratch files
-      const oversizedFileNames = Array.from(input.files!)
-        .filter((file) => file.size > maxFileSize)
-        .map((file) => file.name)
-      if (oversizedFileNames.length > 0) {
-        reject(
-          new DefaultException({
-            en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxFileSize} bytes)`,
-            zh: `文件 ${oversizedFileNames.join(', ')} 尺寸超限（最大 ${maxFileSize} 字节）`
-          })
-        )
-      } else {
-        resolve(Array.from(input.files!))
-      }
+      resolve(Array.from(input.files!))
       settled = true
     }
     input.click()
@@ -92,30 +84,18 @@ function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
 }
 
 /** Let the user select single file */
-export async function selectFile(options?: Omit<FileSelectOptions, 'multiple'>) {
+export async function selectFile(options?: FileSelectOptions) {
   const files = await _selectFile({ ...options, multiple: false })
   return files[0]
 }
 
 /** Let the user select multiple files */
-export function selectFiles(options?: Omit<FileSelectOptions, 'multiple'>) {
+export function selectFiles(options?: FileSelectOptions) {
   return _selectFile({ ...options, multiple: true })
 }
 
-/** Let the user select single image */
-export function selectImg() {
-  const accept = imgExts.map((ext) => `.${ext}`).join(',')
-  return selectFile({ accept })
-}
-
-/** Let the user select multiple images */
-export function selectImgs() {
-  const accept = imgExts.map((ext) => `.${ext}`).join(',')
-  return selectFiles({ accept })
-}
-
 /** Get audio exts of formats that current browser support (to decode / play) */
-async function getSupportedAudioExts() {
+export async function getSupportedAudioExts() {
   // `audio.canPlayType` seems to be more reliable than `MediaRecorder.isTypeSupported` & `navigator.mediaCapabilities.decodingInfo`
   const audio = new Audio()
   return (
@@ -127,13 +107,6 @@ async function getSupportedAudioExts() {
       })
     )
   ).filter(Boolean) as string[]
-}
-
-/** Let the user select single audio file (supported by spx) */
-export async function selectAudio() {
-  const supportedExts = await getSupportedAudioExts()
-  const accept = supportedExts.map((ext) => `.${ext}`).join(',')
-  return selectFile({ accept })
 }
 
 /** Get url for File */

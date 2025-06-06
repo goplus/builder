@@ -1,5 +1,6 @@
+import { lowFirst, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getGopIdentifierNameTip, normalizeGopIdentifierAssetName, validateGopIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
@@ -21,11 +22,26 @@ function getAssetNameTip(asset: LocaleMessage) {
   }
 }
 
+export function validateAssetDisplayName(name: string) {
+  name = name.trim()
+  if (name === '') return { en: 'The asset name must not be blank', zh: '名称不可为空' }
+  if (name.length > 100)
+    return {
+      en: 'The name is too long (maximum is 100 characters)',
+      zh: '名字长度超出限制（最多 100 个字符）'
+    }
+}
+
+export function getAssetDisplayNameTip() {
+  return {
+    en: 'A good name makes it easy to be found in asset library.',
+    zh: '起一个准确的名字，可以帮助你下次更快地找到它'
+  }
+}
+
 function validateGopIdentifierAssetName(name: string) {
   const err = validateAssetName(name)
   if (err != null) return err
-  // spx code is go+ code, and the asset name will compiled to an identifier of go+
-  // so asset name rules is depend on the identifier rules of go+.
   return validateGopIdentifierName(name)
 }
 
@@ -36,11 +52,13 @@ function getGopIdentifierAssetNameTip(asset: LocaleMessage) {
 export const spriteNameTip = getGopIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
 
 export function validateSpriteName(name: string, project: Project | null) {
-  // spx will use the sprite's name as identifier for the sprite variable in compiled code,
-  // so it should obey the naming rule of gop identifier
+  // Name of a sprite should obey the naming rule of identifiers, because:
+  // 1. It will be used to name the sprite struct in compiled code
+  // 2. It will be used to name the identifier in auto-binding
   const err = validateGopIdentifierAssetName(name)
   if (err != null) return err
   if (project != null) {
+    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
     if (project.sprites.find((s) => s.name === name))
       return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
     if (project.sounds.find((s) => s.name === name))
@@ -69,8 +87,17 @@ export function validateAnimationName(name: string, sprite: Sprite | null) {
 export const soundNameTip = getGopIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
 
 export function validateSoundName(name: string, project: Project | null) {
-  // Now same validation logic for sprite & sound
-  return validateSpriteName(name, project)
+  // Name of a sound should obey the naming rule of identifiers, because:
+  // It will be used to name the identifier in auto-binding
+  const err = validateGopIdentifierAssetName(name)
+  if (err != null) return err
+  if (project != null) {
+    // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
+    if (project.sprites.find((s) => s.name === name))
+      return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
+    if (project.sounds.find((s) => s.name === name))
+      return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
+  }
 }
 
 export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
@@ -91,31 +118,10 @@ export function validateWidgetName(name: string, stage: Stage | null) {
     return { en: `Widget with name ${name} already exists`, zh: '存在同名的控件' }
 }
 
-function upFirst(str: string) {
-  return str[0].toUpperCase() + str.slice(1)
-}
-
-function lowFirst(str: string) {
-  return str[0].toLowerCase() + str.slice(1)
-}
-
 /** Convert any string to valid asset name, empty string may be returned */
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
-  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
-}
-
-export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
-  src = src
-    .replace(/[^a-zA-Z0-9_]+/g, '_')
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^[^a-zA-Z]+/, '') // remove invalid starting such as numbers
-  const parts = src.split('_').filter((p) => !!p)
-  if (parts.length === 0) return ''
-  const [firstpart, ...otherParts] = parts
-  const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
   return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 
@@ -129,7 +135,7 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'Sprite'
+  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'MySprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 

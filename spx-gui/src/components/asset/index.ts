@@ -1,6 +1,6 @@
 import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
-import { selectAudio, selectFile, selectImg, selectImgs } from '@/utils/file'
+import { getSupportedAudioExts, imgExts, selectFile } from '@/utils/file'
 import { parseScratchFileAssets } from '@/utils/scratch'
 import { stripExt } from '@/utils/path'
 import { useI18n } from '@/utils/i18n'
@@ -12,10 +12,10 @@ import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { Animation } from '@/models/animation'
-import { saveFiles } from '@/models/common/cloud'
+import { selectFileWithUploadLimit, selectFilesWithUploadLimit, saveFiles } from '@/models/common/cloud'
 import { Monitor } from '@/models/widget/monitor'
 import * as assetName from '@/models/common/asset-name'
-import type { Costume } from '@/models/costume'
+import { Costume } from '@/models/costume'
 import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
@@ -23,12 +23,13 @@ import { useEditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
 import { getResourceIdentifier } from '../editor/code-editor/common'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
-import AssetAddModal from './library/AssetAddModal.vue'
+import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
+import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
-function selectAsset(project: Project, asset: AssetModel | undefined) {
+export function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
   else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
   else if (asset instanceof Backdrop) {
@@ -46,17 +47,24 @@ export function useAddAssetFromLibrary(autoSelect = true) {
   }
 }
 
-export function useAddAssetToLibrary() {
-  const invokeAddAssetModal = useModal(AssetAddModal)
-  return function addAssetToLibrary(asset: Backdrop | Sound | Sprite) {
-    return invokeAddAssetModal({ asset })
+export function useSaveAssetToLibrary() {
+  const invokeAssetSaveModal = useModal(AssetSaveModal)
+  return function saveAssetToLibrary(model: AssetModel) {
+    return invokeAssetSaveModal({ model })
+  }
+}
+
+export function useAssetLibraryManagement() {
+  const invokeAssetLibraryManagementModal = useModal(AssetLibraryManagementModal)
+  return function manageAssetLibrary(type: AssetType) {
+    return invokeAssetLibraryManagementModal({ type })
   }
 }
 
 export function useLoadFromScratchModal() {
   const invokeModal = useModal(LoadFromScratchModal)
   return async function loadFromScratchModal(project: Project) {
-    const file = await selectFile({ accept: '.sb3' })
+    const file = await selectFile({ accept: ['sb3'] })
     const exportedScratchAssets = await parseScratchFileAssets(file)
     const imported = await invokeModal({ project, exportedScratchAssets })
     selectAsset(project, imported[0])
@@ -68,7 +76,7 @@ export function useAddSpriteFromLocalFile(autoSelect = true) {
   const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: Project) {
     const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
-    const nativeFiles = await selectImgs()
+    const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
     const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
     const sprite = Sprite.create(spriteName)
@@ -94,7 +102,7 @@ export function useAddCostumeFromLocalFile(autoSelect = true) {
   const preprocess = useModal(PreprocessModal)
   return async function addCostumeFromLocalFile(sprite: Sprite, project: Project) {
     const actionMessage = { en: 'Add costume', zh: '添加造型' }
-    const nativeFiles = await selectImgs()
+    const nativeFiles = await selectFilesWithUploadLimit({ accept: imgExts })
     const files = nativeFiles.map((f) => fromNativeFile(f))
     const costumes = await preprocess({
       files,
@@ -115,7 +123,7 @@ export function useAddSoundFromLocalFile(autoSelect = true) {
   const { t } = useI18n()
   const { isOnline } = useNetwork()
   return async function addSoundFromLocalFile(project: Project) {
-    const audio = await selectAudio()
+    const audio = await selectFileWithUploadLimit({ accept: await getSupportedAudioExts() })
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
 
     if (isOnline.value) {
@@ -143,7 +151,7 @@ export function useAddBackdropFromLocalFile(autoSelect = true) {
   const { t } = useI18n()
   const { isOnline } = useNetwork()
   return async function addBackdropFromLocalFile(project: Project) {
-    const img = await selectImg()
+    const img = await selectFileWithUploadLimit({ accept: imgExts })
     const file = fromNativeFile(img)
     const backdrop = await Backdrop.create(stripExt(img.name), file)
     const action = { name: { en: 'Add backdrop', zh: '添加背景' } }

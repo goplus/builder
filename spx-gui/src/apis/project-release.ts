@@ -36,3 +36,18 @@ export type ListReleasesParams = PaginationParams & {
 export function listReleases(params: ListReleasesParams, signal?: AbortSignal) {
   return client.get(`/project-releases/list`, params, { signal }) as Promise<ByPage<ProjectRelease>>
 }
+
+export function parseProjectReleaseFullName(fullName: string) {
+  const [encodedOwner, encodedProject, encodedRelease] = fullName.split('/')
+  const owner = decodeURIComponent(encodedOwner)
+  const project = decodeURIComponent(encodedProject)
+  const release = decodeURIComponent(encodedRelease)
+  return { owner, project, release }
+}
+
+export function stringifyProjectReleaseFullName(owner: string, project: string, release: string) {
+  const encodedOwner = encodeURIComponent(owner)
+  const encodedProject = encodeURIComponent(project)
+  const encodedRelease = encodeURIComponent(release)
+  return `${encodedOwner}/${encodedProject}/${encodedRelease}`
+}

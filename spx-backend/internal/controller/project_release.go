@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
@@ -15,7 +17,7 @@ import (
 type ProjectReleaseDTO struct {
 	ModelDTO
 
-	ProjectFullName string               `json:"projectFullName"`
+	ProjectFullName ProjectFullName      `json:"projectFullName"`
 	Name            string               `json:"name"`
 	Description     string               `json:"description"`
 	Files           model.FileCollection `json:"files"`
@@ -27,11 +29,10 @@ type ProjectReleaseDTO struct {
 func toProjectReleaseDTO(pr model.ProjectRelease) ProjectReleaseDTO {
 	return ProjectReleaseDTO{
 		ModelDTO: toModelDTO(pr.Model),
-		ProjectFullName: fmt.Sprintf(
-			"%s/%s",
-			pr.Project.Owner.Username,
-			pr.Project.Name,
-		),
+		ProjectFullName: ProjectFullName{
+			Owner:   pr.Project.Owner.Username,
+			Project: pr.Project.Name,
+		},
 		Name:        pr.Name,
 		Description: pr.Description,
 		Files:       pr.Files,
@@ -40,25 +41,87 @@ func toProjectReleaseDTO(pr model.ProjectRelease) ProjectReleaseDTO {
 	}
 }
 
-var (
-	// projectReleaseNameRE is the regular expression for project release name.
-	projectReleaseNameRE = regexp.MustCompile(`^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+// projectReleaseNameRE is the regular expression for project release name.
+var projectReleaseNameRE = regexp.MustCompile(`^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
 
-	// projectReleaseFullNameRE is the regular expression for project release full name.
-	projectReleaseFullNameRE = regexp.MustCompile(`^([\w-]{1,100})\/([\w-]{1,100})\/(v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)))?$`)
-)
+// ProjectReleaseFullName holds the full name of a project release.
+type ProjectReleaseFullName struct {
+	ProjectFullName
+	Release string
+}
+
+// ParseProjectReleaseFullName parses a project release full name from a string.
+func ParseProjectReleaseFullName(fullName string) (ProjectReleaseFullName, error) {
+	var prfn ProjectReleaseFullName
+	return prfn, prfn.UnmarshalText([]byte(fullName))
+}
+
+// String implements [fmt.Stringer].
+func (prfn ProjectReleaseFullName) String() string {
+	text, _ := prfn.MarshalText()
+	return string(text)
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (prfn ProjectReleaseFullName) MarshalText() ([]byte, error) {
+	escapedProjectFullName, _ := prfn.ProjectFullName.MarshalText()
+	if len(escapedProjectFullName) == 0 || prfn.Release == "" {
+		return []byte{}, nil
+	}
+	escapedRelease := url.PathEscape(prfn.Release)
+	return fmt.Appendf(escapedProjectFullName, "/%s", escapedRelease), nil
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (prfn *ProjectReleaseFullName) UnmarshalText(text []byte) error {
+	parts := strings.Split(string(text), "/")
+	if len(parts) != 3 {
+		return fmt.Errorf("invalid project release full name: %s", text)
+	}
+
+	escapedOwner := parts[0]
+	owner, err := url.PathUnescape(escapedOwner)
+	if err != nil {
+		return fmt.Errorf("failed to unescape owner in project release full name %q: %w", text, err)
+	}
+
+	escapedProject := parts[1]
+	project, err := url.PathUnescape(escapedProject)
+	if err != nil {
+		return fmt.Errorf("failed to unescape project in project release full name %q: %w", text, err)
+	}
+
+	escapedRelease := parts[2]
+	release, err := url.PathUnescape(escapedRelease)
+	if err != nil {
+		return fmt.Errorf("failed to unescape release in project release full name %q: %w", text, err)
+	}
+
+	prfn.Owner = owner
+	prfn.Project = project
+	prfn.Release = release
+	return nil
+}
+
+// IsValid reports whether the project release full name is valid.
+func (prfn ProjectReleaseFullName) IsValid() bool {
+	if !prfn.ProjectFullName.IsValid() || prfn.Release == "" {
+		return false
+	}
+	return projectReleaseNameRE.MatchString(prfn.Release)
+}
 
 // CreateProjectReleaseParams holds the parameters for creating a project release.
 type CreateProjectReleaseParams struct {
-	ProjectFullName string `json:"projectFullName"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	Thumbnail       string `json:"thumbnail"`
+	ProjectFullName ProjectFullName `json:"projectFullName"`
+	Name            string          `json:"name"`
+	Description     string          `json:"description"`
+	Thumbnail       string          `json:"thumbnail"`
 }
 
 // Validate validates the parameters.
 func (p *CreateProjectReleaseParams) Validate() (ok bool, msg string) {
-	if !projectFullNameRE.MatchString(p.ProjectFullName) {
+	if !p.ProjectFullName.IsValid() {
 		return false, "invalid projectFullName"
 	}
 	if !projectReleaseNameRE.MatchString(p.Name) {
@@ -72,11 +135,7 @@ func (p *CreateProjectReleaseParams) Validate() (ok bool, msg string) {
 
 // CreateProjectRelease creates a project release.
 func (ctrl *Controller) CreateProjectRelease(ctx context.Context, params *CreateProjectReleaseParams) (*ProjectReleaseDTO, error) {
-	projectFullNameMatches := projectFullNameRE.FindStringSubmatch(params.ProjectFullName)
-	projectOwnerUsername := projectFullNameMatches[1]
-	projectName := projectFullNameMatches[2]
-
-	mProject, err := ctrl.ensureProject(ctx, projectOwnerUsername, projectName, true)
+	mProject, err := ctrl.ensureProject(ctx, params.ProjectFullName, true)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +209,7 @@ type ListProjectReleasesParams struct {
 	// ProjectFullName filters releases by the full name of the associated project.
 	//
 	// Applied only if non-nil.
-	ProjectFullName *string
+	ProjectFullName *ProjectFullName
 
 	// OrderBy indicates the field by which to order the results.
 	OrderBy ListProjectReleasesOrderBy
@@ -173,7 +232,7 @@ func NewListProjectReleasesParams() *ListProjectReleasesParams {
 
 // Validate validates the parameters.
 func (p *ListProjectReleasesParams) Validate() (ok bool, msg string) {
-	if p.ProjectFullName != nil && !projectFullNameRE.MatchString(*p.ProjectFullName) {
+	if p.ProjectFullName != nil && !p.ProjectFullName.IsValid() {
 		return false, "invalid projectFullName"
 	}
 	if !p.OrderBy.IsValid() {
@@ -195,13 +254,10 @@ func (ctrl *Controller) ListProjectReleases(ctx context.Context, params *ListPro
 		Joins("JOIN project ON project.id = project_release.project_id").
 		Where("project.visibility = ?", model.VisibilityPublic)
 	if params.ProjectFullName != nil {
-		projectFullNameMatches := projectFullNameRE.FindStringSubmatch(*params.ProjectFullName)
-		projectOwnerUsername := projectFullNameMatches[1]
-		projectName := projectFullNameMatches[2]
 		query = query.
 			Joins("JOIN user AS project_owner ON project_owner.id = project.owner_id").
-			Where("project_owner.username = ?", projectOwnerUsername).
-			Where("project.name = ?", projectName)
+			Where("project_owner.username = ?", params.ProjectFullName.Owner).
+			Where("project.name = ?", params.ProjectFullName.Project)
 	}
 	var queryOrderByColumn string
 	switch params.OrderBy {
@@ -241,8 +297,8 @@ func (ctrl *Controller) ListProjectReleases(ctx context.Context, params *ListPro
 }
 
 // GetProjectRelease gets a project release.
-func (ctrl *Controller) GetProjectRelease(ctx context.Context, projectOwnerUsername, projectName, projectReleaseName string) (*ProjectReleaseDTO, error) {
-	mProject, err := ctrl.ensureProject(ctx, projectOwnerUsername, projectName, false)
+func (ctrl *Controller) GetProjectRelease(ctx context.Context, fullName ProjectReleaseFullName) (*ProjectReleaseDTO, error) {
+	mProject, err := ctrl.ensureProject(ctx, fullName.ProjectFullName, false)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +307,7 @@ func (ctrl *Controller) GetProjectRelease(ctx context.Context, projectOwnerUsern
 	if err := ctrl.db.WithContext(ctx).
 		Preload("Project.Owner").
 		Where("project_id = ?", mProject.ID).
-		Where("name = ?", projectReleaseName).
+		Where("name = ?", fullName.Release).
 		First(&mProjectRelease).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get project release: %w", err)

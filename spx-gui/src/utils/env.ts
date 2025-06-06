@@ -1,12 +1,16 @@
 /**
  * @file env file
- * @desc Exports enviroment variables from `.env.*` file
+ * @desc Exports environment variables from `.env.*` file
  */
 
 /// <reference types="vite/client" />
 
 // Base URL for spx-backend APIs, e.g. `/api`
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
+
+// Base URL for the static assets. For example, `monaco-editor` files
+export const usercontentBaseUrl = import.meta.env.VITE_USERCONTENT_BASE_URL as string
+export const usercontentUploadBaseUrl = import.meta.env.VITE_USERCONTENT_UPLOAD_BASE_URL as string
 
 // Casdoor configurations
 export const casdoorConfig = {
@@ -23,3 +27,6 @@ export const casdoorConfig = {
 export const disableAIGC = import.meta.env.VITE_DISABLE_AIGC === 'true'
 
 export const spxVersion = import.meta.env.VITE_SPX_VERSION as string
+
+/** Whether to show the license information (including copyright) in the footer. */
+export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'

@@ -4,7 +4,9 @@
       <EditorNavbar :project="project" />
     </header>
     <main v-if="userInfo" class="editor-main">
-      <UILoading v-if="allQueryRet.isLoading.value" />
+      <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
+        <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
+      </UIDetailedLoading>
       <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
@@ -22,11 +24,12 @@ import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
+import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { composeQuery, useQuery } from '@/utils/query'
 import { getStringParam } from '@/utils/route'
 import { clear } from '@/models/common/local'
 import { Runtime } from '@/models/runtime'
-import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
+import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
@@ -35,6 +38,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
+import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 
 const props = defineProps<{
   projectName: string
@@ -45,10 +49,11 @@ usePageTitle(() => ({
   zh: `编辑 ${props.projectName}`
 }))
 
-const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
+const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())
+const copilotCtx = useCopilotCtx()
 
 const router = useRouter()
 
@@ -87,7 +92,7 @@ const projectQueryRet = useQuery(
     if (userInfo.value == null) throw new Error('User not signed in') // This should not happen as the route is protected
     // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const project = await loadProject(userInfo.value.name, props.projectName, ctx.signal)
+    const project = await loadProject(userInfo.value.name, props.projectName, ctx.signal, ctx.reporter)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     return project
   },
@@ -104,14 +109,18 @@ const runtimeQueryRet = useQuery(async (ctx) => {
   return runtime
 })
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet)
+if (copilotCtx.mcp.registry == null) {
+  throw new Error('Copilot registry not initialized')
+}
+
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, copilotCtx.mcp.registry)
 
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
-      composeQuery(ctx, projectQueryRet),
-      composeQuery(ctx, runtimeQueryRet),
-      composeQuery(ctx, codeEditorQueryRet)
+      composeQuery(ctx, projectQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
+      composeQuery(ctx, runtimeQueryRet, [null, 0.1]),
+      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
@@ -125,7 +134,21 @@ if (getStringParam(router, 'publish') != null) {
   })
 }
 
-async function loadProject(user: string, projectName: string, signal: AbortSignal) {
+async function loadProject(user: string, projectName: string, signal: AbortSignal, reporter: ProgressReporter) {
+  const collector = ProgressCollector.collectorFor(reporter)
+  const loadFromLocalCacheReporter = collector.getSubReporter(
+    { en: 'Reading local cache...', zh: '读取本地缓存中...' },
+    1
+  )
+  const loadFromCloudReporter = collector.getSubReporter(
+    { en: 'Loading project from cloud...', zh: '从云端加载项目中...' },
+    10
+  )
+  const startEditingReporter = collector.getSubReporter(
+    { en: 'Initializing editing features...', zh: '初始化编辑功能中...' },
+    1
+  )
+
   let localProject: Project | null
   try {
     localProject = new Project()
@@ -137,6 +160,7 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
     await clear(LOCAL_CACHE_KEY)
   }
   signal.throwIfAborted()
+  loadFromLocalCacheReporter.report(1)
 
   // https://github.com/goplus/builder/issues/259
   // https://github.com/goplus/builder/issues/393
@@ -161,8 +185,7 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
 
   let newProject = new Project()
   newProject.disposeOnSignal(signal)
-  await newProject.loadFromCloud(user, projectName)
-  signal.throwIfAborted()
+  await newProject.loadFromCloud(user, projectName, undefined, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
@@ -178,6 +201,8 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
   setProjectAutoSaveMode(newProject)
   await newProject.startEditing(LOCAL_CACHE_KEY)
   signal.throwIfAborted()
+  startEditingReporter.report(1)
+
   return newProject
 }
 

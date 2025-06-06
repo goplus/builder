@@ -99,7 +99,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { humanizeCount, humanizeExactCount, humanizeTime, humanizeExactTime, useAsyncComputed } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { getPublishedContent, universalUrlToWebUrl } from '@/models/common/cloud'
+import { createFileWithUniversalUrl, getPublishedContent } from '@/models/common/cloud'
 import { useUserStore } from '@/stores/user'
 import { useIsLikingProject } from '@/stores/liking'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
@@ -140,10 +140,11 @@ const to = computed(() => {
   return props.context === 'edit' ? getProjectEditorRoute(name) : getProjectPageRoute(owner, name)
 })
 
-const thumbnailUrl = useAsyncComputed(async () => {
-  const thumbnail = getPublishedContent(props.project)?.thumbnail ?? props.project.thumbnail
-  if (thumbnail === '') return null
-  return universalUrlToWebUrl(thumbnail)
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+  const thumbnailUniversalUrl = getPublishedContent(props.project)?.thumbnail ?? props.project.thumbnail
+  if (thumbnailUniversalUrl === '') return null
+  const thumbnail = createFileWithUniversalUrl(thumbnailUniversalUrl)
+  return thumbnail.url(onCleanup)
 })
 
 const { data: liking } = useIsLikingProject(() => ({
@@ -207,7 +208,7 @@ const handleRemove = useMessageHandle(
   height: 172px;
   background-position: center;
   background-size: contain;
-  background-image: url(@/assets/stage-bg.svg);
+  background-image: url(@/assets/images/stage-bg.svg);
 
   .thumbnail {
     width: 100%;

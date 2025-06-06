@@ -1,3 +1,4 @@
+import { onUnmounted, watchEffect } from 'vue'
 import type * as monaco from 'monaco-editor'
 import { Cancelled } from '@/utils/exception'
 import type { ResourceModel } from '@/models/common/resource-model'
@@ -6,6 +7,7 @@ import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
 import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
 import type { Monaco, MonacoEditor } from '../monaco'
+import { useCodeEditorUICtx } from './CodeEditorUI.vue'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -84,6 +86,13 @@ export type AbsolutePosition = {
   height: number
 }
 
+/**
+ * Convert a position in the editor to an absolute position in the viewport.
+ * **Known issue:**
+ * If there's a decoration start from given position, `toAbsolutePosition` now returns the absolute position of the decoration
+ * instead of the absolute position of the exact column, which is rendered after the decoration.
+ * This is not ideal for most cases. TODO: get accurate position.
+ */
 export function toAbsolutePosition(position: Position, editor: MonacoEditor): AbsolutePosition | null {
   const mPos = toMonacoPosition(position)
   const editorPos = editor.getDomNode()?.getBoundingClientRect()
@@ -95,4 +104,24 @@ export function toAbsolutePosition(position: Position, editor: MonacoEditor): Ab
     left: editorPos.left + scrolledVisiblePos.left,
     height: scrolledVisiblePos.height
   }
+}
+
+export function useDecorations(
+  /** Returns decorations to be rendered in the editor. */
+  getDecorations: () => monaco.editor.IModelDeltaDecoration[]
+) {
+  const codeEditorUICtx = useCodeEditorUICtx()
+  let collection: monaco.editor.IEditorDecorationsCollection | null = null
+
+  watchEffect(() => {
+    const decorations = getDecorations()
+    if (decorations.length === 0) {
+      collection?.clear()
+      return
+    }
+
+    collection = collection ?? codeEditorUICtx.ui.editor.createDecorationsCollection([])
+    collection.set(decorations)
+  })
+  onUnmounted(() => collection?.clear())
 }

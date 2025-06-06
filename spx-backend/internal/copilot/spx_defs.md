@@ -4,43 +4,48 @@
 
 ```csv
 Name,Sample,Description
-backdropIndex,,Get the index of the current backdrop
-backdropName,,Get the name of the current backdrop
-broadcast,broadcast msg,"Broadcast a message, e.g., `broadcast ""msg""`"
-broadcast,"broadcast msg, true","Broadcast a message with waiting for related (`onMsg`) works to complete, e.g., `broadcast ""msg"", true`"
-broadcast,"broadcast msg, data, true","Broadcast a message with data and waiting for related (`onMsg`) works to complete, e.g., `broadcast ""msg"", data, true`"
-changeVolume,changeVolume dVolume,"Change the volume for sounds with given volume change, e.g., `changeVolume 10`"
-onClick,onClick => {},Listen to stage clicked
-onKey,"onKey key, => {}","Listen to given key pressed, e.g., `onKey KeyA, => {}`"
-onKey,"onKey keys, key => {}","Listen to given keys pressed, optionally receiving the key pressed"
-onMsg,"onMsg (msg, data) => {}","Listen to any message broadcasted, get the broadcasted message and data"
-onMsg,"onMsg msg, => {}",Listen to specific message broadcasted
-onStart,onStart => {},Listen to game start
-getWidget,"getWidget(T, name)","Get the widget by given type & name, e.g., `getWidget(Monitor, ""score"")`"
-keyPressed,keyPressed(key),"Check if given key is currently pressed, e.g., `keyPressed(KeyA)`"
-mouseHitItem,,"Get the topmost sprite which is hit by mouse, e.g., `hitSprite, ok := mouseHitItem`"
-mousePressed,,Check if the mouse is currently pressed
-mouseX,,Get X position of the mouse
-mouseY,,Get Y position of the mouse
-nextBackdrop,,Switch to the next backdrop
-nextBackdrop,nextBackdrop true,"Switch to the next backdrop, with waiting for related (`onBackdrop`) works to complete"
+answer,,The answer from the player
+backdropIndex,,Index of the current backdrop
+backdropName,,Name of the current backdrop
+broadcast,"broadcast ""ping""",Broadcast a message
+broadcast,"broadcast ""ping"", true",Broadcast a message with waiting for related (`onMsg`) behaviors to complete
+broadcast,"broadcast ""ping"", 1, true","Broadcast a message along with extra data, with waiting for related (`onMsg`) behaviors to complete"
+ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
+changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110"
+changeVolume,changeVolume 10,"Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
+clearGraphicEffects,,Clear all graphic effects of the stage
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
-onBackdrop,"onBackdrop backdrop, => {}",Listen to switching to specific backdrop
-play,play sound,"Play given sound, e.g., `play explosion`"
-play,"play sound, wait","Play given sound with waiting, e.g., `play explosion, true`"
-play,"play sound, options","Play given sound with options, e.g., `play explosion, { Loop: true }`"
-play,play name,"Play sound with given name, e.g., `play ""explosion""`"
-play,"play name, wait","Play sound with given name and waiting, e.g., `play ""explosion"", true`"
-play,"play name, options","Play sound with given name and options, e.g., `play ""explosion"", { Loop: true }`"
+onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
+onClick,onClick => {},Listen to stage clicked
+onKey,"onKey KeyA, => {}",Listen to given key pressed
+onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
+onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
+onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
+onStart,onStart => {},Listen to game start
+play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name and wait
+play,"play ""s1"", { Action: PlayStop }",Control sound playback
+setEffect,"setEffect ColorEffect, 100",Set graphic effect of the stage
+setVolume,setVolume 100,Set the volume for stage sounds
+volume,,The volume for stage sounds
+getWidget,"getWidget(Monitor, ""w1"")",Get the widget by given type & name
+keyPressed,keyPressed(KeyA),Check if given key is currently pressed
+mouseHitItem,,The sprite which is hit by mouse
+mousePressed,,If the mouse is currently pressed
+mouseX,,X position of the mouse
+mouseY,,Y position of the mouse
+nextBackdrop,,Switch to the next backdrop
+nextBackdrop,nextBackdrop true,"Switch to the next backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
 prevBackdrop,,Switch to the previous backdrop
-prevBackdrop,prevBackdrop true,"Switch to the previous backdrop, with waiting for related (`onBackdrop`) works to complete"
-setVolume,setVolume volume,"Set the volume for sounds, e.g., `setVolume 100`"
-startBackdrop,startBackdrop name,"Set the current backdrop by specifying name, e.g., `startBackdrop ""backdrop1""`"
-startBackdrop,"startBackdrop name, true","Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) works to complete, e.g., `startBackdrop ""backdrop1"", true`"
+prevBackdrop,prevBackdrop true,"Switch to the previous backdrop, with waiting for related (`onBackdrop`) behaviors to complete"
+resetTimer,,Reset the timer to zero
+startBackdrop,"startBackdrop ""bg1""",Set the current backdrop by specifying name
+startBackdrop,"startBackdrop ""bg1"", true","Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) behaviors to complete"
 stopAllSounds,,Stop all playing sounds
-volume,,Get the volume for sounds
-wait,wait seconds,"Block current execution (coroutine) for given seconds, e.g., `wait 0.5`"
+timer,,Current timer value
+wait,wait 1,Wait for given seconds
+waitUntil,waitUntil true,Wait until given condition is met
 
 ```
 
@@ -48,70 +53,79 @@ wait,wait seconds,"Block current execution (coroutine) for given seconds, e.g., 
 
 ```csv
 Name,Sample,Description
-animate,animate name,"Play animation with given name, e.g., `animate ""jump""`"
-bounceOffEdge,,Check & bounce off current sprite if touching the edge
-changeHeading,changeHeading dDirection,"Change heading with given direction change, e.g., `changeHeading 90`"
-changeSize,changeSize dSize,"Change the size of current sprite, e.g., `changeSize 1`"
-changeXYpos,"changeXYpos dX, dY","Change the sprite's position, e.g., `changeXYpos 10, 20` changing X position by 10 and Y position by 20"
-changeXpos,changeXpos dX,"Change the sprite's X position, e.g., `changeXpos 10` changing X position by 10"
-changeYpos,changeYpos dY,"Change the sprite's Y position, e.g., `changeYpos 10` changing Y position by 10"
-clone,,Make a clone of current sprite
-clone,clone data,"Make a clone of current sprite with given data, e.g., `clone 123` (you can get the data `123` by `onCloned`)"
+animate,"animate ""a1""",Play animation with given name
+bounceOffEdge,,Bounce off if the sprite touching the edge
+changeHeading,changeHeading 90,"Change heading by given degree. For example, if initially heading at 30 degrees, changing by 90 degrees will result in heading 120 degrees"
+changeSize,changeSize 1,"Change size of the sprite. For example, if initially size is 1, changing by 1 will result in size 2"
+changeXYpos,"changeXYpos 10, 10","Change the sprite's X, Y position"
+changeXpos,changeXpos 10,Change the sprite's X position
+changeYpos,changeYpos 10,Change the sprite's Y position
+clone,,Make a clone of the sprite
+clone,clone 1,Make a clone of the sprite and pass extra data
 costumeName,,The name of the current costume
-die,,"Let current sprite die. Animation bound to state ""die"" will be played."
-distanceTo,distanceTo(sprite),Get the distance from current sprite to given sprite
-distanceTo,distanceTo(name),"Get the distance from current sprite to the sprite with given name, e.g., `distanceTo(""Enemy"")`"
-distanceTo,distanceTo(obj),"Get the distance from current sprite to given object, e.g., `distanceTo(Mouse)`"
-glide,"glide x, y, seconds","Move to given position (X, Y) with glide animation and given duration, e.g., `glide 100, 100, 2`"
-glide,"glide sprite, seconds","Move to given sprite with glide animation and given duration, e.g., `glide Enemy, 2`"
-glide,"glide name, seconds","Move to the sprite with given name with glide animation and given duration, e.g., `glide ""Enemy"", 2`"
-glide,"glide obj, seconds","Move to given obj with glide animation and given duration, e.g., `glide Mouse, 2`"
-goto,goto sprite,"Move to given sprite, e.g., `goto Enemy`"
-goto,goto name,"Move to the sprite with given name, e.g., `goto ""Enemy""`"
-goto,goto obj,"Move to given obj, e.g., `goto Mouse`"
-heading,,Get current heading direction
-hide,,Make current sprite invisible
-move,move distance,"Move given distance toward current heading, e.g., `move 10`"
-onCloned,onCloned data => {},"Listen to current sprite cloned, optionally receiving data"
-onMoving,onMoving info => {},"Listen to current sprite moving (position change), optionally receiving the moving info"
-onTouchStart,onTouchStart sprite => {},"Listen to current sprite starting to be touched by any other sprites, optionally receiving the sprite"
-onTouchStart,"onTouchStart name, sprite => {}","Listen to current sprite starting to be touched by sprite of given name, optionally receiving the sprite"
-onTouchStart,"onTouchStart names, sprite => {}","Listen to current sprite starting to be touched by any sprite of given names, optionally receiving the sprite"
-onTurning,onTurning info => {},"Listen to current sprite turning (heading change), optionally receiving the turning info"
-say,say word,"Make the sprite say some word, e.g., `say ""Hello!""`"
-say,"say word, seconds","Make the sprite say some word with duration, e.g., `say ""Hello!"", 2`"
-setCostume,setCostume name,"Set the current costume by specifying name, e.g., `setCostume ""happy""`"
-setHeading,setHeading direction,"Set heading to given value, e.g., `setHeading 90`"
-setRotationStyle,setRotationStyle style,"Set the rotation style of the sprite, e.g., `setRotationStyle LeftRight`"
-setSize,setSize size,"Set the size of current sprite, e.g., `setSize 2`"
-setXYpos,"setXYpos x, y","Set the sprite's position, e.g., `setXYpos 100, 100`"
-setXpos,setXpos x,"Set the sprite's X position, e.g., `setXpos 100`"
-setYpos,setYpos y,"Set the sprite's Y position, e.g., `setYpos 100`"
-show,,Make current sprite visible
-size,,Get the size of current sprite
-onClick,onClick => {},Listen to current sprite clicked
-onKey,"onKey key, => {}","Listen to given key pressed, e.g., `onKey KeyA, => {}`"
-onKey,"onKey keys, key => {}","Listen to given keys pressed, optionally receiving the key pressed"
-onMsg,"onMsg (msg, data) => {}","Listen to any message broadcasted, get the broadcasted message and data"
-onMsg,"onMsg msg, => {}",Listen to specific message broadcasted
+die,,"Let the sprite die. Animation for state ""die"" will be played."
+distanceTo,"distanceTo(""S1"")",Distance from the sprite to another sprite with given name
+distanceTo,distanceTo(Mouse),Distance from the sprite to given object
+glide,"glide 100, 100, 1",Glide to given position within given duration
+glide,"glide ""S1"", 1",Glide to the sprite with given name within given duration
+glide,"glide Mouse, 1",Glide to given object within given duration
+goBackLayers,goBackLayers 1,"Send the sprite back by given layers. Positive number moves back, negative number moves front"
+goto,"goto ""S1""",Move to the sprite with given name
+goto,goto Mouse,Move to given obj
+gotoBack,,Send the sprite to back
+gotoFront,,Send the sprite to front
+heading,,The sprite's heading direction
+hide,,Make the sprite invisible
+onCloned,onCloned data => {},Listen to sprite cloned
+onMoving,onMoving info => {},Listen to the sprite moving
+onTouchStart,onTouchStart sprite => {},Listen to sprite touching another sprite
+onTouchStart,"onTouchStart ""S1"", sprite => {}",Listen to sprite touching another sprite with given name
+onTouchStart,"onTouchStart [""S1""], sprite => {}",Listen to sprite touching another sprite with one of given names
+onTurning,onTurning info => {},Listen to the sprite turning
+say,"say ""Hi""",Say some word
+say,"say ""Hi"", 1",Say some word for given seconds
+setCostume,"setCostume ""c1""",Set the current costume by specifying name
+setHeading,setHeading Right,Set heading to given direction
+setRotationStyle,setRotationStyle LeftRight,Set the rotation style of the sprite
+setSize,setSize 2,Set size of the sprite
+setXYpos,"setXYpos 0, 0","Set the sprite's X, Y position"
+setXpos,setXpos 0,Set the sprite's X position
+setYpos,setYpos 0,Set the sprite's Y position
+show,,Make the sprite visible
+size,,"Size of the sprite. Value is relative to initial size. For example, 2 means current size is twice the initial size"
+ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
+changeEffect,"changeEffect ColorEffect, 10","Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110"
+changeVolume,changeVolume 10,"Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
+clearGraphicEffects,,Clear all graphic effects of the sprite
+onAnyKey,onAnyKey key => {},Listen to any key pressed
+onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
+onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
+onClick,onClick => {},Listen to sprite clicked
+onKey,"onKey KeyA, => {}",Listen to given key pressed
+onKey,"onKey [KeyA], key => {}",Listen to given keys pressed
+onMsg,"onMsg (msg, data) => {}",Listen to any message broadcasted
+onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
 onStart,onStart => {},Listen to game start
-step,step distance,"Step given distance toward current heading. Animation bound to state ""step"" will be played, e.g., `step 10`"
-step,"step distance, animation","Step given distance toward current heading and animation with given name will be played, e.g., `step 10, ""run""`"
-think,think word,"Make the sprite think of some word, e.g., `think ""Wow!""`"
-think,"think word, seconds","Make the sprite think of some word with duration, e.g., `think ""Wow!"", 2`"
-touching,touching(name),Check if current sprite touching sprite with given name
-touching,touching(sprite),Check if current sprite touching given sprite
-touching,touching(obj),"Check if current sprite touching given object, e.g., `touching(Mouse)`"
-turn,turn degree,"Turn with given degree relative to current heading, e.g., `turn 90`"
-turn,turn direction,"Turn with given direction relative to current heading, e.g., `turn Left`"
-turnTo,turnTo sprite,Turn heading to given sprite
-turnTo,turnTo name,"Turn heading to given sprite by name, e.g., `turnTo ""Enemy""`"
-turnTo,turnTo degree,"Turn heading to given degree, e.g., `turnTo 90`"
-turnTo,turnTo direction,"Turn heading to given direction, e.g., `turnTo Left`"
-turnTo,turnTo obj,"Turn heading to given object, e.g., `turnTo Mouse`"
-visible,,If current sprite visible
-xpos,,Get current X position
-ypos,,Get current Y position
+play,"play ""s1""",Play sound with given name
+play,"play ""s1"", true",Play sound with given name and wait
+play,"play ""s1"", { Action: PlayStop }",Control sound playback
+setEffect,"setEffect ColorEffect, 100",Set graphic effect of the sprite
+setVolume,setVolume 100,Set the volume for sprite sounds
+volume,,The volume for sprite sounds
+step,step 100,"Step toward current heading. Animation for state ""step"" will be played"
+step,"step 100, ""a1""",Step toward current heading. Animation with given name will be played
+think,"think ""Emmm...""",Think of some word
+think,"think ""Emmm..."", 1",Think of some word for given seconds
+touching,"touching(""S1"")",If sprite touching another sprite with given name
+touching,touching(Edge),If sprite touching given object
+touchingColor,"touchingColor(HSB(50,100,100))",If sprite touching given color
+turn,turn Right,"Turn by given direction. For example, if initially heading at 30 degrees, turning right will result in heading 120 degrees"
+turnTo,"turnTo ""S1""",Turn to sprite with given name
+turnTo,turnTo Left,Turn to given direction
+turnTo,turnTo Mouse,Turn to given object
+visible,,If sprite visible
+xpos,,The sprite's X position
+ypos,,The sprite's Y position
 
 ```
 
@@ -119,37 +133,40 @@ ypos,,Get current Y position
 
 ```csv
 Name,Sample,Description
+hSB,"HSB(50, 100, 100)",Define HSB color
+hSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
 Down,,"Down direction, i.e., 180 degree"
-Edge,,Any edge
-EdgeBottom,,Bottom edge
-EdgeLeft,,Left edge
-EdgeRight,,Right edge
-EdgeTop,,Top edge
+Edge,,Edge of the stage
+EdgeBottom,,Bottom edge of the stage
+EdgeLeft,,Left edge of the stage
+EdgeRight,,Right edge of the stage
+EdgeTop,,Top edge of the stage
 exit,,Exit the game
+forever,forever => {},Repeat forever
 Left,,"Left direction, i.e., -90 degree"
 LeftRight,,Left-Right
-Monitor,,Type for monitor widget
-Monitor.changeSize,changeSize dSize,"Change the size of current widget, e.g., `w.changeSize 1`"
-Monitor.changeXYpos,"changeXYpos dX, dY","Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20"
-Monitor.changeXpos,changeXpos dX,"Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10"
-Monitor.changeYpos,changeYpos dY,"Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10"
-Monitor.hide,hide,"Make current widget invisible, e.g., `w.hide`"
-Monitor.setSize,setSize size,"Set the size of current widget, e.g., `w.setSize 2`"
-Monitor.setXYpos,"setXYpos x, y","Set the widget's position, e.g., `w.setXYpos 100, 100`"
-Monitor.setXpos,setXpos x,"Set the widget's X position, e.g., `w.setXpos 100`"
-Monitor.setYpos,setYpos y,"Set the widget's Y position, e.g., `w.setYpos 100`"
-Monitor.show,show,"Make current widget visible, e.g., `w.show`"
-Monitor.size,size,"Get current size, e.g., `w.size`"
-Monitor.visible,visible,"If current widget visible, e.g., `w.visible`"
-Monitor.xpos,xpos,"Get current X position, e.g., `w.xpos`"
-Monitor.ypos,ypos,"Get current Y position, e.g., `w.ypos`"
+Monitor,,Monitor widget
+Monitor.changeSize,changeSize 0.1,Change size of the widget
+Monitor.changeXYpos,"changeXYpos 10, 10",Change the widget's position
+Monitor.changeXpos,changeXpos 10,Change the widget's X position
+Monitor.changeYpos,changeYpos 10,Change the widget's Y position
+Monitor.hide,hide,Make the widget invisible
+Monitor.setSize,setSize 2,Set size of the widget
+Monitor.setXYpos,"setXYpos 0, 0","Set the widget's X, Y position"
+Monitor.setXpos,setXpos 0,Set the widget's X position
+Monitor.setYpos,setYpos 0,Set the widget's Y position
+Monitor.show,show,Make the widget visible
+Monitor.size,size,"Size of the widget. Value is relative to initial size. For example, 2 means current size is twice the initial size"
+Monitor.visible,visible,If widget visible
+Monitor.xpos,xpos,The widget's X position
+Monitor.ypos,ypos,The widget's Y position
 Mouse,,Mouse
-MovingInfo.dx,dx,The horizontal distance moved
-MovingInfo.dy,dy,The vertical distance moved
-MovingInfo.NewX,newX,The horizontal position after moving
-MovingInfo.NewY,newY,The vertical position after moving
-MovingInfo.OldX,oldX,The horizontal position before moving
-MovingInfo.OldY,oldY,The vertical position before moving
+MovingInfo.dx,dx,Change of the X position
+MovingInfo.dy,dy,Change of the Y position
+MovingInfo.NewX,newX,The X position after moving
+MovingInfo.NewY,newY,The Y position after moving
+MovingInfo.OldX,oldX,The X position before moving
+MovingInfo.OldY,oldY,The Y position before moving
 Next,,Next item
 None,,Don't Rotate
 Normal,,Normal
@@ -159,28 +176,30 @@ PlayResume,,Resume
 PlayRewind,,Rewind
 PlayStop,,Stop
 Prev,,Previous item
-rand,"rand(from, to)","Generate a random integer, e.g., `rand(1, 10)`"
-rand,"rand(from, to)","Generate a random number, e.g., `rand(1.5, 9.9)`"
+rand,"rand(1, 10)",Generate a random integer
+rand,"rand(1.5, 9.9)",Generate a random number
+repeat,"repeat 10, => {}",Repeat for given times
+repeatUntil,"repeatUntil false, => {}",Repeat until given condition is met
 Right,,"Right direction, i.e., 90 degree"
 Sprite,,Type for sprite
-TurningInfo.dir,dir,The angle rotated
-TurningInfo.NewDir,NewDir,The heading after turning
-TurningInfo.OldDir,OldDir,The heading before turning
+TurningInfo.dir,dir,The degree changed by turning
+TurningInfo.NewDir,NewDir,The heading direction after turning
+TurningInfo.OldDir,OldDir,The heading direction before turning
 Up,,"Up direction, i.e., 0 degree"
-Widget.changeSize,changeSize dSize,"Change the size of current widget, e.g., `w.changeSize 1`"
-Widget.changeXYpos,"changeXYpos dX, dY","Change the widget's position, e.g., `w.changeXYpos 10, 20` changing X position of widget `w` by 10 and Y position by 20"
-Widget.changeXpos,changeXpos dX,"Change the widget's X position, e.g., `w.changeXpos 10` changing X position of widget `w` by 10"
-Widget.changeYpos,changeYpos dY,"Change the widget's Y position, e.g., `w.changeYpos 10` changing Y position of widget `w` by 10"
-Widget.hide,hide,"Make current widget invisible, e.g., `w.hide`"
-Widget.setSize,setSize size,"Set the size of current widget, e.g., `w.setSize 2`"
-Widget.setXYpos,"setXYpos x, y","Set the widget's position, e.g., `w.setXYpos 100, 100`"
-Widget.setXpos,setXpos x,"Set the widget's X position, e.g., `w.setXpos 100`"
-Widget.setYpos,setYpos y,"Set the widget's Y position, e.g., `w.setYpos 100`"
-Widget.show,show,"Make current widget visible, e.g., `w.show`"
-Widget.size,size,"Get current size, e.g., `w.size`"
-Widget.visible,visible,"If current widget visible, e.g., `w.visible`"
-Widget.xpos,xpos,"Get current X position, e.g., `w.xpos`"
-Widget.ypos,ypos,"Get current Y position, e.g., `w.ypos`"
+Widget.changeSize,changeSize 0.1,Change size of the widget
+Widget.changeXYpos,"changeXYpos 10, 10",Change the widget's position
+Widget.changeXpos,changeXpos 10,Change the widget's X position
+Widget.changeYpos,changeYpos 10,Change the widget's Y position
+Widget.hide,hide,Make the widget invisible
+Widget.setSize,setSize 2,Set size of the widget
+Widget.setXYpos,"setXYpos 0, 0","Set the widget's X, Y position"
+Widget.setXpos,setXpos 0,Set the widget's X position
+Widget.setYpos,setYpos 0,Set the widget's Y position
+Widget.show,show,Make the widget visible
+Widget.size,size,"Size of the widget. Value is relative to initial size. For example, 2 means current size is twice the initial size"
+Widget.visible,visible,If widget visible
+Widget.xpos,xpos,The widget's X position
+Widget.ypos,ypos,The widget's Y position
 
 ```
 

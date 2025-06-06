@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import { computed, watch, type ComputedRef } from 'vue'
 import Emitter from '@/utils/emitter'
 import { type Stage } from '@/models/stage'
@@ -13,7 +14,7 @@ import {
   type TextEdit,
   getTextDocumentId
 } from './common'
-import { toMonacoPosition, toMonacoRange, fromMonacoPosition } from './ui/common'
+import { toMonacoPosition, toMonacoRange, fromMonacoPosition, fromMonacoRange } from './ui/common'
 import type { Monaco, monaco } from './monaco'
 
 enum CodeChangeKind {
@@ -116,15 +117,7 @@ export class TextDocument
 
     this.monacoTextModel = monaco.editor.createModel(codeOwner.getCode() ?? '', 'spx')
 
-    this.addDisposer(
-      watch(
-        () => codeOwner.getCode(),
-        (newCode) => {
-          if (newCode == null || this.monacoTextModel.getValue() === newCode) return
-          this.monacoTextModel.setValue(newCode)
-        }
-      )
-    )
+    this.addDisposer(watch(() => codeOwner.getCode(), this.handleCodeOwnerCodeChange))
 
     this.addDisposable(
       this.monacoTextModel.onDidChangeContent(async () => {
@@ -136,6 +129,28 @@ export class TextDocument
       })
     )
   }
+
+  // This is a workaround for IME input issues in Monaco editor.
+  // When typing certain characters like Chinese punctuation (`……`, `——`, `"`),
+  // the IME often splits input into multiple insertions with small time intervals.
+  //
+  // Example with `……`:
+  // 1. First `…` inserted in Monaco → synced to codeOwner (async)
+  // 2. Second `…` inserted in Monaco → synced to codeOwner (async)
+  // 3. First sync completes: Monaco: `……`, codeOwner: `…`
+  // 4. Second sync completes: Monaco: `……`, codeOwner: `……`
+  //
+  // The problem: Step 3 causes Monaco to reset with `monacoTextModel.setValue()`,
+  // resulting in cursor jumps and other disruptions.
+  //
+  // Solution: Debounce the syncing to codeOwner so both insertions are processed
+  // together, avoiding unnecessary model resets.
+  // TODO: Find a better solution to this problem.
+  private handleCodeOwnerCodeChange = debounce(() => {
+    const newCode = this.codeOwner.getCode()
+    if (newCode == null || this.monacoTextModel.getValue() === newCode) return
+    this.monacoTextModel.setValue(newCode)
+  }, 100)
 
   /** Kind of the current change */
   private changeKind = CodeChangeKind.User
@@ -188,6 +203,10 @@ export class TextDocument
       start: { line: position.line, column: word.startColumn },
       end: { line: position.line, column: word.endColumn }
     }
+  }
+
+  getFullRange(): Range {
+    return fromMonacoRange(this.monacoTextModel.getFullModelRange())
   }
 
   pushEdits(edits: TextEdit[]): void {

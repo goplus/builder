@@ -4,6 +4,7 @@ import { adaptAudio } from '@/utils/spx'
 import { Disposable } from '@/utils/disposable'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 import { getSoundName, validateSoundName } from './common/asset-name'
+import type { AssetMetadata } from './common/asset'
 import type { Project } from './project'
 import { nanoid } from 'nanoid'
 
@@ -11,10 +12,12 @@ export type SoundInits = {
   id?: string
   rate?: number
   sampleCount?: number
+  assetMetadata?: AssetMetadata
 }
 
 export type RawSoundConfig = Omit<SoundInits, 'id'> & {
   builder_id?: string
+  builder_assetMetadata?: AssetMetadata
   path?: string
 }
 
@@ -23,6 +26,7 @@ export const soundConfigFileName = 'index.json'
 
 export type SoundExportLoadOptions = {
   includeId?: boolean
+  includeAssetMetadata?: boolean
 }
 
 export class Sound extends Disposable {
@@ -55,6 +59,11 @@ export class Sound extends Disposable {
     this.sampleCount = sampleCount
   }
 
+  assetMetadata: AssetMetadata | null
+  setAssetMetadata(metadata: AssetMetadata | null) {
+    this.assetMetadata = metadata
+  }
+
   constructor(name: string, file: File, inits?: SoundInits) {
     super()
     this.name = name
@@ -62,6 +71,7 @@ export class Sound extends Disposable {
     this.rate = inits?.rate ?? 0
     this.sampleCount = inits?.sampleCount ?? 0
     this.id = inits?.id ?? nanoid()
+    this.assetMetadata = inits?.assetMetadata ?? null
     return reactive(this) as this
   }
 
@@ -74,17 +84,27 @@ export class Sound extends Disposable {
     return new Sound(getSoundName(null, nameBase), adaptedFile, inits)
   }
 
-  static async load(name: string, files: Files, { includeId = true }: SoundExportLoadOptions = {}) {
+  static async load(
+    name: string,
+    files: Files,
+    { includeId = true, includeAssetMetadata: includeMetadata = true }: SoundExportLoadOptions = {}
+  ) {
     const pathPrefix = join(soundAssetPath, name)
     const configFile = files[join(pathPrefix, soundConfigFileName)]
     if (configFile == null) return null
-    const { builder_id: id, path, ...inits } = (await toConfig(configFile)) as RawSoundConfig
+    const {
+      builder_id: id,
+      builder_assetMetadata: metadata,
+      path,
+      ...inits
+    } = (await toConfig(configFile)) as RawSoundConfig
     if (path == null) throw new Error(`path expected for sound ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
     return new Sound(name, file, {
       ...inits,
-      id: includeId ? id : undefined
+      id: includeId ? id : undefined,
+      assetMetadata: includeMetadata ? metadata : undefined
     })
   }
 
@@ -103,7 +123,7 @@ export class Sound extends Disposable {
   }
 
   // config is included in files
-  export({ includeId = true }: SoundExportLoadOptions = {}): Files {
+  export({ includeId = true, includeAssetMetadata: includeMetadata = true }: SoundExportLoadOptions = {}): Files {
     const filename = this.name + extname(this.file.name)
     const config: RawSoundConfig = {
       rate: this.rate,
@@ -111,6 +131,7 @@ export class Sound extends Disposable {
       path: filename
     }
     if (includeId) config.builder_id = this.id
+    if (includeMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
     const files: Files = {}
     const assetPath = join(soundAssetPath, this.name)
     files[join(assetPath, soundConfigFileName)] = fromConfig(soundConfigFileName, config)

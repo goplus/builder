@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +18,392 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+func TestParseProjectFullName(t *testing.T) {
+	got, err := ParseProjectFullName("user/project")
+	require.NoError(t, err)
+	assert.Equal(t, "user", got.Owner)
+	assert.Equal(t, "project", got.Project)
+}
+
+func TestProjectFullNameString(t *testing.T) {
+	pfn := ProjectFullName{Owner: "user", Project: "project"}
+	got := pfn.String()
+	assert.Equal(t, "user/project", got)
+}
+
+func TestProjectFullNameMarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		pfn  ProjectFullName
+		want string
+	}{
+		{
+			name: "normal case",
+			pfn:  ProjectFullName{Owner: "user", Project: "project"},
+			want: "user/project",
+		},
+		{
+			name: "with special characters",
+			pfn:  ProjectFullName{Owner: "user/name", Project: "project-name"},
+			want: "user%2Fname/project-name",
+		},
+		{
+			name: "empty owner",
+			pfn:  ProjectFullName{Owner: "", Project: "project"},
+			want: "",
+		},
+		{
+			name: "empty project",
+			pfn:  ProjectFullName{Owner: "owner", Project: ""},
+			want: "",
+		},
+		{
+			name: "empty",
+			pfn:  ProjectFullName{Owner: "", Project: ""},
+			want: "",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.pfn.MarshalText()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestProjectFullNameUnmarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		text    string
+		want    ProjectFullName
+		wantErr bool
+	}{
+		{
+			name:    "normal case",
+			text:    "user/project",
+			want:    ProjectFullName{Owner: "user", Project: "project"},
+			wantErr: false,
+		},
+		{
+			name:    "with escaped characters",
+			text:    "user%2Fname/project-name",
+			want:    ProjectFullName{Owner: "user/name", Project: "project-name"},
+			wantErr: false,
+		},
+		{
+			name:    "invalid format - missing slash",
+			text:    "userproject",
+			want:    ProjectFullName{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid format - too many slashes",
+			text:    "user/name/project",
+			want:    ProjectFullName{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid escaping",
+			text:    "user%2/project",
+			want:    ProjectFullName{},
+			wantErr: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var got ProjectFullName
+			err := got.UnmarshalText([]byte(tt.text))
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestProjectFullNameIsValid(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		pfn  ProjectFullName
+		want bool
+	}{
+		{
+			name: "valid",
+			pfn:  ProjectFullName{Owner: "owner", Project: "project"},
+			want: true,
+		},
+		{
+			name: "valid with hyphens and underscores",
+			pfn:  ProjectFullName{Owner: "owner", Project: "project-name_123"},
+			want: true,
+		},
+		{
+			name: "project with invalid characters",
+			pfn:  ProjectFullName{Owner: "owner", Project: "project/name"},
+			want: false,
+		},
+		{
+			name: "project too long",
+			pfn:  ProjectFullName{Owner: "owner", Project: strings.Repeat("a", 101)},
+			want: false,
+		},
+		{
+			name: "empty owner",
+			pfn:  ProjectFullName{Owner: "", Project: "project"},
+			want: false,
+		},
+		{
+			name: "empty project",
+			pfn:  ProjectFullName{Owner: "owner", Project: ""},
+			want: false,
+		},
+		{
+			name: "empty",
+			pfn:  ProjectFullName{Owner: "", Project: ""},
+			want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.pfn.IsValid()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParseRemixSource(t *testing.T) {
+	got, err := ParseRemixSource("user/project/v1.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, "user", got.Owner)
+	assert.Equal(t, "project", got.Project)
+	assert.Equal(t, "v1.0.0", *got.Release)
+}
+
+func TestRemixSourceString(t *testing.T) {
+	rs := RemixSource{Owner: "user", Project: "project"}
+	got := rs.String()
+	assert.Equal(t, "user/project", got)
+}
+
+func TestRemixSourceMarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		rs   RemixSource
+		want string
+	}{
+		{
+			name: "without release",
+			rs:   RemixSource{Owner: "user", Project: "project"},
+			want: "user/project",
+		},
+		{
+			name: "with release",
+			rs:   RemixSource{Owner: "user", Project: "project", Release: ptr("v1.0.0")},
+			want: "user/project/v1.0.0",
+		},
+		{
+			name: "with special characters without release",
+			rs:   RemixSource{Owner: "user/name", Project: "project-name"},
+			want: "user%2Fname/project-name",
+		},
+		{
+			name: "with special characters with release",
+			rs:   RemixSource{Owner: "user/name", Project: "project-name", Release: ptr("v1.0.0-beta")},
+			want: "user%2Fname/project-name/v1.0.0-beta",
+		},
+		{
+			name: "empty owner",
+			rs:   RemixSource{Owner: "", Project: "project", Release: ptr("v1.0.0")},
+			want: "",
+		},
+		{
+			name: "empty project",
+			rs:   RemixSource{Owner: "user", Project: "", Release: ptr("v1.0.0")},
+			want: "",
+		},
+		{
+			name: "empty release",
+			rs:   RemixSource{Owner: "user", Project: "project", Release: ptr("")},
+			want: "",
+		},
+		{
+			name: "empty without release",
+			rs:   RemixSource{Owner: "", Project: ""},
+			want: "",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.rs.MarshalText()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestRemixSourceUnmarshalText(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		text    string
+		want    RemixSource
+		wantErr bool
+	}{
+		{
+			name:    "without release",
+			text:    "user/project",
+			want:    RemixSource{Owner: "user", Project: "project"},
+			wantErr: false,
+		},
+		{
+			name:    "with release",
+			text:    "user/project/v1.0.0",
+			want:    RemixSource{Owner: "user", Project: "project", Release: ptr("v1.0.0")},
+			wantErr: false,
+		},
+		{
+			name:    "with escaped characters without release",
+			text:    "user%2Fname/project-name",
+			want:    RemixSource{Owner: "user/name", Project: "project-name"},
+			wantErr: false,
+		},
+		{
+			name:    "with escaped characters with release",
+			text:    "user%2Fname/project-name/v1.0.0-beta",
+			want:    RemixSource{Owner: "user/name", Project: "project-name", Release: ptr("v1.0.0-beta")},
+			wantErr: false,
+		},
+		{
+			name:    "invalid format - missing parts",
+			text:    "user",
+			want:    RemixSource{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid format - too many parts",
+			text:    "user/name/project/v1.0.0/extra",
+			want:    RemixSource{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid escaping",
+			text:    "user%2/project",
+			want:    RemixSource{},
+			wantErr: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var got RemixSource
+			err := got.UnmarshalText([]byte(tt.text))
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.Owner, got.Owner)
+			assert.Equal(t, tt.want.Project, got.Project)
+			if tt.want.Release == nil {
+				assert.Nil(t, got.Release)
+			} else {
+				assert.NotNil(t, got.Release)
+				assert.Equal(t, *tt.want.Release, *got.Release)
+			}
+		})
+	}
+}
+
+func TestRemixSourceIsValid(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		rs   RemixSource
+		want bool
+	}{
+		{
+			name: "valid without release",
+			rs:   RemixSource{Owner: "owner", Project: "project"},
+			want: true,
+		},
+		{
+			name: "valid with release",
+			rs:   RemixSource{Owner: "owner", Project: "project", Release: ptr("v1.0.0")},
+			want: true,
+		},
+		{
+			name: "valid with hyphens and underscores without release",
+			rs:   RemixSource{Owner: "owner", Project: "project-name_123"},
+			want: true,
+		},
+		{
+			name: "valid with prerelease",
+			rs:   RemixSource{Owner: "owner", Project: "project", Release: ptr("v1.0.0-alpha")},
+			want: true,
+		},
+		{
+			name: "project with invalid characters without release",
+			rs:   RemixSource{Owner: "owner", Project: "project/name"},
+			want: false,
+		},
+		{
+			name: "project with invalid characters with release",
+			rs:   RemixSource{Owner: "owner", Project: "project/name", Release: ptr("v1.0.0")},
+			want: false,
+		},
+		{
+			name: "invalid release format",
+			rs:   RemixSource{Owner: "owner", Project: "project", Release: ptr("1.0.0")},
+			want: false,
+		},
+		{
+			name: "project too long without release",
+			rs:   RemixSource{Owner: "owner", Project: strings.Repeat("a", 101)},
+			want: false,
+		},
+		{
+			name: "project too long with release",
+			rs:   RemixSource{Owner: "owner", Project: strings.Repeat("a", 101), Release: ptr("v1.0.0")},
+			want: false,
+		},
+		{
+			name: "empty owner without release",
+			rs:   RemixSource{Owner: "", Project: "project"},
+			want: false,
+		},
+		{
+			name: "empty owner with release",
+			rs:   RemixSource{Owner: "", Project: "project", Release: ptr("v1.0.0")},
+			want: false,
+		},
+		{
+			name: "empty project without release",
+			rs:   RemixSource{Owner: "owner", Project: ""},
+			want: false,
+		},
+		{
+			name: "empty project with release",
+			rs:   RemixSource{Owner: "owner", Project: "", Release: ptr("v1.0.0")},
+			want: false,
+		},
+		{
+			name: "empty release",
+			rs:   RemixSource{Owner: "owner", Project: "project", Release: ptr("")},
+			want: false,
+		},
+		{
+			name: "completely empty without release",
+			rs:   RemixSource{Owner: "", Project: ""},
+			want: false,
+		},
+		{
+			name: "completely empty with release",
+			rs:   RemixSource{Owner: "", Project: "", Release: ptr("")},
+			want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.rs.IsValid()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
 
 func TestControllerEnsureProject(t *testing.T) {
 	db, _, closeDB, err := modeltest.NewMockDB()
@@ -66,7 +453,7 @@ func TestControllerEnsureProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
-		project, err := ctrl.ensureProject(ctx, mAuthedUser.Username, mProject.Name, false)
+		project, err := ctrl.ensureProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name}, false)
 		require.NoError(t, err)
 		assert.Equal(t, mProject.ID, project.ID)
 		assert.Equal(t, mProject.Name, project.Name)
@@ -95,7 +482,7 @@ func TestControllerEnsureProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		_, err := ctrl.ensureProject(ctx, mAuthedUser.Username, mProjectName, false)
+		_, err := ctrl.ensureProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProjectName}, false)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -142,7 +529,7 @@ func TestControllerEnsureProject(t *testing.T) {
 				Username: mProjectOwnerUsername,
 			})...))
 
-		_, err := ctrl.ensureProject(ctx, mProjectOwnerUsername, mProject.Name, false)
+		_, err := ctrl.ensureProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name}, false)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
 
@@ -189,7 +576,7 @@ func TestControllerEnsureProject(t *testing.T) {
 				Username: mProjectOwnerUsername,
 			})...))
 
-		_, err := ctrl.ensureProject(ctx, mProjectOwnerUsername, mProject.Name, true)
+		_, err := ctrl.ensureProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name}, true)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
 
@@ -200,7 +587,7 @@ func TestControllerEnsureProject(t *testing.T) {
 func TestCreateProjectParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &CreateProjectParams{
-			RemixSource: "user/project",
+			RemixSource: &RemixSource{Owner: "user", Project: "project"},
 			Name:        "testproject",
 			Files: model.FileCollection{
 				"main.go": "http://example.com/main.go",
@@ -231,7 +618,7 @@ func TestCreateProjectParams(t *testing.T) {
 
 	t.Run("InvalidRemixSource", func(t *testing.T) {
 		params := &CreateProjectParams{
-			RemixSource: "invalid/project/name",
+			RemixSource: &RemixSource{},
 			Name:        "testproject",
 			Visibility:  "public",
 		}
@@ -396,7 +783,7 @@ func TestControllerCreateProject(t *testing.T) {
 		}
 
 		params := &CreateProjectParams{
-			RemixSource: fmt.Sprintf("%s/%s", mSourceProjectOwnerUsername, mSourceProject.Name),
+			RemixSource: &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name},
 			Name:        "remixproject",
 			Visibility:  "public",
 		}
@@ -545,7 +932,7 @@ func TestControllerCreateProject(t *testing.T) {
 		assert.Equal(t, mSourceProject.Instructions, projectDTO.Instructions)
 		assert.Equal(t, mSourceProjectRelease.Thumbnail, projectDTO.Thumbnail)
 		assert.Equal(t, mSourceProjectRelease.Files, projectDTO.Files)
-		assert.Equal(t, fmt.Sprintf("%s/%s/%s", mSourceProjectOwnerUsername, mSourceProject.Name, mSourceProjectRelease.Name), projectDTO.RemixedFrom)
+		assert.Equal(t, &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name, Release: &mSourceProjectRelease.Name}, projectDTO.RemixedFrom)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -630,15 +1017,15 @@ func TestListProjectsParams(t *testing.T) {
 
 	t.Run("ValidWithAllFields", func(t *testing.T) {
 		params := NewListProjectsParams()
-		params.Owner = stringPtr("testuser")
-		params.RemixedFrom = stringPtr("user/project")
-		params.Keyword = stringPtr("test")
-		params.Visibility = stringPtr("public")
-		params.Liker = stringPtr("liker")
+		params.Owner = ptr("testuser")
+		params.RemixedFrom = &RemixSource{Owner: "user", Project: "project"}
+		params.Keyword = ptr("test")
+		params.Visibility = ptr("public")
+		params.Liker = ptr("liker")
 		params.CreatedAfter = &time.Time{}
 		params.LikesReceivedAfter = &time.Time{}
 		params.RemixesReceivedAfter = &time.Time{}
-		params.FromFollowees = boolPtr(true)
+		params.FromFollowees = ptr(true)
 		params.OrderBy = ListProjectsOrderByLikeCount
 		params.SortOrder = SortOrderAsc
 		params.Pagination = Pagination{Index: 2, Size: 10}
@@ -650,7 +1037,7 @@ func TestListProjectsParams(t *testing.T) {
 
 	t.Run("InvalidRemixedFrom", func(t *testing.T) {
 		params := NewListProjectsParams()
-		params.RemixedFrom = stringPtr("invalid/project/name")
+		params.RemixedFrom = &RemixSource{}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid remixedFrom", msg)
@@ -658,7 +1045,7 @@ func TestListProjectsParams(t *testing.T) {
 
 	t.Run("InvalidVisibility", func(t *testing.T) {
 		params := NewListProjectsParams()
-		params.Visibility = stringPtr("invalid")
+		params.Visibility = ptr("invalid")
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid visibility", msg)
@@ -770,7 +1157,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 		assert.Equal(t, mProjects[1].Name, result.Data[1].Name)
 
@@ -836,7 +1223,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -902,7 +1289,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -972,7 +1359,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1045,7 +1432,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
-		assert.Len(t, result.Data, 2)
+		require.Len(t, result.Data, 2)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 		assert.Equal(t, mProjects[1].Name, result.Data[1].Name)
 
@@ -1138,8 +1525,7 @@ func TestControllerListProjects(t *testing.T) {
 		}
 
 		params := NewListProjectsParams()
-		remixedFrom := "original_user/original_project"
-		params.RemixedFrom = &remixedFrom
+		params.RemixedFrom = &RemixSource{Owner: "original_user", Project: "original_project"}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Project{}).
@@ -1198,7 +1584,7 @@ func TestControllerListProjects(t *testing.T) {
 		result, err := ctrl.ListProjects(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
-		assert.Len(t, result.Data, 1)
+		require.Len(t, result.Data, 1)
 		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1254,7 +1640,7 @@ func TestControllerGetProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
-		projectDTO, err := ctrl.GetProject(ctx, mAuthedUser.Username, mProject.Name)
+		projectDTO, err := ctrl.GetProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name})
 		require.NoError(t, err)
 		assert.Equal(t, mProject.Name, projectDTO.Name)
 		assert.Equal(t, mProject.Visibility.String(), projectDTO.Visibility)
@@ -1284,7 +1670,7 @@ func TestControllerGetProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		_, err := ctrl.GetProject(ctx, mAuthedUser.Username, mProjectName)
+		_, err := ctrl.GetProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -1331,7 +1717,7 @@ func TestControllerGetProject(t *testing.T) {
 				Username: mProjectOwnerUsername,
 			})...))
 
-		_, err := ctrl.GetProject(ctx, mProjectOwnerUsername, mProject.Name)
+		_, err := ctrl.GetProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
 
@@ -1452,7 +1838,7 @@ func TestControllerUpdateProject(t *testing.T) {
 
 		dbMock.ExpectCommit()
 
-		mUpdatedProject, err := ctrl.UpdateProject(ctx, mAuthedUser.Username, mProject.Name, params)
+		mUpdatedProject, err := ctrl.UpdateProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name}, params)
 		require.NoError(t, err)
 		assert.Equal(t, params.Visibility, mUpdatedProject.Visibility)
 		assert.Equal(t, params.Description, mUpdatedProject.Description)
@@ -1485,7 +1871,7 @@ func TestControllerUpdateProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		_, err := ctrl.UpdateProject(ctx, mAuthedUser.Username, mProjectName, params)
+		_, err := ctrl.UpdateProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProjectName}, params)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -1536,7 +1922,7 @@ func TestControllerUpdateProject(t *testing.T) {
 				Username: mProjectOwnerUsername,
 			})...))
 
-		_, err := ctrl.UpdateProject(ctx, mProjectOwnerUsername, mProject.Name, params)
+		_, err := ctrl.UpdateProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name}, params)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
 
@@ -1584,7 +1970,7 @@ func TestControllerUpdateProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
-		mUpdatedProject, err := ctrl.UpdateProject(ctx, mAuthedUser.Username, mProject.Name, params)
+		mUpdatedProject, err := ctrl.UpdateProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name}, params)
 		require.NoError(t, err)
 		assert.Equal(t, mProject.Visibility.String(), mUpdatedProject.Visibility)
 		assert.Equal(t, mProject.Description, mUpdatedProject.Description)
@@ -1723,7 +2109,7 @@ func TestControllerDeleteProject(t *testing.T) {
 
 		dbMock.ExpectCommit()
 
-		err := ctrl.DeleteProject(ctx, mAuthedUser.Username, mProject.Name)
+		err := ctrl.DeleteProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1750,7 +2136,7 @@ func TestControllerDeleteProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		err := ctrl.DeleteProject(ctx, mAuthedUser.Username, mProjectName)
+		err := ctrl.DeleteProject(ctx, ProjectFullName{Owner: mAuthedUser.Username, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -1797,7 +2183,7 @@ func TestControllerDeleteProject(t *testing.T) {
 				Username: mProjectOwnerUsername,
 			})...))
 
-		err := ctrl.DeleteProject(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.DeleteProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
 
@@ -1861,9 +2247,10 @@ func TestControllerDeleteProject(t *testing.T) {
 
 		dbMock.ExpectRollback()
 
-		err := ctrl.DeleteProject(ctx, mAuthedUser.Username, mProject.Name)
+		projectFullName := ProjectFullName{Owner: mAuthedUser.Username, Project: mProject.Name}
+		err := ctrl.DeleteProject(ctx, projectFullName)
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("failed to delete project: %s", "delete failed"))
+		assert.EqualError(t, err, fmt.Sprintf("failed to delete project %q: %s", projectFullName, "delete failed"))
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -1964,7 +2351,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 
 		dbMock.ExpectCommit()
 
-		err := ctrl.RecordProjectView(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.RecordProjectView(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2014,7 +2401,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 				LastViewedAt: sql.NullTime{Valid: true, Time: recentViewTime},
 			})...))
 
-		err := ctrl.RecordProjectView(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.RecordProjectView(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2024,7 +2411,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		err := ctrl.RecordProjectView(context.Background(), "otheruser", "testproject")
+		err := ctrl.RecordProjectView(context.Background(), ProjectFullName{Owner: "otheruser", Project: "testproject"})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
@@ -2049,7 +2436,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		err := ctrl.RecordProjectView(ctx, mProjectOwnerUsername, mProjectName)
+		err := ctrl.RecordProjectView(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -2159,7 +2546,7 @@ func TestControllerLikeProject(t *testing.T) {
 
 		dbMock.ExpectCommit()
 
-		err := ctrl.LikeProject(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.LikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2207,7 +2594,7 @@ func TestControllerLikeProject(t *testing.T) {
 				LikedAt:   sql.NullTime{Valid: true, Time: time.Now()},
 			})...))
 
-		err := ctrl.LikeProject(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.LikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2217,7 +2604,7 @@ func TestControllerLikeProject(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		err := ctrl.LikeProject(context.Background(), "otheruser", "testproject")
+		err := ctrl.LikeProject(context.Background(), ProjectFullName{Owner: "otheruser", Project: "testproject"})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
@@ -2242,7 +2629,7 @@ func TestControllerLikeProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		err := ctrl.LikeProject(ctx, mProjectOwnerUsername, mProjectName)
+		err := ctrl.LikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -2298,7 +2685,7 @@ func TestControllerHasLikedProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-		hasLiked, err := ctrl.HasLikedProject(ctx, mProjectOwnerUsername, mProject.Name)
+		hasLiked, err := ctrl.HasLikedProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 		assert.True(t, hasLiked)
 
@@ -2344,7 +2731,7 @@ func TestControllerHasLikedProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		hasLiked, err := ctrl.HasLikedProject(ctx, mProjectOwnerUsername, mProject.Name)
+		hasLiked, err := ctrl.HasLikedProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 		assert.False(t, hasLiked)
 
@@ -2355,7 +2742,7 @@ func TestControllerHasLikedProject(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		hasLiked, err := ctrl.HasLikedProject(context.Background(), "otheruser", "testproject")
+		hasLiked, err := ctrl.HasLikedProject(context.Background(), ProjectFullName{Owner: "otheruser", Project: "testproject"})
 		require.NoError(t, err)
 		assert.False(t, hasLiked)
 	})
@@ -2380,7 +2767,7 @@ func TestControllerHasLikedProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		_, err := ctrl.HasLikedProject(ctx, mProjectOwnerUsername, mProjectName)
+		_, err := ctrl.HasLikedProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -2478,7 +2865,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 
 		dbMock.ExpectCommit()
 
-		err := ctrl.UnlikeProject(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.UnlikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2526,7 +2913,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 				LikedAt:   sql.NullTime{Valid: false},
 			})...))
 
-		err := ctrl.UnlikeProject(ctx, mProjectOwnerUsername, mProject.Name)
+		err := ctrl.UnlikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProject.Name})
 		require.NoError(t, err)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -2536,7 +2923,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		err := ctrl.UnlikeProject(context.Background(), "otheruser", "testproject")
+		err := ctrl.UnlikeProject(context.Background(), ProjectFullName{Owner: "otheruser", Project: "testproject"})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
@@ -2561,7 +2948,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		err := ctrl.UnlikeProject(ctx, mProjectOwnerUsername, mProjectName)
+		err := ctrl.UnlikeProject(ctx, ProjectFullName{Owner: mProjectOwnerUsername, Project: mProjectName})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 

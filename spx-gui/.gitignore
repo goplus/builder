@@ -21,7 +21,10 @@ npm-debug.log*
 tests/**/coverage/
 
 # Local debug
-.vscode/launch.json
+.vscode/*
+!.vscode
+!.vscode/extensions.json
+!.vscode/tasks.json
 
 # Editor directories and files
 .idea

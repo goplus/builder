@@ -16,7 +16,7 @@ function makeProject(name?: string, screenshotTaker = async () => mockFile()) {
   const sound = new Sound('sound', mockFile())
   project.addSound(sound)
 
-  const sprite = new Sprite('Sprite')
+  const sprite = new Sprite('MySprite')
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))

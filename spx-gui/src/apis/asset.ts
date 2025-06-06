@@ -51,7 +51,7 @@ export type ListAssetParams = PaginationParams & {
   category?: string
   filesHash?: string
   visibility?: Visibility
-  orderBy?: 'createdAt' | 'updatedAt'
+  orderBy?: 'createdAt' | 'updatedAt' | 'displayName'
   sortOrder?: 'asc' | 'desc'
 }
 

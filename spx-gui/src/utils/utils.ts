@@ -1,4 +1,4 @@
-import { memoize } from 'lodash'
+import { debounce, escape, memoize } from 'lodash'
 import dayjs from 'dayjs'
 import {
   shallowReactive,
@@ -11,10 +11,11 @@ import {
   onUnmounted,
   onDeactivated,
   ref,
-  onActivated
+  onActivated,
+  toValue
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
-import type { Disposable } from './disposable'
+import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -28,29 +29,19 @@ export const isSound = (url: string): boolean => {
   return ['wav', 'mp3', 'ogg'].includes(extension)
 }
 
-/**
- * If add-to-public-library features are enabled.
- * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).
- * These features are only enabled when there is `?library` in URL query. A simple & ugly interface will be provided.
- * This is an informal & temporary behavior.
- */
-export function isAddPublicLibraryEnabled() {
-  return /\blibrary\b/.test(window.location.search)
-}
-
 /** Manage spx version. */
 export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
-  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v1')
+  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v2')
 }
 
-export function useAsyncComputed<T>(getter: () => Promise<T>) {
+export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
     onCleanup(() => {
       cancelled = true
     })
-    const result = await getter()
+    const result = await getter(onCleanup)
     if (!cancelled) r.value = result
   })
   return r
@@ -181,12 +172,12 @@ function untilConditionMet<T>(
   })
 }
 
-/** Convert arbitrary degree value to `[-180, 180)` */
+/** Convert arbitrary degree value to `(-180, 180]` */
 export function nomalizeDegree(num: number) {
   if (!Number.isFinite(num) || Number.isNaN(num)) return num
   num = num % 360
-  if (num >= 180) num = num - 360
-  if (num < -180) num = num + 360
+  if (num > 180) num = num - 360
+  if (num <= -180) num = num + 360
   if (num === 0) num = 0 // convert `-0` to `0`
   return num
 }
@@ -273,13 +264,29 @@ export function humanizeListWithLimit(list: LocaleMessage[], maxNum: number = 3)
   }
 }
 
+export function humanizeFileSize(
+  /** File size in bytes */
+  size: number
+) {
+  const base = 1024
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  for (let i = 0; i < units.length; i++) {
+    if (size < base || i === units.length - 1) {
+      const text = `${parseFloat(size.toFixed(2)) + ''} ${units[i]}`
+      return { en: text, zh: text }
+    }
+    size /= base
+  }
+  throw new Error('Unreachable code in humanizeFileSize')
+}
+
 export function usePageTitle(
   titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
 ) {
   const i18n = useI18n()
   function setTitle(parts: LocaleMessage | LocaleMessage[]) {
     if (!Array.isArray(parts)) parts = [parts]
-    document.title = [...parts.map((p) => i18n.t(p)), 'Go+ Builder'].join(' - ')
+    document.title = [...parts.map((p) => i18n.t(p)), 'XBuilder'].join(' - ')
   }
 
   if (typeof titleParts !== 'function') {
@@ -311,4 +318,80 @@ export function useActivated() {
   onDeactivated(() => (activatedRef.value = false))
   onUnmounted(() => (activatedRef.value = false))
   return activatedRef
+}
+
+export function escapeHTML(str: string) {
+  return escape(str)
+}
+
+/**
+ * Create a new value reference for given source with debounce.
+ * Changes to the source will be reflected in the new value reference.
+ * Changes to the new value reference will be reflected in the source with debounce.
+ * The new value reference can be used as model (`v-model`) for input components.
+ */
+export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T) => void, wait = 300) {
+  const valueRef = ref<T>(toValue(source))
+  const debouncedOnChange = debounce(() => {
+    if (valueRef.value === toValue(source)) return
+    onChange(valueRef.value)
+  }, wait)
+  watch(source, (newSourceValue) => (valueRef.value = newSourceValue))
+  watch(valueRef, debouncedOnChange)
+  return [valueRef, () => debouncedOnChange.flush()] as const
+}
+
+export function upFirst(str: string) {
+  return str[0].toUpperCase() + str.slice(1)
+}
+
+export function lowFirst(str: string) {
+  return str[0].toLowerCase() + str.slice(1)
+}
+
+export function isCrossOriginUrl(url: string, origin = window.location.origin) {
+  try {
+    const parsedUrl = new URL(url)
+    if (parsedUrl.protocol === 'data:') return false // Data URLs are not assumed cross-origin
+    return parsedUrl.origin !== origin
+  } catch (e) {
+    // If URL parsing fails (for example relative URL), assume it's not a cross-origin URL
+    return false
+  }
+}
+
+/**
+ * Helper for using external URLs.
+ * We enable cross-origin isolation for Builder by specifying COEP header,
+ * which denies cross-origin requests by default. By fetching the URL (with CORS enabled),
+ * then creating an object URL from the response, we can safely use cross-origin URLs in Builder.
+ *
+ * NOTE: You may not need this if you are consuming URL of a `File` (see details in `src/models/common/file.ts`).
+ * `File.url` automatically create an object URL for further usage.
+ */
+export function useExternalUrl(urlSource: WatchSource<string | null | undefined>) {
+  const urlRef = ref<string | null>(null)
+  watch(
+    urlSource,
+    async (url, _, onCleanup) => {
+      if (url == null) {
+        urlRef.value = null
+        return
+      }
+      if (!isCrossOriginUrl(url)) {
+        urlRef.value = url
+        return
+      }
+      const signal = getCleanupSignal(onCleanup)
+      const resp = await fetch(url)
+      signal.throwIfAborted()
+      const ab = await resp.arrayBuffer()
+      signal.throwIfAborted()
+      const objectUrl = URL.createObjectURL(new Blob([ab], { type: resp.headers.get('Content-Type') ?? '' }))
+      signal.addEventListener('abort', () => URL.revokeObjectURL(objectUrl))
+      urlRef.value = objectUrl
+    },
+    { immediate: true }
+  )
+  return urlRef
 }

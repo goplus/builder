@@ -1,4 +1,4 @@
-import { shallowRef, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import { Cancelled } from '@/utils/exception'
@@ -12,7 +12,7 @@ import {
   builtInCommandPaste,
   type InternalAction
 } from '../code-editor-ui'
-import { toMonacoPosition, fromMonacoPosition, fromMonacoSelection } from '../common'
+import { fromMonacoPosition, fromMonacoSelection } from '../common'
 
 export type ContextMenuContext = BaseContext
 
@@ -95,31 +95,6 @@ export class ContextMenuController extends Disposable {
     return { selection: this.ui.selection! }
   }
 
-  triggerWidgetEl = document.createElement('div')
-
-  private triggerWidget = {
-    getId: () => `context-menu-trigger-for-${this.ui.id}`,
-    getDomNode: () => this.triggerWidgetEl,
-    getPosition: () => {
-      const monaco = this.ui.monaco
-      const triggerData = this.triggerData
-      let position: monaco.IPosition | null = null
-      if (triggerData != null) {
-        position = toMonacoPosition({
-          line: triggerData.selection.position.line,
-          column: 0
-        })
-      }
-      return {
-        position,
-        preference: [
-          monaco.editor.ContentWidgetPositionPreference.ABOVE,
-          monaco.editor.ContentWidgetPositionPreference.BELOW
-        ]
-      }
-    }
-  } satisfies monaco.editor.IContentWidget
-
   private hideMenu() {
     this.menuMgr.stop()
   }
@@ -148,15 +123,6 @@ export class ContextMenuController extends Disposable {
 
   init() {
     const { editor, monaco } = this.ui
-
-    editor.addContentWidget(this.triggerWidget)
-    this.addDisposer(() => editor.removeContentWidget(this.triggerWidget))
-    this.addDisposer(
-      watch(
-        () => this.triggerWidget.getPosition(),
-        () => editor.layoutContentWidget(this.triggerWidget)
-      )
-    )
 
     const MTT = monaco.editor.MouseTargetType
     this.addDisposable(

@@ -8,7 +8,7 @@ export const forIterate: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_iterate' },
-  insertText: 'for ${1:i}, ${2:v} <- ${3:set} {\n\t${4:}\n}',
+  insertSnippet: 'for ${1:i}, ${2:v} <- ${3:set} {\n\t$0\n}',
   overview: 'for i, v <- set {}',
   detail: makeBasicMarkdownString({
     en: 'Iterate within given set',
@@ -20,7 +20,7 @@ export const forLoopWithCondition: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_loop_with_condition' },
-  insertText: 'for ${1:condition} {\n\t${2:}\n}',
+  insertSnippet: 'for ${1:condition} {\n\t$0\n}',
   overview: 'for condition {}',
   detail: makeBasicMarkdownString({
     en: 'Loop with condition',
@@ -32,7 +32,7 @@ export const forLoopWithRange: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_loop_with_range' },
-  insertText: 'for ${1:i} <- ${2:start}:${3:end} {\n\t${4:}\n}',
+  insertSnippet: 'for ${1:i} <- ${2:start}:${3:end} {\n\t$0\n}',
   overview: 'for i <- start:end {}',
   detail: makeBasicMarkdownString({
     en: 'Loop with range',
@@ -44,7 +44,7 @@ export const ifStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'if_statement' },
-  insertText: 'if ${1:condition} {\n\t${2:}\n}',
+  insertSnippet: 'if ${1:condition} {\n\t$0\n}',
   overview: 'if condition {}',
   detail: makeBasicMarkdownString({
     en: 'If statement',
@@ -56,7 +56,7 @@ export const ifElseStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'if_else_statement' },
-  insertText: 'if ${1:condition} {\n\t${2:}\n} else {\n\t${3:}\n}',
+  insertSnippet: 'if ${1:condition} {\n\t$0\n} else {\n\t$0\n}',
   overview: 'if condition {} else {}',
   detail: makeBasicMarkdownString({
     en: 'If else statement',
@@ -68,7 +68,7 @@ export const varDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'var_declaration' },
-  insertText: 'var ${1:name} ${2:type}',
+  insertSnippet: 'var ${1:name} ${2:type}',
   overview: 'var name type',
   detail: makeBasicMarkdownString({
     en: 'Variable declaration, e.g., `var count int`',
@@ -80,7 +80,7 @@ export const importStatement: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'import_declaration' },
-  insertText: 'import "${1:package}"',
+  insertSnippet: 'import "${1:package}"',
   overview: 'import "package"',
   detail: makeBasicMarkdownString({
     en: 'Import package declaration, e.g., `import "fmt"`',
@@ -92,7 +92,7 @@ export const functionDeclaration: DefinitionDocumentationItem = {
   categories: [categories.control.declaration],
   kind: DefinitionKind.Statement,
   definition: { name: 'func_declaration' },
-  insertText: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}',
+  insertSnippet: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}',
   overview: 'func name(params) {}',
   detail: makeBasicMarkdownString({
     en: 'Function declaration, e.g., `func add(a int, b int) int {}`',
@@ -107,10 +107,11 @@ export const println: DefinitionDocumentationItem = {
     package: 'fmt',
     name: 'println'
   },
-  insertText: 'println ${1}',
+  insertSnippet: 'println ${1:"Hello, World!"}',
+  insertSnippetParameterHints: ['msg'],
   overview: 'println msg, ...',
   detail: makeBasicMarkdownString({
-    en: 'Print line, e.g., `println "Hello, world!"`',
-    zh: '打印行，如 `println "Hello, world!"`'
+    en: 'Print given message',
+    zh: '打印给定信息'
   })
 }

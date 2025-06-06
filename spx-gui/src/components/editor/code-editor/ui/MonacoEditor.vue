@@ -46,6 +46,7 @@ watchEffect(async (onClenaup) => {
     scrollBeyondLastLine: false,
     overviewRulerLanes: 0,
     renderLineHighlight: 'none',
+    occurrencesHighlight: 'off',
     bracketPairColorization: {
       enabled: false
     },
@@ -72,7 +73,12 @@ watchEffect(async (onClenaup) => {
 </script>
 
 <template>
-  <div ref="editorElRef" class="monaco-editor"></div>
+  <div ref="editorElRef" class="monaco-editor-conflict-free"></div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss">
+.monaco-editor-conflict-free > .monaco-editor {
+  // remove the default outline of monaco editor
+  outline: none;
+}
+</style>

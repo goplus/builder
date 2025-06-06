@@ -8,6 +8,7 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
+import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
@@ -67,12 +68,12 @@ type RawProjectConfig = RawStageConfig & {
   zorder?: ZorderItem[]
   run?: RunConfig
   /**
-   * Sprite order info, used by Go+ Builder to determine the order of sprites.
+   * Sprite order info, used by Builder to determine the order of sprites.
    * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
    */
   builder_spriteOrder?: string[]
   /**
-   * Sound order info, used by Go+ Builder to determine the order of sounds.
+   * Sound order info, used by Builder to determine the order of sounds.
    * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
    */
   builder_soundOrder?: string[]
@@ -144,6 +145,18 @@ export class Project extends Disposable {
       this.zorder = [...this.zorder, sprite.id]
     }
   }
+  /**
+   * Move a sprite within the sprites array, without changing the sprite zorder.
+   * TODO: Consider merging this with set-sprite-zorder
+   */
+  moveSprite(from: number, to: number) {
+    if (from < 0 || from >= this.sprites.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.sprites.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const sprite = this.sprites[from]
+    this.sprites.splice(from, 1)
+    this.sprites.splice(to, 0, sprite)
+  }
   // TODO: Test this method
   private setSpriteZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.zorder.findIndex((v) => v === id)
@@ -191,6 +204,15 @@ export class Project extends Disposable {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
+  }
+  /** Move a sound within the sounds array, without changing the sound zorder */
+  moveSound(from: number, to: number) {
+    if (from < 0 || from >= this.sounds.length) throw new Error(`invalid from index: ${from}`)
+    if (to < 0 || to >= this.sounds.length) throw new Error(`invalid to index: ${to}`)
+    if (from === to) return
+    const sound = this.sounds[from]
+    this.sounds.splice(from, 1)
+    this.sounds.splice(to, 0, sound)
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -275,6 +297,10 @@ export class Project extends Disposable {
     if (!this.hasUnsyncedChanges && !!this.thumbnail) return
     const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
     this.thumbnail = await screenshotTaker('thumbnail', signal)
+  }
+
+  public setThumbnail(thumbnail: File) {
+    this.thumbnail = thumbnail
   }
 
   constructor(owner?: string, name?: string) {
@@ -413,10 +439,28 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+  async loadFromCloud(
+    owner: string,
+    name: string,
+    preferPublishedContent: boolean = false,
+    signal?: AbortSignal,
+    reporter?: ProgressReporter
+  ) {
+    const collector = reporter != null ? ProgressCollector.collectorFor(reporter) : null
+    const cloudLoadReporter = collector?.getSubReporter(
+      { en: 'Downloading project info...', zh: '正在下载项目信息...' },
+      1
+    )
+    const projectLoadReporter = collector?.getSubReporter({ en: 'Loading project...', zh: '正在载入项目...' }, 1)
+
     const { metadata, files } = await cloudHelper.load(owner, name, preferPublishedContent, signal)
     signal?.throwIfAborted()
+    cloudLoadReporter?.report(1)
+
     await this.load(metadata, files)
+    signal?.throwIfAborted()
+    projectLoadReporter?.report(1)
+
     return this as CloudProject
   }
 

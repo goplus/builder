@@ -1,6 +1,7 @@
 import { watchEffect, type InjectionKey, inject, provide } from 'vue'
 import { shikiToMonaco } from '@shikijs/monaco'
 import { useI18n } from '@/utils/i18n'
+import { ProgressCollector } from '@/utils/progress'
 import { getHighlighter } from '@/utils/spx/highlighter'
 import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import type { Project } from '@/models/project'
@@ -16,6 +17,7 @@ import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
+import { ToolRegistry } from '@/components/copilot/mcp/registry'
 
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void
@@ -137,12 +139,22 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 
 export function useProvideCodeEditorCtx(
   projectRet: QueryRet<Project>,
-  runtimeRet: QueryRet<Runtime>
+  runtimeRet: QueryRet<Runtime>,
+  registry: ToolRegistry
 ): QueryRet<unknown> {
   const i18n = useI18n()
 
-  const monacoQueryRet = useQuery<Monaco>(async () => {
-    const [monaco, highlighter] = await Promise.all([getMonaco(i18n.lang.value), getHighlighter()])
+  const monacoQueryRet = useQuery<Monaco>(async (ctx) => {
+    const collector = ProgressCollector.collectorFor(ctx.reporter)
+    const monacoReporter = collector.getSubReporter({ en: 'Loading Monaco...', zh: '正在加载 Monaco...' }, 2)
+    const highlighterReporter = collector.getSubReporter(
+      { en: 'Loading syntax highlighter...', zh: '正在加载语法高亮器...' },
+      1
+    )
+    const [monaco, highlighter] = await Promise.all([
+      getMonaco(i18n.lang.value).then((m) => (monacoReporter.report(1), m)),
+      getHighlighter().then((h) => (highlighterReporter.report(1), h))
+    ])
     monaco.languages.register({ id: 'spx' })
     shikiToMonaco(highlighter, monaco)
     monaco.languages.setLanguageConfiguration('spx', spxLanguageConfiguration)
@@ -152,12 +164,12 @@ export function useProvideCodeEditorCtx(
   const editorQueryRet = useQuery<CodeEditor>(
     async (ctx) => {
       const [project, runtime, monaco] = await Promise.all([
-        composeQuery(ctx, projectRet),
-        composeQuery(ctx, runtimeRet),
+        composeQuery(ctx, projectRet, [null, 0]),
+        composeQuery(ctx, runtimeRet, [null, 0]),
         composeQuery(ctx, monacoQueryRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, runtime, monaco, i18n)
+      const codeEditor = new CodeEditor(project, runtime, monaco, i18n, registry)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },

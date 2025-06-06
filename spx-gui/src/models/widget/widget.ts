@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { Disposable } from '@/utils/disposable'
 import { validateWidgetName } from '../common/asset-name'
 import type { Stage } from '../stage'
+import type { WidgetType } from '.'
 
 export type BaseWidgetInits = {
   id?: string
@@ -20,7 +21,7 @@ export type BaseRawWidgetConfig = Omit<BaseWidgetInits, 'id'> & {
 
 export class BaseWidget extends Disposable {
   id: string
-  type: string
+  type: WidgetType
 
   stage: Stage | null = null
   setStage(stage: Stage | null) {
@@ -54,7 +55,7 @@ export class BaseWidget extends Disposable {
     this.visible = visible
   }
 
-  constructor(name: string, type: string, inits?: BaseWidgetInits) {
+  constructor(name: string, type: WidgetType, inits?: BaseWidgetInits) {
     super()
     this.name = name
     this.type = type
@@ -64,12 +65,6 @@ export class BaseWidget extends Disposable {
     this.visible = inits?.visible ?? false
     this.id = inits?.id ?? nanoid()
     return reactive(this) as this
-  }
-
-  static load({ builder_id: id, type, name, ...inits }: BaseRawWidgetConfig) {
-    if (name == null) throw new Error('name expected for widget')
-    if (type == null) throw new Error('type expected for widget')
-    return new BaseWidget(name, type, { ...inits, id })
   }
 
   export(): BaseRawWidgetConfig {

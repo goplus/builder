@@ -5,11 +5,15 @@ import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
 import { jwtDecode } from 'jwt-decode'
 
-export interface UserInfo {
+export type UserInfoFromToken = {
   id: string
   name: string
   displayName: string
   avatar: string
+}
+
+export type UserInfo = UserInfoFromToken & {
+  advancedLibraryEnabled: boolean
 }
 
 interface TokenResponse {
@@ -31,7 +35,8 @@ export const useUserStore = defineStore('spx-user', {
   state: () => ({
     accessToken: null as string | null,
     accessTokenExpiresAt: null as number | null, // timestamp in milliseconds, null if never expires
-    refreshToken: null as string | null
+    refreshToken: null as string | null,
+    advancedLibraryEnabled: true
   }),
   actions: {
     initiateSignIn(returnTo: string = window.location.pathname + window.location.search + window.location.hash) {
@@ -42,14 +47,16 @@ export const useUserStore = defineStore('spx-user', {
       })
       casdoorSdk.signin_redirect()
     },
-    async completeSignIn() {
+    async completeSignIn(advancedLibraryEnabled = false) {
       const resp = await casdoorSdk.exchangeForAccessToken()
       this.handleTokenResponse(resp)
+      this.advancedLibraryEnabled = advancedLibraryEnabled
     },
     signOut() {
       this.accessToken = null
       this.accessTokenExpiresAt = null
       this.refreshToken = null
+      this.advancedLibraryEnabled = false
     },
     async ensureAccessToken(): Promise<string | null> {
       if (this.isAccessTokenValid()) return this.accessToken
@@ -96,17 +103,22 @@ export const useUserStore = defineStore('spx-user', {
       return this.isAccessTokenValid() || this.refreshToken != null
     },
     parseAccessToken(accessToken: string) {
-      return jwtDecode<UserInfo>(accessToken)
+      return jwtDecode<UserInfoFromToken>(accessToken)
     },
     // TODO: return type `User` instead of `UserInfo` to keep consistency with `getUser` in `src/apis/user.ts`
     getSignedInUser(): UserInfo | null {
       if (!this.isSignedIn()) return null
-      return this.parseAccessToken(this.accessToken!)
+      const fromToken = this.parseAccessToken(this.accessToken!)
+      return { ...fromToken, advancedLibraryEnabled: this.advancedLibraryEnabled }
     },
-    signInWithAccessToken(accessToken: string) {
+    signInWithAccessToken(accessToken: string, advancedLibraryEnabled = false) {
       this.accessToken = accessToken
       this.accessTokenExpiresAt = null
       this.refreshToken = null
+      this.advancedLibraryEnabled = advancedLibraryEnabled
+    },
+    disableAdvancedLibrary() {
+      this.advancedLibraryEnabled = false
     }
   },
   persist: true

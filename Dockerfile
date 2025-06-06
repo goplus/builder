@@ -1,7 +1,7 @@
 # All-in-one Dockerfile for building the SPX GUI
 
-ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.2
-ARG GO_BASE_IMAGE=golang:1.23.4
+ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.4.6
+ARG GO_BASE_IMAGE=golang:1.24.4
 ARG NODE_BASE_IMAGE=node:20.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
 
@@ -25,8 +25,6 @@ RUN gop build -trimpath -o spx-backend ./cmd/spx-backend
 FROM ${GO_BASE_IMAGE} AS go-builder
 
 ARG GOPROXY
-# Pre-install Go toolchain for 1.21.3, which will be used by tools/ispx
-RUN GOTOOLCHAIN=go1.21.3 go version
 
 WORKDIR /app
 COPY tools ./tools

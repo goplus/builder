@@ -1,3 +1,4 @@
+import type { LocaleMessage } from '@/utils/i18n'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
 import type { Sound } from '../sound'
@@ -28,5 +29,26 @@ export class ResourceModelIdentifier {
 
   toString() {
     return `${this.type}:${this.id ?? ''}`
+  }
+}
+
+export function humanizeResourceType(type: ResourceModelType): LocaleMessage {
+  switch (type) {
+    case 'stage':
+      return { en: 'stage', zh: '舞台' }
+    case 'sound':
+      return { en: 'sound', zh: '声音' }
+    case 'sprite':
+      return { en: 'sprite', zh: '精灵' }
+    case 'backdrop':
+      return { en: 'backdrop', zh: '背景' }
+    case 'widget':
+      return { en: 'widget', zh: '控件' }
+    case 'animation':
+      return { en: 'animation', zh: '动画' }
+    case 'costume':
+      return { en: 'costume', zh: '造型' }
+    default:
+      throw new Error(`Invalid resource type: ${type}`)
   }
 }
