@@ -1,7 +1,7 @@
 # All-in-one Dockerfile for building the SPX GUI
 
-ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.3.8
-ARG GO_BASE_IMAGE=golang:1.23.4
+ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.4.6
+ARG GO_BASE_IMAGE=golang:1.24.4
 ARG NODE_BASE_IMAGE=node:20.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
 

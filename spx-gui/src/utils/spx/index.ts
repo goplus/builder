@@ -21,7 +21,7 @@ import {
   type BuilderHSBA
 } from '../color'
 
-export const packageSpx = 'github.com/goplus/spx'
+export const packageSpx = 'github.com/goplus/spx/v2'
 
 export const keywords = [
   'func',

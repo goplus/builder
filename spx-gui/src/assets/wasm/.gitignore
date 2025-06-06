@@ -2,8 +2,3 @@
 *
 */*
 !.gitignore
-
-# TODO: `wasm_exec.js` is temporarily tracked due to GOTOOLCHAIN compatibility
-# issues in Go 1.23. This exception can be removed once Go 1.24 becomes the
-# minimum supported version.
-!wasm_exec.js
