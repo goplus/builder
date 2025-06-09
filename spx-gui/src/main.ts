@@ -16,6 +16,7 @@ import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
+import * as Sentry from '@sentry/browser';
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -30,6 +31,12 @@ const initApiClient = async () => {
 async function initApp() {
   const app = createApp(App)
 
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN || '',
+    integrations: [Sentry.browserTracingIntegration()],
+    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || 'development',
+    tracesSampleRate: import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE || 0.1,
+  });
   initUserStore(app)
   initApiClient()
   initRouter(app)
