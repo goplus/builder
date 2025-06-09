@@ -5,6 +5,7 @@ echo "Run this script from 'spx-gui' directory"
 
 # Copy Go wasm_exec.js
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" src/assets/wasm/wasm_exec.js
+chmod +w src/assets/wasm/wasm_exec.js
 
 # Build and copy ispx.wasm
 ( cd ../tools/ispx && ./build.sh )

@@ -3,6 +3,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
+import { isDeveloperMode } from '@/utils/developer-mode'
 import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import wasmExecScriptUrl from '@/assets/wasm/wasm_exec.js?url'
@@ -17,14 +18,15 @@ import {
   containsPosition,
   type InputSlot
 } from '../common'
-import { Spxlc } from './spxls/client'
-import type { Files as SpxlsFiles } from './spxls'
+import { Spxlc, type IConnection } from './spxls/client'
+import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage, Spxls, Files } from './spxls'
 import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
   parseDocumentLinkForDefinition
 } from './spxls/methods'
+import type { IWorkerHandler } from './worker'
 
 function loadScript(url: string) {
   return new Promise((resolve, reject) => {
@@ -36,6 +38,111 @@ function loadScript(url: string) {
   })
 }
 
+interface IConnectionWithFiles extends IConnection {
+  sendFiles(files: SpxlsFiles): void
+  dispose(): void
+}
+
+/** Connection between LS client and server when the server runs in a Web Worker. */
+class WorkerConnection implements IConnectionWithFiles {
+  private worker: IWorkerHandler
+  constructor() {
+    this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+  }
+  sendMessage(message: RequestMessage | NotificationMessage) {
+    this.worker.postMessage({ type: 'lsp', message })
+  }
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.worker.addEventListener('message', (event) => {
+      const message = event.data
+      handler(message.message)
+    })
+  }
+  sendFiles(files: SpxlsFiles): void {
+    this.worker.postMessage({ type: 'files', files })
+  }
+  dispose() {
+    this.worker.terminate()
+  }
+}
+
+class SimpleConnection implements IConnectionWithFiles {
+  private files: Files = {}
+  private spxlsRef = shallowRef<Spxls | null>(null)
+  private isLSRunning = shallowRef(false)
+  private isLSRestarting = false
+  private lsRestartedAt = 0
+
+  async sendMessage(message: RequestMessage | NotificationMessage) {
+    this.prepareLanguageServer()
+    await untilNotNull(this.spxlsRef)
+    this.spxlsRef.value!.handleMessage(message)
+  }
+
+  private handler: ((message: ResponseMessage | NotificationMessage) => void) | null = null
+
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.handler = handler
+  }
+
+  private async prepareLanguageServer() {
+    if (this.isLSRunning.value || this.isLSRestarting) return
+    this.isLSRestarting = true
+
+    // Apply cooldown between restarts.
+    const cooldown = LS_RESTART_COOLDOWN - (Date.now() - this.lsRestartedAt)
+    if (cooldown > 0) await timeout(cooldown)
+    this.lsRestartedAt = Date.now()
+
+    try {
+      await this.loadLSWasm()
+      const ls = NewSpxls(
+        () => this.files,
+        (message) => this.handler?.(message)
+      )
+      if (ls instanceof Error) throw ls
+      this.spxlsRef.value = ls
+      this.isLSRunning.value = true
+    } catch (e) {
+      console.error('[LSP] Failed to start language server:', e)
+    } finally {
+      this.isLSRestarting = false
+    }
+  }
+
+  private loadWasmScriptPromise: Promise<unknown> | null = null
+
+  private async loadWasmScript() {
+    return (this.loadWasmScriptPromise = this.loadWasmScriptPromise ?? loadScript(wasmExecScriptUrl))
+  }
+
+  private async loadLSWasm() {
+    await this.loadWasmScript()
+    const [wasmResp, spxlsPkgdataZipResp] = await Promise.all([fetch(spxlsWasmUrl), fetch(spxlsPkgdataZipUrl)])
+
+    const go = new Go()
+    const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
+    go.run(instance).finally(() => {
+      console.warn('[LSP] Language server process exited.')
+      this.isLSRunning.value = false
+      this.spxlsRef.value = null
+    })
+
+    // Load additional resources.
+    const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
+    SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
+    SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
+  }
+
+  sendFiles(files: SpxlsFiles): void {
+    this.files = files
+  }
+
+  dispose(): void {
+    this.spxlsRef.value = null
+  }
+}
+
 // 10 seconds cooldown between language server restarts.
 const LS_RESTART_COOLDOWN = 10_000
 
@@ -44,7 +151,7 @@ export class SpxLSPClient extends Disposable {
     super()
   }
 
-  private files: SpxlsFiles = {}
+  private connection: IConnectionWithFiles = new SimpleConnection()
   private isFilesStale = shallowRef(true)
 
   async loadFiles(signal: AbortSignal) {
@@ -68,7 +175,7 @@ export class SpxLSPClient extends Disposable {
       })
     )
     signal.throwIfAborted()
-    this.files = loadedFiles
+    this.connection.sendFiles(loadedFiles)
     this.isFilesStale.value = false
   }
 
@@ -84,7 +191,7 @@ export class SpxLSPClient extends Disposable {
   private lsRestartedAt = 0
 
   private async prepareRequest() {
-    this.prepareLanguageServer()
+    // this.prepareLanguageServer()
 
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
@@ -97,10 +204,17 @@ export class SpxLSPClient extends Disposable {
     return spxlc
   }
 
-  async init() {
+  init() {
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    await this.loadWasmScript()
-    await this.prepareLanguageServer()
+    this.spxlcRef.value = new Spxlc(this.connection, () => isDeveloperMode.value)
+    // await this.loadWasmScript()
+    // await this.prepareLanguageServer()
+  }
+
+  dispose() {
+    this.spxlcRef.value?.dispose()
+    this.connection.dispose()
+    super.dispose()
   }
 
   private async prepareLanguageServer() {
@@ -114,7 +228,7 @@ export class SpxLSPClient extends Disposable {
 
     try {
       await this.loadLSWasm()
-      this.spxlcRef.value = new Spxlc(() => this.files)
+      this.spxlcRef.value = new Spxlc(this.connection)
       this.isLSRunning.value = true
     } catch (e) {
       console.error('[LSP] Failed to start language server:', e)
