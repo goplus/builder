@@ -90,10 +90,10 @@ export class Spxlc {
         const sendAt = performance.now();
         
         try {
-          // 调用原始的 request 方法
+          // Call the original request method
           const result = await this.innerrequest<T>(method, params);
           
-          // 记录耗时
+          // Record duration
           const time = performance.now() - sendAt;
           span.setAttribute('lsp.duration_ms', Math.round(time));
           span.setAttribute('lsp.duration_category', 
@@ -102,11 +102,11 @@ export class Spxlc {
           
           return result;
         } catch (error) {
-          // 记录错误
+          // Record error
           span.setAttribute('lsp.success', false);
           span.setAttribute('lsp.error', String(error));
           
-          // 重新抛出错误
+          // Re-throw the error
           throw error;
         }
       }
