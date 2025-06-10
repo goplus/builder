@@ -41,13 +41,22 @@ function loadScript(url: string) {
 const LS_RESTART_COOLDOWN = 10_000
 
 // Enhanced method for LSP requests with Sentry tracing
-async function tracedRequest<T>(method: string, operation: () => Promise<T>): Promise<T> {
+async function tracedRequest<T>(
+  method: string, 
+  operation: () => Promise<T>, 
+  options?: { command?: string }
+): Promise<T> {
+  const opName = options?.command 
+    ? `LSP: ${method} (${options.command})` 
+    : `LSP: ${method}`;
+  
   return Sentry.startSpan(
     {
-      name: `LSP: ${method}`,
+      name: opName,
       op: 'lsp.request',
       attributes: {
-        'lsp.method': method
+        'lsp.method': method,
+        ...(options?.command ? { 'lsp.command': options.command } : {})
       }
     },
     async (span) => {
@@ -181,21 +190,30 @@ export class SpxLSPClient extends Disposable {
    * Wrapper for LSP requests with automatic performance tracing
    * @param method LSP method name
    * @param params Method parameters
+   * @param options Additional options for request tracking
    * @returns Promise that resolves with the response
    */
-  private async request<T>(method: string, params: any): Promise<T> {
+  private async request<T>(
+    method: string, 
+    params: any, 
+    options?: { command?: string }
+  ): Promise<T> {
     const spxlc = await this.prepareRequest()
     
     return tracedRequest(method, async () => {
       return spxlc.request<T>(method, params)
-    })
+    }, options)
   }
 
   private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
-    return this.request<R>(lsp.ExecuteCommandRequest.method, {
-      command,
-      arguments: args
-    })
+    return this.request<R>(
+      lsp.ExecuteCommandRequest.method, 
+      {
+        command,
+        arguments: args
+      },
+      { command } // Pass the command name to request
+    )
   }
 
   async workspaceExecuteCommandSpxGetDefinitions(
