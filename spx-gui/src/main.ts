@@ -16,6 +16,8 @@ import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
+import * as Sentry from '@sentry/browser'
+import { sentryDsn, sentryTracesSampleRate } from './utils/env'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -30,6 +32,14 @@ const initApiClient = async () => {
 async function initApp() {
   const app = createApp(App)
 
+  // Import sentryTracesSampleRate from env.ts instead of defining it locally
+
+  Sentry.init({
+    dsn: sentryDsn,
+    integrations: [Sentry.browserTracingIntegration()],
+    environment: process.env.NODE_ENV,
+    tracesSampleRate: sentryTracesSampleRate
+  })
   initUserStore(app)
   initApiClient()
   initRouter(app)
