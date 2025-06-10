@@ -30,3 +30,15 @@ export const spxVersion = import.meta.env.VITE_SPX_VERSION as string
 
 /** Whether to show the license information (including copyright) in the footer. */
 export const showLicense = import.meta.env.VITE_SHOW_LICENSE === 'true'
+
+/**
+ * Sentry DSN for error reporting
+ * Empty string means Sentry is disabled
+ */
+export const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string) || ''
+
+/**
+ * Sampling rate for Sentry traces (0.0 to 1.0)
+ * This determines what percentage of transactions are sent to Sentry
+ */
+export const sentryTracesSampleRate = parseFloat(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string) || 0.1
