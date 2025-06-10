@@ -177,13 +177,24 @@ export class SpxLSPClient extends Disposable {
     SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
   }
 
-  private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
+  /**
+   * Wrapper for LSP requests with automatic performance tracing
+   * @param method LSP method name
+   * @param params Method parameters
+   * @returns Promise that resolves with the response
+   */
+  private async request<T>(method: string, params: any): Promise<T> {
     const spxlc = await this.prepareRequest()
-    return tracedRequest(command, async () => {
-      return spxlc.request<R>(lsp.ExecuteCommandRequest.method, {
-        command,
-        arguments: args
-      })
+    
+    return tracedRequest(method, async () => {
+      return spxlc.request<T>(method, params)
+    })
+  }
+
+  private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
+    return this.request<R>(lsp.ExecuteCommandRequest.method, {
+      command,
+      arguments: args
     })
   }
 
@@ -212,82 +223,49 @@ export class SpxLSPClient extends Disposable {
   }
 
   async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.DocumentLinkRequest.method, async () => {
-      return spxlc.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
-    })
+    return this.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
   }
 
   async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.DocumentDiagnosticRequest.method, async () => {
-      return spxlc.request<lsp.DocumentDiagnosticReport>(lsp.DocumentDiagnosticRequest.method, params)
-    })
+    return this.request<lsp.DocumentDiagnosticReport>(lsp.DocumentDiagnosticRequest.method, params)
   }
 
   async workspaceDiagnostic(params: lsp.WorkspaceDiagnosticParams): Promise<lsp.WorkspaceDiagnosticReport> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.WorkspaceDiagnosticRequest.method, async () => {
-      return spxlc.request<lsp.WorkspaceDiagnosticReport>(lsp.WorkspaceDiagnosticRequest.method, params)
-    })
+    return this.request<lsp.WorkspaceDiagnosticReport>(lsp.WorkspaceDiagnosticRequest.method, params)
   }
 
   async textDocumentHover(params: lsp.HoverParams): Promise<lsp.Hover | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.HoverRequest.method, async () => {
-      return spxlc.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
-    })
+    return this.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
   }
 
   async textDocumentCompletion(
     params: lsp.CompletionParams
   ): Promise<lsp.CompletionList | lsp.CompletionItem[] | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.CompletionRequest.method, async () => {
-      return spxlc.request<lsp.CompletionList | lsp.CompletionItem[] | null>(lsp.CompletionRequest.method, params)
-    })
+    return this.request<lsp.CompletionList | lsp.CompletionItem[] | null>(lsp.CompletionRequest.method, params)
   }
 
   async textDocumentDefinition(params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.DefinitionRequest.method, async () => {
-      return spxlc.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
-    })
+    return this.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
   }
 
   async textDocumentTypeDefinition(params: lsp.TypeDefinitionParams): Promise<lsp.Definition | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.DefinitionRequest.method, async () => {
-      return spxlc.request<lsp.Definition | null>(lsp.TypeDefinitionRequest.method, params)
-    })
+    return this.request<lsp.Definition | null>(lsp.TypeDefinitionRequest.method, params)
   }
 
   async textDocumentPrepareRename(params: lsp.PrepareRenameParams): Promise<lsp.PrepareRenameResult | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.PrepareRenameRequest.method, async () => {
-      return spxlc.request<lsp.PrepareRenameResult | null>(lsp.PrepareRenameRequest.method, params)
-    })
+    return this.request<lsp.PrepareRenameResult | null>(lsp.PrepareRenameRequest.method, params)
   }
 
   async textDocumentRename(params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.RenameRequest.method, async () => {
-      return spxlc.request<lsp.WorkspaceEdit | null>(lsp.RenameRequest.method, params)
-    })
+    return this.request<lsp.WorkspaceEdit | null>(lsp.RenameRequest.method, params)
   }
 
   async textDocumentFormatting(params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.DocumentFormattingRequest.method, async () => {
-      return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
-    })
+    return this.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
   }
 
   async textDocumentInlayHint(params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
-    const spxlc = await this.prepareRequest()
-    return tracedRequest(lsp.InlayHintRequest.method, async () => {
-      return spxlc.request<lsp.InlayHint[] | null>(lsp.InlayHintRequest.method, params)
-    })
+    return this.request<lsp.InlayHint[] | null>(lsp.InlayHintRequest.method, params)
   }
 
   // Higher-level APIs
