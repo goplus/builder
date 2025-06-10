@@ -68,7 +68,6 @@ async function tracedRequest<T>(
         // Record performance metrics
         const duration = performance.now() - startTime
         span.setAttribute('duration_ms', Math.round(duration))
-        span.setAttribute('duration_category', duration > 500 ? 'very_slow' : duration > 100 ? 'slow' : 'normal')
         span.setAttribute('success', true)
 
         return result
