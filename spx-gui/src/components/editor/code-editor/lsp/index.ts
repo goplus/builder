@@ -1,6 +1,7 @@
 import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/browser'
+import { SPAN_STATUS_OK, SPAN_STATUS_ERROR } from '@sentry/core'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
@@ -74,7 +75,7 @@ async function tracedRequest<T>(
       } catch (error) {
         // Record error information
         span.setAttribute('success', false)
-        span.setAttribute('error', String(error))
+        Sentry.captureException(error);
 
         // Re-throw to maintain original behavior
         throw error
