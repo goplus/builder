@@ -33,7 +33,6 @@ async function initApp() {
   const app = createApp(App)
 
   // Import sentryTracesSampleRate from env.ts instead of defining it locally
-
   Sentry.init({
     dsn: sentryDsn,
     integrations: [Sentry.browserTracingIntegration()],
