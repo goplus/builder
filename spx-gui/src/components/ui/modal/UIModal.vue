@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
-import { usePopupContainer } from '../utils'
+import { useModalContainer } from '../utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{
@@ -32,7 +32,7 @@ const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
 
-const attachTo = usePopupContainer()
+const attachTo = useModalContainer()
 </script>
 
 <style lang="scss" scoped>

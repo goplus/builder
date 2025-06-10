@@ -48,6 +48,7 @@ export type Props = {
   pos?: Pos
   offset?: Offset
   showArrow?: boolean
+  disabled?: boolean
 }
 
 export type Events = {
@@ -174,6 +175,7 @@ export default defineComponent<Props, Events>(
           to: attachTo.value,
           showArrow: props.showArrow!,
           raw: true,
+          disabled: props.disabled,
           onUpdateShow: handleUpdateShow,
           onClickoutside: handleClickOutside
         },

@@ -43,6 +43,12 @@ Result of the previous command: {{if not .PreviousCommandResult.Success}}ERROR: 
 {{if .PreviousCommandResult.IsBreak}}The interaction was terminated by the command.{{end}}
 {{end}}
 
+{{if .History}}
+## History
+
+{{.History}}
+{{end}}
+
 {{if gt .ContinuationTurn 0}}
 ## Continuation Turn
 

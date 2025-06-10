@@ -24,12 +24,14 @@ import {
   UICollapse,
   UICollapseItem,
   UIDivider,
-  useResponsive
+  useResponsive,
+  UITooltip
 } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
@@ -97,6 +99,7 @@ const isOwner = computed(() => props.owner === userStore.getSignedInUser()?.name
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
+const isFullScreenRunning = ref(false)
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -143,6 +146,14 @@ const handleRun = useMessageHandle(
     runnerState.value = 'running'
   },
   { en: 'Failed to run project', zh: '运行项目失败' }
+)
+
+const handleStop = useMessageHandle(
+  async () => {
+    await projectRunnerRef.value?.stop()
+    runnerState.value = 'initial'
+  },
+  { en: 'Failed to stop project', zh: '停止项目失败' }
 )
 
 const handleRerun = useMessageHandle(async () => projectRunnerRef.value?.rerun(), {
@@ -287,7 +298,7 @@ const remixesRet = useQuery(
                   class="run-button"
                   type="primary"
                   size="large"
-                  icon="play"
+                  icon="playHollow"
                   :disabled="projectRunnerRef == null"
                   :loading="handleRun.isLoading.value"
                   @click="handleRun.fn"
@@ -296,16 +307,20 @@ const remixesRet = useQuery(
               </div>
             </template>
           </div>
+          <FullScreenProjectRunner
+            v-if="project != null"
+            :project="project"
+            :visible="isFullScreenRunning"
+            @close="isFullScreenRunning = false"
+          />
           <div class="ops">
             <UIButton
               v-if="runnerState === 'initial'"
               type="primary"
-              icon="play"
-              :disabled="projectRunnerRef == null"
-              :loading="handleRun.isLoading.value"
-              @click="handleRun.fn"
+              icon="fullScreen"
+              @click="isFullScreenRunning = true"
             >
-              {{ $t({ en: 'Run', zh: '运行' }) }}
+              {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
             </UIButton>
             <UIButton
               v-if="runnerState === 'running'"
@@ -317,9 +332,15 @@ const remixesRet = useQuery(
             >
               {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
             </UIButton>
-            <UIButton type="boring" icon="share" @click="handleShare.fn">
-              {{ $t({ en: 'Share', zh: '分享' }) }}
+            <UIButton v-if="runnerState === 'running'" type="boring" icon="end" @click="handleStop.fn">
+              {{ $t({ en: 'Stop', zh: '停止' }) }}
             </UIButton>
+            <UITooltip>
+              <template #trigger>
+                <UIButton type="boring" icon="share" @click="handleShare.fn"></UIButton>
+              </template>
+              {{ $t({ en: 'Share', zh: '分享' }) }}
+            </UITooltip>
           </div>
         </div>
         <div class="right">

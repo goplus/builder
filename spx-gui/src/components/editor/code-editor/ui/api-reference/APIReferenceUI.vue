@@ -1,28 +1,4 @@
-<script setup lang="ts">
-import { throttle } from 'lodash'
-import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
-import { type LocaleMessage } from '@/utils/i18n'
-import { ActionException, Cancelled } from '@/utils/exception'
-import { getCleanupSignal } from '@/utils/disposable'
-import { packageSpx } from '@/utils/spx'
-import { useUIVariables, UIError } from '@/components/ui'
-import { mainCategories, stringifyDefinitionId, subCategories } from '../../common'
-import type { APIReferenceController, APIReferenceItem } from '.'
-import APIReferenceItemComp from './APIReferenceItem.vue'
-import iconEvent from './icons/event.svg?raw'
-import iconLook from './icons/look.svg?raw'
-import iconMotion from './icons/motion.svg?raw'
-import iconSound from './icons/sound.svg?raw'
-import iconControl from './icons/control.svg?raw'
-import iconGame from './icons/game.svg?raw'
-import iconSensing from './icons/sensing.svg?raw'
-
-const props = defineProps<{
-  controller: APIReferenceController
-}>()
-
-const uiVariables = useUIVariables()
-
+<script lang="ts">
 type SubCategory = {
   id: string
   label: LocaleMessage
@@ -111,7 +87,7 @@ const categoriesViewInfo = [
     id: mainCategories.sound,
     label: { en: 'Sound', zh: '声音' },
     icon: iconSound,
-    color: uiVariables.color.sound.main,
+    color: 'var(--ui-color-sound-main)',
     subCategories: [
       { id: subCategories.sound.playControl, label: { en: 'Play / Stop', zh: '播放/停止' } },
       { id: subCategories.sound.volume, label: { en: 'Volume', zh: '音量' } }
@@ -133,6 +109,30 @@ const categoriesViewInfo = [
 function belongs(item: APIReferenceItem, mcid: string, scid: string) {
   return item.categories.some((c) => c[0] === mcid && c[1] === scid)
 }
+</script>
+
+<script setup lang="ts">
+import { throttle } from 'lodash'
+import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
+import { type LocaleMessage } from '@/utils/i18n'
+import { ActionException, Cancelled } from '@/utils/exception'
+import { getCleanupSignal } from '@/utils/disposable'
+import { packageSpx } from '@/utils/spx'
+import { UIError } from '@/components/ui'
+import { mainCategories, stringifyDefinitionId, subCategories } from '../../common'
+import type { APIReferenceController, APIReferenceItem } from '.'
+import APIReferenceItemComp from './APIReferenceItem.vue'
+import iconEvent from './icons/event.svg?raw'
+import iconLook from './icons/look.svg?raw'
+import iconMotion from './icons/motion.svg?raw'
+import iconSound from './icons/sound.svg?raw'
+import iconControl from './icons/control.svg?raw'
+import iconGame from './icons/game.svg?raw'
+import iconSensing from './icons/sensing.svg?raw'
+
+const props = defineProps<{
+  controller: APIReferenceController
+}>()
 
 const itemsForDisplay = shallowRef(props.controller.items)
 
@@ -199,12 +199,22 @@ watch(
 
 const itemsWrapperRef = ref<HTMLElement>()
 
-// Update activeCategoryId when scrolling
+const scrolling = ref(false)
+
+// Update `activeCategoryId` & `scrolling` when scrolling
 watchEffect((onCleanup) => {
   const itemsWrapper = itemsWrapperRef.value
   if (itemsWrapper == null) return
   const signal = getCleanupSignal(onCleanup)
+  let clearScrollingTimer: ReturnType<typeof setTimeout> | null = null
+
   const handleScroll = throttle(() => {
+    scrolling.value = true
+    if (clearScrollingTimer != null) clearTimeout(clearScrollingTimer)
+    clearScrollingTimer = setTimeout(() => {
+      scrolling.value = false
+    }, 200)
+
     const scrollTop = itemsWrapper.scrollTop
     const categoryWrappers = itemsWrapper.querySelectorAll('[data-category-id]')
     if (categoryWrappers.length <= 1) return
@@ -262,6 +272,7 @@ function handleCategoryClick(id: string) {
                 v-for="item in sc.items"
                 :key="stringifyDefinitionId(item.definition)"
                 :item="item"
+                :interaction-disabled="scrolling"
               />
             </ul>
           </section>

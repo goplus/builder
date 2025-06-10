@@ -60,7 +60,6 @@
         </div>
       </div>
       <UIButton
-        class="submit-btn"
         size="large"
         :disabled="selectedCostumes.length === 0"
         :loading="handleConfirm.isLoading.value"
@@ -296,15 +295,6 @@ watch(
 .costume-list {
   display: flex;
   gap: 8px;
-}
-.submit-btn {
-  width: 88px;
-  height: 88px;
-  :deep(.content) {
-    padding: 0 10px;
-    width: 100%;
-    justify-content: center;
-  }
 }
 .sider {
   flex: 0 0 auto;

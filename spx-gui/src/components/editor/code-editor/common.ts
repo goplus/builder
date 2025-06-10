@@ -127,7 +127,7 @@ export type DefinitionIdentifier = {
    * If `main`, it's the current user package.
    * Exmples:
    * - `fmt`
-   * - `github.com/goplus/spx`
+   * - `github.com/goplus/spx/v2`
    * - `main`
    */
   package?: string
@@ -270,7 +270,7 @@ export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename' |
  * Documentation string for a definition. Typically:
  * ```mdx
  * <OverviewWrapper>func turn(dDirection float64)</OverviewWrapper>
- * <Detail id="github.com/goplus/spx|Sprite.turn[0]" />
+ * <Detail id="github.com/goplus/spx/v2|Sprite.turn[0]" />
  * ```
  */
 export type DefinitionDocumentationString = BasicMarkdownString | AdvancedMarkdownString

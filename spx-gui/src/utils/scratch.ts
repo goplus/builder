@@ -6,18 +6,28 @@ export interface ExportedScratchFile {
   extension: string
   filename: string
   blob: Blob
-  bitmapResolution?: number
+}
+
+export interface ExportedScratchCostume extends ExportedScratchFile {
+  rotationCenterX: number
+  rotationCenterY: number
+  bitmapResolution: number
+}
+
+export interface ExportedScratchSound extends ExportedScratchFile {
+  rate: number
+  sampleCount: number
 }
 
 export interface ExportedScratchSprite {
   name: string
-  costumes: ExportedScratchFile[]
+  costumes: ExportedScratchCostume[]
 }
 
 export interface ExportedScratchAssets {
   sprites: ExportedScratchSprite[]
-  sounds: ExportedScratchFile[]
-  backdrops: ExportedScratchFile[]
+  sounds: ExportedScratchSound[]
+  backdrops: ExportedScratchCostume[]
 }
 
 interface ScratchFile {
@@ -62,43 +72,63 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
     backdrops: []
   }
 
-  const convertFiles = async (scratchFiles: (ScratchCostume | ScratchSound)[]): Promise<ExportedScratchFile[]> => {
-    const files = []
-    for (const file of scratchFiles) {
-      const zipFilename = getFilename(file)
-      const zipFile = zip.file(zipFilename)
-      if (!zipFile) {
-        console.warn('Costume file not found in the uploaded file: ', zipFilename)
-        continue
-      }
-      const arrayBuffer = await zipFile.async('arraybuffer')
-      files.push({
-        name: file.name,
-        extension: file.dataFormat,
-        filename: `${file.name}.${file.dataFormat}`,
-        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) }),
-        bitmapResolution: 'bitmapResolution' in file ? file.bitmapResolution : undefined
-      })
+  const convertScratchFile = async (file: ScratchFile): Promise<ExportedScratchFile | null> => {
+    const zipFilename = getFilename(file)
+    const zipFile = zip.file(zipFilename)
+    if (zipFile == null) {
+      console.warn('File not found in zip: ', zipFilename)
+      return null
     }
-    return files
+    const arrayBuffer = await zipFile.async('arraybuffer')
+    return {
+      name: file.name,
+      extension: file.dataFormat,
+      filename: `${file.name}.${file.dataFormat}`,
+      blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) })
+    }
+  }
+
+  const convertSound = async (sound: ScratchSound): Promise<ExportedScratchSound | null> => {
+    const file = await convertScratchFile(sound)
+    if (file == null) return null
+    return {
+      ...file,
+      rate: sound.rate,
+      sampleCount: sound.sampleCount
+    }
+  }
+
+  const convertCostume = async (costume: ScratchCostume): Promise<ExportedScratchCostume | null> => {
+    const file = await convertScratchFile(costume)
+    if (file == null) return null
+    return {
+      ...file,
+      rotationCenterX: costume.rotationCenterX,
+      rotationCenterY: costume.rotationCenterY,
+      bitmapResolution: costume.bitmapResolution
+    }
   }
 
   for (const target of projectData.targets) {
-    const imageFiles = await convertFiles(target.costumes)
-    const soundFiles = await convertFiles(target.sounds)
+    const costumes = filterNulls(await Promise.all(target.costumes.map(convertCostume)))
+    const sounds = filterNulls(await Promise.all(target.sounds.map(convertSound)))
 
-    if (imageFiles.length > 0) {
+    if (costumes.length > 0) {
       if (target.isStage) {
-        scratchAssets.backdrops.push(...imageFiles)
+        scratchAssets.backdrops.push(...costumes)
       } else {
-        scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
+        scratchAssets.sprites.push({ name: target.name, costumes: costumes })
       }
     }
 
-    if (soundFiles.length > 0) {
-      scratchAssets.sounds.push(...soundFiles)
+    if (sounds.length > 0) {
+      scratchAssets.sounds.push(...sounds)
     }
   }
 
   return scratchAssets
+}
+
+function filterNulls<T>(array: (T | null)[]): T[] {
+  return array.filter((item): item is T => item != null)
 }

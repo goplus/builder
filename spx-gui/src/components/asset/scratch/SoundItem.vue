@@ -7,13 +7,13 @@
   </UISoundItem>
 </template>
 <script setup lang="ts">
-import type { ExportedScratchFile } from '@/utils/scratch'
+import type { ExportedScratchSound } from '@/utils/scratch'
 import { useAudioDuration } from '@/utils/audio'
 import { UISoundItem, UICornerIcon } from '@/components/ui'
 import BlobSoundPlayer from '../BlobSoundPlayer.vue'
 
 const props = defineProps<{
-  asset: ExportedScratchFile
+  asset: ExportedScratchSound
   selected: boolean
 }>()
 
