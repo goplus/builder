@@ -10,7 +10,7 @@
     "type-check": "vue-tsc --build --force",
     "format-check": "prettier --check ./src",
     "format": "prettier --write ./src",
-    "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore",
+    "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore --max-warnings 0",
     "test": "vitest"
   },
   "dependencies": {
