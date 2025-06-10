@@ -16,7 +16,6 @@ export class Spxlc {
   /**
    * Creates a new client instance.
    * @param filesProvider Function that provides access to workspace files.
-   * @param tracer Optional performance tracer
    */
   constructor(filesProvider: () => Files) {
     const ls = NewSpxls(filesProvider, this.handleMessage.bind(this))
