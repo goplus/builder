@@ -1,6 +1,5 @@
 import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
 import { isDeveloperMode } from '@/utils/developer-mode'
-import * as Sentry from '@sentry/browser';
 
 /**
  * Client wrapper for the spxls.
@@ -17,6 +16,7 @@ export class Spxlc {
   /**
    * Creates a new client instance.
    * @param filesProvider Function that provides access to workspace files.
+   * @param tracer Optional performance tracer
    */
   constructor(filesProvider: () => Files) {
     const ls = NewSpxls(filesProvider, this.handleMessage.bind(this))
@@ -70,56 +70,12 @@ export class Spxlc {
   }
 
   /**
-   * Sends a request to the language server with performance tracing.
-   * This is a wrapper around the request method that adds Sentry tracing.
-   * 
-   * @param method LSP method name.
-   * @param params Method parameters.
-   * @returns Promise that resolves with the response.
-   */
-  request<T>(method: string, params?: any): Promise<T> {
-    return Sentry.startSpan(
-      {
-        name: `LSP Request: ${method}`,
-        op: "lsp.request",
-        attributes: {
-          "lsp.method": method,
-        },
-      },
-      async (span) => {
-        const sendAt = performance.now();
-        
-        try {
-          // Call the original request method
-          const result = await this.innerrequest<T>(method, params);
-          
-          // Record duration
-          const time = performance.now() - sendAt;
-          span.setAttribute('lsp.duration_ms', Math.round(time));
-          span.setAttribute('lsp.duration_category', 
-            time > 500 ? 'very_slow' : time > 100 ? 'slow' : 'normal');
-          span.setAttribute('lsp.success', true);
-          
-          return result;
-        } catch (error) {
-          // Record error
-          span.setAttribute('lsp.success', false);
-          span.setAttribute('lsp.error', String(error));
-          
-          // Re-throw the error
-          throw error;
-        }
-      }
-    );
-  }
-
-  /**
    * Sends a request to the language server and waits for response.
    * @param method LSP method name.
    * @param params Method parameters.
    * @returns Promise that resolves with the response.
    */
-  innerrequest<T>(method: string, params?: any): Promise<T> {
+  request<T>(method: string, params?: any): Promise<T> {
     const id = this.nextRequestId++
     const sendAt = performance.now()
     return new Promise<T>((resolve, reject) => {
