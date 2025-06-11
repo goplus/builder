@@ -13,7 +13,7 @@ import { Visibility, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
-import * as gbpHelper from '../common/gbp'
+import * as xbpHelper from '../common/xbp'
 import { hashFiles } from '../common/hash'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
@@ -428,14 +428,14 @@ export class Project extends Disposable {
     return this.historyMutex.runExclusive(() => [this.exportMetadata(), this.exportGameFiles()])
   }
 
-  async loadGbpFile(file: globalThis.File) {
-    const { metadata, files } = await gbpHelper.load(file)
+  async loadXbpFile(file: globalThis.File) {
+    const { metadata, files } = await xbpHelper.load(file)
     await this.load(metadata, files)
   }
 
-  async exportGbpFile() {
+  async exportXbpFile() {
     const [metadata, files] = await this.export()
-    return await gbpHelper.save(metadata, files)
+    return await xbpHelper.save(metadata, files)
   }
 
   /** Load from cloud */

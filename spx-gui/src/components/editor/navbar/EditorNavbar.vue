@@ -142,17 +142,17 @@ const handleImportProjectFile = useMessageHandle(
       }),
       confirmText: i18n.t({ en: 'Continue', zh: '继续' })
     })
-    const file = await selectFile({ accept: ['gbp'] })
+    const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
-    await props.project?.history.doAction(action, () => props.project!.loadGbpFile(file))
+    await props.project?.history.doAction(action, () => props.project!.loadXbpFile(file))
   },
   { en: 'Failed to import project file', zh: '导入项目文件失败' }
 ).fn
 
 const handleExportProjectFile = useMessageHandle(
   async () => {
-    const gbpFile = await props.project!.exportGbpFile()
-    saveAs(gbpFile, gbpFile.name) // TODO: what if user cancelled download?
+    const xbpFile = await props.project!.exportXbpFile()
+    saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
   },
   { en: 'Failed to export project file', zh: '导出项目文件失败' }
 ).fn
