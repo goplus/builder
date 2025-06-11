@@ -11,10 +11,10 @@ import ProjectPublishedModal from './ProjectPublishedModal.vue'
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
  * 2. Edit it as needed.
- * 3. Export the project file (`.gbp`).
- * 4. Replace `./default-project.gbp` with the exported file.
+ * 3. Export the project file (`.xbp`).
+ * 4. Replace `./default-project.xbp` with the exported file.
  */
-import defaultProjectFileUrl from './default-project.gbp?url'
+import defaultProjectFileUrl from './default-project.xbp?url'
 
 /**
  * Get the default project file as a File object
@@ -23,7 +23,7 @@ import defaultProjectFileUrl from './default-project.gbp?url'
 export async function getDefaultProjectFile(): Promise<File> {
   const resp = await fetch(defaultProjectFileUrl)
   const blob = await resp.blob()
-  return new window.File([blob], 'default-project.gbp', { type: blob.type })
+  return new window.File([blob], 'default-project.xbp', { type: blob.type })
 }
 
 export function useCreateProject() {

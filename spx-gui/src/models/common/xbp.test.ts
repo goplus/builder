@@ -3,9 +3,9 @@ import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
 import { Costume } from '../costume'
-import { fromText, toText } from '../common/file'
+import { fromText, toText } from './file'
 import { Project } from '../project'
-import { load, save } from './gbp'
+import { load, save } from './xbp'
 
 function mockFile(name = 'mocked', type = 'text/plain') {
   return fromText(name, Math.random() + '', { type })
@@ -28,11 +28,11 @@ function makeProject(name?: string, screenshotTaker = async () => mockFile()) {
 }
 
 describe('save', () => {
-  it('should get gbp file correctly', async () => {
+  it('should get xbp file correctly', async () => {
     const project = makeProject('test')
     const [metadata, files] = await project.export()
     const projectFile = await save(metadata, files)
-    expect(projectFile.name).toBe('test.gbp')
+    expect(projectFile.name).toBe('test.xbp')
   })
 })
 
