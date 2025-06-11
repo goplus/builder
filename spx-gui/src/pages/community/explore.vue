@@ -74,15 +74,6 @@ const queryRet = useQuery(
   gap: 20px;
 }
 
-.error,
-.empty {
-  flex: 1 1 0;
-  display: flex;
-
-  border-radius: var(--ui-border-radius-2);
-  background: var(--ui-color-grey-100);
-}
-
 .projects {
   display: flex;
   flex-wrap: wrap;

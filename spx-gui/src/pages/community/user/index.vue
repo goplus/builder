@@ -14,7 +14,7 @@ const { data: user, error, refetch } = useUser(() => props.name)
 
 <template>
   <CenteredWrapper class="user-page" size="large">
-    <UIError v-if="error != null" :retry="refetch">
+    <UIError v-if="error != null" class="error" :retry="refetch">
       {{ $t(error.userMessage) }}
     </UIError>
     <template v-else-if="user != null">
@@ -31,10 +31,19 @@ const { data: user, error, refetch } = useUser(() => props.name)
 
 <style lang="scss" scoped>
 .user-page {
+  flex: 1 0 auto;
   padding: 24px 0 40px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.error {
+  flex: 1 1 0;
+  display: flex;
+
+  border-radius: var(--ui-border-radius-2);
+  background: var(--ui-color-grey-100);
 }
 
 .main {
