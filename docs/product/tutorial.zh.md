@@ -37,14 +37,36 @@ User Tutorial 的目标是满足需求 1，并在短期内满足需求 2。
 * 通过特殊的回复内容影响 Builder 的界面，如高亮特定 UI 元素并显示提示
 * 感知 Builder 中发生的事件，并主动进行对话
 
-	- 前提是当前的用户意图明确
-	- 事件可能包括：用户操作、游戏退出等
-	- 感知用户操作在实现上是有挑战的；我们可能会在前期实现时退化为由用户主动触发，如对话框中提供一个固定的“继续”按钮供用户点击
+	- 前提是当前的用户意图明确，如用户正在某个 Tutorial Course 中
+	- 事件可能包括：用户完成某个操作、游戏退出等
+	- 感知“一般的用户操作”在实现上是有挑战的；我们可能会在前期实现时退化为由用户主动触发，如对话框中提供一个固定的“继续”按钮供用户点击
 
-Copilot 默认不出现，其触发方式包括但不限于：
+Copilot 对应的对话框默认隐藏，当存在 Session 时显示。
+
+### 助手会话 Copilot Session
+
+一个 Copilot Session 对应于 Copilot 与用户之间的一批交互。
+
+每个 Copilot Session 包括独立的：
+
+* Subject: 主题；它会影响 Copilot 关注的信息、事件及能够调用的能力
+
+	如通过 Tutorial 发起的 Session，其 Subject 会包含对应的 Course 信息。
+
+* Messages: 本次会话中的对话历史
+
+用户在使用 Copilot 时，同时只会有一个 Session 生效。
+
+Session 可以被创建，如
 
 * 用户通过某个常驻的入口唤起 Copilot
 * Builder 在特定的场景下自动唤起 Copilot（如用户进入 Tutorial Course 时）
+
+Session 可以被结束，如
+
+* 用户通过某个关闭按钮关闭会话
+* Builder 在特定的场景下自动结束会话（如用户完成 Tutorial Course 时）
+* 新的 Session 被创建
 
 ### 课程 Course
 
@@ -59,7 +81,7 @@ Course 与 User 有两种关系：
 
 此外，Course 包含以下信息：
 
-* DisplayName: 展示名，对 Course 的简单描述
+* Title: 标题，对 Course 的简单描述
 * Thumbnail: 缩略图
 * Url: 初始 URL，用户进入 Course 时 Builder 会自动跳转到该 URL
 * References: 参考信息，Course 中可能会引用其他的内容（如 Project）作为参考
@@ -104,7 +126,7 @@ Effect-free Mode 可能被用于这样的场景：
 * 用户进入 Course“创建 Project”，对应地：
 
 	- Builder 跳转到 Course 对应的初始 URL，如 `/`（首页）
-	- Copilot 出现并基于 Course 信息给出提示：
+	- Builder 基于 Course 信息创建新的 Copilot Session 并给出提示：
 
 		> 要创建一个新的 Project，请打开导航栏中的「项目下拉菜单」，点击其中的「新建 Project」菜单项
 
@@ -123,6 +145,8 @@ Effect-free Mode 可能被用于这样的场景：
 	> 恭喜你！Project 创建成功，你可以继续学习下一个课程：「移动 Sprite」，或返回「课程列表」。
 
 	如用户点击「移动 Sprite」，Builder 会进入对应的 Course。如用户点击「课程列表」，Builder 会打开 Course Gallery 页面。
+
+	本次 Course 对应的 Copilot Session 结束。
 
 ### 创作 Course“创建 Project”
 
@@ -148,7 +172,7 @@ Effect-free Mode 可能被用于这样的场景：
 * 用户进入 Course“循环”，对应地：
 
 	- Builder 跳转到 Course 对应的初始 URL，如 `/editor/<course_author>/loop`（在 Effect-free Mode 下打开 Project `loop`）
-	- Copilot 出现并基于 Course 信息给出提示：
+	- Builder 基于 Course 信息创建新的 Copilot Session 并给出提示：
 
 		> 在这个课程中，你将学习编程中的循环概念。在当前 Project 中，我们设计了一个任务，你需要使用循环来完成它。
 		> 首先确保你选中了「Sprite A」，接下来的任务将通过修改 Sprite A 的代码来完成。
@@ -166,13 +190,15 @@ Effect-free Mode 可能被用于这样的场景：
 
 	在这个过程中随时可以通过在 Copilot 对话框中描述自己遇到的问题并得到建议。
 	
-	也可以通过其他 Copilot 功能的入口（如 Code Editor 中 Diagnostics 对应的“修复问题 Fix Problem” 按钮）来向当前 Copilot 对话中添加问题并得到建议。
+	也可以通过其他 Copilot 功能的入口（如 Code Editor 中 Diagnostics 对应的“修复问题 Fix Problem” 按钮）来向当前 Copilot Session 中追加问题并得到回复。
 
 * 用户完成代码修改并按要求成功运行（游戏正常退出）后，Copilot 继续提示用户
 
 	> 恭喜你！你已经成功使用循环来完成了任务。现在你可以继续学习下一个课程：「条件判断」，或返回「课程列表」。
 
 	如用户点击「条件判断」，Builder 会进入对应的 Course；如用户点击「课程列表」，Builder 会打开 Course Gallery 页面。
+
+	本次 Course 对应的 Copilot Session 结束。
 
 ### 创作 Course“循环”
 
@@ -213,7 +239,7 @@ Effect-free Mode 可能被用于这样的场景：
 用户可以在 Course Gallery 浏览我们推荐的 Course：
 
 * Course 被组织为不同的分类，用户可以通过分类筛选 Course
-* 用户可以看到每个 Course 的 DisplayName、Thumbnail 等信息
+* 用户可以看到每个 Course 的 Title、Thumbnail 等信息
 * 用户可以通过点击列表中 Course 对应的项开始该 Course 的学习
 
 ### 管理 Course Gallery
@@ -228,5 +254,5 @@ Course Gallery 由 Course Admin 管理，Course Admin 可以：
 
 Course Admin 可以管理自己创作的 Course，包括：
 
-* 修改 Course 的 DisplayName、Thumbnail、Prompt、References 等信息
+* 修改 Course 的 Title、Thumbnail、Prompt、References 等信息
 * 删除 Course
