@@ -43,7 +43,7 @@ export type CopilotCtx = {
     registry: ToolRegistry | null
   }
   controls: {
-    open: () => Promise<boolean>
+    open: (problem?: string, prompt?: string) => Promise<boolean>
     close: () => void
     toggle: () => Promise<boolean>
     mcpDebugger: {
@@ -107,6 +107,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import dockLeft from './dock-left.svg?raw'
 import dockRight from './dock-right.svg?raw'
 import dockBottom from './dock-bottom.svg?raw'
+import dockFloating from './dock-floating.svg?raw'
 import EnvPanel from './EnvPanel.vue'
 
 // Component state using refs
@@ -238,8 +239,8 @@ async function waitToolRegister(): Promise<void> {
   return until(() => registry.isToolRegistered('write_to_file'))
 }
 
-type DockPosition = 'left' | 'bottom' | 'right'
-const copilotPosition = ref<DockPosition>('left')
+type DockPosition = 'left' | 'bottom' | 'right' | 'floating'
+const copilotPosition = ref<DockPosition>('floating')
 
 const showCopilotPositionMenu = ref(false)
 
@@ -282,18 +283,27 @@ const copilotContainerStyle = computed(() => {
         height: copilotSize.height,
         flexDirection: 'row' as const
       }
+    case 'floating':
+      return {
+        top: `${copilotFloatingPosition.y}px`,
+        left: `${copilotFloatingPosition.x}px`,
+        width: copilotSize.width,
+        height: copilotSize.height,
+        flexDirection: 'column' as const
+      }
     default:
       return {
-        top: '0',
-        left: '0',
+        top: `${copilotFloatingPosition.y}px`,
+        left: `${copilotFloatingPosition.x}px`,
         width: copilotSize.width,
-        height: '100vh',
+        height: copilotSize.height,
         flexDirection: 'column' as const
       }
   }
 })
 
 const positionOptions = [
+  { id: 'floating', label: 'Floating', icon: 'dockFloating' as const },
   { id: 'left', label: 'Left', icon: 'dockLeft' as const },
   { id: 'bottom', label: 'Bottom', icon: 'dockBottom' as const },
   { id: 'right', label: 'Right', icon: 'dockRight' as const }
@@ -322,6 +332,12 @@ const positionMenuStyle = computed(() => {
         zIndex: 1002,
         width: '250px' // Set specific width for bottom position
       }
+    case 'floating':
+      return {
+        top: `${headerHeight}px`,
+        right: '12px',
+        zIndex: 1002
+      }
     default:
       return {
         top: `${headerHeight}px`,
@@ -332,13 +348,24 @@ const positionMenuStyle = computed(() => {
 })
 
 const copilotSize = reactive({
-  width: '15%',
-  height: '300px',
+  width: '400px',
+  height: '600px',
   dragging: false,
   startX: 0,
   startY: 0,
   startWidth: 0,
   startHeight: 0
+})
+
+// Position state for floating mode
+const copilotFloatingPosition = reactive({
+  x: Math.max(100, (window.innerWidth - 400) / 2), // Center horizontally
+  y: Math.max(100, (window.innerHeight - 600) / 2), // Center vertically
+  dragging: false,
+  startX: 0,
+  startY: 0,
+  startPosX: 0,
+  startPosY: 0
 })
 
 const handleDragStart = (event: MouseEvent) => {
@@ -357,6 +384,9 @@ const handleDragStart = (event: MouseEvent) => {
     } else {
       copilotSize.startWidth = parseFloat(copilotSize.width)
     }
+  } else if (copilotPosition.value === 'floating') {
+    copilotSize.startWidth = parseFloat(copilotSize.width)
+    copilotSize.startHeight = parseFloat(copilotSize.height)
   } else {
     copilotSize.startHeight = parseFloat(copilotSize.height)
   }
@@ -364,8 +394,57 @@ const handleDragStart = (event: MouseEvent) => {
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
 
-  document.body.style.cursor = copilotPosition.value === 'bottom' ? 'ns-resize' : 'ew-resize'
+  if (copilotPosition.value === 'floating') {
+    document.body.style.cursor = 'nwse-resize'
+  } else {
+    document.body.style.cursor = copilotPosition.value === 'bottom' ? 'ns-resize' : 'ew-resize'
+  }
   document.body.style.userSelect = 'none'
+}
+
+// Handle position dragging for floating mode
+const handlePositionDragStart = (event: MouseEvent) => {
+  if (copilotPosition.value !== 'floating') return
+  
+  copilotFloatingPosition.dragging = true
+  copilotFloatingPosition.startX = event.clientX
+  copilotFloatingPosition.startY = event.clientY
+  copilotFloatingPosition.startPosX = copilotFloatingPosition.x
+  copilotFloatingPosition.startPosY = copilotFloatingPosition.y
+
+  document.addEventListener('mousemove', handlePositionDragMove)
+  document.addEventListener('mouseup', handlePositionDragEnd)
+
+  document.body.style.cursor = 'move'
+  document.body.style.userSelect = 'none'
+}
+
+const handlePositionDragMove = (event: MouseEvent) => {
+  if (!copilotFloatingPosition.dragging) return
+
+  const deltaX = event.clientX - copilotFloatingPosition.startX
+  const deltaY = event.clientY - copilotFloatingPosition.startY
+
+  const newX = copilotFloatingPosition.startPosX + deltaX
+  const newY = copilotFloatingPosition.startPosY + deltaY
+
+  // Constrain to viewport with some padding
+  const padding = 20
+  const maxX = Math.max(padding, window.innerWidth - parseFloat(copilotSize.width) - padding)
+  const maxY = Math.max(padding, window.innerHeight - parseFloat(copilotSize.height) - padding)
+
+  copilotFloatingPosition.x = Math.max(padding, Math.min(newX, maxX))
+  copilotFloatingPosition.y = Math.max(padding, Math.min(newY, maxY))
+}
+
+const handlePositionDragEnd = () => {
+  copilotFloatingPosition.dragging = false
+
+  document.removeEventListener('mousemove', handlePositionDragMove)
+  document.removeEventListener('mouseup', handlePositionDragEnd)
+
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
 }
 
 const handleDragMove = (event: MouseEvent) => {
@@ -397,6 +476,24 @@ const handleDragMove = (event: MouseEvent) => {
     if (newHeight >= minHeight && newHeight <= maxHeight) {
       copilotSize.height = `${newHeight}px`
     }
+  } else if (copilotPosition.value === 'floating') {
+    const deltaX = event.clientX - copilotSize.startX
+    const deltaY = event.clientY - copilotSize.startY
+    
+    const newWidth = copilotSize.startWidth + deltaX
+    const newHeight = copilotSize.startHeight + deltaY
+    
+    const minWidth = 300
+    const maxWidth = window.innerWidth * 0.8
+    const minHeight = 200
+    const maxHeight = window.innerHeight * 0.8
+
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      copilotSize.width = `${newWidth}px`
+    }
+    if (newHeight >= minHeight && newHeight <= maxHeight) {
+      copilotSize.height = `${newHeight}px`
+    }
   }
 }
 
@@ -420,8 +517,11 @@ watch(
   () => {
     if (copilotPosition.value === 'left' || copilotPosition.value === 'right') {
       copilotSize.width = '15%'
-    } else {
+    } else if (copilotPosition.value === 'bottom') {
       copilotSize.height = '300px'
+    } else if (copilotPosition.value === 'floating') {
+      copilotSize.width = '400px'
+      copilotSize.height = '600px'
     }
   }
 )
@@ -433,8 +533,11 @@ const controls = {
   /**
    * Open the chat UI, ensuring Copilot is initialized first
    */
-  open: async (): Promise<boolean> => {
+  open: async (problem?: string, prompt?: string): Promise<boolean> => {
     visible.value = true
+    if (prompt != null) {
+      copilotController.startChat(problem ?? '', prompt)
+    }
     return true
   },
 
@@ -497,7 +600,13 @@ const controls = {
         copilotPosition.value = position
       },
       get: () => copilotPosition.value,
-      toggle: toggleCopilotPositionMenu
+      toggle: toggleCopilotPositionMenu,
+      setFloatingPosition: (x: number, y: number) => {
+        if (copilotPosition.value === 'floating') {
+          copilotFloatingPosition.x = x
+          copilotFloatingPosition.y = y
+        }
+      }
     }
   }
 }
@@ -547,12 +656,28 @@ function handleCloseUI() {
   controls.close()
 }
 
+// Initialize and handle window resize for floating position
+const handleWindowResize = () => {
+  if (copilotPosition.value === 'floating') {
+    const padding = 20
+    const maxX = Math.max(padding, window.innerWidth - parseFloat(copilotSize.width) - padding)
+    const maxY = Math.max(padding, window.innerHeight - parseFloat(copilotSize.height) - padding)
+    
+    copilotFloatingPosition.x = Math.max(padding, Math.min(copilotFloatingPosition.x, maxX))
+    copilotFloatingPosition.y = Math.max(padding, Math.min(copilotFloatingPosition.y, maxY))
+  }
+}
+
+// Add window resize listener
+window.addEventListener('resize', handleWindowResize)
+
 /**
  * Clean up resources when component is destroyed
  */
 onBeforeUnmount(() => {
   visible.value = false
   mcpDebuggerVisible.value = false
+  window.removeEventListener('resize', handleWindowResize)
 })
 
 /**
@@ -570,6 +695,8 @@ const shouldShowCopilotUI = computed(() => {
  */
 const getDockIcon = (position: string) => {
   switch (position) {
+    case 'floating':
+      return dockFloating
     case 'left':
       return dockLeft
     case 'right':
@@ -577,7 +704,7 @@ const getDockIcon = (position: string) => {
     case 'bottom':
       return dockBottom
     default:
-      return dockLeft
+      return dockFloating
   }
 }
 
@@ -626,6 +753,13 @@ defineExpose({
       :style="copilotContainerStyle"
       :class="[`position-${copilotPosition}`, { dragging: copilotSize.dragging }]"
     >
+      <!-- Header drag handle for floating mode -->
+      <div
+        v-if="copilotPosition === 'floating'"
+        class="header-drag-handle"
+        @mousedown="handlePositionDragStart"
+      ></div>
+
       <!-- Resize handle for drag resizing -->
       <div class="resize-handle" :class="`resize-${copilotPosition}`" @mousedown="handleDragStart"></div>
 
@@ -689,8 +823,8 @@ defineExpose({
 
   /* Layout */
   display: flex;
-  z-index: 1000;
-  transition: all 0.3s ease;
+  z-index: 9999;
+  /* transition: all 0.3s ease; */
 
   /* Position-specific styles */
   &.position-left {
@@ -703,6 +837,12 @@ defineExpose({
 
   &.position-bottom {
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.position-floating {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .copilot-ui {
@@ -877,6 +1017,11 @@ defineExpose({
     &.position-right {
       width: 300px;
     }
+    
+    &.position-floating {
+      width: 350px !important;
+      height: 500px !important;
+    }
   }
 }
 
@@ -886,10 +1031,27 @@ defineExpose({
     &.position-right {
       width: 100%;
     }
+    
+    &.position-floating {
+      width: 90% !important;
+      height: 70% !important;
+      left: 5% !important;
+      top: 15% !important;
+    }
   }
 }
 
 /* Add drag edge styles */
+.header-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 70px;
+  right: 100px;
+  height: 48px; /* Height of the header */
+  cursor: move;
+  z-index: 1002;
+}
+
 .resize-handle {
   position: absolute;
   z-index: 1001;
@@ -918,7 +1080,28 @@ defineExpose({
     cursor: ns-resize;
   }
 
-  &:hover {
+  &.resize-floating {
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 8px 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-bottom: 6px solid rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  &:hover:not(.resize-floating) {
     background-color: rgba(0, 0, 0, 0.2);
   }
 }

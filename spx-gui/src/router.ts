@@ -32,6 +32,10 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export function getTutorialRoute() {
+  return '/tutorial'
+}
+
 declare module 'vue-router' {
   interface RouteMeta {
     /** Whether the route requires sign-in */
@@ -53,6 +57,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/explore',
         component: () => import('@/pages/community/explore.vue')
+      },
+      {
+        path: '/tutorial',
+        component: () => import('@/pages/tutorial/index.vue')
       },
       {
         path: '/search',

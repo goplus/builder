@@ -1,12 +1,12 @@
 <template>
   <UIConfigProvider :config="config">
-    <UIMessageProvider>
-      <UIModalProvider>
-        <CopilotProvider>
+    <CopilotProvider>
+      <UIMessageProvider>
+        <UIModalProvider>
           <RouterView />
-        </CopilotProvider>
-      </UIModalProvider>
-    </UIMessageProvider>
+        </UIModalProvider>
+      </UIMessageProvider>
+    </CopilotProvider>
   </UIConfigProvider>
 </template>
 

@@ -12,11 +12,12 @@
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
+          data-name="project-name-input"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value" data-name="project-create-button">
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
@@ -25,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import {
   UIButton,
   UIForm,
@@ -43,6 +44,7 @@ import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { Project } from '@/models/project'
 import { getDefaultProjectFile } from '@/components/project'
+import { useCopilotCtx } from '../copilot/CopilotProvider.vue'
 
 const props = defineProps<{
   remixSource?: string
@@ -90,6 +92,8 @@ const handleSubmit = useMessageHandle(
       await project.loadGbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
+
+      cc.controller?.askProblem(`我创建好了项目 ${projectName}。`)
     }
     emit('resolved', projectName)
     return projectName
@@ -131,6 +135,31 @@ async function validateName(name: string): Promise<FormValidationResult> {
       zh: `项目 ${name} 已存在`
     })
 }
+
+const cc = useCopilotCtx()
+
+onMounted(() => {
+  cc.controller?.askProblem(`
+我按你说的做了操作。这里是当前界面上的元素信息：
+
+\`\`\`json
+{
+  "projectCreateModal": {
+    "path": "project-create-modal",
+    "description": "The modal for creating a new project."
+  },
+  "projectNameInput": {
+    "path": "project-create-modal > project-name-input",
+    "description": "The input field for entering the project name."
+  },
+  "projectCreateButton": {
+    "path": "project-create-modal > project-create-button",
+    "description": "The button to submit, so that the project will be created."
+  }
+}
+\`\`\`
+`)
+})
 </script>
 
 <style scoped lang="scss">

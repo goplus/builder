@@ -15,6 +15,7 @@ export type ChatMessage = {
 
 /** Chat session structure */
 export type Chat = {
+  systemPrompt?: string
   messages: ChatMessage[]
   env?: Record<string, any>
 }
@@ -56,6 +57,7 @@ export type Round = {
 
 /** Internal chat state representation */
 type InternalChat = {
+  systemPrompt?: string
   rounds: Round[]
   ctrl: AbortController
 }
@@ -132,11 +134,12 @@ ${resultContent}
    * Start a new chat session with an initial question
    * @param problem Initial user question
    */
-  async startChat(problem: string) {
+  async startChat(problem: string, systemPrompt?: string) {
     const currentChat = this.currentChat
     if (currentChat != null) currentChat.ctrl.abort()
 
     this.currentChatRef.value = {
+      systemPrompt,
       rounds: [],
       ctrl: new AbortController()
     }
@@ -227,6 +230,7 @@ ${resultContent}
       return roundMessages
     })
     return {
+      systemPrompt: currentChat.systemPrompt,
       messages,
       env: this.collctor.getEnvironment()
     }

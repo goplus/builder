@@ -61,12 +61,13 @@ export async function* generateStreamMessage(
   options?: {
     signal?: AbortSignal
     tools?: Tool[]
+    system?: string
   }
 ): AsyncIterableIterator<string> {
   try {
     const stream = await client.postTextStream(
       '/copilot/stream/message',
-      { messages, tools: options?.tools },
+      { messages, tools: options?.tools, system: options?.system },
       {
         timeout: timeout,
         signal: options?.signal

@@ -1,5 +1,5 @@
 <template>
-  <nav class="top-nav">
+  <nav class="top-nav" data-name="navbar">
     <div class="content" :class="{ centered }">
       <div class="left">
         <NavbarLogo />

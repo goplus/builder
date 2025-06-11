@@ -19,8 +19,8 @@ const retryable = computed(() => {
 </script>
 
 <template>
-  <section class="copilot-round">
-    <UserMessage :content="round.problem" />
+  <section v-show="isLastRound" class="copilot-round">
+    <!-- <UserMessage :content="round.problem" /> -->
     <MarkdownView v-if="round.answer != null" class="answer" :value="round.answer" />
     <div v-else class="abnormal">
       <div v-if="round.state === RoundState.Loading" class="loading">

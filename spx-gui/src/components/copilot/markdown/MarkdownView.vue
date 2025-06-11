@@ -8,6 +8,8 @@ import ToolEcecResult from './ToolExecResult.vue'
 import FileContent from './FileContent.vue'
 import FileDiagnostics from './FileDiagnostics.vue'
 import Env from './WorkflowEnv.vue'
+import UIHighlightLink from './UIHighlightLink.vue'
+import TutorialSuccess from './TutorialSuccess.vue'
 
 const props = defineProps<{
   value: string | LocaleMessage
@@ -58,7 +60,21 @@ const basicComponents = {
    * <env kname="MY_ENV" value="my_value"></env>
    * ```
    */
-  env: Env
+  env: Env,
+  /**
+   * Usage:
+   *  ```html
+   * <ui-highlight-link path="navbar > dropdown" tooltip="Hover me to see more">Project Dropdown</ui-highlight-link>
+   * ```
+   */
+  'ui-highlight-link': UIHighlightLink,
+  /**
+   * Usage:
+   *  ```html
+   * <tutorial-success tutorial="Your First Game">You have successfully completed the tutorial!</tutorial-success>
+   * ```
+   */
+  'tutorial-success': TutorialSuccess
 }
 
 const components = computed(() => {

@@ -10,6 +10,9 @@
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
+      <RouterLink class="nav-link" to="/tutorial">
+        {{ $t({ en: 'Tutorials', zh: '教程' }) }}
+      </RouterLink>
     </template>
     <template #right>
       <div class="search">
@@ -68,6 +71,28 @@ watch(
 </script>
 
 <style lang="scss" scoped>
+.nav-link {
+  color: var(--ui-color-grey-100);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  
+  &:hover {
+    color: white;
+    background-color: var(--ui-color-primary-600);
+  }
+  
+  &.router-link-active {
+    color: white;
+    font-weight: 600;
+  }
+}
+
 .search {
   margin-right: 8px;
   width: 340px;
