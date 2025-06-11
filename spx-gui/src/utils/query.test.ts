@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { type ProgressHandler } from './progress'
 import { useQuery, composeQuery, type QueryContext } from './query'
 import { withSetup } from './test'
+import { timeout } from './utils'
 
 describe('composeQuery', () => {
   it('should work well', async () => {
@@ -28,6 +29,9 @@ describe('composeQuery', () => {
 
     valueRef.value++
     await flushPromises()
+    expect(ret1.isLoading.value).toBe(false)
+    expect(ret1.data.value).toBe(1)
+    expect(ret1.error.value).toBe(null)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(1)
     expect(ret2.error.value).toBe(null)
@@ -52,7 +56,9 @@ describe('composeQuery', () => {
   })
 
   function makeErrorFn(times: number, err: unknown) {
-    return async () => {
+    return async (ctx: QueryContext) => {
+      await timeout(50)
+      ctx.signal.throwIfAborted()
       times--
       if (times >= 0) throw err
       return 'ok'
@@ -61,34 +67,39 @@ describe('composeQuery', () => {
 
   it('should work well with exception', async () => {
     const err = new Error('test')
+    const errFn = vi.fn(makeErrorFn(3, err))
     const [ret1, ret2] = withSetup(() => {
-      const ret1 = useQuery(makeErrorFn(3, err))
+      const ret1 = useQuery(errFn)
       const ret2 = useQuery(async (ctx: QueryContext) => composeQuery(ctx, ret1))
       return [ret1, ret2] as const
     })
 
-    await flushPromises()
+    await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
     expect(ret2.error.value).toBe(err)
+    expect(errFn).toHaveBeenCalledTimes(1)
 
     ret2.refetch()
-    await flushPromises()
+    await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
     expect(ret2.error.value).toBe(err)
+    expect(errFn).toHaveBeenCalledTimes(2)
 
     ret1.refetch()
-    await flushPromises()
+    await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe(null)
     expect(ret2.error.value).toBe(err)
+    expect(errFn).toHaveBeenCalledTimes(3)
 
     ret2.refetch()
-    await flushPromises()
+    await timeout(100)
     expect(ret2.isLoading.value).toBe(false)
     expect(ret2.data.value).toBe('ok')
     expect(ret2.error.value).toBe(null)
+    expect(errFn).toHaveBeenCalledTimes(4)
   })
 
   it('should work well with multiple dependencies', async () => {
@@ -103,19 +114,19 @@ describe('composeQuery', () => {
       return ret3
     })
 
-    await flushPromises()
+    await timeout(100)
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toBe(null)
     expect(ret3.error.value).toBe(err1)
 
     ret3.refetch()
-    await flushPromises()
+    await timeout(100)
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toBe(null)
     expect(ret3.error.value).toBe(err2)
 
     ret3.refetch()
-    await flushPromises()
+    await timeout(100)
     expect(ret3.isLoading.value).toBe(false)
     expect(ret3.data.value).toEqual(['ok', 'ok'])
     expect(ret3.error.value).toBe(null)
