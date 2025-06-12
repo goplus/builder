@@ -66,11 +66,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go & Go+
-        uses: goplus/setup-goplus@v1
+      - name: Set up Go & XGo
+        uses: goplus/setup-xgo@v1
         with:
           go-version: 1.24.x
-          gop-version: 1.4.6
+          xgo-version: 1.5.x
 
       - name: Run unit test cases
         working-directory: spx-backend
