@@ -1,7 +1,7 @@
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
-      <div class="dropdown" data-name="project-dropdown">
+      <div class="dropdown">
         <slot name="trigger"></slot>
         <UIIcon class="icon-arrow" type="arrowDown" />
       </div>

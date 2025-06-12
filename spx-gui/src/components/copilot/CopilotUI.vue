@@ -9,7 +9,7 @@ import envSvg from './env.svg?raw'
 import type { CopilotController } from './index'
 const props = defineProps<{
   controller: CopilotController
-  position?: 'left' | 'bottom' | 'right' | 'floating'
+  position?: 'left' | 'bottom' | 'right'
   positionOptions?: Array<{ id: string; label: string; icon: string }>
   showPositionMenu?: boolean
 }>()
@@ -17,7 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'togglePositionMenu'): void
-  (e: 'changePosition', position: 'left' | 'bottom' | 'right' | 'floating'): void
+  (e: 'changePosition', position: 'left' | 'bottom' | 'right'): void
   (e: 'toggleEnvPanel'): void
 }>()
 
@@ -62,6 +62,13 @@ useBottomSticky(bodyRef)
       <div class="title">
         {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
       </div>
+      <button class="env-button" @click="handleEnvClick">
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <span class="icon" v-html="envSvg"></span>
+      </button>
+      <button class="position-button" @click="$emit('togglePositionMenu')">
+        <UIIcon class="icon" type="more" />
+      </button>
       <button class="close">
         <UIIcon class="icon" type="close" @click="handleClose" />
       </button>

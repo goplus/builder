@@ -25,12 +25,6 @@ var customElementCodeLink string
 //go:embed custom_element_code_change.md
 var customElementCodeChange string
 
-//go:embed custom_element_ui_highlight_link.md
-var customElementUIHighlightLink string
-
-//go:embed custom_element_tutorial_success.md
-var customElementTutorialSuccess string
-
 //go:embed system_prompt_with_tools.md
 var SystemPromptWithToolsTpl string
 
@@ -44,14 +38,12 @@ var SystemPrompt string
 // systemPromptTplData holds all data needed to populate the system prompt template.
 // This includes language definitions, documentation, and available tools.
 type systemPromptTplData struct {
-	GopDefs                      string         // Go+ language documentation
-	SpxDefs                      string         // SPX framework documentation
-	CustomElementCodeLink        string         // Custom element code linking documentation
-	CustomElementCodeChange      string         // Custom element code change documentation
-	CustomElementUIHighlightLink string         // Custom element UI highlight linking documentation
-	CustomElementTutorialSuccess string         // Custom element tutorial success documentation
-	Tools                        []Tool         // Available tools for the AI assistant
-	Reference                    *model.Project // Reference to the project model for context
+	GopDefs                 string         // Go+ language documentation
+	SpxDefs                 string         // SPX framework documentation
+	CustomElementCodeLink   string         // Custom element code linking documentation
+	CustomElementCodeChange string         // Custom element code change documentation
+	Tools                   []Tool         // Available tools for the AI assistant
+	Reference               *model.Project // Reference to the project model for context
 }
 
 // init initializes the package by:
@@ -62,13 +54,11 @@ type systemPromptTplData struct {
 func SystemPromptWithTools(tools []Tool) string {
 	// Create a new template with the provided tools
 	tplData := systemPromptTplData{
-		GopDefs:                      GopDefs,
-		SpxDefs:                      SpxDefs,
-		CustomElementCodeLink:        customElementCodeLink,
-		CustomElementCodeChange:      customElementCodeChange,
-		CustomElementUIHighlightLink: customElementUIHighlightLink,
-		CustomElementTutorialSuccess: customElementTutorialSuccess,
-		Tools:                        tools,
+		GopDefs:                 GopDefs,
+		SpxDefs:                 SpxDefs,
+		CustomElementCodeLink:   customElementCodeLink,
+		CustomElementCodeChange: customElementCodeChange,
+		Tools:                   tools,
 	}
 
 	// Define template functions for formatting
@@ -98,12 +88,10 @@ func SystemPromptWithTools(tools []Tool) string {
 
 func init() {
 	tplData := systemPromptTplData{
-		GopDefs:                      GopDefs,
-		SpxDefs:                      SpxDefs,
-		CustomElementCodeLink:        customElementCodeLink,
-		CustomElementCodeChange:      customElementCodeChange,
-		CustomElementUIHighlightLink: customElementUIHighlightLink,
-		CustomElementTutorialSuccess: customElementTutorialSuccess,
+		GopDefs:                 GopDefs,
+		SpxDefs:                 SpxDefs,
+		CustomElementCodeLink:   customElementCodeLink,
+		CustomElementCodeChange: customElementCodeChange,
 	}
 	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
 	if err != nil {
