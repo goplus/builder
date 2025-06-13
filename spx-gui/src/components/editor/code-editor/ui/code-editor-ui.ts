@@ -23,7 +23,9 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range
+  selection2Range,
+  type DefinitionDocumentationItem,
+  isBlockDefinitionKind
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -43,6 +45,7 @@ import {
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
+import { DropIndicatorController } from './drop-indicator'
 import { SnippetParser } from './snippet'
 
 export * from './hover'
@@ -54,6 +57,7 @@ export * from './api-reference'
 export * from './input-helper'
 export * from './inlay-hint'
 export * from './copilot'
+export * from './drop-indicator'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void
@@ -203,6 +207,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   resourceReferenceController = new ResourceReferenceController(this)
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
+  dropIndicatorController = new DropIndicatorController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -417,6 +422,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return this.insertBlockContent('snippet', snippet, range)
   }
 
+  async insertDefinition(ddi: DefinitionDocumentationItem, range: Range = this.getSelectionRange()) {
+    const parsed = this.parseSnippet(ddi.insertSnippet)
+    // Now we have feature InputHelper for APIReferenceItem insertion.
+    // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
+    // so we transform snippet to text and insert it directly.
+    const text = parsed.toString()
+    if (isBlockDefinitionKind(ddi.kind)) this.insertBlockText(text, range)
+    else this.insertInlineText(text, range)
+  }
+
   private cursorPositionRef = shallowRef<Position | null>(null)
   /** Cursor position (in current active text document) */
   get cursorPosition() {
@@ -619,6 +634,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.resourceReferenceController.init()
     this.inputHelperController.init()
     this.inlayHintController.init()
+    this.dropIndicatorController.init()
   }
 
   dispose() {

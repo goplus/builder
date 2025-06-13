@@ -376,6 +376,21 @@ export type DefinitionDocumentationItem = {
   hiddenFromList?: true
 }
 
+const ddiDragFormat = 'application/x-builder-definition-documentation-item'
+
+/** Set DefinitionDocumentationItem in drag data */
+export function setDdiDragData(dataTransfer: DataTransfer, item: DefinitionDocumentationItem): void {
+  dataTransfer.setData('text/plain', item.overview)
+  dataTransfer.setData(ddiDragFormat, JSON.stringify(item))
+}
+
+/** Get DefinitionDocumentationItem from drag data */
+export function getDdiDragData(dataTransfer: DataTransfer): DefinitionDocumentationItem | null {
+  const data = dataTransfer.getData(ddiDragFormat)
+  if (data === '') return null
+  return JSON.parse(data) as DefinitionDocumentationItem
+}
+
 export interface IDocumentBase {
   getDocumentation(defId: DefinitionIdentifier): Promise<DefinitionDocumentationItem | null>
 }
