@@ -66,11 +66,11 @@ useDecorations(() => {
   &::before {
     content: '';
     position: absolute;
-    left: -1px;
+    left: 0;
     top: 0;
     width: 2px;
     height: 100%;
-    background-color: var(--ui-color-blue-500);
+    background-color: #000;
   }
 }
 </style>

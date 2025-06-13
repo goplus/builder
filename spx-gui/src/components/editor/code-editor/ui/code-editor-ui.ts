@@ -274,6 +274,10 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   // TODO: Optimize inserting logic with inline context. https://github.com/goplus/builder/issues/1258
 
+  /**
+   * Insert text at given range (defaults to current selection).
+   * Cursor will be moved to the end of the inserted text.
+   */
   async insertText(text: string, range: Range = this.getSelectionRange()) {
     this.activeTextDocument?.pushEdits([
       {
@@ -281,6 +285,27 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         newText: text
       }
     ])
+
+    // After inserting text, we need to move the cursor to the end of the inserted text.
+    // This is supposed to be done by Monaco editor if we calling `pushEditOperations` with proper cursor-state-computer in `TextDocument.pushEdits`.
+    // While the cursor-state-computer is ignored, which is a bug. See details in https://github.com/microsoft/monaco-editor/issues/3893
+    // TODO: Remove this workaround when the bug is fixed in Monaco editor.
+    const insertionStart = range.start
+    const insertedLines = text.split(/\r?\n/)
+    let insertionEnd = insertionStart
+    if (insertedLines.length > 1) {
+      insertionEnd = {
+        line: insertionStart.line + insertedLines.length - 1,
+        column: insertedLines[insertedLines.length - 1].length + 1
+      }
+    } else {
+      insertionEnd = {
+        line: insertionStart.line,
+        column: insertionStart.column + insertedLines[0].length
+      }
+    }
+    this.editor.setPosition(toMonacoPosition(insertionEnd))
+
     this.editor.focus()
   }
 

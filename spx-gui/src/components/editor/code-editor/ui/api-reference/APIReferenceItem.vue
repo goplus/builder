@@ -116,6 +116,14 @@ function handleDragStart(e: DragEvent) {
     background: var(--ui-color-grey-300);
     box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
   }
+
+  &:active {
+    // Adjust transparency when dragging to avoid visual obstruction
+    background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
+    .overview {
+      opacity: 0.6;
+    }
+  }
 }
 
 .overview {
