@@ -376,7 +376,7 @@ export type DefinitionDocumentationItem = {
   hiddenFromList?: true
 }
 
-const ddiDragFormat = 'application/x-builder-definition-documentation-item'
+const ddiDragFormat = 'application/builder-definition-documentation-item'
 
 /** Set DefinitionDocumentationItem in drag data */
 export function setDdiDragData(dataTransfer: DataTransfer, item: DefinitionDocumentationItem): void {
