@@ -64,8 +64,26 @@ function hideDropdown() {
   ;(hoverDropdown.value as any)?.setVisible(false)
 }
 
+// Apply styling class BEFORE the `dragstart` event triggers to ensure
+// the visual effect is applied during dragging (just another weird Chrome requirement).
+// So we add the class on `mousedown` and remove it after `dragstart` or on `mouseup`.
+const beforeDraggingClz = 'before-dragging'
+
 function handleDragStart(e: DragEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  setTimeout(() => itemEl.classList.remove(beforeDraggingClz), 0)
   setDdiDragData(e.dataTransfer!, props.item)
+}
+
+function handleMouseDown(e: MouseEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  itemEl.classList.add(beforeDraggingClz)
+  hideDropdown()
+}
+
+function handleMouseUp(e: MouseEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  itemEl.classList.remove(beforeDraggingClz)
 }
 </script>
 
@@ -76,7 +94,8 @@ function handleDragStart(e: DragEvent) {
         class="api-reference-item"
         draggable="true"
         @dragstart="handleDragStart"
-        @mousedown="hideDropdown"
+        @mousedown.passive="handleMouseDown"
+        @mouseup.passive="handleMouseUp"
         @click="handleInsert"
       >
         <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
@@ -117,8 +136,8 @@ function handleDragStart(e: DragEvent) {
     box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
   }
 
-  &:active {
-    // Adjust transparency when dragging to avoid visual obstruction
+  &.before-dragging {
+    // Adjust transparency for dragging to avoid visual obstruction
     background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
     .overview {
       opacity: 0.6;
