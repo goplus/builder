@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "gop run ./cmd/spx-backend",
+      "label": "xgo run ./cmd/spx-backend",
       "detail": "Run spx-backend",
       "type": "shell",
-      "command": "gop run ./cmd/spx-backend",
+      "command": "xgo run ./cmd/spx-backend",
       "options": {
         "env": {
           "GOTOOLCHAIN": "go1.24.4"
