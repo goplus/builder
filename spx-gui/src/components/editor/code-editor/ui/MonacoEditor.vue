@@ -27,20 +27,20 @@ watchEffect(async (onClenaup) => {
     selectOnLineNumbers: true,
     roundedSelection: true,
     readOnly: false,
-    cursorStyle: 'line', // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
+    cursorStyle: 'line',
     automaticLayout: true,
-    glyphMargin: true, // the margin is used for glyph margin and line numbers
-    useTabStops: false, // use tab key
+    glyphMargin: true,
+    useTabStops: false,
     renderControlCharacters: false,
     quickSuggestions: false,
     wordWrapColumn: 40,
     tabSize: 4,
     insertSpaces: false,
     detectIndentation: false,
-    folding: true, // code folding
-    foldingHighlight: true, // 折叠等高线
-    foldingStrategy: 'indentation', // 折叠方式 auto | indentation
-    showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
+    folding: true,
+    foldingHighlight: true,
+    foldingStrategy: 'indentation',
+    showFoldingControls: 'mouseover',
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
     scrollBeyondLastLine: false,
@@ -54,6 +54,21 @@ watchEffect(async (onClenaup) => {
       useShadows: false,
       horizontalScrollbarSize: 8,
       verticalScrollbarSize: 8
+    },
+    // We are not utilizing the native support for dropping (`dragAndDrop` & `dropIntoEditor`) of Monaco,
+    // instead we handle the drag & drop events, implement drop-indicator & scroll-on-drag by ourselves,
+    // because:
+    // 1. The native support is not flexible enough for our use case:
+    //   - There's no way to customize the drop indicator UI
+    //   - There's no way to prevent the default drop behavior
+    //   - The related API `onDropIntoEditor` is not public yet. See details in https://github.com/microsoft/monaco-editor/issues/3359
+    // 2. There's bug with the native support since v0.46.0. See details in https://github.com/microsoft/monaco-editor/issues/4386
+    dragAndDrop: false,
+    dropIntoEditor: {
+      enabled: false
+    },
+    stickyScroll: {
+      enabled: false
     },
     ...props.options
   })
