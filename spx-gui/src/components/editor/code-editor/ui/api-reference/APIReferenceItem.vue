@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
-import { type Action, isBlockDefinitionKind } from '../../common'
+import { type Action, setDdiDragData } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -20,21 +20,10 @@ const props = defineProps<{
 
 const codeEditorUICtx = useCodeEditorUICtx()
 
-const handleInsert = useMessageHandle(
-  () => {
-    const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
-    // Now we have feature InputHelper for APIReferenceItem insertion.
-    // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
-    // so we transform snippet to text and insert it directly.
-    const text = parsed.toString()
-    if (isBlockDefinitionKind(props.item.kind)) codeEditorUICtx.ui.insertBlockText(text)
-    else codeEditorUICtx.ui.insertInlineText(text)
-  },
-  {
-    en: 'Failed to insert',
-    zh: '插入失败'
-  }
-).fn
+const handleInsert = useMessageHandle(() => codeEditorUICtx.ui.insertDefinition(props.item), {
+  en: 'Failed to insert',
+  zh: '插入失败'
+}).fn
 
 const parsed = computed(() => {
   const parsed = codeEditorUICtx.ui.parseSnippet(props.item.insertSnippet)
@@ -70,22 +59,52 @@ const hoverCardActions = computed<Action[]>(() => {
   ]
 })
 
-function handlePostHoverAction() {
+function hideDropdown() {
   // TODO: proper typing for UIDropdown exposed
   ;(hoverDropdown.value as any)?.setVisible(false)
+}
+
+// Apply styling class BEFORE the `dragstart` event triggers to ensure
+// the visual effect is applied during dragging (just another weird Chrome requirement).
+// So we add the class on `mousedown` and remove it after `dragstart` or on `mouseup`.
+const beforeDraggingClz = 'before-dragging'
+
+function handleDragStart(e: DragEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  setTimeout(() => itemEl.classList.remove(beforeDraggingClz), 0)
+  setDdiDragData(e.dataTransfer!, props.item)
+  hideDropdown()
+}
+
+function handleMouseDown(e: MouseEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  itemEl.classList.add(beforeDraggingClz)
+  hideDropdown()
+}
+
+function handleMouseUp(e: MouseEvent) {
+  const itemEl = e.currentTarget as HTMLElement
+  itemEl.classList.remove(beforeDraggingClz)
 }
 </script>
 
 <template>
   <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
-      <li class="api-reference-item" @click="handleInsert">
+      <li
+        class="api-reference-item"
+        draggable="true"
+        @dragstart="handleDragStart"
+        @mousedown.passive="handleMouseDown"
+        @mouseup.passive="handleMouseUp"
+        @click="handleInsert"
+      >
         <DefinitionOverviewWrapper class="overview" :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
           parsed.overview
         }}</DefinitionOverviewWrapper>
       </li>
     </template>
-    <HoverCard :actions="hoverCardActions" @action="handlePostHoverAction">
+    <HoverCard :actions="hoverCardActions" @action="hideDropdown">
       <HoverCardContent>
         <DefinitionOverviewWrapper :kind="item.kind" :inlay-hints="parsed.inlayHints">{{
           parsed.overview
@@ -110,9 +129,20 @@ function handlePostHoverAction() {
   transition: 0.2s;
   cursor: pointer;
 
+  // Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788
+  transform: translate(0, 0);
+
   &:hover {
     background: var(--ui-color-grey-300);
     box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+  }
+
+  &.before-dragging {
+    // Adjust transparency for dragging to avoid visual obstruction
+    background-color: rgba(from var(--ui-color-grey-300) r g b / 0.6);
+    .overview {
+      opacity: 0.6;
+    }
   }
 }
 
