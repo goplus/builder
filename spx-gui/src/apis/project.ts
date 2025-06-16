@@ -124,8 +124,8 @@ export type ExploreParams = {
 
 /** Get project list for explore purpose */
 export async function exploreProjects({ order, count }: ExploreParams) {
-  // count within the last month
-  const countAfter = timeStringify(dayjs().subtract(1, 'month').valueOf())
+  // count within the last 6 months
+  const countAfter = timeStringify(dayjs().subtract(6, 'month').valueOf())
   const p: ListProjectParams = {
     visibility: Visibility.Public,
     owner: ownerAll,
