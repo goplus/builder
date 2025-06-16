@@ -73,6 +73,7 @@ function handleDragStart(e: DragEvent) {
   const itemEl = e.currentTarget as HTMLElement
   setTimeout(() => itemEl.classList.remove(beforeDraggingClz), 0)
   setDdiDragData(e.dataTransfer!, props.item)
+  hideDropdown()
 }
 
 function handleMouseDown(e: MouseEvent) {
