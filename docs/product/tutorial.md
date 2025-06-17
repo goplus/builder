@@ -47,9 +47,9 @@ A Copilot Session corresponds to a batch of interactions between Copilot and the
 
 Each Copilot Session includes independent:
 
-* Subject: Theme; it affects the information and events that Copilot focuses on and the capabilities it can invoke
+* Topic: Theme; it affects the information and events that Copilot focuses on and the capabilities it can invoke
 
-	For example, a Session initiated through Tutorial will include corresponding Course information in its Subject.
+	For example, a Session initiated through Tutorial will include corresponding Course information in its Topic.
 
 * Messages: Conversation history in this session
 
