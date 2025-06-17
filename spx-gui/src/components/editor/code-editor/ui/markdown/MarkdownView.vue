@@ -67,7 +67,7 @@ const advancedComponents = {
   /**
    * Usage:
    * ```html
-   * <definition-item def-id="gop:fmt?Println" overview="func Println(a ...interface{}) void">
+   * <definition-item def-id="xgo:fmt?Println" overview="func Println(a ...any) void">
    *   Default detail content here (Markdown supported)
    * </definition-item>
    */

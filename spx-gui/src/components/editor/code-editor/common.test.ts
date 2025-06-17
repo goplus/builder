@@ -3,29 +3,29 @@ import { stringifyDefinitionId, parseDefinitionId, parseResourceURI, parseResour
 
 describe('stringifyDefinitionId', () => {
   it('should stringify definition identifier', () => {
-    expect(stringifyDefinitionId({ package: 'fmt', name: 'Println' })).toBe('gop:fmt?Println')
+    expect(stringifyDefinitionId({ package: 'fmt', name: 'Println' })).toBe('xgo:fmt?Println')
     expect(stringifyDefinitionId({ package: 'github.com/goplus/spx/v2', name: 'Sprite.Clone', overloadId: '1' })).toBe(
-      'gop:github.com/goplus/spx/v2?Sprite.Clone#1'
+      'xgo:github.com/goplus/spx/v2?Sprite.Clone#1'
     )
     expect(stringifyDefinitionId({ name: 'for_statement_with_single_condition' })).toBe(
-      'gop:?for_statement_with_single_condition'
+      'xgo:?for_statement_with_single_condition'
     )
-    expect(stringifyDefinitionId({ package: 'main', name: 'foo' })).toBe('gop:main?foo')
+    expect(stringifyDefinitionId({ package: 'main', name: 'foo' })).toBe('xgo:main?foo')
   })
 })
 
 describe('parseDefinitionId', () => {
   it('should parse definition identifier correctly', () => {
-    expect(parseDefinitionId('gop:fmt?Println')).toEqual({ package: 'fmt', name: 'Println' })
-    expect(parseDefinitionId('gop:github.com/goplus/spx/v2?Sprite.Clone#1')).toEqual({
+    expect(parseDefinitionId('xgo:fmt?Println')).toEqual({ package: 'fmt', name: 'Println' })
+    expect(parseDefinitionId('xgo:github.com/goplus/spx/v2?Sprite.Clone#1')).toEqual({
       package: 'github.com/goplus/spx/v2',
       name: 'Sprite.Clone',
       overloadId: '1'
     })
-    expect(parseDefinitionId('gop:?for_statement_with_single_condition')).toEqual({
+    expect(parseDefinitionId('xgo:?for_statement_with_single_condition')).toEqual({
       name: 'for_statement_with_single_condition'
     })
-    expect(parseDefinitionId('gop:main?foo')).toEqual({ package: 'main', name: 'foo' })
+    expect(parseDefinitionId('xgo:main?foo')).toEqual({ package: 'main', name: 'foo' })
   })
 
   it('should stringify & parse correctly', () => {
