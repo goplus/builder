@@ -1,11 +1,24 @@
-import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
-import { isDeveloperMode } from '@/utils/developer-mode'
+// TODO: Mechanism to keep this file in sync with `client.ts` in xgolsw.
+
+import { type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj } from '.'
+
+/** Connection between the client and the language server. */
+export interface IConnection {
+  sendMessage(message: RequestMessage | NotificationMessage): void
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void): void
+}
+
+export interface OngoingRequest<T> {
+  /** Unique ID of the request. */
+  id: number
+  /** Returns a promise that resolves with the response of the request. */
+  response(): Promise<T>
+}
 
 /**
  * Client wrapper for the spxls.
  */
 export class Spxlc {
-  private ls: Spxls
   private nextRequestId: number = 1
   private pendingRequests = new Map<number, {
     resolve: (response: any) => void
@@ -13,14 +26,11 @@ export class Spxlc {
   }>()
   private notificationHandlers = new Map<string, (params: any) => void>()
 
-  /**
-   * Creates a new client instance.
-   * @param filesProvider Function that provides access to workspace files.
-   */
-  constructor(filesProvider: () => Files) {
-    const ls = NewSpxls(filesProvider, this.handleMessage.bind(this))
-    if (ls instanceof Error) throw ls
-    this.ls = ls
+  constructor(
+    /** The connection to the language server. */
+    private connection: IConnection
+  ) {
+    connection.onMessage(m => this.handleMessage(m))
   }
 
   /**
@@ -69,15 +79,14 @@ export class Spxlc {
   }
 
   /**
-   * Sends a request to the language server and waits for response.
+   * Sends a request to the language server.
    * @param method LSP method name.
    * @param params Method parameters.
-   * @returns Promise that resolves with the response.
+   * @returns The ongoing request, which can be used to get the response later.
    */
-  request<T>(method: string, params?: any): Promise<T> {
+  request<T>(method: string, params?: any): OngoingRequest<T> {
     const id = this.nextRequestId++
-    const sendAt = performance.now()
-    return new Promise<T>((resolve, reject) => {
+    const respPromise = new Promise<T>((resolve, reject) => {
       const message: RequestMessage = {
         jsonrpc: '2.0',
         id,
@@ -85,24 +94,13 @@ export class Spxlc {
         params
       }
       this.pendingRequests.set(id, { resolve, reject })
-      const err = this.ls.handleMessage(message)
-      if (err != null) {
-        reject(err)
-        this.pendingRequests.delete(id)
-      }
-    }).then(
-      result => {
-        if (process.env.NODE_ENV === 'development' || isDeveloperMode.value) {
-          const time = performance.now() - sendAt
-          if (time > 20) console.warn(`[LSP] ${method} took ${Math.round(time)}ms, params:`, params)
-        }
-        return result
-      },
-      err => {
-        console.warn(`[LSP] ${method} error:`, err, ', params:', params)
-        throw err
-      }
-    )
+      // TODO: Catch errors on sending, and clear the pending request
+      this.connection.sendMessage(message)
+    })
+    return {
+      id,
+      response: () => respPromise
+    }
   }
 
   /**
@@ -116,8 +114,8 @@ export class Spxlc {
       method,
       params
     }
-    const err = this.ls.handleMessage(message)
-    if (err != null) throw err
+    // TODO: Catch errors on sending, and clear the pending request
+    this.connection.sendMessage(message)
   }
 
   /**

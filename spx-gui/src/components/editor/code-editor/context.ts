@@ -1,4 +1,4 @@
-import { watchEffect, type InjectionKey, inject, provide } from 'vue'
+import { type InjectionKey, inject, provide, watch } from 'vue'
 import { shikiToMonaco } from '@shikijs/monaco'
 import { useI18n } from '@/utils/i18n'
 import { ProgressCollector } from '@/utils/progress'
@@ -179,12 +179,15 @@ export function useProvideCodeEditorCtx(
   const editorRef = editorQueryRet.data
   const monacoRef = monacoQueryRet.data
 
-  watchEffect((onCleanUp) => {
-    const editor = editorRef.value
-    if (editor == null) return
-    editor.init()
-    onCleanUp(() => editor.dispose())
-  })
+  watch(
+    editorRef,
+    (editor, _, onCleanUp) => {
+      if (editor == null) return
+      editor.init()
+      onCleanUp(() => editor.dispose())
+    },
+    { immediate: true }
+  )
 
   provide(codeEditorCtxInjectionKey, {
     attachUI(ui: ICodeEditorUI) {

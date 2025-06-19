@@ -11,7 +11,6 @@ import {
 import { type monaco } from '../../monaco'
 import type { CodeEditorUI } from '../code-editor-ui'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
-import { debounce } from 'lodash'
 
 export type CompletionContext = BaseContext
 
@@ -56,7 +55,7 @@ export class CompletionController extends Emitter<{
   private filterPositionRef = shallowRef<Position | null>(null)
 
   private completionMgr = new TaskManager(async (signal) => {
-    if (this.provider == null) throw new Error('No provider registered')
+    if (this.provider == null) return null
     const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
     if (textDocument == null || position == null) throw new Error('No active text document or cursor position')
     this.filterPositionRef.value = position
@@ -93,10 +92,11 @@ export class CompletionController extends Emitter<{
     return items
   }
 
-  private startCompletion = debounce(() => this.completionMgr.start(), 100)
+  startCompletion() {
+    this.completionMgr.start()
+  }
 
   stopCompletion() {
-    this.startCompletion.cancel()
     this.completionMgr.stop()
   }
 
