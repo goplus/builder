@@ -38,14 +38,14 @@ async function initApp() {
     integrations: [Sentry.browserTracingIntegration()],
     environment: process.env.NODE_ENV,
     tracesSampler: (samplingContext) => {
-      const { name, inheritOrSampleWith } = samplingContext;
+      const { name, inheritOrSampleWith } = samplingContext
       // Sample all checkout transactions
-      if (name.includes("LSP")) {
-        return sentryLSPSampleRate;
+      if (name.includes('LSP')) {
+        return sentryLSPSampleRate
       }
       // Sample 10% of everything else
-      return inheritOrSampleWith(sentryTracesSampleRate);
-    },
+      return inheritOrSampleWith(sentryTracesSampleRate)
+    }
   })
   initUserStore(app)
   initApiClient()
