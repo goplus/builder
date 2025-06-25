@@ -277,14 +277,14 @@ class APIReferenceProvider implements IAPIReferenceProvider {
 class ResourceReferencesProvider implements IResourceReferencesProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
-    return this.lspClient.getResourceReferences(ctx.textDocument.id)
+    return this.lspClient.getResourceReferences({ signal: ctx.signal }, ctx.textDocument.id)
   }
 }
 
 class InputHelperProvider implements IInputHelperProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
-    const slots = await this.lspClient.getInputSlots(ctx.textDocument.id)
+    const slots = await this.lspClient.getInputSlots({ signal: ctx.signal }, ctx.textDocument.id)
     return slots.filter((slot) => {
       if (slots.some((s) => s !== slot && rangeContains(s.range, slot.range))) return false
       return true
@@ -295,10 +295,13 @@ class InputHelperProvider implements IInputHelperProvider {
 class InlayHintProvider implements IInlayHintProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]> {
-    const lspInlayHints = await this.lspClient.textDocumentInlayHint({
-      textDocument: ctx.textDocument.id,
-      range: toLSPRange(ctx.textDocument.getFullRange())
-    })
+    const lspInlayHints = await this.lspClient.textDocumentInlayHint(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id,
+        range: toLSPRange(ctx.textDocument.getFullRange())
+      }
+    )
     const result: InlayHintItem[] = []
     if (lspInlayHints == null) return result
     for (const ih of lspInlayHints) {
@@ -393,9 +396,12 @@ class DiagnosticsProvider
 
   private async getLSDiagnostics(ctx: DiagnosticsContext) {
     const diagnostics: Diagnostic[] = []
-    const report = await this.lspClient.textDocumentDiagnostic({
-      textDocument: ctx.textDocument.id
-    })
+    const report = await this.lspClient.textDocumentDiagnostic(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id
+      }
+    )
     if (report.kind !== lsp.DocumentDiagnosticReportKind.Full)
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
@@ -419,7 +425,7 @@ class HoverProvider implements IHoverProvider {
 
   private async getExplainAction(textDocument: TextDocumentIdentifier, position: Position) {
     let definition: DefinitionDocumentationItem | null = null
-    const defId = await this.lspClient.getDefinition(textDocument, position)
+    const defId = await this.lspClient.getDefinition({}, textDocument, position)
     if (defId == null) return null
     definition = await this.documentBase.getDocumentation(defId)
     if (definition == null) return null
@@ -438,7 +444,10 @@ class HoverProvider implements IHoverProvider {
   private async getGoToDefinitionAction(position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const lspClient = this.lspClient
     const [definition, typeDefinition] = (
-      await Promise.all([lspClient.textDocumentDefinition(lspParams), lspClient.textDocumentTypeDefinition(lspParams)])
+      await Promise.all([
+        lspClient.textDocumentDefinition({}, lspParams),
+        lspClient.textDocumentTypeDefinition({}, lspParams)
+      ])
     ).map((def) => {
       if (def == null) return null
       if (Array.isArray(def)) return def[0]
@@ -461,7 +470,7 @@ class HoverProvider implements IHoverProvider {
 
   private async getRenameAction(ctx: HoverContext, position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const lspClient = this.lspClient
-    const result = await lspClient.textDocumentPrepareRename(lspParams)
+    const result = await lspClient.textDocumentPrepareRename({ signal: ctx.signal }, lspParams)
     if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
     return {
       command: builtInCommandRename,
@@ -480,7 +489,7 @@ class HoverProvider implements IHoverProvider {
       textDocument: ctx.textDocument.id,
       position: toLSPPosition(position)
     }
-    const lspHover = await this.lspClient.textDocumentHover(lspParams)
+    const lspHover = await this.lspClient.textDocumentHover({ signal: ctx.signal }, lspParams)
     if (lspHover == null) return null
     const contents: DefinitionDocumentationString[] = []
     if (lsp.MarkupContent.is(lspHover.contents)) {
@@ -544,10 +553,13 @@ class CompletionProvider implements ICompletionProvider {
   }
 
   async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]> {
-    const items = await this.lspClient.getCompletionItems({
-      textDocument: ctx.textDocument.id,
-      position: toLSPPosition(position)
-    })
+    const items = await this.lspClient.getCompletionItems(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id,
+        position: toLSPPosition(position)
+      }
+    )
     const lineContent = ctx.textDocument.getLineContent(position.line)
     const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
@@ -603,8 +615,8 @@ class ContextMenuProvider implements IContextMenuProvider {
     private documentBase: DocumentBase
   ) {}
 
-  private async getExplainMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
-    const defId = await this.lspClient.getDefinition(textDocument.id, position)
+  private async getExplainMenuItemForPosition({ signal, textDocument }: ContextMenuContext, position: Position) {
+    const defId = await this.lspClient.getDefinition({ signal }, textDocument.id, position)
     if (defId == null) return null
     const definition = await this.documentBase.getDocumentation(defId)
     if (definition == null) return null
@@ -620,12 +632,12 @@ class ContextMenuProvider implements IContextMenuProvider {
     }
   }
 
-  private async getRenameMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
+  private async getRenameMenuItemForPosition({ textDocument, signal }: ContextMenuContext, position: Position) {
     const lspParams = {
       textDocument: textDocument.id,
       position: toLSPPosition(position)
     }
-    const result = await this.lspClient.textDocumentPrepareRename(lspParams)
+    const result = await this.lspClient.textDocumentPrepareRename({ signal }, lspParams)
     if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
     return {
       command: builtInCommandRename,
@@ -959,10 +971,13 @@ export class CodeEditor extends Disposable {
   async formatTextDocument(id: TextDocumentIdentifier) {
     const textDocument = this.getTextDocument(id)
     if (textDocument == null) return
-    const edits = await this.lspClient.textDocumentFormatting({
-      textDocument: id,
-      options: lsp.FormattingOptions.create(tabSize, insertSpaces)
-    })
+    const edits = await this.lspClient.textDocumentFormatting(
+      {},
+      {
+        textDocument: id,
+        options: lsp.FormattingOptions.create(tabSize, insertSpaces)
+      }
+    )
     if (edits == null) return
     textDocument.pushEdits(edits.map(fromLSPTextEdit))
   }
@@ -988,7 +1003,7 @@ export class CodeEditor extends Disposable {
   }
 
   async diagnosticWorkspace(): Promise<WorkspaceDiagnostics> {
-    const diagnosticReport = await this.lspClient.workspaceDiagnostic({ previousResultIds: [] })
+    const diagnosticReport = await this.lspClient.workspaceDiagnostic({}, { previousResultIds: [] })
     const items: TextDocumentDiagnostics[] = []
     for (const report of diagnosticReport.items) {
       if (report.kind === 'unchanged') continue // For now, we support 'full' reports only
@@ -1002,18 +1017,21 @@ export class CodeEditor extends Disposable {
 
   /** Update code for renaming */
   async rename(id: TextDocumentIdentifier, position: Position, newName: string) {
-    const edit = await this.lspClient.textDocumentRename({
-      textDocument: id,
-      position: toLSPPosition(position),
-      newName
-    })
+    const edit = await this.lspClient.textDocumentRename(
+      {},
+      {
+        textDocument: id,
+        position: toLSPPosition(position),
+        newName
+      }
+    )
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }
 
   /** Update code for resource renaming, should be called before model name update */
   async renameResource(resource: ResourceIdentifier, newName: string) {
-    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({ resource, newName })
+    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({}, { resource, newName })
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }
