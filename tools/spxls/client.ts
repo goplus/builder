@@ -58,9 +58,15 @@ export class Spxlc {
     this.pendingRequests.delete(message.id)
 
     if ('error' in message && message.error != null) {
-      pending.reject(new ResponseError(message.error))
+      pending.reject({
+        error: new ResponseError(message.error),
+        id: message.id
+      })
     }
-    else pending.resolve(message.result)
+    else pending.resolve({
+      result: message.result,
+      id: message.id
+    })
   }
 
   /**

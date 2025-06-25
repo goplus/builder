@@ -19,6 +19,10 @@ export function createLSPOperationName(method: string, options?: LSPTraceOptions
   return options?.command ? `${IDENTIFIER}: ${method} (${options.command})` : `LSP: ${method}`
 }
 
+export function createLSPServerOperationName(method: string, options?: LSPTraceOptions): string {
+  return options?.command ? `${IDENTIFIER} Server: ${method} (${options.command})` : `LSP Server: ${method}`
+}
+
 /**
  * Checks if a trace name is related to LSP operations.
  * @param name Trace/span name

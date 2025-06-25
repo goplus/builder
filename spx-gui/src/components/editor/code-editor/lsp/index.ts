@@ -5,7 +5,7 @@ import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
-import { createLSPOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
+import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
 import type { Project } from '@/models/project'
 import {
   fromLSPRange,
@@ -54,6 +54,9 @@ class WorkerConnection implements IConnectionWithFiles {
   }
 }
 
+// Global map to track ongoing requests and their spans
+const activeSpans = new Map<number, Sentry.Span>()
+
 type TraceOptions = {
   /** Optional command name for better tracing context */
   command?: string
@@ -76,12 +79,14 @@ async function tracedRequest<T>(method: string, operation: () => Promise<T>, opt
       const startTime = performance.now()
 
       try {
-        const result = await operation()
+        const response = await operation()
+        const { result, id } = response as { result: any; id: number }
 
         // Record performance metrics
         const duration = performance.now() - startTime
         span.setAttribute('duration_ms', Math.round(duration))
         span.setAttribute('success', true)
+        activeSpans.set(id, span)
 
         return result
       } catch (error) {
@@ -152,6 +157,9 @@ export class SpxLSPClient extends Disposable {
     this.connection = new WorkerConnection()
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
     this.spxlcRef.value = new Spxlc(this.connection)
+
+     // Register handler for telemetry event notifications
+    this.spxlcRef.value.onNotification('$/wasm/performance', this.handleTelemetryEventNotification)
   }
 
   dispose() {
@@ -303,6 +311,35 @@ export class SpxLSPClient extends Disposable {
   async textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
     return this.request<lsp.InlayHint[] | null>(ctx, lsp.InlayHintRequest.method, params)
   }
+
+  /**
+ * Handles performance notifications from the WASM language server
+ */
+handleTelemetryEventNotification(params: {
+  method: string
+  command?: string
+  requestId: number
+  duration: number
+}) {
+  const { method, command, requestId, duration } = params
+  const parentSpan = activeSpans.get(requestId)
+  
+  if (!parentSpan) {
+    console.warn(`[LSP] No active span found for request ID: ${requestId}`)
+    return
+  }
+
+  const opName = createLSPServerOperationName(method, { command })
+
+  // Create a child span for WASM execution
+  Sentry.withActiveSpan(parentSpan, () => {
+    Sentry.startSpan({ name: opName }, (span) => {
+      span.setAttribute('duration_ms', duration)
+      span.setAttribute('success', true)
+      activeSpans.delete(requestId)
+    });
+  });
+}
 
   // Higher-level APIs
 
