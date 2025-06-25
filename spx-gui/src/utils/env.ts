@@ -42,3 +42,9 @@ export const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string) || ''
  * This determines what percentage of transactions are sent to Sentry
  */
 export const sentryTracesSampleRate = parseFloat(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string) || 0.1
+
+/**
+ * Sampling rate for Sentry LSP traces (0.0 to 1.0)
+ * This determines what percentage of LSP transactions are sent to Sentry
+ */
+export const sentryLSPSampleRate = parseFloat(import.meta.env.VITE_SENTRY_LSP_SAMPLE_RATE as string) || 0.1
