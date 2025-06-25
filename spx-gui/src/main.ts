@@ -16,6 +16,7 @@ import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
+import { isLSPOperation } from './utils/lsp-tracing'
 import * as Sentry from '@sentry/browser'
 import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
 
@@ -38,10 +39,9 @@ function initSentry() {
     tracesSampler: (samplingContext) => {
       const { name, inheritOrSampleWith } = samplingContext
       // Sample all checkout transactions
-      if (name.includes('LSP')) {
+      if (isLSPOperation(name)) {
         return sentryLSPSampleRate
       }
-      // Sample 10% of everything else
       return inheritOrSampleWith(sentryTracesSampleRate)
     }
   })

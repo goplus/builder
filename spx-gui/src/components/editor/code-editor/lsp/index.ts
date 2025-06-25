@@ -5,6 +5,7 @@ import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
+import { createLSPOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
 import type { Project } from '@/models/project'
 import {
   fromLSPRange,
@@ -59,8 +60,8 @@ type TraceOptions = {
 }
 
 // Enhanced method for LSP requests with Sentry tracing
-async function tracedRequest<T>(method: string, operation: () => Promise<T>, options?: TraceOptions): Promise<T> {
-  const opName = options?.command ? `LSP: ${method} (${options.command})` : `LSP: ${method}`
+async function tracedRequest<T>(method: string, operation: () => Promise<T>, options?: LSPTraceOptions): Promise<T> {
+  const opName = createLSPOperationName(method, options)
 
   return Sentry.startSpan(
     {
