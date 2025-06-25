@@ -27,4 +27,3 @@ export function createLSPOperationName(method: string, options?: LSPTraceOptions
 export function isLSPOperation(name: string): boolean {
   return name.includes(IDENTIFIER)
 }
-
