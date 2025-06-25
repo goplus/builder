@@ -5,11 +5,13 @@
 <script lang="ts">
 import { inject } from 'vue'
 import { Runtime } from '@/models/runtime'
+import type { Editing } from './editing'
 
 export type EditorCtx = {
   project: Project
   userInfo: UserInfo
   runtime: Runtime
+  editing: Editing
 }
 
 const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
@@ -31,12 +33,14 @@ const props = defineProps<{
   project: Project
   userInfo: UserInfo
   runtime: Runtime
+  editing: Editing
 }>()
 
 const editorCtx = computedShallowReactive<EditorCtx>(() => ({
   project: props.project,
   userInfo: props.userInfo,
-  runtime: props.runtime
+  runtime: props.runtime,
+  editing: props.editing
 }))
 
 provide(editorCtxKey, editorCtx)

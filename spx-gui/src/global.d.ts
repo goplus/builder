@@ -1,3 +1,5 @@
+import type { WatchSource } from 'vue'
+
 declare global {
   class Go {
     argv: string[]
@@ -14,6 +16,11 @@ declare global {
   type KonvaNodeInstance<T> = {
     getNode(): T
   }
+}
+
+declare module 'vue' {
+  // Fix type inference issue with `toValue`
+  export function toValue<T>(source: WatchSource<T> | T): T
 }
 
 // This empty `export {}` is required for `declare` to work, because there's no other exports for this module.

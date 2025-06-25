@@ -28,11 +28,14 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
-            <UIMenuItem @click="handlePublishProject">
+            <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
               <template #icon><img :src="publishSvg" /></template>
               {{ $t({ en: 'Publish project', zh: '发布项目' }) }}
             </UIMenuItem>
-            <UIMenuItem v-if="project?.visibility === Visibility.Public" @click="handleUnpublishProject">
+            <UIMenuItem
+              v-if="canManageProject && project?.visibility === Visibility.Public"
+              @click="handleUnpublishProject"
+            >
               <template #icon><img :src="unpublishSvg" /></template>
               {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
             </UIMenuItem>
@@ -42,7 +45,7 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleRemoveProject">
+            <UIMenuItem v-if="canManageProject" @click="handleRemoveProject">
               <template #icon><img :src="removeProjectSvg" /></template>
               {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
             </UIMenuItem>
@@ -67,8 +70,9 @@
     </template>
     <template #center>
       <template v-if="project != null">
+        <div v-if="ownerInfoToDisplay" class="owner-info">{{ ownerInfoToDisplay.displayName }}</div>
         <div class="project-name">{{ project.name }}</div>
-        <div class="auto-save-state">
+        <div v-if="autoSaveStateIcon != null" class="auto-save-state">
           <UITooltip placement="right">
             <template #trigger>
               <div :class="['icon', autoSaveStateIcon.stateClass]" v-html="autoSaveStateIcon.svg"></div>
@@ -79,7 +83,7 @@
       </template>
     </template>
     <template #right>
-      <div v-show="project != null" class="publish">
+      <div v-show="canManageProject" class="publish">
         <UIButton type="secondary" :disabled="!isOnline" @click="handlePublishProject">
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
@@ -97,7 +101,8 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
-import { AutoSaveToCloudState, type Project } from '@/models/project'
+import { type Project } from '@/models/project'
+import { useUser, useUserStore } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
@@ -106,6 +111,7 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
+import { AutoSaveState, EditingMode, type Editing } from '../editing'
 import undoSvg from './icons/undo.svg'
 import redoSvg from './icons/redo.svg'
 import importProjectSvg from './icons/import-project.svg'
@@ -122,13 +128,32 @@ import cloudCheckSvg from './icons/cloud-check.svg?raw'
 
 const props = defineProps<{
   project: Project | null
+  editing: Editing | null
 }>()
 
 const { isOnline } = useNetwork()
 const i18n = useI18n()
 const router = useRouter()
-
 const confirm = useConfirmDialog()
+const userStore = useUserStore()
+
+const canManageProject = computed(() => {
+  if (props.project == null) return false
+  const signedInUser = userStore.getSignedInUser()
+  if (signedInUser == null) return false
+  if (props.project.owner !== signedInUser.name) return false
+  return true
+})
+
+const projectOwnerRet = useUser(() => props.project?.owner ?? null)
+
+const ownerInfoToDisplay = computed(() => {
+  const owner = projectOwnerRet.data.value
+  if (owner == null) return null
+  const signedInUser = userStore.getSignedInUser()
+  if (signedInUser == null || signedInUser.name !== owner.username) return owner
+  return null
+})
 
 const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
@@ -226,33 +251,50 @@ type AutoSaveStateIcon = {
   stateClass?: string
   desc: LocaleMessage
 }
-const autoSaveStateIcon = computed<AutoSaveStateIcon>(() => {
-  if (!isOnline.value) return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
-  switch (props.project?.autoSaveToCloudState) {
-    case AutoSaveToCloudState.Saved:
-      return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
-    case AutoSaveToCloudState.Pending:
-      return {
-        svg: savingSvg,
-        stateClass: 'pending',
-        desc: { en: 'Pending save', zh: '待保存' }
+
+const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
+  const editing = props.editing
+  if (editing == null) return null
+  switch (editing.mode) {
+    case EditingMode.EffectFree:
+      return null // TODO: style for effect-free mode
+    case EditingMode.AutoSave: {
+      if (!isOnline.value) return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
+      switch (editing.autoSaveState) {
+        case AutoSaveState.Saved:
+          return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
+        case AutoSaveState.Pending:
+          return {
+            svg: savingSvg,
+            stateClass: 'pending',
+            desc: { en: 'Pending save', zh: '待保存' }
+          }
+        case AutoSaveState.Saving:
+          return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
+        case AutoSaveState.Failed:
+          return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
+        default:
+          throw new Error('unknown auto save state')
       }
-    case AutoSaveToCloudState.Saving:
-      return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
-    case AutoSaveToCloudState.Failed:
-      return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
+    }
     default:
-      throw new Error('unknown auto save state')
+      throw new Error(`Unknown editing mode: ${editing.mode}`)
   }
 })
 </script>
 
 <style lang="scss" scoped>
+.owner-info,
 .project-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 16px;
+}
+
+.owner-info::after {
+  content: '/';
+  margin: 0 4px;
 }
 
 .auto-save-state {

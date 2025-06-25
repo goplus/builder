@@ -23,12 +23,15 @@ const fileUniversalUrlSchemes = {
 } as const
 
 export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
-  const projectData = await getProject(owner, name, signal)
+  let projectData = await getProject(owner, name, signal)
   if (preferPublishedContent) {
     const published = getPublishedContent(projectData)
     if (published != null) {
-      projectData.thumbnail = published.thumbnail
-      projectData.files = published.files
+      projectData = {
+        ...projectData,
+        thumbnail: published.thumbnail,
+        files: published.files
+      }
     }
   }
   return parseProjectData(projectData)
@@ -99,7 +102,7 @@ export function getFiles(fileCollection: FileCollection): Files {
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]
     const file = createFileWithUniversalUrl(universalUrl, filename(path))
-    setUniversalUrl(file, universalUrl)
+    setUniversalUrl(file, universalUrl) // TODO: move to `createFileWithUniversalUrl`?
     files[path] = file
   })
   return files

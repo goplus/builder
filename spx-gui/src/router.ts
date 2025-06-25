@@ -103,6 +103,11 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/'
   },
   {
+    path: '/editor/:ownerName/:projectName',
+    component: () => import('@/pages/editor/index.vue'),
+    props: true
+  },
+  {
     path: '/editor/:projectName',
     component: () => import('@/pages/editor/index.vue'),
     meta: { requiresSignIn: true },

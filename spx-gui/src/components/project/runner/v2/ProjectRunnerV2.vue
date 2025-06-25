@@ -8,7 +8,8 @@ import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/prog
 import { useFileUrl } from '@/utils/file'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
-import { toNativeFile } from '@/models/common/file'
+import { toNativeFile, type Files } from '@/models/common/file'
+import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
@@ -86,18 +87,10 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
   else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
 }
 
-async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) {
+async function zip(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
   const collector = ProgressCollector.collectorFor(reporter)
-  const projectExportReporter = collector.getSubReporter(
-    { en: 'Counting project files...', zh: '清点项目文件中...' },
-    1
-  )
   const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
   const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
-
-  const [{ filesHash }, files] = await props.project.export()
-  signal?.throwIfAborted()
-  projectExportReporter.report(1)
 
   const zip = new JSZip()
   const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
@@ -114,8 +107,7 @@ async function getProjectData(reporter: ProgressReporter, signal?: AbortSignal) 
   const zipped = await zip.generateAsync({ type: 'arraybuffer' })
   signal?.throwIfAborted()
   zipReporter.report(1)
-
-  return { filesHash, zipped }
+  return zipped
 }
 
 const registered = registerPlayer(() => {
@@ -167,11 +159,13 @@ defineExpose({
 
       registered.onStart()
 
+      const files = props.project.exportGameFiles()
+
       const iframeWindow = await untilNotNull(iframeWindowRef)
       signal?.throwIfAborted()
       iframeLoadReporter.report(1)
 
-      const projectData = await getProjectData(getProjectDataReporter, signal)
+      const zipped = await zip(files, getProjectDataReporter, signal)
 
       // Ensure the latest progress update to be rendered to UI
       // This is necessary because now spx runs in the same thread as the main thread of editor.
@@ -181,7 +175,7 @@ defineExpose({
 
       // TODO: get progress for engine-loading, which is now included in `startGame`
       startGameReporter.startAutoReport(10 * 1000)
-      await iframeWindow.startGame(projectData.zipped, assetURLs, () => {
+      await iframeWindow.startGame(zipped, assetURLs, () => {
         // Set up API endpoint for AI Interaction.
         iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
@@ -190,7 +184,7 @@ defineExpose({
       })
       signal?.throwIfAborted()
       startGameReporter.report(1)
-      return projectData.filesHash
+      return hashFiles(files)
     } catch (err) {
       console.warn('ProjectRunner run game error:', err)
       failed.value = true

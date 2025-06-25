@@ -53,10 +53,10 @@ import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
 import { until, untilNotNull } from '@/utils/utils'
+import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
 import type { Widget } from '@/models/widget'
-import { createFileWithWebUrl } from '@/models/common/cloud'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import NodeTransformer from './NodeTransformer.vue'
 import SpriteNode from './SpriteNode.vue'
@@ -241,17 +241,20 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   menuVisible.value = false
 }
 
+// TODO: implement a standalone screenshot taker which does not depend on StageViewer
+// See details in https://github.com/goplus/builder/issues/1807 .
 async function takeScreenshot(name: string, signal?: AbortSignal) {
   const stage = await untilNotNull(stageRef, signal)
   const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
   await until(() => !loading.value, signal)
   // Omit transform control when taking screenshot
-  const dataUrl = nodeTransformer.withHidden(() =>
-    stage.getStage().toDataURL({
-      mimeType: 'image/jpeg'
-    })
+  const blob = await nodeTransformer.withHidden(
+    () =>
+      stage.getStage().toBlob({
+        mimeType: 'image/jpeg'
+      }) as Promise<Blob>
   )
-  return createFileWithWebUrl(dataUrl, `${name}.jpg`)
+  return fromBlob(`${name}.jpg`, blob)
 }
 
 watchEffect((onCleanup) => {

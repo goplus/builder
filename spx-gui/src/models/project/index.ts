@@ -3,18 +3,19 @@
  * @desc Object-model definition for Project
  */
 
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch, type ComputedRef, toValue, effectScope } from 'vue'
 
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
-import { Disposable } from '@/utils/disposable'
+import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import Mutex from '@/utils/mutex'
+import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as xbpHelper from '../common/xbp'
-import { hashFiles } from '../common/hash'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
@@ -23,9 +24,6 @@ import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
-import Mutex from '@/utils/mutex'
-import { Cancelled, capture } from '@/utils/exception'
-import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
@@ -33,10 +31,7 @@ export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumb
   thumbnail: File | null
 }
 
-export type Metadata = Partial<CloudMetadata> & {
-  filesHash?: string
-  lastSyncedFilesHash?: string
-}
+export type Metadata = Partial<CloudMetadata>
 
 // TODO: better organization & type derivation
 export type CloudProject = Project & CloudMetadata
@@ -47,19 +42,6 @@ const projectConfigFilePath = join('assets', projectConfigFileName)
 export type RunConfig = {
   width?: number
   height?: number
-}
-
-export enum AutoSaveMode {
-  Off,
-  Cloud,
-  LocalCache
-}
-
-export enum AutoSaveToCloudState {
-  Saved,
-  Pending,
-  Saving,
-  Failed
 }
 
 type ZorderItem = string | RawWidgetConfig
@@ -98,25 +80,15 @@ export class Project extends Disposable {
   visibility?: Visibility
   description?: string
   instructions?: string
-  /** Universal URL of the project's thumbnail image, may be empty (`""`) */
+  /**
+   * Thumbnail image file.
+   * It may not be synced with game content when project is under editing. See details in https://github.com/goplus/builder/issues/1807 .
+   */
   thumbnail?: File | null
   viewCount?: number
   likeCount?: number
   releaseCount?: number
   remixCount?: number
-
-  /** Files' hash of game content, available when project is under editing */
-  filesHash?: string
-  private lastSyncedFilesHash?: string
-  /** If there is any change of game content not synced (to cloud) yet. */
-  get hasUnsyncedChanges() {
-    // if filesHash is null, it means editing not started yet
-    if (this.filesHash == null) return false
-    return this.lastSyncedFilesHash !== this.filesHash
-  }
-
-  /** Modification time in milliseconds of project state, available when project is under editing */
-  modTime?: number
 
   stage: Stage
   sprites: Sprite[]
@@ -282,25 +254,46 @@ export class Project extends Disposable {
   history: History
   historyMutex = new Mutex()
 
+  // In project editor, we use `bindScreenshotTaker` to register a screenshot taker and
+  // update thumbnail automatically. That way, the thumbnail will always reflect the latest changes
+  // made to the project (game) content. While there're issues with the current flow,
+  // see details in https://github.com/goplus/builder/issues/1807 . TODO: improve the flow.
+
   private screenshotTaker: ScreenshotTaker | null = null
+
+  private updateThumbnail = debounce(async (signal?: AbortSignal) => {
+    try {
+      const reactiveThis = reactive(this) as this
+      if (reactiveThis.screenshotTaker == null) return
+      reactiveThis.thumbnail = await reactiveThis.screenshotTaker('thumbnail', signal)
+    } catch (e) {
+      if (e instanceof Cancelled) return
+      console.warn('failed to update thumbnail', e)
+    }
+  }, 300)
+
   bindScreenshotTaker(st: ScreenshotTaker) {
     if (this.screenshotTaker != null) throw new Error('screenshotTaker already bound')
+    const disposable = new Disposable()
+
     this.screenshotTaker = st
-    return () => {
-      if (this.screenshotTaker === st) {
-        this.screenshotTaker = null
-      }
-    }
-  }
+    disposable.addDisposer(() => (this.screenshotTaker = null))
 
-  private async updateThumbnail(signal?: AbortSignal) {
-    if (!this.hasUnsyncedChanges && !!this.thumbnail) return
-    const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
-    this.thumbnail = await screenshotTaker('thumbnail', signal)
-  }
+    // Use detached scope to prevent vue component setup from capturing watch-effects below, which are expected to be handled by `bindScreenshotTaker` itself.
+    // If not, error `TypeError: Cannot read properties of undefined (reading 'stop')` will be thrown when component unmounted.
+    // TODO: we may extract this pattern as a method of class `Disposable`, e.g. `runWithDetachedEffectScope`, to simplify the usage.
+    const scope = effectScope(true)
+    scope.run(() =>
+      watch(
+        () => this.exportGameFiles(),
+        (_, __, onCleanup) => this.updateThumbnail(getCleanupSignal(onCleanup)),
+        { immediate: true }
+      )
+    )
+    disposable.addDisposer(() => scope.stop())
 
-  public setThumbnail(thumbnail: File) {
-    this.thumbnail = thumbnail
+    this.addDisposable(disposable)
+    return () => disposable.dispose()
   }
 
   constructor(owner?: string, name?: string) {
@@ -319,6 +312,7 @@ export class Project extends Disposable {
       this.zorder = []
       this.stage.dispose()
     })
+    this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
     return reactiveThis
   }
 
@@ -337,9 +331,7 @@ export class Project extends Disposable {
       visibility: this.visibility,
       description: this.description,
       instructions: this.instructions,
-      thumbnail: this.thumbnail,
-      filesHash: this.filesHash,
-      lastSyncedFilesHash: this.lastSyncedFilesHash
+      thumbnail: this.thumbnail
     }
   }
 
@@ -388,7 +380,7 @@ export class Project extends Disposable {
     this.autoSelect()
   }
 
-  exportGameFiles(): Files {
+  private exportGameFilesWithoutMemo(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
@@ -417,6 +409,17 @@ export class Project extends Disposable {
     return files
   }
 
+  // Use a computed ref to avoid unnecessary re-computation when the game content is not changed.
+  private exportGameFilesComputed: ComputedRef<Files>
+
+  /**
+   * Export game files.
+   * By watching result of this method, you can get notified when game content changed.
+   */
+  exportGameFiles() {
+    return toValue(this.exportGameFilesComputed)
+  }
+
   /** Load with metadata & game files */
   async load(metadata: Metadata, files: Files) {
     this.loadMetadata(metadata)
@@ -425,7 +428,13 @@ export class Project extends Disposable {
 
   /** Export metadata & game files */
   async export(): Promise<[Metadata, Files]> {
-    return this.historyMutex.runExclusive(() => [this.exportMetadata(), this.exportGameFiles()])
+    return this.historyMutex.runExclusive(async () => {
+      // Do flush pending thumbnail updates to ensure the exported thumbnail up-to-date.
+      // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
+      // For more details, see https://github.com/goplus/builder/issues/1807 .
+      await this.updateThumbnail.flush()
+      return [this.exportMetadata(), this.exportGameFiles()]
+    })
   }
 
   async loadXbpFile(file: globalThis.File) {
@@ -464,30 +473,11 @@ export class Project extends Disposable {
     return this as CloudProject
   }
 
-  /** Save to cloud */
-  private saveToCloudAbortController: AbortController | null = null
-  private get isSavingToCloud() {
-    return this.saveToCloudAbortController != null
-  }
-  async saveToCloud() {
-    if (this.saveToCloudAbortController != null) {
-      this.saveToCloudAbortController.abort(new Cancelled('aborted'))
-    }
-    const abortController = new AbortController()
-    this.saveToCloudAbortController = abortController
-
-    try {
-      if (this.isDisposed) throw new Error('disposed')
-      await this.updateThumbnail(abortController.signal)
-      const [metadata, files] = await this.export()
-      const saved = await cloudHelper.save(metadata, files, abortController.signal)
-      this.loadMetadata(saved.metadata)
-      this.lastSyncedFilesHash = await hashFiles(files)
-    } finally {
-      if (this.saveToCloudAbortController === abortController) {
-        this.saveToCloudAbortController = null
-      }
-    }
+  async saveToCloud(signal?: AbortSignal) {
+    if (this.isDisposed) throw new Error('disposed')
+    const [metadata, files] = await this.export()
+    const saved = await cloudHelper.save(metadata, files, signal)
+    this.loadMetadata(saved.metadata)
   }
 
   /** Load from local cache */
@@ -499,162 +489,10 @@ export class Project extends Disposable {
   }
 
   /** Save to local cache */
-  private async saveToLocalCache(key: string) {
+  async saveToLocalCache(key: string) {
     if (this.isDisposed) throw new Error('disposed')
-    await this.updateThumbnail()
     const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
-  }
-
-  autoSaveMode = AutoSaveMode.Off
-  setAutoSaveMode(autoSaveMode: AutoSaveMode) {
-    this.autoSaveMode = autoSaveMode
-    switch (autoSaveMode) {
-      case AutoSaveMode.Cloud:
-        if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
-        break
-      case AutoSaveMode.LocalCache:
-        this.autoSaveToLocalCache?.()
-        break
-    }
-  }
-
-  /** watch for changes of game files, update filesHash, and auto save to cloud if hasUnsyncedChanges */
-  autoSaveToCloudState = AutoSaveToCloudState.Saved
-  private autoSaveToCloud: (() => void) | null = null
-  private startAutoSaveToCloud(localCacheKey: string) {
-    const retryAutoSaveToCloud = debounce(async () => {
-      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
-      if (this.hasUnsyncedChanges) {
-        this.autoSaveToCloud?.()
-      } else {
-        this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-        await localHelper.clear(localCacheKey)
-      }
-    }, 5000)
-    this.addDisposer(retryAutoSaveToCloud.cancel)
-
-    const saveToCloud = debounce(async () => {
-      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Pending) return
-      this.autoSaveToCloudState = AutoSaveToCloudState.Saving
-
-      try {
-        if (this.isSavingToCloud) {
-          await until(() => !this.isSavingToCloud)
-        }
-
-        if (this.hasUnsyncedChanges) await this.saveToCloud()
-        this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-      } catch (e) {
-        this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-        if (e instanceof Cancelled) {
-          this.autoSaveToCloud?.()
-          saveToCloud.flush()
-        } else {
-          retryAutoSaveToCloud()
-          await this.saveToLocalCache(localCacheKey) // prevent data loss
-          capture(e, 'failed to auto save to cloud')
-        }
-        return
-      }
-
-      if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
-      else await localHelper.clear(localCacheKey)
-    }, 1500)
-    this.addDisposer(saveToCloud.cancel)
-
-    this.autoSaveToCloud = () => {
-      retryAutoSaveToCloud.cancel()
-      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
-        this.autoSaveToCloudState = AutoSaveToCloudState.Pending
-      if (this.autoSaveMode === AutoSaveMode.Cloud) saveToCloud()
-    }
-
-    this.addDisposer(
-      watch(
-        () => this.exportGameFiles(),
-        async (files, _, onCleanup) => {
-          let cancelled = false
-          onCleanup(() => (cancelled = true))
-          const filesHash = await hashFiles(files)
-          if (cancelled) return // avoid race condition and ensure filesHash accuracy
-          this.filesHash = filesHash
-          if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
-        },
-        { immediate: true }
-      )
-    )
-
-    // fire pending or retryable auto saves immediately when a new save occurs, making autoSaveToCloudState more responsive
-    this.addDisposer(
-      watch(
-        () => this.isSavingToCloud,
-        async () => {
-          if (this.isSavingToCloud) {
-            await retryAutoSaveToCloud.flush()
-            saveToCloud.flush()
-          }
-        },
-        { immediate: true }
-      )
-    )
-  }
-
-  /**
-   * Watch for all changes to:
-   * 1. Auto save to local cache when enabled.
-   * 2. Touch all files to trigger lazy loading when not in local cache mode.
-   * 3. Update modification time.
-   */
-  private autoSaveToLocalCache: (() => void) | null = null
-  private startAutoSaveToLocalCache(localCacheKey: string) {
-    const saveToLocalCache = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
-    this.addDisposer(saveToLocalCache.cancel)
-
-    const touchFiles = debounce(() => {
-      this.thumbnail?.arrayBuffer()
-      const files = this.exportGameFiles()
-      Object.keys(files).map((path) => files[path]!.arrayBuffer())
-    }, 1000)
-    this.addDisposer(touchFiles.cancel)
-
-    this.autoSaveToLocalCache = () => {
-      if (this.autoSaveMode === AutoSaveMode.LocalCache) saveToLocalCache()
-      else touchFiles()
-      this.modTime = Date.now()
-    }
-
-    this.addDisposer(
-      watch(
-        () => [this.exportMetadata(), this.exportGameFiles()],
-        () => this.autoSaveToLocalCache?.(),
-        {
-          immediate: true
-        }
-      )
-    )
-  }
-
-  /** Initialize editing features */
-  async startEditing(localCacheKey: string) {
-    this.filesHash = await hashFiles(this.exportGameFiles())
-    if (this.lastSyncedFilesHash == null) {
-      this.lastSyncedFilesHash = this.filesHash
-    }
-    this.modTime = Date.now()
-    this.startAutoSaveToCloud(localCacheKey)
-    this.startAutoSaveToLocalCache(localCacheKey)
-
-    this.addDisposer(
-      watch(
-        // new created project has no thumbnail, do save to cloud to generate thumbnail
-        () => this.thumbnail == null && this.autoSaveMode === AutoSaveMode.Cloud,
-        (shouldGenerateThumbnail) => {
-          if (shouldGenerateThumbnail) this.saveToCloud?.()
-        },
-        { immediate: true }
-      )
-    )
   }
 }
 

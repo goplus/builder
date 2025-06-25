@@ -75,9 +75,8 @@ export class Runtime extends Emitter<{
         () => reactiveThis.emit('didChangeOutput')
       )
       watch(
-        () => reactiveThis.project.filesHash,
-        async (_, oldHash) => {
-          if (oldHash == null) return
+        () => reactiveThis.project.exportGameFiles(),
+        async () => {
           await until(() => reactiveThis.running.mode !== 'debug')
           reactiveThis.clearOutputs()
         }
