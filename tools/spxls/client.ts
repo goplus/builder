@@ -1,11 +1,11 @@
 // TODO: Mechanism to keep this file in sync with `client.ts` in xgolsw.
 
-import { type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj } from '.'
+import { type NotificationMessage, type RequestMessage, type ResponseMessageWithMeta, type ResponseError as ResponseErrorObj } from '.'
 
 /** Connection between the client and the language server. */
 export interface IConnection {
   sendMessage(message: RequestMessage | NotificationMessage): void
-  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void): void
+  onMessage(handler: (message: ResponseMessageWithMeta | NotificationMessage) => void): void
 }
 
 export interface OngoingRequest<T> {
@@ -38,7 +38,7 @@ export class Spxlc {
    * @param message Message from the server.
    * @throws Error if the message type is unknown.
    */
-  private handleMessage(message: ResponseMessage | NotificationMessage): void {
+  private handleMessage(message: ResponseMessageWithMeta | NotificationMessage): void {
     if ('id' in message) return this.handleResponseMessage(message)
     if ('method' in message) return this.handleNotificationMessage(message)
     throw new Error('unknown message type')
@@ -49,7 +49,7 @@ export class Spxlc {
    * @param message Response message from the server.
    * @throws Error if no pending request is found for the message ID.
    */
-  private handleResponseMessage(message: ResponseMessage): void {
+  private handleResponseMessage(message: ResponseMessageWithMeta): void {
     const pending = this.pendingRequests.get(message.id)
     if (pending == null) {
       console.warn(`no pending request found for message ID: ${message.id}`, message)
@@ -58,9 +58,15 @@ export class Spxlc {
     this.pendingRequests.delete(message.id)
 
     if ('error' in message && message.error != null) {
-      pending.reject(new ResponseError(message.error))
+      pending.reject({
+        error: new ResponseError(message.error),
+        meta: message.meta
+      })
     }
-    else pending.resolve(message.result)
+    else pending.resolve({
+      result: message.result,
+      meta: message.meta
+    })
   }
 
   /**
@@ -82,7 +88,7 @@ export class Spxlc {
    * Sends a request to the language server.
    * @param method LSP method name.
    * @param params Method parameters.
-   * @returns The ongoing request, which can be used to get the response later.
+   * @returns Promise that resolves with the response including result and meta.
    */
   request<T>(method: string, params?: any): OngoingRequest<T> {
     const id = this.nextRequestId++

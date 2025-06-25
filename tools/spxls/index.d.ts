@@ -21,7 +21,7 @@ declare global {
    * @param messageReplier - Function called when the language server needs to reply to the client. The client should
    *                        handle these messages according to the LSP specification.
    */
-  function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): Spxls | Error
+  function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessageWithMeta | NotificationMessage) => void): Spxls | Error
 
   /**
    * Sets custom package data that will be used with higher priority than the embedded package data.
@@ -94,6 +94,17 @@ export interface ResponseMessage extends Message {
    * The error object in case a request fails.
    */
   error?: ResponseError
+}
+
+/**
+ * A Response Message with additional metadata.
+ * Extends the standard ResponseMessage with a meta field for extra information.
+ */
+export interface ResponseMessageWithMeta extends ResponseMessage {
+  /**
+   * Additional metadata associated with the response.
+   */
+  meta?: Record<string, any>
 }
 
 export interface ResponseError {

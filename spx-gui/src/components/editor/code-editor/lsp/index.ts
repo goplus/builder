@@ -16,7 +16,7 @@ import {
   type InputSlot
 } from '../common'
 import { Spxlc, type IConnection, ResponseError } from './spxls/client'
-import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
+import type { Files as SpxlsFiles, RequestMessage, ResponseMessageWithMeta, NotificationMessage } from './spxls'
 import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
@@ -39,7 +39,7 @@ class WorkerConnection implements IConnectionWithFiles {
   sendMessage(message: RequestMessage | NotificationMessage) {
     this.worker.postMessage({ type: 'lsp', message })
   }
-  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+  onMessage(handler: (message: ResponseMessageWithMeta | NotificationMessage) => void) {
     this.worker.addEventListener('message', (event) => {
       const message = event.data
       handler(message.message)
@@ -75,11 +75,17 @@ async function tracedRequest<T>(method: string, operation: () => Promise<T>, opt
       const startTime = performance.now()
 
       try {
-        const result = await operation()
+        const response = await operation()
+        const { result, meta } = response as { result: any; meta?: Record<string, any> }
 
         // Record performance metrics
-        const duration = performance.now() - startTime
-        span.setAttribute('duration_ms', Math.round(duration))
+        const clientDuration = performance.now() - startTime
+        span.setAttribute('client_duration_ms', Math.round(clientDuration))
+        
+        // Extract server execution time from meta if available
+        if (meta && meta._executionTimeMs !== undefined) {
+          span.setAttribute('server_execution_ms', meta._executionTimeMs)
+        }
         span.setAttribute('success', true)
 
         return result
