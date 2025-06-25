@@ -6,7 +6,7 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/xgolsw v0.6.0
+	github.com/goplus/xgolsw v0.6.1-0.20250624115719-f2e2489e2ac0
 )
 
 require (
@@ -20,10 +20,8 @@ require (
 	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
 	golang.org/x/mod v0.25.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 )
 
 replace github.com/goplus/builder/tools/ai => ../ai
-
-// FIXME: Remove this after the repo is renamed.
-replace github.com/goplus/xgolsw v0.6.0 => github.com/goplus/goxlsw v0.6.0

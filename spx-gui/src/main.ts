@@ -24,15 +24,13 @@ dayjs.extend(relativeTime)
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const initApiClient = async () => {
+function initApiClient() {
   const userStore = useUserStore()
   setTokenProvider(userStore.ensureAccessToken)
 }
 
-async function initApp() {
-  const app = createApp(App)
-
-  // Import sentryTracesSampleRate from env.ts instead of defining it locally
+function initSentry() {
+  if (process.env.NODE_ENV === 'development') return
   Sentry.init({
     dsn: sentryDsn,
     integrations: [Sentry.browserTracingIntegration()],
@@ -47,6 +45,12 @@ async function initApp() {
       return inheritOrSampleWith(sentryTracesSampleRate)
     }
   })
+}
+
+async function initApp() {
+  const app = createApp(App)
+
+  initSentry()
   initUserStore(app)
   initApiClient()
   initRouter(app)

@@ -1,14 +1,11 @@
 import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as Sentry from '@sentry/browser'
-import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import { Cancelled } from '@/utils/exception'
+import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
-import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
-import wasmExecScriptUrl from '@/assets/wasm/wasm_exec.js?url'
-import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
-import spxlsPkgdataZipUrl from '@/assets/wasm/spxls-pkgdata.zip?url'
 import {
   fromLSPRange,
   type DefinitionIdentifier,
@@ -18,34 +15,51 @@ import {
   containsPosition,
   type InputSlot
 } from '../common'
-import { Spxlc } from './spxls/client'
-import type { Files as SpxlsFiles } from './spxls'
+import { Spxlc, type IConnection, ResponseError } from './spxls/client'
+import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
 import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
   parseDocumentLinkForDefinition
 } from './spxls/methods'
+import type { WorkerHandler } from './worker'
 
-function loadScript(url: string) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = url
-    script.onload = resolve
-    script.onerror = reject
-    document.body.appendChild(script)
-  })
+interface IConnectionWithFiles extends IConnection {
+  sendFiles(files: SpxlsFiles): void
+  dispose(): void
 }
 
-// 10 seconds cooldown between language server restarts.
-const LS_RESTART_COOLDOWN = 10_000
+/** Connection between LS client and server when the server runs in a Web Worker. */
+class WorkerConnection implements IConnectionWithFiles {
+  private worker: WorkerHandler
+  constructor() {
+    this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+  }
+  sendMessage(message: RequestMessage | NotificationMessage) {
+    this.worker.postMessage({ type: 'lsp', message })
+  }
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void) {
+    this.worker.addEventListener('message', (event) => {
+      const message = event.data
+      handler(message.message)
+    })
+  }
+  sendFiles(files: SpxlsFiles): void {
+    this.worker.postMessage({ type: 'files', files })
+  }
+  dispose() {
+    this.worker.terminate()
+  }
+}
+
+type TraceOptions = {
+  /** Optional command name for better tracing context */
+  command?: string
+}
 
 // Enhanced method for LSP requests with Sentry tracing
-async function tracedRequest<T>(
-  method: string,
-  operation: () => Promise<T>,
-  options?: { command?: string }
-): Promise<T> {
+async function tracedRequest<T>(method: string, operation: () => Promise<T>, options?: TraceOptions): Promise<T> {
   const opName = options?.command ? `LSP: ${method} (${options.command})` : `LSP: ${method}`
 
   return Sentry.startSpan(
@@ -81,18 +95,24 @@ async function tracedRequest<T>(
   )
 }
 
+export type RequestContext = {
+  /** Optional signal to cancel the request */
+  signal?: AbortSignal
+  /** Optional tracing options for the request */
+  traceOptions?: TraceOptions
+}
+
 export class SpxLSPClient extends Disposable {
   constructor(private project: Project) {
     super()
   }
 
-  private files: SpxlsFiles = {}
+  private connection: IConnectionWithFiles | undefined
   private isFilesStale = shallowRef(true)
 
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
     const files = this.project.exportGameFiles()
-    const debugFiles: Record<string, string> = {}
     const loadedFiles: SpxlsFiles = {}
     await Promise.all(
       Object.entries(files).map(async ([path, file]) => {
@@ -105,29 +125,17 @@ export class SpxLSPClient extends Disposable {
             content: new Uint8Array(ab),
             modTime: this.project.modTime ?? Date.now()
           }
-          debugFiles[path] = await toText(file)
         }
       })
     )
     signal.throwIfAborted()
-    this.files = loadedFiles
+    this.connection?.sendFiles(loadedFiles)
     this.isFilesStale.value = false
   }
 
-  private loadWasmScriptPromise: Promise<unknown> | null = null
-
-  private async loadWasmScript() {
-    return (this.loadWasmScriptPromise = this.loadWasmScriptPromise ?? loadScript(wasmExecScriptUrl))
-  }
-
   private spxlcRef = shallowRef<Spxlc | null>(null)
-  private isLSRunning = shallowRef(false)
-  private isLSRestarting = false
-  private lsRestartedAt = 0
 
   private async prepareRequest() {
-    this.prepareLanguageServer()
-
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
       // Typically requests are triggered earlier than file-loading:
@@ -139,154 +147,166 @@ export class SpxLSPClient extends Disposable {
     return spxlc
   }
 
-  async init() {
+  init() {
+    this.connection = new WorkerConnection()
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    await this.loadWasmScript()
-    await this.prepareLanguageServer()
+    this.spxlcRef.value = new Spxlc(this.connection)
   }
 
-  private async prepareLanguageServer() {
-    if (this.isLSRunning.value || this.isLSRestarting) return
-    this.isLSRestarting = true
-
-    // Apply cooldown between restarts.
-    const cooldown = LS_RESTART_COOLDOWN - (Date.now() - this.lsRestartedAt)
-    if (cooldown > 0) await timeout(cooldown)
-    this.lsRestartedAt = Date.now()
-
-    try {
-      await this.loadLSWasm()
-      this.spxlcRef.value = new Spxlc(() => this.files)
-      this.isLSRunning.value = true
-    } catch (e) {
-      console.error('[LSP] Failed to start language server:', e)
-    } finally {
-      this.isLSRestarting = false
-    }
+  dispose() {
+    this.spxlcRef.value?.dispose()
+    this.connection?.dispose()
+    super.dispose()
   }
 
-  private async loadLSWasm() {
-    await this.loadWasmScript()
-    const [wasmResp, spxlsPkgdataZipResp] = await Promise.all([fetch(spxlsWasmUrl), fetch(spxlsPkgdataZipUrl)])
-
-    const go = new Go()
-    const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
-    go.run(instance).finally(() => {
-      console.warn('[LSP] Language server process exited.')
-      this.isLSRunning.value = false
-      this.spxlcRef.value = null
-    })
-
-    // Load additional resources.
-    const spxlsPkgdataZip = await spxlsPkgdataZipResp.arrayBuffer()
-    SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
-    SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
-  }
-
-  /**
-   * Wrapper for LSP requests with automatic performance tracing
-   * @param method LSP method name
-   * @param params Method parameters
-   * @param options Additional options for request tracking
-   * @returns Promise that resolves with the response
-   */
-  private async request<T>(method: string, params: any, options?: { command?: string }): Promise<T> {
+  /** Do LSP request, with cancellation and tracing. */
+  private async request<T>({ signal, traceOptions }: RequestContext, method: string, params: any): Promise<T> {
     const spxlc = await this.prepareRequest()
-
     return tracedRequest(
       method,
-      async () => {
-        return spxlc.request<T>(method, params)
+      () => {
+        let unlisten: Disposer | undefined
+        const ongoingReq = spxlc.request<T>(method, params)
+        if (signal != null) {
+          const cancel = () => this.cancelRequest(ongoingReq.id)
+          if (signal.aborted) {
+            cancel()
+          } else {
+            signal.addEventListener('abort', cancel)
+            unlisten = () => signal.removeEventListener('abort', cancel)
+          }
+        }
+        return ongoingReq
+          .response()
+          .catch((e) => {
+            if (e instanceof ResponseError && e.code === lsp.LSPErrorCodes.RequestCancelled) {
+              throw new Cancelled(e.message)
+            }
+            console.warn(`[LSP] ${method} error:`, e, ', params:', params)
+            throw e
+          })
+          .finally(unlisten)
       },
-      options
+      traceOptions
     )
   }
 
-  private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
-    return this.request<R>(
-      lsp.ExecuteCommandRequest.method,
-      {
-        command,
-        arguments: args
-      },
-      { command } // Pass the command name to request
-    )
+  private async cancelRequest(id: number) {
+    const spxlc = await untilNotNull(this.spxlcRef)
+    // The method `$/cancelRequest` is defined in https://github.com/microsoft/vscode-languageserver-node/blob/4c20197acf4c499345a18e79945e706345cbc50f/protocol/src/common/protocol.%24.ts#L46-L58 ,
+    // while not exported by package `vscode-languageserver-protocol`.
+    spxlc.notify('$/cancelRequest', { id })
+  }
+
+  private async executeCommand<A extends any[], R>(ctx: RequestContext, command: string, ...args: A): Promise<R> {
+    return this.request<R>({ ...ctx, traceOptions: { command } }, lsp.ExecuteCommandRequest.method, {
+      command,
+      arguments: args
+    })
   }
 
   async workspaceExecuteCommandSpxGetDefinitions(
+    ctx: RequestContext,
     ...params: spxGetDefinitions.Arguments
   ): Promise<spxGetDefinitions.Result> {
     return this.executeCommand<spxGetDefinitions.Arguments, spxGetDefinitions.Result>(
+      ctx,
       spxGetDefinitions.command,
       ...params
     )
   }
 
   async workspaceExecuteCommandSpxRenameResources(
+    ctx: RequestContext,
     ...params: spxRenameResources.Arguments
   ): Promise<spxRenameResources.Result> {
     return this.executeCommand<spxRenameResources.Arguments, spxRenameResources.Result>(
+      ctx,
       spxRenameResources.command,
       ...params
     )
   }
 
   async workspaceExecuteCommandSpxGetInputSlots(
+    ctx: RequestContext,
     ...params: spxGetInputSlots.Arguments
   ): Promise<spxGetInputSlots.Result> {
-    return this.executeCommand<spxGetInputSlots.Arguments, spxGetInputSlots.Result>(spxGetInputSlots.command, ...params)
+    return this.executeCommand<spxGetInputSlots.Arguments, spxGetInputSlots.Result>(
+      ctx,
+      spxGetInputSlots.command,
+      ...params
+    )
   }
 
-  async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
-    return this.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
+  async textDocumentDocumentLink(
+    ctx: RequestContext,
+    params: lsp.DocumentLinkParams
+  ): Promise<lsp.DocumentLink[] | null> {
+    return this.request<lsp.DocumentLink[] | null>(ctx, lsp.DocumentLinkRequest.method, params)
   }
 
-  async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
-    return this.request<lsp.DocumentDiagnosticReport>(lsp.DocumentDiagnosticRequest.method, params)
+  async textDocumentDiagnostic(
+    ctx: RequestContext,
+    params: lsp.DocumentDiagnosticParams
+  ): Promise<lsp.DocumentDiagnosticReport> {
+    return this.request<lsp.DocumentDiagnosticReport>(ctx, lsp.DocumentDiagnosticRequest.method, params)
   }
 
-  async workspaceDiagnostic(params: lsp.WorkspaceDiagnosticParams): Promise<lsp.WorkspaceDiagnosticReport> {
-    return this.request<lsp.WorkspaceDiagnosticReport>(lsp.WorkspaceDiagnosticRequest.method, params)
+  async workspaceDiagnostic(
+    ctx: RequestContext,
+    params: lsp.WorkspaceDiagnosticParams
+  ): Promise<lsp.WorkspaceDiagnosticReport> {
+    return this.request<lsp.WorkspaceDiagnosticReport>(ctx, lsp.WorkspaceDiagnosticRequest.method, params)
   }
 
-  async textDocumentHover(params: lsp.HoverParams): Promise<lsp.Hover | null> {
-    return this.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
+  async textDocumentHover(ctx: RequestContext, params: lsp.HoverParams): Promise<lsp.Hover | null> {
+    return this.request<lsp.Hover | null>(ctx, lsp.HoverRequest.method, params)
   }
 
   async textDocumentCompletion(
+    ctx: RequestContext,
     params: lsp.CompletionParams
   ): Promise<lsp.CompletionList | lsp.CompletionItem[] | null> {
-    return this.request<lsp.CompletionList | lsp.CompletionItem[] | null>(lsp.CompletionRequest.method, params)
+    return this.request<lsp.CompletionList | lsp.CompletionItem[] | null>(ctx, lsp.CompletionRequest.method, params)
   }
 
-  async textDocumentDefinition(params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
-    return this.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
+  async textDocumentDefinition(ctx: RequestContext, params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
+    return this.request<lsp.Definition | null>(ctx, lsp.DefinitionRequest.method, params)
   }
 
-  async textDocumentTypeDefinition(params: lsp.TypeDefinitionParams): Promise<lsp.Definition | null> {
-    return this.request<lsp.Definition | null>(lsp.TypeDefinitionRequest.method, params)
+  async textDocumentTypeDefinition(
+    ctx: RequestContext,
+    params: lsp.TypeDefinitionParams
+  ): Promise<lsp.Definition | null> {
+    return this.request<lsp.Definition | null>(ctx, lsp.TypeDefinitionRequest.method, params)
   }
 
-  async textDocumentPrepareRename(params: lsp.PrepareRenameParams): Promise<lsp.PrepareRenameResult | null> {
-    return this.request<lsp.PrepareRenameResult | null>(lsp.PrepareRenameRequest.method, params)
+  async textDocumentPrepareRename(
+    ctx: RequestContext,
+    params: lsp.PrepareRenameParams
+  ): Promise<lsp.PrepareRenameResult | null> {
+    return this.request<lsp.PrepareRenameResult | null>(ctx, lsp.PrepareRenameRequest.method, params)
   }
 
-  async textDocumentRename(params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
-    return this.request<lsp.WorkspaceEdit | null>(lsp.RenameRequest.method, params)
+  async textDocumentRename(ctx: RequestContext, params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
+    return this.request<lsp.WorkspaceEdit | null>(ctx, lsp.RenameRequest.method, params)
   }
 
-  async textDocumentFormatting(params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null> {
-    return this.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
+  async textDocumentFormatting(
+    ctx: RequestContext,
+    params: lsp.DocumentFormattingParams
+  ): Promise<lsp.TextEdit[] | null> {
+    return this.request<lsp.TextEdit[] | null>(ctx, lsp.DocumentFormattingRequest.method, params)
   }
 
-  async textDocumentInlayHint(params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
-    return this.request<lsp.InlayHint[] | null>(lsp.InlayHintRequest.method, params)
+  async textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
+    return this.request<lsp.InlayHint[] | null>(ctx, lsp.InlayHintRequest.method, params)
   }
 
   // Higher-level APIs
 
-  async getResourceReferences(textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
-    const documentLinks = await this.textDocumentDocumentLink({ textDocument })
+  async getResourceReferences(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
+    const documentLinks = await this.textDocumentDocumentLink(ctx, { textDocument })
     if (documentLinks == null) return []
     const rrs: ResourceReference[] = []
     for (const documentLink of documentLinks) {
@@ -300,8 +320,12 @@ export class SpxLSPClient extends Disposable {
     return rrs
   }
 
-  async getDefinition(textDocument: TextDocumentIdentifier, position: Position): Promise<DefinitionIdentifier | null> {
-    const documentLinks = await this.textDocumentDocumentLink({ textDocument })
+  async getDefinition(
+    ctx: RequestContext,
+    textDocument: TextDocumentIdentifier,
+    position: Position
+  ): Promise<DefinitionIdentifier | null> {
+    const documentLinks = await this.textDocumentDocumentLink(ctx, { textDocument })
     if (documentLinks == null) return null
     for (const documentLink of documentLinks) {
       const definition = parseDocumentLinkForDefinition(documentLink)
@@ -313,15 +337,15 @@ export class SpxLSPClient extends Disposable {
     return null
   }
 
-  async getCompletionItems(params: lsp.CompletionParams) {
-    const completionResult = await this.textDocumentCompletion(params)
+  async getCompletionItems(ctx: RequestContext, params: lsp.CompletionParams) {
+    const completionResult = await this.textDocumentCompletion(ctx, params)
     if (completionResult == null) return []
     if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
     return completionResult as CompletionItem[]
   }
 
-  async getInputSlots(textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
-    const result = await this.workspaceExecuteCommandSpxGetInputSlots({ textDocument })
+  async getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
+    const result = await this.workspaceExecuteCommandSpxGetInputSlots(ctx, { textDocument })
     if (result == null) return []
     return result.map((item) => ({
       ...item,
