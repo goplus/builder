@@ -159,7 +159,9 @@ export class SpxLSPClient extends Disposable {
     this.spxlcRef.value = new Spxlc(this.connection)
 
     // Register handler for telemetry event notifications
-    this.spxlcRef.value.onNotification(lsp.TelemetryEventNotification.method, this.handleTelemetryEventNotification)
+    this.spxlcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
+      this.handleTelemetryEventNotification(params)
+    })
   }
 
   dispose() {
@@ -336,6 +338,7 @@ export class SpxLSPClient extends Disposable {
     if (method === lsp.ExecuteCommandRequest.method && call.params && typeof call.params === 'object' && !Array.isArray(call.params) && 'command' in call.params) {
       command = call.params.command as string | undefined
     }
+
     const parentSpan = this.activeSpans.get(id)
 
     if (!parentSpan) {
