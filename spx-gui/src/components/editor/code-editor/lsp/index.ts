@@ -320,12 +320,14 @@ export class SpxLSPClient extends Disposable {
    */
   handleTelemetryEventNotification(params: {
     id: number; 
-    method: string; 
+    method: string;
+    startTimestamp: number;
+    endTimestamp: number; 
     duration: number;
     success: boolean; 
     command?: string;
   }) {
-    const { method, command, id, duration,success } = params
+    const { method, command, id,startTimestamp, endTimestamp, duration, success } = params
     const parentSpan = activeSpans.get(id)
 
     if (!parentSpan) {
@@ -344,10 +346,12 @@ export class SpxLSPClient extends Disposable {
           attributes: {
             'lsp.method': method,
             ...(command ? { 'lsp.command': command } : {})
-          }
+          },
+          startTime: startTimestamp,
         }, (span) => {
         span.setAttribute('duration_ms', duration)
         span.setAttribute('success', success)
+        span.end(endTimestamp)
       })
     })
   }
