@@ -54,9 +54,6 @@ class WorkerConnection implements IConnectionWithFiles {
   }
 }
 
-// Global map to track ongoing requests and their spans
-const activeSpans = new Map<number, Sentry.Span>()
-
 type TraceOptions = {
   /** Optional command name for better tracing context */
   command?: string
@@ -142,6 +139,7 @@ export class SpxLSPClient extends Disposable {
   }
 
   private spxlcRef = shallowRef<Spxlc | null>(null)
+  private activeSpans = new Map<number, Sentry.Span>()
 
   private async prepareRequest() {
     const [spxlc] = await Promise.all([
@@ -161,7 +159,7 @@ export class SpxLSPClient extends Disposable {
     this.spxlcRef.value = new Spxlc(this.connection)
 
     // Register handler for telemetry event notifications
-    this.spxlcRef.value.onNotification('telemetry/event', this.handleTelemetryEventNotification)
+    this.spxlcRef.value.onNotification(lsp.TelemetryEventNotification.method, this.handleTelemetryEventNotification)
   }
 
   dispose() {
@@ -181,7 +179,7 @@ export class SpxLSPClient extends Disposable {
 
         // Store the span immediately when request is created
         const requestId = ongoingReq.id
-        activeSpans.set(requestId, span)
+        this.activeSpans.set(requestId, span)
 
         if (signal != null) {
           const cancel = () => this.cancelRequest(ongoingReq.id)
@@ -333,13 +331,13 @@ export class SpxLSPClient extends Disposable {
     command?: string
   }) {
     const { method, command, id, initTimestamp, startTimestamp, endTimestamp, duration, success } = params
-    const parentSpan = activeSpans.get(id)
+    const parentSpan = this.activeSpans.get(id)
 
     if (!parentSpan) {
       console.warn(`[LSP] No active span found for request ID: ${id}`)
       return
     }
-    activeSpans.delete(id)
+    this.activeSpans.delete(id)
     const opName = createLSPServerOperationName(method, { command })
 
     // Create a child span for WASM execution
@@ -356,7 +354,7 @@ export class SpxLSPClient extends Disposable {
         },
         (span) => {
           span.setAttribute('queue_time_ms', startTimestamp - initTimestamp)
-          span.setAttribute('duration_ms', duration)
+          span.setAttribute('duration_ms', endTimestamp - startTimestamp)
           span.setAttribute('success', success)
           span.end(endTimestamp)
         }
