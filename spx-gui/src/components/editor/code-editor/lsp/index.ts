@@ -159,7 +159,7 @@ export class SpxLSPClient extends Disposable {
     this.spxlcRef.value = new Spxlc(this.connection)
 
     // Register handler for telemetry event notifications
-    this.spxlcRef.value.onNotification('$/wasm/performance', this.handleTelemetryEventNotification)
+    this.spxlcRef.value.onNotification('$/telemetry/event', this.handleTelemetryEventNotification)
   }
 
   dispose() {
