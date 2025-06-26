@@ -74,7 +74,6 @@ export class Spxlc {
       console.warn(`no notification handler found for method: ${message.method}`, message)
       return
     }
-    console.log(message.params)
     handler(message.params)
   }
 
