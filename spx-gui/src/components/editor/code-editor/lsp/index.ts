@@ -63,7 +63,11 @@ type TraceOptions = {
 }
 
 // Enhanced method for LSP requests with Sentry tracing
-async function tracedRequest<T>(method: string, operation: (span: Sentry.Span) => Promise<T>, options?: LSPTraceOptions): Promise<T> {
+async function tracedRequest<T>(
+  method: string,
+  operation: (span: Sentry.Span) => Promise<T>,
+  options?: LSPTraceOptions
+): Promise<T> {
   const opName = createLSPOperationName(method, options)
 
   return Sentry.startSpan(
@@ -178,7 +182,7 @@ export class SpxLSPClient extends Disposable {
         // Store the span immediately when request is created
         const requestId = ongoingReq.id
         activeSpans.set(requestId, span)
-        
+
         if (signal != null) {
           const cancel = () => this.cancelRequest(ongoingReq.id)
           if (signal.aborted) {
@@ -319,15 +323,16 @@ export class SpxLSPClient extends Disposable {
    * Handles performance notifications from the WASM language server
    */
   handleTelemetryEventNotification(params: {
-    id: number; 
-    method: string;
-    startTimestamp: number;
-    endTimestamp: number; 
-    duration: number;
-    success: boolean; 
-    command?: string;
+    id: number
+    method: string
+    initTimestamp: number
+    startTimestamp: number
+    endTimestamp: number
+    duration: number
+    success: boolean
+    command?: string
   }) {
-    const { method, command, id,startTimestamp, endTimestamp, duration, success } = params
+    const { method, command, id, initTimestamp, startTimestamp, endTimestamp, duration, success } = params
     const parentSpan = activeSpans.get(id)
 
     if (!parentSpan) {
@@ -340,19 +345,22 @@ export class SpxLSPClient extends Disposable {
     // Create a child span for WASM execution
     Sentry.withActiveSpan(parentSpan, () => {
       Sentry.startSpan(
-        { 
+        {
           name: opName,
           op: 'lsp.server.execution',
           attributes: {
             'lsp.method': method,
             ...(command ? { 'lsp.command': command } : {})
           },
-          startTime: startTimestamp,
-        }, (span) => {
-        span.setAttribute('duration_ms', duration)
-        span.setAttribute('success', success)
-        span.end(endTimestamp)
-      })
+          startTime: startTimestamp
+        },
+        (span) => {
+          span.setAttribute('queue_time_ms', startTimestamp - initTimestamp)
+          span.setAttribute('duration_ms', duration)
+          span.setAttribute('success', success)
+          span.end(endTimestamp)
+        }
+      )
     })
   }
 
