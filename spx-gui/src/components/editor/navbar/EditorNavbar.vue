@@ -111,7 +111,7 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
-import { AutoSaveState, EditingMode, type Editing } from '../editing'
+import { SavingState, EditingMode, type Editing } from '../editing'
 import undoSvg from './icons/undo.svg'
 import redoSvg from './icons/redo.svg'
 import importProjectSvg from './icons/import-project.svg'
@@ -260,21 +260,22 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
       return null // TODO: style for effect-free mode
     case EditingMode.AutoSave: {
       if (!isOnline.value) return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
-      switch (editing.autoSaveState) {
-        case AutoSaveState.Saved:
-          return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
-        case AutoSaveState.Pending:
+      if (!editing.dirty || editing.saving == null) return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
+      switch (editing.saving.state) {
+        case SavingState.Pending:
           return {
             svg: savingSvg,
             stateClass: 'pending',
             desc: { en: 'Pending save', zh: '待保存' }
           }
-        case AutoSaveState.Saving:
+        case SavingState.InProgress:
           return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
-        case AutoSaveState.Failed:
+        case SavingState.Completed:
+          return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
+        case SavingState.Failed:
           return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
         default:
-          throw new Error('unknown auto save state')
+          throw new Error('unknown saving state')
       }
     }
     default:

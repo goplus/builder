@@ -45,7 +45,7 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
-import { AutoSaveState, Editing } from '@/components/editor/editing'
+import { Editing, EditingMode } from '@/components/editor/editing'
 
 const props = defineProps<{
   ownerName?: string
@@ -227,44 +227,68 @@ watchEffect((onCleanup) => {
   const editing = editingQueryRet.data.value
   if (editing == null) return
   const cleanup = router.beforeEach(async () => {
-    if (editing.autoSaveState === AutoSaveState.Saved) return true
-    try {
-      await withConfirm({
-        title: t({
-          en: 'Save changes',
-          zh: '保存变更'
-        }),
-        content: t({
-          en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
-          zh: '存在未保存的变更，你必须先保存到云端才能离开。'
-        }),
-        confirmText: t({
-          en: 'Save',
-          zh: '保存'
-        }),
-        async confirmHandler() {
-          try {
-            if (editing.autoSaveState !== AutoSaveState.Saved) await editing.flushSaving()
-            await clear(LOCAL_CACHE_KEY)
-          } catch (e) {
-            m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
-            throw e
-          }
-        },
-        autoConfirm: true
-      })
-      return true
-    } catch {
-      return false
-    }
+    if (!editing.dirty) return true
+    if (editing.mode === EditingMode.EffectFree) return navigationGuardForEffectFreeMode()
+    if (editing.mode === EditingMode.AutoSave) return navigationGuardForAutoSaveMode(editing)
   })
 
   onCleanup(cleanup)
 })
 
+function navigationGuardForAutoSaveMode(editing: Editing) {
+  return withConfirm({
+    title: t({
+      en: 'Save changes',
+      zh: '保存变更'
+    }),
+    content: t({
+      en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
+      zh: '存在未保存的变更，你必须先保存到云端才能离开。'
+    }),
+    confirmText: t({
+      en: 'Save',
+      zh: '保存'
+    }),
+    async confirmHandler() {
+      try {
+        if (editing.dirty) await editing.saving?.flush()
+        await clear(LOCAL_CACHE_KEY)
+      } catch (e) {
+        m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
+        throw e
+      }
+    },
+    autoConfirm: true
+  }).catch(() => false)
+}
+
+function navigationGuardForEffectFreeMode() {
+  return withConfirm({
+    title: t({
+      en: 'Discard changes',
+      zh: '放弃变更'
+    }),
+    content: t({
+      en: 'There are changes not saved yet. You can discard them and leave.',
+      zh: '存在未保存的变更，你可以放弃它们并离开。'
+    }),
+    cancelText: t({
+      en: 'Keep editing',
+      zh: '继续编辑'
+    }),
+    confirmText: t({
+      en: 'Discard changes',
+      zh: '放弃变更'
+    }),
+    async confirmHandler() {
+      await clear(LOCAL_CACHE_KEY)
+    }
+  }).catch(() => false)
+}
+
 function handleBeforeUnload(event: BeforeUnloadEvent) {
   const editing = editingQueryRet.data.value
-  if (editing != null && editing.autoSaveState !== AutoSaveState.Saved) {
+  if (editing != null && editing.dirty) {
     event.preventDefault()
   }
 }

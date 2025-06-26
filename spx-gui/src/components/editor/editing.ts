@@ -17,14 +17,14 @@ export interface LocalStorage {
   clear(key: string): Promise<void>
 }
 
-enum SavingState {
+export enum SavingState {
   Pending,
   InProgress,
   Completed,
   Failed
 }
 
-class Saving {
+export class Saving {
   private stateRef = ref(SavingState.Pending)
   get state() {
     return this.stateRef.value
@@ -36,9 +36,11 @@ class Saving {
     private isOnline: WatchSource<boolean>,
     private localCacheKey: string,
     private signal: AbortSignal
-  ) {}
+  ) {
+    this.start()
+  }
 
-  async start() {
+  private async start() {
     timeout(1000, this.signal)
       .then(() => this.project.saveToLocalCache(this.localCacheKey, this.signal))
       .catch((e) => {
@@ -55,7 +57,7 @@ class Saving {
     }
   }
 
-  async saveToCloud() {
+  private async saveToCloud() {
     const signal = this.signal
     try {
       this.stateRef.value = SavingState.InProgress
@@ -71,6 +73,10 @@ class Saving {
       this.saveToCloud()
     }
   }
+
+  flush() {
+    return this.saveToCloud()
+  }
 }
 
 export enum EditingMode {
@@ -84,17 +90,6 @@ export enum EditingMode {
    * Typically when editing a project that is not owned by the user.
    */
   EffectFree
-}
-
-export enum AutoSaveState {
-  /** Saved to cloud */
-  Saved,
-  /** There's save operation pending */
-  Pending,
-  /** There's save operation in progress */
-  Saving,
-  /** Save operation failed */
-  Failed
 }
 
 export class Editing extends Disposable {
@@ -125,25 +120,35 @@ export class Editing extends Disposable {
     )
   }
 
-  get autoSaveState(): AutoSaveState {
-    const saving = this.savingRef.value
-    if (saving == null) return AutoSaveState.Saved
-    switch (saving.state) {
-      case SavingState.Pending:
-        return AutoSaveState.Pending
-      case SavingState.InProgress:
-        return AutoSaveState.Saving
-      case SavingState.Completed:
-        return AutoSaveState.Saved
-      case SavingState.Failed:
-        return AutoSaveState.Failed
-    }
+  private dirtyRef = shallowRef(false)
+
+  get dirty() {
+    return this.dirtyRef.value
+  }
+
+  private startDirtyMonitoring() {
+    this.addDisposer(
+      watch(
+        () => this.project.exportGameFiles(),
+        () => (this.dirtyRef.value = true)
+      )
+    )
+    this.addDisposer(
+      watch(
+        () => this.saving?.state,
+        (state) => {
+          if (state === SavingState.Completed) {
+            this.dirtyRef.value = false
+          }
+        }
+      )
+    )
   }
 
   private savingRef = shallowRef<Saving | null>(null)
 
-  async flushSaving() {
-    await this.savingRef.value?.saveToCloud()
+  get saving() {
+    return this.savingRef.value
   }
 
   private startAutoSave() {
@@ -155,7 +160,6 @@ export class Editing extends Disposable {
 
           const signal = getCleanupSignal(onCleanup)
           const saving = new Saving(this.project, this.localStorage, this.isOnline, this.localCacheKey, signal)
-          saving.start()
 
           this.savingRef.value = saving
           signal.addEventListener('abort', () => (this.savingRef.value = null))
@@ -165,6 +169,7 @@ export class Editing extends Disposable {
   }
 
   start() {
+    this.startDirtyMonitoring()
     this.startAutoPreload()
     this.startAutoSave()
   }

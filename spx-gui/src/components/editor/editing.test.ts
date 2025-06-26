@@ -4,7 +4,7 @@ import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
 import { fromText, type Files } from '@/models/common/file'
 import type { UserInfo } from '@/stores/user'
-import { Editing, type EditableProject, AutoSaveState, EditingMode, type LocalStorage } from './editing'
+import { Editing, type EditableProject, SavingState, EditingMode, type LocalStorage } from './editing'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -93,11 +93,13 @@ describe('Editing', () => {
     editing.start()
 
     expect(editing.mode).toBe(EditingMode.AutoSave)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving).toBeNull()
 
     files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
-    expect(editing.autoSaveState).toBe(AutoSaveState.Pending)
+    expect(editing.dirty).toBe(true)
+    expect(editing.saving?.state).toBe(SavingState.Pending)
 
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
     await flushPromises()
@@ -106,11 +108,12 @@ describe('Editing', () => {
     vi.advanceTimersByTime(autoSaveToCloudDelay - autoSaveToLocalCacheDelay + 1)
     await flushPromises()
     expect(project.saveToCloud).toHaveBeenCalledTimes(1)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saving)
+    expect(editing.saving?.state).toBe(SavingState.InProgress)
 
     vi.advanceTimersByTime(500)
     await flushPromises()
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving?.state).toBe(SavingState.Completed)
     expect(localStorage.clear).toHaveBeenCalledTimes(1)
     expect(localStorage.clear).toHaveBeenCalledWith('LOCAL_CACHE_KEY')
   })
@@ -135,17 +138,18 @@ describe('Editing', () => {
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
     expect(project.saveToCloud).toHaveBeenCalledTimes(1)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Failed)
+    expect(editing.saving?.state).toBe(SavingState.Failed)
 
     vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
     await flushPromises()
     expect(project.saveToCloud).toHaveBeenCalledTimes(2)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Failed)
+    expect(editing.saving?.state).toBe(SavingState.Failed)
 
     vi.advanceTimersByTime(retryAutoSaveToCloudDelay)
     await flushPromises()
     expect(project.saveToCloud).toHaveBeenCalledTimes(3)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving?.state).toBe(SavingState.Completed)
   })
 
   it('should cancel pending saving when editing is disposed', async () => {
@@ -181,7 +185,8 @@ describe('Editing', () => {
 
     vi.advanceTimersByTime(autoSaveToCloudDelay)
     await flushPromises()
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving?.state).toBe(SavingState.Completed)
     expect(project.saveToLocalCache).toHaveBeenCalledTimes(1)
     expect(project.saveToCloud).toHaveBeenCalledTimes(1)
   })
@@ -196,7 +201,8 @@ describe('Editing', () => {
     editing.start()
 
     expect(editing.mode).toBe(EditingMode.EffectFree)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving).toBeNull()
 
     // Make changes to files
     files['file1.txt'] = mockFile('file1.txt updated')
@@ -211,7 +217,8 @@ describe('Editing', () => {
     // Auto-save should not have been triggered
     expect(project.saveToLocalCache).toHaveBeenCalledTimes(0)
     expect(project.saveToCloud).toHaveBeenCalledTimes(0)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(true) // Files are dirty, but no saving is triggered
+    expect(editing.saving).toBeNull()
   })
 
   it('should wait for online when during auto-save', async () => {
@@ -224,12 +231,14 @@ describe('Editing', () => {
     const editing = mockEditing({ project, isOnline })
     editing.start()
 
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving).toBeNull()
 
     // Make changes to files
     files['file1.txt'] = mockFile('file1.txt updated')
     await flushPromises()
-    expect(editing.autoSaveState).toBe(AutoSaveState.Pending)
+    expect(editing.dirty).toBe(true)
+    expect(editing.saving?.state).toBe(SavingState.Pending)
 
     // Local cache save should happen
     vi.advanceTimersByTime(autoSaveToLocalCacheDelay)
@@ -242,7 +251,8 @@ describe('Editing', () => {
 
     // Cloud save should not have been called yet because we're offline
     expect(project.saveToCloud).toHaveBeenCalledTimes(0)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Pending)
+    expect(editing.dirty).toBe(true)
+    expect(editing.saving?.state).toBe(SavingState.Pending)
 
     // Go online
     isOnline.value = true
@@ -250,11 +260,12 @@ describe('Editing', () => {
 
     // Now cloud save should be triggered and in progress
     expect(project.saveToCloud).toHaveBeenCalledTimes(1)
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saving)
+    expect(editing.saving?.state).toBe(SavingState.InProgress)
 
     // Wait for save to complete
     vi.advanceTimersByTime(500)
     await flushPromises()
-    expect(editing.autoSaveState).toBe(AutoSaveState.Saved)
+    expect(editing.dirty).toBe(false)
+    expect(editing.saving?.state).toBe(SavingState.Completed)
   })
 })
