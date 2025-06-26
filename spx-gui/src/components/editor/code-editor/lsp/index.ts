@@ -321,16 +321,21 @@ export class SpxLSPClient extends Disposable {
    * Handles performance notifications from the WASM language server
    */
   handleTelemetryEventNotification(params: {
-    id: number
-    method: string
+    call: RequestMessage
     initTimestamp: number
     startTimestamp: number
     endTimestamp: number
     duration: number
     success: boolean
-    command?: string
   }) {
-    const { method, command, id, initTimestamp, startTimestamp, endTimestamp, duration, success } = params
+    const { call, initTimestamp, startTimestamp, endTimestamp, success } = params
+    const id = call.id
+    const method = call.method
+    
+    let command: string | undefined
+    if (method === lsp.ExecuteCommandRequest.method && call.params && typeof call.params === 'object' && !Array.isArray(call.params) && 'command' in call.params) {
+      command = call.params.command as string | undefined
+    }
     const parentSpan = this.activeSpans.get(id)
 
     if (!parentSpan) {
