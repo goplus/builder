@@ -158,7 +158,7 @@ export class SpxLSPClient extends Disposable {
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
     this.spxlcRef.value = new Spxlc(this.connection)
 
-     // Register handler for telemetry event notifications
+    // Register handler for telemetry event notifications
     this.spxlcRef.value.onNotification('$/wasm/performance', this.handleTelemetryEventNotification)
   }
 
@@ -313,33 +313,28 @@ export class SpxLSPClient extends Disposable {
   }
 
   /**
- * Handles performance notifications from the WASM language server
- */
-handleTelemetryEventNotification(params: {
-  method: string
-  command?: string
-  requestId: number
-  duration: number
-}) {
-  const { method, command, requestId, duration } = params
-  const parentSpan = activeSpans.get(requestId)
-  
-  if (!parentSpan) {
-    console.warn(`[LSP] No active span found for request ID: ${requestId}`)
-    return
+   * Handles performance notifications from the WASM language server
+   */
+  handleTelemetryEventNotification(params: { method: string; command?: string; requestId: number; duration: number }) {
+    const { method, command, requestId, duration } = params
+    const parentSpan = activeSpans.get(requestId)
+
+    if (!parentSpan) {
+      console.warn(`[LSP] No active span found for request ID: ${requestId}`)
+      return
+    }
+
+    const opName = createLSPServerOperationName(method, { command })
+
+    // Create a child span for WASM execution
+    Sentry.withActiveSpan(parentSpan, () => {
+      Sentry.startSpan({ name: opName }, (span) => {
+        span.setAttribute('duration_ms', duration)
+        span.setAttribute('success', true)
+        activeSpans.delete(requestId)
+      })
+    })
   }
-
-  const opName = createLSPServerOperationName(method, { command })
-
-  // Create a child span for WASM execution
-  Sentry.withActiveSpan(parentSpan, () => {
-    Sentry.startSpan({ name: opName }, (span) => {
-      span.setAttribute('duration_ms', duration)
-      span.setAttribute('success', true)
-      activeSpans.delete(requestId)
-    });
-  });
-}
 
   // Higher-level APIs
 
