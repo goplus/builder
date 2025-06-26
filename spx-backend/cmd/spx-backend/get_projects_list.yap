@@ -16,11 +16,11 @@ params := controller.NewListProjectsParams()
 
 switch owner := ${owner}; owner {
 case "":
-	mAuthedUser, isAuthed := ensureAuthedUser(ctx)
-	if !isAuthed {
+	mUser, ok := ensureAuthenticatedUser(ctx)
+	if !ok {
 		return
 	}
-	params.Owner = &mAuthedUser.Username
+	params.Owner = &mUser.Username
 case "*":
 	params.Owner = nil
 default:

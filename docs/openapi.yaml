@@ -218,7 +218,7 @@ paths:
 
         #### Visibility rules
 
-        | Authed (as alice) | Owner | Visibility | Access |
+        | Authenticated (as alice) | Owner | Visibility | Access |
         |-------------|-------------|------------------|-----------|
         | false | * | | All users' public projects (force `visibility=public`) |
         | false | * | public | All users' public projects |
@@ -673,7 +673,7 @@ paths:
 
         #### Visibility rules
 
-        | Authed (as alice) | Owner | Visibility | Access |
+        | Authenticated (as alice) | Owner | Visibility | Access |
         |-------------|-------------|------------------|-----------|
         | false | * | | All users' public assets (force `visibility=public`) |
         | false | * | public | All users' public assets |

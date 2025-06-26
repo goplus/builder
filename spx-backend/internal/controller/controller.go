@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
+	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -27,10 +28,8 @@ import (
 )
 
 var (
-	ErrBadRequest   = errors.New("bad request")
-	ErrNotExist     = errors.New("not exist")
-	ErrUnauthorized = errors.New("unauthorized")
-	ErrForbidden    = errors.New("forbidden")
+	ErrBadRequest = errors.New("bad request")
+	ErrNotExist   = errors.New("not exist")
 )
 
 // contextKey is a value for use with [context.WithValue]. It's used as a
@@ -43,8 +42,8 @@ type contextKey struct {
 type Controller struct {
 	db            *gorm.DB
 	kodo          *kodoConfig
+	authenticator authn.Authenticator
 	aigcClient    *aigc.AigcClient
-	casdoorClient casdoorClient
 	copilot       *copilot.Copilot
 	workflow      *workflow.Workflow
 	aiInteraction *aiinteraction.AIInteraction
@@ -68,8 +67,15 @@ func New(ctx context.Context) (*Controller, error) {
 	// TODO: Configure connection pool and timeouts.
 
 	kodoConfig := newKodoConfig(logger)
+	authenticator := casdoor.New(casdoor.Config{
+		Endpoint:         mustEnv(logger, "GOP_CASDOOR_ENDPOINT"),
+		ClientID:         mustEnv(logger, "GOP_CASDOOR_CLIENTID"),
+		ClientSecret:     mustEnv(logger, "GOP_CASDOOR_CLIENTSECRET"),
+		Certificate:      mustEnv(logger, "GOP_CASDOOR_CERTIFICATE"),
+		OrganizationName: mustEnv(logger, "GOP_CASDOOR_ORGANIZATIONNAME"),
+		ApplicationName:  mustEnv(logger, "GOP_CASDOOR_APPLICATIONNAME"),
+	}, db)
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
-	casdoorClient := newCasdoorClient(logger)
 
 	openaiAPIKey := mustEnv(logger, "OPENAI_API_KEY")
 	openaiAPIEndpoint := mustEnv(logger, "OPENAI_API_ENDPOINT")
@@ -104,12 +110,17 @@ func New(ctx context.Context) (*Controller, error) {
 	return &Controller{
 		db:            db,
 		kodo:          kodoConfig,
+		authenticator: authenticator,
 		aigcClient:    aigcClient,
-		casdoorClient: casdoorClient,
 		copilot:       cpt,
 		workflow:      stdflow,
 		aiInteraction: aiInteraction,
 	}, nil
+}
+
+// Authenticator returns the authenticator.
+func (ctrl *Controller) Authenticator() authn.Authenticator {
+	return ctrl.authenticator
 }
 
 func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
@@ -234,25 +245,6 @@ func newKodoConfig(logger *qiniuLog.Logger) *kodoConfig {
 		bucketRegion: mustEnv(logger, "KODO_BUCKET_REGION"),
 		baseUrl:      mustEnv(logger, "KODO_BASE_URL"),
 	}
-}
-
-// casdoorClient is the client interface for Casdoor.
-type casdoorClient interface {
-	ParseJwtToken(token string) (*casdoorsdk.Claims, error)
-	GetUser(name string) (*casdoorsdk.User, error)
-}
-
-// newCasdoorClient creates a new [casdoorsdk.Client].
-func newCasdoorClient(logger *qiniuLog.Logger) casdoorClient {
-	config := &casdoorsdk.AuthConfig{
-		Endpoint:         mustEnv(logger, "GOP_CASDOOR_ENDPOINT"),
-		ClientId:         mustEnv(logger, "GOP_CASDOOR_CLIENTID"),
-		ClientSecret:     mustEnv(logger, "GOP_CASDOOR_CLIENTSECRET"),
-		Certificate:      mustEnv(logger, "GOP_CASDOOR_CERTIFICATE"),
-		OrganizationName: mustEnv(logger, "GOP_CASDOOR_ORGANIZATIONNAME"),
-		ApplicationName:  mustEnv(logger, "GOP_CASDOOR_APPLICATIONNAME"),
-	}
-	return casdoorsdk.NewClientWithConf(config)
 }
 
 // mustEnv gets the environment variable value or exits the program.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -49,15 +48,22 @@ func (User) TableName() string {
 	return "user"
 }
 
+// CreateUserParams holds parameters for creating a user with [FirstOrCreateUser].
+type CreateUserParams struct {
+	Username    string
+	DisplayName string
+	Avatar      string
+}
+
 // FirstOrCreateUser gets or creates a user.
-func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk.User) (*User, error) {
+func FirstOrCreateUser(ctx context.Context, db *gorm.DB, params CreateUserParams) (*User, error) {
 	var mUser User
 	if err := db.WithContext(ctx).
-		Where("username = ?", casdoorUser.Name).
+		Where("username = ?", params.Username).
 		Attrs(User{
-			Username:    casdoorUser.Name,
-			DisplayName: casdoorUser.DisplayName,
-			Avatar:      casdoorUser.Avatar,
+			Username:    params.Username,
+			DisplayName: params.DisplayName,
+			Avatar:      params.Avatar,
 		}).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "username"}},
@@ -65,15 +71,15 @@ func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk
 		}).
 		FirstOrCreate(&mUser).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get/create user %q: %w", casdoorUser.Name, err)
+		return nil, fmt.Errorf("failed to get/create user %q: %w", params.Username, err)
 	}
 	if mUser.ID == 0 {
-		// Unfortunatlly, MySQL doesn't support the RETURNING clause.
+		// Unfortunately, MySQL doesn't support the RETURNING clause.
 		if err := db.WithContext(ctx).
-			Where("username = ?", casdoorUser.Name).
+			Where("username = ?", params.Username).
 			First(&mUser).
 			Error; err != nil {
-			return nil, fmt.Errorf("failed to get user %q: %w", casdoorUser.Name, err)
+			return nil, fmt.Errorf("failed to get user %q: %w", params.Username, err)
 		}
 	}
 	return &mUser, nil

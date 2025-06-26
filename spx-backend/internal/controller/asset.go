@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
@@ -52,7 +53,7 @@ func (ctrl *Controller) ensureAsset(ctx context.Context, id int64, ownedOnly boo
 	}
 
 	if ownedOnly || mAsset.Visibility == model.VisibilityPrivate {
-		if _, err := ensureAuthedUser(ctx, mAsset.OwnerID); err != nil {
+		if _, err := authn.EnsureUser(ctx, mAsset.OwnerID); err != nil {
 			return nil, err
 		}
 	}
@@ -95,13 +96,13 @@ func (p *CreateAssetParams) Validate() (ok bool, msg string) {
 
 // CreateAsset creates an asset.
 func (ctrl *Controller) CreateAsset(ctx context.Context, params *CreateAssetParams) (*AssetDTO, error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return nil, ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return nil, authn.ErrUnauthorized
 	}
 
 	mAsset := model.Asset{
-		OwnerID:     mAuthedUser.ID,
+		OwnerID:     mUser.ID,
 		DisplayName: params.DisplayName,
 		Type:        model.ParseAssetType(params.Type),
 		Category:    params.Category,
@@ -213,14 +214,14 @@ func (p *ListAssetsParams) Validate() (ok bool, msg string) {
 
 // ListAssets lists assets.
 func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams) (*ByPage[AssetDTO], error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed || (params.Owner != nil && *params.Owner != mAuthedUser.Username) {
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok || (params.Owner != nil && *params.Owner != mUser.Username) {
 		// Ensure non-owners can only see public assets.
 		if params.Visibility == nil {
 			public := model.VisibilityPublic.String()
 			params.Visibility = &public
 		} else if *params.Visibility != model.VisibilityPublic.String() {
-			return nil, ErrUnauthorized
+			return nil, authn.ErrUnauthorized
 		}
 	}
 
@@ -242,8 +243,8 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	}
 	if params.Visibility != nil {
 		query = query.Where("asset.visibility = ?", model.ParseVisibility(*params.Visibility))
-	} else if isAuthed && params.Owner == nil {
-		query = query.Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic))
+	} else if ok && params.Owner == nil {
+		query = query.Where(ctrl.db.Where("asset.owner_id = ?", mUser.ID).Or("asset.visibility = ?", model.VisibilityPublic))
 	}
 	var queryOrderByColumn string
 	switch params.OrderBy {

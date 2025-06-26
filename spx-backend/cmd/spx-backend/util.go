@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -12,10 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// ensureAuthedUser ensures there is an authenticated user in the context.
-func ensureAuthedUser(ctx *yap.Context) (mAuthedUser *model.User, isAuthed bool) {
-	mAuthedUser, isAuthed = controller.AuthedUserFromContext(ctx.Context())
-	if !isAuthed {
+// ensureAuthenticatedUser ensures there is an authenticated user in the context.
+func ensureAuthenticatedUser(ctx *yap.Context) (mUser *model.User, ok bool) {
+	mUser, ok = authn.UserFromContext(ctx.Context())
+	if !ok {
 		replyWithCode(ctx, errorUnauthorized)
 	}
 	return
@@ -47,6 +48,12 @@ func replyWithCode(ctx *yap.Context, code errorCode) {
 // replyWithCodeMsg replies to the client with the error code and custom message.
 func replyWithCodeMsg(ctx *yap.Context, code errorCode, msg string) {
 	statusCode := int(code) / 100
+
+	// According to RFC 9110, section 11.6.1, a 401 response MUST include a WWW-Authenticate header.
+	if code == errorUnauthorized {
+		ctx.ResponseWriter.Header().Set("WWW-Authenticate", "Bearer")
+	}
+
 	ctx.JSON(statusCode, &errorPayload{
 		Code: code,
 		Msg:  msg,
@@ -60,9 +67,9 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 		replyWithCode(ctx, errorInvalidArgs)
 	case errors.Is(err, controller.ErrNotExist), errors.Is(err, gorm.ErrRecordNotFound):
 		replyWithCode(ctx, errorNotFound)
-	case errors.Is(err, controller.ErrUnauthorized):
+	case errors.Is(err, authn.ErrUnauthorized):
 		replyWithCode(ctx, errorUnauthorized)
-	case errors.Is(err, controller.ErrForbidden):
+	case errors.Is(err, authn.ErrForbidden):
 		replyWithCode(ctx, errorForbidden)
 	default:
 		logger := log.GetReqLogger(ctx.Context())

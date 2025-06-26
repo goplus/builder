@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -36,7 +37,11 @@ if port == "" {
 }
 logger.Printf("Listening to %s", port)
 
-h := handler(NewUserMiddleware(ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
+h := handler(
+	authn.Middleware(ctrl.Authenticator()),
+	NewReqIDMiddleware(),
+	NewCORSMiddleware(),
+)
 server := &http.Server{Addr: port, Handler: h}
 
 stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
