@@ -333,9 +333,14 @@ export class SpxLSPClient extends Disposable {
     const { call, initTimestamp, startTimestamp, endTimestamp, success } = params
     const id = call.id
     const method = call.method
-    
+
     let command: string | undefined
-    if (method === lsp.ExecuteCommandRequest.method && call.params && typeof call.params === 'object' && !Array.isArray(call.params) && 'command' in call.params) {
+    if (
+      method === lsp.ExecuteCommandRequest.method &&
+      call.params &&
+      typeof call.params === 'object' &&
+      'command' in call.params
+    ) {
       command = call.params.command as string | undefined
     }
 
