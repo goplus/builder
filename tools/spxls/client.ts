@@ -58,15 +58,9 @@ export class Spxlc {
     this.pendingRequests.delete(message.id)
 
     if ('error' in message && message.error != null) {
-      pending.reject({
-        error: new ResponseError(message.error),
-        id: message.id
-      })
+      pending.reject(new ResponseError(message.error))
     }
-    else pending.resolve({
-      result: message.result,
-      id: message.id
-    })
+    else pending.resolve(message.result)
   }
 
   /**
@@ -80,7 +74,7 @@ export class Spxlc {
       console.warn(`no notification handler found for method: ${message.method}`, message)
       return
     }
-
+    console.log(message.params)
     handler(message.params)
   }
 
