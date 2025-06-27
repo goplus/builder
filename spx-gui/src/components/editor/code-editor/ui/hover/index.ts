@@ -126,7 +126,7 @@ export class HoverController extends Emitter<{
       return {
         contents: [
           makeBasicMarkdownString(
-            `<diagnostic-item severity="${diagnostic.severity}">${diagnostic.message}</diagnostic-item>`
+            `<pre is="diagnostic-item" severity="${diagnostic.severity}">${diagnostic.message}</pre>`
           )
         ],
         range: diagnostic.range,
