@@ -16,7 +16,11 @@ export type LSPTraceOptions = {
  * @returns Formatted operation name
  */
 export function createLSPOperationName(method: string, options?: LSPTraceOptions): string {
-  return options?.command ? `${IDENTIFIER}: ${method} (${options.command})` : `LSP: ${method}`
+  return options?.command ? `${IDENTIFIER}: ${method} (${options.command})` : `${IDENTIFIER}: ${method}`
+}
+
+export function createLSPServerOperationName(method: string, options?: LSPTraceOptions): string {
+  return options?.command ? `${IDENTIFIER} Server: ${method} (${options.command})` : `${IDENTIFIER} Server: ${method}`
 }
 
 /**

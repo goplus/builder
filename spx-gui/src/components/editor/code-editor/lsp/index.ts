@@ -5,7 +5,7 @@ import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
-import { createLSPOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
+import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
 import type { Project } from '@/models/project'
 import {
   fromLSPRange,
@@ -60,7 +60,11 @@ type TraceOptions = {
 }
 
 // Enhanced method for LSP requests with Sentry tracing
-async function tracedRequest<T>(method: string, operation: () => Promise<T>, options?: LSPTraceOptions): Promise<T> {
+async function tracedRequest<T>(
+  method: string,
+  operation: (span: Sentry.Span) => Promise<T>,
+  options?: LSPTraceOptions
+): Promise<T> {
   const opName = createLSPOperationName(method, options)
 
   return Sentry.startSpan(
@@ -76,7 +80,7 @@ async function tracedRequest<T>(method: string, operation: () => Promise<T>, opt
       const startTime = performance.now()
 
       try {
-        const result = await operation()
+        const result = await operation(span)
 
         // Record performance metrics
         const duration = performance.now() - startTime
@@ -135,6 +139,7 @@ export class SpxLSPClient extends Disposable {
   }
 
   private spxlcRef = shallowRef<Spxlc | null>(null)
+  private activeSpans = new Map<number, Sentry.Span>()
 
   private async prepareRequest() {
     const [spxlc] = await Promise.all([
@@ -152,6 +157,11 @@ export class SpxLSPClient extends Disposable {
     this.connection = new WorkerConnection()
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
     this.spxlcRef.value = new Spxlc(this.connection)
+
+    // Register handler for telemetry event notifications
+    this.spxlcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
+      this.handleTelemetryEventNotification(params)
+    })
   }
 
   dispose() {
@@ -165,9 +175,14 @@ export class SpxLSPClient extends Disposable {
     const spxlc = await this.prepareRequest()
     return tracedRequest(
       method,
-      () => {
+      async (span: Sentry.Span) => {
         let unlisten: Disposer | undefined
         const ongoingReq = spxlc.request<T>(method, params)
+
+        // Store the span immediately when request is created
+        const requestId = ongoingReq.id
+        this.activeSpans.set(requestId, span)
+
         if (signal != null) {
           const cancel = () => this.cancelRequest(ongoingReq.id)
           if (signal.aborted) {
@@ -302,6 +317,61 @@ export class SpxLSPClient extends Disposable {
 
   async textDocumentInlayHint(ctx: RequestContext, params: lsp.InlayHintParams): Promise<lsp.InlayHint[] | null> {
     return this.request<lsp.InlayHint[] | null>(ctx, lsp.InlayHintRequest.method, params)
+  }
+
+  /**
+   * Handles performance notifications from the WASM language server
+   */
+  handleTelemetryEventNotification(params: {
+    call: RequestMessage
+    initTimestamp: number
+    startTimestamp: number
+    endTimestamp: number
+    success: boolean
+  }) {
+    const { call, initTimestamp, startTimestamp, endTimestamp, success } = params
+    const id = call.id
+    const method = call.method
+
+    let command: string | undefined
+    if (
+      method === lsp.ExecuteCommandRequest.method &&
+      call.params &&
+      typeof call.params === 'object' &&
+      'command' in call.params
+    ) {
+      command = call.params.command as string | undefined
+    }
+
+    const parentSpan = this.activeSpans.get(id)
+
+    if (!parentSpan) {
+      console.warn(`[LSP] No active span found for request ID: ${id}`)
+      return
+    }
+    this.activeSpans.delete(id)
+    const opName = createLSPServerOperationName(method, { command })
+
+    // Create a child span for WASM execution
+    Sentry.withActiveSpan(parentSpan, () => {
+      Sentry.startSpan(
+        {
+          name: opName,
+          op: 'lsp.server.execution',
+          attributes: {
+            'lsp.method': method,
+            ...(command ? { 'lsp.command': command } : {})
+          },
+          startTime: startTimestamp
+        },
+        (span) => {
+          span.setAttribute('queue_time_ms', startTimestamp - initTimestamp)
+          span.setAttribute('duration_ms', endTimestamp - startTimestamp)
+          span.setAttribute('success', success)
+          span.end(endTimestamp)
+        }
+      )
+    })
   }
 
   // Higher-level APIs
