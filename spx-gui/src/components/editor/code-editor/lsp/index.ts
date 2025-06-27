@@ -327,7 +327,6 @@ export class SpxLSPClient extends Disposable {
     initTimestamp: number
     startTimestamp: number
     endTimestamp: number
-    duration: number
     success: boolean
   }) {
     const { call, initTimestamp, startTimestamp, endTimestamp, success } = params
