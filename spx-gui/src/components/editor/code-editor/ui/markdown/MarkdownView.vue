@@ -49,9 +49,9 @@ const basicComponents = {
   /**
    * Usage:
    * ```html
-   * <diagnostic-item severity="error">
+   * <pre is="diagnostic-item" severity="error">
    *   Diagnostic message here (Markdown supported)
-   * </diagnostic-item>
+   * </pre>
    */
   'diagnostic-item': DiagnosticItem,
   /**
@@ -67,9 +67,9 @@ const advancedComponents = {
   /**
    * Usage:
    * ```html
-   * <definition-item def-id="xgo:fmt?Println" overview="func Println(a ...any) void">
+   * <pre is="definition-item" def-id="xgo:fmt?Println" overview="func Println(a ...any) void">
    *   Default detail content here (Markdown supported)
-   * </definition-item>
+   * </pre>
    */
   'definition-item': DefinitionItem
 }

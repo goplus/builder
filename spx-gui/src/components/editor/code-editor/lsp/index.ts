@@ -107,6 +107,23 @@ export type RequestContext = {
   traceOptions?: TraceOptions
 }
 
+type TelemetryEventBaseParams = {
+  initTimestamp: number
+  startTimestamp: number
+  endTimestamp: number
+  success: boolean
+}
+
+type TelemetryEventParamsForCall = TelemetryEventBaseParams & {
+  call: RequestMessage
+}
+
+type TelemetryEventParamsForNotification = TelemetryEventBaseParams & {
+  notification: NotificationMessage
+}
+
+type TelemetryEventParams = TelemetryEventParamsForCall | TelemetryEventParamsForNotification
+
 export class SpxLSPClient extends Disposable {
   constructor(private project: Project) {
     super()
@@ -322,14 +339,13 @@ export class SpxLSPClient extends Disposable {
   /**
    * Handles performance notifications from the WASM language server
    */
-  handleTelemetryEventNotification(params: {
-    call: RequestMessage
-    initTimestamp: number
-    startTimestamp: number
-    endTimestamp: number
-    success: boolean
-  }) {
-    const { call, initTimestamp, startTimestamp, endTimestamp, success } = params
+  handleTelemetryEventNotification(params: TelemetryEventParams): void {
+    const { initTimestamp, startTimestamp, endTimestamp, success } = params
+
+    // Drop telemetry events for notifications temporarily. TODO: report them properly
+    if (!('call' in params)) return
+
+    const call = params.call
     const id = call.id
     const method = call.method
 
