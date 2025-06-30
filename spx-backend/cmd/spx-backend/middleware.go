@@ -7,6 +7,16 @@ import (
 	"github.com/qiniu/x/reqid"
 )
 
+// NewReqIDMiddleware creates a new request ID middleware.
+func NewReqIDMiddleware() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := reqid.NewContextWith(r.Context(), w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // NewCORSMiddleware creates a new CORS middleware.
 func NewCORSMiddleware() func(next http.Handler) http.Handler {
 	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
@@ -26,16 +36,6 @@ func NewCORSMiddleware() func(next http.Handler) http.Handler {
 			}
 
 			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// NewReqIDMiddleware creates a new request ID middleware.
-func NewReqIDMiddleware() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := reqid.NewContextWith(r.Context(), w, r)
-			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

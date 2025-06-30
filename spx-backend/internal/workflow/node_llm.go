@@ -52,7 +52,7 @@ func (ln *LLMNode) GetType() NodeType {
 func (ln *LLMNode) Prompt(env Env) (string, error) {
 	// Define custom template functions
 	funcMap := template.FuncMap{
-		"formatJSON": func(v interface{}) string {
+		"formatJSON": func(v any) string {
 			indented, err := json.MarshalIndent(v, "", "\t")
 			if err != nil {
 				return fmt.Sprintf("Error formatting JSON: %v", err)
@@ -102,8 +102,16 @@ func (ln *LLMNode) Execute(ctx context.Context, w *Response, r *Request) error {
 		}
 	}
 
+	// Get premium model setting from environment
+	canUsePremium := false
+	if v := r.env.Get("canUsePremium"); v != nil {
+		if premium, ok := v.(bool); ok {
+			canUsePremium = premium
+		}
+	}
+
 	// Stream the message from the LLM
-	read, err := ln.copilot.StreamMessage(ctx, params)
+	read, err := ln.copilot.StreamMessage(ctx, params, canUsePremium)
 	if err != nil {
 		return err
 	}

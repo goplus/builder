@@ -84,6 +84,18 @@ paths:
                 $ref: "#/components/schemas/User"
 
   /user:
+    get:
+      tags:
+        - Users
+      summary: Get the authenticated user
+      description: Retrieve the profile information of the authenticated user.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
     put:
       tags:
         - Users
@@ -628,7 +640,13 @@ paths:
       tags:
         - Assets
       summary: Create an asset
-      description: Create a new asset with the necessary details.
+      description: |
+        Create a new asset with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `assetAdmin` role can create public assets.
+        - Regular users can only create private assets.
       requestBody:
         required: true
         content:
@@ -662,6 +680,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /assets/list:
     get:
@@ -783,7 +803,13 @@ paths:
       tags:
         - Assets
       summary: Update an asset
-      description: Update the details of a specific asset.
+      description: |
+        Update the details of a specific asset.
+
+        #### Permission requirements
+
+        - Only users with the `assetAdmin` role can update assets to public visibility.
+        - Asset owners can update their private assets.
       parameters:
         - name: id
           in: path
@@ -824,6 +850,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "403":
+          description: Insufficient permissions to perform this operation.
     delete:
       tags:
         - Assets
@@ -877,7 +905,13 @@ paths:
       tags:
         - Copilot
       summary: Generate a message
-      description: Generate a message by sending a list of input messages.
+      description: |
+        Generate a message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each message consumes 1 quota from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -921,13 +955,21 @@ paths:
                     content:
                       type: text
                       text: Hello!
+        "429":
+          description: Insufficient quota to perform this operation.
 
   /copilot/stream/message:
     post:
       tags:
         - Copilot
       summary: Generate a stream message
-      description: Generate a stream message by sending a list of input messages.
+      description: |
+        Generate a stream message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each message consumes 1 quota from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -963,13 +1005,21 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+        "429":
+          description: Insufficient quota to perform this operation.
 
   /workflow/stream/message:
     post:
       tags:
         - Workflow
       summary: Generate a stream message from workflow
-      description: Generate a stream message by sending a list of input messages.
+      description: |
+        Generate a stream message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1008,6 +1058,8 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+        "429":
+          description: Insufficient quota to perform this operation.
 
   /ai/interaction/turn:
     post:
@@ -1150,6 +1202,14 @@ components:
           examples:
             - Two giants live in Britain's land...
           description: Brief bio or description of the user.
+        plan:
+          type: string
+          enum:
+            - free
+            - plus
+          examples:
+            - free
+          description: Subscription plan of the user.
         followerCount:
           type: integer
           format: int64
@@ -1185,6 +1245,41 @@ components:
           examples:
             - 1
           description: Number of projects liked by the user.
+        capabilities:
+          $ref: "#/components/schemas/UserCapabilities"
+          nullable: true
+          description: |
+            Capabilities and quotas of the user.
+
+            **This field is only present for the authenticated user's own profile.**
+
+    UserCapabilities:
+      type: object
+      properties:
+        canManageAssets:
+          type: boolean
+          description: Whether user can manage asset library.
+          examples:
+            - true
+        canUsePremiumLLM:
+          type: boolean
+          description: Whether user can access premium LLM models.
+          examples:
+            - true
+        copilotMessageQuota:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Total quota for Copilot messages.
+          examples:
+            - 1000
+        copilotMessageQuotaLeft:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Remaining quota for Copilot messages.
+          examples:
+            - 789
 
     Project:
       type: object

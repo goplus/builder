@@ -91,18 +91,20 @@ type errorCode int
 //
 // The first 3 digits of the value are the corresponding HTTP status code.
 const (
-	errorInvalidArgs  errorCode = 40001
-	errorUnauthorized errorCode = 40100
-	errorForbidden    errorCode = 40300
-	errorNotFound     errorCode = 40400
-	errorUnknown      errorCode = 50000
+	errorInvalidArgs     errorCode = 40001
+	errorUnauthorized    errorCode = 40100
+	errorForbidden       errorCode = 40300
+	errorNotFound        errorCode = 40400
+	errorTooManyRequests errorCode = 42900
+	errorUnknown         errorCode = 50000
 )
 
 // errorMsgs defines messages for error codes.
 var errorMsgs = map[errorCode]string{
-	errorInvalidArgs:  "Invalid args",
-	errorUnauthorized: "Unauthorized",
-	errorForbidden:    "Forbidden",
-	errorNotFound:     "Not found",
-	errorUnknown:      "Internal error",
+	errorInvalidArgs:     "Invalid args",
+	errorUnauthorized:    "Unauthorized",
+	errorForbidden:       "Forbidden",
+	errorNotFound:        "Not found",
+	errorTooManyRequests: "Too many requests",
+	errorUnknown:         "Internal error",
 }
