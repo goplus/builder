@@ -41,13 +41,14 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db            *gorm.DB
-	kodo          *kodoConfig
-	aigcClient    *aigc.AigcClient
-	casdoorClient casdoorClient
-	copilot       *copilot.Copilot
-	workflow      *workflow.Workflow
-	aiInteraction *aiinteraction.AIInteraction
+	db                *gorm.DB
+	kodo              *kodoConfig
+	aigcClient        *aigc.AigcClient
+	casdoorClient     casdoorClient
+	copilot           *copilot.Copilot
+	stdflow           *workflow.Workflow
+	stdflowWithoutRef *workflow.Workflow
+	aiInteraction     *aiinteraction.AIInteraction
 }
 
 // New creates a new controller.
@@ -94,6 +95,7 @@ func New(ctx context.Context) (*Controller, error) {
 	}
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
+	stdflow_without_ref := NewWorkflowWithoutRef("stdflow_without_ref", cpt, db)
 
 	aiInteraction, err := aiinteraction.New(openaiClient, openaiModelID)
 	if err != nil {
@@ -102,13 +104,14 @@ func New(ctx context.Context) (*Controller, error) {
 	}
 
 	return &Controller{
-		db:            db,
-		kodo:          kodoConfig,
-		aigcClient:    aigcClient,
-		casdoorClient: casdoorClient,
-		copilot:       cpt,
-		workflow:      stdflow,
-		aiInteraction: aiInteraction,
+		db:                db,
+		kodo:              kodoConfig,
+		aigcClient:        aigcClient,
+		casdoorClient:     casdoorClient,
+		copilot:           cpt,
+		stdflow:           stdflow,
+		stdflowWithoutRef: stdflow_without_ref,
+		aiInteraction:     aiInteraction,
 	}, nil
 }
 
@@ -145,6 +148,39 @@ func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.W
 			return env.Get("ReferenceID") == nil
 		}, NewKeyNode(copilot).SetNext(workflow.NewSearch(db).SetNext(classifier))).
 		Else(workflow.NewSearch(db).SetNext(classifier)))
+
+	return flow
+}
+
+func NewWorkflowWithoutRef(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
+	editNode := NewCodeEditNode(copilot)
+	chatNode := NewMessageNode(copilot)
+	flow := workflow.NewWorkflow(name)
+
+	projectCreate := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("project_id") == nil
+		}, NewCreateProject(copilot)).
+		Else(editNode)
+
+	classifierNode := workflow.NewClassifierNode(copilot, ``).
+		AddCase("project_create", projectCreate).
+		AddCase("code_edit", editNode).
+		Default(chatNode)
+
+	classifier := workflow.NewIfStmt().
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == nil
+		}, classifierNode).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "project_create"
+		}, projectCreate).
+		If(func(env workflow.Env) bool {
+			return env.Get("Classification") == "code_edit"
+		}, editNode).
+		Else(chatNode)
+
+	flow.Start(classifier)
 
 	return flow
 }

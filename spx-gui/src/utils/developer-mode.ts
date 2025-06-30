@@ -6,6 +6,9 @@ const DEV_MODE_STORAGE_KEY = 'xb_dev_mode_enabled'
 // Create reactive state for developer mode
 export const isDeveloperMode = ref(false)
 
+// Create reactive state for workflow ID
+export const workflowID = ref<string | null>(null)
+
 /**
  * Initialize developer mode state
  * Reads settings from localStorage or other storage
@@ -45,6 +48,14 @@ function setupConsoleCommands() {
   window.__xb_dev_mode_status = () => {
     return isDeveloperMode.value
   }
+
+  window.__xb_set_workflow_id = (id: string) => {
+    if (isDeveloperMode.value) {
+      workflowID.value = id
+    } else {
+      console.warn('Developer mode is not enabled. Cannot set workflow ID.')
+    }
+  }
 }
 
 // Add TypeScript global type definitions
@@ -67,5 +78,11 @@ declare global {
      * @returns Current developer mode state
      */
     __xb_dev_mode_status: () => boolean
+
+    /**
+     * Set the workflow ID for debugging
+     * @param workflowID - The workflow ID to set
+     */
+    __xb_set_workflow_id: (workflowID: string) => void
   }
 }
