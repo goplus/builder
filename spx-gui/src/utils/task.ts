@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue'
-import { Cancelled } from './exception'
+import { Cancelled, capture } from './exception'
 
 export class TaskManager<P extends any[], T> {
   constructor(
@@ -37,7 +37,7 @@ export class TaskManager<P extends any[], T> {
       this.errorRef.value = null
     } catch (e) {
       if (e instanceof Cancelled) return
-      console.warn('Task failed:', e)
+      capture(e, 'Task failed')
       this.dataRef.value = null
       this.errorRef.value = e
     }

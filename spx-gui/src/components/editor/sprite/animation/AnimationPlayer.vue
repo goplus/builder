@@ -9,7 +9,7 @@
 import { onUnmounted, ref, watchEffect } from 'vue'
 import { registerPlayer as registerAudioPlayer } from '@/utils/player-registry'
 import { useActivated } from '@/utils/utils'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled, capture } from '@/utils/exception'
 import type { Costume } from '@/models/costume'
 import type { Sound } from '@/models/sound'
 import CostumesPlayer from '@/components/common/CostumesPlayer.vue'
@@ -96,8 +96,7 @@ watchEffect(async () => {
     if (audio != null) playAudio(audio, duration, signal)
   } catch (e) {
     ctrl.abort(e)
-    if (e instanceof Cancelled) return
-    console.warn('load and play animation failed:', e)
+    capture(e, 'load and play animation failed')
   }
 })
 </script>

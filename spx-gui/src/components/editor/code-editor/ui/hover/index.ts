@@ -2,6 +2,7 @@ import { debounce } from 'lodash'
 import { escapeHTML } from '@/utils/utils'
 import Emitter from '@/utils/emitter'
 import { TaskManager } from '@/utils/task'
+import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import {
   type Action,
   type BaseContext,
@@ -204,6 +205,13 @@ export class HoverController extends Emitter<{
 
     const hideHoverWithDebounce = debounce(() => this.hideHover(), 100)
 
+    const startCodeHoveredTransaction = defineIdleTransaction({
+      startSpanOptions: {
+        name: createCodeEditorOperationName('Code hovered'),
+        op: 'code-editor.hover'
+      }
+    })
+
     const handleMouseEnter = debounce((target: HoverTarget) => {
       if (target.type === 'other') {
         hideHoverWithDebounce()
@@ -218,6 +226,7 @@ export class HoverController extends Emitter<{
       // Do not trigger hover when input helper is active
       if (this.ui.inputHelperController.inputingSlot != null) return
 
+      startCodeHoveredTransaction()
       this.hoverMgr.start(position)
     }, 50)
 

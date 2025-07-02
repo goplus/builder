@@ -3,6 +3,7 @@
  */
 
 import { ref } from 'vue'
+import { captureException } from '@sentry/vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { useMessage } from '@/components/ui'
 
@@ -114,7 +115,7 @@ export function useMessageHandle<Args extends any[], T>(
         if (e instanceof Cancelled) return
         if (e instanceof Exception) {
           if (e.userMessage != null) m.error(t(e.userMessage))
-          console.warn(e)
+          capture(e)
           return
         }
         throw e
@@ -125,4 +126,16 @@ export function useMessageHandle<Args extends any[], T>(
     fn: fnWithMessage,
     isLoading
   }
+}
+
+/**
+ * `capture` is a utility function to capture exceptions.
+ * It will ignore `Cancelled` exceptions, and log others to console and Sentry.
+ * It is intended to be used in places where you handle exceptions but not throw them.
+ * If you do `console.warn` or `console.error` somewhere, perhaps you should use `capture` instead.
+ */
+export function capture(err: unknown, ctx?: unknown) {
+  if (err instanceof Cancelled) return
+  captureException(err)
+  if (process.env.NODE_ENV !== 'test') console.warn(ctx, err)
 }

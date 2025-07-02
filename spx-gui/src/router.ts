@@ -141,4 +141,5 @@ export const initRouter = (app: App) => {
     }
   })
   app.use(router)
+  return router
 }
