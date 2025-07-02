@@ -102,7 +102,6 @@ export function getFiles(fileCollection: FileCollection): Files {
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]
     const file = createFileWithUniversalUrl(universalUrl, filename(path))
-    setUniversalUrl(file, universalUrl) // TODO: move to `createFileWithUniversalUrl`?
     files[path] = file
   })
   return files
@@ -120,11 +119,13 @@ function getUniversalUrl(file: File): UniversalUrl | null {
 }
 
 export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
-  return new File(name, async () => {
+  const file = new File(name, async () => {
     const webUrl = await universalUrlToWebUrl(url)
     const resp = await fetch(webUrl)
     return resp.arrayBuffer()
   })
+  setUniversalUrl(file, url)
+  return file
 }
 
 export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
