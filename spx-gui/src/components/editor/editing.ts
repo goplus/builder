@@ -43,10 +43,7 @@ export class Saving {
   private async start() {
     timeout(1000, this.signal)
       .then(() => this.project.saveToLocalCache(this.localCacheKey, this.signal))
-      .catch((e) => {
-        if (e instanceof Cancelled) return
-        console.warn('Failed to save to local cache:', e)
-      })
+      .catch((e) => capture(e, 'Failed to save to local cache'))
     try {
       await timeout(1500, this.signal)
       await until(this.isOnline, this.signal) // Wait until online
