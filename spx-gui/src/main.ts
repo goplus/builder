@@ -1,5 +1,7 @@
 import './polyfills'
-import { createApp } from 'vue'
+import { createApp, type App as VueApp } from 'vue'
+import * as Sentry from '@sentry/vue'
+import type { Router } from 'vue-router'
 import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import dayjs from 'dayjs'
@@ -16,8 +18,7 @@ import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
-import { isLSPOperation } from './utils/lsp-tracing'
-import * as Sentry from '@sentry/browser'
+import { isCodeEditorOperation, isLSPOperation } from './utils/tracing'
 import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
 
 dayjs.extend(localizedFormat)
@@ -30,16 +31,27 @@ function initApiClient() {
   setTokenProvider(userStore.ensureAccessToken)
 }
 
-function initSentry() {
+function initSentry(app: VueApp<Element>, router: Router) {
   if (process.env.NODE_ENV === 'development') return
   Sentry.init({
+    app,
     dsn: sentryDsn,
-    integrations: [Sentry.browserTracingIntegration()],
+    integrations: [
+      Sentry.browserTracingIntegration({
+        router,
+        routeLabel: 'path',
+        shouldCreateSpanForRequest(url) {
+          // We use data URLs for inlineable file, see details in `src/models/common/cloud.ts`.
+          // Ignore them to avoid exceeding event size limits.
+          if (url.startsWith('data:')) return false
+          return true
+        }
+      })
+    ],
     environment: process.env.NODE_ENV,
     tracesSampler: (samplingContext) => {
       const { name, inheritOrSampleWith } = samplingContext
-      // Sample all checkout transactions
-      if (isLSPOperation(name)) {
+      if (isLSPOperation(name) || isCodeEditorOperation(name)) {
         return sentryLSPSampleRate
       }
       return inheritOrSampleWith(sentryTracesSampleRate)
@@ -50,10 +62,10 @@ function initSentry() {
 async function initApp() {
   const app = createApp(App)
 
-  initSentry()
   initUserStore(app)
+  const router = initRouter(app)
+  initSentry(app, router)
   initApiClient()
-  initRouter(app)
   initI18n(app)
   initDeveloperMode()
 

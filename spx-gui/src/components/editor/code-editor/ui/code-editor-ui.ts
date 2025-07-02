@@ -3,6 +3,7 @@ import { ref, shallowReactive, shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
+import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import type { Project } from '@/models/project'
 import { Sprite } from '@/models/sprite'
 import { Sound } from '@/models/sound'
@@ -647,6 +648,29 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           if (pos == null || this.newlyInsertedLineRef.value == null || this.isNewlyInserted(pos)) return
           this.newlyInsertedLineRef.value = null
         }
+      )
+    )
+
+    const startCodeUpdatedTransaction = defineIdleTransaction({
+      startSpanOptions: {
+        name: createCodeEditorOperationName('Code updated'),
+        op: 'code-editor.update'
+      },
+      mergeAdjacent: true
+    })
+
+    this.addDisposer(
+      watch(
+        () => this.activeTextDocument,
+        (td, _, onCleanup) => {
+          if (td == null) return
+          onCleanup(
+            td.on('didChangeContent', () => {
+              startCodeUpdatedTransaction()
+            })
+          )
+        },
+        { immediate: true }
       )
     )
 

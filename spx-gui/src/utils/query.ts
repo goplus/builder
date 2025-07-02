@@ -12,7 +12,7 @@ import {
 } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
-import { useAction, type ActionException, Cancelled } from './exception'
+import { useAction, type ActionException, Cancelled, capture } from './exception'
 import { until } from './utils'
 import { ProgressReporter, type Progress, ProgressCollector } from './progress'
 
@@ -79,7 +79,7 @@ export function useQuery<T>(
       },
       (e) => {
         if (e instanceof Cancelled) return
-        if (process.env.NODE_ENV !== 'test') console.warn(e)
+        capture(e, 'useQuery error')
         error.value = e
         isLoading.value = false
       }

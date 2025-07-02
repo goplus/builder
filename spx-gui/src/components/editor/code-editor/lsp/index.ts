@@ -1,11 +1,11 @@
 import { shallowRef, watchEffect } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
-import * as Sentry from '@sentry/browser'
+import * as Sentry from '@sentry/vue'
 import { Cancelled } from '@/utils/exception'
 import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import { timeout, until, untilNotNull } from '@/utils/utils'
 import { extname } from '@/utils/path'
-import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/lsp-tracing'
+import { createLSPOperationName, createLSPServerOperationName, type LSPTraceOptions } from '@/utils/tracing'
 import type { Project } from '@/models/project'
 import {
   fromLSPRange,
@@ -66,38 +66,32 @@ async function tracedRequest<T>(
   options?: LSPTraceOptions
 ): Promise<T> {
   const opName = createLSPOperationName(method, options)
-
-  return Sentry.startSpan(
-    {
-      name: opName,
-      op: 'lsp.request',
-      attributes: {
-        'lsp.method': method,
-        ...(options?.command ? { 'lsp.command': options.command } : {})
-      }
-    },
-    async (span) => {
-      const startTime = performance.now()
-
-      try {
-        const result = await operation(span)
-
-        // Record performance metrics
-        const duration = performance.now() - startTime
-        span.setAttribute('duration_ms', Math.round(duration))
-        span.setAttribute('success', true)
-
+  // We construct an inactive span to avoid inrelevant child spans, e.g., concurrent HTTP requests.
+  const span = Sentry.startInactiveSpan({
+    name: opName,
+    op: 'lsp.request',
+    attributes: {
+      'lsp.method': method,
+      ...(options?.command ? { 'lsp.command': options.command } : {})
+    }
+  })
+  return operation(span)
+    .then(
+      (result) => {
+        span.setStatus({ code: 1 }) // OK
         return result
-      } catch (error) {
-        // Record error information
-        span.setAttribute('success', false)
-        Sentry.captureException(error)
-
-        // Re-throw to maintain original behavior
+      },
+      (error) => {
+        span.setStatus({
+          code: 2, // ERROR
+          message: error instanceof Cancelled ? 'cancelled' : undefined
+        })
         throw error
       }
-    }
-  )
+    )
+    .finally(() => {
+      span.end()
+    })
 }
 
 export type RequestContext = {
@@ -369,25 +363,25 @@ export class SpxLSPClient extends Disposable {
     const opName = createLSPServerOperationName(method, { command })
 
     // Create a child span for WASM execution
-    Sentry.withActiveSpan(parentSpan, () => {
-      Sentry.startSpan(
-        {
-          name: opName,
-          op: 'lsp.server.execution',
-          attributes: {
-            'lsp.method': method,
-            ...(command ? { 'lsp.command': command } : {})
-          },
-          startTime: startTimestamp
-        },
-        (span) => {
-          span.setAttribute('queue_time_ms', startTimestamp - initTimestamp)
-          span.setAttribute('duration_ms', endTimestamp - startTimestamp)
-          span.setAttribute('success', success)
-          span.end(endTimestamp)
-        }
-      )
+    const span = Sentry.startInactiveSpan({
+      name: opName,
+      op: 'lsp.server.execution',
+      attributes: {
+        'lsp.method': method,
+        queue_time_ms: startTimestamp - initTimestamp,
+        duration_ms: endTimestamp - startTimestamp,
+        success: success,
+        ...(command ? { 'lsp.command': command } : {})
+      },
+      startTime: startTimestamp,
+      parentSpan
     })
+    // `parentSpanIsAlwaysRootSpan` is set to `true` by default in browser, the parent span we passed to
+    // `Sentry.startInactiveSpan` is not used, see details in https://github.com/getsentry/sentry-javascript/issues/16769 .
+    // As a workaround, here we set the `_parentSpanId` property manually to ensure that the parent span is correctly linked in Sentry.
+    // TODO: remove this workaround when new version of Sentry is released with this issue fixed.
+    ;(span as any)._parentSpanId = parentSpan.spanContext().spanId
+    span.end(endTimestamp)
   }
 
   // Higher-level APIs

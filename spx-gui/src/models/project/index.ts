@@ -24,7 +24,7 @@ import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled, capture } from '@/utils/exception'
 import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
@@ -553,7 +553,7 @@ export class Project extends Disposable {
         } else {
           retryAutoSaveToCloud()
           await this.saveToLocalCache(localCacheKey) // prevent data loss
-          console.error('failed to auto save to cloud', e)
+          capture(e, 'failed to auto save to cloud')
         }
         return
       }

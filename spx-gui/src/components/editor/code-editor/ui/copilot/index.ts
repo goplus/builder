@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
-import { ActionException, Cancelled } from '@/utils/exception'
+import { ActionException, Cancelled, capture } from '@/utils/exception'
 import {
   type BaseContext,
   type DefinitionIdentifier,
@@ -249,6 +249,7 @@ export class CopilotController extends Disposable {
       }
       currentRound.state = RoundState.Failed
       currentRound.error = new ActionException(e, { en: 'Failed to get answer', zh: 'Copilot 出错了' })
+      capture(currentRound.error)
     }
   }
 
