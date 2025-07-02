@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/yap"
@@ -147,59 +148,59 @@ type put_user struct {
 	yap.Handler
 	*AppV2
 }
-//line cmd/spx-backend/main.yap:26
+//line cmd/spx-backend/main.yap:27
 func (this *AppV2) MainEntry() {
-//line cmd/spx-backend/main.yap:26:1
+//line cmd/spx-backend/main.yap:27:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/main.yap:28:1
-	this.ctrl, this.err = controller.New(context.Background())
 //line cmd/spx-backend/main.yap:29:1
-	if this.err != nil {
+	this.ctrl, this.err = controller.New(context.Background())
 //line cmd/spx-backend/main.yap:30:1
+	if this.err != nil {
+//line cmd/spx-backend/main.yap:31:1
 		logger.Fatalln("Failed to create a new controller:", this.err)
 	}
-//line cmd/spx-backend/main.yap:33:1
-	port := os.Getenv("PORT")
 //line cmd/spx-backend/main.yap:34:1
-	if port == "" {
+	port := os.Getenv("PORT")
 //line cmd/spx-backend/main.yap:35:1
+	if port == "" {
+//line cmd/spx-backend/main.yap:36:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/main.yap:37:1
+//line cmd/spx-backend/main.yap:38:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/main.yap:39:1
-	h := this.Handler(NewUserMiddleware(this.ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
 //line cmd/spx-backend/main.yap:40:1
-	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:42:1
-	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-//line cmd/spx-backend/main.yap:43:1
-	defer stop()
-//line cmd/spx-backend/main.yap:44:1
-	var serverErr error
+	h := this.Handler(authn.Middleware(this.ctrl.Authenticator()), NewReqIDMiddleware(), NewCORSMiddleware())
 //line cmd/spx-backend/main.yap:45:1
-	go func() {
-//line cmd/spx-backend/main.yap:46:1
-		serverErr = server.ListenAndServe()
+	server := &http.Server{Addr: port, Handler: h}
 //line cmd/spx-backend/main.yap:47:1
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+//line cmd/spx-backend/main.yap:48:1
+	defer stop()
+//line cmd/spx-backend/main.yap:49:1
+	var serverErr error
+//line cmd/spx-backend/main.yap:50:1
+	go func() {
+//line cmd/spx-backend/main.yap:51:1
+		serverErr = server.ListenAndServe()
+//line cmd/spx-backend/main.yap:52:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:49:1
+//line cmd/spx-backend/main.yap:54:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:50:1
+//line cmd/spx-backend/main.yap:55:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:51:1
+//line cmd/spx-backend/main.yap:56:1
 		logger.Fatalln("Server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:54:1
+//line cmd/spx-backend/main.yap:59:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:55:1
+//line cmd/spx-backend/main.yap:60:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:56:1
+//line cmd/spx-backend/main.yap:61:1
 	if
-//line cmd/spx-backend/main.yap:56:1
+//line cmd/spx-backend/main.yap:61:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:57:1
+//line cmd/spx-backend/main.yap:62:1
 		logger.Fatalln("Failed to gracefully shut down:", err)
 	}
 }
@@ -244,7 +245,7 @@ func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/delete_asset_#id.yap:7:1
 	if
 //line cmd/spx-backend/delete_asset_#id.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_asset_#id.yap:8:1
 		return
 	}
@@ -275,7 +276,7 @@ func (this *delete_project_owner_name) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
 	if
 //line cmd/spx-backend/delete_project_#owner_#name.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_project_#owner_#name.yap:12:1
 		return
 	}
@@ -308,7 +309,7 @@ func (this *delete_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
 	if
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:12:1
 		return
 	}
@@ -341,7 +342,7 @@ func (this *delete_user_username_following) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/delete_user_#username_following.yap:7:1
 	if
 //line cmd/spx-backend/delete_user_#username_following.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_user_#username_following.yap:8:1
 		return
 	}
@@ -409,14 +410,14 @@ func (this *get_assets_list) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/get_assets_list.yap:19:1
 	case "":
 //line cmd/spx-backend/get_assets_list.yap:20:1
-		mAuthedUser, isAuthed := ensureAuthedUser(ctx)
+		mUser, ok := ensureAuthenticatedUser(ctx)
 //line cmd/spx-backend/get_assets_list.yap:21:1
-		if !isAuthed {
+		if !ok {
 //line cmd/spx-backend/get_assets_list.yap:22:1
 			return
 		}
 //line cmd/spx-backend/get_assets_list.yap:24:1
-		params.Owner = &mAuthedUser.Username
+		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_assets_list.yap:25:1
 	case "*":
 //line cmd/spx-backend/get_assets_list.yap:26:1
@@ -631,7 +632,7 @@ func (this *get_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:11:1
 	if
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:12:1
 		return
 	}
@@ -676,14 +677,14 @@ func (this *get_projects_list) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/get_projects_list.yap:18:1
 	case "":
 //line cmd/spx-backend/get_projects_list.yap:19:1
-		mAuthedUser, isAuthed := ensureAuthedUser(ctx)
+		mUser, ok := ensureAuthenticatedUser(ctx)
 //line cmd/spx-backend/get_projects_list.yap:20:1
-		if !isAuthed {
+		if !ok {
 //line cmd/spx-backend/get_projects_list.yap:21:1
 			return
 		}
 //line cmd/spx-backend/get_projects_list.yap:23:1
-		params.Owner = &mAuthedUser.Username
+		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_projects_list.yap:24:1
 	case "*":
 //line cmd/spx-backend/get_projects_list.yap:25:1
@@ -872,7 +873,7 @@ func (this *get_user_username_following) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/get_user_#username_following.yap:7:1
 	if
 //line cmd/spx-backend/get_user_#username_following.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/get_user_#username_following.yap:8:1
 		return
 	}
@@ -976,7 +977,7 @@ func (this *get_util_upinfo) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/get_util_upinfo.yap:7:1
 	if
 //line cmd/spx-backend/get_util_upinfo.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/get_util_upinfo.yap:8:1
 		return
 	}
@@ -1047,7 +1048,7 @@ func (this *post_aigc_matting) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_aigc_matting.yap:11:1
 	if
 //line cmd/spx-backend/post_aigc_matting.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_aigc_matting.yap:12:1
 		return
 	}
@@ -1094,7 +1095,7 @@ func (this *post_asset) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_asset.yap:11:1
 	if
 //line cmd/spx-backend/post_asset.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_asset.yap:12:1
 		return
 	}
@@ -1141,7 +1142,7 @@ func (this *post_copilot_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_message.yap:11:1
 	if
 //line cmd/spx-backend/post_copilot_message.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_copilot_message.yap:12:1
 		return
 	}
@@ -1188,7 +1189,7 @@ func (this *post_copilot_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_stream_message.yap:11:1
 	if
 //line cmd/spx-backend/post_copilot_stream_message.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_copilot_stream_message.yap:12:1
 		return
 	}
@@ -1239,7 +1240,7 @@ func (this *post_project_release) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_project-release.yap:11:1
 	if
 //line cmd/spx-backend/post_project-release.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_project-release.yap:12:1
 		return
 	}
@@ -1286,7 +1287,7 @@ func (this *post_project) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_project.yap:11:1
 	if
 //line cmd/spx-backend/post_project.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_project.yap:12:1
 		return
 	}
@@ -1333,7 +1334,7 @@ func (this *post_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
 	if
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:12:1
 		return
 	}
@@ -1366,7 +1367,7 @@ func (this *post_project_owner_name_view) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
 	if
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:12:1
 		return
 	}
@@ -1399,7 +1400,7 @@ func (this *post_user_username_following) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_#username_following.yap:7:1
 	if
 //line cmd/spx-backend/post_user_#username_following.yap:7:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_user_#username_following.yap:8:1
 		return
 	}
@@ -1470,7 +1471,7 @@ func (this *post_workflow_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_workflow_stream_message.yap:11:1
 	if
 //line cmd/spx-backend/post_workflow_stream_message.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_workflow_stream_message.yap:12:1
 		return
 	}
@@ -1521,7 +1522,7 @@ func (this *put_asset_id) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/put_asset_#id.yap:11:1
 	if
 //line cmd/spx-backend/put_asset_#id.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/put_asset_#id.yap:12:1
 		return
 	}
@@ -1568,7 +1569,7 @@ func (this *put_project_owner_name) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/put_project_#owner_#name.yap:11:1
 	if
 //line cmd/spx-backend/put_project_#owner_#name.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/put_project_#owner_#name.yap:12:1
 		return
 	}
@@ -1617,12 +1618,12 @@ func (this *put_user) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/put_user.yap:11:1
 	if
 //line cmd/spx-backend/put_user.yap:11:1
-	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/put_user.yap:12:1
 		return
 	}
 //line cmd/spx-backend/put_user.yap:15:1
-	params := &controller.UpdateAuthedUserParams{}
+	params := &controller.UpdateAuthenticatedUserParams{}
 //line cmd/spx-backend/put_user.yap:16:1
 	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/put_user.yap:17:1
@@ -1638,7 +1639,7 @@ func (this *put_user) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/put_user.yap:24:1
-	user, err := this.ctrl.UpdateAuthedUser(ctx.Context(), params)
+	user, err := this.ctrl.UpdateAuthenticatedUser(ctx.Context(), params)
 //line cmd/spx-backend/put_user.yap:25:1
 	if err != nil {
 //line cmd/spx-backend/put_user.yap:26:1

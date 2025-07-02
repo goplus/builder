@@ -11,7 +11,7 @@ ctx := &Context
 
 // FIXME: Uncomment the following line to ensure the user is authenticated once
 // https://github.com/goplus/builder/issues/1673 is fixed.
-// if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+// if _, ok := ensureAuthenticatedUser(ctx); !ok {
 // 	return
 // }
 

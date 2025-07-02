@@ -87,5 +87,3 @@ func TestNewReqIDMiddleware(t *testing.T) {
 		assert.Equal(t, "foobar", string(respBody))
 	})
 }
-
-// TODO: Add tests for [NewUserMiddleware].

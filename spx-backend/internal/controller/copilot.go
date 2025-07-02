@@ -31,7 +31,7 @@ func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
 
 type GenerateMessageResult copilot.Message
 
-// GenerateStream generates response message based on input messages.
+// GenerateMessageStream generates response message based on input messages.
 func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *GenerateMessageParams) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 

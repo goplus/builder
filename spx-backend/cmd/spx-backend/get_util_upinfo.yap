@@ -4,7 +4,7 @@
 //   GET /util/upinfo
 
 ctx := &Context
-if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
