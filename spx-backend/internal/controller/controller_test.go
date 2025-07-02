@@ -7,7 +7,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/authn"
-	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
@@ -16,13 +16,14 @@ import (
 
 func setTestEnv(t *testing.T) {
 	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
-	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
 
 	t.Setenv("KODO_AK", "test-kodo-ak")
 	t.Setenv("KODO_SK", "test-kodo-sk")
 	t.Setenv("KODO_BUCKET", "builder")
 	t.Setenv("KODO_BUCKET_REGION", "earth")
 	t.Setenv("KODO_BASE_URL", "https://kodo.example.com")
+
+	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
 }
 
 const testUserToken = "test-user-token"
@@ -53,29 +54,27 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 	db, dbMock, closeDB, err := modeltest.NewMockDB()
 	require.NoError(t, err)
 
-	logger := log.GetLogger()
-	kodoConfig := newKodoConfig(logger)
-	authenticator := &mockAuthenticator{}
-	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
+	cfg := &config.Config{
+		Kodo: config.KodoConfig{
+			AccessKey:    "test-kodo-ak",
+			SecretKey:    "test-kodo-sk",
+			Bucket:       "builder",
+			BucketRegion: "earth",
+			BaseURL:      "https://kodo.example.com",
+		},
+		AIGC: config.AIGCConfig{
+			Endpoint: "https://aigc.example.com",
+		},
+	}
+
+	kodoClient := newKodoClient(cfg.Kodo)
+	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
 
 	return &Controller{
-		db:            db,
-		kodo:          kodoConfig,
-		authenticator: authenticator,
-		aigcClient:    aigcClient,
+		db:   db,
+		kodo: kodoClient,
+		aigc: aigcClient,
 	}, dbMock, closeDB
-}
-
-func TestEnvOrDefault(t *testing.T) {
-	t.Setenv("ENV_VAR", "custom")
-
-	t.Run("Valid", func(t *testing.T) {
-		assert.Equal(t, "custom", envOrDefault("ENV_VAR", "default"))
-	})
-
-	t.Run("Invalid", func(t *testing.T) {
-		assert.Equal(t, "default", envOrDefault("INVALID_ENV_VAR", "default"))
-	})
 }
 
 func TestSortOrder(t *testing.T) {

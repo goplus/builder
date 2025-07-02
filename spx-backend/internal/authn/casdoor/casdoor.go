@@ -7,19 +7,11 @@ import (
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
 )
 
-// Config is the configuration for the Casdoor authenticator.
-type Config struct {
-	Endpoint         string
-	ClientID         string
-	ClientSecret     string
-	Certificate      string
-	OrganizationName string
-	ApplicationName  string
-}
 
 // client defines the interface for Casdoor client operations.
 type client interface {
@@ -34,7 +26,7 @@ type authenticator struct {
 }
 
 // New creates a new Casdoor authenticator.
-func New(cfg Config, db *gorm.DB) authn.Authenticator {
+func New(db *gorm.DB, cfg config.CasdoorConfig) authn.Authenticator {
 	client := casdoorsdk.NewClientWithConf(&casdoorsdk.AuthConfig{
 		Endpoint:         cfg.Endpoint,
 		ClientId:         cfg.ClientID,
