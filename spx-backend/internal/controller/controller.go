@@ -4,26 +4,20 @@ import (
 	"context"
 	"errors"
 	_ "image/png"
-	"io/fs"
-	"os"
 	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
-	"github.com/goplus/builder/spx-backend/internal/authn"
-	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
+	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
-	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
-	"github.com/joho/godotenv"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
-	qiniuLog "github.com/qiniu/x/log"
 	"gorm.io/gorm"
 )
 
@@ -32,95 +26,52 @@ var (
 	ErrNotExist   = errors.New("not exist")
 )
 
-// contextKey is a value for use with [context.WithValue]. It's used as a
-// pointer so it fits in an interface{} without allocation.
-type contextKey struct {
-	name string
-}
-
 // Controller is the controller for the service.
 type Controller struct {
 	db            *gorm.DB
-	kodo          *kodoConfig
-	authenticator authn.Authenticator
-	aigcClient    *aigc.AigcClient
+	kodo          *kodoClient
 	copilot       *copilot.Copilot
 	workflow      *workflow.Workflow
 	aiInteraction *aiinteraction.AIInteraction
+	aigc          *aigc.AigcClient
 }
 
 // New creates a new controller.
-func New(ctx context.Context) (*Controller, error) {
-	logger := log.GetLogger()
+func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, error) {
+	kodoClient := newKodoClient(cfg.Kodo)
 
-	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		logger.Printf("failed to load env: %v", err)
-		return nil, err
-	}
-
-	dsn := mustEnv(logger, "GOP_SPX_DSN")
-	db, err := model.OpenDB(ctx, dsn, 0, 0)
-	if err != nil {
-		logger.Printf("failed to open database: %v", err)
-		return nil, err
-	}
-	// TODO: Configure connection pool and timeouts.
-
-	kodoConfig := newKodoConfig(logger)
-	authenticator := casdoor.New(casdoor.Config{
-		Endpoint:         mustEnv(logger, "GOP_CASDOOR_ENDPOINT"),
-		ClientID:         mustEnv(logger, "GOP_CASDOOR_CLIENTID"),
-		ClientSecret:     mustEnv(logger, "GOP_CASDOOR_CLIENTSECRET"),
-		Certificate:      mustEnv(logger, "GOP_CASDOOR_CERTIFICATE"),
-		OrganizationName: mustEnv(logger, "GOP_CASDOOR_ORGANIZATIONNAME"),
-		ApplicationName:  mustEnv(logger, "GOP_CASDOOR_APPLICATIONNAME"),
-	}, db)
-	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
-
-	openaiAPIKey := mustEnv(logger, "OPENAI_API_KEY")
-	openaiAPIEndpoint := mustEnv(logger, "OPENAI_API_ENDPOINT")
-	openaiModelID := mustEnv(logger, "OPENAI_MODEL_ID")
 	openaiClient := openai.NewClient(
-		option.WithAPIKey(openaiAPIKey),
-		option.WithBaseURL(openaiAPIEndpoint),
+		option.WithAPIKey(cfg.OpenAI.APIKey),
+		option.WithBaseURL(cfg.OpenAI.APIEndpoint),
 	)
 
-	openaiPremiumAPIKey := envOrDefault("OPENAI_PREMIUM_API_KEY", openaiAPIKey)
-	openaiPremiumAPIEndpoint := envOrDefault("OPENAI_PREMIUM_API_ENDPOINT", openaiAPIEndpoint)
-	openaiPremiumModelID := envOrDefault("OPENAI_PREMIUM_MODEL_ID", openaiModelID)
 	openaiPremiumClient := openai.NewClient(
-		option.WithAPIKey(openaiPremiumAPIKey),
-		option.WithBaseURL(openaiPremiumAPIEndpoint),
+		option.WithAPIKey(cfg.OpenAI.GetPremiumAPIKey()),
+		option.WithBaseURL(cfg.OpenAI.GetPremiumAPIEndpoint()),
 	)
 
-	cpt, err := copilot.New(openaiPremiumClient, openaiPremiumModelID)
+	cpt, err := copilot.New(openaiPremiumClient, cfg.OpenAI.GetPremiumModelID())
 	if err != nil {
-		logger.Printf("failed to create copilot: %v", err)
 		return nil, err
 	}
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
 
-	aiInteraction, err := aiinteraction.New(openaiClient, openaiModelID)
+	aiInteraction, err := aiinteraction.New(openaiClient, cfg.OpenAI.ModelID)
 	if err != nil {
-		logger.Printf("failed to create ai interaction service: %v", err)
 		return nil, err
 	}
 
+	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
+
 	return &Controller{
 		db:            db,
-		kodo:          kodoConfig,
-		authenticator: authenticator,
-		aigcClient:    aigcClient,
+		kodo:          kodoClient,
 		copilot:       cpt,
 		workflow:      stdflow,
 		aiInteraction: aiInteraction,
+		aigc:          aigcClient,
 	}, nil
-}
-
-// Authenticator returns the authenticator.
-func (ctrl *Controller) Authenticator() authn.Authenticator {
-	return ctrl.authenticator
 }
 
 func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {
@@ -226,43 +177,25 @@ func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
 	return workflow.NewLLMNode(copit, system, true)
 }
 
-// kodoConfig is the configuration for Kodo.
-type kodoConfig struct {
+// kodoClient is the client for Kodo.
+type kodoClient struct {
 	cred         *qiniuAuth.Credentials
 	bucket       string
 	bucketRegion string
 	baseUrl      string
 }
 
-// newKodoConfig creates a new [kodoConfig].
-func newKodoConfig(logger *qiniuLog.Logger) *kodoConfig {
-	return &kodoConfig{
+// newKodoClient creates a new [kodoClient].
+func newKodoClient(cfg config.KodoConfig) *kodoClient {
+	return &kodoClient{
 		cred: qiniuAuth.New(
-			mustEnv(logger, "KODO_AK"),
-			mustEnv(logger, "KODO_SK"),
+			cfg.AccessKey,
+			cfg.SecretKey,
 		),
-		bucket:       mustEnv(logger, "KODO_BUCKET"),
-		bucketRegion: mustEnv(logger, "KODO_BUCKET_REGION"),
-		baseUrl:      mustEnv(logger, "KODO_BASE_URL"),
+		bucket:       cfg.Bucket,
+		bucketRegion: cfg.BucketRegion,
+		baseUrl:      cfg.BaseURL,
 	}
-}
-
-// mustEnv gets the environment variable value or exits the program.
-func mustEnv(logger *qiniuLog.Logger, key string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		logger.Fatalf("Missing required environment variable: %s", key)
-	}
-	return value
-}
-
-// envOrDefault gets the environment variable value or returns the default value.
-func envOrDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
 
 // ModelDTO is the data transfer object for models.

@@ -68,7 +68,7 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 	var aigcResult struct {
 		ImageUrl string `json:"image_url"`
 	}
-	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/matting", &aigcParams, &aigcResult)
+	err := ctrl.aigc.Call(ctx, http.MethodPost, "/matting", &aigcParams, &aigcResult)
 	if err != nil {
 		logger.Printf("failed to call: %v", err)
 		return nil, err

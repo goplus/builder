@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
@@ -50,8 +51,8 @@ func (mc *mockClient) GetUser(name string) (*casdoorsdk.User, error) {
 	}, nil
 }
 
-func newTestConfig() Config {
-	return Config{
+func newTestConfig() config.CasdoorConfig {
+	return config.CasdoorConfig{
 		Endpoint:         "https://example.com",
 		ClientID:         "test-client-id",
 		ClientSecret:     "test-client-secret",
@@ -89,7 +90,7 @@ func setupTestAuthenticator(
 	client := newMockClient()
 	client.parseJwtTokenFunc = parseTokenFunc
 	client.getUserFunc = getUserFunc
-	auth := New(newTestConfig(), db).(*authenticator)
+	auth := New(db, newTestConfig()).(*authenticator)
 	auth.client = client
 	return auth
 }
@@ -128,7 +129,7 @@ func TestNew(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		auth := New(newTestConfig(), db)
+		auth := New(db, newTestConfig())
 
 		assert.NotNil(t, auth)
 		assert.IsType(t, &authenticator{}, auth)
