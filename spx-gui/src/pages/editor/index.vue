@@ -48,7 +48,7 @@ import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 import { Editing, EditingMode } from '@/components/editor/editing'
 
 const props = defineProps<{
-  ownerName?: string
+  ownerName: string
   projectName: string
 }>()
 
@@ -97,14 +97,9 @@ const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: strin
 
 const projectQueryRet = useQuery(
   async (ctx) => {
-    let ownerName = props.ownerName
-    if (ownerName == null) {
-      if (userInfo.value == null) throw new Error('User not signed in') // This should not happen as the route is protected
-      ownerName = userInfo.value.name
-    }
     // We need to access deps (`ownerName`, `projectName`) synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const project = await loadProject(ownerName, props.projectName, ctx.signal, ctx.reporter)
+    const project = await loadProject(props.ownerName, props.projectName, ctx.signal, ctx.reporter)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     return project
   },
@@ -199,7 +194,7 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
       await clear(LOCAL_CACHE_KEY)
       localProject = null
     } else {
-      openProject(localProject.name!)
+      openProject(localProject.owner!, localProject.name!)
       throw new Cancelled('Open another project')
     }
   }
@@ -301,8 +296,8 @@ onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
-function openProject(projectName: string) {
-  router.push(getProjectEditorRoute(projectName))
+function openProject(owner: string, name: string) {
+  router.push(getProjectEditorRoute(owner, name))
 }
 </script>
 

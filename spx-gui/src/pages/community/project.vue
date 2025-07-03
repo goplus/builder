@@ -12,7 +12,7 @@ import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, useUserStore } from '@/stores/user'
-import { getProjectEditorRoute, getUserPageRoute } from '@/router'
+import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
   UILoading,
@@ -163,7 +163,7 @@ const handleRerun = useMessageHandle(async () => projectRunnerRef.value?.rerun()
 
 const handleEdit = useMessageHandle(
   async () => {
-    const projectEditorRoute = getProjectEditorRoute(props.name)
+    const projectEditorRoute = getProjectEditorRoute(props.owner, props.name)
     await router.push(projectEditorRoute)
   },
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
@@ -208,7 +208,7 @@ const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
     const name = await createProject(stringifyRemixSource(props.owner, props.name))
-    router.push(getProjectEditorRoute(name))
+    router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
@@ -247,7 +247,7 @@ const handleUnpublish = useMessageHandle(
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
   // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
-  async () => router.push(getProjectEditorRoute(props.name, true)),
+  async () => router.push(getOwnProjectEditorRoute(props.name, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 

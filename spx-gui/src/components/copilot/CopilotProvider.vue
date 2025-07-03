@@ -98,7 +98,7 @@ import { useUserStore } from '@/stores/user'
 import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
-import { getProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -209,7 +209,7 @@ async function createProject(options: CreateProjectOptions) {
   try {
     await project.saveToCloud()
 
-    const projectRoute = getProjectEditorRoute(projectName)
+    const projectRoute = getOwnProjectEditorRoute(projectName)
 
     router.push(projectRoute)
     await waitToolRegister()
