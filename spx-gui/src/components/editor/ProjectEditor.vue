@@ -25,6 +25,10 @@ import { useEditorCtx } from './EditorContextProvider.vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
 import {
+  addSpriteFromAssetArgsSchema,
+  addSpriteFromAssetToolDescription,
+  searchSpriteFromAssetArgsSchema,
+  searchSpriteFromAssetToolDescription,
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
   addStageBackdropFromCanvasToolDescription,
@@ -39,6 +43,8 @@ import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asse
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
 import { Monitor } from '@/models/widget/monitor'
+import { getAsset, listAsset, AssetType, Visibility } from '@/apis/asset'
+import { asset2Sprite } from '@/models/common/asset'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useCopilotCtx()
@@ -47,6 +53,8 @@ const project = computed(() => editorCtx.project)
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
 type AddMonitorOptions = z.infer<typeof AddMonitorArgsSchema>
+type AddSpriteFromAssetOptions = z.infer<typeof addSpriteFromAssetArgsSchema>
+type SearchSpriteFromAssetOptions = z.infer<typeof searchSpriteFromAssetArgsSchema>
 
 async function listMonitors() {
   const monitors = project.value.stage.widgets.filter((widget) => widget instanceof Monitor)
@@ -94,6 +102,55 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   }
 }
 
+/**
+ * Adds a sprite to the project from an existing asset library.
+ *
+ * @param {AddSpriteFromAssetOptions} args - The options for adding the sprite.
+ * @param {string} args.assetId - The ID of the asset to convert into a sprite.
+ * @returns {Promise<{success: boolean, message: string}>} A promise resolving to an object indicating success and a message.
+ */
+async function addSpriteFromAsset(args: AddSpriteFromAssetOptions) {
+  const asset = await getAsset(args.assetId)
+  const sprite = await asset2Sprite(asset)
+  project.value.addSprite(sprite)
+  await sprite.autoFit()
+  selectAsset(project.value, sprite)
+  project.value.saveToCloud()
+  return {
+    success: true,
+    message: `Successfully added assetID "${args.assetId}" to project "${project.value.name}"`
+  }
+}
+
+/**
+ * Searches for sprites in the asset library based on a keyword.
+ *
+ * @param {SearchSpriteFromAssetOptions} args - The options for searching sprites.
+ * @param {string} args.keyword - The keyword to search for.
+ * @returns {Promise<{success: boolean, message: string, sprites: Array<{id: string, displayName: string}>}>} A promise resolving to an object indicating success, a message, and the list of found sprites.
+ */
+async function searchSpriteFromAsset(args: SearchSpriteFromAssetOptions) {
+  const assets = await listAsset({
+    pageSize: 3,
+    pageIndex: 1,
+    type: AssetType.Sprite,
+    keyword: args.keyword,
+    orderBy: 'displayName',
+    owner: '*',
+    visibility: Visibility.Public
+  })
+
+  const sprites = assets.data.map((asset) => ({
+    id: asset.id,
+    displayName: asset.displayName
+  }))
+  return {
+    success: true,
+    message: `Successfully listed sprites matching "${args.keyword}" in project "${project.value.name}"`,
+    sprites: sprites
+  }
+}
+
 async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
   project.value.stage.addBackdrop(backdrop)
@@ -121,6 +178,36 @@ function registerProjectTools() {
           },
           execute: async (args: AddSpriteFromCanvaOptions) => {
             return addSpriteFromCanvas(args)
+          }
+        }
+      },
+      {
+        description: addSpriteFromAssetToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = addSpriteFromAssetArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${addSpriteFromAssetToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: AddSpriteFromAssetOptions) => {
+            return addSpriteFromAsset(args)
+          }
+        }
+      },
+      {
+        description: searchSpriteFromAssetToolDescription,
+        implementation: {
+          validate: (args) => {
+            const result = searchSpriteFromAssetArgsSchema.safeParse(args)
+            if (!result.success) {
+              throw new Error(`Invalid arguments for ${searchSpriteFromAssetToolDescription.name}: ${result.error}`)
+            }
+            return result.data
+          },
+          execute: async (args: SearchSpriteFromAssetOptions) => {
+            return searchSpriteFromAsset(args)
           }
         }
       },
