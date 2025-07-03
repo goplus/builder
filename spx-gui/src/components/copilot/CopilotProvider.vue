@@ -98,9 +98,8 @@ import { useUserStore } from '@/stores/user'
 import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
-import { getProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/router'
 import { Project } from '@/models/project'
-import { genAssetFromCanvas } from '@/models/common/asset'
 import McpDebugger from './mcp/McpDebugger.vue'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
@@ -208,11 +207,9 @@ async function createProject(options: CreateProjectOptions) {
   project.setVisibility(Visibility.Private)
 
   try {
-    const thumbnail = await genAssetFromCanvas('stage.png', 800, 600, '#000000')
-    project.setThumbnail(thumbnail)
     await project.saveToCloud()
 
-    const projectRoute = getProjectEditorRoute(projectName)
+    const projectRoute = getOwnProjectEditorRoute(projectName)
 
     router.push(projectRoute)
     await waitToolRegister()

@@ -7,7 +7,7 @@ import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
-import { getProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/router'
 import { useUser, useUserStore } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
@@ -77,7 +77,7 @@ const handleNewProject = useMessageHandle(
   async () => {
     await ensureSignedIn()
     const name = await createProject()
-    router.push(getProjectEditorRoute(name))
+    router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn

@@ -5,6 +5,7 @@ import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
 import { packageSpx } from '@/utils/spx'
+import { hashFiles } from '@/models/common/hash'
 import { RuntimeOutputKind, type Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
@@ -347,9 +348,10 @@ class DiagnosticsProvider
     return { start: lineStartPos, end: lineEndPos }
   }
 
-  private getRuntimeDiagnostics(ctx: DiagnosticsContext) {
+  private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
     const { outputs, filesHash } = this.runtime
-    if (filesHash !== this.project.filesHash) return []
+    const currentFilesHash = await hashFiles(this.project.exportGameFiles())
+    if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
     for (const output of outputs) {
       if (output.kind !== RuntimeOutputKind.Error) continue
@@ -413,7 +415,7 @@ class DiagnosticsProvider
   }
 
   async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    return [...this.getRuntimeDiagnostics(ctx), ...(await this.getLSDiagnostics(ctx))]
+    return [...(await this.getRuntimeDiagnostics(ctx)), ...(await this.getLSDiagnostics(ctx))]
   }
 }
 

@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { getProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/router'
 import { UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useCreateProject } from '@/components/project'
@@ -21,7 +21,7 @@ const handleNewProject = useMessageHandle(
   async () => {
     await ensureSignedIn()
     const name = await createProject()
-    router.push(getProjectEditorRoute(name))
+    router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn

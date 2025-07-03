@@ -1,7 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <EditorNavbar :project="project" />
+      <EditorNavbar :project="project" :editing="editingQueryRet.data.value" />
     </header>
     <main v-if="userInfo" class="editor-main">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -10,7 +10,13 @@
       <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else :project="project!" :runtime="runtimeQueryRet.data.value!" :user-info="userInfo">
+      <EditorContextProvider
+        v-else
+        :project="project!"
+        :user-info="userInfo"
+        :runtime="runtimeQueryRet.data.value!"
+        :editing="editingQueryRet.data.value!"
+      >
         <ProjectEditor />
       </EditorContextProvider>
     </main>
@@ -18,10 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, watch, onMounted, onUnmounted, computed } from 'vue'
+import { watchEffect, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { AutoSaveMode, Project } from '@/models/project'
+import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
@@ -39,8 +45,10 @@ import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { Editing, EditingMode } from '@/components/editor/editing'
 
 const props = defineProps<{
+  ownerName: string
   projectName: string
 }>()
 
@@ -89,10 +97,9 @@ const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: strin
 
 const projectQueryRet = useQuery(
   async (ctx) => {
-    if (userInfo.value == null) throw new Error('User not signed in') // This should not happen as the route is protected
-    // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
+    // We need to access deps (`ownerName`, `projectName`) synchronously,
     // so their change will drive `useQuery` to re-fetch
-    const project = await loadProject(userInfo.value.name, props.projectName, ctx.signal, ctx.reporter)
+    const project = await loadProject(props.ownerName, props.projectName, ctx.signal, ctx.reporter)
     ;(window as any).project = project // for debug purpose, TODO: remove me
     return project
   },
@@ -115,12 +122,25 @@ if (copilotCtx.mcp.registry == null) {
 
 const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, copilotCtx.mcp.registry)
 
+const editingQueryRet = useQuery(
+  async (ctx) => {
+    const project = await composeQuery(ctx, projectQueryRet)
+    ctx.signal.throwIfAborted()
+    const editing = new Editing(project, isOnline, userInfo, LOCAL_CACHE_KEY)
+    editing.disposeOnSignal(ctx.signal)
+    editing.start()
+    return editing
+  },
+  { en: 'Failed to initialize editing features', zh: '初始化编辑功能失败' }
+)
+
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
       composeQuery(ctx, projectQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
       composeQuery(ctx, runtimeQueryRet, [null, 0.1]),
-      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
+      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1]),
+      composeQuery(ctx, editingQueryRet, [{ en: 'Initializing editing features...', zh: '初始化编辑功能中...' }, 0.1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
@@ -134,7 +154,7 @@ if (getStringParam(router, 'publish') != null) {
   })
 }
 
-async function loadProject(user: string, projectName: string, signal: AbortSignal, reporter: ProgressReporter) {
+async function loadProject(ownerName: string, projectName: string, signal: AbortSignal, reporter: ProgressReporter) {
   const collector = ProgressCollector.collectorFor(reporter)
   const loadFromLocalCacheReporter = collector.getSubReporter(
     { en: 'Reading local cache...', zh: '读取本地缓存中...' },
@@ -143,10 +163,6 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
   const loadFromCloudReporter = collector.getSubReporter(
     { en: 'Loading project from cloud...', zh: '从云端加载项目中...' },
     10
-  )
-  const startEditingReporter = collector.getSubReporter(
-    { en: 'Initializing editing features...', zh: '初始化编辑功能中...' },
-    1
   )
 
   let localProject: Project | null
@@ -165,32 +181,32 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
   // https://github.com/goplus/builder/issues/259
   // https://github.com/goplus/builder/issues/393
   // Local Cache Saving & Restoring
-  if (localProject != null && localProject.owner !== user) {
+  if (localProject != null && localProject.owner !== ownerName) {
     // Case 4: Different user: Discard local cache
     await clear(LOCAL_CACHE_KEY)
     localProject = null
   }
 
-  if (localProject != null && localProject.name !== projectName && localProject.hasUnsyncedChanges) {
+  if (localProject != null && localProject.name !== projectName) {
     const stillOpenTarget = await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)
     signal.throwIfAborted()
     if (stillOpenTarget) {
       await clear(LOCAL_CACHE_KEY)
       localProject = null
     } else {
-      openProject(localProject.name!)
+      openProject(localProject.owner!, localProject.name!)
       throw new Cancelled('Open another project')
     }
   }
 
   let newProject = new Project()
   newProject.disposeOnSignal(signal)
-  await newProject.loadFromCloud(user, projectName, undefined, signal, loadFromCloudReporter)
+  await newProject.loadFromCloud(ownerName, projectName, undefined, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
   // (clear local cache if cloud version is newer)
-  if (localProject?.hasUnsyncedChanges) {
+  if (localProject != null) {
     if (newProject.version <= localProject.version) {
       newProject = localProject
     } else {
@@ -198,59 +214,76 @@ async function loadProject(user: string, projectName: string, signal: AbortSigna
     }
   }
 
-  setProjectAutoSaveMode(newProject)
-  await newProject.startEditing(LOCAL_CACHE_KEY)
   signal.throwIfAborted()
-  startEditingReporter.report(1)
-
   return newProject
 }
 
-// watch for online <-> offline switches, and set autoSaveMode accordingly
-function setProjectAutoSaveMode(project: Project | null) {
-  project?.setAutoSaveMode(isOnline.value ? AutoSaveMode.Cloud : AutoSaveMode.LocalCache)
-}
-watch(isOnline, () => setProjectAutoSaveMode(project.value))
-
 watchEffect((onCleanup) => {
+  const editing = editingQueryRet.data.value
+  if (editing == null) return
   const cleanup = router.beforeEach(async () => {
-    if (!project.value?.hasUnsyncedChanges) return true
-    try {
-      await withConfirm({
-        title: t({
-          en: 'Save changes',
-          zh: '保存变更'
-        }),
-        content: t({
-          en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
-          zh: '存在未保存的变更，你必须先保存到云端才能离开。'
-        }),
-        confirmText: t({
-          en: 'Save',
-          zh: '保存'
-        }),
-        async confirmHandler() {
-          try {
-            if (project.value?.hasUnsyncedChanges) await project.value!.saveToCloud()
-            await clear(LOCAL_CACHE_KEY)
-          } catch (e) {
-            m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
-            throw e
-          }
-        },
-        autoConfirm: true
-      })
-      return true
-    } catch {
-      return false
-    }
+    if (!editing.dirty) return true
+    if (editing.mode === EditingMode.EffectFree) return navigationGuardForEffectFreeMode()
+    if (editing.mode === EditingMode.AutoSave) return navigationGuardForAutoSaveMode(editing)
   })
 
   onCleanup(cleanup)
 })
 
+function navigationGuardForAutoSaveMode(editing: Editing) {
+  return withConfirm({
+    title: t({
+      en: 'Save changes',
+      zh: '保存变更'
+    }),
+    content: t({
+      en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
+      zh: '存在未保存的变更，你必须先保存到云端才能离开。'
+    }),
+    confirmText: t({
+      en: 'Save',
+      zh: '保存'
+    }),
+    async confirmHandler() {
+      try {
+        if (editing.dirty) await editing.saving?.flush()
+        await clear(LOCAL_CACHE_KEY)
+      } catch (e) {
+        m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
+        throw e
+      }
+    },
+    autoConfirm: true
+  }).catch(() => false)
+}
+
+function navigationGuardForEffectFreeMode() {
+  return withConfirm({
+    title: t({
+      en: 'Discard changes',
+      zh: '放弃变更'
+    }),
+    content: t({
+      en: 'There are changes not saved yet. You can discard them and leave.',
+      zh: '存在未保存的变更，你可以放弃它们并离开。'
+    }),
+    cancelText: t({
+      en: 'Keep editing',
+      zh: '继续编辑'
+    }),
+    confirmText: t({
+      en: 'Discard changes',
+      zh: '放弃变更'
+    }),
+    async confirmHandler() {
+      await clear(LOCAL_CACHE_KEY)
+    }
+  }).catch(() => false)
+}
+
 function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (project.value?.hasUnsyncedChanges) {
+  const editing = editingQueryRet.data.value
+  if (editing != null && editing.dirty) {
     event.preventDefault()
   }
 }
@@ -263,8 +296,8 @@ onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
-function openProject(projectName: string) {
-  router.push(getProjectEditorRoute(projectName))
+function openProject(owner: string, name: string) {
+  router.push(getProjectEditorRoute(owner, name))
 }
 </script>
 

@@ -178,10 +178,7 @@ export async function composeQuery<T>(
   const stopWatch = watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
   ctx.signal.addEventListener('abort', () => stopWatch())
 
-  return new Promise<T>((resolve, reject) => {
-    until(() => !queryRet.isLoading.value, ctx.signal).then(() => {
-      if (queryRet.error.value != null) reject(queryRet.error.value)
-      else resolve(queryRet.data.value!)
-    })
-  })
+  await until(() => !queryRet.isLoading.value, ctx.signal)
+  if (queryRet.error.value != null) throw queryRet.error.value
+  return queryRet.data.value!
 }

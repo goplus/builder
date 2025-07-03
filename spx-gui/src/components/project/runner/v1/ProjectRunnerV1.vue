@@ -49,7 +49,8 @@ import { until } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { type Progress, ProgressReporter, ProgressCollector } from '@/utils/progress'
 import { toPng } from '@/utils/img'
-import { File, toNativeFile } from '@/models/common/file'
+import { File, toNativeFile, type Files } from '@/models/common/file'
+import { hashFiles } from '@/models/common/hash'
 import { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import IframeDisplay, { preload } from './IframeDisplay.vue'
@@ -83,15 +84,10 @@ onUnmounted(() => {
   registered.onStopped()
 })
 
-async function getProjectData(signal: AbortSignal | undefined, reporter: ProgressReporter) {
+async function zip(files: Files, signal: AbortSignal | undefined, reporter: ProgressReporter) {
   const collector = ProgressCollector.collectorFor(reporter)
-  const projectExportReporter = collector.getSubReporter({ en: 'Exporting project...', zh: '导出项目中...' }, 1)
   const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
   const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
-
-  const [{ filesHash }, files] = await props.project.export()
-  signal?.throwIfAborted()
-  projectExportReporter.report(1)
 
   const zip = new JSZip()
   const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
@@ -106,7 +102,7 @@ async function getProjectData(signal: AbortSignal | undefined, reporter: Progres
   const zipped = await zip.generateAsync({ type: 'arraybuffer' })
   zipReporter.report(1)
 
-  return { filesHash, zipped }
+  return zipped
 }
 
 const collector = new ProgressCollector()
@@ -120,11 +116,11 @@ defineExpose({
   async run(signal?: AbortSignal) {
     loading.value = true
     registered.onStart()
-    const projectData = await getProjectData(signal, getProjectDataReporter)
-    zipData.value = projectData.zipped
+    const files = props.project.exportGameFiles()
+    zipData.value = await zip(files, signal, getProjectDataReporter)
     signal?.throwIfAborted()
     await until(() => !loading.value)
-    return projectData.filesHash
+    return hashFiles(files)
   },
   stop() {
     zipData.value = null

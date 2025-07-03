@@ -139,7 +139,7 @@ export class SpxLSPClient extends Disposable {
           const ab = await file.arrayBuffer()
           loadedFiles[path] = {
             content: new Uint8Array(ab),
-            modTime: this.project.modTime ?? Date.now()
+            modTime: file.lastModified
           }
         }
       })
