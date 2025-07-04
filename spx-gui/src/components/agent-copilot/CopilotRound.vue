@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RoundState, type Round } from './index'
-import MarkdownView from '@/components/copilot/markdown/MarkdownView.vue'
-import UserMessage from '@/components/copilot/UserMessage.vue'
+import MarkdownView from './markdown/MarkdownView.vue'
+import UserMessage from './UserMessage.vue'
 
 const props = defineProps<{
   round: Round

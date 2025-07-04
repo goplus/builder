@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
-import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { useAgentCopilotCtx } from '../CopilotProvider.vue'
 
 const props = defineProps<{
   /**
@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 // Get the copilot context which contains the collector
-const copilotCtx = useCopilotCtx()
+const copilotCtx = useAgentCopilotCtx()
 
 // Check if the MCP collector is initialized
 if (!copilotCtx?.mcp?.collector) {

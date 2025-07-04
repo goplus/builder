@@ -73,12 +73,12 @@ import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { isDeveloperMode } from '@/utils/developer-mode'
-import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const router = useRouter()
-const { controls } = useCopilotCtx()
+const { controls } = useAgentCopilotCtx()
 
 const userInfo = computed(() => userStore.getSignedInUser())
 const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)

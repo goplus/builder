@@ -23,7 +23,7 @@ import EditorPanels from './panels/EditorPanels.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import { onMounted, onBeforeUnmount } from 'vue'
-import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import {
   addSpriteFromCanvasToolDescription,
   AddSpriteFromCanvasArgsSchema,
@@ -33,7 +33,7 @@ import {
   AddMonitorArgsSchema,
   listMonitorsToolDescription,
   ListMonitorsArgsSchema
-} from '@/components/copilot/mcp/definitions'
+} from '@/components/agent-copilot/mcp/definitions'
 import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 import { computed, watchEffect } from 'vue'
@@ -41,7 +41,7 @@ import type { z } from 'zod'
 import { Monitor } from '@/models/widget/monitor'
 
 const editorCtx = useEditorCtx()
-const copilotCtx = useCopilotCtx()
+const copilotCtx = useAgentCopilotCtx()
 const project = computed(() => editorCtx.project)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>

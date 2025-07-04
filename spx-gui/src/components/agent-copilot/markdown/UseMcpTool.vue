@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
 import CodeBlock from './CodeBlock.vue'
-import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { useAgentCopilotCtx } from '../CopilotProvider.vue'
 
 // Component props
 const props = defineProps<{
@@ -17,7 +17,7 @@ const i18n = useI18n()
 const { t } = i18n
 
 // Ensure the tool name is trimmed
-const copilotCtx = useCopilotCtx()
+const copilotCtx = useAgentCopilotCtx()
 
 // Check if the MCP collector is initialized
 if (!copilotCtx?.mcp?.collector) {

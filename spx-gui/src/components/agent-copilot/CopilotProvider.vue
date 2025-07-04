@@ -68,7 +68,7 @@ const copilotCtxInjectionKey: InjectionKey<CopilotCtx> = Symbol('copilot-ctx')
  * Hook to access Copilot context
  * @throws Error if used outside CopilotProvider
  */
-export function useCopilotCtx() {
+export function useAgentCopilotCtx() {
   const ctx = inject(copilotCtxInjectionKey)
   if (ctx == null) throw new Error('useCopilotCtx should be called inside of CopilotProvider')
   return ctx
