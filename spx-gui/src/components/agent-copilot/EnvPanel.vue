@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useCopilotCtx } from './CopilotProvider.vue'
+import { useAgentCopilotCtx } from './CopilotProvider.vue'
 import { UIIcon } from '@/components/ui'
 
 defineEmits<{
@@ -36,7 +36,7 @@ defineEmits<{
 }>()
 
 // Get copilot context to access collector
-const copilotCtx = useCopilotCtx()
+const copilotCtx = useAgentCopilotCtx()
 
 // Get the collector from context
 const collector = computed(() => copilotCtx.mcp?.collector)

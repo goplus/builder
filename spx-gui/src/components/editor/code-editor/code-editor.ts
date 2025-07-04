@@ -78,7 +78,7 @@ import {
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import * as z from 'zod'
-import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
 import {
   writeToFileToolDescription,
   WriteToFileArgsSchema,
@@ -88,7 +88,7 @@ import {
   getDiagnosticsToolDescription,
   GetFileCodeArgsSchema,
   getFileCodeToolDescription
-} from '@/components/copilot/mcp/definitions'
+} from '@/components/agent-copilot/mcp/definitions'
 
 /** Definition ID string for APIReference items */
 const apiReferenceItems = [

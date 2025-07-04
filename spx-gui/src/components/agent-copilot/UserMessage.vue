@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MarkdownView from '@/components/copilot/markdown/MarkdownView.vue'
+import MarkdownView from './markdown/MarkdownView.vue'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{

@@ -187,7 +187,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useCopilotCtx } from '../CopilotProvider.vue'
+import { useAgentCopilotCtx } from '../CopilotProvider.vue'
 import { UITooltip } from '@/components/ui'
 
 /**
@@ -198,7 +198,7 @@ interface McpDebuggerPanelProps {
   isVisible: boolean // Controls the visibility of the debugger panel
 }
 
-const ctx = useCopilotCtx()
+const ctx = useAgentCopilotCtx()
 
 const mcpConnectionStatus = ctx.mcp.status
 const mcpRequestHistory = ctx.mcp.history.requests

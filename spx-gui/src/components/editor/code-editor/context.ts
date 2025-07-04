@@ -17,7 +17,7 @@ import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
-import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
 
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void

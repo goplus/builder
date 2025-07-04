@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
 export { default as CopilotProvider } from './CopilotProvider.vue'
-import { Collector, type ToolResult } from '@/components/copilot/mcp/collector'
+import { Collector, type ToolResult } from './mcp/collector'
 
 /** Message role identifiers */
 export type MessageRole = 'user' | 'copilot'

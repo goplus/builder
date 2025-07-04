@@ -1,7 +1,7 @@
 import { Disposable } from '@/utils/disposable'
 import type { I18n } from '@/utils/i18n'
 import { workflowStreamMessage, type Message, type Tool, ToolType } from '@/apis/copilot'
-import type { ICopilot, Chat } from '@/components/copilot/index'
+import type { ICopilot, Chat } from '.'
 import type { ToolDescription, ToolRegistry } from './mcp/registry'
 
 function convertToApiTools(serverTools: ToolDescription[]): Tool[] {

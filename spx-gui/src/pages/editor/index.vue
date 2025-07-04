@@ -44,7 +44,7 @@ import EditorContextProvider from '@/components/editor/EditorContextProvider.vue
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
-import { useCopilotCtx } from '@/components/copilot/CopilotProvider.vue'
+import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { Editing, EditingMode } from '@/components/editor/editing'
 
 const props = defineProps<{
@@ -61,7 +61,7 @@ const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.getSignedInUser())
-const copilotCtx = useCopilotCtx()
+const copilotCtx = useAgentCopilotCtx()
 
 const router = useRouter()
 

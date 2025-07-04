@@ -4,7 +4,7 @@ import { useI18n } from '@/utils/i18n'
 import highlight from 'highlight.js'
 import { useSlotText } from '@/utils/vnode'
 import 'highlight.js/styles/github.css'
-import CodeView from '@/components/copilot/markdown/CodeView.vue'
+import CodeView from './CodeView.vue'
 import { UIIcon } from '@/components/ui'
 
 // Component props
