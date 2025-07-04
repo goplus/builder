@@ -1,22 +1,16 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <EditorNavbar :project="project" :editing="editingQueryRet.data.value" />
+      <EditorNavbar :project="project" :state="state" />
     </header>
-    <main v-if="userInfo" class="editor-main">
+    <main class="editor-main">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
         <span>{{ $t(allQueryRet.progress.value.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
       </UIDetailedLoading>
       <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
         {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider
-        v-else
-        :project="project!"
-        :user-info="userInfo"
-        :runtime="runtimeQueryRet.data.value!"
-        :editing="editingQueryRet.data.value!"
-      >
+      <EditorContextProvider v-else :project="project!" :state="state!">
         <ProjectEditor />
       </EditorContextProvider>
     </main>
@@ -24,17 +18,15 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted, computed } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
 import { composeQuery, useQuery } from '@/utils/query'
-import { getStringParam } from '@/utils/route'
 import { clear } from '@/models/common/local'
-import { Runtime } from '@/models/runtime'
 import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -46,6 +38,7 @@ import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context
 import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { Editing, EditingMode } from '@/components/editor/editing'
+import { EditorState } from '@/components/editor/editor-state'
 
 const props = defineProps<{
   ownerName: string
@@ -108,51 +101,48 @@ const projectQueryRet = useQuery(
 
 const project = projectQueryRet.data
 
-const runtimeQueryRet = useQuery(async (ctx) => {
+const stateQueryRet = useQuery(async (ctx) => {
   const project = await composeQuery(ctx, projectQueryRet)
   ctx.signal.throwIfAborted()
-  const runtime = new Runtime(project)
-  runtime.disposeOnSignal(ctx.signal)
-  return runtime
+  const state = new EditorState(project, isOnline, userInfo, LOCAL_CACHE_KEY)
+  state.disposeOnSignal(ctx.signal)
+  state.syncWithRouter(router)
+  state.editing.start()
+  return state
 })
+
+const state = stateQueryRet.data
 
 if (copilotCtx.mcp.registry == null) {
   throw new Error('Copilot registry not initialized')
 }
 
-const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, runtimeQueryRet, copilotCtx.mcp.registry)
-
-const editingQueryRet = useQuery(
-  async (ctx) => {
-    const project = await composeQuery(ctx, projectQueryRet)
-    ctx.signal.throwIfAborted()
-    const editing = new Editing(project, isOnline, userInfo, LOCAL_CACHE_KEY)
-    editing.disposeOnSignal(ctx.signal)
-    editing.start()
-    return editing
-  },
-  { en: 'Failed to initialize editing features', zh: '初始化编辑功能失败' }
-)
+const codeEditorQueryRet = useProvideCodeEditorCtx(projectQueryRet, stateQueryRet, copilotCtx.mcp.registry)
 
 const allQueryRet = useQuery(
   (ctx) =>
     Promise.all([
       composeQuery(ctx, projectQueryRet, [{ en: 'Loading project...', zh: '加载项目中...' }, 2]),
-      composeQuery(ctx, runtimeQueryRet, [null, 0.1]),
-      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1]),
-      composeQuery(ctx, editingQueryRet, [{ en: 'Initializing editing features...', zh: '初始化编辑功能中...' }, 0.1])
+      composeQuery(ctx, stateQueryRet, [{ en: 'Initializing editor...', zh: '初始化编辑器中...' }, 0.1]),
+      composeQuery(ctx, codeEditorQueryRet, [{ en: 'Loading code editor...', zh: '加载代码编辑器中...' }, 1])
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-// `?publish`
-if (getStringParam(router, 'publish') != null) {
-  const publishProject = usePublishProject()
-  onMounted(async () => {
+const publishProject = usePublishProject()
+
+onMounted(async () => {
+  // `?publish`
+  const currentRoute = router.currentRoute.value
+  const { publish, ...restQuery } = currentRoute.query
+  const shouldPublish = publish !== undefined // Vue Router returns `publish: null` for `?publish`
+  if (shouldPublish) {
     const p = await untilNotNull(project)
-    publishProject(p)
-  })
-}
+    publishProject(p).finally(() => {
+      router.replace({ query: restQuery }) // Remove `publish` from query
+    })
+  }
+})
 
 async function loadProject(ownerName: string, projectName: string, signal: AbortSignal, reporter: ProgressReporter) {
   const collector = ProgressCollector.collectorFor(reporter)
@@ -218,16 +208,11 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
   return newProject
 }
 
-watchEffect((onCleanup) => {
-  const editing = editingQueryRet.data.value
-  if (editing == null) return
-  const cleanup = router.beforeEach(async () => {
-    if (!editing.dirty) return true
-    if (editing.mode === EditingMode.EffectFree) return navigationGuardForEffectFreeMode()
-    if (editing.mode === EditingMode.AutoSave) return navigationGuardForAutoSaveMode(editing)
-  })
-
-  onCleanup(cleanup)
+onBeforeRouteLeave(() => {
+  const editing = state.value?.editing
+  if (editing == null || !editing.dirty) return true
+  if (editing.mode === EditingMode.EffectFree) return navigationGuardForEffectFreeMode()
+  if (editing.mode === EditingMode.AutoSave) return navigationGuardForAutoSaveMode(editing)
 })
 
 function navigationGuardForAutoSaveMode(editing: Editing) {
@@ -282,7 +267,7 @@ function navigationGuardForEffectFreeMode() {
 }
 
 function handleBeforeUnload(event: BeforeUnloadEvent) {
-  const editing = editingQueryRet.data.value
+  const editing = state.value?.editing
   if (editing != null && editing.dirty) {
     event.preventDefault()
   }

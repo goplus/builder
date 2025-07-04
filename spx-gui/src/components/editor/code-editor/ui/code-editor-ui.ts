@@ -5,9 +5,7 @@ import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import type { Project } from '@/models/project'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { isWidget } from '@/models/widget'
+import type { EditorState } from '../../editor-state'
 import {
   type Command,
   type CommandInfo,
@@ -43,7 +41,7 @@ import {
   type ChatTopicExplainTarget,
   type ChatTopicReview
 } from './copilot'
-import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
+import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition } from './common'
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
@@ -188,6 +186,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   constructor(
     private mainTextDocumentId: TextDocumentIdentifier,
     public project: Project,
+    private editorState: EditorState,
     public i18n: I18n,
     public monaco: Monaco,
     private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
@@ -605,13 +604,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       handler: async (resource) => {
         const resourceModel = getResourceModel(this.project, resource)
         if (resourceModel == null) throw new Error(`Resource not found: ${resource.uri}`)
-        if (!supportGoTo(resourceModel)) throw new Error(`Go to resource (${resource.uri}) not supported`)
-        if (resourceModel instanceof Sprite) return this.project.select({ type: 'sprite', id: resourceModel.id })
-        if (resourceModel instanceof Sound) return this.project.select({ type: 'sound', id: resourceModel.id })
-        if (isWidget(resourceModel)) {
-          this.project.select({ type: 'stage' })
-          this.project.stage.selectWidget(resourceModel.id)
-        }
+        this.editorState.selectResource(resourceModel)
       }
     })
 

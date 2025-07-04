@@ -212,9 +212,8 @@ const moveActionNames = {
 }
 
 async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const project = editorCtx.project
-  const selectedSprite = project.selectedSprite
-  const selectedWidget = project.stage.selectedWidget
+  const { state, project } = editorCtx
+  const { selectedSprite, selectedWidget } = state
   await project.history.doAction({ name: moveActionNames[direction] }, () => {
     if (selectedSprite != null) {
       if (direction === 'up') {

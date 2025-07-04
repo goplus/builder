@@ -1,7 +1,7 @@
 <template>
   <CommonPanel
     :expanded="expanded"
-    :active="editorCtx.project.selectedSprite != null"
+    :active="selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
     color="sprite"
     @expand="emit('expand')"
@@ -31,14 +31,10 @@
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter v-if="footerExpanded && editorCtx.project.selectedSprite != null">
-        <SpriteBasicConfig
-          :sprite="editorCtx.project.selectedSprite"
-          :project="editorCtx.project"
-          @collapse="footerExpanded = false"
-        />
+      <PanelFooter v-if="footerExpanded && selectedSprite != null">
+        <SpriteBasicConfig :sprite="selectedSprite" :project="editorCtx.project" @collapse="footerExpanded = false" />
       </PanelFooter>
-      <UITooltip v-if="!footerExpanded && editorCtx.project.selectedSprite != null">
+      <UITooltip v-if="!footerExpanded && selectedSprite != null">
         <template #trigger>
           <div class="footer-expand-button" @click="footerExpanded = true">
             <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
@@ -90,27 +86,41 @@ const sprites = computed(() => editorCtx.project.sprites)
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 
+const selectedSprite = computed(() => editorCtx.state.selectedSprite)
+
 function isSelected(sprite: Sprite) {
-  return sprite.id === editorCtx.project.selectedSprite?.id
+  return sprite.id === selectedSprite.value?.id
 }
 
 function handleSpriteClick(sprite: Sprite) {
-  editorCtx.project.select({ type: 'sprite', id: sprite.id })
+  editorCtx.state.selectSprite(sprite.id)
 }
 
 const addFromLocalFile = useAddSpriteFromLocalFile()
 
-const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx.project), {
-  en: 'Failed to add sprite from local file',
-  zh: '从本地文件添加失败'
-}).fn
+const handleAddFromLocalFile = useMessageHandle(
+  async () => {
+    const sprite = await addFromLocalFile(editorCtx.project)
+    editorCtx.state.selectSprite(sprite.id)
+  },
+  {
+    en: 'Failed to add sprite from local file',
+    zh: '从本地文件添加失败'
+  }
+).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(editorCtx.project, AssetType.Sprite), {
-  en: 'Failed to add sound from asset library',
-  zh: '从素材库添加失败'
-}).fn
+const handleAddFromAssetLibrary = useMessageHandle(
+  async () => {
+    const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+    editorCtx.state.selectSprite(sprites[0].id)
+  },
+  {
+    en: 'Failed to add sprite from asset library',
+    zh: '从素材库添加失败'
+  }
+).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {

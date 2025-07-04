@@ -169,7 +169,6 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
 }
 
 function handleMousedown() {
-  editorCtx.project.select({ type: 'stage' })
-  editorCtx.project.stage.selectWidget(props.monitor.id)
+  editorCtx.state.selectWidget(props.monitor.id)
 }
 </script>

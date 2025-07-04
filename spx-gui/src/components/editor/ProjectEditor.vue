@@ -1,9 +1,13 @@
 <template>
   <UICard class="main">
     <KeepAlive>
-      <SoundEditor v-if="editorCtx.project.selectedSound != null" :sound="editorCtx.project.selectedSound" />
-      <SpriteEditor v-else-if="editorCtx.project.selectedSprite != null" :sprite="editorCtx.project.selectedSprite" />
-      <StageEditor v-else-if="editorCtx.project.selected?.type === 'stage'" :stage="editorCtx.project.stage" />
+      <SoundEditor v-if="selected.type === 'sound' && selected.sound != null" :sound="selected.sound" />
+      <SpriteEditor
+        v-else-if="selected.type === 'sprite' && selected.sprite != null"
+        :sprite="selected.sprite"
+        :state="editorCtx.state.spriteState!"
+      />
+      <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
       <EditorPlaceholder v-else />
     </KeepAlive>
   </UICard>
@@ -34,7 +38,6 @@ import {
   listMonitorsToolDescription,
   ListMonitorsArgsSchema
 } from '@/components/agent-copilot/mcp/definitions'
-import { selectAsset } from '@/components/asset/index'
 import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asset'
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
@@ -43,6 +46,7 @@ import { Monitor } from '@/models/widget/monitor'
 const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
 const project = computed(() => editorCtx.project)
+const selected = computed(() => editorCtx.state.selected)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
@@ -86,7 +90,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
   const sprite = await genSpriteFromCanvas(args.spriteName, args.size, args.size, args.color)
   project.value.addSprite(sprite)
   await sprite.autoFit()
-  selectAsset(project.value, sprite)
+  editorCtx.state.selectSprite(sprite.id)
   project.value.saveToCloud()
   return {
     success: true,
@@ -97,7 +101,7 @@ async function addSpriteFromCanvas(args: AddSpriteFromCanvaOptions) {
 async function addBackdropFromCanvas(args: AddStageBackdropFromCanvasOptions) {
   const backdrop = await genBackdropFromCanvas(args.backdropName, 800, 600, args.color)
   project.value.stage.addBackdrop(backdrop)
-  selectAsset(project.value, backdrop)
+  editorCtx.state.selectBackdrop(backdrop.id)
   project.value.saveToCloud()
   return {
     success: true,

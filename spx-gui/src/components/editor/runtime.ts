@@ -4,7 +4,7 @@ import { until } from '@/utils/utils'
 import type { Project } from '@/models/project'
 
 // TODO: move TextDocumentRange to some proper place
-import type { TextDocumentRange } from '../components/editor/code-editor/common'
+import type { TextDocumentRange } from './code-editor/common'
 
 export type RunningState =
   | {

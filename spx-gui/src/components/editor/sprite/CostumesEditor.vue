@@ -10,7 +10,7 @@
       :key="costume.id"
       :costume="costume"
       removable
-      :selectable="{ selected: selected?.id === costume.id }"
+      :selectable="{ selected: state.selected?.id === costume.id }"
       @click="handleSelect(costume)"
     />
     <template #add-options>
@@ -21,15 +21,47 @@
       </UIMenu>
     </template>
     <template #detail>
-      <CostumeDetail v-if="selected != null" :sprite="sprite" :costume="selected" />
+      <CostumeDetail v-if="state.selected != null" :sprite="sprite" :costume="state.selected" />
     </template>
   </EditorList>
 </template>
 
+<script lang="ts">
+export class CostumesEditorState {
+  constructor(private sprite: Sprite) {}
+
+  /** The currently selected costume */
+  get selected() {
+    return this.sprite.defaultCostume
+  }
+  /** Select a costume by its ID */
+  select(id: string) {
+    this.sprite.setDefaultCostume(id)
+  }
+  /** Select a costume by its name */
+  selectByName(name: string): void {
+    const costume = this.sprite.costumes.find((costume) => costume.name === name)
+    if (costume == null) throw new Error(`Costume with name "${name}" not found`)
+    this.select(costume.id)
+  }
+  /** Select a costume (by specifying route path) */
+  selectByRoute(path: PathSegments) {
+    const [name] = shiftPath(path)
+    if (name == null) return
+    return this.selectByName(name)
+  }
+  /** Get route path for the current selection */
+  getRoute(): PathSegments {
+    if (this.selected == null) return []
+    return [this.selected.name]
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { computed } from 'vue'
 import { UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { useAddCostumeFromLocalFile } from '@/components/asset'
@@ -40,10 +72,10 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   sprite: Sprite
+  state: CostumesEditorState
 }>()
 
 const editorCtx = useEditorCtx()
-const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }

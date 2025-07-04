@@ -124,6 +124,7 @@ const uiRef = computed(() => {
   return new CodeEditorUI(
     mainTextDocumentId,
     editorCtx.project,
+    editorCtx.state,
     i18n,
     codeEditorCtx.getMonaco(),
     codeEditorCtx.getTextDocument,

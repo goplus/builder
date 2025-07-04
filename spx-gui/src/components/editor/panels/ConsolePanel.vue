@@ -3,15 +3,15 @@ import dayjs from 'dayjs'
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { useI18n } from '@/utils/i18n'
-import type { RuntimeOutput } from '@/models/runtime'
 import { UICard, UICardHeader, UIEmpty } from '@/components/ui'
+import type { RuntimeOutput } from '@/components/editor/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import CodeLink from '../code-editor/CodeLink.vue'
 import { textDocumentId2CodeFileName } from '../code-editor/common'
 
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
-const runtime = computed(() => editorCtx.runtime)
+const runtime = computed(() => editorCtx.state.runtime)
 
 const outputContainerRef = ref<HTMLElement | null>(null)
 useBottomSticky(outputContainerRef)

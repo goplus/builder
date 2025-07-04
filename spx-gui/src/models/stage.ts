@@ -137,7 +137,6 @@ export class Stage extends Disposable {
     widget.dispose()
 
     this.widgetsZorder = this.widgetsZorder.filter((v) => v !== id)
-    this.autoSelectWidget()
   }
   /**
    * Move a widget within the widgets array, without changing the widget zorder
@@ -170,18 +169,6 @@ export class Stage extends Disposable {
   }
   bottomWidgetZorder(id: string) {
     this.setWidgetZorderIdx(id, 0)
-  }
-
-  private selectedWidgetId: string | null = null
-  selectWidget(id: string | null) {
-    this.selectedWidgetId = id
-  }
-  get selectedWidget(): Widget | null {
-    return this.widgets.find((w) => w.id === this.selectedWidgetId) ?? null
-  }
-  autoSelectWidget() {
-    if (this.selectedWidget != null) return
-    this.selectWidget(this.widgets[0]?.id)
   }
 
   mapWidth: number

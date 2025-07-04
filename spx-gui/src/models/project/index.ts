@@ -101,7 +101,6 @@ export class Project extends Disposable {
     const [sprite] = this.sprites.splice(idx, 1)
     this.zorder = this.zorder.filter((v) => v !== sprite.id)
     sprite.dispose()
-    this.autoSelect()
   }
   /**
    * Add given sprite to project.
@@ -164,7 +163,6 @@ export class Project extends Disposable {
       }
     }
     sound.dispose()
-    this.autoSelect()
   }
   /**
    * Add given sound to project.
@@ -212,47 +210,8 @@ export class Project extends Disposable {
     this.instructions = instructions
   }
 
-  selected: ResourceModelIdentifier | null = null
-
-  get selectedSprite() {
-    const selected = this.selected
-    if (selected?.type !== 'sprite') return null
-    return this.getResourceModel(selected) as Sprite | null
-  }
-
-  get selectedSound() {
-    const selected = this.selected
-    if (selected?.type !== 'sound') return null
-    return this.getResourceModel(selected) as Sound | null
-  }
-
-  select(selected: ResourceModelIdentifier | { type: 'stage' } | null) {
-    if (selected != null && !(selected instanceof ResourceModelIdentifier)) {
-      // compatibility for legacy usage: `select({ type, id })`
-      // TODO: remove this after all usage updated
-      selected = new ResourceModelIdentifier(selected.type, (selected as any).id)
-    }
-    this.selected = selected
-  }
-
-  /**
-   * Check if current selected target is valid. If not, select some target automatically.
-   * Targets with the same type are preferred.
-   */
-  private autoSelect() {
-    const selected = this.selected
-    if (selected?.type === 'stage') return
-    if (selected?.type === 'sound' && this.selectedSound == null && this.sounds[0] != null) {
-      this.select({ type: 'sound', id: this.sounds[0].id })
-      return
-    }
-    if (this.selectedSprite == null) {
-      this.select(this.sprites[0] != null ? { type: 'sprite', id: this.sprites[0].id } : null)
-    }
-  }
-
-  history: History
-  historyMutex = new Mutex()
+  history: History // TODO: move to state `Editing`
+  historyMutex = new Mutex() // TODO: rename to some "atomic mutex", used to ensure atomicity of project operations
 
   // In project editor, we use `bindScreenshotTaker` to register a screenshot taker and
   // update thumbnail automatically. That way, the thumbnail will always reflect the latest changes
@@ -377,7 +336,6 @@ export class Project extends Disposable {
     this.sounds.splice(0).forEach((s) => s.dispose())
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
-    this.autoSelect()
   }
 
   private exportGameFilesWithoutMemo(): Files {
