@@ -97,7 +97,7 @@ function createProjectWithResources(): Project {
   return project
 }
 
-function mockRouter(): IRouter {
+function mockRouter() {
   const currentRoute = ref({
     fullPath: '/',
     params: {},
@@ -108,7 +108,7 @@ function mockRouter(): IRouter {
   return {
     currentRoute,
     push: vi.fn().mockResolvedValue(undefined)
-  }
+  } satisfies IRouter
 }
 
 function createEditorState(
@@ -611,6 +611,49 @@ describe('EditorState', () => {
           type: 'code'
         }
       } satisfies Selected)
+
+      editorState.dispose()
+    })
+
+    it('should do replace instead of push when selected resource renamed', async () => {
+      const project = createProjectWithResources()
+      const editorState = createEditorState(project)
+      const router = mockRouter()
+
+      editorState.syncWithRouter(router)
+      await flushPromises()
+
+      router.push.mockClear()
+      // Simulate resource rename
+      project.sprites[0].setName('newSpriteName')
+      await flushPromises()
+
+      expect(router.push).toHaveBeenCalledOnce()
+      expect(router.push).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            inEditorPath: ['sprites', 'newSpriteName', 'code']
+          }),
+          replace: true
+        })
+      )
+
+      editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
+      await flushPromises()
+
+      router.push.mockClear()
+      project.sprites[0].costumes[0].setName('newCostumeName')
+      await flushPromises()
+
+      expect(router.push).toHaveBeenCalledOnce()
+      expect(router.push).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            inEditorPath: ['sprites', 'newSpriteName', 'costumes', 'newCostumeName']
+          }),
+          replace: true
+        })
+      )
 
       editorState.dispose()
     })
