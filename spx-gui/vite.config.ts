@@ -38,7 +38,16 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       include: [`monaco-editor/esm/vs/editor/editor.worker`]
     },
-    test: { environment: 'happy-dom' },
+    test: {
+      environment: 'happy-dom',
+      alias: [
+        // Alias for `monaco-editor` to avoid `Failed to resolve entry for package "monaco-editor"`, for details: https://github.com/vitest-dev/vitest/discussions/1806
+        {
+          find: /^monaco-editor$/,
+          replacement: resolve('node_modules/monaco-editor/esm/vs/editor/editor.api'),
+        },
+      ],
+    },
     server: {
       headers: {
         'Cross-Origin-Embedder-Policy': 'require-corp',

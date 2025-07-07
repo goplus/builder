@@ -89,62 +89,6 @@ describe('Project', () => {
     expect(project.sounds.map((s) => s.name)).toEqual(['sound1', 'sound3', 'sound2'])
   })
 
-  it('should select correctly after sound removed', async () => {
-    const project = makeProject()
-    const sprite2 = new Sprite('MySprite2')
-    project.addSprite(sprite2)
-    const sound2 = new Sound('sound2', mockFile())
-    project.addSound(sound2)
-    const sound3 = new Sound('sound3', mockFile())
-    project.addSound(sound3)
-
-    project.select({ type: 'stage', id: null })
-    project.removeSound(sound3.id)
-    expect(project.selected?.type).toEqual('stage')
-
-    project.select({ type: 'sound', id: project.sounds[0].id })
-
-    project.removeSound(project.sounds[0].id)
-    const sound2Id = project.sounds.find((s) => s.name === 'sound2')?.id
-    expect(sound2Id).toBeTruthy()
-    expect(sound2Id).toEqual(sound2.id)
-    expect(project.selected).toEqual({
-      type: 'sound',
-      id: sound2Id
-    })
-
-    project.removeSound(sound2.id)
-
-    const spriteId = project.sprites.find((s) => s.name === 'MySprite')?.id
-    expect(spriteId).toBeTruthy()
-    expect(project.selected).toEqual({
-      type: 'sprite',
-      id: spriteId
-    })
-  })
-
-  it('should select correctly after sprite removed', async () => {
-    const project = makeProject()
-    const sprite2 = new Sprite('MySprite2')
-    project.addSprite(sprite2)
-    const sprite3 = new Sprite('MySprite3')
-    project.addSprite(sprite3)
-
-    project.select({ type: 'stage' })
-    project.removeSprite(sprite3.id)
-    expect(project.selected?.type).toEqual('stage')
-
-    project.select({ type: 'sprite', id: project.sprites[0].id })
-
-    project.removeSprite(project.sprites[0].id)
-    const nextId: string = (project.selected as any).id
-    expect(nextId).toBeTruthy()
-    expect(nextId).toEqual(project.sprites.find((s) => s.name === 'MySprite2')?.id)
-
-    project.removeSprite(sprite2.id)
-    expect(project.selected).toBeNull()
-  })
-
   it('should throw an error when saving a disposed project', async () => {
     const project = makeProject()
     const saveToLocalCacheMethod = vi.spyOn(project, 'saveToLocalCache' as any)

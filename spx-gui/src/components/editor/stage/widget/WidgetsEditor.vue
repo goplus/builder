@@ -21,9 +21,9 @@
       v-for="widget in stage.widgets"
       :key="widget.id"
       :widget="widget"
-      :selectable="{ selected: selected?.id === widget.id }"
+      :selectable="{ selected: state.selected?.id === widget.id }"
       removable
-      @click="handleSelect(widget)"
+      @click="state.select(widget.id)"
     />
     <template #add-options>
       <UIMenu>
@@ -31,16 +31,66 @@
       </UIMenu>
     </template>
     <template #detail>
-      <WidgetDetail v-if="selected != null" :widget="selected" />
+      <WidgetDetail v-if="state.selected != null" :widget="state.selected" />
     </template>
   </EditorList>
 </template>
 
+<script lang="ts">
+export class WidgetsEditorState extends Disposable {
+  constructor(private stage: Stage) {
+    super()
+    this.selectedIdRef = ref(stage.widgets[0]?.id ?? null)
+
+    this.addDisposer(
+      watch(
+        () => this.selected,
+        (selected) => {
+          if (selected == null && this.stage.widgets.length > 0) {
+            this.select(this.stage.widgets[0].id)
+          }
+        }
+      )
+    )
+  }
+
+  private selectedIdRef: Ref<string | null>
+
+  /** The currently selected widget */
+  get selected() {
+    return this.stage.widgets.find((widget) => widget.id === this.selectedIdRef.value) ?? null
+  }
+  /** Select a target (by ID) */
+  select(id: string | null) {
+    this.selectedIdRef.value = id
+  }
+  /** Select a target (by name) */
+  selectByName(name: string): void {
+    const widget = this.stage.widgets.find((widget) => widget.name === name)
+    if (widget == null) throw new Error(`Widget with name "${name}" not found`)
+    this.select(widget.id)
+  }
+  /** Select a target (by specifying route path) */
+  selectByRoute(path: PathSegments) {
+    const [name] = shiftPath(path)
+    if (name == null) return
+    return this.selectByName(name)
+  }
+  /** Get route path for the current selection */
+  getRoute(): PathSegments {
+    if (this.selected == null) return []
+    return [this.selected.name]
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { type Widget } from '@/models/widget'
+import { Disposable } from '@/utils/disposable'
+import { shiftPath, type PathSegments } from '@/utils/route'
+import type { Stage } from '@/models/stage'
 import { useAddMonitor } from '@/components/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
@@ -48,20 +98,25 @@ import WidgetItem from './WidgetItem.vue'
 import WidgetDetail from './detail/WidgetDetail.vue'
 import monitorIcon from './monitor-gray.svg'
 
+const props = defineProps<{
+  state: WidgetsEditorState
+}>()
+
 const editorCtx = useEditorCtx()
 const stage = computed(() => editorCtx.project.stage)
-const selected = computed(() => stage.value.selectedWidget)
-
-function handleSelect(widget: Widget) {
-  stage.value.selectWidget(widget.id)
-}
 
 const addMonitor = useAddMonitor()
 
-const handleAddMonitor = useMessageHandle(() => addMonitor(editorCtx.project), {
-  en: 'Failed to add widget',
-  zh: '添加控件失败'
-}).fn
+const handleAddMonitor = useMessageHandle(
+  async () => {
+    const monitor = await addMonitor(editorCtx.project)
+    props.state.select(monitor.id)
+  },
+  {
+    en: 'Failed to add widget',
+    zh: '添加控件失败'
+  }
+).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
@@ -73,12 +128,4 @@ const handleSorted = useMessageHandle(
     zh: '更新控件顺序失败'
   }
 ).fn
-
-onMounted(() => {
-  stage.value.autoSelectWidget()
-})
-
-onUnmounted(() => {
-  stage.value.selectWidget(null)
-})
 </script>

@@ -1,33 +1,127 @@
 <template>
   <EditorHeader>
-    <UITabs v-model:value="selectedTab" color="sprite">
+    <UITabs :value="state.selected.type" color="sprite" @update:value="(type) => state.select(type as SelectedType)">
       <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
       <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
       <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code'" :code-file-path="sprite.codeFilePath" />
+      <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
     </template>
   </EditorHeader>
-  <CodeEditorUI v-show="selectedTab === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
-  <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
+  <CodeEditorUI v-show="state.selected.type === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
+  <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
-  <AnimationEditor v-if="selectedTab === 'animations'" :sprite="sprite" />
+  <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
 </template>
 
+<script lang="ts">
+export type SelectedType = 'code' | 'costumes' | 'animations'
+
+export type Selected =
+  | {
+      type: 'code'
+    }
+  | {
+      type: 'costumes'
+      costume: Costume | null
+    }
+  | {
+      type: 'animations'
+      animation: Animation | null
+    }
+
+export class SpriteEditorState extends Disposable {
+  constructor(sprite: Sprite, initialSelected?: Selected) {
+    super()
+    this.costumesState = new CostumesEditorState(sprite)
+    this.addDisposable((this.animationsState = new AnimationsEditorState(sprite)))
+    this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
+  }
+
+  costumesState: CostumesEditorState
+  animationsState: AnimationsEditorState
+  private selectedTypeRef: Ref<SelectedType>
+
+  /** The current selection */
+  get selected(): Selected {
+    switch (this.selectedTypeRef.value) {
+      case 'code':
+        return { type: 'code' }
+      case 'costumes':
+        return { type: 'costumes', costume: this.costumesState.selected }
+      case 'animations':
+        return { type: 'animations', animation: this.animationsState.selected }
+      default:
+        throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
+    }
+  }
+
+  /** Select a target */
+  select(type: SelectedType) {
+    this.selectedTypeRef.value = type
+  }
+
+  selectCostume(costumeId: string) {
+    this.select('costumes')
+    this.costumesState.select(costumeId)
+  }
+
+  selectAnimation(animationId: string) {
+    this.select('animations')
+    this.animationsState.select(animationId)
+  }
+
+  /** Select a target (by specifying route path) */
+  selectByRoute(path: PathSegments) {
+    const [type, extra] = shiftPath(path)
+    switch (type) {
+      case 'code':
+      case null:
+        this.select('code')
+        break
+      case 'costumes':
+        this.select('costumes')
+        this.costumesState.selectByRoute(extra)
+        break
+      case 'animations':
+        this.select('animations')
+        this.animationsState.selectByRoute(extra)
+        break
+      default:
+        throw new Error(`Unknown type: ${type}`)
+    }
+  }
+  /** Get route path for the current selection */
+  getRoute(): PathSegments {
+    switch (this.selected.type) {
+      case 'code':
+        return ['code']
+      case 'costumes':
+        return ['costumes', ...this.costumesState.getRoute()]
+      case 'animations':
+        return ['animations', ...this.animationsState.getRoute()]
+    }
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
+import { Disposable } from '@/utils/disposable'
+import { shiftPath, type PathSegments } from '@/utils/route'
+import type { Costume } from '@/models/costume'
+import type { Animation } from '@/models/animation'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
 import CodeEditorUI from '../code-editor/ui/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
-import CostumesEditor from './CostumesEditor.vue'
-import AnimationEditor from './AnimationEditor.vue'
+import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
+import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
 
 defineProps<{
   sprite: Sprite
+  state: SpriteEditorState
 }>()
-
-const selectedTab = ref<'code' | 'costumes' | 'animations'>('code')
 </script>

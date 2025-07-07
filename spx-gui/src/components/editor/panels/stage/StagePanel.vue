@@ -18,10 +18,10 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
 
-const active = computed(() => editorCtx.project.selected?.type === 'stage')
+const active = computed(() => editorCtx.state.selected?.type === 'stage')
 
 function activate() {
-  editorCtx.project.select({ type: 'stage' })
+  editorCtx.state.select({ type: 'stage' })
 }
 
 const backdrop = computed(() => editorCtx.project.stage.defaultBackdrop)

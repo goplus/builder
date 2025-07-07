@@ -89,6 +89,8 @@ export enum EditingMode {
   EffectFree
 }
 
+// TODO: Move `History` into `Editing` (or `EditorState`).
+
 export class Editing extends Disposable {
   constructor(
     private project: EditableProject,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { RuntimeOutputKind, type RuntimeOutput } from '@/models/runtime'
+import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { getCleanupSignal } from '@/utils/disposable'
 
 const props = defineProps<{
@@ -11,6 +11,7 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
+const runtime = computed(() => editorCtx.state.runtime)
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const lastPanicOutput = ref<RuntimeOutput | null>(null)
 
@@ -32,7 +33,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
         //     "file": "MySprite.spx",
         //     "line": 2
         //   }
-        editorCtx.runtime.addOutput({
+        runtime.value.addOutput({
           kind: RuntimeOutputKind.Log,
           time: logMsg.time,
           message: logMsg.msg,
@@ -93,10 +94,10 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
     lastPanicOutput.value != null &&
     (message === lastPanicOutput.value.message || message === '\t' + lastPanicOutput.value.message)
   ) {
-    editorCtx.runtime.addOutput(lastPanicOutput.value)
+    runtime.value.addOutput(lastPanicOutput.value)
     lastPanicOutput.value = null
   } else {
-    editorCtx.runtime.addOutput({
+    runtime.value.addOutput({
       kind: type === 'warn' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
       time: Date.now(),
       message
@@ -112,9 +113,9 @@ watch(
     const signal = getCleanupSignal(onCleanup)
     const projectRunner = await untilNotNull(projectRunnerRef)
     signal.throwIfAborted()
-    editorCtx.runtime.clearOutputs()
+    runtime.value.clearOutputs()
     projectRunner.run().then((filesHash) => {
-      editorCtx.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+      runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
     })
     signal.addEventListener('abort', () => {
       projectRunner.stop()
@@ -125,11 +126,11 @@ watch(
 
 defineExpose({
   async rerun() {
-    editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
+    runtime.value.setRunning({ mode: 'debug', initializing: true })
     const projectRunner = await untilNotNull(projectRunnerRef)
-    editorCtx.runtime.clearOutputs()
+    runtime.value.clearOutputs()
     const filesHash = await projectRunner.rerun()
-    editorCtx.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+    runtime.value.setRunning({ mode: 'debug', initializing: false }, filesHash)
   }
 })
 </script>

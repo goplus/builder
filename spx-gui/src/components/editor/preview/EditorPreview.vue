@@ -75,10 +75,10 @@ import InPlaceRunner from './InPlaceRunner.vue'
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 
-const running = computed(() => editorCtx.runtime.running)
+const running = computed(() => editorCtx.state.runtime.running)
 
 function handleStop() {
-  editorCtx.runtime.setRunning({ mode: 'none' })
+  editorCtx.state.runtime.setRunning({ mode: 'none' })
 }
 
 const i18n = useI18n()
@@ -115,13 +115,13 @@ async function tryFormatWorkspace() {
 const startRunning = useMessageHandle(async () => {
   await checkAndNotifyError()
   await tryFormatWorkspace()
-  editorCtx.runtime.setRunning({ mode: 'run' })
+  editorCtx.state.runtime.setRunning({ mode: 'run' })
 })
 
 const startDebugging = useMessageHandle(async () => {
   await checkAndNotifyError()
   await tryFormatWorkspace()
-  editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
+  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
 })
 
 const inPlaceRunner = ref<InstanceType<typeof InPlaceRunner>>()

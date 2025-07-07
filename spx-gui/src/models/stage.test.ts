@@ -243,19 +243,16 @@ describe('Stage', () => {
     stage.addWidget(monitor1)
     stage.addWidget(monitor2)
     stage.addWidget(monitor3)
-    stage.selectWidget(monitor1.id)
     expect(stage.widgetsZorder).toEqual([monitor1.id, monitor2.id, monitor3.id])
     expect(stage.widgets.map((w) => w.name)).toEqual(['monitor1', 'monitor2', 'monitor3'])
     stage.moveWidget(0, 1)
     expect(stage.widgets.map((w) => w.name)).toEqual(['monitor2', 'monitor1', 'monitor3'])
     expect(stage.widgetsZorder).toEqual([monitor1.id, monitor2.id, monitor3.id])
     expect(monitor1.stage).toEqual(stage)
-    expect(stage.selectedWidget).toBe(monitor1)
 
     stage.moveWidget(2, 0)
     expect(stage.widgets.map((w) => w.name)).toEqual(['monitor3', 'monitor2', 'monitor1'])
     expect(stage.widgetsZorder).toEqual([monitor1.id, monitor2.id, monitor3.id])
-    expect(stage.selectedWidget).toBe(monitor1)
 
     // invalid index causes error:
     expect(() => stage.moveWidget(2, 3)).toThrow()

@@ -111,7 +111,8 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
-import { SavingState, EditingMode, type Editing } from '../editing'
+import { SavingState, EditingMode } from '../editing'
+import type { EditorState } from '../editor-state'
 import undoSvg from './icons/undo.svg'
 import redoSvg from './icons/redo.svg'
 import importProjectSvg from './icons/import-project.svg'
@@ -128,7 +129,7 @@ import cloudCheckSvg from './icons/cloud-check.svg?raw'
 
 const props = defineProps<{
   project: Project | null
-  editing: Editing | null
+  state: EditorState | null
 }>()
 
 const { isOnline } = useNetwork()
@@ -183,10 +184,18 @@ const handleExportProjectFile = useMessageHandle(
 ).fn
 
 const loadFromScratchModal = useLoadFromScratchModal()
-const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(props.project!), {
-  en: 'Failed to import from Scratch file',
-  zh: '从 Scratch 项目文件导入失败'
-}).fn
+const handleImportFromScratch = useMessageHandle(
+  async () => {
+    const { state, project } = props
+    if (state == null || project == null) throw new Error('Editor state or project is not available')
+    const added = await loadFromScratchModal(project)
+    state.selectResource(added[0])
+  },
+  {
+    en: 'Failed to import from Scratch file',
+    zh: '从 Scratch 项目文件导入失败'
+  }
+).fn
 
 const publishProject = usePublishProject()
 const handlePublishProject = useMessageHandle(() => publishProject(props.project!), {
@@ -253,7 +262,7 @@ type AutoSaveStateIcon = {
 }
 
 const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
-  const editing = props.editing
+  const editing = props.state?.editing
   if (editing == null) return null
   switch (editing.mode) {
     case EditingMode.EffectFree:

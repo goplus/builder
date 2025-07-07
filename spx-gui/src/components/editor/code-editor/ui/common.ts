@@ -1,10 +1,6 @@
 import { onUnmounted, watchEffect } from 'vue'
 import type * as monaco from 'monaco-editor'
 import { Cancelled } from '@/utils/exception'
-import type { ResourceModel } from '@/models/common/resource-model'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { isWidget } from '@/models/widget'
 import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
 import type { Monaco, MonacoEditor } from '../monaco'
 import { useCodeEditorUICtx } from './CodeEditorUI.vue'
@@ -68,15 +64,6 @@ export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
 
 export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.Uri {
   return monaco.Uri.parse(id.uri)
-}
-
-export function supportGoTo(resourceModel: ResourceModel): boolean {
-  // Currently, we do not support "go to detail" for other types of resources due to two reasons:
-  // 1. The "selected" state of certain resource types, such as animations, is still managed within the Component, making it difficult to control from here.
-  // 2. The "selected" state of some resource types, like costumes and backdrops, affects game behavior.
-  // TODO: Refactor to address issue 1 and reconsider user interactions to address issue 2, then enable this feature for all resource types.
-  // Related issue: https://github.com/goplus/builder/issues/1139
-  return resourceModel instanceof Sprite || resourceModel instanceof Sound || isWidget(resourceModel)
 }
 
 /** Position in pixels relative to the viewport's top-left corner */

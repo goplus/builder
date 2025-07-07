@@ -2,6 +2,7 @@
  * @file Disposing related utilities
  */
 
+import { markRaw } from 'vue'
 import { Cancelled } from './exception'
 
 export type Disposer = () => void
@@ -11,7 +12,9 @@ export interface IDisposable {
 }
 
 export class Disposable implements IDisposable {
-  private disposers: Disposer[] = []
+  // Sometimes model class may extends `Disposable`, a typical model class use `reactive(this)` to make its properties reactive.
+  // We use `markRaw` to prevent Vue from making `disposers` reactive, which may cause unexpected dependency collection & triggering.
+  private disposers: Disposer[] = markRaw([])
 
   private ctrl = new AbortController()
   get isDisposed() {

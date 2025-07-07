@@ -24,7 +24,7 @@ import {
   builtInCommandRenameResource,
   builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
-import { fromMonacoPosition, supportGoTo } from '../common'
+import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
 export type Hover = {
@@ -154,7 +154,7 @@ export class HoverController extends Emitter<{
       if (!containsPosition(reference.range, position)) continue
       const actions: Action[] = []
       const resourceModel = getResourceModel(this.ui.project, reference.resource)
-      if (resourceModel != null && supportGoTo(resourceModel)) {
+      if (resourceModel != null) {
         actions.push({
           command: builtInCommandGoToResource,
           arguments: [reference.resource]

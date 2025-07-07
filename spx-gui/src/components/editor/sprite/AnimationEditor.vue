@@ -22,9 +22,9 @@
       :key="animation.id"
       :sprite="sprite"
       :animation="animation"
-      :selectable="{ selected: selectedAnimationId === animation.id }"
+      :selectable="{ selected: state.selected?.id === animation.id }"
       removable
-      @click="selectedAnimationId = animation.id"
+      @click="state.select(animation.id)"
     />
     <template #add-options>
       <UIMenu>
@@ -34,13 +34,63 @@
       </UIMenu>
     </template>
     <template #detail>
-      <AnimationDetail v-if="selectedAnimation" :animation="selectedAnimation" :sprite="sprite" />
+      <AnimationDetail v-if="state.selected != null" :animation="state.selected" :sprite="sprite" />
     </template>
   </EditorList>
 </template>
 
+<script lang="ts">
+export class AnimationsEditorState extends Disposable {
+  constructor(private sprite: Sprite) {
+    super()
+    this.selectedIdRef = ref(sprite.animations[0]?.id ?? null)
+
+    this.addDisposer(
+      watch(
+        () => this.selected,
+        (selected) => {
+          if (selected == null && this.sprite.animations.length > 0) {
+            this.select(this.sprite.animations[0].id)
+          }
+        }
+      )
+    )
+  }
+
+  private selectedIdRef: Ref<string | null>
+
+  /** The currently selected animation */
+  get selected() {
+    return this.sprite.animations.find((animation) => animation.id === this.selectedIdRef.value) ?? null
+  }
+  /** Select a target (by ID) */
+  select(id: string | null) {
+    this.selectedIdRef.value = id
+  }
+  /** Select a target (by name) */
+  selectByName(name: string): void {
+    const animation = this.sprite.animations.find((animation) => animation.name === name)
+    if (animation == null) throw new Error(`Animation with name "${name}" not found`)
+    this.select(animation.id)
+  }
+  /** Select a target (by specifying route path) */
+  selectByRoute(path: PathSegments) {
+    const [name] = shiftPath(path)
+    if (name == null) return
+    return this.selectByName(name)
+  }
+  /** Get route path for the current selection */
+  getRoute() {
+    if (this.selected == null) return []
+    return [this.selected.name]
+  }
+}
+</script>
+
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { ref, type Ref, watch } from 'vue'
+import { Disposable } from '@/utils/disposable'
+import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
@@ -53,27 +103,17 @@ import galleryIcon from './gallery.svg'
 
 const props = defineProps<{
   sprite: Sprite
+  state: AnimationsEditorState
 }>()
 
 const editorCtx = useEditorCtx()
-
-const selectedAnimationId = ref<string | null>(props.sprite.animations[0]?.id || null)
-const selectedAnimation = computed(
-  () => props.sprite.animations.find((animation) => animation.id === selectedAnimationId.value) ?? null
-)
-
-watchEffect(() => {
-  if (selectedAnimationId.value == null || !selectedAnimation.value) {
-    selectedAnimationId.value = props.sprite.animations[0]?.id ?? null
-  }
-})
 
 const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
 
 const handleGroupCostumes = useMessageHandle(
   async () => {
     const animation = await addAnimationByGroupingCostumes(editorCtx.project, props.sprite)
-    selectedAnimationId.value = animation.id
+    props.state.select(animation.id)
   },
   {
     en: 'Failed to group costumes as animation',

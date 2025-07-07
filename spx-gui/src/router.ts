@@ -111,7 +111,7 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/'
   },
   {
-    path: '/editor/:ownerName/:projectName',
+    path: '/editor/:ownerName/:projectName/:inEditorPath*',
     component: () => import('@/pages/editor/index.vue'),
     props: true
   },

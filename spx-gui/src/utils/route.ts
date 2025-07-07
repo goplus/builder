@@ -85,3 +85,12 @@ export function useRouteQueryParamStrEnum<K extends string, E extends StrEnumTyp
     }
   })
 }
+
+/** Matched route segments (URL-decoded). */
+export type PathSegments = string[]
+
+/** Shift the first segment off the path segments. */
+export function shiftPath(path: PathSegments): [segment: string | null, extra: PathSegments] {
+  const [first, ...rest] = path
+  return [first ?? null, rest]
+}
