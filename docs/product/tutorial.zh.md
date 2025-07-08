@@ -47,9 +47,9 @@ Copilot 对应的对话框默认隐藏，当存在 Session 时显示。
 
 每个 Copilot Session 包括独立的：
 
-* Subject: 主题；它会影响 Copilot 关注的信息、事件及能够调用的能力
+* Topic: 主题；它会影响 Copilot 关注的信息、事件及能够调用的能力
 
-	如通过 Tutorial 发起的 Session，其 Subject 会包含对应的 Course 信息。
+	如通过 Tutorial 发起的 Session，其 Topic 会包含对应的 Course 信息。
 
 * Messages: 本次会话中的对话历史
 
