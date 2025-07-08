@@ -8,6 +8,97 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParseVisibility(t *testing.T) {
+	t.Run("Private", func(t *testing.T) {
+		v, err := ParseVisibility("private")
+		require.NoError(t, err)
+		assert.Equal(t, VisibilityPrivate, v)
+	})
+
+	t.Run("Public", func(t *testing.T) {
+		v, err := ParseVisibility("public")
+		require.NoError(t, err)
+		assert.Equal(t, VisibilityPublic, v)
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		_, err := ParseVisibility("invalid")
+		assert.EqualError(t, err, "invalid visibility: invalid")
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		_, err := ParseVisibility("")
+		assert.EqualError(t, err, "invalid visibility: ")
+	})
+}
+
+func TestVisibilityString(t *testing.T) {
+	t.Run("Private", func(t *testing.T) {
+		v := VisibilityPrivate
+		assert.Equal(t, "private", v.String())
+	})
+
+	t.Run("Public", func(t *testing.T) {
+		v := VisibilityPublic
+		assert.Equal(t, "public", v.String())
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		v := Visibility(255)
+		assert.Equal(t, "Visibility(255)", v.String())
+	})
+}
+
+func TestVisibilityMarshalText(t *testing.T) {
+	t.Run("Private", func(t *testing.T) {
+		v := VisibilityPrivate
+		text, err := v.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, []byte("private"), text)
+	})
+
+	t.Run("Public", func(t *testing.T) {
+		v := VisibilityPublic
+		text, err := v.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, []byte("public"), text)
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		v := Visibility(255)
+		_, err := v.MarshalText()
+		assert.EqualError(t, err, "invalid visibility: 255")
+	})
+}
+
+func TestVisibilityUnmarshalText(t *testing.T) {
+	t.Run("Private", func(t *testing.T) {
+		var v Visibility
+		err := v.UnmarshalText([]byte("private"))
+		require.NoError(t, err)
+		assert.Equal(t, VisibilityPrivate, v)
+	})
+
+	t.Run("Public", func(t *testing.T) {
+		var v Visibility
+		err := v.UnmarshalText([]byte("public"))
+		require.NoError(t, err)
+		assert.Equal(t, VisibilityPublic, v)
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		var v Visibility
+		err := v.UnmarshalText([]byte("invalid"))
+		assert.EqualError(t, err, "invalid visibility: invalid")
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		var v Visibility
+		err := v.UnmarshalText([]byte(""))
+		assert.EqualError(t, err, "invalid visibility: ")
+	})
+}
+
 func TestFileCollectionScan(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		var fc FileCollection

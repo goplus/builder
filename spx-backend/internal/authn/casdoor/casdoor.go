@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 // client defines the interface for Casdoor client operations.
 type client interface {
 	ParseJwtToken(token string) (*casdoorsdk.Claims, error)
@@ -47,7 +46,7 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	if err != nil {
 		return nil, errors.Join(authn.ErrUnauthorized, fmt.Errorf("failed to parse token: %w", err))
 	}
-	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserParams{
+	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserAttrs{
 		Username:    claims.Name,
 		DisplayName: claims.DisplayName,
 		Avatar:      claims.Avatar,

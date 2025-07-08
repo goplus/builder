@@ -63,27 +63,43 @@ const (
 	VisibilityPublic
 )
 
-// ParseVisibility parses the string representation of the visibility.
-func ParseVisibility(s string) Visibility {
-	switch s {
-	case "private":
-		return VisibilityPrivate
-	case "public":
-		return VisibilityPublic
-	}
-	return 255
+// ParseVisibility parses the string representation of a visibility.
+func ParseVisibility(s string) (Visibility, error) {
+	var v Visibility
+	return v, v.UnmarshalText([]byte(s))
 }
 
-// String implements [fmt.Stringer]. It returns the string representation of the
-// visibility.
+// String implements [fmt.Stringer].
 func (v Visibility) String() string {
+	if text, err := v.MarshalText(); err == nil {
+		return string(text)
+	}
+	return fmt.Sprintf("Visibility(%d)", v)
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (v Visibility) MarshalText() ([]byte, error) {
 	switch v {
 	case VisibilityPrivate:
-		return "private"
+		return []byte("private"), nil
 	case VisibilityPublic:
-		return "public"
+		return []byte("public"), nil
+	default:
+		return nil, fmt.Errorf("invalid visibility: %d", v)
 	}
-	return "unknown"
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (v *Visibility) UnmarshalText(text []byte) error {
+	switch string(text) {
+	case "private":
+		*v = VisibilityPrivate
+	case "public":
+		*v = VisibilityPublic
+	default:
+		return fmt.Errorf("invalid visibility: %s", text)
+	}
+	return nil
 }
 
 // FileCollection is a map from relative path to universal URL. It is used to

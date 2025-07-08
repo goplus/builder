@@ -593,7 +593,7 @@ func TestCreateProjectParams(t *testing.T) {
 			Files: model.FileCollection{
 				"main.go": "http://example.com/main.go",
 			},
-			Visibility:   "public",
+			Visibility:   model.VisibilityPublic,
 			Description:  "Test project description",
 			Instructions: "How to use this project",
 			Thumbnail:    "http://example.com/thumbnail.jpg",
@@ -607,7 +607,7 @@ func TestCreateProjectParams(t *testing.T) {
 		params := &CreateProjectParams{
 			Name:         "testproject",
 			Files:        model.FileCollection{},
-			Visibility:   "private",
+			Visibility:   model.VisibilityPrivate,
 			Description:  "Test project description",
 			Instructions: "How to use this project",
 			Thumbnail:    "http://example.com/thumbnail.jpg",
@@ -621,7 +621,7 @@ func TestCreateProjectParams(t *testing.T) {
 		params := &CreateProjectParams{
 			RemixSource: &RemixSource{},
 			Name:        "testproject",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -630,7 +630,7 @@ func TestCreateProjectParams(t *testing.T) {
 
 	t.Run("MissingName", func(t *testing.T) {
 		params := &CreateProjectParams{
-			Visibility: "public",
+			Visibility: model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -640,21 +640,11 @@ func TestCreateProjectParams(t *testing.T) {
 	t.Run("InvalidName", func(t *testing.T) {
 		params := &CreateProjectParams{
 			Name:       "invalid project name",
-			Visibility: "public",
+			Visibility: model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid name", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &CreateProjectParams{
-			Name:       "testproject",
-			Visibility: "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -686,7 +676,7 @@ func TestControllerCreateProject(t *testing.T) {
 		params := &CreateProjectParams{
 			Name:        "testproject",
 			Files:       model.FileCollection{"main.go": "http://example.com/main.go"},
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 			Description: "Test project description",
 		}
 
@@ -698,7 +688,7 @@ func TestControllerCreateProject(t *testing.T) {
 				Name:        params.Name,
 				Version:     1,
 				Files:       params.Files,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 				Description: params.Description,
 			}).
 			Statement
@@ -734,7 +724,7 @@ func TestControllerCreateProject(t *testing.T) {
 				OwnerID:     mUser.ID,
 				Name:        params.Name,
 				Files:       params.Files,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 				Description: params.Description,
 			})...))
 
@@ -786,7 +776,7 @@ func TestControllerCreateProject(t *testing.T) {
 		params := &CreateProjectParams{
 			RemixSource: &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name},
 			Name:        "remixproject",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -819,7 +809,7 @@ func TestControllerCreateProject(t *testing.T) {
 				Name:                 params.Name,
 				Version:              1,
 				Files:                mSourceProjectRelease.Files,
-				Visibility:           model.ParseVisibility(params.Visibility),
+				Visibility:           params.Visibility,
 				Description:          mSourceProject.Description,
 				Instructions:         mSourceProject.Instructions,
 				Thumbnail:            mSourceProjectRelease.Thumbnail,
@@ -879,7 +869,7 @@ func TestControllerCreateProject(t *testing.T) {
 				OwnerID:              mUser.ID,
 				Name:                 params.Name,
 				Files:                mSourceProjectRelease.Files,
-				Visibility:           model.ParseVisibility(params.Visibility),
+				Visibility:           params.Visibility,
 				Description:          mSourceProject.Description,
 				Instructions:         mSourceProject.Instructions,
 				Thumbnail:            mSourceProjectRelease.Thumbnail,
@@ -944,7 +934,7 @@ func TestControllerCreateProject(t *testing.T) {
 
 		params := &CreateProjectParams{
 			Name:       "testproject",
-			Visibility: "public",
+			Visibility: model.VisibilityPublic,
 		}
 
 		_, err := ctrl.CreateProject(context.Background(), params)
@@ -962,7 +952,7 @@ func TestControllerCreateProject(t *testing.T) {
 
 		params := &CreateProjectParams{
 			Name:       "testproject",
-			Visibility: "public",
+			Visibility: model.VisibilityPublic,
 		}
 
 		dbMock.ExpectBegin()
@@ -972,7 +962,7 @@ func TestControllerCreateProject(t *testing.T) {
 				OwnerID:    mUser.ID,
 				Name:       params.Name,
 				Version:    1,
-				Visibility: model.ParseVisibility(params.Visibility),
+				Visibility: params.Visibility,
 			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -1021,7 +1011,7 @@ func TestListProjectsParams(t *testing.T) {
 		params.Owner = ptr("testuser")
 		params.RemixedFrom = &RemixSource{Owner: "user", Project: "project"}
 		params.Keyword = ptr("test")
-		params.Visibility = ptr("public")
+		params.Visibility = ptr(model.VisibilityPublic)
 		params.Liker = ptr("liker")
 		params.CreatedAfter = &time.Time{}
 		params.LikesReceivedAfter = &time.Time{}
@@ -1042,14 +1032,6 @@ func TestListProjectsParams(t *testing.T) {
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid remixedFrom", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := NewListProjectsParams()
-		params.Visibility = ptr("invalid")
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 
 	t.Run("InvalidOrderBy", func(t *testing.T) {
@@ -1644,7 +1626,7 @@ func TestControllerGetProject(t *testing.T) {
 		projectDTO, err := ctrl.GetProject(ctx, ProjectFullName{Owner: mUser.Username, Project: mProject.Name})
 		require.NoError(t, err)
 		assert.Equal(t, mProject.Name, projectDTO.Name)
-		assert.Equal(t, mProject.Visibility.String(), projectDTO.Visibility)
+		assert.Equal(t, mProject.Visibility, projectDTO.Visibility)
 		assert.Equal(t, mProject.Description, projectDTO.Description)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -1730,7 +1712,7 @@ func TestUpdateProjectParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &UpdateProjectParams{
 			Files:        model.FileCollection{"main.go": "http://example.com/main.go"},
-			Visibility:   "public",
+			Visibility:   model.VisibilityPublic,
 			Description:  "Updated project description",
 			Instructions: "Updated instructions",
 			Thumbnail:    "http://example.com/updated-thumbnail.jpg",
@@ -1738,15 +1720,6 @@ func TestUpdateProjectParams(t *testing.T) {
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &UpdateProjectParams{
-			Visibility: "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -1780,7 +1753,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		}
 
 		params := &UpdateProjectParams{
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 			Description: "Updated description",
 		}
 
@@ -1818,7 +1791,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
 			Updates(map[string]any{
-				"visibility":  model.ParseVisibility(params.Visibility),
+				"visibility":  params.Visibility,
 				"description": params.Description,
 			}).
 			Statement
@@ -1858,7 +1831,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		mProjectName := "nonexistent"
 
 		params := &UpdateProjectParams{
-			Visibility: "public",
+			Visibility: model.VisibilityPublic,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -1897,7 +1870,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		}
 
 		params := &UpdateProjectParams{
-			Visibility: "private",
+			Visibility: model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -1947,7 +1920,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		}
 
 		params := &UpdateProjectParams{
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 			Description: "Original description",
 		}
 
@@ -1973,7 +1946,7 @@ func TestControllerUpdateProject(t *testing.T) {
 
 		mUpdatedProject, err := ctrl.UpdateProject(ctx, ProjectFullName{Owner: mUser.Username, Project: mProject.Name}, params)
 		require.NoError(t, err)
-		assert.Equal(t, mProject.Visibility.String(), mUpdatedProject.Visibility)
+		assert.Equal(t, mProject.Visibility, mUpdatedProject.Visibility)
 		assert.Equal(t, mProject.Description, mUpdatedProject.Description)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
