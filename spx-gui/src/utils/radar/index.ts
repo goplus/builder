@@ -4,7 +4,7 @@ import { inject, reactive, type App, type Directive, type InjectionKey } from 'v
 export type RadarNodeMeta = {
   /** Descriptive name of the node */
   name: string
-  /** Desciption of the node */
+  /** Description of the node */
   desc: string
   /** Whether the node is visible */
   visible?: boolean
@@ -25,7 +25,7 @@ export class RadarNodeInfo {
   id: string
   /** Descriptive name of the node */
   name: string
-  /** Desciption of the node */
+  /** Description of the node */
   desc: string
   /** Whether the node is visible */
   visible: boolean
