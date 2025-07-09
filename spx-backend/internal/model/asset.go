@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 // Asset is the model for assets.
 type Asset struct {
 	Model
@@ -42,29 +44,45 @@ const (
 	AssetTypeSound
 )
 
-// ParseAssetType parses the string representation of the asset type.
-func ParseAssetType(s string) AssetType {
-	switch s {
-	case "sprite":
-		return AssetTypeSprite
-	case "backdrop":
-		return AssetTypeBackdrop
-	case "sound":
-		return AssetTypeSound
-	}
-	return 255
+// ParseAssetType parses the string representation of an asset type.
+func ParseAssetType(s string) (AssetType, error) {
+	var at AssetType
+	return at, at.UnmarshalText([]byte(s))
 }
 
-// String implements [fmt.Stringer]. It returns the string representation of the
-// asset type.
+// String implements [fmt.Stringer].
 func (at AssetType) String() string {
+	if text, err := at.MarshalText(); err == nil {
+		return string(text)
+	}
+	return fmt.Sprintf("AssetType(%d)", at)
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (at AssetType) MarshalText() ([]byte, error) {
 	switch at {
 	case AssetTypeSprite:
-		return "sprite"
+		return []byte("sprite"), nil
 	case AssetTypeBackdrop:
-		return "backdrop"
+		return []byte("backdrop"), nil
 	case AssetTypeSound:
-		return "sound"
+		return []byte("sound"), nil
+	default:
+		return nil, fmt.Errorf("invalid asset type: %d", at)
 	}
-	return "unknown"
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (at *AssetType) UnmarshalText(text []byte) error {
+	switch string(text) {
+	case "sprite":
+		*at = AssetTypeSprite
+	case "backdrop":
+		*at = AssetTypeBackdrop
+	case "sound":
+		*at = AssetTypeSound
+	default:
+		return fmt.Errorf("invalid asset type: %s", text)
+	}
+	return nil
 }

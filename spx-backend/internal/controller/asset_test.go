@@ -140,10 +140,10 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -153,10 +153,10 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("MissingDisplayName", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -166,35 +166,22 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("InvalidDisplayName", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: strings.Repeat("a", 256),
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid displayName", msg)
 	})
 
-	t.Run("InvalidType", func(t *testing.T) {
-		params := &CreateAssetParams{
-			DisplayName: "Test Asset",
-			Type:        "invalid",
-			Category:    "characters",
-			FilesHash:   "abc123",
-			Visibility:  "public",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
 	t.Run("MissingCategory", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -204,26 +191,13 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("MissingFilesHash", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing filesHash", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &CreateAssetParams{
-			DisplayName: "Test Asset",
-			Type:        "sprite",
-			Category:    "characters",
-			FilesHash:   "abc123",
-			Visibility:  "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -250,10 +224,10 @@ func TestControllerCreateAsset(t *testing.T) {
 
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 
 		dbMock.ExpectBegin()
@@ -262,10 +236,10 @@ func TestControllerCreateAsset(t *testing.T) {
 			Create(&model.Asset{
 				OwnerID:     mUser.ID,
 				DisplayName: params.DisplayName,
-				Type:        model.ParseAssetType(params.Type),
+				Type:        params.Type,
 				Category:    params.Category,
 				FilesHash:   params.FilesHash,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -287,10 +261,10 @@ func TestControllerCreateAsset(t *testing.T) {
 				Model:       model.Model{ID: 1},
 				OwnerID:     mUser.ID,
 				DisplayName: params.DisplayName,
-				Type:        model.ParseAssetType(params.Type),
+				Type:        params.Type,
 				Category:    params.Category,
 				FilesHash:   params.FilesHash,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 			})...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -319,10 +293,10 @@ func TestControllerCreateAsset(t *testing.T) {
 
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 
 		_, err := ctrl.CreateAsset(context.Background(), params)
@@ -348,24 +322,6 @@ func TestListAssetsParams(t *testing.T) {
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
-	})
-
-	t.Run("InvalidType", func(t *testing.T) {
-		params := NewListAssetsParams()
-		invalidType := "invalid"
-		params.Type = &invalidType
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := NewListAssetsParams()
-		invalidVisibility := "invalid"
-		params.Visibility = &invalidVisibility
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 
 	t.Run("InvalidOrderBy", func(t *testing.T) {
@@ -542,10 +498,10 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -555,10 +511,10 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("MissingDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -568,35 +524,22 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("InvalidDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: strings.Repeat("a", 256),
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid displayName", msg)
 	})
 
-	t.Run("InvalidType", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "Updated Asset",
-			Type:        "invalid",
-			Category:    "characters",
-			FilesHash:   "def456",
-			Visibility:  "public",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
 	t.Run("MissingCategory", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -606,26 +549,13 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("MissingFilesHash", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing filesHash", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "Updated Asset",
-			Type:        "sprite",
-			Category:    "characters",
-			FilesHash:   "def456",
-			Visibility:  "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -662,10 +592,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -692,10 +622,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Model(&model.Asset{Model: mAsset.Model}).
 			Updates(map[string]any{
 				"display_name": params.DisplayName,
-				"type":         model.ParseAssetType(params.Type),
+				"type":         params.Type,
 				"category":     params.Category,
 				"files_hash":   params.FilesHash,
-				"visibility":   model.ParseVisibility(params.Visibility),
+				"visibility":   params.Visibility,
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -727,10 +657,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -769,10 +699,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).

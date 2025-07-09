@@ -402,109 +402,127 @@ func (this *get_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/get_assets_list.yap:10
+//line cmd/spx-backend/get_assets_list.yap:11
 func (this *get_assets_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/get_assets_list.yap:10:1
+//line cmd/spx-backend/get_assets_list.yap:11:1
 	ctx := &this.Context
-//line cmd/spx-backend/get_assets_list.yap:12:1
+//line cmd/spx-backend/get_assets_list.yap:13:1
 	params := controller.NewListAssetsParams()
-//line cmd/spx-backend/get_assets_list.yap:14:1
-	if
-//line cmd/spx-backend/get_assets_list.yap:14:1
-	keyword := this.Gop_Env("keyword"); keyword != "" {
 //line cmd/spx-backend/get_assets_list.yap:15:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:15:1
+	keyword := this.Gop_Env("keyword"); keyword != "" {
+//line cmd/spx-backend/get_assets_list.yap:16:1
 		params.Keyword = &keyword
 	}
-//line cmd/spx-backend/get_assets_list.yap:18:1
-	switch
-//line cmd/spx-backend/get_assets_list.yap:18:1
-	owner := this.Gop_Env("owner"); owner {
 //line cmd/spx-backend/get_assets_list.yap:19:1
-	case "":
+	switch
+//line cmd/spx-backend/get_assets_list.yap:19:1
+	owner := this.Gop_Env("owner"); owner {
 //line cmd/spx-backend/get_assets_list.yap:20:1
-		mUser, ok := ensureAuthenticatedUser(ctx)
+	case "":
 //line cmd/spx-backend/get_assets_list.yap:21:1
-		if !ok {
+		mUser, ok := ensureAuthenticatedUser(ctx)
 //line cmd/spx-backend/get_assets_list.yap:22:1
+		if !ok {
+//line cmd/spx-backend/get_assets_list.yap:23:1
 			return
 		}
-//line cmd/spx-backend/get_assets_list.yap:24:1
-		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_assets_list.yap:25:1
-	case "*":
+		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_assets_list.yap:26:1
-		params.Owner = nil
+	case "*":
 //line cmd/spx-backend/get_assets_list.yap:27:1
-	default:
+		params.Owner = nil
 //line cmd/spx-backend/get_assets_list.yap:28:1
+	default:
+//line cmd/spx-backend/get_assets_list.yap:29:1
 		params.Owner = &owner
 	}
-//line cmd/spx-backend/get_assets_list.yap:31:1
-	if
-//line cmd/spx-backend/get_assets_list.yap:31:1
-	typeParam := ctx.Param("type"); typeParam != "" {
 //line cmd/spx-backend/get_assets_list.yap:32:1
-		params.Type = &typeParam
-	}
-//line cmd/spx-backend/get_assets_list.yap:35:1
 	if
+//line cmd/spx-backend/get_assets_list.yap:32:1
+	typeParam := ctx.Param("type"); typeParam != "" {
+//line cmd/spx-backend/get_assets_list.yap:33:1
+		at, err := model.ParseAssetType(typeParam)
+//line cmd/spx-backend/get_assets_list.yap:34:1
+		if err != nil {
 //line cmd/spx-backend/get_assets_list.yap:35:1
-	category := this.Gop_Env("category"); category != "" {
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid type")
 //line cmd/spx-backend/get_assets_list.yap:36:1
+			return
+		}
+//line cmd/spx-backend/get_assets_list.yap:38:1
+		params.Type = &at
+	}
+//line cmd/spx-backend/get_assets_list.yap:41:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:41:1
+	category := this.Gop_Env("category"); category != "" {
+//line cmd/spx-backend/get_assets_list.yap:42:1
 		params.Category = &category
 	}
-//line cmd/spx-backend/get_assets_list.yap:39:1
+//line cmd/spx-backend/get_assets_list.yap:45:1
 	if
-//line cmd/spx-backend/get_assets_list.yap:39:1
+//line cmd/spx-backend/get_assets_list.yap:45:1
 	filesHash := this.Gop_Env("filesHash"); filesHash != "" {
-//line cmd/spx-backend/get_assets_list.yap:40:1
+//line cmd/spx-backend/get_assets_list.yap:46:1
 		params.FilesHash = &filesHash
 	}
-//line cmd/spx-backend/get_assets_list.yap:43:1
+//line cmd/spx-backend/get_assets_list.yap:49:1
 	if
-//line cmd/spx-backend/get_assets_list.yap:43:1
+//line cmd/spx-backend/get_assets_list.yap:49:1
 	visibility := this.Gop_Env("visibility"); visibility != "" {
-//line cmd/spx-backend/get_assets_list.yap:44:1
-		params.Visibility = &visibility
+//line cmd/spx-backend/get_assets_list.yap:50:1
+		v, err := model.ParseVisibility(visibility)
+//line cmd/spx-backend/get_assets_list.yap:51:1
+		if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:52:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid visibility")
+//line cmd/spx-backend/get_assets_list.yap:53:1
+			return
+		}
+//line cmd/spx-backend/get_assets_list.yap:55:1
+		params.Visibility = &v
 	}
-//line cmd/spx-backend/get_assets_list.yap:47:1
+//line cmd/spx-backend/get_assets_list.yap:58:1
 	if
-//line cmd/spx-backend/get_assets_list.yap:47:1
+//line cmd/spx-backend/get_assets_list.yap:58:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_assets_list.yap:48:1
+//line cmd/spx-backend/get_assets_list.yap:59:1
 		params.OrderBy = controller.ListAssetsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_assets_list.yap:50:1
+//line cmd/spx-backend/get_assets_list.yap:61:1
 	if
-//line cmd/spx-backend/get_assets_list.yap:50:1
+//line cmd/spx-backend/get_assets_list.yap:61:1
 	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
-//line cmd/spx-backend/get_assets_list.yap:51:1
+//line cmd/spx-backend/get_assets_list.yap:62:1
 		params.SortOrder = controller.SortOrder(sortOrder)
 	}
-//line cmd/spx-backend/get_assets_list.yap:54:1
+//line cmd/spx-backend/get_assets_list.yap:65:1
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_assets_list.yap:55:1
-	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_assets_list.yap:56:1
-	if
-//line cmd/spx-backend/get_assets_list.yap:56:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_assets_list.yap:57:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/get_assets_list.yap:58:1
-		return
-	}
-//line cmd/spx-backend/get_assets_list.yap:61:1
-	assets, err := this.ctrl.ListAssets(ctx.Context(), params)
-//line cmd/spx-backend/get_assets_list.yap:62:1
-	if err != nil {
-//line cmd/spx-backend/get_assets_list.yap:63:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_assets_list.yap:64:1
-		return
-	}
 //line cmd/spx-backend/get_assets_list.yap:66:1
+	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_assets_list.yap:67:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:67:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/get_assets_list.yap:68:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/get_assets_list.yap:69:1
+		return
+	}
+//line cmd/spx-backend/get_assets_list.yap:72:1
+	assets, err := this.ctrl.ListAssets(ctx.Context(), params)
+//line cmd/spx-backend/get_assets_list.yap:73:1
+	if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:74:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_assets_list.yap:75:1
+		return
+	}
+//line cmd/spx-backend/get_assets_list.yap:77:1
 	this.Json__1(assets)
 }
 func (this *get_assets_list) Classfname() string {
@@ -676,175 +694,184 @@ func (this *get_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/get_projects_list.yap:13
+//line cmd/spx-backend/get_projects_list.yap:14
 func (this *get_projects_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/get_projects_list.yap:13:1
+//line cmd/spx-backend/get_projects_list.yap:14:1
 	ctx := &this.Context
-//line cmd/spx-backend/get_projects_list.yap:15:1
+//line cmd/spx-backend/get_projects_list.yap:16:1
 	params := controller.NewListProjectsParams()
-//line cmd/spx-backend/get_projects_list.yap:17:1
-	switch
-//line cmd/spx-backend/get_projects_list.yap:17:1
-	owner := this.Gop_Env("owner"); owner {
 //line cmd/spx-backend/get_projects_list.yap:18:1
-	case "":
+	switch
+//line cmd/spx-backend/get_projects_list.yap:18:1
+	owner := this.Gop_Env("owner"); owner {
 //line cmd/spx-backend/get_projects_list.yap:19:1
-		mUser, ok := ensureAuthenticatedUser(ctx)
+	case "":
 //line cmd/spx-backend/get_projects_list.yap:20:1
-		if !ok {
+		mUser, ok := ensureAuthenticatedUser(ctx)
 //line cmd/spx-backend/get_projects_list.yap:21:1
+		if !ok {
+//line cmd/spx-backend/get_projects_list.yap:22:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:23:1
-		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_projects_list.yap:24:1
-	case "*":
+		params.Owner = &mUser.Username
 //line cmd/spx-backend/get_projects_list.yap:25:1
-		params.Owner = nil
+	case "*":
 //line cmd/spx-backend/get_projects_list.yap:26:1
-	default:
+		params.Owner = nil
 //line cmd/spx-backend/get_projects_list.yap:27:1
+	default:
+//line cmd/spx-backend/get_projects_list.yap:28:1
 		params.Owner = &owner
 	}
-//line cmd/spx-backend/get_projects_list.yap:30:1
-	if
-//line cmd/spx-backend/get_projects_list.yap:30:1
-	remixedFrom := this.Gop_Env("remixedFrom"); remixedFrom != "" {
 //line cmd/spx-backend/get_projects_list.yap:31:1
-		rs, err := controller.ParseRemixSource(remixedFrom)
+	if
+//line cmd/spx-backend/get_projects_list.yap:31:1
+	remixedFrom := this.Gop_Env("remixedFrom"); remixedFrom != "" {
 //line cmd/spx-backend/get_projects_list.yap:32:1
-		if err != nil {
+		rs, err := controller.ParseRemixSource(remixedFrom)
 //line cmd/spx-backend/get_projects_list.yap:33:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixedFrom")
+		if err != nil {
 //line cmd/spx-backend/get_projects_list.yap:34:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixedFrom")
+//line cmd/spx-backend/get_projects_list.yap:35:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:36:1
+//line cmd/spx-backend/get_projects_list.yap:37:1
 		params.RemixedFrom = &rs
 	}
-//line cmd/spx-backend/get_projects_list.yap:39:1
-	if
-//line cmd/spx-backend/get_projects_list.yap:39:1
-	keyword := this.Gop_Env("keyword"); keyword != "" {
 //line cmd/spx-backend/get_projects_list.yap:40:1
+	if
+//line cmd/spx-backend/get_projects_list.yap:40:1
+	keyword := this.Gop_Env("keyword"); keyword != "" {
+//line cmd/spx-backend/get_projects_list.yap:41:1
 		params.Keyword = &keyword
 	}
-//line cmd/spx-backend/get_projects_list.yap:43:1
-	if
-//line cmd/spx-backend/get_projects_list.yap:43:1
-	visibility := this.Gop_Env("visibility"); visibility != "" {
 //line cmd/spx-backend/get_projects_list.yap:44:1
-		params.Visibility = &visibility
-	}
-//line cmd/spx-backend/get_projects_list.yap:47:1
 	if
+//line cmd/spx-backend/get_projects_list.yap:44:1
+	visibility := this.Gop_Env("visibility"); visibility != "" {
+//line cmd/spx-backend/get_projects_list.yap:45:1
+		v, err := model.ParseVisibility(visibility)
+//line cmd/spx-backend/get_projects_list.yap:46:1
+		if err != nil {
 //line cmd/spx-backend/get_projects_list.yap:47:1
-	liker := this.Gop_Env("liker"); liker != "" {
+			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid visibility")
 //line cmd/spx-backend/get_projects_list.yap:48:1
+			return
+		}
+//line cmd/spx-backend/get_projects_list.yap:50:1
+		params.Visibility = &v
+	}
+//line cmd/spx-backend/get_projects_list.yap:53:1
+	if
+//line cmd/spx-backend/get_projects_list.yap:53:1
+	liker := this.Gop_Env("liker"); liker != "" {
+//line cmd/spx-backend/get_projects_list.yap:54:1
 		params.Liker = &liker
 	}
-//line cmd/spx-backend/get_projects_list.yap:51:1
+//line cmd/spx-backend/get_projects_list.yap:57:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:51:1
+//line cmd/spx-backend/get_projects_list.yap:57:1
 	createdAfter := this.Gop_Env("createdAfter"); createdAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:52:1
+//line cmd/spx-backend/get_projects_list.yap:58:1
 		createdAfterTime, err := time.Parse(time.RFC3339Nano, createdAfter)
-//line cmd/spx-backend/get_projects_list.yap:53:1
+//line cmd/spx-backend/get_projects_list.yap:59:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:54:1
+//line cmd/spx-backend/get_projects_list.yap:60:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid createdAfter")
-//line cmd/spx-backend/get_projects_list.yap:55:1
+//line cmd/spx-backend/get_projects_list.yap:61:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:57:1
+//line cmd/spx-backend/get_projects_list.yap:63:1
 		params.CreatedAfter = &createdAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:60:1
+//line cmd/spx-backend/get_projects_list.yap:66:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:60:1
+//line cmd/spx-backend/get_projects_list.yap:66:1
 	likesReceivedAfter := this.Gop_Env("likesReceivedAfter"); likesReceivedAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:61:1
+//line cmd/spx-backend/get_projects_list.yap:67:1
 		likesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, likesReceivedAfter)
-//line cmd/spx-backend/get_projects_list.yap:62:1
+//line cmd/spx-backend/get_projects_list.yap:68:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:63:1
+//line cmd/spx-backend/get_projects_list.yap:69:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid likesReceivedAfter")
-//line cmd/spx-backend/get_projects_list.yap:64:1
+//line cmd/spx-backend/get_projects_list.yap:70:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:66:1
+//line cmd/spx-backend/get_projects_list.yap:72:1
 		params.LikesReceivedAfter = &likesReceivedAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:69:1
+//line cmd/spx-backend/get_projects_list.yap:75:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:69:1
+//line cmd/spx-backend/get_projects_list.yap:75:1
 	remixesReceivedAfter := this.Gop_Env("remixesReceivedAfter"); remixesReceivedAfter != "" {
-//line cmd/spx-backend/get_projects_list.yap:70:1
+//line cmd/spx-backend/get_projects_list.yap:76:1
 		remixesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, remixesReceivedAfter)
-//line cmd/spx-backend/get_projects_list.yap:71:1
+//line cmd/spx-backend/get_projects_list.yap:77:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:72:1
+//line cmd/spx-backend/get_projects_list.yap:78:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixesReceivedAfter")
-//line cmd/spx-backend/get_projects_list.yap:73:1
+//line cmd/spx-backend/get_projects_list.yap:79:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:75:1
+//line cmd/spx-backend/get_projects_list.yap:81:1
 		params.RemixesReceivedAfter = &remixesReceivedAfterTime
 	}
-//line cmd/spx-backend/get_projects_list.yap:78:1
+//line cmd/spx-backend/get_projects_list.yap:84:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:78:1
+//line cmd/spx-backend/get_projects_list.yap:84:1
 	fromFollowees := this.Gop_Env("fromFollowees"); fromFollowees != "" {
-//line cmd/spx-backend/get_projects_list.yap:79:1
+//line cmd/spx-backend/get_projects_list.yap:85:1
 		fromFolloweesBool, err := strconv.ParseBool(fromFollowees)
-//line cmd/spx-backend/get_projects_list.yap:80:1
+//line cmd/spx-backend/get_projects_list.yap:86:1
 		if err != nil {
-//line cmd/spx-backend/get_projects_list.yap:81:1
+//line cmd/spx-backend/get_projects_list.yap:87:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid fromFollowees")
-//line cmd/spx-backend/get_projects_list.yap:82:1
+//line cmd/spx-backend/get_projects_list.yap:88:1
 			return
 		}
-//line cmd/spx-backend/get_projects_list.yap:84:1
+//line cmd/spx-backend/get_projects_list.yap:90:1
 		params.FromFollowees = &fromFolloweesBool
 	}
-//line cmd/spx-backend/get_projects_list.yap:87:1
+//line cmd/spx-backend/get_projects_list.yap:93:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:87:1
+//line cmd/spx-backend/get_projects_list.yap:93:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_projects_list.yap:88:1
+//line cmd/spx-backend/get_projects_list.yap:94:1
 		params.OrderBy = controller.ListProjectsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_projects_list.yap:90:1
+//line cmd/spx-backend/get_projects_list.yap:96:1
 	if
-//line cmd/spx-backend/get_projects_list.yap:90:1
+//line cmd/spx-backend/get_projects_list.yap:96:1
 	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
-//line cmd/spx-backend/get_projects_list.yap:91:1
+//line cmd/spx-backend/get_projects_list.yap:97:1
 		params.SortOrder = controller.SortOrder(sortOrder)
 	}
-//line cmd/spx-backend/get_projects_list.yap:94:1
+//line cmd/spx-backend/get_projects_list.yap:100:1
 	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_projects_list.yap:95:1
-	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_projects_list.yap:96:1
-	if
-//line cmd/spx-backend/get_projects_list.yap:96:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_projects_list.yap:97:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/get_projects_list.yap:98:1
-		return
-	}
 //line cmd/spx-backend/get_projects_list.yap:101:1
-	projects, err := this.ctrl.ListProjects(ctx.Context(), params)
+	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
 //line cmd/spx-backend/get_projects_list.yap:102:1
-	if err != nil {
+	if
+//line cmd/spx-backend/get_projects_list.yap:102:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/get_projects_list.yap:103:1
-		replyWithInnerError(ctx, err)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/get_projects_list.yap:104:1
 		return
 	}
-//line cmd/spx-backend/get_projects_list.yap:106:1
+//line cmd/spx-backend/get_projects_list.yap:107:1
+	projects, err := this.ctrl.ListProjects(ctx.Context(), params)
+//line cmd/spx-backend/get_projects_list.yap:108:1
+	if err != nil {
+//line cmd/spx-backend/get_projects_list.yap:109:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_projects_list.yap:110:1
+		return
+	}
+//line cmd/spx-backend/get_projects_list.yap:112:1
 	this.Json__1(projects)
 }
 func (this *get_projects_list) Classfname() string {

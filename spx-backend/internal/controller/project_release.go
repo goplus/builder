@@ -50,10 +50,11 @@ type ProjectReleaseFullName struct {
 	Release string
 }
 
-// ParseProjectReleaseFullName parses a project release full name from a string.
-func ParseProjectReleaseFullName(fullName string) (ProjectReleaseFullName, error) {
+// ParseProjectReleaseFullName parses the string representation of a project
+// release full name.
+func ParseProjectReleaseFullName(s string) (ProjectReleaseFullName, error) {
 	var prfn ProjectReleaseFullName
-	return prfn, prfn.UnmarshalText([]byte(fullName))
+	return prfn, prfn.UnmarshalText([]byte(s))
 }
 
 // String implements [fmt.Stringer].

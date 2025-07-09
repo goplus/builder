@@ -22,7 +22,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, User{})
 	require.NoError(t, err)
 
-	expectedParams := CreateUserParams{
+	expectedAttrs := CreateUserAttrs{
 		Username:    "john",
 		DisplayName: "John Doe",
 		Avatar:      "https://example.com/avatar.jpg",
@@ -30,9 +30,9 @@ func TestFirstOrCreateUser(t *testing.T) {
 
 	mExpectedUser := User{
 		Model:              Model{ID: 1},
-		Username:           expectedParams.Username,
-		DisplayName:        expectedParams.DisplayName,
-		Avatar:             expectedParams.Avatar,
+		Username:           expectedAttrs.Username,
+		DisplayName:        expectedAttrs.DisplayName,
+		Avatar:             expectedAttrs.Avatar,
 		Description:        "I'm John",
 		FollowerCount:      10,
 		FollowingCount:     5,
@@ -55,7 +55,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
 
-		mUser, err := FirstOrCreateUser(context.Background(), db, expectedParams)
+		mUser, err := FirstOrCreateUser(context.Background(), db, expectedAttrs)
 		require.NoError(t, err)
 		assert.Equal(t, mExpectedUser, *mUser)
 
@@ -103,7 +103,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
 
-		mUser, err := FirstOrCreateUser(context.Background(), db, expectedParams)
+		mUser, err := FirstOrCreateUser(context.Background(), db, expectedAttrs)
 		require.NoError(t, err)
 		assert.Equal(t, mExpectedUser, *mUser)
 

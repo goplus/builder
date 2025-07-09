@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
@@ -41,7 +42,12 @@ if keyword := ${keyword}; keyword != "" {
 }
 
 if visibility := ${visibility}; visibility != "" {
-	params.Visibility = &visibility
+	v, err := model.ParseVisibility(visibility)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid visibility")
+		return
+	}
+	params.Visibility = &v
 }
 
 if liker := ${liker}; liker != "" {

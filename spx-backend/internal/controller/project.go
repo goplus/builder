@@ -27,7 +27,7 @@ type ProjectDTO struct {
 	Name          string               `json:"name"`
 	Version       int                  `json:"version"`
 	Files         model.FileCollection `json:"files"`
-	Visibility    string               `json:"visibility"`
+	Visibility    model.Visibility     `json:"visibility"`
 	Description   string               `json:"description"`
 	Instructions  string               `json:"instructions"`
 	Thumbnail     string               `json:"thumbnail"`
@@ -60,7 +60,7 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 		Name:          mProject.Name,
 		Version:       mProject.Version,
 		Files:         mProject.Files,
-		Visibility:    mProject.Visibility.String(),
+		Visibility:    mProject.Visibility,
 		Description:   mProject.Description,
 		Instructions:  mProject.Instructions,
 		Thumbnail:     mProject.Thumbnail,
@@ -77,10 +77,10 @@ var projectNameRE = regexp.MustCompile(`^[\w-]{1,100}$`)
 // ProjectFullName holds the full name of a project.
 type ProjectFullName struct{ Owner, Project string }
 
-// ParseProjectFullName parses the project full name from a string.
-func ParseProjectFullName(fullName string) (ProjectFullName, error) {
+// ParseProjectFullName parses the string representation of a project full name.
+func ParseProjectFullName(s string) (ProjectFullName, error) {
 	var pfn ProjectFullName
-	return pfn, pfn.UnmarshalText([]byte(fullName))
+	return pfn, pfn.UnmarshalText([]byte(s))
 }
 
 // String implements [fmt.Stringer].
@@ -139,10 +139,10 @@ type RemixSource struct {
 	Release *string
 }
 
-// ParseRemixSource parses the remix source from a string.
-func ParseRemixSource(source string) (RemixSource, error) {
+// ParseRemixSource parses the string representation of a remix source.
+func ParseRemixSource(s string) (RemixSource, error) {
 	var rs RemixSource
-	return rs, rs.UnmarshalText([]byte(source))
+	return rs, rs.UnmarshalText([]byte(s))
 }
 
 // String implements [fmt.Stringer].
@@ -231,7 +231,7 @@ type CreateProjectParams struct {
 	RemixSource  *RemixSource         `json:"remixSource"`
 	Name         string               `json:"name"`
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
+	Visibility   model.Visibility     `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
@@ -246,9 +246,6 @@ func (p *CreateProjectParams) Validate() (ok bool, msg string) {
 		return false, "missing name"
 	} else if !projectNameRE.Match([]byte(p.Name)) {
 		return false, "invalid name"
-	}
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
 	}
 	return true, ""
 }
@@ -265,7 +262,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		Name:         params.Name,
 		Version:      1,
 		Files:        params.Files,
-		Visibility:   model.ParseVisibility(params.Visibility),
+		Visibility:   params.Visibility,
 		Description:  params.Description,
 		Instructions: params.Instructions,
 		Thumbnail:    params.Thumbnail,
@@ -414,7 +411,7 @@ type ListProjectsParams struct {
 	// Visibility filters assets by visibility.
 	//
 	// Applied only if non-nil.
-	Visibility *string
+	Visibility *model.Visibility
 
 	// Liked filters projects liked by the specified user.
 	//
@@ -464,9 +461,6 @@ func (p *ListProjectsParams) Validate() (ok bool, msg string) {
 	if p.RemixedFrom != nil && !p.RemixedFrom.IsValid() {
 		return false, "invalid remixedFrom"
 	}
-	if p.Visibility != nil && model.ParseVisibility(*p.Visibility).String() != *p.Visibility {
-		return false, "invalid visibility"
-	}
 	if !p.OrderBy.IsValid() {
 		return false, "invalid orderBy"
 	}
@@ -485,9 +479,9 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 	if !ok || (params.Owner != nil && *params.Owner != mUser.Username) {
 		// Ensure non-owners can only see public projects.
 		if params.Visibility == nil {
-			public := model.VisibilityPublic.String()
+			public := model.VisibilityPublic
 			params.Visibility = &public
-		} else if *params.Visibility != model.VisibilityPublic.String() {
+		} else if *params.Visibility != model.VisibilityPublic {
 			return nil, authn.ErrUnauthorized
 		}
 	}
@@ -511,7 +505,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 		query = query.Where("project.name LIKE ?", "%"+*params.Keyword+"%")
 	}
 	if params.Visibility != nil {
-		query = query.Where("project.visibility = ?", model.ParseVisibility(*params.Visibility))
+		query = query.Where("project.visibility = ?", *params.Visibility)
 	} else if ok && params.Owner == nil {
 		query = query.Where(ctrl.db.Where("project.owner_id = ?", mUser.ID).Or("project.visibility = ?", model.VisibilityPublic))
 	}
@@ -618,7 +612,7 @@ func (ctrl *Controller) GetProject(ctx context.Context, fullName ProjectFullName
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
+	Visibility   model.Visibility     `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
@@ -626,9 +620,6 @@ type UpdateProjectParams struct {
 
 // Validate validates the parameters.
 func (p *UpdateProjectParams) Validate() (ok bool, msg string) {
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
-	}
 	return true, ""
 }
 
@@ -638,8 +629,8 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if !maps.Equal(p.Files, mProject.Files) {
 		updates["files"] = p.Files
 	}
-	if p.Visibility != mProject.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(p.Visibility)
+	if p.Visibility != mProject.Visibility {
+		updates["visibility"] = p.Visibility
 	}
 	if p.Description != mProject.Description {
 		updates["description"] = p.Description
@@ -684,9 +675,9 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, fullName ProjectFullN
 			mUserStatisticalUpdates := map[string]any{}
 			if updates["visibility"] != nil {
 				switch params.Visibility {
-				case model.VisibilityPrivate.String():
+				case model.VisibilityPrivate:
 					mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
-				case model.VisibilityPublic.String():
+				case model.VisibilityPublic:
 					mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 				}
 			}

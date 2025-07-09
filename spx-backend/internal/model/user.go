@@ -48,22 +48,22 @@ func (User) TableName() string {
 	return "user"
 }
 
-// CreateUserParams holds parameters for creating a user with [FirstOrCreateUser].
-type CreateUserParams struct {
+// CreateUserAttrs holds attributes for creating a user with [FirstOrCreateUser].
+type CreateUserAttrs struct {
 	Username    string
 	DisplayName string
 	Avatar      string
 }
 
 // FirstOrCreateUser gets or creates a user.
-func FirstOrCreateUser(ctx context.Context, db *gorm.DB, params CreateUserParams) (*User, error) {
+func FirstOrCreateUser(ctx context.Context, db *gorm.DB, attrs CreateUserAttrs) (*User, error) {
 	var mUser User
 	if err := db.WithContext(ctx).
-		Where("username = ?", params.Username).
+		Where("username = ?", attrs.Username).
 		Attrs(User{
-			Username:    params.Username,
-			DisplayName: params.DisplayName,
-			Avatar:      params.Avatar,
+			Username:    attrs.Username,
+			DisplayName: attrs.DisplayName,
+			Avatar:      attrs.Avatar,
 		}).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "username"}},
@@ -71,15 +71,15 @@ func FirstOrCreateUser(ctx context.Context, db *gorm.DB, params CreateUserParams
 		}).
 		FirstOrCreate(&mUser).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get/create user %q: %w", params.Username, err)
+		return nil, fmt.Errorf("failed to get/create user %q: %w", attrs.Username, err)
 	}
 	if mUser.ID == 0 {
 		// Unfortunately, MySQL doesn't support the RETURNING clause.
 		if err := db.WithContext(ctx).
-			Where("username = ?", params.Username).
+			Where("username = ?", attrs.Username).
 			First(&mUser).
 			Error; err != nil {
-			return nil, fmt.Errorf("failed to get user %q: %w", params.Username, err)
+			return nil, fmt.Errorf("failed to get user %q: %w", attrs.Username, err)
 		}
 	}
 	return &mUser, nil
