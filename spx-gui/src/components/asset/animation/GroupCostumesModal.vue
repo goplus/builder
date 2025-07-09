@@ -1,5 +1,6 @@
 <template>
   <UIFormModal
+    :radar="{ name: 'Group costumes modal', desc: 'Modal for grouping costumes as animation' }"
     style="width: 1034px"
     :visible="visible"
     :title="
@@ -41,7 +42,12 @@
           }}
         </span>
       </UICheckbox>
-      <UIButton size="large" :disabled="selectedCostumeSet.size === 0" @click="handleConfirm">
+      <UIButton
+        v-radar="{ name: 'Add animation button', desc: 'Click to create animation from selected costumes' }"
+        size="large"
+        :disabled="selectedCostumeSet.size === 0"
+        @click="handleConfirm"
+      >
         {{ $t({ en: 'Add animation', zh: '添加动画' }) }}
       </UIButton>
     </div>

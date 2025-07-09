@@ -1,8 +1,12 @@
 <template>
   <div v-if="!userInfo" class="sign-in">
-    <UIButton type="secondary" :disabled="!isOnline" @click="userStore.initiateSignIn()">{{
-      $t({ en: 'Sign in', zh: '登录' })
-    }}</UIButton>
+    <UIButton
+      v-radar="{ name: 'Sign in button', desc: 'Click to sign in' }"
+      type="secondary"
+      :disabled="!isOnline"
+      @click="userStore.initiateSignIn()"
+      >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
+    >
   </div>
   <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
     <template #trigger>

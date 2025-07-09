@@ -1,5 +1,6 @@
 <template>
   <UIFormModal
+    :radar="{ name: 'Animation remove modal', desc: 'Modal for removing animations' }"
     style="width: 560px"
     :title="$t({ en: 'Remove animation', zh: '删除动画' })"
     :visible="visible"
@@ -24,10 +25,18 @@
       </UICheckbox>
     </div>
     <div class="action">
-      <UIButton type="boring" @click="emit('cancelled')">
+      <UIButton
+        v-radar="{ name: 'Cancel button', desc: 'Click to cancel removing animation' }"
+        type="boring"
+        @click="emit('cancelled')"
+      >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
-      <UIButton type="primary" @click="handleConfirm">
+      <UIButton
+        v-radar="{ name: 'Confirm button', desc: 'Click to confirm removing animation' }"
+        type="primary"
+        @click="handleConfirm"
+      >
         {{ $t({ en: 'Confirm', zh: '确认' }) }}
       </UIButton>
     </div>

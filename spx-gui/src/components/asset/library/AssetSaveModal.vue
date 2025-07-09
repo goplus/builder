@@ -185,6 +185,7 @@ async function addAssetWithParams(params: PartialAssetData) {
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Asset save modal', desc: 'Modal for saving assets to the asset library' }"
     :title="$t({ en: 'Save to asset library', zh: '保存到素材库' })"
     :visible="visible"
     @update:visible="emit('cancelled')"
@@ -202,7 +203,10 @@ async function addAssetWithParams(params: PartialAssetData) {
         </div>
         <div class="inputs">
           <UIFormItem path="name">
-            <UITextInput v-model:value="form.value.name" />
+            <UITextInput
+              v-model:value="form.value.name"
+              v-radar="{ name: 'Asset name input', desc: 'Input field for asset display name' }"
+            />
             <template #tip>{{ $t(getAssetDisplayNameTip()) }}</template>
           </UIFormItem>
           <UIFormItem v-if="advancedLibraryEnabled" :label="$t({ en: 'Category', zh: '类别' })" path="category">
@@ -231,7 +235,13 @@ async function addAssetWithParams(params: PartialAssetData) {
         </div>
       </main>
       <footer class="footer">
-        <UIButton type="primary" html-type="submit" :disabled="isLoading" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Save button', desc: 'Click to save asset to the library' }"
+          type="primary"
+          html-type="submit"
+          :disabled="isLoading"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Save', zh: '保存' }) }}
         </UIButton>
       </footer>

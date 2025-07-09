@@ -41,7 +41,11 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
         <TextView style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
-        <UIButton v-if="isSignedInUser" @click="handleEditProfile">
+        <UIButton
+          v-if="isSignedInUser"
+          v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"
+          @click="handleEditProfile"
+        >
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
         <FollowButton v-else :name="user.username" />

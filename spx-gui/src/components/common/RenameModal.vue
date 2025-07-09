@@ -55,6 +55,7 @@ function validateName(name: string) {
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Rename modal', desc: 'Modal for renaming items' }"
     class="rename-modal"
     style="width: 512px"
     :title="$t({ en: 'Rename', zh: '重命名' })"
@@ -63,7 +64,10 @@ function validateName(name: string) {
   >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <UIFormItem path="name">
-        <UITextInput v-model:value="form.value.name" />
+        <UITextInput
+          v-model:value="form.value.name"
+          v-radar="{ name: 'Name input', desc: 'Input field for new name' }"
+        />
         <template #tip>{{ $t(target.inputTip) }}</template>
       </UIFormItem>
       <p v-if="target.warning != null" class="warning">
@@ -71,10 +75,19 @@ function validateName(name: string) {
         {{ $t(target.warning) }}
       </p>
       <footer class="footer">
-        <UIButton type="boring" @click="emit('cancelled')">
+        <UIButton
+          v-radar="{ name: 'Cancel button', desc: 'Click to cancel renaming' }"
+          type="boring"
+          @click="emit('cancelled')"
+        >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
-        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Confirm button', desc: 'Click to confirm renaming' }"
+          type="primary"
+          html-type="submit"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Confirm', zh: '确认' }) }}
         </UIButton>
       </footer>

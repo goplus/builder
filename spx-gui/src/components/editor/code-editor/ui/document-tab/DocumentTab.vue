@@ -43,7 +43,12 @@ const [stageImgUrl] = useFileUrl(() => {
   <UITooltip placement="right">
     {{ $t(name) }}
     <template #trigger>
-      <div class="document-tab" :class="{ active: isActive }" @click="emit('click')">
+      <div
+        v-radar="{ name: 'Code document tab', desc: `Click to open code of ${textDocument.id.uri}` }"
+        class="document-tab"
+        :class="{ active: isActive }"
+        @click="emit('click')"
+      >
         <UIImg v-if="spriteImgUrl != null" class="sprite-img" :src="spriteImgUrl" />
         <UIImg v-else-if="stageImgUrl != null" class="stage-img" :src="stageImgUrl" />
       </div>

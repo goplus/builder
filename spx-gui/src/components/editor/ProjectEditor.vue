@@ -1,15 +1,24 @@
 <template>
-  <UICard class="main">
-    <KeepAlive>
-      <SoundEditor v-if="selected.type === 'sound' && selected.sound != null" :sound="selected.sound" />
-      <SpriteEditor
-        v-else-if="selected.type === 'sprite' && selected.sprite != null"
-        :sprite="selected.sprite"
-        :state="editorCtx.state.spriteState!"
-      />
-      <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
-      <EditorPlaceholder v-else />
-    </KeepAlive>
+  <UICard
+    v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
+    class="main"
+  >
+    <!--
+      TODO: optimize performance for switching between editors, which corresponds to selection change.
+      There's known issue with Vue `KeepAlive`:
+      * It increases difficulty of implementing the inner components.
+        For example: we need to listen to extra events (activated/deactivated) to do initialization and cleanup.
+      * We use custom directive to capture UI information, which does not work well with KeepAlive.
+        For details, see: https://github.com/vuejs/core/issues/2349
+    -->
+    <SoundEditor v-if="selected.type === 'sound' && selected.sound != null" :sound="selected.sound" />
+    <SpriteEditor
+      v-else-if="selected.type === 'sprite' && selected.sprite != null"
+      :sprite="selected.sprite"
+      :state="editorCtx.state.spriteState!"
+    />
+    <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
+    <EditorPlaceholder v-else />
   </UICard>
   <div class="sider">
     <EditorPreview />

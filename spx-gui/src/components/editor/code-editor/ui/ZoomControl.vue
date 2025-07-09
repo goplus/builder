@@ -13,9 +13,27 @@ const emit = defineEmits<{
 <template>
   <div class="zoomer">
     <!-- eslint-disable vue/no-v-html -->
-    <button class="zoom-btn" title="Zoom in" @click="emit('in')" v-html="iconZoomIn" />
-    <button class="zoom-btn" title="Zoom out" @click="emit('out')" v-html="iconZoomOut" />
-    <button class="zoom-btn" title="Reset" @click="emit('reset')" v-html="iconZoomReset" />
+    <button
+      v-radar="{ name: 'Zoom in', desc: 'Zoom in the code editor' }"
+      class="zoom-btn"
+      title="Zoom in"
+      @click="emit('in')"
+      v-html="iconZoomIn"
+    />
+    <button
+      v-radar="{ name: 'Zoom out', desc: 'Zoom out the code editor' }"
+      class="zoom-btn"
+      title="Zoom out"
+      @click="emit('out')"
+      v-html="iconZoomOut"
+    />
+    <button
+      v-radar="{ name: 'Reset zoom', desc: 'Reset code editor zoom to default' }"
+      class="zoom-btn"
+      title="Reset"
+      @click="emit('reset')"
+      v-html="iconZoomReset"
+    />
   </div>
 </template>
 

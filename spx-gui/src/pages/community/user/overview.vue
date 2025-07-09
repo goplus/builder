@@ -73,7 +73,13 @@ const likesRet = useQuery(
 <template>
   <div class="user-overview">
     <CommunityCard class="card">
-      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="projectsRet" :link-to="projectsRoute">
+      <ProjectsSection
+        v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="projectsRet"
+        :link-to="projectsRoute"
+      >
         <template #title>
           {{
             $t({
@@ -103,7 +109,13 @@ const likesRet = useQuery(
       </ProjectsSection>
     </CommunityCard>
     <CommunityCard class="card">
-      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="likesRet" :link-to="likesRoute">
+      <ProjectsSection
+        v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="likesRet"
+        :link-to="likesRoute"
+      >
         <template #title>
           {{
             $t({

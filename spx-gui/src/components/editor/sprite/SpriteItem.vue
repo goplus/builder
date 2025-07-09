@@ -1,5 +1,11 @@
 <template>
-  <UIEditorSpriteItem ref="wrapperRef" :name="sprite.name" :selectable="selectable" :color="color">
+  <UIEditorSpriteItem
+    ref="wrapperRef"
+    v-radar="radarNodeMeta"
+    :name="sprite.name"
+    :selectable="selectable"
+    :color="color"
+  >
     <template #img="{ style }">
       <CostumesAutoPlayer
         v-if="animation != null && (autoplay || hovered)"
@@ -60,6 +66,12 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 const animation = computed(() => props.sprite.getDefaultAnimation())
+
+const radarNodeMeta = computed(() => {
+  const name = `Sprite item "${props.sprite.name}"`
+  const desc = props.selectable ? 'Click to select the sprite and view more options' : ''
+  return { name, desc }
+})
 
 const handleRemove = useMessageHandle(
   async () => {

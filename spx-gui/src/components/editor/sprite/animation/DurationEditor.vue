@@ -1,5 +1,11 @@
 <template>
-  <UIDropdownModal :title="$t(actionName)" style="width: 280px" @cancel="emit('close')" @confirm="handleConfirm">
+  <UIDropdownModal
+    v-radar="{ name: 'Duration editor modal', desc: 'Modal for editing animation duration' }"
+    :title="$t(actionName)"
+    style="width: 280px"
+    @cancel="emit('close')"
+    @confirm="handleConfirm"
+  >
     <UINumberInput v-model:value="duration" :min="0.01">
       <template #prefix>{{ $t({ en: 'Duration', zh: '时长' }) }}:</template>
       <template #suffix>{{ $t({ en: 's', zh: '秒' }) }}</template>

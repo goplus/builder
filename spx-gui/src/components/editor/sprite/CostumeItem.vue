@@ -1,9 +1,15 @@
 <template>
-  <UIEditorSpriteItem :selectable="selectable" :name="costume.name" :color="color">
+  <UIEditorSpriteItem v-radar="radarNodeMeta" :selectable="selectable" :name="costume.name" :color="color">
     <template #img="{ style }">
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
+    <UICornerIcon
+      v-if="removable"
+      v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+      type="trash"
+      :color="color"
+      @click="handleRemove"
+    />
   </UIEditorSpriteItem>
 </template>
 
@@ -33,6 +39,12 @@ const props = withDefaults(
 
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
+
+const radarNodeMeta = computed(() => {
+  const name = `Costume item "${props.costume.name}"`
+  const desc = props.selectable ? 'Click to select the costume and view more options' : ''
+  return { name, desc }
+})
 
 const parent = computed(() => {
   const parent = props.costume.parent

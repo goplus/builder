@@ -19,7 +19,13 @@ function handleJoin() {
       <h4 class="sub-title">
         {{ $t({ en: 'Build and share your projects', zh: '创作并分享你的作品' }) }}
       </h4>
-      <UIButton class="join-btn" type="primary" size="large" @click="handleJoin">
+      <UIButton
+        v-radar="{ name: 'Join now button', desc: 'Click to sign in/up' }"
+        class="join-btn"
+        type="primary"
+        size="large"
+        @click="handleJoin"
+      >
         {{ $t({ en: 'Join now', zh: '立即加入' }) }}
       </UIButton>
     </div>

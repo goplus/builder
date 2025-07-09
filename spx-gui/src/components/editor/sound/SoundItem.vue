@@ -1,5 +1,11 @@
 <template>
-  <UIEditorSoundItem :audio-src="audioSrc" :name="sound.name" :selectable="selectable" :color="color">
+  <UIEditorSoundItem
+    v-radar="radarNodeMeta"
+    :audio-src="audioSrc"
+    :name="sound.name"
+    :selectable="selectable"
+    :color="color"
+  >
     <template #player>
       <SoundPlayer :color="color" :src="audioSrc" />
     </template>
@@ -36,6 +42,12 @@ const [audioSrc] = useFileUrl(() => props.sound.file)
 const editorCtx = useEditorCtx()
 
 const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
+
+const radarNodeMeta = computed(() => {
+  const name = `Sound item "${props.sound.name}"`
+  const desc = props.selectable ? 'Click to select the sound and view more options' : ''
+  return { name, desc }
+})
 
 const handleRemove = useMessageHandle(
   async () => {

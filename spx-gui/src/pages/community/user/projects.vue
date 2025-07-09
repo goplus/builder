@@ -111,7 +111,13 @@ const handleNewProject = useMessageHandle(
           }}</UISelectOption>
         </UISelect>
       </label>
-      <UIButton v-if="isSignedInUser" type="secondary" icon="plus" @click="handleNewProject">
+      <UIButton
+        v-if="isSignedInUser"
+        v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
+        type="secondary"
+        icon="plus"
+        @click="handleNewProject"
+      >
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>

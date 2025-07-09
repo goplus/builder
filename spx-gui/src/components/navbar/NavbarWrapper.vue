@@ -1,5 +1,5 @@
 <template>
-  <nav class="top-nav">
+  <nav v-radar="{ name: 'Navbar', desc: 'Top navigation bar' }" class="top-nav">
     <div class="content" :class="{ centered }">
       <div class="left">
         <NavbarLogo />

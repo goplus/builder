@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import * as lsp from 'vscode-languageserver-protocol'
 import { useMessageHandle } from '@/utils/exception'
 import { UIDropdown } from '@/components/ui'
-import { type Action, setDdiDragData } from '../../common'
+import { type Action, setDdiDragData, stringifyDefinitionId } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -92,6 +92,10 @@ function handleMouseUp(e: MouseEvent) {
   <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li
+        v-radar="{
+          name: `API ${item.definition.name}`,
+          desc: `Code snippet for API ${stringifyDefinitionId(item.definition)}, drag or click to insert`
+        }"
         class="api-reference-item"
         draggable="true"
         @dragstart="handleDragStart"

@@ -5,24 +5,50 @@
       <div class="preview" v-html="monitorIcon"></div>
       <div class="controls">
         <div class="line">
-          <UITextInput class="input" :value="monitor.label" @update:value="handleLabelUpdate">
+          <UITextInput
+            v-radar="{ name: 'Label input', desc: 'Input field for monitor label' }"
+            class="input"
+            :value="monitor.label"
+            @update:value="handleLabelUpdate"
+          >
             <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}:</template>
           </UITextInput>
-          <UITextInput class="input" :value="monitor.variableName" @update:value="handleValueUpdate">
+          <UITextInput
+            v-radar="{ name: 'Value input', desc: 'Input field for monitor value' }"
+            class="input"
+            :value="monitor.variableName"
+            @update:value="handleValueUpdate"
+          >
             <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}:</template>
           </UITextInput>
         </div>
         <div class="divider"></div>
         <div class="line">
-          <UINumberInput class="input" :value="monitor.x" @update:value="handleXUpdate">
+          <UINumberInput
+            v-radar="{ name: 'X position input', desc: 'Input field for monitor X position' }"
+            class="input"
+            :value="monitor.x"
+            @update:value="handleXUpdate"
+          >
             <template #prefix>X:</template>
           </UINumberInput>
-          <UINumberInput class="input" :value="monitor.y" @update:value="handleYUpdate">
+          <UINumberInput
+            v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
+            class="input"
+            :value="monitor.y"
+            @update:value="handleYUpdate"
+          >
             <template #prefix>Y:</template>
           </UINumberInput>
         </div>
         <div class="line">
-          <UINumberInput class="input" :min="0" :value="sizePercent" @update:value="handleSizePercentUpdate">
+          <UINumberInput
+            v-radar="{ name: 'Size input', desc: 'Input field for monitor size' }"
+            class="input"
+            :min="0"
+            :value="sizePercent"
+            @update:value="handleSizePercentUpdate"
+          >
             <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
             <template #suffix>%</template>
           </UINumberInput>
@@ -31,6 +57,7 @@
           <p class="with-label">
             {{ $t({ en: 'Show', zh: '显示' }) }}:
             <UIButtonGroup
+              v-radar="{ name: 'Visibility control', desc: 'Control to set monitor visibility' }"
               :value="monitor.visible ? 'visible' : 'hidden'"
               @update:value="(v) => handleVisibleUpdate(v === 'visible')"
             >

@@ -1,11 +1,15 @@
 <template>
-  <UICard class="editor-preview">
+  <UICard
+    v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
+    class="editor-preview"
+  >
     <UICardHeader v-if="running.mode !== 'debug'">
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
       <UIButton
         ref="runButtonRef"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
         class="button"
         type="primary"
         icon="playHollow"
@@ -17,6 +21,7 @@
       <UITooltip placement="top-end">
         <template #trigger>
           <UIButton
+            v-radar="{ name: 'Full screen run button', desc: 'Click to run in full screen mode' }"
             class="button full-screen-run-button"
             type="boring"
             icon="fullScreen"
@@ -32,6 +37,7 @@
         {{ $t({ en: 'Running', zh: '运行中' }) }}
       </div>
       <UIButton
+        v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
         class="button"
         type="primary"
         icon="rotate"
@@ -41,7 +47,13 @@
       >
         {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
       </UIButton>
-      <UIButton class="button" type="boring" icon="end" @click="handleStop">
+      <UIButton
+        v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+        class="button"
+        type="boring"
+        icon="end"
+        @click="handleStop"
+      >
         {{ $t({ en: 'Stop', zh: '停止' }) }}
       </UIButton>
     </UICardHeader>

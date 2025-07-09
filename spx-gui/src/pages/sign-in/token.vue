@@ -5,6 +5,7 @@
       <UIFormItem path="token">
         <UITextInput
           v-model:value="form.value.token"
+          v-radar="{ name: 'Token input', desc: 'Input field for authentication token' }"
           class="input"
           type="textarea"
           :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
@@ -16,10 +17,19 @@
         </UICheckbox>
       </UIFormItem>
       <footer class="footer">
-        <UIButton type="boring" @click="handleCancel">
+        <UIButton
+          v-radar="{ name: 'Cancel button', desc: 'Click to cancel token sign-in' }"
+          type="boring"
+          @click="handleCancel"
+        >
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
-        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Sign in button', desc: 'Click to sign in with token' }"
+          type="primary"
+          html-type="submit"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ buttonText }}
         </UIButton>
       </footer>

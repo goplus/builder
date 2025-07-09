@@ -2,7 +2,12 @@
 <template>
   <NavbarWrapper>
     <template #left>
-      <NavbarDropdown>
+      <NavbarDropdown
+        :trigger-radar="{
+          name: 'Project menu',
+          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import from Scratch, etc.)'
+        }"
+      >
         <template #trigger>
           <UIIcon type="file" />
         </template>
@@ -52,7 +57,10 @@
           </UIMenuGroup>
         </UIMenu>
       </NavbarDropdown>
-      <NavbarDropdown v-if="project != null">
+      <NavbarDropdown
+        v-if="project != null"
+        :trigger-radar="{ name: 'History menu', desc: 'Hover to see history options (undo/redo)' }"
+      >
         <template #trigger>
           <UIIcon type="clock" />
         </template>
@@ -84,7 +92,12 @@
     </template>
     <template #right>
       <div v-show="canManageProject" class="publish">
-        <UIButton type="secondary" :disabled="!isOnline" @click="handlePublishProject">
+        <UIButton
+          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          type="secondary"
+          :disabled="!isOnline"
+          @click="handlePublishProject"
+        >
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
       </div>
