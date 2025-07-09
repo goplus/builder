@@ -53,6 +53,7 @@ module.exports = {
         ignoreRestSiblings: true,
         destructuredArrayIgnorePattern: '^_'
       }
-    ]
+    ],
+    'vue/one-component-per-file': 'off',
   }
 }
