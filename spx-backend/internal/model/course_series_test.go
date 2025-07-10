@@ -1,0 +1,74 @@
+package model
+
+import (
+	"encoding/json"
+	"reflect"
+	"testing"
+)
+
+func TestCourseIDCollection_Scan(t *testing.T) {
+	tests := []struct {
+		name     string
+		src      any
+		expected CourseIDCollection
+		wantErr  bool
+	}{
+		{
+			name:     "valid JSON",
+			src:      []byte(`["course1","course2"]`),
+			expected: CourseIDCollection{"course1", "course2"},
+			wantErr:  false,
+		},
+		{
+			name:     "nil value",
+			src:      nil,
+			expected: CourseIDCollection{},
+			wantErr:  false,
+		},
+		{
+			name:     "invalid JSON",
+			src:      []byte(`invalid json`),
+			expected: CourseIDCollection{},
+			wantErr:  true,
+		},
+		{
+			name:     "incompatible type",
+			src:      42,
+			expected: CourseIDCollection{},
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var cic CourseIDCollection
+			err := cic.Scan(tt.src)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CourseIDCollection.Scan() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(cic, tt.expected) {
+				t.Errorf("CourseIDCollection.Scan() = %v, want %v", cic, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCourseIDCollection_Value(t *testing.T) {
+	cic := CourseIDCollection{"course1", "course2"}
+	value, err := cic.Value()
+	if err != nil {
+		t.Errorf("CourseIDCollection.Value() error = %v", err)
+		return
+	}
+
+	var result CourseIDCollection
+	if err := json.Unmarshal(value.([]byte), &result); err != nil {
+		t.Errorf("failed to unmarshal returned value: %v", err)
+		return
+	}
+
+	if !reflect.DeepEqual(result, cic) {
+		t.Errorf("CourseIDCollection.Value() = %v, want %v", result, cic)
+	}
+}
