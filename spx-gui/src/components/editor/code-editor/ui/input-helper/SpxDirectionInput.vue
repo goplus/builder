@@ -5,8 +5,9 @@ export function getDefaultValue() {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch, ref } from 'vue'
 import { nomalizeDegree, useDebouncedModel } from '@/utils/utils'
+import { useDraggableAngleForElement } from '@/utils/dom'
 import { makeArcPathString } from '@/utils/svg'
 import { UINumberInput } from '@/components/ui'
 
@@ -23,19 +24,15 @@ const [modelValue, flush] = useDebouncedModel<number | null>(
   () => props.value,
   (v) => emit('update:value', Math.floor(nomalizeDegree(v ?? getDefaultValue())))
 )
+const svgEl = ref<HTMLElement | null>(null)
+const arcPath = computed(() => {
+  const v = modelValue.value ?? 0
+  const [start, end] = v >= 0 ? [0, v] : [v, 0]
+  return makeArcPathString({ x: 70, y: 70, r: 63, start, end })
+})
+const angle = useDraggableAngleForElement(svgEl, { initialValue: props.value, snap: 15 })
 
-const arcPath = computed(() => makeArcPathString({ x: 70, y: 70, r: 63, start: 0, end: modelValue.value ?? 0 }))
-
-function handleCircleClick(e: MouseEvent) {
-  const svg = e.currentTarget as SVGSVGElement
-  const rect = svg.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
-  const centerX = rect.width / 2
-  const centerY = rect.height / 2
-  const angle = Math.atan2(x - centerX, centerY - y) * (180 / Math.PI)
-  modelValue.value = Math.floor(nomalizeDegree(angle))
-}
+watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
 
 function handleSubmit() {
   flush()
@@ -45,14 +42,7 @@ function handleSubmit() {
 
 <template>
   <div class="circle-container">
-    <svg
-      width="140"
-      height="140"
-      viewBox="0 0 140 140"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      @click="handleCircleClick"
-    >
+    <svg ref="svgEl" width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g>
         <circle cx="70" cy="70" r="62.3" fill="#3FCDD9" stroke="#B5EBF0" stroke-width="1.4" />
         <rect x="69.0542" y="15.8193" width="1.26" height="8.82" fill="white" />

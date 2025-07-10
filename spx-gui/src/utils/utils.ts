@@ -409,3 +409,15 @@ export function useExternalUrl(urlSource: WatchSource<string | null | undefined>
   )
   return urlRef
 }
+
+export function createResettableObject<T extends object>(getter: () => T): [T, () => void] {
+  const state = {
+    ...getter()
+  }
+  return [
+    state,
+    () => {
+      Object.assign(state, { ...getter() })
+    }
+  ]
+}

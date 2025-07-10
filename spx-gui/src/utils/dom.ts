@@ -1,6 +1,7 @@
 import { ref, toValue, watch, watchEffect, type WatchSource } from 'vue'
 import { throttle } from 'lodash'
 import { getCleanupSignal } from './disposable'
+import { createResettableObject } from '@/utils/utils'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
   const width = ref<number | null>(null)
@@ -129,4 +130,66 @@ export function useLastClickEvent() {
   })
 
   return lastClickEvent
+}
+
+export function useDraggableAngleForElement(
+  elSource: WatchSource<HTMLElement | null>,
+  { initialValue = 0, snap = 1 } = {}
+) {
+  const angleRef = ref(initialValue)
+
+  const [rotateState, reset] = createResettableObject(() => ({
+    centerX: 0,
+    centerY: 0,
+    left: 0,
+    top: 0
+  }))
+
+  function calcAngle(x: number, y: number, centerX: number, centerY: number) {
+    const angle = Math.atan2(x - centerX, centerY - y) * (180 / Math.PI)
+    return Math.floor(angle < 0 ? angle + 360 : angle)
+  }
+
+  function angleOverlaySnap(angle: number, snap: number) {
+    return Math.round(angle / snap) * snap
+  }
+
+  function handleDragAngle(e: MouseEvent) {
+    const { left, top, centerX, centerY } = rotateState
+    const angle = calcAngle(e.clientX - left, e.clientY - top, centerX, centerY)
+    angleRef.value = angleOverlaySnap(angle, snap)
+  }
+
+  function handleEndDragAngle() {
+    reset()
+    document.removeEventListener('mousemove', handleDragAngle)
+    document.removeEventListener('mouseup', handleEndDragAngle)
+  }
+
+  function handleStartDragAngle(e: MouseEvent, el: HTMLElement) {
+    e.preventDefault()
+    const rect = el.getBoundingClientRect()
+    const { left, top, centerX, centerY } = Object.assign(rotateState, {
+      left: rect.left,
+      top: rect.top,
+      centerX: rect.width / 2,
+      centerY: rect.height / 2
+    })
+    angleRef.value = angleOverlaySnap(calcAngle(e.clientX - left, e.clientY - top, centerX, centerY), snap)
+    document.addEventListener('mousemove', handleDragAngle)
+    document.addEventListener('mouseup', handleEndDragAngle)
+  }
+
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (!el) return
+      const handleMousedown = (e: MouseEvent) => handleStartDragAngle(e, el)
+      el.addEventListener('mousedown', handleMousedown, { capture: true })
+      onCleanup(() => el.removeEventListener('mousedown', handleMousedown, { capture: true }))
+    },
+    { immediate: true }
+  )
+
+  return angleRef
 }
