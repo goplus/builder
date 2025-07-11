@@ -33,7 +33,7 @@ export class InlayHintController extends Disposable {
 
   private mgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (provider == null) throw new Error('No provider registered')
+    if (provider == null) return []
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) throw new Error('No active text document')
     return await provider.provideInlayHints({ textDocument, signal })
@@ -48,7 +48,7 @@ export class InlayHintController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.ui.project.filesHash, this.ui.activeTextDocument],
+        () => [this.ui.project.exportGameFiles(), this.ui.activeTextDocument],
         () => refresh(),
         { immediate: true }
       )

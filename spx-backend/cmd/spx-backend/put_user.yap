@@ -8,11 +8,11 @@ import (
 )
 
 ctx := &Context
-if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-params := &controller.UpdateAuthedUserParams{}
+params := &controller.UpdateAuthenticatedUserParams{}
 if !parseJSON(ctx, params) {
 	return
 }
@@ -21,7 +21,7 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-user, err := ctrl.UpdateAuthedUser(ctx.Context(), params)
+user, err := ctrl.UpdateAuthenticatedUser(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

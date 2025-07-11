@@ -1,7 +1,7 @@
 <template>
   <CommonPanel
     :expanded="expanded"
-    :active="editorCtx.project.selectedSound != null"
+    :active="editorCtx.state.selectedSound != null"
     :title="$t({ en: 'Sounds', zh: '声音' })"
     color="sound"
     @expand="emit('expand')"
@@ -72,30 +72,48 @@ const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sounds, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sound: Sound) {
-  return sound.id === editorCtx.project.selectedSound?.id
+  return sound.id === editorCtx.state.selectedSound?.id
 }
 
 function handleSoundClick(sound: Sound) {
-  editorCtx.project.select({ type: 'sound', id: sound.id })
+  editorCtx.state.selectSound(sound.id)
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
-const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx.project), {
-  en: 'Failed to add sound from local file',
-  zh: '从本地文件添加失败'
-}).fn
+const handleAddFromLocalFile = useMessageHandle(
+  async () => {
+    const sound = await addFromLocalFile(editorCtx.project)
+    editorCtx.state.selectSound(sound.id)
+  },
+  {
+    en: 'Failed to add sound from local file',
+    zh: '从本地文件添加失败'
+  }
+).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
-const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(editorCtx.project, AssetType.Sound), {
-  en: 'Failed to add sound from asset library',
-  zh: '从素材库添加失败'
-}).fn
+const handleAddFromAssetLibrary = useMessageHandle(
+  async () => {
+    const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
+    editorCtx.state.selectSound(sounds[0].id)
+  },
+  {
+    en: 'Failed to add sound from asset library',
+    zh: '从素材库添加失败'
+  }
+).fn
 
-const addSoundFromRecording = useAddSoundByRecording(true)
-const handleRecord = useMessageHandle(() => addSoundFromRecording(editorCtx.project), {
-  en: 'Failed to record sound',
-  zh: '录音失败'
-}).fn
+const addSoundFromRecording = useAddSoundByRecording()
+const handleRecord = useMessageHandle(
+  async () => {
+    const sound = await addSoundFromRecording(editorCtx.project)
+    editorCtx.state.selectSound(sound.id)
+  },
+  {
+    en: 'Failed to record sound',
+    zh: '录音失败'
+  }
+).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {

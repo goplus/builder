@@ -61,7 +61,7 @@ async function handleSoundClick(sound: string) {
   selected.value = selected.value === sound ? null : sound
 }
 
-const addFromLocalFile = useAddSoundFromLocalFile(false)
+const addFromLocalFile = useAddSoundFromLocalFile()
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sound = await addFromLocalFile(editorCtx.project)
@@ -73,7 +73,7 @@ const handleAddFromLocalFile = useMessageHandle(
   }
 ).fn
 
-const addAssetFromLibrary = useAddAssetFromLibrary(false)
+const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
@@ -82,7 +82,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
 
-const addSoundFromRecording = useAddSoundByRecording(false)
+const addSoundFromRecording = useAddSoundByRecording()
 const handleRecord = useMessageHandle(
   async () => {
     const sound = await addSoundFromRecording(editorCtx.project)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
@@ -16,11 +17,11 @@ params := controller.NewListProjectsParams()
 
 switch owner := ${owner}; owner {
 case "":
-	mAuthedUser, isAuthed := ensureAuthedUser(ctx)
-	if !isAuthed {
+	mUser, ok := ensureAuthenticatedUser(ctx)
+	if !ok {
 		return
 	}
-	params.Owner = &mAuthedUser.Username
+	params.Owner = &mUser.Username
 case "*":
 	params.Owner = nil
 default:
@@ -41,7 +42,12 @@ if keyword := ${keyword}; keyword != "" {
 }
 
 if visibility := ${visibility}; visibility != "" {
-	params.Visibility = &visibility
+	v, err := model.ParseVisibility(visibility)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid visibility")
+		return
+	}
+	params.Visibility = &v
 }
 
 if liker := ${liker}; liker != "" {

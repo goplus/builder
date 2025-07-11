@@ -17,10 +17,9 @@ const transformer = ref<KonvaNodeInstance<CustomTransformer>>()
 const editorCtx = useEditorCtx()
 
 const config = computed<CustomTransformerConfig>(() => {
-  const project = editorCtx.project
-  if (project.selectedSprite != null) {
+  if (editorCtx.state.selectedSprite != null) {
     return {
-      rotationStyle: project.selectedSprite.rotationStyle,
+      rotationStyle: editorCtx.state.selectedSprite.rotationStyle,
       centeredScaling: true
     }
   }
@@ -34,8 +33,7 @@ effect(async () => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
-  const project = editorCtx.project
-  const selected = project.selectedSprite ?? project.stage.selectedWidget
+  const selected = editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget
   if (selected == null) return
   const nodeId = getNodeId(selected)
   // Wait for node ready, so that Konva can get correct node size

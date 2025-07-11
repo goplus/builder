@@ -87,7 +87,7 @@ const handleSubmit = useMessageHandle(
       const owner = await untilNotNull(signedInUser)
       const defaultProjectFile = await getDefaultProjectFile()
       const project = new Project(owner.name, projectName)
-      await project.loadGbpFile(defaultProjectFile)
+      await project.loadXbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
     }

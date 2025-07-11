@@ -118,6 +118,6 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
 }
 
 function handleMousedown() {
-  editorCtx.project.select({ type: 'sprite', id: props.sprite.id })
+  editorCtx.state.selectSprite(props.sprite.id)
 }
 </script>

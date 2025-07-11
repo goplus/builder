@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -26,7 +27,7 @@ type ProjectDTO struct {
 	Name          string               `json:"name"`
 	Version       int                  `json:"version"`
 	Files         model.FileCollection `json:"files"`
-	Visibility    string               `json:"visibility"`
+	Visibility    model.Visibility     `json:"visibility"`
 	Description   string               `json:"description"`
 	Instructions  string               `json:"instructions"`
 	Thumbnail     string               `json:"thumbnail"`
@@ -59,7 +60,7 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 		Name:          mProject.Name,
 		Version:       mProject.Version,
 		Files:         mProject.Files,
-		Visibility:    mProject.Visibility.String(),
+		Visibility:    mProject.Visibility,
 		Description:   mProject.Description,
 		Instructions:  mProject.Instructions,
 		Thumbnail:     mProject.Thumbnail,
@@ -76,10 +77,10 @@ var projectNameRE = regexp.MustCompile(`^[\w-]{1,100}$`)
 // ProjectFullName holds the full name of a project.
 type ProjectFullName struct{ Owner, Project string }
 
-// ParseProjectFullName parses the project full name from a string.
-func ParseProjectFullName(fullName string) (ProjectFullName, error) {
+// ParseProjectFullName parses the string representation of a project full name.
+func ParseProjectFullName(s string) (ProjectFullName, error) {
 	var pfn ProjectFullName
-	return pfn, pfn.UnmarshalText([]byte(fullName))
+	return pfn, pfn.UnmarshalText([]byte(s))
 }
 
 // String implements [fmt.Stringer].
@@ -138,10 +139,10 @@ type RemixSource struct {
 	Release *string
 }
 
-// ParseRemixSource parses the remix source from a string.
-func ParseRemixSource(source string) (RemixSource, error) {
+// ParseRemixSource parses the string representation of a remix source.
+func ParseRemixSource(s string) (RemixSource, error) {
 	var rs RemixSource
-	return rs, rs.UnmarshalText([]byte(source))
+	return rs, rs.UnmarshalText([]byte(s))
 }
 
 // String implements [fmt.Stringer].
@@ -217,7 +218,7 @@ func (ctrl *Controller) ensureProject(ctx context.Context, fullName ProjectFullN
 	}
 
 	if ownedOnly || mProject.Visibility == model.VisibilityPrivate {
-		if _, err := ensureAuthedUser(ctx, mProject.OwnerID); err != nil {
+		if _, err := authn.EnsureUser(ctx, mProject.OwnerID); err != nil {
 			return nil, err
 		}
 	}
@@ -230,7 +231,7 @@ type CreateProjectParams struct {
 	RemixSource  *RemixSource         `json:"remixSource"`
 	Name         string               `json:"name"`
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
+	Visibility   model.Visibility     `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
@@ -246,25 +247,22 @@ func (p *CreateProjectParams) Validate() (ok bool, msg string) {
 	} else if !projectNameRE.Match([]byte(p.Name)) {
 		return false, "invalid name"
 	}
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
-	}
 	return true, ""
 }
 
 // CreateProject creates a project.
 func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProjectParams) (*ProjectDTO, error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return nil, ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return nil, authn.ErrUnauthorized
 	}
 
 	mProject := model.Project{
-		OwnerID:      mAuthedUser.ID,
+		OwnerID:      mUser.ID,
 		Name:         params.Name,
 		Version:      1,
 		Files:        params.Files,
-		Visibility:   model.ParseVisibility(params.Visibility),
+		Visibility:   params.Visibility,
 		Description:  params.Description,
 		Instructions: params.Instructions,
 		Thumbnail:    params.Thumbnail,
@@ -319,13 +317,13 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			return err
 		}
 
-		mAuthedUserStatisticalUpdates := map[string]any{
+		mUserStatisticalUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count + 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+			mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 		}
-		if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
+		if err := tx.Model(mUser).UpdateColumns(mUserStatisticalUpdates).Error; err != nil {
 			return err
 		}
 
@@ -413,7 +411,7 @@ type ListProjectsParams struct {
 	// Visibility filters assets by visibility.
 	//
 	// Applied only if non-nil.
-	Visibility *string
+	Visibility *model.Visibility
 
 	// Liked filters projects liked by the specified user.
 	//
@@ -463,9 +461,6 @@ func (p *ListProjectsParams) Validate() (ok bool, msg string) {
 	if p.RemixedFrom != nil && !p.RemixedFrom.IsValid() {
 		return false, "invalid remixedFrom"
 	}
-	if p.Visibility != nil && model.ParseVisibility(*p.Visibility).String() != *p.Visibility {
-		return false, "invalid visibility"
-	}
 	if !p.OrderBy.IsValid() {
 		return false, "invalid orderBy"
 	}
@@ -480,14 +475,14 @@ func (p *ListProjectsParams) Validate() (ok bool, msg string) {
 
 // ListProjects lists projects.
 func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsParams) (*ByPage[ProjectDTO], error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed || (params.Owner != nil && *params.Owner != mAuthedUser.Username) {
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok || (params.Owner != nil && *params.Owner != mUser.Username) {
 		// Ensure non-owners can only see public projects.
 		if params.Visibility == nil {
-			public := model.VisibilityPublic.String()
+			public := model.VisibilityPublic
 			params.Visibility = &public
-		} else if *params.Visibility != model.VisibilityPublic.String() {
-			return nil, ErrUnauthorized
+		} else if *params.Visibility != model.VisibilityPublic {
+			return nil, authn.ErrUnauthorized
 		}
 	}
 
@@ -510,9 +505,9 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 		query = query.Where("project.name LIKE ?", "%"+*params.Keyword+"%")
 	}
 	if params.Visibility != nil {
-		query = query.Where("project.visibility = ?", model.ParseVisibility(*params.Visibility))
-	} else if isAuthed && params.Owner == nil {
-		query = query.Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic))
+		query = query.Where("project.visibility = ?", *params.Visibility)
+	} else if ok && params.Owner == nil {
+		query = query.Where(ctrl.db.Where("project.owner_id = ?", mUser.ID).Or("project.visibility = ?", model.VisibilityPublic))
 	}
 	if params.Liker != nil {
 		query = query.
@@ -538,12 +533,12 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 			Group("project.id")
 	}
 	if params.FromFollowees != nil && *params.FromFollowees {
-		if !isAuthed {
-			return nil, ErrUnauthorized
+		if !ok {
+			return nil, authn.ErrUnauthorized
 		}
 		query = query.
 			Joins("JOIN user_relationship ON user_relationship.target_user_id = project.owner_id").
-			Where("user_relationship.user_id = ?", mAuthedUser.ID).
+			Where("user_relationship.user_id = ?", mUser.ID).
 			Where("user_relationship.followed_at IS NOT NULL")
 	}
 	var queryOrderByColumn string
@@ -617,7 +612,7 @@ func (ctrl *Controller) GetProject(ctx context.Context, fullName ProjectFullName
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
 	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
+	Visibility   model.Visibility     `json:"visibility"`
 	Description  string               `json:"description"`
 	Instructions string               `json:"instructions"`
 	Thumbnail    string               `json:"thumbnail"`
@@ -625,9 +620,6 @@ type UpdateProjectParams struct {
 
 // Validate validates the parameters.
 func (p *UpdateProjectParams) Validate() (ok bool, msg string) {
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
-	}
 	return true, ""
 }
 
@@ -637,8 +629,8 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if !maps.Equal(p.Files, mProject.Files) {
 		updates["files"] = p.Files
 	}
-	if p.Visibility != mProject.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(p.Visibility)
+	if p.Visibility != mProject.Visibility {
+		updates["visibility"] = p.Visibility
 	}
 	if p.Description != mProject.Description {
 		updates["description"] = p.Description
@@ -654,9 +646,9 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 
 // UpdateProject updates a project.
 func (ctrl *Controller) UpdateProject(ctx context.Context, fullName ProjectFullName, params *UpdateProjectParams) (*ProjectDTO, error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return nil, ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return nil, authn.ErrUnauthorized
 	}
 
 	mProject, err := ctrl.ensureProject(ctx, fullName, true)
@@ -680,17 +672,17 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, fullName ProjectFullN
 				return nil
 			}
 
-			mAuthedUserStatisticalUpdates := map[string]any{}
+			mUserStatisticalUpdates := map[string]any{}
 			if updates["visibility"] != nil {
 				switch params.Visibility {
-				case model.VisibilityPrivate.String():
-					mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
-				case model.VisibilityPublic.String():
-					mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+				case model.VisibilityPrivate:
+					mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+				case model.VisibilityPublic:
+					mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 				}
 			}
-			if len(mAuthedUserStatisticalUpdates) > 0 {
-				if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
+			if len(mUserStatisticalUpdates) > 0 {
+				if err := tx.Model(mUser).UpdateColumns(mUserStatisticalUpdates).Error; err != nil {
 					return err
 				}
 			}
@@ -706,9 +698,9 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, fullName ProjectFullN
 
 // DeleteProject deletes a project.
 func (ctrl *Controller) DeleteProject(ctx context.Context, fullName ProjectFullName) error {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return authn.ErrUnauthorized
 	}
 
 	mProject, err := ctrl.ensureProject(ctx, fullName, true)
@@ -727,13 +719,13 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, fullName ProjectFullN
 			return err
 		}
 
-		mAuthedUserStatisticalUpdates := map[string]any{
+		mUserStatisticalUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count - 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+			mUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 		}
-		if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
+		if err := tx.Model(mUser).UpdateColumns(mUserStatisticalUpdates).Error; err != nil {
 			return err
 		}
 
@@ -798,9 +790,9 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, fullName ProjectFullN
 
 // RecordProjectView records a view for the specified project as the authenticated user.
 func (ctrl *Controller) RecordProjectView(ctx context.Context, fullName ProjectFullName) error {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return authn.ErrUnauthorized
 	}
 
 	var mProject model.Project
@@ -813,7 +805,7 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, fullName ProjectF
 		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -849,9 +841,9 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, fullName ProjectF
 
 // LikeProject likes the specified project as the authenticated user.
 func (ctrl *Controller) LikeProject(ctx context.Context, fullName ProjectFullName) error {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return authn.ErrUnauthorized
 	}
 
 	var mProject model.Project
@@ -864,7 +856,7 @@ func (ctrl *Controller) LikeProject(ctx context.Context, fullName ProjectFullNam
 		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -881,7 +873,7 @@ func (ctrl *Controller) LikeProject(ctx context.Context, fullName ProjectFullNam
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
+		if err := tx.Model(mUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mProject).UpdateColumn("like_count", gorm.Expr("like_count + 1")).Error; err != nil {
@@ -896,8 +888,8 @@ func (ctrl *Controller) LikeProject(ctx context.Context, fullName ProjectFullNam
 
 // HasLikedProject checks if the authenticated user has liked the specified project.
 func (ctrl *Controller) HasLikedProject(ctx context.Context, fullName ProjectFullName) (bool, error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
 		return false, nil
 	}
 
@@ -913,7 +905,7 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, fullName ProjectFul
 
 	if err := ctrl.db.WithContext(ctx).
 		Select("id").
-		Where("user_id = ?", mAuthedUser.ID).
+		Where("user_id = ?", mUser.ID).
 		Where("project_id = ?", mProject.ID).
 		Where("liked_at IS NOT NULL").
 		First(&model.UserProjectRelationship{}).
@@ -921,16 +913,16 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, fullName ProjectFul
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check if user %q has liked project %q: %w", mAuthedUser.Username, fullName, err)
+		return false, fmt.Errorf("failed to check if user %q has liked project %q: %w", mUser.Username, fullName, err)
 	}
 	return true, nil
 }
 
 // UnlikeProject unlikes the specified project as the authenticated user.
 func (ctrl *Controller) UnlikeProject(ctx context.Context, fullName ProjectFullName) error {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return authn.ErrUnauthorized
 	}
 
 	var mProject model.Project
@@ -943,7 +935,7 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, fullName ProjectFullN
 		return fmt.Errorf("failed to get project %q: %w", fullName, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -960,7 +952,7 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, fullName ProjectFullN
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
+		if err := tx.Model(mUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mProject).UpdateColumn("like_count", gorm.Expr("like_count - 1")).Error; err != nil {

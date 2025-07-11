@@ -2,7 +2,7 @@
   <button
     ref="btnRef"
     class="ui-button"
-    :class="[`type-${type}`, `size-${size}`, loading && 'loading']"
+    :class="[`type-${type}`, `size-${size}`, loading && 'loading', iconOnly && 'icon-only']"
     :disabled="disabled"
     :type="htmlType"
   >
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useSlots } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 export type ButtonSize = 'small' | 'medium' | 'large'
@@ -43,6 +43,9 @@ const props = withDefaults(
 const disabled = computed(() => props.disabled || props.loading)
 const icon = computed(() => (props.loading ? 'loading' : props.icon))
 const btnRef = ref<HTMLButtonElement>()
+
+const slots = useSlots()
+const iconOnly = computed(() => (props.icon != null || slots.icon != null) && slots.default == null)
 
 defineExpose({
   focus() {
@@ -85,6 +88,13 @@ defineExpose({
     padding-bottom: 0;
     .content {
       box-shadow: none;
+    }
+  }
+
+  &.icon-only {
+    width: var(--ui-line-height-2);
+    .content {
+      padding: 0;
     }
   }
 
@@ -169,6 +179,13 @@ defineExpose({
     width: 15px;
     height: 15px;
   }
+
+  &.icon-only {
+    width: var(--ui-line-height-3);
+    .content {
+      padding: 0;
+    }
+  }
 }
 
 .ui-button.size-small {
@@ -184,6 +201,13 @@ defineExpose({
   .icon {
     width: 13px;
     height: 13px;
+  }
+
+  &.icon-only {
+    width: var(--ui-line-height-1);
+    .content {
+      padding: 0;
+    }
   }
 }
 </style>

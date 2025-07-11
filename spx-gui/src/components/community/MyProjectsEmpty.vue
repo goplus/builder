@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
-import { getProjectEditorRoute } from '@/router'
+import { getOwnProjectEditorRoute } from '@/router'
 import { UIEmpty, UIButton } from '@/components/ui'
 import newProjectIcon from '@/components/navbar/icons/new.svg'
 import { useCreateProject } from '@/components/project'
@@ -11,7 +11,7 @@ const createProject = useCreateProject()
 const handleNewProject = useMessageHandle(
   async () => {
     const name = await createProject()
-    router.push(getProjectEditorRoute(name))
+    router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
 ).fn

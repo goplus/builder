@@ -45,7 +45,7 @@ export class ResourceReferenceController extends Emitter<{
 
     this.addDisposer(
       watch(
-        () => [this.providerRef.value, this.ui.project.filesHash, this.ui.activeTextDocument] as const,
+        () => [this.providerRef.value, this.ui.project.exportGameFiles(), this.ui.activeTextDocument] as const,
         ([provider]) => {
           if (provider == null) return
           refreshItems()

@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, shallowRef, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { UICard } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundsPanel from './sound/SoundsPanel.vue'
@@ -26,10 +26,10 @@ function expand(panel: 'sprites' | 'sounds') {
 }
 
 const editorCtx = useEditorCtx()
-const running = computed(() => editorCtx.runtime.running)
+const running = computed(() => editorCtx.state.runtime.running)
 
 watch(
-  () => editorCtx.project.selected,
+  () => editorCtx.state.selected,
   (selected) => {
     if (selected?.type === 'sprite' && expandedPanel.value !== 'sprites') expand('sprites')
     else if (selected?.type === 'sound' && expandedPanel.value !== 'sounds') expand('sounds')
@@ -37,35 +37,14 @@ watch(
   { immediate: true }
 )
 
-const lastSelectedSpriteId = shallowRef<string | null>(null)
-const lastSelectedSoundId = shallowRef<string | null>(null)
-watch(
-  () => [editorCtx.project, editorCtx.project.selected] as const,
-  ([project], [lastProject, lastSelected]) => {
-    if (project !== lastProject) {
-      lastSelectedSpriteId.value = null
-      lastSelectedSoundId.value = null
-      return
-    }
-    if (lastSelected?.type === 'sprite') lastSelectedSpriteId.value = lastSelected.id
-    else if (lastSelected?.type === 'sound') lastSelectedSoundId.value = lastSelected.id
-  }
-)
-
 watch(
   () => expandedPanel.value,
   (expanded) => {
-    const project = editorCtx.project
-    if (expanded === 'sprites' && project.selected?.type !== 'sprite' && project.sprites.length > 0) {
-      project.select({
-        type: 'sprite',
-        id: lastSelectedSpriteId.value ?? project.sprites[0].id
-      })
-    } else if (expanded === 'sounds' && project.selected?.type !== 'sound' && project.sounds.length > 0) {
-      project.select({
-        type: 'sound',
-        id: lastSelectedSoundId.value ?? editorCtx.project.sounds[0].id
-      })
+    const { project, state } = editorCtx
+    if (expanded === 'sprites' && state.selected?.type !== 'sprite' && project.sprites.length > 0) {
+      state.select({ type: 'sprite' })
+    } else if (expanded === 'sounds' && state.selected?.type !== 'sound' && project.sounds.length > 0) {
+      state.select({ type: 'sound' })
     }
   }
 )

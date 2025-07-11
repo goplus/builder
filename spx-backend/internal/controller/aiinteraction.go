@@ -14,10 +14,10 @@ type AIInteractionTurnParams aiinteraction.Request
 // Validate validates the parameters.
 func (p *AIInteractionTurnParams) Validate() (ok bool, msg string) {
 	const maxContentLength = 280
-	if p.Content == "" {
-		return false, "missing content"
-	} else if len(p.Content) > maxContentLength {
+	if len(p.Content) > maxContentLength {
 		return false, fmt.Sprintf("content length exceeds %d characters", maxContentLength)
+	} else if p.Content == "" && p.ContinuationTurn == 0 {
+		return false, "missing content"
 	}
 	if len(p.CommandSpecs) == 0 {
 		return false, "no available commands"

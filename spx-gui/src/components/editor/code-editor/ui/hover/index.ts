@@ -2,6 +2,7 @@ import { debounce } from 'lodash'
 import { escapeHTML } from '@/utils/utils'
 import Emitter from '@/utils/emitter'
 import { TaskManager } from '@/utils/task'
+import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import {
   type Action,
   type BaseContext,
@@ -23,7 +24,7 @@ import {
   builtInCommandRenameResource,
   builtInCommandInvokeInputHelper
 } from '../code-editor-ui'
-import { fromMonacoPosition, supportGoTo } from '../common'
+import { fromMonacoPosition } from '../common'
 import { hasPreviewForInputType } from '../markdown/InputValuePreview.vue'
 
 export type Hover = {
@@ -69,7 +70,7 @@ export class HoverController extends Emitter<{
   }
 
   private hoverMgr = new TaskManager(async (signal, position: Position) => {
-    if (this.provider == null) throw new Error('No provider registered')
+    if (this.provider == null) return null
     const textDocument = this.ui.activeTextDocument
     if (textDocument == null) throw new Error('No active text document')
 
@@ -126,7 +127,7 @@ export class HoverController extends Emitter<{
       return {
         contents: [
           makeBasicMarkdownString(
-            `<diagnostic-item severity="${diagnostic.severity}">${diagnostic.message}</diagnostic-item>`
+            `<pre is="diagnostic-item" severity="${diagnostic.severity}">${diagnostic.message}</pre>`
           )
         ],
         range: diagnostic.range,
@@ -153,7 +154,7 @@ export class HoverController extends Emitter<{
       if (!containsPosition(reference.range, position)) continue
       const actions: Action[] = []
       const resourceModel = getResourceModel(this.ui.project, reference.resource)
-      if (resourceModel != null && supportGoTo(resourceModel)) {
+      if (resourceModel != null) {
         actions.push({
           command: builtInCommandGoToResource,
           arguments: [reference.resource]
@@ -204,6 +205,13 @@ export class HoverController extends Emitter<{
 
     const hideHoverWithDebounce = debounce(() => this.hideHover(), 100)
 
+    const startCodeHoveredTransaction = defineIdleTransaction({
+      startSpanOptions: {
+        name: createCodeEditorOperationName('Code hovered'),
+        op: 'code-editor.hover'
+      }
+    })
+
     const handleMouseEnter = debounce((target: HoverTarget) => {
       if (target.type === 'other') {
         hideHoverWithDebounce()
@@ -218,6 +226,7 @@ export class HoverController extends Emitter<{
       // Do not trigger hover when input helper is active
       if (this.ui.inputHelperController.inputingSlot != null) return
 
+      startCodeHoveredTransaction()
       this.hoverMgr.start(position)
     }, 50)
 

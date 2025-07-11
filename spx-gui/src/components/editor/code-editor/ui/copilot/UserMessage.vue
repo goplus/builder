@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useExternalUrl } from '@/utils/utils'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useUserStore } from '@/stores/user'
 import type { BasicMarkdownString } from '../../common'
 import MarkdownView from '../markdown/MarkdownView.vue'
 
@@ -8,8 +8,9 @@ defineProps<{
   content: BasicMarkdownString
 }>()
 
-const editorCtx = useEditorCtx()
-const avatarUrl = useExternalUrl(() => editorCtx.userInfo.avatar)
+const userStore = useUserStore()
+// TODO: Disable copilot for unsigned-in users or provide a default avatar
+const avatarUrl = useExternalUrl(() => userStore.getSignedInUser()?.avatar)
 </script>
 
 <template>

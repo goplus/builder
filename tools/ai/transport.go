@@ -15,7 +15,7 @@ type Transport interface {
 // Request encapsulates all information sent to the AI via the [Transport].
 type Request struct {
 	// Content is the core user input.
-	Content string `json:"content"`
+	Content string `json:"content,omitempty"`
 
 	// Context is the specific context for the current user input.
 	Context map[string]any `json:"context,omitempty"`
@@ -64,7 +64,10 @@ type Response struct {
 // Turn represents a single turn in the conversation history.
 type Turn struct {
 	// RequestContent is the user's input text for that turn.
-	RequestContent string `json:"requestContent"`
+	RequestContent string `json:"requestContent,omitempty"`
+
+	// RequestContext is the context for the user's input text for the turn.
+	RequestContext map[string]any `json:"context,omitempty"`
 
 	// ResponseText is the AI's text output for that turn.
 	ResponseText string `json:"responseText"`

@@ -29,21 +29,10 @@ import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
-export function selectAsset(project: Project, asset: AssetModel | undefined) {
-  if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
-  else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
-  else if (asset instanceof Backdrop) {
-    project.select({ type: 'stage' })
-    project.stage.setDefaultBackdrop(asset.id)
-  }
-}
-
-export function useAddAssetFromLibrary(autoSelect = true) {
+export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const added = (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
-    if (autoSelect) selectAsset(project, added[0])
-    return added
+    return (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
   }
 }
 
@@ -66,13 +55,11 @@ export function useLoadFromScratchModal() {
   return async function loadFromScratchModal(project: Project) {
     const file = await selectFile({ accept: ['sb3'] })
     const exportedScratchAssets = await parseScratchFileAssets(file)
-    const imported = await invokeModal({ project, exportedScratchAssets })
-    selectAsset(project, imported[0])
-    return imported
+    return invokeModal({ project, exportedScratchAssets })
   }
 }
 
-export function useAddSpriteFromLocalFile(autoSelect = true) {
+export function useAddSpriteFromLocalFile() {
   const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: Project) {
     const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
@@ -93,12 +80,11 @@ export function useAddSpriteFromLocalFile(autoSelect = true) {
       await sprite.autoFitCostumes()
       await sprite.autoFit()
     })
-    if (autoSelect) selectAsset(project, sprite)
     return sprite
   }
 }
 
-export function useAddCostumeFromLocalFile(autoSelect = true) {
+export function useAddCostumeFromLocalFile() {
   const preprocess = useModal(PreprocessModal)
   return async function addCostumeFromLocalFile(sprite: Sprite, project: Project) {
     const actionMessage = { en: 'Add costume', zh: '添加造型' }
@@ -112,13 +98,12 @@ export function useAddCostumeFromLocalFile(autoSelect = true) {
     await project.history.doAction({ name: actionMessage }, async () => {
       for (const costume of costumes) sprite.addCostume(costume)
       await sprite.autoFitCostumes(costumes)
-      if (autoSelect) sprite.setDefaultCostume(costumes[0].id)
     })
     return costumes
   }
 }
 
-export function useAddSoundFromLocalFile(autoSelect = true) {
+export function useAddSoundFromLocalFile() {
   const m = useMessage()
   const { t } = useI18n()
   const { isOnline } = useNetwork()
@@ -132,21 +117,18 @@ export function useAddSoundFromLocalFile(autoSelect = true) {
 
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
     await project.history.doAction(action, () => project.addSound(sound))
-    if (autoSelect) selectAsset(project, sound)
     return sound
   }
 }
 
-export function useAddSoundByRecording(autoSelect = true) {
+export function useAddSoundByRecording() {
   const invokeSoundRecorderModal = useModal(SoundRecorderModal)
   return async function addSoundFromRecording(project: Project): Promise<Sound> {
-    const sound = await invokeSoundRecorderModal({ project })
-    if (autoSelect) selectAsset(project, sound)
-    return sound
+    return invokeSoundRecorderModal({ project })
   }
 }
 
-export function useAddBackdropFromLocalFile(autoSelect = true) {
+export function useAddBackdropFromLocalFile() {
   const m = useMessage()
   const { t } = useI18n()
   const { isOnline } = useNetwork()
@@ -164,7 +146,6 @@ export function useAddBackdropFromLocalFile(autoSelect = true) {
     await project.history.doAction(action, () => {
       const stage = project.stage
       stage.addBackdrop(backdrop)
-      if (autoSelect) stage.setDefaultBackdrop(backdrop.id)
     })
     return backdrop
   }
@@ -191,13 +172,12 @@ export function useAddAnimationByGroupingCostumes() {
   }
 }
 
-export function useAddMonitor(autoSelect = true) {
+export function useAddMonitor() {
   return async function addMonitor(project: Project) {
     const monitor = await Monitor.create()
     const action = { name: { en: 'Add widget', zh: '添加控件' } }
     await project.history.doAction(action, () => {
       project.stage.addWidget(monitor)
-      if (autoSelect) project.stage.selectWidget(monitor.id)
     })
     return monitor
   }

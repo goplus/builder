@@ -154,7 +154,7 @@ function untilConditionMet<T>(
   condition: (value: T) => boolean,
   signal?: AbortSignal
 ): Promise<T> {
-  return new Promise<T>((resolve) => {
+  return new Promise<T>((resolve, reject) => {
     let stopWatch: (() => void) | null = null
     stopWatch = watch(
       valueSource,
@@ -166,8 +166,12 @@ function untilConditionMet<T>(
       { immediate: true }
     )
     if (signal != null) {
-      if (signal.aborted) stopWatch?.()
-      else signal.addEventListener('abort', () => stopWatch?.())
+      const onAbort = () => {
+        stopWatch?.()
+        reject(signal.reason)
+      }
+      if (signal.aborted) onAbort()
+      else signal.addEventListener('abort', onAbort)
     }
   })
 }
@@ -304,8 +308,18 @@ export function usePageTitle(
   )
 }
 
-export function timeout(duration = 0) {
-  return new Promise<void>((resolve) => setTimeout(() => resolve(), duration))
+export function timeout(duration = 0, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => resolve(), duration)
+    if (signal != null) {
+      const onAbort = () => {
+        clearTimeout(timer)
+        reject(signal.reason)
+      }
+      if (signal.aborted) onAbort()
+      else signal.addEventListener('abort', onAbort)
+    }
+  })
 }
 
 export function trimLineBreaks(str: string) {
@@ -394,4 +408,16 @@ export function useExternalUrl(urlSource: WatchSource<string | null | undefined>
     { immediate: true }
   )
   return urlRef
+}
+
+export function createResettableObject<T extends object>(getter: () => T): [T, () => void] {
+  const state = {
+    ...getter()
+  }
+  return [
+    state,
+    () => {
+      Object.assign(state, { ...getter() })
+    }
+  ]
 }

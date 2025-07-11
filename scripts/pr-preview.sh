@@ -16,7 +16,7 @@ docker build \
 	--push \
 	-f ./Dockerfile \
 	-t "${CONTAINER_IMAGE}" \
-	--build-arg GOP_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/gop:1.4.6" \
+	--build-arg XGO_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/xgo:1.5.0" \
 	--build-arg GO_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/golang:1.24.4" \
 	--build-arg NODE_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/node:20.11.1" \
 	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27-dev" \

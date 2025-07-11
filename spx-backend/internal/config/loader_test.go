@@ -1,0 +1,104 @@
+package config
+
+import (
+	"testing"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func setTestEnv(t *testing.T) {
+	// Database
+	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
+
+	// Kodo
+	t.Setenv("KODO_AK", "test-kodo-ak")
+	t.Setenv("KODO_SK", "test-kodo-sk")
+	t.Setenv("KODO_BUCKET", "builder")
+	t.Setenv("KODO_BUCKET_REGION", "earth")
+	t.Setenv("KODO_BASE_URL", "https://kodo.example.com")
+
+	// Casdoor
+	t.Setenv("GOP_CASDOOR_ENDPOINT", "https://casdoor.example.com")
+	t.Setenv("GOP_CASDOOR_CLIENTID", "test-client-id")
+	t.Setenv("GOP_CASDOOR_CLIENTSECRET", "test-client-secret")
+	t.Setenv("GOP_CASDOOR_CERTIFICATE", "test-certificate")
+	t.Setenv("GOP_CASDOOR_ORGANIZATIONNAME", "test-org")
+	t.Setenv("GOP_CASDOOR_APPLICATIONNAME", "test-app")
+
+	// OpenAI
+	t.Setenv("OPENAI_API_KEY", "test-openai-key")
+	t.Setenv("OPENAI_API_ENDPOINT", "https://api.openai.com/v1")
+	t.Setenv("OPENAI_MODEL_ID", "gpt-3.5-turbo")
+
+	// AIGC
+	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
+}
+
+func TestLoad(t *testing.T) {
+	setTestEnv(t)
+
+	logger := log.GetLogger()
+	config, err := Load(logger)
+	require.NoError(t, err)
+	require.NotNil(t, config)
+
+	// Server
+	assert.Empty(t, config.Server.Port)
+	assert.Equal(t, ":8080", config.Server.GetPort())
+
+	// Database
+	assert.Equal(t, "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True", config.Database.DSN)
+
+	// Kodo
+	assert.Equal(t, "test-kodo-ak", config.Kodo.AccessKey)
+	assert.Equal(t, "test-kodo-sk", config.Kodo.SecretKey)
+	assert.Equal(t, "builder", config.Kodo.Bucket)
+	assert.Equal(t, "earth", config.Kodo.BucketRegion)
+	assert.Equal(t, "https://kodo.example.com", config.Kodo.BaseURL)
+
+	// Casdoor
+	assert.Equal(t, "https://casdoor.example.com", config.Casdoor.Endpoint)
+	assert.Equal(t, "test-client-id", config.Casdoor.ClientID)
+	assert.Equal(t, "test-client-secret", config.Casdoor.ClientSecret)
+	assert.Equal(t, "test-certificate", config.Casdoor.Certificate)
+	assert.Equal(t, "test-org", config.Casdoor.OrganizationName)
+	assert.Equal(t, "test-app", config.Casdoor.ApplicationName)
+
+	// OpenAI
+	assert.Equal(t, "test-openai-key", config.OpenAI.APIKey)
+	assert.Equal(t, "https://api.openai.com/v1", config.OpenAI.APIEndpoint)
+	assert.Equal(t, "gpt-3.5-turbo", config.OpenAI.ModelID)
+	assert.Empty(t, config.OpenAI.PremiumAPIKey)
+	assert.Empty(t, config.OpenAI.PremiumAPIEndpoint)
+	assert.Empty(t, config.OpenAI.PremiumModelID)
+
+	// AIGC
+	assert.Equal(t, "https://aigc.example.com", config.AIGC.Endpoint)
+}
+
+func TestLoadWithPremiumConfig(t *testing.T) {
+	setTestEnv(t)
+	t.Setenv("PORT", ":9090")
+	t.Setenv("OPENAI_PREMIUM_API_KEY", "premium-key")
+	t.Setenv("OPENAI_PREMIUM_API_ENDPOINT", "https://premium.openai.com/v1")
+	t.Setenv("OPENAI_PREMIUM_MODEL_ID", "gpt-4")
+
+	logger := log.GetLogger()
+	config, err := Load(logger)
+	require.NoError(t, err)
+	require.NotNil(t, config)
+
+	// Server
+	assert.Equal(t, ":9090", config.Server.Port)
+	assert.Equal(t, config.Server.Port, config.Server.GetPort())
+
+	// OpenAI
+	assert.Equal(t, "premium-key", config.OpenAI.PremiumAPIKey)
+	assert.Equal(t, config.OpenAI.PremiumAPIKey, config.OpenAI.GetPremiumAPIKey())
+	assert.Equal(t, "https://premium.openai.com/v1", config.OpenAI.PremiumAPIEndpoint)
+	assert.Equal(t, config.OpenAI.PremiumAPIEndpoint, config.OpenAI.GetPremiumAPIEndpoint())
+	assert.Equal(t, "gpt-4", config.OpenAI.PremiumModelID)
+	assert.Equal(t, config.OpenAI.PremiumModelID, config.OpenAI.GetPremiumModelID())
+}

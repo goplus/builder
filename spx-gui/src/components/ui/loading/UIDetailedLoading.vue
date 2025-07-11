@@ -44,7 +44,7 @@ watch(
   <div class="ui-detailed-loading" :class="{ cover, visible, [`mask-${mask}`]: true }">
     <DotLottieVue ref="dotLottieRef" class="animation" autoplay loop :src="animationFileUrl" />
     <div class="progress-bar">
-      <div class="progress" :style="{ width: `${percentage * 100}%` }"></div>
+      <div v-show="percentage > 0" class="progress" :style="{ width: `${percentage * 100}%` }"></div>
     </div>
     <div class="text">
       <slot></slot>

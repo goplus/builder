@@ -11,6 +11,7 @@ export function useCodeEditorUICtx() {
 </script>
 
 <script setup lang="ts">
+import { throttle } from 'lodash'
 import {
   type InjectionKey,
   inject,
@@ -47,6 +48,7 @@ import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../context'
 import {
+  getDdiDragData,
   getResourceModel,
   getTextDocumentId,
   type Position,
@@ -55,6 +57,7 @@ import {
   type TextDocumentIdentifier
 } from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
+import { fromMonacoPosition } from './common'
 import { CodeEditorUI } from './code-editor-ui'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
@@ -66,6 +69,7 @@ import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
 import InlayHintUI from './inlay-hint/InlayHintUI.vue'
+import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 
@@ -120,6 +124,7 @@ const uiRef = computed(() => {
   return new CodeEditorUI(
     mainTextDocumentId,
     editorCtx.project,
+    editorCtx.state,
     i18n,
     codeEditorCtx.getMonaco(),
     codeEditorCtx.getTextDocument,
@@ -144,6 +149,58 @@ const monacEditorRef = shallowRef<MonacoEditor | null>(null)
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
   monacEditorRef.value = editor
+}
+
+const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
+  const ui = uiRef.value
+  if (clientPoint == null) {
+    ui.dropIndicatorController.setDropPosition(null)
+    return
+  }
+  const target = ui.editor.getTargetAtClientPoint(clientPoint.x, clientPoint.y)
+  if (target == null || target.position == null) {
+    ui.dropIndicatorController.setDropPosition(null)
+    return
+  }
+  const position = fromMonacoPosition(target.position)
+  ui.dropIndicatorController.setDropPosition(position)
+}, 50)
+
+function handleMonacoEditorDragOver(e: DragEvent) {
+  e.preventDefault()
+  handleMonacoEditorDrag({
+    x: e.clientX,
+    y: e.clientY
+  })
+}
+
+function handleMonacoEditorDragLeave(e: DragEvent) {
+  e.preventDefault()
+  handleMonacoEditorDrag(null)
+}
+
+function handleMonacoEditorDrop(e: DragEvent) {
+  e.preventDefault()
+
+  const ui = uiRef.value
+  ui.dropIndicatorController.setDropPosition(null)
+  handleMonacoEditorDrag.cancel()
+  if (e.dataTransfer == null) return
+
+  const target = ui.editor.getTargetAtClientPoint(e.clientX, e.clientY)
+  if (target == null || target.position == null) return
+  const position = fromMonacoPosition(target.position)
+  const range = { start: position, end: position }
+  const ddi = getDdiDragData(e.dataTransfer)
+  if (ddi != null) {
+    ui.insertDefinition(ddi, range)
+    return
+  }
+  const dataTextPlain = e.dataTransfer.getData('text/plain')
+  if (dataTextPlain !== '') {
+    ui.insertText(dataTextPlain, range)
+    return
+  }
 }
 
 watch(
@@ -265,6 +322,9 @@ function zoomReset() {
       :monaco="codeEditorCtx.getMonaco()"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
+      @dragover="handleMonacoEditorDragOver"
+      @dragleave="handleMonacoEditorDragLeave"
+      @drop="handleMonacoEditorDrop"
     />
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
@@ -272,6 +332,7 @@ function zoomReset() {
     <ContextMenuUI :controller="uiRef.contextMenuController" />
     <InputHelperUI :controller="uiRef.inputHelperController" />
     <InlayHintUI :controller="uiRef.inlayHintController" />
+    <DropIndicatorUI :controller="uiRef.dropIndicatorController" />
     <aside class="right-sidebar">
       <DocumentTabs class="document-tabs" />
       <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />

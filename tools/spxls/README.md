@@ -2,10 +2,10 @@
 
 ## Upgrade
 
-Steps to upgrade the `goxlsw` module:
+Steps to upgrade the `xgolsw` module:
 
 ```bash
-go get github.com/goplus/goxlsw@latest
-GOXLSW_DIR="$(GOOS=js GOARCH=wasm go list -f '{{.Dir}}' github.com/goplus/goxlsw)"
-cp "${GOXLSW_DIR}/index.d.ts" "${GOXLSW_DIR}/client.ts" ./
+go get github.com/goplus/xgolsw@latest
+XGOLSW_DIR="$(GOOS=js GOARCH=wasm go list -f '{{.Dir}}' github.com/goplus/xgolsw)"
+cp "${XGOLSW_DIR}/index.d.ts" "${XGOLSW_DIR}/client.ts" ./
 ```

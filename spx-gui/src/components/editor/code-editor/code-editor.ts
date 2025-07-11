@@ -5,8 +5,9 @@ import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
 import { packageSpx } from '@/utils/spx'
-import { RuntimeOutputKind, type Runtime } from '@/models/runtime'
+import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
+import { RuntimeOutputKind, type Runtime } from '@/components/editor/runtime'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
 import { SpxLSPClient } from './lsp'
@@ -77,7 +78,7 @@ import {
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 import * as z from 'zod'
-import { ToolRegistry } from '@/components/copilot/mcp/registry'
+import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
 import {
   writeToFileToolDescription,
   WriteToFileArgsSchema,
@@ -87,146 +88,146 @@ import {
   getDiagnosticsToolDescription,
   GetFileCodeArgsSchema,
   getFileCodeToolDescription
-} from '@/components/copilot/mcp/definitions'
+} from '@/components/agent-copilot/mcp/definitions'
 
 /** Definition ID string for APIReference items */
 const apiReferenceItems = [
-  'gop:fmt?println',
-  `gop:${packageSpx}?rand#0`,
-  `gop:${packageSpx}?rand#1`,
-  `gop:${packageSpx}?exit#1`,
-  `gop:${packageSpx}?forever`,
-  `gop:${packageSpx}?repeat`,
-  `gop:${packageSpx}?repeatUntil`,
+  'xgo:fmt?println',
+  `xgo:${packageSpx}?rand#0`,
+  `xgo:${packageSpx}?rand#1`,
+  `xgo:${packageSpx}?exit#1`,
+  `xgo:${packageSpx}?forever`,
+  `xgo:${packageSpx}?repeat`,
+  `xgo:${packageSpx}?repeatUntil`,
 
-  `gop:${packageSpx}?Game.wait`,
-  `gop:${packageSpx}?Game.waitUntil`,
-  `gop:${packageSpx}?Game.timer`,
-  `gop:${packageSpx}?Game.resetTimer`,
+  `xgo:${packageSpx}?Game.wait`,
+  `xgo:${packageSpx}?Game.waitUntil`,
+  `xgo:${packageSpx}?Game.timer`,
+  `xgo:${packageSpx}?Game.resetTimer`,
 
-  `gop:${packageSpx}?Game.onStart`,
-  `gop:${packageSpx}?Game.onClick`,
-  `gop:${packageSpx}?Game.onKey#0`,
-  `gop:${packageSpx}?Game.onMsg#1`,
+  `xgo:${packageSpx}?Game.onStart`,
+  `xgo:${packageSpx}?Game.onClick`,
+  `xgo:${packageSpx}?Game.onKey#0`,
+  `xgo:${packageSpx}?Game.onMsg#1`,
 
-  `gop:${packageSpx}?Game.mouseX`,
-  `gop:${packageSpx}?Game.mouseY`,
-  `gop:${packageSpx}?Game.keyPressed`,
-  `gop:${packageSpx}?Game.getWidget`,
-  `gop:${packageSpx}?Mouse`,
+  `xgo:${packageSpx}?Game.mouseX`,
+  `xgo:${packageSpx}?Game.mouseY`,
+  `xgo:${packageSpx}?Game.keyPressed`,
+  `xgo:${packageSpx}?Game.getWidget`,
+  `xgo:${packageSpx}?Mouse`,
 
-  `gop:${packageSpx}?Game.ask`,
-  `gop:${packageSpx}?Sprite.ask`,
-  `gop:${packageSpx}?Game.answer`,
+  `xgo:${packageSpx}?Game.ask`,
+  `xgo:${packageSpx}?Sprite.ask`,
+  `xgo:${packageSpx}?Game.answer`,
 
-  `gop:${packageSpx}?Game.onBackdrop#1`,
-  `gop:${packageSpx}?Game.backdropName`,
-  `gop:${packageSpx}?Game.backdropIndex`,
-  `gop:${packageSpx}?Game.prevBackdrop#0`,
-  `gop:${packageSpx}?Game.nextBackdrop#0`,
-  `gop:${packageSpx}?Game.startBackdrop#0`,
+  `xgo:${packageSpx}?Game.onBackdrop#1`,
+  `xgo:${packageSpx}?Game.backdropName`,
+  `xgo:${packageSpx}?Game.backdropIndex`,
+  `xgo:${packageSpx}?Game.prevBackdrop#0`,
+  `xgo:${packageSpx}?Game.nextBackdrop#0`,
+  `xgo:${packageSpx}?Game.startBackdrop#0`,
 
-  `gop:${packageSpx}?Game.broadcast#0`,
+  `xgo:${packageSpx}?Game.broadcast#0`,
 
-  `gop:${packageSpx}?Game.play#3`,
-  `gop:${packageSpx}?Game.play#4`,
-  `gop:${packageSpx}?Game.stopAllSounds`,
-  `gop:${packageSpx}?PlayContinue`,
-  `gop:${packageSpx}?PlayPause`,
-  `gop:${packageSpx}?PlayResume`,
-  `gop:${packageSpx}?PlayRewind`,
-  `gop:${packageSpx}?PlayStop`,
+  `xgo:${packageSpx}?Game.play#3`,
+  `xgo:${packageSpx}?Game.play#4`,
+  `xgo:${packageSpx}?Game.stopAllSounds`,
+  `xgo:${packageSpx}?PlayContinue`,
+  `xgo:${packageSpx}?PlayPause`,
+  `xgo:${packageSpx}?PlayResume`,
+  `xgo:${packageSpx}?PlayRewind`,
+  `xgo:${packageSpx}?PlayStop`,
 
-  `gop:${packageSpx}?Game.volume`,
-  `gop:${packageSpx}?Game.changeVolume`,
-  `gop:${packageSpx}?Game.setVolume`,
+  `xgo:${packageSpx}?Game.volume`,
+  `xgo:${packageSpx}?Game.changeVolume`,
+  `xgo:${packageSpx}?Game.setVolume`,
 
-  `gop:${packageSpx}?Game.changeEffect`,
-  `gop:${packageSpx}?Game.setEffect`,
-  `gop:${packageSpx}?Game.clearGraphicEffects`,
+  `xgo:${packageSpx}?Game.changeEffect`,
+  `xgo:${packageSpx}?Game.setEffect`,
+  `xgo:${packageSpx}?Game.clearGraphicEffects`,
 
-  `gop:${packageSpx}?Sprite.onStart`,
-  `gop:${packageSpx}?Sprite.onClick`,
-  `gop:${packageSpx}?Sprite.onKey#0`,
-  `gop:${packageSpx}?Sprite.onMsg#1`,
+  `xgo:${packageSpx}?Sprite.onStart`,
+  `xgo:${packageSpx}?Sprite.onClick`,
+  `xgo:${packageSpx}?Sprite.onKey#0`,
+  `xgo:${packageSpx}?Sprite.onMsg#1`,
 
-  `gop:${packageSpx}?Sprite.animate`,
+  `xgo:${packageSpx}?Sprite.animate`,
 
-  `gop:${packageSpx}?Sprite.bounceOffEdge`,
+  `xgo:${packageSpx}?Sprite.bounceOffEdge`,
 
-  `gop:${packageSpx}?Sprite.heading`,
-  `gop:${packageSpx}?Sprite.turn#0`,
-  `gop:${packageSpx}?Sprite.turnTo#2`,
-  `gop:${packageSpx}?Sprite.turnTo#1`,
-  `gop:${packageSpx}?Sprite.turnTo#3`,
-  `gop:${packageSpx}?Sprite.changeHeading`,
-  `gop:${packageSpx}?Sprite.setHeading`,
-  `gop:${packageSpx}?Up`,
-  `gop:${packageSpx}?Down`,
-  `gop:${packageSpx}?Left`,
-  `gop:${packageSpx}?Right`,
+  `xgo:${packageSpx}?Sprite.heading`,
+  `xgo:${packageSpx}?Sprite.turn#0`,
+  `xgo:${packageSpx}?Sprite.turnTo#2`,
+  `xgo:${packageSpx}?Sprite.turnTo#1`,
+  `xgo:${packageSpx}?Sprite.turnTo#3`,
+  `xgo:${packageSpx}?Sprite.changeHeading`,
+  `xgo:${packageSpx}?Sprite.setHeading`,
+  `xgo:${packageSpx}?Up`,
+  `xgo:${packageSpx}?Down`,
+  `xgo:${packageSpx}?Left`,
+  `xgo:${packageSpx}?Right`,
 
-  `gop:${packageSpx}?Sprite.size`,
-  `gop:${packageSpx}?Sprite.changeSize`,
-  `gop:${packageSpx}?Sprite.setSize`,
+  `xgo:${packageSpx}?Sprite.size`,
+  `xgo:${packageSpx}?Sprite.changeSize`,
+  `xgo:${packageSpx}?Sprite.setSize`,
 
-  `gop:${packageSpx}?Sprite.xpos`,
-  `gop:${packageSpx}?Sprite.ypos`,
-  `gop:${packageSpx}?Sprite.step#0`,
-  `gop:${packageSpx}?Sprite.glide#0`,
-  `gop:${packageSpx}?Sprite.glide#2`,
-  `gop:${packageSpx}?Sprite.glide#3`,
-  `gop:${packageSpx}?Sprite.goto#1`,
-  `gop:${packageSpx}?Sprite.goto#2`,
-  `gop:${packageSpx}?Sprite.changeXpos`,
-  `gop:${packageSpx}?Sprite.setXpos`,
-  `gop:${packageSpx}?Sprite.changeYpos`,
-  `gop:${packageSpx}?Sprite.setYpos`,
+  `xgo:${packageSpx}?Sprite.xpos`,
+  `xgo:${packageSpx}?Sprite.ypos`,
+  `xgo:${packageSpx}?Sprite.step#0`,
+  `xgo:${packageSpx}?Sprite.glide#0`,
+  `xgo:${packageSpx}?Sprite.glide#2`,
+  `xgo:${packageSpx}?Sprite.glide#3`,
+  `xgo:${packageSpx}?Sprite.goto#1`,
+  `xgo:${packageSpx}?Sprite.goto#2`,
+  `xgo:${packageSpx}?Sprite.changeXpos`,
+  `xgo:${packageSpx}?Sprite.setXpos`,
+  `xgo:${packageSpx}?Sprite.changeYpos`,
+  `xgo:${packageSpx}?Sprite.setYpos`,
 
-  `gop:${packageSpx}?Sprite.clone#0`,
+  `xgo:${packageSpx}?Sprite.clone#0`,
 
-  `gop:${packageSpx}?Sprite.costumeName`,
-  `gop:${packageSpx}?Sprite.setCostume#0`,
+  `xgo:${packageSpx}?Sprite.costumeName`,
+  `xgo:${packageSpx}?Sprite.setCostume#0`,
 
-  `gop:${packageSpx}?Sprite.setRotationStyle`,
-  `gop:${packageSpx}?None`,
-  `gop:${packageSpx}?Normal`,
-  `gop:${packageSpx}?LeftRight`,
+  `xgo:${packageSpx}?Sprite.setRotationStyle`,
+  `xgo:${packageSpx}?None`,
+  `xgo:${packageSpx}?Normal`,
+  `xgo:${packageSpx}?LeftRight`,
 
-  `gop:${packageSpx}?Sprite.die`,
+  `xgo:${packageSpx}?Sprite.die`,
 
-  `gop:${packageSpx}?Sprite.touching#0`,
-  `gop:${packageSpx}?Sprite.touching#2`,
-  `gop:${packageSpx}?Sprite.distanceTo#1`,
-  `gop:${packageSpx}?Sprite.distanceTo#2`,
+  `xgo:${packageSpx}?Sprite.touching#0`,
+  `xgo:${packageSpx}?Sprite.touching#2`,
+  `xgo:${packageSpx}?Sprite.distanceTo#1`,
+  `xgo:${packageSpx}?Sprite.distanceTo#2`,
 
-  `gop:${packageSpx}?Edge`,
-  `gop:${packageSpx}?EdgeBottom`,
-  `gop:${packageSpx}?EdgeLeft`,
-  `gop:${packageSpx}?EdgeRight`,
-  `gop:${packageSpx}?EdgeTop`,
+  `xgo:${packageSpx}?Edge`,
+  `xgo:${packageSpx}?EdgeBottom`,
+  `xgo:${packageSpx}?EdgeLeft`,
+  `xgo:${packageSpx}?EdgeRight`,
+  `xgo:${packageSpx}?EdgeTop`,
 
-  `gop:${packageSpx}?Sprite.visible`,
-  `gop:${packageSpx}?Sprite.show`,
-  `gop:${packageSpx}?Sprite.hide`,
-  `gop:${packageSpx}?Sprite.gotoFront`,
-  `gop:${packageSpx}?Sprite.gotoBack`,
-  `gop:${packageSpx}?Sprite.goBackLayers`,
+  `xgo:${packageSpx}?Sprite.visible`,
+  `xgo:${packageSpx}?Sprite.show`,
+  `xgo:${packageSpx}?Sprite.hide`,
+  `xgo:${packageSpx}?Sprite.gotoFront`,
+  `xgo:${packageSpx}?Sprite.gotoBack`,
+  `xgo:${packageSpx}?Sprite.goBackLayers`,
 
-  `gop:${packageSpx}?Sprite.onCloned#0`,
-  `gop:${packageSpx}?Sprite.onMoving#0`,
-  `gop:${packageSpx}?Sprite.onTouchStart#0`,
-  `gop:${packageSpx}?Sprite.onTouchStart#2`,
-  `gop:${packageSpx}?Sprite.onTurning#0`,
+  `xgo:${packageSpx}?Sprite.onCloned#0`,
+  `xgo:${packageSpx}?Sprite.onMoving#0`,
+  `xgo:${packageSpx}?Sprite.onTouchStart#0`,
+  `xgo:${packageSpx}?Sprite.onTouchStart#2`,
+  `xgo:${packageSpx}?Sprite.onTurning#0`,
 
-  `gop:${packageSpx}?Sprite.say#0`,
-  `gop:${packageSpx}?Sprite.say#1`,
-  `gop:${packageSpx}?Sprite.think#0`,
-  `gop:${packageSpx}?Sprite.think#1`,
+  `xgo:${packageSpx}?Sprite.say#0`,
+  `xgo:${packageSpx}?Sprite.say#1`,
+  `xgo:${packageSpx}?Sprite.think#0`,
+  `xgo:${packageSpx}?Sprite.think#1`,
 
-  `gop:${packageSpx}?Sprite.changeEffect`,
-  `gop:${packageSpx}?Sprite.setEffect`,
-  `gop:${packageSpx}?Sprite.clearGraphicEffects`
+  `xgo:${packageSpx}?Sprite.changeEffect`,
+  `xgo:${packageSpx}?Sprite.setEffect`,
+  `xgo:${packageSpx}?Sprite.clearGraphicEffects`
 
   // TODO: definitions like `if-else` / `var`?
 ]
@@ -277,14 +278,14 @@ class APIReferenceProvider implements IAPIReferenceProvider {
 class ResourceReferencesProvider implements IResourceReferencesProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
-    return this.lspClient.getResourceReferences(ctx.textDocument.id)
+    return this.lspClient.getResourceReferences({ signal: ctx.signal }, ctx.textDocument.id)
   }
 }
 
 class InputHelperProvider implements IInputHelperProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInputSlots(ctx: InputHelperContext): Promise<InputSlot[]> {
-    const slots = await this.lspClient.getInputSlots(ctx.textDocument.id)
+    const slots = await this.lspClient.getInputSlots({ signal: ctx.signal }, ctx.textDocument.id)
     return slots.filter((slot) => {
       if (slots.some((s) => s !== slot && rangeContains(s.range, slot.range))) return false
       return true
@@ -295,10 +296,13 @@ class InputHelperProvider implements IInputHelperProvider {
 class InlayHintProvider implements IInlayHintProvider {
   constructor(private lspClient: SpxLSPClient) {}
   async provideInlayHints(ctx: InlayHintContext): Promise<InlayHintItem[]> {
-    const lspInlayHints = await this.lspClient.textDocumentInlayHint({
-      textDocument: ctx.textDocument.id,
-      range: toLSPRange(ctx.textDocument.getFullRange())
-    })
+    const lspInlayHints = await this.lspClient.textDocumentInlayHint(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id,
+        range: toLSPRange(ctx.textDocument.getFullRange())
+      }
+    )
     const result: InlayHintItem[] = []
     if (lspInlayHints == null) return result
     for (const ih of lspInlayHints) {
@@ -344,9 +348,10 @@ class DiagnosticsProvider
     return { start: lineStartPos, end: lineEndPos }
   }
 
-  private getRuntimeDiagnostics(ctx: DiagnosticsContext) {
+  private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
     const { outputs, filesHash } = this.runtime
-    if (filesHash !== this.project.filesHash) return []
+    const currentFilesHash = await hashFiles(this.project.exportGameFiles())
+    if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
     for (const output of outputs) {
       if (output.kind !== RuntimeOutputKind.Error) continue
@@ -393,9 +398,12 @@ class DiagnosticsProvider
 
   private async getLSDiagnostics(ctx: DiagnosticsContext) {
     const diagnostics: Diagnostic[] = []
-    const report = await this.lspClient.textDocumentDiagnostic({
-      textDocument: ctx.textDocument.id
-    })
+    const report = await this.lspClient.textDocumentDiagnostic(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id
+      }
+    )
     if (report.kind !== lsp.DocumentDiagnosticReportKind.Full)
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
@@ -407,7 +415,7 @@ class DiagnosticsProvider
   }
 
   async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-    return [...this.getRuntimeDiagnostics(ctx), ...(await this.getLSDiagnostics(ctx))]
+    return [...(await this.getRuntimeDiagnostics(ctx)), ...(await this.getLSDiagnostics(ctx))]
   }
 }
 
@@ -419,7 +427,7 @@ class HoverProvider implements IHoverProvider {
 
   private async getExplainAction(textDocument: TextDocumentIdentifier, position: Position) {
     let definition: DefinitionDocumentationItem | null = null
-    const defId = await this.lspClient.getDefinition(textDocument, position)
+    const defId = await this.lspClient.getDefinition({}, textDocument, position)
     if (defId == null) return null
     definition = await this.documentBase.getDocumentation(defId)
     if (definition == null) return null
@@ -438,7 +446,10 @@ class HoverProvider implements IHoverProvider {
   private async getGoToDefinitionAction(position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const lspClient = this.lspClient
     const [definition, typeDefinition] = (
-      await Promise.all([lspClient.textDocumentDefinition(lspParams), lspClient.textDocumentTypeDefinition(lspParams)])
+      await Promise.all([
+        lspClient.textDocumentDefinition({}, lspParams),
+        lspClient.textDocumentTypeDefinition({}, lspParams)
+      ])
     ).map((def) => {
       if (def == null) return null
       if (Array.isArray(def)) return def[0]
@@ -461,7 +472,7 @@ class HoverProvider implements IHoverProvider {
 
   private async getRenameAction(ctx: HoverContext, position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const lspClient = this.lspClient
-    const result = await lspClient.textDocumentPrepareRename(lspParams)
+    const result = await lspClient.textDocumentPrepareRename({ signal: ctx.signal }, lspParams)
     if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
     return {
       command: builtInCommandRename,
@@ -480,7 +491,7 @@ class HoverProvider implements IHoverProvider {
       textDocument: ctx.textDocument.id,
       position: toLSPPosition(position)
     }
-    const lspHover = await this.lspClient.textDocumentHover(lspParams)
+    const lspHover = await this.lspClient.textDocumentHover({ signal: ctx.signal }, lspParams)
     if (lspHover == null) return null
     const contents: DefinitionDocumentationString[] = []
     if (lsp.MarkupContent.is(lspHover.contents)) {
@@ -544,10 +555,13 @@ class CompletionProvider implements ICompletionProvider {
   }
 
   async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]> {
-    const items = await this.lspClient.getCompletionItems({
-      textDocument: ctx.textDocument.id,
-      position: toLSPPosition(position)
-    })
+    const items = await this.lspClient.getCompletionItems(
+      { signal: ctx.signal },
+      {
+        textDocument: ctx.textDocument.id,
+        position: toLSPPosition(position)
+      }
+    )
     const lineContent = ctx.textDocument.getLineContent(position.line)
     const isLineEnd = lineContent.length === position.column - 1
     const maybeItems = await Promise.all(
@@ -603,8 +617,8 @@ class ContextMenuProvider implements IContextMenuProvider {
     private documentBase: DocumentBase
   ) {}
 
-  private async getExplainMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
-    const defId = await this.lspClient.getDefinition(textDocument.id, position)
+  private async getExplainMenuItemForPosition({ signal, textDocument }: ContextMenuContext, position: Position) {
+    const defId = await this.lspClient.getDefinition({ signal }, textDocument.id, position)
     if (defId == null) return null
     const definition = await this.documentBase.getDocumentation(defId)
     if (definition == null) return null
@@ -620,12 +634,12 @@ class ContextMenuProvider implements IContextMenuProvider {
     }
   }
 
-  private async getRenameMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
+  private async getRenameMenuItemForPosition({ textDocument, signal }: ContextMenuContext, position: Position) {
     const lspParams = {
       textDocument: textDocument.id,
       position: toLSPPosition(position)
     }
-    const result = await this.lspClient.textDocumentPrepareRename(lspParams)
+    const result = await this.lspClient.textDocumentPrepareRename({ signal }, lspParams)
     if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
     return {
       command: builtInCommandRename,
@@ -959,10 +973,13 @@ export class CodeEditor extends Disposable {
   async formatTextDocument(id: TextDocumentIdentifier) {
     const textDocument = this.getTextDocument(id)
     if (textDocument == null) return
-    const edits = await this.lspClient.textDocumentFormatting({
-      textDocument: id,
-      options: lsp.FormattingOptions.create(tabSize, insertSpaces)
-    })
+    const edits = await this.lspClient.textDocumentFormatting(
+      {},
+      {
+        textDocument: id,
+        options: lsp.FormattingOptions.create(tabSize, insertSpaces)
+      }
+    )
     if (edits == null) return
     textDocument.pushEdits(edits.map(fromLSPTextEdit))
   }
@@ -988,7 +1005,7 @@ export class CodeEditor extends Disposable {
   }
 
   async diagnosticWorkspace(): Promise<WorkspaceDiagnostics> {
-    const diagnosticReport = await this.lspClient.workspaceDiagnostic({ previousResultIds: [] })
+    const diagnosticReport = await this.lspClient.workspaceDiagnostic({}, { previousResultIds: [] })
     const items: TextDocumentDiagnostics[] = []
     for (const report of diagnosticReport.items) {
       if (report.kind === 'unchanged') continue // For now, we support 'full' reports only
@@ -1002,18 +1019,21 @@ export class CodeEditor extends Disposable {
 
   /** Update code for renaming */
   async rename(id: TextDocumentIdentifier, position: Position, newName: string) {
-    const edit = await this.lspClient.textDocumentRename({
-      textDocument: id,
-      position: toLSPPosition(position),
-      newName
-    })
+    const edit = await this.lspClient.textDocumentRename(
+      {},
+      {
+        textDocument: id,
+        position: toLSPPosition(position),
+        newName
+      }
+    )
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }
 
   /** Update code for resource renaming, should be called before model name update */
   async renameResource(resource: ResourceIdentifier, newName: string) {
-    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({ resource, newName })
+    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({}, { resource, newName })
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }

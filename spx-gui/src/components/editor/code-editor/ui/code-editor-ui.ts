@@ -3,10 +3,9 @@ import { ref, shallowReactive, shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
+import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import type { Project } from '@/models/project'
-import { Sprite } from '@/models/sprite'
-import { Sound } from '@/models/sound'
-import { isWidget } from '@/models/widget'
+import type { EditorState } from '../../editor-state'
 import {
   type Command,
   type CommandInfo,
@@ -23,7 +22,9 @@ import {
   type TextDocumentRange,
   isRangeEmpty,
   textDocumentIdEq,
-  selection2Range
+  selection2Range,
+  type DefinitionDocumentationItem,
+  isBlockDefinitionKind
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor, monaco } from '../monaco'
@@ -40,9 +41,10 @@ import {
   type ChatTopicExplainTarget,
   type ChatTopicReview
 } from './copilot'
-import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
+import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition } from './common'
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
+import { DropIndicatorController } from './drop-indicator'
 import { SnippetParser } from './snippet'
 
 export * from './hover'
@@ -54,6 +56,7 @@ export * from './api-reference'
 export * from './input-helper'
 export * from './inlay-hint'
 export * from './copilot'
+export * from './drop-indicator'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void
@@ -183,6 +186,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   constructor(
     private mainTextDocumentId: TextDocumentIdentifier,
     public project: Project,
+    private editorState: EditorState,
     public i18n: I18n,
     public monaco: Monaco,
     private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
@@ -203,6 +207,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   resourceReferenceController = new ResourceReferenceController(this)
   inputHelperController = new InputHelperController(this)
   inlayHintController = new InlayHintController(this)
+  dropIndicatorController = new DropIndicatorController(this)
   documentBase: IDocumentBase | null = null
 
   /** Temporary text document IDs */
@@ -269,6 +274,10 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   // TODO: Optimize inserting logic with inline context. https://github.com/goplus/builder/issues/1258
 
+  /**
+   * Insert text at given range (defaults to current selection).
+   * Cursor will be moved to the end of the inserted text.
+   */
   async insertText(text: string, range: Range = this.getSelectionRange()) {
     this.activeTextDocument?.pushEdits([
       {
@@ -276,6 +285,27 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         newText: text
       }
     ])
+
+    // After inserting text, we need to move the cursor to the end of the inserted text.
+    // This is supposed to be done by Monaco editor if we calling `pushEditOperations` with proper cursor-state-computer in `TextDocument.pushEdits`.
+    // While the cursor-state-computer is ignored, which is a bug. See details in https://github.com/microsoft/monaco-editor/issues/3893
+    // TODO: Remove this workaround when the bug is fixed in Monaco editor.
+    const insertionStart = range.start
+    const insertedLines = text.split(/\r?\n/)
+    let insertionEnd = insertionStart
+    if (insertedLines.length > 1) {
+      insertionEnd = {
+        line: insertionStart.line + insertedLines.length - 1,
+        column: insertedLines[insertedLines.length - 1].length + 1
+      }
+    } else {
+      insertionEnd = {
+        line: insertionStart.line,
+        column: insertionStart.column + insertedLines[0].length
+      }
+    }
+    this.editor.setPosition(toMonacoPosition(insertionEnd))
+
     this.editor.focus()
   }
 
@@ -415,6 +445,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   async insertBlockSnippet(snippet: string, range: Range = this.getSelectionRange()) {
     return this.insertBlockContent('snippet', snippet, range)
+  }
+
+  async insertDefinition(ddi: DefinitionDocumentationItem, range: Range = this.getSelectionRange()) {
+    const parsed = this.parseSnippet(ddi.insertSnippet)
+    // Now we have feature InputHelper for APIReferenceItem insertion.
+    // The "TabStop / Placeholder" of snippet is not helpful and introduces confusion,
+    // so we transform snippet to text and insert it directly.
+    const text = parsed.toString()
+    if (isBlockDefinitionKind(ddi.kind)) this.insertBlockText(text, range)
+    else this.insertInlineText(text, range)
   }
 
   private cursorPositionRef = shallowRef<Position | null>(null)
@@ -564,13 +604,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       handler: async (resource) => {
         const resourceModel = getResourceModel(this.project, resource)
         if (resourceModel == null) throw new Error(`Resource not found: ${resource.uri}`)
-        if (!supportGoTo(resourceModel)) throw new Error(`Go to resource (${resource.uri}) not supported`)
-        if (resourceModel instanceof Sprite) return this.project.select({ type: 'sprite', id: resourceModel.id })
-        if (resourceModel instanceof Sound) return this.project.select({ type: 'sound', id: resourceModel.id })
-        if (isWidget(resourceModel)) {
-          this.project.select({ type: 'stage' })
-          this.project.stage.selectWidget(resourceModel.id)
-        }
+        this.editorState.selectResource(resourceModel)
       }
     })
 
@@ -610,6 +644,29 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       )
     )
 
+    const startCodeUpdatedTransaction = defineIdleTransaction({
+      startSpanOptions: {
+        name: createCodeEditorOperationName('Code updated'),
+        op: 'code-editor.update'
+      },
+      mergeAdjacent: true
+    })
+
+    this.addDisposer(
+      watch(
+        () => this.activeTextDocument,
+        (td, _, onCleanup) => {
+          if (td == null) return
+          onCleanup(
+            td.on('didChangeContent', () => {
+              startCodeUpdatedTransaction()
+            })
+          )
+        },
+        { immediate: true }
+      )
+    )
+
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
@@ -619,6 +676,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.resourceReferenceController.init()
     this.inputHelperController.init()
     this.inlayHintController.init()
+    this.dropIndicatorController.init()
   }
 
   dispose() {

@@ -19,7 +19,7 @@ type WorkflowMessageParams struct {
 	GenerateMessageParams
 }
 
-// GenerateStream generates response message based on input messages.
+// WorkflowMessageStream generates response message based on input messages.
 func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 

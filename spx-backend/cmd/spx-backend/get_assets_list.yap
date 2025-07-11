@@ -5,6 +5,7 @@
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
@@ -17,11 +18,11 @@ if keyword := ${keyword}; keyword != "" {
 
 switch owner := ${owner}; owner {
 case "":
-	mAuthedUser, isAuthed := ensureAuthedUser(ctx)
-	if !isAuthed {
+	mUser, ok := ensureAuthenticatedUser(ctx)
+	if !ok {
 		return
 	}
-	params.Owner = &mAuthedUser.Username
+	params.Owner = &mUser.Username
 case "*":
 	params.Owner = nil
 default:
@@ -29,7 +30,12 @@ default:
 }
 
 if typeParam := ctx.Param("type"); typeParam != "" {
-	params.Type = &typeParam
+	at, err := model.ParseAssetType(typeParam)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid type")
+		return
+	}
+	params.Type = &at
 }
 
 if category := ${category}; category != "" {
@@ -41,7 +47,12 @@ if filesHash := ${filesHash}; filesHash != "" {
 }
 
 if visibility := ${visibility}; visibility != "" {
-	params.Visibility = &visibility
+	v, err := model.ParseVisibility(visibility)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid visibility")
+		return
+	}
+	params.Visibility = &v
 }
 
 if orderBy := ${orderBy}; orderBy != "" {

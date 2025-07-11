@@ -48,9 +48,9 @@ class SoundSelector implements IResourceSelector<Sound> {
   constructor(private project: Project) {}
 
   useCreateMethods() {
-    const addFromLocalFile = useAddSoundFromLocalFile(false)
-    const addFromAssetLibrary = useAddAssetFromLibrary(false)
-    const addFromRecording = useAddSoundByRecording(false)
+    const addFromLocalFile = useAddSoundFromLocalFile()
+    const addFromAssetLibrary = useAddAssetFromLibrary()
+    const addFromRecording = useAddSoundByRecording()
     return [
       {
         label: { en: 'Select local file', zh: '选择本地文件' },
@@ -77,8 +77,8 @@ class SpriteSelector implements IResourceSelector<Sprite> {
   constructor(private project: Project) {}
 
   useCreateMethods() {
-    const addFromLocalFile = useAddSpriteFromLocalFile(false)
-    const addFromAssetLibrary = useAddAssetFromLibrary(false)
+    const addFromLocalFile = useAddSpriteFromLocalFile()
+    const addFromAssetLibrary = useAddAssetFromLibrary()
     return [
       {
         label: { en: 'Select local file', zh: '选择本地文件' },
@@ -123,8 +123,8 @@ class BackdropSelector implements IResourceSelector<Backdrop> {
   constructor(private project: Project) {}
 
   useCreateMethods() {
-    const addFromLocalFile = useAddBackdropFromLocalFile(false)
-    const addFromAssetLibrary = useAddAssetFromLibrary(false)
+    const addFromLocalFile = useAddBackdropFromLocalFile()
+    const addFromAssetLibrary = useAddAssetFromLibrary()
     return [
       {
         label: { en: 'Select local file', zh: '选择本地文件' },
@@ -147,7 +147,7 @@ class WidgetSelector implements IResourceSelector<Widget> {
   constructor(private project: Project) {}
 
   useCreateMethods() {
-    const addMonitor = useAddMonitor(false)
+    const addMonitor = useAddMonitor()
     return [
       {
         label: { en: 'Add widget monitor', zh: '添加监视器控件' },
@@ -169,7 +169,7 @@ class CostumeSelector implements IResourceSelector<Costume> {
   ) {}
 
   useCreateMethods() {
-    const addFromLocalFile = useAddCostumeFromLocalFile(false)
+    const addFromLocalFile = useAddCostumeFromLocalFile()
     return [
       {
         label: { en: 'Select local file', zh: '选择本地文件' },

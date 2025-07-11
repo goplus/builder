@@ -12,7 +12,7 @@ import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, useUserStore } from '@/stores/user'
-import { getProjectEditorRoute, getUserPageRoute } from '@/router'
+import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
   UILoading,
@@ -24,12 +24,14 @@ import {
   UICollapse,
   UICollapseItem,
   UIDivider,
-  useResponsive
+  useResponsive,
+  UITooltip
 } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
@@ -97,6 +99,7 @@ const isOwner = computed(() => props.owner === userStore.getSignedInUser()?.name
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
+const isFullScreenRunning = ref(false)
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -145,6 +148,14 @@ const handleRun = useMessageHandle(
   { en: 'Failed to run project', zh: '运行项目失败' }
 )
 
+const handleStop = useMessageHandle(
+  async () => {
+    await projectRunnerRef.value?.stop()
+    runnerState.value = 'initial'
+  },
+  { en: 'Failed to stop project', zh: '停止项目失败' }
+)
+
 const handleRerun = useMessageHandle(async () => projectRunnerRef.value?.rerun(), {
   en: 'Failed to rerun project',
   zh: '重新运行项目失败'
@@ -152,7 +163,7 @@ const handleRerun = useMessageHandle(async () => projectRunnerRef.value?.rerun()
 
 const handleEdit = useMessageHandle(
   async () => {
-    const projectEditorRoute = getProjectEditorRoute(props.name)
+    const projectEditorRoute = getProjectEditorRoute(props.owner, props.name)
     await router.push(projectEditorRoute)
   },
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
@@ -197,7 +208,7 @@ const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
     const name = await createProject(stringifyRemixSource(props.owner, props.name))
-    router.push(getProjectEditorRoute(name))
+    router.push(getOwnProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
@@ -236,7 +247,7 @@ const handleUnpublish = useMessageHandle(
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
   // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
-  async () => router.push(getProjectEditorRoute(props.name, true)),
+  async () => router.push(getOwnProjectEditorRoute(props.name, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 
@@ -272,180 +283,196 @@ const remixesRet = useQuery(
 
 <template>
   <CenteredWrapper size="large">
-    <UIError v-if="error != null" :retry="reloadProject">
-      {{ $t(error.userMessage) }}
-    </UIError>
-    <template v-else>
-      <CommunityCard class="main">
-        <UILoading v-if="isLoading" cover mask="solid" />
-        <div class="left">
-          <div class="project-wrapper">
-            <template v-if="project != null">
-              <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
-              <div v-show="runnerState === 'initial'" class="runner-mask">
-                <UIButton
-                  class="run-button"
-                  type="primary"
-                  size="large"
-                  icon="play"
-                  :disabled="projectRunnerRef == null"
-                  :loading="handleRun.isLoading.value"
-                  @click="handleRun.fn"
-                  >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
-                >
-              </div>
-            </template>
-          </div>
-          <div class="ops">
-            <UIButton
-              v-if="runnerState === 'initial'"
-              type="primary"
-              icon="play"
-              :disabled="projectRunnerRef == null"
-              :loading="handleRun.isLoading.value"
-              @click="handleRun.fn"
-            >
-              {{ $t({ en: 'Run', zh: '运行' }) }}
-            </UIButton>
-            <UIButton
-              v-if="runnerState === 'running'"
-              type="primary"
-              icon="rotate"
-              :disabled="projectRunnerRef == null"
-              :loading="handleRerun.isLoading.value"
-              @click="handleRerun.fn"
-            >
-              {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-            </UIButton>
-            <UIButton type="boring" icon="share" @click="handleShare.fn">
-              {{ $t({ en: 'Share', zh: '分享' }) }}
-            </UIButton>
-          </div>
-        </div>
-        <div class="right">
+    <CommunityCard class="main">
+      <UILoading v-if="isLoading" cover mask="solid" />
+      <UIError v-else-if="error != null" class="error" :retry="reloadProject">
+        {{ $t(error.userMessage) }}
+      </UIError>
+      <div class="left">
+        <div class="project-wrapper">
           <template v-if="project != null">
-            <h2 class="title">{{ project.name }}</h2>
-            <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
-            <div class="info">
-              <OwnerInfo :owner="project.owner!" />
-              <p class="extra">
-                <span class="part" :title="$t(viewCount!.title)">
-                  <UIIcon class="icon" type="eye" />
-                  {{ $t(viewCount!.text) }}
-                </span>
-                <template v-if="isOwner">
-                  <i class="sep"></i>
-                  <span class="part" :title="$t(likeCount!.title)">
-                    <UIIcon class="icon" type="heart" />
-                    {{ $t(likeCount!.text) }}
-                  </span>
-                </template>
-                <i class="sep"></i>
-                <span class="part" :title="$t(remixCount!.title)">
-                  <UIIcon class="icon" type="remix" />
-                  {{ $t(remixCount!.text) }}
-                </span>
-              </p>
+            <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
+            <div v-show="runnerState === 'initial'" class="runner-mask">
+              <UIButton
+                class="run-button"
+                type="primary"
+                size="large"
+                icon="playHollow"
+                :disabled="projectRunnerRef == null"
+                :loading="handleRun.isLoading.value"
+                @click="handleRun.fn"
+                >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
+              >
             </div>
-            <div class="ops">
-              <template v-if="isOwner">
-                <UIButton
-                  type="primary"
-                  size="large"
-                  icon="edit2"
-                  :loading="handleEdit.isLoading.value"
-                  @click="handleEdit.fn"
-                  >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
-                >
-                <UIButton
-                  v-if="project.visibility === Visibility.Public"
-                  type="boring"
-                  size="large"
-                  icon="share"
-                  @click="handleShare.fn"
-                  >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
-                >
-                <UIButton
-                  v-else
-                  type="boring"
-                  size="large"
-                  icon="share"
-                  :loading="handlePublish.isLoading.value"
-                  @click="handlePublish.fn"
-                  >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
-                >
-                <UIDropdown placement="bottom-end" trigger="click">
-                  <template #trigger>
-                    <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
-                  </template>
-                  <UIMenu>
-                    <UIMenuItem v-if="project.visibility === Visibility.Public" @click="handleUnpublish.fn">{{
-                      $t({ en: 'Unpublish', zh: '取消发布' })
-                    }}</UIMenuItem>
-                    <UIMenuItem @click="handleRemove.fn">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
-                  </UIMenu>
-                </UIDropdown>
-              </template>
-              <template v-else>
-                <UIButton
-                  v-if="hasRelease"
-                  type="primary"
-                  size="large"
-                  icon="remix"
-                  :loading="handleRemix.isLoading.value"
-                  @click="handleRemix.fn"
-                  >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
-                >
-                <UIButton
-                  :class="{ liking }"
-                  type="boring"
-                  size="large"
-                  :title="$t(likeCount!.title)"
-                  :icon="liking ? 'heart' : 'heartHollow'"
-                  :loading="isTogglingLike"
-                  @click="handleToggleLike"
-                >
-                  {{ $t(likeCount!.text) }}
-                </UIButton>
-                <UIButton type="boring" size="large" icon="share" @click="handleShare.fn">{{
-                  $t({ en: 'Share', zh: '分享' })
-                }}</UIButton>
-              </template>
-            </div>
-            <UIDivider class="divider" />
-            <UICollapse class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
-              <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
-                <TextView :text="project.description" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
-              </UICollapseItem>
-              <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
-                <TextView
-                  :text="project.instructions"
-                  :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })"
-                />
-              </UICollapseItem>
-              <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
-                <ReleaseHistory :query-ret="releasesRet" />
-              </UICollapseItem>
-            </UICollapse>
           </template>
         </div>
-      </CommunityCard>
-      <ProjectsSection class="remixes" context="project" :num-in-row="remixNumInRow" :query-ret="remixesRet">
-        <template #title>
-          {{
-            $t({
-              en: 'Popular remixes',
-              zh: '热门改编'
-            })
-          }}
+        <FullScreenProjectRunner
+          v-if="project != null"
+          :project="project"
+          :visible="isFullScreenRunning"
+          @close="isFullScreenRunning = false"
+        />
+        <div class="ops">
+          <UIButton
+            v-if="runnerState === 'initial'"
+            type="primary"
+            icon="fullScreen"
+            @click="isFullScreenRunning = true"
+          >
+            {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
+          </UIButton>
+          <UIButton
+            v-if="runnerState === 'running'"
+            type="primary"
+            icon="rotate"
+            :disabled="projectRunnerRef == null"
+            :loading="handleRerun.isLoading.value"
+            @click="handleRerun.fn"
+          >
+            {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+          </UIButton>
+          <UIButton v-if="runnerState === 'running'" type="boring" icon="end" @click="handleStop.fn">
+            {{ $t({ en: 'Stop', zh: '停止' }) }}
+          </UIButton>
+          <UITooltip>
+            <template #trigger>
+              <UIButton type="boring" icon="share" @click="handleShare.fn"></UIButton>
+            </template>
+            {{ $t({ en: 'Share', zh: '分享' }) }}
+          </UITooltip>
+        </div>
+      </div>
+      <div class="right">
+        <template v-if="project != null">
+          <h2 class="title">{{ project.name }}</h2>
+          <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
+          <div class="info">
+            <OwnerInfo :owner="project.owner!" />
+            <p class="extra">
+              <span class="part" :title="$t(viewCount!.title)">
+                <UIIcon class="icon" type="eye" />
+                {{ $t(viewCount!.text) }}
+              </span>
+              <template v-if="isOwner">
+                <i class="sep"></i>
+                <span class="part" :title="$t(likeCount!.title)">
+                  <UIIcon class="icon" type="heart" />
+                  {{ $t(likeCount!.text) }}
+                </span>
+              </template>
+              <i class="sep"></i>
+              <span class="part" :title="$t(remixCount!.title)">
+                <UIIcon class="icon" type="remix" />
+                {{ $t(remixCount!.text) }}
+              </span>
+            </p>
+          </div>
+          <div class="ops">
+            <template v-if="isOwner">
+              <UIButton
+                type="primary"
+                size="large"
+                icon="edit2"
+                :loading="handleEdit.isLoading.value"
+                @click="handleEdit.fn"
+                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
+              >
+              <UIButton
+                v-if="project.visibility === Visibility.Public"
+                type="boring"
+                size="large"
+                icon="share"
+                @click="handleShare.fn"
+                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
+              >
+              <UIButton
+                v-else
+                type="boring"
+                size="large"
+                icon="share"
+                :loading="handlePublish.isLoading.value"
+                @click="handlePublish.fn"
+                >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
+              >
+              <UIDropdown placement="bottom-end" trigger="click">
+                <template #trigger>
+                  <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
+                </template>
+                <UIMenu>
+                  <UIMenuItem v-if="project.visibility === Visibility.Public" @click="handleUnpublish.fn">{{
+                    $t({ en: 'Unpublish', zh: '取消发布' })
+                  }}</UIMenuItem>
+                  <UIMenuItem @click="handleRemove.fn">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
+                </UIMenu>
+              </UIDropdown>
+            </template>
+            <template v-else>
+              <UIButton
+                v-if="hasRelease"
+                type="primary"
+                size="large"
+                icon="remix"
+                :loading="handleRemix.isLoading.value"
+                @click="handleRemix.fn"
+                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
+              >
+              <UIButton
+                :class="{ liking }"
+                type="boring"
+                size="large"
+                :title="$t(likeCount!.title)"
+                :icon="liking ? 'heart' : 'heartHollow'"
+                :loading="isTogglingLike"
+                @click="handleToggleLike"
+              >
+                {{ $t(likeCount!.text) }}
+              </UIButton>
+              <UIButton type="boring" size="large" icon="share" @click="handleShare.fn">{{
+                $t({ en: 'Share', zh: '分享' })
+              }}</UIButton>
+            </template>
+          </div>
+          <UIDivider class="divider" />
+          <UICollapse class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
+            <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
+              <TextView :text="project.description" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
+            </UICollapseItem>
+            <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
+              <TextView
+                :text="project.instructions"
+                :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })"
+              />
+            </UICollapseItem>
+            <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
+              <ReleaseHistory :query-ret="releasesRet" />
+            </UICollapseItem>
+          </UICollapse>
         </template>
-        <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
-      </ProjectsSection>
-    </template>
+      </div>
+    </CommunityCard>
+    <ProjectsSection class="remixes" context="project" :num-in-row="remixNumInRow" :query-ret="remixesRet">
+      <template #title>
+        {{
+          $t({
+            en: 'Popular remixes',
+            zh: '热门改编'
+          })
+        }}
+      </template>
+      <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
+    </ProjectsSection>
   </CenteredWrapper>
 </template>
 
 <style scoped lang="scss">
+.error {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background: var(--ui-color-grey-100);
+}
+
 .main {
   position: relative;
   flex: 0 0 auto;

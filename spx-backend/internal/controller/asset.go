@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
@@ -16,11 +17,11 @@ type AssetDTO struct {
 
 	Owner       string               `json:"owner"`
 	DisplayName string               `json:"displayName"`
-	Type        string               `json:"type"`
+	Type        model.AssetType      `json:"type"`
 	Category    string               `json:"category"`
 	Files       model.FileCollection `json:"files"`
 	FilesHash   string               `json:"filesHash"`
-	Visibility  string               `json:"visibility"`
+	Visibility  model.Visibility     `json:"visibility"`
 }
 
 // toAssetDTO converts the model asset to its DTO.
@@ -29,11 +30,11 @@ func toAssetDTO(mAsset model.Asset) AssetDTO {
 		ModelDTO:    toModelDTO(mAsset.Model),
 		Owner:       mAsset.Owner.Username,
 		DisplayName: mAsset.DisplayName,
-		Type:        mAsset.Type.String(),
+		Type:        mAsset.Type,
 		Category:    mAsset.Category,
 		Files:       mAsset.Files,
 		FilesHash:   mAsset.FilesHash,
-		Visibility:  mAsset.Visibility.String(),
+		Visibility:  mAsset.Visibility,
 	}
 }
 
@@ -52,7 +53,7 @@ func (ctrl *Controller) ensureAsset(ctx context.Context, id int64, ownedOnly boo
 	}
 
 	if ownedOnly || mAsset.Visibility == model.VisibilityPrivate {
-		if _, err := ensureAuthedUser(ctx, mAsset.OwnerID); err != nil {
+		if _, err := authn.EnsureUser(ctx, mAsset.OwnerID); err != nil {
 			return nil, err
 		}
 	}
@@ -63,12 +64,12 @@ func (ctrl *Controller) ensureAsset(ctx context.Context, id int64, ownedOnly boo
 // CreateAssetParams holds parameters for creating an asset.
 type CreateAssetParams struct {
 	DisplayName string               `json:"displayName"`
-	Type        string               `json:"type"`
+	Type        model.AssetType      `json:"type"`
 	Category    string               `json:"category"`
 	Files       model.FileCollection `json:"files"`
 	FilesHash   string               `json:"filesHash"`
 	Preview     string               `json:"preview"`
-	Visibility  string               `json:"visibility"`
+	Visibility  model.Visibility     `json:"visibility"`
 }
 
 // Validate validates the parameters.
@@ -78,36 +79,30 @@ func (p *CreateAssetParams) Validate() (ok bool, msg string) {
 	} else if !assetDisplayNameRE.Match([]byte(p.DisplayName)) {
 		return false, "invalid displayName"
 	}
-	if model.ParseAssetType(p.Type).String() != p.Type {
-		return false, "invalid type"
-	}
 	if p.Category == "" {
 		return false, "missing category"
 	}
 	if p.FilesHash == "" {
 		return false, "missing filesHash"
 	}
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
-	}
 	return true, ""
 }
 
 // CreateAsset creates an asset.
 func (ctrl *Controller) CreateAsset(ctx context.Context, params *CreateAssetParams) (*AssetDTO, error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed {
-		return nil, ErrUnauthorized
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return nil, authn.ErrUnauthorized
 	}
 
 	mAsset := model.Asset{
-		OwnerID:     mAuthedUser.ID,
+		OwnerID:     mUser.ID,
 		DisplayName: params.DisplayName,
-		Type:        model.ParseAssetType(params.Type),
+		Type:        params.Type,
 		Category:    params.Category,
 		Files:       params.Files,
 		FilesHash:   params.FilesHash,
-		Visibility:  model.ParseVisibility(params.Visibility),
+		Visibility:  params.Visibility,
 	}
 	if err := ctrl.db.WithContext(ctx).Create(&mAsset).Error; err != nil {
 		return nil, fmt.Errorf("failed to create asset: %w", err)
@@ -155,7 +150,7 @@ type ListAssetsParams struct {
 	// Type filters assets by type.
 	//
 	// Applied only if non-nil.
-	Type *string
+	Type *model.AssetType
 
 	// Category filters assets by category.
 	//
@@ -170,7 +165,7 @@ type ListAssetsParams struct {
 	// Visibility filters assets by visibility.
 	//
 	// Applied only if non-nil.
-	Visibility *string
+	Visibility *model.Visibility
 
 	// OrderBy indicates the field by which to order the results.
 	OrderBy ListAssetsOrderBy
@@ -193,12 +188,6 @@ func NewListAssetsParams() *ListAssetsParams {
 
 // Validate validates the parameters.
 func (p *ListAssetsParams) Validate() (ok bool, msg string) {
-	if p.Type != nil && model.ParseAssetType(*p.Type).String() != *p.Type {
-		return false, "invalid type"
-	}
-	if p.Visibility != nil && model.ParseVisibility(*p.Visibility).String() != *p.Visibility {
-		return false, "invalid visibility"
-	}
 	if !p.OrderBy.IsValid() {
 		return false, "invalid orderBy"
 	}
@@ -213,14 +202,14 @@ func (p *ListAssetsParams) Validate() (ok bool, msg string) {
 
 // ListAssets lists assets.
 func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams) (*ByPage[AssetDTO], error) {
-	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-	if !isAuthed || (params.Owner != nil && *params.Owner != mAuthedUser.Username) {
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok || (params.Owner != nil && *params.Owner != mUser.Username) {
 		// Ensure non-owners can only see public assets.
 		if params.Visibility == nil {
-			public := model.VisibilityPublic.String()
+			public := model.VisibilityPublic
 			params.Visibility = &public
-		} else if *params.Visibility != model.VisibilityPublic.String() {
-			return nil, ErrUnauthorized
+		} else if *params.Visibility != model.VisibilityPublic {
+			return nil, authn.ErrUnauthorized
 		}
 	}
 
@@ -232,7 +221,7 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 		query = query.Joins("JOIN user ON user.id = asset.owner_id").Where("user.username = ?", *params.Owner)
 	}
 	if params.Type != nil {
-		query = query.Where("asset.type = ?", model.ParseAssetType(*params.Type))
+		query = query.Where("asset.type = ?", *params.Type)
 	}
 	if params.Category != nil {
 		query = query.Where("asset.category = ?", *params.Category)
@@ -241,9 +230,9 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 		query = query.Where("asset.files_hash = ?", *params.FilesHash)
 	}
 	if params.Visibility != nil {
-		query = query.Where("asset.visibility = ?", model.ParseVisibility(*params.Visibility))
-	} else if isAuthed && params.Owner == nil {
-		query = query.Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic))
+		query = query.Where("asset.visibility = ?", *params.Visibility)
+	} else if ok && params.Owner == nil {
+		query = query.Where(ctrl.db.Where("asset.owner_id = ?", mUser.ID).Or("asset.visibility = ?", model.VisibilityPublic))
 	}
 	var queryOrderByColumn string
 	switch params.OrderBy {
@@ -299,11 +288,11 @@ func (ctrl *Controller) GetAsset(ctx context.Context, id string) (*AssetDTO, err
 // UpdateAssetParams holds parameters for updating an asset.
 type UpdateAssetParams struct {
 	DisplayName string               `json:"displayName"`
-	Type        string               `json:"type"`
+	Type        model.AssetType      `json:"type"`
 	Category    string               `json:"category"`
 	Files       model.FileCollection `json:"files"`
 	FilesHash   string               `json:"filesHash"`
-	Visibility  string               `json:"visibility"`
+	Visibility  model.Visibility     `json:"visibility"`
 }
 
 // Validate validates the parameters.
@@ -313,17 +302,11 @@ func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
 	} else if !assetDisplayNameRE.Match([]byte(p.DisplayName)) {
 		return false, "invalid displayName"
 	}
-	if model.ParseAssetType(p.Type).String() != p.Type {
-		return false, "invalid type"
-	}
 	if p.Category == "" {
 		return false, "missing category"
 	}
 	if p.FilesHash == "" {
 		return false, "missing filesHash"
-	}
-	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
-		return false, "invalid visibility"
 	}
 	return true, ""
 }
@@ -334,8 +317,8 @@ func (p *UpdateAssetParams) Diff(mAsset *model.Asset) map[string]any {
 	if p.DisplayName != mAsset.DisplayName {
 		updates["display_name"] = p.DisplayName
 	}
-	if p.Type != mAsset.Type.String() {
-		updates["type"] = model.ParseAssetType(p.Type)
+	if p.Type != mAsset.Type {
+		updates["type"] = p.Type
 	}
 	if p.Category != mAsset.Category {
 		updates["category"] = p.Category
@@ -346,8 +329,8 @@ func (p *UpdateAssetParams) Diff(mAsset *model.Asset) map[string]any {
 	if p.FilesHash != mAsset.FilesHash {
 		updates["files_hash"] = p.FilesHash
 	}
-	if p.Visibility != mAsset.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(p.Visibility)
+	if p.Visibility != mAsset.Visibility {
+		updates["visibility"] = p.Visibility
 	}
 	return updates
 }

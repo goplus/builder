@@ -1,11 +1,12 @@
-import { watchEffect, type InjectionKey, inject, provide } from 'vue'
+import { type InjectionKey, inject, provide, watch } from 'vue'
 import { shikiToMonaco } from '@shikijs/monaco'
 import { useI18n } from '@/utils/i18n'
 import { ProgressCollector } from '@/utils/progress'
 import { getHighlighter } from '@/utils/spx/highlighter'
 import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
 import type { Project } from '@/models/project'
-import type { Runtime } from '@/models/runtime'
+import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
+import type { EditorState } from '../editor-state'
 import {
   DiagnosticSeverity,
   type Position,
@@ -17,7 +18,6 @@ import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
-import { ToolRegistry } from '@/components/copilot/mcp/registry'
 
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void
@@ -139,7 +139,7 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
 
 export function useProvideCodeEditorCtx(
   projectRet: QueryRet<Project>,
-  runtimeRet: QueryRet<Runtime>,
+  editorStateRet: QueryRet<EditorState>,
   registry: ToolRegistry
 ): QueryRet<unknown> {
   const i18n = useI18n()
@@ -163,13 +163,13 @@ export function useProvideCodeEditorCtx(
 
   const editorQueryRet = useQuery<CodeEditor>(
     async (ctx) => {
-      const [project, runtime, monaco] = await Promise.all([
+      const [project, editorState, monaco] = await Promise.all([
         composeQuery(ctx, projectRet, [null, 0]),
-        composeQuery(ctx, runtimeRet, [null, 0]),
+        composeQuery(ctx, editorStateRet, [null, 0]),
         composeQuery(ctx, monacoQueryRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, runtime, monaco, i18n, registry)
+      const codeEditor = new CodeEditor(project, editorState.runtime, monaco, i18n, registry)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },
@@ -179,12 +179,15 @@ export function useProvideCodeEditorCtx(
   const editorRef = editorQueryRet.data
   const monacoRef = monacoQueryRet.data
 
-  watchEffect((onCleanUp) => {
-    const editor = editorRef.value
-    if (editor == null) return
-    editor.init()
-    onCleanUp(() => editor.dispose())
-  })
+  watch(
+    editorRef,
+    (editor, _, onCleanUp) => {
+      if (editor == null) return
+      editor.init()
+      onCleanUp(() => editor.dispose())
+    },
+    { immediate: true }
+  )
 
   provide(codeEditorCtxInjectionKey, {
     attachUI(ui: ICodeEditorUI) {

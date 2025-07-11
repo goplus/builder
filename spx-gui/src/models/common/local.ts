@@ -15,6 +15,8 @@ type MetadataEx = Omit<Metadata, 'thumbnail'> & {
 
 type RawFile = {
   name: string
+  type: string
+  lastModified: number
   content: ArrayBuffer
   meta?: FileMetadata
 }
@@ -33,15 +35,19 @@ async function removeMetadataEx(key: string) {
   await storage.removeItem(key)
 }
 
-function fromRawFile(rawFile: RawFile): File {
-  const file = new File(rawFile.name, async () => rawFile.content)
-  if (rawFile.meta != null) file.meta = rawFile.meta
-  return file
+function fromRawFile({ name, content, ...options }: RawFile): File {
+  return new File(name, async () => content, options)
 }
 
 async function toRawFile(file: File): Promise<RawFile> {
   const content = await file.arrayBuffer()
-  return { name: file.name, content, meta: file.meta }
+  return {
+    name: file.name,
+    type: file.type,
+    lastModified: file.lastModified,
+    meta: file.meta,
+    content
+  }
 }
 
 async function readFile(key: string, path: string): Promise<File> {

@@ -145,11 +145,11 @@ export type DefinitionIdentifier = {
   overloadId?: string
 }
 
-/** gop:<package>?<name>#<overloadId> */
+/** xgo:<package>?<name>#<overloadId> */
 export type DefinitionIdString = string
 
 export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionIdString {
-  let idStr = 'gop:'
+  let idStr = 'xgo:'
   if (defId.package != null) idStr += `${defId.package}`
   if (defId.name != null) idStr += `?${encodeURIComponent(defId.name)}`
   if (defId.overloadId != null) idStr += `#${encodeURIComponent(defId.overloadId)}`
@@ -157,7 +157,7 @@ export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionId
 }
 
 export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifier {
-  if (!idStr.startsWith('gop:')) throw new Error(`Invalid definition ID: ${idStr}`)
+  if (!idStr.startsWith('xgo:')) throw new Error(`Invalid definition ID: ${idStr}`)
   idStr = idStr.slice(4)
   const [withoutHash, hash = ''] = idStr.split('#')
   const [hostWithPath, query = ''] = withoutHash.split('?')
@@ -374,6 +374,21 @@ export type DefinitionDocumentationItem = {
    * - It is duplicated with another one
    */
   hiddenFromList?: true
+}
+
+const ddiDragFormat = 'application/builder-definition-documentation-item'
+
+/** Set DefinitionDocumentationItem in drag data */
+export function setDdiDragData(dataTransfer: DataTransfer, item: DefinitionDocumentationItem): void {
+  dataTransfer.setData('text/plain', item.overview)
+  dataTransfer.setData(ddiDragFormat, JSON.stringify(item))
+}
+
+/** Get DefinitionDocumentationItem from drag data */
+export function getDdiDragData(dataTransfer: DataTransfer): DefinitionDocumentationItem | null {
+  const data = dataTransfer.getData(ddiDragFormat)
+  if (data === '') return null
+  return JSON.parse(data) as DefinitionDocumentationItem
 }
 
 export interface IDocumentBase {

@@ -4,8 +4,16 @@ import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
 import { useUserStore } from './stores/user'
 
-export function getProjectEditorRoute(projectName: string, publish = false) {
-  return publish ? `/editor/${projectName}?publish` : `/editor/${projectName}`
+export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
+  ownerName = encodeURIComponent(ownerName)
+  projectName = encodeURIComponent(projectName)
+  return publish ? `/editor/${ownerName}/${projectName}?publish` : `/editor/${ownerName}/${projectName}`
+}
+
+export function getOwnProjectEditorRoute(projectName: string, publish = false) {
+  const user = useUserStore().getSignedInUser()
+  if (user == null) throw new Error('User not signed in')
+  return getProjectEditorRoute(user.name, projectName, publish)
 }
 
 export function getProjectPageRoute(owner: string, name: string) {
@@ -103,10 +111,24 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/'
   },
   {
-    path: '/editor/:projectName',
+    path: '/editor/:ownerName/:projectName/:inEditorPath*',
     component: () => import('@/pages/editor/index.vue'),
-    meta: { requiresSignIn: true },
     props: true
+  },
+  {
+    path: '/editor/:projectName',
+    redirect(to) {
+      const { projectName } = to.params
+      const userStore = useUserStore()
+      const user = userStore.getSignedInUser()
+      // Route with `redirect` will not trigger the global `beforeEach` guard,
+      // so we need to check sign-in status here.
+      if (user == null) {
+        userStore.initiateSignIn()
+        throw new Error('User not signed in') // prevent router from redirecting
+      }
+      return getProjectEditorRoute(user.name, projectName as string)
+    }
   },
   {
     path: '/sign-in/callback',
@@ -141,4 +163,5 @@ export const initRouter = (app: App) => {
     }
   })
   app.use(router)
+  return router
 }

@@ -137,7 +137,7 @@ const router = useRouter()
 
 const to = computed(() => {
   const { owner, name } = props.project
-  return props.context === 'edit' ? getProjectEditorRoute(name) : getProjectPageRoute(owner, name)
+  return props.context === 'edit' ? getProjectEditorRoute(owner, name) : getProjectPageRoute(owner, name)
 })
 
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
@@ -169,7 +169,7 @@ const timeTitle = computed(() => {
 })
 
 function handleEdit() {
-  router.push(getProjectEditorRoute(props.project.name))
+  router.push(getProjectEditorRoute(props.project.owner, props.project.name))
 }
 
 const removeProject = useRemoveProject()

@@ -1,7 +1,7 @@
 import { shallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
-import { Cancelled } from '@/utils/exception'
+import { Cancelled, capture } from '@/utils/exception'
 import { TaskManager } from '@/utils/task'
 import { type Action, type BaseContext, type Selection, type Position, isSelectionEmpty } from '../../common'
 import type { monaco } from '../../monaco'
@@ -75,7 +75,7 @@ export class ContextMenuController extends Disposable {
         : provider.provideSelectionContextMenu(ctx, posOrSel)
     ).catch((err) => {
       if (err instanceof Cancelled) throw err
-      console.warn('Error while providing context menu items:', err)
+      capture(err, 'Error while providing context menu items')
       return []
     })
     const groups = [this.builtinMenuItems]

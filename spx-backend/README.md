@@ -3,7 +3,7 @@
 ## Prepare
 
 * Set up [Go](https://go.dev/doc/install)
-* Set up [Go+](https://github.com/goplus/gop/blob/main/doc/docs.md)
+* Set up [XGo](https://github.com/goplus/xgo/blob/main/doc/docs.md)
 
 Then install deps:
 
@@ -17,5 +17,5 @@ Run
 
 ```sh
 cp .env.dev .env
-gop run ./cmd/spx-backend
+xgo run ./cmd/spx-backend
 ```

@@ -143,7 +143,7 @@ export class TextDocument
   // The problem: Step 3 causes Monaco to reset with `monacoTextModel.setValue()`,
   // resulting in cursor jumps and other disruptions.
   //
-  // Solution: Debounce the syncing to codeOwner so both insertions are processed
+  // Solution: Debounce the syncing from codeOwner to Monaco so both insertions are processed
   // together, avoiding unnecessary model resets.
   // TODO: Find a better solution to this problem.
   private handleCodeOwnerCodeChange = debounce(() => {

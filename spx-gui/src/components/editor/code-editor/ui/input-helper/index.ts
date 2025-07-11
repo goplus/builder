@@ -33,7 +33,7 @@ export class InputHelperController extends Disposable {
 
   private mgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (provider == null) throw new Error('No provider registered')
+    if (provider == null) return []
     const { activeTextDocument: textDocument } = this.ui
     if (textDocument == null) throw new Error('No active text document')
     const items = await provider.provideInputSlots({ textDocument, signal })
@@ -73,7 +73,7 @@ export class InputHelperController extends Disposable {
 
     this.addDisposer(
       watch(
-        () => [this.ui.project.filesHash, this.ui.activeTextDocument],
+        () => [this.providerRef.value, this.ui.project.exportGameFiles(), this.ui.activeTextDocument],
         () => refreshSlots(),
         { immediate: true }
       )

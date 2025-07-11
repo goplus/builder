@@ -12,8 +12,7 @@ import {
 } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
-import { mergeSignals } from './disposable'
-import { useAction, type ActionException, Cancelled } from './exception'
+import { useAction, type ActionException, Cancelled, capture } from './exception'
 import { until } from './utils'
 import { ProgressReporter, type Progress, ProgressCollector } from './progress'
 
@@ -22,7 +21,7 @@ export type QueryRet<T> = {
   data: ShallowRef<T | null>
   error: ShallowRef<ActionException | null>
   progress: ShallowRef<Progress>
-  refetch: (signal?: AbortSignal) => void
+  refetch: () => void
 }
 
 /**
@@ -68,11 +67,11 @@ export function useQuery<T>(
     return ctrl.signal
   }
 
-  function fetch(source: QuerySource, signal?: AbortSignal) {
-    const finalSignal = mergeSignals(signal, getSignal())
+  function fetch(source: QuerySource) {
+    const signal = getSignal()
     const reporter = new ProgressReporter((p) => (progress.value = p))
     isLoading.value = true
-    queryFn({ signal: finalSignal, source, reporter }).then(
+    queryFn({ signal, source, reporter }).then(
       (d) => {
         data.value = d
         error.value = null
@@ -80,7 +79,7 @@ export function useQuery<T>(
       },
       (e) => {
         if (e instanceof Cancelled) return
-        if (process.env.NODE_ENV !== 'test') console.warn(e)
+        capture(e, 'useQuery error')
         error.value = e
         isLoading.value = false
       }
@@ -89,7 +88,7 @@ export function useQuery<T>(
 
   watchEffect(() => fetch('auto'))
 
-  const refetch = (signal?: AbortSignal) => fetch('refetch', signal)
+  const refetch = () => fetch('refetch')
 
   return { isLoading, data, error, progress, refetch }
 }
@@ -167,19 +166,19 @@ export async function composeQuery<T>(
   subReportParams?: SubReporterParams
 ): Promise<T> {
   if (ctx.source === 'refetch') {
-    queryRet.refetch(ctx.signal)
+    queryRet.refetch()
   } else {
-    toValue(queryRet.isLoading) // Trigger dependency collection
+    // Collect `queryRet.isLoading` as dependency of current query.
+    // This ensures that when sub-query re-fetches (maybe because of its own dependencies' change), the current query re-fetches too.
+    toValue(queryRet.isLoading)
   }
 
   const collector = getCollector(ctx.reporter)
   const subReporter = collector.getSubReporter(...(subReportParams ?? []))
-  watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
+  const stopWatch = watch(queryRet.progress, (p) => subReporter.report(p), { immediate: true })
+  ctx.signal.addEventListener('abort', () => stopWatch())
 
-  return new Promise<T>((resolve, reject) => {
-    until(() => !queryRet.isLoading.value, ctx.signal).then(() => {
-      if (queryRet.error.value != null) reject(queryRet.error.value)
-      else resolve(queryRet.data.value!)
-    })
-  })
+  await until(() => !queryRet.isLoading.value, ctx.signal)
+  if (queryRet.error.value != null) throw queryRet.error.value
+  return queryRet.data.value!
 }

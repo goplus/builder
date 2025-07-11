@@ -12,15 +12,18 @@ import { Disposable, type Disposer } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
 import type { Size } from '.'
 
-export type Options = {
-  /** MIME type of file */
-  type?: string
-  // TODO: lastModified, endings
-}
-
 export type Metadata = {
   universalUrl?: string
   hash?: string
+}
+
+export type Options = {
+  /** MIME type of file */
+  type?: string
+  /** Last modified time in milliseconds since Unix epoch */
+  lastModified?: number
+  /** Metadata related to current file */
+  meta?: Metadata
 }
 
 export type Loader = () => Promise<ArrayBuffer>
@@ -28,23 +31,28 @@ export type Loader = () => Promise<ArrayBuffer>
 /** File-like class, while load lazily */
 export class File {
   /** MIME type of file */
-  type: string
+  readonly type: string
+  /** Last modified time in milliseconds since Unix epoch */
+  readonly lastModified: number
 
   /**
    * Metadata related to current file.
    * If you want to save data during the file's lifetime (including serialization & deserialization), put it here.
    * It's ok to read & write this field directly as long as you are clear about what you are doing.
    */
-  meta: Metadata = {}
+  readonly meta: Metadata
 
   constructor(
     /** File name */
-    public name: string,
+    public readonly name: string,
     /** Loader for file content */
     private loader: Loader,
+    /** Options for file */
     options?: Options
   ) {
     this.type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? ''
+    this.lastModified = options?.lastModified ?? Date.now()
+    this.meta = { ...options?.meta }
     markRaw(this)
   }
 

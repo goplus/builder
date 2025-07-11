@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
@@ -34,12 +35,12 @@ func TestControllerEnsureAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mAuthedUser.ID,
+			OwnerID:    mUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -53,13 +54,13 @@ func TestControllerEnsureAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		asset, err := ctrl.ensureAsset(ctx, mAsset.ID, false)
 		require.NoError(t, err)
@@ -97,12 +98,12 @@ func TestControllerEnsureAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mAuthedUser.ID + 1,
+			OwnerID:    mUser.ID + 1,
 			Visibility: model.VisibilityPrivate,
 		}
 
@@ -129,7 +130,7 @@ func TestControllerEnsureAsset(t *testing.T) {
 
 		_, err := ctrl.ensureAsset(ctx, mAsset.ID, false)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrForbidden)
+		assert.ErrorIs(t, err, authn.ErrForbidden)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -139,10 +140,10 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -152,10 +153,10 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("MissingDisplayName", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -165,35 +166,22 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("InvalidDisplayName", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: strings.Repeat("a", 256),
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid displayName", msg)
 	})
 
-	t.Run("InvalidType", func(t *testing.T) {
-		params := &CreateAssetParams{
-			DisplayName: "Test Asset",
-			Type:        "invalid",
-			Category:    "characters",
-			FilesHash:   "abc123",
-			Visibility:  "public",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
 	t.Run("MissingCategory", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -203,26 +191,13 @@ func TestCreateAssetParams(t *testing.T) {
 	t.Run("MissingFilesHash", func(t *testing.T) {
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing filesHash", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &CreateAssetParams{
-			DisplayName: "Test Asset",
-			Type:        "sprite",
-			Category:    "characters",
-			FilesHash:   "abc123",
-			Visibility:  "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -244,27 +219,27 @@ func TestControllerCreateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.Asset{
-				OwnerID:     mAuthedUser.ID,
+				OwnerID:     mUser.ID,
 				DisplayName: params.DisplayName,
-				Type:        model.ParseAssetType(params.Type),
+				Type:        params.Type,
 				Category:    params.Category,
 				FilesHash:   params.FilesHash,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -284,22 +259,22 @@ func TestControllerCreateAsset(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(model.Asset{
 				Model:       model.Model{ID: 1},
-				OwnerID:     mAuthedUser.ID,
+				OwnerID:     mUser.ID,
 				DisplayName: params.DisplayName,
-				Type:        model.ParseAssetType(params.Type),
+				Type:        params.Type,
 				Category:    params.Category,
 				FilesHash:   params.FilesHash,
-				Visibility:  model.ParseVisibility(params.Visibility),
+				Visibility:  params.Visibility,
 			})...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		assetDTO, err := ctrl.CreateAsset(ctx, params)
 		require.NoError(t, err)
@@ -318,15 +293,15 @@ func TestControllerCreateAsset(t *testing.T) {
 
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "abc123",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 
 		_, err := ctrl.CreateAsset(context.Background(), params)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
+		assert.ErrorIs(t, err, authn.ErrUnauthorized)
 	})
 }
 
@@ -347,24 +322,6 @@ func TestListAssetsParams(t *testing.T) {
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
-	})
-
-	t.Run("InvalidType", func(t *testing.T) {
-		params := NewListAssetsParams()
-		invalidType := "invalid"
-		params.Type = &invalidType
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := NewListAssetsParams()
-		invalidVisibility := "invalid"
-		params.Visibility = &invalidVisibility
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 
 	t.Run("InvalidOrderBy", func(t *testing.T) {
@@ -410,14 +367,14 @@ func TestControllerListAssets(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		params := NewListAssetsParams()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Asset{}).
-			Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
+			Where(ctrl.db.Where("asset.owner_id = ?", mUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -426,7 +383,7 @@ func TestControllerListAssets(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
+			Where(ctrl.db.Where("asset.owner_id = ?", mUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
 			Order("asset.created_at asc, asset.id").
 			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
@@ -437,19 +394,19 @@ func TestControllerListAssets(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(
 				generateAssetDBRows(
-					model.Asset{Model: model.Model{ID: 1}, OwnerID: mAuthedUser.ID, Visibility: model.VisibilityPublic},
-					model.Asset{Model: model.Model{ID: 2}, OwnerID: mAuthedUser.ID, Visibility: model.VisibilityPublic},
+					model.Asset{Model: model.Model{ID: 1}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
+					model.Asset{Model: model.Model{ID: 2}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
 				)...,
 			))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		result, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
@@ -478,12 +435,12 @@ func TestControllerGetAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mAuthedUser.ID,
+			OwnerID:    mUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -497,13 +454,13 @@ func TestControllerGetAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		asset, err := ctrl.GetAsset(ctx, "1")
 		require.NoError(t, err)
@@ -541,10 +498,10 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -554,10 +511,10 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("MissingDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -567,35 +524,22 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("InvalidDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: strings.Repeat("a", 256),
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid displayName", msg)
 	})
 
-	t.Run("InvalidType", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "Updated Asset",
-			Type:        "invalid",
-			Category:    "characters",
-			FilesHash:   "def456",
-			Visibility:  "public",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid type", msg)
-	})
-
 	t.Run("MissingCategory", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			FilesHash:   "def456",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -605,26 +549,13 @@ func TestUpdateAssetParams(t *testing.T) {
 	t.Run("MissingFilesHash", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "sprite",
+			Type:        model.AssetTypeSprite,
 			Category:    "characters",
-			Visibility:  "public",
+			Visibility:  model.VisibilityPublic,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing filesHash", msg)
-	})
-
-	t.Run("InvalidVisibility", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "Updated Asset",
-			Type:        "sprite",
-			Category:    "characters",
-			FilesHash:   "def456",
-			Visibility:  "invalid",
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
@@ -646,12 +577,12 @@ func TestControllerUpdateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:       model.Model{ID: 1},
-			OwnerID:     mAuthedUser.ID,
+			OwnerID:     mUser.ID,
 			DisplayName: "Old Name",
 			Type:        model.AssetTypeSprite,
 			Category:    "old-category",
@@ -661,10 +592,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -677,13 +608,13 @@ func TestControllerUpdateAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		dbMock.ExpectBegin()
 
@@ -691,10 +622,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Model(&model.Asset{Model: mAsset.Model}).
 			Updates(map[string]any{
 				"display_name": params.DisplayName,
-				"type":         model.ParseAssetType(params.Type),
+				"type":         params.Type,
 				"category":     params.Category,
 				"files_hash":   params.FilesHash,
-				"visibility":   model.ParseVisibility(params.Visibility),
+				"visibility":   params.Visibility,
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -726,10 +657,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -753,12 +684,12 @@ func TestControllerUpdateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:       model.Model{ID: 1},
-			OwnerID:     mAuthedUser.ID + 1,
+			OwnerID:     mUser.ID + 1,
 			DisplayName: "Old Name",
 			Type:        model.AssetTypeSprite,
 			Category:    "old-category",
@@ -768,10 +699,10 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		params := &UpdateAssetParams{
 			DisplayName: "Updated Asset",
-			Type:        "backdrop",
+			Type:        model.AssetTypeBackdrop,
 			Category:    "new-category",
 			FilesHash:   "new-hash",
-			Visibility:  "private",
+			Visibility:  model.VisibilityPrivate,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -797,7 +728,7 @@ func TestControllerUpdateAsset(t *testing.T) {
 
 		_, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrForbidden)
+		assert.ErrorIs(t, err, authn.ErrForbidden)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -821,12 +752,12 @@ func TestControllerDeleteAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mAuthedUser.ID,
+			OwnerID:    mUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -840,13 +771,13 @@ func TestControllerDeleteAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mAuthedUser.ID).
+			Where("`user`.`id` = ?", mUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		dbMock.ExpectBegin()
 
@@ -896,12 +827,12 @@ func TestControllerDeleteAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
-		require.True(t, isAuthed)
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mAuthedUser.ID + 1,
+			OwnerID:    mUser.ID + 1,
 			Visibility: model.VisibilityPrivate,
 		}
 
@@ -928,7 +859,7 @@ func TestControllerDeleteAsset(t *testing.T) {
 
 		err := ctrl.DeleteAsset(ctx, "1")
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrForbidden)
+		assert.ErrorIs(t, err, authn.ErrForbidden)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})

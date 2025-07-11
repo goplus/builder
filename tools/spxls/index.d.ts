@@ -1,5 +1,5 @@
 /**
-  * A lightweight Go+ language server for spx that runs in the browser using WebAssembly.
+  * A lightweight XGo language server for spx that runs in the browser using WebAssembly.
   */
 export interface Spxls {
   /**

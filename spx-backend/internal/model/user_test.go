@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,17 +22,17 @@ func TestFirstOrCreateUser(t *testing.T) {
 	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, User{})
 	require.NoError(t, err)
 
-	expectedCasdoorUser := casdoorsdk.User{
-		Name:        "john",
+	expectedAttrs := CreateUserAttrs{
+		Username:    "john",
 		DisplayName: "John Doe",
 		Avatar:      "https://example.com/avatar.jpg",
 	}
 
 	mExpectedUser := User{
 		Model:              Model{ID: 1},
-		Username:           expectedCasdoorUser.Name,
-		DisplayName:        expectedCasdoorUser.DisplayName,
-		Avatar:             expectedCasdoorUser.Avatar,
+		Username:           expectedAttrs.Username,
+		DisplayName:        expectedAttrs.DisplayName,
+		Avatar:             expectedAttrs.Avatar,
 		Description:        "I'm John",
 		FollowerCount:      10,
 		FollowingCount:     5,
@@ -56,7 +55,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
 
-		mUser, err := FirstOrCreateUser(context.Background(), db, &expectedCasdoorUser)
+		mUser, err := FirstOrCreateUser(context.Background(), db, expectedAttrs)
 		require.NoError(t, err)
 		assert.Equal(t, mExpectedUser, *mUser)
 
@@ -104,7 +103,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
 
-		mUser, err := FirstOrCreateUser(context.Background(), db, &expectedCasdoorUser)
+		mUser, err := FirstOrCreateUser(context.Background(), db, expectedAttrs)
 		require.NoError(t, err)
 		assert.Equal(t, mExpectedUser, *mUser)
 
