@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     branches:
-      - dev
+      - main
   workflow_dispatch:
 jobs:
   deploy-spx-backend:
@@ -16,7 +16,7 @@ jobs:
         run: |
           GOPLUS_DEPLOY_GIT_REF=${GITHUB_SHA}
           if [ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]; then
-            GOPLUS_DEPLOY_GIT_REF=dev
+            GOPLUS_DEPLOY_GIT_REF=main
           fi
           echo "GOPLUS_DEPLOY_GIT_REF=${GOPLUS_DEPLOY_GIT_REF}" >> ${GITHUB_ENV}
       - name: Deploy
