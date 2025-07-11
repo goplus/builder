@@ -197,13 +197,13 @@ export function cssColorStringForSpxColor(value: ColorValue) {
 }
 
 export const effectKinds = [
-  { name: 'ColorEffect', text: { en: 'Color Effect', zh: '颜色' } },
-  { name: 'FishEyeEffect', text: { en: 'Fish Eye Effect', zh: '鱼眼' } },
-  { name: 'WhirlEffect', text: { en: 'Whirl Effect', zh: '旋转' } },
-  { name: 'PixelateEffect', text: { en: 'Pixelate Effect', zh: '像素化' } },
-  { name: 'MosaicEffect', text: { en: 'Mosaic Effect', zh: '马赛克' } },
-  { name: 'BrightnessEffect', text: { en: 'Brightness Effect', zh: '亮度' } },
-  { name: 'GhostEffect', text: { en: 'Ghost Effect', zh: '幽灵' } }
+  { name: 'ColorEffect', text: { en: 'Color', zh: '颜色' } },
+  { name: 'FishEyeEffect', text: { en: 'Fish Eye', zh: '鱼眼' } },
+  { name: 'WhirlEffect', text: { en: 'Whirl', zh: '旋转' } },
+  { name: 'PixelateEffect', text: { en: 'Pixelate', zh: '像素化' } },
+  { name: 'MosaicEffect', text: { en: 'Mosaic', zh: '马赛克' } },
+  { name: 'BrightnessEffect', text: { en: 'Brightness', zh: '亮度' } },
+  { name: 'GhostEffect', text: { en: 'Ghost', zh: '幽灵' } }
 ]
 
 export type KeyDefinition = {

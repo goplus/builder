@@ -6,6 +6,7 @@ export function hasPreviewForInputType(type: InputType) {
     InputType.String,
     InputType.Boolean,
     InputType.SpxResourceName,
+    InputType.SpxEffectKind,
     InputType.SpxColor,
     InputType.SpxKey
   ].includes(type)
@@ -26,6 +27,7 @@ import {
 import { type Input, InputKind, InputType, getResourceModel, exprForInput } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import ResourceItem from '../resource/ResourceItem.vue'
+import SpxEffectKindItem from '../input-helper/spx-effect-input/SpxEffectKindItem.vue'
 
 const props = defineProps<{
   input: string
@@ -49,6 +51,12 @@ const resourceModel = computed(() => {
   return getResourceModel(codeEditorCtx.ui.project, { uri: parsedInput.value.value })
 })
 
+const effectKind = computed(() => {
+  if (parsedInput.value == null) return null
+  if (parsedInput.value.type !== InputType.SpxEffectKind) return null
+  return effectKinds.find((d) => d.name === parsedInput.value?.value)?.name ?? null
+})
+
 const key = computed(() => {
   if (parsedInput.value == null) return null
   if (parsedInput.value.type !== InputType.SpxKey) return null
@@ -66,10 +74,6 @@ const enumText = computed(() => {
   if (parsedInput.value.type === InputType.SpxDirection) {
     const value = parsedInput.value.value
     return specialDirections.find((d) => d.value === value)?.text ?? null
-  }
-  if (parsedInput.value.type === InputType.SpxEffectKind) {
-    const value = parsedInput.value.value
-    return effectKinds.find((d) => d.name === value)?.text ?? null
   }
   if (parsedInput.value.type === InputType.SpxPlayAction) {
     const value = parsedInput.value.value
@@ -95,6 +99,7 @@ const expr = computed(() => {
 <template>
   <div class="input-value-preview">
     <ResourceItem v-if="resourceModel != null" :resource="resourceModel" autoplay />
+    <SpxEffectKindItem v-else-if="effectKind != null" :name="effectKind" :active="false" :interactive="false" />
     <div v-else-if="key != null" class="key">{{ $t(key.text) }}</div>
     <div v-else-if="color != null" class="color">
       <i class="color-preview" :style="{ backgroundColor: color }"></i>
