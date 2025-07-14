@@ -58,8 +58,6 @@
     "naive-ui": "^2.38.1",
     "nanoid": "^5.0.5",
     "npm": "^10.3.0",
-    "pinia": "^2.1.7",
-    "pinia-plugin-persistedstate": "^3.2.1",
     "prettier": "^3.2.2",
     "property-information": "^6.5.0",
     "qiniu-js": "^3.4.2",

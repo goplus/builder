@@ -11,7 +11,7 @@ import wasmExecUrl from '@/assets/wasm/wasm_exec.js?url'
 import ispxWasmUrl from '@/assets/wasm/ispx.wasm?url'
 import ispxRunnerHtml from './ispx/runner.html?raw'
 import { apiBaseUrl } from '@/utils/env'
-import { useUserStore } from '@/stores/user'
+import { ensureAccessToken } from '@/stores/user'
 
 // preload resources (for example, wasm files) to accelerate the loading
 export function preload() {
@@ -71,9 +71,8 @@ watch(iframe, () => {
 
     iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
-    const userStore = useUserStore()
-    await userStore.ensureAccessToken()
-    iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
+    await ensureAccessToken()
+    iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
     iframeWindow.startWithZipBuffer(props.zipData)
     startWithZipBufferReporter.report(1)
     const canvas = iframeWindow.document.querySelector('canvas')

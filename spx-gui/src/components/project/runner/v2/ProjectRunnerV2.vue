@@ -13,12 +13,10 @@ import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
-import { useUserStore } from '@/stores/user'
+import { ensureAccessToken } from '@/stores/user'
 
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
-
-const userStore = useUserStore()
 
 const props = defineProps<{ project: Project }>()
 
@@ -180,7 +178,7 @@ defineExpose({
         iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
         // Set up token provider for AI Interaction.
-        iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
+        iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
       })
       signal?.throwIfAborted()
       startGameReporter.report(1)

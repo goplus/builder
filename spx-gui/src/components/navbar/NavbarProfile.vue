@@ -1,10 +1,10 @@
 <template>
-  <div v-if="!userInfo" class="sign-in">
+  <div v-if="!signedInUser" class="sign-in">
     <UIButton
       v-radar="{ name: 'Sign in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
-      @click="userStore.initiateSignIn()"
+      @click="initiateSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
@@ -17,7 +17,7 @@
     <UIMenu class="user-menu">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
-          {{ userInfo.displayName || userInfo.name }}
+          {{ signedInUser?.displayName || signedInUser?.username }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -36,7 +36,7 @@
           {{ $t({ en: 'Use SPX v2', zh: '使用 SPX v2' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="userInfo.advancedLibraryEnabled">
+      <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
         <UIMenuItem @click="manageAssets(AssetType.Sprite)">
           {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
         </UIMenuItem>
@@ -45,9 +45,6 @@
         </UIMenuItem>
         <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
           {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
-        </UIMenuItem>
-        <UIMenuItem @click="handleDisableAdvancedLibrary">
-          {{ $t({ en: 'Disable advanced library features', zh: '禁用高级素材库功能' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="isDeveloperMode">
@@ -66,26 +63,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useExternalUrl, useSpxVersion } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
-import { useUserStore } from '@/stores/user'
+import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 
-const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const router = useRouter()
 const { controls } = useAgentCopilotCtx()
 
-const userInfo = computed(() => userStore.getSignedInUser())
-const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
+const { data: signedInUser } = useSignedInUser()
+const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 
 const handleAskCopilotAgent = useMessageHandle(
   async () => {
@@ -100,11 +95,11 @@ const handleAskCopilotAgent = useMessageHandle(
 ).fn
 
 function handleUserPage() {
-  router.push(getUserPageRoute(userInfo.value!.name))
+  router.push(getUserPageRoute(signedInUser.value!.username))
 }
 
 function handleProjects() {
-  router.push(getUserPageRoute(userInfo.value!.name, 'projects'))
+  router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
 }
 
 const spxVersion = useSpxVersion()
@@ -131,10 +126,6 @@ const handleUseSpxV2 = useMessageHandle(
   }
 ).fn
 
-function handleDisableAdvancedLibrary() {
-  userStore.disableAdvancedLibrary()
-}
-
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
 const handleUseMcpDebuggerUtils = useMessageHandle(
@@ -150,7 +141,7 @@ const handleUseMcpDebuggerUtils = useMessageHandle(
 ).fn
 
 function handleSignOut() {
-  userStore.signOut()
+  signOut()
   router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>

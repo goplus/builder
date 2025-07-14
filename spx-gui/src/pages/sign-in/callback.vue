@@ -5,18 +5,16 @@
 </template>
 <script setup lang="ts">
 import { usePageTitle } from '@/utils/utils'
-import { useUserStore } from '@/stores/user'
+import { completeSignIn } from '@/stores/user'
 
 const title = { en: 'Signing in...', zh: '登录中...' }
 
 usePageTitle(title)
 
-const userStore = useUserStore()
-
 try {
   const params = new URLSearchParams(location.search)
 
-  await userStore.completeSignIn()
+  await completeSignIn()
 
   const returnTo = params.get('returnTo')
   window.location.replace(returnTo != null ? returnTo : '/')

@@ -11,7 +11,7 @@ import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSo
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
-import { useUser, useUserStore } from '@/stores/user'
+import { useUser, isSignedIn, getSignedInUsername } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -45,7 +45,6 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const userStore = useUserStore()
 
 const {
   data: project,
@@ -83,7 +82,7 @@ usePageTitle(() => {
 
 watch(
   () => [props.owner, props.name],
-  () => userStore.isSignedIn() && recordProjectView(props.owner, props.name),
+  () => isSignedIn() && recordProjectView(props.owner, props.name),
   { immediate: true }
 )
 
@@ -95,7 +94,7 @@ watch(
   }
 )
 
-const isOwner = computed(() => props.owner === userStore.getSignedInUser()?.name)
+const isOwner = computed(() => props.owner === getSignedInUsername())
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
@@ -255,7 +254,7 @@ const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
     await removeProject(props.owner, props.name)
-    await router.push(getUserPageRoute(userStore.getSignedInUser()!.name, 'projects'))
+    await router.push(getUserPageRoute(getSignedInUsername()!, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
   { en: 'Project removed', zh: '项目已删除' }
