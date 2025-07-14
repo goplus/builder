@@ -1,5 +1,11 @@
 <template>
-  <UIEditorSpriteItem ref="wrapperRef" :selectable="selectable" :name="animation.name" :color="color">
+  <UIEditorSpriteItem
+    ref="wrapperRef"
+    v-radar="radarNodeMeta"
+    :selectable="selectable"
+    :name="animation.name"
+    :color="color"
+  >
     <template #img="{ style }">
       <CostumesAutoPlayer
         v-if="autoplay || hovered"
@@ -10,7 +16,13 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
+    <UICornerIcon
+      v-if="removable"
+      v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }"
+      type="trash"
+      :color="color"
+      @click="handleRemove"
+    />
   </UIEditorSpriteItem>
 </template>
 
@@ -47,6 +59,12 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
+
+const radarNodeMeta = computed(() => {
+  const name = `Animation item "${props.animation.name}"`
+  const desc = props.selectable ? 'Click to select the animation and view more options' : ''
+  return { name, desc }
+})
 
 const removeAnimation = useModal(AnimationRemoveModal)
 const handleRemove = useMessageHandle(

@@ -2,7 +2,12 @@
 <template>
   <UITooltip placement="bottom">
     <template #trigger>
-      <div class="lang" @click="toggleLang" v-html="langContent"></div>
+      <div
+        v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+        class="lang"
+        @click="toggleLang"
+        v-html="langContent"
+      ></div>
     </template>
     {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
   </UITooltip>

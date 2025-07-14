@@ -64,7 +64,13 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
     Although naive-ui modal supports `display-directive: show`, it does not initialize the component until it is shown for the first time.
     TODO: Update `UIModal` to support this requirement.
   -->
-  <div ref="wrapperRef" class="full-screen-project-runner" :class="{ visible }" :style="modalTransformStyle">
+  <div
+    ref="wrapperRef"
+    v-radar="{ name: 'Full screen project runner', desc: 'Full screen modal for running project', visible }"
+    class="full-screen-project-runner"
+    :class="{ visible }"
+    :style="modalTransformStyle"
+  >
     <div class="container">
       <div class="header">
         <div class="header-left"></div>
@@ -73,6 +79,7 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
         </div>
         <div class="header-right">
           <UIButton
+            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
             class="button"
             icon="rotate"
             :disabled="initialLoading"
@@ -82,7 +89,11 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
           </UIButton>
           <!-- TODO: support "stop", which preserves the last frame -->
-          <UIModalClose class="close" @click="emit('close')" />
+          <UIModalClose
+            v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+            class="close"
+            @click="emit('close')"
+          />
         </div>
       </div>
       <div class="main">

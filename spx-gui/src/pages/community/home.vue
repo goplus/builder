@@ -3,6 +3,7 @@
     <GuestBanner v-if="!userStore.isSignedIn()" class="guest-banner" />
     <ProjectsSection
       v-else
+      v-radar="{ name: 'Your projects', desc: 'Section showing user\'s own projects' }"
       context="home"
       :num-in-row="numInRow"
       :link-to="userStore.isSignedIn() ? myProjectsRoute : null"
@@ -36,6 +37,7 @@
       />
     </ProjectsSection>
     <ProjectsSection
+      v-radar="{ name: 'Community liking', desc: 'Section showing projects liked by the community' }"
       :link-to="communityLikingRoute"
       context="home"
       :num-in-row="numInRow"
@@ -60,6 +62,7 @@
       <ProjectItem v-for="project in communityLikingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
+      v-radar="{ name: 'Community remixing', desc: 'Section showing projects being remixed by the community' }"
       :link-to="communityRemixingRoute"
       context="home"
       :num-in-row="numInRow"
@@ -85,6 +88,7 @@
     </ProjectsSection>
     <ProjectsSection
       v-if="userStore.isSignedIn()"
+      v-radar="{ name: 'Following created', desc: 'Section showing projects created by users you follow' }"
       context="home"
       :num-in-row="numInRow"
       :link-to="followingCreatedRoute"

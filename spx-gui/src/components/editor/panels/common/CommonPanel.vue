@@ -2,7 +2,11 @@
 
 <template>
   <div class="common-panel" :class="{ expanded }" :style="cssVars">
-    <section v-show="expanded" class="details">
+    <section
+      v-show="expanded"
+      v-radar="{ name: 'Detail', desc: 'Detailed view of the panel', visible: expanded }"
+      class="details"
+    >
       <PanelHeader :active="active">
         {{ title }}
         <template #add-options>
@@ -11,7 +15,12 @@
       </PanelHeader>
       <slot name="details"></slot>
     </section>
-    <section v-show="!expanded" class="summary" @click="emit('expand')">
+    <section
+      v-show="!expanded"
+      v-radar="{ name: 'Summary', desc: 'Summary view of the panel, click to view details', visible: !expanded }"
+      class="summary"
+      @click="emit('expand')"
+    >
       <!-- TODO: use UICardHeader? -->
       <h4 class="summary-header">{{ title }}</h4>
       <slot name="summary"></slot>

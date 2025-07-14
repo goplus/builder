@@ -1,5 +1,10 @@
 <template>
-  <UIButton type="boring" :loading="handleFormat.isLoading.value" @click="handleFormat.fn">
+  <UIButton
+    v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
+    type="boring"
+    :loading="handleFormat.isLoading.value"
+    @click="handleFormat.fn"
+  >
     {{ $t({ en: 'Format', zh: '格式化' }) }}
   </UIButton>
 </template>

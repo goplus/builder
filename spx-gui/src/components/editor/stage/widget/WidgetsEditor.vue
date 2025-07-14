@@ -2,7 +2,12 @@
   <UIEmpty v-if="stage.widgets.length === 0" size="extra-large">
     {{ $t({ en: 'No widgets', zh: '没有控件' }) }}
     <template #op>
-      <UIButton type="boring" size="large" @click="handleAddMonitor">
+      <UIButton
+        v-radar="{ name: 'Add monitor button', desc: 'Click to add a monitor widget' }"
+        type="boring"
+        size="large"
+        @click="handleAddMonitor"
+      >
         <template #icon>
           <img :src="monitorIcon" />
         </template>
@@ -12,6 +17,7 @@
   </UIEmpty>
   <EditorList
     v-else
+    v-radar="{ name: 'Widgets management', desc: 'Managing widgets' }"
     color="stage"
     :add-text="$t({ en: 'Add widget', zh: '添加控件' })"
     :sortable="{ list: stage.widgets }"
@@ -27,7 +33,11 @@
     />
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddMonitor">{{ $t({ en: 'Monitor', zh: '监视器' }) }}</UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Add monitor', desc: 'Click to add a monitor widget' }"
+          @click="handleAddMonitor"
+          >{{ $t({ en: 'Monitor', zh: '监视器' }) }}</UIMenuItem
+        >
       </UIMenu>
     </template>
     <template #detail>

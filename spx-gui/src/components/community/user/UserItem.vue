@@ -18,7 +18,13 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 <template>
   <li class="user-item">
     <UserAvatar class="avatar" :user="user.username" />
-    <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
+    <RouterUILink
+      v-radar="{ name: 'User link', desc: 'Click to view user profile' }"
+      class="name"
+      type="boring"
+      :to="userRoute"
+      >{{ user.displayName }}</RouterUILink
+    >
     <UserJoinedAt class="joined-at" :time="user.createdAt" />
     <TextView v-if="!!user.description" class="description" :text="user.description" />
     <FollowButton class="follow" :name="user.username" />

@@ -6,7 +6,12 @@
       <h2 class="title">
         <slot name="title"></slot>
       </h2>
-      <RouterUILink v-if="linkTo != null" class="link" :to="linkTo">
+      <RouterUILink
+        v-if="linkTo != null"
+        v-radar="{ name: 'Link to more', desc: 'Link to more similar projects' }"
+        class="link"
+        :to="linkTo"
+      >
         <slot name="link"></slot>
         <UIIcon class="link-icon" type="arrowRightSmall" />
       </RouterUILink>

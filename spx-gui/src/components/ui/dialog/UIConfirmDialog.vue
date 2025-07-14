@@ -9,10 +9,20 @@
   >
     <div>{{ content }}</div>
     <footer class="footer">
-      <UIButton type="boring" @click="emit('cancelled')">
+      <UIButton
+        v-radar="{ name: 'Cancel button', desc: 'Click to cancel current action' }"
+        type="boring"
+        @click="emit('cancelled')"
+      >
         {{ cancelText ?? config?.cancelText ?? 'Cancel' }}
       </UIButton>
-      <UIButton ref="confirmBtnRef" type="primary" :loading="isConfirmLoading" @click="handleConfirm">
+      <UIButton
+        ref="confirmBtnRef"
+        v-radar="{ name: 'Confirm button', desc: 'Click to confirm current action' }"
+        type="primary"
+        :loading="isConfirmLoading"
+        @click="handleConfirm"
+      >
         {{ confirmText ?? config?.confirmText ?? 'Confirm' }}
       </UIButton>
     </footer>

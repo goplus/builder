@@ -25,7 +25,13 @@
         </NGridItem>
       </NGrid>
     </div>
-    <UIButton size="large" class="import-button" :loading="importSelected.isLoading.value" @click="importSelected.fn">
+    <UIButton
+      v-radar="{ name: 'Import button', desc: 'Click to import selected assets from Scratch' }"
+      size="large"
+      class="import-button"
+      :loading="importSelected.isLoading.value"
+      @click="importSelected.fn"
+    >
       {{
         $t({
           en: 'Import',

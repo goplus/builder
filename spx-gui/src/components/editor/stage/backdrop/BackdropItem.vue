@@ -1,5 +1,11 @@
 <template>
-  <UIEditorBackdropItem :img-src="imgSrc" :img-loading="imgLoading" :name="backdrop.name" :selectable="selectable">
+  <UIEditorBackdropItem
+    v-radar="radarNodeMeta"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="backdrop.name"
+    :selectable="selectable"
+  >
     <CornerMenu
       v-if="selectable && selectable.selected"
       color="stage"
@@ -33,6 +39,12 @@ const props = withDefaults(
 
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
+
+const radarNodeMeta = computed(() => {
+  const name = `Backdrop item "${props.backdrop.name}"`
+  const desc = props.selectable ? 'Click to select the backdrop and view more options' : ''
+  return { name, desc }
+})
 
 const stageRef = computed(() => {
   const stage = props.backdrop.stage

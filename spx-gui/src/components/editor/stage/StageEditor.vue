@@ -1,16 +1,41 @@
 <template>
   <EditorHeader color="stage">
-    <UITabs :value="state.selected.type" color="stage" @update:value="(type) => state.select(type as SelectedType)">
-      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
-      <UITab value="widgets">{{ $t({ en: 'Widgets', zh: '控件' }) }}</UITab>
-      <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
+    <UITabs
+      v-radar="{
+        name: 'Stage editor tabs',
+        desc: 'Navigation tabs for switching between different stage editing views'
+      }"
+      :value="state.selected.type"
+      color="stage"
+      @update:value="(type) => state.select(type as SelectedType)"
+    >
+      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
+        $t({ en: 'Code', zh: '代码' })
+      }}</UITab>
+      <UITab v-radar="{ name: 'Widgets tab', desc: 'Click to switch to widgets management view' }" value="widgets">{{
+        $t({ en: 'Widgets', zh: '控件' })
+      }}</UITab>
+      <UITab
+        v-radar="{ name: 'Backdrops tab', desc: 'Click to switch to backdrops management view' }"
+        value="backdrops"
+        >{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab
+      >
     </UITabs>
     <template #extra>
       <FormatButton v-if="state.selected.type === 'code'" :code-file-path="stage.codeFilePath" />
       <BackdropModeSelector v-if="state.selected.type === 'backdrops'" />
     </template>
   </EditorHeader>
-  <CodeEditorUI v-show="state.selected.type === 'code'" ref="codeEditor" :code-file-path="stage.codeFilePath" />
+  <CodeEditorUI
+    v-show="state.selected.type === 'code'"
+    ref="codeEditor"
+    v-radar="{
+      name: 'Code editor',
+      desc: 'Code editor for editing stage code',
+      visible: state.selected.type === 'code'
+    }"
+    :code-file-path="stage.codeFilePath"
+  />
   <WidgetsEditor v-if="state.selected.type === 'widgets'" :state="state.widgetsState" />
   <BackdropsEditor v-if="state.selected.type === 'backdrops'" :state="state.backdropsState" />
 </template>

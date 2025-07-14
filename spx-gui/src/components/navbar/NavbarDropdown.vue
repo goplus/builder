@@ -1,7 +1,7 @@
 <template>
   <UIDropdown placement="bottom-start">
     <template #trigger>
-      <div class="dropdown">
+      <div v-radar="triggerRadar" class="dropdown">
         <slot name="trigger"></slot>
         <UIIcon class="icon-arrow" type="arrowDown" />
       </div>
@@ -12,6 +12,11 @@
 
 <script setup lang="ts">
 import { UIDropdown, UIIcon } from '@/components/ui'
+import type { RadarNodeMeta } from '@/utils/radar'
+
+defineProps<{
+  triggerRadar: RadarNodeMeta
+}>()
 </script>
 
 <style lang="scss" scoped>

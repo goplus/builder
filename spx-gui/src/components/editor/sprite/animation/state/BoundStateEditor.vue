@@ -1,19 +1,40 @@
 <!-- eslint-disable vue/no-v-html -->
 
 <template>
-  <UIDropdownModal :title="$t(actionName)" style="width: 320px" @cancel="emit('close')" @confirm="handleConfirm">
+  <UIDropdownModal
+    v-radar="{ name: 'Bound state editor modal', desc: 'Modal for editing animation bound state' }"
+    :title="$t(actionName)"
+    style="width: 320px"
+    @cancel="emit('close')"
+    @confirm="handleConfirm"
+  >
     <ul class="state-items">
-      <UIBlockItem class="state-item" :active="isBound(State.default)" @click="handleStateItemClick(State.default)">
+      <UIBlockItem
+        v-radar="{ name: 'State default', desc: 'Click to select state \u0022default\u0022' }"
+        class="state-item"
+        :active="isBound(State.default)"
+        @click="handleStateItemClick(State.default)"
+      >
         <div class="icon" v-html="iconStateDefault"></div>
         <p class="name">{{ $t({ en: 'Default', zh: '默认' }) }}</p>
         <UICornerIcon v-show="isBound(State.default)" type="check" />
       </UIBlockItem>
-      <UIBlockItem class="state-item" :active="isBound(State.step)" @click="handleStateItemClick(State.step)">
+      <UIBlockItem
+        v-radar="{ name: 'State step', desc: 'Click to select state \u0022step\u0022' }"
+        class="state-item"
+        :active="isBound(State.step)"
+        @click="handleStateItemClick(State.step)"
+      >
         <div class="icon" v-html="iconStateStep"></div>
         <p class="name">{{ $t({ en: 'Step', zh: '行走' }) }}</p>
         <UICornerIcon v-show="isBound(State.step)" type="check" />
       </UIBlockItem>
-      <UIBlockItem class="state-item" :active="isBound(State.die)" @click="handleStateItemClick(State.die)">
+      <UIBlockItem
+        v-radar="{ name: 'State die', desc: 'Click to select state \u0022die\u0022' }"
+        class="state-item"
+        :active="isBound(State.die)"
+        @click="handleStateItemClick(State.die)"
+      >
         <div class="icon" v-html="iconStateDie"></div>
         <p class="name">{{ $t({ en: 'Die', zh: '死亡' }) }}</p>
         <UICornerIcon v-show="isBound(State.die)" type="check" />

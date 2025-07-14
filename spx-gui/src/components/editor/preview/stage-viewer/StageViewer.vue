@@ -1,5 +1,12 @@
 <template>
-  <div ref="conatiner" class="stage-viewer">
+  <div
+    ref="conatiner"
+    v-radar="{
+      name: 'Stage viewer',
+      desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
+    }"
+    class="stage-viewer"
+  >
     <v-stage
       v-if="stageConfig != null"
       ref="stageRef"
@@ -34,10 +41,26 @@
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
-        <UIMenuItem @click="moveZorder('up')">{{ $t(moveActionNames.up) }}</UIMenuItem>
-        <UIMenuItem @click="moveZorder('top')">{{ $t(moveActionNames.top) }}</UIMenuItem>
-        <UIMenuItem @click="moveZorder('down')">{{ $t(moveActionNames.down) }}</UIMenuItem>
-        <UIMenuItem @click="moveZorder('bottom')">{{ $t(moveActionNames.bottom) }}</UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
+          @click="moveZorder('up')"
+          >{{ $t(moveActionNames.up) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
+          @click="moveZorder('top')"
+          >{{ $t(moveActionNames.top) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
+          @click="moveZorder('down')"
+          >{{ $t(moveActionNames.down) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
+          @click="moveZorder('bottom')"
+          >{{ $t(moveActionNames.bottom) }}</UIMenuItem
+        >
       </UIMenu>
     </UIDropdown>
     <UILoading :visible="loading" cover />

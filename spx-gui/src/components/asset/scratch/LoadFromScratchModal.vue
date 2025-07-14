@@ -1,5 +1,6 @@
 <template>
   <UIFormModal
+    :radar="{ name: 'Load from Scratch modal', desc: 'Modal for importing assets from Scratch' }"
     :title="$t({ en: 'Import assets from Scratch', zh: '从 Scratch 导入资源' })"
     :visible="visible"
     style="width: 928px"

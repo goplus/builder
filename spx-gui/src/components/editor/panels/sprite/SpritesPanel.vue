@@ -1,5 +1,6 @@
 <template>
   <CommonPanel
+    v-radar="{ name: 'Sprites panel', desc: 'Panel for managing project sprites' }"
     :expanded="expanded"
     :active="selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
@@ -8,12 +9,16 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{
-          $t({ en: 'Select local file', zh: '选择本地文件' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="handleAddFromAssetLibrary">{{
-          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
-        }}</UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Add from local file', desc: 'Click to add sprite from local file' }"
+          @click="handleAddFromLocalFile"
+          >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Add from asset library', desc: 'Click to add sprite from asset library' }"
+          @click="handleAddFromAssetLibrary"
+          >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
+        >
       </UIMenu>
     </template>
     <template #details>
@@ -31,12 +36,25 @@
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter v-if="footerExpanded && selectedSprite != null">
+      <PanelFooter
+        v-if="footerExpanded && selectedSprite != null"
+        v-radar="{
+          name: `Basic configuration for selected sprite`,
+          desc: 'Panel for configuring sprite basic settings'
+        }"
+      >
         <SpriteBasicConfig :sprite="selectedSprite" :project="editorCtx.project" @collapse="footerExpanded = false" />
       </PanelFooter>
       <UITooltip v-if="!footerExpanded && selectedSprite != null">
         <template #trigger>
-          <div class="footer-expand-button" @click="footerExpanded = true">
+          <div
+            v-radar="{
+              name: 'Expand button',
+              desc: 'Button to expand the basic configuration panel for selected sprite'
+            }"
+            class="footer-expand-button"
+            @click="footerExpanded = true"
+          >
             <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
           </div>
         </template>

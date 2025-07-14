@@ -20,6 +20,7 @@ import { CustomTransformer } from './components/editor/preview/stage-viewer/cust
 import { initDeveloperMode } from './utils/developer-mode'
 import { isCodeEditorOperation, isLSPOperation } from './utils/tracing'
 import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
+import { createRadar } from './utils/radar'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -68,12 +69,11 @@ async function initApp() {
   initApiClient()
   initI18n(app)
   initDeveloperMode()
-
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })
-
   app.use(VueQueryPlugin)
+  app.use(createRadar())
 
   app.mount('#app')
 }

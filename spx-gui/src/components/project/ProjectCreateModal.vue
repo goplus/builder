@@ -1,5 +1,11 @@
 <template>
-  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
+  <UIFormModal
+    :radar="{ name: 'Create project modal', desc: 'Modal for creating a new project' }"
+    class="project-create-modal"
+    :title="$t(title)"
+    :visible="props.visible"
+    @update:visible="handleCancel"
+  >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
@@ -12,11 +18,18 @@
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
+          v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
+          class="create-button"
+          type="primary"
+          html-type="submit"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>

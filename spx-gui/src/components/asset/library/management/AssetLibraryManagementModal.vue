@@ -176,6 +176,7 @@ const handleRemove = useMessageHandle(
 
 <template>
   <UISearchableModal
+    :radar="{ name: 'Asset library management modal', desc: 'Modal for managing assets in the library' }"
     style="width: 1244px"
     :visible="props.visible"
     :title="$t({ en: `Manage ${entityMessage.en}s`, zh: `管理${entityMessage.zh}` })"
@@ -184,6 +185,7 @@ const handleRemove = useMessageHandle(
     <template #input>
       <UITextInput
         v-model:value="searchInput"
+        v-radar="{ name: 'Search input', desc: 'Input to search library assets' }"
         class="search-input"
         clearable
         :placeholder="$t({ en: 'Search', zh: '搜索' })"

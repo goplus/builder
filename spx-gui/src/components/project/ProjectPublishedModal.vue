@@ -27,6 +27,7 @@ const handleCopy = useMessageHandle(
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Project published modal', desc: 'Modal showing project published successfully' }"
     :title="$t({ en: `Project ${project.name} published`, zh: `项目 ${project.name} 发布成功` })"
     :visible="props.visible"
     :auto-focus="false"
@@ -35,17 +36,36 @@ const handleCopy = useMessageHandle(
     <div class="desc">
       <I18nT>
         <template #en>
-          Visit <UILink target="_blank" :href="projectPageRoute">project page</UILink>, or copy the link below to share
-          the project with others.
+          Visit
+          <UILink
+            v-radar="{ name: 'Project page link', desc: 'Click to visit the project page' }"
+            target="_blank"
+            :href="projectPageRoute"
+            >project page</UILink
+          >, or copy the link below to share the project with others.
         </template>
         <template #zh>
-          访问<UILink target="_blank" :href="projectPageRoute">项目主页</UILink>，或者复制下方链接将项目分享给其他人。
+          访问<UILink
+            v-radar="{ name: 'Project page link', desc: 'Click to visit the project page' }"
+            target="_blank"
+            :href="projectPageRoute"
+            >项目主页</UILink
+          >，或者复制下方链接将项目分享给其他人。
         </template>
       </I18nT>
     </div>
     <div class="link-wrapper">
-      <UITextInput :value="projectPageLink" :readonly="true" @focus="$event.target.select()" />
-      <UIButton class="copy-button" @click="handleCopy">
+      <UITextInput
+        v-radar="{ name: 'Project link input', desc: 'Input field showing the published project link' }"
+        :value="projectPageLink"
+        :readonly="true"
+        @focus="$event.target.select()"
+      />
+      <UIButton
+        v-radar="{ name: 'Copy link button', desc: 'Click to copy project link to clipboard' }"
+        class="copy-button"
+        @click="handleCopy"
+      >
         {{ $t({ en: 'Copy link', zh: '复制链接' }) }}
       </UIButton>
     </div>

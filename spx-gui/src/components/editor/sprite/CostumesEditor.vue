@@ -1,5 +1,6 @@
 <template>
   <EditorList
+    v-radar="{ name: 'Costumes management', desc: 'Managing costumes of current sprite' }"
     color="sprite"
     :add-text="$t({ en: 'Add costume', zh: '添加造型' })"
     :sortable="{ list: sprite.costumes }"
@@ -15,9 +16,11 @@
     />
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{
-          $t({ en: 'Select local file', zh: '选择本地文件' })
-        }}</UIMenuItem>
+        <UIMenuItem
+          v-radar="{ name: 'Add from local file', desc: 'Click to add costume from local file' }"
+          @click="handleAddFromLocalFile"
+          >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
+        >
       </UIMenu>
     </template>
     <template #detail>

@@ -1,19 +1,32 @@
 <template>
-  <li class="project-item">
+  <li
+    v-radar="{
+      name: `Project item \u0022${project.owner}/${project.name}\u0022`,
+      desc: `Click to ${props.context === 'edit' ? 'edit' : 'view'} the project${operatable ? ', hover for more operations' : ''}`
+    }"
+    class="project-item"
+  >
     <RouterLink class="link" :to="to" @click="emit('selected')">
       <div class="thumbnail-wrapper">
         <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
-        <UIDropdown v-if="context === 'mine' && isOwner" trigger="click" placement="bottom-end">
+        <UIDropdown v-if="operatable" trigger="click" placement="bottom-end">
           <template #trigger>
-            <div class="options" @click.stop.prevent>
+            <div
+              v-radar="{
+                name: 'Project item operations',
+                desc: 'More operations (edit, remove) for project item, click to open the menu'
+              }"
+              class="options"
+              @click.stop.prevent
+            >
               <UIIcon class="icon" type="more" />
             </div>
           </template>
           <UIMenu>
-            <UIMenuItem @click="handleEdit">
+            <UIMenuItem v-radar="{ name: 'Edit option', desc: 'Click to edit the project' }" @click="handleEdit">
               {{ $t({ en: 'Edit', zh: '编辑' }) }}
             </UIMenuItem>
-            <UIMenuItem @click="handleRemove">
+            <UIMenuItem v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }" @click="handleRemove">
               {{ $t({ en: 'Remove', zh: '删除' }) }}
             </UIMenuItem>
           </UIMenu>
@@ -32,7 +45,12 @@
               fill="white"
             />
           </svg>
-          <UserAvatar class="owner-avatar" size="small" :user="project.owner" />
+          <UserAvatar
+            v-radar="{ name: 'Project owner avatar', desc: 'Click to view profile of project owner' }"
+            class="owner-avatar"
+            size="small"
+            :user="project.owner"
+          />
         </div>
       </div>
       <div class="info">
@@ -132,6 +150,7 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 const isOwner = computed(() => props.project.owner === userStore.getSignedInUser()?.name)
+const operatable = computed(() => props.context === 'mine' && isOwner.value)
 
 const router = useRouter()
 
