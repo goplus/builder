@@ -17,6 +17,7 @@ export type StageInits = {
   mapWidth?: number
   mapHeight?: number
   mapMode?: MapMode
+  collisionByShape?: boolean
 }
 
 export type RawMapConfig = {
@@ -30,6 +31,7 @@ export type RawStageConfig = {
   backdropIndex?: number
   widgets?: RawWidgetConfig[]
   map?: RawMapConfig
+  collisionByShape?: boolean
   // For compatibility
   scenes?: RawBackdropConfig[]
   sceneIndex?: number
@@ -52,6 +54,11 @@ export class Stage extends Disposable {
   code: string
   setCode(code: string) {
     this.code = code
+  }
+
+  collisionByShape: boolean = false
+  setCollisionByShape(value: boolean) {
+    this.collisionByShape = value
   }
   codeFilePath = stageCodeFilePath
 
@@ -204,6 +211,7 @@ export class Stage extends Disposable {
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
+    this.collisionByShape = inits?.collisionByShape ?? false
     return reactive(this) as this
   }
 
@@ -216,7 +224,8 @@ export class Stage extends Disposable {
       sceneIndex,
       costumes: costumeConfigs,
       currentCostumeIndex,
-      map
+      map,
+      collisionByShape
     }: RawStageConfig,
     files: Files
   ) {
@@ -227,7 +236,8 @@ export class Stage extends Disposable {
       backdropIndex: backdropIndex ?? sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
-      mapMode: getMapMode(map?.mode)
+      mapMode: getMapMode(map?.mode),
+      collisionByShape: collisionByShape
     })
     const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
@@ -249,7 +259,7 @@ export class Stage extends Disposable {
       backdropConfigs.push(backdropConfig)
       Object.assign(files, backdropFiles)
     }
-    const { backdropIndex, mapWidth, mapHeight, mapMode } = this
+    const { backdropIndex, mapWidth, mapHeight, mapMode, collisionByShape } = this
     const widgetsConfig: RawWidgetConfig[] = this.widgetsZorder.map((id) => {
       const widget = this.widgets.find((w) => w.id === id)
       if (widget == null) throw new Error(`widget ${id} not found`)
@@ -259,7 +269,8 @@ export class Stage extends Disposable {
       backdrops: backdropConfigs,
       backdropIndex: backdropIndex,
       widgets: widgetsConfig,
-      map: { width: mapWidth, height: mapHeight, mode: mapMode }
+      map: { width: mapWidth, height: mapHeight, mode: mapMode },
+      collisionByShape: collisionByShape
     }
     return [config, files]
   }
