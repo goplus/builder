@@ -30,7 +30,7 @@ function spxColor2HSBA(value: ColorValue): BuilderHSBA {
 import { debounce } from 'lodash'
 import { onMounted, ref, watch } from 'vue'
 import { type ColorValue } from '@/utils/spx'
-import { UINumberInput, UIDivider } from '@/components/ui'
+import { UINumberInput, UIDivider, UIFlatButton, UIIcon } from '@/components/ui'
 import {
   builderHSB2CSSColorString,
   type BuilderHSB,
@@ -38,9 +38,12 @@ import {
   builderRGB2BuilderHSB,
   type BuilderRGB,
   builderRGBA2BuilderHSBA,
-  type BuilderRGBA
+  type BuilderRGBA,
+  hex2rgb,
+  rgb2builderHSB
 } from '@/utils/color'
 import ColorSlider from './ColorSlider.vue'
+import { useEyeDropper } from '@/utils/dom'
 
 const props = defineProps<{
   value: ColorValue
@@ -55,6 +58,8 @@ const hue = ref(0)
 const saturation = ref(0)
 const brightness = ref(0)
 const alpha = ref(0)
+
+const { isSupported: isEyeDropperSupported, open: openEyeDropper } = useEyeDropper()
 
 onMounted(() => {
   const [h, s, b, a] = spxColor2HSBA(props.value)
@@ -80,6 +85,11 @@ const onChange = debounce(() => {
 }, 300)
 
 watch([hue, saturation, brightness, alpha], onChange)
+
+async function handleOpenEyeDropper() {
+  const sRGBHex = await openEyeDropper()
+  ;[hue.value, saturation.value, brightness.value] = rgb2builderHSB(hex2rgb(sRGBHex))
+}
 
 function handleSubmit() {
   onChange.flush()
@@ -120,7 +130,9 @@ function handleSubmit() {
     </section>
     <UIDivider />
     <section class="inputs">
-      <!-- TODO: Eyedropper -->
+      <UIFlatButton v-if="isEyeDropperSupported" @click="handleOpenEyeDropper">
+        <UIIcon type="eyedrop" />
+      </UIFlatButton>
       <UINumberInput v-model:value="hue" class="input" :min="0" :max="100" :step="1" @keyup.enter="handleSubmit">
         <template #prefix>H</template>
       </UINumberInput>
