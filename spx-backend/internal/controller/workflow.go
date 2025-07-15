@@ -20,7 +20,7 @@ type WorkflowMessageParams struct {
 }
 
 // WorkflowMessageStream generates response message based on input messages.
-func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams) (io.ReadCloser, error) {
+func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams, canUsePremium bool) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Check if workflow is initialized
@@ -40,6 +40,7 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 	env.Set("Tools", params.Tools)
 	env.Set("GopDefs", copilot.GopDefs)
 	env.Set("SpxDefs", copilot.SpxDefs)
+	env.Set("canUsePremium", canUsePremium)
 
 	// Create workflow runner with the specified index
 	runner := ctrl.workflow.Runner(env)

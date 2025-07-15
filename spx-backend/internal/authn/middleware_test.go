@@ -12,25 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockAuthenticator implements Authenticator interface for testing.
-type mockAuthenticator struct {
-	authenticateFunc func(ctx context.Context, token string) (*model.User, error)
-}
-
-func (m *mockAuthenticator) Authenticate(ctx context.Context, token string) (*model.User, error) {
-	if m.authenticateFunc != nil {
-		return m.authenticateFunc(ctx, token)
-	}
-	return newTestUser(), nil
-}
-
-// newMockAuthenticator creates a mock authenticator.
-func newMockAuthenticator() *mockAuthenticator {
-	return &mockAuthenticator{}
-}
-
-// testHandler is a simple handler that checks for authenticated user.
-func testHandler(t *testing.T, expectAuthenticated bool) http.HandlerFunc {
+func newTestHandler(t *testing.T, expectAuthenticated bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mUser, ok := UserFromContext(r.Context())
 		if expectAuthenticated {
@@ -49,9 +31,9 @@ func testHandler(t *testing.T, expectAuthenticated bool) http.HandlerFunc {
 
 func TestMiddleware(t *testing.T) {
 	t.Run("NoAuthorizationHeader", func(t *testing.T) {
-		auth := newMockAuthenticator()
+		auth := &mockAuthenticator{}
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, false))
+		handler := middleware(newTestHandler(t, false))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -63,15 +45,15 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidBearerToken", func(t *testing.T) {
-		auth := newMockAuthenticator()
-		expectedUser := newTestUser()
+		auth := &mockAuthenticator{}
+		wantUser := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "valid-token", token)
-			return expectedUser, nil
+			return wantUser, nil
 		}
 
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, true))
+		handler := middleware(newTestHandler(t, true))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "Bearer valid-token")
@@ -84,14 +66,14 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("InvalidToken", func(t *testing.T) {
-		auth := newMockAuthenticator()
+		auth := &mockAuthenticator{}
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "invalid-token", token)
 			return nil, errors.New("invalid token")
 		}
 
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, false))
+		handler := middleware(newTestHandler(t, false))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "Bearer invalid-token")
@@ -104,14 +86,14 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("NilUserFromAuthenticator", func(t *testing.T) {
-		auth := newMockAuthenticator()
+		auth := &mockAuthenticator{}
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "token-with-nil-user", token)
 			return nil, nil
 		}
 
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, false))
+		handler := middleware(newTestHandler(t, false))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "Bearer token-with-nil-user")
@@ -124,15 +106,15 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("AuthorizationWithoutBearer", func(t *testing.T) {
-		auth := newMockAuthenticator()
-		expectedUser := newTestUser()
+		auth := &mockAuthenticator{}
+		wantUser := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "Basic dXNlcjpwYXNz", token)
-			return expectedUser, nil
+			return wantUser, nil
 		}
 
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, true))
+		handler := middleware(newTestHandler(t, true))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "Basic dXNlcjpwYXNz")
@@ -145,9 +127,9 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("EmptyAuthorizationHeader", func(t *testing.T) {
-		auth := newMockAuthenticator()
+		auth := &mockAuthenticator{}
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, false))
+		handler := middleware(newTestHandler(t, false))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "")
@@ -160,15 +142,15 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("BearerWithoutToken", func(t *testing.T) {
-		auth := newMockAuthenticator()
-		expectedUser := newTestUser()
+		auth := &mockAuthenticator{}
+		wantUser := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "", token)
-			return expectedUser, nil
+			return wantUser, nil
 		}
 
 		middleware := Middleware(auth)
-		handler := middleware(testHandler(t, true))
+		handler := middleware(newTestHandler(t, true))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", "Bearer ")

@@ -9,6 +9,9 @@ import (
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
+	"github.com/goplus/builder/spx-backend/internal/authz"
+	"github.com/goplus/builder/spx-backend/internal/authz/embpdp"
+	"github.com/goplus/builder/spx-backend/internal/authz/quota"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -21,8 +24,8 @@ const (
 )
 
 var (
-	ctrl *controller.Controller
-	err  error
+	authorizer *authz.Authorizer
+	ctrl       *controller.Controller
 )
 
 logger := log.GetLogger()
@@ -40,22 +43,34 @@ if err != nil {
 }
 // TODO: Configure connection pool and timeouts.
 
+// Initialize authenticator.
+authenticator := casdoor.New(db, cfg.Casdoor)
+
+// Initialize authorizer.
+var quotaTracker authz.QuotaTracker
+if cfg.Redis.Addr != "" {
+	quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
+	logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
+}
+pdp := embpdp.New(quotaTracker)
+authorizer = authz.New(db, pdp, quotaTracker)
+
 // Initialize controller.
 ctrl, err = controller.New(context.Background(), db, cfg)
 if err != nil {
 	logger.Fatalln("failed to create a new controller:", err)
 }
 
-// Initialize authenticator.
-authenticator := casdoor.New(db, cfg.Casdoor)
+// Start server.
 
 port := cfg.Server.GetPort()
 logger.Printf("listening to %s", port)
 
 h := handler(
+	authorizer.Middleware(),
 	authn.Middleware(authenticator),
-	NewReqIDMiddleware(),
 	NewCORSMiddleware(),
+	NewReqIDMiddleware(),
 )
 server := &http.Server{Addr: port, Handler: h}
 

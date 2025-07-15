@@ -214,8 +214,8 @@ func TestBuildConversationMessages(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expectedLen := maxHistoryTurns*2 + 1
-		require.Len(t, messages, expectedLen)
+		wantLen := maxHistoryTurns*2 + 1
+		require.Len(t, messages, wantLen)
 
 		firstMsg := messages[0].OfUser
 		require.NotNil(t, firstMsg)

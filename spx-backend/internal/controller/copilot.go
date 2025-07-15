@@ -32,7 +32,7 @@ func (p *GenerateMessageParams) Validate() (ok bool, msg string) {
 type GenerateMessageResult copilot.Message
 
 // GenerateMessageStream generates response message based on input messages.
-func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *GenerateMessageParams) (io.ReadCloser, error) {
+func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *GenerateMessageParams, canUsePremium bool) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Check if copilot is initialized
@@ -50,7 +50,7 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 		System:   copilot.Content{Text: systemPrompt},
 		Messages: params.Messages,
 		Tools:    params.Tools,
-	})
+	}, canUsePremium)
 	if err != nil {
 		logger.Errorf("failed to generate message: %v", err)
 		return nil, err
@@ -60,7 +60,7 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 }
 
 // GenerateMessage generates response message based on input messages.
-func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMessageParams) (*GenerateMessageResult, error) {
+func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMessageParams, canUsePremium bool) (*GenerateMessageResult, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Check if copilot is initialized
@@ -78,7 +78,7 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		System:   copilot.Content{Text: systemPrompt},
 		Messages: params.Messages,
 		Tools:    params.Tools,
-	})
+	}, canUsePremium)
 	if err != nil {
 		logger.Errorf("failed to generate message: %v", err)
 		return nil, err

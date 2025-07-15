@@ -12,6 +12,12 @@ func setTestEnv(t *testing.T) {
 	// Database
 	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
 
+	// Redis
+	t.Setenv("REDIS_ADDR", "redis.example.com:6379")
+	t.Setenv("REDIS_PASSWORD", "test-redis-password")
+	t.Setenv("REDIS_DB", "1")
+	t.Setenv("REDIS_POOL_SIZE", "15")
+
 	// Kodo
 	t.Setenv("KODO_AK", "test-kodo-ak")
 	t.Setenv("KODO_SK", "test-kodo-sk")
@@ -50,6 +56,14 @@ func TestLoad(t *testing.T) {
 
 	// Database
 	assert.Equal(t, "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True", config.Database.DSN)
+
+	// Redis
+	assert.Equal(t, "redis.example.com:6379", config.Redis.Addr)
+	assert.Equal(t, "redis.example.com:6379", config.Redis.GetAddr())
+	assert.Equal(t, "test-redis-password", config.Redis.Password)
+	assert.Equal(t, 1, config.Redis.DB)
+	assert.Equal(t, 15, config.Redis.PoolSize)
+	assert.Equal(t, config.Redis.PoolSize, config.Redis.GetPoolSize())
 
 	// Kodo
 	assert.Equal(t, "test-kodo-ak", config.Kodo.AccessKey)
@@ -101,4 +115,40 @@ func TestLoadWithPremiumConfig(t *testing.T) {
 	assert.Equal(t, config.OpenAI.PremiumAPIEndpoint, config.OpenAI.GetPremiumAPIEndpoint())
 	assert.Equal(t, "gpt-4", config.OpenAI.PremiumModelID)
 	assert.Equal(t, config.OpenAI.PremiumModelID, config.OpenAI.GetPremiumModelID())
+}
+
+func TestGetIntEnv(t *testing.T) {
+	t.Run("ValidIntegerValue", func(t *testing.T) {
+		t.Setenv("TEST_INT", "42")
+		assert.Equal(t, 42, getIntEnv("TEST_INT"))
+	})
+
+	t.Run("ZeroValue", func(t *testing.T) {
+		t.Setenv("TEST_INT_ZERO", "0")
+		assert.Equal(t, 0, getIntEnv("TEST_INT_ZERO"))
+	})
+
+	t.Run("NegativeValue", func(t *testing.T) {
+		t.Setenv("TEST_INT_NEG", "-10")
+		assert.Equal(t, -10, getIntEnv("TEST_INT_NEG"))
+	})
+
+	t.Run("EmptyValue", func(t *testing.T) {
+		t.Setenv("TEST_INT_EMPTY", "")
+		assert.Equal(t, 0, getIntEnv("TEST_INT_EMPTY"))
+	})
+
+	t.Run("NonExistentVariable", func(t *testing.T) {
+		assert.Equal(t, 0, getIntEnv("NON_EXISTENT_VAR"))
+	})
+
+	t.Run("InvalidIntegerValue", func(t *testing.T) {
+		t.Setenv("TEST_INT_INVALID", "not-a-number")
+		assert.Equal(t, 0, getIntEnv("TEST_INT_INVALID"))
+	})
+
+	t.Run("FloatValue", func(t *testing.T) {
+		t.Setenv("TEST_INT_FLOAT", "42.5")
+		assert.Equal(t, 0, getIntEnv("TEST_INT_FLOAT"))
+	})
 }

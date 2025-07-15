@@ -23,10 +23,6 @@ type mockClient struct {
 	getUserFunc       func(name string) (*casdoorsdk.User, error)
 }
 
-func newMockClient() *mockClient {
-	return &mockClient{}
-}
-
 func (mc *mockClient) ParseJwtToken(token string) (*casdoorsdk.Claims, error) {
 	if mc.parseJwtTokenFunc != nil {
 		return mc.parseJwtTokenFunc(token)
@@ -87,9 +83,10 @@ func setupTestAuthenticator(
 	parseTokenFunc func(token string) (*casdoorsdk.Claims, error),
 	getUserFunc func(name string) (*casdoorsdk.User, error),
 ) authn.Authenticator {
-	client := newMockClient()
-	client.parseJwtTokenFunc = parseTokenFunc
-	client.getUserFunc = getUserFunc
+	client := &mockClient{
+		parseJwtTokenFunc: parseTokenFunc,
+		getUserFunc:       getUserFunc,
+	}
 	auth := New(db, newTestConfig()).(*authenticator)
 	auth.client = client
 	return auth
@@ -142,31 +139,35 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
-		expectedUser := newTestUser()
-		expectedCasdoorUser := &casdoorsdk.User{
+		wantClaims := newTestClaims()
+		wantUser := newTestUser()
+		wantCasdoorUser := &casdoorsdk.User{
 			Name:        "test-user",
 			DisplayName: "Test User",
 			Avatar:      "https://example.com/avatar.png",
+			Groups:      []string{"test-org/role:assetAdmin", "test-org/plan:plus"},
 		}
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return expectedCasdoorUser, nil
+				return wantCasdoorUser, nil
 			})
 
-		setupMockDBForUser(t, db, dbMock, expectedClaims, expectedUser)
-		setupMockDBForUserUpdate(t, db, dbMock, expectedUser, map[string]any{})
+		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
+		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
+			"roles": "assetAdmin",
+			"plan":  "plus",
+		})
 
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.NoError(t, err)
 		require.NotNil(t, user)
-		assert.Equal(t, expectedClaims.Name, user.Username)
-		assert.Equal(t, expectedClaims.DisplayName, user.DisplayName)
-		assert.Equal(t, expectedClaims.Avatar, user.Avatar)
+		assert.Equal(t, wantClaims.Name, user.Username)
+		assert.Equal(t, wantClaims.DisplayName, user.DisplayName)
+		assert.Equal(t, wantClaims.Avatar, user.Avatar)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -176,14 +177,14 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
-		expectedUser := &model.User{
+		wantClaims := newTestClaims()
+		wantUser := &model.User{
 			Model:       model.Model{ID: 1},
 			Username:    "test-user",
 			DisplayName: "Old Display Name",
 			Avatar:      "https://example.com/old-avatar.png",
 		}
-		expectedCasdoorUser := &casdoorsdk.User{
+		wantCasdoorUser := &casdoorsdk.User{
 			Name:        "test-user",
 			DisplayName: "New Display Name",
 			Avatar:      "https://example.com/new-avatar.png",
@@ -191,14 +192,14 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return expectedCasdoorUser, nil
+				return wantCasdoorUser, nil
 			})
 
-		setupMockDBForUser(t, db, dbMock, expectedClaims, expectedUser)
-		setupMockDBForUserUpdate(t, db, dbMock, expectedUser, map[string]any{
+		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
+		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
 			"display_name": "New Display Name",
 			"avatar":       "https://example.com/new-avatar.png",
 		})
@@ -206,7 +207,7 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.NoError(t, err)
 		require.NotNil(t, user)
-		assert.Equal(t, expectedClaims.Name, user.Username)
+		assert.Equal(t, wantClaims.Name, user.Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -216,14 +217,14 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
-		expectedUser := &model.User{
+		wantClaims := newTestClaims()
+		wantUser := &model.User{
 			Model:       model.Model{ID: 1},
 			Username:    "test-user",
 			DisplayName: "Old Display Name",
 			Avatar:      "https://example.com/avatar.png",
 		}
-		expectedCasdoorUser := &casdoorsdk.User{
+		wantCasdoorUser := &casdoorsdk.User{
 			Name:        "test-user",
 			DisplayName: "New Display Name",
 			Avatar:      "https://example.com/avatar.png",
@@ -231,14 +232,14 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return expectedCasdoorUser, nil
+				return wantCasdoorUser, nil
 			})
 
-		setupMockDBForUser(t, db, dbMock, expectedClaims, expectedUser)
-		setupMockDBForUserUpdate(t, db, dbMock, expectedUser, map[string]any{
+		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
+		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
 			"display_name": "New Display Name",
 		})
 
@@ -254,10 +255,10 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedErr := errors.New("invalid token")
+		wantErr := errors.New("invalid token")
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return nil, expectedErr
+				return nil, wantErr
 			}, nil)
 
 		user, err := auth.Authenticate(context.Background(), "invalid-token")
@@ -265,7 +266,7 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		assert.Nil(t, user)
 		assert.ErrorIs(t, err, authn.ErrUnauthorized)
 		assert.Contains(t, err.Error(), "failed to parse token")
-		assert.Contains(t, err.Error(), expectedErr.Error())
+		assert.Contains(t, err.Error(), wantErr.Error())
 	})
 
 	t.Run("FirstOrCreateUserFailure", func(t *testing.T) {
@@ -273,27 +274,27 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
+		wantClaims := newTestClaims()
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			}, nil)
 
 		dbMockStmt := db.Session(&gorm.Session{DryRun: true}).
-			Where("username = ?", expectedClaims.Name).
+			Where("username = ?", wantClaims.Name).
 			First(&model.User{}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		expectedDBErr := errors.New("database connection failed")
+		wantDBErr := errors.New("database connection failed")
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnError(expectedDBErr)
+			WillReturnError(wantDBErr)
 
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
 		assert.Nil(t, user)
-		assert.Contains(t, err.Error(), expectedClaims.Name)
-		assert.Contains(t, err.Error(), expectedDBErr.Error())
+		assert.Contains(t, err.Error(), wantClaims.Name)
+		assert.Contains(t, err.Error(), wantDBErr.Error())
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -303,26 +304,26 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
-		expectedUser := newTestUser()
-		expectedGetUserErr := errors.New("failed to get user from casdoor")
+		wantClaims := newTestClaims()
+		wantUser := newTestUser()
+		wantGetUserErr := errors.New("failed to get user from casdoor")
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return nil, expectedGetUserErr
+				return nil, wantGetUserErr
 			})
 
-		setupMockDBForUser(t, db, dbMock, expectedClaims, expectedUser)
+		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
 
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
 		assert.Nil(t, user)
 		assert.Contains(t, err.Error(), "failed to get user")
-		assert.Contains(t, err.Error(), expectedClaims.Name)
-		assert.Contains(t, err.Error(), expectedGetUserErr.Error())
+		assert.Contains(t, err.Error(), wantClaims.Name)
+		assert.Contains(t, err.Error(), wantGetUserErr.Error())
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -332,42 +333,42 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		expectedClaims := newTestClaims()
-		expectedUser := &model.User{
+		wantClaims := newTestClaims()
+		wantUser := &model.User{
 			Model:       model.Model{ID: 1},
 			Username:    "test-user",
 			DisplayName: "Old Display Name",
 			Avatar:      "https://example.com/avatar.png",
 		}
-		expectedCasdoorUser := &casdoorsdk.User{
+		wantCasdoorUser := &casdoorsdk.User{
 			Name:        "test-user",
 			DisplayName: "New Display Name",
 			Avatar:      "https://example.com/avatar.png",
 		}
-		expectedUpdateErr := errors.New("database update failed")
+		wantUpdateErr := errors.New("database update failed")
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return expectedClaims, nil
+				return wantClaims, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return expectedCasdoorUser, nil
+				return wantCasdoorUser, nil
 			})
 
-		setupMockDBForUser(t, db, dbMock, expectedClaims, expectedUser)
+		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
 		dbMock.ExpectBegin()
-		args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), expectedUser.ID}
+		args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), wantUser.ID}
 		dbMock.ExpectExec("UPDATE `user` SET .+ WHERE `user`\\.`deleted_at` IS NULL AND `id` = \\?").
 			WithArgs(args...).
-			WillReturnError(expectedUpdateErr)
+			WillReturnError(wantUpdateErr)
 		dbMock.ExpectRollback()
 
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
 		assert.Nil(t, user)
 		assert.Contains(t, err.Error(), "failed to update user")
-		assert.Contains(t, err.Error(), expectedUser.Username)
-		assert.Contains(t, err.Error(), expectedUpdateErr.Error())
+		assert.Contains(t, err.Error(), wantUser.Username)
+		assert.Contains(t, err.Error(), wantUpdateErr.Error())
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -388,4 +389,99 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		assert.ErrorIs(t, err, authn.ErrUnauthorized)
 		assert.Contains(t, err.Error(), "failed to parse token")
 	})
+}
+
+func TestAuthenticatorExtractUserRolesFromGroups(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		groups []string
+		want   string
+	}{
+		{
+			name:   "SingleRole",
+			groups: []string{"test-org/role:assetAdmin"},
+			want:   "assetAdmin",
+		},
+		{
+			name:   "MultipleRoles",
+			groups: []string{"test-org/role:assetAdmin", "test-org/role:moderator"},
+			want:   "assetAdmin,moderator",
+		},
+		{
+			name:   "MixedGroupsWithRoles",
+			groups: []string{"test-org/plan:plus", "test-org/role:assetAdmin", "OtherOrg/other:value"},
+			want:   "assetAdmin",
+		},
+		{
+			name:   "NoRoles",
+			groups: []string{"test-org/plan:plus", "OtherOrg/other:value"},
+			want:   "",
+		},
+		{
+			name:   "EmptyGroups",
+			groups: []string{},
+			want:   "",
+		},
+		{
+			name:   "NilGroups",
+			groups: nil,
+			want:   "",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &authenticator{orgName: "test-org"}
+			got := a.extractUserRolesFromGroups(tt.groups)
+			assert.Equal(t, tt.want, got.String())
+		})
+	}
+}
+
+func TestAuthenticatorExtractUserPlanFromGroups(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		groups []string
+		want   model.UserPlan
+	}{
+		{
+			name:   "PlusPlan",
+			groups: []string{"test-org/plan:plus"},
+			want:   model.UserPlanPlus,
+		},
+		{
+			name:   "FreePlan",
+			groups: []string{"test-org/plan:free"},
+			want:   model.UserPlanFree,
+		},
+		{
+			name:   "MixedGroupsWithPlan",
+			groups: []string{"test-org/role:assetAdmin", "test-org/plan:plus", "OtherOrg/other:value"},
+			want:   model.UserPlanPlus,
+		},
+		{
+			name:   "NoPlanDefaultsToFree",
+			groups: []string{"test-org/role:assetAdmin", "OtherOrg/other:value"},
+			want:   model.UserPlanFree,
+		},
+		{
+			name:   "EmptyGroupsDefaultsToFree",
+			groups: []string{},
+			want:   model.UserPlanFree,
+		},
+		{
+			name:   "NilGroupsDefaultsToFree",
+			groups: nil,
+			want:   model.UserPlanFree,
+		},
+		{
+			name:   "UnknownPlanDefaultsToFree",
+			groups: []string{"test-org/plan:unknown"},
+			want:   model.UserPlanFree,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &authenticator{orgName: "test-org"}
+			got := a.extractUserPlanFromGroups(tt.groups)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

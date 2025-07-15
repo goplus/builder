@@ -50,7 +50,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		option.WithBaseURL(cfg.OpenAI.GetPremiumAPIEndpoint()),
 	)
 
-	cpt, err := copilot.New(openaiPremiumClient, cfg.OpenAI.GetPremiumModelID())
+	cpt, err := copilot.New(openaiClient, cfg.OpenAI.ModelID, openaiPremiumClient, cfg.OpenAI.GetPremiumModelID())
 	if err != nil {
 		return nil, err
 	}

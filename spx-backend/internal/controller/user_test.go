@@ -10,6 +10,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,15 @@ func newTestUser() *model.User {
 }
 
 func newContextWithTestUser(ctx context.Context) context.Context {
-	return authn.NewContextWithUser(ctx, newTestUser())
+	testUser := newTestUser()
+	ctx = authn.NewContextWithUser(ctx, testUser)
+	ctx = authz.NewContextWithUserCapabilities(ctx, authz.UserCapabilities{
+		CanManageAssets:         false,
+		CanUsePremiumLLM:        false,
+		CopilotMessageQuota:     100,
+		CopilotMessageQuotaLeft: 100,
+	})
+	return ctx
 }
 
 func TestListUsersOrderBy(t *testing.T) {
@@ -144,6 +153,8 @@ func TestControllerListUsers(t *testing.T) {
 		require.Len(t, result.Data, 2)
 		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 		assert.Equal(t, mUsers[1].Username, result.Data[1].Username)
+		assert.Nil(t, result.Data[0].Capabilities)
+		assert.Nil(t, result.Data[1].Capabilities)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -403,6 +414,7 @@ func TestControllerGetUser(t *testing.T) {
 		assert.Equal(t, mUser.Username, result.Username)
 		assert.Equal(t, mUser.Description, result.Description)
 		assert.Equal(t, mUser.FollowerCount, result.FollowerCount)
+		assert.Nil(t, result.Capabilities)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -427,6 +439,55 @@ func TestControllerGetUser(t *testing.T) {
 		assert.EqualError(t, err, fmt.Sprintf("failed to get user %q: record not found", mUserUsername))
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+}
+
+func TestControllerGetAuthenticatedUser(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
+
+		result, err := ctrl.GetAuthenticatedUser(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, mUser.Username, result.Username)
+		assert.Equal(t, mUser.Description, result.Description)
+		assert.Equal(t, mUser.FollowerCount, result.FollowerCount)
+		assert.Equal(t, mUser.FollowingCount, result.FollowingCount)
+		assert.Equal(t, mUser.ProjectCount, result.ProjectCount)
+		assert.Equal(t, mUser.PublicProjectCount, result.PublicProjectCount)
+		assert.Equal(t, mUser.LikedProjectCount, result.LikedProjectCount)
+		assert.NotNil(t, result.Capabilities)
+		assert.False(t, result.Capabilities.CanManageAssets)
+		assert.False(t, result.Capabilities.CanUsePremiumLLM)
+		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
+		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
+	})
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := context.Background()
+
+		_, err := ctrl.GetAuthenticatedUser(ctx)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, authn.ErrUnauthorized)
+	})
+
+	t.Run("MissingCapabilities", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		testUser := newTestUser()
+		ctx := authn.NewContextWithUser(context.Background(), testUser)
+
+		_, err := ctrl.GetAuthenticatedUser(ctx)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing user capabilities in context")
 	})
 }
 
@@ -474,6 +535,11 @@ func TestControllerUpdateAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, params.Description, result.Description)
 		assert.Equal(t, mUser.Username, result.Username)
+		assert.NotNil(t, result.Capabilities)
+		assert.False(t, result.Capabilities.CanManageAssets)
+		assert.False(t, result.Capabilities.CanUsePremiumLLM)
+		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
+		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -494,6 +560,7 @@ func TestControllerUpdateAuthenticatedUser(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, mUser.Description, result.Description)
 		assert.Equal(t, mUser.Username, result.Username)
+		assert.NotNil(t, result.Capabilities)
 	})
 
 	t.Run("Unauthorized", func(t *testing.T) {

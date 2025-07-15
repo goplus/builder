@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/authn"
@@ -20,8 +22,9 @@ type client interface {
 
 // authenticator implements [authn.Authenticator] using Casdoor.
 type authenticator struct {
-	client client
-	db     *gorm.DB
+	client  client
+	orgName string
+	db      *gorm.DB
 }
 
 // New creates a new Casdoor authenticator.
@@ -35,8 +38,9 @@ func New(db *gorm.DB, cfg config.CasdoorConfig) authn.Authenticator {
 		ApplicationName:  cfg.ApplicationName,
 	})
 	return &authenticator{
-		client: client,
-		db:     db,
+		client:  client,
+		orgName: cfg.OrganizationName,
+		db:      db,
 	}
 }
 
@@ -50,6 +54,8 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 		Username:    claims.Name,
 		DisplayName: claims.DisplayName,
 		Avatar:      claims.Avatar,
+		Roles:       nil,
+		Plan:        model.UserPlanFree,
 	})
 	if err != nil {
 		return nil, err
@@ -67,6 +73,12 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	if mUser.Avatar != casdoorUser.Avatar {
 		mUserUpdates["avatar"] = casdoorUser.Avatar
 	}
+	if roles := a.extractUserRolesFromGroups(casdoorUser.Groups); !slices.Equal(mUser.Roles, roles) {
+		mUserUpdates["roles"] = roles
+	}
+	if plan := a.extractUserPlanFromGroups(casdoorUser.Groups); mUser.Plan != plan {
+		mUserUpdates["plan"] = plan
+	}
 	if len(mUserUpdates) > 0 {
 		if err := a.db.WithContext(ctx).Model(&mUser).Updates(mUserUpdates).Error; err != nil {
 			return nil, fmt.Errorf("failed to update user %q: %w", mUser.Username, err)
@@ -74,4 +86,44 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	}
 
 	return mUser, nil
+}
+
+// extractUserRolesFromGroups extracts user roles from Casdoor user groups. Expected
+// format: "GoPlus/role:assetAdmin" for single role or multiple groups containing
+// "GoPlus/role:" prefix.
+func (a *authenticator) extractUserRolesFromGroups(groups []string) model.UserRoles {
+	rolePrefix := fmt.Sprintf("%s/role:", a.orgName)
+
+	if len(groups) == 0 {
+		return nil
+	}
+
+	var roles model.UserRoles
+	for _, group := range groups {
+		if role, ok := strings.CutPrefix(group, rolePrefix); ok && role != "" {
+			roles = append(roles, role)
+		}
+	}
+	return roles
+}
+
+// extractUserPlanFromGroups extracts user plan from Casdoor user groups. Expected
+// format: "GoPlus/plan:free" or "GoPlus/plan:plus".
+func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPlan {
+	planPrefix := fmt.Sprintf("%s/plan:", a.orgName)
+
+	if len(groups) == 0 {
+		return model.UserPlanFree
+	}
+
+	for _, group := range groups {
+		if plan, ok := strings.CutPrefix(group, planPrefix); ok && plan != "" {
+			up, err := model.ParseUserPlan(plan)
+			if err != nil {
+				return model.UserPlanFree
+			}
+			return up
+		}
+	}
+	return model.UserPlanFree
 }

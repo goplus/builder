@@ -22,6 +22,38 @@ func TestServerConfigGetPort(t *testing.T) {
 	})
 }
 
+func TestRedisConfigGetAddr(t *testing.T) {
+	t.Run("WithCustomAddr", func(t *testing.T) {
+		cfg := &RedisConfig{
+			Addr: "redis.example.com:6379",
+		}
+		assert.Equal(t, "redis.example.com:6379", cfg.GetAddr())
+	})
+
+	t.Run("WithoutCustomAddr", func(t *testing.T) {
+		cfg := &RedisConfig{
+			Addr: "",
+		}
+		assert.Equal(t, "127.0.0.1:6379", cfg.GetAddr())
+	})
+}
+
+func TestRedisConfigGetPoolSize(t *testing.T) {
+	t.Run("WithCustomPoolSize", func(t *testing.T) {
+		cfg := &RedisConfig{
+			PoolSize: 20,
+		}
+		assert.Equal(t, 20, cfg.GetPoolSize())
+	})
+
+	t.Run("WithoutCustomPoolSize", func(t *testing.T) {
+		cfg := &RedisConfig{
+			PoolSize: 0,
+		}
+		assert.Equal(t, 10, cfg.GetPoolSize())
+	})
+}
+
 func TestOpenAIConfigGetPremiumAPIKey(t *testing.T) {
 	t.Run("WithPremiumKey", func(t *testing.T) {
 		cfg := &OpenAIConfig{
