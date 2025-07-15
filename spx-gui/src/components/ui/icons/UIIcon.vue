@@ -53,6 +53,7 @@ import insert from './insert.svg?raw'
 import copy from './copy.svg?raw'
 import fullScreen from './full-screen.svg?raw'
 import end from './end.svg?raw'
+import eyedrop from './eyedrop.svg?raw'
 
 const typeIconMap = {
   file,
@@ -102,7 +103,8 @@ const typeIconMap = {
   insert,
   copy,
   fullScreen,
-  end
+  end,
+  eyedrop
 }
 
 export type Type = keyof typeof typeIconMap

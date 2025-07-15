@@ -193,3 +193,27 @@ export function useDraggableAngleForElement(
 
   return angleRef
 }
+
+/**
+ * Provides a composable utility for using the browser's EyeDropper API to pick colors from the screen.
+ */
+export function useEyeDropper() {
+  const isSupported = Boolean('EyeDropper' in window)
+
+  return {
+    isSupported,
+    /**
+     * Opens the EyeDropper tool.
+     * @param openOptions - Options for opening the EyeDropper, including an optional AbortSignal.
+     * @returns A promise that resolves to the selected color in sRGBHex format.
+     */
+    async open(openOptions: { signal?: AbortSignal } = {}): Promise<string> {
+      if (!isSupported) {
+        throw new Error('EyeDropper is not supported in this browser')
+      }
+      const eyeDropper = new (window as any).EyeDropper()
+      const { sRGBHex } = await eyeDropper.open(openOptions)
+      return sRGBHex
+    }
+  }
+}
