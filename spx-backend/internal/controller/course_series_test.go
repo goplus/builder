@@ -40,7 +40,7 @@ func TestControllerEnsureCourseSeries(t *testing.T) {
 			Model:     model.Model{ID: 1},
 			OwnerID:   mUser.ID,
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 
@@ -230,7 +230,7 @@ func TestControllerCreateCourseSeries(t *testing.T) {
 			Create(&model.CourseSeries{
 				OwnerID:   mUser.ID,
 				Title:     params.Title,
-				CourseIDs: model.CourseIDCollection(params.CourseIDs),
+				CourseIDs: adaptCourseIDs(params.CourseIDs),
 				Order:     params.Order,
 			}).
 			Statement
@@ -254,7 +254,7 @@ func TestControllerCreateCourseSeries(t *testing.T) {
 				Model:     model.Model{ID: 1},
 				OwnerID:   mUser.ID,
 				Title:     params.Title,
-				CourseIDs: model.CourseIDCollection(params.CourseIDs),
+				CourseIDs: adaptCourseIDs(params.CourseIDs),
 				Order:     params.Order,
 			})...))
 
@@ -488,7 +488,7 @@ func TestControllerGetCourseSeries(t *testing.T) {
 			Model:     model.Model{ID: 1},
 			OwnerID:   mUser.ID,
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 
@@ -617,7 +617,7 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 	t.Run("NoChanges", func(t *testing.T) {
 		mCourseSeries := &model.CourseSeries{
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 		params := &UpdateCourseSeriesParams{
@@ -632,7 +632,7 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 	t.Run("TitleChanged", func(t *testing.T) {
 		mCourseSeries := &model.CourseSeries{
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 		params := &UpdateCourseSeriesParams{
@@ -648,7 +648,7 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 	t.Run("CourseIDsChanged", func(t *testing.T) {
 		mCourseSeries := &model.CourseSeries{
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 		params := &UpdateCourseSeriesParams{
@@ -658,13 +658,13 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 		}
 		updates := params.Diff(mCourseSeries)
 		assert.Len(t, updates, 1)
-		assert.Equal(t, model.CourseIDCollection{"1", "2", "3"}, updates["course_ids"])
+		assert.Equal(t, model.CourseIDCollection{1, 2, 3}, updates["course_ids"])
 	})
 
 	t.Run("OrderChanged", func(t *testing.T) {
 		mCourseSeries := &model.CourseSeries{
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 		params := &UpdateCourseSeriesParams{
@@ -680,7 +680,7 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 	t.Run("AllChanged", func(t *testing.T) {
 		mCourseSeries := &model.CourseSeries{
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 		params := &UpdateCourseSeriesParams{
@@ -691,7 +691,7 @@ func TestUpdateCourseSeriesParamsDiff(t *testing.T) {
 		updates := params.Diff(mCourseSeries)
 		assert.Len(t, updates, 3)
 		assert.Equal(t, "Updated Course Series", updates["title"])
-		assert.Equal(t, model.CourseIDCollection{"3", "4", "5"}, updates["course_ids"])
+		assert.Equal(t, model.CourseIDCollection{3, 4, 5}, updates["course_ids"])
 		assert.Equal(t, 2, updates["order"])
 	})
 }
@@ -721,7 +721,7 @@ func TestControllerUpdateCourseSeries(t *testing.T) {
 			Model:     model.Model{ID: 1},
 			OwnerID:   mUser.ID,
 			Title:     "Test Course Series",
-			CourseIDs: model.CourseIDCollection{"1", "2"},
+			CourseIDs: model.CourseIDCollection{1, 2},
 			Order:     1,
 		}
 

@@ -202,12 +202,7 @@ func (ctrl *Controller) ListCourses(ctx context.Context, params *ListCoursesPara
 			return nil, fmt.Errorf("failed to get course series: %w", err)
 		}
 
-		courseIDs := make([]int64, 0, len(mCourseSeries.CourseIDs))
-		for _, idStr := range mCourseSeries.CourseIDs {
-			if id, err := strconv.ParseInt(idStr, 10, 64); err == nil {
-				courseIDs = append(courseIDs, id)
-			}
-		}
+		courseIDs := []int64(mCourseSeries.CourseIDs)
 		if len(courseIDs) > 0 {
 			query = query.Where("course.id IN ?", courseIDs)
 		} else {

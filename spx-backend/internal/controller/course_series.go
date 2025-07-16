@@ -24,7 +24,7 @@ type CourseSeriesDTO struct {
 func toCourseSeriesDTO(mCourseSeries model.CourseSeries) CourseSeriesDTO {
 	courseIDs := make([]string, len(mCourseSeries.CourseIDs))
 	for i, id := range mCourseSeries.CourseIDs {
-		courseIDs[i] = id
+		courseIDs[i] = strconv.FormatInt(id, 10)
 	}
 	return CourseSeriesDTO{
 		ModelDTO:  toModelDTO(mCourseSeries.Model),
@@ -78,17 +78,27 @@ func (p *CreateCourseSeriesParams) Validate() (ok bool, msg string) {
 	return true, ""
 }
 
+// adaptCourseIDs converts a slice of course ID strings to a CourseIDCollection.
+func adaptCourseIDs(courseIDStrs []string) model.CourseIDCollection {
+	courseIDs := make([]int64, len(courseIDStrs))
+	for i, id := range courseIDStrs {
+		if id, err := strconv.ParseInt(id, 10, 64); err == nil {
+			courseIDs[i] = id
+		}
+	}
+	return model.CourseIDCollection(courseIDs)
+}
+
 // CreateCourseSeries creates a course series.
 func (ctrl *Controller) CreateCourseSeries(ctx context.Context, params *CreateCourseSeriesParams) (*CourseSeriesDTO, error) {
 	mUser, ok := authn.UserFromContext(ctx)
 	if !ok {
 		return nil, authn.ErrUnauthorized
 	}
-
 	mCourseSeries := model.CourseSeries{
 		OwnerID:   mUser.ID,
 		Title:     params.Title,
-		CourseIDs: model.CourseIDCollection(params.CourseIDs),
+		CourseIDs: adaptCourseIDs(params.CourseIDs),
 		Order:     params.Order,
 	}
 	if err := ctrl.db.WithContext(ctx).Create(&mCourseSeries).Error; err != nil {
@@ -144,8 +154,9 @@ func (p *UpdateCourseSeriesParams) Diff(mCourseSeries *model.CourseSeries) map[s
 	if p.Title != mCourseSeries.Title {
 		updates["title"] = p.Title
 	}
-	if !courseIDsEqual(p.CourseIDs, mCourseSeries.CourseIDs) {
-		updates["course_ids"] = model.CourseIDCollection(p.CourseIDs)
+	pCourseIDs := adaptCourseIDs(p.CourseIDs)
+	if !courseIDsEqual(pCourseIDs, mCourseSeries.CourseIDs) {
+		updates["course_ids"] = model.CourseIDCollection(pCourseIDs)
 	}
 	if p.Order != mCourseSeries.Order {
 		updates["order"] = p.Order
@@ -154,7 +165,7 @@ func (p *UpdateCourseSeriesParams) Diff(mCourseSeries *model.CourseSeries) map[s
 }
 
 // courseIDsEqual compares two course ID collections for equality.
-func courseIDsEqual(a []string, b model.CourseIDCollection) bool {
+func courseIDsEqual(a, b model.CourseIDCollection) bool {
 	if len(a) != len(b) {
 		return false
 	}

@@ -15,26 +15,26 @@ func TestCourseIDCollectionScan(t *testing.T) {
 	}{
 		{
 			name:     "ValidJSON",
-			src:      []byte(`["course1","course2"]`),
-			expected: CourseIDCollection{"course1", "course2"},
+			src:      []byte(`[123, 456]`),
+			expected: CourseIDCollection{123, 456},
 			wantErr:  false,
 		},
 		{
 			name:     "NilValue",
 			src:      nil,
-			expected: CourseIDCollection{},
+			expected: nil,
 			wantErr:  false,
 		},
 		{
 			name:     "InvalidJSON",
 			src:      []byte(`invalid json`),
-			expected: CourseIDCollection{},
+			expected: nil,
 			wantErr:  true,
 		},
 		{
 			name:     "IncompatibleType",
 			src:      42,
-			expected: CourseIDCollection{},
+			expected: nil,
 			wantErr:  true,
 		},
 	}
@@ -55,7 +55,7 @@ func TestCourseIDCollectionScan(t *testing.T) {
 }
 
 func TestCourseIDCollectionValue(t *testing.T) {
-	cic := CourseIDCollection{"course1", "course2"}
+	cic := CourseIDCollection{123, 456}
 	value, err := cic.Value()
 	if err != nil {
 		t.Errorf("CourseIDCollection.Value() error = %v", err)

@@ -31,7 +31,7 @@ func (CourseSeries) TableName() string {
 }
 
 // CourseIDCollection is a slice of course IDs. It is used to store course IDs information.
-type CourseIDCollection []string
+type CourseIDCollection []int64
 
 // Scan implements [sql.Scanner].
 func (cic *CourseIDCollection) Scan(src any) error {
@@ -43,7 +43,7 @@ func (cic *CourseIDCollection) Scan(src any) error {
 		}
 		*cic = parsed
 	case nil:
-		*cic = CourseIDCollection{}
+		*cic = nil
 	default:
 		return errors.New("incompatible type for CourseIDCollection")
 	}
