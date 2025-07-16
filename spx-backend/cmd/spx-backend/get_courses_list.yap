@@ -12,7 +12,7 @@ ctx := &Context
 
 params := controller.NewListCoursesParams()
 
-if courseSeriesID := ${courseSeriesId}; courseSeriesID != "" {
+if courseSeriesID := ${courseSeriesID}; courseSeriesID != "" {
 	params.CourseSeriesID = &courseSeriesID
 }
 

@@ -1128,7 +1128,7 @@ paths:
         - {}
         - bearerAuth: []
       parameters:
-        - name: courseSeriesId
+        - name: courseSeriesID
           in: query
           schema:
             type: string
@@ -1266,13 +1266,13 @@ paths:
               type: object
               required:
                 - title
-                - courseIds
+                - courseIDs
                 - order
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
-                courseIds:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIds"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -1367,13 +1367,13 @@ paths:
               type: object
               required:
                 - title
-                - courseIds
+                - courseIDs
                 - order
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
-                courseIds:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIds"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
@@ -1849,7 +1849,7 @@ components:
           examples:
             - Go+ Programming Series
           description: Title of the course series.
-        courseIds:
+        courseIDs:
           type: array
           items:
             type: string

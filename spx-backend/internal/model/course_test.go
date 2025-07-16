@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestReferenceCollection_Scan(t *testing.T) {
+func TestReferenceCollectionScan(t *testing.T) {
 	tests := []struct {
 		name     string
 		src      any
@@ -14,7 +14,7 @@ func TestReferenceCollection_Scan(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name: "valid JSON",
+			name: "ValidJSON",
 			src:  []byte(`[{"type":"project","fullName":"owner/project"}]`),
 			expected: ReferenceCollection{
 				{Type: "project", FullName: "owner/project"},
@@ -22,21 +22,21 @@ func TestReferenceCollection_Scan(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:     "nil value",
+			name:     "NilValue",
 			src:      nil,
-			expected: ReferenceCollection{},
+			expected: nil,
 			wantErr:  false,
 		},
 		{
-			name:     "invalid JSON",
+			name:     "InvalidJSON",
 			src:      []byte(`invalid json`),
-			expected: ReferenceCollection{},
+			expected: nil,
 			wantErr:  true,
 		},
 		{
-			name:     "incompatible type",
+			name:     "IncompatibleType",
 			src:      42,
-			expected: ReferenceCollection{},
+			expected: nil,
 			wantErr:  true,
 		},
 	}
@@ -56,7 +56,7 @@ func TestReferenceCollection_Scan(t *testing.T) {
 	}
 }
 
-func TestReferenceCollection_Value(t *testing.T) {
+func TestReferenceCollectionValue(t *testing.T) {
 	rc := ReferenceCollection{
 		{Type: "project", FullName: "owner/project"},
 	}

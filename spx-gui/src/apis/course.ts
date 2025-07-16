@@ -49,7 +49,7 @@ export async function deleteCourse(id: string) {
 
 export type ListCourseParams = PaginationParams & {
   /** Filter courses by the course series ID */
-  courseSeriesId?: string
+  courseSeriesID?: string
   /**
    * Filter courses by the owner's username.
    * Defaults to the authenticated user if not specified. Use * to include courses from all users.

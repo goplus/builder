@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestCourseIDCollection_Scan(t *testing.T) {
+func TestCourseIDCollectionScan(t *testing.T) {
 	tests := []struct {
 		name     string
 		src      any
@@ -14,25 +14,25 @@ func TestCourseIDCollection_Scan(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "valid JSON",
+			name:     "ValidJSON",
 			src:      []byte(`["course1","course2"]`),
 			expected: CourseIDCollection{"course1", "course2"},
 			wantErr:  false,
 		},
 		{
-			name:     "nil value",
+			name:     "NilValue",
 			src:      nil,
 			expected: CourseIDCollection{},
 			wantErr:  false,
 		},
 		{
-			name:     "invalid JSON",
+			name:     "InvalidJSON",
 			src:      []byte(`invalid json`),
 			expected: CourseIDCollection{},
 			wantErr:  true,
 		},
 		{
-			name:     "incompatible type",
+			name:     "IncompatibleType",
 			src:      42,
 			expected: CourseIDCollection{},
 			wantErr:  true,
@@ -54,7 +54,7 @@ func TestCourseIDCollection_Scan(t *testing.T) {
 	}
 }
 
-func TestCourseIDCollection_Value(t *testing.T) {
+func TestCourseIDCollectionValue(t *testing.T) {
 	cic := CourseIDCollection{"course1", "course2"}
 	value, err := cic.Value()
 	if err != nil {

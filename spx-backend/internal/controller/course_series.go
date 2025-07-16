@@ -16,7 +16,7 @@ type CourseSeriesDTO struct {
 
 	Owner     string   `json:"owner"`
 	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIds"`
+	CourseIDs []string `json:"courseIDs"`
 	Order     int      `json:"order"`
 }
 
@@ -61,7 +61,7 @@ func (ctrl *Controller) ensureCourseSeries(ctx context.Context, id int64, ownedO
 // CreateCourseSeriesParams holds parameters for creating a course series.
 type CreateCourseSeriesParams struct {
 	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIds"`
+	CourseIDs []string `json:"courseIDs"`
 	Order     int      `json:"order"`
 }
 
@@ -121,7 +121,7 @@ func (ctrl *Controller) GetCourseSeries(ctx context.Context, id string) (*Course
 // UpdateCourseSeriesParams holds parameters for updating a course series.
 type UpdateCourseSeriesParams struct {
 	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIds"`
+	CourseIDs []string `json:"courseIDs"`
 	Order     int      `json:"order"`
 }
 

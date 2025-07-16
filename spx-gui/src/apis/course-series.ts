@@ -8,7 +8,7 @@ export type CourseSeries = {
   /** Title of the course series */
   title: string
   /** Array of course IDs that included in this series */
-  courseIds: string[]
+  courseIDs: string[]
   /** Order/priority of the course series for sorting */
   order: number
 }
@@ -18,7 +18,7 @@ export async function getCourseSeries(id: string, signal?: AbortSignal) {
   return client.get(`/course-series/${encodeURIComponent(id)}`, undefined, { signal }) as Promise<CourseSeries>
 }
 
-export type AddUpdateCourseSeriesParams = Pick<CourseSeries, 'title' | 'courseIds' | 'order'>
+export type AddUpdateCourseSeriesParams = Pick<CourseSeries, 'title' | 'courseIDs' | 'order'>
 
 /** Add a new course series */
 export async function addCourseSeries(params: AddUpdateCourseSeriesParams, signal?: AbortSignal) {

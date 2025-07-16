@@ -57,7 +57,7 @@ func (rc *ReferenceCollection) Scan(src any) error {
 		}
 		*rc = parsed
 	case nil:
-		*rc = ReferenceCollection{}
+		*rc = nil
 	default:
 		return errors.New("incompatible type for ReferenceCollection")
 	}
