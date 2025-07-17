@@ -109,6 +109,7 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Game.onClick`,
   `xgo:${packageSpx}?Game.onKey#0`,
   `xgo:${packageSpx}?Game.onMsg#1`,
+  `xgo:${packageSpx}?Game.onSwipe#0`,
 
   `xgo:${packageSpx}?Game.mouseX`,
   `xgo:${packageSpx}?Game.mouseY`,
@@ -150,6 +151,7 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.onClick`,
   `xgo:${packageSpx}?Sprite.onKey#0`,
   `xgo:${packageSpx}?Sprite.onMsg#1`,
+  `xgo:${packageSpx}?Sprite.onSwipe#0`,
 
   `xgo:${packageSpx}?Sprite.animate`,
 

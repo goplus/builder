@@ -1923,6 +1923,32 @@ export const spriteOnClick: DefinitionDocumentationItem = {
   })
 }
 
+export const gameOnSwipe0: DefinitionDocumentationItem = {
+  categories: [categories.event.sensing],
+  kind: DefinitionKind.Listen,
+  definition: {
+    package: packageSpx,
+    name: 'Game.onSwipe',
+    overloadId: '0'
+  },
+  insertSnippet: 'onSwipe ${1:Left}, => {\n\t$0\n}',
+  insertSnippetParameterHints: ['direction'],
+  overview: 'onSwipe direction, => {}',
+  detail: makeBasicMarkdownString({
+    en: 'Listen to swipe in given direction',
+    zh: '用户进行滑动操作时执行'
+  })
+}
+
+export const spriteOnSwipe0: DefinitionDocumentationItem = {
+  ...gameOnSwipe0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onSwipe',
+    overloadId: '0'
+  }
+}
+
 export const gameOnAnyKey: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
