@@ -32,6 +32,14 @@ type delete_asset_id struct {
 	yap.Handler
 	*AppV2
 }
+type delete_course_series_id struct {
+	yap.Handler
+	*AppV2
+}
+type delete_course_id struct {
+	yap.Handler
+	*AppV2
+}
 type delete_project_owner_name struct {
 	yap.Handler
 	*AppV2
@@ -49,6 +57,22 @@ type get_asset_id struct {
 	*AppV2
 }
 type get_assets_list struct {
+	yap.Handler
+	*AppV2
+}
+type get_course_series_id struct {
+	yap.Handler
+	*AppV2
+}
+type get_course_serieses_list struct {
+	yap.Handler
+	*AppV2
+}
+type get_course_id struct {
+	yap.Handler
+	*AppV2
+}
+type get_courses_list struct {
 	yap.Handler
 	*AppV2
 }
@@ -117,6 +141,14 @@ type post_copilot_stream_message struct {
 	yap.Handler
 	*AppV2
 }
+type post_course_series struct {
+	yap.Handler
+	*AppV2
+}
+type post_course struct {
+	yap.Handler
+	*AppV2
+}
 type post_project_release struct {
 	yap.Handler
 	*AppV2
@@ -146,6 +178,14 @@ type post_workflow_stream_message struct {
 	*AppV2
 }
 type put_asset_id struct {
+	yap.Handler
+	*AppV2
+}
+type put_course_series_id struct {
+	yap.Handler
+	*AppV2
+}
+type put_course_id struct {
 	yap.Handler
 	*AppV2
 }
@@ -240,37 +280,47 @@ func (this *AppV2) MainEntry() {
 }
 func (this *AppV2) Main() {
 	_xgo_obj0 := &delete_asset_id{AppV2: this}
-	_xgo_obj1 := &delete_project_owner_name{AppV2: this}
-	_xgo_obj2 := &delete_project_owner_name_liking{AppV2: this}
-	_xgo_obj3 := &delete_user_username_following{AppV2: this}
-	_xgo_obj4 := &get_asset_id{AppV2: this}
-	_xgo_obj5 := &get_assets_list{AppV2: this}
-	_xgo_obj6 := &get_project_release_owner_project_release{AppV2: this}
-	_xgo_obj7 := &get_project_releases_list{AppV2: this}
-	_xgo_obj8 := &get_project_owner_name{AppV2: this}
-	_xgo_obj9 := &get_project_owner_name_liking{AppV2: this}
-	_xgo_obj10 := &get_projects_list{AppV2: this}
-	_xgo_obj11 := &get_user{AppV2: this}
-	_xgo_obj12 := &get_user_username{AppV2: this}
-	_xgo_obj13 := &get_user_username_following{AppV2: this}
-	_xgo_obj14 := &get_users_list{AppV2: this}
-	_xgo_obj15 := &get_util_upinfo{AppV2: this}
-	_xgo_obj16 := &post_ai_interaction_turn{AppV2: this}
-	_xgo_obj17 := &post_aigc_matting{AppV2: this}
-	_xgo_obj18 := &post_asset{AppV2: this}
-	_xgo_obj19 := &post_copilot_message{AppV2: this}
-	_xgo_obj20 := &post_copilot_stream_message{AppV2: this}
-	_xgo_obj21 := &post_project_release{AppV2: this}
-	_xgo_obj22 := &post_project{AppV2: this}
-	_xgo_obj23 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj24 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj25 := &post_user_username_following{AppV2: this}
-	_xgo_obj26 := &post_util_fileurls{AppV2: this}
-	_xgo_obj27 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj28 := &put_asset_id{AppV2: this}
-	_xgo_obj29 := &put_project_owner_name{AppV2: this}
-	_xgo_obj30 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30)
+	_xgo_obj1 := &delete_course_series_id{AppV2: this}
+	_xgo_obj2 := &delete_course_id{AppV2: this}
+	_xgo_obj3 := &delete_project_owner_name{AppV2: this}
+	_xgo_obj4 := &delete_project_owner_name_liking{AppV2: this}
+	_xgo_obj5 := &delete_user_username_following{AppV2: this}
+	_xgo_obj6 := &get_asset_id{AppV2: this}
+	_xgo_obj7 := &get_assets_list{AppV2: this}
+	_xgo_obj8 := &get_course_series_id{AppV2: this}
+	_xgo_obj9 := &get_course_serieses_list{AppV2: this}
+	_xgo_obj10 := &get_course_id{AppV2: this}
+	_xgo_obj11 := &get_courses_list{AppV2: this}
+	_xgo_obj12 := &get_project_release_owner_project_release{AppV2: this}
+	_xgo_obj13 := &get_project_releases_list{AppV2: this}
+	_xgo_obj14 := &get_project_owner_name{AppV2: this}
+	_xgo_obj15 := &get_project_owner_name_liking{AppV2: this}
+	_xgo_obj16 := &get_projects_list{AppV2: this}
+	_xgo_obj17 := &get_user{AppV2: this}
+	_xgo_obj18 := &get_user_username{AppV2: this}
+	_xgo_obj19 := &get_user_username_following{AppV2: this}
+	_xgo_obj20 := &get_users_list{AppV2: this}
+	_xgo_obj21 := &get_util_upinfo{AppV2: this}
+	_xgo_obj22 := &post_ai_interaction_turn{AppV2: this}
+	_xgo_obj23 := &post_aigc_matting{AppV2: this}
+	_xgo_obj24 := &post_asset{AppV2: this}
+	_xgo_obj25 := &post_copilot_message{AppV2: this}
+	_xgo_obj26 := &post_copilot_stream_message{AppV2: this}
+	_xgo_obj27 := &post_course_series{AppV2: this}
+	_xgo_obj28 := &post_course{AppV2: this}
+	_xgo_obj29 := &post_project_release{AppV2: this}
+	_xgo_obj30 := &post_project{AppV2: this}
+	_xgo_obj31 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj32 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj33 := &post_user_username_following{AppV2: this}
+	_xgo_obj34 := &post_util_fileurls{AppV2: this}
+	_xgo_obj35 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj36 := &put_asset_id{AppV2: this}
+	_xgo_obj37 := &put_course_series_id{AppV2: this}
+	_xgo_obj38 := &put_course_id{AppV2: this}
+	_xgo_obj39 := &put_project_owner_name{AppV2: this}
+	_xgo_obj40 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -300,6 +350,68 @@ func (this *delete_asset_id) Classfname() string {
 	return "delete_asset_#id"
 }
 func (this *delete_asset_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/delete_course-series_#id.yap:6
+func (this *delete_course_series_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/delete_course-series_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/delete_course-series_#id.yap:7:1
+	if
+//line cmd/spx-backend/delete_course-series_#id.yap:7:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/delete_course-series_#id.yap:8:1
+		return
+	}
+//line cmd/spx-backend/delete_course-series_#id.yap:11:1
+	err := this.ctrl.DeleteCourseSeries(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/delete_course-series_#id.yap:12:1
+	if err != nil {
+//line cmd/spx-backend/delete_course-series_#id.yap:13:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_course-series_#id.yap:14:1
+		return
+	}
+//line cmd/spx-backend/delete_course-series_#id.yap:16:1
+	this.Text__0(204, "", "")
+}
+func (this *delete_course_series_id) Classfname() string {
+	return "delete_course-series_#id"
+}
+func (this *delete_course_series_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/delete_course_#id.yap:6
+func (this *delete_course_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/delete_course_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/delete_course_#id.yap:7:1
+	if
+//line cmd/spx-backend/delete_course_#id.yap:7:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/delete_course_#id.yap:8:1
+		return
+	}
+//line cmd/spx-backend/delete_course_#id.yap:11:1
+	err := this.ctrl.DeleteCourse(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/delete_course_#id.yap:12:1
+	if err != nil {
+//line cmd/spx-backend/delete_course_#id.yap:13:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_course_#id.yap:14:1
+		return
+	}
+//line cmd/spx-backend/delete_course_#id.yap:16:1
+	this.Text__0(204, "", "")
+}
+func (this *delete_course_id) Classfname() string {
+	return "delete_course_#id"
+}
+func (this *delete_course_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
@@ -551,6 +663,215 @@ func (this *get_assets_list) Classfname() string {
 	return "get_assets_list"
 }
 func (this *get_assets_list) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/get_course-series_#id.yap:6
+func (this *get_course_series_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/get_course-series_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_course-series_#id.yap:8:1
+	courseSeries, err := this.ctrl.GetCourseSeries(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_course-series_#id.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_course-series_#id.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_course-series_#id.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_course-series_#id.yap:13:1
+	this.Json__1(courseSeries)
+}
+func (this *get_course_series_id) Classfname() string {
+	return "get_course-series_#id"
+}
+func (this *get_course_series_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/get_course-serieses_list.yap:11
+func (this *get_course_serieses_list) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/get_course-serieses_list.yap:11:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_course-serieses_list.yap:13:1
+	params := controller.NewListCourseSeriesParams()
+//line cmd/spx-backend/get_course-serieses_list.yap:15:1
+	switch
+//line cmd/spx-backend/get_course-serieses_list.yap:15:1
+	owner := this.Gop_Env("owner"); owner {
+//line cmd/spx-backend/get_course-serieses_list.yap:16:1
+	case "":
+//line cmd/spx-backend/get_course-serieses_list.yap:17:1
+		mUser, ok := ensureAuthenticatedUser(ctx)
+//line cmd/spx-backend/get_course-serieses_list.yap:18:1
+		if !ok {
+//line cmd/spx-backend/get_course-serieses_list.yap:19:1
+			return
+		}
+//line cmd/spx-backend/get_course-serieses_list.yap:21:1
+		params.Owner = &mUser.Username
+//line cmd/spx-backend/get_course-serieses_list.yap:22:1
+	case "*":
+//line cmd/spx-backend/get_course-serieses_list.yap:23:1
+		params.Owner = nil
+//line cmd/spx-backend/get_course-serieses_list.yap:24:1
+	default:
+//line cmd/spx-backend/get_course-serieses_list.yap:25:1
+		params.Owner = &owner
+	}
+//line cmd/spx-backend/get_course-serieses_list.yap:28:1
+	if
+//line cmd/spx-backend/get_course-serieses_list.yap:28:1
+	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+//line cmd/spx-backend/get_course-serieses_list.yap:29:1
+		params.OrderBy = controller.ListCourseSeriesOrderBy(orderBy)
+	}
+//line cmd/spx-backend/get_course-serieses_list.yap:31:1
+	if
+//line cmd/spx-backend/get_course-serieses_list.yap:31:1
+	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
+//line cmd/spx-backend/get_course-serieses_list.yap:32:1
+		params.SortOrder = controller.SortOrder(sortOrder)
+	}
+//line cmd/spx-backend/get_course-serieses_list.yap:35:1
+	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/get_course-serieses_list.yap:36:1
+	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_course-serieses_list.yap:37:1
+	if
+//line cmd/spx-backend/get_course-serieses_list.yap:37:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/get_course-serieses_list.yap:38:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/get_course-serieses_list.yap:39:1
+		return
+	}
+//line cmd/spx-backend/get_course-serieses_list.yap:42:1
+	courseSeries, err := this.ctrl.ListCourseSeries(ctx.Context(), params)
+//line cmd/spx-backend/get_course-serieses_list.yap:43:1
+	if err != nil {
+//line cmd/spx-backend/get_course-serieses_list.yap:44:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_course-serieses_list.yap:45:1
+		return
+	}
+//line cmd/spx-backend/get_course-serieses_list.yap:47:1
+	this.Json__1(courseSeries)
+}
+func (this *get_course_serieses_list) Classfname() string {
+	return "get_course-serieses_list"
+}
+func (this *get_course_serieses_list) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/get_course_#id.yap:6
+func (this *get_course_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/get_course_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_course_#id.yap:8:1
+	course, err := this.ctrl.GetCourse(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_course_#id.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_course_#id.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_course_#id.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_course_#id.yap:13:1
+	this.Json__1(course)
+}
+func (this *get_course_id) Classfname() string {
+	return "get_course_#id"
+}
+func (this *get_course_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/get_courses_list.yap:11
+func (this *get_courses_list) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/get_courses_list.yap:11:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_courses_list.yap:13:1
+	params := controller.NewListCoursesParams()
+//line cmd/spx-backend/get_courses_list.yap:15:1
+	if
+//line cmd/spx-backend/get_courses_list.yap:15:1
+	courseSeriesID := this.Gop_Env("courseSeriesID"); courseSeriesID != "" {
+//line cmd/spx-backend/get_courses_list.yap:16:1
+		params.CourseSeriesID = &courseSeriesID
+	}
+//line cmd/spx-backend/get_courses_list.yap:19:1
+	switch
+//line cmd/spx-backend/get_courses_list.yap:19:1
+	owner := this.Gop_Env("owner"); owner {
+//line cmd/spx-backend/get_courses_list.yap:20:1
+	case "":
+//line cmd/spx-backend/get_courses_list.yap:21:1
+		mUser, ok := ensureAuthenticatedUser(ctx)
+//line cmd/spx-backend/get_courses_list.yap:22:1
+		if !ok {
+//line cmd/spx-backend/get_courses_list.yap:23:1
+			return
+		}
+//line cmd/spx-backend/get_courses_list.yap:25:1
+		params.Owner = &mUser.Username
+//line cmd/spx-backend/get_courses_list.yap:26:1
+	case "*":
+//line cmd/spx-backend/get_courses_list.yap:27:1
+		params.Owner = nil
+//line cmd/spx-backend/get_courses_list.yap:28:1
+	default:
+//line cmd/spx-backend/get_courses_list.yap:29:1
+		params.Owner = &owner
+	}
+//line cmd/spx-backend/get_courses_list.yap:32:1
+	if
+//line cmd/spx-backend/get_courses_list.yap:32:1
+	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+//line cmd/spx-backend/get_courses_list.yap:33:1
+		params.OrderBy = controller.ListCoursesOrderBy(orderBy)
+	}
+//line cmd/spx-backend/get_courses_list.yap:35:1
+	if
+//line cmd/spx-backend/get_courses_list.yap:35:1
+	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
+//line cmd/spx-backend/get_courses_list.yap:36:1
+		params.SortOrder = controller.SortOrder(sortOrder)
+	}
+//line cmd/spx-backend/get_courses_list.yap:39:1
+	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/get_courses_list.yap:40:1
+	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_courses_list.yap:41:1
+	if
+//line cmd/spx-backend/get_courses_list.yap:41:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/get_courses_list.yap:42:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/get_courses_list.yap:43:1
+		return
+	}
+//line cmd/spx-backend/get_courses_list.yap:46:1
+	courses, err := this.ctrl.ListCourses(ctx.Context(), params)
+//line cmd/spx-backend/get_courses_list.yap:47:1
+	if err != nil {
+//line cmd/spx-backend/get_courses_list.yap:48:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_courses_list.yap:49:1
+		return
+	}
+//line cmd/spx-backend/get_courses_list.yap:51:1
+	this.Json__1(courses)
+}
+func (this *get_courses_list) Classfname() string {
+	return "get_courses_list"
+}
+func (this *get_courses_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
@@ -1381,6 +1702,100 @@ func (this *post_copilot_stream_message) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+//line cmd/spx-backend/post_course-series.yap:10
+func (this *post_course_series) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_course-series.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_course-series.yap:11:1
+	if
+//line cmd/spx-backend/post_course-series.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_course-series.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:15:1
+	params := &controller.CreateCourseSeriesParams{}
+//line cmd/spx-backend/post_course-series.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_course-series.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:19:1
+	if
+//line cmd/spx-backend/post_course-series.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_course-series.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_course-series.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:24:1
+	courseSeries, err := this.ctrl.CreateCourseSeries(ctx.Context(), params)
+//line cmd/spx-backend/post_course-series.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_course-series.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_course-series.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:29:1
+	this.Json__0(201, courseSeries)
+}
+func (this *post_course_series) Classfname() string {
+	return "post_course-series"
+}
+func (this *post_course_series) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_course.yap:10
+func (this *post_course) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_course.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_course.yap:11:1
+	if
+//line cmd/spx-backend/post_course.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_course.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:15:1
+	params := &controller.CreateCourseParams{}
+//line cmd/spx-backend/post_course.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_course.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:19:1
+	if
+//line cmd/spx-backend/post_course.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_course.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_course.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:24:1
+	course, err := this.ctrl.CreateCourse(ctx.Context(), params)
+//line cmd/spx-backend/post_course.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_course.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_course.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:29:1
+	this.Json__0(201, course)
+}
+func (this *post_course) Classfname() string {
+	return "post_course"
+}
+func (this *post_course) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
 //line cmd/spx-backend/post_project-release.yap:10
 func (this *post_project_release) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1740,6 +2155,100 @@ func (this *put_asset_id) Classfname() string {
 	return "put_asset_#id"
 }
 func (this *put_asset_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/put_course-series_#id.yap:10
+func (this *put_course_series_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/put_course-series_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/put_course-series_#id.yap:11:1
+	if
+//line cmd/spx-backend/put_course-series_#id.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/put_course-series_#id.yap:12:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:15:1
+	params := &controller.UpdateCourseSeriesParams{}
+//line cmd/spx-backend/put_course-series_#id.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_course-series_#id.yap:17:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:19:1
+	if
+//line cmd/spx-backend/put_course-series_#id.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/put_course-series_#id.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_course-series_#id.yap:21:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:24:1
+	courseSeries, err := this.ctrl.UpdateCourseSeries(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course-series_#id.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/put_course-series_#id.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_course-series_#id.yap:27:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:29:1
+	this.Json__1(courseSeries)
+}
+func (this *put_course_series_id) Classfname() string {
+	return "put_course-series_#id"
+}
+func (this *put_course_series_id) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/put_course_#id.yap:10
+func (this *put_course_id) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/put_course_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/put_course_#id.yap:11:1
+	if
+//line cmd/spx-backend/put_course_#id.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/put_course_#id.yap:12:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:15:1
+	params := &controller.UpdateCourseParams{}
+//line cmd/spx-backend/put_course_#id.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_course_#id.yap:17:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:19:1
+	if
+//line cmd/spx-backend/put_course_#id.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/put_course_#id.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_course_#id.yap:21:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:24:1
+	course, err := this.ctrl.UpdateCourse(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course_#id.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/put_course_#id.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_course_#id.yap:27:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:29:1
+	this.Json__1(course)
+}
+func (this *put_course_id) Classfname() string {
+	return "put_course_#id"
+}
+func (this *put_course_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

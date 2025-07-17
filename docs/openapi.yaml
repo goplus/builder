@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Go+ Builder API
+  title: XBuilder API
   version: 0.1.0
   description: |
     ## Overview
@@ -1081,6 +1081,324 @@ paths:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
 
+  /course:
+    post:
+      tags:
+        - Courses
+      summary: Create a course
+      description: Create a new course with the necessary details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "201":
+          description: Successfully created the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+
+  /courses/list:
+    get:
+      tags:
+        - Courses
+      summary: List courses
+      description: Retrieve a paginated list of courses with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: courseSeriesID
+          in: query
+          schema:
+            type: string
+          description: Filter courses by the course series ID.
+        - name: owner
+          in: query
+          schema:
+            type: string
+          description: |
+            Filter courses by the owner's username.
+            
+            Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Course"
+                    description: Array of course objects.
+
+  /course/{id}:
+    get:
+      tags:
+        - Courses
+      summary: Get a course
+      description: Retrieve details of a specific course.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    put:
+      tags:
+        - Courses
+      summary: Update a course
+      description: Update the details of a specific course.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "200":
+          description: Successfully updated the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    delete:
+      tags:
+        - Courses
+      summary: Delete a course
+      description: Permanently delete a specific course by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to delete.
+      responses:
+        "204":
+          description: Successfully deleted the course.
+
+  /course-series:
+    post:
+      tags:
+        - Course Series
+      summary: Create a course series
+      description: Create a new course series with the necessary details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "201":
+          description: Successfully created the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+
+  /course-serieses/list:
+    get:
+      tags:
+        - Course Series
+      summary: List course series
+      description: Retrieve a paginated list of course series with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - order
+            default: order
+            examples:
+              - order
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseSeries"
+                    description: Array of course series objects.
+
+  /course-series/{id}:
+    get:
+      tags:
+        - Course Series
+      summary: Get a course series
+      description: Retrieve details of a specific course series.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+    put:
+      tags:
+        - Course Series
+      summary: Update a course series
+      description: Update the details of a specific course series.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "200":
+          description: Successfully updated the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+    delete:
+      tags:
+        - Course Series
+      summary: Delete a course series
+      description: Permanently delete a specific course series by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to delete.
+      responses:
+        "204":
+          description: Successfully deleted the course series.
+
   /util/upinfo:
     get:
       tags:
@@ -1457,6 +1775,93 @@ components:
           description: Hash of the asset files.
         visibility:
           $ref: "#/components/schemas/Visibility"
+
+    Course:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+          description: Username of the course's owner.
+        title:
+          type: string
+          examples:
+            - Introduction to XGo
+          description: Title of the course.
+        thumbnail:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course-thumbnail.png
+          description: URL of the course's thumbnail image.
+        entrypoint:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course/intro
+          description: Starting URL of the course.
+        references:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseReference"
+          description: References associated with the course.
+        prompt:
+          type: string
+          examples:
+            - Learn the basics of XGo programming language
+          description: Prompt text for the course (used for copilot assistance).
+
+    CourseReference:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - project
+          examples:
+            - project
+          description: Type of the reference.
+        fullName:
+          type: string
+          examples:
+            - john/NiuXiaoQi
+          description: Full name of the reference, in the format `owner/project`.
+
+    CourseSeries:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+          description: Username of the course's owner.
+        title:
+          type: string
+          examples:
+            - XGo Programming Series
+          description: Title of the course series.
+        courseIDs:
+          type: array
+          items:
+            type: string
+          examples:
+            - ["1", "2", "3"]
+          description: Array of course IDs included in this series.
+        order:
+          type: integer
+          format: int32
+          examples:
+            - 1
+          description: Order/priority of the course series for sorting.
 
     AIInteractionRequest:
       type: object
