@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Go+ Builder API
+  title: XBuilder API
   version: 0.1.0
   description: |
     ## Overview
@@ -1791,7 +1791,7 @@ components:
         title:
           type: string
           examples:
-            - Introduction to Go+
+            - Introduction to XGo
           description: Title of the course.
         thumbnail:
           type: string
@@ -1813,7 +1813,7 @@ components:
         prompt:
           type: string
           examples:
-            - Learn the basics of Go+ programming language
+            - Learn the basics of XGo programming language
           description: Prompt text for the course (used for copilot assistance).
 
     CourseReference:
@@ -1847,7 +1847,7 @@ components:
         title:
           type: string
           examples:
-            - Go+ Programming Series
+            - XGo Programming Series
           description: Title of the course series.
         courseIDs:
           type: array

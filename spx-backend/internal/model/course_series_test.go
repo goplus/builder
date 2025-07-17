@@ -2,8 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCourseIDCollectionScan(t *testing.T) {
@@ -43,12 +44,11 @@ func TestCourseIDCollectionScan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var cic CourseIDCollection
 			err := cic.Scan(tt.src)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CourseIDCollection.Scan() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && !reflect.DeepEqual(cic, tt.expected) {
-				t.Errorf("CourseIDCollection.Scan() = %v, want %v", cic, tt.expected)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, cic)
 			}
 		})
 	}
@@ -57,18 +57,11 @@ func TestCourseIDCollectionScan(t *testing.T) {
 func TestCourseIDCollectionValue(t *testing.T) {
 	cic := CourseIDCollection{123, 456}
 	value, err := cic.Value()
-	if err != nil {
-		t.Errorf("CourseIDCollection.Value() error = %v", err)
-		return
-	}
+	assert.NoError(t, err)
 
 	var result CourseIDCollection
-	if err := json.Unmarshal(value.([]byte), &result); err != nil {
-		t.Errorf("failed to unmarshal returned value: %v", err)
-		return
-	}
+	err = json.Unmarshal(value.([]byte), &result)
+	assert.NoError(t, err)
 
-	if !reflect.DeepEqual(result, cic) {
-		t.Errorf("CourseIDCollection.Value() = %v, want %v", result, cic)
-	}
+	assert.Equal(t, cic, result)
 }

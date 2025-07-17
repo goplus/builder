@@ -2,8 +2,9 @@ package model
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReferenceCollectionScan(t *testing.T) {
@@ -45,12 +46,11 @@ func TestReferenceCollectionScan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var rc ReferenceCollection
 			err := rc.Scan(tt.src)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReferenceCollection.Scan() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && !reflect.DeepEqual(rc, tt.expected) {
-				t.Errorf("ReferenceCollection.Scan() = %v, want %v", rc, tt.expected)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, rc)
 			}
 		})
 	}
@@ -61,18 +61,11 @@ func TestReferenceCollectionValue(t *testing.T) {
 		{Type: "project", FullName: "owner/project"},
 	}
 	value, err := rc.Value()
-	if err != nil {
-		t.Errorf("ReferenceCollection.Value() error = %v", err)
-		return
-	}
+	assert.NoError(t, err)
 
 	var result ReferenceCollection
-	if err := json.Unmarshal(value.([]byte), &result); err != nil {
-		t.Errorf("failed to unmarshal returned value: %v", err)
-		return
-	}
+	err = json.Unmarshal(value.([]byte), &result)
+	assert.NoError(t, err)
 
-	if !reflect.DeepEqual(result, rc) {
-		t.Errorf("ReferenceCollection.Value() = %v, want %v", result, rc)
-	}
+	assert.Equal(t, rc, result)
 }
