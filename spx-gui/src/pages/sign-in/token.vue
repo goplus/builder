@@ -11,11 +11,6 @@
           :placeholder="$t({ en: 'Paste token here', zh: '在此粘贴 Token' })"
         />
       </UIFormItem>
-      <UIFormItem path="enableAdvancedLibrary">
-        <UICheckbox v-model:checked="form.value.enableAdvancedLibrary">
-          {{ $t({ en: 'Enable advanced library features', zh: '启用高级素材库功能' }) }}
-        </UICheckbox>
-      </UIFormItem>
       <footer class="footer">
         <UIButton
           v-radar="{ name: 'Cancel button', desc: 'Click to cancel token sign-in' }"
@@ -39,11 +34,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { jwtDecode } from 'jwt-decode'
 import { useI18n } from '@/utils/i18n'
 import { usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { useUserStore, type UserInfoFromToken } from '@/stores/user'
-import { UIForm, UIFormItem, UITextInput, UIButton, UICheckbox, useForm } from '@/components/ui'
+import { signInWithAccessToken } from '@/stores/user'
+import { UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 
 const title = {
   en: 'Sign in with token',
@@ -53,26 +49,23 @@ const title = {
 usePageTitle(title)
 
 const router = useRouter()
-const userStore = useUserStore()
 const i18n = useI18n()
 
-const userInfo = ref<UserInfoFromToken | null>(null)
+const username = ref<string | null>(null)
 const buttonText = computed(() => {
-  if (userInfo.value == null) return i18n.t({ en: 'Sign in', zh: '登录' })
-  const username = userInfo.value.displayName || userInfo.value.name
+  if (username.value == null) return i18n.t({ en: 'Sign in', zh: '登录' })
   return i18n.t({
-    en: `Sign in as ${username}`,
-    zh: `以 ${username} 登录`
+    en: `Sign in as ${username.value}`,
+    zh: `以 ${username.value} 登录`
   })
 })
 
 const form = useForm({
-  token: ['', validateToken],
-  enableAdvancedLibrary: [true]
+  token: ['', validateToken]
 })
 
 function validateToken(token: string) {
-  userInfo.value = null
+  username.value = null
   token = token.trim()
   if (token === '')
     return i18n.t({
@@ -80,7 +73,8 @@ function validateToken(token: string) {
       zh: '请提供 Token'
     })
   try {
-    userInfo.value = userStore.parseAccessToken(token)
+    const decoded = jwtDecode<{ name: string }>(token)
+    username.value = decoded.name
   } catch (e) {
     return i18n.t({
       en: 'Invalid token: ' + e,
@@ -96,7 +90,7 @@ function handleCancel() {
 const handleSubmit = useMessageHandle(
   async () => {
     const token = form.value.token.trim()
-    userStore.signInWithAccessToken(token, form.value.enableAdvancedLibrary)
+    signInWithAccessToken(token)
     router.push('/')
   },
   {

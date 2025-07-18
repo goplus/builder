@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useExternalUrl } from '@/utils/utils'
-import { useUserStore } from '@/stores/user'
+import { useSignedInUser } from '@/stores/user'
 import type { BasicMarkdownString } from '../../common'
 import MarkdownView from '../markdown/MarkdownView.vue'
 
@@ -8,9 +8,9 @@ defineProps<{
   content: BasicMarkdownString
 }>()
 
-const userStore = useUserStore()
+const { data: signedInUser } = useSignedInUser()
 // TODO: Disable copilot for unsigned-in users or provide a default avatar
-const avatarUrl = useExternalUrl(() => userStore.getSignedInUser()?.avatar)
+const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
 </script>
 
 <template>

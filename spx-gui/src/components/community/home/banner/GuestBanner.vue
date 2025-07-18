@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
+import { initiateSignIn } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 import CommunityCard from '../../CommunityCard.vue'
 
-const userStore = useUserStore()
-
 function handleJoin() {
-  userStore.initiateSignIn()
+  initiateSignIn()
 }
 </script>
 

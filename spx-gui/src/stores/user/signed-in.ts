@@ -1,19 +1,31 @@
-import { type App } from 'vue'
-import { defineStore, createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { reactive, watchEffect, computed } from 'vue'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
 import { jwtDecode } from 'jwt-decode'
+import { useQueryWithCache, useQueryCache } from '@/utils/query'
+import { useAction } from '@/utils/exception'
+import * as apis from '@/apis/user'
+import { getUserQueryKey } from './query-keys'
 
-export type UserInfoFromToken = {
-  id: string
-  name: string
-  displayName: string
-  avatar: string
-}
+const casdoorAuthRedirectPath = '/sign-in/callback'
+const casdoorSdk = new Sdk({
+  ...casdoorConfig,
+  redirectPath: casdoorAuthRedirectPath
+})
 
-export type UserInfo = UserInfoFromToken & {
-  advancedLibraryEnabled: boolean
+const userStateStorageKey = 'spx-user'
+const userState = reactive({
+  accessToken: null as string | null,
+  accessTokenExpiresAt: null as number | null,
+  refreshToken: null as string | null
+})
+
+export function initUserState() {
+  const stored = localStorage.getItem(userStateStorageKey)
+  if (stored != null) {
+    Object.assign(userState, JSON.parse(stored))
+  }
+  watchEffect(() => localStorage.setItem(userStateStorageKey, JSON.stringify(userState)))
 }
 
 interface TokenResponse {
@@ -22,111 +34,122 @@ interface TokenResponse {
   refresh_token: string
 }
 
-const casdoorAuthRedirectPath = '/sign-in/callback'
-const casdoorSdk = new Sdk({
-  ...casdoorConfig,
-  redirectPath: casdoorAuthRedirectPath
-})
+function handleTokenResponse(resp: TokenResponse) {
+  userState.accessToken = resp.access_token
+  userState.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
+  userState.refreshToken = resp.refresh_token
+}
+
+export function initiateSignIn(
+  returnTo: string = window.location.pathname + window.location.search + window.location.hash
+) {
+  // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
+  const casdoorSdk = new Sdk({
+    ...casdoorConfig,
+    redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
+  })
+  casdoorSdk.signin_redirect()
+}
+
+export async function completeSignIn() {
+  const resp = await casdoorSdk.exchangeForAccessToken()
+  handleTokenResponse(resp)
+}
+
+export function signInWithAccessToken(accessToken: string) {
+  userState.accessToken = accessToken
+  userState.accessTokenExpiresAt = null
+  userState.refreshToken = null
+}
+
+export function signOut() {
+  userState.accessToken = null
+  userState.accessTokenExpiresAt = null
+  userState.refreshToken = null
+}
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
 let tokenRefreshPromise: Promise<string | null> | null = null
 
-export const useUserStore = defineStore('spx-user', {
-  state: () => ({
-    accessToken: null as string | null,
-    accessTokenExpiresAt: null as number | null, // timestamp in milliseconds, null if never expires
-    refreshToken: null as string | null,
-    advancedLibraryEnabled: true
-  }),
-  actions: {
-    initiateSignIn(returnTo: string = window.location.pathname + window.location.search + window.location.hash) {
-      // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
-      const casdoorSdk = new Sdk({
-        ...casdoorConfig,
-        redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
-      })
-      casdoorSdk.signin_redirect()
-    },
-    async completeSignIn(advancedLibraryEnabled = false) {
-      const resp = await casdoorSdk.exchangeForAccessToken()
-      this.handleTokenResponse(resp)
-      this.advancedLibraryEnabled = advancedLibraryEnabled
-    },
-    signOut() {
-      this.accessToken = null
-      this.accessTokenExpiresAt = null
-      this.refreshToken = null
-      this.advancedLibraryEnabled = false
-    },
-    async ensureAccessToken(): Promise<string | null> {
-      if (this.isAccessTokenValid()) return this.accessToken
+export async function ensureAccessToken(): Promise<string | null> {
+  if (isAccessTokenValid()) return userState.accessToken
 
-      if (tokenRefreshPromise != null) return tokenRefreshPromise
-      if (this.refreshToken == null) {
-        this.signOut()
-        return null
-      }
+  if (tokenRefreshPromise != null) return tokenRefreshPromise
+  if (userState.refreshToken == null) {
+    signOut()
+    return null
+  }
 
-      tokenRefreshPromise = (async () => {
-        try {
-          const resp = await casdoorSdk.refreshAccessToken(this.refreshToken!)
-          this.handleTokenResponse(resp)
-        } catch (e) {
-          console.error('failed to refresh access token', e)
-          throw e
-        }
-
-        // Due to casdoor-js-sdk's lack of error handling, we must check if the access token is valid after calling
-        // `casdoorSdk.refreshAccessToken`. The token might still be invalid if, e.g., the server has already revoked
-        // the refresh token. We can't do anything but sign out the user in such cases.
-        if (!this.isAccessTokenValid()) {
-          this.signOut()
-          return null
-        }
-
-        return this.accessToken
-      })()
-      return tokenRefreshPromise.finally(() => (tokenRefreshPromise = null))
-    },
-    handleTokenResponse(resp: TokenResponse) {
-      this.accessToken = resp.access_token
-      this.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
-      this.refreshToken = resp.refresh_token
-    },
-    isAccessTokenValid(): boolean {
-      return !!(
-        this.accessToken &&
-        (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
-      )
-    },
-    isSignedIn(): boolean {
-      return this.isAccessTokenValid() || this.refreshToken != null
-    },
-    parseAccessToken(accessToken: string) {
-      return jwtDecode<UserInfoFromToken>(accessToken)
-    },
-    // TODO: return type `User` instead of `UserInfo` to keep consistency with `getUser` in `src/apis/user.ts`
-    getSignedInUser(): UserInfo | null {
-      if (!this.isSignedIn()) return null
-      const fromToken = this.parseAccessToken(this.accessToken!)
-      return { ...fromToken, advancedLibraryEnabled: this.advancedLibraryEnabled }
-    },
-    signInWithAccessToken(accessToken: string, advancedLibraryEnabled = false) {
-      this.accessToken = accessToken
-      this.accessTokenExpiresAt = null
-      this.refreshToken = null
-      this.advancedLibraryEnabled = advancedLibraryEnabled
-    },
-    disableAdvancedLibrary() {
-      this.advancedLibraryEnabled = false
+  tokenRefreshPromise = (async () => {
+    try {
+      const resp = await casdoorSdk.refreshAccessToken(userState.refreshToken!)
+      handleTokenResponse(resp)
+    } catch (e) {
+      console.error('failed to refresh access token', e)
+      throw e
     }
-  },
-  persist: true
-})
 
-// TODO: we may get rid of pinia as it offers almost nothing.
-export function initUserStore(app: App) {
-  const store = createPinia()
-  store.use(piniaPluginPersistedstate)
-  app.use(store)
+    // Due to casdoor-js-sdk's lack of error handling, we must check if the access token is valid after calling
+    // `casdoorSdk.refreshAccessToken`. The token might still be invalid if, e.g., the server has already revoked
+    // the refresh token. We can't do anything but sign out the user in such cases.
+    if (!isAccessTokenValid()) {
+      signOut()
+      return null
+    }
+
+    return userState.accessToken
+  })()
+  return tokenRefreshPromise.finally(() => (tokenRefreshPromise = null))
+}
+
+function isAccessTokenValid(): boolean {
+  return !!(
+    userState.accessToken &&
+    (userState.accessTokenExpiresAt === null || userState.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
+  )
+}
+
+export function isSignedIn(): boolean {
+  return isAccessTokenValid() || userState.refreshToken != null
+}
+
+export function getSignedInUsername(): string | null {
+  if (!isSignedIn()) return null
+  if (!userState.accessToken) return null
+  const decoded = jwtDecode<{ name: string }>(userState.accessToken)
+  return decoded.name
+}
+
+const signedInUserStaleTime = 60 * 1000 // 1min
+
+export function getSignedInUserQueryKey() {
+  return [...getUserQueryKey(getSignedInUsername() ?? ''), 'signed-in']
+}
+
+export function useSignedInUser() {
+  const queryKey = computed(() => getSignedInUserQueryKey())
+  return useQueryWithCache({
+    queryKey: queryKey,
+    async queryFn() {
+      if (!isSignedIn()) return null
+      return apis.getSignedInUser()
+    },
+    failureSummaryMessage: {
+      en: 'Failed to load signed-in user information',
+      zh: '加载当前用户信息失败'
+    },
+    staleTime: signedInUserStaleTime
+  })
+}
+
+export function useUpdateSignedInUser() {
+  const queryCache = useQueryCache()
+  return useAction(
+    async function updateSignedInUser(params: apis.UpdateSignedInUserParams) {
+      const updated = await apis.updateSignedInUser(params)
+      queryCache.invalidate(getUserQueryKey(getSignedInUsername()!))
+      return updated
+    },
+    { en: 'Failed to update profile', zh: '更新个人信息失败' }
+  )
 }

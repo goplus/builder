@@ -115,7 +115,7 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { type Project } from '@/models/project'
-import { useUser, useUserStore } from '@/stores/user'
+import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
@@ -149,13 +149,11 @@ const { isOnline } = useNetwork()
 const i18n = useI18n()
 const router = useRouter()
 const confirm = useConfirmDialog()
-const userStore = useUserStore()
-
 const canManageProject = computed(() => {
   if (props.project == null) return false
-  const signedInUser = userStore.getSignedInUser()
-  if (signedInUser == null) return false
-  if (props.project.owner !== signedInUser.name) return false
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null) return false
+  if (props.project.owner !== signedInUsername) return false
   return true
 })
 
@@ -164,8 +162,8 @@ const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
   if (owner == null) return null
-  const signedInUser = userStore.getSignedInUser()
-  if (signedInUser == null || signedInUser.name !== owner.username) return owner
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null || signedInUsername !== owner.username) return owner
   return null
 })
 

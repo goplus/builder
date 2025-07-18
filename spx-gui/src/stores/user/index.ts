@@ -1,14 +1,9 @@
 import { computed, toRef, type WatchSource } from 'vue'
-import { useQueryWithCache, useQueryCache } from '@/utils/query'
-import { useAction } from '@/utils/exception'
+import { useQueryWithCache } from '@/utils/query'
 import * as apis from '@/apis/user'
-import { useUserStore } from './signed-in'
+import { getUserQueryKey } from './query-keys'
 
 export * from './signed-in'
-
-function getUserQueryKey(username: string) {
-  return ['user', username]
-}
 
 const staleTime = 5 * 60 * 1000 // 5min
 
@@ -27,17 +22,4 @@ export function useUser(username: WatchSource<string | null>) {
     },
     staleTime
   })
-}
-
-export function useUpdateSignedInUser() {
-  const userStore = useUserStore()
-  const queryCache = useQueryCache()
-  return useAction(
-    async function updateSignedInUser(params: apis.UpdateSignedInUserParams) {
-      const updated = await apis.updateSignedInUser(params)
-      queryCache.invalidate(getUserQueryKey(userStore.getSignedInUser()!.name))
-      return updated
-    },
-    { en: 'Failed to update profile', zh: '更新个人信息失败' }
-  )
 }

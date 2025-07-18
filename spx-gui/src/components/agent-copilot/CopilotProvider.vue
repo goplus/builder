@@ -94,7 +94,7 @@ import { ToolRegistry } from './mcp/registry'
 import { Collector } from './mcp/collector'
 import CopilotUI from './CopilotUI.vue'
 import { z } from 'zod'
-import { useUserStore } from '@/stores/user'
+import { getSignedInUsername } from '@/stores/user'
 import { createProjectToolDescription, CreateProjectArgsSchema } from './mcp/definitions'
 import { getProject, Visibility } from '@/apis/project'
 import { useRouter } from 'vue-router'
@@ -179,20 +179,17 @@ async function createProject(options: CreateProjectOptions) {
   const projectName = options.projectName
 
   // Check if user is signed in
-  const userStore = useUserStore()
-  const signedInUser = computed(() => userStore.getSignedInUser())
-  if (signedInUser.value == null) {
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null) {
     return {
       success: false,
       message: 'Please sign in to create a project'
     }
   }
 
-  const username = signedInUser.value.name
-
   try {
     // Check if project already exists
-    const project = await getProject(username, options.projectName)
+    const project = await getProject(signedInUsername, options.projectName)
     if (project != null) {
       return {
         success: false,
@@ -203,7 +200,7 @@ async function createProject(options: CreateProjectOptions) {
     // Handle error checking project existence
   }
 
-  const project = new Project(username, projectName)
+  const project = new Project(signedInUsername, projectName)
   project.setVisibility(Visibility.Private)
 
   try {

@@ -16,16 +16,38 @@ export type User = {
   avatar: string
   /** Brief bio or description of the user */
   description: string
+  /** Subscription plan of the user */
+  plan: 'free' | 'plus'
+}
+
+export type SignedInUser = User & {
+  /** Capabilities and quotas of the user */
+  capabilities: UserCapabilities
+}
+
+export type UserCapabilities = {
+  /** Whether user can manage asset library */
+  canManageAssets: boolean
+  /** Whether user can access premium LLM models */
+  canUsePremiumLLM: boolean
+  /** Total quota for Copilot messages */
+  copilotMessageQuota: number
+  /** Remaining quota for Copilot messages */
+  copilotMessageQuotaLeft: number
 }
 
 export async function getUser(name: string): Promise<User> {
   return await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>)
 }
 
+export async function getSignedInUser(): Promise<SignedInUser> {
+  return await (client.get(`/user`) as Promise<SignedInUser>)
+}
+
 export type UpdateSignedInUserParams = Pick<User, 'description'>
 
 export async function updateSignedInUser(params: UpdateSignedInUserParams) {
-  return await (client.put(`/user`, params) as Promise<User>)
+  return await (client.put(`/user`, params) as Promise<SignedInUser>)
 }
 
 export type ListUserParams = PaginationParams & {
