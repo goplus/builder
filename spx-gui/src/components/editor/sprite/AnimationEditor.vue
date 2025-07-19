@@ -41,16 +41,16 @@
 
 <script lang="ts">
 export class AnimationsEditorState extends Disposable {
-  constructor(private sprite: Sprite) {
+  constructor(private getSprite: () => Sprite | null) {
     super()
-    this.selectedIdRef = ref(sprite.animations[0]?.id ?? null)
+    this.selectedIdRef = ref(getSprite()?.animations[0]?.id ?? null)
 
     this.addDisposer(
       watch(
         () => this.selected,
         (selected) => {
-          if (selected == null && this.sprite.animations.length > 0) {
-            this.select(this.sprite.animations[0].id)
+          if (selected == null && this.animations.length > 0) {
+            this.select(this.animations[0].id)
           }
         }
       )
@@ -59,9 +59,13 @@ export class AnimationsEditorState extends Disposable {
 
   private selectedIdRef: Ref<string | null>
 
+  private get animations() {
+    return this.getSprite()?.animations ?? []
+  }
+
   /** The currently selected animation */
   get selected() {
-    return this.sprite.animations.find((animation) => animation.id === this.selectedIdRef.value) ?? null
+    return this.animations.find((animation) => animation.id === this.selectedIdRef.value) ?? null
   }
   /** Select a target (by ID) */
   select(id: string | null) {
@@ -69,7 +73,7 @@ export class AnimationsEditorState extends Disposable {
   }
   /** Select a target (by name) */
   selectByName(name: string): void {
-    const animation = this.sprite.animations.find((animation) => animation.name === name)
+    const animation = this.animations.find((animation) => animation.name === name)
     if (animation == null) throw new Error(`Animation with name "${name}" not found`)
     this.select(animation.id)
   }

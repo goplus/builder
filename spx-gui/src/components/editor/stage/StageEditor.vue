@@ -32,10 +32,10 @@ export type Selected =
     }
 
 export class StageEditorState extends Disposable {
-  constructor(stage: Stage) {
+  constructor(getStage: () => Stage) {
     super()
-    this.widgetsState = new WidgetsEditorState(stage)
-    this.backdropsState = new BackdropsEditorState(stage)
+    this.widgetsState = new WidgetsEditorState(getStage)
+    this.backdropsState = new BackdropsEditorState(getStage)
 
     this.addDisposable(this.widgetsState)
 
