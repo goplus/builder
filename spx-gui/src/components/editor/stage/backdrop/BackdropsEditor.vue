@@ -36,19 +36,19 @@
 
 <script lang="ts">
 export class BackdropsEditorState {
-  constructor(private stage: Stage) {}
+  constructor(private getStage: () => Stage) {}
 
   /** The currently selected backdrop */
   get selected() {
-    return this.stage.defaultBackdrop
+    return this.getStage().defaultBackdrop
   }
   /** Select a backdrop by its ID */
   select(id: string) {
-    this.stage.setDefaultBackdrop(id)
+    this.getStage().setDefaultBackdrop(id)
   }
   /** Select a backdrop by its name */
   selectByName(name: string): void {
-    const backdrop = this.stage.backdrops.find((backdrop) => backdrop.name === name)
+    const backdrop = this.getStage().backdrops.find((backdrop) => backdrop.name === name)
     if (backdrop == null) throw new Error(`Backdrop with name "${name}" not found`)
     this.select(backdrop.id)
   }
