@@ -4,6 +4,7 @@
       <UIModalProvider>
         <AgentCopilotProvider>
           <RouterView />
+          <SpotlightUI />
         </AgentCopilotProvider>
       </UIModalProvider>
     </UIMessageProvider>
@@ -14,6 +15,7 @@
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
+import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from './utils/i18n'
 
 const { t } = useI18n()
