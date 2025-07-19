@@ -36,7 +36,13 @@ export { default as UICode } from './UICode.vue'
 export { default as UIButtonGroup } from './UIButtonGroup.vue'
 export { default as UIButtonGroupItem } from './UIButtonGroupItem.vue'
 export { default as UIDropdownWithTooltip } from './UIDropdownWithTooltip.vue'
-export { isInPopup, provideRootContainer, providePopupContainer, provideModalContainer } from './utils'
+export {
+  isInPopup,
+  provideRootContainer,
+  providePopupContainer,
+  provideModalContainer,
+  useRootContainer
+} from './utils'
 export { default as UISpriteItem } from './block-items/UISpriteItem.vue'
 export { default as UIEditorSpriteItem } from './block-items/UIEditorSpriteItem.vue'
 export { default as UIEditorSoundItem } from './block-items/UIEditorSoundItem.vue'
