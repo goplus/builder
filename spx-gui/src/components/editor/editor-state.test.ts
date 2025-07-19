@@ -260,6 +260,33 @@ describe('EditorState', () => {
 
       editorState.dispose()
     })
+
+    it('should select correctly with undo/redo', async () => {
+      const project = createProjectWithResources()
+      const editorState = createEditorState(project)
+
+      editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[0].id)
+      await flushPromises()
+
+      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+        editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
+      )
+      await flushPromises()
+
+      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+
+      await project.history.undo()
+      await flushPromises()
+
+      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[0].name)
+
+      await project.history.doAction({ name: { en: 'test', zh: '测试' } }, () =>
+        editorState.selectCostume(project.sprites[0].id, project.sprites[0].costumes[1].id)
+      )
+      await flushPromises()
+
+      expect(editorState.selectedCostume?.name).toBe(project.sprites[0].costumes[1].name)
+    })
   })
 
   describe('selectByName methods', () => {
@@ -865,6 +892,7 @@ describe('EditorState', () => {
     it('should dispose all resources correctly', () => {
       const project = createProjectWithResources()
       const editorState = createEditorState(project)
+      editorState.selectAnimation(project.sprites[0].id, project.sprites[0].animations[0].id)
 
       // Ensure runtime and editing are created
       expect(editorState.runtime).toBeDefined()
@@ -873,11 +901,17 @@ describe('EditorState', () => {
       // Mock dispose methods to verify they're called
       const runtimeDispose = vi.spyOn(editorState.runtime, 'dispose')
       const editingDispose = vi.spyOn(editorState.editing, 'dispose')
+      const stageStateDispose = vi.spyOn(editorState.stageState, 'dispose')
+      const spriteStateDispose = vi.spyOn(editorState.spriteState!, 'dispose')
+      const animationsStateDispose = vi.spyOn(editorState.spriteState!.animationsState, 'dispose')
 
       editorState.dispose()
 
       expect(runtimeDispose).toHaveBeenCalled()
       expect(editingDispose).toHaveBeenCalled()
+      expect(stageStateDispose).toHaveBeenCalled()
+      expect(spriteStateDispose).toHaveBeenCalled()
+      expect(animationsStateDispose).toHaveBeenCalled()
     })
   })
 })

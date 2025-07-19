@@ -50,7 +50,9 @@ export class EditorState extends Disposable {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
     this.addDisposable((this.editing = new editing.Editing(project, isOnline, userInfo, localCacheKey, localStorage)))
-    this.stageState = new StageEditorState(project.stage)
+    this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
+
+    this.addDisposer(() => this.spriteState?.dispose())
 
     this.addDisposer(
       watch(
@@ -79,6 +81,16 @@ export class EditorState extends Disposable {
   get selectedSprite() {
     if (this.selectedTypeRef.value !== 'sprite') return null
     return this.project.sprites.find((s) => s.id === this.selectedSpriteIdRef.value) ?? null
+  }
+
+  get selectedCostume() {
+    if (this.selectedTypeRef.value !== 'sprite' || this.spriteState == null) return null
+    return this.spriteState.selectedCostume
+  }
+
+  get selectedAnimation() {
+    if (this.selectedTypeRef.value !== 'sprite' || this.spriteState == null) return null
+    return this.spriteState.selectedAnimation
   }
 
   get selectedSound() {
@@ -121,10 +133,18 @@ export class EditorState extends Disposable {
       case 'sprite':
         this.selectedTypeRef.value = 'sprite'
         if (target.id != null && target.id !== this.selectedSpriteIdRef.value) {
-          const prevSelected = this.spriteState?.selected
+          let prevSelected: SpriteEditorSelected | undefined
+          if (this.spriteState != null) {
+            prevSelected = this.spriteState?.selected
+            this.spriteState.dispose()
+          }
           this.selectedSpriteIdRef.value = target.id
-          this.spriteState =
-            this.selectedSprite != null ? new SpriteEditorState(this.selectedSprite, prevSelected) : null
+          if (this.selectedSprite == null) {
+            this.spriteState = null
+            return
+          }
+          const getSprite = () => this.project.sprites.find((s) => s.id === target.id) ?? null
+          this.spriteState = new SpriteEditorState(getSprite, prevSelected)
         }
         break
       case 'sound':

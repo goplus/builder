@@ -28,19 +28,19 @@
 
 <script lang="ts">
 export class CostumesEditorState {
-  constructor(private sprite: Sprite) {}
+  constructor(private getSprite: () => Sprite | null) {}
 
   /** The currently selected costume */
   get selected() {
-    return this.sprite.defaultCostume
+    return this.getSprite()?.defaultCostume ?? null
   }
   /** Select a costume by its ID */
   select(id: string) {
-    this.sprite.setDefaultCostume(id)
+    this.getSprite()?.setDefaultCostume(id)
   }
   /** Select a costume by its name */
   selectByName(name: string): void {
-    const costume = this.sprite.costumes.find((costume) => costume.name === name)
+    const costume = this.getSprite()?.costumes.find((costume) => costume.name === name)
     if (costume == null) throw new Error(`Costume with name "${name}" not found`)
     this.select(costume.id)
   }
