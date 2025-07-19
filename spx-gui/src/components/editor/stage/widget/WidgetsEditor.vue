@@ -48,16 +48,16 @@
 
 <script lang="ts">
 export class WidgetsEditorState extends Disposable {
-  constructor(private stage: Stage) {
+  constructor(private getStage: () => Stage) {
     super()
-    this.selectedIdRef = ref(stage.widgets[0]?.id ?? null)
+    this.selectedIdRef = ref(getStage().widgets[0]?.id ?? null)
 
     this.addDisposer(
       watch(
         () => this.selected,
         (selected) => {
-          if (selected == null && this.stage.widgets.length > 0) {
-            this.select(this.stage.widgets[0].id)
+          if (selected == null && this.getStage().widgets.length > 0) {
+            this.select(this.getStage().widgets[0].id)
           }
         }
       )
@@ -68,7 +68,7 @@ export class WidgetsEditorState extends Disposable {
 
   /** The currently selected widget */
   get selected() {
-    return this.stage.widgets.find((widget) => widget.id === this.selectedIdRef.value) ?? null
+    return this.getStage().widgets.find((widget) => widget.id === this.selectedIdRef.value) ?? null
   }
   /** Select a target (by ID) */
   select(id: string | null) {
@@ -76,7 +76,7 @@ export class WidgetsEditorState extends Disposable {
   }
   /** Select a target (by name) */
   selectByName(name: string): void {
-    const widget = this.stage.widgets.find((widget) => widget.name === name)
+    const widget = this.getStage().widgets.find((widget) => widget.name === name)
     if (widget == null) throw new Error(`Widget with name "${name}" not found`)
     this.select(widget.id)
   }

@@ -28,10 +28,24 @@ const loading = ref(false)
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 const failed = ref(false)
 
+// Log levels defined in spx/godot.editor.js
+const logLevels = {
+  LOG_LEVEL_VERBOSE: 0,
+  LOG_LEVEL_LOG: 1,
+  LOG_LEVEL_WARNING: 2,
+  LOG_LEVEL_ERROR: 3,
+  LOG_LEVEL_NONE: 4
+}
+
 interface IframeWindow extends Window {
   setAIInteractionAPIEndpoint: (endpoint: string) => void
   setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
-  startGame(buffer: ArrayBuffer, assetURLs: Record<string, string>, onSpxReady?: () => void): Promise<void>
+  startGame(
+    buffer: ArrayBuffer,
+    assetURLs: Record<string, string>,
+    onSpxReady?: () => void,
+    logLevel?: number
+  ): Promise<void>
   /**
    * NOTE: This method is not recommended to be used now.
    * We reload the iframe to stop the game instead.
@@ -173,13 +187,18 @@ defineExpose({
 
       // TODO: get progress for engine-loading, which is now included in `startGame`
       startGameReporter.startAutoReport(10 * 1000)
-      await iframeWindow.startGame(zipped, assetURLs, () => {
-        // Set up API endpoint for AI Interaction.
-        iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+      await iframeWindow.startGame(
+        zipped,
+        assetURLs,
+        () => {
+          // Set up API endpoint for AI Interaction.
+          iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
-        // Set up token provider for AI Interaction.
-        iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
-      })
+          // Set up token provider for AI Interaction.
+          iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+        },
+        logLevels.LOG_LEVEL_ERROR
+      )
       signal?.throwIfAborted()
       startGameReporter.report(1)
       return hashFiles(files)

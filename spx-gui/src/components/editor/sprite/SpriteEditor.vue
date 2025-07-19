@@ -57,10 +57,10 @@ export type Selected =
     }
 
 export class SpriteEditorState extends Disposable {
-  constructor(sprite: Sprite, initialSelected?: Selected) {
+  constructor(getSprite: () => Sprite | null, initialSelected?: Selected) {
     super()
-    this.costumesState = new CostumesEditorState(sprite)
-    this.addDisposable((this.animationsState = new AnimationsEditorState(sprite)))
+    this.costumesState = new CostumesEditorState(getSprite)
+    this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite)))
     this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
   }
 
@@ -80,6 +80,16 @@ export class SpriteEditorState extends Disposable {
       default:
         throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
     }
+  }
+
+  get selectedCostume() {
+    if (this.selectedTypeRef.value !== 'costumes') return null
+    return this.costumesState.selected
+  }
+
+  get selectedAnimation() {
+    if (this.selectedTypeRef.value !== 'animations') return null
+    return this.animationsState.selected
   }
 
   /** Select a target */
