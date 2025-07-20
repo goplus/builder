@@ -25,19 +25,19 @@ var customElementCodeLink string
 //go:embed custom_element_code_change.md
 var customElementCodeChange string
 
-//go:embed system_prompt_with_tools.md
-var SystemPromptWithToolsTpl string
+//go:embed workflow_system_prompt.md
+var WorkflowSystemPromptTpl string
 
-//go:embed system_prompt.md
-var systemPromptTpl string
+//go:embed code_system_prompt.md
+var codeSystemPromptTpl string
 
-// SystemPrompt is the fully rendered system prompt used to instruct the AI assistant.
+// CodeSystemPrompt is the fully rendered system prompt used to instruct the code copilot.
 // It is initialized during package initialization.
-var SystemPrompt string
+var CodeSystemPrompt string
 
-// systemPromptTplData holds all data needed to populate the system prompt template.
+// codeSystemPromptTplData holds all data needed to populate the system prompt template.
 // This includes language definitions, documentation, and available tools.
-type systemPromptTplData struct {
+type codeSystemPromptTplData struct {
 	GopDefs                 string         // Go+ language documentation
 	SpxDefs                 string         // SPX framework documentation
 	CustomElementCodeLink   string         // Custom element code linking documentation
@@ -53,7 +53,7 @@ type systemPromptTplData struct {
 // The function will panic if any step fails, as proper initialization is critical.
 func SystemPromptWithTools(tools []Tool) string {
 	// Create a new template with the provided tools
-	tplData := systemPromptTplData{
+	tplData := codeSystemPromptTplData{
 		GopDefs:                 GopDefs,
 		SpxDefs:                 SpxDefs,
 		CustomElementCodeLink:   customElementCodeLink,
@@ -73,7 +73,7 @@ func SystemPromptWithTools(tools []Tool) string {
 	}
 
 	// Parse the system prompt template
-	tpl, err := template.New("system-prompt").Funcs(funcMap).Parse(SystemPromptWithToolsTpl)
+	tpl, err := template.New("system-prompt").Funcs(funcMap).Parse(WorkflowSystemPromptTpl)
 	if err != nil {
 		panic(err)
 	}
@@ -87,13 +87,13 @@ func SystemPromptWithTools(tools []Tool) string {
 }
 
 func init() {
-	tplData := systemPromptTplData{
+	tplData := codeSystemPromptTplData{
 		GopDefs:                 GopDefs,
 		SpxDefs:                 SpxDefs,
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 	}
-	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
+	tpl, err := template.New("system-prompt").Parse(codeSystemPromptTpl)
 	if err != nil {
 		panic(err)
 	}
@@ -101,5 +101,5 @@ func init() {
 	if err := tpl.Execute(&sb, tplData); err != nil {
 		panic(err)
 	}
-	SystemPrompt = sb.String()
+	CodeSystemPrompt = sb.String()
 }

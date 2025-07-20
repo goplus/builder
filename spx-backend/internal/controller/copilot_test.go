@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateMessageParamsValidate(t *testing.T) {
+func TestGenerateMessageBaseParamsValidate(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		params := &GenerateMessageParams{}
+		params := &GenerateMessageBaseParams{}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
 	})
 
 	t.Run("Too many messages", func(t *testing.T) {
-		params := &GenerateMessageParams{
+		params := &GenerateMessageBaseParams{
 			Messages: make([]copilot.Message, MaxMessageCount+1),
 		}
 		ok, msg := params.Validate()
@@ -25,7 +25,7 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid message role", func(t *testing.T) {
-		params := &GenerateMessageParams{
+		params := &GenerateMessageBaseParams{
 			Messages: []copilot.Message{
 				{
 					Role: copilot.Role("invalid"),
@@ -38,7 +38,7 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid message content type", func(t *testing.T) {
-		params := &GenerateMessageParams{
+		params := &GenerateMessageBaseParams{
 			Messages: []copilot.Message{
 				{
 					Role: copilot.RoleUser,
@@ -54,7 +54,7 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid message empty content text", func(t *testing.T) {
-		params := &GenerateMessageParams{
+		params := &GenerateMessageBaseParams{
 			Messages: []copilot.Message{
 				{
 					Role: copilot.RoleUser,
@@ -70,7 +70,7 @@ func TestGenerateMessageParamsValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid message too long content text", func(t *testing.T) {
-		params := &GenerateMessageParams{
+		params := &GenerateMessageBaseParams{
 			Messages: []copilot.Message{
 				{
 					Role: copilot.RoleUser,
