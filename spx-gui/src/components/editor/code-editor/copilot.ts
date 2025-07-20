@@ -141,7 +141,7 @@ ${codeInfoText}
     })
 
     // Use generateStreamMessage directly
-    const stream = await generateStreamMessage(messages, {
+    const stream = await generateStreamMessage('code', messages, {
       signal: ctx.signal
     })
 

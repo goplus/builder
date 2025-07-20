@@ -244,7 +244,13 @@ function handleCategoryClick(id: string) {
 </script>
 
 <template>
-  <section class="api-reference-ui">
+  <section
+    v-radar="{
+      name: 'API References',
+      desc: 'All available API reference items. Drag-n-drop or click one item to insert corresponding code snippet.'
+    }"
+    class="api-reference-ui"
+  >
     <UIError v-if="err != null">
       {{ $t(err.userMessage) }}
     </UIError>

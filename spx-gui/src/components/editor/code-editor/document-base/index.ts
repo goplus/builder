@@ -5,7 +5,7 @@ import {
   stringifyDefinitionId,
   type DefinitionIdString
 } from '../common'
-import * as gopDefinitionsByName from './gop'
+import * as gopDefinitionsByName from './xgo'
 import * as spxDefinitionsByName from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
 import './helpers'

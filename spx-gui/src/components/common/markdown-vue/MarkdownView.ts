@@ -43,14 +43,7 @@ export type Props = {
 
 export default defineComponent<Props>(
   (props, { attrs }) => {
-    const hastNodes = computed(() => {
-      const customComponents = props.components?.custom ?? {}
-      const mdast = fromMarkdown(props.value)
-      const hast = toHast(mdast, { allowDangerousHtml: true })
-      const rawProcessed = raw(hast, { tagfilter: false })
-      const sanitizeSchema = getSanitizeSchema(customComponents)
-      return sanitize(rawProcessed, sanitizeSchema)
-    })
+    const hastNodes = computed(() => parseMarkdown(props))
     return function render() {
       return renderHastNodes(hastNodes.value, attrs, props.components ?? {})
     }
@@ -70,6 +63,44 @@ export default defineComponent<Props>(
     }
   }
 )
+
+export type CustomComponentUsage = {
+  name: string
+  props: Record<string, string | number | boolean>
+}
+
+export function findCustomComponentUsages({ value, components }: Props): CustomComponentUsage[] {
+  const hastNodes = parseMarkdown({ value, components })
+  const rootContents: hast.RootContent[] = hastNodes.type === 'root' ? hastNodes.children : [hastNodes]
+  return rootContents.flatMap((node) => findCustomComponentUsagesInNode(node, components ?? {}))
+}
+
+function findCustomComponentUsagesInNode(node: hast.Node, components: Components): CustomComponentUsage[] {
+  if (node.type !== 'element') return []
+  const element = node as hast.Element
+  const customComponents = components.custom ?? {}
+  if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
+    return [{ name: element.tagName, props: hastProps2VueProps(element.properties) }]
+  } else if (
+    element.tagName === 'pre' &&
+    typeof element.properties.is === 'string' &&
+    Object.prototype.hasOwnProperty.call(customComponents, element.properties.is)
+  ) {
+    const { is, ...properties } = element.properties
+    return [{ name: is, props: hastProps2VueProps(properties) }]
+  } else {
+    return element.children.flatMap((child) => findCustomComponentUsagesInNode(child, components))
+  }
+}
+
+function parseMarkdown({ value, components }: Props): hast.Nodes {
+  const customComponents = components?.custom ?? {}
+  const mdast = fromMarkdown(value)
+  const hast = toHast(mdast, { allowDangerousHtml: true })
+  const rawProcessed = raw(hast, { tagfilter: false })
+  const sanitizeSchema = getSanitizeSchema(customComponents)
+  return sanitize(rawProcessed, sanitizeSchema)
+}
 
 function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, components: Components) {
   if (node.type === 'root') {
