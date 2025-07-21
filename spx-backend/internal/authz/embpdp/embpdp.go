@@ -24,20 +24,15 @@ func New(quotaTracker authz.QuotaTracker) authz.PolicyDecisionPoint {
 // ComputeUserCapabilities implements authz.PolicyDecisionPoint.
 func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.User) (authz.UserCapabilities, error) {
 	caps := authz.UserCapabilities{
-		CanManageAssets:         p.hasRole(mUser, userRoleAssetAdmin),
-		CanUsePremiumLLM:        p.hasPlusPlan(mUser),
-		CopilotMessageQuota:     p.getCopilotQuota(mUser),
-		CopilotMessageQuotaLeft: 0,
+		CanManageAssets:     p.hasRole(mUser, userRoleAssetAdmin),
+		CanUsePremiumLLM:    p.hasPlusPlan(mUser),
+		CopilotMessageQuota: p.getCopilotQuota(mUser),
 	}
-	if p.quotaTracker != nil {
-		usage, err := p.quotaTracker.Usage(ctx, mUser.ID, authz.ResourceCopilotMessage)
-		if err != nil {
-			return authz.UserCapabilities{}, fmt.Errorf("failed to get quota usage for user %q: %w", mUser.Username, err)
-		}
-		caps.CopilotMessageQuotaLeft = max(caps.CopilotMessageQuota-usage, 0)
-	} else {
-		caps.CopilotMessageQuotaLeft = caps.CopilotMessageQuota
+	usage, err := p.quotaTracker.Usage(ctx, mUser.ID, authz.ResourceCopilotMessage)
+	if err != nil {
+		return authz.UserCapabilities{}, fmt.Errorf("failed to retrieve copilot message quota usage for user %q: %w", mUser.Username, err)
 	}
+	caps.CopilotMessageQuotaLeft = max(caps.CopilotMessageQuota-usage, 0)
 	return caps, nil
 }
 

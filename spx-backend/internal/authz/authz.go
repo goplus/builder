@@ -51,8 +51,5 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 
 // ConsumeQuota consumes the specified amount of quota for a user and resource.
 func (a *Authorizer) ConsumeQuota(ctx context.Context, userID int64, resource Resource, amount int64) error {
-	if a.quotaTracker == nil {
-		return nil // No quota tracking configured, nothing to do
-	}
 	return a.quotaTracker.IncrementUsage(ctx, userID, resource, amount)
 }

@@ -51,6 +51,9 @@ var quotaTracker authz.QuotaTracker
 if cfg.Redis.Addr != "" {
 	quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
 	logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
+} else {
+	quotaTracker = quota.NewNopQuotaTracker()
+	logger.Println("using no-op quota tracker")
 }
 pdp := embpdp.New(quotaTracker)
 authorizer = authz.New(db, pdp, quotaTracker)
