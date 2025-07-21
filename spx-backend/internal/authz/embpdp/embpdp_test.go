@@ -168,20 +168,4 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 		assert.Equal(t, int64(100), caps.CopilotMessageQuota)
 		assert.Equal(t, int64(0), caps.CopilotMessageQuotaLeft)
 	})
-
-	t.Run("WithoutQuotaTracker", func(t *testing.T) {
-		pdp := New(nil)
-
-		mUser := &model.User{
-			Model:    model.Model{ID: 1},
-			Username: "test-user",
-			Roles:    nil,
-			Plan:     model.UserPlanFree,
-		}
-
-		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
-		require.NoError(t, err)
-		assert.Equal(t, int64(100), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(100), caps.CopilotMessageQuotaLeft)
-	})
 }

@@ -226,55 +226,60 @@ func (this *AppV2) MainEntry() {
 		quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
 //line cmd/spx-backend/main.yap:53:1
 		logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
-	}
+	} else {
 //line cmd/spx-backend/main.yap:55:1
-	pdp := embpdp.New(quotaTracker)
+		quotaTracker = quota.NewNopQuotaTracker()
 //line cmd/spx-backend/main.yap:56:1
-	this.authorizer = authz.New(db, pdp, quotaTracker)
+		logger.Println("using no-op quota tracker")
+	}
+//line cmd/spx-backend/main.yap:58:1
+	pdp := embpdp.New(quotaTracker)
 //line cmd/spx-backend/main.yap:59:1
+	this.authorizer = authz.New(db, pdp, quotaTracker)
+//line cmd/spx-backend/main.yap:62:1
 	this.ctrl, err = controller.New(context.Background(), db, cfg)
-//line cmd/spx-backend/main.yap:60:1
+//line cmd/spx-backend/main.yap:63:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:61:1
+//line cmd/spx-backend/main.yap:64:1
 		logger.Fatalln("failed to create a new controller:", err)
 	}
-//line cmd/spx-backend/main.yap:66:1
-	port := cfg.Server.GetPort()
-//line cmd/spx-backend/main.yap:67:1
-	logger.Printf("listening to %s", port)
 //line cmd/spx-backend/main.yap:69:1
+	port := cfg.Server.GetPort()
+//line cmd/spx-backend/main.yap:70:1
+	logger.Printf("listening to %s", port)
+//line cmd/spx-backend/main.yap:72:1
 	h := this.Handler(this.authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
-//line cmd/spx-backend/main.yap:75:1
-	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:77:1
-	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 //line cmd/spx-backend/main.yap:78:1
-	defer stop()
-//line cmd/spx-backend/main.yap:79:1
-	var serverErr error
+	server := &http.Server{Addr: port, Handler: h}
 //line cmd/spx-backend/main.yap:80:1
-	go func() {
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 //line cmd/spx-backend/main.yap:81:1
-		serverErr = server.ListenAndServe()
+	defer stop()
 //line cmd/spx-backend/main.yap:82:1
+	var serverErr error
+//line cmd/spx-backend/main.yap:83:1
+	go func() {
+//line cmd/spx-backend/main.yap:84:1
+		serverErr = server.ListenAndServe()
+//line cmd/spx-backend/main.yap:85:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:84:1
+//line cmd/spx-backend/main.yap:87:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:85:1
+//line cmd/spx-backend/main.yap:88:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:86:1
+//line cmd/spx-backend/main.yap:89:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:89:1
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:90:1
-	defer cancel()
-//line cmd/spx-backend/main.yap:91:1
-	if
-//line cmd/spx-backend/main.yap:91:1
-	err := server.Shutdown(shutdownCtx); err != nil {
 //line cmd/spx-backend/main.yap:92:1
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+//line cmd/spx-backend/main.yap:93:1
+	defer cancel()
+//line cmd/spx-backend/main.yap:94:1
+	if
+//line cmd/spx-backend/main.yap:94:1
+	err := server.Shutdown(shutdownCtx); err != nil {
+//line cmd/spx-backend/main.yap:95:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }
