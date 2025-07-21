@@ -1,7 +1,6 @@
 package authz
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
@@ -35,6 +34,11 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 			ctx := r.Context()
 			logger := log.GetReqLogger(ctx)
 
+			// Inject the authorizer instance into the context.
+			ctx = newContextWithAuthorizer(ctx, a)
+
+			// Compute user capabilities for authenticated users and inject them into
+			// the context.
 			if mUser, ok := authn.UserFromContext(ctx); ok {
 				caps, err := a.pdp.ComputeUserCapabilities(ctx, mUser)
 				if err != nil {
@@ -47,9 +51,4 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-// ConsumeQuota consumes the specified amount of quota for a user and resource.
-func (a *Authorizer) ConsumeQuota(ctx context.Context, userID int64, resource Resource, amount int64) error {
-	return a.quotaTracker.IncrementUsage(ctx, userID, resource, amount)
 }

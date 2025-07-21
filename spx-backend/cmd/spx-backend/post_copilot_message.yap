@@ -10,8 +10,7 @@ import (
 )
 
 ctx := &Context
-mUser, ok := ensureAuthenticatedUser(ctx)
-if !ok {
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
@@ -32,7 +31,7 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-canUsePremium := authz.UserCanUsePremiumLLM(ctx.Context())
+canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
 result, err := ctrl.GenerateMessage(ctx.Context(), params, canUsePremium)
 if err != nil {
 	replyWithInnerError(ctx, err)
@@ -40,7 +39,7 @@ if err != nil {
 }
 
 // Consume quota after successful generation.
-if err := authorizer.ConsumeQuota(ctx.Context(), mUser.ID, authz.ResourceCopilotMessage, 1); err != nil {
+if err := authz.ConsumeQuota(ctx.Context(), authz.ResourceCopilotMessage, 1); err != nil {
 	logger := log.GetReqLogger(ctx.Context())
 	logger.Printf("failed to consume copilot quota: %v", err)
 }

@@ -130,35 +130,3 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		assert.Equal(t, "no capabilities", recorder.Body.String())
 	})
 }
-
-func TestAuthorizerConsumeQuota(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, resource Resource, amount int64) error {
-			assert.Equal(t, int64(123), userID)
-			assert.Equal(t, ResourceCopilotMessage, resource)
-			assert.Equal(t, int64(5), amount)
-			return nil
-		}
-
-		pdp := &mockPolicyDecisionPoint{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
-
-		err := authorizer.ConsumeQuota(context.Background(), 123, ResourceCopilotMessage, 5)
-		assert.NoError(t, err)
-	})
-
-	t.Run("QuotaTrackerError", func(t *testing.T) {
-		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, resource Resource, amount int64) error {
-			return errors.New("quota tracker error")
-		}
-
-		pdp := &mockPolicyDecisionPoint{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
-
-		err := authorizer.ConsumeQuota(context.Background(), 123, ResourceCopilotMessage, 5)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "quota tracker error")
-	})
-}
