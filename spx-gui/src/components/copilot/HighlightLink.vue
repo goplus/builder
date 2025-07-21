@@ -1,3 +1,26 @@
+<script lang="ts">
+import { z } from 'zod'
+import zodToJsonSchema from 'zod-to-json-schema'
+
+export const tagName = 'highlight-link'
+
+export const description = `Create a link that reveals & highlights a specific node in the UI when clicked. \
+Use the node ID provided in the UI information to specify the target node. \
+Use this element in your output to help users to find the relevant UI element quickly. \
+For example, \`<highlight-link target-id="xxxyyy" tip="Click this button to submit">Submit button</highlight-link>\` \
+will create a link with text "Submit button", when clicked, reveals the node with ID "xxxyyy" and shows the tip "Click this button to submit".`
+
+export const attributes = zodToJsonSchema(
+  z.object({
+    'target-id': z.string().describe('ID for the linked node'),
+    tip: z
+      .string()
+      .optional()
+      .describe('Tip to show when node revealed, typically a description of the UI element in user language')
+  })
+)
+</script>
+
 <script lang="ts" setup>
 import { useRadar } from '@/utils/radar'
 import { useSpotlight } from '@/utils/spotlight'
@@ -8,8 +31,6 @@ const props = defineProps<{
   targetId: string
   /** Tip to show when node revealed */
   tip?: string
-  /** Text to display for the link */
-  children: string
 }>()
 
 const radar = useRadar()
@@ -36,7 +57,7 @@ const { fn: handleClick } = useMessageHandle(
 
 <template>
   <button type="button" class="highlight-link" @click="handleClick">
-    {{ children }}
+    <slot></slot>
   </button>
 </template>
 

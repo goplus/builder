@@ -1,5 +1,5 @@
 <template>
-  <div class="animation-player">
+  <div v-radar="{ name: 'Animation player', desc: 'Provides preview for animation' }" class="animation-player">
     <CheckerboardBackground class="background" />
     <CostumesPlayer ref="costumesPlayerRef" class="costumes-player" />
     <MuteSwitch v-if="sound != null" class="mute-switch" :muted="mutedRef" @click="setMuted(!mutedRef)" />

@@ -285,11 +285,7 @@ function zoomReset() {
 
 <template>
   <div ref="codeEditorEl" class="code-editor" :style="{ userSelect: isResizing ? 'none' : undefined }">
-    <aside
-      v-radar="{ name: 'Code sidebar', desc: 'Including API reference panel showing available code snippets' }"
-      class="sidebar"
-      :style="{ flexBasis: `${sidebarWidth}px` }"
-    >
+    <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
       <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
       <footer class="footer">
         <CopilotTrigger @click="handleCopilotTriggerClick" />

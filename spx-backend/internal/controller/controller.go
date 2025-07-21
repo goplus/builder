@@ -112,7 +112,7 @@ func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.W
 }
 
 func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
-	system := copilot.SystemPromptWithToolsTpl
+	system := copilot.WorkflowSystemPromptTpl
 	node := workflow.NewLLMNode(copit, system, true)
 	node.WithPrepare(func(env workflow.Env) workflow.Env {
 		msgs := env.Get("messages")
@@ -132,7 +132,7 @@ func NewCreateProject(copit *copilot.Copilot) *workflow.LLMNode {
 }
 
 func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
-	system := copilot.SystemPromptWithToolsTpl
+	system := copilot.WorkflowSystemPromptTpl
 	node := workflow.NewLLMNode(copit, system, true)
 	node.WithPrepare(func(env workflow.Env) workflow.Env {
 		msgs := env.Get("messages")
@@ -173,7 +173,7 @@ Usage:
 }
 
 func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
-	system := copilot.SystemPromptWithToolsTpl
+	system := copilot.WorkflowSystemPromptTpl
 	return workflow.NewLLMNode(copit, system, true)
 }
 

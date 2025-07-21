@@ -15,8 +15,9 @@ type Workflow struct {
 }
 
 type WorkflowMessageParams struct {
-	Workflow *Workflow `json:"workflow,omitempty"`
-	GenerateMessageParams
+	Workflow *Workflow      `json:"workflow,omitempty"`
+	Tools    []copilot.Tool `json:"tools,omitempty"` // Additional tools to use in the completion
+	GenerateMessageBaseParams
 }
 
 // WorkflowMessageStream generates response message based on input messages.
