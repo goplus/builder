@@ -1086,7 +1086,12 @@ paths:
       tags:
         - Courses
       summary: Create a course
-      description: Create a new course with the necessary details.
+      description: |
+        Create a new course with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create courses.
       requestBody:
         required: true
         content:
@@ -1117,6 +1122,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /courses/list:
     get:
@@ -1198,7 +1205,12 @@ paths:
       tags:
         - Courses
       summary: Update a course
-      description: Update the details of a specific course.
+      description: |
+        Update the details of a specific course.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update courses.
       parameters:
         - name: id
           in: path
@@ -1236,11 +1248,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
     delete:
       tags:
         - Courses
       summary: Delete a course
-      description: Permanently delete a specific course by its ID.
+      description: |
+        Permanently delete a specific course by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete courses.
       parameters:
         - name: id
           in: path
@@ -1251,13 +1270,20 @@ paths:
       responses:
         "204":
           description: Successfully deleted the course.
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /course-series:
     post:
       tags:
         - Course Series
       summary: Create a course series
-      description: Create a new course series with the necessary details.
+      description: |
+        Create a new course series with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create course series.
       requestBody:
         required: true
         content:
@@ -1282,6 +1308,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /course-serieses/list:
     get:
@@ -1351,7 +1379,12 @@ paths:
       tags:
         - Course Series
       summary: Update a course series
-      description: Update the details of a specific course series.
+      description: |
+        Update the details of a specific course series.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update course series.
       parameters:
         - name: id
           in: path
@@ -1383,11 +1416,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
     delete:
       tags:
         - Course Series
       summary: Delete a course series
-      description: Permanently delete a specific course series by its ID.
+      description: |
+        Permanently delete a specific course series by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete course series.
       parameters:
         - name: id
           in: path
@@ -1398,6 +1438,8 @@ paths:
       responses:
         "204":
           description: Successfully deleted the course series.
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /util/upinfo:
     get:
@@ -1577,6 +1619,11 @@ components:
         canManageAssets:
           type: boolean
           description: Whether user can manage asset library.
+          examples:
+            - true
+        canManageCourses:
+          type: boolean
+          description: Whether user can manage courses and course series.
           examples:
             - true
         canUsePremiumLLM:

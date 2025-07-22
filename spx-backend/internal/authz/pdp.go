@@ -18,6 +18,9 @@ type UserCapabilities struct {
 	// CanManageAssets indicates if user can manage asset library.
 	CanManageAssets bool `json:"canManageAssets"`
 
+	// CanManageCourses indicates if user can manage courses and course series.
+	CanManageCourses bool `json:"canManageCourses"`
+
 	// CanUsePremiumLLM indicates if user can access premium LLM models.
 	CanUsePremiumLLM bool `json:"canUsePremiumLLM"`
 

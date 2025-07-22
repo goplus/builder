@@ -13,6 +13,12 @@ func CanManageAssets(ctx context.Context) bool {
 	return ok && caps.CanManageAssets
 }
 
+// CanManageCourses checks if the user can manage courses.
+func CanManageCourses(ctx context.Context) bool {
+	caps, ok := UserCapabilitiesFromContext(ctx)
+	return ok && caps.CanManageCourses
+}
+
 // CanUsePremiumLLM checks if the user can use premium LLM models.
 func CanUsePremiumLLM(ctx context.Context) bool {
 	caps, ok := UserCapabilitiesFromContext(ctx)
