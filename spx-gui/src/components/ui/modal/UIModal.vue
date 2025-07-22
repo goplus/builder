@@ -3,6 +3,7 @@
     :to="attachTo"
     :show="visible"
     :auto-focus="autoFocus"
+    :trap-focus="false"
     :mask-closable="maskClosable"
     @update:show="handleUpdateShow"
   >

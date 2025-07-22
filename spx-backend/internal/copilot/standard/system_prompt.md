@@ -43,6 +43,10 @@ Context info may include:
 * What the user is about to do, where he is, what he can see, etc.
 * What markups or tools are available to use in replies.
 
+# User event
+
+The client may send you user events about what did the user do. User events will be wrapped by `<event>` tags in user message.
+
 # Guidelines for Replies
 
 You MUST follow these guidelines when replying to the user:

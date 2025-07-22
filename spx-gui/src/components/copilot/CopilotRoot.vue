@@ -1,16 +1,18 @@
 <script lang="ts">
 import { z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { inject, provide, type InjectionKey } from 'vue'
-import CopilotUI from './CopilotUI.vue'
-import { Copilot, type CustomElementDefinition, type ICopilotContextProvider, type ToolDefinition } from './copilot'
-import * as projectCloudHelper from '@/models/common/cloud'
-import * as toolUse from './ToolUse.vue'
-import * as highlightLink from './HighlightLink.vue'
+import { inject, onBeforeUnmount, provide, watch, type InjectionKey } from 'vue'
+import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
-import { getSignedInUsername } from '@/stores/user'
 import { escapeHTML } from '@/utils/utils'
+import * as projectApis from '@/apis/project'
+import * as projectCloudHelper from '@/models/common/cloud'
+import { getSignedInUsername } from '@/stores/user'
+import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
+import { Copilot, type CustomElementDefinition, type ICopilotContextProvider, type ToolDefinition } from './copilot'
+import * as toolUse from './ToolUse.vue'
+import * as highlightLink from './HighlightLink.vue'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -20,16 +22,38 @@ export function useCopilot(): Copilot {
   return copilot
 }
 
-const readProjectMetadataParamsSchema = z.object({
+const listProjectsParamsSchema = z.object({
+  owner: z
+    .string()
+    .optional()
+    .describe(
+      "The owner's username. Defaults to the authenticated user if not specified. Use * to include projects from all users"
+    ),
+  keyword: z.string().optional().describe('Keyword in the project name'),
+  pageSize: z.number().optional().describe('Number of projects to return per page'),
+  pageIndex: z.number().optional().describe('Page index, starting from 1')
+})
+
+const listProjectsTool: ToolDefinition = {
+  name: 'list_projects',
+  description: 'List all projects for a user.',
+  parameters: zodToJsonSchema(listProjectsParamsSchema),
+  async implementation(params: z.infer<typeof listProjectsParamsSchema>) {
+    const { total, data } = await projectApis.listProject(params)
+    return { total, data: data.map((p) => [p.owner, p.name].map(encodeURIComponent).join('/')) }
+  }
+}
+
+const getProjectMetadataParamsSchema = z.object({
   owner: z.string().describe('Owner of the project'),
   project: z.string().describe('Project name')
 })
 
-const readProjectMetadataTool: ToolDefinition = {
-  name: 'read_project_metadata',
-  description: 'Read metadata of a project.',
-  parameters: zodToJsonSchema(readProjectMetadataParamsSchema),
-  async implementation(params: z.infer<typeof readProjectMetadataParamsSchema>, signal?: AbortSignal) {
+const getProjectMetadataTool: ToolDefinition = {
+  name: 'get_project_metadata',
+  description: 'Get metadata of a project.',
+  parameters: zodToJsonSchema(getProjectMetadataParamsSchema),
+  async implementation(params: z.infer<typeof getProjectMetadataParamsSchema>, signal?: AbortSignal) {
     const preferPublishedContent = false // TODO: preferPublishedContent
     const { metadata } = await projectCloudHelper.load(params.owner, params.project, preferPublishedContent, signal)
     const { owner, remixedFrom, visibility, description, instructions } = metadata
@@ -97,10 +121,10 @@ ${userInfo}`
 }
 
 class LocationContextProvider implements ICopilotContextProvider {
+  constructor(private router: Router) {}
   provideContext(): string {
-    const location = window.location
     return `# Current location
-The user is now browsing page with URL: \`${location.pathname + location.search + location.hash}\``
+The user is now browsing page with URL: \`${this.router.currentRoute.value.fullPath}\``
   }
 }
 </script>
@@ -108,19 +132,31 @@ The user is now browsing page with URL: \`${location.pathname + location.search 
 <script setup lang="ts">
 const radar = useRadar()
 const i18n = useI18n()
+const router = useRouter()
+const modalEvents = useModalEvents()
 
 const copilot = new Copilot()
-copilot.registerTool(readProjectMetadataTool)
+copilot.registerTool(listProjectsTool)
+copilot.registerTool(getProjectMetadataTool)
 copilot.registerCustomElement(useMcpToolCustomElement)
 copilot.registerCustomElement(useHighlightLinkCustomElement)
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
-copilot.registerContextProvider(new LocationContextProvider())
+copilot.registerContextProvider(new LocationContextProvider(router))
+
+watch(router.currentRoute, (route) => {
+  copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+})
+
+onBeforeUnmount(
+  modalEvents.on('open', () => {
+    copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
+  })
+)
 
 provide(copilotInjectionKey, copilot)
 </script>
 
 <template>
-  <slot />
-  <CopilotUI :copilot="copilot" />
+  <slot></slot>
 </template>
