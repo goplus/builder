@@ -116,6 +116,10 @@ const routes: Array<RouteRecordRaw> = [
     props: true
   },
   {
+    path: '/tutorials',
+    component: () => import('@/pages/tutorials/index.vue')
+  },
+  {
     path: '/editor/:projectName',
     redirect(to) {
       const { projectName } = to.params

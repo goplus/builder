@@ -1136,7 +1136,7 @@ paths:
         - name: owner
           in: query
           schema:
-            type: string
+            $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter courses by the owner's username.
             
@@ -1305,6 +1305,14 @@ paths:
             examples:
               - order
           description: Field by which to order the results.
+        - name: owner
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: |
+            Filter course serieses by the owner's username.
+            
+            Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
         - $ref: "#/components/parameters/PageSize"

@@ -40,6 +40,8 @@ export type ListCourseSeriesParams = PaginationParams & {
   orderBy?: 'createdAt' | 'updatedAt' | 'order'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
+  /** Filter by owner username */
+  owner?: string
 }
 
 export async function listCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
