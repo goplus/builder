@@ -118,8 +118,7 @@ type get_util_upinfo struct {
 }
 type AppV2 struct {
 	yap.AppV2
-	authorizer *authz.Authorizer
-	ctrl       *controller.Controller
+	ctrl *controller.Controller
 }
 type post_ai_interaction_turn struct {
 	yap.Handler
@@ -197,89 +196,89 @@ type put_user struct {
 	yap.Handler
 	*AppV2
 }
-//line cmd/spx-backend/main.yap:31
+//line cmd/spx-backend/main.yap:30
 func (this *AppV2) MainEntry() {
-//line cmd/spx-backend/main.yap:31:1
+//line cmd/spx-backend/main.yap:30:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/main.yap:34:1
+//line cmd/spx-backend/main.yap:33:1
 	cfg, err := config.Load(logger)
-//line cmd/spx-backend/main.yap:35:1
+//line cmd/spx-backend/main.yap:34:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:36:1
+//line cmd/spx-backend/main.yap:35:1
 		logger.Fatalln("failed to load configuration:", err)
 	}
-//line cmd/spx-backend/main.yap:40:1
+//line cmd/spx-backend/main.yap:39:1
 	db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
-//line cmd/spx-backend/main.yap:41:1
+//line cmd/spx-backend/main.yap:40:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:42:1
+//line cmd/spx-backend/main.yap:41:1
 		logger.Fatalln("failed to open database:", err)
 	}
-//line cmd/spx-backend/main.yap:47:1
+//line cmd/spx-backend/main.yap:46:1
 	authenticator := casdoor.New(db, cfg.Casdoor)
-//line cmd/spx-backend/main.yap:49:1
+//line cmd/spx-backend/main.yap:48:1
 	// Initialize authorizer.
 	var quotaTracker authz.QuotaTracker
-//line cmd/spx-backend/main.yap:51:1
+//line cmd/spx-backend/main.yap:50:1
 	if cfg.Redis.Addr != "" {
-//line cmd/spx-backend/main.yap:52:1
+//line cmd/spx-backend/main.yap:51:1
 		quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
-//line cmd/spx-backend/main.yap:53:1
+//line cmd/spx-backend/main.yap:52:1
 		logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
 	} else {
-//line cmd/spx-backend/main.yap:55:1
+//line cmd/spx-backend/main.yap:54:1
 		quotaTracker = quota.NewNopQuotaTracker()
-//line cmd/spx-backend/main.yap:56:1
+//line cmd/spx-backend/main.yap:55:1
 		logger.Println("using no-op quota tracker")
 	}
-//line cmd/spx-backend/main.yap:58:1
+//line cmd/spx-backend/main.yap:57:1
 	pdp := embpdp.New(quotaTracker)
-//line cmd/spx-backend/main.yap:59:1
-	this.authorizer = authz.New(db, pdp, quotaTracker)
-//line cmd/spx-backend/main.yap:62:1
+//line cmd/spx-backend/main.yap:58:1
+	authorizer := authz.New(db, pdp, quotaTracker)
+//line cmd/spx-backend/main.yap:61:1
 	this.ctrl, err = controller.New(context.Background(), db, cfg)
-//line cmd/spx-backend/main.yap:63:1
+//line cmd/spx-backend/main.yap:62:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:64:1
+//line cmd/spx-backend/main.yap:63:1
 		logger.Fatalln("failed to create a new controller:", err)
 	}
-//line cmd/spx-backend/main.yap:69:1
+//line cmd/spx-backend/main.yap:68:1
 	port := cfg.Server.GetPort()
-//line cmd/spx-backend/main.yap:70:1
+//line cmd/spx-backend/main.yap:69:1
 	logger.Printf("listening to %s", port)
-//line cmd/spx-backend/main.yap:72:1
-	h := this.Handler(this.authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
-//line cmd/spx-backend/main.yap:78:1
+//line cmd/spx-backend/main.yap:71:1
+	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
+//line cmd/spx-backend/main.yap:77:1
 	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:80:1
+//line cmd/spx-backend/main.yap:79:1
 	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-//line cmd/spx-backend/main.yap:81:1
+//line cmd/spx-backend/main.yap:80:1
 	defer stop()
-//line cmd/spx-backend/main.yap:82:1
+//line cmd/spx-backend/main.yap:81:1
 	var serverErr error
-//line cmd/spx-backend/main.yap:83:1
+//line cmd/spx-backend/main.yap:82:1
 	go func() {
-//line cmd/spx-backend/main.yap:84:1
+//line cmd/spx-backend/main.yap:83:1
 		serverErr = server.ListenAndServe()
-//line cmd/spx-backend/main.yap:85:1
+//line cmd/spx-backend/main.yap:84:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:87:1
+//line cmd/spx-backend/main.yap:86:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:88:1
+//line cmd/spx-backend/main.yap:87:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:89:1
+//line cmd/spx-backend/main.yap:88:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:92:1
+//line cmd/spx-backend/main.yap:91:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:93:1
+//line cmd/spx-backend/main.yap:92:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:94:1
+//line cmd/spx-backend/main.yap:93:1
 	if
-//line cmd/spx-backend/main.yap:94:1
+//line cmd/spx-backend/main.yap:93:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:95:1
+//line cmd/spx-backend/main.yap:94:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }
@@ -1535,7 +1534,7 @@ func (this *post_asset) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_asset.yap:26:1
-	if !authz.UserCanManageAssets(ctx.Context()) {
+	if !authz.CanManageAssets(ctx.Context()) {
 //line cmd/spx-backend/post_asset.yap:27:1
 		if params.Visibility == model.VisibilityPublic {
 //line cmd/spx-backend/post_asset.yap:28:1
@@ -1569,61 +1568,61 @@ func (this *post_copilot_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_message.yap:12:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_copilot_message.yap:13:1
-	mUser, ok := ensureAuthenticatedUser(ctx)
+	if
+//line cmd/spx-backend/post_copilot_message.yap:13:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_copilot_message.yap:14:1
-	if !ok {
-//line cmd/spx-backend/post_copilot_message.yap:15:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_message.yap:19:1
+//line cmd/spx-backend/post_copilot_message.yap:18:1
 	if
-//line cmd/spx-backend/post_copilot_message.yap:19:1
+//line cmd/spx-backend/post_copilot_message.yap:18:1
 	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context()); ok {
-//line cmd/spx-backend/post_copilot_message.yap:20:1
+//line cmd/spx-backend/post_copilot_message.yap:19:1
 		if caps.CopilotMessageQuotaLeft <= 0 {
-//line cmd/spx-backend/post_copilot_message.yap:21:1
+//line cmd/spx-backend/post_copilot_message.yap:20:1
 			replyWithCodeMsg(ctx, errorTooManyRequests, "Copilot message quota exceeded")
-//line cmd/spx-backend/post_copilot_message.yap:22:1
+//line cmd/spx-backend/post_copilot_message.yap:21:1
 			return
 		}
 	}
-//line cmd/spx-backend/post_copilot_message.yap:26:1
+//line cmd/spx-backend/post_copilot_message.yap:25:1
 	params := &controller.GenerateMessageParams{}
-//line cmd/spx-backend/post_copilot_message.yap:27:1
+//line cmd/spx-backend/post_copilot_message.yap:26:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_copilot_message.yap:28:1
+//line cmd/spx-backend/post_copilot_message.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_message.yap:30:1
+//line cmd/spx-backend/post_copilot_message.yap:29:1
 	if
-//line cmd/spx-backend/post_copilot_message.yap:30:1
+//line cmd/spx-backend/post_copilot_message.yap:29:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_copilot_message.yap:31:1
+//line cmd/spx-backend/post_copilot_message.yap:30:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_copilot_message.yap:32:1
+//line cmd/spx-backend/post_copilot_message.yap:31:1
 		return
 	}
+//line cmd/spx-backend/post_copilot_message.yap:34:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
 //line cmd/spx-backend/post_copilot_message.yap:35:1
-	canUsePremium := authz.UserCanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_copilot_message.yap:36:1
 	result, err := this.ctrl.GenerateMessage(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_copilot_message.yap:37:1
+//line cmd/spx-backend/post_copilot_message.yap:36:1
 	if err != nil {
-//line cmd/spx-backend/post_copilot_message.yap:38:1
+//line cmd/spx-backend/post_copilot_message.yap:37:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_copilot_message.yap:39:1
+//line cmd/spx-backend/post_copilot_message.yap:38:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_message.yap:43:1
+//line cmd/spx-backend/post_copilot_message.yap:42:1
 	if
+//line cmd/spx-backend/post_copilot_message.yap:42:1
+	err := authz.ConsumeQuota(ctx.Context(), authz.ResourceCopilotMessage, 1); err != nil {
 //line cmd/spx-backend/post_copilot_message.yap:43:1
-	err := this.authorizer.ConsumeQuota(ctx.Context(), mUser.ID, authz.ResourceCopilotMessage, 1); err != nil {
-//line cmd/spx-backend/post_copilot_message.yap:44:1
 		logger := log.GetReqLogger(ctx.Context())
-//line cmd/spx-backend/post_copilot_message.yap:45:1
+//line cmd/spx-backend/post_copilot_message.yap:44:1
 		logger.Printf("failed to consume copilot quota: %v", err)
 	}
-//line cmd/spx-backend/post_copilot_message.yap:48:1
+//line cmd/spx-backend/post_copilot_message.yap:47:1
 	this.Json__1(result)
 }
 func (this *post_copilot_message) Classfname() string {
@@ -1639,65 +1638,65 @@ func (this *post_copilot_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_stream_message.yap:12:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_copilot_stream_message.yap:13:1
-	mUser, ok := ensureAuthenticatedUser(ctx)
+	if
+//line cmd/spx-backend/post_copilot_stream_message.yap:13:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_copilot_stream_message.yap:14:1
-	if !ok {
-//line cmd/spx-backend/post_copilot_stream_message.yap:15:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:19:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:18:1
 	if
-//line cmd/spx-backend/post_copilot_stream_message.yap:19:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:18:1
 	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context()); ok {
-//line cmd/spx-backend/post_copilot_stream_message.yap:20:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:19:1
 		if caps.CopilotMessageQuotaLeft <= 0 {
-//line cmd/spx-backend/post_copilot_stream_message.yap:21:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:20:1
 			replyWithCodeMsg(ctx, errorTooManyRequests, "Copilot message quota exceeded")
-//line cmd/spx-backend/post_copilot_stream_message.yap:22:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:21:1
 			return
 		}
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:26:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:25:1
 	params := &controller.GenerateMessageParams{}
-//line cmd/spx-backend/post_copilot_stream_message.yap:27:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:26:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_copilot_stream_message.yap:28:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:30:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:29:1
 	if
-//line cmd/spx-backend/post_copilot_stream_message.yap:30:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:29:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_copilot_stream_message.yap:31:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:30:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_copilot_stream_message.yap:32:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:31:1
 		return
 	}
+//line cmd/spx-backend/post_copilot_stream_message.yap:34:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
 //line cmd/spx-backend/post_copilot_stream_message.yap:35:1
-	canUsePremium := authz.UserCanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_copilot_stream_message.yap:36:1
 	read, err := this.ctrl.GenerateMessageStream(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_copilot_stream_message.yap:37:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:36:1
 	if err != nil {
-//line cmd/spx-backend/post_copilot_stream_message.yap:38:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:37:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_copilot_stream_message.yap:39:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:38:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:43:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:42:1
 	if
+//line cmd/spx-backend/post_copilot_stream_message.yap:42:1
+	err := authz.ConsumeQuota(ctx.Context(), authz.ResourceCopilotMessage, 1); err != nil {
 //line cmd/spx-backend/post_copilot_stream_message.yap:43:1
-	err := this.authorizer.ConsumeQuota(ctx.Context(), mUser.ID, authz.ResourceCopilotMessage, 1); err != nil {
-//line cmd/spx-backend/post_copilot_stream_message.yap:44:1
 		logger := log.GetReqLogger(ctx.Context())
-//line cmd/spx-backend/post_copilot_stream_message.yap:45:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:44:1
 		logger.Printf("failed to consume copilot quota: %v", err)
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:48:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:47:1
 	defer read.Close()
-//line cmd/spx-backend/post_copilot_stream_message.yap:50:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:49:1
 	buf := make([]byte, 4096)
-//line cmd/spx-backend/post_copilot_stream_message.yap:51:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:50:1
 	this.Stream__2(read, buf)
 }
 func (this *post_copilot_stream_message) Classfname() string {
@@ -2038,65 +2037,65 @@ func (this *post_workflow_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_workflow_stream_message.yap:12:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_workflow_stream_message.yap:13:1
-	mUser, ok := ensureAuthenticatedUser(ctx)
+	if
+//line cmd/spx-backend/post_workflow_stream_message.yap:13:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_workflow_stream_message.yap:14:1
-	if !ok {
-//line cmd/spx-backend/post_workflow_stream_message.yap:15:1
 		return
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:19:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:18:1
 	if
-//line cmd/spx-backend/post_workflow_stream_message.yap:19:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:18:1
 	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context()); ok {
-//line cmd/spx-backend/post_workflow_stream_message.yap:20:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:19:1
 		if caps.CopilotMessageQuotaLeft <= 0 {
-//line cmd/spx-backend/post_workflow_stream_message.yap:21:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:20:1
 			replyWithCodeMsg(ctx, errorTooManyRequests, "Copilot message quota exceeded")
-//line cmd/spx-backend/post_workflow_stream_message.yap:22:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:21:1
 			return
 		}
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:26:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:25:1
 	params := &controller.WorkflowMessageParams{}
-//line cmd/spx-backend/post_workflow_stream_message.yap:27:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:26:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_workflow_stream_message.yap:28:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:30:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:29:1
 	if
-//line cmd/spx-backend/post_workflow_stream_message.yap:30:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:29:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_workflow_stream_message.yap:31:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:30:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_workflow_stream_message.yap:32:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:31:1
 		return
 	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:34:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
 //line cmd/spx-backend/post_workflow_stream_message.yap:35:1
-	canUsePremium := authz.UserCanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_workflow_stream_message.yap:36:1
 	read, err := this.ctrl.WorkflowMessageStream(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_workflow_stream_message.yap:37:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:36:1
 	if err != nil {
-//line cmd/spx-backend/post_workflow_stream_message.yap:38:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:37:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_workflow_stream_message.yap:39:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:38:1
 		return
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:43:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:42:1
 	if
+//line cmd/spx-backend/post_workflow_stream_message.yap:42:1
+	err := authz.ConsumeQuota(ctx.Context(), authz.ResourceCopilotMessage, 1); err != nil {
 //line cmd/spx-backend/post_workflow_stream_message.yap:43:1
-	err := this.authorizer.ConsumeQuota(ctx.Context(), mUser.ID, authz.ResourceCopilotMessage, 1); err != nil {
-//line cmd/spx-backend/post_workflow_stream_message.yap:44:1
 		logger := log.GetReqLogger(ctx.Context())
-//line cmd/spx-backend/post_workflow_stream_message.yap:45:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:44:1
 		logger.Printf("failed to consume copilot quota: %v", err)
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:48:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:47:1
 	defer read.Close()
-//line cmd/spx-backend/post_workflow_stream_message.yap:50:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:49:1
 	buf := make([]byte, 4096)
-//line cmd/spx-backend/post_workflow_stream_message.yap:51:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:50:1
 	this.Stream__2(read, buf)
 }
 func (this *post_workflow_stream_message) Classfname() string {
@@ -2135,7 +2134,7 @@ func (this *put_asset_id) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/put_asset_#id.yap:26:1
-	if !authz.UserCanManageAssets(ctx.Context()) {
+	if !authz.CanManageAssets(ctx.Context()) {
 //line cmd/spx-backend/put_asset_#id.yap:27:1
 		if params.Visibility == model.VisibilityPublic {
 //line cmd/spx-backend/put_asset_#id.yap:28:1

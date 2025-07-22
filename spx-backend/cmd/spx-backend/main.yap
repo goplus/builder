@@ -24,8 +24,7 @@ const (
 )
 
 var (
-	authorizer *authz.Authorizer
-	ctrl       *controller.Controller
+	ctrl *controller.Controller
 )
 
 logger := log.GetLogger()
@@ -56,7 +55,7 @@ if cfg.Redis.Addr != "" {
 	logger.Println("using no-op quota tracker")
 }
 pdp := embpdp.New(quotaTracker)
-authorizer = authz.New(db, pdp, quotaTracker)
+authorizer := authz.New(db, pdp, quotaTracker)
 
 // Initialize controller.
 ctrl, err = controller.New(context.Background(), db, cfg)

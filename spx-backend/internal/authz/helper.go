@@ -1,15 +1,33 @@
 package authz
 
-import "context"
+import (
+	"context"
+	"errors"
 
-// UserCanManageAssets checks if the user can manage assets.
-func UserCanManageAssets(ctx context.Context) bool {
+	"github.com/goplus/builder/spx-backend/internal/authn"
+)
+
+// CanManageAssets checks if the user can manage assets.
+func CanManageAssets(ctx context.Context) bool {
 	caps, ok := UserCapabilitiesFromContext(ctx)
 	return ok && caps.CanManageAssets
 }
 
-// UserCanUsePremiumLLM checks if the user can use premium LLM models.
-func UserCanUsePremiumLLM(ctx context.Context) bool {
+// CanUsePremiumLLM checks if the user can use premium LLM models.
+func CanUsePremiumLLM(ctx context.Context) bool {
 	caps, ok := UserCapabilitiesFromContext(ctx)
 	return ok && caps.CanUsePremiumLLM
+}
+
+// ConsumeQuota consumes the specified amount of quota for the user and resource.
+func ConsumeQuota(ctx context.Context, resource Resource, amount int64) error {
+	authorizer, ok := authorizerFromContext(ctx)
+	if !ok {
+		return errors.New("missing authorizer in context")
+	}
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return errors.New("missing authenticated user in context")
+	}
+	return authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, resource, amount)
 }

@@ -23,7 +23,7 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-if !authz.UserCanManageAssets(ctx.Context()) {
+if !authz.CanManageAssets(ctx.Context()) {
 	if params.Visibility == model.VisibilityPublic {
 		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to create public assets")
 		return
