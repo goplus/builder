@@ -6,7 +6,7 @@ const props = defineProps<{
   copilot: Copilot
 }>()
 
-const inputStr = ref('告诉我 nighca/Ninja-Fight 这个项目的介绍')
+const inputStr = ref('')
 const textareaRef = ref<HTMLTextAreaElement>()
 const round = computed(() => props.copilot.currentSession?.currentRound ?? null)
 const loading = computed(() => {
@@ -22,6 +22,7 @@ const placeholder = computed(() => {
 })
 
 const defaultTopic: Topic = {
+  title: { en: 'New chat', zh: '新会话' },
   description: '',
   reactToEvents: false
 }

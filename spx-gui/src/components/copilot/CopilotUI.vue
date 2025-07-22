@@ -1,24 +1,37 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
-import { UIIcon } from '@/components/ui'
+import { timeout } from '@/utils/utils'
+import { UIIcon, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import logoSrc from './logo.png'
-import type { Copilot } from './copilot'
+import { useCopilot } from './CopilotRoot.vue'
 
-const props = defineProps<{
-  copilot: Copilot
-}>()
+const copilot = useCopilot()
 
 const bodyRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 
-const rounds = computed(() => {
-  const session = props.copilot.currentSession
-  if (session == null || session.rounds.length === 0) return null
-  return session.rounds
+const session = computed(() => copilot.currentSession)
+
+const title = computed(() => {
+  if (session.value == null) return null
+  return session.value.topic.title
 })
+
+const rounds = computed(() => {
+  if (session.value == null || session.value.rounds.length === 0) return null
+  return session.value.rounds
+})
+
+const StateIndicator = computed(() => session.value?.topic.stateIndicator)
+
+async function handleNewSession() {
+  copilot.endCurrentSession()
+  await timeout(100) // TODO
+  inputRef.value?.focus()
+}
 
 useBottomSticky(bodyRef)
 
@@ -46,10 +59,29 @@ useBottomSticky(bodyRef)
     </div>
     <div v-show="copilot.active" class="copilot-panel">
       <header class="header">
-        {{ $t({ en: 'Copilot', zh: 'Copilot' }) }}
-        <button class="close">
-          <UIIcon class="icon" type="close" @click="copilot.close()" />
+        <h4 class="title">{{ $t(title) }}</h4>
+        <template v-if="StateIndicator != null">
+          <StateIndicator />
+        </template>
+        <UITooltip v-if="session != null && session.topic.endable !== false">
+          {{ $t({ en: 'New chat', zh: '新建会话' }) }}
+          <template #trigger>
+            <button class="btn">
+              <UIIcon class="icon" type="plus" @click="handleNewSession" />
+            </button>
+          </template>
+        </UITooltip>
+        <button v-if="session == null" class="btn" disabled>
+          <UIIcon class="icon" type="plus" />
         </button>
+        <UITooltip>
+          {{ $t({ en: 'Close the panel', zh: '关闭对话框' }) }}
+          <template #trigger>
+            <button class="btn">
+              <UIIcon class="icon" type="close" @click="copilot.close()" />
+            </button>
+          </template>
+        </UITooltip>
       </header>
       <div ref="bodyRef" class="body">
         <!-- <MarkdownView :value="testContent"></MarkdownView> -->
@@ -61,23 +93,23 @@ useBottomSticky(bodyRef)
           <h4 class="title">
             {{
               $t({
-                en: 'Ask copilot',
-                zh: '向 Copilot 提问'
+                en: 'Hi, I am Copilot',
+                zh: '你好，我是 Copilot'
               })
             }}
           </h4>
           <p class="description">
             {{
               $t({
-                en: 'Copilot may help you write or understand code, find and fix problems',
-                zh: 'Copilot 可以帮助你编写或理解代码，发现并修复问题'
+                en: 'I can help you with XBuilder, please type your question or what you want to do below.',
+                zh: '我可以帮助你了解并使用 XBuilder，请在下方输入你的问题或想做的事。'
               })
             }}
           </p>
         </div>
       </div>
       <footer class="footer">
-        <CopilotInput ref="inputRef" class="input" :copilot="props.copilot" />
+        <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
       </footer>
     </div>
   </div>
@@ -89,6 +121,7 @@ useBottomSticky(bodyRef)
 
 .copilot-trigger {
   position: fixed;
+  z-index: 9999; // TODO
   right: 0;
   bottom: 20px;
 
@@ -110,10 +143,11 @@ useBottomSticky(bodyRef)
 
 .copilot-panel {
   position: fixed;
+  z-index: 9999; // TODO
   right: 10px;
   bottom: 20px;
   top: 100px;
-  width: 360px;
+  width: 340px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -129,9 +163,13 @@ useBottomSticky(bodyRef)
   padding: 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
 
-  .close {
+  .title {
+    flex: 1 1 0;
+  }
+
+  .btn {
     width: 24px;
     height: 24px;
     padding: 0;
@@ -143,14 +181,21 @@ useBottomSticky(bodyRef)
     background: none;
     border-radius: 50%;
     color: var(--ui-color-grey-700);
-    cursor: pointer;
     transition: background-color 0.2s;
 
-    &:hover {
-      background-color: var(--ui-color-grey-400);
+    &:not(:disabled) {
+      cursor: pointer;
+      &:hover {
+        background-color: var(--ui-color-grey-400);
+      }
+      &:active {
+        background-color: var(--ui-color-grey-500);
+      }
     }
-    &:active {
-      background-color: var(--ui-color-grey-500);
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--ui-color-grey-600);
     }
 
     .icon {

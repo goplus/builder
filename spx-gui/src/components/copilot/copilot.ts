@@ -1,10 +1,11 @@
+import { debounce } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component } from 'vue'
 import type { JsonSchema7Type } from 'zod-to-json-schema'
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
-import { ToolExecutor, type ToolExecutionInput } from './tool-executor'
+import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName, type Props as ToolUseProps } from './ToolUse.vue'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 
@@ -44,7 +45,7 @@ export type CopilotMessage = TextMessage & {
 export type ToolMessage = {
   role: 'tool'
   callId: string
-  content: unknown
+  execution: ToolExecution
 }
 
 export type Message = UserMessage | CopilotMessage | ToolMessage
@@ -58,7 +59,7 @@ export function toApiMessage(m: Message): apis.Message {
           textContent = m.content
           break
         case 'event':
-          textContent = m.detail
+          textContent = `<event>${m.detail}</event>`
           break
       }
       break
@@ -66,8 +67,17 @@ export function toApiMessage(m: Message): apis.Message {
       textContent = m.content
       break
     case 'tool':
-      // For tool messages, we assume the content is already a string.
-      textContent = JSON.stringify(m.content)
+      switch (m.execution.state) {
+        case 'executing':
+          textContent = 'Executing tool...'
+          break
+        case 'completed':
+          textContent = `<result>${JSON.stringify(m.execution.result)}</result>`
+          break
+        case 'failed':
+          textContent = `Tool execution failed: ${m.execution.error}`
+          break
+      }
       break
   }
   return {
@@ -80,6 +90,8 @@ export function toApiMessage(m: Message): apis.Message {
 }
 
 export type Topic = {
+  /** Name of the topic, for display purpose. */
+  title: LocaleMessage
   /**
    * Description of the topic. Sample:
    * * "Now you are about to help the user to fix a bug in the code."
@@ -88,6 +100,10 @@ export type Topic = {
   description: string
   /** Whether the copilot should react to user events under the topic */
   reactToEvents: boolean
+  /** Whether the session can be ended by the user, defaults to `true` */
+  endable?: boolean
+  /** Component to render the topic state indicator, e.g. tip for current tutorial course */
+  stateIndicator?: Component<{}>
 }
 
 export enum RoundState {
@@ -177,11 +193,13 @@ export class Round {
     }
     const toolMessages = await Promise.all(
       toolExecutionInputs.map(async (calling) => {
-        const result = await this.copilot.executor.execute(calling)
+        await this.copilot.executor.execute(calling)
+        const execution = this.copilot.executor.getExecution(calling.id)
+        if (execution == null) throw new Error(`Tool execution with ID ${calling.id} not found`)
         return {
           role: 'tool',
           callId: calling.id,
-          content: result
+          execution
         } satisfies ToolMessage
       })
     )
@@ -300,8 +318,6 @@ export type ToolDefinition = {
 
 export type ToolDefinitionWithImplementation = Required<ToolDefinition>
 
-// export type Tool = CustomElementTool | FunctionTool
-
 export interface ICopilotToolImplementationsProvider {
   /**
    * Provide tools for the copilot.
@@ -349,11 +365,11 @@ export class Copilot {
     return this.currentSessionRef.value
   }
 
-  getContext(): string {
+  private getContext(): string {
     return this.contextProviders.map((provider) => provider.provideContext()).join('\n\n')
   }
 
-  getCustomElementPrompt(customElement: CustomElementDefinition) {
+  private getCustomElementPrompt(customElement: CustomElementDefinition) {
     return `### \`${customElement.tagName}\`
 ${customElement.description}
 Attributes schema:
@@ -362,7 +378,7 @@ ${stringifySchema(customElement.attributes)}
 \`\`\``
   }
 
-  getCustomElementsPrompt() {
+  private getCustomElementsPrompt() {
     const customElements = this.getCustomElements()
     if (customElements.length === 0) return ''
     return `# Available custom elements
@@ -378,7 +394,7 @@ Here are the custom elements you can use in your messages:
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
-  getToolPrompt(tool: ToolDefinitionWithImplementation) {
+  private getToolPrompt(tool: ToolDefinitionWithImplementation) {
     return `### Tool \`${tool.name}\`
 ${tool.description}
 Parameters schema:
@@ -387,7 +403,7 @@ ${stringifySchema(tool.parameters)}
 \`\`\``
   }
 
-  getToolsPrompt() {
+  private getToolsPrompt() {
     const tools = this.getToolsWithImplementations()
     if (tools.length === 0) return "There's no tools available."
     return `# Available tools
@@ -395,8 +411,15 @@ ${stringifySchema(tool.parameters)}
 ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
   }
 
+  private getTopicPrompt() {
+    if (this.currentSession == null) return ''
+    const topic = this.currentSession.topic
+    return `# Current topic between you and user
+${topic.description}`
+  }
+
   getContextMessage(): UserTextMessage {
-    const parts = [this.getCustomElementsPrompt(), this.getToolsPrompt(), this.getContext()]
+    const parts = [this.getCustomElementsPrompt(), this.getToolsPrompt(), this.getContext(), this.getTopicPrompt()]
     const content = `<context>
 ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 </context>`
@@ -454,12 +477,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
-  /**
-   * Notify the copilot of a user event.
-   * If no session is running, nothing will happen.
-   */
-  notifyUserEvent(name: LocaleMessage, detail: string): void {
+  private notifyUserEventWithoutDebounce(name: LocaleMessage, detail: string): void {
     if (this.currentSession == null) return
+    if (this.currentSession.topic.reactToEvents === false) return
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',
@@ -468,6 +488,15 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
     this.currentSession.addUserMessage(userEventMessage)
   }
+
+  /**
+   * Notify the copilot of a user event.
+   * If no session is running, nothing will happen.
+   */
+  notifyUserEvent = debounce(
+    (name: LocaleMessage, detail: string) => this.notifyUserEventWithoutDebounce(name, detail),
+    1000
+  )
 
   /** Register a context provider for the copilot. */
   registerContextProvider(provider: ICopilotContextProvider): Disposer {

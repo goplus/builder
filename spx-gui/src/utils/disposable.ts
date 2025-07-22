@@ -3,7 +3,7 @@
  */
 
 import { markRaw } from 'vue'
-import { Cancelled } from './exception'
+import { Cancelled } from './exception/base'
 
 export type Disposer = () => void
 
