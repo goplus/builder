@@ -1,0 +1,10 @@
+filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
+filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
+github.com/go-sql-driver/mysql v1.9.3 h1:U/N249h2WzJ3Ukj8SowVFjdtZKfu9vlLZxjPXV1aweo=
+github.com/go-sql-driver/mysql v1.9.3/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
+github.com/goplus/gogen v1.19.1 h1:L7jz60azeowj8zUq48tozETriTPBLqHb0nDj6PheANc=
+github.com/goplus/gogen v1.19.1/go.mod h1:owX2e1EyU5WD+Nm6oH2m/GXjLdlBYcwkLO4wN8HHXZI=
+github.com/goplus/xgo v1.5.1 h1:eirZIOEWpDRUJs2jXtzyFDSF5uaxikC4dhGzjKHxut4=
+github.com/goplus/xgo v1.5.1/go.mod h1:Jop/v2uxh1/kBQwThrOwizjfZxYlBcODzChBWkuAoAw=
+github.com/qiniu/x v1.15.1 h1:avE+YQaowp8ZExjylOeSM73rUo3MQKBAYVxh4NJ8dY8=
+github.com/qiniu/x v1.15.1/go.mod h1:AiovSOCaRijaf3fj+0CBOpR1457pn24b0Vdb1JpwhII=
