@@ -54,9 +54,11 @@ export type SpriteInits = {
   animationBindings?: Record<State, string | undefined>
   pivot?: Pivot
   assetMetadata?: AssetMetadata
+  /** Additional config not recognized by builder */
+  extraConfig?: object
 }
 
-export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings' | 'metadata'> & {
+export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings' | 'assetMetadata' | 'extraConfig'> & {
   builder_id?: string
   builder_assetMetadata?: AssetMetadata
   /** Same as costumeIndex, for compatibility only */
@@ -262,6 +264,11 @@ export class Sprite extends Disposable {
     this.assetMetadata = metadata
   }
 
+  extraConfig: object
+  setExtraConfig(extraConfig: object) {
+    this.extraConfig = extraConfig
+  }
+
   constructor(name: string, code: string = '', inits?: SpriteInits) {
     super()
     this.name = name
@@ -289,6 +296,7 @@ export class Sprite extends Disposable {
     this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
+    this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
 
@@ -357,7 +365,16 @@ export class Sprite extends Disposable {
       tAnimations,
       defaultAnimation,
       animBindings,
-      ...inits
+      x,
+      y,
+      size,
+      visible,
+      heading,
+      rotationStyle,
+      costumeIndex,
+      isDraggable,
+      pivot,
+      ...extraConfig
     } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
     if (includeCode) {
@@ -391,9 +408,16 @@ export class Sprite extends Disposable {
     const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
 
     const sprite = new Sprite(name, code, {
-      ...inits,
+      x,
+      y,
+      size,
+      visible,
+      heading,
+      rotationStyle,
+      isDraggable,
+      pivot,
       id: includeId ? id : undefined,
-      costumeIndex: inits.costumeIndex ?? currentCostumeIndex,
+      costumeIndex: costumeIndex ?? currentCostumeIndex,
       animationBindings: {
         [State.default]: animationNameToId(defaultAnimation),
         [State.die]: animationNameToId(animBindings?.[State.die]),
@@ -401,7 +425,8 @@ export class Sprite extends Disposable {
         [State.turn]: animationNameToId(animBindings?.[State.turn]),
         [State.glide]: animationNameToId(animBindings?.[State.glide])
       },
-      assetMetadata: includeMetadata ? metadata : undefined
+      assetMetadata: includeMetadata ? metadata : undefined,
+      extraConfig
     })
     for (const costume of costumes) {
       // If this costume is included by any animation, exclude it from sprite's costume list
@@ -477,7 +502,8 @@ export class Sprite extends Disposable {
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
       defaultAnimation: defaultAnimationName,
-      animBindings: animationBindingsNames
+      animBindings: animationBindingsNames,
+      ...this.extraConfig
     }
     if (includeCode) {
       const codeFilePath = getSpriteCodeFilePath(this.name)
