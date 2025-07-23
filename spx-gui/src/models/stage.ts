@@ -17,6 +17,8 @@ export type StageInits = {
   mapWidth?: number
   mapHeight?: number
   mapMode?: MapMode
+  /** Additional config not recognized by builder */
+  extraConfig?: object
 }
 
 export type RawMapConfig = {
@@ -190,6 +192,11 @@ export class Stage extends Disposable {
     return { width: this.mapWidth, height: this.mapHeight }
   }
 
+  extraConfig: object
+  setExtraConfig(extraConfig: object) {
+    this.extraConfig = extraConfig
+  }
+
   constructor(code: string = '', inits?: Partial<StageInits>) {
     super()
     this.code = code
@@ -204,6 +211,7 @@ export class Stage extends Disposable {
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
+    this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
 
@@ -216,7 +224,8 @@ export class Stage extends Disposable {
       sceneIndex,
       costumes: costumeConfigs,
       currentCostumeIndex,
-      map
+      map,
+      ...extraConfig
     }: RawStageConfig,
     files: Files
   ) {
@@ -227,7 +236,8 @@ export class Stage extends Disposable {
       backdropIndex: backdropIndex ?? sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
-      mapMode: getMapMode(map?.mode)
+      mapMode: getMapMode(map?.mode),
+      extraConfig
     })
     const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
@@ -259,7 +269,8 @@ export class Stage extends Disposable {
       backdrops: backdropConfigs,
       backdropIndex: backdropIndex,
       widgets: widgetsConfig,
-      map: { width: mapWidth, height: mapHeight, mode: mapMode }
+      map: { width: mapWidth, height: mapHeight, mode: mapMode },
+      ...this.extraConfig
     }
     return [config, files]
   }
