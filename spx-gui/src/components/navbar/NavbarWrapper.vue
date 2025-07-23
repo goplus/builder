@@ -5,6 +5,7 @@
         <NavbarLogo />
         <slot name="left"></slot>
         <NavbarLang />
+        <NavbarTutorials />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -21,6 +22,7 @@
 import NavbarLogo from './NavbarLogo.vue'
 import NavbarLang from './NavbarLang.vue'
 import NavbarProfile from './NavbarProfile.vue'
+import NavbarTutorials from './NavbarTutorials.vue'
 
 withDefaults(
   defineProps<{
