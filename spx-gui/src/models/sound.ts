@@ -13,9 +13,11 @@ export type SoundInits = {
   rate?: number
   sampleCount?: number
   assetMetadata?: AssetMetadata
+  /** Additional config not recognized by builder */
+  extraConfig?: object
 }
 
-export type RawSoundConfig = Omit<SoundInits, 'id'> & {
+export type RawSoundConfig = Omit<SoundInits, 'id' | 'assetMetadata' | 'extraConfig'> & {
   builder_id?: string
   builder_assetMetadata?: AssetMetadata
   path?: string
@@ -64,6 +66,11 @@ export class Sound extends Disposable {
     this.assetMetadata = metadata
   }
 
+  extraConfig: object
+  setExtraConfig(extraConfig: object) {
+    this.extraConfig = extraConfig
+  }
+
   constructor(name: string, file: File, inits?: SoundInits) {
     super()
     this.name = name
@@ -72,6 +79,7 @@ export class Sound extends Disposable {
     this.sampleCount = inits?.sampleCount ?? 0
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
+    this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
 
@@ -96,15 +104,19 @@ export class Sound extends Disposable {
       builder_id: id,
       builder_assetMetadata: metadata,
       path,
-      ...inits
+      rate,
+      sampleCount,
+      ...extraConfig
     } = (await toConfig(configFile)) as RawSoundConfig
     if (path == null) throw new Error(`path expected for sound ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
     return new Sound(name, file, {
-      ...inits,
       id: includeId ? id : undefined,
-      assetMetadata: includeMetadata ? metadata : undefined
+      rate,
+      sampleCount,
+      assetMetadata: includeMetadata ? metadata : undefined,
+      extraConfig
     })
   }
 
@@ -128,7 +140,8 @@ export class Sound extends Disposable {
     const config: RawSoundConfig = {
       rate: this.rate,
       sampleCount: this.sampleCount,
-      path: filename
+      path: filename,
+      ...this.extraConfig
     }
     if (includeId) config.builder_id = this.id
     if (includeMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
