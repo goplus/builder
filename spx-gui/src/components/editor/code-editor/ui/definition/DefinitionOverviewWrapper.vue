@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import CodeView from '@/components/common/CodeView.vue'
 import type { DefinitionKind } from '../../common'
-import CodeView from '../markdown/CodeView.vue'
 
 defineProps<{
   kind?: DefinitionKind

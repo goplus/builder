@@ -1,11 +1,13 @@
 <script lang="ts">
-function getComponents(copilot: Copilot) {
+function getComponents(copilot: Copilot): Components {
   const customComponents = copilot.getCustomElements().reduce<Record<string, Component>>((acc, tool) => {
     acc[tool.tagName] = tool.component
     return acc
   }, {})
-  // TODO: codeBlock
-  return { custom: customComponents }
+  return {
+    codeBlock: CodeBlock,
+    custom: customComponents
+  }
 }
 
 export function findCustomComponentUsages(value: string, copilot: Copilot) {
@@ -16,7 +18,11 @@ export function findCustomComponentUsages(value: string, copilot: Copilot) {
 
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
-import MarkdownView, { findCustomComponentUsages as fccu } from '@/components/common/markdown-vue/MarkdownView'
+import MarkdownView, {
+  findCustomComponentUsages as fccu,
+  type Components
+} from '@/components/common/markdown-vue/MarkdownView'
+import CodeBlock from './custom-elements/CodeBlock.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import type { Copilot } from './copilot'
 
@@ -123,6 +129,10 @@ const components = computed(() => getComponents(copilot))
     background: var(--ui-color-grey-300);
     word-break: break-word;
     overflow-wrap: break-word;
+  }
+
+  :deep(strong) {
+    font-weight: bold;
   }
 }
 </style>

@@ -32,6 +32,14 @@ export class Client {
   })
 
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
+    if (!resp.ok) {
+      const body = await resp.json()
+      if (!isApiExceptionPayload(body)) {
+        throw new Error('api call failed')
+      }
+      throw new ApiException(body.code, body.msg)
+    }
+
     const reader = resp.body?.getReader()
     if (!reader) throw new Error('Response body is null')
 

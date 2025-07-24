@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { inject } from 'vue'
+import { useAppProvide, useAppInject } from '@/utils/app-state'
 import type { EditorState } from './editor-state'
 
 export type EditorCtx = {
@@ -13,15 +13,19 @@ export type EditorCtx = {
 
 const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
 
+export function useEditorCtxRef() {
+  return useAppInject(editorCtxKey)
+}
+
 export function useEditorCtx() {
-  const ctx = inject(editorCtxKey)
-  if (ctx == null) throw new Error('useEditorCtx should be called inside of editor')
-  return ctx
+  const ctxRef = useAppInject(editorCtxKey)
+  if (ctxRef.value == null) throw new Error('useEditorCtx should be called inside of editor')
+  return ctxRef.value
 }
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey } from 'vue'
+import { type InjectionKey } from 'vue'
 import { Project } from '@/models/project'
 import { computedShallowReactive } from '@/utils/utils'
 
@@ -35,5 +39,5 @@ const editorCtx = computedShallowReactive<EditorCtx>(() => ({
   state: props.state
 }))
 
-provide(editorCtxKey, editorCtx)
+useAppProvide(editorCtxKey, editorCtx)
 </script>

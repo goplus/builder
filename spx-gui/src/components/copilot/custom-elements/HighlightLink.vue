@@ -1,25 +1,24 @@
 <script lang="ts">
 import { z } from 'zod'
-import zodToJsonSchema from 'zod-to-json-schema'
 
 export const tagName = 'highlight-link'
 
-export const description = `Create a link that reveals & highlights a specific node in the UI when clicked. \
+export const description = 'Create a link that reveals & highlights a specific node in the UI when clicked.'
+
+export const detailedDescription = `Create a link that reveals & highlights a specific node in the UI when clicked. \
 Use the node ID provided in the UI information to specify the target node. \
 Use this element in your output to help users to find the relevant UI element quickly. \
-For example, \`<highlight-link target-id="xxxyyy" tip="Click this button to submit" text="Submit button"></highlight-link>\` \
+For example, <pre is="highlight-link" target-id="xxxyyy" tip="Click this button to submit" text="Submit button"></pre> \
 will create a link with text "Submit button", when clicked, reveals the node with ID "xxxyyy" and shows the tip "Click this button to submit".`
 
-export const attributes = zodToJsonSchema(
-  z.object({
-    text: z.string().describe('Link text'),
-    'target-id': z.string().describe('ID for the linked node'),
-    tip: z
-      .string()
-      .optional()
-      .describe('Tip to show when node revealed, typically a description of the UI element in user language')
-  })
-)
+export const attributes = z.object({
+  text: z.string().describe('Link text'),
+  'target-id': z.string().describe('ID for the linked node'),
+  tip: z
+    .string()
+    .optional()
+    .describe('Tip to show when node revealed, typically a description of the UI element in user language')
+})
 </script>
 
 <script lang="ts" setup>

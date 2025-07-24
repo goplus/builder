@@ -82,6 +82,8 @@ export interface ICodeEditorUI {
   /** Open a text document in the editor, and select the given range */
   open(textDocument: TextDocumentIdentifier, range: Range): void
 
+  insertBlockText(text: string, range?: Range): Promise<void>
+
   dispose(): void
 }
 

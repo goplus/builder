@@ -79,7 +79,7 @@ const renameWidget = useRenameWidget()
 const getRenameWarning = useRenameWarning()
 
 async function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
-  const textDocument = codeEditorCtx.getTextDocument(textDocumentId)
+  const textDocument = codeEditorCtx.mustEditor().getTextDocument(textDocumentId)
   if (textDocument == null) throw new Error(`Text document (${textDocumentId.uri}) not found`)
   const name = textDocument.getValueInRange(range)
   return invokeRenameModal({
@@ -88,7 +88,7 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
       validateName: validateGopIdentifierName,
       applyName: (newName) =>
         editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
-          codeEditorCtx.rename(textDocumentId, position, newName)
+          codeEditorCtx.mustEditor().rename(textDocumentId, position, newName)
         ),
       inputTip: getGopIdentifierNameTip(),
       warning: await getRenameWarning()
@@ -115,8 +115,8 @@ const uiRef = computed(() => {
     editorCtx.project,
     editorCtx.state,
     i18n,
-    codeEditorCtx.getMonaco(),
-    codeEditorCtx.getTextDocument,
+    codeEditorCtx.mustMonaco(),
+    (id) => codeEditorCtx.mustEditor().getTextDocument(id),
     rename,
     renameResource
   )
@@ -209,9 +209,9 @@ watch(
       }
     })
 
-    codeEditorCtx.attachUI(ui)
+    codeEditorCtx.mustEditor().attachUI(ui)
     signal.addEventListener('abort', () => {
-      codeEditorCtx.detachUI(ui)
+      codeEditorCtx.mustEditor().detachUI(ui)
     })
   },
   { immediate: true }
@@ -302,7 +302,7 @@ function zoomReset() {
     <MonacoEditorComp
       v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
       class="monaco-editor-conflict-free"
-      :monaco="codeEditorCtx.getMonaco()"
+      :monaco="codeEditorCtx.mustMonaco()"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
       @dragover="handleMonacoEditorDragOver"

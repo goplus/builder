@@ -730,7 +730,7 @@ export class CodeEditor extends Disposable {
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
 
-  registerMCPTools(): void {
+  private registerMCPTools(): void {
     // Register tools for code editor
     this.registry.registerTools(
       [
@@ -1006,8 +1006,8 @@ export class CodeEditor extends Disposable {
     }
   }
 
-  async diagnosticWorkspace(): Promise<WorkspaceDiagnostics> {
-    const diagnosticReport = await this.lspClient.workspaceDiagnostic({}, { previousResultIds: [] })
+  async diagnosticWorkspace(signal?: AbortSignal): Promise<WorkspaceDiagnostics> {
+    const diagnosticReport = await this.lspClient.workspaceDiagnostic({ signal }, { previousResultIds: [] })
     const items: TextDocumentDiagnostics[] = []
     for (const report of diagnosticReport.items) {
       if (report.kind === 'unchanged') continue // For now, we support 'full' reports only
