@@ -97,7 +97,7 @@ const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 async function checkAndNotifyError() {
-  const r = await codeEditorCtx.diagnosticWorkspace()
+  const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
   const codeFilesWithError: LocaleMessage[] = []
   for (const i of r.items) {
     if (!i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
@@ -117,7 +117,7 @@ async function checkAndNotifyError() {
 async function tryFormatWorkspace() {
   try {
     await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
-      codeEditorCtx.formatWorkspace()
+      codeEditorCtx.mustEditor().formatWorkspace()
     )
   } catch (e) {
     console.warn('Failed to format workspace', e)

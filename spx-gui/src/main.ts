@@ -22,6 +22,7 @@ import { isCodeEditorOperation, isLSPOperation } from './utils/tracing'
 import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
 import { createRadar } from './utils/radar'
 import { createSpotlight } from './utils/spotlight'
+import { createAppState } from './utils/app-state'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -75,6 +76,7 @@ async function initApp() {
   app.use(VueQueryPlugin)
   app.use(createRadar())
   app.use(createSpotlight())
+  app.use(createAppState())
 
   app.mount('#app')
 }

@@ -1,18 +1,39 @@
+<script lang="ts">
+import { z } from 'zod'
+
+export const tagName = 'code-change'
+
+export const description = 'Display a modification based on the existing code. The user can decide if apply the change.'
+
+export const detailedDescription = `Display a modification based on the existing code. For example,
+<pre is="code-change" file="file:///NiuXiaoQi.spx" line="10" remove-line-count="2">
+onStart => {
+	say "Hello, world!"
+}
+</pre>
+will display a code change that removes 2 lines starting from line 10, and adds the code block.`
+
+export const attributes = z.object({
+  file: z.string().describe('Text document URI, e.g., `file:///NiuXiaoQi.spx`'),
+  line: z.string().describe('Position (line number) to do change'),
+  removeLineCount: z.string().optional().describe('Line count to remove. No line will be removed if not provided')
+})
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle, ActionException } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { type Range } from '../../common'
-import { useCodeEditorCtx } from '../../context'
-import CodeLink from '../../CodeLink.vue'
+import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
+import CodeLink from '@/components/editor/code-editor/CodeLink.vue'
+import { type Range } from '@/components/editor/code-editor/common'
+import { useCodeEditorCtxRef } from '@/components/editor/code-editor/context'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
 
 const props = defineProps<{
-  language?: string
   /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
   file: string
   /** Position (line number) to do change */
@@ -21,8 +42,8 @@ const props = defineProps<{
   removeLineCount?: string
 }>()
 
-const editorCtx = useEditorCtx()
-const codeEditorCtx = useCodeEditorCtx()
+const editorCtxRef = useEditorCtxRef()
+const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const childrenText = useSlotText()
 const codeToAdd = computed(() => {
@@ -34,6 +55,8 @@ const codeToAdd = computed(() => {
 })
 
 const target = computed(() => {
+  const codeEditorCtx = codeEditorCtxRef.value
+  if (codeEditorCtx == null) return null
   const textDocument = codeEditorCtx.mustEditor().getTextDocument({ uri: props.file })
   if (textDocument == null) return null
   const startLine = parseInt(props.line, 10)
@@ -57,7 +80,9 @@ const codeToDelete = (() => {
 
 const handleApply = useMessageHandle(
   async () => {
-    if (target.value == null) return
+    if (target.value == null) throw new Error('Target is not available')
+    const editorCtx = editorCtxRef.value
+    if (editorCtx == null) throw new Error('Editor context is not available')
     const { textDocument, range } = target.value
     if (textDocument.getValueInRange(range) !== codeToDelete)
       throw new ActionException(null, {
@@ -81,8 +106,8 @@ const handleApply = useMessageHandle(
       <div class="body">
         <div class="code-wrapper">
           <!-- TODO: Consider using [transformerNotationDiff](https://shiki.style/packages/transformers#transformernotationdiff) instead -->
-          <CodeView class="code" :language="language" mode="block" deletion>{{ codeToDelete }}</CodeView>
-          <CodeView class="code" :language="language" mode="block" addition>{{ codeToAdd }}</CodeView>
+          <CodeView class="code" mode="block" deletion>{{ codeToDelete }}</CodeView>
+          <CodeView class="code" mode="block" addition>{{ codeToAdd }}</CodeView>
         </div>
       </div>
       <BlockFooter>

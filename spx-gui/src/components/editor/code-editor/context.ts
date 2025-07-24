@@ -1,45 +1,33 @@
-import { type InjectionKey, inject, provide, watch } from 'vue'
+import { type InjectionKey, watch } from 'vue'
 import { shikiToMonaco } from '@shikijs/monaco'
 import { useI18n } from '@/utils/i18n'
 import { ProgressCollector } from '@/utils/progress'
 import { getHighlighter } from '@/utils/spx/highlighter'
 import { composeQuery, useQuery, type QueryRet } from '@/utils/query'
+import { useAppInject, useAppProvide } from '@/utils/app-state'
 import type { Project } from '@/models/project'
 import { ToolRegistry } from '@/components/agent-copilot/mcp/registry'
 import type { EditorState } from '../editor-state'
-import {
-  DiagnosticSeverity,
-  type Position,
-  type ResourceIdentifier,
-  type TextDocumentIdentifier,
-  type WorkspaceDiagnostics
-} from './common'
-import { type ICodeEditorUI } from './ui/code-editor-ui'
-import { TextDocument } from './text-document'
+import { DiagnosticSeverity } from './common'
 import { getMonaco, type monaco, type Monaco } from './monaco'
 import { CodeEditor } from './code-editor'
 
 export type CodeEditorCtx = {
-  attachUI(ui: ICodeEditorUI): void
-  detachUI(ui: ICodeEditorUI): void
-  getAttachedUI(): ICodeEditorUI | null
-  getMonaco(): Monaco
-  getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null
-  formatTextDocument(id: TextDocumentIdentifier): Promise<void>
-  formatWorkspace(): Promise<void>
-  diagnosticWorkspace(): Promise<WorkspaceDiagnostics>
-  /** Update code for (symbol) renaming */
-  rename(id: TextDocumentIdentifier, position: Position, newName: string): Promise<void>
-  /** Update code for resource renaming, should be called before model name update. */
-  renameResource(resource: ResourceIdentifier, newName: string): Promise<void>
+  getEditor(): CodeEditor | null
+  mustEditor(): CodeEditor
+  mustMonaco(): Monaco
 }
 
 const codeEditorCtxInjectionKey: InjectionKey<CodeEditorCtx> = Symbol('code-editor-ctx')
 
+export function useCodeEditorCtxRef() {
+  return useAppInject(codeEditorCtxInjectionKey)
+}
+
 export function useCodeEditorCtx() {
-  const ctx = inject(codeEditorCtxInjectionKey)
-  if (ctx == null) throw new Error('useCodeEditorCtx should be called inside of CodeEditor')
-  return ctx
+  const ctx = useAppInject(codeEditorCtxInjectionKey)
+  if (ctx.value == null) throw new Error('useCodeEditorCtx should be called inside of CodeEditor')
+  return ctx.value
 }
 
 // There may be errors in the project code when renaming resource/symbol, which may cause some references to be updated incorrectly.
@@ -47,7 +35,7 @@ export function useCodeEditorCtx() {
 export function useRenameWarning() {
   const codeEditorCtx = useCodeEditorCtx()
   return async function getRenameWarning() {
-    const r = await codeEditorCtx.diagnosticWorkspace()
+    const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
     const hasError = r.items.some((i) => i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error))
     if (!hasError) return null
     return {
@@ -189,46 +177,17 @@ export function useProvideCodeEditorCtx(
     { immediate: true }
   )
 
-  provide(codeEditorCtxInjectionKey, {
-    attachUI(ui: ICodeEditorUI) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      editorRef.value.attachUI(ui)
+  useAppProvide(codeEditorCtxInjectionKey, {
+    getEditor() {
+      return editorRef.value
     },
-    detachUI(ui: ICodeEditorUI) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      editorRef.value.detachUI(ui)
+    mustEditor() {
+      if (editorRef.value == null) throw new Error('CodeEditor is not initialized yet')
+      return editorRef.value
     },
-    getAttachedUI() {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.getAttachedUI()
-    },
-    getMonaco() {
-      if (monacoRef.value == null) throw new Error('Monaco not initialized')
+    mustMonaco() {
+      if (monacoRef.value == null) throw new Error('Monaco is not initialized yet')
       return monacoRef.value
-    },
-    getTextDocument(id: TextDocumentIdentifier) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.getTextDocument(id)
-    },
-    formatTextDocument(id: TextDocumentIdentifier) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.formatTextDocument(id)
-    },
-    formatWorkspace() {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.formatWorkspace()
-    },
-    diagnosticWorkspace() {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.diagnosticWorkspace()
-    },
-    rename(id: TextDocumentIdentifier, position: Position, newName: string) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.rename(id, position, newName)
-    },
-    renameResource(resource: ResourceIdentifier, newName: string) {
-      if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.renameResource(resource, newName)
     }
   })
 

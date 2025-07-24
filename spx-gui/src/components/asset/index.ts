@@ -198,7 +198,7 @@ export function useRenameSprite() {
         async applyName(newName) {
           const action = { name: { en: 'Rename sprite', zh: '重命名精灵' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(sprite), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sprite), newName)
             sprite.setName(newName)
           })
         },
@@ -224,7 +224,7 @@ export function useRenameSound() {
         async applyName(newName) {
           const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(sound), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(sound), newName)
             sound.setName(newName)
           })
         },
@@ -250,7 +250,7 @@ export function useRenameCostume() {
         async applyName(newName) {
           const action = { name: { en: 'Rename costume', zh: '重命名造型' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(costume), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(costume), newName)
             costume.setName(newName)
           })
         },
@@ -276,7 +276,7 @@ export function useRenameBackdrop() {
         async applyName(newName) {
           const action = { name: { en: 'Rename backdrop', zh: '重命名背景' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(backdrop), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(backdrop), newName)
             backdrop.setName(newName)
           })
         },
@@ -302,7 +302,7 @@ export function useRenameAnimation() {
         async applyName(newName) {
           const action = { name: { en: 'Rename animation', zh: '重命名动画' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(animation), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(animation), newName)
             animation.setName(newName)
           })
         },
@@ -328,7 +328,7 @@ export function useRenameWidget() {
         async applyName(newName) {
           const action = { name: { en: 'Rename widget', zh: '重命名控件' } }
           await editorCtx.project.history.doAction(action, async () => {
-            await codeEditorCtx.renameResource(getResourceIdentifier(widget), newName)
+            await codeEditorCtx.mustEditor().renameResource(getResourceIdentifier(widget), newName)
             widget.setName(newName)
           })
         },

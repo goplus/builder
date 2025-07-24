@@ -6,7 +6,7 @@ import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
-type Components = {
+export type Components = {
   /** Component for rendering code blocks */
   codeBlock?: Component
   /**

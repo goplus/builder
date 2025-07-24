@@ -3,7 +3,7 @@ import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { type Range, type Position, type TextDocumentIdentifier, textDocumentId2CodeFileName } from './common'
-import { useCodeEditorCtx } from './context'
+import { useCodeEditorCtxRef } from './context'
 
 const props = defineProps<{
   file: TextDocumentIdentifier
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const slots = useSlots()
 const i18n = useI18n()
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const codeFileName = computed(() => i18n.t(textDocumentId2CodeFileName(props.file)))
 
@@ -43,7 +43,9 @@ const defaultText = computed(() => {
 
 const handleClick = useMessageHandle(
   () => {
-    const ui = codeEditorCtx.getAttachedUI()
+    const codeEditorCtx = codeEditorCtxRef.value
+    if (codeEditorCtx == null) throw new Error('Code editor context is not available')
+    const ui = codeEditorCtx.mustEditor().getAttachedUI()
     if (ui == null) return
     const { file, position, range } = props
     if (position != null) {

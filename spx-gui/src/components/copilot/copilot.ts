@@ -1,12 +1,13 @@
+import type { ZodObject, ZodTypeAny } from 'zod'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 import { debounce } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component } from 'vue'
-import type { JsonSchema7Type } from 'zod-to-json-schema'
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
 import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
-import { tagName as toolUseTagName, type Props as ToolUseProps } from './ToolUse.vue'
+import { tagName as toolUseTagName } from './custom-elements/ToolUse.vue'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 
 /** Message with text content. */
@@ -181,11 +182,9 @@ export class Round {
     const toolExecutionInputs: ToolExecutionInput[] = []
     for (const ccu of ccus) {
       if (ccu.name !== toolUseTagName) continue
-      const props = ccu.props as ToolUseProps // TODO: validate props
-      const id = props.id as string
-      const tool = props.tool as string
-      const parameters = JSON.parse(props.parameters as string)
-      toolExecutionInputs.push({ id, tool, parameters })
+      const props = ccu.props
+      const id = props.id + ''
+      toolExecutionInputs.push({ ...props, id })
     }
     if (toolExecutionInputs.length === 0) {
       this.completeRound()
@@ -298,7 +297,7 @@ export type CustomElementDefinition = {
    */
   description: string
   /** Attributes definition for the tool (Element). */
-  attributes: JsonSchema7Type
+  attributes: ZodObject<any>
   /** Component to render the tool in the UI. */
   component: Component
 }
@@ -311,23 +310,13 @@ export type ToolDefinition = {
   /** Description of the function about what it does and how to use it. */
   description: string
   /** Parameters definition for the function. */
-  parameters: JsonSchema7Type
+  parameters: ZodObject<any>
   /** Function to call when the tool is used. */
-  implementation?: ToolImplementation
+  implementation: ToolImplementation
 }
 
-export type ToolDefinitionWithImplementation = Required<ToolDefinition>
-
-export interface ICopilotToolImplementationsProvider {
-  /**
-   * Provide tools for the copilot.
-   * The tools should be returned as an array.
-   */
-  provideToolImplementations(): Record<string, ToolImplementation | undefined>
-}
-
-function stringifySchema(schema: JsonSchema7Type): string {
-  const { $schema, ...pruned } = schema as any
+function stringifyZodSchema(schema: ZodTypeAny): string {
+  const { $schema, ...pruned } = zodToJsonSchema(schema)
   return JSON.stringify(pruned)
 }
 
@@ -335,24 +324,12 @@ export class Copilot {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
-  private toolImplementationsProviders: ICopilotToolImplementationsProvider[] = shallowReactive([])
 
-  private getToolsWithImplementations(): ToolDefinitionWithImplementation[] {
-    const tools: ToolDefinitionWithImplementation[] = []
-    const toolImplementations = this.toolImplementationsProviders.reduce<
-      Record<string, ToolImplementation | undefined>
-    >((acc, provider) => {
-      const impls = provider.provideToolImplementations()
-      return { ...acc, ...impls }
-    }, {})
-    for (const [name, tool] of this.toolMap.entries()) {
-      const implementation = toolImplementations[name] ?? tool.implementation
-      if (implementation != null) tools.push({ ...tool, implementation })
-    }
-    return tools
+  private getTools(): ToolDefinition[] {
+    return Array.from(this.toolMap.values())
   }
 
-  executor = new ToolExecutor(() => this.getToolsWithImplementations())
+  executor = new ToolExecutor(() => this.getTools())
 
   /** If copilot is active (the panel is visible) */
   private activeRef = shallowRef(false)
@@ -374,7 +351,7 @@ export class Copilot {
 ${customElement.description}
 Attributes schema:
 \`\`\`json
-${stringifySchema(customElement.attributes)}
+${stringifyZodSchema(customElement.attributes)}
 \`\`\``
   }
 
@@ -384,7 +361,7 @@ ${stringifySchema(customElement.attributes)}
     return `# Available custom elements
 
 You can use custom elements in your messages to render specific UI content or invoke additional functionality. \
-For example: \`<foo-bar a="1" b='"Hello"'></foo-bar>\` creates a custom element with tag name \`foo-bar\` \
+For example: \`<pre is="foo-bar" a="1" b='"Hello"'></pre>\` creates a custom element with tag name \`foo-bar\` \
 and attributes \`{ a: "1", b: '"Hello"' }\`.
 
 Each custom element has a tag name, a description, and an attributes schema that defines what values are accepted for each attribute.
@@ -394,17 +371,17 @@ Here are the custom elements you can use in your messages:
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
-  private getToolPrompt(tool: ToolDefinitionWithImplementation) {
+  private getToolPrompt(tool: ToolDefinition) {
     return `### Tool \`${tool.name}\`
 ${tool.description}
 Parameters schema:
 \`\`\`json
-${stringifySchema(tool.parameters)}
+${stringifyZodSchema(tool.parameters)}
 \`\`\``
   }
 
   private getToolsPrompt() {
-    const tools = this.getToolsWithImplementations()
+    const tools = this.getTools()
     if (tools.length === 0) return "There's no tools available."
     return `# Available tools
 
@@ -522,14 +499,6 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       if (this.toolMap.get(tool.name) === tool) {
         this.toolMap.delete(tool.name)
       }
-    }
-  }
-
-  registerToolImplementationsProvider(provider: ICopilotToolImplementationsProvider): Disposer {
-    this.toolImplementationsProviders.push(provider)
-    return () => {
-      const index = this.toolImplementationsProviders.indexOf(provider)
-      if (index !== -1) this.toolImplementationsProviders.splice(index, 1)
     }
   }
 }
