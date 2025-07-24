@@ -357,28 +357,35 @@ func (this *delete_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/delete_course-series_#id.yap:6
+//line cmd/spx-backend/delete_course-series_#id.yap:10
 func (this *delete_course_series_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/delete_course-series_#id.yap:6:1
+//line cmd/spx-backend/delete_course-series_#id.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/delete_course-series_#id.yap:7:1
-	if
-//line cmd/spx-backend/delete_course-series_#id.yap:7:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
-//line cmd/spx-backend/delete_course-series_#id.yap:8:1
-		return
-	}
 //line cmd/spx-backend/delete_course-series_#id.yap:11:1
-	err := this.ctrl.DeleteCourseSeries(ctx.Context(), this.Gop_Env("id"))
+	if
+//line cmd/spx-backend/delete_course-series_#id.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_course-series_#id.yap:12:1
-	if err != nil {
-//line cmd/spx-backend/delete_course-series_#id.yap:13:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/delete_course-series_#id.yap:14:1
 		return
 	}
+//line cmd/spx-backend/delete_course-series_#id.yap:15:1
+	if !authz.CanManageCourses(ctx.Context()) {
 //line cmd/spx-backend/delete_course-series_#id.yap:16:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to delete course series")
+//line cmd/spx-backend/delete_course-series_#id.yap:17:1
+		return
+	}
+//line cmd/spx-backend/delete_course-series_#id.yap:20:1
+	err := this.ctrl.DeleteCourseSeries(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/delete_course-series_#id.yap:21:1
+	if err != nil {
+//line cmd/spx-backend/delete_course-series_#id.yap:22:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_course-series_#id.yap:23:1
+		return
+	}
+//line cmd/spx-backend/delete_course-series_#id.yap:25:1
 	this.Text__0(204, "", "")
 }
 func (this *delete_course_series_id) Classfname() string {
@@ -388,28 +395,35 @@ func (this *delete_course_series_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/delete_course_#id.yap:6
+//line cmd/spx-backend/delete_course_#id.yap:10
 func (this *delete_course_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/delete_course_#id.yap:6:1
+//line cmd/spx-backend/delete_course_#id.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/delete_course_#id.yap:7:1
-	if
-//line cmd/spx-backend/delete_course_#id.yap:7:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
-//line cmd/spx-backend/delete_course_#id.yap:8:1
-		return
-	}
 //line cmd/spx-backend/delete_course_#id.yap:11:1
-	err := this.ctrl.DeleteCourse(ctx.Context(), this.Gop_Env("id"))
+	if
+//line cmd/spx-backend/delete_course_#id.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/delete_course_#id.yap:12:1
-	if err != nil {
-//line cmd/spx-backend/delete_course_#id.yap:13:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/delete_course_#id.yap:14:1
 		return
 	}
+//line cmd/spx-backend/delete_course_#id.yap:15:1
+	if !authz.CanManageCourses(ctx.Context()) {
 //line cmd/spx-backend/delete_course_#id.yap:16:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to delete courses")
+//line cmd/spx-backend/delete_course_#id.yap:17:1
+		return
+	}
+//line cmd/spx-backend/delete_course_#id.yap:20:1
+	err := this.ctrl.DeleteCourse(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/delete_course_#id.yap:21:1
+	if err != nil {
+//line cmd/spx-backend/delete_course_#id.yap:22:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_course_#id.yap:23:1
+		return
+	}
+//line cmd/spx-backend/delete_course_#id.yap:25:1
 	this.Text__0(204, "", "")
 }
 func (this *delete_course_id) Classfname() string {
@@ -1706,44 +1720,51 @@ func (this *post_copilot_stream_message) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/post_course-series.yap:10
+//line cmd/spx-backend/post_course-series.yap:11
 func (this *post_course_series) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_course-series.yap:10:1
+//line cmd/spx-backend/post_course-series.yap:11:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_course-series.yap:11:1
-	if
-//line cmd/spx-backend/post_course-series.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_course-series.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_course-series.yap:15:1
-	params := &controller.CreateCourseSeriesParams{}
-//line cmd/spx-backend/post_course-series.yap:16:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_course-series.yap:17:1
-		return
-	}
-//line cmd/spx-backend/post_course-series.yap:19:1
 	if
-//line cmd/spx-backend/post_course-series.yap:19:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_course-series.yap:20:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_course-series.yap:21:1
+//line cmd/spx-backend/post_course-series.yap:12:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_course-series.yap:13:1
 		return
 	}
-//line cmd/spx-backend/post_course-series.yap:24:1
-	courseSeries, err := this.ctrl.CreateCourseSeries(ctx.Context(), params)
+//line cmd/spx-backend/post_course-series.yap:16:1
+	if !authz.CanManageCourses(ctx.Context()) {
+//line cmd/spx-backend/post_course-series.yap:17:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to create course series")
+//line cmd/spx-backend/post_course-series.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:21:1
+	params := &controller.CreateCourseSeriesParams{}
+//line cmd/spx-backend/post_course-series.yap:22:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_course-series.yap:23:1
+		return
+	}
 //line cmd/spx-backend/post_course-series.yap:25:1
-	if err != nil {
+	if
+//line cmd/spx-backend/post_course-series.yap:25:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_course-series.yap:26:1
-		replyWithInnerError(ctx, err)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_course-series.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_course-series.yap:29:1
+//line cmd/spx-backend/post_course-series.yap:30:1
+	courseSeries, err := this.ctrl.CreateCourseSeries(ctx.Context(), params)
+//line cmd/spx-backend/post_course-series.yap:31:1
+	if err != nil {
+//line cmd/spx-backend/post_course-series.yap:32:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_course-series.yap:33:1
+		return
+	}
+//line cmd/spx-backend/post_course-series.yap:35:1
 	this.Json__0(201, courseSeries)
 }
 func (this *post_course_series) Classfname() string {
@@ -1753,44 +1774,51 @@ func (this *post_course_series) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/post_course.yap:10
+//line cmd/spx-backend/post_course.yap:11
 func (this *post_course) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_course.yap:10:1
+//line cmd/spx-backend/post_course.yap:11:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_course.yap:11:1
-	if
-//line cmd/spx-backend/post_course.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_course.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_course.yap:15:1
-	params := &controller.CreateCourseParams{}
-//line cmd/spx-backend/post_course.yap:16:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_course.yap:17:1
-		return
-	}
-//line cmd/spx-backend/post_course.yap:19:1
 	if
-//line cmd/spx-backend/post_course.yap:19:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_course.yap:20:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_course.yap:21:1
+//line cmd/spx-backend/post_course.yap:12:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_course.yap:13:1
 		return
 	}
-//line cmd/spx-backend/post_course.yap:24:1
-	course, err := this.ctrl.CreateCourse(ctx.Context(), params)
+//line cmd/spx-backend/post_course.yap:16:1
+	if !authz.CanManageCourses(ctx.Context()) {
+//line cmd/spx-backend/post_course.yap:17:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to create courses")
+//line cmd/spx-backend/post_course.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:21:1
+	params := &controller.CreateCourseParams{}
+//line cmd/spx-backend/post_course.yap:22:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_course.yap:23:1
+		return
+	}
 //line cmd/spx-backend/post_course.yap:25:1
-	if err != nil {
+	if
+//line cmd/spx-backend/post_course.yap:25:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_course.yap:26:1
-		replyWithInnerError(ctx, err)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_course.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_course.yap:29:1
+//line cmd/spx-backend/post_course.yap:30:1
+	course, err := this.ctrl.CreateCourse(ctx.Context(), params)
+//line cmd/spx-backend/post_course.yap:31:1
+	if err != nil {
+//line cmd/spx-backend/post_course.yap:32:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_course.yap:33:1
+		return
+	}
+//line cmd/spx-backend/post_course.yap:35:1
 	this.Json__0(201, course)
 }
 func (this *post_course) Classfname() string {
@@ -2162,44 +2190,51 @@ func (this *put_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/put_course-series_#id.yap:10
+//line cmd/spx-backend/put_course-series_#id.yap:11
 func (this *put_course_series_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/put_course-series_#id.yap:10:1
+//line cmd/spx-backend/put_course-series_#id.yap:11:1
 	ctx := &this.Context
-//line cmd/spx-backend/put_course-series_#id.yap:11:1
-	if
-//line cmd/spx-backend/put_course-series_#id.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/put_course-series_#id.yap:12:1
-		return
-	}
-//line cmd/spx-backend/put_course-series_#id.yap:15:1
-	params := &controller.UpdateCourseSeriesParams{}
-//line cmd/spx-backend/put_course-series_#id.yap:16:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/put_course-series_#id.yap:17:1
-		return
-	}
-//line cmd/spx-backend/put_course-series_#id.yap:19:1
 	if
-//line cmd/spx-backend/put_course-series_#id.yap:19:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/put_course-series_#id.yap:20:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/put_course-series_#id.yap:21:1
+//line cmd/spx-backend/put_course-series_#id.yap:12:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/put_course-series_#id.yap:13:1
 		return
 	}
-//line cmd/spx-backend/put_course-series_#id.yap:24:1
-	courseSeries, err := this.ctrl.UpdateCourseSeries(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course-series_#id.yap:16:1
+	if !authz.CanManageCourses(ctx.Context()) {
+//line cmd/spx-backend/put_course-series_#id.yap:17:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to update course series")
+//line cmd/spx-backend/put_course-series_#id.yap:18:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:21:1
+	params := &controller.UpdateCourseSeriesParams{}
+//line cmd/spx-backend/put_course-series_#id.yap:22:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_course-series_#id.yap:23:1
+		return
+	}
 //line cmd/spx-backend/put_course-series_#id.yap:25:1
-	if err != nil {
+	if
+//line cmd/spx-backend/put_course-series_#id.yap:25:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/put_course-series_#id.yap:26:1
-		replyWithInnerError(ctx, err)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/put_course-series_#id.yap:27:1
 		return
 	}
-//line cmd/spx-backend/put_course-series_#id.yap:29:1
+//line cmd/spx-backend/put_course-series_#id.yap:30:1
+	courseSeries, err := this.ctrl.UpdateCourseSeries(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course-series_#id.yap:31:1
+	if err != nil {
+//line cmd/spx-backend/put_course-series_#id.yap:32:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_course-series_#id.yap:33:1
+		return
+	}
+//line cmd/spx-backend/put_course-series_#id.yap:35:1
 	this.Json__1(courseSeries)
 }
 func (this *put_course_series_id) Classfname() string {
@@ -2209,44 +2244,51 @@ func (this *put_course_series_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/put_course_#id.yap:10
+//line cmd/spx-backend/put_course_#id.yap:11
 func (this *put_course_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/put_course_#id.yap:10:1
+//line cmd/spx-backend/put_course_#id.yap:11:1
 	ctx := &this.Context
-//line cmd/spx-backend/put_course_#id.yap:11:1
-	if
-//line cmd/spx-backend/put_course_#id.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/put_course_#id.yap:12:1
-		return
-	}
-//line cmd/spx-backend/put_course_#id.yap:15:1
-	params := &controller.UpdateCourseParams{}
-//line cmd/spx-backend/put_course_#id.yap:16:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/put_course_#id.yap:17:1
-		return
-	}
-//line cmd/spx-backend/put_course_#id.yap:19:1
 	if
-//line cmd/spx-backend/put_course_#id.yap:19:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/put_course_#id.yap:20:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/put_course_#id.yap:21:1
+//line cmd/spx-backend/put_course_#id.yap:12:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/put_course_#id.yap:13:1
 		return
 	}
-//line cmd/spx-backend/put_course_#id.yap:24:1
-	course, err := this.ctrl.UpdateCourse(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course_#id.yap:16:1
+	if !authz.CanManageCourses(ctx.Context()) {
+//line cmd/spx-backend/put_course_#id.yap:17:1
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to update courses")
+//line cmd/spx-backend/put_course_#id.yap:18:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:21:1
+	params := &controller.UpdateCourseParams{}
+//line cmd/spx-backend/put_course_#id.yap:22:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_course_#id.yap:23:1
+		return
+	}
 //line cmd/spx-backend/put_course_#id.yap:25:1
-	if err != nil {
+	if
+//line cmd/spx-backend/put_course_#id.yap:25:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/put_course_#id.yap:26:1
-		replyWithInnerError(ctx, err)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/put_course_#id.yap:27:1
 		return
 	}
-//line cmd/spx-backend/put_course_#id.yap:29:1
+//line cmd/spx-backend/put_course_#id.yap:30:1
+	course, err := this.ctrl.UpdateCourse(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_course_#id.yap:31:1
+	if err != nil {
+//line cmd/spx-backend/put_course_#id.yap:32:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_course_#id.yap:33:1
+		return
+	}
+//line cmd/spx-backend/put_course_#id.yap:35:1
 	this.Json__1(course)
 }
 func (this *put_course_id) Classfname() string {

@@ -25,6 +25,7 @@ func New(quotaTracker authz.QuotaTracker) authz.PolicyDecisionPoint {
 func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.User) (authz.UserCapabilities, error) {
 	caps := authz.UserCapabilities{
 		CanManageAssets:     p.hasRole(mUser, userRoleAssetAdmin),
+		CanManageCourses:    p.hasRole(mUser, userRoleCourseAdmin),
 		CanUsePremiumLLM:    p.hasPlusPlan(mUser),
 		CopilotMessageQuota: p.getCopilotQuota(mUser),
 	}
@@ -40,7 +41,8 @@ func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.
 type userRole string
 
 const (
-	userRoleAssetAdmin userRole = "assetAdmin"
+	userRoleAssetAdmin  userRole = "assetAdmin"
+	userRoleCourseAdmin userRole = "courseAdmin"
 )
 
 // hasRole checks if the user has a specific role.

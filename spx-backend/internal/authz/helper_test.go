@@ -58,6 +58,55 @@ func TestCanManageAssets(t *testing.T) {
 	})
 }
 
+func TestCanManageCourses(t *testing.T) {
+	t.Run("HasPermission", func(t *testing.T) {
+		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
+			CanManageAssets:         false,
+			CanManageCourses:        true,
+			CanUsePremiumLLM:        false,
+			CopilotMessageQuota:     100,
+			CopilotMessageQuotaLeft: 50,
+		})
+
+		result := CanManageCourses(ctx)
+		assert.True(t, result)
+	})
+
+	t.Run("NoPermission", func(t *testing.T) {
+		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
+			CanManageAssets:         true,
+			CanManageCourses:        false,
+			CanUsePremiumLLM:        true,
+			CopilotMessageQuota:     100,
+			CopilotMessageQuotaLeft: 50,
+		})
+
+		result := CanManageCourses(ctx)
+		assert.False(t, result)
+	})
+
+	t.Run("NoCapabilities", func(t *testing.T) {
+		ctx := context.Background()
+
+		result := CanManageCourses(ctx)
+		assert.False(t, result)
+	})
+
+	t.Run("WrongContextValue", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), userCapabilitiesContextKey{}, "not-capabilities")
+
+		result := CanManageCourses(ctx)
+		assert.False(t, result)
+	})
+
+	t.Run("ZeroCapabilities", func(t *testing.T) {
+		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{})
+
+		result := CanManageCourses(ctx)
+		assert.False(t, result)
+	})
+}
+
 func TestCanUsePremiumLLM(t *testing.T) {
 	t.Run("HasPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{

@@ -49,6 +49,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			name                    string
 			mUser                   *model.User
 			wantCanManageAssets     bool
+			wantCanManageCourses    bool
 			wantCanUsePremiumLLM    bool
 			wantCopilotMessageQuota int64
 		}{
@@ -61,6 +62,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Plan:     model.UserPlanPlus,
 				},
 				wantCanManageAssets:     true,
+				wantCanManageCourses:    false,
 				wantCanUsePremiumLLM:    true,
 				wantCopilotMessageQuota: 1000,
 			},
@@ -73,6 +75,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Plan:     model.UserPlanPlus,
 				},
 				wantCanManageAssets:     false,
+				wantCanManageCourses:    false,
 				wantCanUsePremiumLLM:    true,
 				wantCopilotMessageQuota: 1000,
 			},
@@ -85,6 +88,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Plan:     model.UserPlanFree,
 				},
 				wantCanManageAssets:     false,
+				wantCanManageCourses:    false,
 				wantCanUsePremiumLLM:    false,
 				wantCopilotMessageQuota: 100,
 			},
@@ -97,6 +101,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Plan:     model.UserPlanFree,
 				},
 				wantCanManageAssets:     false,
+				wantCanManageCourses:    false,
 				wantCanUsePremiumLLM:    false,
 				wantCopilotMessageQuota: 100,
 			},
@@ -109,8 +114,35 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Plan:     model.UserPlanFree,
 				},
 				wantCanManageAssets:     true,
+				wantCanManageCourses:    false,
 				wantCanUsePremiumLLM:    false,
 				wantCopilotMessageQuota: 100,
+			},
+			{
+				name: "CourseAdminUser",
+				mUser: &model.User{
+					Model:    model.Model{ID: 6},
+					Username: "course-admin-user",
+					Roles:    model.UserRoles{"courseAdmin"},
+					Plan:     model.UserPlanFree,
+				},
+				wantCanManageAssets:     false,
+				wantCanManageCourses:    true,
+				wantCanUsePremiumLLM:    false,
+				wantCopilotMessageQuota: 100,
+			},
+			{
+				name: "UserWithMultipleAdminRoles",
+				mUser: &model.User{
+					Model:    model.Model{ID: 7},
+					Username: "multi-admin-user",
+					Roles:    model.UserRoles{"assetAdmin", "courseAdmin"},
+					Plan:     model.UserPlanPlus,
+				},
+				wantCanManageAssets:     true,
+				wantCanManageCourses:    true,
+				wantCanUsePremiumLLM:    true,
+				wantCopilotMessageQuota: 1000,
 			},
 		} {
 			t.Run(tt.name, func(t *testing.T) {
@@ -120,6 +152,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				caps, err := pdp.ComputeUserCapabilities(context.Background(), tt.mUser)
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantCanManageAssets, caps.CanManageAssets)
+				assert.Equal(t, tt.wantCanManageCourses, caps.CanManageCourses)
 				assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
 				assert.Equal(t, tt.wantCopilotMessageQuota, caps.CopilotMessageQuota)
 				assert.Equal(t, caps.CopilotMessageQuota, caps.CopilotMessageQuotaLeft)
@@ -144,6 +177,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
 		require.NoError(t, err)
 		assert.Equal(t, false, caps.CanManageAssets)
+		assert.Equal(t, false, caps.CanManageCourses)
 		assert.Equal(t, false, caps.CanUsePremiumLLM)
 		assert.Equal(t, int64(100), caps.CopilotMessageQuota)
 		assert.Equal(t, int64(70), caps.CopilotMessageQuotaLeft)
