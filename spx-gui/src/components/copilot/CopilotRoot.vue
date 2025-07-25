@@ -1,5 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
+import { debounce } from 'lodash'
 import { inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
@@ -11,6 +12,7 @@ import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
+import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
 import * as toolUse from './custom-elements/ToolUse.vue'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
@@ -258,6 +260,7 @@ const radar = useRadar()
 const i18n = useI18n()
 const router = useRouter()
 const modalEvents = useModalEvents()
+const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
 
@@ -299,13 +302,30 @@ copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
 
-watch(router.currentRoute, (route) => {
-  copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
-})
+watch(
+  router.currentRoute,
+  debounce((route) => {
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+  }, 100)
+)
 
 onBeforeUnmount(
   modalEvents.on('open', () => {
     copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('close', () => {
+    copilot.notifyUserEvent({ en: 'Modal closed', zh: '关闭模态框' }, 'User closed a modal dialog')
+  })
+)
+
+onBeforeUnmount(
+  messageEvents.on('message', ({ type, content }) => {
+    copilot.notifyUserEvent(
+      { en: 'UI Notification', zh: '消息提示' },
+      `A ${type} notification showed with content: ${content}`
+    )
   })
 )
 

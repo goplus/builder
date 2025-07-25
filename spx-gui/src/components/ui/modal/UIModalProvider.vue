@@ -44,7 +44,10 @@ export type ModalInfo = {
   visible: boolean
 }
 
-export type ModalEvents = Emitter<{ open: void }>
+export type ModalEvents = Emitter<{
+  open: void
+  close: void
+}>
 
 type ModalContext = {
   events: ModalEvents
@@ -76,7 +79,7 @@ export function useModalEvents(): ModalEvents {
 
 <script setup lang="ts">
 const currentModals = shallowReactive<ModalInfo[]>([])
-const emitter = new Emitter<{ open: void }>()
+const emitter: ModalEvents = new Emitter()
 
 async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
@@ -93,6 +96,7 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   if (modal == null) return
   modal.visible = false
   onHide(modal)
+  emitter.emit('close')
   setTimeout(() => {
     // wait for hide animation to finish
     currentModals.splice(

@@ -2,7 +2,8 @@
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { timeout } from '@/utils/utils'
-import { UIIcon, UITooltip } from '@/components/ui'
+import { useDraggable } from '@/utils/draggable'
+import { providePopupContainer, UIIcon, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import logoSrc from './logo.png'
@@ -35,6 +36,17 @@ async function handleNewSession() {
 
 useBottomSticky(bodyRef)
 
+const panelRef = ref<HTMLElement>()
+providePopupContainer(panelRef)
+
+// TODO: Support more complex dragging logic
+const headerRef = ref<HTMLElement>()
+const position = ref({ right: 10, bottom: 20 })
+useDraggable(headerRef, (offset) => {
+  position.value.right -= offset.x
+  position.value.bottom -= offset.y
+})
+
 // TODO: prevent click in copilot panel from closing other dropdowns
 </script>
 
@@ -57,9 +69,14 @@ useBottomSticky(bodyRef)
         </svg>
       </div>
     </div>
-    <div v-show="copilot.active" class="copilot-panel">
-      <header class="header">
-        <h4 class="title">{{ $t(title) }}</h4>
+    <div
+      v-show="copilot.active"
+      ref="panelRef"
+      class="copilot-panel"
+      :style="{ right: `${position.right}px`, bottom: `${position.bottom}px` }"
+    >
+      <header ref="headerRef" class="header">
+        <h4 class="title">{{ $t(title) || '&nbsp;' }}</h4>
         <template v-if="StateIndicator != null">
           <StateIndicator />
         </template>
@@ -126,7 +143,7 @@ useBottomSticky(bodyRef)
   bottom: 20px;
 
   cursor: pointer;
-  border-radius: 12px 0px 0px 12px;
+  border-radius: 16px 0px 0px 16px;
   border: 1px solid #fff;
   background: #c390ff;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
@@ -137,7 +154,7 @@ useBottomSticky(bodyRef)
   display: flex;
   margin: 1px 0 1px 1px;
   padding: 4px 9px 4px 4px;
-  border-radius: 11px 0px 0px 11px;
+  border-radius: 15px 0px 0px 15px;
   background: var(--ui-color-grey-100);
 }
 
@@ -146,8 +163,8 @@ useBottomSticky(bodyRef)
   z-index: 9999; // TODO
   right: 10px;
   bottom: 20px;
-  top: 100px;
   width: 340px;
+  height: 680px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -167,6 +184,7 @@ useBottomSticky(bodyRef)
 
   .title {
     flex: 1 1 0;
+    cursor: move;
   }
 
   .btn {
