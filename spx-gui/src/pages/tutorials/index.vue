@@ -26,7 +26,7 @@
                   v-for="course in courseList"
                   :key="course.id"
                   :course="course"
-                  @click="handleCourseClick(course)"
+                  @click="handleCourseClick(course, courseSeries, courseList)"
                 />
               </template>
             </CourseSeriesItem>
@@ -43,7 +43,7 @@
 import { sortBy } from 'lodash'
 import { useQuery } from '@/utils/query'
 
-import { listCourseSeries } from '@/apis/course-series'
+import { listCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { ownerAll } from '@/apis/common'
 import type { Course } from '@/apis/course'
 
@@ -54,6 +54,9 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CourseItem from '@/components/tutorials/CourseItem.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
+import { useTutorial } from '@/components/tutorials/tutorial'
+
+const tutorial = useTutorial()
 
 const courseSeriesQuery = useQuery(
   async () => {
@@ -63,9 +66,11 @@ const courseSeriesQuery = useQuery(
   { en: 'Failed to load course series', zh: '加载课程系列失败' }
 )
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function handleCourseClick(_: Course) {
-  // TODO: Implement course click handling logic
+function handleCourseClick(course: Course, courseSeries: CourseSeries, courseList: Course[]) {
+  tutorial.startCourse(course, {
+    ...courseSeries,
+    courses: courseList
+  })
 }
 </script>
 
@@ -73,7 +78,7 @@ function handleCourseClick(_: Course) {
 .tutorials-wrapper {
   display: flex;
   flex-direction: column;
-  overflow-y: scroll;
+  overflow-y: auto;
   width: 100%;
   height: 100%;
 

@@ -196,6 +196,7 @@ watch(
 
 <style lang="scss" scoped>
 $anchor-size: 28px;
+$z-index: 10000; // TODO: Adjust as needed
 
 :global(.spotlight-attach-element-highlight) {
   box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.17);
@@ -206,7 +207,7 @@ $anchor-size: 28px;
   overflow: hidden;
   inset: 0;
   pointer-events: none;
-  z-index: 2000;
+  z-index: $z-index;
 
   .spotlight-item {
     position: absolute;
