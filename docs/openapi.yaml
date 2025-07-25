@@ -1146,7 +1146,7 @@ paths:
             $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter courses by the owner's username.
-            
+
             Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
         - name: orderBy
           in: query
@@ -1339,7 +1339,7 @@ paths:
             $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter course serieses by the owner's username.
-            
+
             Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"

@@ -1,5 +1,11 @@
 <template>
-  <UIModal :radar="radar" :visible="visible" :auto-focus="autoFocus" mask-closable @update:visible="handleUpdateShow">
+  <UIModal
+    :radar="radar"
+    :visible="visible"
+    :auto-focus="autoFocus"
+    :mask-closable="maskClosable"
+    @update:visible="handleUpdateShow"
+  >
     <div class="container">
       <div class="header">
         <div :class="['title', { center: centerTitle }]">
@@ -28,6 +34,7 @@ withDefaults(
     title: string
     visible?: boolean
     autoFocus?: boolean
+    maskClosable?: boolean
     centerTitle?: boolean
     // maybe it is better to let caller specify the body class instead of body style,
     // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
@@ -36,6 +43,7 @@ withDefaults(
   }>(),
   {
     autoFocus: true,
+    maskClosable: true,
     bodyStyle: () => ({}),
     radar: undefined
   }
