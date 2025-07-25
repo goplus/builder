@@ -108,7 +108,9 @@ export type Topic = {
 }
 
 export enum RoundState {
-  /** The round is still loading, no copilot response yet. */
+  /** The round is initialized, while not sent to copilot yet. */
+  Initialized,
+  /** The round is loading, waiting for copilot response. */
   Loading,
   /** The round is in progress, partial copilot response is available. */
   InProgress,
@@ -130,7 +132,7 @@ export class Round {
   get error() {
     return this.errorRef.value
   }
-  private stateRef = ref(RoundState.Loading)
+  private stateRef = ref(RoundState.Initialized)
   get state() {
     return this.stateRef.value
   }
@@ -209,10 +211,11 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      // TODO: history summarization
       messages.push(this.copilot.getContextMessage())
       const apiMessages = messages.map(toApiMessage)
-      const result = apis.generateStreamMessage('standard', apiMessages, { signal: this.ctrl.signal })
+      // TODO: history summarization with LLM instead of truncation
+      const sampledApiMessages = sampleApiMessages(apiMessages)
+      const result = apis.generateStreamMessage('standard', sampledApiMessages, { signal: this.ctrl.signal })
       for await (const chunk of result) {
         if (this.inProgressCopilotMessageContentRef.value == null) {
           this.inProgressCopilotMessageContentRef.value = ''
@@ -228,7 +231,7 @@ export class Round {
   }
 
   start() {
-    this.resultMessages = []
+    this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
     this.stateRef.value = RoundState.Loading
@@ -268,11 +271,23 @@ export class Session {
     this.currentRound?.abort()
   }
 
-  addUserMessage(userMessage: UserMessage) {
+  private startCurrentRound() {
+    this.currentRound?.start()
+  }
+
+  private startCurrentRoundWithDelay = debounce(() => this.startCurrentRound(), 1000)
+
+  addUserMessage(m: UserMessage) {
     this.abortCurrentRound() // TODO: or should we wait for the current round to finish? Then there may be a user message queue
-    const round = new Round(userMessage, this.copilot, this)
+    const round = new Round(m, this.copilot, this)
     this.rounds.push(round)
-    round.start()
+    if (m.type === 'event' && this.rounds.length > 1) {
+      // If the user event is added in the middle of a session,
+      // we delay the starting of the current round to introduce batching.
+      this.startCurrentRoundWithDelay()
+    } else {
+      this.startCurrentRound()
+    }
   }
 }
 
@@ -454,7 +469,11 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
-  private notifyUserEventWithoutDebounce(name: LocaleMessage, detail: string): void {
+  /**
+   * Notify the copilot of a user event.
+   * If no session is running, nothing will happen.
+   */
+  notifyUserEvent(name: LocaleMessage, detail: string): void {
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
     const userEventMessage: UserEventMessage = {
@@ -465,15 +484,6 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
     this.currentSession.addUserMessage(userEventMessage)
   }
-
-  /**
-   * Notify the copilot of a user event.
-   * If no session is running, nothing will happen.
-   */
-  notifyUserEvent = debounce(
-    (name: LocaleMessage, detail: string) => this.notifyUserEventWithoutDebounce(name, detail),
-    1000
-  )
 
   /** Register a context provider for the copilot. */
   registerContextProvider(provider: ICopilotContextProvider): Disposer {
@@ -501,4 +511,20 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       }
     }
   }
+}
+
+export function sampleApiMessages(
+  messages: apis.Message[],
+  limit = 100_000 // Context size for Deepseek V3 / Kimi K2: 128K
+): apis.Message[] {
+  let totalSize = 0
+  const sampled: apis.Message[] = []
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    const size = msg.content.text.length
+    if (totalSize + size > limit) break
+    totalSize += size
+    sampled.unshift(msg)
+  }
+  return sampled
 }
