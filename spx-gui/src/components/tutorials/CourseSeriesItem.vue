@@ -40,9 +40,11 @@ const courseQuery = useQuery(
           {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
         </UIEmpty>
       </template>
-      <ul class="course-item-list">
-        <slot :data="courseQuery.data.value" />
-      </ul>
+      <template #default="{ data }">
+        <ul class="course-item-list">
+          <slot :data="data" />
+        </ul>
+      </template>
     </ListResultWrapper>
   </section>
 </template>
@@ -65,7 +67,7 @@ const courseQuery = useQuery(
 
   .course-item-list {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
     gap: 20px;
   }
 }

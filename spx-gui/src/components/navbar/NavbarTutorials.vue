@@ -6,14 +6,14 @@
     to="/tutorials"
   >
     <button class="button">
-      <div class="icon" v-html="tutorialsIcon"></div>
+      <UIIcon class="icon" type="tutorial" />
       <div class="text">{{ $t({ en: 'Tutorials', zh: '教程' }) }}</div>
     </button>
   </router-link>
 </template>
 
 <script setup lang="ts">
-import tutorialsIcon from './icons/tutorials.svg?raw'
+import { UIIcon } from '@/components/ui'
 </script>
 
 <style lang="scss" scoped>
@@ -35,8 +35,9 @@ import tutorialsIcon from './icons/tutorials.svg?raw'
     background: var(--ui-color-grey-100);
 
     .icon {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
+      color: var(--ui-color-primary-main);
     }
     .text {
       white-space: nowrap;
