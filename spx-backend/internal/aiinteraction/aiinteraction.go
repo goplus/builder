@@ -47,6 +47,14 @@ func New(openaiClient openai.Client, openaiModelID string) (*AIInteraction, erro
 
 // Interact processes an AI interaction request and returns a response.
 func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Response, error) {
+	const formatRetryPromptEnhancement = `
+---
+
+**CRITICAL: Your previous response failed to parse due to formatting errors.**
+
+Please carefully review and strictly follow the "Response Format" rules specified above.
+`
+
 	systemPrompt, err := renderSystemPrompt(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build system prompt: %w", err)
@@ -57,6 +65,28 @@ func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Respo
 		return nil, fmt.Errorf("failed to build conversation messages: %w", err)
 	}
 
+	response, err := ai.callOpenAI(ctx, systemPrompt, messages)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedResponse, err := parseAIResponse(response)
+	if err != nil {
+		enhancedSystemPrompt := systemPrompt + formatRetryPromptEnhancement
+		retryResponse, err := ai.callOpenAI(ctx, enhancedSystemPrompt, messages)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retry openai api call: %w", err)
+		}
+		parsedResponse, err = parseAIResponse(retryResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse ai response after retry attempt: %w", err)
+		}
+	}
+	return parsedResponse, nil
+}
+
+// callOpenAI makes the actual API call to OpenAI
+func (ai *AIInteraction) callOpenAI(ctx context.Context, systemPrompt string, messages []openai.ChatCompletionMessageParamUnion) (string, error) {
 	chatCompletion, err := ai.openaiClient.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages:    append([]openai.ChatCompletionMessageParamUnion{openai.SystemMessage(systemPrompt)}, messages...),
 		Model:       ai.openaiModelID,
@@ -64,17 +94,12 @@ func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Respo
 		Temperature: openai.Opt(temperature),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create chat completion: %w", err)
+		return "", fmt.Errorf("failed to create chat completion: %w", err)
 	}
 	if len(chatCompletion.Choices) == 0 {
-		return nil, errors.New("no choices returned from ai")
+		return "", errors.New("no choices returned from ai")
 	}
-
-	response, err := parseAIResponse(chatCompletion.Choices[0].Message.Content)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse ai response: %w", err)
-	}
-	return response, nil
+	return chatCompletion.Choices[0].Message.Content, nil
 }
 
 // buildConversationMessages constructs the message history for the AI request.
