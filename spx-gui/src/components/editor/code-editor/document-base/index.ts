@@ -5,12 +5,12 @@ import {
   stringifyDefinitionId,
   type DefinitionIdString
 } from '../common'
-import * as gopDefinitionsByName from './xgo'
+import * as xgoDefinitionsByName from './xgo'
 import * as spxDefinitionsByName from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
 import './helpers'
 
-const gopDefinitions = Object.values(gopDefinitionsByName)
+const xgoDefinitions = Object.values(xgoDefinitionsByName)
 const spxDefinitions = Object.values(spxDefinitionsByName)
 
 export class DocumentBase extends Disposable {
@@ -18,7 +18,7 @@ export class DocumentBase extends Disposable {
 
   constructor() {
     super()
-    ;[...gopDefinitions, ...spxDefinitions, ...spxKeyDefinitions].forEach((d) => {
+    ;[...xgoDefinitions, ...spxDefinitions, ...spxKeyDefinitions].forEach((d) => {
       this.addDocumentation(d)
     })
   }

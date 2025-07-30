@@ -1710,7 +1710,7 @@ components:
           type: string
           format: uri
           examples:
-            - https://builder.goplus.org/logo.svg
+            - https://example.com/project-thumbnail.png
           description: URL of the project's thumbnail image.
         viewCount:
           type: integer

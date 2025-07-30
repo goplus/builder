@@ -211,11 +211,11 @@ func Gopt_Player_Gopx_OnCmd[T any](p *Player, handler func(cmd T) error) {
 
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
-		log.Fatalln("Failed to build Go+ source:", err)
+		log.Fatalln("Failed to build XGo source:", err)
 	}
 
 	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {
-		log.Fatalln("Failed to run Go+ source:", err, " Code:", code)
+		log.Fatalln("Failed to run XGo source:", err, " Code:", code)
 	}
 }

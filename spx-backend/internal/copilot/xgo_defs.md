@@ -1,4 +1,4 @@
-# Go+ Syntax
+# XGo Syntax
 
 ```csv
 Package,Name,Sample,Description

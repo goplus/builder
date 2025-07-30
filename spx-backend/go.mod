@@ -7,7 +7,7 @@ require (
 	github.com/casdoor/casdoor-go-sdk v1.9.0
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/goplus/yap v0.8.4 //gop:class
+	github.com/goplus/yap v0.8.4 //xgo:class
 	github.com/joho/godotenv v1.5.1
 	github.com/openai/openai-go v1.11.1
 	github.com/qiniu/go-cdk-driver v0.1.1
