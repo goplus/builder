@@ -90,7 +90,13 @@ export class Tutorial {
   <course-id>${id}</course-id>
   <course-title>${title}</course-title>
   <course-entrypoint>${entrypoint}</course-entrypoint>
-  <course-prompt>${prompt}, Add appropriate tags to the end-of-course message based on context</course-prompt>
+  <course-prompt>
+    ${prompt}
+    At that point, your response must include the following three points:
+    1. Congratulate and inform the user that the course is over.
+    2. Prompt the user that they can close Copilot.
+    3. According to the general rules, append the designated tag for course success at the end of your reply.
+  </course-prompt>
   <course-references>
     ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
   </course-references>
