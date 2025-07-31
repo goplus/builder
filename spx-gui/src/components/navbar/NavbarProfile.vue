@@ -17,7 +17,7 @@
     <UIMenu class="user-menu">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
-          {{ signedInUser?.displayName || signedInUser?.username }}
+          {{ signedInUser?.displayName }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
