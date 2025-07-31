@@ -20,15 +20,12 @@ type SentryLogger struct {
 type Config struct {
 	// RecordSQL determines whether to record SQL statements
 	RecordSQL bool
-	// RecordParams determines whether to record SQL parameters in Sentry
-	RecordParams bool
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() Config {
 	return Config{
-		RecordSQL:    true,
-		RecordParams: false, // Disabled by default to avoid sensitive information leakage
+		RecordSQL: true,
 	}
 }
 
