@@ -82,11 +82,11 @@ port := cfg.Server.GetPort()
 logger.Printf("listening to %s", port)
 
 h := handler(
+	NewSentryMiddleware(),
 	authorizer.Middleware(),
 	authn.Middleware(authenticator),
 	NewCORSMiddleware(),
 	NewReqIDMiddleware(),
-	NewSentryMiddleware(),
 )
 server := &http.Server{Addr: port, Handler: h}
 

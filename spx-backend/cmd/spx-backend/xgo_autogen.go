@@ -257,7 +257,7 @@ func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:82:1
 	logger.Printf("listening to %s", port)
 //line cmd/spx-backend/main.yap:84:1
-	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware(), NewSentryMiddleware())
+	h := this.Handler(NewSentryMiddleware(), authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
 //line cmd/spx-backend/main.yap:91:1
 	server := &http.Server{Addr: port, Handler: h}
 //line cmd/spx-backend/main.yap:93:1

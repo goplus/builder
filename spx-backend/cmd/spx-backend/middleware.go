@@ -51,6 +51,7 @@ func NewSentryMiddleware() func(next http.Handler) http.Handler {
 				hub = sentry.CurrentHub().Clone()
 				ctx = sentry.SetHubOnContext(ctx, hub)
 			}
+			sentry.ContinueTrace(hub, r.Header.Get(sentry.SentryTraceHeader), r.Header.Get(sentry.SentryBaggageHeader))
 			options := []sentry.SpanOption{
 				sentry.WithOpName("http.server"),
 				sentry.ContinueFromRequest(r),

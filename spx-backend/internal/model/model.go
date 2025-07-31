@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/goplus/builder/spx-backend/internal/model/gormsentry"
+	"github.com/goplus/builder/spx-backend/internal/tracer/gormsentry"
 )
 
 // Model is the base model for all models.
