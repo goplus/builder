@@ -8,31 +8,31 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// SentryLogger 实现 logger.Interface 接口，用于将 GORM 数据库操作记录到 Sentry
+// SentryLogger implements logger.Interface for recording GORM database operations to Sentry
 type SentryLogger struct {
-	// 内部使用的 logger，可以设置为 logger.Discard 来避免控制台输出
+	// BaseLogger is the internal logger, can be set to logger.Discard to avoid console output
 	BaseLogger logger.Interface
-	// 可选配置
+	// Config contains optional configuration options
 	Config Config
 }
 
-// Config 定义 SentryLogger 的配置选项
+// Config defines configuration options for SentryLogger
 type Config struct {
-	// 是否记录 SQL 语句
+	// RecordSQL determines whether to record SQL statements
 	RecordSQL bool
-	// 是否将 SQL 参数记录到 Sentry
+	// RecordParams determines whether to record SQL parameters in Sentry
 	RecordParams bool
 }
 
-// DefaultConfig 返回默认配置
+// DefaultConfig returns the default configuration
 func DefaultConfig() Config {
 	return Config{
 		RecordSQL:    true,
-		RecordParams: false, // 默认不记录参数，避免敏感信息泄露
+		RecordParams: false, // Disabled by default to avoid sensitive information leakage
 	}
 }
 
-// New 创建一个新的 SentryLogger
+// New creates a new SentryLogger
 func New(baseLogger logger.Interface, hub *sentry.Hub, config ...Config) *SentryLogger {
 	if hub == nil {
 		hub = sentry.CurrentHub()
@@ -53,39 +53,39 @@ func New(baseLogger logger.Interface, hub *sentry.Hub, config ...Config) *Sentry
 	}
 }
 
-// LogMode 实现 logger.Interface 接口
+// LogMode implements logger.Interface
 func (l *SentryLogger) LogMode(level logger.LogLevel) logger.Interface {
 	newLogger := *l
 	newLogger.BaseLogger = l.BaseLogger.LogMode(level)
 	return &newLogger
 }
 
-// Info 实现 logger.Interface 接口
+// Info implements logger.Interface
 func (l *SentryLogger) Info(ctx context.Context, msg string, data ...interface{}) {
 	l.BaseLogger.Info(ctx, msg, data...)
 }
 
-// Warn 实现 logger.Interface 接口
+// Warn implements logger.Interface
 func (l *SentryLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
 	l.BaseLogger.Warn(ctx, msg, data...)
 }
 
-// Error 实现 logger.Interface 接口
+// Error implements logger.Interface
 func (l *SentryLogger) Error(ctx context.Context, msg string, data ...interface{}) {
 	l.BaseLogger.Error(ctx, msg, data...)
 }
 
-// Trace 实现 logger.Interface 接口，这是记录 SQL 执行信息的核心方法
+// Trace implements logger.Interface, this is the core method for recording SQL execution information
 func (l *SentryLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
-	// 首先调用基础 logger 的 Trace 方法
+	// First call the base logger's Trace method
 	l.BaseLogger.Trace(ctx, begin, fc, err)
 
-	// 从上下文中获取或创建 Sentry transaction
+	// Get or create a Sentry transaction from context
 	var span *sentry.Span
 	tx := sentry.TransactionFromContext(ctx)
 
 	if tx == nil {
-		// 如果没有父事务，创建一个新的事务
+		// If there's no parent transaction, create a new one
 		tx = sentry.StartTransaction(
 			ctx,
 			"gorm.execute",
@@ -95,17 +95,17 @@ func (l *SentryLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 		)
 		span = tx
 	} else {
-		// 如果已有父事务，创建一个子 span
+		// If there's already a parent transaction, create a child span
 		span = tx.StartChild("db.execute")
 	}
 
-	// 设置开始时间以确保时间记录准确
+	// Set start time to ensure accurate time recording
 	span.StartTime = begin
 
-	// 获取 SQL 和影响的行数
+	// Get SQL and number of affected rows
 	sql, rows := fc()
 
-	// 设置 span 属性
+	// Set span attributes
 	span.SetTag("db.system", "sql")
 
 	if l.Config.RecordSQL {
@@ -115,7 +115,7 @@ func (l *SentryLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 	span.SetData("db.rows_affected", rows)
 	span.SetData("db.duration_ms", float64(time.Since(begin).Nanoseconds())/1e6)
 
-	// 记录错误（如果有）
+	// Record error (if any)
 	if err != nil {
 		span.Status = sentry.SpanStatusInternalError
 		span.SetData("db.error", err.Error())
@@ -123,6 +123,6 @@ func (l *SentryLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 		span.Status = sentry.SpanStatusOK
 	}
 
-	// 完成 span
+	// Finish the span
 	span.Finish()
 }
