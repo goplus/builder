@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useBottomSticky } from '@/utils/dom'
 import { timeout } from '@/utils/utils'
+import { initiateSignIn, isSignedIn, useSignedInUser } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
 import { providePopupContainer, UIIcon, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
@@ -13,6 +14,8 @@ const copilot = useCopilot()
 
 const bodyRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
+
+const { data: signedInUser } = useSignedInUser()
 
 const session = computed(() => copilot.currentSession)
 
@@ -102,31 +105,55 @@ useDraggable(headerRef, (offset) => {
       </header>
       <div ref="bodyRef" class="body">
         <!-- <MarkdownView :value="testContent"></MarkdownView> -->
-        <ul v-if="rounds != null" class="messages">
-          <CopilotRound v-for="(round, i) in rounds" :key="i" :round="round" :is-last-round="i === rounds.length - 1" />
-        </ul>
-        <div v-else class="placeholder">
-          <img class="logo" :src="logoSrc" alt="Copilot" />
-          <h4 class="title">
-            {{
-              $t({
-                en: 'Hi, I am Copilot',
-                zh: '你好，我是 Copilot'
-              })
-            }}
-          </h4>
-          <p class="description">
-            {{
-              $t({
-                en: 'I can help you with XBuilder, please type your question or what you want to do below.',
-                zh: '我可以帮助你了解并使用 XBuilder，请在下方输入你的问题或想做的事。'
-              })
-            }}
-          </p>
-        </div>
+        <template v-if="isSignedIn()">
+          <ul v-if="rounds != null" class="messages">
+            <CopilotRound
+              v-for="(round, i) in rounds"
+              :key="i"
+              :round="round"
+              :is-last-round="i === rounds.length - 1"
+            />
+          </ul>
+          <div v-else class="placeholder">
+            <img class="logo" :src="logoSrc" alt="Copilot" />
+            <h4 class="title">
+              {{
+                $t({
+                  en: `Hi, ${signedInUser?.displayName}`,
+                  zh: `你好，${signedInUser?.displayName}`
+                })
+              }}
+            </h4>
+            <p class="description">
+              {{
+                $t({
+                  en: 'I can help you with XBuilder, please type your question or what you want to do below.',
+                  zh: '我可以帮助你了解并使用 XBuilder，请在下方输入你的问题或想做的事。'
+                })
+              }}
+            </p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="placeholder">
+            <img class="logo" :src="logoSrc" alt="Copilot" />
+            <h4 class="title">{{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}</h4>
+            <p class="description">
+              {{
+                $t({
+                  en: "I'm your coding assistant. After you sign in, I can help you learn to code!",
+                  zh: '我是你的编程助手，登录后就能帮你学编程啦。'
+                })
+              }}
+            </p>
+            <button class="sign-button" @click="initiateSignIn()">{{ $t({ en: 'Sign in', zh: '登录' }) }}</button>
+          </div>
+        </template>
       </div>
       <footer class="footer">
-        <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
+        <template v-if="isSignedIn()">
+          <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
+        </template>
       </footer>
     </div>
   </div>
@@ -255,6 +282,36 @@ useDraggable(headerRef, (offset) => {
       line-height: 20px;
       text-align: center;
       color: var(--ui-color-grey-800);
+    }
+
+    .sign-button {
+      position: relative;
+      border: none;
+      width: 78px;
+      height: 32px;
+      font-weight: 600;
+      margin-top: 40px;
+      color: var(--ui-color-purple-main);
+      background-color: transparent;
+      outline: none;
+
+      &::before {
+        content: '';
+        position: absolute;
+        background: linear-gradient(to right, #72bbff 0%, #c390ff 100%);
+        border-radius: 8px;
+        padding: 1px;
+        inset: 0;
+        mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        mask-composite: exclude;
+      }
+
+      &:hover {
+        cursor: pointer;
+        background-color: var(--ui-color-purple-100);
+      }
     }
   }
 }
