@@ -1,4 +1,4 @@
-# ispx for Go+ Builder
+# ispx for XBuilder
 
 ## Introduction
 

@@ -1,6 +1,6 @@
 /**
  * @file Definition-related helpers
- * @desc Here we define some helper functions to get definitions for Go+ and SPX.
+ * @desc Here we define some helper functions to get definitions for XGo and spx.
  *       They are expected to be generated, then copy-pasted to spx-backend code as part of prompt for Copilot.
  */
 

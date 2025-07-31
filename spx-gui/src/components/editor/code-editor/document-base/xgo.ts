@@ -1,7 +1,7 @@
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../common'
 
 // TODO: https://github.com/goplus/builder/issues/1257
-// * Add more frequently-used statements for gop
+// * Add more frequently-used statements for XGo
 // * Review naming for these definitions
 
 export const forIterate: DefinitionDocumentationItem = {

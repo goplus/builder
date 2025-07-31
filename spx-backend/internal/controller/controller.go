@@ -152,7 +152,7 @@ func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
 }
 
 func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {
-	system := `We are using Go+'s XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform. 
+	system := `We are using XGo's XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform.
 Reference project names, it is best to give multiple (>3), including whether it is camel case, whether it is underlined, whether the first letter is capitalized, etc.
 Please use the search tool to search.
 

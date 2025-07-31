@@ -1,4 +1,4 @@
-// Package ai provides a simple API for AI interactions in Go+ Builder games.
+// Package ai provides a simple API for AI interactions in XBuilder games.
 //
 // This package is designed for children around 10 years old who are learning
 // programming. It provides a minimalist API to integrate AI capabilities into
@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// GopPackage indicates that this package is a Go+ package.
+// GopPackage indicates that this package is a XGo package.
 const GopPackage = true
 
 // Break is a special error that signals the AI interaction should be terminated.
