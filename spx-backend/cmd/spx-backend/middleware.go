@@ -62,7 +62,7 @@ func NewSentryMiddleware() func(next http.Handler) http.Handler {
 			)
 			defer transaction.Finish()
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(transaction.Context()))
 		})
 	}
 }
