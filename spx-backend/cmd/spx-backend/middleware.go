@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/qiniu/x/reqid"
 )
 
@@ -34,6 +36,31 @@ func NewCORSMiddleware() func(next http.Handler) http.Handler {
 				w.WriteHeader(http.StatusOK)
 				return
 			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func NewSentryMiddleware() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			hub := sentry.GetHubFromContext(ctx)
+			if hub == nil {
+				hub = sentry.CurrentHub().Clone()
+				ctx = sentry.SetHubOnContext(ctx, hub)
+			}
+			options := []sentry.SpanOption{
+				sentry.WithOpName("http.server"),
+				sentry.ContinueFromRequest(r),
+				sentry.WithTransactionSource(sentry.SourceURL),
+			}
+			transaction := sentry.StartTransaction(ctx,
+				fmt.Sprintf("%s %s", r.Method, r.URL.Path),
+				options...,
+			)
+			defer transaction.Finish()
 
 			next.ServeHTTP(w, r)
 		})

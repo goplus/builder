@@ -71,6 +71,7 @@ logger.Printf("listening to %s", port)
 h := handler(
 	authorizer.Middleware(),
 	authn.Middleware(authenticator),
+	NewSentyMiddleware(),
 	NewCORSMiddleware(),
 	NewReqIDMiddleware(),
 )
