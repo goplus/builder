@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// requestBodyWrapper 包装一个请求体以便能够在不破坏原始请求的情况下读取其内容
+// requestBodyWrapper wraps a request body to allow reading its content without destroying the original request
 type requestBodyWrapper struct {
 	body     io.ReadCloser
 	buffered *bytes.Buffer
@@ -24,7 +24,7 @@ func (r *requestBodyWrapper) Close() error {
 	return r.body.Close()
 }
 
-// responseBodyWrapper 包装一个响应体以便能够在不破坏原始响应的情况下读取其内容
+// responseBodyWrapper wraps a response body to allow reading its content without destroying the original response
 type responseBodyWrapper struct {
 	body     io.ReadCloser
 	buffered *bytes.Buffer
@@ -42,7 +42,7 @@ func (r *responseBodyWrapper) Close() error {
 	return r.body.Close()
 }
 
-// wrapRequestBody 包装请求体以便跟踪
+// wrapRequestBody wraps request body for tracing
 func wrapRequestBody(req *http.Request) *bytes.Buffer {
 	if req.Body == nil {
 		return &bytes.Buffer{}
@@ -57,7 +57,7 @@ func wrapRequestBody(req *http.Request) *bytes.Buffer {
 	return buf
 }
 
-// wrapResponseBody 包装响应体以便跟踪
+// wrapResponseBody wraps response body for tracing
 func wrapResponseBody(resp *http.Response) *bytes.Buffer {
 	if resp.Body == nil {
 		return &bytes.Buffer{}
