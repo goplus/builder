@@ -93,7 +93,7 @@ func (l *SentryLogger) Trace(ctx context.Context, begin time.Time, fc func() (st
 		span = tx
 	} else {
 		// If there's already a parent transaction, create a child span
-		span = tx.StartChild("db.execute")
+		span = tx.StartChild("db.execute", sentry.WithDescription("database execute"))
 	}
 
 	// Set start time to ensure accurate time recording

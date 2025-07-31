@@ -29,7 +29,7 @@ func NewCORSMiddleware() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, HEAD, POST, PUT, DELETE")
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token")
+			w.Header().Set("Access-Control-Allow-Headers", fmt.Sprintf("Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token, %s, %s", sentry.SentryTraceHeader, sentry.SentryBaggageHeader))
 
 			// Handle preflight requests.
 			if r.Method == "OPTIONS" {
