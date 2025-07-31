@@ -39,9 +39,9 @@ export function useRequest<T>(
   defaultTimeout: number = 10 * 1000 // 10 seconds
 ) {
   async function prepareRequest(path: string, payload: unknown, options?: RequestOptions) {
-    const traceData = Sentry.getTraceData();
-    const sentryTraceHeader = traceData["sentry-trace"];
-    const sentryBaggageHeader = traceData["baggage"];
+    const traceData = Sentry.getTraceData()
+    const sentryTraceHeader = traceData['sentry-trace']
+    const sentryBaggageHeader = traceData['baggage']
     const url = baseUrl + path
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
