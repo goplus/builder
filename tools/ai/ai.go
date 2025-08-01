@@ -34,6 +34,7 @@ type Player struct {
 	commands              sync.Map // map[string]commandInfo
 	errorHandler          func(error)
 	history               []Turn
+	archivedHistory       string
 	previousCommandResult *CommandResult
 }
 
@@ -126,6 +127,7 @@ func (p *Player) think(msg string, context map[string]any) {
 		currentRole := p.role
 		currentRoleContext := p.roleContext
 		currentHistory := slices.Clone(p.history)
+		currentArchivedHistory := p.archivedHistory
 		var currentCommandSpecs []CommandSpec
 		p.commands.Range(func(k, v any) bool {
 			if info, ok := v.(commandInfo); ok {
@@ -143,6 +145,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			Role:                  currentRole,
 			RoleContext:           currentRoleContext,
 			History:               currentHistory,
+			ArchivedHistory:       currentArchivedHistory,
 			CommandSpecs:          currentCommandSpecs,
 			KnowledgeBase:         currentKnowledgeBase,
 			PreviousCommandResult: currentPrevCmdResult,
@@ -235,6 +238,17 @@ func (p *Player) think(msg string, context map[string]any) {
 		}
 		p.mu.Lock()
 		p.history = append(p.history, currentTurn)
+
+		// Handle archived history if present in response.
+		if resp.ArchivedHistory != nil {
+			p.archivedHistory = resp.ArchivedHistory.Content
+
+			// Truncate history to keep only recent turns as instructed.
+			if resp.ArchivedHistory.KeepRecentTurns > 0 && len(p.history) > resp.ArchivedHistory.KeepRecentTurns {
+				p.history = p.history[len(p.history)-resp.ArchivedHistory.KeepRecentTurns:]
+			}
+		}
+
 		p.previousCommandResult = executedResult
 		p.mu.Unlock()
 
