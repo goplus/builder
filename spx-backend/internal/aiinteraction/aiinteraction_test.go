@@ -69,6 +69,26 @@ func TestParseAIResponse(t *testing.T) {
 		assert.Equal(t, "TestCommand", response.CommandName)
 		assert.Equal(t, "value1", response.CommandArgs["param1"])
 	})
+
+	t.Run("MissingSpaceAfterCommand", func(t *testing.T) {
+		responseText := "Testing response.\nCOMMAND:TestCommand\nARGS: {\"param1\": \"value1\"}"
+		response, err := parseAIResponse(responseText)
+
+		require.NoError(t, err)
+		assert.Equal(t, responseText, response.Text)
+		assert.Empty(t, response.CommandName)
+		assert.Nil(t, response.CommandArgs)
+	})
+
+	t.Run("ArgsWithoutCommand", func(t *testing.T) {
+		responseText := "Testing response.\nARGS: {\"param1\": \"value1\"}"
+		response, err := parseAIResponse(responseText)
+
+		require.NoError(t, err)
+		assert.Equal(t, responseText, response.Text)
+		assert.Empty(t, response.CommandName)
+		assert.Nil(t, response.CommandArgs)
+	})
 }
 
 func TestBuildConversationMessages(t *testing.T) {
