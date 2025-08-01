@@ -7,6 +7,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -34,6 +36,17 @@ cfg, err := config.Load(logger)
 if err != nil {
 	logger.Fatalln("failed to load configuration:", err)
 }
+
+// Initialize Sentry
+err = sentry.Init(sentry.ClientOptions{
+	Dsn:              cfg.Sentry.DSN,
+	EnableTracing:    true,
+	TracesSampleRate: cfg.Sentry.SampleRate,
+})
+if err != nil {
+	logger.Fatalln("failed to initialize sentry:", err)
+}
+defer sentry.Flush(10 * time.Second)
 
 // Initialize database.
 db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
@@ -69,6 +82,7 @@ port := cfg.Server.GetPort()
 logger.Printf("listening to %s", port)
 
 h := handler(
+	NewSentryMiddleware(),
 	authorizer.Middleware(),
 	authn.Middleware(authenticator),
 	NewCORSMiddleware(),

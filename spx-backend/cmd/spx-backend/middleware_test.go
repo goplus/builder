@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +49,7 @@ func TestNewCORSMiddleware(t *testing.T) {
 
 		assert.Equal(t, allowedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
 		assert.Equal(t, "OPTIONS, GET, HEAD, POST, PUT, DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
-		assert.Equal(t, "Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token", resp.Header.Get("Access-Control-Allow-Headers"))
+		assert.Equal(t, fmt.Sprintf("Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token, %s, %s", sentry.SentryTraceHeader, sentry.SentryBaggageHeader), resp.Header.Get("Access-Control-Allow-Headers"))
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)

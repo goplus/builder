@@ -25,6 +25,10 @@ func Load(logger *log.Logger) (*Config, error) {
 		Database: DatabaseConfig{
 			DSN: mustGetEnv(logger, "GOP_SPX_DSN"),
 		},
+		Sentry: SentryConfig{
+			DSN:        os.Getenv("SENTRY_DSN"),
+			SampleRate: getFloatEnv("SENTRY_SAMPLE_RATE", 1.0),
+		},
 		Redis: RedisConfig{
 			Addr:     os.Getenv("REDIS_ADDR"),
 			Password: os.Getenv("REDIS_PASSWORD"),
@@ -78,4 +82,16 @@ func getIntEnv(key string) int {
 	}
 	intValue, _ := strconv.Atoi(value)
 	return intValue
+}
+
+func getFloatEnv(key string, defaultValue float64) float64 {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	floatValue, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return defaultValue
+	}
+	return floatValue
 }
