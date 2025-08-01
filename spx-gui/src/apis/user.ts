@@ -28,6 +28,8 @@ export type SignedInUser = User & {
 export type UserCapabilities = {
   /** Whether user can manage asset library */
   canManageAssets: boolean
+  /** Whether user can manage courses and course series */
+  canManageCourses: boolean
   /** Whether user can access premium LLM models */
   canUsePremiumLLM: boolean
   /** Total quota for Copilot messages */

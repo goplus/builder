@@ -47,6 +47,14 @@
           {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
         </UIMenuItem>
       </UIMenuGroup>
+      <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
+        <UIMenuItem @click="manageCourses()">
+          {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageCourseSeries()">
+          {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
       <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem @click="handleUseMcpDebuggerUtils">
           {{ $t({ en: 'Use MCP Debugger Utils', zh: '启用 MCP 调试工具' }) }}
@@ -72,6 +80,7 @@ import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
+import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 
@@ -128,6 +137,13 @@ const handleUseSpxV2 = useMessageHandle(
 
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
+
+const manageCoursesFn = useCourseManagement()
+const manageCourses = useMessageHandle(manageCoursesFn).fn
+
+const manageCourseSeriesFn = useCourseSeriesManagement()
+const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
+
 const handleUseMcpDebuggerUtils = useMessageHandle(
   async () => {
     const isVisible = controls.mcpDebugger.toggle()
