@@ -1966,6 +1966,11 @@ components:
           items:
             $ref: "#/components/schemas/AIInteractionTurn"
           description: Record of previous interactions in this session.
+        archivedHistory:
+          type: string
+          description: Content of archived historical interactions.
+          examples:
+            - "Previous conversation summary..."
         continuationTurn:
           type: integer
           format: int32
@@ -2000,6 +2005,10 @@ components:
             - Row: 1
               Col: 1
               Result: ""
+        archivedHistory:
+          $ref: "#/components/schemas/AIInteractionArchivedHistory"
+          nullable: true
+          description: Archived history information when history management occurs.
 
     AIInteractionTurn:
       type: object
@@ -2009,6 +2018,13 @@ components:
           description: User's input text for the turn.
           examples:
             - It's your turn.
+        requestContext:
+          type: object
+          additionalProperties: true
+          description: Context for the user's input text for the turn.
+          examples:
+            - position: [10, 20]
+              health: 80
         responseText:
           type: string
           description: AI's text output for the turn.
@@ -2088,6 +2104,22 @@ components:
           description: Indicates if the interaction should be terminated.
           examples:
             - false
+
+    AIInteractionArchivedHistory:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Archived content of historical interactions.
+          examples:
+            - Previous conversation summary...
+        turnCount:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of turns that were archived.
+          examples:
+            - 5
 
     UpInfo:
       type: object
