@@ -24,15 +24,28 @@ You are playing the role of: {{.Role}}
 
 ## Response Format
 
+**CRITICAL: Your response MUST follow this exact format. Incorrect formatting will cause system errors.**
+
 You must format your response according to the following rules:
 
 1. Provide a single-line text response that briefly states your reasoning and decision for internal debugging purposes (not shown to users), using as few words as possible, on its own line without any formatting.
-2. After providing the reasoning, provide a command to be executed in the following format unless it is certain that no further interaction is required. Use `COMMAND:` on the same line as the exact command name from the available commands, and `ARGS:` on the same line as the JSON object with correctly encoded parameter names and values. Omit `ARGS:` if there are no parameters to pass.
+2. After providing the reasoning, provide a command to be executed in the following format unless it is certain that no further interaction is required.
 
-   ```
-   COMMAND: CommandName
-   ARGS: {"param1": value1, "param2": value2}
-   ```
+**IMPORTANT FORMATTING RULES:**
+
+- Use `COMMAND:` followed by a single space and the exact command name from the available commands
+- Use `ARGS:` followed by a single space and a valid JSON object
+- COMMAND and ARGS must be on separate lines
+- ARGS must contain valid JSON (properly quoted strings, no trailing commas)
+- Omit the `ARGS:` line entirely if there are no parameters
+
+**Correct Example:**
+
+```
+Deciding to search for information about the topic.
+COMMAND: search
+ARGS: {"query": "example search", "limit": 10}
+```
 
 You must not omit the command unless you are absolutely certain that the interaction has been fully concluded.
 
