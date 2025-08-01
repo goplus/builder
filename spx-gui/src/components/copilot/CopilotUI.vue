@@ -1,19 +1,37 @@
+<script lang="ts">
+type Position = {
+  right: number
+  bottom: number
+}
+
+type FloatPosition = Position & {
+  float: Float
+}
+
+enum Float {
+  Left = 'left',
+  Right = 'right'
+}
+</script>
+
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useBottomSticky } from '@/utils/dom'
+import { computed, ref, watch, type WatchSource } from 'vue'
+import { useBottomSticky, useContentSize } from '@/utils/dom'
 import { timeout } from '@/utils/utils'
 import { initiateSignIn, isSignedIn, useSignedInUser } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
 import { providePopupContainer, UIIcon, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
-import logoSrc from './logo.png'
 import { useCopilot } from './CopilotRoot.vue'
+import logoSrc from './logo.png'
 
 const copilot = useCopilot()
 
 const bodyRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
+const panelRef = ref<HTMLElement>()
 
 const { data: signedInUser } = useSignedInUser()
 
@@ -39,15 +57,105 @@ async function handleNewSession() {
 
 useBottomSticky(bodyRef)
 
-const panelRef = ref<HTMLElement>()
 providePopupContainer(panelRef)
 
-// TODO: Support more complex dragging logic
+// resize the panel when the window size changes
+const documentElementRef = ref(document.documentElement)
+const { width: windowWidth, height: windowHeight } = useContentSize(documentElementRef)
+const { width: triggerWidth, height: triggerHeight } = useContentSize(triggerRef)
+const { width: panelWidth, height: panelHeight } = useContentSize(panelRef as WatchSource<HTMLElement | null>)
+
+function fixResizeNullable() {
+  return {
+    windowW: windowWidth.value ?? 0,
+    windowH: windowHeight.value ?? 0,
+    triggerW: triggerWidth.value ?? 0,
+    triggerH: triggerHeight.value ?? 0,
+    panelW: panelWidth.value ?? 0,
+    panelH: panelHeight.value ?? 0
+  }
+}
+
+// resize the panel to fit the window size
+watch(
+  () => [windowWidth.value, windowHeight.value],
+  () => fitTriggerByPosition(triggerPosition.value)
+)
+watch(
+  () => [triggerWidth.value, triggerHeight.value],
+  ([w]) => w && fitTriggerByPosition(swapFloatPositionIfNeeded(triggerPosition.value, panelPosition.value))
+)
+watch(
+  () => [panelWidth.value, panelHeight.value],
+  ([w]) => w && fitPanelByPosition(triggerPosition.value)
+)
+
+function getFloatDirection(position: Position, elWidth: number) {
+  const { windowW } = fixResizeNullable()
+  const centerX = position.right + elWidth / 2
+  return {
+    ...position,
+    float: centerX > windowW / 2 ? Float.Left : Float.Right
+  }
+}
+
+function swapFloatPositionIfNeeded(p1: FloatPosition, p2: FloatPosition) {
+  return p1.float === p2.float ? p1 : p2
+}
+
+const position = { right: 0, bottom: 20 }
+const triggerPosition = ref({ ...position, float: Float.Right })
+function fitTriggerByPosition(position: FloatPosition) {
+  const { triggerW, triggerH, windowW, windowH } = fixResizeNullable()
+  const { bottom, float } = position
+  triggerPosition.value = {
+    right: float === Float.Left ? windowW - triggerW : 0,
+    bottom: Math.min(windowH - triggerH, Math.max(bottom, 0)),
+    float
+  }
+}
+const { draggable: isTriggerDraggable } = useDraggable(triggerRef, {
+  onDragStart() {
+    position.right = triggerPosition.value.right
+    position.bottom = triggerPosition.value.bottom
+  },
+  onDragMove(offset) {
+    const { triggerW } = fixResizeNullable()
+    const floatPosition = getFloatDirection(
+      {
+        right: position.right - offset.x,
+        bottom: position.bottom - offset.y
+      },
+      triggerW
+    )
+    position.right = floatPosition.right
+    position.bottom = floatPosition.bottom
+    fitTriggerByPosition(floatPosition)
+  }
+})
+
 const headerRef = ref<HTMLElement>()
-const position = ref({ right: 10, bottom: 20 })
-useDraggable(headerRef, (offset) => {
-  position.value.right -= offset.x
-  position.value.bottom -= offset.y
+const panelPosition = ref({ right: 10, bottom: 20, float: Float.Right })
+function fitPanelByPosition(position: FloatPosition) {
+  const { panelW, panelH, windowW, windowH } = fixResizeNullable()
+  const { right, bottom, float } = swapFloatPositionIfNeeded(panelPosition.value, position)
+  panelPosition.value = {
+    right: Math.min(windowW - panelW, Math.max(right, 0)),
+    bottom: Math.min(windowH - panelH, Math.max(bottom, 0)),
+    float
+  }
+}
+useDraggable(headerRef, {
+  onDragMove(offset) {
+    const { panelW } = fixResizeNullable()
+    panelPosition.value = getFloatDirection(
+      {
+        right: panelPosition.value.right - offset.x,
+        bottom: panelPosition.value.bottom - offset.y
+      },
+      panelW
+    )
+  }
 })
 
 // TODO: prevent click in copilot panel from closing other dropdowns
@@ -55,8 +163,14 @@ useDraggable(headerRef, (offset) => {
 
 <template>
   <div class="copilot-ui">
-    <div v-show="!copilot.active" class="copilot-trigger" @click="copilot.open()">
-      <div class="copilot-trigger-content">
+    <div
+      v-show="!copilot.active"
+      ref="triggerRef"
+      :class="['copilot-trigger', triggerPosition.float]"
+      :style="{ right: `${triggerPosition.right}px`, bottom: `${triggerPosition.bottom}px` }"
+      @click="!isTriggerDraggable && copilot.open()"
+    >
+      <div :class="['copilot-trigger-content', triggerPosition.float]">
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
           <path
@@ -76,7 +190,7 @@ useDraggable(headerRef, (offset) => {
       v-show="copilot.active"
       ref="panelRef"
       class="copilot-panel"
-      :style="{ right: `${position.right}px`, bottom: `${position.bottom}px` }"
+      :style="{ right: `${panelPosition.right}px`, bottom: `${panelPosition.bottom}px` }"
     >
       <header ref="headerRef" class="header">
         <h4 class="title">{{ $t(title) || '&nbsp;' }}</h4>
@@ -175,6 +289,10 @@ useDraggable(headerRef, (offset) => {
   background: #c390ff;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
   box-shadow: 0px 4px 8px -16px rgba(0, 0, 0, 0.08);
+
+  &.left {
+    border-radius: 0px 16px 16px 0px;
+  }
 }
 
 .copilot-trigger-content {
@@ -183,6 +301,12 @@ useDraggable(headerRef, (offset) => {
   padding: 4px 9px 4px 4px;
   border-radius: 15px 0px 0px 15px;
   background: var(--ui-color-grey-100);
+
+  &.left {
+    border-radius: 0px 15px 15px 0px;
+    padding: 4px 4px 4px 9px;
+    margin: 1px 1px 1px 0px;
+  }
 }
 
 .copilot-panel {
