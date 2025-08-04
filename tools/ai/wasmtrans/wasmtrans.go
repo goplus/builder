@@ -108,9 +108,9 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 	}
 	jsonString := js.Global().Get("JSON").Call("stringify", jsJSON).String()
 
-	var aiResp ai.Response
-	if err := json.Unmarshal([]byte(jsonString), &aiResp); err != nil {
+	var resp ai.Response
+	if err := json.Unmarshal([]byte(jsonString), &resp); err != nil {
 		return ai.Response{}, fmt.Errorf("failed to unmarshal response json: %w", err)
 	}
-	return aiResp, nil
+	return resp, nil
 }
