@@ -141,8 +141,8 @@ useDraggable(headerRef, (offset) => {
             <p class="description">
               {{
                 $t({
-                  en: "I'm your coding assistant. After you sign in, I can help you learn to code!",
-                  zh: '我是你的编程助手，登录后就能帮你学编程啦。'
+                  en: 'I can help you with XBuilder, please sign in to continue',
+                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续'
                 })
               }}
             </p>
