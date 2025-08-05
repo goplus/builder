@@ -190,7 +190,9 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
 
   let newProject = new Project()
   newProject.disposeOnSignal(signal)
-  await newProject.loadFromCloud(ownerName, projectName, undefined, signal, loadFromCloudReporter)
+  // For projects not owned by the signed-in user, we prefer to load the published version.
+  const preferPublishedContent = signedInUsername.value !== ownerName
+  await newProject.loadFromCloud(ownerName, projectName, preferPublishedContent, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.
