@@ -9,6 +9,7 @@ import (
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/goplus/builder/spx-backend/internal/aidescription"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/config"
@@ -34,6 +35,7 @@ type Controller struct {
 	kodo          *kodoClient
 	copilot       *copilot.Copilot
 	workflow      *workflow.Workflow
+	aiDescription *aidescription.AIDescription
 	aiInteraction *aiinteraction.AIInteraction
 	aigc          *aigc.AigcClient
 }
@@ -65,6 +67,11 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
 
+	aiDescription, err := aidescription.New(openaiClient, cfg.OpenAI.ModelID)
+	if err != nil {
+		return nil, err
+	}
+
 	aiInteraction, err := aiinteraction.New(openaiClient, cfg.OpenAI.ModelID)
 	if err != nil {
 		return nil, err
@@ -77,6 +84,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		kodo:          kodoClient,
 		copilot:       cpt,
 		workflow:      stdflow,
+		aiDescription: aiDescription,
 		aiInteraction: aiInteraction,
 		aigc:          aigcClient,
 	}, nil

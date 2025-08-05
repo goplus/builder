@@ -1,4 +1,4 @@
-# SPX APIs
+# spx APIs
 
 ## Game
 
@@ -47,6 +47,7 @@ stopAllSounds,,Stop all playing sounds
 timer,,Current timer value
 wait,wait 1,Wait for given seconds
 waitUntil,waitUntil true,Wait until given condition is met
+
 ```
 
 ## Sprite
@@ -127,6 +128,7 @@ turnTo,turnTo Mouse,Turn to given object
 visible,,If sprite visible
 xpos,,The sprite's X position
 ypos,,The sprite's Y position
+
 ```
 
 ## Others
@@ -200,6 +202,7 @@ Widget.size,size,"Size of the widget. Value is relative to initial size. For exa
 Widget.visible,visible,If widget visible
 Widget.xpos,xpos,The widget's X position
 Widget.ypos,ypos,The widget's Y position
+
 ```
 
 ## Keys
@@ -207,4 +210,5 @@ Widget.ypos,ypos,The widget's Y position
 ```csv
 Name,Sample,Description
 "Key0-Key9,KeyA-KeyZ,KeyF1-KeyF12,KeyKP0-KeyKP9,KeyApostrophe,KeyBackslash,KeyBackspace,KeyCapsLock,KeyComma,KeyDelete,KeyDown,KeyEnd,KeyEnter,KeyEqual,KeyEscape,KeyGraveAccent,KeyHome,KeyInsert,KeyKPDecimal,KeyKPDivide,KeyKPEnter,KeyKPEqual,KeyKPMultiply,KeyKPSubtract,KeyLeft,KeyLeftBracket,KeyMenu,KeyMinus,KeyNumLock,KeyPageDown,KeyPageUp,KeyPause,KeyPeriod,KeyPrintScreen,KeyRight,KeyRightBracket,KeyScrollLock,KeySemicolon,KeySlash,KeySpace,KeyTab,KeyUp,KeyAlt,KeyControl,KeyShift,KeyMax,KeyAny","onKey Key1, => {}","Key definitions, used for keyboard event listening."
+
 ```

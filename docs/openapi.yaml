@@ -1061,10 +1061,32 @@ paths:
         "429":
           description: Insufficient quota to perform this operation.
 
+  /ai/description:
+    post:
+      tags:
+        - AI
+      summary: Generate AI description
+      description: |
+        Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
+        content (such as spx source code and project structure).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIDescriptionRequest"
+      responses:
+        "200":
+          description: Successfully generated AI description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIDescriptionResponse"
+
   /ai/interaction/turn:
     post:
       tags:
-        - AI Interaction
+        - AI
       summary: Perform an AI interaction turn
       description: Send a message and context to the AI, receive a response including text and an optional command.
       requestBody:
@@ -1917,6 +1939,44 @@ components:
           examples:
             - 1
           description: Order/priority of the course series for sorting.
+
+    AIDescriptionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: The game content to generate a description for (e.g., spx source code, project structure).
+          examples:
+            - |
+              Game: TicTacToe
+              Description: A classic Tic-Tac-Toe game.
+
+              === File: main.spx ===
+              var (
+                  // board is the main Tic-Tac-Toe board, where 1 represents "X" and 2 represents "O".
+                  board [3][3]int
+              )
+
+              // onStart handles the game start event.
+              onStart => {
+                // ...
+              }
+
+    AIDescriptionResponse:
+      type: object
+      properties:
+        description:
+          type: string
+          description: AI-generated descriptive summary of the game world from the player's perspective.
+          examples:
+            - |
+              This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent uses `O`
+              marks. Players take turns placing their marks in empty squares, with the goal of getting three marks in a
+              row horizontally, vertically, or diagonally. The game supports mouse click interaction. Click on an empty
+              square to place your mark. The game ends when either player achieves three in a row or the board is
+              completely filled.
 
     AIInteractionRequest:
       type: object
