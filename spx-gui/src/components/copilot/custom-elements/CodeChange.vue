@@ -3,15 +3,19 @@ import { z } from 'zod'
 
 export const tagName = 'code-change'
 
-export const description = 'Display a modification based on the existing code. The user can decide if apply the change.'
+export const isRaw = true
+
+export const description = 'Display a modification based on the existing code.'
 
 export const detailedDescription = `Display a modification based on the existing code. For example,
-<pre is="code-change" file="file:///NiuXiaoQi.spx" line="10" remove-line-count="2">
+
+<code-change file="file:///NiuXiaoQi.spx" line="10" remove-line-count="2">
 onStart => {
 	say "Hello, world!"
 }
-</pre>
-will display a code change that removes 2 lines starting from line 10, and adds the code block.`
+</code-change>
+
+will display a code change that removes line 10 & 11, then adds the new code content. The user can then apply the change by clicking the "Apply" button.`
 
 export const attributes = z.object({
   file: z.string().describe('Text document URI, e.g., `file:///NiuXiaoQi.spx`'),

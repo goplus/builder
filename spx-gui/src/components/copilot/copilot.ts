@@ -313,6 +313,11 @@ export type CustomElementDefinition = {
   description: string
   /** Attributes definition for the tool (Element). */
   attributes: ZodObject<any>
+  /**
+   * Whether the component is raw, that can include lines without exiting, just like `pre`/`textarea` tags.
+   * See details in https://github.com/micromark/micromark/blob/774a70c6bae6dd94486d3385dbd9a0f14550b709/packages/micromark-util-html-tag-name/readme.md#htmlrawnames
+   */
+  isRaw: boolean
   /** Component to render the tool in the UI. */
   component: Component
 }
@@ -375,9 +380,10 @@ ${stringifyZodSchema(customElement.attributes)}
     if (customElements.length === 0) return ''
     return `# Available custom elements
 
-You can use custom elements in your messages to render specific UI content or invoke additional functionality. \
-For example: \`<pre is="foo-bar" a="1" b='"Hello"'></pre>\` creates a custom element with tag name \`foo-bar\` \
-and attributes \`{ a: "1", b: '"Hello"' }\`.
+You can use custom elements in your messages to render specific UI content or invoke additional functionality. For example:
+
+* \`<foo a="1" b='"Hello"' />\` creates a custom element with tag name \`foo\` and attributes \`{ a: "1", b: '"Hello"' }\`.
+* \`<bar a="1">Hello</bar>\` creates a custom element with tag name \`bar\` and attributes \`{ a: "1" }\` and content \`Hello\`.
 
 Each custom element has a tag name, a description, and an attributes schema that defines what values are accepted for each attribute.
 

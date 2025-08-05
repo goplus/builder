@@ -103,11 +103,16 @@ class GetProjectSpritesTool implements ToolDefinition {
 }
 
 type LineRangeParams = {
-  lineStart: number // 1-based
-  lineEnd: number // 1-based
+  /** 1-based */
+  lineStart?: number
+  /** 1-based */
+  lineEnd?: number
 }
 
-function getLines(code: string, { lineStart, lineEnd }: LineRangeParams): Record<string, string> {
+const lineStartSchema = z.number().default(1).describe('Line number to start from, 1-based')
+const lineEndSchema = z.number().optional().describe('Line number to end at, 1-based')
+
+function getLines(code: string, { lineStart = 1, lineEnd }: LineRangeParams): Record<string, string> {
   return code
     .split(/\r?\n/)
     .slice(lineStart - 1, lineEnd)
@@ -120,8 +125,8 @@ function getLines(code: string, { lineStart, lineEnd }: LineRangeParams): Record
 const getProjectStageCodeParamsSchema = z.object({
   owner: z.string().describe('Owner of the project'),
   project: z.string().describe('Project name'),
-  lineStart: z.number().describe('Line number to start from, 1-based'),
-  lineEnd: z.number().describe('Line number to end at, 1-based')
+  lineStart: lineStartSchema,
+  lineEnd: lineEndSchema
 })
 
 class GetProjectStageCodeTool implements ToolDefinition {
@@ -144,8 +149,8 @@ const getProjectSpriteCodeParamsSchema = z.object({
   owner: z.string().describe('Owner of the project'),
   project: z.string().describe('Project name'),
   sprite: z.string().describe('Sprite name'),
-  lineStart: z.number().describe('Line number to start from, 1-based'),
-  lineEnd: z.number().describe('Line number to end at, 1-based')
+  lineStart: lineStartSchema,
+  lineEnd: lineEndSchema
 })
 
 class GetProjectSpriteCodeTool implements ToolDefinition {
@@ -277,24 +282,28 @@ copilot.registerCustomElement({
   tagName: toolUse.tagName,
   description: toolUse.detailedDescription,
   attributes: toolUse.attributes,
+  isRaw: toolUse.isRaw,
   component: toolUse.default
 })
 copilot.registerCustomElement({
   tagName: highlightLink.tagName,
   description: highlightLink.detailedDescription,
   attributes: highlightLink.attributes,
+  isRaw: highlightLink.isRaw,
   component: highlightLink.default
 })
 copilot.registerCustomElement({
   tagName: codeLink.tagName,
   description: codeLink.detailedDescription,
   attributes: codeLink.attributes,
+  isRaw: codeLink.isRaw,
   component: codeLink.default
 })
 copilot.registerCustomElement({
   tagName: codeChange.tagName,
   description: codeChange.detailedDescription,
   attributes: codeChange.attributes,
+  isRaw: codeChange.isRaw,
   component: codeChange.default
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))

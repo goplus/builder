@@ -17,6 +17,7 @@ onUnmounted(
     tagName: tutorialCourseSuccess.tagName,
     description: tutorialCourseSuccess.detailedDescription,
     attributes: tutorialCourseSuccess.attributes,
+    isRaw: tutorialCourseSuccess.isRaw,
     component: tutorialCourseSuccess.default
   })
 )

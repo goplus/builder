@@ -3,12 +3,14 @@ import { z } from 'zod'
 
 export const tagName = 'highlight-link'
 
+export const isRaw = false
+
 export const description = 'Create a link that reveals & highlights a specific node in the UI when clicked.'
 
 export const detailedDescription = `Create a link that reveals & highlights a specific node in the UI when clicked. \
 Use the node ID provided in the UI information to specify the target node. \
 Use this element in your output to help users to find the relevant UI element quickly. \
-For example, <pre is="highlight-link" target-id="xxxyyy" tip="Click this button to submit" text="Submit button"></pre> \
+For example, <highlight-link target-id="xxxyyy" tip="Click this button to submit" text="Submit button" /> \
 will create a link with text "Submit button", when clicked, reveals the node with ID "xxxyyy" and shows the tip "Click this button to submit".`
 
 export const attributes = z.object({

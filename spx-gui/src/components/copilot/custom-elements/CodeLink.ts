@@ -5,18 +5,22 @@ import RawCodeLink from '@/components/editor/code-editor/CodeLink.vue'
 
 export const tagName = 'code-link'
 
+export const isRaw = false
+
 export const description = 'Display a link to a code location in the project.'
 
 export const detailedDescription = `Display a link to a code location in the project. By clicking on the link, \
 the user will be navigated to the code location. A location can be a position or a range. For example, \
-<pre is="code-link" file="file:///NiuXiaoQi.spx" position="10,20" text="L10,C20"></pre> will create a link to \
+<code-link file="file:///NiuXiaoQi.spx" position="10,20" text="L10,C20" /> will create a link to \
 line 10, column 20 in the file "NiuXiaoQi.spx" with text "L10,C20".`
 
 export const attributes = z.object({
   file: z.string().describe('Text document URI, e.g., `file:///NiuXiaoQi.spx`'),
-  position: z.string().describe('Position in the document, `${line},${column}`, e.g., `10,20`'),
+  text: z.string().optional().describe('Link text, if not provided, the file name will be used as the link text'),
+  position: z.string().optional().describe('Position in the document, `${line},${column}`, e.g., `10,20`'),
   range: z
     .string()
+    .optional()
     .describe('Range in the document, `${startLine},${startColumn}-${endLine},${endColumn}`, e.g., `10,20-12,10`')
 })
 
