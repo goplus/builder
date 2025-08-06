@@ -52,10 +52,10 @@ export function useRequest<T>(
       headers.set('Authorization', `Bearer ${token}`)
     }
     if (sentryTraceHeader) {
-      headers.set('sentry-trace', sentryTraceHeader)
+      headers.set('Sentry-Trace', sentryTraceHeader)
     }
     if (sentryBaggageHeader) {
-      headers.set('baggage', sentryBaggageHeader)
+      headers.set('Baggage', sentryBaggageHeader)
     }
     return new Request(url, { method, headers, body })
   }
