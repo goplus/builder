@@ -13,12 +13,14 @@ require (
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/go-sdk/v7 v7.25.4
 	github.com/qiniu/x v1.15.1
-	github.com/redis/go-redis/v9 v9.11.0
+	github.com/redis/go-redis/v9 v9.12.0
 	github.com/stretchr/testify v1.10.0
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.1
 )
+
+require github.com/getsentry/sentry-go v0.34.1
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
@@ -35,7 +37,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gammazero/toposort v0.1.1 // indirect
-	github.com/getsentry/sentry-go v0.34.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
