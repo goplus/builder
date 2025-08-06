@@ -42,7 +42,7 @@ type Controller struct {
 func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, error) {
 	kodoClient := newKodoClient(cfg.Kodo)
 
-	traceClient := httpclient.New(nil)
+	traceClient := httpclient.NewClient(nil)
 
 	casdoorsdk.SetHttpClient(traceClient)
 

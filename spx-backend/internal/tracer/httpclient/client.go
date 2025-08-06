@@ -8,16 +8,11 @@ import (
 	"github.com/getsentry/sentry-go"
 )
 
-// HTTPClient defines the interface for an HTTP client
-// This follows Go's standard naming convention with HTTP capitalized
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-// TraceableClient wraps an HTTPClient with Sentry tracing capabilities
-type TraceableClient struct {
-	// BaseClient is the underlying HTTP client
-	BaseClient HTTPClient
+// TraceableTransport wraps an http.RoundTripper with Sentry tracing capabilities
+type TraceableTransport struct {
+	// Transport is the underlying http.RoundTripper
+	// If nil, http.DefaultTransport will be used
+	Transport http.RoundTripper
 	// Config contains optional configuration options
 	Config Config
 }
@@ -44,10 +39,10 @@ func DefaultConfig() Config {
 	}
 }
 
-// New creates a new TraceableClient
-func New(baseClient HTTPClient, config ...Config) *TraceableClient {
-	if baseClient == nil {
-		baseClient = &http.Client{}
+// New creates a new TraceableTransport
+func New(transport http.RoundTripper, config ...Config) *TraceableTransport {
+	if transport == nil {
+		transport = http.DefaultTransport
 	}
 
 	cfg := DefaultConfig()
@@ -55,14 +50,14 @@ func New(baseClient HTTPClient, config ...Config) *TraceableClient {
 		cfg = config[0]
 	}
 
-	return &TraceableClient{
-		BaseClient: baseClient,
-		Config:     cfg,
+	return &TraceableTransport{
+		Transport: transport,
+		Config:    cfg,
 	}
 }
 
-// Do implements the HTTPClient interface and adds tracing
-func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
+// RoundTrip implements the http.RoundTripper interface and adds tracing
+func (t *TraceableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Get or create a Sentry transaction from context
 	var span *sentry.Span
 	tx := sentry.TransactionFromContext(req.Context())
@@ -93,13 +88,13 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 	span.SetTag("http.url", req.URL.String())
 
 	// Record headers if configured
-	if c.Config.RecordHeaders {
+	if t.Config.RecordHeaders {
 		// Create a copy of headers to avoid modifying the original request
 		headers := make(map[string]string)
 		for k, v := range req.Header {
 			// Check if this is a sensitive header that should be redacted
 			isSensitive := false
-			for _, sh := range c.Config.SensitiveHeaders {
+			for _, sh := range t.Config.SensitiveHeaders {
 				if http.CanonicalHeaderKey(k) == http.CanonicalHeaderKey(sh) {
 					isSensitive = true
 					break
@@ -116,7 +111,7 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	// Record request body if configured
-	if c.Config.RecordBody && req.Body != nil {
+	if t.Config.RecordBody && req.Body != nil {
 		// Wrap the request body to capture its content
 		requestBodyBuf := wrapRequestBody(req)
 		// We don't need to take any further action here since the wrapper will
@@ -136,8 +131,8 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 		}()
 	}
 
-	// Execute the request using the base client
-	resp, err := c.BaseClient.Do(req)
+	// Execute the request using the underlying transport
+	resp, err := t.Transport.RoundTrip(req)
 
 	// Record duration
 	duration := time.Since(startTime)
@@ -164,13 +159,13 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	// Record response headers if configured
-	if c.Config.RecordHeaders && resp != nil {
+	if t.Config.RecordHeaders && resp != nil {
 		// Create a copy of headers to avoid modifying the original response
 		headers := make(map[string]string)
 		for k, v := range resp.Header {
 			// Check if this is a sensitive header that should be redacted
 			isSensitive := false
-			for _, sh := range c.Config.SensitiveHeaders {
+			for _, sh := range t.Config.SensitiveHeaders {
 				if http.CanonicalHeaderKey(k) == http.CanonicalHeaderKey(sh) {
 					isSensitive = true
 					break
@@ -187,7 +182,7 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	// Record response body if configured
-	if c.Config.RecordBody && resp != nil && resp.Body != nil {
+	if t.Config.RecordBody && resp != nil && resp.Body != nil {
 		// Wrap the response body to capture its content
 		responseBuf := wrapResponseBody(resp)
 
@@ -206,4 +201,12 @@ func (c *TraceableClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// NewClient creates an http.Client with tracing capabilities
+func NewClient(transport http.RoundTripper, config ...Config) *http.Client {
+	traceableTransport := New(transport, config...)
+	return &http.Client{
+		Transport: traceableTransport,
+	}
 }

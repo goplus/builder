@@ -8,15 +8,14 @@ import (
 	"net/http"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/tracer/httpclient"
 )
 
 type AigcClient struct {
 	endpoint string
-	client   httpclient.HTTPClient
+	client   *http.Client
 }
 
-func NewAigcClientWithHTTPClient(endpoint string, client httpclient.HTTPClient) *AigcClient {
+func NewAigcClientWithHTTPClient(endpoint string, client *http.Client) *AigcClient {
 	return &AigcClient{
 		endpoint: endpoint,
 		client:   client,
