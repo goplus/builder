@@ -90,7 +90,12 @@ export class Tutorial {
   <course-id>${id}</course-id>
   <course-title>${title}</course-title>
   <course-entrypoint>${entrypoint}</course-entrypoint>
-  <course-prompt>${prompt}, Add appropriate tags to the end-of-course message based on context</course-prompt>
+  <course-prompt>
+    ${prompt}
+    First, based on the provided context, clearly define the course completion standards.
+    Once the course tasks are finished according to these defined standards, your response must include the following:
+    - According to the general rules, append the designated tag for course success at the end of your reply.
+  </course-prompt>
   <course-references>
     ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
   </course-references>
