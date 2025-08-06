@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/casdoor/casdoor-go-sdk v1.11.0
+	github.com/getsentry/sentry-go v0.34.1
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/goplus/yap v0.8.4 //xgo:class
@@ -19,8 +20,6 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.1
 )
-
-require github.com/getsentry/sentry-go v0.34.1
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
