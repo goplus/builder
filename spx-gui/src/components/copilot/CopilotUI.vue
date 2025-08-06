@@ -1,19 +1,41 @@
+<script lang="ts">
+type Position = {
+  right: number
+  bottom: number
+}
+
+type StatePosition = Position & {
+  state: State
+}
+
+enum State {
+  Left = 'left', // The point is on the left side of the screen
+  Right = 'right', // The point is on the right side of the screen
+  Move = 'move' // The point is moving, it may move to the left or right
+}
+
+const snapThreshold = 10
+const panelBoundBuffer = [20, 10]
+</script>
+
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useBottomSticky } from '@/utils/dom'
-import { timeout } from '@/utils/utils'
+import { computed, nextTick, onMounted, ref, watch, type WatchSource } from 'vue'
+import { useBottomSticky, useContentSize } from '@/utils/dom'
+import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { initiateSignIn, isSignedIn, useSignedInUser } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
 import { providePopupContainer, UIIcon, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
-import logoSrc from './logo.png'
 import { useCopilot } from './CopilotRoot.vue'
+import logoSrc from './logo.png'
 
 const copilot = useCopilot()
 
 const bodyRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
+const panelRef = ref<HTMLElement>()
 
 const { data: signedInUser } = useSignedInUser()
 
@@ -39,15 +61,230 @@ async function handleNewSession() {
 
 useBottomSticky(bodyRef)
 
-const panelRef = ref<HTMLElement>()
 providePopupContainer(panelRef)
 
-// TODO: Support more complex dragging logic
+// resize the panel when the window size changes
+const documentElementRef = ref(document.documentElement)
+const { width: windowWidth, height: windowHeight } = useContentSize(documentElementRef)
+const { width: triggerWidth, height: triggerHeight } = useContentSize(triggerRef)
+const { width: panelWidth, height: panelHeight } = useContentSize(panelRef as WatchSource<HTMLElement | null>)
+
+function fixResizeNullable() {
+  return {
+    windowW: windowWidth.value ?? 0,
+    windowH: windowHeight.value ?? 0,
+    triggerW: triggerWidth.value ?? 0,
+    triggerH: triggerHeight.value ?? 0,
+    panelW: panelWidth.value ?? 0,
+    panelH: panelHeight.value ?? 0
+  }
+}
+
+// resize the panel to fit the window size
+watch(
+  () => [windowWidth.value, windowHeight.value],
+  async () => {
+    const { triggerW, panelW } = fixResizeNullable()
+    if (triggerW) {
+      refreshTriggerPosition(triggerPosition.value)
+    }
+    if (panelW) {
+      refreshPanelPosition(panelPosition.value)
+    }
+  }
+)
+watch(
+  () => [panelWidth.value, panelHeight.value],
+  ([w, h]) => {
+    if (!w || !h) return // close panel
+    refreshPanelPosition(panelPosition.value)
+  }
+)
+watch(
+  () => copilot.active,
+  async (active) => {
+    const { right, bottom, state } = triggerPosition.value
+    if (!active && state === State.Move) {
+      const { panelW } = fixResizeNullable()
+      triggerPosition.value = {
+        right: right + panelW / 2,
+        bottom,
+        state
+      }
+      await timeout(0)
+      snapAnimatedToSide(triggerPosition.value)
+    }
+  }
+)
+
+function getDirection(position: Position, elWidth: number) {
+  const { windowW } = fixResizeNullable()
+  const centerX = position.right + elWidth / 2
+  return {
+    ...position,
+    state: centerX > windowW / 2 ? State.Left : State.Right
+  }
+}
+
+function snapToSide(position: Position, elWidth: number) {
+  const { windowW } = fixResizeNullable()
+  const { state } = getDirection(position, elWidth)
+  return {
+    ...position,
+    state,
+    right: state === State.Left ? windowW - elWidth : 0
+  }
+}
+
+function snapMove(position: Position, elWidth: number) {
+  const { windowW } = fixResizeNullable()
+  let state = State.Right
+  let right = position.right
+  if (right < snapThreshold || windowW - (right + elWidth) < snapThreshold) {
+    ;({ right, state } = snapToSide(position, elWidth))
+  } else {
+    state = State.Move
+  }
+  return {
+    ...position,
+    state: state,
+    right
+  }
+}
+
+function snapEnd(position: StatePosition, elWidth: number) {
+  return getDirection(position, elWidth)
+}
+
+function clampToWindowBounds(
+  { right, bottom, state }: StatePosition,
+  elWidth: number,
+  elHeight: number,
+  buffer = [0, 0]
+) {
+  const { windowW, windowH } = fixResizeNullable()
+  const [topBottom, leftRight] = buffer
+  return {
+    right: Math.min(windowW - elWidth - leftRight, Math.max(right, leftRight)),
+    bottom: Math.min(windowH - elHeight - topBottom, Math.max(bottom, topBottom)),
+    state
+  }
+}
+
+async function snapAnimatedToSide(position: Position) {
+  const triggerEl = triggerRef.value
+  if (!triggerEl) return
+
+  const { triggerW } = fixResizeNullable()
+  const snapToWindow = snapToSide(position, triggerW)
+
+  triggerEl.addEventListener(
+    'transitionend',
+    async () => {
+      triggerAnimated.value = false
+      // Update the position after the transition ends
+      await timeout()
+      const { triggerW } = fixResizeNullable()
+      triggerPosition.value = snapToSide(position, triggerW)
+    },
+    { once: true }
+  )
+  triggerAnimated.value = true
+
+  await nextTick()
+
+  triggerPosition.value = {
+    ...snapToWindow,
+    state: State.Move
+  }
+}
+
+const position = { right: 0, bottom: 20 }
+const triggerPosition = localStorageRef('spx-gui-copilot-trigger-position', { ...position, state: State.Right })
+const triggerAnimated = ref(false)
+function refreshTriggerPosition(position: StatePosition) {
+  const { triggerW, triggerH } = fixResizeNullable()
+  triggerPosition.value = clampToWindowBounds(snapToSide(position, triggerW), triggerW, triggerH)
+}
+useDraggable(triggerRef, {
+  onDragStart() {
+    const statePosition = triggerPosition.value
+    position.right = statePosition.right
+    position.bottom = statePosition.bottom
+  },
+  onDragMove(offset) {
+    const { triggerW, triggerH } = fixResizeNullable()
+    const statePosition = snapMove(
+      {
+        right: (position.right -= offset.x),
+        bottom: (position.bottom -= offset.y)
+      },
+      triggerW
+    )
+    triggerPosition.value = clampToWindowBounds(statePosition, triggerW, triggerH)
+  },
+  onDragEnd() {
+    const statePosition = triggerPosition.value
+    if (statePosition.state === State.Move) {
+      snapAnimatedToSide(statePosition)
+    }
+    // Change panelPosition when dragging position.
+    const { triggerW } = fixResizeNullable()
+    panelPosition.value = snapToSide(statePosition, triggerW)
+  }
+})
+
 const headerRef = ref<HTMLElement>()
-const position = ref({ right: 10, bottom: 20 })
-useDraggable(headerRef, (offset) => {
-  position.value.right -= offset.x
-  position.value.bottom -= offset.y
+const panelPosition = localStorageRef('spx-gui-copilot-panel-position', { right: 10, bottom: 20, state: State.Right })
+function refreshPanelPosition(position: StatePosition) {
+  const { panelW, panelH } = fixResizeNullable()
+  panelPosition.value = clampToWindowBounds(getDirection(position, panelW), panelW, panelH, panelBoundBuffer)
+}
+useDraggable(headerRef, {
+  onDragStart() {
+    const statePosition = panelPosition.value
+    position.right = statePosition.right
+    position.bottom = statePosition.bottom
+  },
+  onDragMove(offset) {
+    const { panelW, panelH } = fixResizeNullable()
+    const statePosition = snapMove(
+      {
+        right: (position.right -= offset.x),
+        bottom: (position.bottom -= offset.y)
+      },
+      panelW
+    )
+    panelPosition.value = clampToWindowBounds(statePosition, panelW, panelH, panelBoundBuffer)
+  },
+  onDragEnd() {
+    const { panelW } = fixResizeNullable()
+    const statePosition = snapEnd(panelPosition.value, panelW)
+    panelPosition.value = statePosition
+    // When dragging panelPosition, update triggerPosition and animate it to snap to the edge.
+    triggerPosition.value = { ...statePosition, state: State.Move }
+  }
+})
+
+onMounted(async () => {
+  // Fix the position of elements with state State.Move after refresh.
+  await untilNotNull(() => triggerWidth.value)
+  const { triggerW } = fixResizeNullable()
+  let statePosition = triggerPosition.value
+  if (statePosition.state === State.Move) {
+    statePosition = snapToSide(statePosition, triggerW)
+    triggerPosition.value = panelPosition.value = statePosition
+  }
+
+  statePosition = panelPosition.value
+  if (statePosition.state === State.Move) {
+    statePosition = snapToSide(statePosition, triggerW)
+    triggerPosition.value = statePosition
+    panelPosition.value = {
+      ...panelPosition.value,
+      state: statePosition.state
+    }
+  }
 })
 
 // TODO: prevent click in copilot panel from closing other dropdowns
@@ -55,8 +292,14 @@ useDraggable(headerRef, (offset) => {
 
 <template>
   <div class="copilot-ui">
-    <div v-show="!copilot.active" class="copilot-trigger" @click="copilot.open()">
-      <div class="copilot-trigger-content">
+    <div
+      v-show="!copilot.active"
+      ref="triggerRef"
+      :class="['copilot-trigger', { animated: triggerAnimated }, triggerPosition.state]"
+      :style="{ right: `${triggerPosition.right}px`, bottom: `${triggerPosition.bottom}px` }"
+      @click="copilot.open()"
+    >
+      <div :class="['copilot-trigger-content', triggerPosition.state]">
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
           <path
@@ -76,7 +319,7 @@ useDraggable(headerRef, (offset) => {
       v-show="copilot.active"
       ref="panelRef"
       class="copilot-panel"
-      :style="{ right: `${position.right}px`, bottom: `${position.bottom}px` }"
+      :style="{ right: `${panelPosition.right}px`, bottom: `${panelPosition.bottom}px` }"
     >
       <header ref="headerRef" class="header">
         <h4 class="title">{{ $t(title) || '&nbsp;' }}</h4>
@@ -173,7 +416,17 @@ useDraggable(headerRef, (offset) => {
   border: 1px solid #fff;
   background: #c390ff;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
-  box-shadow: 0px 4px 8px -16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 8px 0px rgba(0, 0, 0, 0.08);
+
+  &.animated {
+    transition: right ease 0.4s;
+  }
+  &.left {
+    border-radius: 0px 16px 16px 0px;
+  }
+  &.move {
+    border-radius: 16px;
+  }
 }
 
 .copilot-trigger-content {
@@ -182,6 +435,17 @@ useDraggable(headerRef, (offset) => {
   padding: 4px 9px 4px 4px;
   border-radius: 15px 0px 0px 15px;
   background: var(--ui-color-grey-100);
+
+  &.left {
+    border-radius: 0px 15px 15px 0px;
+    padding: 4px 4px 4px 9px;
+    margin: 1px 1px 1px 0px;
+  }
+  &.move {
+    border-radius: 15px;
+    padding: 4px;
+    margin: 1px;
+  }
 }
 
 .copilot-panel {
@@ -207,10 +471,10 @@ useDraggable(headerRef, (offset) => {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: move;
 
   .title {
     flex: 1 1 0;
-    cursor: move;
   }
 
   .btn {
