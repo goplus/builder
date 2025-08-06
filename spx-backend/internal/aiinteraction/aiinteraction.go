@@ -11,14 +11,20 @@ import (
 )
 
 const (
-	// maxHistoryTurns defines the maximum number of history turns to keep.
-	maxHistoryTurns = 10
+	// maxHistoryTurns defines the maximum number of detailed history turns to keep.
+	maxHistoryTurns = 20
+
+	// archiveThreshold defines when to start archiving history.
+	archiveThreshold = 30
+
+	// archiveBatchSize defines how many turns to archive at once.
+	archiveBatchSize = 15
 
 	// maxContentLength defines the maximum length of content text.
 	maxContentLength = 10000
 
 	// maxTokens defines the maximum number of tokens for the AI response.
-	maxTokens = 1024
+	maxTokens = 2048
 
 	// temperature defines the sampling temperature for the AI response.
 	//
@@ -58,6 +64,11 @@ func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Respo
 Please carefully review and strictly follow the "Response format" rules specified above.
 `
 
+	archivedHistory, request, err := ai.manageHistory(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to manage history: %w", err)
+	}
+
 	systemPrompt, err := renderSystemPrompt(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build system prompt: %w", err)
@@ -76,9 +87,68 @@ Please carefully review and strictly follow the "Response format" rules specifie
 
 		// Retry with an enhanced system prompt to help the AI correct its response format.
 		enhancedSystemPrompt := systemPrompt + formatRetryPromptEnhancement
-		return ai.callAndParse(ctx, enhancedSystemPrompt, messages)
+		resp, err = ai.callAndParse(ctx, enhancedSystemPrompt, messages)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if archivedHistory != nil {
+		resp.ArchivedHistory = archivedHistory
 	}
 	return resp, nil
+}
+
+// manageHistory checks if history needs archiving and performs it if necessary.
+func (ai *AIInteraction) manageHistory(ctx context.Context, request *Request) (*ArchivedHistory, *Request, error) {
+	archiveCount := calculateTurnsToArchive(request)
+	if archiveCount == 0 {
+		return nil, request, nil
+	}
+	turnsToArchive := request.History[:archiveCount]
+
+	// Generate archive.
+	systemPrompt, err := renderArchiveSystemPrompt(request.ArchivedHistory, turnsToArchive)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to render archive system prompt: %w", err)
+	}
+	messages := []openai.ChatCompletionMessageParamUnion{openai.UserMessage("Please create the archive as specified.")}
+	newArchive, err := ai.callOpenAI(ctx, systemPrompt, messages)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to archive history: %w", err)
+	}
+
+	archivedHistory := &ArchivedHistory{
+		Content:   newArchive,
+		TurnCount: archiveCount,
+	}
+
+	processedRequest := applyArchivedHistory(request, archivedHistory)
+	return archivedHistory, processedRequest, nil
+}
+
+// calculateTurnsToArchive calculates how many turns need to be archived. It
+// returns 0 if no archiving is needed.
+func calculateTurnsToArchive(request *Request) int {
+	totalTurns := len(request.History)
+
+	if request.ArchivedHistory == "" && totalTurns >= archiveThreshold {
+		// First-time archiving: archive turns to reach target history size.
+		return totalTurns - maxHistoryTurns
+	} else if request.ArchivedHistory != "" && totalTurns >= maxHistoryTurns+archiveBatchSize {
+		// Subsequent archiving: archive a fixed batch size.
+		return archiveBatchSize
+	}
+
+	// No archiving needed.
+	return 0
+}
+
+// applyArchivedHistory creates a new request with updated history after archiving.
+func applyArchivedHistory(request *Request, archivedHistory *ArchivedHistory) *Request {
+	processedRequest := *request
+	processedRequest.History = request.History[archivedHistory.TurnCount:]
+	processedRequest.ArchivedHistory = archivedHistory.Content
+	return &processedRequest
 }
 
 // callAndParse makes an API call and parses the response.
@@ -111,27 +181,18 @@ func (ai *AIInteraction) callOpenAI(ctx context.Context, systemPrompt string, me
 func buildConversationMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, error) {
 	var messages []openai.ChatCompletionMessageParamUnion
 
-	if len(request.History) > 0 {
-		var startIndex int
-		if len(request.History) > maxHistoryTurns {
-			startIndex = len(request.History) - maxHistoryTurns
-		}
+	for _, turn := range request.History {
+		messages = append(messages, openai.UserMessage(turn.RequestContent))
 
-		for i := startIndex; i < len(request.History); i++ {
-			turn := request.History[i]
-
-			messages = append(messages, openai.UserMessage(turn.RequestContent))
-
-			responseText := turn.ResponseText
-			if turn.ResponseCommandName != "" {
-				responseCommandArgsJSON, err := json.Marshal(turn.ResponseCommandArgs)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal command arguments: %w", err)
-				}
-				responseText += fmt.Sprintf("\nCOMMAND: %s\nARGS: %s", turn.ResponseCommandName, responseCommandArgsJSON)
+		responseText := turn.ResponseText
+		if turn.ResponseCommandName != "" {
+			responseCommandArgsJSON, err := json.Marshal(turn.ResponseCommandArgs)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal command arguments: %w", err)
 			}
-			messages = append(messages, openai.AssistantMessage(responseText))
+			responseText += fmt.Sprintf("\nCOMMAND: %s\nARGS: %s", turn.ResponseCommandName, responseCommandArgsJSON)
 		}
+		messages = append(messages, openai.AssistantMessage(responseText))
 	}
 
 	if request.ContinuationTurn > 0 {

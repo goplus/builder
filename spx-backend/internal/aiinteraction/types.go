@@ -26,6 +26,9 @@ type Request struct {
 	// History contains the record of previous interactions in this session.
 	History []Turn `json:"history,omitempty"`
 
+	// ArchivedHistory contains the content of archived historical interactions.
+	ArchivedHistory string `json:"archivedHistory,omitempty"`
+
 	// ContinuationTurn indicates the current turn number in a multi-turn
 	// interaction.
 	//
@@ -45,6 +48,18 @@ type Response struct {
 
 	// CommandArgs contains the arguments for the command to be executed.
 	CommandArgs map[string]any `json:"commandArgs,omitempty"`
+
+	// ArchivedHistory contains archived history information when history management occurs.
+	ArchivedHistory *ArchivedHistory `json:"archivedHistory,omitempty"`
+}
+
+// ArchivedHistory contains information about archived historical interactions.
+type ArchivedHistory struct {
+	// Content is the archived content of historical interactions.
+	Content string `json:"content"`
+
+	// TurnCount indicates how many turns were archived.
+	TurnCount int `json:"turnCount"`
 }
 
 // Turn represents a single turn in the AI interaction.

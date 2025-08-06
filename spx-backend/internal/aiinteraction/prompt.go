@@ -16,6 +16,14 @@ var (
 
 	// systemPromptTmpl is the parsed template for the system prompt.
 	systemPromptTmpl = template.Must(template.New("system_prompt").Parse(systemPromptTemplate))
+
+	// archiveSystemPromptTemplate is the embedded archive system prompt template.
+	//
+	//go:embed archive_system_prompt.md
+	archiveSystemPromptTemplate string
+
+	// archiveSystemPromptTmpl is the parsed template for the archive system prompt.
+	archiveSystemPromptTmpl = template.Must(template.New("archive_system_prompt").Parse(archiveSystemPromptTemplate))
 )
 
 // promptTemplateData contains the data for rendering the system prompt template.
@@ -26,6 +34,7 @@ type promptTemplateData struct {
 	CommandSpecs          string
 	PreviousCommandResult *CommandResult
 	History               string
+	ArchivedHistory       string
 	ContinuationTurn      int
 }
 
@@ -34,6 +43,7 @@ func renderSystemPrompt(request *Request) (string, error) {
 	data := promptTemplateData{
 		Role:                  request.Role,
 		PreviousCommandResult: request.PreviousCommandResult,
+		ArchivedHistory:       request.ArchivedHistory,
 		ContinuationTurn:      request.ContinuationTurn,
 	}
 	if len(request.RoleContext) > 0 {
@@ -68,6 +78,31 @@ func renderSystemPrompt(request *Request) (string, error) {
 	var sb strings.Builder
 	if err := systemPromptTmpl.Execute(&sb, data); err != nil {
 		return "", fmt.Errorf("failed to render system prompt template: %w", err)
+	}
+	return sb.String(), nil
+}
+
+// archiveSystemPromptData contains the data for rendering the archive system prompt template.
+type archiveSystemPromptData struct {
+	ExistingArchive string
+	TurnsToArchive  string
+}
+
+// renderArchiveSystemPrompt renders the archive system prompt template with the given data.
+func renderArchiveSystemPrompt(existingArchive string, turnsToArchive []Turn) (string, error) {
+	data := archiveSystemPromptData{
+		ExistingArchive: existingArchive,
+	}
+
+	turnsToArchiveJSON, err := json.Marshal(turnsToArchive)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal turns to archive: %w", err)
+	}
+	data.TurnsToArchive = string(turnsToArchiveJSON)
+
+	var sb strings.Builder
+	if err := archiveSystemPromptTmpl.Execute(&sb, data); err != nil {
+		return "", fmt.Errorf("failed to render archive system prompt template: %w", err)
 	}
 	return sb.String(), nil
 }
