@@ -25,7 +25,9 @@ export type Components = {
    *  Content
    * </my-comp2>
    * ```
-   * Or: (for custom elements whose content contains blank lines, see details in https://github.com/goplus/builder/pull/1193)
+   * Or:
+   * (ATTENTION: It is preferred to use `customRaw` instead of `custom` for these custom elements.)
+   * For custom elements whose content contains blank lines (see details in https://github.com/goplus/builder/pull/1193), `pre` with `is` is supported:
    * ```markdown
    * <pre is="my-comp1" prop1="value1" prop2="value2">
    *  Content
@@ -33,6 +35,27 @@ export type Components = {
    * ```
    */
   custom?: Record<string, Component>
+  /**
+   * Custom raw components (key as component name expected to be in kebab-case).
+   * About raw components, see https://github.com/micromark/micromark/blob/774a70c6bae6dd94486d3385dbd9a0f14550b709/packages/micromark-util-html-tag-name/readme.md#htmlrawnames
+   * Example:
+   * ```js
+   * {
+   *   'custom-raw-component': CustomRawComponent
+   * }
+   * ```
+   * Usage in markdown:
+   * ```markdown
+   * <custom-raw-component>
+   * Content1
+   *
+   * Content2
+   * Content3
+   * </custom-raw-component>
+   * ```
+   */
+  customRaw?: Record<string, Component>
+  // TODO: support custom block elements
 }
 
 export type Props = {
@@ -78,7 +101,7 @@ export function findCustomComponentUsages({ value, components }: Props): CustomC
 function findCustomComponentUsagesInNode(node: hast.Node, components: Components): CustomComponentUsage[] {
   if (node.type !== 'element') return []
   const element = node as hast.Element
-  const customComponents = components.custom ?? {}
+  const customComponents = { ...components.custom, ...components.customRaw }
   if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
     return [{ name: element.tagName, props: hastProps2VueProps(element.properties) }]
   } else if (
@@ -93,8 +116,62 @@ function findCustomComponentUsagesInNode(node: hast.Node, components: Components
   }
 }
 
+/**
+ * Process custom raw components in the markdown string.
+ * By transforming `<custom-raw-component>...</custom-raw-component>` to `<pre is="custom-raw-component"></pre>`,
+ * we allow custom raw components to contain content like blank lines.
+ */
+export function preprocessCustomRawComponents(value: string, tagNames: string[]) {
+  tagNames.forEach((tagName) => {
+    value = value.replace(new RegExp(`<${tagName}([^>]*)>`, 'g'), `<pre is="${tagName}"$1>`)
+    value = value.replace(new RegExp(`</${tagName}>`, 'g'), '</pre>')
+  })
+  return value
+}
+
+/**
+ * Process self-closing custom components in the markdown string.
+ * By transforming `<custom-raw-component />` to `<custom-raw-component></custom-raw-component>`,
+ * we allow custom raw components to be self-closing.
+ * This is useful for components that do not have any content.
+ */
+export function preprocessSelfClosingCustomComponents(value: string, tagNames: string[]) {
+  tagNames.forEach((tagName) => {
+    value = value.replace(new RegExp(`<${tagName}([^>]*)/>`, 'g'), (match, attrs: string) => {
+      const begin = [tagName, attrs.trim()].filter(Boolean).join(' ')
+      return `<${begin}></${tagName}>`
+    })
+  })
+  return value
+}
+
+/**
+ * Process incomplete tags in the markdown string.
+ * By removing the last incomplete tag, we ensure that the markdown is well-formed.
+ * This is useful for streaming cases.
+ */
+export function preprocessIncompleteTags(value: string, tagNames: string[]) {
+  const lastTagIndex = value.lastIndexOf('<')
+  const lastTagEndIndex = value.lastIndexOf('>')
+  if (lastTagIndex > lastTagEndIndex) value = value.slice(0, lastTagIndex)
+
+  tagNames.forEach((tagName) => {
+    const lastIndex = value.lastIndexOf(`<${tagName}`)
+    if (lastIndex === -1) return
+    // `preprocessIncompleteTags` is called after `preprocessSelfClosingCustomComponents`,
+    // so we can assume that the last tag is not self-closing.
+    const lastCloseIndex = value.lastIndexOf(`</${tagName}>`)
+    if (lastIndex > lastCloseIndex) value = value.slice(0, lastIndex)
+  })
+  return value
+}
+
 function parseMarkdown({ value, components }: Props): hast.Nodes {
-  const customComponents = components?.custom ?? {}
+  const customComponents = { ...components?.custom, ...components?.customRaw }
+  const customTagNames = Object.keys(customComponents)
+  value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
+  value = preprocessSelfClosingCustomComponents(value, customTagNames)
+  value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
   const hast = toHast(mdast, { allowDangerousHtml: true })
   const rawProcessed = raw(hast, { tagfilter: false })
@@ -130,7 +207,7 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
   let props: Record<string, string | number | boolean>
   let type: string | Component
   let children: VRendered | (() => VRendered) | undefined
-  const customComponents = components.custom ?? {}
+  const customComponents = { ...components.custom, ...components.customRaw }
   if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
     type = customComponents[element.tagName]
     props = hastProps2VueProps(element.properties)

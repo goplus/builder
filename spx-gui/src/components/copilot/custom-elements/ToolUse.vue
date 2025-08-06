@@ -3,11 +3,13 @@ import { z } from 'zod'
 
 export const tagName = 'tool-use'
 
+export const isRaw = false
+
 export const description = 'Use a tool and get the result.'
 
 export const detailedDescription = `Use a tool and get the result. \
 The client provides various tools with specific capabilities and input schemas that define their required and optional parameters. \
-For example, <tool-use id="hmztvy" tool="example-tool" parameters='{"foo":"bar"}'></tool-use> invokes the tool named "example-tool" with parameters \`{"foo":"bar"}\`. \
+For example, <tool-use id="hmztvy" tool="example-tool" parameters='{"foo":"bar"}' /> invokes the tool named "example-tool" with parameters \`{"foo":"bar"}\`. \
 DO NOT output any content after this element, as you should wait for the client to execute the tool and provide you the result in later messages. Then you can continue.`
 
 export const attributes = z.object({

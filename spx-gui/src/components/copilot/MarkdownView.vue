@@ -1,12 +1,19 @@
 <script lang="ts">
 function getComponents(copilot: Copilot): Components {
-  const customComponents = copilot.getCustomElements().reduce<Record<string, Component>>((acc, tool) => {
-    acc[tool.tagName] = tool.component
-    return acc
-  }, {})
+  const customComponents: Record<string, Component> = {}
+  const customRawComponents: Record<string, Component> = {}
+
+  copilot.getCustomElements().forEach((tool) => {
+    if (tool.isRaw) {
+      customRawComponents[tool.tagName] = tool.component
+      return
+    }
+    customComponents[tool.tagName] = tool.component
+  })
   return {
     codeBlock: CodeBlock,
-    custom: customComponents
+    custom: customComponents,
+    customRaw: customRawComponents
   }
 }
 

@@ -104,7 +104,6 @@ useDraggable(headerRef, (offset) => {
         </UITooltip>
       </header>
       <div ref="bodyRef" class="body">
-        <!-- <MarkdownView :value="testContent"></MarkdownView> -->
         <template v-if="isSignedIn()">
           <ul v-if="rounds != null" class="messages">
             <CopilotRound
