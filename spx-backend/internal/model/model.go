@@ -11,6 +11,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/goplus/builder/spx-backend/internal/tracer/gormsentry"
 )
 
 // Model is the base model for all models.
@@ -35,7 +37,7 @@ func (_deleted_at_is_null) GormDataType() string {
 func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, models ...any) (*gorm.DB, error) {
 	dialector := mysql.New(mysql.Config{DSN: dsn})
 	db, err := gorm.Open(dialector, &gorm.Config{
-		Logger:  logger.Discard,
+		Logger:  gormsentry.New(logger.Discard, nil, gormsentry.DefaultConfig()),
 		NowFunc: func() time.Time { return time.Now().UTC() },
 	})
 	if err != nil {

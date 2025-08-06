@@ -7,12 +7,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/tracer/httpclient"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -40,14 +42,20 @@ type Controller struct {
 func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, error) {
 	kodoClient := newKodoClient(cfg.Kodo)
 
+	traceClient := httpclient.NewClient(nil)
+
+	casdoorsdk.SetHttpClient(traceClient)
+
 	openaiClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.APIKey),
 		option.WithBaseURL(cfg.OpenAI.APIEndpoint),
+		option.WithHTTPClient(traceClient),
 	)
 
 	openaiPremiumClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.GetPremiumAPIKey()),
 		option.WithBaseURL(cfg.OpenAI.GetPremiumAPIEndpoint()),
+		option.WithHTTPClient(traceClient),
 	)
 
 	cpt, err := copilot.New(openaiClient, cfg.OpenAI.ModelID, openaiPremiumClient, cfg.OpenAI.GetPremiumModelID())
@@ -62,7 +70,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		return nil, err
 	}
 
-	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
+	aigcClient := aigc.NewAigcClientWithHTTPClient(cfg.AIGC.Endpoint, traceClient)
 
 	return &Controller{
 		db:            db,

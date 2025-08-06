@@ -4,6 +4,7 @@ package config
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Sentry   SentryConfig
 	Redis    RedisConfig
 	Kodo     KodoConfig
 	Casdoor  CasdoorConfig
@@ -22,6 +23,12 @@ func (c *ServerConfig) GetPort() string {
 		return c.Port
 	}
 	return ":8080"
+}
+
+// SentryConfig holds Sentry configuration.
+type SentryConfig struct {
+	DSN        string
+	SampleRate float64
 }
 
 // DatabaseConfig holds database configuration.
