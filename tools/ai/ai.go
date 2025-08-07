@@ -15,6 +15,8 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/goplus/spx/v2/pkg/spx"
 )
 
 // GopPackage indicates that this package is a XGo package.
@@ -101,12 +103,14 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 // on command execution results until the AI signals completion (no command) or
 // an [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
-	p.taskRunner()(func() { p.think(msg, context) })
+	spx.ExecuteNative(func(owner any) {
+		p.think(owner, msg, context)
+	})
 }
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
-func (p *Player) think(msg string, context map[string]any) {
+func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout    = 15 * time.Second      // Timeout for each transport call.
 		maxTransportRetries = 3                     // Maximum number of retries for each AI transport call.
@@ -179,7 +183,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			}
 		}
 		if lastErr != nil {
-			p.handleError(fmt.Errorf("ai interaction failed after %d transport retries: %w", maxTransportRetries, lastErr))
+			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport retries: %w", maxTransportRetries, lastErr))
 			return
 		}
 
@@ -197,7 +201,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			p.mu.Unlock()
 
 			if !hasExecutedAtLeastOneCommandInThisCall {
-				p.handleError(errors.New("ai did not provide an initial command or any command during the interaction"))
+				p.handleError(owner, errors.New("ai did not provide an initial command or any command during the interaction"))
 			}
 			return
 		}
@@ -207,14 +211,14 @@ func (p *Player) think(msg string, context map[string]any) {
 		if cmdInfoIface, ok := p.commands.Load(resp.CommandName); ok {
 			cmdInfo, ok := cmdInfoIface.(commandInfo)
 			if !ok {
-				p.handleError(fmt.Errorf("invalid type found in command map for %s", resp.CommandName))
+				p.handleError(owner, fmt.Errorf("invalid type found in command map for %s", resp.CommandName))
 				return
 			}
 
 			var err error
-			executedResult, err = callCommandHandler(cmdInfo, resp.CommandArgs)
+			executedResult, err = callCommandHandler(owner, cmdInfo, resp.CommandArgs)
 			if err != nil {
-				p.handleError(fmt.Errorf("failed to execute command %s: %w", resp.CommandName, err))
+				p.handleError(owner, fmt.Errorf("failed to execute command %s: %w", resp.CommandName, err))
 				return
 			}
 		} else {
@@ -279,13 +283,15 @@ func (p *Player) OnErr__1(handler func()) {
 
 // handleError processes errors that occur during AI interactions. It uses the
 // registered error handler if available, otherwise falls back to a default one.
-func (p *Player) handleError(err error) {
+func (p *Player) handleError(owner any, err error) {
 	p.mu.RLock()
 	handler := p.errorHandler
 	p.mu.RUnlock()
 
 	if handler != nil {
-		handler(err)
+		spx.Execute(owner, func(owner any) {
+			handler(err)
+		})
 		return
 	}
 
