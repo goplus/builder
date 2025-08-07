@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { defineComponent, h } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useChildrenWithDefault } from '@/utils/vnode'
 
 export const tagName = 'page-link'
 
@@ -23,7 +24,8 @@ export type Props = {
 }
 
 export default defineComponent<Props>(
-  (props, { slots }) => {
+  (props) => {
+    const children = useChildrenWithDefault(props.path)
     return function render() {
       // We use render function to define `CodeLink` to properly pass `slots` to `RouterLink`
       return h(
@@ -31,7 +33,7 @@ export default defineComponent<Props>(
         {
           to: props.path
         },
-        () => slots.default?.() || props.path
+        children
       )
     }
   },
