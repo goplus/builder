@@ -42,17 +42,17 @@ function handleBrowseTutorials() {
   emit('cancelled')
 }
 
+const hasNextCourse = computed(() => {
+  const currentCourse = props.course
+  const currentSeries = props.series
+  const index = currentSeries.courses.findIndex(({ id }) => id === currentCourse.id)
+  return index !== -1 && index + 1 < currentSeries.courses.length
+})
+
 const { fn: handleStartNextCourse } = useMessageHandle(
   async () => {
     const currentCourse = props.course
     const currentSeries = props.series
-    if (!currentCourse || !currentSeries) {
-      throw new DefaultException({
-        en: 'No course in progress',
-        zh: '没有进行中的课程'
-      })
-    }
-
     const findIndex = currentSeries.courses.findIndex(({ id }) => id === currentCourse.id)
     if (findIndex === -1 || findIndex + 1 >= currentSeries.courses.length) {
       throw new DefaultException({
@@ -66,8 +66,8 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     emit('cancelled')
   },
   {
-    en: 'No next course available',
-    zh: '没有下一个课程'
+    en: 'Failed to learn next course',
+    zh: '学习下一个课程失败'
   }
 )
 </script>
@@ -97,11 +97,11 @@ const { fn: handleStartNextCourse } = useMessageHandle(
 
         <div class="actions">
           <UIButton type="boring" size="large" @click="handleBrowseTutorials">
-            {{ $t({ zh: '浏览所有教程', en: 'Browse all tutorials' }) }}
+            {{ $t({ zh: '浏览所有课程', en: 'Browse all courses' }) }}
           </UIButton>
 
-          <UIButton size="large" @click="handleStartNextCourse">
-            {{ $t({ zh: '浏览下一个课程', en: 'Browse next course' }) }}
+          <UIButton v-if="hasNextCourse" size="large" @click="handleStartNextCourse">
+            {{ $t({ zh: '学习下一个课程', en: 'Learn next course' }) }}
           </UIButton>
         </div>
       </div>

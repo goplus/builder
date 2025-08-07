@@ -136,7 +136,10 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
  * This is useful for components that do not have any content.
  */
 export function preprocessSelfClosingCustomComponents(value: string, tagNames: string[]) {
-  tagNames.forEach((tagName) => {
+  // Always include 'pre' because custom raw components are transformed to <pre is="custom-raw-component">...</pre>
+  // (see preprocessCustomRawComponents). This ensures self-closing <pre> tags are handled consistently.
+  ;['pre', ...tagNames].forEach((tagName) => {
+    // TODO: Support special cases like `<foo bar="a => {}" />`
     value = value.replace(new RegExp(`<${tagName}([^>]*)/>`, 'g'), (match, attrs: string) => {
       const begin = [tagName, attrs.trim()].filter(Boolean).join(' ')
       return `<${begin}></${tagName}>`
