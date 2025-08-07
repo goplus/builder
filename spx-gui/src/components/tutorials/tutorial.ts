@@ -2,6 +2,7 @@ import { inject, provide, ref } from 'vue'
 import type { InjectionKey } from 'vue'
 import type { Router } from 'vue-router'
 
+import { timeout } from '@/utils/utils'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
@@ -53,9 +54,10 @@ export class Tutorial {
 
       if (entrypoint) {
         await this.router.push(entrypoint)
+        await timeout(100) // Wait for the router to finish navigation
       }
 
-      await this.copilot.startSession(this.generateTopic(course, series))
+      await this.copilot.startSession(this.generateTopic(course))
 
       this.copilot.notifyUserEvent(
         {
@@ -73,20 +75,29 @@ export class Tutorial {
     }
   }
 
-  protected generateTopic(course: Course, series: CourseSeriesWithCourses): Topic {
+  protected generateTopic(course: Course): Topic {
     const { id, title, prompt, references, entrypoint } = course
     return {
       title: { en: title, zh: title },
-      description: `
-## You are an expert-level Q&A assistant for the course: ${course.title}.
+      description: `\
+You are now helping the user to learn the course: ${course.title}.
 
-### TASK
-1. Answer any questions I ask about this course with precision and clarity.
-2. All of your responses must be strictly based on the course information provided below.
-3. If my question is outside the scope of the provided information, state that clearly and guide me back to the core content of the course.
-4. When answering, give priority to the teaching guidelines in \`<course-prompt>\` and the reference materials in \`<course-references>\`.
+### Tips
+
+* Answer any questions the user ask about this course with precision and clarity.
+* All of your responses must be strictly based on the course information provided below.
+* If the user's question is outside the scope of the provided information, state that clearly and guide the user back to the core content of the course.
+* When answering, give priority to the teaching guidelines in \`<course-prompt>\`.
+
+### Tips about coding tasks in the course
+
+* If a project reference is provided, it is considered to provide a standard answer for you.
+* Make sure you know what the current code is before you give coding suggestions. If not, use proper tools to read the current code first.
+* Avoid providing result code directly to the user. Instead, guide the user to write the code himself step-by-step by providing hints and explanations.
+
+### Detailed information of course ${course.title}
+
 <course>
-  <series-id>${series.id}</series-id>
   <course-id>${id}</course-id>
   <course-title>${title}</course-title>
   <course-entrypoint>${entrypoint}</course-entrypoint>
@@ -99,8 +110,7 @@ export class Tutorial {
   <course-references>
     ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
   </course-references>
-</course>
-      `,
+</course>`,
       reactToEvents: true,
       endable: false,
       stateIndicator: TutorialStateIndicator

@@ -73,7 +73,7 @@ export function toApiMessage(m: Message): apis.Message {
           textContent = 'Executing tool...'
           break
         case 'completed':
-          textContent = `<result>${JSON.stringify(m.execution.result)}</result>`
+          textContent = `<tool-result id="${m.callId}">${JSON.stringify(m.execution.result)}</tool-result>`
           break
         case 'failed':
           textContent = `Tool execution failed: ${m.execution.error}`
@@ -380,15 +380,6 @@ ${stringifyZodSchema(customElement.attributes)}
     if (customElements.length === 0) return ''
     return `# Available custom elements
 
-You can use custom elements in your messages to render specific UI content or invoke additional functionality. For example:
-
-* \`<foo a="1" b='"Hello"' />\` creates a custom element with tag name \`foo\` and attributes \`{ a: "1", b: '"Hello"' }\`.
-* \`<bar a="1">Hello</bar>\` creates a custom element with tag name \`bar\` and attributes \`{ a: "1" }\` and content \`Hello\`.
-
-Each custom element has a tag name, a description, and an attributes schema that defines what values are accepted for each attribute.
-
-Here are the custom elements you can use in your messages:
-
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
@@ -403,7 +394,7 @@ ${stringifyZodSchema(tool.parameters)}
 
   private getToolsPrompt() {
     const tools = this.getTools()
-    if (tools.length === 0) return "There's no tools available."
+    if (tools.length === 0) return "# Available tools\nThere's no tools available."
     return `# Available tools
 
 ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
@@ -413,6 +404,7 @@ ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
     return `# Current topic between you and user
+
 ${topic.description}`
   }
 

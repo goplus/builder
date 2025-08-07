@@ -9,12 +9,17 @@ const props = defineProps<{ project: Project }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
+  exit: [code: number]
 }>()
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerV1> | InstanceType<typeof ProjectRunnerV2>>()
 
 function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   emit('console', type, args)
+}
+
+function handleExit(code: number) {
+  emit('exit', code)
 }
 
 const version = useSpxVersion()
@@ -33,6 +38,12 @@ defineExpose({
 </script>
 
 <template>
-  <ProjectRunnerV2 v-if="version === 'v2'" ref="projectRunnerRef" v-bind="props" @console="handleConsole" />
+  <ProjectRunnerV2
+    v-if="version === 'v2'"
+    ref="projectRunnerRef"
+    v-bind="props"
+    @console="handleConsole"
+    @exit="handleExit"
+  />
   <ProjectRunnerV1 v-else v-bind="props" ref="projectRunnerRef" @console="handleConsole" />
 </template>

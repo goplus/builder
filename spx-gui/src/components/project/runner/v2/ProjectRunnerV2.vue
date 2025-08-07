@@ -22,6 +22,7 @@ const props = defineProps<{ project: Project }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
+  exit: [code: number]
 }>()
 
 const loading = ref(false)
@@ -52,6 +53,7 @@ interface IframeWindow extends Window {
    */
   stopGame(): Promise<void>
   onGameError: (callback: (err: string) => void) => void
+  onGameExit: (callback: (code: number) => void) => void
   console: typeof console
   /**
    * This property is used to detect if the iframe is reloaded.
@@ -88,6 +90,9 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
     iframeWindow.onGameError((err: string) => {
       console.warn('ProjectRunner game error:', err)
       failed.value = true
+    })
+    iframeWindow.onGameExit((code: number) => {
+      emit('exit', code)
     })
   }
 

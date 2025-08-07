@@ -1,7 +1,7 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
+import { h, inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -112,14 +112,16 @@ type LineRangeParams = {
 const lineStartSchema = z.number().default(1).describe('Line number to start from, 1-based')
 const lineEndSchema = z.number().optional().describe('Line number to end at, 1-based')
 
-function getLines(code: string, { lineStart = 1, lineEnd }: LineRangeParams): Record<string, string> {
-  return code
+/** Process code content and return in LLM-friendly format. */
+function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
+  const lines = code
     .split(/\r?\n/)
     .slice(lineStart - 1, lineEnd)
     .reduce<Record<string, string>>((o, line, i) => {
-      o['L' + (i + lineStart)] = line
+      o[i + lineStart] = line
       return o
     }, {})
+  return { lines }
 }
 
 const getProjectStageCodeParamsSchema = z.object({
@@ -141,7 +143,7 @@ class GetProjectStageCodeTool implements ToolDefinition {
     signal?: AbortSignal
   ) {
     const p = await this.retriever.getProject({ owner, project }, signal)
-    return getLines(p.stage.code, { lineStart, lineEnd })
+    return processCode(p.stage.code, { lineStart, lineEnd })
   }
 }
 
@@ -167,7 +169,7 @@ class GetProjectSpriteCodeTool implements ToolDefinition {
     const p = await this.retriever.getProject({ owner, project }, signal)
     const s = p.sprites.find((s) => s.name === sprite)
     if (!s) throw new Error(`Sprite not found: ${sprite}`)
-    return getLines(s.code, { lineStart, lineEnd })
+    return processCode(s.code, { lineStart, lineEnd })
   }
 }
 
@@ -232,7 +234,9 @@ class UIContextProvider implements ICopilotContextProvider {
       }[this.i18n.lang.value] ?? 'Unknown'
     return `# Current UI of XBuilder
 
-Current UI language: ${lang}. Current UI structure is as follows:
+Current UI language: ${lang}.
+
+Current UI structure:
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
@@ -245,7 +249,9 @@ class UserContextProvider implements ICopilotContextProvider {
   provideContext(): string {
     const signedInUsername = getSignedInUsername()
     const userInfo =
-      signedInUsername != null ? `Now the user is signed in with name ${signedInUsername}` : 'The user is not signed in'
+      signedInUsername != null
+        ? `Now the user is signed in with name "${signedInUsername}"`
+        : 'The user is not signed in'
     return `# Current user
 ${userInfo}`
   }
@@ -306,6 +312,17 @@ copilot.registerCustomElement({
   isRaw: codeChange.isRaw,
   component: codeChange.default
 })
+copilot.registerCustomElement({
+  tagName: 'thinking',
+  description: 'Custom element to wrap your thinking process.',
+  attributes: z.object({}),
+  isRaw: true,
+  component: {
+    render() {
+      return h('div', { style: { display: 'none' } }, this.$slots.default ? this.$slots.default() : [])
+    }
+  }
+})
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
@@ -336,6 +353,19 @@ onBeforeUnmount(
       `A ${type} notification showed with content: ${content}`
     )
   })
+)
+
+watch(
+  () => editorCtxRef.value?.state.runtime,
+  (editorRuntime, _, onCleanup) => {
+    if (editorRuntime == null) return
+    const unlisten = editorRuntime.on('didExit', (code) => {
+      if (code !== 0) return
+      copilot.notifyUserEvent({ en: 'Game exited with code 0', zh: '游戏正常退出' }, `Game exited with code ${code}`)
+    })
+    onCleanup(unlisten)
+  },
+  { immediate: true }
 )
 
 provide(copilotInjectionKey, copilot)

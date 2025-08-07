@@ -105,6 +105,10 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   }
 }
 
+function handleExit(code: number) {
+  runtime.value.emit('didExit', code)
+}
+
 watch(
   () => props.visible,
   async (visible, _, onCleanup) => {
@@ -136,7 +140,7 @@ defineExpose({
 </script>
 
 <template>
-  <ProjectRunner ref="projectRunnerRef" :project="editorCtx.project" @console="handleConsole" />
+  <ProjectRunner ref="projectRunnerRef" :project="editorCtx.project" @console="handleConsole" @exit="handleExit" />
 </template>
 
 <style lang="scss" scoped></style>

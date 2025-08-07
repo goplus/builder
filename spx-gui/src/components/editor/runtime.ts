@@ -36,6 +36,7 @@ export interface RuntimeOutput {
 
 export class Runtime extends Emitter<{
   didChangeOutput: void
+  didExit: number
 }> {
   running: RunningState = { mode: 'none' }
 
