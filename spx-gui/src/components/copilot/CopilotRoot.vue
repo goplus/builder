@@ -1,7 +1,7 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { h, inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
+import { inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -15,9 +15,11 @@ import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/c
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
 import * as toolUse from './custom-elements/ToolUse.vue'
+import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
+import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -46,28 +48,27 @@ const listProjectsTool: ToolDefinition = {
   }
 }
 
-type ProjectParams = {
-  owner: string
-  project: string
-}
-
 class Retriever {
   constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
 
-  async getProject({ owner, project }: ProjectParams, signal?: AbortSignal): Promise<Project> {
-    if (this.editorCtxRef.value != null) {
-      const currentProject = this.editorCtxRef.value.project
-      if (currentProject.owner === owner && currentProject.name === project) return currentProject
+  async getProject(project: string | undefined, signal?: AbortSignal): Promise<Project> {
+    const currentProject = this.editorCtxRef.value?.project
+    if (project == null) {
+      if (currentProject == null) throw new Error('No project specified and no current editing project available')
+      return currentProject
+    }
+    const { owner, name } = parseProjectIdentifier(project)
+    if (currentProject != null && currentProject.owner === owner && currentProject.name === name) {
+      return currentProject
     }
     const p = new Project()
-    await p.loadFromCloud(owner, project, true, signal)
+    await p.loadFromCloud(owner, name, true, signal)
     return p
   }
 }
 
 const getProjectMetadataParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name')
+  project: projectIdentifierSchema
 })
 
 class GetProjectMetadataTool implements ToolDefinition {
@@ -77,16 +78,15 @@ class GetProjectMetadataTool implements ToolDefinition {
 
   constructor(private retriever: Retriever) {}
 
-  async implementation({ owner, project }: z.infer<typeof getProjectMetadataParamsSchema>, signal?: AbortSignal) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
+  async implementation({ project }: z.infer<typeof getProjectMetadataParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
     const { owner: pOwner, remixedFrom, visibility, description, instructions } = p
     return { owner: pOwner, remixedFrom, visibility, description, instructions }
   }
 }
 
 const getProjectSpritesParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name')
+  project: projectIdentifierSchema
 })
 
 class GetProjectSpritesTool implements ToolDefinition {
@@ -96,9 +96,9 @@ class GetProjectSpritesTool implements ToolDefinition {
 
   constructor(private retriever: Retriever) {}
 
-  async implementation(params: z.infer<typeof getProjectSpritesParamsSchema>, signal?: AbortSignal) {
-    const project = await this.retriever.getProject(params, signal)
-    return project.sprites.map((s) => s.name)
+  async implementation({ project }: z.infer<typeof getProjectSpritesParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
+    return p.sprites.map((s) => s.name)
   }
 }
 
@@ -124,52 +124,29 @@ function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) 
   return { lines }
 }
 
-const getProjectStageCodeParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name'),
+const getProjectCodeParamsSchema = z.object({
+  project: projectIdentifierSchema,
+  file: codeFilePathSchema,
   lineStart: lineStartSchema,
   lineEnd: lineEndSchema
 })
 
-class GetProjectStageCodeTool implements ToolDefinition {
-  name = 'get_project_stage_code'
-  description = 'Get stage code of a project.'
-  parameters = getProjectStageCodeParamsSchema
+class GetProjectCodeTool implements ToolDefinition {
+  name = 'get_project_code'
+  description = 'Get code content of a file in project.'
+  parameters = getProjectCodeParamsSchema
 
   constructor(private retriever: Retriever) {}
 
   async implementation(
-    { owner, project, lineStart, lineEnd }: z.infer<typeof getProjectStageCodeParamsSchema>,
+    { project, file, lineStart, lineEnd }: z.infer<typeof getProjectCodeParamsSchema>,
     signal?: AbortSignal
   ) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
-    return processCode(p.stage.code, { lineStart, lineEnd })
-  }
-}
-
-const getProjectSpriteCodeParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name'),
-  sprite: z.string().describe('Sprite name'),
-  lineStart: lineStartSchema,
-  lineEnd: lineEndSchema
-})
-
-class GetProjectSpriteCodeTool implements ToolDefinition {
-  name = 'get_project_sprite_code'
-  description = 'Get code of a sprite in a project.'
-  parameters = getProjectSpriteCodeParamsSchema
-
-  constructor(private retriever: Retriever) {}
-
-  async implementation(
-    { owner, project, sprite, lineStart, lineEnd }: z.infer<typeof getProjectSpriteCodeParamsSchema>,
-    signal?: AbortSignal
-  ) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
-    const s = p.sprites.find((s) => s.name === sprite)
-    if (!s) throw new Error(`Sprite not found: ${sprite}`)
-    return processCode(s.code, { lineStart, lineEnd })
+    const p = await this.retriever.getProject(project, signal)
+    if (p.stage.codeFilePath === file) return processCode(p.stage.code, { lineStart, lineEnd })
+    const sprite = p.sprites.find((s) => s.codeFilePath === file)
+    if (sprite == null) throw new Error(`Code file ${file} not found in project ${project}`)
+    return processCode(sprite.code, { lineStart, lineEnd })
   }
 }
 
@@ -261,7 +238,7 @@ class LocationContextProvider implements ICopilotContextProvider {
   constructor(private router: Router) {}
   provideContext(): string {
     return `# Current location
-The user is now browsing page with URL: \`${this.router.currentRoute.value.fullPath}\``
+The user is now browsing page with path: \`${this.router.currentRoute.value.fullPath}\``
   }
 }
 </script>
@@ -281,8 +258,7 @@ const copilot = new Copilot()
 copilot.registerTool(listProjectsTool)
 copilot.registerTool(new GetProjectMetadataTool(retriever))
 copilot.registerTool(new GetProjectSpritesTool(retriever))
-copilot.registerTool(new GetProjectStageCodeTool(retriever))
-copilot.registerTool(new GetProjectSpriteCodeTool(retriever))
+copilot.registerTool(new GetProjectCodeTool(retriever))
 copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
 copilot.registerCustomElement({
   tagName: toolUse.tagName,
@@ -290,6 +266,13 @@ copilot.registerCustomElement({
   attributes: toolUse.attributes,
   isRaw: toolUse.isRaw,
   component: toolUse.default
+})
+copilot.registerCustomElement({
+  tagName: pageLink.tagName,
+  description: pageLink.detailedDescription,
+  attributes: pageLink.attributes,
+  isRaw: pageLink.isRaw,
+  component: pageLink.default
 })
 copilot.registerCustomElement({
   tagName: highlightLink.tagName,
@@ -319,7 +302,7 @@ copilot.registerCustomElement({
   isRaw: true,
   component: {
     render() {
-      return h('div', { style: { display: 'none' } }, this.$slots.default ? this.$slots.default() : [])
+      return null // This is a placeholder for thinking process, no actual rendering
     }
   }
 })
