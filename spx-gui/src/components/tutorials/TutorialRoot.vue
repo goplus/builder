@@ -6,6 +6,7 @@ import { provideTutorial, Tutorial } from './tutorial'
 
 import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
+import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 
 const copilot = useCopilot()
 const router = useRouter()
@@ -19,6 +20,16 @@ onUnmounted(
     attributes: tutorialCourseSuccess.attributes,
     isRaw: tutorialCourseSuccess.isRaw,
     component: tutorialCourseSuccess.default
+  })
+)
+
+onUnmounted(
+  copilot.registerCustomElement({
+    tagName: tutorialCourseExitLink.tagName,
+    description: tutorialCourseExitLink.description,
+    attributes: tutorialCourseExitLink.attributes,
+    isRaw: tutorialCourseExitLink.isRaw,
+    component: tutorialCourseExitLink.default
   })
 )
 

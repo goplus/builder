@@ -35,7 +35,7 @@ const resultContent = computed<string | null>(() => {
   <section class="copilot-round">
     <UserMessage :message="round.userMessage" />
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
-    <div class="state">
+    <div v-if="round.state !== RoundState.Initialized" class="state">
       <div v-if="round.state === RoundState.Loading || round.state === RoundState.InProgress" class="loading">
         <svg
           class="loading-icon"
@@ -89,19 +89,18 @@ const resultContent = computed<string | null>(() => {
 
 <style lang="scss" scoped>
 .copilot-round {
-  padding-bottom: 20px;
 }
 .copilot-round + .copilot-round {
   border-top: 1px solid #e3e9ee;
 }
 .answer {
-  padding: 20px 16px 0;
+  padding: 20px 16px;
   align-self: stretch;
   border-top: 1px solid #e3e9ee;
 }
 
 .state {
-  padding: 0px 16px;
+  padding: 0px 16px 20px;
   display: flex;
   align-self: stretch;
   flex-direction: column;
