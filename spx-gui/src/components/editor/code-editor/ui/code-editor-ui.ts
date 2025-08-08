@@ -75,6 +75,12 @@ export interface ICodeEditorUI {
   /** Register a command with given name & handler */
   registerCommand<A extends any[], R>(command: Command<A, R>, info: CommandInfo<A, R>): void
 
+  /** Current active text document */
+  activeTextDocument: TextDocument | null
+  /** Cursor position (in current active text document) */
+  cursorPosition: Position | null
+  /** Current selection (in current active text document) */
+  selection: Selection | null
   /** Open a text document in the editor. */
   open(textDocument: TextDocumentIdentifier): void
   /** Open a text document in the editor,and scroll to given position */

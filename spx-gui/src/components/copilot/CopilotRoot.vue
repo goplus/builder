@@ -12,6 +12,8 @@ import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
+import { getCodeFilePath, isSelectionEmpty } from '../editor/code-editor/common'
+import type { TextDocument } from '../editor/code-editor/text-document'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
 import * as toolUse from './custom-elements/ToolUse'
@@ -115,14 +117,15 @@ const lineEndSchema = z.number().optional().describe('Line number to end at, 1-b
 
 /** Process code content and return in LLM-friendly format. */
 function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
-  const lines = code
-    .split(/\r?\n/)
-    .slice(lineStart - 1, lineEnd)
-    .reduce<Record<string, string>>((o, line, i) => {
-      o[i + lineStart] = line
-      return o
-    }, {})
-  return { lines }
+  const allLines = code.split(/\r?\n/)
+  const lines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((o, line, i) => {
+    o[i + lineStart] = line
+    return o
+  }, {})
+  return {
+    lines,
+    totalLineNum: allLines.length
+  }
 }
 
 const getProjectCodeParamsSchema = z.object({
@@ -259,6 +262,41 @@ class LocationContextProvider implements ICopilotContextProvider {
 The user is now browsing page with path: \`${this.router.currentRoute.value.fullPath}\``
   }
 }
+
+class CodeContextProvider implements ICopilotContextProvider {
+  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+
+  private sampleCode(activeTextDocument: TextDocument, line: number) {
+    const threshold = 10
+    const lineStart = Math.max(line - threshold, 1)
+    const lineEnd = lineStart + threshold * 2
+    const code = activeTextDocument.getValue()
+    const result = processCode(code, { lineStart, lineEnd })
+    return `Part of code around line ${line}:
+${JSON.stringify(result)}`
+  }
+
+  provideContext(): string {
+    const codeEditorUI = this.codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    if (codeEditorUI == null) return ''
+    const { activeTextDocument, cursorPosition, selection } = codeEditorUI
+    if (activeTextDocument == null) return ''
+    const codeFilePath = getCodeFilePath(activeTextDocument.id.uri)
+    const cursorPositionStr =
+      cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
+    const selectionStr =
+      selection == null || isSelectionEmpty(selection)
+        ? 'None'
+        : `From Line ${selection.start.line}, Column ${selection.start.column} to Line ${selection.position.line}, Column ${selection.position.column}`
+    let result = `# Current code
+The user is now viewing / editing code of file \`${codeFilePath}\`. \
+Cursor position: ${cursorPositionStr}. \
+Selection: ${selectionStr}.`
+    const surroundingCode = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
+    if (surroundingCode != null) result += '\n' + surroundingCode
+    return result
+  }
+}
 </script>
 
 <script setup lang="ts">
@@ -313,21 +351,11 @@ copilot.registerCustomElement({
   isRaw: codeChange.isRaw,
   component: codeChange.default
 })
-copilot.registerCustomElement({
-  tagName: 'thinking',
-  description: 'Custom element to wrap your thinking process.',
-  attributes: z.object({}),
-  isRaw: true,
-  component: {
-    render() {
-      return null // This is a placeholder for thinking process, no actual rendering
-    }
-  }
-})
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
+copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
 watch(
   router.currentRoute,

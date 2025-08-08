@@ -395,7 +395,10 @@ export class Copilot {
   }
 
   private getContext(): string {
-    return this.contextProviders.map((provider) => provider.provideContext()).join('\n\n')
+    return this.contextProviders
+      .map((provider) => provider.provideContext())
+      .filter((s) => s.trim() !== '')
+      .join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
