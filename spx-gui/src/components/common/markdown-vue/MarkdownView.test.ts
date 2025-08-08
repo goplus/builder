@@ -2,11 +2,7 @@ import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
 import { useSlotText } from '@/utils/vnode'
-import MarkdowView, {
-  preprocessCustomRawComponents,
-  preprocessSelfClosingCustomComponents,
-  preprocessIncompleteTags
-} from './MarkdownView'
+import MarkdowView, { preprocessCustomRawComponents, preprocessIncompleteTags } from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
   it('should convert custom raw components to <pre> tags', () => {
@@ -99,47 +95,6 @@ describe('preprocessCustomRawComponents', () => {
     const tagNames = ['custom-raw-component']
     const result = preprocessCustomRawComponents(value, tagNames)
     expect(result).toBe('<pre is="custom-raw-component" attr1="value1" attr2="value2" />')
-  })
-})
-
-describe('preprocessSelfClosingCustomComponents', () => {
-  it('should convert self-closing custom components to normal tags', () => {
-    const value = '<custom-self-closing-component />'
-    const tagNames = ['custom-self-closing-component']
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe('<custom-self-closing-component></custom-self-closing-component>')
-  })
-  it('should handle multiple self-closing custom components', () => {
-    const value = '<custom-self-closing-1 /><custom-self-closing-2 />'
-    const tagNames = ['custom-self-closing-1', 'custom-self-closing-2']
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe(
-      '<custom-self-closing-1></custom-self-closing-1><custom-self-closing-2></custom-self-closing-2>'
-    )
-  })
-  it('should not modify content without self-closing custom components', () => {
-    const value = '<div>Normal content</div>'
-    const tagNames = ['custom-self-closing-component']
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe('<div>Normal content</div>')
-  })
-  it('should handle empty value', () => {
-    const value = ''
-    const tagNames = ['custom-self-closing-component']
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe('')
-  })
-  it('should handle no tag names', () => {
-    const value = '<custom-self-closing-component />'
-    const tagNames: string[] = []
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe('<custom-self-closing-component />')
-  })
-  it('should handle tags with attributes', () => {
-    const value = '<custom-self-closing-component attr="value" />'
-    const tagNames = ['custom-self-closing-component']
-    const result = preprocessSelfClosingCustomComponents(value, tagNames)
-    expect(result).toBe('<custom-self-closing-component attr="value"></custom-self-closing-component>')
   })
 })
 
@@ -261,5 +216,43 @@ After`,
   Content2
 </div>
 <p>After</p></div>`)
+  })
+  it('should support self-closing custom components', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1"></div>'
+    }
+    const testComp2 = {
+      template: '<div class="test-comp-2">{{content}}</div>',
+      props: ['content']
+    }
+    const testComp3 = {
+      template: '<div class="test-comp-3"><slot /></div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `
+<test-comp3>
+1111
+
+222
+</test-comp3>
+
+<test-comp1 />aaa<test-comp2 content="bbb" /><test-comp2 content="ccc" />ddd<test-comp3 />`,
+        components: {
+          custom: {
+            'test-comp1': testComp1,
+            'test-comp2': testComp2
+          },
+          customRaw: {
+            'test-comp3': testComp3
+          }
+        }
+      }
+    })
+    expect(result).toBe(`<div><div class="test-comp-3"><!--[-->1111
+
+222
+<!--]--></div>
+<p><div class="test-comp-1"></div>aaa<div class="test-comp-2">bbb</div><div class="test-comp-2">ccc</div>ddd</p><div class="test-comp-3"><!--[--><p></p><!--]--></div></div>`)
   })
 })

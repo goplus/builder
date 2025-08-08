@@ -12,9 +12,11 @@ import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
+import { getCodeFilePath, isSelectionEmpty } from '../editor/code-editor/common'
+import type { TextDocument } from '../editor/code-editor/text-document'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
-import * as toolUse from './custom-elements/ToolUse.vue'
+import * as toolUse from './custom-elements/ToolUse'
 import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
@@ -115,14 +117,15 @@ const lineEndSchema = z.number().optional().describe('Line number to end at, 1-b
 
 /** Process code content and return in LLM-friendly format. */
 function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
-  const lines = code
-    .split(/\r?\n/)
-    .slice(lineStart - 1, lineEnd)
-    .reduce<Record<string, string>>((o, line, i) => {
-      o[i + lineStart] = line
-      return o
-    }, {})
-  return { lines }
+  const allLines = code.split(/\r?\n/)
+  const lines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((o, line, i) => {
+    o[i + lineStart] = line
+    return o
+  }, {})
+  return {
+    lines,
+    totalLineNum: allLines.length
+  }
 }
 
 const getProjectCodeParamsSchema = z.object({
@@ -192,12 +195,28 @@ class UIContextProvider implements ICopilotContextProvider {
     private i18n: I18n
   ) {}
 
-  private stringifyNode(node: RadarNodeInfo): string {
-    const children = this.stringifyNodes(node.getChildren())
+  private serializeNode(attrs: Record<string, string>, childrenStr: string) {
     // TODO: use XMLSerializer?
-    if (children.trim() === '')
-      return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}"/>`
-    return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}">${children}</node>`
+    const attrsStr = Object.entries(attrs)
+      .filter(([_, value]) => value != null && value !== '')
+      .map(([key, value]) => `${key}="${escapeHTML(value)}"`)
+      .join(' ')
+    if (childrenStr.trim() === '') {
+      return `<n ${attrsStr}/>`
+    }
+    return `<n ${attrsStr}>${childrenStr}</n>`
+  }
+
+  private stringifyNode(node: RadarNodeInfo): string {
+    const childrenStr = this.stringifyNodes(node.getChildren())
+    return this.serializeNode(
+      {
+        name: node.name,
+        id: node.id,
+        desc: node.desc
+      },
+      childrenStr
+    )
   }
 
   private stringifyNodes(node: RadarNodeInfo[]): string {
@@ -214,12 +233,13 @@ class UIContextProvider implements ICopilotContextProvider {
 
 Current UI language: ${lang}.
 
-Current UI structure:
+Current UI structure (\`n\` for \`node\`):
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
-DO NOT make up appearance or position (e.g., left/right/top/bottom) of elements, unless explicitly mentioned in the description.
-`
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.
+
+If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
 }
 
@@ -240,6 +260,41 @@ class LocationContextProvider implements ICopilotContextProvider {
   provideContext(): string {
     return `# Current location
 The user is now browsing page with path: \`${this.router.currentRoute.value.fullPath}\``
+  }
+}
+
+class CodeContextProvider implements ICopilotContextProvider {
+  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+
+  private sampleCode(activeTextDocument: TextDocument, line: number) {
+    const threshold = 10
+    const lineStart = Math.max(line - threshold, 1)
+    const lineEnd = lineStart + threshold * 2
+    const code = activeTextDocument.getValue()
+    const result = processCode(code, { lineStart, lineEnd })
+    return `Part of code around line ${line}:
+${JSON.stringify(result)}`
+  }
+
+  provideContext(): string {
+    const codeEditorUI = this.codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    if (codeEditorUI == null) return ''
+    const { activeTextDocument, cursorPosition, selection } = codeEditorUI
+    if (activeTextDocument == null) return ''
+    const codeFilePath = getCodeFilePath(activeTextDocument.id.uri)
+    const cursorPositionStr =
+      cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
+    const selectionStr =
+      selection == null || isSelectionEmpty(selection)
+        ? 'None'
+        : `From Line ${selection.start.line}, Column ${selection.start.column} to Line ${selection.position.line}, Column ${selection.position.column}`
+    let result = `# Current code
+The user is now viewing / editing code of file \`${codeFilePath}\`. \
+Cursor position: ${cursorPositionStr}. \
+Selection: ${selectionStr}.`
+    const surroundingCode = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
+    if (surroundingCode != null) result += '\n' + surroundingCode
+    return result
   }
 }
 </script>
@@ -296,21 +351,11 @@ copilot.registerCustomElement({
   isRaw: codeChange.isRaw,
   component: codeChange.default
 })
-copilot.registerCustomElement({
-  tagName: 'thinking',
-  description: 'Custom element to wrap your thinking process.',
-  attributes: z.object({}),
-  isRaw: true,
-  component: {
-    render() {
-      return null // This is a placeholder for thinking process, no actual rendering
-    }
-  }
-})
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
+copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
 watch(
   router.currentRoute,

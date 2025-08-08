@@ -50,7 +50,7 @@ const { fn: handleClick } = useMessageHandle(
     const { visible } = nodeInfo
     const element = nodeInfo.getElement()
     if (visible) {
-      spotlight.reveal(element, props.tip)
+      spotlight.reveal(element, props.tip ?? props.text)
     } else {
       spotlight.conceal()
     }

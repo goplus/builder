@@ -2,7 +2,7 @@ import { computed, defineComponent, h, type VNode, type Component } from 'vue'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { html, find } from 'property-information'
 import type * as hast from 'hast'
-import { toHast } from 'mdast-util-to-hast'
+import { toHast, type Raw } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
@@ -129,23 +129,52 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
+const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
+
+function processSelfClosingForHastRawNode(node: Raw, tagNames: string[]) {
+  const value = node.value.trim()
+  if (!value.endsWith('/>')) return node
+  const match = value.match(tagHeaderPattern)
+  if (match == null) return node
+  const tagName = match[1]
+  if (!tagNames.includes(tagName)) return node
+  return {
+    ...node,
+    value: value.slice(0, -2) + `></${tagName}>`
+  }
+}
+
+function processSelfClosingForHastNode(node: hast.Node, tagNames: string[]): hast.Node {
+  switch (node.type) {
+    case 'raw':
+      return processSelfClosingForHastRawNode(node as Raw, tagNames)
+    case 'text':
+      return node
+    case 'element': {
+      const element = node as hast.Element
+      const processedElement = {
+        ...element,
+        children: element.children.map((child) => processSelfClosingForHastNode(child, tagNames))
+      }
+      return processedElement
+    }
+    default:
+      return node
+  }
+}
+
 /**
- * Process self-closing custom components in the markdown string.
- * By transforming `<custom-raw-component />` to `<custom-raw-component></custom-raw-component>`,
- * we allow custom raw components to be self-closing.
- * This is useful for components that do not have any content.
+ * Process self-closing tags in the hast nodes.
+ * This makes sure self-closing is supported for all custom components.
  */
-export function preprocessSelfClosingCustomComponents(value: string, tagNames: string[]) {
-  // Always include 'pre' because custom raw components are transformed to <pre is="custom-raw-component">...</pre>
-  // (see preprocessCustomRawComponents). This ensures self-closing <pre> tags are handled consistently.
-  ;['pre', ...tagNames].forEach((tagName) => {
-    // TODO: Support special cases like `<foo bar="a => {}" />`
-    value = value.replace(new RegExp(`<${tagName}([^>]*)/>`, 'g'), (match, attrs: string) => {
-      const begin = [tagName, attrs.trim()].filter(Boolean).join(' ')
-      return `<${begin}></${tagName}>`
-    })
-  })
-  return value
+function processSelfClosingForHastNodes(nodes: hast.Nodes, tagNames: string[]): hast.Nodes {
+  if (nodes.type === 'root') {
+    return {
+      ...nodes,
+      children: nodes.children.map((child) => processSelfClosingForHastNode(child, tagNames))
+    } as hast.Root
+  }
+  return processSelfClosingForHastNode(nodes, tagNames) as hast.RootContent
 }
 
 /**
@@ -161,10 +190,9 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
   tagNames.forEach((tagName) => {
     const lastIndex = value.lastIndexOf(`<${tagName}`)
     if (lastIndex === -1) return
-    // `preprocessIncompleteTags` is called after `preprocessSelfClosingCustomComponents`,
-    // so we can assume that the last tag is not self-closing.
     const lastCloseIndex = value.lastIndexOf(`</${tagName}>`)
-    if (lastIndex > lastCloseIndex) value = value.slice(0, lastIndex)
+    const lastSelfCloseIndex = value.lastIndexOf(`/>`)
+    if (lastIndex > lastCloseIndex && lastIndex > lastSelfCloseIndex) value = value.slice(0, lastIndex)
   })
   return value
 }
@@ -173,11 +201,11 @@ function parseMarkdown({ value, components }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
-  value = preprocessSelfClosingCustomComponents(value, customTagNames)
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
   const hast = toHast(mdast, { allowDangerousHtml: true })
-  const rawProcessed = raw(hast, { tagfilter: false })
+  const hastWithSelfClosingProcessed = processSelfClosingForHastNodes(hast, customTagNames)
+  const rawProcessed = raw(hastWithSelfClosingProcessed, { tagfilter: false })
   const sanitizeSchema = getSanitizeSchema(customComponents)
   return sanitize(rawProcessed, sanitizeSchema)
 }

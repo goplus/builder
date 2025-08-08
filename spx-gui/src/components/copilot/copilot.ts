@@ -7,7 +7,7 @@ import type { Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
 import { isToolExecution, ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
-import { tagName as toolUseTagName } from './custom-elements/ToolUse.vue'
+import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 import type { CopilotSessionStorage } from './copilot-storage'
 import { localStorageRef } from '@/utils/utils'
@@ -395,7 +395,10 @@ export class Copilot {
   }
 
   private getContext(): string {
-    return this.contextProviders.map((provider) => provider.provideContext()).join('\n\n')
+    return this.contextProviders
+      .map((provider) => provider.provideContext())
+      .filter((s) => s.trim() !== '')
+      .join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {

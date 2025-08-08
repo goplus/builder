@@ -38,8 +38,8 @@ function handleCancel() {
 }
 
 function handleBrowseTutorials() {
-  router.push('/tutorials')
   emit('cancelled')
+  router.push('/tutorials')
 }
 
 const hasNextCourse = computed(() => {
@@ -61,9 +61,10 @@ const { fn: handleStartNextCourse } = useMessageHandle(
       })
     }
 
+    const tutorial = props.tutorial
     const nextCourse = currentSeries.courses[findIndex + 1]
-    await props.tutorial.startCourse(nextCourse, currentSeries)
     emit('cancelled')
+    await tutorial.startCourse(nextCourse, currentSeries)
   },
   {
     en: 'Failed to learn next course',

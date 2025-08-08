@@ -94,6 +94,10 @@ function handleMouseUp(e: MouseEvent) {
   <UIDropdown ref="hoverDropdown" placement="bottom-start" :offset="{ x: 0, y: 4 }" :disabled="interactionDisabled">
     <template #trigger>
       <li
+        v-radar="{
+          name: parsed.overview,
+          desc: ''
+        }"
         class="api-reference-item"
         draggable="true"
         @dragstart="handleDragStart"
@@ -130,6 +134,7 @@ function handleMouseUp(e: MouseEvent) {
   box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
   transition: 0.2s;
   cursor: pointer;
+  scroll-margin-top: 42px; // 42px for sticky title, to ensure the item correctly scrolled-into-view
 
   // Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788
   transform: translate(0, 0);
