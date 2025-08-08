@@ -41,6 +41,7 @@ const logLevels = {
 interface IframeWindow extends Window {
   setAIInteractionAPIEndpoint: (endpoint: string) => void
   setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
+  setAIDescription: (description: string) => void
   startGame(
     buffer: ArrayBuffer,
     assetURLs: Record<string, string>,
@@ -182,7 +183,10 @@ defineExpose({
       signal?.throwIfAborted()
       iframeLoadReporter.report(1)
 
-      const zipped = await zip(files, getProjectDataReporter, signal)
+      const [zipped, aiDescription] = await Promise.all([
+        zip(files, getProjectDataReporter, signal),
+        props.project.ensureAIDescription(false, signal)
+      ])
 
       // Ensure the latest progress update to be rendered to UI
       // This is necessary because now spx runs in the same thread as the main thread of editor.
@@ -196,6 +200,9 @@ defineExpose({
         zipped,
         assetURLs,
         () => {
+          // Inject AI description
+          iframeWindow.setAIDescription(aiDescription)
+
           // Set up API endpoint for AI Interaction.
           iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 

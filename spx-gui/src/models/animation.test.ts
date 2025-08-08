@@ -1,5 +1,5 @@
 import { nextTick } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { delayFile } from '@/utils/test'
 import { fromText, type Files } from './common/file'
 import { Project } from './project'
@@ -7,6 +7,10 @@ import { Sprite } from './sprite'
 import { Costume } from './costume'
 import { Sound } from './sound'
 import { Animation } from './animation'
+
+vi.mock('@/apis/ai-description', () => ({
+  generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
+}))
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')

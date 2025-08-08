@@ -11,6 +11,7 @@ import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 import { File, toNativeFile, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
+import { createAIDescriptionFiles, extractAIDescription } from './'
 
 // Supported universal Url schemes for files
 const fileUniversalUrlSchemes = {
@@ -48,8 +49,11 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
 
+  const aiDescriptionFiles = createAIDescriptionFiles(metadata)
+  const filesToSave = { ...files, ...aiDescriptionFiles }
+
   const [{ fileCollection }, thumbnailUniversalUrl] = await Promise.all([
-    saveFiles(files, signal),
+    saveFiles(filesToSave, signal),
     metadata.thumbnail == null ? '' : await saveFile(metadata.thumbnail, signal)
   ])
   signal?.throwIfAborted()
@@ -79,10 +83,12 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   return { metadata, files }
 }
 
-function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
+async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
   const files = getFiles(fileCollection)
   const thumbnail = thumbnailUniversalUrl === '' ? null : createFileWithUniversalUrl(thumbnailUniversalUrl)
-  const metadata: Metadata = { ...extra, thumbnail }
+  const { aiDescription, aiDescriptionHash } = await extractAIDescription(files)
+
+  const metadata: Metadata = { ...extra, thumbnail, aiDescription, aiDescriptionHash }
   return { metadata, files }
 }
 
