@@ -1,4 +1,4 @@
-import { inject, provide, ref } from 'vue'
+import { inject, provide } from 'vue'
 import type { InjectionKey } from 'vue'
 import type { Router } from 'vue-router'
 
@@ -8,6 +8,7 @@ import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
 import TutorialStateIndicator from './TutorialStateIndicator.vue'
+import { localStorageRef } from '@/utils/utils'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -28,8 +29,8 @@ export function provideTutorial(tutorial: Tutorial) {
 }
 
 export class Tutorial {
-  private course = ref<Course | null>(null)
-  private series = ref<CourseSeriesWithCourses | null>(null)
+  private course = localStorageRef<Course | null>('spx-gui-tutorial-course', null)
+  private series = localStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
 
   constructor(
     private copilot: Copilot,

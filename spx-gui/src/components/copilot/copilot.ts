@@ -1,14 +1,16 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { debounce } from 'lodash'
+import { debounce, isBoolean, isString } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
-import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
+import { isToolExecution, ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName } from './custom-elements/ToolUse.vue'
 import { findCustomComponentUsages } from './MarkdownView.vue'
+import type { CopilotSessionStorage } from './copilot-storage'
+import { localStorageRef } from '@/utils/utils'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -120,6 +122,34 @@ export enum RoundState {
   Cancelled,
   /** The round failed due to an error */
   Failed
+}
+
+export function isTopic(o: any): o is Topic {
+  return o.title && isString(o.description) && isBoolean(o.reactToEvents)
+}
+
+export function isTextMessage(o: any): o is TextMessage {
+  return o.type === 'text' && ['user', 'copilot'].includes(o.role) && isString(o.content)
+}
+
+export function isUserTextMessage(o: any): o is UserTextMessage {
+  return isTextMessage(o) && o.role === 'user'
+}
+
+export function isUserEventMessage(o: any): o is UserEventMessage {
+  return o.type === 'event' && o.role === 'user' && o.name && isString(o.detail)
+}
+
+export function isUserMessage(o: any): o is UserMessage {
+  return isUserTextMessage(o) || isUserEventMessage(o)
+}
+
+export function isCopilotMessage(o: any): o is CopilotMessage {
+  return isTextMessage(o) && o.role === 'copilot'
+}
+
+export function isToolMessage(o: any): o is ToolMessage {
+  return o.role === 'tool' && isString(o.callId) && isToolExecution(o.execution)
 }
 
 export class Round {
@@ -351,8 +381,10 @@ export class Copilot {
 
   executor = new ToolExecutor(() => this.getTools())
 
+  constructor(public copilotSessionStorage: CopilotSessionStorage) {}
+
   /** If copilot is active (the panel is visible) */
-  private activeRef = shallowRef(false)
+  private activeRef = localStorageRef('spx-gui-copilot-active', false)
   get active() {
     return this.activeRef.value
   }
@@ -436,10 +468,31 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
+  saveSession(session = this.currentSession): Promise<void> {
+    if (!session) {
+      return Promise.resolve()
+    }
+    return this.copilotSessionStorage.save(session)
+  }
+
+  async loadSessionFromStorage() {
+    const session = await this.copilotSessionStorage.load(this)
+    if (!session) {
+      return
+    }
+    this.endCurrentSession()
+    this.currentSessionRef.value = session
+  }
+
+  clearSession(): Promise<void> {
+    return this.copilotSessionStorage.clear()
+  }
+
   /** End the current session. */
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
     this.currentSessionRef.value = null
+    this.clearSession()
   }
 
   open() {

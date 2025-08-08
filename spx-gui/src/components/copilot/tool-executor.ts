@@ -21,6 +21,10 @@ export type ToolExecutionInput = {
   parameters?: unknown
 }
 
+export function isToolExecution(o: any): o is ToolExecution {
+  return ['executing', 'completed', 'failed'].includes(o.state)
+}
+
 export class ToolExecutor {
   /** Map of executions by call ID. */
   executions = shallowReactive(new Map<string, ToolExecution>())
