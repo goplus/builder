@@ -22,7 +22,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 
       // Handle info messages.
       if (logMsg.level === 'INFO') {
-        // Log format is determined by `github.com/goplus/builder/tools/ispx/main.go:logWithCallerInfo`.
+        // Log format is determined by `github.com/goplus/spx/cmd/ispx/main.go:logWithCallerInfo`.
         //
         // Example:
         //   {
@@ -52,7 +52,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 
       // Handle panic messages.
       if (logMsg.level === 'ERROR' && logMsg.error && logMsg.msg === 'panic') {
-        // Log format is determined by `github.com/goplus/builder/tools/ispx/main.go:logWithPanicInfo`.
+        // Log format is determined by `github.com/goplus/spx/cmd/ispx/main.go:logWithPanicInfo`.
         //
         // Example:
         //   {
