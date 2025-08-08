@@ -2,7 +2,7 @@ module github.com/goplus/builder/tools/ai
 
 go 1.23.0
 
-require github.com/goplus/spx/v2 v2.0.0-pre.3
+require github.com/goplus/spx/v2 v2.0.0-pre.4
 
 require (
 	github.com/h2non/filetype v1.1.3 // indirect
