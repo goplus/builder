@@ -4,25 +4,9 @@ import (
 	_ "embed"
 	"strings"
 	"text/template"
+
+	"github.com/goplus/builder/spx-backend/internal/embkb"
 )
-
-// For details about maintaining `xgo_syntax.md` & `spx_apis.md`, see:
-// spx-gui/src/components/editor/code-editor/document-base/helpers.ts
-
-//go:embed about_xgo.md
-var AboutXGo string
-
-//go:embed xgo_syntax.md
-var XGoSyntax string
-
-//go:embed about_spx.md
-var AboutSpx string
-
-//go:embed spx_apis.md
-var SpxAPIs string
-
-//go:embed about_xbuilder.md
-var AboutXBuilder string
 
 //go:embed system_prompt.md
 var systemPromptTpl string
@@ -43,11 +27,11 @@ type systemPromptTplData struct {
 
 func init() {
 	tplData := systemPromptTplData{
-		AboutXGo:      AboutXGo,
-		XGoSyntax:     XGoSyntax,
-		AboutSpx:      AboutSpx,
-		SpxAPIs:       SpxAPIs,
-		AboutXBuilder: AboutXBuilder,
+		AboutXGo:      embkb.AboutXGo(),
+		XGoSyntax:     embkb.XGoSyntax(),
+		AboutSpx:      embkb.AboutSpx(),
+		SpxAPIs:       embkb.SpxAPIs(),
+		AboutXBuilder: embkb.AboutXBuilder(),
 	}
 	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
 	if err != nil {

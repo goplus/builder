@@ -6,7 +6,7 @@ The `Game` class is the "project class" that represents the whole game. In an sp
 
 The `Sprite` classes are "worker classes" which are used to define game objects. In an spx project, there can be multiple code files for `Sprite` classes. Each `Sprite` class has its own code file, named after the sprite's name, e.g., `Apple.spx`, `Banana.spx`. Variables & functions declared in a sprite's code can only be accessed by that sprite.
 
-In document `spx-defs.md`, you can find definitions for most APIs of spx game engine.
+In document `spx-apis.md`, you can find definitions for most APIs of spx game engine.
 
 ## Guidelines for Developing Games in spx
 

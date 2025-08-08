@@ -6,7 +6,7 @@ The XGo programming language is
 * Statically typed
 * With special features focusing on simplicity and efficiency
 
-In document `xgo-defs.md`, you can find some definitions for XGo language syntax.
+In document `xgo-syntax.md`, you can find some definitions for XGo language syntax.
 
 ## How XGo simplifies Go's expressions
 
