@@ -12,7 +12,6 @@ const (
 type Params struct {
 	Messages []Message `json:"messages"`
 	System   Content   `json:"system"`
-	Tools    []Tool    `json:"tools,omitempty"` // Additional tools to use in the completion
 }
 
 // Tool represents an additional tool to use in the completion

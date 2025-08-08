@@ -1,5 +1,5 @@
 <template>
-  <router-link class="logo" to="/">
+  <router-link v-radar="{ name: 'Logo link', desc: 'Logo image as link to the homepage' }" class="logo" to="/">
     <img :src="logoSvg" />
   </router-link>
 </template>

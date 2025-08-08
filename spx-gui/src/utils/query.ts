@@ -125,6 +125,10 @@ export function useQueryWithCache<T>(options: QueryWithCacheOptions<T>): QueryRe
 export function useQueryCache<T>() {
   const queryClient = useVueQueryClient()
 
+  /**
+   * Invalidate all queries whose keys start with the provided queryKey.
+   * @see https://tanstack.com/query/latest/docs/framework/vue/guides/query-invalidation#query-matching-with-invalidatequeries
+   */
   function invalidate(queryKey: unknown[]) {
     return queryClient.invalidateQueries({ queryKey })
   }

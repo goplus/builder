@@ -23,7 +23,7 @@ import type { AssetModel, PartialAssetData } from '@/models/common/asset'
 import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common/asset'
 import { useI18n } from '@/utils/i18n'
 import { useQuery } from '@/utils/query'
-import { useUserStore } from '@/stores/user'
+import { useSignedInUser } from '@/stores/user'
 import { categoryAll, getAssetCategories } from './category'
 import BackdropPreview from './BackdropPreview.vue'
 import SpritePreview from './SpritePreview.vue'
@@ -39,15 +39,15 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-const userStore = useUserStore()
+const { data: signedInUser } = useSignedInUser()
 
 const user = computed(() => {
-  const u = userStore.getSignedInUser()
+  const u = signedInUser.value
   if (u == null) throw new Error('user is not signed in')
   return u
 })
 
-const advancedLibraryEnabled = computed(() => user.value.advancedLibraryEnabled)
+const advancedLibraryEnabled = computed(() => user.value.capabilities.canManageAssets)
 
 const { t } = useI18n()
 
@@ -60,7 +60,7 @@ const {
   async () => {
     if (!advancedLibraryEnabled.value) return null
     const metadata = props.model.assetMetadata
-    if (metadata == null || metadata.owner !== user.value.name) return null
+    if (metadata == null || metadata.owner !== user.value.username) return null
     return getAsset(metadata.id).catch((e) => {
       console.warn('failed to get existed asset', e)
       return null
@@ -185,6 +185,7 @@ async function addAssetWithParams(params: PartialAssetData) {
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Asset save modal', desc: 'Modal for saving assets to the asset library' }"
     :title="$t({ en: 'Save to asset library', zh: '保存到素材库' })"
     :visible="visible"
     @update:visible="emit('cancelled')"
@@ -202,7 +203,10 @@ async function addAssetWithParams(params: PartialAssetData) {
         </div>
         <div class="inputs">
           <UIFormItem path="name">
-            <UITextInput v-model:value="form.value.name" />
+            <UITextInput
+              v-model:value="form.value.name"
+              v-radar="{ name: 'Asset name input', desc: 'Input field for asset display name' }"
+            />
             <template #tip>{{ $t(getAssetDisplayNameTip()) }}</template>
           </UIFormItem>
           <UIFormItem v-if="advancedLibraryEnabled" :label="$t({ en: 'Category', zh: '类别' })" path="category">
@@ -231,7 +235,13 @@ async function addAssetWithParams(params: PartialAssetData) {
         </div>
       </main>
       <footer class="footer">
-        <UIButton type="primary" html-type="submit" :disabled="isLoading" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Save button', desc: 'Click to save asset to the library' }"
+          type="primary"
+          html-type="submit"
+          :disabled="isLoading"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Save', zh: '保存' }) }}
         </UIButton>
       </footer>

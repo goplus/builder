@@ -13,17 +13,16 @@ import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
-import { useUserStore } from '@/stores/user'
+import { ensureAccessToken } from '@/stores/user'
 
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
-
-const userStore = useUserStore()
 
 const props = defineProps<{ project: Project }>()
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
+  exit: [code: number]
 }>()
 
 const loading = ref(false)
@@ -54,6 +53,7 @@ interface IframeWindow extends Window {
    */
   stopGame(): Promise<void>
   onGameError: (callback: (err: string) => void) => void
+  onGameExit: (callback: (code: number) => void) => void
   console: typeof console
   /**
    * This property is used to detect if the iframe is reloaded.
@@ -90,6 +90,9 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
     iframeWindow.onGameError((err: string) => {
       console.warn('ProjectRunner game error:', err)
       failed.value = true
+    })
+    iframeWindow.onGameExit((code: number) => {
+      emit('exit', code)
     })
   }
 
@@ -197,7 +200,7 @@ defineExpose({
           iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
           // Set up token provider for AI Interaction.
-          iframeWindow.setAIInteractionAPITokenProvider(async () => (await userStore.ensureAccessToken()) ?? '')
+          iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
         },
         logLevels.LOG_LEVEL_ERROR
       )

@@ -1,5 +1,5 @@
 <template>
-  <div :class="['ui-modal-close', `size-${size}`]">
+  <div v-radar="{ name: 'Close button', desc: 'Click to close the modal' }" :class="['ui-modal-close', `size-${size}`]">
     <UIIcon type="close" class="icon" />
   </div>
 </template>

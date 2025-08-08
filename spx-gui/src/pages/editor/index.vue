@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { getSignedInUsername } from '@/stores/user'
 import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
@@ -52,8 +52,7 @@ usePageTitle(() => ({
 
 const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
 
-const userStore = useUserStore()
-const userInfo = computed(() => userStore.getSignedInUser())
+const signedInUsername = computed(() => getSignedInUsername())
 const copilotCtx = useAgentCopilotCtx()
 
 const router = useRouter()
@@ -104,7 +103,7 @@ const project = projectQueryRet.data
 const stateQueryRet = useQuery(async (ctx) => {
   const project = await composeQuery(ctx, projectQueryRet)
   ctx.signal.throwIfAborted()
-  const state = new EditorState(project, isOnline, userInfo, LOCAL_CACHE_KEY)
+  const state = new EditorState(project, isOnline, signedInUsername, LOCAL_CACHE_KEY)
   state.disposeOnSignal(ctx.signal)
   state.syncWithRouter(router)
   state.editing.start()
@@ -191,7 +190,9 @@ async function loadProject(ownerName: string, projectName: string, signal: Abort
 
   let newProject = new Project()
   newProject.disposeOnSignal(signal)
-  await newProject.loadFromCloud(ownerName, projectName, undefined, signal, loadFromCloudReporter)
+  // For projects not owned by the signed-in user, we prefer to load the published version.
+  const preferPublishedContent = signedInUsername.value !== ownerName
+  await newProject.loadFromCloud(ownerName, projectName, preferPublishedContent, signal, loadFromCloudReporter)
 
   // If there is no newer cloud version, use local version without confirmation.
   // If there is a newer cloud version, use cloud version without confirmation.

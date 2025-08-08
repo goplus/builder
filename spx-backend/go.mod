@@ -4,18 +4,21 @@ go 1.22.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/casdoor/casdoor-go-sdk v1.7.0
+	github.com/casdoor/casdoor-go-sdk v1.14.0
+	github.com/getsentry/sentry-go v0.35.0
+	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/goplus/yap v0.8.4 //gop:class
+	github.com/goplus/yap v0.8.4 //xgo:class
 	github.com/joho/godotenv v1.5.1
-	github.com/openai/openai-go v1.10.0
+	github.com/openai/openai-go v1.12.0
 	github.com/qiniu/go-cdk-driver v0.1.1
 	github.com/qiniu/go-sdk/v7 v7.25.4
 	github.com/qiniu/x v1.15.1
+	github.com/redis/go-redis/v9 v9.12.0
 	github.com/stretchr/testify v1.10.0
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.30.1
 )
 
 require (
@@ -29,7 +32,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.17 // indirect
 	github.com/aws/smithy-go v1.20.3 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/gammazero/toposort v0.1.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect

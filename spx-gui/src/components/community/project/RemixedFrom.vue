@@ -23,7 +23,12 @@ const title = computed(() => {
 <template>
   <p class="remixed-from">
     {{ $t({ en: 'Remixed from', zh: '改编自' }) }}
-    <RouterUILink :to="getProjectPageRoute(remixedFrom.owner, remixedFrom.project)" type="boring" :title="$t(title)">
+    <RouterUILink
+      v-radar="{ name: 'Remixed from link', desc: 'Click to view the original project' }"
+      :to="getProjectPageRoute(remixedFrom.owner, remixedFrom.project)"
+      type="boring"
+      :title="$t(title)"
+    >
       {{ remixedFrom.project }}
     </RouterUILink>
   </p>

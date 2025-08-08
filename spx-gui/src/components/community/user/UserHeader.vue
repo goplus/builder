@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { type User } from '@/apis/user'
 import { useExternalUrl } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { useUserStore } from '@/stores/user'
+import { getSignedInUsername } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import TextView from '../TextView.vue'
@@ -16,7 +16,7 @@ const props = defineProps<{
   user: User
 }>()
 
-const isSignedInUser = computed(() => props.user.username === useUserStore().getSignedInUser()?.name)
+const isSignedInUser = computed(() => props.user.username === getSignedInUsername())
 const avatarUrl = useExternalUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
@@ -41,7 +41,11 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
         <TextView style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
-        <UIButton v-if="isSignedInUser" @click="handleEditProfile">
+        <UIButton
+          v-if="isSignedInUser"
+          v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"
+          @click="handleEditProfile"
+        >
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
         <FollowButton v-else :name="user.username" />

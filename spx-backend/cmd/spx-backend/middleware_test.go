@@ -7,9 +7,30 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewReqIDMiddleware(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		middleware := NewReqIDMiddleware()
+		require.NotNil(t, middleware)
+
+		req := httptest.NewRequest("", "/", nil)
+		rec := httptest.NewRecorder()
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, "foobar")
+		})
+		middleware(next).ServeHTTP(rec, req)
+		resp := rec.Result()
+
+		assert.NotEmpty(t, resp.Header.Get("X-Reqid"))
+		respBody, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Equal(t, "foobar", string(respBody))
+	})
+}
 
 func TestNewCORSMiddleware(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
@@ -28,7 +49,7 @@ func TestNewCORSMiddleware(t *testing.T) {
 
 		assert.Equal(t, allowedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
 		assert.Equal(t, "OPTIONS, GET, HEAD, POST, PUT, DELETE", resp.Header.Get("Access-Control-Allow-Methods"))
-		assert.Equal(t, "Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token", resp.Header.Get("Access-Control-Allow-Headers"))
+		assert.Equal(t, fmt.Sprintf("Accept, Accept-Encoding, Content-Type, Content-Length, Authorization, X-CSRF-Token, %s, %s", sentry.SentryTraceHeader, sentry.SentryBaggageHeader), resp.Header.Get("Access-Control-Allow-Headers"))
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		respBody, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
@@ -65,25 +86,5 @@ func TestNewCORSMiddleware(t *testing.T) {
 		respBody, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Empty(t, respBody)
-	})
-}
-
-func TestNewReqIDMiddleware(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		middleware := NewReqIDMiddleware()
-		require.NotNil(t, middleware)
-
-		req := httptest.NewRequest("", "/", nil)
-		rec := httptest.NewRecorder()
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "foobar")
-		})
-		middleware(next).ServeHTTP(rec, req)
-		resp := rec.Result()
-
-		assert.NotEmpty(t, resp.Header.Get("X-Reqid"))
-		respBody, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		assert.Equal(t, "foobar", string(respBody))
 	})
 }

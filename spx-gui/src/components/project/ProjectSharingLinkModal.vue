@@ -1,5 +1,6 @@
 <template>
   <UIFormModal
+    :radar="{ name: 'Project sharing link modal', desc: 'Modal for sharing project links' }"
     :title="$t({ en: 'Project sharing link', zh: '项目分享链接' })"
     :visible="props.visible"
     :auto-focus="false"
@@ -14,8 +15,18 @@
       }}
     </div>
     <div class="link">
-      <UITextInput :value="projectSharingLink" :readonly="true" @focus="$event.target.select()" />
-      <UIButton class="copy-button" :loading="handleCopy.isLoading.value" @click="handleCopy.fn">
+      <UITextInput
+        v-radar="{ name: 'Sharing link input', desc: 'Input field showing the project sharing link' }"
+        :value="projectSharingLink"
+        :readonly="true"
+        @focus="$event.target.select()"
+      />
+      <UIButton
+        v-radar="{ name: 'Copy button', desc: 'Click to copy sharing link to clipboard' }"
+        class="copy-button"
+        :loading="handleCopy.isLoading.value"
+        @click="handleCopy.fn"
+      >
         {{ $t({ en: 'Copy', zh: '复制' }) }}
       </UIButton>
     </div>

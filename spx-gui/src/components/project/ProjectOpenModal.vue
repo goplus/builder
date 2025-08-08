@@ -36,6 +36,7 @@ const queryRet = useQuery(
 
 <template>
   <UIFormModal
+    :radar="{ name: 'Project open modal', desc: 'Modal for opening projects' }"
     :title="$t({ en: 'Open project', zh: '打开项目' })"
     :style="{ width: '1024px' }"
     :visible="props.visible"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { getSignedInUsername } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useEnsureSignedIn } from '@/utils/user'
@@ -11,11 +11,9 @@ const props = defineProps<{
   name: string
 }>()
 
-const userStore = useUserStore()
-
 const followable = computed(() => {
-  const signedInUser = userStore.getSignedInUser()
-  return signedInUser != null && props.name !== signedInUser.name
+  const signedInUsername = getSignedInUsername()
+  return signedInUsername != null && props.name !== signedInUsername
 })
 
 const { data: following } = useIsFollowing(() => props.name)
@@ -32,6 +30,7 @@ const handleClick = useMessageHandle(async () => {
 <template>
   <UIButton
     v-if="followable && following != null"
+    v-radar="{ name: 'Follow button', desc: 'Click to follow or unfollow user' }"
     class="follow-button"
     :type="following ? 'boring' : 'primary'"
     :loading="handleClick.isLoading.value"

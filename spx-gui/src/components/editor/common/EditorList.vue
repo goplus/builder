@@ -1,7 +1,7 @@
 <template>
   <div class="editor-list" :style="cssVars">
     <div class="sider">
-      <div ref="itemsWrapper" class="items">
+      <div ref="itemsWrapper" v-radar="{ name: 'Items', desc }" class="items">
         <slot></slot>
       </div>
       <UIDropdownWithTooltip>
@@ -12,7 +12,7 @@
           {{ addText }}
         </template>
         <template #trigger>
-          <button class="add">
+          <button v-radar="{ name: 'Add item', desc: 'Button for adding new items to the list' }" class="add">
             <UIIcon class="icon" type="plus" />
           </button>
         </template>
@@ -41,6 +41,13 @@ const props = withDefaults(
 const emit = defineEmits<{
   sorted: [oldIdx: number, newIdx: number]
 }>()
+
+const desc = computed(() => {
+  if (props.sortable && props.sortable.list.length > 0) {
+    return 'Drag to reorder items'
+  }
+  return ''
+})
 
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))

@@ -2,7 +2,10 @@
  * @desc Copilot-related APIs of spx-backend
  */
 
+import type { JsonSchema7Type } from 'zod-to-json-schema'
 import { client } from './common'
+
+export type CopilotScope = 'standard' | 'code'
 
 export enum ToolType {
   Function = 'function'
@@ -11,28 +14,7 @@ export enum ToolType {
 export type FunctionDefinition = {
   name: string
   description?: string
-  parameters: ToolParameters
-}
-
-export type SchemaProperty = {
-  type: string
-  description?: string
-  enum?: Array<string | number | boolean>
-  enumDescriptions?: string[]
-  format?: string
-  default?: any
-
-  [key: string]: any
-}
-
-export type ToolParameters = {
-  type: 'object'
-  properties: {
-    [key: string]: SchemaProperty
-  }
-  required?: string[]
-
-  [key: string]: any
+  parameters: JsonSchema7Type
 }
 
 export type MessageContent = {
@@ -41,7 +23,7 @@ export type MessageContent = {
 }
 
 export type Message = {
-  role: 'user' | 'copilot'
+  role: 'user' | 'copilot' | 'tool'
   content: MessageContent
 }
 
@@ -50,23 +32,29 @@ export type Tool = {
   function: FunctionDefinition
 }
 
+export type GenerateMessageOptions = {
+  signal?: AbortSignal
+}
+
 const timeout = 15 * 1000
 
-export async function generateMessage(messages: Message[], signal?: AbortSignal) {
-  return (await client.post('/copilot/message', { messages }, { timeout: timeout, signal })) as Message
+export async function generateMessage(scope: CopilotScope, messages: Message[], options?: GenerateMessageOptions) {
+  return (await client.post(
+    '/copilot/message',
+    { scope, messages },
+    { timeout: timeout, signal: options?.signal }
+  )) as Message
 }
 
 export async function* generateStreamMessage(
+  scope: CopilotScope,
   messages: Message[],
-  options?: {
-    signal?: AbortSignal
-    tools?: Tool[]
-  }
+  options?: GenerateMessageOptions
 ): AsyncIterableIterator<string> {
   try {
     const stream = await client.postTextStream(
       '/copilot/stream/message',
-      { messages, tools: options?.tools },
+      { scope, messages },
       {
         timeout: timeout,
         signal: options?.signal

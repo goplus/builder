@@ -49,14 +49,14 @@ type Request struct {
 
 // Response handles the output from a workflow node
 type Response struct {
-	output map[string]interface{} // Key-value pairs to be added to the environment
+	output map[string]any // Key-value pairs to be added to the environment
 
 	w   io.Writer     // Writer for the node's primary output
 	pip io.ReadWriter // Pipe connecting this node's output to the next node's input
 }
 
 // Env represents a simple key-value environment for storing workflow context data
-type Env map[string]interface{}
+type Env map[string]any
 
 // NewEnv creates a new environment instance
 func NewEnv() Env {
@@ -65,7 +65,7 @@ func NewEnv() Env {
 
 // Get retrieves a value from the environment by key
 // Returns nil if the key doesn't exist
-func (e Env) Get(key string) interface{} {
+func (e Env) Get(key string) any {
 	if v, ok := e[key]; ok {
 		return v
 	}
@@ -74,7 +74,7 @@ func (e Env) Get(key string) interface{} {
 
 // Set stores a key-value pair in the environment
 // Overwrites any existing value for the same key
-func (e Env) Set(key string, value interface{}) {
+func (e Env) Set(key string, value any) {
 	e[key] = value
 }
 

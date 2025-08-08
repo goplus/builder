@@ -1,5 +1,6 @@
 <template>
   <CommonPanel
+    v-radar="{ name: 'Sounds panel', desc: 'Panel for managing project sounds' }"
     :expanded="expanded"
     :active="editorCtx.state.selectedSound != null"
     :title="$t({ en: 'Sounds', zh: '声音' })"
@@ -8,13 +9,19 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{
-          $t({ en: 'Select local file', zh: '选择本地文件' })
+        <UIMenuItem
+          v-radar="{ name: 'Add from local file', desc: 'Click to add sound from local file' }"
+          @click="handleAddFromLocalFile"
+          >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Add from asset library', desc: 'Click to add sound from asset library' }"
+          @click="handleAddFromAssetLibrary"
+          >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
+        >
+        <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">{{
+          $t({ en: 'Record', zh: '录音' })
         }}</UIMenuItem>
-        <UIMenuItem @click="handleAddFromAssetLibrary">{{
-          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="handleRecord">{{ $t({ en: 'Record', zh: '录音' }) }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #details>

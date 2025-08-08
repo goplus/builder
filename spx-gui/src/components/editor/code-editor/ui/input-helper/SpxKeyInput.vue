@@ -49,7 +49,13 @@ function handleKeyDown(e: KeyboardEvent) {
 
 <template>
   <div class="spx-key-input">
-    <UITextInput class="input" :value="text" autofocus @keydown="handleKeyDown" />
+    <UITextInput
+      v-radar="{ name: 'Key input', desc: 'Input field for detecting key press' }"
+      class="input"
+      :value="text"
+      autofocus
+      @keydown="handleKeyDown"
+    />
     <p class="tip">
       {{ $t({ en: 'Press desired key', zh: '按下你想输入的按键' }) }}
     </p>

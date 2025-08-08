@@ -82,9 +82,9 @@ func (c *WorkflowRunner) Execute(ctx context.Context) (io.ReadCloser, error) {
 
 			// Create a response writer that will handle the node's output
 			w := &Response{
-				output: make(map[string]interface{}), // For environment updates
-				w:      pw,                           // For primary output (streamed to client)
-				pip:    pipBuf,                       // For next node's input
+				output: make(map[string]any),
+				w:      pw,     // For primary output (streamed to client)
+				pip:    pipBuf, // For next node's input
 			}
 
 			// Execute the current node

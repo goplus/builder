@@ -13,7 +13,7 @@ import (
 
 const (
 	// MaxContentLength defines the maximum length of content text.
-	MaxContentLength = 10000
+	MaxContentLength = 40000
 
 	// MaxTokens defines the maximum number of tokens for the AI response.
 	MaxTokens = 10240
@@ -25,25 +25,40 @@ const (
 // Copilot provides code suggestions, explanations, and other programming
 // assistance features using AI models.
 type Copilot struct {
-	openaiClient  openai.Client
-	openaiModelID string
+	client        openai.Client
+	model         string
+	premiumClient openai.Client
+	premiumModel  string
 }
 
-// New creates a new instance of [Copilot] with the specified OpenAI client and model ID.
-func New(openaiClient openai.Client, openaiModelID string) (*Copilot, error) {
-	if openaiModelID == "" {
-		return nil, errors.New("missing openai model id")
+// New creates a new instance of [Copilot] with the specified OpenAI clients and model IDs.
+func New(client openai.Client, model string, premiumClient openai.Client, premiumModel string) (*Copilot, error) {
+	if model == "" {
+		return nil, errors.New("missing model id")
+	}
+	if premiumModel == "" {
+		return nil, errors.New("missing premium model id")
 	}
 	copilot := &Copilot{
-		openaiClient:  openaiClient,
-		openaiModelID: openaiModelID,
+		client:        client,
+		model:         model,
+		premiumClient: premiumClient,
+		premiumModel:  premiumModel,
 	}
 	return copilot, nil
 }
 
+// selectClientAndModel selects the appropriate client and model based on whether to use premium.
+func (c *Copilot) selectClientAndModel(usePremium bool) (openai.Client, string) {
+	if usePremium {
+		return c.premiumClient, c.premiumModel
+	}
+	return c.client, c.model
+}
+
 // buildChatCompletionParams builds an [openai.ChatCompletionNewParams] for the
 // chat completion request.
-func (c *Copilot) buildChatCompletionNewParams(params *Params) (openai.ChatCompletionNewParams, error) {
+func (c *Copilot) buildChatCompletionNewParams(params *Params, model string) (openai.ChatCompletionNewParams, error) {
 	messages := make([]openai.ChatCompletionMessageParamUnion, 0, len(params.Messages)+1)
 
 	// Add system prompt message.
@@ -67,20 +82,22 @@ func (c *Copilot) buildChatCompletionNewParams(params *Params) (openai.ChatCompl
 
 	return openai.ChatCompletionNewParams{
 		Messages:    messages,
-		Model:       c.openaiModelID,
+		Model:       model,
 		MaxTokens:   openai.Opt(int64(MaxTokens)),
 		Temperature: openai.Opt(Temperature),
 	}, nil
 }
 
 // Message sends a request to the AI provider and returns the response.
-func (c *Copilot) Message(ctx context.Context, params *Params) (*Result, error) {
-	body, err := c.buildChatCompletionNewParams(params)
+func (c *Copilot) Message(ctx context.Context, params *Params, usePremium bool) (*Result, error) {
+	client, model := c.selectClientAndModel(usePremium)
+
+	body, err := c.buildChatCompletionNewParams(params, model)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build chat completion params: %w", err)
 	}
 
-	chatCompletion, err := c.openaiClient.Chat.Completions.New(ctx, body)
+	chatCompletion, err := client.Chat.Completions.New(ctx, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion: %w", err)
 	}
@@ -101,13 +118,15 @@ func (c *Copilot) Message(ctx context.Context, params *Params) (*Result, error) 
 }
 
 // StreamMessage sends a request to the AI provider and returns a stream of responses.
-func (c *Copilot) StreamMessage(ctx context.Context, params *Params) (io.ReadCloser, error) {
-	body, err := c.buildChatCompletionNewParams(params)
+func (c *Copilot) StreamMessage(ctx context.Context, params *Params, usePremium bool) (io.ReadCloser, error) {
+	client, model := c.selectClientAndModel(usePremium)
+
+	body, err := c.buildChatCompletionNewParams(params, model)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build chat completion params: %w", err)
 	}
 
-	chatCompletionStream := c.openaiClient.Chat.Completions.NewStreaming(ctx, body)
+	chatCompletionStream := client.Chat.Completions.NewStreaming(ctx, body)
 	if err := chatCompletionStream.Err(); err != nil {
 		return nil, fmt.Errorf("failed to create chat completion stream: %w", err)
 	}

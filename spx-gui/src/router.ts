@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
-import { useUserStore } from './stores/user'
+import { initiateSignIn, isSignedIn, getSignedInUsername } from './stores/user'
 
 export function getProjectEditorRoute(ownerName: string, projectName: string, publish = false) {
   ownerName = encodeURIComponent(ownerName)
@@ -11,9 +11,9 @@ export function getProjectEditorRoute(ownerName: string, projectName: string, pu
 }
 
 export function getOwnProjectEditorRoute(projectName: string, publish = false) {
-  const user = useUserStore().getSignedInUser()
-  if (user == null) throw new Error('User not signed in')
-  return getProjectEditorRoute(user.name, projectName, publish)
+  const username = getSignedInUsername()
+  if (username == null) throw new Error('User not signed in')
+  return getProjectEditorRoute(username, projectName, publish)
 }
 
 export function getProjectPageRoute(owner: string, name: string) {
@@ -116,18 +116,21 @@ const routes: Array<RouteRecordRaw> = [
     props: true
   },
   {
+    path: '/tutorials',
+    component: () => import('@/pages/tutorials/index.vue')
+  },
+  {
     path: '/editor/:projectName',
     redirect(to) {
       const { projectName } = to.params
-      const userStore = useUserStore()
-      const user = userStore.getSignedInUser()
+      const username = getSignedInUsername()
       // Route with `redirect` will not trigger the global `beforeEach` guard,
       // so we need to check sign-in status here.
-      if (user == null) {
-        userStore.initiateSignIn()
+      if (username == null) {
+        initiateSignIn()
         throw new Error('User not signed in') // prevent router from redirecting
       }
-      return getProjectEditorRoute(user.name, projectName as string)
+      return getProjectEditorRoute(username, projectName as string)
     }
   },
   {
@@ -154,10 +157,9 @@ const router = createRouter({
 })
 
 export const initRouter = (app: App) => {
-  const userStore = useUserStore()
   router.beforeEach((to, _, next) => {
-    if (to.meta.requiresSignIn && !userStore.isSignedIn()) {
-      userStore.initiateSignIn()
+    if (to.meta.requiresSignIn && !isSignedIn()) {
+      initiateSignIn()
     } else {
       next()
     }

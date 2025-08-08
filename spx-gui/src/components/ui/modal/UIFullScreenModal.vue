@@ -1,6 +1,9 @@
 <template>
-  <NModal :to="attachTo" :auto-focus="false" :show="visible" @update:show="handleUpdateShow">
-    <div class="container">
+  <NModal :to="attachTo" :auto-focus="false" :trap-focus="false" :show="visible" @update:show="handleUpdateShow">
+    <div
+      v-radar="{ name: 'Full screen modal', desc: 'A full screen modal dialog for specific purpose' }"
+      class="container"
+    >
       <slot></slot>
     </div>
   </NModal>

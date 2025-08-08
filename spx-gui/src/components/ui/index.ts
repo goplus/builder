@@ -3,6 +3,7 @@ export { default as UICard } from './UICard.vue'
 export { default as UICardHeader } from './UICardHeader.vue'
 export { default as UIButton } from './UIButton.vue'
 export { default as UIIconButton } from './UIIconButton.vue'
+export { default as UIFlatButton } from './UIFlatButton.vue'
 export { default as UIDropdown, type Pos as DropdownPos } from './UIDropdown'
 export { default as UITooltip } from './UITooltip.vue'
 export { UIMenu, UIMenuGroup, UIMenuItem } from './menu'
@@ -35,7 +36,13 @@ export { default as UICode } from './UICode.vue'
 export { default as UIButtonGroup } from './UIButtonGroup.vue'
 export { default as UIButtonGroupItem } from './UIButtonGroupItem.vue'
 export { default as UIDropdownWithTooltip } from './UIDropdownWithTooltip.vue'
-export { isInPopup, provideRootContainer, providePopupContainer, provideModalContainer } from './utils'
+export {
+  isInPopup,
+  provideRootContainer,
+  providePopupContainer,
+  provideModalContainer,
+  useRootContainer
+} from './utils'
 export { default as UISpriteItem } from './block-items/UISpriteItem.vue'
 export { default as UIEditorSpriteItem } from './block-items/UIEditorSpriteItem.vue'
 export { default as UIEditorSoundItem } from './block-items/UIEditorSoundItem.vue'

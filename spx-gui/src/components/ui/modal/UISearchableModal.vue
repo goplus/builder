@@ -3,7 +3,7 @@
 -->
 
 <template>
-  <UIModal :visible="visible" :auto-focus="false" mask-closable @update:visible="handleUpdateShow">
+  <UIModal :radar="radar" :visible="visible" :auto-focus="false" mask-closable @update:visible="handleUpdateShow">
     <div class="container">
       <div class="header">
         <h4 class="title">
@@ -18,6 +18,7 @@
   </UIModal>
 </template>
 <script setup lang="ts">
+import type { RadarNodeMeta } from '@/utils/radar'
 import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
 import UIModalClose from './UIModalClose.vue'
@@ -25,6 +26,7 @@ import UIModalClose from './UIModalClose.vue'
 defineProps<{
   title: string
   visible?: boolean
+  radar?: RadarNodeMeta
 }>()
 
 const emit = defineEmits<{

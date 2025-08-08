@@ -2,9 +2,15 @@
   <UIConfigProvider :config="config">
     <UIMessageProvider>
       <UIModalProvider>
-        <AgentCopilotProvider>
-          <RouterView />
-        </AgentCopilotProvider>
+        <CopilotRoot>
+          <TutorialRoot>
+            <AgentCopilotProvider>
+              <RouterView />
+              <SpotlightUI />
+              <CopilotUI />
+            </AgentCopilotProvider>
+          </TutorialRoot>
+        </CopilotRoot>
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
@@ -14,6 +20,10 @@
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
+import CopilotRoot from './components/copilot/CopilotRoot.vue'
+import CopilotUI from './components/copilot/CopilotUI.vue'
+import TutorialRoot from './components/tutorials/TutorialRoot.vue'
+import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from './utils/i18n'
 
 const { t } = useI18n()

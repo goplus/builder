@@ -4,6 +4,8 @@ package config
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Sentry   SentryConfig
+	Redis    RedisConfig
 	Kodo     KodoConfig
 	Casdoor  CasdoorConfig
 	OpenAI   OpenAIConfig
@@ -23,9 +25,39 @@ func (c *ServerConfig) GetPort() string {
 	return ":8080"
 }
 
+// SentryConfig holds Sentry configuration.
+type SentryConfig struct {
+	DSN        string
+	SampleRate float64
+}
+
 // DatabaseConfig holds database configuration.
 type DatabaseConfig struct {
 	DSN string
+}
+
+// RedisConfig holds Redis configuration.
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+	PoolSize int
+}
+
+// GetAddr returns the Redis address, defaulting to "127.0.0.1:6379" if not set.
+func (c *RedisConfig) GetAddr() string {
+	if c.Addr != "" {
+		return c.Addr
+	}
+	return "127.0.0.1:6379"
+}
+
+// GetPoolSize returns the Redis pool size, defaulting to 10 if not set.
+func (c *RedisConfig) GetPoolSize() int {
+	if c.PoolSize > 0 {
+		return c.PoolSize
+	}
+	return 10
 }
 
 // KodoConfig holds Kodo storage configuration.

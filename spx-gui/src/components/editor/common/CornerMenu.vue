@@ -1,13 +1,24 @@
 <template>
   <UIDropdown trigger="click">
     <template #trigger>
-      <UICornerIcon :color="color" type="more" />
+      <UICornerIcon
+        v-radar="{ name: 'Options button', desc: 'Click to view more options (save to asset library, remove, etc.)' }"
+        :color="color"
+        type="more"
+      />
     </template>
     <UIMenu>
-      <UIMenuItem @click="handleSaveToAssetLibrary.fn">{{
-        $t({ en: 'Save to asset library', zh: '保存到素材库' })
-      }}</UIMenuItem>
-      <UIMenuItem :disabled="!removable" @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
+      <UIMenuItem
+        v-radar="{ name: 'Save to asset library', desc: 'Click to save the item to asset library' }"
+        @click="handleSaveToAssetLibrary.fn"
+        >{{ $t({ en: 'Save to asset library', zh: '保存到素材库' }) }}</UIMenuItem
+      >
+      <UIMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the item' }"
+        :disabled="!removable"
+        @click="emit('remove')"
+        >{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem
+      >
     </UIMenu>
   </UIDropdown>
 </template>

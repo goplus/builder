@@ -9,10 +9,18 @@
       <slot></slot>
     </main>
     <footer class="footer">
-      <UIButton type="boring" @click="emit('cancel')">
+      <UIButton
+        v-radar="{ name: 'Cancel button', desc: 'Click to cancel the operation in modal' }"
+        type="boring"
+        @click="emit('cancel')"
+      >
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
-      <UIButton type="primary" html-type="submit">
+      <UIButton
+        v-radar="{ name: 'Confirm button', desc: 'Click to submit the modal' }"
+        type="primary"
+        html-type="submit"
+      >
         {{ $t({ en: 'Confirm', zh: '确认' }) }}
       </UIButton>
     </footer>

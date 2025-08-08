@@ -1,8 +1,17 @@
 <template>
-  <main class="editor-item-detail">
+  <main
+    v-radar="{ name: `Detail for \u0022${name}\u0022`, desc: `Detail view of the selected item \u0022${name}\u0022` }"
+    class="editor-item-detail"
+  >
     <h4 class="name">
       <AssetName>{{ name }}</AssetName>
-      <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="emit('rename')" />
+      <UIIcon
+        v-radar="{ name: 'Rename button', desc: 'Click to rename the selected item' }"
+        class="edit-icon"
+        :title="$t({ en: 'Rename', zh: '重命名' })"
+        type="edit"
+        @click="emit('rename')"
+      />
     </h4>
     <slot></slot>
   </main>

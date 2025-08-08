@@ -1,6 +1,7 @@
 import { mergeSignals } from '@/utils/disposable'
 import { Exception } from '@/utils/exception'
 import { Client } from './client'
+import * as Sentry from '@sentry/vue'
 
 /** TokenProvider provides access token used for the Authorization header */
 export type TokenProvider = () => Promise<string | null>
@@ -38,6 +39,9 @@ export function useRequest<T>(
   defaultTimeout: number = 10 * 1000 // 10 seconds
 ) {
   async function prepareRequest(path: string, payload: unknown, options?: RequestOptions) {
+    const traceData = Sentry.getTraceData()
+    const sentryTraceHeader = traceData['sentry-trace']
+    const sentryBaggageHeader = traceData['baggage']
     const url = baseUrl + path
     const method = options?.method ?? 'GET'
     const body = payload != null ? JSON.stringify(payload) : null
@@ -46,6 +50,12 @@ export function useRequest<T>(
     headers.set('Content-Type', 'application/json')
     if (token != null) {
       headers.set('Authorization', `Bearer ${token}`)
+    }
+    if (sentryTraceHeader) {
+      headers.set('Sentry-Trace', sentryTraceHeader)
+    }
+    if (sentryBaggageHeader) {
+      headers.set('Baggage', sentryBaggageHeader)
     }
     return new Request(url, { method, headers, body })
   }

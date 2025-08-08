@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Go+ Builder API
+  title: XBuilder API
   version: 0.1.0
   description: |
     ## Overview
@@ -84,6 +84,18 @@ paths:
                 $ref: "#/components/schemas/User"
 
   /user:
+    get:
+      tags:
+        - Users
+      summary: Get the authenticated user
+      description: Retrieve the profile information of the authenticated user.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
     put:
       tags:
         - Users
@@ -628,7 +640,13 @@ paths:
       tags:
         - Assets
       summary: Create an asset
-      description: Create a new asset with the necessary details.
+      description: |
+        Create a new asset with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `assetAdmin` role can create public assets.
+        - Regular users can only create private assets.
       requestBody:
         required: true
         content:
@@ -662,6 +680,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /assets/list:
     get:
@@ -783,7 +803,13 @@ paths:
       tags:
         - Assets
       summary: Update an asset
-      description: Update the details of a specific asset.
+      description: |
+        Update the details of a specific asset.
+
+        #### Permission requirements
+
+        - Only users with the `assetAdmin` role can update assets to public visibility.
+        - Asset owners can update their private assets.
       parameters:
         - name: id
           in: path
@@ -824,6 +850,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Asset"
+        "403":
+          description: Insufficient permissions to perform this operation.
     delete:
       tags:
         - Assets
@@ -877,7 +905,13 @@ paths:
       tags:
         - Copilot
       summary: Generate a message
-      description: Generate a message by sending a list of input messages.
+      description: |
+        Generate a message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each message consumes 1 quota from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -921,13 +955,21 @@ paths:
                     content:
                       type: text
                       text: Hello!
+        "429":
+          description: Insufficient quota to perform this operation.
 
   /copilot/stream/message:
     post:
       tags:
         - Copilot
       summary: Generate a stream message
-      description: Generate a stream message by sending a list of input messages.
+      description: |
+        Generate a stream message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each message consumes 1 quota from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -963,13 +1005,21 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+        "429":
+          description: Insufficient quota to perform this operation.
 
   /workflow/stream/message:
     post:
       tags:
         - Workflow
       summary: Generate a stream message from workflow
-      description: Generate a stream message by sending a list of input messages.
+      description: |
+        Generate a stream message by sending a list of input messages.
+
+        #### Quota requirements
+
+        - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
+        - Quota limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1008,11 +1058,35 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+        "429":
+          description: Insufficient quota to perform this operation.
+
+  /ai/description:
+    post:
+      tags:
+        - AI
+      summary: Generate AI description
+      description: |
+        Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
+        content (such as spx source code and project structure).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIDescriptionRequest"
+      responses:
+        "200":
+          description: Successfully generated AI description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIDescriptionResponse"
 
   /ai/interaction/turn:
     post:
       tags:
-        - AI Interaction
+        - AI
       summary: Perform an AI interaction turn
       description: Send a message and context to the AI, receive a response including text and an optional command.
       requestBody:
@@ -1028,6 +1102,374 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
+
+  /course:
+    post:
+      tags:
+        - Courses
+      summary: Create a course
+      description: |
+        Create a new course with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create courses.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "201":
+          description: Successfully created the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /courses/list:
+    get:
+      tags:
+        - Courses
+      summary: List courses
+      description: Retrieve a paginated list of courses with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: courseSeriesID
+          in: query
+          schema:
+            type: string
+          description: Filter courses by the course series ID.
+        - name: owner
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: |
+            Filter courses by the owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+            default: createdAt
+            examples:
+              - createdAt
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Course"
+                    description: Array of course objects.
+
+  /course/{id}:
+    get:
+      tags:
+        - Courses
+      summary: Get a course
+      description: Retrieve details of a specific course.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+    put:
+      tags:
+        - Courses
+      summary: Update a course
+      description: |
+        Update the details of a specific course.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update courses.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - thumbnail
+                - entrypoint
+                - references
+                - prompt
+              properties:
+                title:
+                  $ref: "#/components/schemas/Course/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/Course/properties/thumbnail"
+                entrypoint:
+                  $ref: "#/components/schemas/Course/properties/entrypoint"
+                references:
+                  $ref: "#/components/schemas/Course/properties/references"
+                prompt:
+                  $ref: "#/components/schemas/Course/properties/prompt"
+      responses:
+        "200":
+          description: Successfully updated the course.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    delete:
+      tags:
+        - Courses
+      summary: Delete a course
+      description: |
+        Permanently delete a specific course by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete courses.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course to delete.
+      responses:
+        "204":
+          description: Successfully deleted the course.
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /course-series:
+    post:
+      tags:
+        - Course Series
+      summary: Create a course series
+      description: |
+        Create a new course series with the necessary details.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can create course series.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "201":
+          description: Successfully created the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
+
+  /course-serieses/list:
+    get:
+      tags:
+        - Course Series
+      summary: List course series
+      description: Retrieve a paginated list of course series with optional filtering and ordering.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - updatedAt
+              - order
+            default: order
+            examples:
+              - order
+          description: Field by which to order the results.
+        - name: owner
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: |
+            Filter course serieses by the owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseSeries"
+                    description: Array of course series objects.
+
+  /course-series/{id}:
+    get:
+      tags:
+        - Course Series
+      summary: Get a course series
+      description: Retrieve details of a specific course series.
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+    put:
+      tags:
+        - Course Series
+      summary: Update a course series
+      description: |
+        Update the details of a specific course series.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can update course series.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - courseIDs
+                - order
+              properties:
+                title:
+                  $ref: "#/components/schemas/CourseSeries/properties/title"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
+      responses:
+        "200":
+          description: Successfully updated the course series.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseSeries"
+        "403":
+          description: Insufficient permissions to perform this operation.
+    delete:
+      tags:
+        - Course Series
+      summary: Delete a course series
+      description: |
+        Permanently delete a specific course series by its ID.
+
+        #### Permission requirements
+
+        - Only users with the `courseAdmin` role can delete course series.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the course series to delete.
+      responses:
+        "204":
+          description: Successfully deleted the course series.
+        "403":
+          description: Insufficient permissions to perform this operation.
 
   /util/upinfo:
     get:
@@ -1150,6 +1592,14 @@ components:
           examples:
             - Two giants live in Britain's land...
           description: Brief bio or description of the user.
+        plan:
+          type: string
+          enum:
+            - free
+            - plus
+          examples:
+            - free
+          description: Subscription plan of the user.
         followerCount:
           type: integer
           format: int64
@@ -1185,6 +1635,46 @@ components:
           examples:
             - 1
           description: Number of projects liked by the user.
+        capabilities:
+          $ref: "#/components/schemas/UserCapabilities"
+          nullable: true
+          description: |
+            Capabilities and quotas of the user.
+
+            **This field is only present for the authenticated user's own profile.**
+
+    UserCapabilities:
+      type: object
+      properties:
+        canManageAssets:
+          type: boolean
+          description: Whether user can manage asset library.
+          examples:
+            - true
+        canManageCourses:
+          type: boolean
+          description: Whether user can manage courses and course series.
+          examples:
+            - true
+        canUsePremiumLLM:
+          type: boolean
+          description: Whether user can access premium LLM models.
+          examples:
+            - true
+        copilotMessageQuota:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Total quota for Copilot messages.
+          examples:
+            - 1000
+        copilotMessageQuotaLeft:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Remaining quota for Copilot messages.
+          examples:
+            - 789
 
     Project:
       type: object
@@ -1242,7 +1732,7 @@ components:
           type: string
           format: uri
           examples:
-            - https://builder.goplus.org/logo.svg
+            - https://example.com/project-thumbnail.png
           description: URL of the project's thumbnail image.
         viewCount:
           type: integer
@@ -1363,6 +1853,131 @@ components:
         visibility:
           $ref: "#/components/schemas/Visibility"
 
+    Course:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+          description: Username of the course's owner.
+        title:
+          type: string
+          examples:
+            - Introduction to XGo
+          description: Title of the course.
+        thumbnail:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course-thumbnail.png
+          description: URL of the course's thumbnail image.
+        entrypoint:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course/intro
+          description: Starting URL of the course.
+        references:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseReference"
+          description: References associated with the course.
+        prompt:
+          type: string
+          examples:
+            - Learn the basics of XGo programming language
+          description: Prompt text for the course (used for copilot assistance).
+
+    CourseReference:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - project
+          examples:
+            - project
+          description: Type of the reference.
+        fullName:
+          type: string
+          examples:
+            - john/NiuXiaoQi
+          description: Full name of the reference, in the format `owner/project`.
+
+    CourseSeries:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+          description: Username of the course's owner.
+        title:
+          type: string
+          examples:
+            - XGo Programming Series
+          description: Title of the course series.
+        courseIDs:
+          type: array
+          items:
+            type: string
+          examples:
+            - ["1", "2", "3"]
+          description: Array of course IDs included in this series.
+        order:
+          type: integer
+          format: int32
+          examples:
+            - 1
+          description: Order/priority of the course series for sorting.
+
+    AIDescriptionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: The game content to generate a description for (e.g., spx source code, project structure).
+          examples:
+            - |
+              Game: TicTacToe
+              Description: A classic Tic-Tac-Toe game.
+
+              === File: main.spx ===
+              var (
+                  // board is the main Tic-Tac-Toe board, where 1 represents "X" and 2 represents "O".
+                  board [3][3]int
+              )
+
+              // onStart handles the game start event.
+              onStart => {
+                // ...
+              }
+
+    AIDescriptionResponse:
+      type: object
+      properties:
+        description:
+          type: string
+          description: AI-generated descriptive summary of the game world from the player's perspective.
+          examples:
+            - |
+              This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent uses `O`
+              marks. Players take turns placing their marks in empty squares, with the goal of getting three marks in a
+              row horizontally, vertically, or diagonally. The game supports mouse click interaction. Click on an empty
+              square to place your mark. The game ends when either player achieves three in a row or the board is
+              completely filled.
+
     AIInteractionRequest:
       type: object
       properties:
@@ -1411,6 +2026,11 @@ components:
           items:
             $ref: "#/components/schemas/AIInteractionTurn"
           description: Record of previous interactions in this session.
+        archivedHistory:
+          type: string
+          description: Content of archived historical interactions.
+          examples:
+            - "Previous conversation summary..."
         continuationTurn:
           type: integer
           format: int32
@@ -1445,6 +2065,10 @@ components:
             - Row: 1
               Col: 1
               Result: ""
+        archivedHistory:
+          $ref: "#/components/schemas/AIInteractionArchivedHistory"
+          nullable: true
+          description: Archived history information when history management occurs.
 
     AIInteractionTurn:
       type: object
@@ -1454,6 +2078,13 @@ components:
           description: User's input text for the turn.
           examples:
             - It's your turn.
+        requestContext:
+          type: object
+          additionalProperties: true
+          description: Context for the user's input text for the turn.
+          examples:
+            - position: [10, 20]
+              health: 80
         responseText:
           type: string
           description: AI's text output for the turn.
@@ -1533,6 +2164,22 @@ components:
           description: Indicates if the interaction should be terminated.
           examples:
             - false
+
+    AIInteractionArchivedHistory:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Archived content of historical interactions.
+          examples:
+            - Previous conversation summary...
+        turnCount:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of turns that were archived.
+          examples:
+            - 5
 
     UpInfo:
       type: object

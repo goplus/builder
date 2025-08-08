@@ -18,6 +18,7 @@ import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Com
 import { NModalProvider } from 'naive-ui'
 import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
+import Emitter from '@/utils/emitter'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -43,7 +44,13 @@ export type ModalInfo = {
   visible: boolean
 }
 
+export type ModalEvents = Emitter<{
+  open: void
+  close: void
+}>
+
 type ModalContext = {
+  events: ModalEvents
   add(modalInfo: Omit<ModalInfo, 'visible'>): void
 }
 
@@ -62,10 +69,17 @@ export function useModal<P extends ModalComponentProps, R>(component: ComponentD
     })
   }
 }
+
+export function useModalEvents(): ModalEvents {
+  const ctx = inject(modalContextInjectKey)
+  if (ctx == null) throw new Error('useModalEvents should be called inside of ModalProvider')
+  return ctx.events
+}
 </script>
 
 <script setup lang="ts">
 const currentModals = shallowReactive<ModalInfo[]>([])
+const emitter: ModalEvents = new Emitter()
 
 async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
@@ -74,6 +88,7 @@ async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'
   // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
   await nextTick()
   currentModal.visible = true
+  emitter.emit('open')
 }
 
 function remove(id: number, onHide: (modal: ModalInfo) => void) {
@@ -81,6 +96,7 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   if (modal == null) return
   modal.visible = false
   onHide(modal)
+  emitter.emit('close')
   setTimeout(() => {
     // wait for hide animation to finish
     currentModals.splice(
@@ -98,5 +114,5 @@ function handleResolved(id: number, resolved?: unknown) {
   remove(id, (m) => m.handlers.resolve(resolved))
 }
 
-provide(modalContextInjectKey, { add })
+provide(modalContextInjectKey, { add, events: emitter })
 </script>

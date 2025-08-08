@@ -4,7 +4,6 @@ import { timeout, until } from '@/utils/utils'
 import { Cancelled, capture } from '@/utils/exception'
 import type { Files } from '@/models/common/file'
 import * as localHelper from '@/models/common/local'
-import type { UserInfo } from '@/stores/user'
 
 export interface EditableProject {
   owner?: string
@@ -95,7 +94,7 @@ export class Editing extends Disposable {
   constructor(
     private project: EditableProject,
     private isOnline: WatchSource<boolean>,
-    private userInfo: WatchSource<UserInfo | null>,
+    private signedInUsername: WatchSource<string | null>,
     private localCacheKey: string,
     private localStorage: LocalStorage = localHelper
   ) {
@@ -103,8 +102,8 @@ export class Editing extends Disposable {
   }
 
   get mode(): EditingMode {
-    const userInfo = toValue(this.userInfo)
-    if (userInfo == null || userInfo.name !== this.project.owner) {
+    const username = toValue(this.signedInUsername)
+    if (username == null || username !== this.project.owner) {
       return EditingMode.EffectFree
     }
     return EditingMode.AutoSave

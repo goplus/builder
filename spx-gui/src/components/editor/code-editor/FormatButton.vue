@@ -1,5 +1,10 @@
 <template>
-  <UIButton type="boring" :loading="handleFormat.isLoading.value" @click="handleFormat.fn">
+  <UIButton
+    v-radar="{ name: 'Format button', desc: 'Click to format the code' }"
+    type="boring"
+    :loading="handleFormat.isLoading.value"
+    @click="handleFormat.fn"
+  >
     {{ $t({ en: 'Format', zh: '格式化' }) }}
   </UIButton>
 </template>
@@ -20,7 +25,7 @@ const codeEditorCtx = useCodeEditorCtx()
 const handleFormat = useMessageHandle(
   () =>
     editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
-      codeEditorCtx.formatTextDocument(getTextDocumentId(props.codeFilePath))
+      codeEditorCtx.mustEditor().formatTextDocument(getTextDocumentId(props.codeFilePath))
     ),
   {
     en: 'Failed to format, please check the code',

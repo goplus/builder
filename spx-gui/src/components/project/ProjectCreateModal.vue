@@ -1,5 +1,11 @@
 <template>
-  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
+  <UIFormModal
+    :radar="{ name: 'Create project modal', desc: 'Modal for creating a new project' }"
+    class="project-create-modal"
+    :title="$t(title)"
+    :visible="props.visible"
+    @update:visible="handleCancel"
+  >
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
@@ -12,11 +18,18 @@
       <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
+          v-radar="{ name: 'Project name input', desc: 'Input field for project name' }"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
+        <UIButton
+          v-radar="{ name: 'Create button', desc: 'Click to create the project' }"
+          class="create-button"
+          type="primary"
+          html-type="submit"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
@@ -39,7 +52,7 @@ import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/pro
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { untilNotNull } from '@/utils/utils'
-import { useUserStore } from '@/stores/user'
+import { getSignedInUsername } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { Project } from '@/models/project'
 import { getDefaultProjectFile } from '@/components/project'
@@ -55,9 +68,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const userStore = useUserStore()
-
-const signedInUser = computed(() => userStore.getSignedInUser())
+const signedInUsername = computed(() => getSignedInUsername())
 
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
@@ -84,9 +95,9 @@ const handleSubmit = useMessageHandle(
         remixSource: props.remixSource
       })
     } else {
-      const owner = await untilNotNull(signedInUser)
+      const username = await untilNotNull(signedInUsername)
       const defaultProjectFile = await getDefaultProjectFile()
-      const project = new Project(owner.name, projectName)
+      const project = new Project(username, projectName)
       await project.loadXbpFile(defaultProjectFile)
       project.setVisibility(Visibility.Private)
       await project.saveToCloud()
@@ -119,8 +130,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  if (signedInUser.value == null) throw new Error('login required')
-  const username = signedInUser.value.name
+  if (signedInUsername.value == null) throw new Error('login required')
+  const username = signedInUsername.value
   const existedProject = await getProject(username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e

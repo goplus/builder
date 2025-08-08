@@ -12,23 +12,12 @@ export function useCodeEditorUICtx() {
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import {
-  type InjectionKey,
-  inject,
-  provide,
-  ref,
-  watchEffect,
-  shallowRef,
-  watch,
-  computed,
-  onDeactivated,
-  onActivated
-} from 'vue'
+import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
 import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/spx'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -44,6 +33,7 @@ import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
 import { useModal } from '@/components/ui'
+import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../context'
@@ -63,8 +53,6 @@ import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
-import CopilotUI from './copilot/CopilotUI.vue'
-import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
@@ -80,6 +68,7 @@ const props = defineProps<{
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const copilot = useCopilot()
 const invokeRenameModal = useModal(RenameModal)
 const renameSprite = useRenameSprite()
 const renameSound = useRenameSound()
@@ -90,18 +79,18 @@ const renameWidget = useRenameWidget()
 const getRenameWarning = useRenameWarning()
 
 async function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
-  const textDocument = codeEditorCtx.getTextDocument(textDocumentId)
+  const textDocument = codeEditorCtx.mustEditor().getTextDocument(textDocumentId)
   if (textDocument == null) throw new Error(`Text document (${textDocumentId.uri}) not found`)
   const name = textDocument.getValueInRange(range)
   return invokeRenameModal({
     target: {
       name,
-      validateName: validateGopIdentifierName,
+      validateName: validateXGoIdentifierName,
       applyName: (newName) =>
         editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
-          codeEditorCtx.rename(textDocumentId, position, newName)
+          codeEditorCtx.mustEditor().rename(textDocumentId, position, newName)
         ),
-      inputTip: getGopIdentifierNameTip(),
+      inputTip: getXGoIdentifierNameTip(),
       warning: await getRenameWarning()
     }
   })
@@ -126,8 +115,9 @@ const uiRef = computed(() => {
     editorCtx.project,
     editorCtx.state,
     i18n,
-    codeEditorCtx.getMonaco(),
-    codeEditorCtx.getTextDocument,
+    codeEditorCtx.mustMonaco(),
+    copilot,
+    (id) => codeEditorCtx.mustEditor().getTextDocument(id),
     rename,
     renameResource
   )
@@ -220,25 +210,13 @@ watch(
       }
     })
 
-    codeEditorCtx.attachUI(ui)
+    codeEditorCtx.mustEditor().attachUI(ui)
     signal.addEventListener('abort', () => {
-      codeEditorCtx.detachUI(ui)
+      codeEditorCtx.mustEditor().detachUI(ui)
     })
   },
   { immediate: true }
 )
-
-// We use `KeepAlive` (in `ProjectEditor`) to cache result of different editors (e.g. `SoundEditor`, `SpriteEditor`, `StageEditor`).
-// So we need to attach/detach UI when `CodeEditorUI` is activated/deactivated
-onActivated(() => codeEditorCtx.attachUI(uiRef.value))
-onDeactivated(() => {
-  uiRef.value.closeTempTextDocuments()
-  codeEditorCtx.detachUI(uiRef.value)
-})
-
-function handleCopilotTriggerClick() {
-  uiRef.value.setIsCopilotActive(true)
-}
 
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
   ui: uiRef.value
@@ -306,20 +284,18 @@ function zoomReset() {
   <div ref="codeEditorEl" class="code-editor" :style="{ userSelect: isResizing ? 'none' : undefined }">
     <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
       <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
-      <footer class="footer">
-        <CopilotTrigger @click="handleCopilotTriggerClick" />
-      </footer>
-      <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div
       ref="resizeHandleEl"
+      v-radar="{ name: 'Resize handle', desc: 'Drag to resize the sidebar' }"
       class="resize-handle"
       :class="{ active: isResizing }"
       :style="{ left: `${sidebarWidth}px` }"
     ></div>
     <MonacoEditorComp
+      v-radar="{ name: 'Code text editor', desc: 'Text editor for code' }"
       class="monaco-editor-conflict-free"
-      :monaco="codeEditorCtx.getMonaco()"
+      :monaco="codeEditorCtx.mustMonaco()"
       :options="monacoEditorOptions"
       @init="handleMonacoEditorInit"
       @dragover="handleMonacoEditorDragOver"
@@ -360,22 +336,6 @@ function zoomReset() {
 
   .api-reference {
     flex: 1 1 0;
-  }
-
-  .footer {
-    flex: 0 0 auto;
-    padding: 12px 16px;
-    display: flex;
-    border-top: 1px solid var(--ui-color-dividing-line-2);
-  }
-
-  .copilot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
   }
 }
 

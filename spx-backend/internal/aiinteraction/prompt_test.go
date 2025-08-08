@@ -35,7 +35,7 @@ func TestRenderSystemPrompt(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
-				assert.Contains(t, result, "You are playing the role of: TestRole")
+				assert.Contains(t, result, "TestRole")
 				assert.Contains(t, result, `"name":"TestCommand","description":"A test command"`)
 				assert.Contains(t, result, `"name":"Param1","type":"string","description":"First parameter"`)
 				assert.NotContains(t, result, "Role context:")
@@ -81,7 +81,7 @@ func TestRenderSystemPrompt(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
-				assert.Contains(t, result, "You are playing the role of: Developer")
+				assert.Contains(t, result, "Developer")
 
 				roleContext := map[string]any{
 					"experience": "Senior",
@@ -101,7 +101,7 @@ func TestRenderSystemPrompt(t *testing.T) {
 				assert.Contains(t, result, `"name":"TestName","type":"string","description":"Name of the test"`)
 				assert.Contains(t, result, `"name":"Coverage","type":"float64","description":"Desired test coverage"`)
 
-				assert.Contains(t, result, "Result of the previous command: SUCCESS")
+				assert.Contains(t, result, "**SUCCESS**: Previous command executed successfully.")
 				assert.NotContains(t, result, "The interaction was terminated by the command")
 			},
 		},
@@ -123,7 +123,8 @@ func TestRenderSystemPrompt(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
-				assert.Contains(t, result, "Result of the previous command: ERROR: Test failed")
+				assert.Contains(t, result, "**ERROR**:")
+				assert.Contains(t, result, "Test failed")
 			},
 		},
 		{
@@ -144,7 +145,7 @@ func TestRenderSystemPrompt(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, result string) {
-				assert.Contains(t, result, "Result of the previous command: SUCCESS")
+				assert.Contains(t, result, "**SUCCESS**: Previous command executed successfully.")
 				assert.Contains(t, result, "The interaction was terminated by the command")
 			},
 		},

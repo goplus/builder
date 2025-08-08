@@ -1,14 +1,12 @@
 package controller
 
 import (
-	"context"
+	"net/http"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
-	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/config"
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,28 +22,6 @@ func setTestEnv(t *testing.T) {
 	t.Setenv("KODO_BASE_URL", "https://kodo.example.com")
 
 	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
-}
-
-const testUserToken = "test-user-token"
-
-type mockAuthenticator struct{}
-
-func (mockAuthenticator) Authenticate(ctx context.Context, token string) (*model.User, error) {
-	if token == testUserToken {
-		return &model.User{
-			Model:              model.Model{ID: 1},
-			Username:           "test-user",
-			DisplayName:        "",
-			Avatar:             "",
-			Description:        "Test description",
-			FollowerCount:      10,
-			FollowingCount:     5,
-			ProjectCount:       3,
-			PublicProjectCount: 2,
-			LikedProjectCount:  15,
-		}, nil
-	}
-	return nil, authn.ErrUnauthorized
 }
 
 func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, closeDB func() error) {
@@ -68,7 +44,7 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 	}
 
 	kodoClient := newKodoClient(cfg.Kodo)
-	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
+	aigcClient := aigc.NewAigcClientWithHTTPClient(cfg.AIGC.Endpoint, &http.Client{})
 
 	return &Controller{
 		db:   db,

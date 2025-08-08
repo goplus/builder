@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/goplus/spx/v2/pkg/spx"
 )
 
 // CommandSpec describes an available AI command, derived from a command registration.
@@ -94,7 +96,7 @@ func extractCommandSpec(cmdType reflect.Type) CommandSpec {
 // callCommandHandler handles the overall logic for executing a command
 // handler. It creates the command struct, populates its fields, calls the
 // handler, and processes the result.
-func callCommandHandler(info commandInfo, args map[string]any) (*CommandResult, error) {
+func callCommandHandler(owner any, info commandInfo, args map[string]any) (*CommandResult, error) {
 	// Create a new zero value of the command struct type (T).
 	cmdType := info.typ
 	cmdPtrVal := reflect.New(cmdType)
@@ -110,14 +112,18 @@ func callCommandHandler(info commandInfo, args map[string]any) (*CommandResult, 
 		results        []reflect.Value
 		handlerCallErr error
 	)
-	func(handlerVal reflect.Value) {
-		defer func() {
-			if r := recover(); r != nil {
-				handlerCallErr = fmt.Errorf("panic in command handler: %v", r)
-			}
-		}()
-		results = handlerVal.Call([]reflect.Value{cmdVal})
-	}(reflect.ValueOf(info.handler))
+	spx.Execute(owner, func(owner any) {
+		func(handlerVal reflect.Value) {
+			defer func() {
+				if r := recover(); r != nil {
+					if !spx.IsAbortThreadError(r) {
+						handlerCallErr = fmt.Errorf("panic in command handler: %v", r)
+					}
+				}
+			}()
+			results = handlerVal.Call([]reflect.Value{cmdVal})
+		}(reflect.ValueOf(info.handler))
+	})
 	if handlerCallErr != nil {
 		return nil, fmt.Errorf("failed to call command handler for %s: %w", info.spec.Name, handlerCallErr)
 	}

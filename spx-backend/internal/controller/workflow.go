@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/embkb"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 )
@@ -15,12 +16,13 @@ type Workflow struct {
 }
 
 type WorkflowMessageParams struct {
-	Workflow *Workflow `json:"workflow,omitempty"`
-	GenerateMessageParams
+	Workflow *Workflow      `json:"workflow,omitempty"`
+	Tools    []copilot.Tool `json:"tools,omitempty"` // Additional tools to use in the completion
+	GenerateMessageBaseParams
 }
 
 // WorkflowMessageStream generates response message based on input messages.
-func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams) (io.ReadCloser, error) {
+func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *WorkflowMessageParams, canUsePremium bool) (io.ReadCloser, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Check if workflow is initialized
@@ -38,8 +40,9 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 
 	env.Set("messages", params.Messages)
 	env.Set("Tools", params.Tools)
-	env.Set("GopDefs", copilot.GopDefs)
-	env.Set("SpxDefs", copilot.SpxDefs)
+	env.Set("XGoSyntax", embkb.XGoSyntax())
+	env.Set("SpxAPIs", embkb.SpxAPIs())
+	env.Set("canUsePremium", canUsePremium)
 
 	// Create workflow runner with the specified index
 	runner := ctrl.workflow.Runner(env)

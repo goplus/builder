@@ -2,11 +2,131 @@ package aiinteraction
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestCalculateTurnsToArchive(t *testing.T) {
+	t.Run("NoArchivingNeeded", func(t *testing.T) {
+		request := &Request{
+			History: make([]Turn, 10),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("FirstTimeArchiving", func(t *testing.T) {
+		request := &Request{
+			ArchivedHistory: "",
+			History:         make([]Turn, 30),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 10, count)
+	})
+
+	t.Run("FirstTimeArchivingLargeHistory", func(t *testing.T) {
+		request := &Request{
+			ArchivedHistory: "",
+			History:         make([]Turn, 50),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 30, count)
+	})
+
+	t.Run("SubsequentArchivingNotNeeded", func(t *testing.T) {
+		request := &Request{
+			ArchivedHistory: "existing archive",
+			History:         make([]Turn, 25),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("SubsequentArchiving", func(t *testing.T) {
+		request := &Request{
+			ArchivedHistory: "existing archive",
+			History:         make([]Turn, 35),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 15, count)
+	})
+
+	t.Run("SubsequentArchivingLargeHistory", func(t *testing.T) {
+		request := &Request{
+			ArchivedHistory: "existing archive",
+			History:         make([]Turn, 50),
+		}
+
+		count := calculateTurnsToArchive(request)
+		assert.Equal(t, 15, count)
+	})
+}
+
+func TestApplyArchivedHistory(t *testing.T) {
+	t.Run("ApplyFirstTimeArchiving", func(t *testing.T) {
+		history := make([]Turn, 30)
+		for i := range history {
+			history[i] = Turn{
+				RequestContent: fmt.Sprintf("Request %d", i+1),
+				ResponseText:   fmt.Sprintf("Response %d", i+1),
+			}
+		}
+		request := &Request{
+			Content:         "User content",
+			ArchivedHistory: "",
+			History:         history,
+		}
+		archivedHistory := &ArchivedHistory{
+			Content:   "new archive content",
+			TurnCount: 10,
+		}
+
+		processedRequest := applyArchivedHistory(request, archivedHistory)
+		assert.Equal(t, "new archive content", processedRequest.ArchivedHistory)
+		assert.Len(t, processedRequest.History, 20)
+		assert.Equal(t, "Request 11", processedRequest.History[0].RequestContent)
+		assert.Equal(t, "Response 11", processedRequest.History[0].ResponseText)
+		assert.Equal(t, "Request 30", processedRequest.History[19].RequestContent)
+		assert.Equal(t, "Response 30", processedRequest.History[19].ResponseText)
+		assert.Equal(t, "User content", processedRequest.Content)
+	})
+
+	t.Run("ApplySubsequentArchiving", func(t *testing.T) {
+		history := make([]Turn, 35)
+		for i := range history {
+			history[i] = Turn{
+				RequestContent: fmt.Sprintf("Request %d", i+1),
+				ResponseText:   fmt.Sprintf("Response %d", i+1),
+			}
+		}
+		request := &Request{
+			Content:         "User content",
+			ArchivedHistory: "old archive",
+			History:         history,
+		}
+		archivedHistory := &ArchivedHistory{
+			Content:   "updated archive",
+			TurnCount: 15,
+		}
+
+		processedRequest := applyArchivedHistory(request, archivedHistory)
+		assert.Equal(t, "updated archive", processedRequest.ArchivedHistory)
+		assert.Len(t, processedRequest.History, 20)
+		assert.Equal(t, "Request 16", processedRequest.History[0].RequestContent)
+		assert.Equal(t, "Response 16", processedRequest.History[0].ResponseText)
+		assert.Equal(t, "Request 35", processedRequest.History[19].RequestContent)
+		assert.Equal(t, "Response 35", processedRequest.History[19].ResponseText)
+		assert.Equal(t, "User content", processedRequest.Content)
+	})
+}
 
 func TestParseAIResponse(t *testing.T) {
 	t.Run("TextOnly", func(t *testing.T) {
@@ -68,6 +188,26 @@ func TestParseAIResponse(t *testing.T) {
 		assert.Equal(t, "This is a response\nwith multiple lines\nof text.", response.Text)
 		assert.Equal(t, "TestCommand", response.CommandName)
 		assert.Equal(t, "value1", response.CommandArgs["param1"])
+	})
+
+	t.Run("MissingSpaceAfterCommand", func(t *testing.T) {
+		responseText := "Testing response.\nCOMMAND:TestCommand\nARGS: {\"param1\": \"value1\"}"
+		response, err := parseAIResponse(responseText)
+
+		require.NoError(t, err)
+		assert.Equal(t, responseText, response.Text)
+		assert.Empty(t, response.CommandName)
+		assert.Nil(t, response.CommandArgs)
+	})
+
+	t.Run("ArgsWithoutCommand", func(t *testing.T) {
+		responseText := "Testing response.\nARGS: {\"param1\": \"value1\"}"
+		response, err := parseAIResponse(responseText)
+
+		require.NoError(t, err)
+		assert.Equal(t, responseText, response.Text)
+		assert.Empty(t, response.CommandName)
+		assert.Nil(t, response.CommandArgs)
 	})
 }
 
@@ -196,12 +336,12 @@ func TestBuildConversationMessages(t *testing.T) {
 		assert.Nil(t, messages)
 	})
 
-	t.Run("TruncatedHistory", func(t *testing.T) {
-		history := make([]Turn, maxHistoryTurns+5)
+	t.Run("LargeHistoryPreservesAll", func(t *testing.T) {
+		history := make([]Turn, 25)
 		for i := range history {
 			history[i] = Turn{
-				RequestContent: "Request " + string(rune('a'+i)),
-				ResponseText:   "Response " + string(rune('a'+i)),
+				RequestContent: fmt.Sprintf("Request %d", i+1),
+				ResponseText:   fmt.Sprintf("Response %d", i+1),
 			}
 		}
 
@@ -213,17 +353,35 @@ func TestBuildConversationMessages(t *testing.T) {
 		messages, err := buildConversationMessages(request)
 
 		require.NoError(t, err)
-
-		expectedLen := maxHistoryTurns*2 + 1
-		require.Len(t, messages, expectedLen)
+		require.Len(t, messages, 51)
 
 		firstMsg := messages[0].OfUser
 		require.NotNil(t, firstMsg)
-		assert.Equal(t, "Request "+string(rune('a'+(len(history)-maxHistoryTurns))), firstMsg.Content.OfString.Value)
+		assert.Equal(t, "Request 1", firstMsg.Content.OfString.Value)
 
-		lastMsg := messages[len(messages)-1].OfUser
-		require.NotNil(t, lastMsg)
-		assert.Equal(t, "Final message", lastMsg.Content.OfString.Value)
+		lastHistoryMsg := messages[49].OfAssistant
+		require.NotNil(t, lastHistoryMsg)
+		assert.Equal(t, "Response 25", lastHistoryMsg.Content.OfString.Value)
+
+		finalMsg := messages[50].OfUser
+		require.NotNil(t, finalMsg)
+		assert.Equal(t, "Final message", finalMsg.Content.OfString.Value)
+	})
+
+	t.Run("EmptyHistory", func(t *testing.T) {
+		request := &Request{
+			Content: "Single message",
+			History: []Turn{},
+		}
+
+		messages, err := buildConversationMessages(request)
+
+		require.NoError(t, err)
+		require.Len(t, messages, 1)
+
+		userMsg := messages[0].OfUser
+		require.NotNil(t, userMsg)
+		assert.Equal(t, "Single message", userMsg.Content.OfString.Value)
 	})
 
 	t.Run("ComplexRequest", func(t *testing.T) {

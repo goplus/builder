@@ -3,7 +3,12 @@
     <!-- TODO: use UICardHeader? -->
     <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
-      <div class="overview" :class="{ active }" @click="activate">
+      <div
+        v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
+        class="overview"
+        :class="{ active }"
+        @click="activate"
+      >
         <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
       </div>
     </main>

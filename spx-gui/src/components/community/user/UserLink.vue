@@ -1,5 +1,9 @@
 <template>
-  <RouterLink :to="to ?? ''" :title="userInfo?.displayName">
+  <RouterLink
+    v-radar="{ name: 'User link', desc: 'Click to view user profile' }"
+    :to="to ?? ''"
+    :title="userInfo?.displayName"
+  >
     <slot></slot>
   </RouterLink>
 </template>

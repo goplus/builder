@@ -4,7 +4,9 @@
 //   PUT /asset/:id
 
 import (
+	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
@@ -19,6 +21,13 @@ if !parseJSON(ctx, params) {
 if ok, msg := params.Validate(); !ok {
 	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 	return
+}
+
+if !authz.CanManageAssets(ctx.Context()) {
+	if params.Visibility == model.VisibilityPublic {
+		replyWithCodeMsg(ctx, errorForbidden, "You are not allowed to make assets public")
+		return
+	}
 }
 
 asset, err := ctrl.UpdateAsset(ctx.Context(), ${id}, params)

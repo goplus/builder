@@ -1,12 +1,12 @@
 /**
  * @file Definition-related helpers
- * @desc Here we define some helper functions to get definitions for Go+ and SPX.
+ * @desc Here we define some helper functions to get definitions for XGo and spx.
  *       They are expected to be generated, then copy-pasted to spx-backend code as part of prompt for Copilot.
  */
 
 import { SnippetParser } from '@/utils/snippet-parser'
 import { type DefinitionDocumentationItem } from '../common'
-import * as gopDefinitions from './gop'
+import * as xgoDefinitions from './xgo'
 import * as spxDefinitions from './spx'
 import { keys as spxKeyDefinitions } from './spx/key'
 
@@ -24,11 +24,11 @@ function descOf(ddi: DefinitionDocumentationItem) {
   return typeof ddi.detail.value === 'string' ? ddi.detail.value : ddi.detail.value.en
 }
 
-// Run `copy(await getGopDefinitions())` / `copy(await getSpxDefinitions())` in browser console to copy generated definitions.
-;(globalThis as any).getGopDefinitions = async () => {
+// Run `copy(await getXGoDefinitions())` / `copy(await getSpxDefinitions())` in browser console to copy generated definitions.
+;(globalThis as any).getXGoDefinitions = async () => {
   const csvStringify = await import('csv-stringify/browser/esm/sync').then((m) => m.stringify)
-  const gopTable = csvStringify(
-    Object.values(gopDefinitions)
+  const xgoTable = csvStringify(
+    Object.values(xgoDefinitions)
       .filter((d) => !d.hiddenFromList)
       .map((d) => ({
         Package: d.definition.package,
@@ -37,12 +37,12 @@ function descOf(ddi: DefinitionDocumentationItem) {
         Description: descOf(d)
       })),
     { header: true }
-  )
+  ).trim()
   return `\
-# Go+ Syntax
+# XGo Syntax
 
 \`\`\`csv
-${gopTable}
+${xgoTable}
 \`\`\`
 `
 }
@@ -81,7 +81,7 @@ ${gopTable}
         Description: descOf(d)
       })),
       { header: true }
-    )
+    ).trim()
   }
   const keyTable = csvStringify(
     [
@@ -92,7 +92,7 @@ ${gopTable}
       }
     ],
     { header: true }
-  )
+  ).trim()
   return `\
 # SPX APIs
 

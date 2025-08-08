@@ -1,11 +1,15 @@
 <template>
-  <UICard class="editor-preview">
+  <UICard
+    v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
+    class="editor-preview"
+  >
     <UICardHeader v-if="running.mode !== 'debug'">
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
       <UIButton
         ref="runButtonRef"
+        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
         class="button"
         type="primary"
         icon="playHollow"
@@ -17,6 +21,7 @@
       <UITooltip placement="top-end">
         <template #trigger>
           <UIButton
+            v-radar="{ name: 'Full screen run button', desc: 'Click to run in full screen mode' }"
             class="button full-screen-run-button"
             type="boring"
             icon="fullScreen"
@@ -32,6 +37,7 @@
         {{ $t({ en: 'Running', zh: '运行中' }) }}
       </div>
       <UIButton
+        v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
         class="button"
         type="primary"
         icon="rotate"
@@ -41,12 +47,23 @@
       >
         {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
       </UIButton>
-      <UIButton class="button" type="boring" icon="end" @click="handleStop">
+      <UIButton
+        v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+        class="button"
+        type="boring"
+        icon="end"
+        @click="handleStop"
+      >
         {{ $t({ en: 'Stop', zh: '停止' }) }}
       </UIButton>
     </UICardHeader>
 
-    <FullScreenProjectRunner :project="editorCtx.project" :visible="running.mode === 'run'" @close="handleStop" />
+    <FullScreenProjectRunner
+      :project="editorCtx.project"
+      :visible="running.mode === 'run'"
+      @close="handleStop"
+      @exit="handleExit"
+    />
 
     <div class="main">
       <div class="stage-viewer-container">
@@ -81,11 +98,15 @@ function handleStop() {
   editorCtx.state.runtime.setRunning({ mode: 'none' })
 }
 
+function handleExit(code: number) {
+  editorCtx.state.runtime.emit('didExit', code)
+}
+
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
 async function checkAndNotifyError() {
-  const r = await codeEditorCtx.diagnosticWorkspace()
+  const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
   const codeFilesWithError: LocaleMessage[] = []
   for (const i of r.items) {
     if (!i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
@@ -105,7 +126,7 @@ async function checkAndNotifyError() {
 async function tryFormatWorkspace() {
   try {
     await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
-      codeEditorCtx.formatWorkspace()
+      codeEditorCtx.mustEditor().formatWorkspace()
     )
   } catch (e) {
     console.warn('Failed to format workspace', e)

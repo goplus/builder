@@ -7,8 +7,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
+	"github.com/goplus/builder/spx-backend/internal/authz"
+	"github.com/goplus/builder/spx-backend/internal/authz/embpdp"
+	"github.com/goplus/builder/spx-backend/internal/authz/quota"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -22,7 +27,6 @@ const (
 
 var (
 	ctrl *controller.Controller
-	err  error
 )
 
 logger := log.GetLogger()
@@ -33,6 +37,17 @@ if err != nil {
 	logger.Fatalln("failed to load configuration:", err)
 }
 
+// Initialize Sentry
+err = sentry.Init(sentry.ClientOptions{
+	Dsn:              cfg.Sentry.DSN,
+	EnableTracing:    true,
+	TracesSampleRate: cfg.Sentry.SampleRate,
+})
+if err != nil {
+	logger.Fatalln("failed to initialize sentry:", err)
+}
+defer sentry.Flush(10 * time.Second)
+
 // Initialize database.
 db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
 if err != nil {
@@ -40,22 +55,38 @@ if err != nil {
 }
 // TODO: Configure connection pool and timeouts.
 
+// Initialize authenticator.
+authenticator := casdoor.New(db, cfg.Casdoor)
+
+// Initialize authorizer.
+var quotaTracker authz.QuotaTracker
+if cfg.Redis.Addr != "" {
+	quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
+	logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
+} else {
+	quotaTracker = quota.NewNopQuotaTracker()
+	logger.Println("using no-op quota tracker")
+}
+pdp := embpdp.New(quotaTracker)
+authorizer := authz.New(db, pdp, quotaTracker)
+
 // Initialize controller.
 ctrl, err = controller.New(context.Background(), db, cfg)
 if err != nil {
 	logger.Fatalln("failed to create a new controller:", err)
 }
 
-// Initialize authenticator.
-authenticator := casdoor.New(db, cfg.Casdoor)
+// Start server.
 
 port := cfg.Server.GetPort()
 logger.Printf("listening to %s", port)
 
 h := handler(
+	authorizer.Middleware(),
 	authn.Middleware(authenticator),
-	NewReqIDMiddleware(),
 	NewCORSMiddleware(),
+	NewReqIDMiddleware(),
+	NewSentryMiddleware(),
 )
 server := &http.Server{Addr: port, Handler: h}
 

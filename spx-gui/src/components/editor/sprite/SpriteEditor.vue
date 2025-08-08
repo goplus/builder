@@ -1,15 +1,40 @@
 <template>
   <EditorHeader>
-    <UITabs :value="state.selected.type" color="sprite" @update:value="(type) => state.select(type as SelectedType)">
-      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
-      <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
-      <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
+    <UITabs
+      v-radar="{
+        name: 'Sprite editor tabs',
+        desc: 'Navigation tabs for switching between different sprite editing views'
+      }"
+      :value="state.selected.type"
+      color="sprite"
+      @update:value="(type) => state.select(type as SelectedType)"
+    >
+      <UITab v-radar="{ name: 'Code tab', desc: 'Click to switch to code editing view' }" value="code">{{
+        $t({ en: 'Code', zh: '代码' })
+      }}</UITab>
+      <UITab v-radar="{ name: 'Costumes tab', desc: 'Click to switch to costumes management view' }" value="costumes">{{
+        $t({ en: 'Costumes', zh: '造型' })
+      }}</UITab>
+      <UITab
+        v-radar="{ name: 'Animations tab', desc: 'Click to switch to animations management view' }"
+        value="animations"
+        >{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab
+      >
     </UITabs>
     <template #extra>
       <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
     </template>
   </EditorHeader>
-  <CodeEditorUI v-show="state.selected.type === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
+  <CodeEditorUI
+    v-show="state.selected.type === 'code'"
+    ref="codeEditor"
+    v-radar="{
+      name: 'Code editor',
+      desc: 'Code editor for editing code of current sprite',
+      visible: state.selected.type === 'code'
+    }"
+    :code-file-path="sprite.codeFilePath"
+  />
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
   <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />

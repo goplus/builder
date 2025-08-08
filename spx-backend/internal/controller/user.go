@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
 )
@@ -16,15 +17,17 @@ import (
 type UserDTO struct {
 	ModelDTO
 
-	Username           string `json:"username"`
-	DisplayName        string `json:"displayName"`
-	Avatar             string `json:"avatar"`
-	Description        string `json:"description"`
-	FollowerCount      int64  `json:"followerCount"`
-	FollowingCount     int64  `json:"followingCount"`
-	ProjectCount       int64  `json:"projectCount"`
-	PublicProjectCount int64  `json:"publicProjectCount"`
-	LikedProjectCount  int64  `json:"likedProjectCount"`
+	Username           string                  `json:"username"`
+	DisplayName        string                  `json:"displayName"`
+	Avatar             string                  `json:"avatar"`
+	Description        string                  `json:"description"`
+	Plan               model.UserPlan          `json:"plan"`
+	FollowerCount      int64                   `json:"followerCount"`
+	FollowingCount     int64                   `json:"followingCount"`
+	ProjectCount       int64                   `json:"projectCount"`
+	PublicProjectCount int64                   `json:"publicProjectCount"`
+	LikedProjectCount  int64                   `json:"likedProjectCount"`
+	Capabilities       *authz.UserCapabilities `json:"capabilities,omitempty"`
 }
 
 // toUserDTO converts the model user to its DTO.
@@ -35,12 +38,20 @@ func toUserDTO(mUser model.User) UserDTO {
 		DisplayName:        mUser.DisplayName,
 		Avatar:             mUser.Avatar,
 		Description:        mUser.Description,
+		Plan:               mUser.Plan,
 		FollowerCount:      mUser.FollowerCount,
 		FollowingCount:     mUser.FollowingCount,
 		ProjectCount:       mUser.ProjectCount,
 		PublicProjectCount: mUser.PublicProjectCount,
 		LikedProjectCount:  mUser.LikedProjectCount,
 	}
+}
+
+// toUserDTOWithCapabilities converts the model user to its DTO with capabilities.
+func toUserDTOWithCapabilities(mUser model.User, caps authz.UserCapabilities) UserDTO {
+	userDTO := toUserDTO(mUser)
+	userDTO.Capabilities = &caps
+	return userDTO
 }
 
 // ListUsersOrderBy is the order by condition for listing users.
@@ -163,14 +174,29 @@ func (ctrl *Controller) ListUsers(ctx context.Context, params *ListUsersParams) 
 // GetUser gets user by username.
 func (ctrl *Controller) GetUser(ctx context.Context, username string) (*UserDTO, error) {
 	var mUser model.User
-	if err := ctrl.db.WithContext(ctx).
+	if mAuthenticatedUser, ok := authn.UserFromContext(ctx); ok && mAuthenticatedUser.Username == username {
+		mUser = *mAuthenticatedUser
+	} else if err := ctrl.db.WithContext(ctx).
 		Where("username = ?", username).
 		First(&mUser).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user %q: %w", username, err)
 	}
-
 	userDTO := toUserDTO(mUser)
+	return &userDTO, nil
+}
+
+// GetAuthenticatedUser retrieves the authenticated user from the context.
+func (ctrl *Controller) GetAuthenticatedUser(ctx context.Context) (*UserDTO, error) {
+	mUser, ok := authn.UserFromContext(ctx)
+	if !ok {
+		return nil, authn.ErrUnauthorized
+	}
+	caps, ok := authz.UserCapabilitiesFromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("missing user capabilities in context for user %q", mUser.Username)
+	}
+	userDTO := toUserDTOWithCapabilities(*mUser, caps)
 	return &userDTO, nil
 }
 
@@ -205,7 +231,11 @@ func (ctrl *Controller) UpdateAuthenticatedUser(ctx context.Context, params *Upd
 			return nil, fmt.Errorf("failed to update authenticated user %q: %w", mUser.Username, err)
 		}
 	}
-	userDTO := toUserDTO(*mUser)
+	caps, ok := authz.UserCapabilitiesFromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("missing user capabilities in context for user %q", mUser.Username)
+	}
+	userDTO := toUserDTOWithCapabilities(*mUser, caps)
 	return &userDTO, nil
 }
 

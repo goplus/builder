@@ -11,7 +11,6 @@ import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
 import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
-import type { UserInfo } from '@/stores/user/signed-in'
 import { StageEditorState, type Selected as StageEditorSelected } from './stage/StageEditor.vue'
 import { SpriteEditorState, type Selected as SpriteEditorSelected } from './sprite/SpriteEditor.vue'
 import { Runtime } from './runtime'
@@ -43,13 +42,15 @@ export class EditorState extends Disposable {
   constructor(
     private project: Project,
     isOnline: WatchSource<boolean>,
-    userInfo: WatchSource<UserInfo | null>,
+    signedInUsername: WatchSource<string | null>,
     localCacheKey: string,
     localStorage?: editing.LocalStorage
   ) {
     super()
     this.addDisposable((this.runtime = new Runtime(project)))
-    this.addDisposable((this.editing = new editing.Editing(project, isOnline, userInfo, localCacheKey, localStorage)))
+    this.addDisposable(
+      (this.editing = new editing.Editing(project, isOnline, signedInUsername, localCacheKey, localStorage))
+    )
     this.addDisposable((this.stageState = new StageEditorState(() => project.stage)))
 
     this.addDisposer(() => this.spriteState?.dispose())

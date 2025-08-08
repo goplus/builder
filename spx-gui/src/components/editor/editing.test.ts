@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { timeout } from '@/utils/utils'
 import { fromText, type Files } from '@/models/common/file'
-import type { UserInfo } from '@/stores/user'
 import { Editing, type EditableProject, SavingState, EditingMode, type LocalStorage } from './editing'
 
 function mockFile(name = 'mocked') {
@@ -36,16 +35,6 @@ function mockProject({
   }
 }
 
-function mockUserInfo(name = 'user'): UserInfo {
-  return {
-    id: '123',
-    name,
-    displayName: name,
-    avatar: '',
-    advancedLibraryEnabled: false
-  }
-}
-
 function mockLocalStorage() {
   return {
     clear: vi.fn().mockResolvedValue(undefined)
@@ -55,17 +44,17 @@ function mockLocalStorage() {
 function mockEditing({
   project = mockProject({}),
   isOnline = () => true,
-  userInfo = () => mockUserInfo(),
+  signedInUsername: username = () => 'user',
   localCacheKey = 'LOCAL_CACHE_KEY',
   localStorage = mockLocalStorage()
 }: Partial<{
   project: EditableProject
   isOnline: WatchSource<boolean>
-  userInfo: WatchSource<UserInfo | null>
+  signedInUsername: WatchSource<string | null>
   localCacheKey: string
   localStorage: LocalStorage
 }>) {
-  return new Editing(project, isOnline, userInfo, localCacheKey, localStorage)
+  return new Editing(project, isOnline, username, localCacheKey, localStorage)
 }
 
 describe('Editing', () => {
@@ -196,7 +185,7 @@ describe('Editing', () => {
     const project = mockProject({ files, owner: 'project-owner' })
     const editing = mockEditing({
       project,
-      userInfo: () => mockUserInfo('different-user') // Different user from project owner
+      signedInUsername: () => 'different-user' // Different user from project owner
     })
     editing.start()
 

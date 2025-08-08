@@ -3,7 +3,7 @@ import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { type Range, type Position, type TextDocumentIdentifier, textDocumentId2CodeFileName } from './common'
-import { useCodeEditorCtx } from './context'
+import { useCodeEditorCtxRef } from './context'
 
 const props = defineProps<{
   file: TextDocumentIdentifier
@@ -13,19 +13,27 @@ const props = defineProps<{
 
 const slots = useSlots()
 const i18n = useI18n()
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const codeFileName = computed(() => i18n.t(textDocumentId2CodeFileName(props.file)))
 
+const positionOrRangeComputed = computed(() => {
+  if (props.position != null) return { type: 'position' as const, value: props.position }
+  if (props.range != null) return { type: 'range' as const, value: props.range }
+  return { type: 'position' as const, value: { line: 1, column: 1 } }
+})
+
 const defaultText = computed(() => {
-  const { position, range } = props
-  if (position != null)
+  const positionOrRange = positionOrRangeComputed.value
+  if (positionOrRange.type === 'position') {
+    const position = positionOrRange.value
     return i18n.t({
       en: `${codeFileName.value}: Line ${position.line} Col ${position.column}`,
       zh: `${codeFileName.value}: 第 ${position.line} 行 第 ${position.column} 列`
     })
-  if (range != null) {
-    const { start, end } = range
+  }
+  if (positionOrRange.type === 'range') {
+    const { start, end } = positionOrRange.value
     if (start.line === end.line) {
       return i18n.t({
         en: `${codeFileName.value}: Line ${start.line} Col ${start.column}-${end.column}`,
@@ -38,23 +46,26 @@ const defaultText = computed(() => {
       })
     }
   }
-  throw new Error('Either `position` or `range` must be provided')
+  throw new Error('Position or range expected')
 })
 
 const handleClick = useMessageHandle(
   () => {
-    const ui = codeEditorCtx.getAttachedUI()
+    const codeEditorCtx = codeEditorCtxRef.value
+    if (codeEditorCtx == null) throw new Error('Code editor context is not available')
+    const ui = codeEditorCtx.mustEditor().getAttachedUI()
     if (ui == null) return
-    const { file, position, range } = props
-    if (position != null) {
-      ui.open(file, position)
+    const { file } = props
+    const positionOrRange = positionOrRangeComputed.value
+    if (positionOrRange.type === 'position') {
+      ui.open(file, positionOrRange.value)
       return
     }
-    if (range != null) {
-      ui.open(file, range)
+    if (positionOrRange.type === 'range') {
+      ui.open(file, positionOrRange.value)
       return
     }
-    throw new Error('Either `position` or `range` must be provided')
+    throw new Error('Position or range expected')
   },
   { en: 'Failed to open code location', zh: '打开代码位置失败' }
 ).fn

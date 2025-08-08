@@ -1,5 +1,6 @@
 <template>
   <UIFormModal
+    :radar="{ name: 'Sound recorder modal', desc: 'Modal for recording sounds' }"
     :visible="visible"
     :title="$t({ en: 'Record Sound', zh: '录制声音' })"
     center-title

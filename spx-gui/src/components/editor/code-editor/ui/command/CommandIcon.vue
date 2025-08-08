@@ -6,7 +6,7 @@ import iconGoto from './goto.svg?raw'
 import iconModify from './modify.svg?raw'
 import iconRename from './rename.svg?raw'
 import iconCopy from './copy.svg?raw'
-import iconCopilot from '../copilot/logo-simple.svg?raw'
+import iconCopilot from './copilot.svg?raw'
 
 defineProps<{
   type: CommandIconType

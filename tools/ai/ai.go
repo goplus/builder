@@ -1,4 +1,4 @@
-// Package ai provides a simple API for AI interactions in Go+ Builder games.
+// Package ai provides a simple API for AI interactions in XBuilder games.
 //
 // This package is designed for children around 10 years old who are learning
 // programming. It provides a minimalist API to integrate AI capabilities into
@@ -15,9 +15,11 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/goplus/spx/v2/pkg/spx"
 )
 
-// GopPackage indicates that this package is a Go+ package.
+// GopPackage indicates that this package is a XGo package.
 const GopPackage = true
 
 // Break is a special error that signals the AI interaction should be terminated.
@@ -34,6 +36,7 @@ type Player struct {
 	commands              sync.Map // map[string]commandInfo
 	errorHandler          func(error)
 	history               []Turn
+	archivedHistory       string
 	previousCommandResult *CommandResult
 }
 
@@ -100,12 +103,14 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 // on command execution results until the AI signals completion (no command) or
 // an [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
-	p.taskRunner()(func() { p.think(msg, context) })
+	spx.ExecuteNative(func(owner any) {
+		p.think(owner, msg, context)
+	})
 }
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
-func (p *Player) think(msg string, context map[string]any) {
+func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout    = 15 * time.Second      // Timeout for each transport call.
 		maxTransportRetries = 3                     // Maximum number of retries for each AI transport call.
@@ -126,6 +131,7 @@ func (p *Player) think(msg string, context map[string]any) {
 		currentRole := p.role
 		currentRoleContext := p.roleContext
 		currentHistory := slices.Clone(p.history)
+		currentArchivedHistory := p.archivedHistory
 		var currentCommandSpecs []CommandSpec
 		p.commands.Range(func(k, v any) bool {
 			if info, ok := v.(commandInfo); ok {
@@ -143,6 +149,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			Role:                  currentRole,
 			RoleContext:           currentRoleContext,
 			History:               currentHistory,
+			ArchivedHistory:       currentArchivedHistory,
 			CommandSpecs:          currentCommandSpecs,
 			KnowledgeBase:         currentKnowledgeBase,
 			PreviousCommandResult: currentPrevCmdResult,
@@ -176,7 +183,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			}
 		}
 		if lastErr != nil {
-			p.handleError(fmt.Errorf("ai interaction failed after %d transport retries: %w", maxTransportRetries, lastErr))
+			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport retries: %w", maxTransportRetries, lastErr))
 			return
 		}
 
@@ -194,7 +201,7 @@ func (p *Player) think(msg string, context map[string]any) {
 			p.mu.Unlock()
 
 			if !hasExecutedAtLeastOneCommandInThisCall {
-				p.handleError(errors.New("ai did not provide an initial command or any command during the interaction"))
+				p.handleError(owner, errors.New("ai did not provide an initial command or any command during the interaction"))
 			}
 			return
 		}
@@ -204,14 +211,14 @@ func (p *Player) think(msg string, context map[string]any) {
 		if cmdInfoIface, ok := p.commands.Load(resp.CommandName); ok {
 			cmdInfo, ok := cmdInfoIface.(commandInfo)
 			if !ok {
-				p.handleError(fmt.Errorf("invalid type found in command map for %s", resp.CommandName))
+				p.handleError(owner, fmt.Errorf("invalid type found in command map for %s", resp.CommandName))
 				return
 			}
 
 			var err error
-			executedResult, err = callCommandHandler(cmdInfo, resp.CommandArgs)
+			executedResult, err = callCommandHandler(owner, cmdInfo, resp.CommandArgs)
 			if err != nil {
-				p.handleError(fmt.Errorf("failed to execute command %s: %w", resp.CommandName, err))
+				p.handleError(owner, fmt.Errorf("failed to execute command %s: %w", resp.CommandName, err))
 				return
 			}
 		} else {
@@ -235,6 +242,17 @@ func (p *Player) think(msg string, context map[string]any) {
 		}
 		p.mu.Lock()
 		p.history = append(p.history, currentTurn)
+
+		// Handle archived history if present in response.
+		if resp.ArchivedHistory != nil {
+			p.archivedHistory = resp.ArchivedHistory.Content
+
+			// Remove the archived turns from the beginning of history.
+			if resp.ArchivedHistory.TurnCount > 0 && len(p.history) >= resp.ArchivedHistory.TurnCount {
+				p.history = p.history[resp.ArchivedHistory.TurnCount:]
+			}
+		}
+
 		p.previousCommandResult = executedResult
 		p.mu.Unlock()
 
@@ -265,13 +283,15 @@ func (p *Player) OnErr__1(handler func()) {
 
 // handleError processes errors that occur during AI interactions. It uses the
 // registered error handler if available, otherwise falls back to a default one.
-func (p *Player) handleError(err error) {
+func (p *Player) handleError(owner any, err error) {
 	p.mu.RLock()
 	handler := p.errorHandler
 	p.mu.RUnlock()
 
 	if handler != nil {
-		handler(err)
+		spx.Execute(owner, func(owner any) {
+			handler(err)
+		})
 		return
 	}
 

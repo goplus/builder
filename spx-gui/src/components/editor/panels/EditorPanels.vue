@@ -1,14 +1,25 @@
 <template>
   <div v-show="running.mode !== 'debug'" class="editor-panels">
-    <UICard class="main">
+    <UICard
+      v-radar="{ name: 'Sprites and sounds panel', desc: 'Panel containing sprites and sounds for the project' }"
+      class="main"
+    >
       <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
       <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
     </UICard>
-    <UICard class="sider">
+    <UICard v-radar="{ name: 'Stage panel', desc: 'Panel for stage of the project' }" class="sider">
       <StagePanel></StagePanel>
     </UICard>
   </div>
-  <ConsolePanel v-show="running.mode === 'debug'" class="console-panel" />
+  <ConsolePanel
+    v-show="running.mode === 'debug'"
+    v-radar="{
+      name: 'Console panel',
+      desc: 'Console panel showing runtime output and errors',
+      visible: running.mode === 'debug'
+    }"
+    class="console-panel"
+  />
 </template>
 
 <script setup lang="ts">

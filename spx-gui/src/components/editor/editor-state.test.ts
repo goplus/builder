@@ -9,23 +9,12 @@ import { Monitor } from '@/models/widget/monitor'
 import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import { fromText } from '@/models/common/file'
-import type { UserInfo } from '@/stores/user/signed-in'
 import type * as editing from './editing'
 
 import { EditorState, type IRouter, type Selected } from './editor-state'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
-}
-
-function mockUserInfo(name = 'user'): UserInfo {
-  return {
-    id: '123',
-    name,
-    displayName: name,
-    avatar: '',
-    advancedLibraryEnabled: false
-  }
 }
 
 function mockLocalStorage(): editing.LocalStorage {
@@ -114,11 +103,11 @@ function mockRouter() {
 function createEditorState(
   project: Project = createEmptyProject(),
   isOnline: WatchSource<boolean> = ref(true),
-  userInfo: WatchSource<UserInfo | null> = ref(mockUserInfo()),
+  signedInUsername: WatchSource<string | null> = ref('user'),
   localCacheKey: string = 'test-cache-key',
   localStorage: editing.LocalStorage = mockLocalStorage()
 ): EditorState {
-  return new EditorState(project, isOnline, userInfo, localCacheKey, localStorage)
+  return new EditorState(project, isOnline, signedInUsername, localCacheKey, localStorage)
 }
 
 describe('EditorState', () => {

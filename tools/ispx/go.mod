@@ -23,11 +23,15 @@ require (
 	github.com/goplus/canvas v0.1.0 // indirect
 	github.com/goplus/gogen v1.18.1 // indirect
 	github.com/goplus/gop v1.4.6 // indirect
+	github.com/goplus/spx/v2 v2.0.0-pre.4 // indirect
+	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
+	github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
 	github.com/qiniu/x v1.14.6 // indirect
+	github.com/realdream-ai/mathf v0.0.0-20250513071532-e55e1277a8c5 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/timandy/routine v1.1.5 // indirect
@@ -35,7 +39,7 @@ require (
 	github.com/visualfc/gid v0.3.0 // indirect
 	github.com/visualfc/goembed v0.3.2 // indirect
 	github.com/visualfc/xtype v0.2.0 // indirect
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/image v0.23.0 // indirect
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect

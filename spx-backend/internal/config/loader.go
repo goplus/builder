@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/qiniu/x/log"
@@ -22,43 +23,75 @@ func Load(logger *log.Logger) (*Config, error) {
 			Port: os.Getenv("PORT"),
 		},
 		Database: DatabaseConfig{
-			DSN: mustEnv(logger, "GOP_SPX_DSN"),
+			DSN: mustGetEnv(logger, "GOP_SPX_DSN"),
+		},
+		Sentry: SentryConfig{
+			DSN:        os.Getenv("SENTRY_DSN"),
+			SampleRate: getFloatEnv("SENTRY_SAMPLE_RATE", 1.0),
+		},
+		Redis: RedisConfig{
+			Addr:     os.Getenv("REDIS_ADDR"),
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       getIntEnv("REDIS_DB"),
+			PoolSize: getIntEnv("REDIS_POOL_SIZE"),
 		},
 		Kodo: KodoConfig{
-			AccessKey:    mustEnv(logger, "KODO_AK"),
-			SecretKey:    mustEnv(logger, "KODO_SK"),
-			Bucket:       mustEnv(logger, "KODO_BUCKET"),
-			BucketRegion: mustEnv(logger, "KODO_BUCKET_REGION"),
-			BaseURL:      mustEnv(logger, "KODO_BASE_URL"),
+			AccessKey:    mustGetEnv(logger, "KODO_AK"),
+			SecretKey:    mustGetEnv(logger, "KODO_SK"),
+			Bucket:       mustGetEnv(logger, "KODO_BUCKET"),
+			BucketRegion: mustGetEnv(logger, "KODO_BUCKET_REGION"),
+			BaseURL:      mustGetEnv(logger, "KODO_BASE_URL"),
 		},
 		Casdoor: CasdoorConfig{
-			Endpoint:         mustEnv(logger, "GOP_CASDOOR_ENDPOINT"),
-			ClientID:         mustEnv(logger, "GOP_CASDOOR_CLIENTID"),
-			ClientSecret:     mustEnv(logger, "GOP_CASDOOR_CLIENTSECRET"),
-			Certificate:      mustEnv(logger, "GOP_CASDOOR_CERTIFICATE"),
-			OrganizationName: mustEnv(logger, "GOP_CASDOOR_ORGANIZATIONNAME"),
-			ApplicationName:  mustEnv(logger, "GOP_CASDOOR_APPLICATIONNAME"),
+			Endpoint:         mustGetEnv(logger, "GOP_CASDOOR_ENDPOINT"),
+			ClientID:         mustGetEnv(logger, "GOP_CASDOOR_CLIENTID"),
+			ClientSecret:     mustGetEnv(logger, "GOP_CASDOOR_CLIENTSECRET"),
+			Certificate:      mustGetEnv(logger, "GOP_CASDOOR_CERTIFICATE"),
+			OrganizationName: mustGetEnv(logger, "GOP_CASDOOR_ORGANIZATIONNAME"),
+			ApplicationName:  mustGetEnv(logger, "GOP_CASDOOR_APPLICATIONNAME"),
 		},
 		OpenAI: OpenAIConfig{
-			APIKey:             mustEnv(logger, "OPENAI_API_KEY"),
-			APIEndpoint:        mustEnv(logger, "OPENAI_API_ENDPOINT"),
-			ModelID:            mustEnv(logger, "OPENAI_MODEL_ID"),
+			APIKey:             mustGetEnv(logger, "OPENAI_API_KEY"),
+			APIEndpoint:        mustGetEnv(logger, "OPENAI_API_ENDPOINT"),
+			ModelID:            mustGetEnv(logger, "OPENAI_MODEL_ID"),
 			PremiumAPIKey:      os.Getenv("OPENAI_PREMIUM_API_KEY"),
 			PremiumAPIEndpoint: os.Getenv("OPENAI_PREMIUM_API_ENDPOINT"),
 			PremiumModelID:     os.Getenv("OPENAI_PREMIUM_MODEL_ID"),
 		},
 		AIGC: AIGCConfig{
-			Endpoint: mustEnv(logger, "AIGC_ENDPOINT"),
+			Endpoint: mustGetEnv(logger, "AIGC_ENDPOINT"),
 		},
 	}
 	return config, nil
 }
 
-// mustEnv gets the environment variable value or exits the program.
-func mustEnv(logger *log.Logger, key string) string {
+// mustGetEnv gets the environment variable value or exits the program.
+func mustGetEnv(logger *log.Logger, key string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		logger.Fatalf("missing required environment variable: %s", key)
 	}
 	return value
+}
+
+// getIntEnv gets an integer environment variable value or returns 0 if not set.
+func getIntEnv(key string) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return 0
+	}
+	intValue, _ := strconv.Atoi(value)
+	return intValue
+}
+
+func getFloatEnv(key string, defaultValue float64) float64 {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	floatValue, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return defaultValue
+	}
+	return floatValue
 }

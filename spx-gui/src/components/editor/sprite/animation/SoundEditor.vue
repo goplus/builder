@@ -1,5 +1,6 @@
 <template>
   <UIDropdownModal
+    v-radar="{ name: 'Sound editor modal', desc: 'Modal for selecting animation sound' }"
     :title="$t(actionName)"
     style="width: 320px; max-height: 400px"
     @cancel="emit('close')"
@@ -17,18 +18,24 @@
       />
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
-          <UIBlockItem class="add-sound">
+          <UIBlockItem v-radar="{ name: 'Add sound button', desc: 'Click to add a new sound' }" class="add-sound">
             <UIIcon class="icon" type="plus" />
           </UIBlockItem>
         </template>
         <UIMenu>
-          <UIMenuItem @click="handleAddFromLocalFile">{{
-            $t({ en: 'Select local file', zh: '选择本地文件' })
+          <UIMenuItem
+            v-radar="{ name: 'Add from local file', desc: 'Click to add sound from local file' }"
+            @click="handleAddFromLocalFile"
+            >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
+          >
+          <UIMenuItem
+            v-radar="{ name: 'Add from asset library', desc: 'Click to add sound from asset library' }"
+            @click="handleAddFromAssetLibrary"
+            >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
+          >
+          <UIMenuItem v-radar="{ name: 'Record sound', desc: 'Click to record a new sound' }" @click="handleRecord">{{
+            $t({ en: 'Record', zh: '录音' })
           }}</UIMenuItem>
-          <UIMenuItem @click="handleAddFromAssetLibrary">{{
-            $t({ en: 'Choose from asset library', zh: '从素材库选择' })
-          }}</UIMenuItem>
-          <UIMenuItem @click="handleRecord">{{ $t({ en: 'Record', zh: '录音' }) }}</UIMenuItem>
         </UIMenu>
       </UIDropdown>
     </ul>

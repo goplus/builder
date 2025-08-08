@@ -4,7 +4,7 @@ import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
-import { useUser, useUserStore } from '@/stores/user'
+import { getSignedInUsername, useUser } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -17,8 +17,7 @@ const props = defineProps<{
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-const userStore = useUserStore()
-const isSignedInUser = computed(() => props.name === userStore.getSignedInUser()?.name)
+const isSignedInUser = computed(() => props.name === getSignedInUsername())
 
 const { data: user } = useUser(() => props.name)
 usePageTitle(() => {
@@ -73,7 +72,13 @@ const likesRet = useQuery(
 <template>
   <div class="user-overview">
     <CommunityCard class="card">
-      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="projectsRet" :link-to="projectsRoute">
+      <ProjectsSection
+        v-radar="{ name: 'User projects', desc: 'Section showing user\'s projects' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="projectsRet"
+        :link-to="projectsRoute"
+      >
         <template #title>
           {{
             $t({
@@ -103,7 +108,13 @@ const likesRet = useQuery(
       </ProjectsSection>
     </CommunityCard>
     <CommunityCard class="card">
-      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="likesRet" :link-to="likesRoute">
+      <ProjectsSection
+        v-radar="{ name: 'User liked projects', desc: 'Section showing projects liked by this user' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="likesRet"
+        :link-to="likesRoute"
+      >
         <template #title>
           {{
             $t({

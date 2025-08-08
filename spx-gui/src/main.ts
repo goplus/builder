@@ -14,12 +14,15 @@ import 'dayjs/locale/zh'
 import { initI18n } from './i18n'
 import App from './App.vue'
 import { initRouter } from './router'
-import { initUserStore, useUserStore } from './stores/user'
+import { initUserState, ensureAccessToken } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
 import { isCodeEditorOperation, isLSPOperation } from './utils/tracing'
 import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
+import { createRadar } from './utils/radar'
+import { createSpotlight } from './utils/spotlight'
+import { createAppState } from './utils/app-state'
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
@@ -27,8 +30,7 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 function initApiClient() {
-  const userStore = useUserStore()
-  setTokenProvider(userStore.ensureAccessToken)
+  setTokenProvider(ensureAccessToken)
 }
 
 function initSentry(app: VueApp<Element>, router: Router) {
@@ -62,18 +64,19 @@ function initSentry(app: VueApp<Element>, router: Router) {
 async function initApp() {
   const app = createApp(App)
 
-  initUserStore(app)
+  initUserState()
   const router = initRouter(app)
   initSentry(app, router)
   initApiClient()
   initI18n(app)
   initDeveloperMode()
-
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
   })
-
   app.use(VueQueryPlugin)
+  app.use(createRadar())
+  app.use(createSpotlight())
+  app.use(createAppState())
 
   app.mount('#app')
 }

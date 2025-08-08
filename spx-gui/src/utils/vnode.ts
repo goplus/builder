@@ -19,6 +19,36 @@ export function getTextForVNode(vnode: VNode): string {
   return ''
 }
 
+function getElementForVNodeChild(child: VNodeChild): HTMLElement | null {
+  if (child == null) return null
+  if (typeof child === 'string') return null
+  if (Array.isArray(child)) {
+    for (const c of child) {
+      const element = getElementForVNodeChild(c)
+      if (element != null) return element
+    }
+    return null
+  }
+  if (typeof child === 'object' && 'el' in child) return getElementForVNode(child)
+  return null
+}
+
+export function getElementForVNode(vnode: VNode): HTMLElement | null {
+  const el = vnode.el
+  if (el instanceof HTMLElement) return el
+  const children = vnode.children
+  if (children == null) return null
+  if (typeof children === 'string') return null
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      const element = getElementForVNodeChild(child)
+      if (element != null) return element
+    }
+    return null
+  }
+  return null
+}
+
 export function useSlotText(name = 'default', trimLineBreaks = false) {
   const slots = useSlots()
   return computed(() => {
@@ -26,4 +56,11 @@ export function useSlotText(name = 'default', trimLineBreaks = false) {
     if (trimLineBreaks) text = doTrimLineBreaks(text)
     return text
   })
+}
+
+export function useChildrenWithDefault(defaultChildren: VNodeChild) {
+  const slots = useSlots()
+  return {
+    default: () => slots.default?.() || defaultChildren
+  }
 }

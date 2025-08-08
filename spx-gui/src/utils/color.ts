@@ -115,6 +115,31 @@ export function rgba2builderHSBA(rgba: [r: number, g: number, b: number, a: numb
   return [...rgb2builderHSB([r, g, b]), alpha100]
 }
 
+/**
+ * Converts a hex color string to RGB.
+ * Supports formats: #RRGGBB (with or without the leading #).
+ */
+export function hex2rgb(hex: string): RGB {
+  const [r, g, b] = hex2rgba(hex)
+  return [r, g, b]
+}
+
+/**
+ * Converts a hex color string to RGBA.
+ * Supports formats: #RRGGBB and #RRGGBBAA (with or without the leading #).
+ */
+export function hex2rgba(hex: string): RGBA {
+  hex = hex.replace(/^#/, '')
+  const hex16 = parseInt(hex, 16)
+  const hasAlpah = hex.length === 8
+  let bit = hasAlpah ? 24 : 16 // 24 for RGBA, 16 for RGB
+  const r = (hex16 >> bit) & 0xff
+  const g = (hex16 >> (bit -= 8)) & 0xff
+  const b = (hex16 >> (bit -= 8)) & 0xff
+  const a255 = hasAlpah ? hex16 & 0xff : 0xff
+  return [r, g, b, a255]
+}
+
 export function builderRGB2BuilderHSB(rgb: BuilderRGB) {
   return rgb2builderHSB(rgb)
 }

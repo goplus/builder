@@ -1,10 +1,16 @@
 <template>
-  <UIEditorWidgetItem :name="widget.name" :selectable="selectable" :color="color">
+  <UIEditorWidgetItem v-radar="radarNodeMeta" :name="widget.name" :selectable="selectable" :color="color">
     <template #icon>
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="getIcon(widget)"></div>
     </template>
-    <UICornerIcon v-if="removable" type="trash" :color="color" @click="handleRemove" />
+    <UICornerIcon
+      v-if="removable"
+      v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }"
+      type="trash"
+      :color="color"
+      @click="handleRemove"
+    />
   </UIEditorWidgetItem>
 </template>
 
@@ -31,6 +37,12 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
+
+const radarNodeMeta = computed(() => {
+  const name = `Widget item "${props.widget.name}"`
+  const desc = props.selectable ? 'Click to select the widget and view more options' : ''
+  return { name, desc }
+})
 
 const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 

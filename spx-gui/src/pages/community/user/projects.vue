@@ -8,7 +8,7 @@ import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getOwnProjectEditorRoute } from '@/router'
-import { useUser, useUserStore } from '@/stores/user'
+import { getSignedInUsername, useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -19,7 +19,7 @@ const props = defineProps<{
   name: string
 }>()
 
-const isSignedInUser = computed(() => props.name === useUserStore().getSignedInUser()?.name)
+const isSignedInUser = computed(() => props.name === getSignedInUsername())
 
 const { data: user } = useUser(() => props.name)
 usePageTitle(() => {
@@ -111,7 +111,13 @@ const handleNewProject = useMessageHandle(
           }}</UISelectOption>
         </UISelect>
       </label>
-      <UIButton v-if="isSignedInUser" type="secondary" icon="plus" @click="handleNewProject">
+      <UIButton
+        v-if="isSignedInUser"
+        v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
+        type="secondary"
+        icon="plus"
+        @click="handleNewProject"
+      >
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>

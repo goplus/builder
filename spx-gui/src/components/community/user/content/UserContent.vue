@@ -5,7 +5,7 @@ import CommunityCard from '../../CommunityCard.vue'
 </script>
 
 <template>
-  <CommunityCard class="user-content">
+  <CommunityCard v-radar="{ name: 'User content', desc: 'Main content area for user pages' }" class="user-content">
     <header class="header">
       <h2 class="title">
         <slot name="title"></slot>

@@ -3,10 +3,14 @@
     :to="attachTo"
     :show="visible"
     :auto-focus="autoFocus"
+    :trap-focus="false"
     :mask-closable="maskClosable"
     @update:show="handleUpdateShow"
   >
-    <div :class="['container', `size-${size || 'medium'}`]">
+    <div
+      v-radar="radar ?? { name: 'Modal', desc: 'A modal dialog for specific purpose' }"
+      :class="['container', `size-${size || 'medium'}`]"
+    >
       <slot></slot>
     </div>
   </NModal>
@@ -14,14 +18,22 @@
 
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
+import type { RadarNodeMeta } from '@/utils/radar'
 import { useModalContainer } from '../utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
+
 defineProps<{
   size?: ModalSize
   visible?: boolean
   autoFocus?: boolean
   maskClosable?: boolean
+  /**
+   * Metadata for radar, like `v-radar`.
+   * There's issue with using `v-radar` directly on `NModal`, so we pass it by property instead and set it on the root element.
+   * TODO: Update implementation of `UIModal` to support using `v-radar` directly.
+   */
+  radar?: RadarNodeMeta
 }>()
 
 const emit = defineEmits<{

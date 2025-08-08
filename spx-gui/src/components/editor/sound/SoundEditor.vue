@@ -1,14 +1,26 @@
 <template>
   <EditorHeader>
-    <UITabs value="sound" color="sound">
-      <UITab value="sound">{{ $t({ en: 'Sound', zh: '声音' }) }}</UITab>
+    <UITabs
+      v-radar="{ name: 'Sound editor tabs', desc: 'Navigation tab for sound editing' }"
+      value="sound"
+      color="sound"
+    >
+      <UITab v-radar="{ name: 'Sound tab', desc: 'Click to switch to sound editing view' }" value="sound">{{
+        $t({ en: 'Sound', zh: '声音' })
+      }}</UITab>
     </UITabs>
   </EditorHeader>
   <div class="main">
     <div class="header">
       <div class="name">
         <AssetName>{{ sound.name }}</AssetName>
-        <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+        <UIIcon
+          v-radar="{ name: 'Rename sound', desc: 'Click to rename the sound' }"
+          class="edit-icon"
+          :title="$t({ en: 'Rename', zh: '重命名' })"
+          type="edit"
+          @click="handleNameEdit"
+        />
       </div>
       <div class="duration">
         {{ formattedTrimmedDuration || '&nbsp;' }}
@@ -37,8 +49,19 @@
       <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
       <div class="spacer" />
       <div v-if="editing" class="editing-buttons">
-        <UIButton type="boring" @click="handleResetEdit">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
-        <UIButton type="success" icon="check" :loading="handleSave.isLoading.value" @click="handleSave.fn">
+        <UIButton
+          v-radar="{ name: 'Cancel button', desc: 'Click to cancel sound editing' }"
+          type="boring"
+          @click="handleResetEdit"
+          >{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton
+        >
+        <UIButton
+          v-radar="{ name: 'Save button', desc: 'Click to save sound edits' }"
+          type="success"
+          icon="check"
+          :loading="handleSave.isLoading.value"
+          @click="handleSave.fn"
+        >
           {{ $t({ en: 'Save', zh: '保存' }) }}
         </UIButton>
       </div>
