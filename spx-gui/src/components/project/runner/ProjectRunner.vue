@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useSpxVersion } from '@/utils/utils'
 import type { Project } from '@/models/project'
-import ProjectRunnerV1 from './v1/ProjectRunnerV1.vue'
 import ProjectRunnerV2 from './v2/ProjectRunnerV2.vue'
 
 const props = defineProps<{ project: Project }>()
@@ -12,7 +10,7 @@ const emit = defineEmits<{
   exit: [code: number]
 }>()
 
-const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerV1> | InstanceType<typeof ProjectRunnerV2>>()
+const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerV2>>()
 
 function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   emit('console', type, args)
@@ -21,8 +19,6 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
 function handleExit(code: number) {
   emit('exit', code)
 }
-
-const version = useSpxVersion()
 
 defineExpose({
   async run(signal?: AbortSignal) {
@@ -38,12 +34,5 @@ defineExpose({
 </script>
 
 <template>
-  <ProjectRunnerV2
-    v-if="version === 'v2'"
-    ref="projectRunnerRef"
-    v-bind="props"
-    @console="handleConsole"
-    @exit="handleExit"
-  />
-  <ProjectRunnerV1 v-else v-bind="props" ref="projectRunnerRef" @console="handleConsole" />
+  <ProjectRunnerV2 ref="projectRunnerRef" v-bind="props" @console="handleConsole" @exit="handleExit" />
 </template>
