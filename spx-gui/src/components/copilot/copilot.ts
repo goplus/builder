@@ -429,6 +429,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If a session is already running, it will be ended first.
    */
   async startSession(topic: Topic, userMessage?: Message): Promise<void> {
+    this.open()
     this.endCurrentSession()
     const session = new Session(topic, this)
     this.currentSessionRef.value = session
@@ -455,6 +456,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If no session is running, a new session will be started with given message and topic.
    */
   addUserMessage(content: string, topic: Topic): void {
+    this.open()
     const userMessage: UserTextMessage = {
       type: 'text',
       role: 'user',
@@ -474,6 +476,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   notifyUserEvent(name: LocaleMessage, detail: string): void {
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
+    this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',

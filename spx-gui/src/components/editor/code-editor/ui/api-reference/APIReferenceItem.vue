@@ -7,7 +7,7 @@ import { type Action, setDdiDragData } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
-import { ChatExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
+import { CopilotExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import HoverCard from '../hover/HoverCard.vue'
 import HoverCardContent from '../hover/HoverCardContent.vue'
@@ -50,7 +50,7 @@ const hoverCardActions = computed<Action[]>(() => {
       command: builtInCommandCopilotExplain,
       arguments: [
         {
-          kind: ChatExplainKind.Definition,
+          kind: CopilotExplainKind.Definition,
           overview: props.item.overview,
           definition: props.item.definition
         }

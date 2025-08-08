@@ -66,8 +66,6 @@ export class Tutorial {
         },
         'Now the course has just started.'
       )
-
-      this.copilot.open()
     } catch (error) {
       console.error('Failed to start course:', error)
       this.endCurrentCourse()
