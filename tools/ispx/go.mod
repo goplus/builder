@@ -23,7 +23,7 @@ require (
 	github.com/goplus/canvas v0.1.0 // indirect
 	github.com/goplus/gogen v1.18.1 // indirect
 	github.com/goplus/gop v1.4.6 // indirect
-	github.com/goplus/spx/v2 v2.0.0-pre.3 // indirect
+	github.com/goplus/spx/v2 v2.0.0-pre.4 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
