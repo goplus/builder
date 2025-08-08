@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onUnmounted } from 'vue'
+import { onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { provideTutorial, Tutorial } from './tutorial'
@@ -7,6 +7,7 @@ import { provideTutorial, Tutorial } from './tutorial'
 import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
+import TutorialStateIndicator from './TutorialStateIndicator.vue'
 
 const copilot = useCopilot()
 const router = useRouter()
@@ -34,6 +35,17 @@ onUnmounted(
 )
 
 provideTutorial(tutorial)
+
+const stopWatch = watch(
+  () => copilot.currentSession,
+  (session) => {
+    if (session && tutorial.currentCourse && tutorial.currentSeries) {
+      // TODO: Cannot persist stateIndicator, it gets lost when the course restarts
+      session.topic.stateIndicator = TutorialStateIndicator
+      stopWatch()
+    }
+  }
+)
 </script>
 
 <template>

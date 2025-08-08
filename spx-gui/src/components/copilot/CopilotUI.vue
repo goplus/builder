@@ -103,8 +103,8 @@ watch(
 watch(
   () => copilot.active,
   async (active) => {
-    const { right, bottom, state } = triggerPosition.value
-    if (!active && state === State.Move) {
+    if (!active) {
+      const { right, bottom, state } = triggerPosition.value
       const { panelW } = fixResizeNullable()
       triggerPosition.value = {
         right: right + panelW / 2,
@@ -112,7 +112,11 @@ watch(
         state
       }
       await timeout(0)
-      snapAnimatedToSide(triggerPosition.value)
+      if (state === State.Move) {
+        snapAnimatedToSide(triggerPosition.value)
+      } else {
+        refreshTriggerPosition(triggerPosition.value)
+      }
     }
   }
 )
@@ -268,21 +272,17 @@ useDraggable(headerRef, {
 
 onMounted(async () => {
   // Fix the position of elements with state State.Move after refresh.
-  await untilNotNull(() => triggerWidth.value)
-  const { triggerW } = fixResizeNullable()
-  let statePosition = triggerPosition.value
-  if (statePosition.state === State.Move) {
-    statePosition = snapToSide(statePosition, triggerW)
-    triggerPosition.value = panelPosition.value = statePosition
-  }
-
-  statePosition = panelPosition.value
-  if (statePosition.state === State.Move) {
-    statePosition = snapToSide(statePosition, triggerW)
-    triggerPosition.value = statePosition
-    panelPosition.value = {
-      ...panelPosition.value,
-      state: statePosition.state
+  if (copilot.active) {
+    if (panelPosition.value.state === State.Move) {
+      triggerPosition.value = panelPosition.value
+    }
+  } else {
+    await untilNotNull(() => triggerWidth.value)
+    const { triggerW } = fixResizeNullable()
+    let statePosition = triggerPosition.value
+    if (statePosition.state === State.Move) {
+      statePosition = snapToSide(statePosition, triggerW)
+      triggerPosition.value = panelPosition.value = statePosition
     }
   }
 })
