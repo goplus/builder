@@ -413,7 +413,6 @@ onMounted(async () => {
 
   cursor: pointer;
   border-radius: 16px 0px 0px 16px;
-  border: 1px solid #fff;
   background: #c390ff;
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
   box-shadow: 0 4px 8px 0px rgba(0, 0, 0, 0.08);
