@@ -14,7 +14,7 @@ import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
-import * as toolUse from './custom-elements/ToolUse.vue'
+import * as toolUse from './custom-elements/ToolUse'
 import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
@@ -192,12 +192,28 @@ class UIContextProvider implements ICopilotContextProvider {
     private i18n: I18n
   ) {}
 
-  private stringifyNode(node: RadarNodeInfo): string {
-    const children = this.stringifyNodes(node.getChildren())
+  private serializeNode(attrs: Record<string, string>, childrenStr: string) {
     // TODO: use XMLSerializer?
-    if (children.trim() === '')
-      return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}"/>`
-    return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}">${children}</node>`
+    const attrsStr = Object.entries(attrs)
+      .filter(([_, value]) => value != null && value !== '')
+      .map(([key, value]) => `${key}="${escapeHTML(value)}"`)
+      .join(' ')
+    if (childrenStr.trim() === '') {
+      return `<n ${attrsStr}/>`
+    }
+    return `<n ${attrsStr}>${childrenStr}</n>`
+  }
+
+  private stringifyNode(node: RadarNodeInfo): string {
+    const childrenStr = this.stringifyNodes(node.getChildren())
+    return this.serializeNode(
+      {
+        name: node.name,
+        id: node.id,
+        desc: node.desc
+      },
+      childrenStr
+    )
   }
 
   private stringifyNodes(node: RadarNodeInfo[]): string {
@@ -214,12 +230,13 @@ class UIContextProvider implements ICopilotContextProvider {
 
 Current UI language: ${lang}.
 
-Current UI structure:
+Current UI structure (\`n\` for \`node\`):
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
-DO NOT make up appearance or position (e.g., left/right/top/bottom) of elements, unless explicitly mentioned in the description.
-`
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.
+
+If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
 }
 
