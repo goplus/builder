@@ -1,3 +1,7 @@
+<script lang="ts">
+export const name = 'tutorial-state-indicator'
+</script>
+
 <script lang="ts" setup>
 import { computed } from 'vue'
 

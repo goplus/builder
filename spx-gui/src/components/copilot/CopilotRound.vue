@@ -69,7 +69,7 @@ const resultContent = computed<string | null>(() => {
             fill="#EF4149"
           />
         </svg>
-        {{ $t(round.error!.userMessage) }}
+        {{ $t(round.error!) }}
       </div>
       <button v-if="retryable" class="retry" @click="handleRetry">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
