@@ -207,12 +207,17 @@ export async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 
-  const url = await (isInlineable(file) ? inlineFile(file) : uploadToKodo(file, signal))
+  const url = await ((await isInlineable(file)) ? inlineFile(file) : uploadToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }
 
-const isInlineable = isText
+async function isInlineable(file: File) {
+  const maxInlineSize = 10 * 1024 // 10 KB threshold
+  if (!isText(file)) return false
+  const arrayBuffer = await file.arrayBuffer()
+  return arrayBuffer.byteLength <= maxInlineSize
+}
 
 async function inlineFile(file: File): Promise<UniversalUrl> {
   let mimeType, content
