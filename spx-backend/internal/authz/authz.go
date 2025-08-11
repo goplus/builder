@@ -24,10 +24,8 @@ func New(db *gorm.DB, pdp PolicyDecisionPoint, quotaTracker QuotaTracker) *Autho
 	}
 }
 
-// Middleware returns a middleware function that computes user capabilities
-// and injects them into the request context. It follows a soft fail strategy
-// where capability computation errors are logged but do not prevent the
-// request from proceeding.
+// Middleware returns a middleware function that computes user capabilities and
+// injects them into the request context.
 func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,10 +40,11 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 			if mUser, ok := authn.UserFromContext(ctx); ok {
 				caps, err := a.pdp.ComputeUserCapabilities(ctx, mUser)
 				if err != nil {
-					logger.Printf("failed to compute user capabilities: %v", err)
-				} else {
-					ctx = NewContextWithUserCapabilities(ctx, caps)
+					logger.Printf("authorization system error: %v", err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
 				}
+				ctx = NewContextWithUserCapabilities(ctx, caps)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
