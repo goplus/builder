@@ -51,23 +51,14 @@
         @mousemove="handleMouseMove"
       ></canvas>
       
-      <!-- 临时直线预览 -->
-      <svg 
-        v-if="isDrawingLine && startPoint"
-        class="preview-layer"
-        :width="canvasWidth" 
-        :height="canvasHeight"
-      >
-        <line 
-          :x1="startPoint.x" 
-          :y1="startPoint.y" 
-          :x2="previewPoint.x" 
-          :y2="previewPoint.y" 
-          stroke="#2196f3" 
-          stroke-width="3" 
-          stroke-dasharray="5,5"
-        />
-      </svg>
+      <!-- 直线绘制组件 -->
+      <DrawLine
+        ref="drawLineRef"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+        :is-active="currentTool === 'line'"
+        @line-created="handleLineCreated"
+      />
     </div>
   </div>
 </template>
@@ -75,6 +66,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import paper from 'paper'
+import DrawLine from './components/draw_line.vue'
 
 // 工具类型
 type ToolType = 'line' | 'select'
@@ -98,9 +90,7 @@ const canvasHeight = ref<number>(600)
 
 // 工具状态
 const currentTool = ref<ToolType>('line')
-const isDrawingLine = ref<boolean>(false)
-const startPoint = ref<Point | null>(null)
-const previewPoint = ref<Point>({ x: 0, y: 0 })
+const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 
 // 状态管理
 const isDragging = ref<boolean>(false)
@@ -128,9 +118,19 @@ const initPaper = (): void => {
 // 选择工具
 const selectTool = (tool: ToolType): void => {
   currentTool.value = tool
-  isDrawingLine.value = false
-  startPoint.value = null
+  
+  // 重置直线绘制状态
+  if (drawLineRef.value) {
+    drawLineRef.value.resetDrawing()
+  }
+  
   hideControlPoints()
+}
+
+// 处理直线创建
+const handleLineCreated = (line: paper.Path): void => {
+  allPaths.value.push(line)
+  paper.view.update()
 }
 
 // 创建控制点
@@ -338,46 +338,9 @@ const handleCanvasClick = (event: MouseEvent): void => {
   )
   
   if (currentTool.value === 'line') {
-    if (!isDrawingLine.value) {
-      // 开始画线
-      isDrawingLine.value = true
-      startPoint.value = { x: point.x, y: point.y }
-    } else {
-      // 完成画线 - 创建路径而不是直线，便于后续转换为曲线
-      const line = new paper.Path()
-      line.add(new paper.Point(startPoint.value!.x, startPoint.value!.y))
-      line.add(point)
-      line.strokeColor = new paper.Color('#2196f3')
-      line.strokeWidth = 3
-      
-      // 设置线段连接方式为圆滑
-      line.strokeCap = 'round'
-      line.strokeJoin = 'round'
-      
-      // 添加悬停效果
-      line.onMouseEnter = () => {
-        if (currentTool.value === 'select') {
-          line.strokeColor = new paper.Color('#1976d2')
-          line.strokeWidth = 4
-          paper.view.update()
-        }
-      }
-      
-      line.onMouseLeave = () => {
-        if (currentTool.value === 'select') {
-          line.strokeColor = new paper.Color('#2196f3')
-          line.strokeWidth = 3
-          paper.view.update()
-        }
-      }
-      
-      allPaths.value.push(line)
-      
-      // 重置状态
-      isDrawingLine.value = false
-      startPoint.value = null
-      
-      paper.view.update()
+    // 委托给 DrawLine 组件处理
+    if (drawLineRef.value) {
+      drawLineRef.value.handleCanvasClick({ x: point.x, y: point.y })
     }
   } else if (currentTool.value === 'select') {
     // 检查是否点击了控制点（优先级最高）
@@ -411,9 +374,9 @@ const handleMouseMove = (event: MouseEvent): void => {
     event.clientY - rect.top
   )
   
-  // 更新预览线条
-  if (isDrawingLine.value && startPoint.value) {
-    previewPoint.value = { x: point.x, y: point.y }
+  // 委托给 DrawLine 组件处理预览
+  if (currentTool.value === 'line' && drawLineRef.value) {
+    drawLineRef.value.handleMouseMove({ x: point.x, y: point.y })
   }
   
   // 拖拽控制点
@@ -453,9 +416,10 @@ const clearCanvas = (): void => {
   })
   allPaths.value = []
   
-  // 重置状态
-  isDrawingLine.value = false
-  startPoint.value = null
+  // 重置直线绘制状态
+  if (drawLineRef.value) {
+    drawLineRef.value.resetDrawing()
+  }
   
   paper.project.clear()
   
@@ -476,8 +440,9 @@ onMounted(() => {
   const handleKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
       hideControlPoints()
-      isDrawingLine.value = false
-      startPoint.value = null
+      if (drawLineRef.value) {
+        drawLineRef.value.resetDrawing()
+      }
       paper.view.update()
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
       // 删除选中的路径
@@ -608,14 +573,7 @@ canvas:hover {
   border-color: #2196f3;
 }
 
-/* SVG 预览层 */
-.preview-layer {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  pointer-events: none;
-  z-index: 2;
-}
+
 
 /* 响应式设计 */
 @media (max-width: 768px) {
