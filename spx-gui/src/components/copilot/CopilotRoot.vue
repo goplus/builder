@@ -1,7 +1,16 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { inject, onBeforeUnmount, onMounted, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
+import {
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  provide,
+  watch,
+  type ComputedRef,
+  type InjectionKey
+} from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
@@ -22,7 +31,6 @@ import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
-import { LocalStorageSessionStorage } from './copilot-storage'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -309,7 +317,8 @@ const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const retriever = new Retriever(editorCtxRef)
-const copilot = new Copilot(new LocalStorageSessionStorage())
+const copilot = new Copilot()
+onUnmounted(() => copilot.dispose())
 
 copilot.registerTool(listProjectsTool)
 copilot.registerTool(new GetProjectMetadataTool(retriever))
@@ -399,12 +408,18 @@ watch(
 
 provide(copilotInjectionKey, copilot)
 
-// Handle copilot session storage
-watch(
-  () => copilot.currentSession?.currentRound?.resultMessages.length,
-  () => copilot.saveSession()
-)
-onMounted(() => copilot.loadSessionFromStorage())
+onMounted(() => {
+  const sessionLocalStorageKey = 'spx-gui-copilot-session'
+  copilot.syncSessionWith({
+    set(value: string | null) {
+      if (value == null) localStorage.removeItem(sessionLocalStorageKey)
+      else localStorage.setItem(sessionLocalStorageKey, value)
+    },
+    get() {
+      return localStorage.getItem(sessionLocalStorageKey)
+    }
+  })
+})
 </script>
 
 <template>

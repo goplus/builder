@@ -2,13 +2,12 @@ import { inject, provide } from 'vue'
 import type { InjectionKey } from 'vue'
 import type { Router } from 'vue-router'
 
-import { timeout } from '@/utils/utils'
+import { timeout, localStorageRef } from '@/utils/utils'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
-import TutorialStateIndicator from './TutorialStateIndicator.vue'
-import { localStorageRef } from '@/utils/utils'
+import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -113,7 +112,7 @@ You are now helping the user to learn the course: ${course.title}.
 </course>`,
       reactToEvents: true,
       endable: false,
-      stateIndicator: TutorialStateIndicator
+      stateIndicator: tutorialStateIndicatorName
     }
   }
 
