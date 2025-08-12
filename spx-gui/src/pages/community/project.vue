@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception/index'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -13,6 +13,8 @@ import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, isSignedIn, getSignedInUsername } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
+import RecordingShareModal from '@/components/project/RecordingShareModal.vue'
+import { useFileUrl } from '@/utils/file'
 import {
   UIIcon,
   UILoading,
@@ -100,10 +102,12 @@ const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: p
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 const isFullScreenRunning = ref(false)
+const showRecordingModal = ref(false)
 const isRecording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const isScreenshotModalVisible = ref(false)
 const screenshotDataUrl = ref<string | undefined>()
+const [thumbnailUrl] = useFileUrl(() => project.value?.thumbnail)
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -263,35 +267,9 @@ function handleCloseScreenshotModal() {
   isScreenshotModalVisible.value = false
 }
 
-const handleRecord = useMessageHandle(
-  async () => {
-    if (isRecording.value) {
-      if (mediaRecorder.value) {
-        mediaRecorder.value.stop()
-      }
-      isRecording.value = false
-    } else {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
-      const recorder = new MediaRecorder(stream)
-      const chunks: Blob[] = []
-      
-      recorder.ondataavailable = (e) => chunks.push(e.data)
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.download = `${props.name}-recording.webm`
-        link.href = url
-        link.click()
-      }
-      
-      recorder.start()
-      mediaRecorder.value = recorder
-      isRecording.value = true
-    }
-  },
-  { en: 'Recording failed', zh: '录屏失败' }
-)
+const handleRecord = () => {
+  showRecordingModal.value = true
+}
 
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
@@ -367,41 +345,42 @@ const remixesRet = useQuery(
         />
         <div class="ops">
           <UIButton
-  v-if="runnerState === 'running'"
-  v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
-  type="boring"
-  :loading="handleScreenshot.isLoading.value"
-  @click="handleScreenshot.fn"
->
-  <template #icon>
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
-      <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-      <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5" fill="none"/>
-    </svg>
-  </template>
-  {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
-</UIButton>
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+            type="boring"
+            :loading="handleScreenshot.isLoading.value"
+            @click="handleScreenshot.fn"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path
+                  d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                />
+              </svg>
+            </template>
+            {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+          </UIButton>
 
-<UIButton
-  v-if="runnerState === 'running'"
-  v-radar="{ name: 'Record button', desc: 'Click to start/stop recording' }"
-  type="boring"
-  :loading="handleRecord.isLoading.value"
-  @click="handleRecord.fn"
->
-  <template #icon>
-    <svg v-if="!isRecording" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-      <circle cx="8" cy="8" r="2" fill="currentColor"/>
-      <circle cx="12" cy="6" r="1" fill="currentColor"/>
-    </svg>
-    <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>
-    </svg>
-  </template>
-  {{ $t({ en: isRecording ? 'Stop' : 'Record', zh: isRecording ? '停止' : '录屏' }) }}
-</UIButton>
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Record button', desc: 'Click to start recording' }"
+            type="boring"
+            @click="handleRecord"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" fill="currentColor" />
+                <circle cx="12" cy="6" r="1" fill="currentColor" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Record', zh: '录屏' }) }}
+          </UIButton>
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
@@ -599,6 +578,16 @@ const remixesRet = useQuery(
       </template>
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
+    <RecordingShareModal
+      v-if="project != null"
+      :visible="showRecordingModal"
+      :project-name="project.name"
+      :project-thumbnail="thumbnailUrl || undefined"
+      @cancelled="showRecordingModal = false"
+      @resolved="showRecordingModal = false"
+      @recording-started="showRecordingModal = false"
+      @recording-stopped="showRecordingModal = true"
+    />
   </CenteredWrapper>
   
   <!-- 截屏分享弹窗 -->
