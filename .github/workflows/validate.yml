@@ -12,7 +12,7 @@ jobs:
   spx-gui-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Enable Corepack
         run: corepack enable
@@ -64,7 +64,7 @@ jobs:
   spx-backend-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Go & XGo
         uses: goplus/setup-xgo@v1
@@ -79,7 +79,7 @@ jobs:
   tools-ai-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
