@@ -74,6 +74,7 @@ type ToolType = 'line' | 'select'
 // TypeScript 接口定义
 interface ExtendedItem extends paper.Item {
   isControlPoint?: boolean
+  isTemporaryControlPoint?: boolean
   segmentIndex?: number
   parentPath?: paper.Path
 }
@@ -96,6 +97,18 @@ const isDragging = ref<boolean>(false)
 const selectedPoint = ref<ExtendedItem | null>(null)
 const allPaths = ref<paper.Path[]>([])
 const controlPoints = ref<ExtendedItem[]>([])
+const mouseDownPath = ref<paper.Path | null>(null)
+const mouseDownPos = ref<paper.Point | null>(null)
+
+// 选中路径（独占选择）
+const selectPathExclusive = (path: paper.Path | null): void => {
+  allPaths.value.forEach((p: paper.Path) => {
+    p.selected = false
+  })
+  if (path) {
+    path.selected = true
+  }
+}
 
 // 初始化 Paper.js
 const initPaper = (): void => {
@@ -163,6 +176,7 @@ const createControlPoint = (position: paper.Point): ExtendedItem => {
 // 显示路径的控制点
 const showControlPoints = (path: paper.Path): void => {
   hideControlPoints()
+  selectPathExclusive(path)
   
   if (path && path.segments) {
     path.segments.forEach((segment: paper.Segment, index: number) => {
@@ -182,6 +196,10 @@ const hideControlPoints = (): void => {
     }
   })
   controlPoints.value = []
+  // 同时取消路径高亮
+  allPaths.value.forEach((p: paper.Path) => {
+    p.selected = false
+  })
 }
 
 // 检测点击的路径
@@ -287,20 +305,26 @@ const calculateLocalHandles = (
   }
 }
 
-// 在路径上添加新的控制点
-const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): void => {
+// 在路径上添加新的控制点，并返回对应的控制点实例
+const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): ExtendedItem | null => {
   const location = path.getNearestLocation(clickPoint)
   if (location) {
     // 在最近的位置分割路径，创建新的段点
-    const newSegment = path.insert(location.index + 1, location.point)
-    
+    const insertIndex = location.index + 1
+    path.insert(insertIndex, location.point)
+
     // 局部平滑新添加的点及其相邻区域
-    smoothLocalSegments(path, location.index + 1)
-    
+    smoothLocalSegments(path, insertIndex)
+
     // 重新显示控制点
     showControlPoints(path)
+    
+    // 返回新创建段点对应的控制点实例
+    const created = controlPoints.value.find((p: ExtendedItem) => p.parentPath === path && p.segmentIndex === insertIndex) || null
     paper.view.update()
+    return created
   }
+  return null
 }
 
 // 鼠标按下事件（用于开始拖拽控制点）
@@ -320,9 +344,17 @@ const handleMouseDown = (event: MouseEvent): void => {
   if (controlPoint) {
     isDragging.value = true
     selectedPoint.value = controlPoint
-    // 阻止事件冒泡，避免触发 click 事件
-    event.preventDefault()
-    event.stopPropagation()
+    return
+  }
+
+  // 若未点到控制点，则检测是否按在某个路径上（不立即创建临时点，等拖拽阈值触发）
+  const clickedPath = getPathAtPoint(point)
+  if (clickedPath) {
+    mouseDownPath.value = clickedPath
+    mouseDownPos.value = point
+  } else {
+    mouseDownPath.value = null
+    mouseDownPos.value = null
   }
 }
 
@@ -352,8 +384,9 @@ const handleCanvasClick = (event: MouseEvent): void => {
     // 检查是否点击了现有路径
     const clickedPath = getPathAtPoint(point)
     if (clickedPath) {
-      // 直接在点击位置添加控制点
-      addControlPointOnPath(clickedPath, point)
+      // 仅选中并显示端点（不新增控制点）
+      showControlPoints(clickedPath)
+      paper.view.update()
       return
     }
     
@@ -378,6 +411,27 @@ const handleMouseMove = (event: MouseEvent): void => {
     drawLineRef.value.handleMouseMove({ x: point.x, y: point.y })
   }
   
+  // 若按在路径上且尚未开始拖拽，当移动超过阈值时，创建临时控制点并进入拖拽
+  if (
+    currentTool.value === 'select' &&
+    !isDragging.value &&
+    mouseDownPath.value &&
+    mouseDownPos.value
+  ) {
+    const dx = point.x - mouseDownPos.value.x
+    const dy = point.y - mouseDownPos.value.y
+    const dist2 = dx * dx + dy * dy
+    const threshold2 = 3 * 3
+    if (dist2 >= threshold2) {
+      const tempPoint = addControlPointOnPath(mouseDownPath.value, mouseDownPos.value)
+      if (tempPoint) {
+        tempPoint.isTemporaryControlPoint = true
+        isDragging.value = true
+        selectedPoint.value = tempPoint
+      }
+    }
+  }
+
   // 拖拽控制点
   if (isDragging.value && selectedPoint.value) {
     selectedPoint.value.position = point
@@ -399,9 +453,31 @@ const handleMouseMove = (event: MouseEvent): void => {
 
 // 鼠标释放事件（用于结束拖拽）
 const handleMouseUp = (): void => {
+  const prevSelected = selectedPoint.value
   if (isDragging.value) {
     isDragging.value = false
     selectedPoint.value = null
+  }
+
+  // 清理按下状态
+  const prevMouseDownPath = mouseDownPath.value
+  mouseDownPath.value = null
+  mouseDownPos.value = null
+
+  // 若为临时控制点，则在松开时删除该控制点，并刷新端点显示
+  if (prevSelected && (prevSelected as ExtendedItem).isTemporaryControlPoint) {
+    if (prevSelected.parent) {
+      prevSelected.remove()
+    }
+    controlPoints.value = controlPoints.value.filter((p: ExtendedItem) => p !== prevSelected)
+
+    // 重新显示该路径的所有端点（包含新插入的段点）
+    if (prevSelected.parentPath) {
+      showControlPoints(prevSelected.parentPath)
+    } else if (prevMouseDownPath) {
+      showControlPoints(prevMouseDownPath)
+    }
+    paper.view.update()
   }
 }
 
