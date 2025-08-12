@@ -85,6 +85,7 @@ const handleCanvasClick = (point: Point): void => {
     // 开始画线
     isDrawing.value = true
     startPoint.value = { x: point.x, y: point.y }
+    previewPoint.value = { x: point.x, y: point.y }
   } else {
     // 完成画线
     const line = createLine(startPoint.value!, point)

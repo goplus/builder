@@ -91,7 +91,6 @@ const canvasHeight = ref<number>(600)
 // 工具状态
 const currentTool = ref<ToolType>('line')
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
-
 // 状态管理
 const isDragging = ref<boolean>(false)
 const selectedPoint = ref<ExtendedItem | null>(null)
@@ -108,7 +107,7 @@ const initPaper = (): void => {
   const background = new paper.Path.Rectangle({
     point: [0, 0],
     size: [canvasWidth.value, canvasHeight.value],
-    fillColor: '#ffffff'
+    fillColor: 'transparent'
   })
   
   // 使用 update() 替代 draw()
@@ -427,7 +426,7 @@ const clearCanvas = (): void => {
   const background = new paper.Path.Rectangle({
     point: [0, 0],
     size: [canvasWidth.value, canvasHeight.value],
-    fillColor: '#ffffff'
+    fillColor: 'transparent'
   })
   
   paper.view.update()
@@ -561,9 +560,8 @@ onMounted(() => {
 }
 
 canvas {
-  border: 2px solid #ddd;
   border-radius: 8px;
-  background-color: white;
+  background-color: transparent;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 1;
