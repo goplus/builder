@@ -18,7 +18,6 @@ const props = defineProps<Props>()
 // Emits
 interface Emits {
   (e: 'path-created', path: paper.Path): void
-  (e: 'circle-created', circle: paper.Path): void
 }
 
 const emit = defineEmits<Emits>()

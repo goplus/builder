@@ -80,7 +80,6 @@
         :canvas-height="canvasHeight"
         :is-active="currentTool === 'brush'"
         @path-created="handlePathCreated"
-        @circle-created="handleCircleCreated"
       />
     </div>
   </div>
@@ -178,12 +177,6 @@ const handleLineCreated = (line: paper.Path): void => {
 // 处理笔刷路径创建
 const handlePathCreated = (path: paper.Path): void => {
   allPaths.value.push(path)
-  paper.view.update()
-}
-
-// 处理笔刷圆圈创建
-const handleCircleCreated = (circle: paper.Path): void => {
-  allPaths.value.push(circle)
   paper.view.update()
 }
 
@@ -673,12 +666,6 @@ onMounted(() => {
 
 .tool-btn:hover {
   background-color: #f8f9fa;
-  border-color: #2196f3;
-  color: #2196f3;
-}
-
-.tool-btn.active {
-  background-color: #e3f2fd;
   border-color: #2196f3;
   color: #2196f3;
 }
