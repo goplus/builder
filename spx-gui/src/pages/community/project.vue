@@ -38,6 +38,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import ScreenshotShareModal from '@/components/project/ScreenshotShareModal.vue'
 
 const props = defineProps<{
   owner: string
@@ -101,6 +102,8 @@ const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 const isFullScreenRunning = ref(false)
 const isRecording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
+const isScreenshotModalVisible = ref(false)
+const screenshotDataUrl = ref<string | undefined>()
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -249,15 +252,16 @@ const handleScreenshot = useMessageHandle(
     const canvas = document.querySelector('canvas')
     if (canvas) {
       const dataURL = canvas.toDataURL('image/png')
-      const link = document.createElement('a')
-      link.download = `${props.name}-screenshot.png`
-      link.href = dataURL
-      link.click()
+      screenshotDataUrl.value = dataURL
+      isScreenshotModalVisible.value = true
     }
   },
-  { en: 'Failed to take screenshot', zh: '截屏失败' },
-  { en: 'Screenshot saved', zh: '截屏已保存' }
+  { en: 'Failed to take screenshot', zh: '截屏失败' }
 )
+
+function handleCloseScreenshotModal() {
+  isScreenshotModalVisible.value = false
+}
 
 const handleRecord = useMessageHandle(
   async () => {
@@ -596,6 +600,14 @@ const remixesRet = useQuery(
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
   </CenteredWrapper>
+  
+  <!-- 截屏分享弹窗 -->
+  <ScreenshotShareModal
+    v-model:visible="isScreenshotModalVisible"
+    :screenshot-data-url="screenshotDataUrl"
+    :project-name="props.name"
+    @close="handleCloseScreenshotModal"
+  />
 </template>
 
 <style scoped lang="scss">
