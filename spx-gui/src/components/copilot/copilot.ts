@@ -484,6 +484,7 @@ ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
   private getTopicPrompt() {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
+    if (topic.description.trim() === '') return ''
     return `# Current topic between you and user
 
 ${topic.description}`

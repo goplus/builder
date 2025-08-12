@@ -5,9 +5,10 @@
     :img-loading="imgLoading"
     :name="backdrop.name"
     :selectable="selectable"
+    :color="color"
   >
     <CornerMenu
-      v-if="selectable && selectable.selected"
+      v-if="operable && selectable && selectable.selected"
       color="stage"
       :removable="removable"
       :item="backdrop"
@@ -28,12 +29,15 @@ import { useMessageHandle } from '@/utils/exception'
 const props = withDefaults(
   defineProps<{
     backdrop: Backdrop
+    color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
+    /** `operable: true` means the backdrop can be published & removed */
+    operable?: boolean
   }>(),
   {
+    color: 'stage',
     selectable: false,
-    removable: false
+    operable: false
   }
 )
 
@@ -51,7 +55,7 @@ const stageRef = computed(() => {
   if (stage == null) throw new Error('stage expected')
   return stage
 })
-const removable = computed(() => props.removable && stageRef.value.backdrops.length > 1)
+const removable = computed(() => stageRef.value.backdrops.length > 1)
 
 const handleRemove = useMessageHandle(
   async () => {

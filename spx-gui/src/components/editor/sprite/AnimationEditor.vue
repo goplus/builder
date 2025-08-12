@@ -19,7 +19,7 @@
     v-else
     v-radar="{ name: 'Animations management', desc: 'Managing animations of current sprite' }"
     color="sprite"
-    :add-text="$t({ en: 'Add animation', zh: '添加动画' })"
+    resource-type="animation"
     :sortable="{ list: sprite.animations }"
     @sorted="handleSorted"
   >

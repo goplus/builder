@@ -2,7 +2,7 @@
   <EditorList
     v-radar="{ name: 'Backdrops management', desc: 'Managing backdrops of stage' }"
     color="stage"
-    :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })"
+    resource-type="backdrop"
     :sortable="{ list: stage.backdrops }"
     @sorted="handleSorted"
   >
@@ -11,7 +11,7 @@
       :key="backdrop.id"
       :backdrop="backdrop"
       :selectable="{ selected: state.selected?.id === backdrop.id }"
-      removable
+      operable
       @click="handleSelect(backdrop)"
     />
     <template #add-options>

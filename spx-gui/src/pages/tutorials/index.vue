@@ -42,6 +42,7 @@
 <script setup lang="ts">
 import { sortBy } from 'lodash'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 
 import { listCourseSeries, type CourseSeries } from '@/apis/course-series'
 import { ownerAll } from '@/apis/common'
@@ -55,6 +56,11 @@ import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CourseItem from '@/components/tutorials/CourseItem.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 import { useTutorial } from '@/components/tutorials/tutorial'
+
+usePageTitle({
+  en: 'Tutorials',
+  zh: '教程'
+})
 
 const tutorial = useTutorial()
 

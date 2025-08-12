@@ -2,7 +2,7 @@
   <EditorList
     v-radar="{ name: 'Costumes management', desc: 'Managing costumes of current sprite' }"
     color="sprite"
-    :add-text="$t({ en: 'Add costume', zh: '添加造型' })"
+    resource-type="costume"
     :sortable="{ list: sprite.costumes }"
     @sorted="handleSorted"
   >
