@@ -3,6 +3,7 @@ package quota
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -15,17 +16,26 @@ const quotaTTL = 24 * time.Hour
 
 // redisQuotaTracker implements [authz.QuotaTracker] using Redis storage.
 type redisQuotaTracker struct {
-	client *redis.Client
+	client redis.Cmdable
 }
 
 // NewRedisQuotaTracker creates a new Redis-based quota tracker.
 func NewRedisQuotaTracker(cfg config.RedisConfig) authz.QuotaTracker {
-	client := redis.NewClient(&redis.Options{
-		Addr:     cfg.GetAddr(),
-		Password: cfg.Password,
-		DB:       cfg.DB,
-		PoolSize: cfg.GetPoolSize(),
-	})
+	var client redis.Cmdable
+	if cfg.IsClusterMode() {
+		client = redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs:    cfg.GetAddr(),
+			Password: cfg.Password,
+			PoolSize: cfg.GetPoolSize(),
+		})
+	} else {
+		client = redis.NewClient(&redis.Options{
+			Addr:     cfg.GetAddr()[0],
+			Password: cfg.Password,
+			DB:       cfg.DB,
+			PoolSize: cfg.GetPoolSize(),
+		})
+	}
 	return &redisQuotaTracker{client: client}
 }
 
@@ -71,5 +81,8 @@ func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, resour
 
 // Close closes the Redis connection.
 func (t *redisQuotaTracker) Close() error {
-	return t.client.Close()
+	if c, ok := t.client.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
 }
