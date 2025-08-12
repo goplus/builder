@@ -1,62 +1,115 @@
 <template>
   <UIFormModal
-    :title="$t({ en: 'Recording & Share', zh: '录屏分享' })"
+    :title="modalTitle"
     :visible="props.visible"
     :auto-focus="false"
     style="width: 500px"
-    @update:visible="emit('cancelled')"
+    @update:visible="handleModalClose"
   >
-    <!-- 项目预览区域 -->
-    <div class="preview-section">
-      <div class="project-preview">
-        <!-- 如果有录制的视频，显示视频；否则显示项目图片 -->
-        <video
-          v-if="hasRecording && recordedVideoUrl"
-          :src="recordedVideoUrl"
-          controls
-          :poster="projectThumbnail"
-          class="recorded-video"
-        >
-          您的浏览器不支持视频播放
-        </video>
+    <!-- 调试信息 - 临时添加
+    <div style="background: red; color: white; padding: 10px; margin: 10px">
+      DEBUG: currentState = {{ currentState }}
+    </div> -->
+    <!-- 录屏界面 (initial/recording状态) -->
+    <div v-if="currentState === 'initial' || currentState === 'recording'" class="recording-page">
+      <!-- 项目预览区域 -->
+      <div class="preview-section">
+        <div class="project-preview">
+          <!-- 现有的预览内容保持不变 -->
+          <img v-if="projectThumbnail" :src="projectThumbnail" alt="Project thumbnail" />
 
-        <img v-else-if="projectThumbnail" :src="projectThumbnail" alt="Project thumbnail" />
+          <div v-else class="placeholder">
+            <div class="game-icon">🎮</div>
+            <div class="project-name">{{ projectName }}</div>
+          </div>
 
-        <div v-else class="placeholder">
-          <div class="game-icon">🎮</div>
-          <div class="project-name">{{ projectName }}</div>
+          <!-- 录屏控制按钮 -->
+          <div class="record-overlay">
+            <UIButton
+              v-if="!isRecording"
+              type="primary"
+              size="large"
+              :loading="isStarting"
+              @click="handleStartRecording.fn"
+            >
+              <template #icon>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="3" fill="currentColor" />
+                </svg>
+              </template>
+              {{ $t({ en: 'Record', zh: '录屏' }) }}
+            </UIButton>
+
+            <UIButton v-else type="secondary" size="large" :loading="isStopping" @click="handleStopRecording.fn">
+              <template #icon>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect x="7" y="7" width="6" height="6" fill="currentColor" />
+                </svg>
+              </template>
+              {{ $t({ en: 'Stop Recording', zh: '停止录屏' }) }}
+            </UIButton>
+          </div>
         </div>
 
-        <!-- 录屏控制按钮 - 只在没有录制时显示 -->
-        <div v-if="!hasRecording" class="record-overlay">
-          <UIButton
-            v-if="!isRecording"
-            type="primary"
-            size="large"
-            :loading="isStarting"
-            @click="handleStartRecording.fn"
-          >
-            <template #icon>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="3" fill="currentColor" />
-              </svg>
-            </template>
-            {{ $t({ en: 'Record', zh: '录屏' }) }}
-          </UIButton>
-
-          <UIButton v-else type="secondary" size="large" :loading="isStopping" @click="handleStopRecording">
-            <template #icon>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="7" y="7" width="6" height="6" fill="currentColor" />
-              </svg>
-            </template>
-            {{ $t({ en: 'Stop Recording', zh: '停止录屏' }) }}
-          </UIButton>
+        <!-- 录屏状态显示 -->
+        <div v-if="isRecording" class="recording-status">
+          <div class="recording-indicator">
+            <div class="red-dot"></div>
+            {{ $t({ en: 'Recording...', zh: '录制中...' }) }}
+          </div>
+          <div class="recording-time">{{ formatTime(recordingTime) }}</div>
         </div>
       </div>
+      <!-- 分享平台区域 - 录屏时显示但禁用 -->
+      <div class="share-section">
+        <h4>{{ $t({ en: 'Share to Platform', zh: '分享到平台' }) }}</h4>
+        <div class="platforms">
+          <div
+            v-for="platform in platforms"
+            :key="platform.id"
+            :class="['platform-item', { disabled: isRecording || !hasRecording }]"
+            @click="isRecording ? null : handlePlatformShare(platform)"
+          >
+            <div class="platform-icon">
+              <component :is="platform.icon" />
+            </div>
+            <span class="platform-name">{{ platform.name }}</span>
+          </div>
+        </div>
 
-      <!-- 录屏完成状态显示 -->
-      <div v-if="hasRecording" class="recording-complete">
+        <!-- 提示文字 -->
+        <div v-if="isRecording" class="tip">
+          {{
+            $t({
+              en: 'Recording in progress, platforms will be available after completion',
+              zh: '录制中，完成录制后即可分享到各平台'
+            })
+          }}
+        </div>
+        <div v-else-if="!hasRecording" class="tip">
+          {{ $t({ en: 'Complete recording to share', zh: '完成录屏后即可分享到各平台' }) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 平台选择界面 (completed状态) -->
+    <div v-else-if="currentState === 'completed'" class="platform-selection-page">
+      <!-- 显示录制完成的视频 -->
+      <div class="preview-section">
+        <div class="project-preview">
+          <video
+            v-if="recordedVideoUrl"
+            :src="recordedVideoUrl"
+            controls
+            :poster="projectThumbnail"
+            class="recorded-video"
+          >
+            您的浏览器不支持视频播放
+          </video>
+        </div>
+      </div>
+      <!-- 录屏完成提示 -->
+      <div class="recording-complete">
         <div class="complete-indicator">
           <div class="green-dot"></div>
           {{ $t({ en: 'Recording Complete', zh: '录制完成' }) }}
@@ -66,78 +119,129 @@
         </div>
       </div>
 
-      <!-- 录屏状态显示 -->
-      <div v-if="isRecording" class="recording-status">
-        <div class="recording-indicator">
-          <div class="red-dot"></div>
-          {{ $t({ en: 'Recording...', zh: '录制中...' }) }}
+      <!-- 分享平台区域 -->
+      <div class="share-section">
+        <h4>{{ $t({ en: 'Share to Platform', zh: '分享到平台' }) }}</h4>
+        <div class="platforms">
+          <div
+            v-for="platform in platforms"
+            :key="platform.id"
+            class="platform-item"
+            @click="handlePlatformShare(platform)"
+          >
+            <div class="platform-icon">
+              <component :is="platform.icon" />
+            </div>
+            <span class="platform-name">{{ platform.name }}</span>
+          </div>
         </div>
-        <div class="recording-time">{{ formatTime(recordingTime) }}</div>
       </div>
     </div>
 
-    <!-- 分享平台区域 -->
-    <div class="share-section">
-      <h4>{{ $t({ en: 'Share to Platform', zh: '分享到平台' }) }}</h4>
-      <div class="platforms">
-        <div
-          v-for="platform in platforms"
-          :key="platform.id"
-          :class="['platform-item', { disabled: !hasRecording }]"
-          :title="hasRecording ? `分享到${platform.name}` : '完成录屏后才可分享'"
-          @click="handlePlatformShare(platform)"
-        >
-          <div class="platform-icon">
-            <component :is="platform.icon" />
-          </div>
-          <span class="platform-name">{{ platform.name }}</span>
-        </div>
+    <!-- 二维码界面 (qrcode状态) -->
+    <div v-else-if="currentState === 'qrcode'" class="qrcode-page">
+      <div class="qr-header">
+        <button class="back-btn" @click="handleBackToPlatforms">← {{ $t({ en: 'Back', zh: '返回' }) }}</button>
+        <h3>{{ selectedPlatform === 'qq' ? 'QQ分享' : '微信分享' }}</h3>
       </div>
 
-      <!-- 提示文字 -->
-      <div v-if="!hasRecording" class="tip">
-        {{ $t({ en: 'Complete recording to share', zh: '完成录屏后即可分享到各平台' }) }}
-      </div>
-    </div>
-    <!-- 二维码显示模态框 -->
-    <div v-if="showQRCode" class="qr-modal-overlay" @click="closeQRCode">
-      <div class="qr-modal" @click.stop>
-        <div class="qr-header">
-          <h3>{{ selectedPlatform === 'qq' ? 'QQ分享' : '微信分享' }}</h3>
-          <button class="close-btn" @click="closeQRCode">✕</button>
+      <div class="qr-content">
+        <div class="qr-code-container">
+          <img :src="qrCodeData" alt="分享二维码" class="qr-image" />
         </div>
 
-        <div class="qr-content">
-          <div class="qr-code-container">
-            <img :src="qrCodeData" alt="分享二维码" class="qr-image" />
-          </div>
+        <div class="qr-instructions">
+          <p v-if="selectedPlatform === 'qq'">
+            📱 使用QQ扫描上方二维码<br />
+            🎮 分享你的XBuilder游戏作品到QQ空间
+          </p>
+          <p v-else-if="selectedPlatform === 'wechat'">
+            📱 使用微信扫描上方二维码<br />
+            🎮 分享你的XBuilder游戏作品到微信
+          </p>
+        </div>
 
-          <div class="qr-instructions">
-            <p v-if="selectedPlatform === 'qq'">
-              📱 使用QQ扫描上方二维码<br />
-              🎮 分享你的XBuilder游戏作品到QQ空间
-            </p>
-            <p v-else-if="selectedPlatform === 'wechat'">
-              📱 使用微信扫描上方二维码<br />
-              🎮 分享你的XBuilder游戏作品到微信
-            </p>
-          </div>
-
-          <div class="qr-actions">
-            <button class="manual-download-btn" @click="handleManualDownload">📥 手动下载视频</button>
-            <button class="copy-url-btn" @click="copyShareUrl">📋 复制链接</button>
-          </div>
+        <div class="qr-actions">
+          <button class="manual-download-btn" @click="handleManualDownload">📥 手动下载视频</button>
+          <button class="copy-url-btn" @click="copyShareUrl">📋 复制链接</button>
         </div>
       </div>
     </div>
   </UIFormModal>
 </template>
-  
+
   <script setup lang="ts">
 import { ref, computed, onUnmounted, h } from 'vue'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { generateShareQRCode, type ProjectShareInfo } from '@/utils/qrcode'
+import { useI18n } from '@/utils/i18n' // 如果还没有导入的话
+
+const { t } = useI18n()
+
+const handleModalClose = (visible: boolean, reason?: string | Event) => {
+  if (!visible) {
+    // 检查关闭原因，如果是点击遮罩则阻止关闭
+    if (reason === 'mask' || (reason as any)?.type === 'click') {
+      // 阻止因点击遮罩而关闭
+      return
+    }
+
+    // 如果是录屏完成状态被关闭，重置状态
+    if (hasRecording.value) {
+      resetRecordingState()
+    }
+
+    // 只有明确的关闭动作（如点击X）才触发关闭
+    emit('cancelled')
+  }
+}
+
+// 重置录屏状态的函数
+// 重置录屏状态的函数
+const resetRecordingState = () => {
+  // 重置录屏相关状态
+  hasRecording.value = false
+  recordedVideoUrl.value = null
+  recordingTime.value = 0
+  isRecording.value = false
+  isStarting.value = false
+  isStopping.value = false
+
+  // 重置分享相关状态
+  selectedPlatform.value = null
+  qrCodeUrl.value = ''
+  qrCodeData.value = ''
+
+  // 重置页面状态到初始状态
+  currentState.value = 'initial'
+
+  // 清理计时器
+  if (recordingTimer) {
+    clearInterval(recordingTimer)
+    recordingTimer = null
+  }
+
+  // 清理媒体流
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach((track) => {
+      track.stop()
+    })
+    mediaStream.value = null
+  }
+
+  // 清理视频URL
+  if (recordedVideoUrl.value) {
+    URL.revokeObjectURL(recordedVideoUrl.value)
+  }
+
+  // 清理MediaRecorder
+  if (mediaRecorder.value) {
+    mediaRecorder.value = null
+  }
+
+  console.log('录屏状态已重置到初始状态')
+}
 
 const props = defineProps<{
   visible: boolean
@@ -176,10 +280,29 @@ let recordingTimer: number | null = null
 
 // 在现有状态后添加
 const selectedPlatform = ref<string | null>(null) // 当前选中的平台
-const showQRCode = ref(false) // 是否显示二维码
+// const showQRCode = ref(false) // 是否显示二维码
 const qrCodeUrl = ref<string>('') // 二维码对应的URL
 const qrCodeData = ref<string>('') // 二维码数据
-const mediaStream = ref<MediaStream | null>(null) // 新增：保存媒体流引用
+const mediaStream = ref<MediaStream | null>(null) // 保存媒体流引用
+// 新增：页面状态管理
+type PageState = 'initial' | 'recording' | 'completed' | 'qrcode'
+const currentState = ref<PageState>('initial')
+
+// 动态标题
+const modalTitle = computed(() => {
+  switch (currentState.value) {
+    case 'initial':
+      return t({ en: 'Recording & Share', zh: '录屏分享' })
+    case 'recording':
+      return t({ en: 'Recording...', zh: '录制中...' })
+    case 'completed':
+      return t({ en: 'Choose Platform', zh: '选择平台' })
+    case 'qrcode':
+      return selectedPlatform.value === 'qq' ? 'QQ分享' : '微信分享'
+    default:
+      return t({ en: 'Recording & Share', zh: '录屏分享' })
+  }
+})
 
 // 平台配置 - 使用简单的文字图标
 const platforms = [
@@ -246,18 +369,19 @@ const handleStartRecording = useMessageHandle(
         recordedVideoUrl.value = url
         hasRecording.value = true
 
-        // 自动下载录制的视频（保持原来的行为）
-        const link = document.createElement('a')
-        link.download = `${props.projectName}-recording.webm`
-        link.href = url
-        link.click()
+        currentState.value = 'completed'
 
-        console.log('录制完成，视频已保存，现在可以分享了')
+        // 自动下载录制的视频
+        // const link = document.createElement('a')
+        // link.download = `${props.projectName}-recording.webm`
+        // link.href = url
+        // link.click()
       }
 
       recorder.start()
       mediaRecorder.value = recorder
       isRecording.value = true
+      currentState.value = 'recording'
 
       // 新增：通知父组件录屏已开始，隐藏弹窗
       emit('recordingStarted')
@@ -535,7 +659,7 @@ const handleSocialMediaShare = async (platform: any) => {
     })
 
     qrCodeData.value = qrCodeDataUrl
-    showQRCode.value = true
+    // showQRCode.value = true
 
     console.log(`${platform.name}分享二维码已生成`)
   } catch (error) {
@@ -561,7 +685,9 @@ const handlePlatformShare = async (platform: any) => {
 
   // 处理QQ和微信平台 - 显示二维码
   if (platform.id === 'qq' || platform.id === 'wechat') {
+    selectedPlatform.value = platform.id
     await handleSocialMediaShare(platform)
+    currentState.value = 'qrcode'
     return
   }
 
@@ -593,9 +719,9 @@ const handleManualDownload = () => {
   }
 }
 
-// 关闭二维码显示
-const closeQRCode = () => {
-  showQRCode.value = false
+// 返回到平台选择页面
+const handleBackToPlatforms = () => {
+  currentState.value = 'completed'
   selectedPlatform.value = null
   qrCodeUrl.value = ''
   qrCodeData.value = ''
@@ -840,54 +966,56 @@ onUnmounted(() => {
     font-size: 14px;
   }
 }
-
-// 二维码模态框样式
-.qr-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
+// 新增：页面布局样式
+.recording-page,
+.platform-selection-page,
+.qrcode-page {
+  min-height: 300px;
 }
 
-.qr-modal {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+// 新增：二维码页面样式
+.qr-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
 
-  .qr-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .back-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px;
+    border-radius: 4px;
+    margin-right: 12px;
+
+    &:hover {
+      background: #f5f5f5;
+      color: #333;
+    }
+  }
+
+  h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.qr-content {
+  text-align: center;
+
+  .qr-code-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
     margin-bottom: 20px;
 
-    h3 {
-      margin: 0;
-      color: #333;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: #666;
-      cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-
-      &:hover {
-        color: #333;
-      }
+    .qr-image {
+      width: 200px;
+      height: 200px;
+      border-radius: 8px;
     }
   }
 }
