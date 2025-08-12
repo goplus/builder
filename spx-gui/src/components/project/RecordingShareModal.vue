@@ -99,6 +99,37 @@
         {{ $t({ en: 'Complete recording to share', zh: '完成录屏后即可分享到各平台' }) }}
       </div>
     </div>
+    <!-- 二维码显示模态框 -->
+    <div v-if="showQRCode" class="qr-modal-overlay" @click="closeQRCode">
+      <div class="qr-modal" @click.stop>
+        <div class="qr-header">
+          <h3>{{ selectedPlatform === 'qq' ? 'QQ分享' : '微信分享' }}</h3>
+          <button class="close-btn" @click="closeQRCode">✕</button>
+        </div>
+
+        <div class="qr-content">
+          <div class="qr-code-container">
+            <img :src="qrCodeData" alt="分享二维码" class="qr-image" />
+          </div>
+
+          <div class="qr-instructions">
+            <p v-if="selectedPlatform === 'qq'">
+              📱 使用QQ扫描上方二维码<br />
+              🎮 分享你的XBuilder游戏作品到QQ空间
+            </p>
+            <p v-else-if="selectedPlatform === 'wechat'">
+              📱 使用微信扫描上方二维码<br />
+              🎮 分享你的XBuilder游戏作品到微信
+            </p>
+          </div>
+
+          <div class="qr-actions">
+            <button class="manual-download-btn" @click="handleManualDownload">📥 手动下载视频</button>
+            <button class="copy-url-btn" @click="copyShareUrl">📋 复制链接</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </UIFormModal>
 </template>
   
@@ -106,12 +137,25 @@
 import { ref, computed, onUnmounted, h } from 'vue'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { generateShareQRCode, type ProjectShareInfo } from '@/utils/qrcode'
 
 const props = defineProps<{
   visible: boolean
   projectName: string
   projectThumbnail?: string
+  owner?: string
 }>()
+
+// 复制分享链接
+const copyShareUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(qrCodeUrl.value)
+    console.log('分享链接已复制到剪贴板')
+    // 这里可以添加一个提示消息
+  } catch (error) {
+    console.error('复制链接失败:', error)
+  }
+}
 
 const emit = defineEmits<{
   cancelled: []
@@ -129,6 +173,13 @@ const recordingTime = ref(0)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const recordedVideoUrl = ref<string | null>(null)
 let recordingTimer: number | null = null
+
+// 在现有状态后添加
+const selectedPlatform = ref<string | null>(null) // 当前选中的平台
+const showQRCode = ref(false) // 是否显示二维码
+const qrCodeUrl = ref<string>('') // 二维码对应的URL
+const qrCodeData = ref<string>('') // 二维码数据
+const mediaStream = ref<MediaStream | null>(null) // 新增：保存媒体流引用
 
 // 平台配置 - 使用简单的文字图标
 const platforms = [
@@ -173,6 +224,8 @@ const handleStartRecording = useMessageHandle(
       })
 
       console.log('屏幕录制权限获取成功，用户已选择屏幕')
+
+      mediaStream.value = stream
 
       const recorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4'
@@ -242,18 +295,37 @@ const handleStopRecording = useMessageHandle(
   async () => {
     isStopping.value = true
     try {
+      console.log('开始停止录制...')
+
+      // 1. 停止MediaRecorder
       if (mediaRecorder.value && mediaRecorder.value.state === 'recording') {
         mediaRecorder.value.stop()
+        console.log('MediaRecorder已停止')
       }
+
+      // ========== 新增：完全停止屏幕分享流 ==========
+      if (mediaStream.value) {
+        // 停止所有轨道（视频和音频）
+        mediaStream.value.getTracks().forEach((track) => {
+          track.stop()
+          console.log(`已停止${track.kind}轨道`)
+        })
+        mediaStream.value = null
+        console.log('屏幕分享流已完全停止')
+      }
+      // =============================================
+
+      // 2. 重置状态
       isRecording.value = false
 
+      // 3. 停止计时器
       if (recordingTimer) {
         clearInterval(recordingTimer)
         recordingTimer = null
       }
-      emit('recordingStopped')
 
-      console.log('手动停止录制')
+      emit('recordingStopped')
+      console.log('录制完全停止，状态已重置')
     } finally {
       isStopping.value = false
     }
@@ -442,7 +514,37 @@ const handleBilibiliShare = useMessageHandle(
   { en: 'Successfully shared to Bilibili!', zh: 'B站投稿成功！' }
 )
 
-// 分享到平台
+// 处理QQ和微信分享
+const handleSocialMediaShare = async (platform: any) => {
+  try {
+    selectedPlatform.value = platform.id
+
+    // 准备项目分享信息
+    const projectInfo: ProjectShareInfo = {
+      projectName: props.projectName,
+      projectUrl: `${window.location.origin}/project/${props.owner}/${props.projectName}`, // 根据实际路由调整
+      description: `这是我在XBuilder上创作的游戏作品《${props.projectName}》！🎮 在XBuilder学编程，创造属于你的游戏世界！`,
+      thumbnail: props.projectThumbnail
+    }
+
+    // 生成二维码
+    console.log(`正在生成${platform.name}分享二维码...`)
+    const qrCodeDataUrl = await generateShareQRCode(platform.id, projectInfo, {
+      width: 200,
+      margin: 3
+    })
+
+    qrCodeData.value = qrCodeDataUrl
+    showQRCode.value = true
+
+    console.log(`${platform.name}分享二维码已生成`)
+  } catch (error) {
+    console.error(`生成${platform.name}分享二维码失败:`, error)
+    // 可以显示错误提示给用户
+  }
+}
+
+// 修改分享到平台的函数
 const handlePlatformShare = async (platform: any) => {
   if (!hasRecording.value) {
     console.log('录屏尚未完成，无法分享')
@@ -457,7 +559,13 @@ const handlePlatformShare = async (platform: any) => {
     return
   }
 
-  // 其他平台保持原有逻辑
+  // 处理QQ和微信平台 - 显示二维码
+  if (platform.id === 'qq' || platform.id === 'wechat') {
+    await handleSocialMediaShare(platform)
+    return
+  }
+
+  // 其他平台保持原有逻辑（直接下载）
   if (recordedVideoUrl.value) {
     const link = document.createElement('a')
     link.download = `${props.projectName}-for-${platform.id}.webm`
@@ -474,14 +582,46 @@ const formatTime = (seconds: number) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
+// 手动下载视频文件
+const handleManualDownload = () => {
+  if (recordedVideoUrl.value && selectedPlatform.value) {
+    const link = document.createElement('a')
+    link.download = `${props.projectName}-for-${selectedPlatform.value}.webm`
+    link.href = recordedVideoUrl.value
+    link.click()
+    console.log(`手动下载${selectedPlatform.value}平台视频文件`)
+  }
+}
+
+// 关闭二维码显示
+const closeQRCode = () => {
+  showQRCode.value = false
+  selectedPlatform.value = null
+  qrCodeUrl.value = ''
+  qrCodeData.value = ''
+}
+
 // 清理定时器和资源
+// 修改 onUnmounted 函数
 onUnmounted(() => {
+  // 清理计时器
   if (recordingTimer) {
     clearInterval(recordingTimer)
   }
+
+  // 清理视频URL
   if (recordedVideoUrl.value) {
     URL.revokeObjectURL(recordedVideoUrl.value)
   }
+
+  // ========== 新增：清理媒体流 ==========
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach((track) => {
+      track.stop()
+    })
+    mediaStream.value = null
+  }
+  // ====================================
 })
 </script>
   
@@ -698,6 +838,119 @@ onUnmounted(() => {
   .video-info {
     color: #0369a1;
     font-size: 14px;
+  }
+}
+
+// 二维码模态框样式
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.qr-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+
+  .qr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h3 {
+      margin: 0;
+      color: #333;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #666;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+
+      &:hover {
+        color: #333;
+      }
+    }
+  }
+}
+
+.qr-content {
+  text-align: center;
+
+  .qr-code-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 20px;
+
+    .qr-image {
+      width: 200px;
+      height: 200px;
+      border-radius: 8px;
+    }
+  }
+
+  .qr-instructions {
+    margin-bottom: 24px;
+
+    p {
+      color: #666;
+      line-height: 1.6;
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+
+  .qr-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.manual-download-btn {
+        background: #52c41a;
+        color: white;
+
+        &:hover {
+          background: #389e0d;
+        }
+      }
+
+      &.copy-url-btn {
+        background: #1890ff;
+        color: white;
+
+        &:hover {
+          background: #096dd9;
+        }
+      }
+    }
   }
 }
 </style>
