@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
-import { useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception/index'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
