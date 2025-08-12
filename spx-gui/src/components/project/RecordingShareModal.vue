@@ -9,14 +9,26 @@
     <!-- 项目预览区域 -->
     <div class="preview-section">
       <div class="project-preview">
-        <img v-if="projectThumbnail" :src="projectThumbnail" alt="Project thumbnail" />
+        <!-- 如果有录制的视频，显示视频；否则显示项目图片 -->
+        <video
+          v-if="hasRecording && recordedVideoUrl"
+          :src="recordedVideoUrl"
+          controls
+          :poster="projectThumbnail"
+          class="recorded-video"
+        >
+          您的浏览器不支持视频播放
+        </video>
+
+        <img v-else-if="projectThumbnail" :src="projectThumbnail" alt="Project thumbnail" />
+
         <div v-else class="placeholder">
           <div class="game-icon">🎮</div>
           <div class="project-name">{{ projectName }}</div>
         </div>
 
-        <!-- 录屏控制按钮 -->
-        <div class="record-overlay">
+        <!-- 录屏控制按钮 - 只在没有录制时显示 -->
+        <div v-if="!hasRecording" class="record-overlay">
           <UIButton
             v-if="!isRecording"
             type="primary"
@@ -40,6 +52,17 @@
             </template>
             {{ $t({ en: 'Stop Recording', zh: '停止录屏' }) }}
           </UIButton>
+        </div>
+      </div>
+
+      <!-- 录屏完成状态显示 -->
+      <div v-if="hasRecording" class="recording-complete">
+        <div class="complete-indicator">
+          <div class="green-dot"></div>
+          {{ $t({ en: 'Recording Complete', zh: '录制完成' }) }}
+        </div>
+        <div class="video-info">
+          {{ $t({ en: 'Ready to share', zh: '可以开始分享了' }) }}
         </div>
       </div>
 
@@ -238,8 +261,189 @@ const handleStopRecording = useMessageHandle(
   { en: 'Failed to stop recording', zh: '停止录屏失败' }
 )
 
+// 图片处理函数 - 添加到 <script setup> 部分
+const processImageForBilibili = async (imageBlob: Blob, projectName: string): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')!
+
+    img.onload = () => {
+      try {
+        const originalWidth = img.width
+        const originalHeight = img.height
+
+        console.log(`原始图片尺寸: ${originalWidth}x${originalHeight}`)
+
+        // B站要求最小尺寸：960x600
+        const minWidth = 960
+        const minHeight = 600
+
+        // 计算缩放比例，确保两个维度都满足最小要求
+        const scaleX = minWidth / originalWidth
+        const scaleY = minHeight / originalHeight
+        const scale = Math.max(scaleX, scaleY) // 取较大的缩放比例，确保都满足最小尺寸
+
+        // 计算新尺寸
+        let newWidth = Math.ceil(originalWidth * scale)
+        let newHeight = Math.ceil(originalHeight * scale)
+
+        // 确保尺寸不小于要求
+        newWidth = Math.max(newWidth, minWidth)
+        newHeight = Math.max(newHeight, minHeight)
+
+        console.log(`处理后尺寸: ${newWidth}x${newHeight} (缩放比例: ${scale.toFixed(2)})`)
+
+        // 设置canvas尺寸
+        canvas.width = newWidth
+        canvas.height = newHeight
+
+        // 绘制背景（防止透明图片问题）
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, newWidth, newHeight)
+
+        // 计算图片在canvas中的位置（居中）
+        const drawWidth = originalWidth * scale
+        const drawHeight = originalHeight * scale
+        const x = (newWidth - drawWidth) / 2
+        const y = (newHeight - drawHeight) / 2
+
+        // 使用高质量缩放
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+
+        // 绘制图片
+        ctx.drawImage(img, x, y, drawWidth, drawHeight)
+
+        // 添加XBuilder标识（可选）
+        ctx.fillStyle = 'rgba(0, 161, 214, 0.8)'
+        ctx.font = '24px Arial, sans-serif'
+        ctx.textAlign = 'right'
+        ctx.textBaseline = 'bottom'
+        ctx.fillText('XBuilder', newWidth - 20, newHeight - 20)
+
+        // 转换为Blob
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              console.log(`封面处理完成，文件大小: ${(blob.size / 1024).toFixed(2)} KB`)
+              resolve(blob)
+            } else {
+              reject(new Error('Canvas转换Blob失败'))
+            }
+          },
+          'image/jpeg',
+          0.9 // 质量设置为90%
+        )
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    img.onerror = () => {
+      reject(new Error('图片加载失败'))
+    }
+
+    // 加载图片
+    img.src = URL.createObjectURL(imageBlob)
+  })
+}
+
+// B站分享处理
+const handleBilibiliShare = useMessageHandle(
+  async () => {
+    if (!recordedVideoUrl.value) {
+      throw new Error('录屏视频不存在')
+    }
+
+    console.log('开始B站投稿流程...')
+
+    // ========== 新增：检查登录状态 ==========
+    console.log('检查B站登录状态...')
+    const loginCheckResponse = await fetch('http://localhost:3000/check-login')
+    const loginStatus = await loginCheckResponse.json()
+
+    if (!loginStatus.browserReady) {
+      console.log('浏览器未准备就绪，开始登录流程...')
+
+      // 触发登录
+      const loginResponse = await fetch('http://localhost:3000/login')
+      const loginResult = await loginResponse.json()
+
+      if (!loginResult.success) {
+        throw new Error(`登录失败：${loginResult.message}`)
+      }
+
+      console.log('登录成功，浏览器已准备就绪')
+    }
+    // ========================================
+
+    // 1. 将Blob转换为File对象
+    const response = await fetch(recordedVideoUrl.value)
+    const blob = await response.blob()
+    const videoFile = new File([blob], `${props.projectName}.webm`, { type: 'video/webm' })
+
+    // 2. 自动生成投稿信息
+    const title = `【XBuilder作品】${props.projectName}`
+    const description = `这是我在XBuilder上创作的游戏作品《${props.projectName}》！
+
+🎮 在XBuilder学编程，创造属于你的游戏世界！
+📱 快来XBuilder创建你的第一个游戏吧！
+
+#XBuilder #游戏开发 #编程学习 #创意游戏`
+
+    const tags = 'XBuilder,游戏,编程,创作,教育'
+    const category = 'game' // 游戏分区
+
+    // 3. 准备FormData
+    const formData = new FormData()
+    formData.append('video', videoFile)
+    formData.append('title', title)
+    formData.append('description', description)
+    formData.append('tags', tags)
+    formData.append('category', category)
+
+    // ========== 修改封面处理逻辑 ==========
+    if (props.projectThumbnail) {
+      try {
+        console.log('下载并处理项目缩略图作为封面...')
+        const thumbnailResponse = await fetch(props.projectThumbnail)
+        const thumbnailBlob = await thumbnailResponse.blob()
+
+        // 处理图片尺寸，确保符合B站要求（960x600以上）
+        const processedCoverBlob = await processImageForBilibili(thumbnailBlob, props.projectName)
+
+        const coverFile = new File([processedCoverBlob], `${props.projectName}-cover.jpg`, {
+          type: 'image/jpeg'
+        })
+        formData.append('cover', coverFile)
+        console.log('封面图片已处理并添加到FormData')
+      } catch (error) {
+        console.warn('封面图片处理失败，将使用默认封面:', error)
+      }
+    }
+
+    // 4. 调用B站投稿服务
+    console.log('调用B站自动化投稿服务...')
+    const response2 = await fetch('http://localhost:3000/auto-upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    const result = await response2.json()
+
+    if (result.success) {
+      console.log('B站投稿成功！', result)
+    } else {
+      throw new Error(result.message || 'B站投稿失败')
+    }
+  },
+  { en: 'Failed to share to Bilibili', zh: 'B站分享失败' },
+  { en: 'Successfully shared to Bilibili!', zh: 'B站投稿成功！' }
+)
+
 // 分享到平台
-const handlePlatformShare = (platform: any) => {
+const handlePlatformShare = async (platform: any) => {
   if (!hasRecording.value) {
     console.log('录屏尚未完成，无法分享')
     return
@@ -247,14 +451,18 @@ const handlePlatformShare = (platform: any) => {
 
   console.log(`准备分享到${platform.name}`)
 
-  // 这里可以添加具体的分享逻辑
+  // 特殊处理B站平台
+  if (platform.id === 'bilibili') {
+    await handleBilibiliShare.fn()
+    return
+  }
+
+  // 其他平台保持原有逻辑
   if (recordedVideoUrl.value) {
-    // 对于现在来说，重新下载文件（将来可以改为真正的平台分享）
     const link = document.createElement('a')
     link.download = `${props.projectName}-for-${platform.id}.webm`
     link.href = recordedVideoUrl.value
     link.click()
-
     console.log(`已为${platform.name}下载视频文件`)
   }
 }
@@ -453,5 +661,43 @@ onUnmounted(() => {
   background: #f1f5f9;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+}
+
+.recorded-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.recording-complete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+
+  .complete-indicator {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #059669;
+
+    .green-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+  }
+
+  .video-info {
+    color: #0369a1;
+    font-size: 14px;
+  }
 }
 </style>
