@@ -16,6 +16,18 @@
         </button>
         
         <button 
+          :class="['tool-btn', { active: currentTool === 'brush' }]"
+          @click="selectTool('brush')"
+          title="笔刷工具"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+            <path d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"></path>
+          </svg>
+          <span>笔刷</span>
+        </button>
+        
+        <button 
           :class="['tool-btn', { active: currentTool === 'select' }]"
           @click="selectTool('select')"
           title="选择工具"
@@ -49,6 +61,7 @@
         @click="handleCanvasClick"
         @mousedown="handleMouseDown"
         @mousemove="handleMouseMove"
+        @mouseup="handleCanvasMouseUp"
       ></canvas>
       
       <!-- 直线绘制组件 -->
@@ -59,6 +72,16 @@
         :is-active="currentTool === 'line'"
         @line-created="handleLineCreated"
       />
+      
+      <!-- 笔刷绘制组件 -->
+      <DrawBrush
+        ref="drawBrushRef"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+        :is-active="currentTool === 'brush'"
+        @path-created="handlePathCreated"
+        @circle-created="handleCircleCreated"
+      />
     </div>
   </div>
 </template>
@@ -67,9 +90,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
+import DrawBrush from './components/draw_brush.vue'
 
 // 工具类型
-type ToolType = 'line' | 'select'
+type ToolType = 'line' | 'brush' | 'select'
 
 // TypeScript 接口定义
 interface ExtendedItem extends paper.Item {
@@ -92,6 +116,7 @@ const canvasHeight = ref<number>(600)
 // 工具状态
 const currentTool = ref<ToolType>('line')
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
+const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 // 状态管理
 const isDragging = ref<boolean>(false)
 const selectedPoint = ref<ExtendedItem | null>(null)
@@ -136,12 +161,29 @@ const selectTool = (tool: ToolType): void => {
     drawLineRef.value.resetDrawing()
   }
   
+  // 重置笔刷绘制状态
+  if (drawBrushRef.value) {
+    drawBrushRef.value.resetDrawing()
+  }
+  
   hideControlPoints()
 }
 
 // 处理直线创建
 const handleLineCreated = (line: paper.Path): void => {
   allPaths.value.push(line)
+  paper.view.update()
+}
+
+// 处理笔刷路径创建
+const handlePathCreated = (path: paper.Path): void => {
+  allPaths.value.push(path)
+  paper.view.update()
+}
+
+// 处理笔刷圆圈创建
+const handleCircleCreated = (circle: paper.Path): void => {
+  allPaths.value.push(circle)
   paper.view.update()
 }
 
@@ -329,8 +371,6 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
 
 // 鼠标按下事件（用于开始拖拽控制点）
 const handleMouseDown = (event: MouseEvent): void => {
-  if (currentTool.value !== 'select') return
-  
   const rect = canvasRef.value?.getBoundingClientRect()
   if (!rect) return
   
@@ -338,6 +378,14 @@ const handleMouseDown = (event: MouseEvent): void => {
     event.clientX - rect.left,
     event.clientY - rect.top
   )
+  
+  // 处理笔刷工具
+  if (currentTool.value === 'brush' && drawBrushRef.value) {
+    drawBrushRef.value.handleMouseDown({ x: point.x, y: point.y })
+    return
+  }
+  
+  if (currentTool.value !== 'select') return
   
   // 检查是否点击了控制点
   const controlPoint = getControlPointAtPoint(point)
@@ -411,6 +459,11 @@ const handleMouseMove = (event: MouseEvent): void => {
     drawLineRef.value.handleMouseMove({ x: point.x, y: point.y })
   }
   
+  // 委托给 DrawBrush 组件处理拖拽
+  if (currentTool.value === 'brush' && drawBrushRef.value) {
+    drawBrushRef.value.handleMouseDrag({ x: point.x, y: point.y })
+  }
+  
   // 若按在路径上且尚未开始拖拽，当移动超过阈值时，创建临时控制点并进入拖拽
   if (
     currentTool.value === 'select' &&
@@ -448,6 +501,23 @@ const handleMouseMove = (event: MouseEvent): void => {
     }
     
     paper.view.update()
+  }
+}
+
+// 画布鼠标释放事件
+const handleCanvasMouseUp = (event: MouseEvent): void => {
+  const rect = canvasRef.value?.getBoundingClientRect()
+  if (!rect) return
+  
+  const point = new paper.Point(
+    event.clientX - rect.left,
+    event.clientY - rect.top
+  )
+  
+  // 处理笔刷工具
+  if (currentTool.value === 'brush' && drawBrushRef.value) {
+    drawBrushRef.value.handleMouseUp({ x: point.x, y: point.y })
+    return
   }
 }
 
@@ -496,6 +566,11 @@ const clearCanvas = (): void => {
     drawLineRef.value.resetDrawing()
   }
   
+  // 重置笔刷绘制状态
+  if (drawBrushRef.value) {
+    drawBrushRef.value.resetDrawing()
+  }
+  
   paper.project.clear()
   
   // 重新创建背景
@@ -517,6 +592,9 @@ onMounted(() => {
       hideControlPoints()
       if (drawLineRef.value) {
         drawLineRef.value.resetDrawing()
+      }
+      if (drawBrushRef.value) {
+        drawBrushRef.value.resetDrawing()
       }
       paper.view.update()
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
