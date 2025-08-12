@@ -12,13 +12,15 @@ import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig, File } from '../common/file'
+import { toConfig, type Files, fromConfig, File, toText } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as xbpHelper from '../common/xbp'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
+import { generateAIDescription } from '@/apis/ai-description'
+import { hashFiles } from '../common/hash'
 import { Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
@@ -31,7 +33,10 @@ export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumb
   thumbnail: File | null
 }
 
-export type Metadata = Partial<CloudMetadata>
+export type Metadata = Partial<CloudMetadata> & {
+  aiDescription?: string | null
+  aiDescriptionHash?: string | null
+}
 
 // TODO: better organization & type derivation
 export type CloudProject = Project & CloudMetadata
@@ -94,6 +99,9 @@ export class Project extends Disposable {
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
+
+  private aiDescription: string | null
+  private aiDescriptionHash: string | null
 
   removeSprite(id: string) {
     const idx = this.sprites.findIndex((s) => s.id === id)
@@ -271,6 +279,8 @@ export class Project extends Disposable {
       this.zorder = []
       this.stage.dispose()
     })
+    this.aiDescription = null
+    this.aiDescriptionHash = null
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
     return reactiveThis
   }
@@ -290,7 +300,9 @@ export class Project extends Disposable {
       visibility: this.visibility,
       description: this.description,
       instructions: this.instructions,
-      thumbnail: this.thumbnail
+      thumbnail: this.thumbnail,
+      aiDescription: this.aiDescription,
+      aiDescriptionHash: this.aiDescriptionHash
     }
   }
 
@@ -391,6 +403,7 @@ export class Project extends Disposable {
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
+      await this.ensureAIDescription() // Ensure AI description is available before exporting
       return [this.exportMetadata(), this.exportGameFiles()]
     })
   }
@@ -433,6 +446,7 @@ export class Project extends Disposable {
 
   async saveToCloud(signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
+    await this.ensureAIDescription(false, signal) // Ensure AI description exists before saving
     const [metadata, files] = await this.export()
     const saved = await cloudHelper.save(metadata, files, signal)
     this.loadMetadata(saved.metadata)
@@ -451,6 +465,85 @@ export class Project extends Disposable {
     if (this.isDisposed) throw new Error('disposed')
     const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
+  }
+
+  /** Ensure AI description is available */
+  async ensureAIDescription(checkForUpdate = false, signal?: AbortSignal) {
+    if (this.aiDescription != null && !checkForUpdate) return this.aiDescription
+
+    const files = this.exportGameFiles()
+    const currentHash = await hashFiles(files)
+
+    // Generate or update if necessary
+    if (this.aiDescription == null || this.aiDescriptionHash !== currentHash) {
+      try {
+        const content = await this.serializeForAI()
+        this.aiDescription = await generateAIDescription(content, signal)
+        this.aiDescriptionHash = currentHash
+      } catch (e) {
+        if (e instanceof Cancelled) throw e
+        throw new Error(`failed to generate AI description: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
+
+    return this.aiDescription
+  }
+
+  /** Serialize for AI use */
+  private async serializeForAI() {
+    const files = this.exportGameFiles()
+    const parts: string[] = []
+
+    // Header with project metadata
+    if (this.name != null && this.name !== '') {
+      parts.push(`Game: ${this.name}`)
+    }
+    if (this.description != null && this.description !== '') {
+      parts.push(`Description: ${this.description}`)
+    }
+    if (this.instructions != null && this.instructions !== '') {
+      parts.push(`Instructions: ${this.instructions}`)
+    }
+    parts.push('')
+
+    // Main stage file
+    const mainSpxFile = files['main.spx']
+    if (mainSpxFile != null) {
+      parts.push('=== File: main.spx ===')
+      parts.push(await toText(mainSpxFile))
+      parts.push('')
+    }
+
+    // Sprite code files
+    for (const sprite of this.sprites) {
+      const spriteFile = files[`${sprite.name}.spx`]
+      if (spriteFile != null) {
+        parts.push(`=== File: ${sprite.name}.spx ===`)
+        parts.push(await toText(spriteFile))
+        parts.push('')
+      }
+    }
+
+    // Project configuration
+    const projectConfig = files[projectConfigFilePath]
+    if (projectConfig != null) {
+      parts.push('=== Project Config (assets/index.json) ===')
+      parts.push(await toText(projectConfig))
+      parts.push('')
+    }
+
+    // Sprite configuration files
+    for (const sprite of this.sprites) {
+      const spriteConfigPath = join('assets', 'sprites', sprite.name, 'index.json')
+      const spriteConfig = files[spriteConfigPath]
+      if (spriteConfig != null) {
+        parts.push(`=== Sprite Config: assets/sprites/${sprite.name}/index.json ===`)
+        parts.push(await toText(spriteConfig))
+        parts.push('')
+      }
+    }
+
+    return parts.join('\n')
   }
 }
 
