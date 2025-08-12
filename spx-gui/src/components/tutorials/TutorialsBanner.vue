@@ -6,33 +6,33 @@ const i18n = useI18n()
 
 <template>
   <div class="tutorials-banner-wrapper">
-    <picture class="tutorials-banner">
-      <source media="(max-width: 1679px)" srcset="@/components/tutorials/banner-medium.png" />
-      <source media="(min-width: 1680px)" srcset="@/components/tutorials/banner-large.png" />
-      <img src="@/components/tutorials/banner-medium.png" alt="Tutorials Banner" class="banner-image" />
-    </picture>
+    <div class="banner">
+      <img src="@/components/tutorials/banner.png" alt="Tutorials Banner" class="banner-image" />
+    </div>
     <div class="banner-text" :lang="i18n.lang.value">
-      {{ $t({ en: 'Learn by doing, AI guides every step', zh: '边做边学, AI 导师引导每一步' }) }}
+      <div class="title">{{ $t({ en: 'Explore the User Tutorial', zh: '探索用户教程' }) }}</div>
+      <div class="des">
+        {{ $t({ en: 'Learn XBuilder and improve programming skills', zh: '学习 XBuilder，提高编程技能' }) }}
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-@import '@/components/ui/responsive';
-
 .tutorials-banner-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
 
-  .tutorials-banner {
-    position: relative;
-    width: 100%;
+  .banner {
+    overflow: hidden;
 
     .banner-image {
-      display: block;
+      height: 340px;
       width: 100%;
+      object-fit: cover;
+      object-position: center;
     }
   }
 
@@ -41,37 +41,22 @@ const i18n = useI18n()
     white-space: nowrap;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--ui-color-grey-1000);
+    color: #006375;
+
+    .title {
+      font-size: 36px;
+    }
+
+    .des {
+      font-size: 18px;
+      margin-top: 8px;
+    }
 
     &[lang='en'] {
-      font-size: 2.2vw;
-      letter-spacing: 2px;
+      transform: translate(0%, -80%);
     }
-
     &[lang='zh'] {
-      font-size: 2.9vw;
-      letter-spacing: 8.8px;
-    }
-
-    @include responsive(mobile) {
-      &[lang='en'] {
-        font-size: 2.3vw;
-      }
-      &[lang='zh'] {
-        font-size: 2.8vw;
-        letter-spacing: 6.4px;
-      }
-    }
-
-    @include responsive(desktop-large) {
-      &[lang='en'] {
-        font-size: 1.5vw;
-      }
-      &[lang='zh'] {
-        font-size: 1.8vw;
-        letter-spacing: 6.4px;
-      }
+      transform: translate(70%, -80%);
     }
   }
 }

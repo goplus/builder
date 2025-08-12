@@ -5,7 +5,7 @@
 
     <TutorialsBanner />
     <CenteredWrapper class="centered-wrapper">
-      <ListResultWrapper :query-ret="courseSeriesQuery">
+      <ListResultWrapper :query-ret="courseSeriesQuery" :height="254">
         <template #empty>
           <UIEmpty size="extra-large">
             {{ $t({ en: 'No course series available', zh: '没有可用的课程系列' }) }}
@@ -79,13 +79,13 @@ function handleCourseClick(course: Course, courseSeries: CourseSeries, courseLis
   overflow-y: auto;
   width: 100%;
   height: 100%;
+  background-color: var(--ui-color-grey-300);
 
   .centered-wrapper {
     display: flex;
     flex-direction: column;
-    align-self: center;
+    margin: 32px auto;
     flex: 1;
-    margin: 32px 0;
 
     .course-series-list {
       display: flex;
