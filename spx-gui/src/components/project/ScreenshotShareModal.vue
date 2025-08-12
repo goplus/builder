@@ -26,7 +26,23 @@
                 
                 <!-- 海报装饰元素 -->
                 <div class="poster-decoration">
-                  <div class="game-title">{{ projectName }}</div>
+                  <div class="project-info">
+                    <div class="game-title">{{ projectName }}</div>
+                    <div class="project-stats" v-if="formattedStats">
+                      <div class="stat-item" v-if="formattedStats.viewCount">
+                        <UIIcon type="eye" />
+                        <span>{{ $t(formattedStats.viewCount) }}</span>
+                      </div>
+                      <div class="stat-item" v-if="formattedStats.likeCount">
+                        <UIIcon type="heart" />
+                        <span>{{ $t(formattedStats.likeCount) }}</span>
+                      </div>
+                      <div class="stat-item" v-if="formattedStats.remixCount">
+                        <UIIcon type="remix" />
+                        <span>{{ $t(formattedStats.remixCount) }}</span>
+                      </div>
+                    </div>
+                  </div>
                   <div class="branding">Made with Xbuilder</div>
                 </div>
               </div>
@@ -86,6 +102,7 @@
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
 // import QRCode from 'qrcode' // 暂时注释掉，稍后添加依赖
 import { UIButton, UIIcon } from '@/components/ui'
+import { humanizeCount } from '@/utils/utils'
 
 interface Platform {
   id: string
@@ -95,10 +112,17 @@ interface Platform {
   shareUrl: string
 }
 
+interface ProjectStats {
+  viewCount?: number
+  likeCount?: number
+  remixCount?: number
+}
+
 const props = defineProps<{
   visible: boolean
   screenshotDataUrl?: string
   projectName?: string
+  projectStats?: ProjectStats
 }>()
 
 const emit = defineEmits<{
@@ -154,6 +178,17 @@ const platforms: Platform[] = [
 ]
 
 const selectedPlatform = ref<Platform>(platforms[0])
+
+// 计算格式化的统计数据
+const formattedStats = computed(() => {
+  if (!props.projectStats) return null
+  
+  return {
+    viewCount: props.projectStats.viewCount ? humanizeCount(props.projectStats.viewCount) : null,
+    likeCount: props.projectStats.likeCount ? humanizeCount(props.projectStats.likeCount) : null,
+    remixCount: props.projectStats.remixCount ? humanizeCount(props.projectStats.remixCount) : null
+  }
+})
 
 function selectPlatform(platform: Platform) {
   selectedPlatform.value = platform
@@ -423,12 +458,55 @@ onMounted(() => {
   color: white;
   text-align: left;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-info {
+  flex: 1;
 }
 
 .game-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.project-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  opacity: 0.95;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  
+  :deep(.ui-icon) {
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
+  }
+  
+  span {
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .branding {
@@ -437,6 +515,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+  align-self: flex-end;
 }
 
 .branding::before {

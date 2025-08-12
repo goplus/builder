@@ -595,6 +595,11 @@ const remixesRet = useQuery(
     v-model:visible="isScreenshotModalVisible"
     :screenshot-data-url="screenshotDataUrl"
     :project-name="props.name"
+    :project-stats="{
+      viewCount: project?.viewCount,
+      likeCount: project?.likeCount,
+      remixCount: project?.remixCount
+    }"
     @close="handleCloseScreenshotModal"
   />
 </template>
