@@ -133,5 +133,7 @@ defineExpose({
   left: 0;
   pointer-events: none;
   z-index: 2;
+  height: 100%;
+  width: 100%;
 }
 </style>
