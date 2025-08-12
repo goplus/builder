@@ -10,6 +10,7 @@ import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
+import MyRecordsEmpty from '@/components/community/MyRecordsEmpty.vue'
 
 const props = defineProps<{
   name: string
@@ -97,6 +98,42 @@ const likesRet = useQuery(
         </template>
         <template v-if="isSignedInUser" #empty="emptyProps">
           <MyProjectsEmpty :style="emptyProps.style" />
+        </template>
+        <ProjectItem
+          v-for="project in projectsRet.data.value"
+          :key="project.id"
+          context="mine"
+          :project="project"
+          @removed="projectsRet.refetch()"
+        />
+      </ProjectsSection>
+    </CommunityCard>
+    <CommunityCard class="card">
+      <ProjectsSection
+        v-radar="{ name: 'User records', desc: 'Section showing user\'s records' }"
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="projectsRet"
+        :link-to="projectsRoute"
+      >
+        <template #title>
+          {{
+            $t({
+              en: 'My records',
+              zh: '我的录屏'
+            })
+          }}
+        </template>
+        <template #link>
+          {{
+            $t({
+              en: 'View all',
+              zh: '查看所有'
+            })
+          }}
+        </template>
+        <template v-if="isSignedInUser" #empty="emptyProps">
+          <MyRecordsEmpty :style="emptyProps.style" />
         </template>
         <ProjectItem
           v-for="project in projectsRet.data.value"
