@@ -99,6 +99,8 @@ const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: p
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 const isFullScreenRunning = ref(false)
+const isRecording = ref(false)
+const mediaRecorder = ref<MediaRecorder | null>(null)
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -242,6 +244,50 @@ const handleUnpublish = useMessageHandle(
     zh: '已取消发布'
   }
 )
+const handleScreenshot = useMessageHandle(
+  async () => {
+    const canvas = document.querySelector('canvas')
+    if (canvas) {
+      const dataURL = canvas.toDataURL('image/png')
+      const link = document.createElement('a')
+      link.download = `${props.name}-screenshot.png`
+      link.href = dataURL
+      link.click()
+    }
+  },
+  { en: 'Failed to take screenshot', zh: '截屏失败' },
+  { en: 'Screenshot saved', zh: '截屏已保存' }
+)
+
+const handleRecord = useMessageHandle(
+  async () => {
+    if (isRecording.value) {
+      if (mediaRecorder.value) {
+        mediaRecorder.value.stop()
+      }
+      isRecording.value = false
+    } else {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const recorder = new MediaRecorder(stream)
+      const chunks: Blob[] = []
+      
+      recorder.ondataavailable = (e) => chunks.push(e.data)
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.download = `${props.name}-recording.webm`
+        link.href = url
+        link.click()
+      }
+      
+      recorder.start()
+      mediaRecorder.value = recorder
+      isRecording.value = true
+    }
+  },
+  { en: 'Recording failed', zh: '录屏失败' }
+)
 
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
@@ -316,6 +362,42 @@ const remixesRet = useQuery(
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
+          <UIButton
+  v-if="runnerState === 'running'"
+  v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+  type="boring"
+  :loading="handleScreenshot.isLoading.value"
+  @click="handleScreenshot.fn"
+>
+  <template #icon>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    </svg>
+  </template>
+  {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+</UIButton>
+
+<UIButton
+  v-if="runnerState === 'running'"
+  v-radar="{ name: 'Record button', desc: 'Click to start/stop recording' }"
+  type="boring"
+  :loading="handleRecord.isLoading.value"
+  @click="handleRecord.fn"
+>
+  <template #icon>
+    <svg v-if="!isRecording" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      <circle cx="8" cy="8" r="2" fill="currentColor"/>
+      <circle cx="12" cy="6" r="1" fill="currentColor"/>
+    </svg>
+    <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>
+    </svg>
+  </template>
+  {{ $t({ en: isRecording ? 'Stop' : 'Record', zh: isRecording ? '停止' : '录屏' }) }}
+</UIButton>
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
