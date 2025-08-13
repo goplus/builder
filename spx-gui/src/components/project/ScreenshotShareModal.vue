@@ -37,7 +37,14 @@
                   </div>
                 </div>
               </div>
-              <div class="branding">Made with Xbuilder</div>
+              <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div class="branding">
+                  <img src="@/components/navbar/logo.svg" alt="logo" class="branding-logo" style="height: 20px; vertical-align: middle;" />
+                </div>
+                <div class="project-qrcode">
+                  <canvas ref="projectQrCanvas" class="project-qr-canvas"></canvas>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -85,7 +92,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
-// import QRCode from 'qrcode' // 暂时注释掉，稍后添加依赖
+import QRCode from 'qrcode'
 import { UIButton, UIIcon } from '@/components/ui'
 import { UIFormModal } from '@/components/ui/modal'
 import { humanizeCount } from '@/utils/utils'
@@ -122,6 +129,11 @@ const visible = computed({
 })
 
 const qrCanvas = ref<HTMLCanvasElement>()
+const projectQrCanvas = ref<HTMLCanvasElement>()
+// 获取当前页面URL
+function getCurrentProjectUrl() {
+  return window.location.origin + window.location.pathname;
+}
 const isDownloading = ref(false)
 
 // 平台配置
@@ -183,60 +195,38 @@ function selectPlatform(platform: Platform) {
 
 async function generateQRCode() {
   if (!qrCanvas.value) return
+  // 生成主分享二维码
   
   try {
     const canvas = qrCanvas.value
     const shareText = `我在Xbuilder制作了一个游戏${props.projectName ? ` "${props.projectName}"` : ''}，快来看看吧！`
     const shareUrl = `${selectedPlatform.value.shareUrl}?text=${encodeURIComponent(shareText)}`
-    
-    // 临时显示平台信息，等添加qrcode库后再生成真正的二维码
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      canvas.width = 150
-      canvas.height = 150
-      
-      // 背景
-      ctx.fillStyle = '#f8f9fa'
-      ctx.fillRect(0, 0, 150, 150)
-      
-      // 边框
-      ctx.strokeStyle = '#dee2e6'
-      ctx.lineWidth = 2
-      ctx.strokeRect(1, 1, 148, 148)
-      
-      // 平台图标背景
-      ctx.fillStyle = selectedPlatform.value.color
-      ctx.fillRect(40, 40, 70, 70)
-      
-      // 平台图标
-      ctx.fillStyle = 'white'
-      ctx.font = 'bold 24px Arial'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(selectedPlatform.value.icon, 75, 75)
-      
-      // 平台名称
-      ctx.fillStyle = '#495057'
-      ctx.font = '12px Arial'
-      ctx.fillText(selectedPlatform.value.name, 75, 125)
-      
-      // 二维码提示
-      ctx.font = '10px Arial'
-      ctx.fillStyle = '#6c757d'
-      ctx.fillText('扫码分享', 75, 140)
-    }
-    
-    // 等添加QRCode库后使用：
-    // await QRCode.toCanvas(canvas, shareUrl, {
-    //   width: 150,
-    //   margin: 2,
-    //   color: {
-    //     dark: '#000000',
-    //     light: '#ffffff'
-    //   }
-    // })
+    await QRCode.toCanvas(canvas, shareUrl, {
+      width: 150,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    })
   } catch (error) {
     console.error('生成二维码失败:', error)
+  }
+
+  // 生成项目页面二维码
+  if (projectQrCanvas.value) {
+    try {
+      await QRCode.toCanvas(projectQrCanvas.value, getCurrentProjectUrl(), {
+        width: 32,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      })
+    } catch (error) {
+      // 不影响主流程
+    }
   }
 }
 
@@ -283,10 +273,39 @@ onMounted(() => {
   if (props.visible) {
     generateQRCode()
   }
+  // 页面初始时也生成项目二维码
+  nextTick(() => {
+    if (projectQrCanvas.value) {
+      QRCode.toCanvas(projectQrCanvas.value, getCurrentProjectUrl(), {
+        width: 32,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      }).catch(() => {})
+    }
+  })
 })
 </script>
 
 <style lang="scss" scoped>
+
+.project-qrcode {
+  //display: flex;
+  align-items: center;
+  height: 20px;
+  margin-left: 0;
+}
+.project-qr-canvas {
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid var(--ui-color-grey-300);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-left: 0;
+}
 
 .share-content {
   display: flex;
@@ -510,8 +529,10 @@ onMounted(() => {
 }
 
 .stat-item {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   font-size: 13px;
   opacity: 0.98;
@@ -541,19 +562,14 @@ onMounted(() => {
 }
 
 .branding {
-  font-size: 13px;
-  opacity: 0.95;
   display: flex;
   align-items: center;
-  gap: 8px;
-  align-self: flex-end;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
-  border-radius: 20px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px 16px;
+  border-radius: 24px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
   transition: all 0.2s ease;
   
   &:hover {
@@ -561,13 +577,6 @@ onMounted(() => {
     transform: translateY(-1px);
   }
 }
-
-.branding::before {
-  content: "✨";
-  font-size: 16px;
-}
-
-/* 删除这个::after伪元素，因为我们已经用了更复杂的动画效果 */
 
 /* 拓展qr-section高度并让内容平均分布 */
 .qr-section {
