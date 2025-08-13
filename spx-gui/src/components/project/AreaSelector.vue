@@ -1,5 +1,5 @@
 <template>
-  <div class="area-selector-container" @click="handleBackgroundClick">
+  <div class="area-selector-container">
     <div class="screenshot-wrapper" ref="screenshotWrapper" @click.stop>
       <img
         :src="screenshotDataUrl"
@@ -293,17 +293,6 @@ const startResize = (event: MouseEvent, handle: string) => {
 
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
-}
-
-// 点击背景取消选择
-const handleBackgroundClick = (event) => {
-  console.log('背景点击事件触发', event.target, event.currentTarget)
-  console.log('当前选择状态:', { isSelecting: isSelecting.value, isDragging: isDragging.value })
-
-  // 只有在不是选择或拖拽状态时才取消
-  if (!isSelecting.value && !isDragging.value) {
-    cancel()
-  }
 }
 
 // 确认选择

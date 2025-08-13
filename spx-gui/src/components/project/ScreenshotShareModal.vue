@@ -5,7 +5,18 @@
     :auto-focus="false"
     @update:visible="handleClose"
   >
-    <div class="share-content">
+    <!-- 区域选择器 -->
+    <AreaSelector
+      v-if="showAreaSelector && screenshotDataUrl && screenshotWidth && screenshotHeight"
+      :screenshot-data-url="screenshotDataUrl"
+      :screenshot-width="screenshotWidth"
+      :screenshot-height="screenshotHeight"
+      @area-selected="handleAreaSelected"
+      @cancelled="handleAreaSelectionCancelled"
+    />
+
+    <!-- 分享内容 -->
+    <div v-else class="share-content">
       <div class="share-title">
         {{ $t({ en: 'This screenshot is great, share it with friends!', zh: '截图这么棒,分享给好友吧!' }) }}
       </div>
@@ -13,7 +24,8 @@
         <div class="poster-section">
           <div class="poster-background">
             <div class="screenshot-area">
-              <img v-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
+              <img v-if="croppedScreenshotDataUrl" :src="croppedScreenshotDataUrl" alt="Cropped Screenshot" class="screenshot-image" />
+              <img v-else-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
               <div v-else class="screenshot-placeholder">
                 <UIIcon type="file" />
                 <span>{{ $t({ en: 'No screenshot', zh: '暂无截图' }) }}</span>
@@ -96,6 +108,7 @@ import { generateProjectQRCode } from '@/utils/qrcode'
 import { UIButton, UIIcon } from '@/components/ui'
 import { UIFormModal } from '@/components/ui/modal'
 import { humanizeCount } from '@/utils/utils'
+import AreaSelector from './AreaSelector.vue'
 
 interface Platform {
   id: string
@@ -111,9 +124,18 @@ interface ProjectStats {
   remixCount?: number
 }
 
+interface SelectedArea {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 const props = defineProps<{
   visible: boolean
   screenshotDataUrl?: string
+  screenshotWidth?: number
+  screenshotHeight?: number
   projectName?: string
   projectStats?: ProjectStats
 }>()
@@ -130,11 +152,17 @@ const visible = computed({
 
 const qrCanvas = ref<HTMLCanvasElement>()
 const projectQrCanvas = ref<HTMLCanvasElement>()
+const isDownloading = ref(false)
+
+// 框选相关状态
+const showAreaSelector = ref(false)
+const croppedScreenshotDataUrl = ref<string>('')
+const selectedArea = ref<SelectedArea | null>(null)
+
 // 获取当前页面URL
 function getCurrentProjectUrl() {
   return window.location.origin + window.location.pathname;
 }
-const isDownloading = ref(false)
 
 // 平台配置
 const platforms: Platform[] = [
@@ -185,6 +213,99 @@ const formattedStats = computed(() => {
     viewCount: props.projectStats.viewCount ? humanizeCount(props.projectStats.viewCount) : null,
     likeCount: props.projectStats.likeCount ? humanizeCount(props.projectStats.likeCount) : null,
     remixCount: props.projectStats.remixCount ? humanizeCount(props.projectStats.remixCount) : null
+  }
+})
+
+// 处理区域选择完成
+const handleAreaSelected = async (area: SelectedArea) => {
+  try {
+    console.log('用户选择了区域:', area)
+    selectedArea.value = area
+    
+    // 裁剪图片
+    await cropScreenshot(area)
+    
+    // 隐藏区域选择器
+    showAreaSelector.value = false
+  } catch (error) {
+    console.error('裁剪截图失败:', error)
+    showAreaSelector.value = false
+  }
+}
+
+// 处理区域选择取消
+const handleAreaSelectionCancelled = () => {
+  showAreaSelector.value = false
+  emit('close')
+}
+
+// 裁剪截图
+const cropScreenshot = async (area: SelectedArea) => {
+  if (!props.screenshotDataUrl) return
+
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('无法获取canvas上下文'))
+          return
+        }
+
+        // 设置canvas尺寸为裁剪区域大小
+        canvas.width = area.width
+        canvas.height = area.height
+
+        // 绘制裁剪区域
+        ctx.drawImage(
+          img,
+          area.x, area.y, area.width, area.height, // 源图像裁剪区域
+          0, 0, area.width, area.height // 目标canvas区域
+        )
+
+        // 转换为dataURL
+        croppedScreenshotDataUrl.value = canvas.toDataURL('image/png')
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    }
+    
+    img.onerror = () => {
+      reject(new Error('图片加载失败'))
+    }
+    
+    img.src = props.screenshotDataUrl!
+  })
+}
+
+// 监听弹窗显示状态，显示时启动框选
+watch(() => props.visible, (newVisible) => {
+  if (newVisible && props.screenshotDataUrl) {
+    // 重置状态
+    croppedScreenshotDataUrl.value = ''
+    selectedArea.value = null
+    
+    // 显示区域选择器
+    showAreaSelector.value = true
+  } else if (!newVisible) {
+    // 关闭时重置状态
+    showAreaSelector.value = false
+    croppedScreenshotDataUrl.value = ''
+    selectedArea.value = null
+  }
+})
+
+// 监听框选状态，框选完成后生成二维码
+watch(() => showAreaSelector.value, (newShowAreaSelector) => {
+  if (!newShowAreaSelector && croppedScreenshotDataUrl.value) {
+    // 框选完成，生成二维码
+    nextTick(() => {
+      generateQRCode()
+    })
   }
 })
 
@@ -259,12 +380,13 @@ async function handleDownload() {
   isDownloading.value = true
   
   try {
-    // 这里可以使用html2canvas将整个海报区域转换为图片进行下载
-    // 或者创建一个包含截图和二维码的合成图片
     const link = document.createElement('a')
     
-    if (props.screenshotDataUrl) {
-      link.href = props.screenshotDataUrl
+    // 优先使用裁剪后的图片
+    const imageUrl = croppedScreenshotDataUrl.value || props.screenshotDataUrl
+    
+    if (imageUrl) {
+      link.href = imageUrl
       link.download = `${props.projectName || 'game'}-screenshot.png`
       document.body.appendChild(link)
       link.click()
@@ -285,20 +407,10 @@ function handleOverlayClick() {
   emit('close')
 }
 
-// 监听弹窗显示状态，显示时生成二维码
-watch(() => props.visible, (newVisible) => {
-  if (newVisible) {
-    nextTick(() => {
-      generateQRCode()
-    })
-  }
-})
-
-
 onMounted(() => {
-  if (props.visible) {
+  if (props.visible && props.screenshotDataUrl) {
     nextTick(() => {
-      generateQRCode()
+      showAreaSelector.value = true
     })
   }
 });

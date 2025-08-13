@@ -107,6 +107,8 @@ const isRecording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const isScreenshotModalVisible = ref(false)
 const screenshotDataUrl = ref<string | undefined>()
+const screenshotWidth = ref<number | undefined>()
+const screenshotHeight = ref<number | undefined>()
 const [thumbnailUrl] = useFileUrl(() => project.value?.thumbnail)
 
 const likeCount = computed(() => {
@@ -253,11 +255,50 @@ const handleUnpublish = useMessageHandle(
 )
 const handleScreenshot = useMessageHandle(
   async () => {
-    const canvas = document.querySelector('canvas')
-    if (canvas) {
+    try {
+      // 获取屏幕流（让用户选择要截图的屏幕/窗口）
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false
+      })
+
+      // 创建video元素来显示流
+      const video = document.createElement('video')
+      video.srcObject = screenStream
+      video.play()
+
+      // 等待视频准备就绪
+      await new Promise<void>((resolve) => {
+        video.onloadedmetadata = () => resolve()
+      })
+
+      // 等待一帧确保视频已渲染
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // 创建canvas并绘制当前帧
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      ctx.drawImage(video, 0, 0)
+
       const dataURL = canvas.toDataURL('image/png')
       screenshotDataUrl.value = dataURL
+      screenshotWidth.value = canvas.width
+      screenshotHeight.value = canvas.height
+      
+      // 停止屏幕流
+      screenStream.getTracks().forEach(track => track.stop())
+      
       isScreenshotModalVisible.value = true
+    } catch (error) {
+      console.error('截图失败:', error)
+      // 用户可能取消了屏幕分享选择
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.log('用户取消了屏幕分享')
+      }
+      throw error
     }
   },
   { en: 'Failed to take screenshot', zh: '截屏失败' }
@@ -594,6 +635,8 @@ const remixesRet = useQuery(
   <ScreenshotShareModal
     v-model:visible="isScreenshotModalVisible"
     :screenshot-data-url="screenshotDataUrl"
+    :screenshot-width="screenshotWidth"
+    :screenshot-height="screenshotHeight"
     :project-name="props.name"
     :project-stats="{
       viewCount: project?.viewCount,
