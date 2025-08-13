@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
@@ -123,6 +123,16 @@ const allPaths = ref<paper.Path[]>([])
 const controlPoints = ref<ExtendedItem[]>([])
 const mouseDownPath = ref<paper.Path | null>(null)
 const mouseDownPos = ref<paper.Point | null>(null)
+const imgSrc = ref<string | null>(null)
+const imgLoading = ref<boolean>(true)
+
+// 存储背景图片的引用
+const backgroundImage = ref<paper.Raster | null>(null)
+
+const props = defineProps<{
+  imgSrc: string | null
+  imgLoading: boolean
+}>()
 
 // 选中路径（独占选择）
 const selectPathExclusive = (path: paper.Path | null): void => {
@@ -131,6 +141,52 @@ const selectPathExclusive = (path: paper.Path | null): void => {
   })
   if (path) {
     path.selected = true
+  }
+}
+
+// 加载图片到画布
+const loadImageToCanvas = (imageSrc: string): void => {
+  if (!paper.project) return
+  
+  // 如果已有背景图片，先移除
+  if (backgroundImage.value) {
+    backgroundImage.value.remove()
+  }
+  
+  // 创建新的光栅图像
+  const raster = new paper.Raster(imageSrc)
+  
+  raster.onLoad = () => {
+    // 图片加载完成后的处理
+    // 设置图片位置到画布中心
+    raster.position = paper.view.center
+    
+    // 可选：调整图片大小适应画布
+    const scale = Math.min(
+      canvasWidth.value / raster.width,
+      canvasHeight.value / raster.height
+    ) * 0.8 // 留一些边距
+    
+    if (scale < 1) {
+      raster.scale(scale)
+    }
+    
+    // 将图片放到最底层，作为背景
+    raster.sendToBack()
+    
+    // 保存引用
+    backgroundImage.value = raster
+    
+    // 更新视图
+    paper.view.update()
+  }
+
+  raster.onMouseDown = (event: paper.MouseEvent) => {
+    if (currentTool.value === 'select') {
+      selectPathExclusive(null) // 清除路径选择
+      raster.selected = true
+      paper.view.update()
+    }
   }
 }
 
@@ -147,7 +203,11 @@ const initPaper = (): void => {
     fillColor: 'transparent'
   })
   
-  // 使用 update() 替代 draw()
+  // 如果有初始图片，加载它
+  if (props.imgSrc) {
+    loadImageToCanvas(props.imgSrc)
+  }
+  
   paper.view.update()
 }
 
@@ -575,6 +635,13 @@ const clearCanvas = (): void => {
   
   paper.view.update()
 }
+
+// 监听props中的imgSrc变化
+watch(() => props.imgSrc, (newImgSrc) => {
+  if (newImgSrc) {
+    loadImageToCanvas(newImgSrc)
+  }
+}, { immediate: true })
 
 onMounted(() => {
   initPaper()

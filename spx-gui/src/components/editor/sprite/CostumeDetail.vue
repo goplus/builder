@@ -2,7 +2,7 @@
   <EditorItemDetail :name="costume.name" @rename="handleRename">
     <div class="painter-wrapper">
       <CheckerboardBackground class="background" />
-      <Painter class="painter" />
+      <Painter class="painter" :img-src="imgSrc" :img-loading="imgLoading" />
     </div>
   </EditorItemDetail>
 </template>
@@ -15,6 +15,7 @@ import { useRenameCostume } from '@/components/asset'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import Painter from '@/components/editor/common/painter/painter.vue'
+import { useFileUrl } from '@/utils/file'
 
 const props = defineProps<{
   costume: Costume
@@ -26,6 +27,8 @@ const handleRename = useMessageHandle(() => renameCostume(props.costume), {
   en: 'Failed to rename costume',
   zh: '重命名造型失败'
 }).fn
+
+const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
 
 <style lang="scss" scoped>
