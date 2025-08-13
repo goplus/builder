@@ -7,13 +7,11 @@
     :selectable="selectable"
     :color="color"
   >
-    <CornerMenu
-      v-if="operable && selectable && selectable.selected"
-      color="stage"
-      :removable="removable"
-      :item="backdrop"
-      @remove="handleRemove"
-    />
+    <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
+      <SaveAssetToLibraryMenuItem :item="backdrop" />
+      <RenameMenuItem @click="handleRename" />
+      <RemoveMenuItem :disabled="!removable" @click="handleRemove" />
+    </CornerMenu>
   </UIEditorBackdropItem>
 </template>
 
@@ -25,6 +23,8 @@ import type { Backdrop } from '@/models/backdrop'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useRenameBackdrop } from '@/components/asset'
+import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -68,4 +68,10 @@ const handleRemove = useMessageHandle(
     zh: '删除背景失败'
   }
 ).fn
+
+const renameBackdrop = useRenameBackdrop()
+const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdrop), {
+  en: 'Failed to rename backdrop',
+  zh: '重命名背景失败'
+})
 </script>

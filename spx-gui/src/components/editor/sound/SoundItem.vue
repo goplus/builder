@@ -9,13 +9,11 @@
     <template #player>
       <SoundPlayer :color="color" :src="audioSrc" />
     </template>
-    <CornerMenu
-      v-if="operable && selectable && selectable.selected"
-      :color="color"
-      :item="sound"
-      removable
-      @remove="handleRemove"
-    />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <SaveAssetToLibraryMenuItem :item="sound" />
+      <RenameMenuItem @click="handleRename" />
+      <RemoveMenuItem @click="handleRemove" />
+    </CornerMenu>
   </UIEditorSoundItem>
 </template>
 
@@ -28,6 +26,8 @@ import { UIEditorSoundItem } from '@/components/ui'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import SoundPlayer from './SoundPlayer.vue'
+import { useRenameSound } from '@/components/asset'
+import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -65,4 +65,10 @@ const handleRemove = useMessageHandle(
     zh: '删除声音失败'
   }
 ).fn
+
+const renameSound = useRenameSound()
+const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
+  en: 'Failed to rename sound',
+  zh: '重命名声音失败'
+})
 </script>

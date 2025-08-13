@@ -4,23 +4,23 @@
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="getIcon(widget)"></div>
     </template>
-    <UICornerIcon
-      v-if="removable"
-      v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }"
-      type="trash"
-      :color="color"
-      @click="handleRemove"
-    />
+    <CornerMenu v-if="removable" :color="color">
+      <RenameMenuItem :radar="{ name: 'Rename', desc: 'Click to rename the widget' }" @click="handleRename" />
+      <RemoveMenuItem :radar="{ name: 'Remove', desc: 'Click to remove the widget' }" @click="handleRemove" />
+    </CornerMenu>
   </UIEditorWidgetItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIEditorWidgetItem, UICornerIcon } from '@/components/ui'
+import { UIEditorWidgetItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { getIcon } from './icon'
+import CornerMenu from '../../common/CornerMenu.vue'
+import { useRenameWidget } from '@/components/asset'
+import { RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -58,4 +58,10 @@ const handleRemove = useMessageHandle(
     zh: '删除控件失败'
   }
 ).fn
+
+const renameWidget = useRenameWidget()
+const { fn: handleRename } = useMessageHandle(() => renameWidget(props.widget), {
+  en: 'Failed to rename widget',
+  zh: '重命名控件失败'
+})
 </script>

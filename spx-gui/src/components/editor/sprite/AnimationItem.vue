@@ -16,19 +16,16 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UICornerIcon
-      v-if="removable"
-      v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }"
-      type="trash"
-      :color="color"
-      @click="handleRemove"
-    />
+    <CornerMenu v-if="removable" :color="color">
+      <RenameMenuItem :radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
+      <RemoveMenuItem :radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
+    </CornerMenu>
   </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIImg, UIEditorSpriteItem, useModal, UICornerIcon } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem, useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { useHovered } from '@/utils/dom'
 import type { Animation } from '@/models/animation'
@@ -36,6 +33,9 @@ import { useMessageHandle } from '@/utils/exception'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationRemoveModal from './AnimationRemoveModal.vue'
+import CornerMenu from '../common/CornerMenu.vue'
+import { useRenameAnimation } from '@/components/asset'
+import { RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -78,4 +78,10 @@ const handleRemove = useMessageHandle(
     zh: '删除动画失败'
   }
 ).fn
+
+const renameAnimation = useRenameAnimation()
+const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animation), {
+  en: 'Failed to rename animation',
+  zh: '重命名动画失败'
+})
 </script>
