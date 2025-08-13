@@ -116,26 +116,21 @@
           </video>
         </div>
       </div>
-      <!-- 录屏完成提示 -->
-      <!-- <div class="recording-complete">
-        <div class="complete-indicator">
-          <div class="green-dot"></div>
-          {{ $t({ en: 'Recording Complete', zh: '录制完成' }) }}
-        </div>
-        <div class="video-info">
-          {{ $t({ en: 'Ready to share', zh: '可以开始分享了' }) }}
-        </div>
-      </div> -->
-
-      <!-- 新增：自动保存提示 -->
       <div class="auto-save-tip">
-        <div class="tip-text">
-          {{
-            $t({
-              en: 'Tip: After successful sharing, this recording will be automatically saved to your personal Records.',
-              zh: '提示：分享成功后，录屏将自动保存到您的个人Records中。'
-            })
-          }}
+        <div class="tip-left">
+          <div class="tip-text">
+            {{
+              $t({
+                en: 'Recording saved to your Records. Not satisfied 👉',
+                zh: '录屏已保存到您的Records，不满意 👉'
+              })
+            }}
+          </div>
+        </div>
+        <div class="tip-right">
+          <UIButton type="secondary" size="small" @click="handleReRecord">
+            {{ $t({ en: 'Re-record', zh: '重新录制' }) }}
+          </UIButton>
         </div>
       </div>
 
@@ -178,10 +173,20 @@
 
         <div class="qr-instructions">
           <p v-if="selectedPlatform === 'qq'">
-            {{ $t({ en: 'Scan the QR code above with QQ to share your game.', zh: '使用QQ扫描上方二维码，分享你的游戏作品。' }) }}<br />
+            {{
+              $t({
+                en: 'Scan the QR code above with QQ to share your game.',
+                zh: '使用QQ扫描上方二维码，分享你的游戏作品。'
+              })
+            }}<br />
           </p>
           <p v-else-if="selectedPlatform === 'wechat'">
-            {{ $t({ en: 'Scan the QR code above with WeChat to share your game.', zh: '使用微信扫描上方二维码，分享你的游戏作品。' }) }}
+            {{
+              $t({
+                en: 'Scan the QR code above with WeChat to share your game.',
+                zh: '使用微信扫描上方二维码，分享你的游戏作品。'
+              })
+            }}
           </p>
         </div>
 
@@ -258,7 +263,17 @@ const handleModalClose = (visible: boolean, reason?: string | Event) => {
   }
 }
 
-// 重置录屏状态的函数
+// 新增：重新录制处理函数
+const handleReRecord = () => {
+  // 重置录屏状态
+  resetRecordingState()
+
+  // 切换到初始状态
+  currentState.value = 'initial'
+
+  console.log('用户选择重新录制，状态已重置')
+}
+
 // 重置录屏状态的函数
 const resetRecordingState = () => {
   // 重置录屏相关状态
@@ -1149,29 +1164,38 @@ onUnmounted(() => {
     }
   }
 }
-
-// 自动保存提示样式
 .auto-save-tip {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 13px;
   margin-top: 16px;
   padding: 12px 16px;
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border: 1px solid #bae6fd;
   border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.4;
+
+  .tip-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0; // 防止文本溢出
+  }
 
   .tip-icon {
     font-size: 16px;
-    margin-top: 1px;
     flex-shrink: 0;
   }
 
   .tip-text {
     color: #0369a1;
-    flex: 1;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .tip-right {
+    flex-shrink: 0;
   }
 }
 </style>
