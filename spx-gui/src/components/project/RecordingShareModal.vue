@@ -1262,19 +1262,19 @@ onUnmounted(() => {
   margin-bottom: 8px;
 
   :deep(.svg-icon) {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    svg {
-      width: 28px;
-      height: 28px;
-      max-width: 100%;
-      max-height: 100%;
-    }
+    // svg {
+    //   width: 28px;
+    //   height: 28px;
+    //   max-width: 100%;
+    //   max-height: 100%;
+    // }
   }
 }
 
