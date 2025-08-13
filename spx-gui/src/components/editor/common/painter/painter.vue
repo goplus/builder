@@ -154,6 +154,10 @@ const imgLoading = ref<boolean>(true)
 
 // 存储背景图片的引用
 const backgroundImage = ref<paper.Raster | null>(null)
+// 背景矩形（用于导出时隐藏）
+const backgroundRect = ref<paper.Path | null>(null)
+// 标记：当前是否由 props.imgSrc 触发的导入过程（用于避免导入→导出→再次导入循环）
+const isImportingFromProps = ref<boolean>(false)
 
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
@@ -161,6 +165,10 @@ const aiDialogVisible = ref<boolean>(false)
 const props = defineProps<{
   imgSrc: string | null
   imgLoading: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'svg-change', svg: string): void
 }>()
 
 // 选中路径（独占选择）
@@ -173,7 +181,7 @@ const selectPathExclusive = (path: paper.Path | null): void => {
   }
 }
 
-// 加载图片到画布
+// 加载位图图片到画布（PNG/JPG/...）
 const loadImageToCanvas = (imageSrc: string): void => {
   if (!paper.project) return
   
@@ -190,15 +198,8 @@ const loadImageToCanvas = (imageSrc: string): void => {
     // 设置图片位置到画布中心
     raster.position = paper.view.center
     
-    // 可选：调整图片大小适应画布
-    const scale = Math.min(
-      canvasWidth.value / raster.width,
-      canvasHeight.value / raster.height
-    ) * 0.8 // 留一些边距
-    
-    if (scale < 1) {
-      raster.scale(scale)
-    }
+    // 保持原始尺寸，不进行自动缩放
+    // 如果需要缩放，用户可以手动调整
     
     // 将图片放到最底层，作为背景
     raster.sendToBack()
@@ -219,6 +220,53 @@ const loadImageToCanvas = (imageSrc: string): void => {
   // }
 }
 
+// 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）
+const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
+  if (!paper.project) return
+  try {
+    const resp = await fetch(imageSrc)
+    // 先尝试从响应体的 blob.type 判断（对 blob: URL 更可靠）
+    let isSvg = false
+    let svgText: string | null = null
+    try {
+      const blob = await resp.clone().blob()
+      if (blob && typeof blob.type === 'string' && blob.type.includes('image/svg')) {
+        isSvg = true
+        svgText = await blob.text()
+      }
+    } catch {}
+
+    // 退化到 header 判断
+    if (!isSvg) {
+      const contentType = resp.headers.get('content-type') || ''
+      if (contentType.includes('image/svg')) {
+        isSvg = true
+        svgText = await resp.clone().text()
+      }
+    }
+
+    // 最后尝试直接将文本解析为 SVG（针对部分 blob: 无类型场景）
+    if (!isSvg) {
+      try {
+        const text = await resp.clone().text()
+        if (/^\s*<svg[\s\S]*<\/svg>\s*$/i.test(text)) {
+          isSvg = true
+          svgText = text
+        }
+      } catch {}
+    }
+
+    if (isSvg && svgText != null) {
+      importSvgToCanvas(svgText)
+    } else {
+      loadImageToCanvas(imageSrc)
+    }
+  } catch {
+    // 回退策略：按位图处理
+    loadImageToCanvas(imageSrc)
+  }
+}
+
 // 初始化 Paper.js
 const initPaper = (): void => {
   if (!canvasRef.value) return
@@ -231,11 +279,9 @@ const initPaper = (): void => {
     size: [canvasWidth.value, canvasHeight.value],
     fillColor: 'transparent'
   })
+  backgroundRect.value = background
   
-  // 如果有初始图片，加载它
-  if (props.imgSrc) {
-    loadImageToCanvas(props.imgSrc)
-  }
+  // 初始图片加载交由下面的 watch 处理
   
   paper.view.update()
 }
@@ -259,14 +305,18 @@ const selectTool = (tool: ToolType): void => {
 
 // 处理直线创建
 const handleLineCreated = (line: paper.Path): void => {
+  console.log('handleLineCreated 被调用')
   allPaths.value.push(line)
   paper.view.update()
+  exportSvgAndEmit()
 }
 
 // 处理笔刷路径创建
 const handlePathCreated = (path: paper.Path): void => {
+  console.log('handlePathCreated 被调用')
   allPaths.value.push(path)
   paper.view.update()
+  exportSvgAndEmit()
 }
 
 // 创建控制点
@@ -648,6 +698,7 @@ const handleCanvasMouseUp = (event: MouseEvent): void => {
 // 鼠标释放事件（用于结束拖拽）
 const handleMouseUp = (): void => {
   const prevSelected = selectedPoint.value
+  const wasDragging = isDragging.value
   if (isDragging.value) {
     isDragging.value = false
     selectedPoint.value = null
@@ -672,6 +723,16 @@ const handleMouseUp = (): void => {
       showControlPoints(prevMouseDownPath)
     }
     paper.view.update()
+  }
+
+  if (wasDragging) {
+    console.log('拖拽结束，准备导出 SVG')
+    // props 驱动的导入不触发导出，避免循环
+    if (!isImportingFromProps.value) exportSvgAndEmit()
+    else {
+      console.log('跳过导出（props导入中）')
+      isImportingFromProps.value = false
+    }
   }
 }
 
@@ -718,15 +779,8 @@ const importImageToCanvas = (imageUrl: string): void => {
     // 设置图片位置到画布中心
     raster.position = paper.view.center
     
-    // 调整图片大小适应画布
-    const scale = Math.min(
-      canvasWidth.value / raster.width * 0.6,
-      canvasHeight.value / raster.height * 0.6
-    )
-    
-    if (scale < 1) {
-      raster.scale(scale)
-    }
+    // 保持原始尺寸，不进行自动缩放
+    // 如果需要缩放，用户可以手动调整
     
     // 添加点击事件处理
     // raster.onMouseDown = (event: paper.MouseEvent) => {
@@ -740,6 +794,8 @@ const importImageToCanvas = (imageUrl: string): void => {
     // 更新视图
     paper.view.update()
     // console.log('PNG图片已导入到画布')
+
+    exportSvgAndEmit()
   }
   
   raster.onError = () => {
@@ -770,16 +826,8 @@ const importSvgToCanvas = (svgContent: string): void => {
       // 设置位置到画布中心
       importedItem.position = paper.view.center
       
-      // 调整大小适应画布
-      const bounds = importedItem.bounds
-      const scale = Math.min(
-        canvasWidth.value / bounds.width * 0.6,
-        canvasHeight.value / bounds.height * 0.6
-      )
-      
-      if (scale < 1) {
-        importedItem.scale(scale)
-      }
+      // 保持原始尺寸，不进行自动缩放
+      // 如果需要缩放，用户可以手动调整
       
       // 收集所有可编辑的路径
       // const collectPaths = (item: paper.Item): void => {
@@ -808,6 +856,9 @@ const importSvgToCanvas = (svgContent: string): void => {
       // 更新视图
       paper.view.update()
       // console.log(`SVG已导入到画布，共${allPaths.value.length - (allPaths.value.length - countNewPaths(importedItem))}条可编辑路径`)
+      // 导入来源于 props 时不导出，避免循环
+      if (!isImportingFromProps.value) exportSvgAndEmit()
+      else isImportingFromProps.value = false
     }
   } catch (error) {
     console.error('SVG导入失败:', error)
@@ -862,16 +913,37 @@ const clearCanvas = (): void => {
     size: [canvasWidth.value, canvasHeight.value],
     fillColor: 'transparent'
   })
+  backgroundRect.value = background
   
   paper.view.update()
+
+  // 导出变更
+  exportSvgAndEmit()
 }
 
 // 监听props中的imgSrc变化
-watch(() => props.imgSrc, (newImgSrc) => {
-  if (newImgSrc) {
-    loadImageToCanvas(newImgSrc)
-  }
-}, { immediate: true })
+watch(
+  () => props.imgSrc,
+  (newImgSrc) => {
+    if (!newImgSrc) return
+    isImportingFromProps.value = true
+    // 每次外部传入图片时，清空当前项目并重新导入，避免叠加
+    if (paper.project) {
+      paper.project.clear()
+      const background = new paper.Path.Rectangle({
+        point: [0, 0],
+        size: [canvasWidth.value, canvasHeight.value],
+        fillColor: 'transparent'
+      })
+      backgroundRect.value = background
+      allPaths.value = []
+      backgroundImage.value = null
+      paper.view.update()
+    }
+    loadFileToCanvas(newImgSrc)
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   initPaper()
@@ -895,6 +967,7 @@ onMounted(() => {
         allPaths.value = allPaths.value.filter((path: paper.Path) => path !== pathToDelete)
         hideControlPoints()
         paper.view.update()
+        exportSvgAndEmit()
       }
     }
   }
@@ -909,6 +982,34 @@ onMounted(() => {
     window.removeEventListener('mouseup', handleMouseUp)
   })
 })
+
+// 导出当前画布为 SVG 并上报父组件
+const exportSvgAndEmit = (): void => {
+  console.log('exportSvgAndEmit 被调用')
+  if (!paper.project) {
+    console.log('paper.project 不存在')
+    return
+  }
+  const prevVisible = backgroundRect.value?.visible ?? true
+  if (backgroundRect.value) backgroundRect.value.visible = false
+  try {
+    // 导出SVG时保持原始尺寸和viewBox
+    const svgStr = (paper.project as any).exportSVG({ 
+      asString: true, 
+      embedImages: true,
+      bounds: paper.view.bounds // 使用视图边界确保尺寸正确
+    }) as string
+    console.log('导出的 SVG 长度:', svgStr?.length)
+    if (typeof svgStr === 'string') {
+      console.log('发送 svg-change 事件')
+      emit('svg-change', svgStr)
+    }
+  } catch (e) {
+    console.error('导出 SVG 失败:', e)
+  } finally {
+    if (backgroundRect.value) backgroundRect.value.visible = prevVisible
+  }
+}
 </script>
 
 <style scoped>
