@@ -62,8 +62,8 @@ export function useRemoveProject() {
 export function useShareProject() {
   const modal = useModal(ProjectShareModal)
 
-  return async function shareProject(owner: string, name: string) {
-    await modal({ owner, name })
+  return async function shareProject(owner: string, name: string, thumbnail: string) {
+    await modal({ owner, name, thumbnail})
   }
 }
 
