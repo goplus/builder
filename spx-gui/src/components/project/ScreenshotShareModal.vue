@@ -39,7 +39,7 @@
               </div>
               <div style="display: flex; align-items: flex-start; gap: 16px;">
                 <div class="branding">
-                  <img src="@/components/navbar/logo.svg" alt="logo" class="branding-logo" style="height: 20px; vertical-align: middle;" />
+                  <img src="@/components/navbar/logo.svg" alt="logo" class="branding-logo" style="height: 40px; vertical-align: middle;" />
                 </div>
                 <div class="project-qrcode">
                   <canvas ref="projectQrCanvas" class="project-qr-canvas"></canvas>
@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
-import QRCode from 'qrcode'
+import { generateProjectQRCode } from '@/utils/qrcode'
 import { UIButton, UIIcon } from '@/components/ui'
 import { UIFormModal } from '@/components/ui/modal'
 import { humanizeCount } from '@/utils/utils'
@@ -193,40 +193,65 @@ function selectPlatform(platform: Platform) {
   generateQRCode()
 }
 
-async function generateQRCode() {
-  if (!qrCanvas.value) return
-  // 生成主分享二维码
+async function drawQRCodeToCanvas(canvas: HTMLCanvasElement, url: string) {
+  if (!canvas) return;
   
-  try {
-    const canvas = qrCanvas.value
-    const shareText = `我在Xbuilder制作了一个游戏${props.projectName ? ` "${props.projectName}"` : ''}，快来看看吧！`
-    const shareUrl = `${selectedPlatform.value.shareUrl}?text=${encodeURIComponent(shareText)}`
-    await QRCode.toCanvas(canvas, shareUrl, {
-      width: 150,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#ffffff'
-      }
-    })
-  } catch (error) {
-    console.error('生成二维码失败:', error)
+  // 获取CSS中定义的尺寸
+  const computedStyle = window.getComputedStyle(canvas);
+  const displayWidth = parseInt(computedStyle.width);
+  const displayHeight = parseInt(computedStyle.height);
+  
+  // 计算设备像素比，确保高分辨率显示
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const pixelRatio = Math.max(devicePixelRatio, 2); // 至少2倍分辨率
+  
+  // 设置canvas的实际像素尺寸（高分辨率）
+  canvas.width = displayWidth * pixelRatio;
+  canvas.height = displayHeight * pixelRatio;
+  
+  // 使用qrcode工具生成高分辨率二维码
+  const qrSize = Math.min(displayWidth, displayHeight) * pixelRatio;
+  const dataUrl = await generateProjectQRCode({
+    projectName: props.projectName || '',
+    projectUrl: url,
+  }, { 
+    width: qrSize, 
+    margin: 2 // 添加一些边距确保二维码完整显示
+  });
+  
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // 设置高分辨率渲染
+    ctx.scale(pixelRatio, pixelRatio);
+    
+    const img = new window.Image();
+    img.onload = () => {
+      // 清除canvas
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
+      
+      // 计算居中位置
+      const imgSize = Math.min(displayWidth, displayHeight);
+      const x = (displayWidth - imgSize) / 2;
+      const y = (displayHeight - imgSize) / 2;
+      
+      // 绘制二维码
+      ctx.drawImage(img, x, y, imgSize, imgSize);
+    };
+    img.src = dataUrl;
   }
+}
 
-  // 生成项目页面二维码
+async function generateQRCode() {
+  // 主分享二维码 - 使用当前选中的平台生成分享URL
+  if (qrCanvas.value) {
+    const currentUrl = getCurrentProjectUrl();
+    const shareUrl = `${selectedPlatform.value.shareUrl}?text=${encodeURIComponent(`我在Xbuilder制作了一个游戏${props.projectName ? ` \"${props.projectName}\"` : ''}，快来看看吧！`)}&url=${encodeURIComponent(currentUrl)}`;
+    await drawQRCodeToCanvas(qrCanvas.value, shareUrl);
+  }
+  
+  // 项目页面二维码 - 直接使用项目URL
   if (projectQrCanvas.value) {
-    try {
-      await QRCode.toCanvas(projectQrCanvas.value, getCurrentProjectUrl(), {
-        width: 32,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      })
-    } catch (error) {
-      // 不影响主流程
-    }
+    await drawQRCodeToCanvas(projectQrCanvas.value, getCurrentProjectUrl());
   }
 }
 
@@ -269,42 +294,31 @@ watch(() => props.visible, (newVisible) => {
   }
 })
 
+
 onMounted(() => {
   if (props.visible) {
-    generateQRCode()
+    nextTick(() => {
+      generateQRCode()
+    })
   }
-  // 页面初始时也生成项目二维码
-  nextTick(() => {
-    if (projectQrCanvas.value) {
-      QRCode.toCanvas(projectQrCanvas.value, getCurrentProjectUrl(), {
-        width: 32,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      }).catch(() => {})
-    }
-  })
-})
+});
 </script>
+
 
 <style lang="scss" scoped>
 
 .project-qrcode {
-  //display: flex;
+  display: flex;
   align-items: center;
-  height: 20px;
-  margin-left: 0;
+  height: 60px;
+  min-width: 60px;
+  //margin-left: 0;
 }
 .project-qr-canvas {
-  width: 24px;
-  height: 24px;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid var(--ui-color-grey-300);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  margin-left: 0;
+  width: 60px;
+  height: 60px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .share-content {
@@ -356,6 +370,8 @@ onMounted(() => {
   background: white;
   border-radius: 8px;
   border: 2px solid var(--ui-color-grey-300);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 
@@ -564,7 +580,7 @@ onMounted(() => {
 .branding {
   display: flex;
   align-items: center;
-  height: 40px;
+  height: 60px;
   background: rgba(255, 255, 255, 0.2);
   padding: 10px 16px;
   border-radius: 24px;
