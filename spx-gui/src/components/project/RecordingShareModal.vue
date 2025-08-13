@@ -352,7 +352,8 @@ const hasRecording = ref(false)
 const recordingTime = ref(0)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const recordedVideoUrl = ref<string | null>(null)
-let recordingTimer: number | null = null
+// let recordingTimer: number | null = null
+let recordingTimer: ReturnType<typeof setInterval> | null = null // 修改这里
 
 // 在现有状态后添加
 const selectedPlatform = ref<string | null>(null) // 当前选中的平台
@@ -479,7 +480,7 @@ const handleStartRecording = useMessageHandle(
     } catch (error) {
       console.error('录制失败详细信息:', error)
       // 用户可能取消了屏幕分享选择
-      if (error.name === 'NotAllowedError') {
+      if (error instanceof Error && error.name === 'NotAllowedError') {
         console.log('用户取消了屏幕分享')
       }
       throw error
