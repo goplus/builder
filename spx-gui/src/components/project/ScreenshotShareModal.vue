@@ -1,107 +1,93 @@
 <template>
-  <div v-if="visible" class="modal-overlay" @click="handleOverlayClick">
-    <div class="screenshot-share-modal" @click.stop>
-      <div class="modal-header">
-        <h2>{{ $t({ en: 'Share Screenshot', zh: '分享截图' }) }}</h2>
-        <button class="close-btn" @click="handleClose">
-          <UIIcon type="close" />
-        </button>
+  <UIFormModal
+    :title="$t({ en: 'Share Screenshot', zh: '分享截图' })"
+    :visible="visible"
+    :auto-focus="false"
+    @update:visible="handleClose"
+  >
+    <div class="share-content">
+      <div class="share-title">
+        {{ $t({ en: 'This screenshot is great, share it with friends!', zh: '截图这么棒,分享给好友吧!' }) }}
       </div>
-      
-      <div class="modal-content">
-        <!-- 上半部分：左边海报，右边二维码和下载 -->
-        <div class="top-content">
-          <!-- 左侧：海报样式截图 -->
-          <div class="poster-section">
-            <div class="poster-container">
-              <div class="poster-background">
-                <!-- 截图显示区域 -->
-                <div class="screenshot-area">
-                  <img v-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
-                  <div v-else class="screenshot-placeholder">
-                    <UIIcon type="file" />
-                    <span>{{ $t({ en: 'No screenshot', zh: '暂无截图' }) }}</span>
-                  </div>
-                </div>
-                
-                <!-- 海报装饰元素 -->
-                <div class="poster-decoration">
-                  <div class="project-info">
-                    <div class="game-title">{{ projectName }}</div>
-                    <div class="project-stats" v-if="formattedStats">
-                      <div class="stat-item" v-if="formattedStats.viewCount">
-                        <UIIcon type="eye" />
-                        <span>{{ $t(formattedStats.viewCount) }}</span>
-                      </div>
-                      <div class="stat-item" v-if="formattedStats.likeCount">
-                        <UIIcon type="heart" />
-                        <span>{{ $t(formattedStats.likeCount) }}</span>
-                      </div>
-                      <div class="stat-item" v-if="formattedStats.remixCount">
-                        <UIIcon type="remix" />
-                        <span>{{ $t(formattedStats.remixCount) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="branding">Made with Xbuilder</div>
-                </div>
+      <div class="share-main">
+        <div class="poster-section">
+          <div class="poster-background">
+            <div class="screenshot-area">
+              <img v-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
+              <div v-else class="screenshot-placeholder">
+                <UIIcon type="file" />
+                <span>{{ $t({ en: 'No screenshot', zh: '暂无截图' }) }}</span>
               </div>
             </div>
-          </div>
-          
-          <!-- 右侧：二维码和下载 -->
-          <div class="qr-section">
-            <!-- 二维码区域 -->
-            <div class="qr-container">
-              <div class="qr-code-area">
-                <canvas ref="qrCanvas" class="qr-canvas"></canvas>
+            <div class="poster-decoration">
+              <div class="project-info">
+                <div class="game-title">{{ projectName }}</div>
+                <div class="project-stats" v-if="formattedStats">
+                  <div class="stat-item" v-if="formattedStats.viewCount">
+                    <UIIcon type="eye" />
+                    <span>{{ $t(formattedStats.viewCount) }}</span>
+                  </div>
+                  <div class="stat-item" v-if="formattedStats.likeCount">
+                    <UIIcon type="heart" />
+                    <span>{{ $t(formattedStats.likeCount) }}</span>
+                  </div>
+                  <div class="stat-item" v-if="formattedStats.remixCount">
+                    <UIIcon type="remix" />
+                    <span>{{ $t(formattedStats.remixCount) }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="qr-description">{{ $t({ en: 'Scan QR code to share on platform', zh: '用对应平台进行扫码分享' }) }}</div>
-            </div>
-            
-            <!-- 一键下载按钮 -->
-            <div class="download-section">
-              <UIButton
-                type="primary"
-                size="large"
-                icon="arrowDown"
-                :loading="isDownloading"
-                @click="handleDownload"
-              >
-                {{ $t({ en: 'One-click Download', zh: '一键下载' }) }}
-              </UIButton>
+              <div class="branding">Made with Xbuilder</div>
             </div>
           </div>
         </div>
-        
-        <!-- 下半部分：平台选择器 -->
-        <div class="bottom-content">
-          <div class="platform-selector">
-            <div class="platform-title">{{ $t({ en: 'Share Method', zh: '分享方式' }) }}</div>
-            <div class="platform-buttons">
-              <button
-                v-for="platform in platforms"
-                :key="platform.id"
-                :class="['platform-btn', { active: selectedPlatform.id === platform.id }]"
-                @click="selectPlatform(platform)"
-              >
-                <div class="platform-icon" :style="{ backgroundColor: platform.color }">
-                  <span>{{ platform.icon }}</span>
-                </div>
-                <span class="platform-name">{{ platform.name }}</span>
-              </button>
+        <div class="qr-section">
+          <div class="qr-section-inner">
+            <div class="qr-code">
+              <canvas ref="qrCanvas" class="qr-canvas"></canvas>
             </div>
+            <UIButton
+              class="download-btn"
+              type="primary"
+              size="small"
+              :loading="isDownloading"
+              @click="handleDownload"
+            >
+              {{ $t({ en: 'One-click Download', zh: '一键下载' }) }}
+            </UIButton>
+          </div>
+        </div>
+      </div>
+      <div class="share-methods-section">
+        <div class="section-label">{{ $t({ en: 'Share Method', zh: '分享方式' }) }}</div>
+        <div class="social-icons">
+          <div
+            v-for="platform in platforms"
+            :key="platform.id"
+            class="social-icon"
+            :class="{ active: selectedPlatform.id === platform.id }"
+            @click="selectPlatform(platform)"
+          >
+            <div class="icon-wrapper">
+              <img v-if="platform.id === 'qq'" src="@/assets/images/qq.svg" class="icon" alt="QQ" />
+              <img v-else-if="platform.id === 'wechat'" src="@/assets/images/微信.svg" class="icon" alt="WeChat" />
+              <img v-else-if="platform.id === 'douyin'" src="@/assets/images/抖音.svg" class="icon" alt="Douyin" />
+              <img v-else-if="platform.id === 'xiaohongshu'" src="@/assets/images/小红书.svg" class="icon" alt="Xiaohongshu" />
+              <img v-else-if="platform.id === 'bilibili'" src="@/assets/images/bilibili.svg" class="icon" alt="Bilibili" />
+            </div>
+            <span class="platform-name">{{ platform.name }}</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </UIFormModal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
 // import QRCode from 'qrcode' // 暂时注释掉，稍后添加依赖
 import { UIButton, UIIcon } from '@/components/ui'
+import { UIFormModal } from '@/components/ui/modal'
 import { humanizeCount } from '@/utils/utils'
 
 interface Platform {
@@ -301,168 +287,130 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.25s ease-out;
-}
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
-}
-
-.screenshot-share-modal {
-  width: 90%;
-  max-width: 640px;
-  min-width: 560px;
-  max-height: 85vh;
+.share-content {
   display: flex;
   flex-direction: column;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-  animation: slideInScale 0.3s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-@keyframes slideInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 32px;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  
-  h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--ui-color-title);
-    text-align: center;
-    flex: 1;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-.close-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--ui-color-hint-2);
-  transition: all 0.25s ease;
-  position: relative;
-  
-  &:hover {
-    background: var(--ui-color-grey-hover);
-    color: var(--ui-color-text);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
-  
-  :deep(.ui-icon) {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 32px;
-  flex: 1;
+  height: 100%;
   min-height: 0;
-  align-items: center;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 20px 0;
 }
 
-.top-content {
+.share-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ui-color-title);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.share-main {
+  height: 100%;
+  flex: 1 1 0%;
   display: flex;
   gap: 32px;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
   justify-content: center;
-  align-items: flex-start;
-  padding: 8px;
+  align-items: stretch;
+  min-height: 200px;
+  min-width: 300px;
+  margin-bottom: 24px;
 }
+
 
 .poster-section {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
+  height: 100%;
 }
 
-.bottom-content {
-  flex: 0 0 auto;
-  padding-top: 0px;
+
+.qr-code {
+  margin-bottom: 0;
+}
+
+.qr-canvas {
+  width: 280px;
+  height: 280px;
+  display: block;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid var(--ui-color-grey-300);
+}
+
+
+
+.download-btn {
   width: 100%;
+  margin-top: 8px;
+  border-radius: 6px;
+}
+
+.share-methods-section {
+  margin-top: 8px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ui-color-hint-1);
+  margin-bottom: 12px;
+}
+
+.social-icons {
   display: flex;
+  gap: 48px;
   justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  margin: 0 -32px -32px -32px;
-  padding: 16px 32px 32px 32px;
-  border-radius: 0 0 16px 16px;
 }
 
-.poster-container {
-  width: 100%;
-  max-width: 260px;
-  aspect-ratio: 3/4;
-  position: relative;
-  transition: all 0.3s ease;
-  
-  &:hover .poster-background {
+.social-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   }
+
+  &.active .icon-wrapper {
+    border: 2px solid var(--ui-color-red-main);
+  }
+}
+
+.icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.icon {
+  width: 42px;
+  height: 42px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.platform-name {
+  font-size: 12px;
+  color: var(--ui-color-hint-1);
 }
 
 .poster-background {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('@/assets/images/postBackground.jpg');
+  background-size: cover;
+  background-position: center;
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -471,30 +419,7 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
-  
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-    pointer-events: none;
-  }
-  
-  &::after {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent 49%, rgba(255, 255, 255, 0.03) 50%, transparent 51%);
-    animation: shimmer 3s ease-in-out infinite;
-    pointer-events: none;
-  }
+  max-height: 400px;
 }
 
 @keyframes shimmer {
@@ -644,18 +569,26 @@ onMounted(() => {
 
 /* 删除这个::after伪元素，因为我们已经用了更复杂的动画效果 */
 
+/* 拓展qr-section高度并让内容平均分布 */
 .qr-section {
-  flex: 0 0 200px;
+  flex: 1 1 0%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  height: 100%;
-  align-items: center;
+  justify-content: stretch;
+  align-items: stretch;
+  min-width: 220px;
+  min-height: 0;
   padding: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  border: 1px solid var(--ui-color-dividing-line-1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.qr-section-inner {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  gap: 0;
 }
 
 .qr-container {
