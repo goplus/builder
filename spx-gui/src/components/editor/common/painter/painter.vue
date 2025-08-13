@@ -158,6 +158,8 @@ const backgroundImage = ref<paper.Raster | null>(null)
 const backgroundRect = ref<paper.Path | null>(null)
 // 标记：当前是否由 props.imgSrc 触发的导入过程（用于避免导入→导出→再次导入循环）
 const isImportingFromProps = ref<boolean>(false)
+// 保存当前选中的路径，用于导入后恢复控制点显示
+const selectedPathForRestore = ref<paper.Path | null>(null)
 
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
@@ -300,12 +302,12 @@ const selectTool = (tool: ToolType): void => {
     drawBrushRef.value.resetDrawing()
   }
   
+  // 切换工具时总是隐藏控制点
   hideControlPoints()
 }
 
 // 处理直线创建
 const handleLineCreated = (line: paper.Path): void => {
-  console.log('handleLineCreated 被调用')
   allPaths.value.push(line)
   paper.view.update()
   exportSvgAndEmit()
@@ -313,7 +315,6 @@ const handleLineCreated = (line: paper.Path): void => {
 
 // 处理笔刷路径创建
 const handlePathCreated = (path: paper.Path): void => {
-  console.log('handlePathCreated 被调用')
   allPaths.value.push(path)
   paper.view.update()
   exportSvgAndEmit()
@@ -395,6 +396,8 @@ const hideControlPoints = (): void => {
   if (paper.project) {
     paper.project.deselectAll()
   }
+  // 强制更新视图
+  paper.view.update()
 }
 
 // 检测点击的路径
@@ -596,7 +599,6 @@ const handleCanvasClick = (event: MouseEvent): void => {
     // 检查是否点击了控制点（优先级最高）
     const controlPoint = getControlPointAtPoint(point)
     if (controlPoint) {
-      // console.log('controlPoint', controlPoint)
       // 不在这里设置拖拽状态，由 mousedown 处理
       return
     }
@@ -604,7 +606,6 @@ const handleCanvasClick = (event: MouseEvent): void => {
     // 检查是否点击了现有路径
     const clickedPath = getPathAtPoint(point)
     if (clickedPath) {
-      // console.log('clickedPath', clickedPath)
       // 仅选中并显示端点（不新增控制点）
       showControlPoints(clickedPath)
       paper.view.update()
@@ -612,7 +613,6 @@ const handleCanvasClick = (event: MouseEvent): void => {
     }
     
     // 点击空白区域，隐藏控制点
-    // console.log('hideControlPoints')
     hideControlPoints()
     paper.view.update()
   }
@@ -726,11 +726,9 @@ const handleMouseUp = (): void => {
   }
 
   if (wasDragging) {
-    console.log('拖拽结束，准备导出 SVG')
     // props 驱动的导入不触发导出，避免循环
     if (!isImportingFromProps.value) exportSvgAndEmit()
     else {
-      console.log('跳过导出（props导入中）')
       isImportingFromProps.value = false
     }
   }
@@ -830,28 +828,28 @@ const importSvgToCanvas = (svgContent: string): void => {
       // 如果需要缩放，用户可以手动调整
       
       // 收集所有可编辑的路径
-      // const collectPaths = (item: paper.Item): void => {
-      //   if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
-      //     // 添加到可编辑路径列表
-      //     allPaths.value.push(item)
+      const collectPaths = (item: paper.Item): void => {
+        if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
+          // 添加到可编辑路径列表
+          allPaths.value.push(item)
           
-      //     // 添加鼠标事件处理
-      //     item.onMouseDown = (event: paper.MouseEvent) => {
-      //       if (currentTool.value === 'reshape') {
-      //         showControlPoints(item)
-      //         paper.view.update()
-      //       }
-      //     }
-      //   } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
-      //     // 递归处理子项
-      //     if (item.children) {
-      //       item.children.forEach(child => collectPaths(child))
-      //     }
-      //   }
-      // }
+          // 添加鼠标事件处理
+          item.onMouseDown = (event: paper.MouseEvent) => {
+            if (currentTool.value === 'reshape') {
+              showControlPoints(item)
+              paper.view.update()
+            }
+          }
+        } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
+          // 递归处理子项
+          if (item.children) {
+            item.children.forEach(child => collectPaths(child))
+          }
+        }
+      }
       
       // 收集导入的所有路径
-      // collectPaths(importedItem)
+      collectPaths(importedItem)
       
       // 更新视图
       paper.view.update()
@@ -895,6 +893,9 @@ const clearCanvas = (): void => {
   })
   allPaths.value = []
   
+  // 清理选中路径状态
+  selectedPathForRestore.value = null
+  
   // 重置直线绘制状态
   if (drawLineRef.value) {
     drawLineRef.value.resetDrawing()
@@ -924,9 +925,10 @@ const clearCanvas = (): void => {
 // 监听props中的imgSrc变化
 watch(
   () => props.imgSrc,
-  (newImgSrc) => {
+  async (newImgSrc) => {
     if (!newImgSrc) return
     isImportingFromProps.value = true
+    
     // 每次外部传入图片时，清空当前项目并重新导入，避免叠加
     if (paper.project) {
       paper.project.clear()
@@ -940,7 +942,16 @@ watch(
       backgroundImage.value = null
       paper.view.update()
     }
-    loadFileToCanvas(newImgSrc)
+    
+    // 加载新内容
+    await loadFileToCanvas(newImgSrc)
+    
+    // 导入完成后清理状态，不自动恢复控制点显示
+    // 让用户主动点击路径来显示控制点，避免干扰绘制体验
+    setTimeout(() => {
+      selectedPathForRestore.value = null
+      isImportingFromProps.value = false
+    }, 200)
   },
   { immediate: true }
 )
@@ -990,6 +1001,17 @@ const exportSvgAndEmit = (): void => {
     console.log('paper.project 不存在')
     return
   }
+  
+  // 保存当前选中的路径（如果有控制点显示）
+  if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
+    selectedPathForRestore.value = controlPoints.value[0].parentPath
+  } else {
+    selectedPathForRestore.value = null
+  }
+  
+  // 在导出SVG之前隐藏所有控制点，避免控制点被包含在SVG中
+  hideControlPoints()
+  
   const prevVisible = backgroundRect.value?.visible ?? true
   if (backgroundRect.value) backgroundRect.value.visible = false
   try {
