@@ -34,7 +34,10 @@
             >
               <template #icon>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="3" fill="currentColor" />
+                  <!-- 圆形背景 -->
+                  <circle cx="10" cy="10" r="9" fill="currentColor" opacity="0.2" />
+                  <!-- 播放三角形 -->
+                  <polygon points="7,5 15,10 7,15" fill="currentColor" />
                 </svg>
               </template>
               {{ $t({ en: 'Record', zh: '录屏' }) }}
@@ -43,7 +46,12 @@
             <UIButton v-else type="secondary" size="large" :loading="isStopping" @click="handleStopRecording.fn">
               <template #icon>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <rect x="7" y="7" width="6" height="6" fill="currentColor" />
+                  <!-- 圆形背景 -->
+                  <circle cx="10" cy="10" r="9" fill="currentColor" opacity="0.2" />
+                  <!-- 左竖条 -->
+                  <rect x="6.5" y="5" width="2.5" height="10" fill="currentColor" />
+                  <!-- 右竖条 -->
+                  <rect x="11" y="5" width="2.5" height="10" fill="currentColor" />
                 </svg>
               </template>
               {{ $t({ en: 'Stop Recording', zh: '停止录屏' }) }}
@@ -109,13 +117,25 @@
         </div>
       </div>
       <!-- 录屏完成提示 -->
-      <div class="recording-complete">
+      <!-- <div class="recording-complete">
         <div class="complete-indicator">
           <div class="green-dot"></div>
           {{ $t({ en: 'Recording Complete', zh: '录制完成' }) }}
         </div>
         <div class="video-info">
           {{ $t({ en: 'Ready to share', zh: '可以开始分享了' }) }}
+        </div>
+      </div> -->
+
+      <!-- 新增：自动保存提示 -->
+      <div class="auto-save-tip">
+        <div class="tip-text">
+          {{
+            $t({
+              en: 'Tip: After successful sharing, this recording will be automatically saved to your personal Records.',
+              zh: '提示：分享成功后，录屏将自动保存到您的个人Records中。'
+            })
+          }}
         </div>
       </div>
 
@@ -142,28 +162,34 @@
     <div v-else-if="currentState === 'qrcode'" class="qrcode-page">
       <div class="qr-header">
         <button class="back-btn" @click="handleBackToPlatforms">← {{ $t({ en: 'Back', zh: '返回' }) }}</button>
-        <h3>{{ selectedPlatform === 'qq' ? 'QQ分享' : '微信分享' }}</h3>
+        <h3>
+          {{
+            selectedPlatform === 'qq'
+              ? $t({ en: 'Share to QQ', zh: 'QQ分享' })
+              : $t({ en: 'Share to WeChat', zh: '微信分享' })
+          }}
+        </h3>
       </div>
 
       <div class="qr-content">
         <div class="qr-code-container">
-          <img :src="qrCodeData" alt="分享二维码" class="qr-image" />
+          <img :src="qrCodeData" :alt="$t({ en: 'Share QR Code', zh: '分享二维码' })" class="qr-image" />
         </div>
 
         <div class="qr-instructions">
           <p v-if="selectedPlatform === 'qq'">
-            📱 使用QQ扫描上方二维码<br />
-            🎮 分享你的XBuilder游戏作品到QQ空间
+            {{ $t({ en: 'Scan the QR code above with QQ to share your game.', zh: '使用QQ扫描上方二维码，分享你的游戏作品。' }) }}<br />
           </p>
           <p v-else-if="selectedPlatform === 'wechat'">
-            📱 使用微信扫描上方二维码<br />
-            🎮 分享你的XBuilder游戏作品到微信
+            {{ $t({ en: 'Scan the QR code above with WeChat to share your game.', zh: '使用微信扫描上方二维码，分享你的游戏作品。' }) }}
           </p>
         </div>
 
         <div class="qr-actions">
-          <button class="manual-download-btn" @click="handleManualDownload">📥 手动下载视频</button>
-          <button class="copy-url-btn" @click="copyShareUrl">📋 复制链接</button>
+          <button class="manual-download-btn" @click="handleManualDownload">
+            {{ $t({ en: 'Download Video', zh: '手动下载视频' }) }}
+          </button>
+          <button class="copy-url-btn" @click="copyShareUrl">{{ $t({ en: 'Copy Link', zh: '复制链接' }) }}</button>
         </div>
       </div>
     </div>
@@ -171,13 +197,48 @@
 </template>
 
   <script setup lang="ts">
-import { ref, computed, onUnmounted, h } from 'vue'
 import { UIButton, UIFormModal } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { generateShareQRCode, type ProjectShareInfo } from '@/utils/qrcode'
 import { useI18n } from '@/utils/i18n' // 如果还没有导入的话
+import QQIconSvg from '@/assets/images/qq.svg?raw'
+import WeChatIconSvg from '@/assets/images/微信.svg?raw'
+import DouyinIconSvg from '@/assets/images/抖音.svg?raw'
+import XiaohongshuIconSvg from '@/assets/images/小红书.svg?raw'
+import BilibiliIconSvg from '@/assets/images/bilibili.svg?raw'
+import { ref, computed, onUnmounted, h } from 'vue'
 
 const { t } = useI18n()
+// 新增：创建SVG图标组件
+const QQIcon = () =>
+  h('div', {
+    class: 'svg-icon',
+    innerHTML: QQIconSvg
+  })
+
+const WeChatIcon = () =>
+  h('div', {
+    class: 'svg-icon',
+    innerHTML: WeChatIconSvg
+  })
+
+const DouyinIcon = () =>
+  h('div', {
+    class: 'svg-icon',
+    innerHTML: DouyinIconSvg
+  })
+
+const XiaohongshuIcon = () =>
+  h('div', {
+    class: 'svg-icon',
+    innerHTML: XiaohongshuIconSvg
+  })
+
+const BilibiliIcon = () =>
+  h('div', {
+    class: 'svg-icon',
+    innerHTML: BilibiliIconSvg
+  })
 
 const handleModalClose = (visible: boolean, reason?: string | Event) => {
   if (!visible) {
@@ -264,8 +325,8 @@ const copyShareUrl = async () => {
 const emit = defineEmits<{
   cancelled: []
   resolved: []
-  recordingStarted: [] // 新增：录屏开始时触发
-  recordingStopped: [] // 新增：录屏停止时触发
+  recordingStarted: [] // 录屏开始时触发
+  recordingStopped: [] // 录屏停止时触发
 }>()
 
 // 状态管理
@@ -304,34 +365,34 @@ const modalTitle = computed(() => {
   }
 })
 
-// 平台配置 - 使用简单的文字图标
-const platforms = [
+// 平台配置 - 使用SVG图标，支持双语
+const platforms = computed(() => [
   {
     id: 'qq',
-    name: 'QQ',
-    icon: () => h('div', { class: 'text-icon', style: 'background: #1296db; color: white;' }, 'QQ')
+    name: t({ en: 'QQ', zh: 'QQ' }),
+    icon: QQIcon
   },
   {
     id: 'wechat',
-    name: '微信',
-    icon: () => h('div', { class: 'text-icon', style: 'background: #07c160; color: white;' }, '微信')
+    name: t({ en: 'WeChat', zh: '微信' }),
+    icon: WeChatIcon
   },
   {
     id: 'douyin',
-    name: '抖音',
-    icon: () => h('div', { class: 'text-icon', style: 'background: #000; color: white;' }, '抖音')
+    name: t({ en: 'TikTok', zh: '抖音' }),
+    icon: DouyinIcon
   },
   {
     id: 'xiaohongshu',
-    name: '小红书',
-    icon: () => h('div', { class: 'text-icon', style: 'background: #ff2442; color: white;' }, '小红书')
+    name: t({ en: 'RedBook', zh: '小红书' }),
+    icon: XiaohongshuIcon
   },
   {
     id: 'bilibili',
-    name: 'B站',
-    icon: () => h('div', { class: 'text-icon', style: 'background: #00a1d6; color: white;' }, 'B站')
+    name: t({ en: 'Bilibili', zh: 'B站' }),
+    icon: BilibiliIcon
   }
-]
+])
 
 // 开始录屏 - 使用原来的逻辑
 const handleStartRecording = useMessageHandle(
@@ -646,7 +707,8 @@ const handleSocialMediaShare = async (platform: any) => {
     // 准备项目分享信息
     const projectInfo: ProjectShareInfo = {
       projectName: props.projectName,
-      projectUrl: `${window.location.origin}/project/${props.owner}/${props.projectName}`, // 根据实际路由调整
+      // projectUrl: `${window.location.origin}/project/${props.owner}/${props.projectName}`, // 根据实际路由调整
+      projectUrl: `https://builder.goplus.org/project/${props.owner}/${props.projectName}`,
       description: `这是我在XBuilder上创作的游戏作品《${props.projectName}》！🎮 在XBuilder学编程，创造属于你的游戏世界！`,
       thumbnail: props.projectThumbnail
     }
@@ -660,6 +722,7 @@ const handleSocialMediaShare = async (platform: any) => {
 
     qrCodeData.value = qrCodeDataUrl
     // showQRCode.value = true
+    qrCodeUrl.value = projectInfo.projectUrl // 暂定为 projectUrl
 
     console.log(`${platform.name}分享二维码已生成`)
   } catch (error) {
@@ -753,7 +816,7 @@ onUnmounted(() => {
   
   <style scoped lang="scss">
 .preview-section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .project-preview {
@@ -852,7 +915,7 @@ onUnmounted(() => {
 
 .share-section {
   h4 {
-    margin-bottom: 20px;
+    margin: 13px 0px;
     color: #1e293b;
     font-size: 16px;
     font-weight: 600;
@@ -900,15 +963,20 @@ onUnmounted(() => {
 .platform-icon {
   margin-bottom: 8px;
 
-  :deep(.text-icon) {
+  :deep(.svg-icon) {
     width: 32px;
     height: 32px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
+
+    svg {
+      width: 28px;
+      height: 28px;
+      max-width: 100%;
+      max-height: 100%;
+    }
   }
 }
 
@@ -940,7 +1008,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 16px;
+  margin-bottom: 16px;
   padding: 12px 16px;
   background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
   border-radius: 8px;
@@ -1079,6 +1147,31 @@ onUnmounted(() => {
         }
       }
     }
+  }
+}
+
+// 自动保存提示样式
+.auto-save-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+
+  .tip-icon {
+    font-size: 16px;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  .tip-text {
+    color: #0369a1;
+    flex: 1;
   }
 }
 </style>

@@ -80,18 +80,18 @@ export class QRCodeGenerator {
 }
 
 /**
- * 分享平台配置
+ * 分享平台配置 - 修改为直接访问项目URL
  */
 export const sharePlatforms: Record<string, SharePlatform> = {
   qq: {
     id: 'qq',
     name: 'QQ',
     generateShareUrl: (projectInfo: ProjectShareInfo) => {
-      const title = encodeURIComponent(`【XBuilder作品】${projectInfo.projectName}`)
-      const desc = encodeURIComponent(projectInfo.description || `这是我在XBuilder上创作的游戏作品《${projectInfo.projectName}》，快来体验吧！`)
-      const url = encodeURIComponent(projectInfo.projectUrl)
-      
-      return `https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=${url}&title=${title}&desc=${desc}&summary=${desc}&site=XBuilder`
+      // 直接返回项目URL，可以添加来源标识
+      const url = new URL(projectInfo.projectUrl)
+    //   url.searchParams.set('from', 'qq')
+    //   url.searchParams.set('share', 'qrcode')
+      return url.toString()
     }
   },
   
@@ -99,8 +99,44 @@ export const sharePlatforms: Record<string, SharePlatform> = {
     id: 'wechat',
     name: '微信',
     generateShareUrl: (projectInfo: ProjectShareInfo) => {
-      // 微信通常直接分享项目URL，配合微信JS-SDK
-      return projectInfo.projectUrl
+      // 直接返回项目URL，添加微信来源标识
+      const url = new URL(projectInfo.projectUrl)
+      url.searchParams.set('from', 'wechat')
+      url.searchParams.set('share', 'qrcode')
+      return url.toString()
+    }
+  },
+
+  douyin: {
+    id: 'douyin',
+    name: '抖音',
+    generateShareUrl: (projectInfo: ProjectShareInfo) => {
+      const url = new URL(projectInfo.projectUrl)
+      url.searchParams.set('from', 'douyin')
+      url.searchParams.set('share', 'qrcode')
+      return url.toString()
+    }
+  },
+
+  xiaohongshu: {
+    id: 'xiaohongshu',
+    name: '小红书',
+    generateShareUrl: (projectInfo: ProjectShareInfo) => {
+      const url = new URL(projectInfo.projectUrl)
+      url.searchParams.set('from', 'xiaohongshu')
+      url.searchParams.set('share', 'qrcode')
+      return url.toString()
+    }
+  },
+
+  bilibili: {
+    id: 'bilibili',
+    name: 'B站',
+    generateShareUrl: (projectInfo: ProjectShareInfo) => {
+      const url = new URL(projectInfo.projectUrl)
+      url.searchParams.set('from', 'bilibili')
+      url.searchParams.set('share', 'qrcode')
+      return url.toString()
     }
   }
 }
@@ -122,7 +158,10 @@ export class ShareQRCodeGenerator extends QRCodeGenerator {
       throw new Error(`不支持的分享平台: ${platformId}`)
     }
 
+    // 生成带有来源标识的项目URL
+    // const shareUrl = platform.generateShareUrl(projectInfo)
     const shareUrl = platform.generateShareUrl(projectInfo)
+    
     return await this.generateDataURL(shareUrl, {
       ...options,
       // 为不同平台定制样式
@@ -168,6 +207,17 @@ export class ShareQRCodeGenerator extends QRCodeGenerator {
     await Promise.all(promises)
     return results
   }
+
+  /**
+   * 生成通用项目分享二维码（不带平台标识）
+   */
+  async generateProjectQRCode(
+    projectInfo: ProjectShareInfo, 
+    options?: QRCodeOptions
+  ): Promise<string> {
+    // 直接使用项目URL，不添加平台标识
+    return await this.generateDataURL(projectInfo.projectUrl, options)
+  }
 }
 
 // 导出单例实例
@@ -180,3 +230,7 @@ export const generateQRCode = (text: string, options?: QRCodeOptions) =>
 
 export const generateShareQRCode = (platformId: string, projectInfo: ProjectShareInfo, options?: QRCodeOptions) =>
   shareQRCodeGenerator.generatePlatformQRCode(platformId, projectInfo, options)
+
+// 新增：生成通用项目二维码的便捷函数
+export const generateProjectQRCode = (projectInfo: ProjectShareInfo, options?: QRCodeOptions) =>
+  shareQRCodeGenerator.generateProjectQRCode(projectInfo, options)
