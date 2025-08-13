@@ -670,6 +670,12 @@ onMounted(() => {
   color: #2196f3;
 }
 
+.tool-btn.active {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
 .tool-btn.action-btn {
   background-color: #fff3e0;
   border-color: #ff9800;
