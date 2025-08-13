@@ -364,8 +364,8 @@ onMounted(() => {
 }
 
 .qr-canvas {
-  width: 280px;
-  height: 280px;
+  width: 236px;
+  height: 236px;
   display: block;
   background: white;
   border-radius: 8px;
