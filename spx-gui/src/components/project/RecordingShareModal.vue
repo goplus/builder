@@ -346,13 +346,7 @@ const resetRecordingState = () => {
   if (mediaRecorder.value) {
     mediaRecorder.value = null
   }
-
-  // 新增：清理截图数据中的屏幕流
-  if (screenshotData.value?.screenStream) {
-    screenshotData.value.screenStream.getTracks().forEach((track) => {
-      track.stop()
-    })
-  }
+  
   // 重置区域选择相关状态
   showAreaSelector.value = false
   screenshotData.value = null
