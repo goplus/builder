@@ -20,4 +20,3 @@ go.work
 
 .idea/
 *.wasm
-node_modules/
