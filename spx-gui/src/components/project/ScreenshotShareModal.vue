@@ -5,7 +5,18 @@
     :auto-focus="false"
     @update:visible="handleClose"
   >
-    <div class="share-content">
+    <!-- 区域选择器 -->
+    <AreaSelector
+      v-if="showAreaSelector && screenshotDataUrl && screenshotWidth && screenshotHeight"
+      :screenshot-data-url="screenshotDataUrl"
+      :screenshot-width="screenshotWidth"
+      :screenshot-height="screenshotHeight"
+      @area-selected="handleAreaSelected"
+      @cancelled="handleAreaSelectionCancelled"
+    />
+
+    <!-- 分享内容 -->
+    <div v-else class="share-content">
       <div class="share-title">
         {{ $t({ en: 'This screenshot is great, share it with friends!', zh: '截图这么棒,分享给好友吧!' }) }}
       </div>
@@ -13,7 +24,8 @@
         <div class="poster-section">
           <div class="poster-background">
             <div class="screenshot-area">
-              <img v-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
+              <img v-if="croppedScreenshotDataUrl" :src="croppedScreenshotDataUrl" alt="Cropped Screenshot" class="screenshot-image" />
+              <img v-else-if="screenshotDataUrl" :src="screenshotDataUrl" alt="Screenshot" class="screenshot-image" />
               <div v-else class="screenshot-placeholder">
                 <UIIcon type="file" />
                 <span>{{ $t({ en: 'No screenshot', zh: '暂无截图' }) }}</span>
@@ -37,7 +49,14 @@
                   </div>
                 </div>
               </div>
-              <div class="branding">Made with Xbuilder</div>
+              <div style="display: flex; align-items: flex-start; gap: 16px;">
+                <div class="branding">
+                  <img src="@/components/navbar/logo.svg" alt="logo" class="branding-logo" style="height: 40px; vertical-align: middle;" />
+                </div>
+                <div class="project-qrcode">
+                  <canvas ref="projectQrCanvas" class="project-qr-canvas"></canvas>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -85,10 +104,11 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
-// import QRCode from 'qrcode' // 暂时注释掉，稍后添加依赖
+import { generateProjectQRCode } from '@/utils/qrcode'
 import { UIButton, UIIcon } from '@/components/ui'
 import { UIFormModal } from '@/components/ui/modal'
 import { humanizeCount } from '@/utils/utils'
+import AreaSelector from './AreaSelector.vue'
 
 interface Platform {
   id: string
@@ -104,9 +124,18 @@ interface ProjectStats {
   remixCount?: number
 }
 
+interface SelectedArea {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 const props = defineProps<{
   visible: boolean
   screenshotDataUrl?: string
+  screenshotWidth?: number
+  screenshotHeight?: number
   projectName?: string
   projectStats?: ProjectStats
 }>()
@@ -122,7 +151,18 @@ const visible = computed({
 })
 
 const qrCanvas = ref<HTMLCanvasElement>()
+const projectQrCanvas = ref<HTMLCanvasElement>()
 const isDownloading = ref(false)
+
+// 框选相关状态
+const showAreaSelector = ref(false)
+const croppedScreenshotDataUrl = ref<string>('')
+const selectedArea = ref<SelectedArea | null>(null)
+
+// 获取当前页面URL
+function getCurrentProjectUrl() {
+  return window.location.origin + window.location.pathname;
+}
 
 // 平台配置
 const platforms: Platform[] = [
@@ -176,67 +216,163 @@ const formattedStats = computed(() => {
   }
 })
 
+// 处理区域选择完成
+const handleAreaSelected = async (area: SelectedArea) => {
+  try {
+    console.log('用户选择了区域:', area)
+    selectedArea.value = area
+    
+    // 裁剪图片
+    await cropScreenshot(area)
+    
+    // 隐藏区域选择器
+    showAreaSelector.value = false
+  } catch (error) {
+    console.error('裁剪截图失败:', error)
+    showAreaSelector.value = false
+  }
+}
+
+// 处理区域选择取消
+const handleAreaSelectionCancelled = () => {
+  showAreaSelector.value = false
+  emit('close')
+}
+
+// 裁剪截图
+const cropScreenshot = async (area: SelectedArea) => {
+  if (!props.screenshotDataUrl) return
+
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('无法获取canvas上下文'))
+          return
+        }
+
+        // 设置canvas尺寸为裁剪区域大小
+        canvas.width = area.width
+        canvas.height = area.height
+
+        // 绘制裁剪区域
+        ctx.drawImage(
+          img,
+          area.x, area.y, area.width, area.height, // 源图像裁剪区域
+          0, 0, area.width, area.height // 目标canvas区域
+        )
+
+        // 转换为dataURL
+        croppedScreenshotDataUrl.value = canvas.toDataURL('image/png')
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    }
+    
+    img.onerror = () => {
+      reject(new Error('图片加载失败'))
+    }
+    
+    img.src = props.screenshotDataUrl!
+  })
+}
+
+// 监听弹窗显示状态，显示时启动框选
+watch(() => props.visible, (newVisible) => {
+  if (newVisible && props.screenshotDataUrl) {
+    // 重置状态
+    croppedScreenshotDataUrl.value = ''
+    selectedArea.value = null
+    
+    // 显示区域选择器
+    showAreaSelector.value = true
+  } else if (!newVisible) {
+    // 关闭时重置状态
+    showAreaSelector.value = false
+    croppedScreenshotDataUrl.value = ''
+    selectedArea.value = null
+  }
+})
+
+// 监听框选状态，框选完成后生成二维码
+watch(() => showAreaSelector.value, (newShowAreaSelector) => {
+  if (!newShowAreaSelector && croppedScreenshotDataUrl.value) {
+    // 框选完成，生成二维码
+    nextTick(() => {
+      generateQRCode()
+    })
+  }
+})
+
 function selectPlatform(platform: Platform) {
   selectedPlatform.value = platform
   generateQRCode()
 }
 
-async function generateQRCode() {
-  if (!qrCanvas.value) return
+async function drawQRCodeToCanvas(canvas: HTMLCanvasElement, url: string) {
+  if (!canvas) return;
   
-  try {
-    const canvas = qrCanvas.value
-    const shareText = `我在Xbuilder制作了一个游戏${props.projectName ? ` "${props.projectName}"` : ''}，快来看看吧！`
-    const shareUrl = `${selectedPlatform.value.shareUrl}?text=${encodeURIComponent(shareText)}`
+  // 获取CSS中定义的尺寸
+  const computedStyle = window.getComputedStyle(canvas);
+  const displayWidth = parseInt(computedStyle.width);
+  const displayHeight = parseInt(computedStyle.height);
+  
+  // 计算设备像素比，确保高分辨率显示
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const pixelRatio = Math.max(devicePixelRatio, 2); // 至少2倍分辨率
+  
+  // 设置canvas的实际像素尺寸（高分辨率）
+  canvas.width = displayWidth * pixelRatio;
+  canvas.height = displayHeight * pixelRatio;
+  
+  // 使用qrcode工具生成高分辨率二维码
+  const qrSize = Math.min(displayWidth, displayHeight) * pixelRatio;
+  const dataUrl = await generateProjectQRCode({
+    projectName: props.projectName || '',
+    projectUrl: url,
+  }, { 
+    width: qrSize, 
+    margin: 2 // 添加一些边距确保二维码完整显示
+  });
+  
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // 设置高分辨率渲染
+    ctx.scale(pixelRatio, pixelRatio);
     
-    // 临时显示平台信息，等添加qrcode库后再生成真正的二维码
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      canvas.width = 150
-      canvas.height = 150
+    const img = new window.Image();
+    img.onload = () => {
+      // 清除canvas
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
       
-      // 背景
-      ctx.fillStyle = '#f8f9fa'
-      ctx.fillRect(0, 0, 150, 150)
+      // 计算居中位置
+      const imgSize = Math.min(displayWidth, displayHeight);
+      const x = (displayWidth - imgSize) / 2;
+      const y = (displayHeight - imgSize) / 2;
       
-      // 边框
-      ctx.strokeStyle = '#dee2e6'
-      ctx.lineWidth = 2
-      ctx.strokeRect(1, 1, 148, 148)
-      
-      // 平台图标背景
-      ctx.fillStyle = selectedPlatform.value.color
-      ctx.fillRect(40, 40, 70, 70)
-      
-      // 平台图标
-      ctx.fillStyle = 'white'
-      ctx.font = 'bold 24px Arial'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(selectedPlatform.value.icon, 75, 75)
-      
-      // 平台名称
-      ctx.fillStyle = '#495057'
-      ctx.font = '12px Arial'
-      ctx.fillText(selectedPlatform.value.name, 75, 125)
-      
-      // 二维码提示
-      ctx.font = '10px Arial'
-      ctx.fillStyle = '#6c757d'
-      ctx.fillText('扫码分享', 75, 140)
-    }
-    
-    // 等添加QRCode库后使用：
-    // await QRCode.toCanvas(canvas, shareUrl, {
-    //   width: 150,
-    //   margin: 2,
-    //   color: {
-    //     dark: '#000000',
-    //     light: '#ffffff'
-    //   }
-    // })
-  } catch (error) {
-    console.error('生成二维码失败:', error)
+      // 绘制二维码
+      ctx.drawImage(img, x, y, imgSize, imgSize);
+    };
+    img.src = dataUrl;
+  }
+}
+
+async function generateQRCode() {
+  // 主分享二维码 - 使用当前选中的平台生成分享URL
+  if (qrCanvas.value) {
+    const currentUrl = getCurrentProjectUrl();
+    const shareUrl = `${selectedPlatform.value.shareUrl}?text=${encodeURIComponent(`我在Xbuilder制作了一个游戏${props.projectName ? ` \"${props.projectName}\"` : ''}，快来看看吧！`)}&url=${encodeURIComponent(currentUrl)}`;
+    await drawQRCodeToCanvas(qrCanvas.value, shareUrl);
+  }
+  
+  // 项目页面二维码 - 直接使用项目URL
+  if (projectQrCanvas.value) {
+    await drawQRCodeToCanvas(projectQrCanvas.value, getCurrentProjectUrl());
   }
 }
 
@@ -244,12 +380,13 @@ async function handleDownload() {
   isDownloading.value = true
   
   try {
-    // 这里可以使用html2canvas将整个海报区域转换为图片进行下载
-    // 或者创建一个包含截图和二维码的合成图片
     const link = document.createElement('a')
     
-    if (props.screenshotDataUrl) {
-      link.href = props.screenshotDataUrl
+    // 优先使用裁剪后的图片
+    const imageUrl = croppedScreenshotDataUrl.value || props.screenshotDataUrl
+    
+    if (imageUrl) {
+      link.href = imageUrl
       link.download = `${props.projectName || 'game'}-screenshot.png`
       document.body.appendChild(link)
       link.click()
@@ -270,23 +407,31 @@ function handleOverlayClick() {
   emit('close')
 }
 
-// 监听弹窗显示状态，显示时生成二维码
-watch(() => props.visible, (newVisible) => {
-  if (newVisible) {
+onMounted(() => {
+  if (props.visible && props.screenshotDataUrl) {
     nextTick(() => {
-      generateQRCode()
+      showAreaSelector.value = true
     })
   }
-})
-
-onMounted(() => {
-  if (props.visible) {
-    generateQRCode()
-  }
-})
+});
 </script>
 
+
 <style lang="scss" scoped>
+
+.project-qrcode {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  min-width: 60px;
+  //margin-left: 0;
+}
+.project-qr-canvas {
+  width: 60px;
+  height: 60px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
 
 .share-content {
   display: flex;
@@ -331,12 +476,14 @@ onMounted(() => {
 }
 
 .qr-canvas {
-  width: 280px;
-  height: 280px;
+  width: 236px;
+  height: 236px;
   display: block;
   background: white;
   border-radius: 8px;
   border: 2px solid var(--ui-color-grey-300);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 
@@ -510,8 +657,10 @@ onMounted(() => {
 }
 
 .stat-item {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   font-size: 13px;
   opacity: 0.98;
@@ -541,19 +690,14 @@ onMounted(() => {
 }
 
 .branding {
-  font-size: 13px;
-  opacity: 0.95;
   display: flex;
   align-items: center;
-  gap: 8px;
-  align-self: flex-end;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
-  border-radius: 20px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px 16px;
+  border-radius: 24px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
   transition: all 0.2s ease;
   
   &:hover {
@@ -561,13 +705,6 @@ onMounted(() => {
     transform: translateY(-1px);
   }
 }
-
-.branding::before {
-  content: "✨";
-  font-size: 16px;
-}
-
-/* 删除这个::after伪元素，因为我们已经用了更复杂的动画效果 */
 
 /* 拓展qr-section高度并让内容平均分布 */
 .qr-section {
