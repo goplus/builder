@@ -19,7 +19,7 @@
     v-else
     v-radar="{ name: 'Widgets management', desc: 'Managing widgets' }"
     color="stage"
-    :add-text="$t({ en: 'Add widget', zh: '添加控件' })"
+    resource-type="widget"
     :sortable="{ list: stage.widgets }"
     @sorted="handleSorted"
   >

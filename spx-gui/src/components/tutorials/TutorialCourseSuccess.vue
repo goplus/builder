@@ -1,5 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
+import { timeout } from '@/utils/utils'
 import TutorialCourseSuccessModal from './TutorialCourseSuccessModal.vue'
 
 export const tagName = 'tutorial-course-success'
@@ -29,10 +30,11 @@ const tutorial = useTutorial()
 const copilot = useCopilot()
 const open = useModal(TutorialCourseSuccessModal)
 
-onMounted(() => {
+onMounted(async () => {
   if (!tutorial.currentCourse || !tutorial.currentSeries) {
     throw new Error('No course or series in progress')
   }
+  await timeout(500)
   open({ tutorial, course: tutorial.currentCourse, series: tutorial.currentSeries })
   copilot.close()
   tutorial.endCurrentCourse()

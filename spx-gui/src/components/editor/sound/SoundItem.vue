@@ -9,7 +9,13 @@
     <template #player>
       <SoundPlayer :color="color" :src="audioSrc" />
     </template>
-    <CornerMenu v-if="removable" :color="color" removable :item="sound" @remove="handleRemove" />
+    <CornerMenu
+      v-if="operable && selectable && selectable.selected"
+      :color="color"
+      :item="sound"
+      removable
+      @remove="handleRemove"
+    />
   </UIEditorSoundItem>
 </template>
 
@@ -28,20 +34,19 @@ const props = withDefaults(
     sound: Sound
     color?: 'sound' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
+    /** `operable: true` means the backdrop can be published & removed */
+    operable?: boolean
   }>(),
   {
     color: 'sound',
     selectable: false,
-    removable: false
+    operable: false
   }
 )
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
 
 const editorCtx = useEditorCtx()
-
-const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 
 const radarNodeMeta = computed(() => {
   const name = `Sound item "${props.sound.name}"`

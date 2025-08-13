@@ -96,20 +96,63 @@ class GetProjectMetadataTool implements ToolDefinition {
   }
 }
 
-const getProjectSpritesParamsSchema = z.object({
+function getProjectContent(project: Project) {
+  return `\
+### Sprites (num: ${project.sprites.length})
+${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
+### Sounds (num: ${project.sounds.length})
+${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
+### Backdrops (num: ${project.stage.backdrops.length})
+${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
+### Widgets (num: ${project.stage.widgets.length})
+${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}`
+}
+
+const getProjectContentParamsSchema = z.object({
   project: projectIdentifierSchema
 })
 
-class GetProjectSpritesTool implements ToolDefinition {
-  name = 'get_project_sprites'
-  description = 'Get sprites of a project.'
-  parameters = getProjectSpritesParamsSchema
+class GetProjectContentTool implements ToolDefinition {
+  name = 'get_project_content'
+  description = 'Get content of a project.'
+  parameters = getProjectContentParamsSchema
 
   constructor(private retriever: Retriever) {}
 
-  async implementation({ project }: z.infer<typeof getProjectSpritesParamsSchema>, signal?: AbortSignal) {
+  async implementation({ project }: z.infer<typeof getProjectContentParamsSchema>, signal?: AbortSignal) {
     const p = await this.retriever.getProject(project, signal)
-    return p.sprites.map((s) => s.name)
+    return getProjectContent(p)
+  }
+}
+
+const getSpriteContentParamsSchema = z.object({
+  project: projectIdentifierSchema,
+  spriteName: z.string().describe('Name of the sprite')
+})
+
+class GetSpriteContentTool implements ToolDefinition {
+  name = 'get_sprite_content'
+  description = 'Get content of a sprite in a project.'
+  parameters = getSpriteContentParamsSchema
+
+  constructor(private retriever: Retriever) {}
+
+  async implementation({ project, spriteName }: z.infer<typeof getSpriteContentParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
+    const sprite = p.sprites.find((s) => s.name === spriteName)
+    if (sprite == null) throw new Error(`Sprite "${spriteName}" not found in project "${project}"`)
+    return {
+      name: sprite.name,
+      costumes: sprite.costumes.map((c) => c.name),
+      animations: sprite.animations.map((a) => a.name),
+      heading: sprite.heading,
+      x: sprite.x,
+      y: sprite.y,
+      size: sprite.size,
+      rotationStyle: sprite.rotationStyle,
+      visible: sprite.visible,
+      codeLinesNum: sprite.code.split(/\r?\n/).length
+    }
   }
 }
 
@@ -132,7 +175,7 @@ function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) 
   }, {})
   return {
     lines,
-    totalLineNum: allLines.length
+    fileLineNum: allLines.length
   }
 }
 
@@ -271,6 +314,18 @@ The user is now browsing page with path: \`${this.router.currentRoute.value.full
   }
 }
 
+class ProjectContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const project = this.editorCtxRef.value?.project
+    if (project == null) return ''
+    return `# Current project
+The user is now working on project: ${project.owner}/${project.name}
+## Project content
+${getProjectContent(project)}`
+  }
+}
+
 class CodeContextProvider implements ICopilotContextProvider {
   constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
 
@@ -322,7 +377,8 @@ onUnmounted(() => copilot.dispose())
 
 copilot.registerTool(listProjectsTool)
 copilot.registerTool(new GetProjectMetadataTool(retriever))
-copilot.registerTool(new GetProjectSpritesTool(retriever))
+copilot.registerTool(new GetProjectContentTool(retriever))
+copilot.registerTool(new GetSpriteContentTool(retriever))
 copilot.registerTool(new GetProjectCodeTool(retriever))
 copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
 copilot.registerCustomElement({
@@ -364,6 +420,7 @@ copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
+copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
 watch(

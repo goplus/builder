@@ -1,6 +1,9 @@
 <template>
   <UIFormModal
-    :radar="{ name: 'Preprocess modal', desc: 'Modal for preprocessing image for costumes' }"
+    :radar="{
+      name: 'Preprocess modal',
+      desc: 'Modal for preprocessing image for costumes. This modal allows users to apply various preprocessing methods to images before creating costumes with them.'
+    }"
     style="width: 780px"
     :visible="props.visible && ready"
     :title="$t(title)"

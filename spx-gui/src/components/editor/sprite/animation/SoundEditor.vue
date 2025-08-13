@@ -13,7 +13,6 @@
         :sound="sound"
         :selectable="{ selected: sound.id === selected }"
         color="primary"
-        removable
         @click="handleSoundClick(sound.id)"
       />
       <UIDropdown trigger="click" placement="top">
