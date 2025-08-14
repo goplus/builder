@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIImg, UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
+import { useFileUrlSmooth } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useMessageHandle } from '@/utils/exception'
@@ -38,7 +38,7 @@ const props = withDefaults(
 )
 
 const editorCtx = useEditorCtx()
-const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
+const [imgSrc, imgLoading] = useFileUrlSmooth(() => props.costume.img)
 
 const radarNodeMeta = computed(() => {
   const name = `Costume item "${props.costume.name}"`
