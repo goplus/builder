@@ -308,8 +308,16 @@ function handleCloseScreenshotModal() {
   isScreenshotModalVisible.value = false
 }
 
-const handleRecord = () => {
-  showRecordingModal.value = true
+const handleRecord = async () => {
+  try {
+    // 复用项目中已有的登录验证逻辑
+    await ensureSignedIn()
+    // 用户已登录，显示录屏模态框
+    showRecordingModal.value = true
+  } catch (error) {
+    // 用户取消登录或登录失败，不执行后续操作
+    console.log('用户未登录或取消登录')
+  }
 }
 
 const handlePublish = useMessageHandle(
