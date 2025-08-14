@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import html2canvas from 'html2canvas'
 import { generateProjectQRCode } from '@/utils/qrcode'
 import { UIButton, UIIcon } from '@/components/ui'
 import { UIFormModal } from '@/components/ui/modal'
@@ -378,20 +379,26 @@ async function generateQRCode() {
 
 async function handleDownload() {
   isDownloading.value = true
-  
   try {
+    // 获取 poster-background 区域
+    const posterEl = document.querySelector('.poster-background') as HTMLElement
+    if (!posterEl) throw new Error('未找到分享海报区域')
+
+    // 使用 html2canvas 渲染整个 poster 区域
+    const canvas = await html2canvas(posterEl, {
+      useCORS: true,
+      backgroundColor: null,
+      scale: window.devicePixelRatio || 2
+    })
+    const dataUrl = canvas.toDataURL('image/png')
+
+    // 下载图片
     const link = document.createElement('a')
-    
-    // 优先使用裁剪后的图片
-    const imageUrl = croppedScreenshotDataUrl.value || props.screenshotDataUrl
-    
-    if (imageUrl) {
-      link.href = imageUrl
-      link.download = `${props.projectName || 'game'}-screenshot.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
+    link.href = dataUrl
+    link.download = `${props.projectName || 'game'}-poster.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   } catch (error) {
     console.error('下载失败:', error)
   } finally {
