@@ -5,7 +5,7 @@
         <NavbarLogo />
         <slot name="left"></slot>
         <NavbarLang />
-        <NavbarTutorials />
+        <NavbarTutorials class="mobile-hide"/>
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -87,5 +87,10 @@ withDefaults(
 .right {
   gap: 8px;
   justify-content: flex-end;
+}
+.mobile-hide{
+  @include responsive(mobile) {
+    display: none;
+  }
 }
 </style>

@@ -31,6 +31,10 @@ withDefaults(
     @include responsive(desktop-large) {
       width: 1240px;
     }
+    @include responsive(mobile){
+      width: 95%;
+
+    }
   }
 
   &.size-large {
