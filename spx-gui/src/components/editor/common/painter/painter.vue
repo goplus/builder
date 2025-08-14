@@ -158,6 +158,8 @@ const backgroundImage = ref<paper.Raster | null>(null)
 const backgroundRect = ref<paper.Path | null>(null)
 // 标记：当前是否由 props.imgSrc 触发的导入过程（用于避免导入→导出→再次导入循环）
 const isImportingFromProps = ref<boolean>(false)
+// 标记：是否是第一次挂载（用于控制只在第一次挂载时导入图片）
+const isFirstMount = ref<boolean>(true)
 // 保存当前选中的路径，用于导入后恢复控制点显示
 const selectedPathForRestore = ref<paper.Path | null>(null)
 
@@ -897,6 +899,12 @@ watch(
   () => props.imgSrc,
   async (newImgSrc) => {
     if (!newImgSrc) return
+    
+    // 只在第一次挂载时导入图片
+    if (!isFirstMount.value) {
+      return
+    }
+    
     isImportingFromProps.value = true
     
     // 每次外部传入图片时，清空当前项目并重新导入，避免叠加
@@ -921,6 +929,7 @@ watch(
     setTimeout(() => {
       selectedPathForRestore.value = null
       isImportingFromProps.value = false
+      isFirstMount.value = false // 标记第一次挂载已完成
     }, 200)
   },
   { immediate: true }
