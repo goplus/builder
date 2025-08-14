@@ -4,7 +4,6 @@
     <div 
       v-if="visible" 
       class="dialog-overlay"
-      @click="handleCancel"
     >
       <!-- 弹窗主体 -->
       <div 
