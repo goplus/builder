@@ -79,14 +79,14 @@ const handleNewProject = useMessageHandle(
     const name = await createProject()
     router.push(getOwnProjectEditorRoute(name))
   },
-  { en: 'Failed to create new project', zh: '新建项目失败' }
+  { en: 'Failed to create new record', zh: '新建录屏失败' }
 ).fn
 </script>
 
 <template>
   <UserContent class="user-projects" :style="{ '--project-num-in-row': numInRow }">
     <template #title>
-      {{ $t({ en: 'My projects', zh: '我的项目' }) }}
+      {{ $t({ en: 'My records', zh: '我的录屏' }) }}
     </template>
     <template #extra>
       <label class="sort">
@@ -113,16 +113,16 @@ const handleNewProject = useMessageHandle(
       </label>
       <UIButton
         v-if="isSignedInUser"
-        v-radar="{ name: 'New project button', desc: 'Click to create a new project' }"
+        v-radar="{ name: 'New record button', desc: 'Click to create a new record' }"
         type="secondary"
         icon="plus"
         @click="handleNewProject"
       >
-        {{ $t({ en: 'New project', zh: '新建项目' }) }}
+        {{ $t({ en: 'New record', zh: '新建录屏' }) }}
       </UIButton>
     </template>
     <div class="projects-wrapper">
-      <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
+      <ListResultWrapper v-slot="slotProps" content-type="record" :query-ret="queryRet" :height="524">
         <ul class="projects">
           <ProjectItem
             v-for="project in slotProps.data.data"

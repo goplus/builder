@@ -58,6 +58,8 @@ const handleCloseButton = () => {
 .container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .header {
@@ -81,6 +83,10 @@ const handleCloseButton = () => {
 
 .body {
   padding: 20px 24px 24px;
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .close {

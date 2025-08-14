@@ -42,6 +42,24 @@ defineProps<{
       {{ $t({ en: 'Projects', zh: '项目' }) }}
     </UserSidebarItem>
     <UserSidebarItem
+      v-radar="{ name: 'Records link', desc: 'Click to navigate to user record list' }"
+      :to="getUserPageRoute(username, 'records')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path
+          d="M7.11634 2.93311H4.01097C3.06592 2.93311 2.2998 3.69922 2.2998 4.64427V14.5685C2.2998 15.5135 3.06592 16.2796 4.01097 16.2796H15.9885C16.9335 16.2796 17.6996 15.5135 17.6996 14.5685V8.39797C17.6996 7.45292 16.9335 6.68681 15.9885 6.68681H12.0024C11.8144 6.68681 11.6328 6.61872 11.4911 6.49513L7.62765 3.12479C7.48598 3.0012 7.30434 2.93311 7.11634 2.93311Z"
+          stroke="currentColor"
+          stroke-width="1.44671"
+        />
+        <path
+          d="M8.85693 4.18408L15.9886 4.18408C16.9337 4.18408 17.6998 4.9502 17.6998 5.89525V9.18902"
+          stroke="currentColor"
+          stroke-width="1.44671"
+        />
+      </svg>
+      {{ $t({ en: 'Records', zh: '录屏' }) }}
+    </UserSidebarItem>
+    <UserSidebarItem
       v-radar="{ name: 'Likes link', desc: 'Click to navigate to user liked projects' }"
       :to="getUserPageRoute(username, 'likes')"
     >

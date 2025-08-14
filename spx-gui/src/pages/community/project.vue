@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception/index'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -13,6 +13,8 @@ import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, isSignedIn, getSignedInUsername } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
+import RecordingShareModal from '@/components/project/RecordingShareModal.vue'
+import { useFileUrl } from '@/utils/file'
 import {
   UIIcon,
   UILoading,
@@ -38,6 +40,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import ScreenshotShareModal from '@/components/project/ScreenshotShareModal.vue'
 
 const props = defineProps<{
   owner: string
@@ -99,6 +102,14 @@ const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: p
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 const isFullScreenRunning = ref(false)
+const showRecordingModal = ref(false)
+const isRecording = ref(false)
+const mediaRecorder = ref<MediaRecorder | null>(null)
+const isScreenshotModalVisible = ref(false)
+const screenshotDataUrl = ref<string | undefined>()
+const screenshotWidth = ref<number | undefined>()
+const screenshotHeight = ref<number | undefined>()
+const [thumbnailUrl] = useFileUrl(() => project.value?.thumbnail)
 
 const likeCount = computed(() => {
   if (project.value == null) return null
@@ -242,6 +253,72 @@ const handleUnpublish = useMessageHandle(
     zh: '已取消发布'
   }
 )
+const handleScreenshot = useMessageHandle(
+  async () => {
+    try {
+      // 获取屏幕流（让用户选择要截图的屏幕/窗口）
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false
+      })
+
+      // 创建video元素来显示流
+      const video = document.createElement('video')
+      video.srcObject = screenStream
+      video.play()
+
+      // 等待视频准备就绪
+      await new Promise<void>((resolve) => {
+        video.onloadedmetadata = () => resolve()
+      })
+
+      // 等待一帧确保视频已渲染
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // 创建canvas并绘制当前帧
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      ctx.drawImage(video, 0, 0)
+
+      const dataURL = canvas.toDataURL('image/png')
+      screenshotDataUrl.value = dataURL
+      screenshotWidth.value = canvas.width
+      screenshotHeight.value = canvas.height
+      
+      // 停止屏幕流
+      screenStream.getTracks().forEach(track => track.stop())
+      
+      isScreenshotModalVisible.value = true
+    } catch (error) {
+      console.error('截图失败:', error)
+      // 用户可能取消了屏幕分享选择
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.log('用户取消了屏幕分享')
+      }
+      throw error
+    }
+  },
+  { en: 'Failed to take screenshot', zh: '截屏失败' }
+)
+
+function handleCloseScreenshotModal() {
+  isScreenshotModalVisible.value = false
+}
+
+const handleRecord = async () => {
+  try {
+    // 复用项目中已有的登录验证逻辑
+    await ensureSignedIn()
+    // 用户已登录，显示录屏模态框
+    showRecordingModal.value = true
+  } catch (error) {
+    // 用户取消登录或登录失败，不执行后续操作
+    console.log('用户未登录或取消登录')
+  }
+}
 
 const handlePublish = useMessageHandle(
   // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
@@ -316,6 +393,43 @@ const remixesRet = useQuery(
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+            type="boring"
+            :loading="handleScreenshot.isLoading.value"
+            @click="handleScreenshot.fn"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path
+                  d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                />
+              </svg>
+            </template>
+            {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+          </UIButton>
+
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Record button', desc: 'Click to start recording' }"
+            type="boring"
+            @click="handleRecord"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" fill="currentColor" />
+                <circle cx="12" cy="6" r="1" fill="currentColor" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Record', zh: '录屏' }) }}
+          </UIButton>
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
@@ -513,7 +627,32 @@ const remixesRet = useQuery(
       </template>
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
+    <RecordingShareModal
+      v-if="project != null"
+      :visible="showRecordingModal"
+      :project-name="project.name"
+      :project-thumbnail="thumbnailUrl || undefined"
+      @cancelled="showRecordingModal = false"
+      @resolved="showRecordingModal = false"
+      @recording-started="showRecordingModal = false"
+      @recording-stopped="showRecordingModal = true"
+    />
   </CenteredWrapper>
+  
+  <!-- 截屏分享弹窗 -->
+  <ScreenshotShareModal
+    v-model:visible="isScreenshotModalVisible"
+    :screenshot-data-url="screenshotDataUrl"
+    :screenshot-width="screenshotWidth"
+    :screenshot-height="screenshotHeight"
+    :project-name="props.name"
+    :project-stats="{
+      viewCount: project?.viewCount,
+      likeCount: project?.likeCount,
+      remixCount: project?.remixCount
+    }"
+    @close="handleCloseScreenshotModal"
+  />
 </template>
 
 <style scoped lang="scss">

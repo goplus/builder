@@ -27,6 +27,9 @@
         <UIMenuItem @click="handleProjects">
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
+        <UIMenuItem @click="handleRecords">
+          {{ $t({ en: 'Records', zh: '记录' }) }}
+        </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="isDeveloperMode">
         <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
@@ -100,6 +103,11 @@ function handleUserPage() {
 
 function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
+}
+
+function handleRecords() {
+  // TODO: 实现Records页面的路由，暂时跳转到用户主页的records子页面
+  router.push(getUserPageRoute(signedInUser.value!.username, 'records'))
 }
 
 const spxVersion = useSpxVersion()

@@ -20,7 +20,7 @@ export function getProjectPageRoute(owner: string, name: string) {
   return `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }
 
-export type UserTab = 'overview' | 'projects' | 'likes' | 'followers' | 'following'
+export type UserTab = 'overview' | 'projects' | 'records' | 'likes' | 'followers' | 'following'
 
 export function getUserPageRoute(name: string, tab: UserTab = 'overview') {
   const base = `/user/${encodeURIComponent(name)}`
@@ -80,6 +80,11 @@ const routes: Array<RouteRecordRaw> = [
           {
             path: 'projects',
             component: () => import('@/pages/community/user/projects.vue'),
+            props: true
+          },
+          {
+            path: 'records',
+            component: () => import('@/pages/community/user/records.vue'),
             props: true
           },
           {
