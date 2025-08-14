@@ -3,46 +3,46 @@
     <!-- 左侧工具栏 -->
     <div class="toolbar">
       <div class="tool-section">
-        <h3 class="tool-title">绘图工具</h3>
+        <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
         <button 
           :class="['tool-btn', { active: currentTool === 'line' }]"
           @click="selectTool('line')"
-          title="直线工具"
+          :title="$t({ en: 'Line Tool', zh: '直线工具' })"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="7" y1="17" x2="17" y2="7"></line>
           </svg>
-          <span>直线</span>
+          <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
         </button>
         
         <button 
           :class="['tool-btn', { active: currentTool === 'brush' }]"
           @click="selectTool('brush')"
-          title="笔刷工具"
+          :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
             <path d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"></path>
           </svg>
-          <span>笔刷</span>
+          <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
         </button>
         
         <button 
           :class="['tool-btn', { active: currentTool === 'reshape' }]"
           @click="selectTool('reshape')"
-          title="变形工具"
+          :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
             <path d="m13 13 6 6"></path>
           </svg>
-          <span>变形</span>
+          <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
         </button>
       </div>
       
       <div class="tool-section">
-        <h3 class="tool-title">AI工具</h3>
-        <button class="tool-btn ai-btn" @click="showAiDialog" title="AI生成图片">
+        <h3 class="tool-title">{{ $t({ en: 'AI Tools', zh: 'AI工具' }) }}</h3>
+        <button class="tool-btn ai-btn" @click="showAiDialog" :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 12l2 2 4-4"></path>
             <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
@@ -54,18 +54,18 @@
             <path d="M18.364 5.636c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"></path>
             <path d="M4.222 19.778c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"></path>
           </svg>
-          <span>AI生成</span>
+          <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
         </button>
       </div>
       
       <div class="tool-section">
-        <h3 class="tool-title">操作</h3>
-        <button class="tool-btn action-btn" @click="clearCanvas" title="清空画布">
+        <h3 class="tool-title">{{ $t({ en: 'Actions', zh: '操作' }) }}</h3>
+        <button class="tool-btn action-btn" @click="clearCanvas" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3,6 5,6 21,6"></polyline>
             <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
           </svg>
-          <span>清空</span>
+          <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
         </button>
       </div>
     </div>
@@ -196,20 +196,14 @@ const loadImageToCanvas = (imageSrc: string): void => {
   const raster = new paper.Raster(imageSrc)
   
   raster.onLoad = () => {
-    // 图片加载完成后的处理
-    // 设置图片位置到画布中心
     raster.position = paper.view.center
     
-    // 保持原始尺寸，不进行自动缩放
-    // 如果需要缩放，用户可以手动调整
+
     
     // 将图片放到最底层，作为背景
     raster.sendToBack()
     
-    // 保存引用
     backgroundImage.value = raster
-    
-    // 更新视图
     paper.view.update()
   }
 
@@ -292,12 +286,12 @@ const initPaper = (): void => {
 const selectTool = (tool: ToolType): void => {
   currentTool.value = tool
   
-  // 重置直线绘制状态
+
   if (drawLineRef.value) {
     drawLineRef.value.resetDrawing()
   }
   
-  // 重置笔刷绘制状态
+
   if (drawBrushRef.value) {
     drawBrushRef.value.resetDrawing()
   }
@@ -769,12 +763,9 @@ const handleAiCancel = (): void => {
 const importImageToCanvas = (imageUrl: string): void => {
   if (!paper.project) return
   
-  // 创建新的光栅图像
   const raster = new paper.Raster(imageUrl)
   
   raster.onLoad = () => {
-    // 图片加载完成后的处理
-    // 设置图片位置到画布中心
     raster.position = paper.view.center
     
     // 保持原始尺寸，不进行自动缩放
@@ -788,8 +779,7 @@ const importImageToCanvas = (imageUrl: string): void => {
     //     paper.view.update()
     //   }
     // }
-    
-    // 更新视图
+
     paper.view.update()
     // console.log('PNG图片已导入到画布')
 
@@ -797,7 +787,7 @@ const importImageToCanvas = (imageUrl: string): void => {
   }
   
   raster.onError = () => {
-    console.error('图片加载失败')
+    console.error('failed to load image')
   }
 }
 
@@ -813,7 +803,7 @@ const importSvgToCanvas = (svgContent: string): void => {
     
     // 检查是否解析成功
     if (svgElement.nodeName !== 'svg') {
-      console.error('无效的SVG内容')
+      console.error('invalid svg content')
       return
     }
     
@@ -821,11 +811,8 @@ const importSvgToCanvas = (svgContent: string): void => {
     const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
     
     if (importedItem) {
-      // 设置位置到画布中心
       importedItem.position = paper.view.center
       
-      // 保持原始尺寸，不进行自动缩放
-      // 如果需要缩放，用户可以手动调整
       
       // 收集所有可编辑的路径
       const collectPaths = (item: paper.Item): void => {
@@ -859,27 +846,10 @@ const importSvgToCanvas = (svgContent: string): void => {
       else isImportingFromProps.value = false
     }
   } catch (error) {
-    console.error('SVG导入失败:', error)
+    console.error('failed to import svg:', error)
   }
 }
 
-// 辅助函数：计算新导入的路径数量
-// const countNewPaths = (item: paper.Item): number => {
-//   let count = 0
-  
-//   const countPathsRecursive = (item: paper.Item): void => {
-//     if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
-//       count++
-//     } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
-//       if (item.children) {
-//         item.children.forEach(child => countPathsRecursive(child))
-//       }
-//     }
-//   }
-  
-//   countPathsRecursive(item)
-//   return count
-// }
 
 
 
@@ -996,9 +966,9 @@ onMounted(() => {
 
 // 导出当前画布为 SVG 并上报父组件
 const exportSvgAndEmit = (): void => {
-  console.log('exportSvgAndEmit 被调用')
+  // console.log('exportSvgAndEmit 被调用')
   if (!paper.project) {
-    console.log('paper.project 不存在')
+    console.log('paper.project does not exist')
     return
   }
   
@@ -1021,13 +991,13 @@ const exportSvgAndEmit = (): void => {
       embedImages: true,
       bounds: paper.view.bounds // 使用视图边界确保尺寸正确
     }) as string
-    console.log('导出的 SVG 长度:', svgStr?.length)
+    // console.log('exported svg length:', svgStr?.length)
     if (typeof svgStr === 'string') {
-      console.log('发送 svg-change 事件')
+      // console.log('send svg-change event')
       emit('svg-change', svgStr)
     }
   } catch (e) {
-    console.error('导出 SVG 失败:', e)
+    console.error('failed to export svg:', e)
   } finally {
     if (backgroundRect.value) backgroundRect.value.visible = prevVisible
   }
