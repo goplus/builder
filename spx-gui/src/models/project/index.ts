@@ -44,6 +44,8 @@ export type CloudProject = Project & CloudMetadata
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
 
+const aiPlayerPattern = /\sai\.Player/
+
 export type RunConfig = {
   width?: number
   height?: number
@@ -403,7 +405,7 @@ export class Project extends Disposable {
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
-      await this.ensureAIDescription() // Ensure AI description is available before exporting
+      if (this.isUsingAIInteraction()) await this.ensureAIDescription() // Ensure AI description is available if needed
       return [this.exportMetadata(), this.exportGameFiles()]
     })
   }
@@ -446,7 +448,7 @@ export class Project extends Disposable {
 
   async saveToCloud(signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
-    await this.ensureAIDescription(false, signal) // Ensure AI description exists before saving
+    if (this.isUsingAIInteraction()) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
     const [metadata, files] = await this.export()
     const saved = await cloudHelper.save(metadata, files, signal)
     this.loadMetadata(saved.metadata)
@@ -544,6 +546,23 @@ export class Project extends Disposable {
     }
 
     return parts.join('\n')
+  }
+
+  /** Check if project is using AI Interaction features */
+  isUsingAIInteraction(): boolean {
+    // Check stage code
+    if (this.stage.code && aiPlayerPattern.test(this.stage.code)) {
+      return true
+    }
+
+    // Check all sprite codes
+    for (const sprite of this.sprites) {
+      if (sprite.code && aiPlayerPattern.test(sprite.code)) {
+        return true
+      }
+    }
+
+    return false
   }
 }
 
