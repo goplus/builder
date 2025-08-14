@@ -4,9 +4,13 @@
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-html="getIcon(widget)"></div>
     </template>
-    <CornerMenu v-if="removable" :color="color">
-      <RenameMenuItem :radar="{ name: 'Rename', desc: 'Click to rename the widget' }" @click="handleRename" />
-      <RemoveMenuItem :radar="{ name: 'Remove', desc: 'Click to remove the widget' }" @click="handleRemove" />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the widget' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
     </CornerMenu>
   </UIEditorWidgetItem>
 </template>
@@ -28,11 +32,13 @@ const props = withDefaults(
     color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
     removable?: boolean
+    operable?: boolean
   }>(),
   {
     color: 'stage',
     selectable: false,
-    removable: false
+    removable: false,
+    operable: false
   }
 )
 
@@ -43,8 +49,6 @@ const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the widget and view more options' : ''
   return { name, desc }
 })
-
-const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 
 const handleRemove = useMessageHandle(
   async () => {

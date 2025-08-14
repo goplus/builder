@@ -16,9 +16,13 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="removable" :color="color">
-      <RenameMenuItem :radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
-      <RemoveMenuItem :radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>
@@ -44,19 +48,20 @@ const props = withDefaults(
     selectable?: false | { selected: boolean }
     removable?: boolean
     autoplay?: boolean
+    operable?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
     removable: false,
-    autoplay: false
+    autoplay: false,
+    operable: false
   }
 )
 
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 
-const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 const wrapperRef = ref<InstanceType<typeof UIEditorSpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 

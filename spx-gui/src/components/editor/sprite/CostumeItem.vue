@@ -3,9 +3,13 @@
     <template #img="{ style }">
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu v-if="removable" :color="color">
-      <RenameMenuItem :radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
-      <RemoveMenuItem :radar="{ name: 'Remove', desc: 'Click to remove the costume' }" @click="handleRemove" />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>
@@ -28,12 +32,14 @@ const props = withDefaults(
     color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
     removable?: boolean
+    operable?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
     selected: false,
-    removable: false
+    removable: false,
+    operable: false
   }
 )
 
@@ -53,9 +59,9 @@ const parent = computed(() => {
 })
 
 const removable = computed(() => {
-  const { removable, selectable } = props
+  const { removable } = props
   const costumes = parent.value.costumes
-  return removable && selectable && selectable.selected && costumes.length > 1
+  return removable && costumes.length > 1
 })
 
 const handleRemove = useMessageHandle(

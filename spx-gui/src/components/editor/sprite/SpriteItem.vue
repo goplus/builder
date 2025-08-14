@@ -18,8 +18,8 @@
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
       <SaveAssetToLibraryMenuItem :item="sprite" />
-      <RenameMenuItem @click="handleRename" />
-      <RemoveMenuItem @click="handleRemove" />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>

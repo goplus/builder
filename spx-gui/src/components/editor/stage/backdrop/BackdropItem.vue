@@ -9,8 +9,12 @@
   >
     <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
       <SaveAssetToLibraryMenuItem :item="backdrop" />
-      <RenameMenuItem @click="handleRename" />
-      <RemoveMenuItem :disabled="!removable" @click="handleRemove" />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
     </CornerMenu>
   </UIEditorBackdropItem>
 </template>
