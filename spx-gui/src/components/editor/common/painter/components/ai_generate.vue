@@ -13,7 +13,7 @@
       >
         <!-- 标题栏 -->
         <div class="dialog-header">
-          <h3 class="dialog-title">AI生成图片</h3>
+          <h3 class="dialog-title">{{ $t({ en: 'AI Generate Image', zh: 'AI生成图片' }) }}</h3>
           <button 
             class="close-btn"
             @click="handleCancel"
@@ -29,7 +29,7 @@
             <div class="form-section">
               <!-- 模型选择 -->
               <div class="form-group">
-                <label class="form-label">选择生成模型</label>
+                <label class="form-label">{{ $t({ en: 'Select Generation Model', zh: '选择生成模型' }) }}</label>
                 <div class="model-selector">
                   <div 
                     class="model-option"
@@ -38,8 +38,8 @@
                   >
                     <div class="model-icon">🖼️</div>
                     <div class="model-info">
-                      <div class="model-name">PNG图片</div>
-                      <div class="model-desc">生成高质量位图图片</div>
+                      <div class="model-name">{{ $t({ en: 'PNG Image', zh: 'PNG图片' }) }}</div>
+                      <div class="model-desc">{{ $t({ en: 'Generate high-quality bitmap images', zh: '生成高质量位图图片' }) }}</div>
                     </div>
                   </div>
                   <div 
@@ -49,8 +49,8 @@
                   >
                     <div class="model-icon">📐</div>
                     <div class="model-info">
-                      <div class="model-name">SVG矢量</div>
-                      <div class="model-desc">生成可缩放矢量图形</div>
+                      <div class="model-name">{{ $t({ en: 'SVG Vector', zh: 'SVG矢量' }) }}</div>
+                      <div class="model-desc">{{ $t({ en: 'Generate scalable vector graphics', zh: '生成可缩放矢量图形' }) }}</div>
                     </div>
                   </div>
                 </div>
@@ -58,15 +58,15 @@
 
               <!-- 提示词输入 -->
               <div class="form-group">
-                <label class="form-label">描述您想要的图片</label>
+                <label class="form-label">{{ $t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
                 <textarea
                   v-model="prompt"
                   class="prompt-input"
-                  placeholder="请详细描述您想要生成的图片内容，例如：一只可爱的卡通猫咪，坐在彩虹上，背景是蓝天白云..."
+                  :placeholder="$t({ en: 'Please describe in detail the image content you want to generate, for example: a cute cartoon cat sitting on a rainbow with blue sky and white clouds in the background...', zh: '请详细描述您想要生成的图片内容，例如：一只可爱的卡通猫咪，坐在彩虹上，背景是蓝天白云...' })"
                   rows="4"
                 ></textarea>
                 <div class="input-hint">
-                  提示：描述越详细，生成的图片效果越好
+                  {{ $t({ en: 'Tip: The more detailed the description, the better the generated image effect', zh: '提示：描述越详细，生成的图片效果越好' }) }}
                 </div>
               </div>
 
@@ -78,23 +78,23 @@
                   @click="handleGenerate"
                 >
                   <span v-if="isGenerating" class="loading-spinner"></span>
-                  {{ isGenerating ? '生成中...' : '生成图片' }}
+                  {{ isGenerating ? $t({ en: 'Generating...', zh: '生成中...' }) : $t({ en: 'Generate Image', zh: '生成图片' }) }}
                 </button>
               </div>
             </div>
 
             <!-- 右侧预览区域 -->
             <div class="preview-section" :class="{ visible: previewUrl || isGenerating }">
-              <label class="form-label">预览效果</label>
+              <label class="form-label">{{ $t({ en: 'Preview', zh: '预览效果' }) }}</label>
               <div class="preview-container">
                 <div v-if="isGenerating" class="preview-loading">
                   <div class="loading-spinner large"></div>
-                  <div class="loading-text">AI正在为您生成图片...</div>
+                  <div class="loading-text">{{ $t({ en: 'AI is generating images for you...', zh: 'AI正在为您生成图片...' }) }}</div>
                 </div>
                 <div v-else-if="previewUrl" class="preview-image-wrapper">
                   <img 
                     :src="previewUrl" 
-                    alt="AI生成的图片预览"
+                    :alt="$t({ en: 'AI generated image preview', zh: 'AI生成的图片预览' })"
                     class="preview-image"
                     @load="handleImageLoad"
                     @error="handleImageError"
@@ -106,7 +106,7 @@
                 </div>
                 <div v-else class="preview-placeholder">
                   <div class="placeholder-icon">🖼️</div>
-                  <div class="placeholder-text">生成的图片将在这里预览</div>
+                  <div class="placeholder-text">{{ $t({ en: 'Generated images will be previewed here', zh: '生成的图片将在这里预览' }) }}</div>
                 </div>
               </div>
             </div>
@@ -119,14 +119,72 @@
             class="btn btn-secondary"
             @click="handleCancel"
           >
-            取消
+            {{ $t({ en: 'Cancel', zh: '取消' }) }}
           </button>
           <button 
             class="btn btn-primary"
             :disabled="!previewUrl || isGenerating"
             @click="handleConfirm"
           >
-            确认使用
+            {{ $t({ en: 'Confirm Use', zh: '确认使用' }) }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 错误提示弹窗 -->
+    <div 
+      v-if="showErrorModal" 
+      class="error-modal-overlay"
+      @click="closeErrorModal"
+    >
+      <div 
+        class="error-modal-content"
+        @click.stop
+      >
+        <div class="error-modal-header">
+          <div class="error-icon">⚠️</div>
+          <h3 class="error-title">{{ $t({ en: 'Generation Failed', zh: '生成失败' }) }}</h3>
+          <button 
+            class="error-close-btn"
+            @click="closeErrorModal"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div class="error-modal-body">
+          <p class="error-message">
+            {{ errorType === 'timeout' ? $t({ en: 'Generation timeout, please try simplifying the description or try again later', zh: '生成超时，请尝试简化描述或稍后重试' }) : 
+               errorType === 'network' ? $t({ en: 'Network connection error, please check your network connection', zh: '网络连接异常，请检查网络连接' }) :
+               errorType === 'params' ? $t({ en: 'Request parameter error, please check the prompt length (at least 3 characters)', zh: '请求参数错误，请检查提示词长度（至少3个字符）' }) :
+               errorType === 'server' ? $t({ en: 'Server internal error, please try again later', zh: '服务器内部错误，请稍后重试' }) :
+               $t({ en: 'Image generation failed, please try again later', zh: '图片生成失败，请稍后重试' }) }}
+          </p>
+          <div class="error-suggestions">
+            <h4 class="suggestions-title">{{ $t({ en: 'Suggestions:', zh: '建议：' }) }}</h4>
+            <ul class="suggestions-list">
+              <li v-if="errorType === 'timeout'">{{ $t({ en: 'Try simplifying your description', zh: '尝试简化您的描述' }) }}</li>
+              <li v-if="errorType === 'network'">{{ $t({ en: 'Check your network connection', zh: '检查网络连接状态' }) }}</li>
+              <li v-if="errorType === 'params'">{{ $t({ en: 'Ensure prompt is at least 3 characters', zh: '确保提示词至少3个字符' }) }}</li>
+              <li v-if="errorType === 'default' || errorType === 'server'">{{ $t({ en: 'Try again in a few moments', zh: '稍后再试' }) }}</li>
+              <li>{{ $t({ en: 'Contact support if the problem persists', zh: '如问题持续存在，请联系技术支持' }) }}</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="error-modal-footer">
+          <button 
+            class="btn btn-secondary"
+            @click="closeErrorModal"
+          >
+            {{ $t({ en: 'Close', zh: '关闭' }) }}
+          </button>
+          <button 
+            class="btn btn-primary"
+            @click="retryGeneration"
+          >
+            {{ $t({ en: 'Retry', zh: '重试' }) }}
           </button>
         </div>
       </div>
@@ -169,6 +227,11 @@ const imageSize = ref('')
 // 存储SVG原始代码
 const svgRawContent = ref('')
 
+// 错误处理相关状态
+const showErrorModal = ref(false)
+const errorMessage = ref('')
+const errorType = ref('')
+
 // 方法
 const handleGenerate = async () => {
   if (!prompt.value.trim()) return
@@ -177,21 +240,13 @@ const handleGenerate = async () => {
   previewUrl.value = ''
   
   try {
-    // TODO: 这里需要调用实际的AI生成API
-    // 目前使用模拟数据
-    // await simulateGeneration()
-
-    // // 模拟生成结果
-    // previewUrl.value = generateMockImageUrl()
-    // imageSize.value = selectedModel.value === 'png' ? '512x512' : '矢量图'
 
     await handleRealGenerate()
     // previewUrl 在 handleRealGenerate 中已经设置
     // imageSize 在 handleRealGenerate 中已经设置
     
   } catch (error) {
-    console.error('生成图片失败:', error)
-    // TODO: 显示错误提示
+    console.error('failed to generate image1:', error)
   } finally {
     isGenerating.value = false
   }
@@ -239,16 +294,28 @@ const handleImageLoad = () => {
 }
 
 const handleImageError = () => {
-  console.error('图片加载失败')
+  console.error('failed to load image')
   previewUrl.value = ''
 }
 
-// 模拟生成过程
-const simulateGeneration = () => {
-  return new Promise(resolve => {
-    setTimeout(resolve, 2000) // 模拟2秒生成时间
-  })
+// 错误处理方法
+const showError = (message: string, type: string = 'default') => {
+  errorMessage.value = message
+  errorType.value = type
+  showErrorModal.value = true
 }
+
+const closeErrorModal = () => {
+  showErrorModal.value = false
+  errorMessage.value = ''
+  errorType.value = ''
+}
+
+const retryGeneration = () => {
+  closeErrorModal()
+  handleGenerate()
+}
+
 
 // 实际的AI图片生成函数
 const handleRealGenerate = async () => {
@@ -283,22 +350,34 @@ const handleRealGenerate = async () => {
     }
     
   } catch (error) {
-    console.error('生成图片失败:', error)
+    console.error('failed to generate image:', error)
     
-    let errorMessage = '图片生成失败，请稍后重试'
+    let errorType = 'default'
+    let errorKey = 'default'
+    
     if (error instanceof Error) {
       if (error.message.includes('timeout')) {
-        errorMessage = '生成超时，请尝试简化描述或稍后重试'
+        errorType = 'timeout'
+        errorKey = 'timeout'
       } else if (error.message.includes('network')) {
-        errorMessage = '网络连接异常，请检查网络连接'
+        errorType = 'network' 
+        errorKey = 'network'
       } else if (error.message.includes('400')) {
-        errorMessage = '请求参数错误，请检查提示词长度（至少3个字符）'
+        errorType = 'params'
+        errorKey = 'params'
       } else if (error.message.includes('500')) {
-        errorMessage = '服务器内部错误，请稍后重试'
+        errorType = 'server'
+        errorKey = 'server'
       }
     }
+    if (String(error).includes('fetch') || String(error).includes('net')) {
+      errorType = 'network'
+      errorKey = 'network'
+    }
     
-    alert(errorMessage)
+    // Use a simple fallback message for script context, real i18n will be handled in template
+    const fallbackMessage = '图片生成失败，请稍后重试'
+    showError(fallbackMessage, errorType)
     
   } finally {
     isGenerating.value = false
@@ -673,6 +752,160 @@ watch(() => props.visible, (newVal) => {
   cursor: not-allowed;
 }
 
+/* 错误弹窗样式 */
+.error-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.error-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: errorModalSlideIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes errorModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.error-modal-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 16px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-bottom: 1px solid #fecaca;
+}
+
+.error-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.2));
+}
+
+.error-title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.error-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+  opacity: 0.7;
+}
+
+.error-close-btn:hover {
+  background: rgba(220, 38, 38, 0.1);
+  opacity: 1;
+}
+
+.error-modal-body {
+  padding: 20px 24px;
+}
+
+.error-message {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.error-suggestions {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.suggestions-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.suggestions-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: none;
+}
+
+.suggestions-list li {
+  position: relative;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.suggestions-list li:before {
+  content: '•';
+  color: #3b82f6;
+  font-weight: bold;
+  position: absolute;
+  left: -12px;
+}
+
+.suggestions-list li:last-child {
+  margin-bottom: 0;
+}
+
+.error-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 20px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.error-modal-footer .btn {
+  min-width: 80px;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .dialog-content {
@@ -692,6 +925,19 @@ watch(() => props.visible, (newVal) => {
   
   .preview-container {
     min-height: 200px;
+  }
+
+  .error-modal-content {
+    max-width: 95%;
+    margin: 20px;
+  }
+  
+  .error-modal-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .error-modal-footer .btn {
+    width: 100%;
   }
 }
 </style>
