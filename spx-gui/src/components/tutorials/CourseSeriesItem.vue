@@ -35,9 +35,9 @@ const courseQuery = useQuery(
     </header>
 
     <div class="course-series-warpper">
-      <ListResultWrapper :query-ret="courseQuery">
-        <template #empty>
-          <UIEmpty size="large" img="game" :style="{ height: '254px' }">
+      <ListResultWrapper :query-ret="courseQuery" :height="214">
+        <template #empty="{ style }">
+          <UIEmpty size="large" img="game" :style="style">
             {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
           </UIEmpty>
         </template>

@@ -48,3 +48,6 @@ export const sentryTracesSampleRate = parseFloat(import.meta.env.VITE_SENTRY_TRA
  * This determines what percentage of LSP transactions are sent to Sentry
  */
 export const sentryLSPSampleRate = parseFloat(import.meta.env.VITE_SENTRY_LSP_SAMPLE_RATE as string) || 0.1
+
+/** If tutorials entry should be shown in the Navbar */
+export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 'true'
