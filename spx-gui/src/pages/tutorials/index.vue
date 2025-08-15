@@ -5,7 +5,7 @@
 
     <TutorialsBanner />
     <CenteredWrapper class="centered-wrapper">
-      <ListResultWrapper :query-ret="courseSeriesQuery" :height="254">
+      <ListResultWrapper :query-ret="courseSeriesQuery">
         <template #empty>
           <UIEmpty size="extra-large">
             {{ $t({ en: 'No course series available', zh: '没有可用的课程系列' }) }}

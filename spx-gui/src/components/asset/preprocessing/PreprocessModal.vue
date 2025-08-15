@@ -11,8 +11,18 @@
     @update:visible="emit('cancelled')"
   >
     <main class="main">
-      <div class="sider">
+      <div
+        v-radar="{
+          name: 'Preprocessing method entries',
+          desc: 'Sidebar which contains entries for preprocessing methods'
+        }"
+        class="sider"
+      >
         <ProcessItem
+          v-radar="{
+            name: 'Original image',
+            desc: 'Click to view the original image before any processing'
+          }"
           :img-src="originalThumbnail"
           :name="$t({ en: 'Original', zh: '原图' })"
           :applied="false"
@@ -22,6 +32,10 @@
         <ProcessItem
           v-for="method in supportedMethods"
           :key="method.value"
+          v-radar="{
+            name: method.name.en,
+            desc: `Click to configure preprocessing method: ${method.name.en}`
+          }"
           :img-src="method.thumbnail"
           :name="$t(method.name)"
           :applied="isMethodApplied(method.value)"
@@ -30,7 +44,13 @@
         />
       </div>
       <div class="detail">
-        <ProcessDetail v-show="activeMethod == null">
+        <ProcessDetail
+          v-if="activeMethod == null"
+          v-radar="{
+            name: 'Original image',
+            desc: 'Click to view the original image before any processing'
+          }"
+        >
           <template #header>
             {{ $t({ en: 'Original', zh: '原图' }) }}
           </template>
@@ -40,6 +60,10 @@
           :is="method.component"
           v-for="method in supportedMethods"
           :key="method.value"
+          v-radar="{
+            name: method.name.en,
+            desc: `Configure panel for preprocessing method: ${method.name.en}`
+          }"
           :active="activeMethod === method.value"
           :input="getMethodInput(method.value)"
           :applied="isMethodApplied(method.value)"

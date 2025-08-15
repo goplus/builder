@@ -16,6 +16,7 @@ import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML } from '@/utils/utils'
 import * as projectApis from '@/apis/project'
+import type { Sprite } from '@/models/sprite'
 import { Project } from '@/models/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
@@ -125,6 +126,21 @@ class GetProjectContentTool implements ToolDefinition {
   }
 }
 
+function getSpriteContent(sprite: Sprite) {
+  return {
+    name: sprite.name,
+    costumes: sprite.costumes.map((c) => c.name),
+    animations: sprite.animations.map((a) => a.name),
+    heading: sprite.heading,
+    x: sprite.x,
+    y: sprite.y,
+    size: sprite.size,
+    rotationStyle: sprite.rotationStyle,
+    visible: sprite.visible,
+    codeLinesNum: sprite.code.split(/\r?\n/).length
+  }
+}
+
 const getSpriteContentParamsSchema = z.object({
   project: projectIdentifierSchema,
   spriteName: z.string().describe('Name of the sprite')
@@ -141,18 +157,7 @@ class GetSpriteContentTool implements ToolDefinition {
     const p = await this.retriever.getProject(project, signal)
     const sprite = p.sprites.find((s) => s.name === spriteName)
     if (sprite == null) throw new Error(`Sprite "${spriteName}" not found in project "${project}"`)
-    return {
-      name: sprite.name,
-      costumes: sprite.costumes.map((c) => c.name),
-      animations: sprite.animations.map((a) => a.name),
-      heading: sprite.heading,
-      x: sprite.x,
-      y: sprite.y,
-      size: sprite.size,
-      rotationStyle: sprite.rotationStyle,
-      visible: sprite.visible,
-      codeLinesNum: sprite.code.split(/\r?\n/).length
-    }
+    return getSpriteContent(sprite)
   }
 }
 
@@ -326,6 +331,16 @@ ${getProjectContent(project)}`
   }
 }
 
+class SpriteContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const sprite = this.editorCtxRef.value?.state.selectedSprite
+    if (sprite == null) return ''
+    return `# Current sprite content
+${JSON.stringify(getSpriteContent(sprite))}`
+  }
+}
+
 class CodeContextProvider implements ICopilotContextProvider {
   constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
 
@@ -421,6 +436,7 @@ copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
+copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
 watch(
@@ -436,8 +452,19 @@ onBeforeUnmount(
   })
 )
 onBeforeUnmount(
-  modalEvents.on('close', () => {
-    copilot.notifyUserEvent({ en: 'Modal closed', zh: '关闭模态框' }, 'User closed a modal dialog')
+  modalEvents.on('resolved', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation completed in modal', zh: '模态框中操作完成' },
+      'User completed operation in modal'
+    )
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('cancelled', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
+      'User cancelled operation in modal'
+    )
   })
 )
 

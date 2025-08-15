@@ -288,7 +288,8 @@ export class EditorState extends Disposable {
       watch(
         router.currentRoute,
         (currentRoute) => {
-          const inEditorPath = currentRoute.params.inEditorPath
+          const { inEditorPath, projectName } = currentRoute.params
+          if (projectName !== this.project.name) return // if project changed, do nothing. new `EditorState` instance will be constructed
           const inEditorSections = typeof inEditorPath === 'string' ? [inEditorPath] : inEditorPath ?? []
           this.selectByRoute(inEditorSections)
         },
