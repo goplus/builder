@@ -274,12 +274,22 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
   }
 }
 
+function preventDefaultSaveBehavior(event: KeyboardEvent) {
+  const { metaKey, ctrlKey, key } = event
+  // command/ctrl + s
+  if ((metaKey || ctrlKey) && key.toLowerCase() === 's') {
+    event.preventDefault()
+  }
+}
+
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  window.addEventListener('keydown', preventDefaultSaveBehavior)
 })
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  window.removeEventListener('keydown', preventDefaultSaveBehavior)
 })
 
 function openProject(owner: string, name: string) {

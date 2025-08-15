@@ -28,14 +28,6 @@
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
       </UIMenuGroup>
-      <UIMenuGroup v-if="isDeveloperMode">
-        <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
-          {{ $t({ en: 'Use SPX v1', zh: '使用 SPX v1' }) }}
-        </UIMenuItem>
-        <UIMenuItem v-if="spxVersion === 'v1'" @click="handleUseSpxV2">
-          {{ $t({ en: 'Use SPX v2', zh: '使用 SPX v2' }) }}
-        </UIMenuItem>
-      </UIMenuGroup>
       <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
         <UIMenuItem @click="manageAssets(AssetType.Sprite)">
           {{ $t({ en: 'Manage sprites', zh: '管理精灵' }) }}
@@ -73,7 +65,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useExternalUrl, useSpxVersion } from '@/utils/utils'
+import { useExternalUrl } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
@@ -110,30 +102,6 @@ function handleUserPage() {
 function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
 }
-
-const spxVersion = useSpxVersion()
-
-const handleUseSpxV1 = useMessageHandle(
-  async () => {
-    spxVersion.value = 'v1'
-  },
-  undefined,
-  {
-    en: 'Switched to SPX v1',
-    zh: '已切换为 SPX v1'
-  }
-).fn
-
-const handleUseSpxV2 = useMessageHandle(
-  async () => {
-    spxVersion.value = 'v2'
-  },
-  undefined,
-  {
-    en: 'Switched to SPX v2',
-    zh: '已切换为 SPX v2'
-  }
-).fn
 
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn

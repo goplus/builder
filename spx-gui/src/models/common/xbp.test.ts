@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
@@ -6,6 +6,10 @@ import { Costume } from '../costume'
 import { fromText, toText } from './file'
 import { Project } from '../project'
 import { load, save } from './xbp'
+
+vi.mock('@/apis/ai-description', () => ({
+  generateAIDescription: vi.fn().mockResolvedValue('Mocked AI description for testing')
+}))
 
 function mockFile(name = 'mocked', type = 'text/plain') {
   return fromText(name, Math.random() + '', { type })

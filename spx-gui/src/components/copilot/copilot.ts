@@ -1,16 +1,15 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { debounce, isBoolean, isString } from 'lodash'
-import { shallowRef, ref, shallowReactive, type Component } from 'vue'
+import { debounce, throttle } from 'lodash'
+import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
+import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import type { Disposer } from '@/utils/disposable'
-import { ActionException, Cancelled } from '@/utils/exception'
+import { Disposable, type Disposer } from '@/utils/disposable'
+import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
-import { isToolExecution, ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
+import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
-import type { CopilotSessionStorage } from './copilot-storage'
-import { localStorageRef } from '@/utils/utils'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -105,51 +104,36 @@ export type Topic = {
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
-  /** Component to render the topic state indicator, e.g. tip for current tutorial course */
-  stateIndicator?: Component<{}>
+  /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
+  stateIndicator?: string
 }
 
 export enum RoundState {
   /** The round is initialized, while not sent to copilot yet. */
-  Initialized,
+  Initialized = 'initialized',
   /** The round is loading, waiting for copilot response. */
-  Loading,
+  Loading = 'loading',
   /** The round is in progress, partial copilot response is available. */
-  InProgress,
+  InProgress = 'in-progress',
   /** The round has completed successfully */
-  Completed,
+  Completed = 'completed',
   /** The round was cancelled by the user */
-  Cancelled,
+  Cancelled = 'cancelled',
   /** The round failed due to an error */
-  Failed
+  Failed = 'failed'
 }
 
-export function isTopic(o: any): o is Topic {
-  return o.title && isString(o.description) && isBoolean(o.reactToEvents)
+export interface IMessageStreamGenerator {
+  generateStreamMessage: typeof apis.generateStreamMessage
 }
 
-export function isTextMessage(o: any): o is TextMessage {
-  return o.type === 'text' && ['user', 'copilot'].includes(o.role) && isString(o.content)
-}
-
-export function isUserTextMessage(o: any): o is UserTextMessage {
-  return isTextMessage(o) && o.role === 'user'
-}
-
-export function isUserEventMessage(o: any): o is UserEventMessage {
-  return o.type === 'event' && o.role === 'user' && o.name && isString(o.detail)
-}
-
-export function isUserMessage(o: any): o is UserMessage {
-  return isUserTextMessage(o) || isUserEventMessage(o)
-}
-
-export function isCopilotMessage(o: any): o is CopilotMessage {
-  return isTextMessage(o) && o.role === 'copilot'
-}
-
-export function isToolMessage(o: any): o is ToolMessage {
-  return o.role === 'tool' && isString(o.callId) && isToolExecution(o.execution)
+// NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
+type RoundExported = {
+  userMessage: UserMessage
+  resultMessages: Array<CopilotMessage | ToolMessage>
+  inProgressCopilotMessageContent: string | null
+  error: LocaleMessage | null
+  state: RoundState
 }
 
 export class Round {
@@ -158,7 +142,8 @@ export class Round {
   get inProgressCopilotMessageContent() {
     return this.inProgressCopilotMessageContentRef.value
   }
-  private errorRef = ref<ActionException | null>(null)
+  private errorRef = ref<LocaleMessage | null>(null)
+  /** Error message */
   get error() {
     return this.errorRef.value
   }
@@ -174,6 +159,33 @@ export class Round {
     private session: Session
   ) {
     this.userMessage = userMessage
+  }
+
+  export(): RoundExported {
+    return {
+      userMessage: this.userMessage,
+      resultMessages: this.resultMessages,
+      inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
+      error: this.error,
+      state: this.state
+    }
+  }
+
+  static load(exported: RoundExported, copilot: Copilot, session: Session): Round {
+    const round = new Round(exported.userMessage, copilot, session)
+    round.resultMessages.push(...exported.resultMessages)
+    round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
+    round.errorRef.value = exported.error
+    switch (exported.state) {
+      case RoundState.Loading:
+      case RoundState.InProgress:
+        // We will not resume the ongoing request, so we consider it as cancelled.
+        round.stateRef.value = RoundState.Cancelled
+        break
+      default:
+        round.stateRef.value = exported.state
+    }
+    return round
   }
 
   private sealInProgressCopilotMessage(): CopilotMessage {
@@ -204,7 +216,7 @@ export class Round {
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
-    })
+    }).userMessage
     this.stateRef.value = RoundState.Failed
   }
 
@@ -245,7 +257,9 @@ export class Round {
       const apiMessages = messages.map(toApiMessage)
       // TODO: history summarization with LLM instead of truncation
       const sampledApiMessages = sampleApiMessages(apiMessages)
-      const result = apis.generateStreamMessage('standard', sampledApiMessages, { signal: this.ctrl.signal })
+      const result = this.copilot.generator.generateStreamMessage('standard', sampledApiMessages, {
+        signal: this.ctrl.signal
+      })
       for await (const chunk of result) {
         if (this.inProgressCopilotMessageContentRef.value == null) {
           this.inProgressCopilotMessageContentRef.value = ''
@@ -281,7 +295,12 @@ export class Round {
   }
 }
 
-// TODO: restore session state after page reload
+// NOTE: Keep backward compatibility of `SessionExported` to avoid errors when loading old sessions.
+type SessionExported = {
+  topic: Topic
+  rounds: RoundExported[]
+}
+
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
@@ -291,6 +310,19 @@ export class Session {
     private copilot: Copilot
   ) {
     this.topic = topic
+  }
+
+  export(): SessionExported {
+    return {
+      topic: this.topic,
+      rounds: this.rounds.map((round) => round.export())
+    }
+  }
+
+  static load(exported: SessionExported, copilot: Copilot): Session {
+    const session = new Session(exported.topic, copilot)
+    session.rounds.push(...exported.rounds.map((round) => Round.load(round, copilot, session)))
+    return session
   }
 
   get currentRound() {
@@ -370,18 +402,32 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
-export class Copilot {
+export interface IStorage {
+  set(value: string | null): void
+  get(): string | null
+}
+
+export class Copilot extends Disposable {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
+  private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
 
   private getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
   }
 
+  get stateIndicatorComponent(): Component<{}> | null {
+    const name = this.currentSession?.topic.stateIndicator
+    if (name == null) return null
+    return this.stateIndicatorComponentMap.get(name) ?? null
+  }
+
   executor = new ToolExecutor(() => this.getTools())
 
-  constructor(public copilotSessionStorage: CopilotSessionStorage) {}
+  constructor(public generator: IMessageStreamGenerator = apis) {
+    super()
+  }
 
   /** If copilot is active (the panel is visible) */
   private activeRef = localStorageRef('spx-gui-copilot-active', false)
@@ -438,6 +484,7 @@ ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
   private getTopicPrompt() {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
+    if (topic.description.trim() === '') return ''
     return `# Current topic between you and user
 
 ${topic.description}`
@@ -471,31 +518,32 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
-  saveSession(session = this.currentSession): Promise<void> {
-    if (!session) {
-      return Promise.resolve()
+  syncSessionWith(storage: IStorage): void {
+    try {
+      const saved = storage.get()
+      if (saved != null) {
+        const sessionExported = JSON.parse(saved) as SessionExported
+        this.currentSessionRef.value = Session.load(sessionExported, this)
+      }
+    } catch (e) {
+      capture(e, 'Failed to load session from storage')
     }
-    return this.copilotSessionStorage.save(session)
-  }
-
-  async loadSessionFromStorage() {
-    const session = await this.copilotSessionStorage.load(this)
-    if (!session) {
-      return
-    }
-    this.endCurrentSession()
-    this.currentSessionRef.value = session
-  }
-
-  clearSession(): Promise<void> {
-    return this.copilotSessionStorage.clear()
+    this.addDisposer(
+      watch(
+        () => this.currentSession?.export() ?? null,
+        // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
+        throttle((exported: SessionExported | null) => {
+          const toSave = exported == null ? null : JSON.stringify(exported)
+          storage.set(toSave)
+        }, 300)
+      )
+    )
   }
 
   /** End the current session. */
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
     this.currentSessionRef.value = null
-    this.clearSession()
   }
 
   open() {
@@ -566,6 +614,16 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       if (this.toolMap.get(tool.name) === tool) {
         this.toolMap.delete(tool.name)
       }
+    }
+  }
+
+  registerStateIndicatorComponent(name: string, component: Component): Disposer {
+    if (this.stateIndicatorComponentMap.has(name))
+      console.warn(`State indicator component with name "${name}" already exists`)
+    this.stateIndicatorComponentMap.set(name, component)
+    return () => {
+      if (this.stateIndicatorComponentMap.get(name) !== component) return
+      this.stateIndicatorComponentMap.delete(name)
     }
   }
 }

@@ -51,7 +51,7 @@ const rounds = computed(() => {
   return session.value.rounds
 })
 
-const StateIndicator = computed(() => session.value?.topic.stateIndicator)
+const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
 async function handleNewSession() {
   copilot.endCurrentSession()

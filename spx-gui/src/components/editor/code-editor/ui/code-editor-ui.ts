@@ -428,8 +428,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     }
 
     const lineEndPos = { line: pos.line, column: lineCnt.length + 1 }
+    const lineCntAfterPos = textDocument.getValueInRange({ start: pos, end: lineEndPos })
+
     this.editor.setPosition(toMonacoPosition(lineEndPos))
     insertAtLine += 1
+    if (isPrecededByOpenBrace(lineCntBeforePos) || isFollowedByCloseBrace(lineCntAfterPos)) {
+      if (!content.startsWith('\n')) content = '\n' + content
+      if (!content.endsWith('\n')) content = content + '\n'
+      return insert(content, range)
+    }
+
     content = '\n' + content.replace(/\n$/, '')
     return insert(content, { start: lineEndPos, end: lineEndPos })
   }
@@ -740,4 +748,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
 function isEmptyText(s: string) {
   return /^\s*$/.test(s)
+}
+
+function isPrecededByOpenBrace(s: string): boolean {
+  return /\{\s*$/.test(s)
+}
+
+function isFollowedByCloseBrace(s: string) {
+  return /^\s*\}/.test(s)
 }

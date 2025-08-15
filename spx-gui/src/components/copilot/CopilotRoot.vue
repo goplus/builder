@@ -1,12 +1,22 @@
 <script lang="ts">
 import { z } from 'zod'
 import { debounce } from 'lodash'
-import { inject, onBeforeUnmount, onMounted, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
+import {
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  provide,
+  watch,
+  type ComputedRef,
+  type InjectionKey
+} from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML } from '@/utils/utils'
 import * as projectApis from '@/apis/project'
+import type { Sprite } from '@/models/sprite'
 import { Project } from '@/models/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
@@ -22,7 +32,6 @@ import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
-import { LocalStorageSessionStorage } from './copilot-storage'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -88,20 +97,67 @@ class GetProjectMetadataTool implements ToolDefinition {
   }
 }
 
-const getProjectSpritesParamsSchema = z.object({
+function getProjectContent(project: Project) {
+  return `\
+### Sprites (num: ${project.sprites.length})
+${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
+### Sounds (num: ${project.sounds.length})
+${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
+### Backdrops (num: ${project.stage.backdrops.length})
+${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
+### Widgets (num: ${project.stage.widgets.length})
+${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}`
+}
+
+const getProjectContentParamsSchema = z.object({
   project: projectIdentifierSchema
 })
 
-class GetProjectSpritesTool implements ToolDefinition {
-  name = 'get_project_sprites'
-  description = 'Get sprites of a project.'
-  parameters = getProjectSpritesParamsSchema
+class GetProjectContentTool implements ToolDefinition {
+  name = 'get_project_content'
+  description = 'Get content of a project.'
+  parameters = getProjectContentParamsSchema
 
   constructor(private retriever: Retriever) {}
 
-  async implementation({ project }: z.infer<typeof getProjectSpritesParamsSchema>, signal?: AbortSignal) {
+  async implementation({ project }: z.infer<typeof getProjectContentParamsSchema>, signal?: AbortSignal) {
     const p = await this.retriever.getProject(project, signal)
-    return p.sprites.map((s) => s.name)
+    return getProjectContent(p)
+  }
+}
+
+function getSpriteContent(sprite: Sprite) {
+  return {
+    name: sprite.name,
+    costumes: sprite.costumes.map((c) => c.name),
+    animations: sprite.animations.map((a) => a.name),
+    heading: sprite.heading,
+    x: sprite.x,
+    y: sprite.y,
+    size: sprite.size,
+    rotationStyle: sprite.rotationStyle,
+    visible: sprite.visible,
+    codeLinesNum: sprite.code.split(/\r?\n/).length
+  }
+}
+
+const getSpriteContentParamsSchema = z.object({
+  project: projectIdentifierSchema,
+  spriteName: z.string().describe('Name of the sprite')
+})
+
+class GetSpriteContentTool implements ToolDefinition {
+  name = 'get_sprite_content'
+  description = 'Get content of a sprite in a project.'
+  parameters = getSpriteContentParamsSchema
+
+  constructor(private retriever: Retriever) {}
+
+  async implementation({ project, spriteName }: z.infer<typeof getSpriteContentParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
+    const sprite = p.sprites.find((s) => s.name === spriteName)
+    if (sprite == null) throw new Error(`Sprite "${spriteName}" not found in project "${project}"`)
+    return getSpriteContent(sprite)
   }
 }
 
@@ -124,7 +180,7 @@ function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) 
   }, {})
   return {
     lines,
-    totalLineNum: allLines.length
+    fileLineNum: allLines.length
   }
 }
 
@@ -263,6 +319,28 @@ The user is now browsing page with path: \`${this.router.currentRoute.value.full
   }
 }
 
+class ProjectContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const project = this.editorCtxRef.value?.project
+    if (project == null) return ''
+    return `# Current project
+The user is now working on project: ${project.owner}/${project.name}
+## Project content
+${getProjectContent(project)}`
+  }
+}
+
+class SpriteContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const sprite = this.editorCtxRef.value?.state.selectedSprite
+    if (sprite == null) return ''
+    return `# Current sprite content
+${JSON.stringify(getSpriteContent(sprite))}`
+  }
+}
+
 class CodeContextProvider implements ICopilotContextProvider {
   constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
 
@@ -309,11 +387,13 @@ const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const retriever = new Retriever(editorCtxRef)
-const copilot = new Copilot(new LocalStorageSessionStorage())
+const copilot = new Copilot()
+onUnmounted(() => copilot.dispose())
 
 copilot.registerTool(listProjectsTool)
 copilot.registerTool(new GetProjectMetadataTool(retriever))
-copilot.registerTool(new GetProjectSpritesTool(retriever))
+copilot.registerTool(new GetProjectContentTool(retriever))
+copilot.registerTool(new GetSpriteContentTool(retriever))
 copilot.registerTool(new GetProjectCodeTool(retriever))
 copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
 copilot.registerCustomElement({
@@ -355,6 +435,8 @@ copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
+copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
+copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
 watch(
@@ -370,8 +452,19 @@ onBeforeUnmount(
   })
 )
 onBeforeUnmount(
-  modalEvents.on('close', () => {
-    copilot.notifyUserEvent({ en: 'Modal closed', zh: '关闭模态框' }, 'User closed a modal dialog')
+  modalEvents.on('resolved', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation completed in modal', zh: '模态框中操作完成' },
+      'User completed operation in modal'
+    )
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('cancelled', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
+      'User cancelled operation in modal'
+    )
   })
 )
 
@@ -399,12 +492,18 @@ watch(
 
 provide(copilotInjectionKey, copilot)
 
-// Handle copilot session storage
-watch(
-  () => copilot.currentSession?.currentRound?.resultMessages.length,
-  () => copilot.saveSession()
-)
-onMounted(() => copilot.loadSessionFromStorage())
+onMounted(() => {
+  const sessionLocalStorageKey = 'spx-gui-copilot-session'
+  copilot.syncSessionWith({
+    set(value: string | null) {
+      if (value == null) localStorage.removeItem(sessionLocalStorageKey)
+      else localStorage.setItem(sessionLocalStorageKey, value)
+    },
+    get() {
+      return localStorage.getItem(sessionLocalStorageKey)
+    }
+  })
+})
 </script>
 
 <template>

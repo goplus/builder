@@ -46,7 +46,8 @@ export type ModalInfo = {
 
 export type ModalEvents = Emitter<{
   open: void
-  close: void
+  resolved: void
+  cancelled: void
 }>
 
 type ModalContext = {
@@ -96,7 +97,6 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
   if (modal == null) return
   modal.visible = false
   onHide(modal)
-  emitter.emit('close')
   setTimeout(() => {
     // wait for hide animation to finish
     currentModals.splice(
@@ -108,10 +108,12 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
 
 function handleCancelled(id: number, reason?: unknown) {
   remove(id, (m) => m.handlers.reject(new Cancelled(reason)))
+  emitter.emit('cancelled')
 }
 
 function handleResolved(id: number, resolved?: unknown) {
   remove(id, (m) => m.handlers.resolve(resolved))
+  emitter.emit('resolved')
 }
 
 provide(modalContextInjectKey, { add, events: emitter })

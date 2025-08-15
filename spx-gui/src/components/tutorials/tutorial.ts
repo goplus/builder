@@ -2,13 +2,13 @@ import { inject, provide } from 'vue'
 import type { InjectionKey } from 'vue'
 import type { Router } from 'vue-router'
 
-import { timeout } from '@/utils/utils'
+import { timeout, localStorageRef } from '@/utils/utils'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
-import TutorialStateIndicator from './TutorialStateIndicator.vue'
-import { localStorageRef } from '@/utils/utils'
+import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
+import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -79,41 +79,108 @@ export class Tutorial {
     return {
       title: { en: title, zh: title },
       description: `\
-You are now helping the user to learn the course: ${course.title}.
+You are assisting the user in learning the course: ${course.title}.
 
-### Tips
-
-* Answer any questions the user ask about this course with precision and clarity.
-* All of your responses must be strictly based on the course information provided below.
-* If the user's question is outside the scope of the provided information, state that clearly and guide the user back to the core content of the course.
-* When answering, give priority to the teaching guidelines in \`<course-prompt>\`.
-
-### Tips about coding tasks in the course
-
-* If a project reference is provided, it is considered to provide a standard answer for you.
-* Make sure you know what the current code is before you give coding suggestions. If not, use proper tools to read the current code first.
-* Avoid providing result code directly to the user. Instead, guide the user to write the code himself step-by-step by providing hints and explanations.
-* Ensure the user is in editor for the right project. If the user navigated to somewhere else, notify him to come back. Or tell him to quit the course if he wants to.
-
-### Detailed information of course ${course.title}
+### Course Details
 
 <course>
   <course-id>${id}</course-id>
   <course-title>${title}</course-title>
   <course-entrypoint>${entrypoint}</course-entrypoint>
   <course-prompt>
-    ${prompt}
-    First, based on the provided context, clearly define the course completion standards.
-    Once the course tasks are finished according to these defined standards, your response must include the following:
-    - According to the general rules, append the designated tag for course success at the end of your reply.
+  ${prompt}
   </course-prompt>
   <course-references>
-    ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
+  ${references.map((ref) => `<project-reference>${ref.fullName}</project-reference>`).join('\n')}
   </course-references>
-</course>`,
+</course>
+
+### Guidance
+
+First do some preparation: 
+
+* Split the course into smaller steps.
+
+  Each step should be clear and simple. For example:
+  
+  - Click button "remove"
+  - Drag API \`say "Hi"\` from API References into the code editor
+  - Hover card of project A and select menu item "edit"
+
+  If there's already defined steps in the course, divide them into smaller steps as needed.
+
+* Clearly define the course completion criteria.
+
+Then guide the user through each step. For each step:
+
+1. If extra information required, use appropriate tool to gather it.
+2. Give short and clear instructions on what the user needs to do.
+3. Wait for the user to complete the step. You will get notified about further user events or inputs.
+4. If the user has any questions, answer them based on the course information provided. If the question is outside the scope of the course, redirect the user to the core course content.
+5. If the user finished current step, move on to the next step.
+
+If all steps are completed according to the criteria, invoke a success dialog using <${tutorialCourseSuccessTagName} />.
+
+When coding tasks are involved:
+
+* If a project reference is available for the course, treat it as the standard answer.
+* Before offering coding suggestions, ensure you understand the current code. If not, use appropriate tools to review it first.
+* Avoid giving complete solution code directly. Instead, guide the user step-by-step with hints and explanations.
+* Prefer to insert code by dragging corresponding items (if available) from "API References" into the code editor over providing manual code snippets.
+* If you found the user is navigated outside editor for the correct project, prompt them to return or suggest exiting the course if desired.
+
+When tool result received:
+
+* Skip repeating content already mentioned before.
+* Continue with the chat before the corresponding tool use.
+
+### example
+
+This is an example for messages between you and the user in a course:
+
+- User event
+
+  course started
+
+- Copilot message
+
+  Welcome to the course! In this course we will learn how to remove a project in XBuilder. We will cover the following steps:
+
+  1. Go to page "my projects".
+  2. Hover the first project in list and click the "Remove" in corner menu.
+  3. Confirm the removal in the popup dialog.
+
+  Now let's start with the first step. Please go to the "my projects" page.
+
+- User event
+
+  navigated to /user/xxx/projects
+
+- Copilot message
+
+  Great! You are now on the "my projects" page. Please hover the first project in the list and click the "Remove" in the corner menu.
+
+- User event
+
+  Opened modal
+
+- Copilot message
+
+  Please confirm the removal of the project.
+
+- User event
+
+  Success notification showed: Project removed successfully
+
+- Copilot message
+
+  Great job! You have successfully removed the project.
+
+  <${tutorialCourseSuccessTagName} />
+`,
       reactToEvents: true,
       endable: false,
-      stateIndicator: TutorialStateIndicator
+      stateIndicator: tutorialStateIndicatorName
     }
   }
 
