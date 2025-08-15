@@ -22,7 +22,7 @@
       
       <div class="error-modal-body">
         <p class="error-message">
-          {{ getErrorMessage() }}
+          {{ errorMessage }}
         </p>
         <div class="error-suggestions">
           <h4 class="suggestions-title">{{ $t({ en: 'Suggestions:', zh: '建议：' }) }}</h4>
@@ -55,17 +55,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed, getCurrentInstance } from 'vue'
+
 // Props
 interface Props {
   visible: boolean
   errorType?: string
-  errorMessage?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   errorType: 'default',
-  errorMessage: ''
 })
 
 // Emits
@@ -74,6 +74,10 @@ const emit = defineEmits<{
   'close': []
   'retry': []
 }>()
+
+// 获取全局属性
+const instance = getCurrentInstance()
+const $t = instance?.appContext.config.globalProperties.$t
 
 // 方法
 const handleClose = () => {
@@ -86,11 +90,27 @@ const handleRetry = () => {
   emit('retry')
 }
 
-const getErrorMessage = () => {
-  if (props.errorMessage) {
-    return props.errorMessage
-  }
+// 错误消息计算属性
+const errorMessage = computed(() => {
+
   
+  // 如果 $t 不可用，默认返回英文
+  if (!$t) {
+    switch (props.errorType) {
+      case 'timeout':
+        return 'Generation timeout, please try simplifying the description or try again later'
+      case 'network':
+        return 'Network connection error, please check your network connection'
+      case 'params':
+        return 'Request parameter error, please check the prompt length (at least 3 characters)'
+      case 'server':
+        return 'Server internal error, please try again later'
+      default:
+        return 'Image generation failed, please try again later'
+    }
+  }
+  console.log($t)
+  console.log(props.errorType)
   // 根据错误类型返回对应的错误信息
   switch (props.errorType) {
     case 'timeout':
@@ -104,13 +124,7 @@ const getErrorMessage = () => {
     default:
       return $t({ en: 'Image generation failed, please try again later', zh: '图片生成失败，请稍后重试' })
   }
-}
-
-// 全局函数，用于在模板中使用
-// 注意：这里应该使用实际的国际化函数，暂时返回中文
-const $t = (options: { en: string; zh: string }) => {
-  return options.zh
-}
+})
 </script>
 
 <style scoped>

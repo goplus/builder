@@ -522,7 +522,12 @@ const handleAiConfirm = (data: {
   svgContent?: string;
 }): void => {
   // console.log('AI生成确认:', data)
-  
+  if(data.model === 'claude' || data.model === 'recraft'){
+    data.model = 'svg'
+  }else{
+    data.model = 'png'
+  }
+
   if (data.model === 'svg' && data.svgContent) {
     // 处理SVG导入
     importSvgToCanvas(data.svgContent)

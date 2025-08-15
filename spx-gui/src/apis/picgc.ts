@@ -28,20 +28,11 @@ async function picgcRequest(path: string, options: RequestInit = {}) {
 /** Image generation model types */
 export type ImageModel = 'png' | 'svg'
 
-/** 可用的样式选项 */
-export type StyleOption = 
-  | 'FLAT_VECTOR'
-  | 'FLAT_VECTOR_OUTLINE'
-  | 'FLAT_VECTOR_SILHOUETTE'
-  | 'FLAT_VECTOR_ONE_LINE_ART'
-  | 'FLAT_VECTOR_LINE_ART'
-
 /** Request payload for image generation */
 export interface GenerateImageRequest {
   /** The text prompt describing the desired image */
   prompt: string
   negative_prompt?: string
-  style?: StyleOption
   format?: string
 }
 
@@ -58,19 +49,17 @@ export interface GenerateImageResponse {
   created_at: string
 }
 
-
+//todo：弃用
 export async function generateImage(
   prompt: string, 
   options?: {
     negative_prompt?: string
-    style?: StyleOption
     format?: string
   }
 ): Promise<GenerateImageResponse> {
   const payload: GenerateImageRequest = {
     prompt,
     negative_prompt: options?.negative_prompt || 'text, watermark',
-    style: options?.style || 'FLAT_VECTOR',
     format: options?.format
   }
 
@@ -87,10 +76,10 @@ export async function generateImage(
  * 直接生成并返回SVG内容
  */
 export async function generateSvgDirect(
+  provider: string,//通过这个参数选择供应商:claude,recraft
   prompt: string,
   options?: {
     negative_prompt?: string
-    style?: StyleOption
     format?: string
   }
 ): Promise<{
@@ -102,12 +91,20 @@ export async function generateSvgDirect(
   const payload: GenerateImageRequest = {
     prompt,
     negative_prompt: options?.negative_prompt || 'text, watermark',
-    style: options?.style || 'FLAT_VECTOR',
     format: options?.format
   }
 
-  const url = PICGC_BASE_URL + '/v1/images/svg'
-  
+  let url = ''
+  switch (provider) {
+    case 'claude':
+      url = PICGC_BASE_URL + '/v1/images/claude/svg'
+      break
+    case 'recraft':
+      url = PICGC_BASE_URL + '/v1/images/recraft/svg'
+      break
+    default:
+      throw new Error('Invalid provider')
+  }
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -126,14 +123,38 @@ export async function generateSvgDirect(
   console.log('svgContent', svgContent)
   // 从响应头获取元数据
   const id = response.headers.get('X-Image-Id') || 'unknown'
-  const width = parseInt(response.headers.get('X-Image-Width') || '512')
-  const height = parseInt(response.headers.get('X-Image-Height') || '512')
+  const width = parseInt('512')
+  const height = parseInt('512')
+
+  // 修改SVG内容的尺寸：大小为512*512
+  const modifiedSvgContent = svgContent.replace(
+    /<svg([^>]*?)>/,
+    (match: string, attributes: string) => {
+      // 解析现有属性
+      let newAttributes = attributes
+      
+      // 更新或添加width属性
+      if (newAttributes.includes('width=')) {
+        newAttributes = newAttributes.replace(/width="[^"]*"/, `width="${width}"`)
+      } else {
+        newAttributes += ` width="${width}"`
+      }
+      
+      // 更新或添加height属性
+      if (newAttributes.includes('height=')) {
+        newAttributes = newAttributes.replace(/height="[^"]*"/, `height="${height}"`)
+      } else {
+        newAttributes += ` height="${height}"`
+      }
+      console.log('newAttributes',newAttributes) 
+      return `<svg${newAttributes}>`
+    }
+  )
 
   return {
-    svgContent,
+    svgContent: modifiedSvgContent,
     id,
     width,
     height
   }
 }
-

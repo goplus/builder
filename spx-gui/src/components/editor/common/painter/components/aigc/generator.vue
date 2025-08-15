@@ -32,24 +32,24 @@
                   <div class="model-selector">
                     <div 
                       class="model-option"
-                      :class="{ active: selectedModel === 'png' }"
-                      @click="selectedModel = 'png'"
+                      :class="{ active: selectedModel === 'claude' }"
+                      @click="selectedModel = 'claude'"
                     >
                       <div class="model-icon">🖼️</div>
                       <div class="model-info">
-                        <div class="model-name">{{ $t({ en: 'PNG Image', zh: 'PNG图片' }) }}</div>
-                        <div class="model-desc">{{ $t({ en: 'Generate high-quality bitmap images', zh: '生成高质量位图图片' }) }}</div>
+                        <div class="model-name">{{ $t({ en: 'Claude Vector', zh: 'Claude矢量图' }) }}</div>
+                        <div class="model-desc">{{ $t({ en: 'Generate simple, accurate vector images', zh: '生成简单，精确的矢量图' }) }}</div>
                       </div>
                     </div>
                     <div 
                       class="model-option"
-                      :class="{ active: selectedModel === 'svg' }"
-                      @click="selectedModel = 'svg'"
+                      :class="{ active: selectedModel === 'recraft' }"
+                      @click="selectedModel = 'recraft'"
                     >
                       <div class="model-icon">📐</div>
                       <div class="model-info">
-                        <div class="model-name">{{ $t({ en: 'SVG Vector', zh: 'SVG矢量' }) }}</div>
-                        <div class="model-desc">{{ $t({ en: 'Generate scalable vector graphics', zh: '生成可缩放矢量图形' }) }}</div>
+                        <div class="model-name">{{ $t({ en: 'Recraft SVG Vector', zh: 'Recraft SVG矢量' }) }}</div>
+                        <div class="model-desc">{{ $t({ en: 'Generate fabulous editable vector graphics', zh: '生成精美的可编辑矢量图形' }) }}</div>
                       </div>
                     </div>
                   </div>
@@ -135,7 +135,6 @@
       <ErrorModal
         v-model:visible="showErrorModal"
         :error-type="errorType"
-        :error-message="errorMessage"
         @close="closeErrorModal"
         @retry="retryGeneration"
       />
@@ -169,7 +168,7 @@ import ErrorModal from './error.vue'
   }>()
   
   // 响应式数据
-  const selectedModel = ref<'png' | 'svg'>('png')
+  const selectedModel = ref<'claude' | 'recraft'>('claude')
   const prompt = ref('')
   const previewUrl = ref('')
   const isGenerating = ref(false)
@@ -180,7 +179,6 @@ import ErrorModal from './error.vue'
   
   // 错误处理相关状态
   const showErrorModal = ref(false)
-  const errorMessage = ref('')
   const errorType = ref('')
   
   // 方法
@@ -211,7 +209,7 @@ import ErrorModal from './error.vue'
       prompt: prompt.value
     }
     
-    if (selectedModel.value === 'svg') {
+    if (selectedModel.value === 'recraft' || selectedModel.value === 'claude') {
       // SVG模式：传递原始SVG代码
       confirmData.svgContent = svgRawContent.value
       confirmData.url = previewUrl.value // 用于预览的blob URL
@@ -236,7 +234,7 @@ import ErrorModal from './error.vue'
       prompt.value = ''
       previewUrl.value = ''
       isGenerating.value = false
-      selectedModel.value = 'png'
+      selectedModel.value = 'claude'
     }, 300)
   }
   
@@ -250,15 +248,13 @@ import ErrorModal from './error.vue'
   }
   
   // 错误处理方法
-  const showError = (message: string, type: string = 'default') => {
-    errorMessage.value = message
+  const showError = (type: string = 'default') => {
     errorType.value = type
     showErrorModal.value = true
   }
   
   const closeErrorModal = () => {
     showErrorModal.value = false
-    errorMessage.value = ''
     errorType.value = ''
   }
   
@@ -277,24 +273,20 @@ import ErrorModal from './error.vue'
     svgRawContent.value = ''
     
     try {
-      if (selectedModel.value === 'svg') {
-        const svgResult = await generateSvgDirect(prompt.value, {
-          style: 'FLAT_VECTOR' // developing
-        })
+      if (selectedModel.value === 'recraft' || selectedModel.value === 'claude') {
+        const svgResult = await generateSvgDirect(selectedModel.value, prompt.value)
         
         // 直接获得SVG内容
         svgRawContent.value = svgResult.svgContent
         
-        // 创建blob URL用于预览 - 参照mock方式处理
+        // 创建blob URL用于预览
         const blob = new Blob([svgResult.svgContent], { type: 'image/svg+xml' })
         previewUrl.value = URL.createObjectURL(blob)
         
-        imageSize.value = `${svgResult.width}x${svgResult.height} (矢量图)`
+        imageSize.value = `${svgResult.width}x${svgResult.height}`
       } else {
         // PNG mod
-        const result = await generateImage(prompt.value, {
-          style: 'FLAT_VECTOR' // developing
-        })
+        const result = await generateImage(prompt.value)
         
         previewUrl.value = result.png_url
         imageSize.value = `${result.width}x${result.height}`
@@ -327,8 +319,7 @@ import ErrorModal from './error.vue'
       }
       
       // Use a simple fallback message for script context, real i18n will be handled in template
-      const fallbackMessage = '图片生成失败，请稍后重试'
-      showError(fallbackMessage, errorType)
+      showError(errorType)
       
     } finally {
       isGenerating.value = false
