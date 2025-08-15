@@ -116,6 +116,7 @@ import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
 import AiGenerate from './components/ai_generate.vue'
+import { useImageLoader } from './utils/loader.vue'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape'
@@ -166,6 +167,9 @@ const selectedPathForRestore = ref<paper.Path | null>(null)
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
 
+// 初始化图片加载器
+const { loadFileToCanvas, importSvgToCanvas, loadImageToCanvas, removeBackgroundImage } = useImageLoader()
+
 const props = defineProps<{
   imgSrc: string | null
   imgLoading: boolean
@@ -185,85 +189,9 @@ const selectPathExclusive = (path: paper.Path | null): void => {
   }
 }
 
-// 加载位图图片到画布（PNG/JPG/...）
-const loadImageToCanvas = (imageSrc: string): void => {
-  if (!paper.project) return
-  
-  // 如果已有背景图片，先移除
-  if (backgroundImage.value) {
-    backgroundImage.value.remove()
-  }
-  
-  // 创建新的光栅图像
-  const raster = new paper.Raster(imageSrc)
-  
-  raster.onLoad = () => {
-    raster.position = paper.view.center
-    
 
-    
-    // 将图片放到最底层，作为背景
-    raster.sendToBack()
-    
-    backgroundImage.value = raster
-    paper.view.update()
-  }
 
-  // raster.onMouseDown = (event: paper.MouseEvent) => {
-    // if (currentTool.value === 'reshape') {
-    //   selectPathExclusive(null) // 清除路径选择
-    //   raster.selected = true
-    //   paper.view.update()
-    // }
-  // }
-}
 
-// 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）
-const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
-  if (!paper.project) return
-  try {
-    const resp = await fetch(imageSrc)
-    // 先尝试从响应体的 blob.type 判断（对 blob: URL 更可靠）
-    let isSvg = false
-    let svgText: string | null = null
-    try {
-      const blob = await resp.clone().blob()
-      if (blob && typeof blob.type === 'string' && blob.type.includes('image/svg')) {
-        isSvg = true
-        svgText = await blob.text()
-      }
-    } catch {}
-
-    // 退化到 header 判断
-    if (!isSvg) {
-      const contentType = resp.headers.get('content-type') || ''
-      if (contentType.includes('image/svg')) {
-        isSvg = true
-        svgText = await resp.clone().text()
-      }
-    }
-
-    // 最后尝试直接将文本解析为 SVG（针对部分 blob: 无类型场景）
-    if (!isSvg) {
-      try {
-        const text = await resp.clone().text()
-        if (/^\s*<svg[\s\S]*<\/svg>\s*$/i.test(text)) {
-          isSvg = true
-          svgText = text
-        }
-      } catch {}
-    }
-
-    if (isSvg && svgText != null) {
-      importSvgToCanvas(svgText)
-    } else {
-      loadImageToCanvas(imageSrc)
-    }
-  } catch {
-    // 回退策略：按位图处理
-    loadImageToCanvas(imageSrc)
-  }
-}
 
 // 初始化 Paper.js
 const initPaper = (): void => {
@@ -736,20 +664,55 @@ const showAiDialog = (): void => {
 }
 
 // 处理AI生成确认
-const handleAiConfirm = (data: { 
+const handleAiConfirm = async (data: { 
   model: string; 
   prompt: string; 
   url?: string; 
   svgContent?: string;
-}): void => {
+}): Promise<void> => {
   // console.log('AI生成确认:', data)
   
-  if (data.model === 'svg' && data.svgContent) {
-    // 处理SVG导入
-    importSvgToCanvas(data.svgContent)
-  } else if (data.model === 'png' && data.url) {
-    // 处理PNG图片导入
-    importImageToCanvas(data.url)
+  try {
+    if (data.model === 'svg' && data.svgContent) {
+      // 处理SVG导入
+      await importSvgToCanvas(data.svgContent, {
+        onPathCreated: (path: paper.Path) => {
+          // 添加到可编辑路径列表
+          allPaths.value.push(path)
+          
+          // 添加鼠标事件处理
+          path.onMouseDown = (event: paper.MouseEvent) => {
+            if (currentTool.value === 'reshape') {
+              showControlPoints(path)
+              paper.view.update()
+            }
+          }
+        },
+        onLoadComplete: () => {
+          // 导入来源于 props 时不导出，避免循环
+          if (!isImportingFromProps.value) exportSvgAndEmit()
+          else isImportingFromProps.value = false
+        },
+        onError: (error) => {
+          console.error('Failed to import SVG:', error)
+        }
+      })
+    } else if (data.model === 'png' && data.url) {
+      // 处理PNG图片导入
+      await loadImageToCanvas(data.url, {
+        onImageLoaded: (raster: paper.Raster) => {
+          backgroundImage.value = raster
+        },
+        onLoadComplete: () => {
+          exportSvgAndEmit()
+        },
+        onError: (error) => {
+          console.error('Failed to load image:', error)
+        }
+      })
+    }
+  } catch (error) {
+    console.error('AI生成处理失败:', error)
   }
   
   aiDialogVisible.value = false
@@ -761,96 +724,9 @@ const handleAiCancel = (): void => {
   aiDialogVisible.value = false
 }
 
-// 导入PNG图片到画布
-const importImageToCanvas = (imageUrl: string): void => {
-  if (!paper.project) return
-  
-  const raster = new paper.Raster(imageUrl)
-  
-  raster.onLoad = () => {
-    raster.position = paper.view.center
-    
-    // 保持原始尺寸，不进行自动缩放
-    // 如果需要缩放，用户可以手动调整
-    
-    // 添加点击事件处理
-    // raster.onMouseDown = (event: paper.MouseEvent) => {
-    //   if (currentTool.value === 'reshape') {
-    //     selectPathExclusive(null) // 清除路径选择
-    //     raster.selected = true
-    //     paper.view.update()
-    //   }
-    // }
 
-    paper.view.update()
-    // console.log('PNG图片已导入到画布')
 
-    exportSvgAndEmit()
-  }
-  
-  raster.onError = () => {
-    console.error('failed to load image')
-  }
-}
 
-// 导入SVG到画布并转换为可编辑的路径
-const importSvgToCanvas = (svgContent: string): void => {
-  if (!paper.project) return
-  
-  try {
-    // 创建一个临时的SVG元素来解析SVG内容
-    const parser = new DOMParser()
-    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml')
-    const svgElement = svgDoc.documentElement
-    
-    // 检查是否解析成功
-    if (svgElement.nodeName !== 'svg') {
-      console.error('invalid svg content')
-      return
-    }
-    
-    // 使用Paper.js导入SVG
-    const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
-    
-    if (importedItem) {
-      importedItem.position = paper.view.center
-      
-      
-      // 收集所有可编辑的路径
-      const collectPaths = (item: paper.Item): void => {
-        if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
-          // 添加到可编辑路径列表
-          allPaths.value.push(item)
-          
-          // 添加鼠标事件处理
-          item.onMouseDown = (event: paper.MouseEvent) => {
-            if (currentTool.value === 'reshape') {
-              showControlPoints(item)
-              paper.view.update()
-            }
-          }
-        } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
-          // 递归处理子项
-          if (item.children) {
-            item.children.forEach(child => collectPaths(child))
-          }
-        }
-      }
-      
-      // 收集导入的所有路径
-      collectPaths(importedItem)
-      
-      // 更新视图
-      paper.view.update()
-      // console.log(`SVG已导入到画布，共${allPaths.value.length - (allPaths.value.length - countNewPaths(importedItem))}条可编辑路径`)
-      // 导入来源于 props 时不导出，避免循环
-      if (!isImportingFromProps.value) exportSvgAndEmit()
-      else isImportingFromProps.value = false
-    }
-  } catch (error) {
-    console.error('failed to import svg:', error)
-  }
-}
 
 
 
@@ -917,20 +793,52 @@ watch(
       })
       backgroundRect.value = background
       allPaths.value = []
-      backgroundImage.value = null
+      
+      // 如果已有背景图片，先移除
+      if (backgroundImage.value) {
+        removeBackgroundImage(backgroundImage.value)
+        backgroundImage.value = null
+      }
+      
       paper.view.update()
     }
     
-    // 加载新内容
-    await loadFileToCanvas(newImgSrc)
-    
-    // 导入完成后清理状态，不自动恢复控制点显示
-    // 让用户主动点击路径来显示控制点，避免干扰绘制体验
-    setTimeout(() => {
-      selectedPathForRestore.value = null
+    try {
+      // 加载新内容
+      await loadFileToCanvas(newImgSrc, {
+        onPathCreated: (path: paper.Path) => {
+          // 添加到可编辑路径列表
+          allPaths.value.push(path)
+          
+          // 添加鼠标事件处理
+          path.onMouseDown = (event: paper.MouseEvent) => {
+            if (currentTool.value === 'reshape') {
+              showControlPoints(path)
+              paper.view.update()
+            }
+          }
+        },
+        onImageLoaded: (raster: paper.Raster) => {
+          backgroundImage.value = raster
+        },
+        onLoadComplete: () => {
+          // 导入完成后清理状态，不自动恢复控制点显示
+          // 让用户主动点击路径来显示控制点，避免干扰绘制体验
+          setTimeout(() => {
+            selectedPathForRestore.value = null
+            isImportingFromProps.value = false
+            isFirstMount.value = false // 标记第一次挂载已完成
+          }, 200)
+        },
+        onError: (error) => {
+          console.error('Failed to load file:', error)
+          isImportingFromProps.value = false
+        }
+      })
+    } catch (error) {
+      console.error('Props图片加载失败:', error)
       isImportingFromProps.value = false
-      isFirstMount.value = false // 标记第一次挂载已完成
-    }, 200)
+    }
   },
   { immediate: true }
 )
