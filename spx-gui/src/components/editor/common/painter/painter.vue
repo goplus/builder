@@ -99,6 +99,15 @@
         :is-active="currentTool === 'brush'"
         @path-created="handlePathCreated"
       />
+      
+      <!-- 变形工具组件 -->
+      <Reshape
+        ref="reshapeRef"
+        :is-active="currentTool === 'reshape'"
+        :all-paths="allPaths"
+        @paths-update="handlePathsUpdate"
+        @svg-export="exportSvgAndEmit"
+      />
     </div>
     
     <!-- AI生成弹窗 -->
@@ -115,24 +124,12 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
+import Reshape from './components/reshape.vue'
 import AiGenerate from './components/aigc/generator.vue'
-import { useImageLoader } from './utils/loader.vue'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape'
 
-// TypeScript 接口定义
-interface ExtendedItem extends paper.Item {
-  isControlPoint?: boolean
-  isTemporaryControlPoint?: boolean
-  segmentIndex?: number
-  parentPath?: paper.Path
-}
-
-interface Point {
-  x: number
-  y: number
-}
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -143,15 +140,9 @@ const canvasHeight = ref<number>(600)
 const currentTool = ref<ToolType | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
+const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 // 状态管理
-const isDragging = ref<boolean>(false)
-const selectedPoint = ref<ExtendedItem | null>(null)
 const allPaths = ref<paper.Path[]>([])
-const controlPoints = ref<ExtendedItem[]>([])
-const mouseDownPath = ref<paper.Path | null>(null)
-const mouseDownPos = ref<paper.Point | null>(null)
-const imgSrc = ref<string | null>(null)
-const imgLoading = ref<boolean>(true)
 
 // 存储背景图片的引用
 const backgroundImage = ref<paper.Raster | null>(null)
@@ -167,9 +158,6 @@ const selectedPathForRestore = ref<paper.Path | null>(null)
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
 
-// 初始化图片加载器
-const { loadFileToCanvas, importSvgToCanvas, loadImageToCanvas, removeBackgroundImage } = useImageLoader()
-
 const props = defineProps<{
   imgSrc: string | null
   imgLoading: boolean
@@ -179,19 +167,86 @@ const emit = defineEmits<{
   (e: 'svg-change', svg: string): void
 }>()
 
-// 选中路径（独占选择）
-const selectPathExclusive = (path: paper.Path | null): void => {
-  allPaths.value.forEach((p: paper.Path) => {
-    p.selected = false
-  })
-  if (path) {
-    path.selected = true
+
+// 加载位图图片到画布（PNG/JPG/...）
+const loadImageToCanvas = (imageSrc: string): void => {
+  if (!paper.project) return
+  
+  // 如果已有背景图片，先移除
+  if (backgroundImage.value) {
+    backgroundImage.value.remove()
   }
+  
+  // 创建新的光栅图像
+  const raster = new paper.Raster(imageSrc)
+  
+  raster.onLoad = () => {
+    raster.position = paper.view.center
+    
+
+    
+    // 将图片放到最底层，作为背景
+    raster.sendToBack()
+    
+    backgroundImage.value = raster
+    paper.view.update()
+  }
+
+  // raster.onMouseDown = (event: paper.MouseEvent) => {
+    // if (currentTool.value === 'reshape') {
+    //   selectPathExclusive(null) // 清除路径选择
+    //   raster.selected = true
+    //   paper.view.update()
+    // }
+  // }
 }
 
+// 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）
+const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
+  if (!paper.project) return
+  try {
+    const resp = await fetch(imageSrc)
+    // 先尝试从响应体的 blob.type 判断（对 blob: URL 更可靠）
+    let isSvg = false
+    let svgText: string | null = null
+    try {
+      const blob = await resp.clone().blob()
+      if (blob && typeof blob.type === 'string' && blob.type.includes('image/svg')) {
+        isSvg = true
+        svgText = await blob.text()
+      }
+    } catch {}
 
+    // 退化到 header 判断
+    if (!isSvg) {
+      const contentType = resp.headers.get('content-type') || ''
+      if (contentType.includes('image/svg')) {
+        isSvg = true
+        svgText = await resp.clone().text()
+      }
+    }
 
+    // 最后尝试直接将文本解析为 SVG（针对部分 blob: 无类型场景）
+    if (!isSvg) {
+      try {
+        const text = await resp.clone().text()
+        if (/^\s*<svg[\s\S]*<\/svg>\s*$/i.test(text)) {
+          isSvg = true
+          svgText = text
+        }
+      } catch {}
+    }
 
+    if (isSvg && svgText != null) {
+      importSvgToCanvas(svgText)
+    } else {
+      loadImageToCanvas(imageSrc)
+    }
+  } catch {
+    // 回退策略：按位图处理
+    loadImageToCanvas(imageSrc)
+  }
+}
 
 // 初始化 Paper.js
 const initPaper = (): void => {
@@ -227,7 +282,9 @@ const selectTool = (tool: ToolType): void => {
   }
   
   // 切换工具时总是隐藏控制点
-  hideControlPoints()
+  if (reshapeRef.value) {
+    reshapeRef.value.hideControlPoints()
+  }
 }
 
 // 处理直线创建
@@ -244,231 +301,14 @@ const handlePathCreated = (path: paper.Path): void => {
   exportSvgAndEmit()
 }
 
-// 创建控制点
-const createControlPoint = (position: paper.Point): ExtendedItem => {
-  const point = new paper.Path.Circle({
-    center: position,
-    radius: 8,
-    fillColor: '#ff4444',
-    strokeColor: '#cc0000',
-    strokeWidth: 2
-  }) as ExtendedItem
-  
-  point.isControlPoint = true
-  
-  // 添加悬停效果
-  point.onMouseEnter = () => {
-    point.fillColor = new paper.Color('#ff6666')
-    point.scale(1.25) // 放大控制点
-    paper.view.update()
-  }
-  
-  point.onMouseLeave = () => {
-    point.fillColor = new paper.Color('#ff4444')
-    point.scale(0.8) // 恢复原始大小
-    paper.view.update()
-  }
-  
-  return point
+// 处理路径更新（由reshape组件触发）
+const handlePathsUpdate = (paths: paper.Path[]): void => {
+  allPaths.value = paths
 }
 
-// 显示路径的控制点
-const showControlPoints = (path: paper.Path): void => {
-  hideControlPoints()
-  selectPathExclusive(path)
-  
-  // console.log('显示控制点 - 路径类型:', path.constructor.name, '路径:', path)
-  
-  if (path && path.segments) {
-    // console.log('路径段数:', path.segments.length)
-    path.segments.forEach((segment: paper.Segment, index: number) => {
-      const controlPoint = createControlPoint(segment.point)
-      controlPoint.segmentIndex = index
-      controlPoint.parentPath = path
-      controlPoints.value.push(controlPoint)
-    })
-  } else if (path instanceof paper.CompoundPath) {
-    // 处理复合路径
-    // console.log('处理复合路径')
-    path.children.forEach((child: paper.Item, childIndex: number) => {
-      if (child instanceof paper.Path && child.segments) {
-        child.segments.forEach((segment: paper.Segment, segIndex: number) => {
-          const controlPoint = createControlPoint(segment.point)
-          controlPoint.segmentIndex = segIndex
-          controlPoint.parentPath = child as paper.Path
-          controlPoints.value.push(controlPoint)
-        })
-      }
-    })
-  } else {
-    // console.warn('路径对象没有segments属性:', path)
-  }
-}
 
-// 隐藏控制点
-const hideControlPoints = (): void => {
-  controlPoints.value.forEach((point: ExtendedItem) => {
-    if (point && point.parent) {
-      point.remove()
-    }
-  })
-  controlPoints.value = []
-  // 同时取消路径高亮
-  allPaths.value.forEach((p: paper.Path) => {
-    p.selected = false
-  })
-  if (paper.project) {
-    paper.project.deselectAll()
-  }
-  // 强制更新视图
-  paper.view.update()
-}
-
-// 检测点击的路径
-const getPathAtPoint = (point: paper.Point): paper.Path | null => {
-  // 扩大检测范围，同时检测填充和描边
-  const hitResult = paper.project.hitTest(point, {
-    segments: false,
-    stroke: true,
-    fill: true, // 也检测填充区域
-    tolerance: 15 // 增加容差
-  })
-  
-  if (hitResult && hitResult.item && !(hitResult.item as ExtendedItem).isControlPoint) {
-    let targetItem = hitResult.item
-    
-    // 如果点击的是组内的对象，需要找到实际的路径对象
-    while (targetItem.parent && targetItem.parent !== paper.project.activeLayer) {
-      targetItem = targetItem.parent
-    }
-    
-    // 检查是否在allPaths数组中
-    const pathInArray = allPaths.value.find(path => path === targetItem || path === hitResult.item)
-    if (pathInArray) {
-      return pathInArray
-    }
-    
-    // 如果是Path或CompoundPath类型，返回原始点击的对象
-    if (hitResult.item instanceof paper.Path || hitResult.item instanceof paper.CompoundPath) {
-      return hitResult.item as paper.Path
-    }
-  }
-  return null
-}
-
-// 检测点击的控制点
-const getControlPointAtPoint = (point: paper.Point): ExtendedItem | null => {
-  const hitResult = paper.project.hitTest(point, {
-    segments: false,
-    stroke: false,
-    fill: true,
-    tolerance: 15
-  })
-  
-  if (hitResult && hitResult.item && (hitResult.item as ExtendedItem).isControlPoint) {
-    return hitResult.item as ExtendedItem
-  }
-  return null
-}
-
-// 局部平滑函数：只影响当前点及其相邻的线段
-const smoothLocalSegments = (path: paper.Path, segmentIndex: number): void => {
-  const segments = path.segments
-  const currentSegment = segments[segmentIndex]
-  
-  if (!currentSegment) return
-  
-  // 计算影响范围：前一个点到后一个点
-  const prevIndex = Math.max(0, segmentIndex - 1)
-  const nextIndex = Math.min(segments.length - 1, segmentIndex + 1)
-  
-  // 如果是端点，使用不同的处理方式
-  if (segmentIndex === 0 || segmentIndex === segments.length - 1) {
-    // 端点：只影响连接的那一段
-    if (segmentIndex === 0 && segments.length > 1) {
-      // 起始端点
-      const nextSeg = segments[1]
-      calculateLocalHandles(currentSegment, nextSeg, null)
-    } else if (segmentIndex === segments.length - 1 && segments.length > 1) {
-      // 结束端点
-      const prevSeg = segments[segments.length - 2]
-      calculateLocalHandles(currentSegment, null, prevSeg)
-    }
-  } else {
-    // 中间点：影响前后两段
-    const prevSeg = segments[prevIndex]
-    const nextSeg = segments[nextIndex]
-    calculateLocalHandles(currentSegment, nextSeg, prevSeg)
-  }
-}
-
-// 计算局部贝塞尔曲线控制点
-const calculateLocalHandles = (
-  currentSeg: paper.Segment, 
-  nextSeg: paper.Segment | null, 
-  prevSeg: paper.Segment | null
-): void => {
-  // 清除现有的控制点
-  currentSeg.clearHandles()
-  
-  if (nextSeg && prevSeg) {
-    // 中间点：计算平滑的控制点
-    const vector1 = currentSeg.point.subtract(prevSeg.point)
-    const vector2 = nextSeg.point.subtract(currentSeg.point)
-    
-    // 计算控制点方向和长度
-    const angle1 = vector1.angle
-    const angle2 = vector2.angle
-    const avgAngle = (angle1 + angle2) / 2
-    
-    const length1 = vector1.length * 0.3
-    const length2 = vector2.length * 0.3
-    
-    // 设置控制点
-    currentSeg.handleIn = new paper.Point({
-      angle: avgAngle + 180,
-      length: length1
-    })
-    currentSeg.handleOut = new paper.Point({
-      angle: avgAngle,
-      length: length2
-    })
-  } else if (nextSeg) {
-    // 起始点：只设置出控制点
-    const vector = nextSeg.point.subtract(currentSeg.point)
-    currentSeg.handleOut = vector.multiply(0.3)
-  } else if (prevSeg) {
-    // 结束点：只设置入控制点
-    const vector = currentSeg.point.subtract(prevSeg.point)
-    currentSeg.handleIn = vector.multiply(0.3)
-  }
-}
-
-// 在路径上添加新的控制点，并返回对应的控制点实例
-const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): ExtendedItem | null => {
-  const location = path.getNearestLocation(clickPoint)
-  if (location) {
-    // 在最近的位置分割路径，创建新的段点
-    const insertIndex = location.index + 1
-    path.insert(insertIndex, location.point)
-
-    // 局部平滑新添加的点及其相邻区域
-    smoothLocalSegments(path, insertIndex)
-
-    // 重新显示控制点
-    showControlPoints(path)
-    
-    // 返回新创建段点对应的控制点实例
-    const created = controlPoints.value.find((p: ExtendedItem) => p.parentPath === path && p.segmentIndex === insertIndex) || null
-    paper.view.update()
-    return created
-  }
-  return null
-}
-
-// 鼠标按下事件（变形-用于开始拖拽控制点）
+// 鼠标按下事件
 const handleMouseDown = (event: MouseEvent): void => {
-  // console.log('handleMouseDown')
   const rect = canvasRef.value?.getBoundingClientRect()
   if (!rect) return
   
@@ -483,24 +323,10 @@ const handleMouseDown = (event: MouseEvent): void => {
     return
   }
   
-  if (currentTool.value !== 'reshape') return
-  
-  // 检查是否点击了控制点
-  const controlPoint = getControlPointAtPoint(point)
-  if (controlPoint) {
-    isDragging.value = true
-    selectedPoint.value = controlPoint
+  // 处理变形工具
+  if (currentTool.value === 'reshape' && reshapeRef.value) {
+    reshapeRef.value.handleMouseDown(point)
     return
-  }
-
-  // 若未点到控制点，则检测是否按在某个路径上（不立即创建临时点，等拖拽阈值触发）
-  const clickedPath = getPathAtPoint(point)
-  if (clickedPath) {
-    mouseDownPath.value = clickedPath
-    mouseDownPos.value = point
-  } else {
-    mouseDownPath.value = null
-    mouseDownPos.value = null
   }
 }
 
@@ -520,25 +346,10 @@ const handleCanvasClick = (event: MouseEvent): void => {
       drawLineRef.value.handleCanvasClick({ x: point.x, y: point.y })
     }
   } else if (currentTool.value === 'reshape') {
-    // 检查是否点击了控制点（优先级最高）
-    const controlPoint = getControlPointAtPoint(point)
-    if (controlPoint) {
-      // 不在这里设置拖拽状态，由 mousedown 处理
-      return
+    // 委托给 Reshape 组件处理
+    if (reshapeRef.value) {
+      reshapeRef.value.handleClick(point)
     }
-    
-    // 检查是否点击了现有路径
-    const clickedPath = getPathAtPoint(point)
-    if (clickedPath) {
-      // 仅选中并显示端点（不新增控制点）
-      showControlPoints(clickedPath)
-      paper.view.update()
-      return
-    }
-    
-    // 点击空白区域，隐藏控制点
-    hideControlPoints()
-    paper.view.update()
   }
 }
 
@@ -562,43 +373,9 @@ const handleMouseMove = (event: MouseEvent): void => {
     drawBrushRef.value.handleMouseDrag({ x: point.x, y: point.y })
   }
   
-  // 若按在路径上且尚未开始拖拽，当移动超过阈值时，创建临时控制点并进入拖拽
-  if (
-    currentTool.value === 'reshape' &&
-    !isDragging.value &&
-    mouseDownPath.value &&
-    mouseDownPos.value
-  ) {
-    const dx = point.x - mouseDownPos.value.x
-    const dy = point.y - mouseDownPos.value.y
-    const dist2 = dx * dx + dy * dy
-    const threshold2 = 3 * 3
-    if (dist2 >= threshold2) {
-      const tempPoint = addControlPointOnPath(mouseDownPath.value, mouseDownPos.value)
-      if (tempPoint) {
-        tempPoint.isTemporaryControlPoint = true
-        isDragging.value = true
-        selectedPoint.value = tempPoint
-      }
-    }
-  }
-
-  // 拖拽控制点
-  if (isDragging.value && selectedPoint.value) {
-    selectedPoint.value.position = point
-    
-    // 更新对应的路径段点
-    if (selectedPoint.value.parentPath && selectedPoint.value.segmentIndex !== undefined) {
-      const segment = selectedPoint.value.parentPath.segments[selectedPoint.value.segmentIndex]
-      if (segment) {
-        segment.point = point
-        
-        // 局部平滑：只影响相邻的线段
-        smoothLocalSegments(selectedPoint.value.parentPath, selectedPoint.value.segmentIndex)
-      }
-    }
-    
-    paper.view.update()
+  // 委托给 Reshape 组件处理拖拽
+  if (currentTool.value === 'reshape' && reshapeRef.value) {
+    reshapeRef.value.handleMouseMove(point)
   }
 }
 
@@ -619,44 +396,13 @@ const handleCanvasMouseUp = (event: MouseEvent): void => {
   }
 }
 
-// 鼠标释放事件（用于结束拖拽）
+// 全局鼠标释放事件（用于reshape工具）
 const handleMouseUp = (): void => {
-  const prevSelected = selectedPoint.value
-  const wasDragging = isDragging.value
-  if (isDragging.value) {
-    isDragging.value = false
-    selectedPoint.value = null
-  }
-
-  // 清理按下状态
-  const prevMouseDownPath = mouseDownPath.value
-  mouseDownPath.value = null
-  mouseDownPos.value = null
-
-  // 若为临时控制点，则在松开时删除该控制点，并刷新端点显示
-  if (prevSelected && (prevSelected as ExtendedItem).isTemporaryControlPoint) {
-    if (prevSelected.parent) {
-      prevSelected.remove()
-    }
-    controlPoints.value = controlPoints.value.filter((p: ExtendedItem) => p !== prevSelected)
-
-    // 重新显示该路径的所有端点（包含新插入的段点）
-    if (prevSelected.parentPath) {
-      showControlPoints(prevSelected.parentPath)
-    } else if (prevMouseDownPath) {
-      showControlPoints(prevMouseDownPath)
-    }
-    paper.view.update()
-  }
-
-  if (wasDragging) {
-    // props 驱动的导入不触发导出，避免循环
-    if (!isImportingFromProps.value) exportSvgAndEmit()
-    else {
-      isImportingFromProps.value = false
-    }
+  if (currentTool.value === 'reshape' && reshapeRef.value) {
+    reshapeRef.value.handleMouseUp()
   }
 }
+
 
 // 显示AI生成弹窗
 const showAiDialog = (): void => {
@@ -664,55 +410,20 @@ const showAiDialog = (): void => {
 }
 
 // 处理AI生成确认
-const handleAiConfirm = async (data: { 
+const handleAiConfirm = (data: { 
   model: string; 
   prompt: string; 
   url?: string; 
   svgContent?: string;
-}): Promise<void> => {
+}): void => {
   // console.log('AI生成确认:', data)
   
-  try {
-    if (data.model === 'svg' && data.svgContent) {
-      // 处理SVG导入
-      await importSvgToCanvas(data.svgContent, {
-        onPathCreated: (path: paper.Path) => {
-          // 添加到可编辑路径列表
-          allPaths.value.push(path)
-          
-          // 添加鼠标事件处理
-          path.onMouseDown = (event: paper.MouseEvent) => {
-            if (currentTool.value === 'reshape') {
-              showControlPoints(path)
-              paper.view.update()
-            }
-          }
-        },
-        onLoadComplete: () => {
-          // 导入来源于 props 时不导出，避免循环
-          if (!isImportingFromProps.value) exportSvgAndEmit()
-          else isImportingFromProps.value = false
-        },
-        onError: (error) => {
-          console.error('Failed to import SVG:', error)
-        }
-      })
-    } else if (data.model === 'png' && data.url) {
-      // 处理PNG图片导入
-      await loadImageToCanvas(data.url, {
-        onImageLoaded: (raster: paper.Raster) => {
-          backgroundImage.value = raster
-        },
-        onLoadComplete: () => {
-          exportSvgAndEmit()
-        },
-        onError: (error) => {
-          console.error('Failed to load image:', error)
-        }
-      })
-    }
-  } catch (error) {
-    console.error('AI生成处理失败:', error)
+  if (data.model === 'svg' && data.svgContent) {
+    // 处理SVG导入
+    importSvgToCanvas(data.svgContent)
+  } else if (data.model === 'png' && data.url) {
+    // 处理PNG图片导入
+    importImageToCanvas(data.url)
   }
   
   aiDialogVisible.value = false
@@ -724,16 +435,102 @@ const handleAiCancel = (): void => {
   aiDialogVisible.value = false
 }
 
+// 导入PNG图片到画布
+const importImageToCanvas = (imageUrl: string): void => {
+  if (!paper.project) return
+  
+  const raster = new paper.Raster(imageUrl)
+  
+  raster.onLoad = () => {
+    raster.position = paper.view.center
+    
+    // 保持原始尺寸，不进行自动缩放
+    // 如果需要缩放，用户可以手动调整
+    
+    // 添加点击事件处理
+    // raster.onMouseDown = (event: paper.MouseEvent) => {
+    //   if (currentTool.value === 'reshape') {
+    //     selectPathExclusive(null) // 清除路径选择
+    //     raster.selected = true
+    //     paper.view.update()
+    //   }
+    // }
 
+    paper.view.update()
+    // console.log('PNG图片已导入到画布')
 
+    exportSvgAndEmit()
+  }
+  
+  raster.onError = () => {
+    console.error('failed to load image')
+  }
+}
 
-
-
-
+// 导入SVG到画布并转换为可编辑的路径
+const importSvgToCanvas = (svgContent: string): void => {
+  if (!paper.project) return
+  
+  try {
+    // 创建一个临时的SVG元素来解析SVG内容
+    const parser = new DOMParser()
+    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml')
+    const svgElement = svgDoc.documentElement
+    
+    // 检查是否解析成功
+    if (svgElement.nodeName !== 'svg') {
+      console.error('invalid svg content')
+      return
+    }
+    
+    // 使用Paper.js导入SVG
+    const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
+    
+    if (importedItem) {
+      importedItem.position = paper.view.center
+      
+      
+      // 收集所有可编辑的路径
+      const collectPaths = (item: paper.Item): void => {
+        if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
+          // 添加到可编辑路径列表
+          allPaths.value.push(item)
+          
+          // 添加鼠标事件处理
+          item.onMouseDown = () => {
+            if (currentTool.value === 'reshape' && reshapeRef.value) {
+              reshapeRef.value.showControlPoints(item)
+              paper.view.update()
+            }
+          }
+        } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
+          // 递归处理子项
+          if (item.children) {
+            item.children.forEach(child => collectPaths(child))
+          }
+        }
+      }
+      
+      // 收集导入的所有路径
+      collectPaths(importedItem)
+      
+      // 更新视图
+      paper.view.update()
+      // console.log(`SVG已导入到画布，共${allPaths.value.length - (allPaths.value.length - countNewPaths(importedItem))}条可编辑路径`)
+      // 导入来源于 props 时不导出，避免循环
+      if (!isImportingFromProps.value) exportSvgAndEmit()
+      else isImportingFromProps.value = false
+    }
+  } catch (error) {
+    console.error('failed to import svg:', error)
+  }
+}
 
 // 清空画布
 const clearCanvas = (): void => {
-  hideControlPoints()
+  if (reshapeRef.value) {
+    reshapeRef.value.hideControlPoints()
+  }
   allPaths.value.forEach((path: paper.Path) => {
     if (path && path.parent) {
       path.remove()
@@ -793,52 +590,20 @@ watch(
       })
       backgroundRect.value = background
       allPaths.value = []
-      
-      // 如果已有背景图片，先移除
-      if (backgroundImage.value) {
-        removeBackgroundImage(backgroundImage.value)
-        backgroundImage.value = null
-      }
-      
+      backgroundImage.value = null
       paper.view.update()
     }
     
-    try {
-      // 加载新内容
-      await loadFileToCanvas(newImgSrc, {
-        onPathCreated: (path: paper.Path) => {
-          // 添加到可编辑路径列表
-          allPaths.value.push(path)
-          
-          // 添加鼠标事件处理
-          path.onMouseDown = (event: paper.MouseEvent) => {
-            if (currentTool.value === 'reshape') {
-              showControlPoints(path)
-              paper.view.update()
-            }
-          }
-        },
-        onImageLoaded: (raster: paper.Raster) => {
-          backgroundImage.value = raster
-        },
-        onLoadComplete: () => {
-          // 导入完成后清理状态，不自动恢复控制点显示
-          // 让用户主动点击路径来显示控制点，避免干扰绘制体验
-          setTimeout(() => {
-            selectedPathForRestore.value = null
-            isImportingFromProps.value = false
-            isFirstMount.value = false // 标记第一次挂载已完成
-          }, 200)
-        },
-        onError: (error) => {
-          console.error('Failed to load file:', error)
-          isImportingFromProps.value = false
-        }
-      })
-    } catch (error) {
-      console.error('Props图片加载失败:', error)
+    // 加载新内容
+    await loadFileToCanvas(newImgSrc)
+    
+    // 导入完成后清理状态，不自动恢复控制点显示
+    // 让用户主动点击路径来显示控制点，避免干扰绘制体验
+    setTimeout(() => {
+      selectedPathForRestore.value = null
       isImportingFromProps.value = false
-    }
+      isFirstMount.value = false // 标记第一次挂载已完成
+    }, 200)
   },
   { immediate: true }
 )
@@ -849,7 +614,9 @@ onMounted(() => {
   // 添加键盘事件监听
   const handleKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
-      hideControlPoints()
+      if (reshapeRef.value) {
+        reshapeRef.value.hideControlPoints()
+      }
       if (drawLineRef.value) {
         drawLineRef.value.resetDrawing()
       }
@@ -857,20 +624,15 @@ onMounted(() => {
         drawBrushRef.value.resetDrawing()
       }
       paper.view.update()
-    } else if (event.key === 'Delete' || event.key === 'Backspace') {
-      // 删除选中的路径
-      if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
-        const pathToDelete = controlPoints.value[0].parentPath
-        pathToDelete.remove()
-        allPaths.value = allPaths.value.filter((path: paper.Path) => path !== pathToDelete)
-        hideControlPoints()
-        paper.view.update()
-        exportSvgAndEmit()
+    } else {
+      // 委托给reshape组件处理其他键盘事件
+      if (reshapeRef.value) {
+        reshapeRef.value.handleKeyDown(event)
       }
     }
   }
   
-  // 添加鼠标释放事件监听
+  // 添加键盘和鼠标事件监听
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('mouseup', handleMouseUp)
   
@@ -885,19 +647,14 @@ onMounted(() => {
 const exportSvgAndEmit = (): void => {
   // console.log('exportSvgAndEmit 被调用')
   if (!paper.project) {
-    console.log('paper.project does not exist')
+    // paper.project does not exist
     return
   }
   
-  // 保存当前选中的路径（如果有控制点显示）
-  if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
-    selectedPathForRestore.value = controlPoints.value[0].parentPath
-  } else {
-    selectedPathForRestore.value = null
-  }
-  
   // 在导出SVG之前隐藏所有控制点，避免控制点被包含在SVG中
-  hideControlPoints()
+  if (reshapeRef.value) {
+    reshapeRef.value.hideControlPoints()
+  }
   
   const prevVisible = backgroundRect.value?.visible ?? true
   if (backgroundRect.value) backgroundRect.value.visible = false
