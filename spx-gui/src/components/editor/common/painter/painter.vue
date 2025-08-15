@@ -115,7 +115,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
-import AiGenerate from './components/ai_generate.vue'
+import AiGenerate from './components/aigc/generator.vue'
 import { useImageLoader } from './utils/loader.vue'
 
 // 工具类型
