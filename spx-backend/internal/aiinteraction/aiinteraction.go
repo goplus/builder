@@ -180,38 +180,22 @@ func (ai *AIInteraction) callOpenAI(ctx context.Context, systemPrompt string, me
 // buildConversationMessages constructs the message history for the AI request.
 func buildConversationMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, error) {
 	var messages []openai.ChatCompletionMessageParamUnion
-
-	for _, turn := range request.History {
-		messages = append(messages, openai.UserMessage(turn.RequestContent))
-
-		responseText := turn.ResponseText
-		if turn.ResponseCommandName != "" {
-			responseCommandArgsJSON, err := json.Marshal(turn.ResponseCommandArgs)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal command arguments: %w", err)
-			}
-			responseText += fmt.Sprintf("\nCOMMAND: %s\nARGS: %s", turn.ResponseCommandName, responseCommandArgsJSON)
-		}
-		messages = append(messages, openai.AssistantMessage(responseText))
-	}
-
 	if request.ContinuationTurn > 0 {
-		// No user input is expected during a continuation turn.
-		return messages, nil
-	}
-
-	userMessage := request.Content
-	if userMessage == "" {
-		return nil, errors.New("missing user content in request")
-	}
-	if len(request.Context) > 0 {
-		contextJSON, err := json.Marshal(request.Context)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal context: %w", err)
+		messages = append(messages, openai.UserMessage("Please continue with the next action based on the previous command result."))
+	} else {
+		userMessage := request.Content
+		if userMessage == "" {
+			return nil, errors.New("missing user content in request")
 		}
-		userMessage += "\n\nContext: " + string(contextJSON)
+		if len(request.Context) > 0 {
+			contextJSON, err := json.Marshal(request.Context)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal context: %w", err)
+			}
+			userMessage += "\n\nContext: " + string(contextJSON)
+		}
+		messages = append(messages, openai.UserMessage(userMessage))
 	}
-	messages = append(messages, openai.UserMessage(userMessage))
 	return messages, nil
 }
 

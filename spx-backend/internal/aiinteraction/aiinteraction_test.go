@@ -258,120 +258,13 @@ func TestBuildConversationMessages(t *testing.T) {
 		assert.Equal(t, "nestedValue", nestedMap["nestedKey"])
 	})
 
-	t.Run("WithSingleTurnHistory", func(t *testing.T) {
+	t.Run("RequestWithContext", func(t *testing.T) {
 		request := &Request{
-			Content: "Next message",
-			History: []Turn{
-				{
-					RequestContent: "First message",
-					ResponseText:   "First response",
-				},
+			Content: "Request with context",
+			Context: map[string]any{
+				"gameState": "active",
+				"playerPos": map[string]int{"x": 10, "y": 20},
 			},
-		}
-
-		messages, err := buildConversationMessages(request)
-
-		require.NoError(t, err)
-		require.Len(t, messages, 3)
-
-		userMsg1 := messages[0].OfUser
-		require.NotNil(t, userMsg1)
-		assert.Equal(t, "First message", userMsg1.Content.OfString.Value)
-
-		aiMsg := messages[1].OfAssistant
-		require.NotNil(t, aiMsg)
-		assert.Equal(t, "First response", aiMsg.Content.OfString.Value)
-
-		userMsg2 := messages[2].OfUser
-		require.NotNil(t, userMsg2)
-		assert.Equal(t, "Next message", userMsg2.Content.OfString.Value)
-	})
-
-	t.Run("WithHistoryCommand", func(t *testing.T) {
-		request := &Request{
-			Content: "Next message",
-			History: []Turn{
-				{
-					RequestContent:      "First message",
-					ResponseText:        "First response",
-					ResponseCommandName: "TestCommand",
-					ResponseCommandArgs: map[string]any{"arg1": "value1"},
-				},
-			},
-		}
-
-		messages, err := buildConversationMessages(request)
-
-		require.NoError(t, err)
-		require.Len(t, messages, 3)
-
-		aiMsg := messages[1].OfAssistant
-		require.NotNil(t, aiMsg)
-		assert.Contains(t, aiMsg.Content.OfString.Value, "First response")
-		assert.Contains(t, aiMsg.Content.OfString.Value, "COMMAND: TestCommand")
-		assert.Contains(t, aiMsg.Content.OfString.Value, "\"arg1\":\"value1\"")
-	})
-
-	t.Run("InvalidCommandArgs", func(t *testing.T) {
-		request := &Request{
-			Content: "Next message",
-			History: []Turn{
-				{
-					RequestContent:      "First message",
-					ResponseText:        "First response",
-					ResponseCommandName: "TestCommand",
-					ResponseCommandArgs: map[string]any{"circular": nil},
-				},
-			},
-		}
-
-		circular := make(map[string]any)
-		circular["self"] = circular
-		request.History[0].ResponseCommandArgs["circular"] = circular
-
-		messages, err := buildConversationMessages(request)
-
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to marshal command arguments")
-		assert.Nil(t, messages)
-	})
-
-	t.Run("LargeHistoryPreservesAll", func(t *testing.T) {
-		history := make([]Turn, 25)
-		for i := range history {
-			history[i] = Turn{
-				RequestContent: fmt.Sprintf("Request %d", i+1),
-				ResponseText:   fmt.Sprintf("Response %d", i+1),
-			}
-		}
-
-		request := &Request{
-			Content: "Final message",
-			History: history,
-		}
-
-		messages, err := buildConversationMessages(request)
-
-		require.NoError(t, err)
-		require.Len(t, messages, 51)
-
-		firstMsg := messages[0].OfUser
-		require.NotNil(t, firstMsg)
-		assert.Equal(t, "Request 1", firstMsg.Content.OfString.Value)
-
-		lastHistoryMsg := messages[49].OfAssistant
-		require.NotNil(t, lastHistoryMsg)
-		assert.Equal(t, "Response 25", lastHistoryMsg.Content.OfString.Value)
-
-		finalMsg := messages[50].OfUser
-		require.NotNil(t, finalMsg)
-		assert.Equal(t, "Final message", finalMsg.Content.OfString.Value)
-	})
-
-	t.Run("EmptyHistory", func(t *testing.T) {
-		request := &Request{
-			Content: "Single message",
-			History: []Turn{},
 		}
 
 		messages, err := buildConversationMessages(request)
@@ -381,43 +274,16 @@ func TestBuildConversationMessages(t *testing.T) {
 
 		userMsg := messages[0].OfUser
 		require.NotNil(t, userMsg)
-		assert.Equal(t, "Single message", userMsg.Content.OfString.Value)
+		assert.Contains(t, userMsg.Content.OfString.Value, "Request with context")
+		assert.Contains(t, userMsg.Content.OfString.Value, "Context: ")
+		assert.Contains(t, userMsg.Content.OfString.Value, "\"gameState\":\"active\"")
 	})
 
-	t.Run("ComplexRequest", func(t *testing.T) {
-		request := &Request{
-			Content: "Complex request",
-			Context: map[string]any{
-				"context": "additional",
-			},
-			History: []Turn{
-				{
-					RequestContent:      "Previous request",
-					ResponseText:        "Previous response",
-					ResponseCommandName: "PrevCommand",
-					ResponseCommandArgs: map[string]any{
-						"prevArg": 123,
-					},
-				},
-			},
-		}
-
-		messages, err := buildConversationMessages(request)
-
-		require.NoError(t, err)
-		require.Len(t, messages, 3)
-
-		lastMsg := messages[2].OfUser
-		require.NotNil(t, lastMsg)
-		assert.Contains(t, lastMsg.Content.OfString.Value, "Complex request")
-		assert.Contains(t, lastMsg.Content.OfString.Value, "Context: ")
-		assert.Contains(t, lastMsg.Content.OfString.Value, "\"context\":\"additional\"")
-	})
-
-	t.Run("ContinuationTurnWithHistory", func(t *testing.T) {
+	t.Run("ContinuationTurn", func(t *testing.T) {
 		request := &Request{
 			Content:          "This should be ignored",
 			ContinuationTurn: 1,
+			Context:          map[string]any{"key": "value"},
 			History: []Turn{
 				{
 					RequestContent: "Previous message",
@@ -428,55 +294,10 @@ func TestBuildConversationMessages(t *testing.T) {
 
 		messages, err := buildConversationMessages(request)
 		require.NoError(t, err)
-		require.Len(t, messages, 2)
+		require.Len(t, messages, 1)
 
 		userMsg := messages[0].OfUser
 		require.NotNil(t, userMsg)
-		assert.Equal(t, "Previous message", userMsg.Content.OfString.Value)
-
-		aiMsg := messages[1].OfAssistant
-		require.NotNil(t, aiMsg)
-		assert.Equal(t, "Previous response", aiMsg.Content.OfString.Value)
-	})
-
-	t.Run("ContinuationTurnWithoutHistory", func(t *testing.T) {
-		request := &Request{
-			Content:          "This should be ignored",
-			ContinuationTurn: 2,
-		}
-
-		messages, err := buildConversationMessages(request)
-		require.NoError(t, err)
-		require.Empty(t, messages)
-	})
-
-	t.Run("ContinuationTurnWithContext", func(t *testing.T) {
-		request := &Request{
-			Content:          "This should be ignored",
-			ContinuationTurn: 1,
-			Context:          map[string]any{"key": "value"},
-			History: []Turn{
-				{
-					RequestContent:      "Previous message",
-					ResponseText:        "Previous response",
-					ResponseCommandName: "TestCommand",
-					ResponseCommandArgs: map[string]any{"arg": "value"},
-				},
-			},
-		}
-
-		messages, err := buildConversationMessages(request)
-		require.NoError(t, err)
-		require.Len(t, messages, 2)
-
-		userMsg := messages[0].OfUser
-		require.NotNil(t, userMsg)
-		assert.Equal(t, "Previous message", userMsg.Content.OfString.Value)
-
-		aiMsg := messages[1].OfAssistant
-		require.NotNil(t, aiMsg)
-		assert.Contains(t, aiMsg.Content.OfString.Value, "Previous response")
-		assert.Contains(t, aiMsg.Content.OfString.Value, "COMMAND: TestCommand")
-		assert.Contains(t, aiMsg.Content.OfString.Value, "\"arg\":\"value\"")
+		assert.Equal(t, "Please continue with the next action based on the previous command result.", userMsg.Content.OfString.Value)
 	})
 }
