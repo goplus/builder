@@ -31,14 +31,12 @@ const props = withDefaults(
     costume: Costume
     color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
     operable?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
     selected: false,
-    removable: false,
     operable: false
   }
 )
@@ -59,9 +57,8 @@ const parent = computed(() => {
 })
 
 const removable = computed(() => {
-  const { removable } = props
   const costumes = parent.value.costumes
-  return removable && costumes.length > 1
+  return costumes.length > 1
 })
 
 const handleRemove = useMessageHandle(

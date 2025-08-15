@@ -6,11 +6,7 @@
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the widget' }" @click="handleRename" />
-      <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }"
-        :disabled="!removable"
-        @click="handleRemove"
-      />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the widget' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorWidgetItem>
 </template>
@@ -31,13 +27,11 @@ const props = withDefaults(
     widget: Widget
     color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
     operable?: boolean
   }>(),
   {
     color: 'stage',
     selectable: false,
-    removable: false,
     operable: false
   }
 )

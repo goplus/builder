@@ -18,11 +18,7 @@
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
-      <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }"
-        :disabled="!removable"
-        @click="handleRemove"
-      />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>
@@ -46,14 +42,12 @@ const props = withDefaults(
     animation: Animation
     color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
     autoplay?: boolean
     operable?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
-    removable: false,
     autoplay: false,
     operable: false
   }

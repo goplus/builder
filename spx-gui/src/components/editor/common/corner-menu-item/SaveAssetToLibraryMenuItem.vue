@@ -41,8 +41,8 @@ const { fn: handleSaveToAssetLibrary } = useMessageHandle(
 <template>
   <UIMenuItem
     v-radar="{
-      name: `Save to ${assetType} asset library`,
-      desc: `Click to save the item to ${assetType} asset library`
+      name: 'Save to asset library',
+      desc: `Click to save the ${assetType} to asset library`
     }"
     @click="handleSaveToAssetLibrary"
   >

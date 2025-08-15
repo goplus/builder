@@ -29,7 +29,6 @@
       :sprite="sprite"
       :animation="animation"
       :selectable="{ selected: state.selected?.id === animation.id }"
-      removable
       operable
       @click="state.select(animation.id)"
     />
