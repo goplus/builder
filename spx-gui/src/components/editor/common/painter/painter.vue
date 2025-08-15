@@ -4,40 +4,105 @@
     <div class="toolbar">
       <div class="tool-section">
         <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
-        <button 
-          :class="['tool-btn', { active: currentTool === 'line' }]"
-          @click="selectTool('line')"
-          :title="$t({ en: 'Line Tool', zh: '直线工具' })"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="7" y1="17" x2="17" y2="7"></line>
-          </svg>
-          <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
-        </button>
-        
-        <button 
-          :class="['tool-btn', { active: currentTool === 'brush' }]"
-          @click="selectTool('brush')"
-          :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
-            <path d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"></path>
-          </svg>
-          <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
-        </button>
-        
-        <button 
-          :class="['tool-btn', { active: currentTool === 'reshape' }]"
-          @click="selectTool('reshape')"
-          :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
-            <path d="m13 13 6 6"></path>
-          </svg>
-          <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
-        </button>
+        <div class="tool-grid">
+          <button 
+            :class="['tool-btn', { active: currentTool === 'line' }]"
+            @click="selectTool('line')"
+            :title="$t({ en: 'Line Tool', zh: '直线工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+            </svg>
+            <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'brush' }]"
+            @click="selectTool('brush')"
+            :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+              <path d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"></path>
+            </svg>
+            <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'reshape' }]"
+            @click="selectTool('reshape')"
+            :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+              <path d="m13 13 6 6"></path>
+            </svg>
+            <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'eraser' }]"
+            @click="selectTool('eraser')"
+            :title="$t({ en: 'Eraser Tool', zh: '橡皮工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+              <path d="M22 21H7"></path>
+              <path d="m5 11 9 9"></path>
+            </svg>
+            <span>{{ $t({ en: 'Eraser', zh: '橡皮' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'rectangle' }]"
+            @click="selectTool('rectangle')"
+            :title="$t({ en: 'Rectangle Tool', zh: '矩形工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect width="18" height="12" x="3" y="6" rx="2"></rect>
+            </svg>
+            <span>{{ $t({ en: 'Rectangle', zh: '矩形' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'circle' }]"
+            @click="selectTool('circle')"
+            :title="$t({ en: 'Circle Tool', zh: '圆形工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"></circle>
+            </svg>
+            <span>{{ $t({ en: 'Circle', zh: '圆形' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'fill' }]"
+            @click="selectTool('fill')"
+            :title="$t({ en: 'Fill Tool', zh: '填充颜色工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4"></path>
+              <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+            </svg>
+            <span>{{ $t({ en: 'Fill', zh: '填充' }) }}</span>
+          </button>
+          
+          <button 
+            :class="['tool-btn', { active: currentTool === 'text' }]"
+            @click="selectTool('text')"
+            :title="$t({ en: 'Text Tool', zh: '插入文本工具' })"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7V4h16v3"></path>
+              <path d="M9 20h6"></path>
+              <path d="M12 4v16"></path>
+            </svg>
+            <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
+          </button>
+        </div>
       </div>
       
       <div class="tool-section">
@@ -108,6 +173,41 @@
         @paths-update="handlePathsUpdate"
         @svg-export="exportSvgAndEmit"
       />
+      
+      <!-- 橡皮工具组件 -->
+      <EraserTool
+        :is-active="currentTool === 'eraser'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
+      
+      <!-- 矩形工具组件 -->
+      <RectangleTool
+        :is-active="currentTool === 'rectangle'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
+      
+      <!-- 圆形工具组件 -->
+      <CircleTool
+        :is-active="currentTool === 'circle'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
+      
+      <!-- 填充颜色工具组件 -->
+      <FillTool
+        :is-active="currentTool === 'fill'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
+      
+      <!-- 插入文本工具组件 -->
+      <TextTool
+        :is-active="currentTool === 'text'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
     </div>
     
     <!-- AI生成弹窗 -->
@@ -125,10 +225,15 @@ import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
 import Reshape from './components/reshape.vue'
+import EraserTool from './components/eraser_tool.vue'
+import RectangleTool from './components/rectangle_tool.vue'
+import CircleTool from './components/circle_tool.vue'
+import FillTool from './components/fill_tool.vue'
+import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/generator.vue'
 
 // 工具类型
-type ToolType = 'line' | 'brush' | 'reshape'
+type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
 
 
 // 响应式变量
@@ -704,6 +809,12 @@ const exportSvgAndEmit = (): void => {
   gap: 8px;
 }
 
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .tool-title {
   font-size: 14px;
   font-weight: 600;
@@ -715,17 +826,20 @@ const exportSvgAndEmit = (): void => {
 
 .tool-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background-color: #fff;
   color: #666;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   transition: all 0.2s ease;
-  text-align: left;
+  text-align: center;
+  min-height: 48px;
 }
 
 .tool-btn:hover {
@@ -738,6 +852,11 @@ const exportSvgAndEmit = (): void => {
   background-color: #e3f2fd;
   border-color: #2196f3;
   color: #2196f3;
+}
+
+.tool-btn:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .tool-btn.action-btn {
@@ -770,6 +889,9 @@ const exportSvgAndEmit = (): void => {
 
 .tool-btn span {
   font-weight: 500;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* 画布区域样式 */
