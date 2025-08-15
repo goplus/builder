@@ -10,7 +10,7 @@
       v-for="costume in sprite.costumes"
       :key="costume.id"
       :costume="costume"
-      removable
+      operable
       :selectable="{ selected: state.selected?.id === costume.id }"
       @click="handleSelect(costume)"
     />

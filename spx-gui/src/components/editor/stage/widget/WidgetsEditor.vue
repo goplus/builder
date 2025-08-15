@@ -28,7 +28,7 @@
       :key="widget.id"
       :widget="widget"
       :selectable="{ selected: state.selected?.id === widget.id }"
-      removable
+      operable
       @click="state.select(widget.id)"
     />
     <template #add-options>
