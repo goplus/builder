@@ -67,7 +67,7 @@ const handleSubmit = useMessageHandle(
     project.setVisibility(Visibility.Public)
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
-    await project.ensureAIDescription(true)
+    if (project.isUsingAIInteraction()) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({

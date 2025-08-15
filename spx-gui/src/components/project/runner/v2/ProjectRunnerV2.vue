@@ -183,9 +183,12 @@ defineExpose({
       signal?.throwIfAborted()
       iframeLoadReporter.report(1)
 
+      const isUsingAIInteraction = props.project.isUsingAIInteraction()
+
       const [zipped, aiDescription] = await Promise.all([
         zip(files, getProjectDataReporter, signal),
-        props.project.ensureAIDescription(false, signal)
+        // Conditionally generate AI description only if project uses AI Interaction features
+        isUsingAIInteraction ? props.project.ensureAIDescription(false, signal) : Promise.resolve(null)
       ])
 
       // Ensure the latest progress update to be rendered to UI
@@ -200,14 +203,16 @@ defineExpose({
         zipped,
         assetURLs,
         () => {
-          // Inject AI description
-          iframeWindow.setAIDescription(aiDescription)
+          if (isUsingAIInteraction) {
+            // Inject AI description.
+            iframeWindow.setAIDescription(aiDescription!)
 
-          // Set up API endpoint for AI Interaction.
-          iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+            // Set up API endpoint for AI Interaction.
+            iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
 
-          // Set up token provider for AI Interaction.
-          iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+            // Set up token provider for AI Interaction.
+            iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+          }
         },
         logLevels.LOG_LEVEL_ERROR
       )
