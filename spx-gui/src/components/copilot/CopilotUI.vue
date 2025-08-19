@@ -326,17 +326,17 @@ onMounted(async () => {
         <template v-if="StateIndicator != null">
           <StateIndicator />
         </template>
-        <UITooltip v-if="session != null && session.topic.endable !== false">
+        <!-- <UITooltip v-if="session != null && session.topic.endable !== false">
           {{ $t({ en: 'New chat', zh: '新建会话' }) }}
           <template #trigger>
             <button class="btn">
               <UIIcon class="icon" type="plus" @click="handleNewSession" />
             </button>
           </template>
-        </UITooltip>
-        <button v-if="session == null" class="btn" disabled>
+        </UITooltip> -->
+        <!-- <button v-if="session == null" class="btn" disabled>
           <UIIcon class="icon" type="plus" />
-        </button>
+        </button> -->
         <UITooltip>
           {{ $t({ en: 'Close the panel', zh: '关闭对话框' }) }}
           <template #trigger>
@@ -350,13 +350,13 @@ onMounted(async () => {
         <template v-if="isSignedIn()">
           <ul v-if="rounds != null" class="messages">
             <CopilotRound
-              v-for="(round, i) in rounds"
+              v-for="(round, i) in rounds.slice(-1)"
               :key="i"
               :round="round"
               :is-last-round="i === rounds.length - 1"
             />
           </ul>
-          <div v-else class="placeholder">
+          <!-- <div v-else class="placeholder">
             <img class="logo" :src="logoSrc" alt="Copilot" />
             <h4 class="title">
               {{
@@ -374,7 +374,7 @@ onMounted(async () => {
                 })
               }}
             </p>
-          </div>
+          </div> -->
         </template>
         <template v-else>
           <div class="placeholder">
@@ -453,7 +453,7 @@ onMounted(async () => {
   right: 10px;
   bottom: 20px;
   width: 340px;
-  height: 680px;
+  /* height: 680px; */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -513,8 +513,9 @@ onMounted(async () => {
 }
 
 .body {
-  flex: 1 1 0;
-  min-height: 0;
+  /* flex: 1 1 0; */
+  /* min-height: 0; */
+  max-height: 400px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -579,7 +580,7 @@ onMounted(async () => {
 }
 
 .footer {
-  padding: 12px 16px;
+  padding: 0 16px 12px;
   display: flex;
 
   .input {
