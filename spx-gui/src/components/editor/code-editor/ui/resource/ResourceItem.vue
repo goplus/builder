@@ -34,7 +34,12 @@ withDefaults(
     color="primary"
     :autoplay="autoplay"
   />
-  <BackdropItem v-else-if="resource instanceof Backdrop" :backdrop="resource" :selectable="selectable" />
+  <BackdropItem
+    v-else-if="resource instanceof Backdrop"
+    :backdrop="resource"
+    :selectable="selectable"
+    color="primary"
+  />
   <CostumeItem v-else-if="resource instanceof Costume" :costume="resource" :selectable="selectable" color="primary" />
   <SoundItem v-else-if="resource instanceof Sound" :sound="resource" :selectable="selectable" color="primary" />
   <SpriteItem

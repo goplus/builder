@@ -1061,10 +1061,32 @@ paths:
         "429":
           description: Insufficient quota to perform this operation.
 
+  /ai/description:
+    post:
+      tags:
+        - AI
+      summary: Generate AI description
+      description: |
+        Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
+        content (such as spx source code and project structure).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIDescriptionRequest"
+      responses:
+        "200":
+          description: Successfully generated AI description.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIDescriptionResponse"
+
   /ai/interaction/turn:
     post:
       tags:
-        - AI Interaction
+        - AI
       summary: Perform an AI interaction turn
       description: Send a message and context to the AI, receive a response including text and an optional command.
       requestBody:
@@ -1146,7 +1168,7 @@ paths:
             $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter courses by the owner's username.
-            
+
             Defaults to the authenticated user if not specified. Use `*` to include courses from all users.
         - name: orderBy
           in: query
@@ -1339,7 +1361,7 @@ paths:
             $ref: "#/components/schemas/User/properties/username"
           description: |
             Filter course serieses by the owner's username.
-            
+
             Defaults to the authenticated user if not specified. Use `*` to include course series from all users.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
@@ -1710,7 +1732,7 @@ components:
           type: string
           format: uri
           examples:
-            - https://builder.goplus.org/logo.svg
+            - https://example.com/project-thumbnail.png
           description: URL of the project's thumbnail image.
         viewCount:
           type: integer
@@ -1918,6 +1940,44 @@ components:
             - 1
           description: Order/priority of the course series for sorting.
 
+    AIDescriptionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: The game content to generate a description for (e.g., spx source code, project structure).
+          examples:
+            - |
+              Game: TicTacToe
+              Description: A classic Tic-Tac-Toe game.
+
+              === File: main.spx ===
+              var (
+                  // board is the main Tic-Tac-Toe board, where 1 represents "X" and 2 represents "O".
+                  board [3][3]int
+              )
+
+              // onStart handles the game start event.
+              onStart => {
+                // ...
+              }
+
+    AIDescriptionResponse:
+      type: object
+      properties:
+        description:
+          type: string
+          description: AI-generated descriptive summary of the game world from the player's perspective.
+          examples:
+            - |
+              This is a Tic-Tac-Toe game played on a 3x3 grid. The player uses `X` marks while the AI opponent uses `O`
+              marks. Players take turns placing their marks in empty squares, with the goal of getting three marks in a
+              row horizontally, vertically, or diagonally. The game supports mouse click interaction. Click on an empty
+              square to place your mark. The game ends when either player achieves three in a row or the board is
+              completely filled.
+
     AIInteractionRequest:
       type: object
       properties:
@@ -1966,6 +2026,11 @@ components:
           items:
             $ref: "#/components/schemas/AIInteractionTurn"
           description: Record of previous interactions in this session.
+        archivedHistory:
+          type: string
+          description: Content of archived historical interactions.
+          examples:
+            - "Previous conversation summary..."
         continuationTurn:
           type: integer
           format: int32
@@ -2000,6 +2065,10 @@ components:
             - Row: 1
               Col: 1
               Result: ""
+        archivedHistory:
+          $ref: "#/components/schemas/AIInteractionArchivedHistory"
+          nullable: true
+          description: Archived history information when history management occurs.
 
     AIInteractionTurn:
       type: object
@@ -2009,6 +2078,13 @@ components:
           description: User's input text for the turn.
           examples:
             - It's your turn.
+        requestContext:
+          type: object
+          additionalProperties: true
+          description: Context for the user's input text for the turn.
+          examples:
+            - position: [10, 20]
+              health: 80
         responseText:
           type: string
           description: AI's text output for the turn.
@@ -2088,6 +2164,22 @@ components:
           description: Indicates if the interaction should be terminated.
           examples:
             - false
+
+    AIInteractionArchivedHistory:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Archived content of historical interactions.
+          examples:
+            - Previous conversation summary...
+        turnCount:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Number of turns that were archived.
+          examples:
+            - 5
 
     UpInfo:
       type: object

@@ -126,7 +126,7 @@ func TestAuthorizerMiddleware(t *testing.T) {
 
 		handler.ServeHTTP(recorder, req)
 
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Equal(t, "no capabilities", recorder.Body.String())
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Equal(t, "Internal Server Error\n", recorder.Body.String())
 	})
 }

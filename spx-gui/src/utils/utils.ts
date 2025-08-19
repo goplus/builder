@@ -29,11 +29,6 @@ export const isSound = (url: string): boolean => {
   return ['wav', 'mp3', 'ogg'].includes(extension)
 }
 
-/** Manage spx version. */
-export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
-  return localStorageRef<'v1' | 'v2'>('spx-gui-runner', 'v2')
-}
-
 export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {

@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  exit: [code: number]
 }>()
 
 const wrapperRef = ref<HTMLDivElement>()
@@ -97,7 +98,7 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
         </div>
       </div>
       <div class="main">
-        <ProjectRunner ref="projectRunnerRef" class="runner" :project="project" />
+        <ProjectRunner ref="projectRunnerRef" class="runner" :project="project" @exit="(code) => emit('exit', code)" />
       </div>
     </div>
   </div>

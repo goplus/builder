@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    :radar="{ name: 'Asset library modal', desc: 'Modal for choosing assets from the library' }"
+    :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
     style="width: 1096px"
     :visible="props.visible"
     :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
@@ -38,7 +38,13 @@
       </div>
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
-        <div class="content">
+        <div
+          v-radar="{
+            name: 'Asset list',
+            desc: `List of ${entityMessage.en}s in the selected category`
+          }"
+          class="content"
+        >
           <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
             <!-- fixed asset-list height to keep the layout stable -->
             <ul class="asset-list" style="height: 436px">

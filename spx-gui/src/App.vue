@@ -3,11 +3,13 @@
     <UIMessageProvider>
       <UIModalProvider>
         <CopilotRoot>
-          <AgentCopilotProvider>
-            <RouterView />
-            <SpotlightUI />
-            <CopilotUI />
-          </AgentCopilotProvider>
+          <TutorialRoot>
+            <AgentCopilotProvider>
+              <RouterView />
+              <SpotlightUI />
+              <CopilotUI />
+            </AgentCopilotProvider>
+          </TutorialRoot>
         </CopilotRoot>
       </UIModalProvider>
     </UIMessageProvider>
@@ -20,6 +22,7 @@ import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } fro
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from './components/copilot/CopilotRoot.vue'
 import CopilotUI from './components/copilot/CopilotUI.vue'
+import TutorialRoot from './components/tutorials/TutorialRoot.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from './utils/i18n'
 

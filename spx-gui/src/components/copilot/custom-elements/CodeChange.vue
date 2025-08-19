@@ -1,21 +1,26 @@
 <script lang="ts">
 import { z } from 'zod'
+import { codeFilePathSchema } from '../common'
 
 export const tagName = 'code-change'
 
-export const description = 'Display a modification based on the existing code. The user can decide if apply the change.'
+export const isRaw = true
+
+export const description = 'Display a modification based on the existing code.'
 
 export const detailedDescription = `Display a modification based on the existing code. For example,
-<pre is="code-change" file="file:///NiuXiaoQi.spx" line="10" remove-line-count="2">
+
+<code-change file="NiuXiaoQi.spx" line="10" remove-line-count="2">
 onStart => {
 	say "Hello, world!"
 }
-</pre>
-will display a code change that removes 2 lines starting from line 10, and adds the code block.`
+</code-change>
+
+will display a code change that removes line 10 & 11, then adds the new code content. The user can then apply the change by clicking the "Apply" button.`
 
 export const attributes = z.object({
-  file: z.string().describe('Text document URI, e.g., `file:///NiuXiaoQi.spx`'),
-  line: z.string().describe('Position (line number) to do change'),
+  file: codeFilePathSchema,
+  line: z.string().describe('Position (line number) to do change, 1-based'),
   removeLineCount: z.string().optional().describe('Line count to remove. No line will be removed if not provided')
 })
 </script>
@@ -27,14 +32,14 @@ import { useMessageHandle, ActionException } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
 import CodeLink from '@/components/editor/code-editor/CodeLink.vue'
-import { type Range } from '@/components/editor/code-editor/common'
+import { getTextDocumentId, type Range } from '@/components/editor/code-editor/common'
 import { useCodeEditorCtxRef } from '@/components/editor/code-editor/context'
 import BlockWrapper from './common/BlockWrapper.vue'
 import BlockFooter from './common/BlockFooter.vue'
 import BlockActionBtn from './common/BlockActionBtn.vue'
 
 const props = defineProps<{
-  /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
+  /** Code file path, e.g., `NiuXiaoQi.spx` */
   file: string
   /** Position (line number) to do change */
   line: string
@@ -57,7 +62,7 @@ const codeToAdd = computed(() => {
 const target = computed(() => {
   const codeEditorCtx = codeEditorCtxRef.value
   if (codeEditorCtx == null) return null
-  const textDocument = codeEditorCtx.mustEditor().getTextDocument({ uri: props.file })
+  const textDocument = codeEditorCtx.mustEditor().getTextDocument(getTextDocumentId(props.file))
   if (textDocument == null) return null
   const startLine = parseInt(props.line, 10)
   const removeLineCount = props.removeLineCount == null ? 0 : parseInt(props.removeLineCount, 10)

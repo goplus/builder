@@ -17,7 +17,7 @@ import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
-import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
+import { getXGoIdentifierNameTip, validateXGoIdentifierName } from '@/utils/spx'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -33,6 +33,7 @@ import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
 import { useModal } from '@/components/ui'
+import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../context'
@@ -52,8 +53,6 @@ import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
-import CopilotUI from './copilot/CopilotUI.vue'
-import CopilotTrigger from './copilot/CopilotTrigger.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import InputHelperUI from './input-helper/InputHelperUI.vue'
@@ -69,6 +68,7 @@ const props = defineProps<{
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const copilot = useCopilot()
 const invokeRenameModal = useModal(RenameModal)
 const renameSprite = useRenameSprite()
 const renameSound = useRenameSound()
@@ -85,12 +85,12 @@ async function rename(textDocumentId: TextDocumentIdentifier, position: Position
   return invokeRenameModal({
     target: {
       name,
-      validateName: validateGopIdentifierName,
+      validateName: validateXGoIdentifierName,
       applyName: (newName) =>
         editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
           codeEditorCtx.mustEditor().rename(textDocumentId, position, newName)
         ),
-      inputTip: getGopIdentifierNameTip(),
+      inputTip: getXGoIdentifierNameTip(),
       warning: await getRenameWarning()
     }
   })
@@ -101,8 +101,8 @@ function renameResource(resourceId: ResourceIdentifier): Promise<void> {
   if (model == null) throw new Error(`Resource (${resourceId.uri}) not found`)
   if (model instanceof Sprite) return renameSprite(model)
   if (model instanceof Sound) return renameSound(model)
-  if (model instanceof Costume) return renameCostume(model)
   if (model instanceof Backdrop) return renameBackdrop(model)
+  if (model instanceof Costume) return renameCostume(model)
   if (model instanceof Animation) return renameAnimation(model)
   if (isWidget(model)) return renameWidget(model)
   throw new Error(`Rename resource (${resourceId.uri}) not supported`)
@@ -116,6 +116,7 @@ const uiRef = computed(() => {
     editorCtx.state,
     i18n,
     codeEditorCtx.mustMonaco(),
+    copilot,
     (id) => codeEditorCtx.mustEditor().getTextDocument(id),
     rename,
     renameResource
@@ -217,10 +218,6 @@ watch(
   { immediate: true }
 )
 
-function handleCopilotTriggerClick() {
-  uiRef.value.setIsCopilotActive(true)
-}
-
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
   ui: uiRef.value
 }))
@@ -287,10 +284,6 @@ function zoomReset() {
   <div ref="codeEditorEl" class="code-editor" :style="{ userSelect: isResizing ? 'none' : undefined }">
     <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
       <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
-      <footer class="footer">
-        <CopilotTrigger @click="handleCopilotTriggerClick" />
-      </footer>
-      <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div
       ref="resizeHandleEl"
@@ -343,22 +336,6 @@ function zoomReset() {
 
   .api-reference {
     flex: 1 1 0;
-  }
-
-  .footer {
-    flex: 0 0 auto;
-    padding: 12px 16px;
-    display: flex;
-    border-top: 1px solid var(--ui-color-dividing-line-2);
-  }
-
-  .copilot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
   }
 }
 

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -43,7 +44,7 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 	}
 
 	kodoClient := newKodoClient(cfg.Kodo)
-	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
+	aigcClient := aigc.NewAigcClientWithHTTPClient(cfg.AIGC.Endpoint, &http.Client{})
 
 	return &Controller{
 		db:   db,

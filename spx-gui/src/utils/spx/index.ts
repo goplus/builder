@@ -114,7 +114,7 @@ export async function adaptImg(file: File): Promise<File> {
   return fromBlob(jpegFileName, jpegBlob)
 }
 
-// About Gop identifier:
+// About XGo identifier:
 // ```
 // identifier     = letter { letter | unicode_digit } .
 // letter         = unicode_letter | "_" .
@@ -123,14 +123,14 @@ export async function adaptImg(file: File): Promise<File> {
 // ```
 // See details in https://github.com/goplus/xgo/blob/fc370dac5207d1d1fda7a669bed5bd9508bf1b59/doc/spec-mini.md#identifiers
 
-export function validateGopIdentifierName(name: string) {
+export function validateXGoIdentifierName(name: string) {
   const regex = /^[\p{L}_][\p{L}\p{Nd}_]*$/u
   if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
   if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
   if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
 }
 
-export function getGopIdentifierNameTip(target?: LocaleMessage) {
+export function getXGoIdentifierNameTip(target?: LocaleMessage) {
   if (target == null)
     return {
       en: 'The name can only contain letters, digits, and the character _.',
@@ -142,7 +142,7 @@ export function getGopIdentifierNameTip(target?: LocaleMessage) {
   }
 }
 
-export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
+export function normalizeXGoIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
   src = src
     .replace(/[^\p{L}\p{Nd}]+/gu, '_')
     .replace(/([A-Z])/g, '_$1')

@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Configure spx-gui to use co-located spx-backend
         run: echo "VITE_API_BASE_URL=/api" > ./spx-gui/.env.staging.local
       - name: Log in to GitHub Container Registry

@@ -34,7 +34,7 @@
           :key="sound.id"
           :sound="sound"
           :selectable="{ selected: isSelected(sound) }"
-          removable
+          operable
           @click="handleSoundClick(sound)"
         />
       </PanelList>

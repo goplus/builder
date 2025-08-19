@@ -108,7 +108,9 @@ export async function toNativeFile(file: File) {
 }
 
 export function fromText(name: string, text: string, options?: Options) {
-  return new File(name, async () => str2Ab(text), options)
+  // Default to `text/plain` for text content when MIME type cannot be determined from file extension.
+  const type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? 'text/plain'
+  return new File(name, async () => str2Ab(text), { ...options, type })
 }
 
 export async function toText(file: File) {

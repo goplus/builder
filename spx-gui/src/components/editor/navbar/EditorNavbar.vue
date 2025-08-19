@@ -49,8 +49,8 @@
               {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>
           </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
-            <UIMenuItem v-if="canManageProject" @click="handleRemoveProject">
+          <UIMenuGroup v-if="canManageProject" :disabled="project == null">
+            <UIMenuItem @click="handleRemoveProject">
               <template #icon><img :src="removeProjectSvg" /></template>
               {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
             </UIMenuItem>
