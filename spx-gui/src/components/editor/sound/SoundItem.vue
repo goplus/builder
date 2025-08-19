@@ -9,7 +9,11 @@
     <template #player>
       <SoundPlayer :color="color" :src="audioSrc" />
     </template>
-    <CornerMenu v-if="removable" :color="color" removable :item="sound" @remove="handleRemove" />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <SaveAssetToLibraryMenuItem :item="sound" />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
+    </CornerMenu>
   </UIEditorSoundItem>
 </template>
 
@@ -22,26 +26,27 @@ import { UIEditorSoundItem } from '@/components/ui'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import SoundPlayer from './SoundPlayer.vue'
+import { useRenameSound } from '@/components/asset'
+import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
     sound: Sound
     color?: 'sound' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
+    /** `operable: true` means the backdrop can be published & removed */
+    operable?: boolean
   }>(),
   {
     color: 'sound',
     selectable: false,
-    removable: false
+    operable: false
   }
 )
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
 
 const editorCtx = useEditorCtx()
-
-const removable = computed(() => props.removable && props.selectable && props.selectable.selected)
 
 const radarNodeMeta = computed(() => {
   const name = `Sound item "${props.sound.name}"`
@@ -60,4 +65,10 @@ const handleRemove = useMessageHandle(
     zh: '删除声音失败'
   }
 ).fn
+
+const renameSound = useRenameSound()
+const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
+  en: 'Failed to rename sound',
+  zh: '重命名声音失败'
+})
 </script>

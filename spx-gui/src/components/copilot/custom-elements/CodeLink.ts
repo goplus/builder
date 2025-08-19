@@ -1,27 +1,32 @@
 import { z } from 'zod'
 import { defineComponent, h } from 'vue'
-import { type Range, type Position } from '@/components/editor/code-editor/common'
+import { type Range, type Position, getTextDocumentId } from '@/components/editor/code-editor/common'
 import RawCodeLink from '@/components/editor/code-editor/CodeLink.vue'
+import { codeFilePathSchema } from '../common'
 
 export const tagName = 'code-link'
+
+export const isRaw = false
 
 export const description = 'Display a link to a code location in the project.'
 
 export const detailedDescription = `Display a link to a code location in the project. By clicking on the link, \
 the user will be navigated to the code location. A location can be a position or a range. For example, \
-<pre is="code-link" file="file:///NiuXiaoQi.spx" position="10,20" text="L10,C20"></pre> will create a link to \
+<code-link file="NiuXiaoQi.spx" position="10,20" text="L10,C20" /> will create a link to \
 line 10, column 20 in the file "NiuXiaoQi.spx" with text "L10,C20".`
 
 export const attributes = z.object({
-  file: z.string().describe('Text document URI, e.g., `file:///NiuXiaoQi.spx`'),
-  position: z.string().describe('Position in the document, `${line},${column}`, e.g., `10,20`'),
+  file: codeFilePathSchema,
+  text: z.string().optional().describe('Link text, if not provided, the file name will be used as the link text'),
+  position: z.string().optional().describe('Position in the document, `${line},${column}`, e.g., `10,20`'),
   range: z
     .string()
+    .optional()
     .describe('Range in the document, `${startLine},${startColumn}-${endLine},${endColumn}`, e.g., `10,20-12,10`')
 })
 
 export type Props = {
-  /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
+  /** Code file path, e.g., `NiuXiaoQi.spx` */
   file: string
   /** Link text */
   text?: string
@@ -38,7 +43,7 @@ export default defineComponent<Props>(
       return h(
         RawCodeLink,
         {
-          file: { uri: props.file },
+          file: getTextDocumentId(props.file),
           position: parsePosition(props.position),
           range: parseRange(props.range)
         },

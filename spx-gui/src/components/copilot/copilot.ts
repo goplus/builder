@@ -1,13 +1,14 @@
 import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { debounce } from 'lodash'
-import { shallowRef, ref, shallowReactive, type Component } from 'vue'
+import { debounce, throttle } from 'lodash'
+import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
+import { localStorageRef } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import type { Disposer } from '@/utils/disposable'
-import { ActionException, Cancelled } from '@/utils/exception'
+import { Disposable, type Disposer } from '@/utils/disposable'
+import { ActionException, Cancelled, capture } from '@/utils/exception'
 import * as apis from '@/apis/copilot'
 import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
-import { tagName as toolUseTagName } from './custom-elements/ToolUse.vue'
+import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 
 /** Message with text content. */
@@ -73,7 +74,7 @@ export function toApiMessage(m: Message): apis.Message {
           textContent = 'Executing tool...'
           break
         case 'completed':
-          textContent = `<result>${JSON.stringify(m.execution.result)}</result>`
+          textContent = `<tool-result id="${m.callId}">${JSON.stringify(m.execution.result)}</tool-result>`
           break
         case 'failed':
           textContent = `Tool execution failed: ${m.execution.error}`
@@ -103,21 +104,36 @@ export type Topic = {
   reactToEvents: boolean
   /** Whether the session can be ended by the user, defaults to `true` */
   endable?: boolean
-  /** Component to render the topic state indicator, e.g. tip for current tutorial course */
-  stateIndicator?: Component<{}>
+  /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
+  stateIndicator?: string
 }
 
 export enum RoundState {
-  /** The round is still loading, no copilot response yet. */
-  Loading,
+  /** The round is initialized, while not sent to copilot yet. */
+  Initialized = 'initialized',
+  /** The round is loading, waiting for copilot response. */
+  Loading = 'loading',
   /** The round is in progress, partial copilot response is available. */
-  InProgress,
+  InProgress = 'in-progress',
   /** The round has completed successfully */
-  Completed,
+  Completed = 'completed',
   /** The round was cancelled by the user */
-  Cancelled,
+  Cancelled = 'cancelled',
   /** The round failed due to an error */
-  Failed
+  Failed = 'failed'
+}
+
+export interface IMessageStreamGenerator {
+  generateStreamMessage: typeof apis.generateStreamMessage
+}
+
+// NOTE: Keep backward compatibility of `RoundExported` to avoid errors when loading old sessions.
+type RoundExported = {
+  userMessage: UserMessage
+  resultMessages: Array<CopilotMessage | ToolMessage>
+  inProgressCopilotMessageContent: string | null
+  error: LocaleMessage | null
+  state: RoundState
 }
 
 export class Round {
@@ -126,11 +142,12 @@ export class Round {
   get inProgressCopilotMessageContent() {
     return this.inProgressCopilotMessageContentRef.value
   }
-  private errorRef = ref<ActionException | null>(null)
+  private errorRef = ref<LocaleMessage | null>(null)
+  /** Error message */
   get error() {
     return this.errorRef.value
   }
-  private stateRef = ref(RoundState.Loading)
+  private stateRef = ref(RoundState.Initialized)
   get state() {
     return this.stateRef.value
   }
@@ -142,6 +159,33 @@ export class Round {
     private session: Session
   ) {
     this.userMessage = userMessage
+  }
+
+  export(): RoundExported {
+    return {
+      userMessage: this.userMessage,
+      resultMessages: this.resultMessages,
+      inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
+      error: this.error,
+      state: this.state
+    }
+  }
+
+  static load(exported: RoundExported, copilot: Copilot, session: Session): Round {
+    const round = new Round(exported.userMessage, copilot, session)
+    round.resultMessages.push(...exported.resultMessages)
+    round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
+    round.errorRef.value = exported.error
+    switch (exported.state) {
+      case RoundState.Loading:
+      case RoundState.InProgress:
+        // We will not resume the ongoing request, so we consider it as cancelled.
+        round.stateRef.value = RoundState.Cancelled
+        break
+      default:
+        round.stateRef.value = exported.state
+    }
+    return round
   }
 
   private sealInProgressCopilotMessage(): CopilotMessage {
@@ -172,7 +216,7 @@ export class Round {
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
-    })
+    }).userMessage
     this.stateRef.value = RoundState.Failed
   }
 
@@ -209,10 +253,13 @@ export class Round {
   private async generateCopilotMessage() {
     try {
       const messages = this.session.rounds.flatMap((round) => [round.userMessage, ...round.resultMessages])
-      // TODO: history summarization
       messages.push(this.copilot.getContextMessage())
       const apiMessages = messages.map(toApiMessage)
-      const result = apis.generateStreamMessage('standard', apiMessages, { signal: this.ctrl.signal })
+      // TODO: history summarization with LLM instead of truncation
+      const sampledApiMessages = sampleApiMessages(apiMessages)
+      const result = this.copilot.generator.generateStreamMessage('standard', sampledApiMessages, {
+        signal: this.ctrl.signal
+      })
       for await (const chunk of result) {
         if (this.inProgressCopilotMessageContentRef.value == null) {
           this.inProgressCopilotMessageContentRef.value = ''
@@ -228,7 +275,7 @@ export class Round {
   }
 
   start() {
-    this.resultMessages = []
+    this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
     this.stateRef.value = RoundState.Loading
@@ -248,7 +295,12 @@ export class Round {
   }
 }
 
-// TODO: restore session state after page reload
+// NOTE: Keep backward compatibility of `SessionExported` to avoid errors when loading old sessions.
+type SessionExported = {
+  topic: Topic
+  rounds: RoundExported[]
+}
+
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
@@ -260,6 +312,19 @@ export class Session {
     this.topic = topic
   }
 
+  export(): SessionExported {
+    return {
+      topic: this.topic,
+      rounds: this.rounds.map((round) => round.export())
+    }
+  }
+
+  static load(exported: SessionExported, copilot: Copilot): Session {
+    const session = new Session(exported.topic, copilot)
+    session.rounds.push(...exported.rounds.map((round) => Round.load(round, copilot, session)))
+    return session
+  }
+
   get currentRound() {
     return this.rounds[this.rounds.length - 1] ?? null
   }
@@ -268,11 +333,23 @@ export class Session {
     this.currentRound?.abort()
   }
 
-  addUserMessage(userMessage: UserMessage) {
+  private startCurrentRound() {
+    this.currentRound?.start()
+  }
+
+  private startCurrentRoundWithDelay = debounce(() => this.startCurrentRound(), 1000)
+
+  addUserMessage(m: UserMessage) {
     this.abortCurrentRound() // TODO: or should we wait for the current round to finish? Then there may be a user message queue
-    const round = new Round(userMessage, this.copilot, this)
+    const round = new Round(m, this.copilot, this)
     this.rounds.push(round)
-    round.start()
+    if (m.type === 'event' && this.rounds.length > 1) {
+      // If the user event is added in the middle of a session,
+      // we delay the starting of the current round to introduce batching.
+      this.startCurrentRoundWithDelay()
+    } else {
+      this.startCurrentRound()
+    }
   }
 }
 
@@ -298,6 +375,11 @@ export type CustomElementDefinition = {
   description: string
   /** Attributes definition for the tool (Element). */
   attributes: ZodObject<any>
+  /**
+   * Whether the component is raw, that can include lines without exiting, just like `pre`/`textarea` tags.
+   * See details in https://github.com/micromark/micromark/blob/774a70c6bae6dd94486d3385dbd9a0f14550b709/packages/micromark-util-html-tag-name/readme.md#htmlrawnames
+   */
+  isRaw: boolean
   /** Component to render the tool in the UI. */
   component: Component
 }
@@ -320,19 +402,35 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
-export class Copilot {
+export interface IStorage {
+  set(value: string | null): void
+  get(): string | null
+}
+
+export class Copilot extends Disposable {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
+  private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
 
   private getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
   }
 
+  get stateIndicatorComponent(): Component<{}> | null {
+    const name = this.currentSession?.topic.stateIndicator
+    if (name == null) return null
+    return this.stateIndicatorComponentMap.get(name) ?? null
+  }
+
   executor = new ToolExecutor(() => this.getTools())
 
+  constructor(public generator: IMessageStreamGenerator = apis) {
+    super()
+  }
+
   /** If copilot is active (the panel is visible) */
-  private activeRef = shallowRef(false)
+  private activeRef = localStorageRef('spx-gui-copilot-active', false)
   get active() {
     return this.activeRef.value
   }
@@ -343,7 +441,10 @@ export class Copilot {
   }
 
   private getContext(): string {
-    return this.contextProviders.map((provider) => provider.provideContext()).join('\n\n')
+    return this.contextProviders
+      .map((provider) => provider.provideContext())
+      .filter((s) => s.trim() !== '')
+      .join('\n\n')
   }
 
   private getCustomElementPrompt(customElement: CustomElementDefinition) {
@@ -360,14 +461,6 @@ ${stringifyZodSchema(customElement.attributes)}
     if (customElements.length === 0) return ''
     return `# Available custom elements
 
-You can use custom elements in your messages to render specific UI content or invoke additional functionality. \
-For example: \`<pre is="foo-bar" a="1" b='"Hello"'></pre>\` creates a custom element with tag name \`foo-bar\` \
-and attributes \`{ a: "1", b: '"Hello"' }\`.
-
-Each custom element has a tag name, a description, and an attributes schema that defines what values are accepted for each attribute.
-
-Here are the custom elements you can use in your messages:
-
 ${customElements.map((ce) => this.getCustomElementPrompt(ce)).join('\n\n')}`
   }
 
@@ -382,7 +475,7 @@ ${stringifyZodSchema(tool.parameters)}
 
   private getToolsPrompt() {
     const tools = this.getTools()
-    if (tools.length === 0) return "There's no tools available."
+    if (tools.length === 0) return "# Available tools\nThere's no tools available."
     return `# Available tools
 
 ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
@@ -391,7 +484,9 @@ ${tools.map((tool) => this.getToolPrompt(tool)).join('\n\n')}`
   private getTopicPrompt() {
     if (this.currentSession == null) return ''
     const topic = this.currentSession.topic
+    if (topic.description.trim() === '') return ''
     return `# Current topic between you and user
+
 ${topic.description}`
   }
 
@@ -416,10 +511,33 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If a session is already running, it will be ended first.
    */
   async startSession(topic: Topic, userMessage?: Message): Promise<void> {
+    this.open()
     this.endCurrentSession()
     const session = new Session(topic, this)
     this.currentSessionRef.value = session
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
+  }
+
+  syncSessionWith(storage: IStorage): void {
+    try {
+      const saved = storage.get()
+      if (saved != null) {
+        const sessionExported = JSON.parse(saved) as SessionExported
+        this.currentSessionRef.value = Session.load(sessionExported, this)
+      }
+    } catch (e) {
+      capture(e, 'Failed to load session from storage')
+    }
+    this.addDisposer(
+      watch(
+        () => this.currentSession?.export() ?? null,
+        // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
+        throttle((exported: SessionExported | null) => {
+          const toSave = exported == null ? null : JSON.stringify(exported)
+          storage.set(toSave)
+        }, 300)
+      )
+    )
   }
 
   /** End the current session. */
@@ -442,6 +560,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If no session is running, a new session will be started with given message and topic.
    */
   addUserMessage(content: string, topic: Topic): void {
+    this.open()
     const userMessage: UserTextMessage = {
       type: 'text',
       role: 'user',
@@ -454,9 +573,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
   }
 
-  private notifyUserEventWithoutDebounce(name: LocaleMessage, detail: string): void {
+  /**
+   * Notify the copilot of a user event.
+   * If no session is running, nothing will happen.
+   */
+  notifyUserEvent(name: LocaleMessage, detail: string): void {
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
+    this.open()
     const userEventMessage: UserEventMessage = {
       type: 'event',
       role: 'user',
@@ -465,15 +589,6 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     }
     this.currentSession.addUserMessage(userEventMessage)
   }
-
-  /**
-   * Notify the copilot of a user event.
-   * If no session is running, nothing will happen.
-   */
-  notifyUserEvent = debounce(
-    (name: LocaleMessage, detail: string) => this.notifyUserEventWithoutDebounce(name, detail),
-    1000
-  )
 
   /** Register a context provider for the copilot. */
   registerContextProvider(provider: ICopilotContextProvider): Disposer {
@@ -501,4 +616,30 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       }
     }
   }
+
+  registerStateIndicatorComponent(name: string, component: Component): Disposer {
+    if (this.stateIndicatorComponentMap.has(name))
+      console.warn(`State indicator component with name "${name}" already exists`)
+    this.stateIndicatorComponentMap.set(name, component)
+    return () => {
+      if (this.stateIndicatorComponentMap.get(name) !== component) return
+      this.stateIndicatorComponentMap.delete(name)
+    }
+  }
+}
+
+export function sampleApiMessages(
+  messages: apis.Message[],
+  limit = 100_000 // Context size for Deepseek V3 / Kimi K2: 128K
+): apis.Message[] {
+  let totalSize = 0
+  const sampled: apis.Message[] = []
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    const size = msg.content.text.length
+    if (totalSize + size > limit) break
+    totalSize += size
+    sampled.unshift(msg)
+  }
+  return sampled
 }

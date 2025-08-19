@@ -1,7 +1,7 @@
 <template>
   <div class="editor-list" :style="cssVars">
     <div class="sider">
-      <div ref="itemsWrapper" v-radar="{ name: 'Items', desc }" class="items">
+      <div ref="itemsWrapper" v-radar="listRadarInfo" class="items">
         <slot></slot>
       </div>
       <UIDropdownWithTooltip>
@@ -9,10 +9,10 @@
           <slot name="add-options"></slot>
         </template>
         <template #tooltip-content>
-          {{ addText }}
+          {{ $t(addText) }}
         </template>
         <template #trigger>
-          <button v-radar="{ name: 'Add item', desc: 'Button for adding new items to the list' }" class="add">
+          <button v-radar="addButtonRadarInfo" class="add">
             <UIIcon class="icon" type="plus" />
           </button>
         </template>
@@ -25,12 +25,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDragSortable } from '@/utils/drag-and-drop'
+import type { RadarNodeMeta } from '@/utils/radar'
+import { humanizeResourceType, type ResourceModelType } from '@/models/common/resource-model'
 import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = withDefaults(
   defineProps<{
     color: Color
-    addText: string
+    resourceType: ResourceModelType
     sortable?: { list: unknown[] } | false
   }>(),
   {
@@ -42,12 +44,25 @@ const emit = defineEmits<{
   sorted: [oldIdx: number, newIdx: number]
 }>()
 
-const desc = computed(() => {
-  if (props.sortable && props.sortable.list.length > 0) {
-    return 'Drag to reorder items'
+const resourceTypeName = computed(() => humanizeResourceType(props.resourceType))
+
+const listRadarInfo = computed<RadarNodeMeta>(() => {
+  const draggable = props.sortable && props.sortable.list.length > 0
+  return {
+    name: `List of ${resourceTypeName.value.en}`,
+    desc: draggable ? 'Drag to reorder' : ''
   }
-  return ''
 })
+
+const addText = computed(() => ({
+  en: `Add ${resourceTypeName.value.en}`,
+  zh: `添加${resourceTypeName.value.zh}`
+}))
+
+const addButtonRadarInfo = computed<RadarNodeMeta>(() => ({
+  name: `Add ${resourceTypeName.value.en}`,
+  desc: `Button for adding new ${resourceTypeName.value.en} to the list`
+}))
 
 const uiVariables = useUIVariables()
 const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.color[props.color]))

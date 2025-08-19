@@ -3,12 +3,10 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
-import type { I18n } from '@/utils/i18n'
 import { packageSpx } from '@/utils/spx'
 import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { RuntimeOutputKind, type Runtime } from '@/components/editor/runtime'
-import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
 import { SpxLSPClient } from './lsp'
 import {
@@ -20,7 +18,7 @@ import {
   type IInputHelperProvider,
   type InputHelperContext,
   builtInCommandCopilotExplain,
-  ChatExplainKind,
+  CopilotExplainKind,
   builtInCommandCopilotReview,
   builtInCommandGoToDefinition,
   type HoverContext,
@@ -437,7 +435,7 @@ class HoverProvider implements IHoverProvider {
       command: builtInCommandCopilotExplain,
       arguments: [
         {
-          kind: ChatExplainKind.Definition,
+          kind: CopilotExplainKind.Definition,
           overview: definition.overview,
           definition: definition.definition
         }
@@ -628,7 +626,7 @@ class ContextMenuProvider implements IContextMenuProvider {
       command: builtInCommandCopilotExplain,
       arguments: [
         {
-          kind: ChatExplainKind.Definition,
+          kind: CopilotExplainKind.Definition,
           overview: definition.overview,
           definition: definition.definition
         }
@@ -671,7 +669,7 @@ class ContextMenuProvider implements IContextMenuProvider {
         command: builtInCommandCopilotExplain,
         arguments: [
           {
-            kind: ChatExplainKind.CodeSegment,
+            kind: CopilotExplainKind.CodeSegment,
             codeSegment: {
               textDocument: textDocument.id,
               range,
@@ -697,7 +695,6 @@ class ContextMenuProvider implements IContextMenuProvider {
 type WriteToFileOptions = z.infer<typeof WriteToFileArgsSchema>
 
 export class CodeEditor extends Disposable {
-  private copilot: Copilot
   private documentBase: DocumentBase
   private lspClient: SpxLSPClient
   private apiReferenceProvider: APIReferenceProvider
@@ -713,11 +710,9 @@ export class CodeEditor extends Disposable {
     private project: Project,
     private runtime: Runtime,
     private monaco: Monaco,
-    private i18n: I18n,
     private registry: ToolRegistry
   ) {
     super()
-    this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
     this.apiReferenceProvider = new APIReferenceProvider(this.documentBase)
@@ -1050,7 +1045,6 @@ export class CodeEditor extends Disposable {
     ui.registerAPIReferenceProvider(this.apiReferenceProvider)
     ui.registerCompletionProvider(this.completionProvider)
     ui.registerContextMenuProvider(this.contextMenuProvider)
-    ui.registerCopilot(this.copilot)
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
@@ -1079,7 +1073,6 @@ export class CodeEditor extends Disposable {
     this.uis = []
     this.lspClient.dispose()
     this.documentBase.dispose()
-    this.copilot.dispose()
     this.diagnosticsProvider.dispose()
     super.dispose()
   }

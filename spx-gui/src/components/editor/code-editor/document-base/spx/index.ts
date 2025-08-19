@@ -632,7 +632,7 @@ export const goto0: DefinitionDocumentationItem = {
     zh: '移动到指定精灵'
   }),
   hiddenFromList: true // similar to `goto1`, but `goto1` is more recommended
-  // TODO: unhide this (& similar items) when [work class embed](https://github.com/goplus/gop/pull/2301) is supported
+  // TODO: unhide this (& similar items) when [work class embed](https://github.com/goplus/xgo/pull/2301) is supported
   // See details in https://github.com/goplus/builder/issues/1636
 }
 

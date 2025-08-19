@@ -4,9 +4,7 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import type { MarkdownStringFlag } from '../../common'
 import DefinitionItem from '../definition/DefinitionItem.vue'
-import CodeLink from './CodeLink'
 import CodeBlock from './CodeBlock.vue'
-import CodeChange from './CodeChange.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
 import InputValuePreview from './InputValuePreview.vue'
@@ -23,22 +21,6 @@ const props = withDefaults(
 const i18n = useI18n()
 
 const basicComponents = {
-  /**
-   * Usage:
-   * ```html
-   * <code-link file="file:///NiuXiaoQi.spx" position="10,20">Default link text</code-link>
-   * ```
-   */
-  'code-link': CodeLink,
-  /**
-   * Usage:
-   * ```html
-   * <pre is="code-change" file="file:///NiuXiaoQi.spx" line-range="1-10">
-   *   New code content here
-   * </pre>
-   * ```
-   */
-  'code-change': CodeChange,
   /**
    * Usage:
    * ```html

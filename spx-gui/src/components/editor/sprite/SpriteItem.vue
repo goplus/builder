@@ -16,13 +16,11 @@
       />
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <CornerMenu
-      v-if="operable && selectable && selectable.selected"
-      :color="color"
-      :item="sprite"
-      removable
-      @remove="handleRemove"
-    />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <SaveAssetToLibraryMenuItem :item="sprite" />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
+    </CornerMenu>
   </UIEditorSpriteItem>
 </template>
 
@@ -38,7 +36,9 @@ import { Animation } from '@/models/animation'
 import { UIImg, UIEditorSpriteItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 import CornerMenu from '../common/CornerMenu.vue'
+import { useRenameSprite } from '@/components/asset'
 
 const props = withDefaults(
   defineProps<{
@@ -101,6 +101,12 @@ const copyCostume = useMessageHandle(
     zh: '复制造型失败'
   }
 ).fn
+
+const renameSprite = useRenameSprite()
+const { fn: handleRename } = useMessageHandle(() => renameSprite(props.sprite), {
+  en: 'Failed to rename sprite',
+  zh: '重命名精灵失败'
+})
 
 const copyAnimation = useMessageHandle(
   async (animation: Animation) => {

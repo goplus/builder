@@ -4,7 +4,7 @@ import { useBottomSticky } from '@/utils/dom'
 import { UIIcon } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
-import logoSrc from '../editor/code-editor/ui/copilot/logo.png'
+import logoSrc from './logo.png'
 import envSvg from './env.svg?raw'
 import type { CopilotController } from './index'
 const props = defineProps<{

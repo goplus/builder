@@ -2,9 +2,10 @@ import { uniqueId } from 'lodash'
 import { ref, shallowReactive, shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
-import type { I18n } from '@/utils/i18n'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
 import { createCodeEditorOperationName, defineIdleTransaction } from '@/utils/tracing'
 import type { Project } from '@/models/project'
+import type { Copilot } from '@/components/copilot/copilot'
 import type { EditorState } from '../../editor-state'
 import {
   type Command,
@@ -14,7 +15,6 @@ import {
   type TextDocumentIdentifier,
   type Selection,
   type IDocumentBase,
-  type Diagnostic,
   type Action,
   type TextDocumentPosition,
   type ResourceIdentifier,
@@ -34,18 +34,19 @@ import { ResourceReferenceController, type IResourceReferencesProvider } from '.
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
-import {
-  CopilotController,
-  type ICopilot,
-  ChatTopicKind,
-  type ChatTopicExplainTarget,
-  type ChatTopicReview
-} from './copilot'
 import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition } from './common'
 import { InputHelperController, type IInputHelperProvider, type InternalInputSlot } from './input-helper'
 import { InlayHintController, type IInlayHintProvider } from './inlay-hint'
 import { DropIndicatorController } from './drop-indicator'
 import { SnippetParser } from './snippet'
+import {
+  CopilotExplainKind,
+  makeCodeBlock,
+  makeCodeLinkWithRange,
+  type CopilotExplainTarget,
+  type CopilotFixProblemTarget,
+  type CopilotReviewTarget
+} from './copilot'
 
 export * from './hover'
 export * from './completion'
@@ -67,7 +68,6 @@ export interface ICodeEditorUI {
   registerContextMenuProvider(provider: IContextMenuProvider): void
   registerDiagnosticsProvider(provider: IDiagnosticsProvider): void
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
-  registerCopilot(copilot: ICopilot): void
   registerDocumentBase(documentBase: IDocumentBase): void
 
   /** Execute a command */
@@ -75,6 +75,12 @@ export interface ICodeEditorUI {
   /** Register a command with given name & handler */
   registerCommand<A extends any[], R>(command: Command<A, R>, info: CommandInfo<A, R>): void
 
+  /** Current active text document */
+  activeTextDocument: TextDocument | null
+  /** Cursor position (in current active text document) */
+  cursorPosition: Position | null
+  /** Current selection (in current active text document) */
+  selection: Selection | null
   /** Open a text document in the editor. */
   open(textDocument: TextDocumentIdentifier): void
   /** Open a text document in the editor,and scroll to given position */
@@ -88,12 +94,10 @@ export interface ICodeEditorUI {
 }
 
 export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'spx.copilot.inspire'
-export const builtInCommandCopilotExplain: Command<[target: ChatTopicExplainTarget], void> = 'spx.copilot.explain'
-export const builtInCommandCopilotReview: Command<[target: Omit<ChatTopicReview, 'kind'>], void> = 'spx.copilot.review'
-export const builtInCommandCopilotFixProblem: Command<
-  [{ textDocument: TextDocumentIdentifier; problem: Diagnostic }],
-  void
-> = 'spx.copilot.fixProblem'
+export const builtInCommandCopilotExplain: Command<[target: CopilotExplainTarget], void> = 'spx.copilot.explain'
+export const builtInCommandCopilotReview: Command<[target: CopilotReviewTarget], void> = 'spx.copilot.review'
+export const builtInCommandCopilotFixProblem: Command<[target: CopilotFixProblemTarget], void> =
+  'spx.copilot.fixProblem'
 export const builtInCommandCopy: Command<[], void> = 'editor.action.copy'
 export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
 export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
@@ -135,9 +139,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
     this.apiReferenceController.registerProvider(provider)
-  }
-  registerCopilot(copilot: ICopilot): void {
-    this.copilotController.registerCopilot(copilot)
   }
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
@@ -191,6 +192,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     private editorState: EditorState,
     public i18n: I18n,
     public monaco: Monaco,
+    private copilot: Copilot,
     private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
     private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>,
     private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
@@ -203,7 +205,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   apiReferenceController = new APIReferenceController(this)
   hoverController = new HoverController(this)
   completionController = new CompletionController(this)
-  copilotController = new CopilotController(this)
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
   resourceReferenceController = new ResourceReferenceController(this)
@@ -427,8 +428,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     }
 
     const lineEndPos = { line: pos.line, column: lineCnt.length + 1 }
+    const lineCntAfterPos = textDocument.getValueInRange({ start: pos, end: lineEndPos })
+
     this.editor.setPosition(toMonacoPosition(lineEndPos))
     insertAtLine += 1
+    if (isPrecededByOpenBrace(lineCntBeforePos) || isFollowedByCloseBrace(lineCntAfterPos)) {
+      if (!content.startsWith('\n')) content = '\n' + content
+      if (!content.endsWith('\n')) content = content + '\n'
+      return insert(content, range)
+    }
+
     content = '\n' + content.replace(/\n$/, '')
     return insert(content, { start: lineEndPos, end: lineEndPos })
   }
@@ -513,9 +522,10 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       icon: 'copilot',
       title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
-        this.copilotController.startChat({
-          kind: ChatTopicKind.Inspire,
-          problem
+        this.copilot.addUserMessage(problem, {
+          title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
+          description: '',
+          reactToEvents: false
         })
       }
     })
@@ -524,9 +534,38 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       icon: 'explain',
       title: { en: 'Explain', zh: '解释' },
       handler: (target) => {
-        this.copilotController.startChat({
-          kind: ChatTopicKind.Explain,
-          target
+        let message: LocaleMessage
+        switch (target.kind) {
+          case CopilotExplainKind.CodeSegment: {
+            const { textDocument, range, content } = target.codeSegment
+            const codeLink = makeCodeLinkWithRange(textDocument, range)
+            const codeBlock = makeCodeBlock(content)
+            message = {
+              en: `Explain code ${codeLink}:\n\n${codeBlock}`,
+              zh: `解释代码 ${codeLink}：\n\n${codeBlock}`
+            }
+            break
+          }
+          case CopilotExplainKind.SymbolWithDefinition: {
+            const { textDocument, range, symbol } = target
+            const codeLink = makeCodeLinkWithRange(textDocument, range, symbol)
+            message = {
+              en: `Explain ${codeLink}`,
+              zh: `解释 ${codeLink}`
+            }
+            break
+          }
+          case CopilotExplainKind.Definition:
+            message = {
+              en: `Explain API \`${target.overview}\``,
+              zh: `解释 API \`${target.overview}\``
+            }
+            break
+        }
+        this.copilot.addUserMessage(this.i18n.t(message), {
+          title: { en: 'Explain', zh: '解释' },
+          description: '',
+          reactToEvents: false
         })
       }
     })
@@ -534,10 +573,17 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.registerCommand(builtInCommandCopilotReview, {
       icon: 'explain', // TODO: Add specific icon for review when it is needed
       title: { en: 'Review', zh: '审查' },
-      handler: (target) => {
-        this.copilotController.startChat({
-          kind: ChatTopicKind.Review,
-          ...target
+      handler: ({ textDocument, range, code }) => {
+        const codeLink = makeCodeLinkWithRange(textDocument, range)
+        const codeBlock = makeCodeBlock(code)
+        const message = this.i18n.t({
+          en: `Review code ${codeLink}:\n\n${codeBlock}`,
+          zh: `审查代码 ${codeLink}：\n\n${codeBlock}`
+        })
+        this.copilot.addUserMessage(message, {
+          title: { en: 'Review', zh: '审查' },
+          description: '',
+          reactToEvents: false
         })
       }
     })
@@ -545,10 +591,16 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.registerCommand(builtInCommandCopilotFixProblem, {
       icon: 'fix',
       title: { en: 'Fix problem', zh: '修复问题' },
-      handler: (params) => {
-        this.copilotController.startChat({
-          kind: ChatTopicKind.FixProblem,
-          ...params
+      handler: ({ textDocument, problem }) => {
+        const codeLink = makeCodeLinkWithRange(textDocument, problem.range)
+        const message = this.i18n.t({
+          en: `How to fix this problem:\n\n${codeLink}\n\n> ${problem.message}`,
+          zh: `如何修复这个问题：\n\n${codeLink}\n\n> ${problem.message}`
+        })
+        this.copilot.addUserMessage(message, {
+          title: { en: 'Fix problem', zh: '修复问题' },
+          description: '',
+          reactToEvents: false
         })
       }
     })
@@ -672,7 +724,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
-    this.copilotController.init()
     this.contextMenuController.init()
     this.diagnosticsController.init()
     this.resourceReferenceController.init()
@@ -687,7 +738,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()
     this.contextMenuController.dispose()
-    this.copilotController.dispose()
     this.completionController.dispose()
     this.hoverController.dispose()
     this.apiReferenceController.dispose()
@@ -698,4 +748,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
 function isEmptyText(s: string) {
   return /^\s*$/.test(s)
+}
+
+function isPrecededByOpenBrace(s: string): boolean {
+  return /\{\s*$/.test(s)
+}
+
+function isFollowedByCloseBrace(s: string) {
+  return /^\s*\}/.test(s)
 }

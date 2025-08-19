@@ -58,7 +58,12 @@
       </UIButton>
     </UICardHeader>
 
-    <FullScreenProjectRunner :project="editorCtx.project" :visible="running.mode === 'run'" @close="handleStop" />
+    <FullScreenProjectRunner
+      :project="editorCtx.project"
+      :visible="running.mode === 'run'"
+      @close="handleStop"
+      @exit="handleExit"
+    />
 
     <div class="main">
       <div class="stage-viewer-container">
@@ -91,6 +96,10 @@ const running = computed(() => editorCtx.state.runtime.running)
 
 function handleStop() {
   editorCtx.state.runtime.setRunning({ mode: 'none' })
+}
+
+function handleExit(code: number) {
+  editorCtx.state.runtime.emit('didExit', code)
 }
 
 const i18n = useI18n()
