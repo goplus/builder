@@ -67,6 +67,16 @@ export class BaseWidget extends Disposable {
     return reactive(this) as this
   }
 
+  clone(preserveId = false) {
+    return new BaseWidget(this.name, this.type, {
+      id: preserveId ? this.id : undefined,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      visible: this.visible
+    })
+  }
+
   export(): BaseRawWidgetConfig {
     return {
       type: this.type,

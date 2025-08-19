@@ -1,19 +1,3 @@
-<template>
-  <UIEditorSpriteItem v-radar="radarNodeMeta" :selectable="selectable" :name="costume.name" :color="color">
-    <template #img="{ style }">
-      <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
-    </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
-      <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
-        :disabled="!removable"
-        @click="handleRemove"
-      />
-    </CornerMenu>
-  </UIEditorSpriteItem>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIImg, UIEditorSpriteItem } from '@/components/ui'
@@ -24,7 +8,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { Sprite } from '@/models/sprite'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useRenameCostume } from '@/components/asset'
-import { RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
+import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -61,6 +45,27 @@ const removable = computed(() => {
   return costumes.length > 1
 })
 
+const { fn: handleDuplicate } = useMessageHandle(
+  async () => {
+    const costume = props.costume
+    const parent = costume.parent
+    if (!(parent instanceof Sprite)) {
+      throw new Error('Only costumes whose parent is Sprite can be duplicated')
+    }
+    const action = { name: { en: `Duplicate costume ${costume.name}`, zh: `复制造型 ${costume.name}` } }
+    await editorCtx.project.history.doAction(action, async () => {
+      const newCostume = costume.clone()
+      parent.addCostume(newCostume)
+      await parent.autoFitCostumes([newCostume])
+      editorCtx.state.selectCostume(parent.id, newCostume.id)
+    })
+  },
+  {
+    en: 'Failed to duplicate costume',
+    zh: '复制造型失败'
+  }
+)
+
 const handleRemove = useMessageHandle(
   async () => {
     const name = props.costume.name
@@ -85,3 +90,23 @@ const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume)
   zh: '重命名造型失败'
 })
 </script>
+
+<template>
+  <UIEditorSpriteItem v-radar="radarNodeMeta" :selectable="selectable" :name="costume.name" :color="color">
+    <template #img="{ style }">
+      <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
+    </template>
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <DuplicateMenuItem
+        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the costume' }"
+        @click="handleDuplicate"
+      />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
+    </CornerMenu>
+  </UIEditorSpriteItem>
+</template>

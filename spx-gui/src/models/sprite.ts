@@ -453,6 +453,47 @@ export class Sprite extends Disposable {
     return sprites
   }
 
+  clone(preserveId = false) {
+    const animations = this.animations.map((animation) => animation.clone(preserveId))
+    const animBindings = Object.fromEntries(
+      Object.entries(this.animationBindings).map(([state, id]) => [
+        state,
+        this.animations.find((a) => a.id === id)?.name
+      ])
+    )
+    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+
+    const sprite = new Sprite(this.name, this.code, {
+      id: preserveId ? this.id : undefined,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      visible: this.visible,
+      heading: this.heading,
+      rotationStyle: this.rotationStyle,
+      isDraggable: this.isDraggable,
+      pivot: this.pivot,
+      costumeIndex: this.costumeIndex,
+      animationBindings: {
+        [State.default]: animationNameToId(animBindings?.[State.default]),
+        [State.die]: animationNameToId(animBindings?.[State.die]),
+        [State.step]: animationNameToId(animBindings?.[State.step]),
+        [State.turn]: animationNameToId(animBindings?.[State.turn]),
+        [State.glide]: animationNameToId(animBindings?.[State.glide])
+      },
+      assetMetadata: this.assetMetadata ?? undefined,
+      extraConfig: { ...this.extraConfig }
+    })
+
+    for (const costume of this.costumes) {
+      sprite.addCostume(costume.clone(preserveId))
+    }
+    for (const animation of animations) {
+      sprite.addAnimation(animation)
+    }
+    return sprite
+  }
+
   export({
     includeCode = true,
     includeId = true,

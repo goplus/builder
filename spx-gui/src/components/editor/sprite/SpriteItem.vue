@@ -1,29 +1,3 @@
-<template>
-  <UIEditorSpriteItem
-    ref="wrapperRef"
-    v-radar="radarNodeMeta"
-    :name="sprite.name"
-    :selectable="selectable"
-    :color="color"
-  >
-    <template #img="{ style }">
-      <CostumesAutoPlayer
-        v-if="animation != null && (autoplay || hovered)"
-        :style="style"
-        :costumes="animation.costumes"
-        :duration="animation.duration"
-        :placeholder-img="imgSrc"
-      />
-      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
-    </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <SaveAssetToLibraryMenuItem :item="sprite" />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
-    </CornerMenu>
-  </UIEditorSpriteItem>
-</template>
-
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useHovered } from '@/utils/dom'
@@ -36,7 +10,12 @@ import { Animation } from '@/models/animation'
 import { UIImg, UIEditorSpriteItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
+import {
+  SaveAssetToLibraryMenuItem,
+  RenameMenuItem,
+  RemoveMenuItem,
+  DuplicateMenuItem
+} from '@/components/editor/common/'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useRenameSprite } from '@/components/asset'
 
@@ -72,6 +51,21 @@ const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the sprite and view more options' : ''
   return { name, desc }
 })
+
+const { fn: handleDuplicate } = useMessageHandle(
+  async () => {
+    const sprite = props.sprite
+    const action = { name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` } }
+    await editorCtx.project.history.doAction(action, () => {
+      const newSprite = props.sprite.clone()
+      editorCtx.project.addSprite(newSprite)
+    })
+  },
+  {
+    en: 'Failed to duplicate sprite',
+    zh: '复制精灵失败'
+  }
+)
 
 const handleRemove = useMessageHandle(
   async () => {
@@ -143,3 +137,33 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
   }
 })
 </script>
+
+<template>
+  <UIEditorSpriteItem
+    ref="wrapperRef"
+    v-radar="radarNodeMeta"
+    :name="sprite.name"
+    :selectable="selectable"
+    :color="color"
+  >
+    <template #img="{ style }">
+      <CostumesAutoPlayer
+        v-if="animation != null && (autoplay || hovered)"
+        :style="style"
+        :costumes="animation.costumes"
+        :duration="animation.duration"
+        :placeholder-img="imgSrc"
+      />
+      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
+    </template>
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <SaveAssetToLibraryMenuItem :item="sprite" />
+      <DuplicateMenuItem
+        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"
+        @click="handleDuplicate"
+      />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
+    </CornerMenu>
+  </UIEditorSpriteItem>
+</template>

@@ -128,7 +128,7 @@ describe('Animation', () => {
     })[0].builder_id
     expect(exportedId).toBeUndefined()
   })
-  it('should clone well', async () => {
+  it('should clone well', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]

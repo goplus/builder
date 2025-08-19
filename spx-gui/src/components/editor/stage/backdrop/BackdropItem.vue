@@ -1,24 +1,3 @@
-<template>
-  <UIEditorBackdropItem
-    v-radar="radarNodeMeta"
-    :img-src="imgSrc"
-    :img-loading="imgLoading"
-    :name="backdrop.name"
-    :selectable="selectable"
-    :color="color"
-  >
-    <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
-      <SaveAssetToLibraryMenuItem :item="backdrop" />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
-      <RemoveMenuItem
-        v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
-        :disabled="!removable"
-        @click="handleRemove"
-      />
-    </CornerMenu>
-  </UIEditorBackdropItem>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIEditorBackdropItem } from '@/components/ui'
@@ -28,7 +7,12 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useRenameBackdrop } from '@/components/asset'
-import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
+import {
+  SaveAssetToLibraryMenuItem,
+  RenameMenuItem,
+  RemoveMenuItem,
+  DuplicateMenuItem
+} from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -61,6 +45,23 @@ const stageRef = computed(() => {
 })
 const removable = computed(() => stageRef.value.backdrops.length > 1)
 
+const { fn: handleDuplicate } = useMessageHandle(
+  async () => {
+    const backdrop = props.backdrop
+    const action = { name: { en: `duplicate backdrop ${backdrop.name}`, zh: `复制背景 ${backdrop.name}` } }
+    await editorCtx.project.history.doAction(action, () => {
+      const stage = stageRef.value
+      const newBackdrop = backdrop.clone()
+      stage.addBackdrop(newBackdrop)
+      editorCtx.state.selectBackdrop(newBackdrop.id)
+    })
+  },
+  {
+    en: 'Failed to duplicate backdrop',
+    zh: '复制背景失败'
+  }
+)
+
 const handleRemove = useMessageHandle(
   async () => {
     const name = props.backdrop.name
@@ -79,3 +80,28 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
   zh: '重命名背景失败'
 })
 </script>
+
+<template>
+  <UIEditorBackdropItem
+    v-radar="radarNodeMeta"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="backdrop.name"
+    :selectable="selectable"
+    :color="color"
+  >
+    <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
+      <SaveAssetToLibraryMenuItem :item="backdrop" />
+      <DuplicateMenuItem
+        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the backdrop' }"
+        @click="handleDuplicate"
+      />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
+    </CornerMenu>
+  </UIEditorBackdropItem>
+</template>
