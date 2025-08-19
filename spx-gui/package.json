@@ -61,6 +61,7 @@
     "prettier": "^3.2.2",
     "property-information": "^6.5.0",
     "qiniu-js": "^3.4.2",
+    "qrcode": "^1.5.4",
     "sass": "^1.69.7",
     "scss": "^0.2.4",
     "shiki": "^3.2.2",
@@ -86,5 +87,8 @@
   "engines": {
     "node": "^20.11.1",
     "npm": "^10.2.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5"
   }
 }
