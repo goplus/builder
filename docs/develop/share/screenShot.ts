@@ -1,6 +1,6 @@
-import posterResult from "./poster"
+import { posterResult } from "./poster"
 import { ref, watch, onMounted, nextTick, computed } from 'vue' // 通过父组件（在本项目中是project.vue）传入参数
-import { generateProjectQRcode } from './qrcode'
+import { generateProjectQRCode } from './module_QRCode'
 import html2canvas from 'html2canvas'
 import { getCanvasElement } from "./getCanvas"
 

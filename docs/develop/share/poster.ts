@@ -1,5 +1,5 @@
 import { ref, onMounted, watch, nextTick, computed } from 'vue' // 通过父组件获取填充文字以及图片
-import { generateProjectQRcode } from './qrcode'
+import { generateProjectQRCode } from './module_QRCode'
 import html2canvas from 'html2canvas'
 // import { UIIcon } from '@/components/ui' 考虑到后面可能无法引用XBuilder组件库
 // 海报中不需要跳转到第三方平台 import { generateJumpToQRcode } from './qrcode' // './第三方平台'
