@@ -208,6 +208,9 @@
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"
       />
+      
+      <!-- SVG导入工具组件 -->
+      <SvgImporter ref="svgImporterRef" />
     </div>
     
     <!-- AI生成弹窗 -->
@@ -231,6 +234,7 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/generator.vue'
+import SvgImporter from './utils/svg-importer.vue'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
@@ -246,6 +250,7 @@ const currentTool = ref<ToolType | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
+const svgImporterRef = ref<InstanceType<typeof SvgImporter> | null>(null)
 // 状态管理
 const allPaths = ref<paper.Path[]>([])
 
@@ -591,62 +596,10 @@ const importImageToCanvas = (imageUrl: string): void => {
   }
 }
 
-// 导入SVG到画布并转换为可编辑的路径
+// 导入SVG到画布并转换为可编辑的路径（通过SVG导入组件）
 const importSvgToCanvas = (svgContent: string): void => {
-  if (!paper.project) return
-  
-  try {
-    // 创建一个临时的SVG元素来解析SVG内容
-    const parser = new DOMParser()
-    const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml')
-    const svgElement = svgDoc.documentElement
-    
-    // 检查是否解析成功
-    if (svgElement.nodeName !== 'svg') {
-      console.error('invalid svg content')
-      return
-    }
-    
-    // 使用Paper.js导入SVG
-    const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
-    
-    if (importedItem) {
-      importedItem.position = paper.view.center
-      
-      
-      // 收集所有可编辑的路径
-      const collectPaths = (item: paper.Item): void => {
-        if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
-          // 添加到可编辑路径列表
-          allPaths.value.push(item)
-          
-          // 添加鼠标事件处理
-          item.onMouseDown = () => {
-            if (currentTool.value === 'reshape' && reshapeRef.value) {
-              reshapeRef.value.showControlPoints(item)
-              paper.view.update()
-            }
-          }
-        } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
-          // 递归处理子项
-          if (item.children) {
-            item.children.forEach(child => collectPaths(child))
-          }
-        }
-      }
-      
-      // 收集导入的所有路径
-      collectPaths(importedItem)
-      
-      // 更新视图
-      paper.view.update()
-      // console.log(`SVG已导入到画布，共${allPaths.value.length - (allPaths.value.length - countNewPaths(importedItem))}条可编辑路径`)
-      // 导入来源于 props 时不导出，避免循环
-      if (!isImportingFromProps.value) exportSvgAndEmit()
-      else isImportingFromProps.value = false
-    }
-  } catch (error) {
-    console.error('failed to import svg:', error)
+  if (svgImporterRef.value) {
+    svgImporterRef.value.importSvgToCanvas(svgContent)
   }
 }
 
@@ -800,6 +753,12 @@ const exportSvgAndEmit = (): void => {
     if (backgroundRect.value) backgroundRect.value.visible = prevVisible
   }
 }
+
+// 为SVG导入组件提供必要的依赖（在函数定义之后）
+provide('currentTool', currentTool)
+provide('reshapeRef', reshapeRef)
+provide('isImportingFromProps', isImportingFromProps)
+provide('exportSvgAndEmit', exportSvgAndEmit)
 </script>
 
 <style scoped>
