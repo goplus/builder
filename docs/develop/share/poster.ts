@@ -30,4 +30,7 @@ async function posterResult(props: posterProps): Promise<string> {
     return canvas.toDataURL('image/png')
 }
 
-export default posterResult
+export { posterResult }
+
+export type { posterProps }
+
