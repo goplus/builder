@@ -220,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, provide } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
@@ -408,7 +408,9 @@ const getAllPathsValue = (): paper.Path[] => {
 const setAllPathsValue = (paths: paper.Path[]): void => {
   allPaths.value = paths
 }
-export { getAllPathsValue, setAllPathsValue }
+
+provide('getAllPathsValue',getAllPathsValue)
+provide('setAllPathsValue',setAllPathsValue)
 
 
 // 处理笔刷路径创建
