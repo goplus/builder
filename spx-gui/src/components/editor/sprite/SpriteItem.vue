@@ -59,6 +59,9 @@ const { fn: handleDuplicate } = useMessageHandle(
     await editorCtx.project.history.doAction(action, () => {
       const newSprite = props.sprite.clone()
       editorCtx.project.addSprite(newSprite)
+      newSprite.randomizePosition()
+      newSprite.clampToMap()
+      editorCtx.state.selectSprite(newSprite.id)
     })
   },
   {
@@ -80,9 +83,9 @@ const handleRemove = useMessageHandle(
   }
 ).fn
 
-const copyCostume = useMessageHandle(
+const duplicateCostume = useMessageHandle(
   async (costume: Costume) => {
-    const action = { name: { en: `Copy costume`, zh: `复制造型` } }
+    const action = { name: { en: `Duplicate costume`, zh: `复制造型` } }
     await editorCtx.project.history.doAction(action, async () => {
       const newCostume = costume.clone()
       props.sprite.addCostume(newCostume)
@@ -91,7 +94,7 @@ const copyCostume = useMessageHandle(
     })
   },
   {
-    en: 'Failed to copy costume',
+    en: 'Failed to duplicate costume',
     zh: '复制造型失败'
   }
 ).fn
@@ -102,9 +105,9 @@ const { fn: handleRename } = useMessageHandle(() => renameSprite(props.sprite), 
   zh: '重命名精灵失败'
 })
 
-const copyAnimation = useMessageHandle(
+const duplicateAnimation = useMessageHandle(
   async (animation: Animation) => {
-    const action = { name: { en: `Copy animation`, zh: `复制动画` } }
+    const action = { name: { en: `Duplicate animation`, zh: `复制动画` } }
     await editorCtx.project.history.doAction(action, async () => {
       const newAnimation = animation.clone()
       props.sprite.addAnimation(newAnimation)
@@ -115,7 +118,7 @@ const copyAnimation = useMessageHandle(
     })
   },
   {
-    en: 'Failed to copy animation',
+    en: 'Failed to duplicate animation',
     zh: '复制动画失败'
   }
 ).fn
@@ -132,8 +135,8 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     return false
   },
   onDrop: async (item) => {
-    if (item instanceof Costume) copyCostume(item)
-    else if (item instanceof Animation) copyAnimation(item)
+    if (item instanceof Costume) duplicateCostume(item)
+    else if (item instanceof Animation) duplicateAnimation(item)
   }
 })
 </script>
@@ -157,13 +160,13 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <SaveAssetToLibraryMenuItem :item="sprite" />
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"
         @click="handleDuplicate"
       />
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
       <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
+      <SaveAssetToLibraryMenuItem :item="sprite" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>

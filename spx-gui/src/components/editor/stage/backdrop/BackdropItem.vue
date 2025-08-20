@@ -91,7 +91,6 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
     :color="color"
   >
     <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
-      <SaveAssetToLibraryMenuItem :item="backdrop" />
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the backdrop' }"
         @click="handleDuplicate"
@@ -102,6 +101,7 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
         :disabled="!removable"
         @click="handleRemove"
       />
+      <SaveAssetToLibraryMenuItem :item="backdrop" />
     </CornerMenu>
   </UIEditorBackdropItem>
 </template>

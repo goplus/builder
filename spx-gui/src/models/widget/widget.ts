@@ -19,7 +19,7 @@ export type BaseRawWidgetConfig = Omit<BaseWidgetInits, 'id'> & {
   name?: string
 }
 
-export class BaseWidget extends Disposable {
+export abstract class BaseWidget extends Disposable {
   id: string
   type: WidgetType
 
@@ -65,16 +65,6 @@ export class BaseWidget extends Disposable {
     this.visible = inits?.visible ?? false
     this.id = inits?.id ?? nanoid()
     return reactive(this) as this
-  }
-
-  clone(preserveId = false) {
-    return new BaseWidget(this.name, this.type, {
-      id: preserveId ? this.id : undefined,
-      x: this.x,
-      y: this.y,
-      size: this.size,
-      visible: this.visible
-    })
   }
 
   export(): BaseRawWidgetConfig {

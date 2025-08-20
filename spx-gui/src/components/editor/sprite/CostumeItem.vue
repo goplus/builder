@@ -56,7 +56,6 @@ const { fn: handleDuplicate } = useMessageHandle(
     await editorCtx.project.history.doAction(action, async () => {
       const newCostume = costume.clone()
       parent.addCostume(newCostume)
-      await parent.autoFitCostumes([newCostume])
       editorCtx.state.selectCostume(parent.id, newCostume.id)
     })
   },

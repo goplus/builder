@@ -87,13 +87,13 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
       <SoundPlayer :color="color" :src="audioSrc" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <SaveAssetToLibraryMenuItem :item="sound" />
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sound' }"
         @click="handleDuplicate"
       />
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
       <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
+      <SaveAssetToLibraryMenuItem :item="sound" />
     </CornerMenu>
   </UIEditorSoundItem>
 </template>

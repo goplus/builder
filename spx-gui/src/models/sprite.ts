@@ -300,6 +300,33 @@ export class Sprite extends Disposable {
     return reactive(this) as this
   }
 
+  randomizePosition() {
+    const { project } = this
+    if (project == null) throw new Error('`randomizePosition` should be called after added to a project')
+    const mapSize = project.stage.getMapSize()
+    this.setX(Math.floor(Math.random() * mapSize.width) - (mapSize.width >> 1))
+    this.setY(Math.floor(Math.random() * mapSize.height) - (mapSize.height >> 1))
+  }
+
+  async clampToMap(buffer = 10) {
+    const { project, defaultCostume } = this
+    if (project == null) throw new Error('`clampToMap` should be called after added to a project')
+    if (defaultCostume != null) {
+      const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
+      if (!mapSize) return
+      const costumeWidthHalf = (costumeSize.width * this.size) >> 1
+      const costumeHeightHalf = (costumeSize.height * this.size) >> 1
+
+      const minX = -(mapSize.width >> 1) + costumeWidthHalf + buffer
+      const maxX = (mapSize.width >> 1) - costumeWidthHalf - buffer
+      const minY = -(mapSize.height >> 1) + costumeHeightHalf + buffer
+      const maxY = (mapSize.height >> 1) - costumeHeightHalf - buffer
+
+      this.setX(Math.max(minX, Math.min(this.x, maxX)))
+      this.setY(Math.max(minY, Math.min(this.y, maxY)))
+    }
+  }
+
   /**
    * Adjust position & size to fit current project
    * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
@@ -475,11 +502,11 @@ export class Sprite extends Disposable {
       pivot: this.pivot,
       costumeIndex: this.costumeIndex,
       animationBindings: {
-        [State.default]: animationNameToId(animBindings?.[State.default]),
-        [State.die]: animationNameToId(animBindings?.[State.die]),
-        [State.step]: animationNameToId(animBindings?.[State.step]),
-        [State.turn]: animationNameToId(animBindings?.[State.turn]),
-        [State.glide]: animationNameToId(animBindings?.[State.glide])
+        [State.default]: animationNameToId(animBindings[State.default]),
+        [State.die]: animationNameToId(animBindings[State.die]),
+        [State.step]: animationNameToId(animBindings[State.step]),
+        [State.turn]: animationNameToId(animBindings[State.turn]),
+        [State.glide]: animationNameToId(animBindings[State.glide])
       },
       assetMetadata: this.assetMetadata ?? undefined,
       extraConfig: { ...this.extraConfig }
