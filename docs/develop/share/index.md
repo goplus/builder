@@ -1,96 +1,100 @@
+# Tech design for Share
+## 挑战
+* 提供丝滑的分享方式以满足用户的需求
+    我们将尽可能的将Share与XBuilder的耦合度降低，让Share可以作为一块独立的功能，提供相应的分享方式，以及后续如果需要对分享方式进行修改的话，可以很方便的进行操作
+## 模块
+### Third-partyPlatform
+负责与外部平台的集成。目前支持：QQ、微信、抖音、小红书、B站。为directShare、screenshotShare 、recordShare提供第三方平台的接口支持
+### Poster
+生成分享海报，包含图片、二维码和项目信息
+### QRCode
+生成二维码，提供给 Poster、Third-partyPlatform使用
+### Screenshot
+截屏功能，用于捕获当前应用画面，结果交给 Poster 进行渲染
+### Recording
+录屏功能，用于捕获用户操作过程并输出视频文件
+### suspend
+主要实现游戏页面的运行的暂停和运行，服务于 Screenshot、Recording
+### StorageEngine
+负责本地或云端存储，用于保存录屏文件或临时资源
 
-### 模块划分与功能界限
+## 主要功能实现
+这里我们描述如何通过组合上述模块来实现关键功能。
+### Share
+Share模块实现了share功能，借助直接directShare、screenshotShare 、recordShare三种分享模式实现分享
+### directShare
+直接分享模块，通过集成 Poster、QRCode 和 Third-partyPlatform，将生成的海报或二维码直接分享到第三方平台
+### screenshotShare
+屏分享模块。通过 Suspend 暂停游戏画面，使用 Screenshot 捕获当前场景，并结合 Poster 与 QRCode 生成分享内容，最后调用 Third-partyPlatform 完成分享
+### recordShare
+屏分享模块。通过 Suspend 控制录制时机，利用 Recording 捕获用户操作生成视频，并结合 QRCode 与 StorageEngine 存储或生成链接，最终通过 Third-partyPlatform 分享至目标平台
+## 模块关系
+下图说明了系统中各个模块之间的关系：
 
-#### 1. 分享前端模块 (Sharing Frontend)
+```mermaid
+graph TB
+    %% 功能模块
+    ThirdParty["`**Third-partyPlatform**
+    第三方平台接口集成`"]
 
-* **功能界限**:
-    * 负责在平台所有需要分享功能的地方（如项目页面、录屏详情页）渲染“分享”按钮或入口。
-    * 响应用户的交互操作，例如点击分享按钮、选择分享平台（微信、抖音等）、选择分享类型（直接分享、截屏、录屏）。
-    * 它的核心职责是**捕获用户的分享意图**，并收集必要的上下文信息（例如，当前要分享的项目ID、录屏ID、或者用户截屏的图片数据）。
-    * 将这些意图和数据组装成一个标准化的请求，发送给“分享调度服务”。
-* **不负责**:
-    * 不关心具体分享到哪个平台需要什么内容格式（如图文链接还是海报）。
-    * 不处理分享内容的具体生成逻辑。
-    * 不直接与各社交平台的SDK或API交互。
+    Poster["`**Poster**
+    生成分享海报`"]
 
-#### 2. 分享调度服务 (Sharing Orchestration Service)
+    QRCode["`**QRCode**
+    生成二维码`"]
 
-* **功能界限**:
-    * 作为分享流程的**中央处理器和决策中心**。
-    * 接收来自分享前端模块的请求。
-    * 根据请求中的目标平台和分享类型，依据设计文档中的规则（“关键决策”表格），判断需要生成哪种分享载体（海报、图文链接、还是视频文件）。
-    * 调用“核心资产管理模块”获取所需的基础数据（如项目信息、用户信息、录屏元数据）。
-    * 调用“分享内容生成引擎”来创建具体的分享载体。
-    * 接收生成好的内容，并将其传递给“多平台分发器”进行最终分享。
-* **不负责**:
-    * 不直接提供用户交互界面。
-    * 不实现海报、图文链接等内容的具体生成算法。
+    Screenshot["`**Screenshot**
+    捕获当前画面`"]
 
-#### 3. 分享内容生成引擎 (Content Generation Engine)
+    Recording["`**Recording**
+    捕获录屏视频`"]
 
-* **功能界限**:
-    * 这是一个专门负责**创建分享载体**的“工厂”模块，内部可进一步细分为几个子模块：
-        * **海报生成器 (Poster Generator)**: 接收项目数据（如名称、作者、缩略图或截屏），根据预设模板生成符合设计规范的图片海报，并嵌入二维码。
-        * **图文链接生成器 (Rich Link Generator)**: 接收项目或录屏记录的数据，生成符合微信、QQ等平台规范的图文链接结构体，包含标题、描述、缩略图Icon等信息。
-        * **视频导出器 (Video Exporter)**: 接收录屏记录ID，从“核心资产管理模块”获取视频文件地址，并可能进行格式转换或处理，以准备用于对外平台投稿。
-* **不负责**:
-    * 不关心这些内容将被分享到哪里。
-    * 不决定何时以及为何要生成这些内容。
+    Suspend["`**Suspend**
+    游戏暂停/恢复`"]
 
-#### 4. 多平台分发器 (Platform Dispatcher)
+    Storage["`**StorageEngine**
+    存储录屏/临时资源`"]
 
-* **功能界限**:
-    * 封装了与所有第三方社交平台分享功能的**所有直接交互**。
-    * 接收由“分享调度服务”传递过来的、已经生成好的分享载体（如一张海报图片、一个视频文件路径）。
-    * 调用特定平台的SDK或API，完成最终的分享动作。例如，唤起微信的分享面板、调用抖音的视频投稿接口等。
-* **不负责**:
-    * 不关心内容的来源和生成过程。
-    * 只负责“发送”这最后一步。
+    %% 组件模块
+    Share["`**Share**
+    分享功能总控`"]
 
-#### 5. 核心资产管理模块 (Core Asset Management)
+    Direct["`**directShare**
+    直接分享`"]
 
-* **功能界限**:
-    * 作为后端**数据模型和业务逻辑**的核心。
-    * 管理和提供与分享内容相关的基础数据。
-    * **项目(Project)**: 提供项目的名称、所有者(Owner)、URL、缩略图(Thumbnail)等信息。
-    * **录屏记录(Screen Recording Logs)**: 负责录屏的创建、存储和元数据管理（如关联项目、视频URL、标题、点赞数等）。录屏记录的访问权限默认为公开。
-    * **移动端适配(Mobile Adaptation)**: 存储和管理每个项目版本(Release)的移动端按键布局配置。
-* **不负责**:
-    * 不参与分享流程的调度和决策。
-    * 不直接对外（社交平台）提供服务。
+    ScreenShare["`**screenshotShare**
+    截屏分享`"]
 
-#### 6. Web移动端适配模块 (Web Mobile Adaptation)
+    RecordShare["`**recordShare**
+    录屏分享`"]
 
-* **功能界限**:
-    * 这是一个纯前端模块，与上述分享流程相对独立，但对被分享者的体验至关重要。
-    * 其唯一职责是确保 `网站主页`、`项目页面` 和 `用户页面` 在移动设备浏览器上能够良好地展示和操作。
-* **不负责**:
-    * 不参与主动分享功能的实现。
+    %% 关系
+    Share --> Direct
+    Share --> ScreenShare
+    Share --> RecordShare
 
----
+    Direct --> Poster
+    Direct --> QRCode
+    Direct --> ThirdParty
 
-### 模块协作流程：一次“丝滑”的分享请求
+    ScreenShare --> Suspend
+    ScreenShare --> Screenshot
+    ScreenShare --> Poster
+    ScreenShare --> QRCode
+    ScreenShare --> ThirdParty
 
-以用户在PC端将一个项目**“直接分享”到“抖音”**为例，来看这些模块如何协作：
+    RecordShare --> Suspend
+    RecordShare --> Recording
+    RecordShare --> QRCode
+    RecordShare --> Storage
+    RecordShare --> ThirdParty
 
-1.  **用户操作 (前端模块)**
-    * 用户在XBuilder的项目页面上，点击“分享”按钮，然后在弹出的菜单中选择“抖音”图标。
-    * **[分享前端模块]** 捕获到这个操作，记录下`项目ID`和目标平台`Douyin`。
-    * 它向 **[分享调度服务]** 发起一个请求：`share({ target: 'Douyin', type: 'Direct', projectId: 'xyz' })`。
+    Poster --> QRCode
 
-2.  **决策与调度 (调度服务)**
-    * **[分享调度服务]** 收到请求。它查阅内部逻辑（源自设计文档的决策表），发现“直接分享”到“抖音”需要的内容是**“海报”**。
-    * 服务接着向 **[核心资产管理模块]** 请求项目ID为`xyz`的详细信息（名称、作者、缩略图URL等）。
+    %% 分类样式
+    classDef functionModule fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef componentModule fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 
-3.  **内容生成 (生成引擎)**
-    * **[分享调度服务]** 拿到项目信息后，调用 **[分享内容生成引擎]** 中的“海报生成器”。
-    * **[海报生成器]** 利用项目信息和预设模板，动态生成一张包含项目画面、名称、作者和可跳转二维码的海报图片。
-    * 生成完毕后，将图片文件或其临时路径返回给 **[分享调度服务]**。
-
-4.  **最终分发 (分发器)**
-    * **[分享调度服务]** 收到生成的海报图片。
-    * 它将这张图片传递给 **[多平台分发器]**，并指示其目标是“抖音”。
-    * **[多平台分发器]** 调用封装好的抖音分享SDK，将海报图片传递过去，唤起抖音的分享界面，让用户可以确认并发布。
-
-5.  **分享完成**
-    * 用户在抖音的界面中完成最后的操作，分享成功。整个过程对用户而言是连续且流畅的。
+    class ThirdParty,Poster,QRCode,Screenshot,Recording,Suspend,Storage functionModule
+    class Share,Direct,ScreenShare,RecordShare componentModule
+```
