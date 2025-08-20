@@ -70,6 +70,9 @@ watchEffect(async (onClenaup) => {
     stickyScroll: {
       enabled: false
     },
+    unicodeHighlight: {
+      ambiguousCharacters: false // Disable highlighting of ambiguous characters (like Chinese punctuation)
+    },
     ...props.options
   })
 

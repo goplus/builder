@@ -24,6 +24,7 @@ interface screenShotParams {
     }
 }
 
+
 async function screenShotResult(params: screenShotParams): Promise<string> {
     const canvas = await getCanvasElement(params)
     const imgSrc = canvas.toDataURL('image/png')
@@ -33,9 +34,9 @@ async function screenShotResult(params: screenShotParams): Promise<string> {
         imgSrc: imgSrc
     }
     return posterResult(posterProps)
-    // 到时候在vue组件template中将截屏海报和第三方平台嵌入拼接成弹窗
 }
 
 export { screenShotResult }
 
 export type { screenShotParams }
+

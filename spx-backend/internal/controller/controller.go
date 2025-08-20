@@ -7,12 +7,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/goplus/builder/spx-backend/internal/aidescription"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/tracer/httpclient"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -32,6 +35,7 @@ type Controller struct {
 	kodo          *kodoClient
 	copilot       *copilot.Copilot
 	workflow      *workflow.Workflow
+	aiDescription *aidescription.AIDescription
 	aiInteraction *aiinteraction.AIInteraction
 	aigc          *aigc.AigcClient
 }
@@ -40,14 +44,20 @@ type Controller struct {
 func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, error) {
 	kodoClient := newKodoClient(cfg.Kodo)
 
+	traceClient := httpclient.NewClient(nil)
+
+	casdoorsdk.SetHttpClient(traceClient)
+
 	openaiClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.APIKey),
 		option.WithBaseURL(cfg.OpenAI.APIEndpoint),
+		option.WithHTTPClient(traceClient),
 	)
 
 	openaiPremiumClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.GetPremiumAPIKey()),
 		option.WithBaseURL(cfg.OpenAI.GetPremiumAPIEndpoint()),
+		option.WithHTTPClient(traceClient),
 	)
 
 	cpt, err := copilot.New(openaiClient, cfg.OpenAI.ModelID, openaiPremiumClient, cfg.OpenAI.GetPremiumModelID())
@@ -57,18 +67,24 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
 
+	aiDescription, err := aidescription.New(openaiClient, cfg.OpenAI.ModelID)
+	if err != nil {
+		return nil, err
+	}
+
 	aiInteraction, err := aiinteraction.New(openaiClient, cfg.OpenAI.ModelID)
 	if err != nil {
 		return nil, err
 	}
 
-	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
+	aigcClient := aigc.NewAigcClientWithHTTPClient(cfg.AIGC.Endpoint, traceClient)
 
 	return &Controller{
 		db:            db,
 		kodo:          kodoClient,
 		copilot:       cpt,
 		workflow:      stdflow,
+		aiDescription: aiDescription,
 		aiInteraction: aiInteraction,
 		aigc:          aigcClient,
 	}, nil
@@ -152,7 +168,7 @@ func NewCodeEditNode(copit *copilot.Copilot) *workflow.LLMNode {
 }
 
 func NewKeyNode(copilot *copilot.Copilot) *workflow.LLMNode {
-	system := `We are using Go+'s XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform. 
+	system := `We are using XGo's XBuilder platform. We provide you with a tool that you can use to query whether there are reference projects on the XBuilder platform.
 Reference project names, it is best to give multiple (>3), including whether it is camel case, whether it is underlined, whether the first letter is capitalized, etc.
 Please use the search tool to search.
 

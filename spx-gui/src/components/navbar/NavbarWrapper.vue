@@ -5,7 +5,7 @@
         <NavbarLogo />
         <slot name="left"></slot>
         <NavbarLang />
-        <NavbarTutorials />
+        <NavbarTutorials v-if="showTutorialsEntry" />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import { showTutorialsEntry } from '@/utils/env'
 import NavbarLogo from './NavbarLogo.vue'
 import NavbarLang from './NavbarLang.vue'
 import NavbarProfile from './NavbarProfile.vue'

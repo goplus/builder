@@ -33,3 +33,4 @@ async function posterResult(props: posterProps): Promise<string> {
 export { posterResult }
 
 export type { posterProps }
+

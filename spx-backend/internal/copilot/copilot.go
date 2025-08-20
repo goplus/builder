@@ -13,7 +13,7 @@ import (
 
 const (
 	// MaxContentLength defines the maximum length of content text.
-	MaxContentLength = 20000
+	MaxContentLength = 40000
 
 	// MaxTokens defines the maximum number of tokens for the AI response.
 	MaxTokens = 10240

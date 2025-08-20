@@ -250,7 +250,7 @@ func TestCallCommandHandler(t *testing.T) {
 			if tt.handlerFunc != nil {
 				info.handler = tt.handlerFunc
 			}
-			result, err := callCommandHandler(info, tt.args)
+			result, err := callCommandHandler(nil, info, tt.args)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error")

@@ -5,14 +5,17 @@
     :img-loading="imgLoading"
     :name="backdrop.name"
     :selectable="selectable"
+    :color="color"
   >
-    <CornerMenu
-      v-if="selectable && selectable.selected"
-      color="stage"
-      :removable="removable"
-      :item="backdrop"
-      @remove="handleRemove"
-    />
+    <CornerMenu v-if="operable && selectable && selectable.selected" color="stage">
+      <SaveAssetToLibraryMenuItem :item="backdrop" />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
+    </CornerMenu>
   </UIEditorBackdropItem>
 </template>
 
@@ -24,16 +27,21 @@ import type { Backdrop } from '@/models/backdrop'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { useRenameBackdrop } from '@/components/asset'
+import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
     backdrop: Backdrop
+    color?: 'stage' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
+    /** `operable: true` means the backdrop can be published & removed */
+    operable?: boolean
   }>(),
   {
+    color: 'stage',
     selectable: false,
-    removable: false
+    operable: false
   }
 )
 
@@ -51,7 +59,7 @@ const stageRef = computed(() => {
   if (stage == null) throw new Error('stage expected')
   return stage
 })
-const removable = computed(() => props.removable && stageRef.value.backdrops.length > 1)
+const removable = computed(() => stageRef.value.backdrops.length > 1)
 
 const handleRemove = useMessageHandle(
   async () => {
@@ -64,4 +72,10 @@ const handleRemove = useMessageHandle(
     zh: '删除背景失败'
   }
 ).fn
+
+const renameBackdrop = useRenameBackdrop()
+const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdrop), {
+  en: 'Failed to rename backdrop',
+  zh: '重命名背景失败'
+})
 </script>

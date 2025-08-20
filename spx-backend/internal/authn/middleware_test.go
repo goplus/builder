@@ -69,7 +69,7 @@ func TestMiddleware(t *testing.T) {
 		auth := &mockAuthenticator{}
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "invalid-token", token)
-			return nil, errors.New("invalid token")
+			return nil, ErrUnauthorized
 		}
 
 		middleware := Middleware(auth)
@@ -160,5 +160,25 @@ func TestMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.Equal(t, "authenticated", recorder.Body.String())
+	})
+
+	t.Run("SystemError", func(t *testing.T) {
+		auth := &mockAuthenticator{}
+		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
+			assert.Equal(t, "system-error-token", token)
+			return nil, errors.New("database connection failed")
+		}
+
+		middleware := Middleware(auth)
+		handler := middleware(newTestHandler(t, false))
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.Header.Set("Authorization", "Bearer system-error-token")
+		recorder := httptest.NewRecorder()
+
+		handler.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Equal(t, "Internal Server Error\n", recorder.Body.String())
 	})
 }

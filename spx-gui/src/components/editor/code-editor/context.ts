@@ -157,7 +157,7 @@ export function useProvideCodeEditorCtx(
         composeQuery(ctx, monacoQueryRet)
       ])
       ctx.signal.throwIfAborted()
-      const codeEditor = new CodeEditor(project, editorState.runtime, monaco, i18n, registry)
+      const codeEditor = new CodeEditor(project, editorState.runtime, monaco, registry)
       codeEditor.disposeOnSignal(ctx.signal)
       return codeEditor
     },

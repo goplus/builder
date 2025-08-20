@@ -44,7 +44,11 @@ export type ModalInfo = {
   visible: boolean
 }
 
-export type ModalEvents = Emitter<{ open: void }>
+export type ModalEvents = Emitter<{
+  open: void
+  resolved: void
+  cancelled: void
+}>
 
 type ModalContext = {
   events: ModalEvents
@@ -76,7 +80,7 @@ export function useModalEvents(): ModalEvents {
 
 <script setup lang="ts">
 const currentModals = shallowReactive<ModalInfo[]>([])
-const emitter = new Emitter<{ open: void }>()
+const emitter: ModalEvents = new Emitter()
 
 async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
@@ -104,10 +108,12 @@ function remove(id: number, onHide: (modal: ModalInfo) => void) {
 
 function handleCancelled(id: number, reason?: unknown) {
   remove(id, (m) => m.handlers.reject(new Cancelled(reason)))
+  emitter.emit('cancelled')
 }
 
 function handleResolved(id: number, resolved?: unknown) {
   remove(id, (m) => m.handlers.resolve(resolved))
+  emitter.emit('resolved')
 }
 
 provide(modalContextInjectKey, { add, events: emitter })

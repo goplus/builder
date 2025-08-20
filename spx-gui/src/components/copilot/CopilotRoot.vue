@@ -1,21 +1,37 @@
 <script lang="ts">
 import { z } from 'zod'
-import { inject, onBeforeUnmount, provide, watch, type ComputedRef, type InjectionKey } from 'vue'
+import { debounce } from 'lodash'
+import {
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  provide,
+  watch,
+  type ComputedRef,
+  type InjectionKey
+} from 'vue'
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
 import { escapeHTML } from '@/utils/utils'
 import * as projectApis from '@/apis/project'
+import type { Sprite } from '@/models/sprite'
 import { Project } from '@/models/project'
 import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
+import { getCodeFilePath, isSelectionEmpty } from '../editor/code-editor/common'
+import type { TextDocument } from '../editor/code-editor/text-document'
+import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
-import * as toolUse from './custom-elements/ToolUse.vue'
+import * as toolUse from './custom-elements/ToolUse'
+import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
+import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -44,28 +60,27 @@ const listProjectsTool: ToolDefinition = {
   }
 }
 
-type ProjectParams = {
-  owner: string
-  project: string
-}
-
 class Retriever {
   constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
 
-  async getProject({ owner, project }: ProjectParams, signal?: AbortSignal): Promise<Project> {
-    if (this.editorCtxRef.value != null) {
-      const currentProject = this.editorCtxRef.value.project
-      if (currentProject.owner === owner && currentProject.name === project) return currentProject
+  async getProject(project: string | undefined, signal?: AbortSignal): Promise<Project> {
+    const currentProject = this.editorCtxRef.value?.project
+    if (project == null) {
+      if (currentProject == null) throw new Error('No project specified and no current editing project available')
+      return currentProject
+    }
+    const { owner, name } = parseProjectIdentifier(project)
+    if (currentProject != null && currentProject.owner === owner && currentProject.name === name) {
+      return currentProject
     }
     const p = new Project()
-    await p.loadFromCloud(owner, project, true, signal)
+    await p.loadFromCloud(owner, name, true, signal)
     return p
   }
 }
 
 const getProjectMetadataParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name')
+  project: projectIdentifierSchema
 })
 
 class GetProjectMetadataTool implements ToolDefinition {
@@ -75,92 +90,123 @@ class GetProjectMetadataTool implements ToolDefinition {
 
   constructor(private retriever: Retriever) {}
 
-  async implementation({ owner, project }: z.infer<typeof getProjectMetadataParamsSchema>, signal?: AbortSignal) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
+  async implementation({ project }: z.infer<typeof getProjectMetadataParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
     const { owner: pOwner, remixedFrom, visibility, description, instructions } = p
     return { owner: pOwner, remixedFrom, visibility, description, instructions }
   }
 }
 
-const getProjectSpritesParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name')
+function getProjectContent(project: Project) {
+  return `\
+### Sprites (num: ${project.sprites.length})
+${project.sprites.map((sprite) => `- ${sprite.name}`).join('\n')}
+### Sounds (num: ${project.sounds.length})
+${project.sounds.map((sound) => `- ${sound.name}`).join('\n')}
+### Backdrops (num: ${project.stage.backdrops.length})
+${project.stage.backdrops.map((backdrop) => `- ${backdrop.name}`).join('\n')}
+### Widgets (num: ${project.stage.widgets.length})
+${project.stage.widgets.map((widget) => `- ${widget.name}`).join('\n')}`
+}
+
+const getProjectContentParamsSchema = z.object({
+  project: projectIdentifierSchema
 })
 
-class GetProjectSpritesTool implements ToolDefinition {
-  name = 'get_project_sprites'
-  description = 'Get sprites of a project.'
-  parameters = getProjectSpritesParamsSchema
+class GetProjectContentTool implements ToolDefinition {
+  name = 'get_project_content'
+  description = 'Get content of a project.'
+  parameters = getProjectContentParamsSchema
 
   constructor(private retriever: Retriever) {}
 
-  async implementation(params: z.infer<typeof getProjectSpritesParamsSchema>, signal?: AbortSignal) {
-    const project = await this.retriever.getProject(params, signal)
-    return project.sprites.map((s) => s.name)
+  async implementation({ project }: z.infer<typeof getProjectContentParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
+    return getProjectContent(p)
+  }
+}
+
+function getSpriteContent(sprite: Sprite) {
+  return {
+    name: sprite.name,
+    costumes: sprite.costumes.map((c) => c.name),
+    animations: sprite.animations.map((a) => a.name),
+    heading: sprite.heading,
+    x: sprite.x,
+    y: sprite.y,
+    size: sprite.size,
+    rotationStyle: sprite.rotationStyle,
+    visible: sprite.visible,
+    codeLinesNum: sprite.code.split(/\r?\n/).length
+  }
+}
+
+const getSpriteContentParamsSchema = z.object({
+  project: projectIdentifierSchema,
+  spriteName: z.string().describe('Name of the sprite')
+})
+
+class GetSpriteContentTool implements ToolDefinition {
+  name = 'get_sprite_content'
+  description = 'Get content of a sprite in a project.'
+  parameters = getSpriteContentParamsSchema
+
+  constructor(private retriever: Retriever) {}
+
+  async implementation({ project, spriteName }: z.infer<typeof getSpriteContentParamsSchema>, signal?: AbortSignal) {
+    const p = await this.retriever.getProject(project, signal)
+    const sprite = p.sprites.find((s) => s.name === spriteName)
+    if (sprite == null) throw new Error(`Sprite "${spriteName}" not found in project "${project}"`)
+    return getSpriteContent(sprite)
   }
 }
 
 type LineRangeParams = {
-  lineStart: number // 1-based
-  lineEnd: number // 1-based
+  /** 1-based */
+  lineStart?: number
+  /** 1-based */
+  lineEnd?: number
 }
 
-function getLines(code: string, { lineStart, lineEnd }: LineRangeParams): Record<string, string> {
-  return code
-    .split(/\r?\n/)
-    .slice(lineStart - 1, lineEnd)
-    .reduce<Record<string, string>>((o, line, i) => {
-      o['L' + (i + lineStart)] = line
-      return o
-    }, {})
-}
+const lineStartSchema = z.number().default(1).describe('Line number to start from, 1-based')
+const lineEndSchema = z.number().optional().describe('Line number to end at, 1-based')
 
-const getProjectStageCodeParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name'),
-  lineStart: z.number().describe('Line number to start from, 1-based'),
-  lineEnd: z.number().describe('Line number to end at, 1-based')
-})
-
-class GetProjectStageCodeTool implements ToolDefinition {
-  name = 'get_project_stage_code'
-  description = 'Get stage code of a project.'
-  parameters = getProjectStageCodeParamsSchema
-
-  constructor(private retriever: Retriever) {}
-
-  async implementation(
-    { owner, project, lineStart, lineEnd }: z.infer<typeof getProjectStageCodeParamsSchema>,
-    signal?: AbortSignal
-  ) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
-    return getLines(p.stage.code, { lineStart, lineEnd })
+/** Process code content and return in LLM-friendly format. */
+function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
+  const allLines = code.split(/\r?\n/)
+  const lines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((o, line, i) => {
+    o[i + lineStart] = line
+    return o
+  }, {})
+  return {
+    lines,
+    fileLineNum: allLines.length
   }
 }
 
-const getProjectSpriteCodeParamsSchema = z.object({
-  owner: z.string().describe('Owner of the project'),
-  project: z.string().describe('Project name'),
-  sprite: z.string().describe('Sprite name'),
-  lineStart: z.number().describe('Line number to start from, 1-based'),
-  lineEnd: z.number().describe('Line number to end at, 1-based')
+const getProjectCodeParamsSchema = z.object({
+  project: projectIdentifierSchema,
+  file: codeFilePathSchema,
+  lineStart: lineStartSchema,
+  lineEnd: lineEndSchema
 })
 
-class GetProjectSpriteCodeTool implements ToolDefinition {
-  name = 'get_project_sprite_code'
-  description = 'Get code of a sprite in a project.'
-  parameters = getProjectSpriteCodeParamsSchema
+class GetProjectCodeTool implements ToolDefinition {
+  name = 'get_project_code'
+  description = 'Get code content of a file in project.'
+  parameters = getProjectCodeParamsSchema
 
   constructor(private retriever: Retriever) {}
 
   async implementation(
-    { owner, project, sprite, lineStart, lineEnd }: z.infer<typeof getProjectSpriteCodeParamsSchema>,
+    { project, file, lineStart, lineEnd }: z.infer<typeof getProjectCodeParamsSchema>,
     signal?: AbortSignal
   ) {
-    const p = await this.retriever.getProject({ owner, project }, signal)
-    const s = p.sprites.find((s) => s.name === sprite)
-    if (!s) throw new Error(`Sprite not found: ${sprite}`)
-    return getLines(s.code, { lineStart, lineEnd })
+    const p = await this.retriever.getProject(project, signal)
+    if (p.stage.codeFilePath === file) return processCode(p.stage.code, { lineStart, lineEnd })
+    const sprite = p.sprites.find((s) => s.codeFilePath === file)
+    if (sprite == null) throw new Error(`Code file ${file} not found in project ${project}`)
+    return processCode(sprite.code, { lineStart, lineEnd })
   }
 }
 
@@ -205,12 +251,28 @@ class UIContextProvider implements ICopilotContextProvider {
     private i18n: I18n
   ) {}
 
-  private stringifyNode(node: RadarNodeInfo): string {
-    const children = this.stringifyNodes(node.getChildren())
+  private serializeNode(attrs: Record<string, string>, childrenStr: string) {
     // TODO: use XMLSerializer?
-    if (children.trim() === '')
-      return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}"/>`
-    return `<node name="${escapeHTML(node.name)}" id="${escapeHTML(node.id)}" desc="${escapeHTML(node.desc)}">${children}</node>`
+    const attrsStr = Object.entries(attrs)
+      .filter(([_, value]) => value != null && value !== '')
+      .map(([key, value]) => `${key}="${escapeHTML(value)}"`)
+      .join(' ')
+    if (childrenStr.trim() === '') {
+      return `<n ${attrsStr}/>`
+    }
+    return `<n ${attrsStr}>${childrenStr}</n>`
+  }
+
+  private stringifyNode(node: RadarNodeInfo): string {
+    const childrenStr = this.stringifyNodes(node.getChildren())
+    return this.serializeNode(
+      {
+        name: node.name,
+        id: node.id,
+        desc: node.desc
+      },
+      childrenStr
+    )
   }
 
   private stringifyNodes(node: RadarNodeInfo[]): string {
@@ -225,12 +287,15 @@ class UIContextProvider implements ICopilotContextProvider {
       }[this.i18n.lang.value] ?? 'Unknown'
     return `# Current UI of XBuilder
 
-Current UI language: ${lang}. Current UI structure is as follows:
+Current UI language: ${lang}.
+
+Current UI structure (\`n\` for \`node\`):
 
 <xbuilder>${this.stringifyNodes(this.radar.getRootNodes())}</xbuilder>
 
-DO NOT make up appearance or position (e.g., left/right/top/bottom) of elements, unless explicitly mentioned in the description.
-`
+DO NOT make up appearance or position (e.g., left/right/top/bottom) of any element, unless it is explicitly mentioned in the description.
+
+If there's an API References UI in code editor, encourage the user to insert code by dragging corresponding API items (if there is) into code editor, instead of typing manually.`
   }
 }
 
@@ -238,7 +303,9 @@ class UserContextProvider implements ICopilotContextProvider {
   provideContext(): string {
     const signedInUsername = getSignedInUsername()
     const userInfo =
-      signedInUsername != null ? `Now the user is signed in with name ${signedInUsername}` : 'The user is not signed in'
+      signedInUsername != null
+        ? `Now the user is signed in with name "${signedInUsername}"`
+        : 'The user is not signed in'
     return `# Current user
 ${userInfo}`
   }
@@ -248,7 +315,64 @@ class LocationContextProvider implements ICopilotContextProvider {
   constructor(private router: Router) {}
   provideContext(): string {
     return `# Current location
-The user is now browsing page with URL: \`${this.router.currentRoute.value.fullPath}\``
+The user is now browsing page with path: \`${this.router.currentRoute.value.fullPath}\``
+  }
+}
+
+class ProjectContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const project = this.editorCtxRef.value?.project
+    if (project == null) return ''
+    return `# Current project
+The user is now working on project: ${project.owner}/${project.name}
+## Project content
+${getProjectContent(project)}`
+  }
+}
+
+class SpriteContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+  provideContext(): string {
+    const sprite = this.editorCtxRef.value?.state.selectedSprite
+    if (sprite == null) return ''
+    return `# Current sprite content
+${JSON.stringify(getSpriteContent(sprite))}`
+  }
+}
+
+class CodeContextProvider implements ICopilotContextProvider {
+  constructor(private codeEditorCtxRef: ComputedRef<CodeEditorCtx | undefined>) {}
+
+  private sampleCode(activeTextDocument: TextDocument, line: number) {
+    const threshold = 10
+    const lineStart = Math.max(line - threshold, 1)
+    const lineEnd = lineStart + threshold * 2
+    const code = activeTextDocument.getValue()
+    const result = processCode(code, { lineStart, lineEnd })
+    return `Part of code around line ${line}:
+${JSON.stringify(result)}`
+  }
+
+  provideContext(): string {
+    const codeEditorUI = this.codeEditorCtxRef.value?.getEditor()?.getAttachedUI()
+    if (codeEditorUI == null) return ''
+    const { activeTextDocument, cursorPosition, selection } = codeEditorUI
+    if (activeTextDocument == null) return ''
+    const codeFilePath = getCodeFilePath(activeTextDocument.id.uri)
+    const cursorPositionStr =
+      cursorPosition == null ? 'None' : `Line ${cursorPosition.line}, Column ${cursorPosition.column}`
+    const selectionStr =
+      selection == null || isSelectionEmpty(selection)
+        ? 'None'
+        : `From Line ${selection.start.line}, Column ${selection.start.column} to Line ${selection.position.line}, Column ${selection.position.column}`
+    let result = `# Current code
+The user is now viewing / editing code of file \`${codeFilePath}\`. \
+Cursor position: ${cursorPositionStr}. \
+Selection: ${selectionStr}.`
+    const surroundingCode = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
+    if (surroundingCode != null) result += '\n' + surroundingCode
+    return result
   }
 }
 </script>
@@ -258,58 +382,128 @@ const radar = useRadar()
 const i18n = useI18n()
 const router = useRouter()
 const modalEvents = useModalEvents()
+const messageEvents = useMessageEvents()
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
 
 const retriever = new Retriever(editorCtxRef)
 const copilot = new Copilot()
+onUnmounted(() => copilot.dispose())
 
 copilot.registerTool(listProjectsTool)
 copilot.registerTool(new GetProjectMetadataTool(retriever))
-copilot.registerTool(new GetProjectSpritesTool(retriever))
-copilot.registerTool(new GetProjectStageCodeTool(retriever))
-copilot.registerTool(new GetProjectSpriteCodeTool(retriever))
+copilot.registerTool(new GetProjectContentTool(retriever))
+copilot.registerTool(new GetSpriteContentTool(retriever))
+copilot.registerTool(new GetProjectCodeTool(retriever))
 copilot.registerTool(new GetCodeDiagnosticsTool(codeEditorCtxRef))
 copilot.registerCustomElement({
   tagName: toolUse.tagName,
   description: toolUse.detailedDescription,
   attributes: toolUse.attributes,
+  isRaw: toolUse.isRaw,
   component: toolUse.default
+})
+copilot.registerCustomElement({
+  tagName: pageLink.tagName,
+  description: pageLink.detailedDescription,
+  attributes: pageLink.attributes,
+  isRaw: pageLink.isRaw,
+  component: pageLink.default
 })
 copilot.registerCustomElement({
   tagName: highlightLink.tagName,
   description: highlightLink.detailedDescription,
   attributes: highlightLink.attributes,
+  isRaw: highlightLink.isRaw,
   component: highlightLink.default
 })
 copilot.registerCustomElement({
   tagName: codeLink.tagName,
   description: codeLink.detailedDescription,
   attributes: codeLink.attributes,
+  isRaw: codeLink.isRaw,
   component: codeLink.default
 })
 copilot.registerCustomElement({
   tagName: codeChange.tagName,
   description: codeChange.detailedDescription,
   attributes: codeChange.attributes,
+  isRaw: codeChange.isRaw,
   component: codeChange.default
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())
 copilot.registerContextProvider(new LocationContextProvider(router))
+copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
+copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
+copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
-watch(router.currentRoute, (route) => {
-  copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
-})
+watch(
+  router.currentRoute,
+  debounce((route) => {
+    copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
+  }, 100)
+)
 
 onBeforeUnmount(
   modalEvents.on('open', () => {
     copilot.notifyUserEvent({ en: 'Modal opened', zh: '打开模态框' }, 'User opened a modal dialog')
   })
 )
+onBeforeUnmount(
+  modalEvents.on('resolved', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation completed in modal', zh: '模态框中操作完成' },
+      'User completed operation in modal'
+    )
+  })
+)
+onBeforeUnmount(
+  modalEvents.on('cancelled', () => {
+    copilot.notifyUserEvent(
+      { en: 'Operation cancelled in modal', zh: '模态框中操作取消' },
+      'User cancelled operation in modal'
+    )
+  })
+)
+
+onBeforeUnmount(
+  messageEvents.on('message', ({ type, content }) => {
+    copilot.notifyUserEvent(
+      { en: 'UI Notification', zh: '消息提示' },
+      `A ${type} notification showed with content: ${content}`
+    )
+  })
+)
+
+watch(
+  () => editorCtxRef.value?.state.runtime,
+  (editorRuntime, _, onCleanup) => {
+    if (editorRuntime == null) return
+    const unlisten = editorRuntime.on('didExit', (code) => {
+      if (code !== 0) return
+      copilot.notifyUserEvent({ en: 'Game exited with code 0', zh: '游戏正常退出' }, `Game exited with code ${code}`)
+    })
+    onCleanup(unlisten)
+  },
+  { immediate: true }
+)
 
 provide(copilotInjectionKey, copilot)
+
+onMounted(() => {
+  const sessionLocalStorageKey = 'spx-gui-copilot-session'
+  copilot.syncSessionWith({
+    set(value: string | null) {
+      if (value == null) localStorage.removeItem(sessionLocalStorageKey)
+      else localStorage.setItem(sessionLocalStorageKey, value)
+    },
+    get() {
+      return localStorage.getItem(sessionLocalStorageKey)
+    }
+  })
+})
 </script>
 
 <template>

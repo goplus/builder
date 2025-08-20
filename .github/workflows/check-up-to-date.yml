@@ -1,0 +1,20 @@
+name: Ensure branch is up-to-date with main
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-up-to-date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git fetch origin main
+          # 如果 PR 分支落后 main，就失败
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "❌ Your branch is behind main. Please rebase or merge main first."
+            exit 1
+          fi

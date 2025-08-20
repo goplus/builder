@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/embkb"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 )
@@ -39,8 +40,8 @@ func (ctrl *Controller) WorkflowMessageStream(ctx context.Context, params *Workf
 
 	env.Set("messages", params.Messages)
 	env.Set("Tools", params.Tools)
-	env.Set("GopDefs", copilot.GopDefs)
-	env.Set("SpxDefs", copilot.SpxDefs)
+	env.Set("XGoSyntax", embkb.XGoSyntax())
+	env.Set("SpxAPIs", embkb.SpxAPIs())
 	env.Set("canUsePremium", canUsePremium)
 
 	// Create workflow runner with the specified index

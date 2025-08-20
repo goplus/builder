@@ -7,17 +7,9 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/goplus/builder/spx-backend/internal/embkb"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
-
-// For details about maintaining `*_defs.md` files, see:
-// spx-gui/src/components/editor/code-editor/document-base/helpers.ts
-
-//go:embed gop_defs.md
-var GopDefs string
-
-//go:embed spx_defs.md
-var SpxDefs string
 
 //go:embed custom_element_code_link.md
 var customElementCodeLink string
@@ -36,10 +28,10 @@ var codeSystemPromptTpl string
 var CodeSystemPrompt string
 
 // codeSystemPromptTplData holds all data needed to populate the system prompt template.
-// This includes language definitions, documentation, and available tools.
+// This includes language syntax, APIs, and available tools.
 type codeSystemPromptTplData struct {
-	GopDefs                 string         // Go+ language documentation
-	SpxDefs                 string         // SPX framework documentation
+	XGoSyntax               string         // XGo language syntax
+	SpxAPIs                 string         // spx APIs
 	CustomElementCodeLink   string         // Custom element code linking documentation
 	CustomElementCodeChange string         // Custom element code change documentation
 	Tools                   []Tool         // Available tools for the AI assistant
@@ -54,8 +46,8 @@ type codeSystemPromptTplData struct {
 func SystemPromptWithTools(tools []Tool) string {
 	// Create a new template with the provided tools
 	tplData := codeSystemPromptTplData{
-		GopDefs:                 GopDefs,
-		SpxDefs:                 SpxDefs,
+		XGoSyntax:               embkb.XGoSyntax(),
+		SpxAPIs:                 embkb.SpxAPIs(),
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 		Tools:                   tools,
@@ -88,8 +80,8 @@ func SystemPromptWithTools(tools []Tool) string {
 
 func init() {
 	tplData := codeSystemPromptTplData{
-		GopDefs:                 GopDefs,
-		SpxDefs:                 SpxDefs,
+		XGoSyntax:               embkb.XGoSyntax(),
+		SpxAPIs:                 embkb.SpxAPIs(),
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 	}

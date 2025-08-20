@@ -1,6 +1,6 @@
 import { lowFirst, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
-import { getGopIdentifierNameTip, normalizeGopIdentifierAssetName, validateGopIdentifierName } from '@/utils/spx'
+import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
@@ -39,23 +39,23 @@ export function getAssetDisplayNameTip() {
   }
 }
 
-function validateGopIdentifierAssetName(name: string) {
+function validateXGoIdentifierAssetName(name: string) {
   const err = validateAssetName(name)
   if (err != null) return err
-  return validateGopIdentifierName(name)
+  return validateXGoIdentifierName(name)
 }
 
-function getGopIdentifierAssetNameTip(asset: LocaleMessage) {
-  return getGopIdentifierNameTip(asset)
+function getXGoIdentifierAssetNameTip(asset: LocaleMessage) {
+  return getXGoIdentifierNameTip(asset)
 }
 
-export const spriteNameTip = getGopIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
+export const spriteNameTip = getXGoIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
 
 export function validateSpriteName(name: string, project: Project | null) {
   // Name of a sprite should obey the naming rule of identifiers, because:
   // 1. It will be used to name the sprite struct in compiled code
   // 2. It will be used to name the identifier in auto-binding
-  const err = validateGopIdentifierAssetName(name)
+  const err = validateXGoIdentifierAssetName(name)
   if (err != null) return err
   if (project != null) {
     // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
@@ -84,12 +84,12 @@ export function validateAnimationName(name: string, sprite: Sprite | null) {
     return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
 
-export const soundNameTip = getGopIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
+export const soundNameTip = getXGoIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
 
 export function validateSoundName(name: string, project: Project | null) {
   // Name of a sound should obey the naming rule of identifiers, because:
   // It will be used to name the identifier in auto-binding
-  const err = validateGopIdentifierAssetName(name)
+  const err = validateXGoIdentifierAssetName(name)
   if (err != null) return err
   if (project != null) {
     // Naming conflict between a sprite & a sound will make it impossible to do auto-binding for both of them.
@@ -135,7 +135,7 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'MySprite'
+  base = normalizeXGoIdentifierAssetName(base, 'pascal') || 'MySprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
@@ -165,7 +165,7 @@ export function ensureValidAnimationName(name: string, sprite: Sprite | null) {
 }
 
 export function getSoundName(project: Project | null, base = '') {
-  base = normalizeGopIdentifierAssetName(base, 'camel') || 'sound'
+  base = normalizeXGoIdentifierAssetName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 

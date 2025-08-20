@@ -9,16 +9,14 @@ defineProps<{
 }>()
 
 const signedInUser = useSignedInUser()
-// TODO: Disable copilot for unsigned-in users or provide a default avatar
 const avatarUrl = useExternalUrl(() => signedInUser.data.value?.avatar)
 </script>
 
 <template>
-  <section class="user-message">
+  <section class="user-message" :class="`type-${message.type}`">
     <img class="avatar" :src="avatarUrl ?? undefined" />
     <MarkdownView v-if="message.type === 'text'" class="content" :value="message.content" />
     <div v-else-if="message.type === 'event'" class="content">
-      <!-- TODO: style for event message -->
       {{ $t(message.name) }}
     </div>
   </section>
@@ -28,9 +26,6 @@ const avatarUrl = useExternalUrl(() => signedInUser.data.value?.avatar)
 .user-message {
   padding: 20px 16px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
   align-self: stretch;
 }
 
@@ -40,11 +35,27 @@ const avatarUrl = useExternalUrl(() => signedInUser.data.value?.avatar)
   border-radius: 50%;
 }
 
-.content {
-  padding: 8px;
-  align-self: stretch;
+.type-text {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 
-  border-radius: 0px var(--ui-border-radius-1) var(--ui-border-radius-1) var(--ui-border-radius-1);
-  background: #e9ecf7;
+  .content {
+    padding: 8px;
+    align-self: stretch;
+
+    border-radius: 0px var(--ui-border-radius-1) var(--ui-border-radius-1) var(--ui-border-radius-1);
+    background: #e9ecf7;
+  }
+}
+
+.type-event {
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+
+  .content {
+    flex: 1 1 0;
+  }
 }
 </style>

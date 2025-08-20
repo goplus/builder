@@ -23,18 +23,68 @@ func TestServerConfigGetPort(t *testing.T) {
 }
 
 func TestRedisConfigGetAddr(t *testing.T) {
-	t.Run("WithCustomAddr", func(t *testing.T) {
+	t.Run("SingleAddr", func(t *testing.T) {
 		cfg := &RedisConfig{
 			Addr: "redis.example.com:6379",
 		}
-		assert.Equal(t, "redis.example.com:6379", cfg.GetAddr())
+		assert.Equal(t, []string{"redis.example.com:6379"}, cfg.GetAddr())
 	})
 
-	t.Run("WithoutCustomAddr", func(t *testing.T) {
+	t.Run("EmptyAddr", func(t *testing.T) {
 		cfg := &RedisConfig{
 			Addr: "",
 		}
-		assert.Equal(t, "127.0.0.1:6379", cfg.GetAddr())
+		assert.Equal(t, []string{"127.0.0.1:6379"}, cfg.GetAddr())
+	})
+
+	t.Run("MultipleAddrs", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "node1:6379,node2:6379,node3:6379"}
+		expected := []string{"node1:6379", "node2:6379", "node3:6379"}
+		assert.Equal(t, expected, cfg.GetAddr())
+	})
+
+	t.Run("MultipleAddrsWithSpaces", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "node1:6379, node2:6379 , node3:6379"}
+		expected := []string{"node1:6379", "node2:6379", "node3:6379"}
+		assert.Equal(t, expected, cfg.GetAddr())
+	})
+
+	t.Run("EmptyElements", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "node1:6379,, node2:6379,"}
+		expected := []string{"node1:6379", "node2:6379"}
+		assert.Equal(t, expected, cfg.GetAddr())
+	})
+}
+
+func TestRedisConfigIsClusterMode(t *testing.T) {
+	t.Run("SingleAddress", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "redis.example.com:6379"}
+		assert.False(t, cfg.IsClusterMode())
+	})
+
+	t.Run("MultipleAddresses", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "node1:6379,node2:6379,node3:6379"}
+		assert.True(t, cfg.IsClusterMode())
+	})
+
+	t.Run("TwoAddresses", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "primary:6379,replica:6379"}
+		assert.True(t, cfg.IsClusterMode())
+	})
+
+	t.Run("EmptyAddress", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: ""}
+		assert.False(t, cfg.IsClusterMode())
+	})
+
+	t.Run("SingleAddressWithSpaces", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "  redis.example.com:6379  "}
+		assert.False(t, cfg.IsClusterMode())
+	})
+
+	t.Run("MultipleAddressesWithEmptyElements", func(t *testing.T) {
+		cfg := &RedisConfig{Addr: "node1:6379,,node2:6379,"}
+		assert.True(t, cfg.IsClusterMode())
 	})
 }
 

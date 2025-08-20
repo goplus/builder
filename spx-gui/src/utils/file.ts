@@ -19,7 +19,9 @@ const ext2mime: Record<string, string | undefined> = {
   webm: 'audio/webm',
   json: 'application/json',
   spx: 'text/plain',
-  gmx: 'text/plain'
+  gmx: 'text/plain',
+  md: 'text/plain',
+  hash: 'text/plain'
 }
 
 /**

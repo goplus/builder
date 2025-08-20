@@ -57,3 +57,10 @@ export function useSlotText(name = 'default', trimLineBreaks = false) {
     return text
   })
 }
+
+export function useChildrenWithDefault(defaultChildren: VNodeChild) {
+  const slots = useSlots()
+  return {
+    default: () => slots.default?.() || defaultChildren
+  }
+}

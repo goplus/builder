@@ -1,0 +1,16 @@
+name: Deploy trailhead_sharing to Vercel
+
+on:
+  push:
+    branches:
+      - trailhead_sharing   # 只有合并到 trailhead_sharing 时才触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Deploy Hook
+        run: |
+          curl -X POST "$VERCEL_DEPLOY_SHARING"
+        env:
+          VERCEL_DEPLOY_SHARING: ${{ secrets.VERCEL_DEPLOY_SHARING }}

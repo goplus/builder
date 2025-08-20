@@ -11,6 +11,7 @@ import { filename, stripExt } from '@/utils/path'
 import { getExtFromMime } from '@/utils/file'
 import { File as LazyFile, toConfig, type Files as LazyFiles } from './file'
 import type { Metadata } from '../project'
+import { createAIDescriptionFiles, extractAIDescription } from './'
 
 const metadataFileName = 'builder-meta.json'
 const thumbnailFileName = 'builder-thumbnail'
@@ -35,6 +36,11 @@ export async function load(xbpFile: File) {
       files[path] = file
     })
   )
+
+  const { aiDescription, aiDescriptionHash } = await extractAIDescription(files)
+  metadata.aiDescription = aiDescription
+  metadata.aiDescriptionHash = aiDescriptionHash
+
   return { metadata, files }
 }
 
@@ -51,6 +57,12 @@ export async function save(metadata: Metadata, files: LazyFiles) {
     const ext = getExtFromMime(metadata.thumbnail.type) ?? 'jpg'
     zip.file(`${thumbnailFileName}.${ext}`, metadata.thumbnail.arrayBuffer())
   }
+
+  const aiDescriptionFiles = createAIDescriptionFiles(metadata)
+  Object.entries(aiDescriptionFiles).forEach(([path, file]) => {
+    if (file != null) zip.file(path, file.arrayBuffer())
+  })
+
   Object.entries(files).forEach(([path, file]) => {
     if (file != null) zip.file(path, file.arrayBuffer())
   })

@@ -3,37 +3,41 @@
     <template #img="{ style }">
       <UIImg :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
-    <UICornerIcon
-      v-if="removable"
-      v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
-      type="trash"
-      :color="color"
-      @click="handleRemove"
-    />
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the costume' }" @click="handleRename" />
+      <RemoveMenuItem
+        v-radar="{ name: 'Remove', desc: 'Click to remove the costume' }"
+        :disabled="!removable"
+        @click="handleRemove"
+      />
+    </CornerMenu>
   </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useMessageHandle } from '@/utils/exception'
 import { Sprite } from '@/models/sprite'
+import CornerMenu from '../common/CornerMenu.vue'
+import { useRenameCostume } from '@/components/asset'
+import { RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
     costume: Costume
     color?: 'sprite' | 'primary'
     selectable?: false | { selected: boolean }
-    removable?: boolean
+    operable?: boolean
   }>(),
   {
     color: 'sprite',
     selectable: false,
     selected: false,
-    removable: false
+    operable: false
   }
 )
 
@@ -53,9 +57,8 @@ const parent = computed(() => {
 })
 
 const removable = computed(() => {
-  const { removable, selectable } = props
   const costumes = parent.value.costumes
-  return removable && selectable && selectable.selected && costumes.length > 1
+  return costumes.length > 1
 })
 
 const handleRemove = useMessageHandle(
@@ -75,4 +78,10 @@ const handleRemove = useMessageHandle(
     zh: '删除造型失败'
   }
 ).fn
+
+const renameCostume = useRenameCostume()
+const { fn: handleRename } = useMessageHandle(() => renameCostume(props.costume), {
+  en: 'Failed to rename costume',
+  zh: '重命名造型失败'
+})
 </script>

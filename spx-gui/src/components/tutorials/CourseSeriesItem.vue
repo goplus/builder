@@ -34,16 +34,20 @@ const courseQuery = useQuery(
       </h2>
     </header>
 
-    <ListResultWrapper :query-ret="courseQuery" :height="214">
-      <template #empty>
-        <UIEmpty size="large" img="game">
-          {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
-        </UIEmpty>
-      </template>
-      <ul class="course-item-list">
-        <slot :data="courseQuery.data.value" />
-      </ul>
-    </ListResultWrapper>
+    <div class="course-series-warpper">
+      <ListResultWrapper :query-ret="courseQuery" :height="214">
+        <template #empty="{ style }">
+          <UIEmpty size="large" img="game" :style="style">
+            {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
+          </UIEmpty>
+        </template>
+        <template #default="{ data }">
+          <ul class="course-item-list">
+            <slot :data="data" />
+          </ul>
+        </template>
+      </ListResultWrapper>
+    </div>
   </section>
 </template>
 
@@ -63,9 +67,15 @@ const courseQuery = useQuery(
     }
   }
 
+  .course-series-warpper {
+    &:not(:has(.course-item-list)) {
+      background-color: var(--ui-color-grey-100);
+      border-radius: var(--ui-border-radius-2);
+    }
+  }
   .course-item-list {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
     gap: 20px;
   }
 }

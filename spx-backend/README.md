@@ -1,4 +1,4 @@
-# Server for Go+ Builder
+# Server for XBuilder
 
 ## Prepare
 

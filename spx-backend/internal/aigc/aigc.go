@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
@@ -16,12 +15,10 @@ type AigcClient struct {
 	client   *http.Client
 }
 
-func NewAigcClient(endpoint string) *AigcClient {
+func NewAigcClientWithHTTPClient(endpoint string, client *http.Client) *AigcClient {
 	return &AigcClient{
 		endpoint: endpoint,
-		client: &http.Client{
-			Timeout: 20 * time.Second,
-		},
+		client:   client,
 	}
 }
 

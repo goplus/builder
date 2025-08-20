@@ -1,9 +1,15 @@
 package config
 
+import (
+	"slices"
+	"strings"
+)
+
 // Config holds all configuration for the application.
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Sentry   SentryConfig
 	Redis    RedisConfig
 	Kodo     KodoConfig
 	Casdoor  CasdoorConfig
@@ -24,6 +30,12 @@ func (c *ServerConfig) GetPort() string {
 	return ":8080"
 }
 
+// SentryConfig holds Sentry configuration.
+type SentryConfig struct {
+	DSN        string
+	SampleRate float64
+}
+
 // DatabaseConfig holds database configuration.
 type DatabaseConfig struct {
 	DSN string
@@ -37,12 +49,26 @@ type RedisConfig struct {
 	PoolSize int
 }
 
-// GetAddr returns the Redis address, defaulting to "127.0.0.1:6379" if not set.
-func (c *RedisConfig) GetAddr() string {
-	if c.Addr != "" {
-		return c.Addr
+// GetAddr returns the Redis address(es) as a slice. It supports both single
+// address and comma-separated multiple addresses. It defaults to
+// ["127.0.0.1:6379"] if not set.
+func (c *RedisConfig) GetAddr() []string {
+	if c.Addr == "" {
+		return []string{"127.0.0.1:6379"}
 	}
-	return "127.0.0.1:6379"
+
+	addresses := strings.Split(c.Addr, ",")
+	for i, addr := range addresses {
+		addresses[i] = strings.TrimSpace(addr)
+	}
+	return slices.DeleteFunc(addresses, func(addr string) bool {
+		return addr == ""
+	})
+}
+
+// IsClusterMode returns true if multiple Redis addresses are configured.
+func (c *RedisConfig) IsClusterMode() bool {
+	return len(c.GetAddr()) > 1
 }
 
 // GetPoolSize returns the Redis pool size, defaulting to 10 if not set.
