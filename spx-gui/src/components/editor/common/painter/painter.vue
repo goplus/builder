@@ -393,11 +393,23 @@ const selectTool = (tool: ToolType): void => {
 }
 
 // 处理直线创建
+//todo:逻辑迁移到draw_line组件内部
 const handleLineCreated = (line: paper.Path): void => {
   allPaths.value.push(line)
   paper.view.update()
   exportSvgAndEmit()
 }
+
+
+//painter提供allPath接口给直线组件
+const getAllPathsValue = (): paper.Path[] => {
+  return allPaths.value
+}
+const setAllPathsValue = (paths: paper.Path[]): void => {
+  allPaths.value = paths
+}
+export { getAllPathsValue, setAllPathsValue }
+
 
 // 处理笔刷路径创建
 const handlePathCreated = (path: paper.Path): void => {
