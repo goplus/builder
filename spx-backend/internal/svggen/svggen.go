@@ -18,11 +18,12 @@ type ProviderService interface {
 
 // ServiceManager manages multiple upstream services.
 type ServiceManager struct {
-	svgioService   ProviderService
-	recraftService ProviderService
-	openaiService  ProviderService
-	httpClient     *http.Client
-	logger         *qlog.Logger
+	svgioService     ProviderService
+	recraftService   ProviderService
+	openaiService    ProviderService
+	translateService TranslateService
+	httpClient       *http.Client
+	logger           *qlog.Logger
 }
 
 // NewServiceManager creates a new service manager.
@@ -47,6 +48,8 @@ func NewServiceManager(cfg *config.Config, logger *qlog.Logger) *ServiceManager 
 
 	if cfg.Providers.SVGOpenAI.Enabled {
 		sm.openaiService = NewOpenAIService(cfg, httpClient, logger)
+		// Initialize translation service using the same OpenAI configuration
+		sm.translateService = NewOpenAITranslateService(cfg, httpClient, logger)
 	}
 
 	return sm
@@ -88,8 +91,39 @@ func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest
 		return nil, errors.New("provider not configured: " + string(req.Provider))
 	}
 	
+	// Handle translation for providers that need it
+	originalPrompt := req.Prompt
+	translatedPrompt := req.Prompt
+	wasTranslated := false
+	
+	// Only translate for SVGIO provider (Recraft and OpenAI support Chinese natively)
+	if !req.SkipTranslate && sm.translateService != nil && req.Provider == ProviderSVGIO {
+		translated, err := sm.translateService.Translate(ctx, req.Prompt)
+		if err != nil {
+			logger.Printf("translation failed: %v", err)
+			// Continue with original prompt if translation fails
+		} else if translated != req.Prompt {
+			translatedPrompt = translated
+			wasTranslated = true
+			req.Prompt = translatedPrompt
+			logger.Printf("prompt translated: %q -> %q", originalPrompt, translatedPrompt)
+		}
+	}
+	
 	logger.Printf("generating image with provider: %s", string(req.Provider))
-	return provider.GenerateImage(ctx, req)
+	resp, err := provider.GenerateImage(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Add translation information to response
+	if wasTranslated {
+		resp.OriginalPrompt = originalPrompt
+		resp.TranslatedPrompt = translatedPrompt
+		resp.WasTranslated = wasTranslated
+	}
+	
+	return resp, nil
 }
 
 // IsProviderEnabled checks if a provider is enabled.
