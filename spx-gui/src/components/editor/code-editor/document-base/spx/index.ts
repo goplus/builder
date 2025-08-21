@@ -1463,7 +1463,7 @@ export const waitUntil: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.waitUntil'
+    name: 'waitUntil'
   },
   insertSnippet: 'waitUntil ${1:true}',
   insertSnippetParameterHints: ['condition'],
