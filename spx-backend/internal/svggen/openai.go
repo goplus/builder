@@ -38,6 +38,9 @@ func (s *OpenAIService) GenerateImage(ctx context.Context, req GenerateRequest) 
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("[OPENAI] Starting SVG generation request...")
 
+	// OpenAI supports Chinese natively, so we use the prompt as-is
+	// Translation is handled at the ServiceManager level if needed
+	
 	// Build OpenAI prompt
 	prompt := s.buildSVGPrompt(req.Prompt, req.Style, req.NegativePrompt)
 
@@ -100,7 +103,7 @@ You respond ONLY with clean, valid SVG code - no explanations, no code blocks, j
 	logger.Printf("[OPENAI] Received response with status: %s", resp.Status)
 
 	if resp.StatusCode >= 300 {
-		var errResp map[string]interface{}
+		var errResp map[string]any
 		_ = json.NewDecoder(resp.Body).Decode(&errResp)
 		logger.Printf("[OPENAI] Error response body: %+v", errResp)
 		return nil, fmt.Errorf("openai API error: %s", resp.Status)
