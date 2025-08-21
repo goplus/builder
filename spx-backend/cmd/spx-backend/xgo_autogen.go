@@ -152,6 +152,14 @@ type post_course struct {
 	yap.Handler
 	*AppV2
 }
+type post_image struct {
+	yap.Handler
+	*AppV2
+}
+type post_image_svg struct {
+	yap.Handler
+	*AppV2
+}
 type post_project_release struct {
 	yap.Handler
 	*AppV2
@@ -317,19 +325,21 @@ func (this *AppV2) Main() {
 	_xgo_obj27 := &post_copilot_stream_message{AppV2: this}
 	_xgo_obj28 := &post_course_series{AppV2: this}
 	_xgo_obj29 := &post_course{AppV2: this}
-	_xgo_obj30 := &post_project_release{AppV2: this}
-	_xgo_obj31 := &post_project{AppV2: this}
-	_xgo_obj32 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj33 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj34 := &post_user_username_following{AppV2: this}
-	_xgo_obj35 := &post_util_fileurls{AppV2: this}
-	_xgo_obj36 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj37 := &put_asset_id{AppV2: this}
-	_xgo_obj38 := &put_course_series_id{AppV2: this}
-	_xgo_obj39 := &put_course_id{AppV2: this}
-	_xgo_obj40 := &put_project_owner_name{AppV2: this}
-	_xgo_obj41 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41)
+	_xgo_obj30 := &post_image{AppV2: this}
+	_xgo_obj31 := &post_image_svg{AppV2: this}
+	_xgo_obj32 := &post_project_release{AppV2: this}
+	_xgo_obj33 := &post_project{AppV2: this}
+	_xgo_obj34 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj35 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj36 := &post_user_username_following{AppV2: this}
+	_xgo_obj37 := &post_util_fileurls{AppV2: this}
+	_xgo_obj38 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj39 := &put_asset_id{AppV2: this}
+	_xgo_obj40 := &put_course_series_id{AppV2: this}
+	_xgo_obj41 := &put_course_id{AppV2: this}
+	_xgo_obj42 := &put_project_owner_name{AppV2: this}
+	_xgo_obj43 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1854,6 +1864,94 @@ func (this *post_course) Classfname() string {
 	return "post_course"
 }
 func (this *post_course) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_image.yap:10
+func (this *post_image) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_image.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_image.yap:12:1
+	params := &controller.GenerateImageParams{}
+//line cmd/spx-backend/post_image.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_image.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_image.yap:16:1
+	if
+//line cmd/spx-backend/post_image.yap:16:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_image.yap:17:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_image.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_image.yap:21:1
+	result, err := this.ctrl.GenerateImage(ctx.Context(), params)
+//line cmd/spx-backend/post_image.yap:22:1
+	if err != nil {
+//line cmd/spx-backend/post_image.yap:23:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_image.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_image.yap:27:1
+	this.Json__1(result)
+}
+func (this *post_image) Classfname() string {
+	return "post_image"
+}
+func (this *post_image) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_image_svg.yap:10
+func (this *post_image_svg) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_image_svg.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_image_svg.yap:12:1
+	params := &controller.GenerateSVGParams{}
+//line cmd/spx-backend/post_image_svg.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_image_svg.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_image_svg.yap:16:1
+	if
+//line cmd/spx-backend/post_image_svg.yap:16:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_image_svg.yap:17:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_image_svg.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_image_svg.yap:21:1
+	result, err := this.ctrl.GenerateSVG(ctx.Context(), params)
+//line cmd/spx-backend/post_image_svg.yap:22:1
+	if err != nil {
+//line cmd/spx-backend/post_image_svg.yap:23:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_image_svg.yap:24:1
+		return
+	}
+	for
+//line cmd/spx-backend/post_image_svg.yap:28:1
+	key, value := range result.Headers {
+//line cmd/spx-backend/post_image_svg.yap:29:1
+		ctx.ResponseWriter.Header().Set(key, value)
+	}
+//line cmd/spx-backend/post_image_svg.yap:33:1
+	ctx.ResponseWriter.WriteHeader(200)
+//line cmd/spx-backend/post_image_svg.yap:34:1
+	ctx.ResponseWriter.Write(result.Data)
+}
+func (this *post_image_svg) Classfname() string {
+	return "post_image_svg"
+}
+func (this *post_image_svg) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
