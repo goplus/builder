@@ -31,12 +31,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Emits
-interface Emits {
-  (e: 'line-created', line: paper.Path): void
-}
+// // Emits
+// interface Emits {
+//   (e: 'line-created', line: string): void
+// }
 
-const emit = defineEmits<Emits>()
+// const emit = defineEmits<Emits>()
 
 // 接口定义
 interface Point {
@@ -48,6 +48,15 @@ interface Point {
 const isDrawing = ref<boolean>(false)
 const startPoint = ref<Point | null>(null)
 const previewPoint = ref<Point>({ x: 0, y: 0 })
+
+//注入父组件接口
+import { inject, type Ref } from 'vue'  
+
+const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
+const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
+const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
+
+
 
 // 创建直线路径
 const createLine = (start: Point, end: Point): paper.Path => {
@@ -89,8 +98,10 @@ const handleCanvasClick = (point: Point): void => {
   } else {
     // 完成画线
     const line = createLine(startPoint.value!, point)
-    emit('line-created', line)
-    
+    const currentPaths = getAllPathsValue()
+    currentPaths.push(line)
+    setAllPathsValue(currentPaths)
+    exportSvgAndEmit()
     // 重置状态
     resetDrawing()
   }

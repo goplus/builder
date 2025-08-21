@@ -153,7 +153,6 @@
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"
         :is-active="currentTool === 'line'"
-        @line-created="handleLineCreated"
       />
       
       <!-- 笔刷绘制组件 -->
@@ -379,11 +378,11 @@ const selectTool = (tool: ToolType): void => {
 
 // 处理直线创建
 //todo:逻辑迁移到draw_line组件内部
-const handleLineCreated = (line: paper.Path): void => {
-  allPaths.value.push(line)
-  paper.view.update()
-  exportSvgAndEmit()
-}
+// const handleLineCreated = (line: paper.Path): void => {
+//   allPaths.value.push(line)
+//   paper.view.update()
+//   exportSvgAndEmit()
+// }
 
 
 //painter提供allPath接口给直线组件
@@ -709,6 +708,7 @@ const { exportSvgAndEmit } = useSvgExporter({
 
 provide('currentTool', currentTool)
 provide('reshapeRef', reshapeRef)
+provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
 
