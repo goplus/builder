@@ -211,6 +211,9 @@
       
       <!-- SVG导入工具组件 -->
       <SvgImporter ref="svgImporterRef" />
+      
+      <!-- 图片加载工具组件 -->
+      <ImageLoader ref="imageLoaderRef" />
     </div>
     
     <!-- AI生成弹窗 -->
@@ -234,7 +237,8 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/generator.vue'
-import SvgImporter from './utils/svg-importer.vue'
+import SvgImporter from './utils/SvgImporter.vue'
+import ImageLoader from './utils/ImageLoader.vue'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
@@ -251,6 +255,7 @@ const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const svgImporterRef = ref<InstanceType<typeof SvgImporter> | null>(null)
+const imageLoaderRef = ref<InstanceType<typeof ImageLoader> | null>(null)
 // 状态管理
 const allPaths = ref<paper.Path[]>([])
 
@@ -280,35 +285,9 @@ const emit = defineEmits<{
 
 // 加载位图图片到画布（PNG/JPG/...）
 const loadImageToCanvas = (imageSrc: string): void => {
-  if (!paper.project) return
-  
-  // 如果已有背景图片，先移除
-  if (backgroundImage.value) {
-    backgroundImage.value.remove()
+  if (imageLoaderRef.value) {
+    imageLoaderRef.value.loadImageToCanvas(imageSrc)
   }
-  
-  // 创建新的光栅图像
-  const raster = new paper.Raster(imageSrc)
-  
-  raster.onLoad = () => {
-    raster.position = paper.view.center
-    
-
-    
-    // 将图片放到最底层，作为背景
-    raster.sendToBack()
-    
-    backgroundImage.value = raster
-    paper.view.update()
-  }
-
-  // raster.onMouseDown = (event: paper.MouseEvent) => {
-    // if (currentTool.value === 'reshape') {
-    //   selectPathExclusive(null) // 清除路径选择
-    //   raster.selected = true
-    //   paper.view.update()
-    // }
-  // }
 }
 
 // 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）
@@ -759,6 +738,9 @@ provide('currentTool', currentTool)
 provide('reshapeRef', reshapeRef)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
+
+// 为图片加载组件提供必要的依赖
+provide('backgroundImage', backgroundImage)
 </script>
 
 <style scoped>
