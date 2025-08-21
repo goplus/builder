@@ -238,6 +238,7 @@ import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/generator.vue'
 import SvgImporter from './utils/SvgImporter.vue'
+import { useSvgExporter } from './utils/svg-exporter'
 import ImageLoader from './utils/ImageLoader.vue'
 
 // 工具类型
@@ -700,40 +701,12 @@ onMounted(() => {
 })
 
 // 导出当前画布为 SVG 并上报父组件
-const exportSvgAndEmit = (): void => {
-  // console.log('exportSvgAndEmit 被调用')
-  if (!paper.project) {
-    // paper.project does not exist
-    return
-  }
-  
-  // 在导出SVG之前隐藏所有控制点，避免控制点被包含在SVG中
-  if (reshapeRef.value) {
-    reshapeRef.value.hideControlPoints()
-  }
-  
-  const prevVisible = backgroundRect.value?.visible ?? true
-  if (backgroundRect.value) backgroundRect.value.visible = false
-  try {
-    // 导出SVG时保持原始尺寸和viewBox
-    const svgStr = (paper.project as any).exportSVG({ 
-      asString: true, 
-      embedImages: true,
-      bounds: paper.view.bounds // 使用视图边界确保尺寸正确
-    }) as string
-    // console.log('exported svg length:', svgStr?.length)
-    if (typeof svgStr === 'string') {
-      // console.log('send svg-change event')
-      emit('svg-change', svgStr)
-    }
-  } catch (e) {
-    console.error('failed to export svg:', e)
-  } finally {
-    if (backgroundRect.value) backgroundRect.value.visible = prevVisible
-  }
-}
+const { exportSvgAndEmit } = useSvgExporter({
+  reshapeRef,
+  backgroundRect,
+  emit: (svg: string) => emit('svg-change', svg)
+})
 
-// 为SVG导入组件提供必要的依赖（在函数定义之后）
 provide('currentTool', currentTool)
 provide('reshapeRef', reshapeRef)
 provide('isImportingFromProps', isImportingFromProps)
