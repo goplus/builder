@@ -12,7 +12,9 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/svggen"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -34,6 +36,7 @@ type Controller struct {
 	workflow      *workflow.Workflow
 	aiInteraction *aiinteraction.AIInteraction
 	aigc          *aigc.AigcClient
+	svggen        *svggen.ServiceManager
 }
 
 // New creates a new controller.
@@ -64,6 +67,9 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
 
+	// Initialize SVG generation service manager
+	svggenManager := svggen.NewServiceManager(cfg, log.GetLogger())
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoClient,
@@ -71,6 +77,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		workflow:      stdflow,
 		aiInteraction: aiInteraction,
 		aigc:          aigcClient,
+		svggen:        svggenManager,
 	}, nil
 }
 
