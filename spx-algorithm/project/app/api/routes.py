@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify, current_app
-from werkzeug.utils import secure_filename
+import logging
 import os
 import uuid
-from typing import List
-import logging
+
+from flask import Blueprint, request, jsonify, current_app
+from werkzeug.utils import secure_filename
 
 from ..services.image_search_service import ImageSearchService
 
