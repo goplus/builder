@@ -3,6 +3,7 @@ package config
 import (
 	"slices"
 	"strings"
+	"time"
 )
 
 // Config holds all configuration for the application.
@@ -38,7 +39,17 @@ type SentryConfig struct {
 
 // DatabaseConfig holds database configuration.
 type DatabaseConfig struct {
-	DSN string
+	DSN              string
+	AutoMigrate      bool
+	MigrationTimeout time.Duration
+}
+
+// GetMigrationTimeout returns the migration timeout, defaulting to 5 minutes.
+func (c *DatabaseConfig) GetMigrationTimeout() time.Duration {
+	if c.MigrationTimeout > 0 {
+		return c.MigrationTimeout
+	}
+	return 5 * time.Minute
 }
 
 // RedisConfig holds Redis configuration.
