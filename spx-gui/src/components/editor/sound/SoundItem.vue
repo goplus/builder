@@ -1,22 +1,3 @@
-<template>
-  <UIEditorSoundItem
-    v-radar="radarNodeMeta"
-    :audio-src="audioSrc"
-    :name="sound.name"
-    :selectable="selectable"
-    :color="color"
-  >
-    <template #player>
-      <SoundPlayer :color="color" :src="audioSrc" />
-    </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <SaveAssetToLibraryMenuItem :item="sound" />
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
-    </CornerMenu>
-  </UIEditorSoundItem>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
@@ -27,7 +8,12 @@ import CornerMenu from '../common/CornerMenu.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import SoundPlayer from './SoundPlayer.vue'
 import { useRenameSound } from '@/components/asset'
-import { SaveAssetToLibraryMenuItem, RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
+import {
+  SaveAssetToLibraryMenuItem,
+  RenameMenuItem,
+  RemoveMenuItem,
+  DuplicateMenuItem
+} from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -54,6 +40,22 @@ const radarNodeMeta = computed(() => {
   return { name, desc }
 })
 
+const { fn: handleDuplicate } = useMessageHandle(
+  async () => {
+    const sound = props.sound
+    const action = { name: { en: `Duplicate sound ${sound.name}`, zh: `复制声音 ${sound.name}` } }
+    await editorCtx.project.history.doAction(action, () => {
+      const newSound = sound.clone()
+      editorCtx.project.addSound(newSound)
+      editorCtx.state.selectSound(newSound.id)
+    })
+  },
+  {
+    en: 'Failed to duplicate sound',
+    zh: '复制声音失败'
+  }
+)
+
 const handleRemove = useMessageHandle(
   async () => {
     const name = props.sound.name
@@ -72,3 +74,26 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
   zh: '重命名声音失败'
 })
 </script>
+
+<template>
+  <UIEditorSoundItem
+    v-radar="radarNodeMeta"
+    :audio-src="audioSrc"
+    :name="sound.name"
+    :selectable="selectable"
+    :color="color"
+  >
+    <template #player>
+      <SoundPlayer :color="color" :src="audioSrc" />
+    </template>
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <DuplicateMenuItem
+        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sound' }"
+        @click="handleDuplicate"
+      />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
+      <SaveAssetToLibraryMenuItem :item="sound" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
+    </CornerMenu>
+  </UIEditorSoundItem>
+</template>

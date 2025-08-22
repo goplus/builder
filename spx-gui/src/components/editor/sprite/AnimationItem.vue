@@ -1,28 +1,3 @@
-<template>
-  <UIEditorSpriteItem
-    ref="wrapperRef"
-    v-radar="radarNodeMeta"
-    :selectable="selectable"
-    :name="animation.name"
-    :color="color"
-  >
-    <template #img="{ style }">
-      <CostumesAutoPlayer
-        v-if="autoplay || hovered"
-        :style="style"
-        :costumes="animation.costumes"
-        :duration="animation.duration"
-        :placeholder-img="imgSrc"
-      />
-      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
-    </template>
-    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
-      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
-    </CornerMenu>
-  </UIEditorSpriteItem>
-</template>
-
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { UIImg, UIEditorSpriteItem, useModal } from '@/components/ui'
@@ -35,7 +10,7 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationRemoveModal from './AnimationRemoveModal.vue'
 import CornerMenu from '../common/CornerMenu.vue'
 import { useRenameAnimation } from '@/components/asset'
-import { RenameMenuItem, RemoveMenuItem } from '@/components/editor/common/'
+import { RenameMenuItem, RemoveMenuItem, DuplicateMenuItem } from '@/components/editor/common/'
 
 const props = withDefaults(
   defineProps<{
@@ -65,6 +40,26 @@ const radarNodeMeta = computed(() => {
   return { name, desc }
 })
 
+const { fn: handleDuplicate } = useMessageHandle(
+  async () => {
+    const animation = props.animation
+    const sprite = animation.sprite
+    if (!sprite) {
+      throw new Error('Unable to duplicate animation because it has not been added to the sprite yet.')
+    }
+    const action = { name: { en: `Duplicate animation ${animation.name}`, zh: `复制动画 ${animation.name}` } }
+    await editorCtx.project.history.doAction(action, () => {
+      const newAnimation = animation.clone()
+      sprite.addAnimation(newAnimation)
+      editorCtx.state.selectAnimation(sprite.id, newAnimation.id)
+    })
+  },
+  {
+    en: 'Failed to duplicate animation',
+    zh: '复制动画失败'
+  }
+)
+
 const removeAnimation = useModal(AnimationRemoveModal)
 const handleRemove = useMessageHandle(
   () =>
@@ -84,3 +79,32 @@ const { fn: handleRename } = useMessageHandle(() => renameAnimation(props.animat
   zh: '重命名动画失败'
 })
 </script>
+
+<template>
+  <UIEditorSpriteItem
+    ref="wrapperRef"
+    v-radar="radarNodeMeta"
+    :selectable="selectable"
+    :name="animation.name"
+    :color="color"
+  >
+    <template #img="{ style }">
+      <CostumesAutoPlayer
+        v-if="autoplay || hovered"
+        :style="style"
+        :costumes="animation.costumes"
+        :duration="animation.duration"
+        :placeholder-img="imgSrc"
+      />
+      <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
+    </template>
+    <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <DuplicateMenuItem
+        v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the animation' }"
+        @click="handleDuplicate"
+      />
+      <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the animation' }" @click="handleRename" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the animation' }" @click="handleRemove" />
+    </CornerMenu>
+  </UIEditorSpriteItem>
+</template>

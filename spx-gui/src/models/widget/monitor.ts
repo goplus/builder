@@ -70,6 +70,18 @@ export class Monitor extends BaseWidget {
     return new Monitor(name, { ...inits, id, variableName })
   }
 
+  clone(preserveId = false) {
+    return new Monitor(this.name, {
+      id: preserveId ? this.id : undefined,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      visible: this.visible,
+      label: this.label,
+      variableName: this.variableName
+    })
+  }
+
   export(): RawMonitorConfig {
     return {
       ...super.export(),
