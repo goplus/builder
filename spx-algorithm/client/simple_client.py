@@ -51,12 +51,14 @@ def search_with_urls_example():
     url = "http://localhost:5000/api/search/url"
     
     data = {
-        "text": "beautiful sunset",
+        "text": "a cute cat",
         "image_urls": [
-            "https://via.placeholder.com/300x200.png?text=Image1",
-            "https://via.placeholder.com/300x200.png?text=Image2"
+            "https://svgsilh.com/svg/1801287.svg",
+            "https://svgsilh.com/svg/1790711.svg",
+            "https://svgsilh.com/svg/1300187.svg",
+            "https://svgsilh.com/svg/1295198-e91e63.svg"
         ],
-        "top_k": 2
+        "top_k": 4
     }
     
     try:

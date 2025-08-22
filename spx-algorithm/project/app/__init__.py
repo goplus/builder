@@ -17,9 +17,24 @@ def create_app(config_name='default'):
     os.makedirs(app.config['LOG_FOLDER'], exist_ok=True)
     
     # Configure logging
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    
+    # Setup console handler for debug mode
+    if app.debug:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(name)s:%(lineno)d]'
+        ))
+        console_handler.setLevel(logging.INFO)
+        
+        # Set root logger level to INFO
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(console_handler)
+    
+    # Setup file handler for production
     if not app.debug and not app.testing:
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
         file_handler = RotatingFileHandler(
             os.path.join(app.config['LOG_FOLDER'], 'app.log'),
             maxBytes=10240000, backupCount=10

@@ -27,5 +27,6 @@ if __name__ == '__main__':
     app.run(
         host=host,
         port=port,
-        debug=app.config['DEBUG']
+        debug=app.config['DEBUG'],
+        use_reloader=False
     )
