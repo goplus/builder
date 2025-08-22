@@ -19,7 +19,7 @@ export type BaseRawWidgetConfig = Omit<BaseWidgetInits, 'id'> & {
   name?: string
 }
 
-export class BaseWidget extends Disposable {
+export abstract class BaseWidget extends Disposable {
   id: string
   type: WidgetType
 

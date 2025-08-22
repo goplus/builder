@@ -300,6 +300,53 @@ export class Sprite extends Disposable {
     return reactive(this) as this
   }
 
+  randomizePosition() {
+    const { project } = this
+    if (project == null) throw new Error('`randomizePosition` should be called after added to a project')
+    const mapSize = project.stage.getMapSize()
+    this.setX(Math.floor(Math.random() * mapSize.width - mapSize.width / 2))
+    this.setY(Math.floor(Math.random() * mapSize.height - mapSize.height / 2))
+  }
+
+  async clampToMap() {
+    const { project, defaultCostume, size, x, y, pivot } = this
+    if (project == null) throw new Error('`clampToMap` should be called after added to a project')
+    if (defaultCostume != null) {
+      const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
+      if (mapSize == null) return
+      const halfCostumeWidth = (costumeSize.width * size) / 2
+      const halfCostumeHeight = (costumeSize.height * size) / 2
+      const visualCenter = {
+        x: costumeSize.width / 2,
+        y: -costumeSize.height / 2
+      }
+      /**
+       * Meaning of offsetX / offsetY:
+       * ------------------------------------
+       * When calculating the position of the sprite, the coordinates (x, y)
+       * are normally based on the "pivot" (anchor point).
+       * But visually we want the sprite to be aligned relative to its
+       * "visualCenter" instead.
+       *
+       * offset is the difference between the visual center
+       * and (pivot + costume’s own offset), multiplied by scale (size).
+       *
+       * In short:
+       * - offsetX/offsetY adjust the coordinates so that the visual center
+       *   is aligned with the map, not the pivot.
+       * - Without this correction, the sprite may appear shifted
+       *   because the pivot might not be at the visual center.
+       */
+      const offsetX = (visualCenter.x - pivot.x - defaultCostume.x) * size
+      const offsetY = (visualCenter.y - pivot.y + defaultCostume.y) * size
+
+      const maxX = Math.max(mapSize.width / 2 - halfCostumeWidth, 0)
+      const maxY = Math.max(mapSize.height / 2 - halfCostumeHeight, 0)
+      this.setX(Math.floor(Math.max(-maxX, Math.min(x, maxX)) - offsetX))
+      this.setY(Math.floor(Math.max(-maxY, Math.min(y, maxY)) - offsetY))
+    }
+  }
+
   /**
    * Adjust position & size to fit current project
    * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
@@ -451,6 +498,47 @@ export class Sprite extends Disposable {
       )
     ).filter((s) => !!s) as Sprite[]
     return sprites
+  }
+
+  clone(preserveId = false) {
+    const animations = this.animations.map((animation) => animation.clone(preserveId))
+    const animBindings = Object.fromEntries(
+      Object.entries(this.animationBindings).map(([state, id]) => [
+        state,
+        this.animations.find((a) => a.id === id)?.name
+      ])
+    )
+    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+
+    const sprite = new Sprite(this.name, this.code, {
+      id: preserveId ? this.id : undefined,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      visible: this.visible,
+      heading: this.heading,
+      rotationStyle: this.rotationStyle,
+      isDraggable: this.isDraggable,
+      pivot: this.pivot,
+      costumeIndex: this.costumeIndex,
+      animationBindings: {
+        [State.default]: animationNameToId(animBindings[State.default]),
+        [State.die]: animationNameToId(animBindings[State.die]),
+        [State.step]: animationNameToId(animBindings[State.step]),
+        [State.turn]: animationNameToId(animBindings[State.turn]),
+        [State.glide]: animationNameToId(animBindings[State.glide])
+      },
+      assetMetadata: this.assetMetadata ?? undefined,
+      extraConfig: { ...this.extraConfig }
+    })
+
+    for (const costume of this.costumes) {
+      sprite.addCostume(costume.clone(preserveId))
+    }
+    for (const animation of animations) {
+      sprite.addAnimation(animation)
+    }
+    return sprite
   }
 
   export({
