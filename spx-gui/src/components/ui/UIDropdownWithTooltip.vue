@@ -1,19 +1,12 @@
 <template>
   <UIDropdown trigger="click" :visible="dropdownVisible" @update:visible="handleDropdownVisibleChange">
     <template #trigger>
-      <div>
-        <!--
-            TODO:
-            The empty `div` should be avoided. It is now required due to a warning: 
-            `Runtime directive used on component with non-element root node. The directives will not function as intended.`
-           -->
-        <UITooltip :visible="tooltipVisible" @update:visible="handleTooltipVisibleChange">
-          <template #trigger>
-            <slot name="trigger"></slot>
-          </template>
-          <slot name="tooltip-content"></slot>
-        </UITooltip>
-      </div>
+      <UITooltip :visible="tooltipVisible" @update:visible="handleTooltipVisibleChange">
+        <template #trigger>
+          <slot name="trigger"></slot>
+        </template>
+        <slot name="tooltip-content"></slot>
+      </UITooltip>
     </template>
     <slot name="dropdown-content"></slot>
   </UIDropdown>
