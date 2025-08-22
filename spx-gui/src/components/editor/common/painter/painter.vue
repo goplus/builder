@@ -239,6 +239,7 @@ import AiGenerate from './components/aigc/generator.vue'
 import SvgImporter from './utils/SvgImporter.vue'
 import { useSvgExporter } from './utils/svg-exporter'
 import ImageLoader from './utils/ImageLoader.vue'
+import { canvasEventDelegator,type ToolHandler } from './utils/delegator'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
@@ -256,6 +257,49 @@ const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const svgImporterRef = ref<InstanceType<typeof SvgImporter> | null>(null)
 const imageLoaderRef = ref<InstanceType<typeof ImageLoader> | null>(null)
+
+
+//事件分发器
+const initEventDelegator = (): void => {
+  canvasEventDelegator.setToolRefs({
+    line: drawLineRef.value as ToolHandler,
+    brush: drawBrushRef.value as ToolHandler,
+    reshape: reshapeRef.value as ToolHandler,
+  })
+
+
+  canvasEventDelegator.setCurrentTool(currentTool.value)
+}
+
+// 选择工具
+const selectTool = (tool: ToolType): void => {
+  currentTool.value = tool
+  // 更新委托器的当前工具
+  canvasEventDelegator.setCurrentTool(tool)
+}
+
+const handleCanvasClick = (event: MouseEvent): void => {
+  console.log('handleCanvasClick')
+  canvasEventDelegator.delegateClick(event, canvasRef.value)
+}
+const handleMouseDown = (event: MouseEvent): void => {
+  canvasEventDelegator.delegateMouseDown(event, canvasRef.value)
+}
+
+const handleMouseMove = (event: MouseEvent): void => {
+  canvasEventDelegator.delegateMouseMove(event, canvasRef.value)
+}
+
+const handleCanvasMouseUp = (event: MouseEvent): void => {
+  canvasEventDelegator.delegateMouseUp(event, canvasRef.value)
+}
+
+const handleMouseUp = (): void => {
+  canvasEventDelegator.delegateGlobalMouseUp()
+}
+
+
+
 // 状态管理
 const allPaths = ref<paper.Path[]>([])
 
@@ -356,33 +400,6 @@ const initPaper = (): void => {
   paper.view.update()
 }
 
-// 选择工具
-const selectTool = (tool: ToolType): void => {
-  currentTool.value = tool
-  
-
-  if (drawLineRef.value) {
-    drawLineRef.value.resetDrawing()
-  }
-  
-
-  if (drawBrushRef.value) {
-    drawBrushRef.value.resetDrawing()
-  }
-  
-  // 切换工具时总是隐藏控制点
-  if (reshapeRef.value) {
-    reshapeRef.value.hideControlPoints()
-  }
-}
-
-// 处理直线创建
-//todo:逻辑迁移到draw_line组件内部
-// const handleLineCreated = (line: paper.Path): void => {
-//   allPaths.value.push(line)
-//   paper.view.update()
-//   exportSvgAndEmit()
-// }
 
 
 //painter提供allPath接口给直线组件
@@ -409,102 +426,6 @@ const handlePathsUpdate = (paths: paper.Path[]): void => {
   allPaths.value = paths
 }
 
-
-// 鼠标按下事件
-const handleMouseDown = (event: MouseEvent): void => {
-  const rect = canvasRef.value?.getBoundingClientRect()
-  if (!rect) return
-  
-  const point = new paper.Point(
-    event.clientX - rect.left,
-    event.clientY - rect.top
-  )
-  
-  // 处理笔刷工具
-  if (currentTool.value === 'brush' && drawBrushRef.value) {
-    drawBrushRef.value.handleMouseDown({ x: point.x, y: point.y })
-    return
-  }
-  
-  // 处理变形工具
-  if (currentTool.value === 'reshape' && reshapeRef.value) {
-    reshapeRef.value.handleMouseDown(point)
-    return
-  }
-}
-
-// 画布点击事件
-const handleCanvasClick = (event: MouseEvent): void => {
-  const rect = canvasRef.value?.getBoundingClientRect()
-  if (!rect) return
-  
-  const point = new paper.Point(
-    event.clientX - rect.left,
-    event.clientY - rect.top
-  )
-  
-  if (currentTool.value === 'line') {
-    // 委托给 DrawLine 组件处理
-    if (drawLineRef.value) {
-      drawLineRef.value.handleCanvasClick({ x: point.x, y: point.y })
-    }
-  } else if (currentTool.value === 'reshape') {
-    // 委托给 Reshape 组件处理
-    if (reshapeRef.value) {
-      reshapeRef.value.handleClick(point)
-    }
-  }
-}
-
-// 鼠标移动事件
-const handleMouseMove = (event: MouseEvent): void => {
-  const rect = canvasRef.value?.getBoundingClientRect()
-  if (!rect) return
-  
-  const point = new paper.Point(
-    event.clientX - rect.left,
-    event.clientY - rect.top
-  )
-  
-  // 委托给 DrawLine 组件处理预览
-  if (currentTool.value === 'line' && drawLineRef.value) {
-    drawLineRef.value.handleMouseMove({ x: point.x, y: point.y })
-  }
-  
-  // 委托给 DrawBrush 组件处理拖拽
-  if (currentTool.value === 'brush' && drawBrushRef.value) {
-    drawBrushRef.value.handleMouseDrag({ x: point.x, y: point.y })
-  }
-  
-  // 委托给 Reshape 组件处理拖拽
-  if (currentTool.value === 'reshape' && reshapeRef.value) {
-    reshapeRef.value.handleMouseMove(point)
-  }
-}
-
-// 画布鼠标释放事件
-const handleCanvasMouseUp = (event: MouseEvent): void => {
-  const rect = canvasRef.value?.getBoundingClientRect()
-  if (!rect) return
-  
-  const point = new paper.Point(
-    event.clientX - rect.left,
-    event.clientY - rect.top
-  )
-  
-  // 处理笔刷工具
-  if (currentTool.value === 'brush' && drawBrushRef.value) {
-    drawBrushRef.value.handleMouseUp({ x: point.x, y: point.y })
-    return
-  }
-}
-
-// 全局鼠标释放事件（用于reshape工具）
-const handleMouseUp = (): void => {
-  if (currentTool.value === 'reshape' && reshapeRef.value) {
-    reshapeRef.value.handleMouseUp()
-  }
-}
 
 
 // 显示AI生成弹窗
@@ -663,6 +584,15 @@ watch(
   },
   { immediate: true }
 )
+watch(currentTool, (newTool) => {
+  canvasEventDelegator.setCurrentTool(newTool)
+})
+
+// 监听工具引用变化，更新委托器
+watch([drawLineRef, drawBrushRef, reshapeRef], () => {
+  initEventDelegator()
+}, { deep: true })
+
 
 onMounted(() => {
   initPaper()
@@ -691,9 +621,10 @@ onMounted(() => {
   // 添加键盘和鼠标事件监听
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('mouseup', handleMouseUp)
-  
+  initEventDelegator()
   // 清理函数
   onUnmounted(() => {
+    canvasEventDelegator.clearToolRefs()
     window.removeEventListener('keydown', handleKeyDown)
     window.removeEventListener('mouseup', handleMouseUp)
   })
