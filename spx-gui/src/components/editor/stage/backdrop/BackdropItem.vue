@@ -96,12 +96,12 @@ const { fn: handleRename } = useMessageHandle(() => renameBackdrop(props.backdro
         @click="handleDuplicate"
       />
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the backdrop' }" @click="handleRename" />
+      <SaveAssetToLibraryMenuItem :item="backdrop" />
       <RemoveMenuItem
         v-radar="{ name: 'Remove', desc: 'Click to remove the backdrop' }"
         :disabled="!removable"
         @click="handleRemove"
       />
-      <SaveAssetToLibraryMenuItem :item="backdrop" />
     </CornerMenu>
   </UIEditorBackdropItem>
 </template>

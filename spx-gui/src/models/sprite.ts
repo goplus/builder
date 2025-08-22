@@ -304,26 +304,46 @@ export class Sprite extends Disposable {
     const { project } = this
     if (project == null) throw new Error('`randomizePosition` should be called after added to a project')
     const mapSize = project.stage.getMapSize()
-    this.setX(Math.floor(Math.random() * mapSize.width) - (mapSize.width >> 1))
-    this.setY(Math.floor(Math.random() * mapSize.height) - (mapSize.height >> 1))
+    this.setX(Math.floor(Math.random() * mapSize.width - mapSize.width / 2))
+    this.setY(Math.floor(Math.random() * mapSize.height - mapSize.height / 2))
   }
 
-  async clampToMap(buffer = 10) {
-    const { project, defaultCostume } = this
+  async clampToMap() {
+    const { project, defaultCostume, size, x, y, pivot } = this
     if (project == null) throw new Error('`clampToMap` should be called after added to a project')
     if (defaultCostume != null) {
       const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
-      if (!mapSize) return
-      const costumeWidthHalf = (costumeSize.width * this.size) >> 1
-      const costumeHeightHalf = (costumeSize.height * this.size) >> 1
+      if (mapSize == null) return
+      const halfCostumeWidth = (costumeSize.width * size) / 2
+      const halfCostumeHeight = (costumeSize.height * size) / 2
+      const visualCenter = {
+        x: costumeSize.width / 2,
+        y: -costumeSize.height / 2
+      }
+      /**
+       * Meaning of offsetX / offsetY:
+       * ------------------------------------
+       * When calculating the position of the sprite, the coordinates (x, y)
+       * are normally based on the "pivot" (anchor point).
+       * But visually we want the sprite to be aligned relative to its
+       * "visualCenter" instead.
+       *
+       * offset is the difference between the visual center
+       * and (pivot + costume’s own offset), multiplied by scale (size).
+       *
+       * In short:
+       * - offsetX/offsetY adjust the coordinates so that the visual center
+       *   is aligned with the map, not the pivot.
+       * - Without this correction, the sprite may appear shifted
+       *   because the pivot might not be at the visual center.
+       */
+      const offsetX = (visualCenter.x - pivot.x - defaultCostume.x) * size
+      const offsetY = (visualCenter.y - pivot.y + defaultCostume.y) * size
 
-      const minX = -(mapSize.width >> 1) + costumeWidthHalf + buffer
-      const maxX = (mapSize.width >> 1) - costumeWidthHalf - buffer
-      const minY = -(mapSize.height >> 1) + costumeHeightHalf + buffer
-      const maxY = (mapSize.height >> 1) - costumeHeightHalf - buffer
-
-      this.setX(Math.max(minX, Math.min(this.x, maxX)))
-      this.setY(Math.max(minY, Math.min(this.y, maxY)))
+      const maxX = Math.max(mapSize.width / 2 - halfCostumeWidth, 0)
+      const maxY = Math.max(mapSize.height / 2 - halfCostumeHeight, 0)
+      this.setX(Math.floor(Math.max(-maxX, Math.min(x, maxX)) - offsetX))
+      this.setY(Math.floor(Math.max(-maxY, Math.min(y, maxY)) - offsetY))
     }
   }
 

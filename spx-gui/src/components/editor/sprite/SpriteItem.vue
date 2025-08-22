@@ -165,8 +165,8 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
         @click="handleDuplicate"
       />
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sprite' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
       <SaveAssetToLibraryMenuItem :item="sprite" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sprite' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSpriteItem>
 </template>

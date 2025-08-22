@@ -92,8 +92,8 @@ const { fn: handleRename } = useMessageHandle(() => renameSound(props.sound), {
         @click="handleDuplicate"
       />
       <RenameMenuItem v-radar="{ name: 'Rename', desc: 'Click to rename the sound' }" @click="handleRename" />
-      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
       <SaveAssetToLibraryMenuItem :item="sound" />
+      <RemoveMenuItem v-radar="{ name: 'Remove', desc: 'Click to remove the sound' }" @click="handleRemove" />
     </CornerMenu>
   </UIEditorSoundItem>
 </template>
