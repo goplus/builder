@@ -9,6 +9,9 @@ open_clip_torch>=2.20.0
 Pillow>=9.5.0
 numpy==1.24.0
 
+# HTTP客户端
+requests>=2.31.0
+
 # SVG处理
 cairosvg>=2.7.0
 
