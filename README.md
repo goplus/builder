@@ -4,11 +4,13 @@ XBuilder is a tool for building games. We create it to help children to learn [a
 
 XBuilder is developed based on [spx](https://github.com/goplus/spx), which is a game engine built on [XGo](https://xgo.dev/).
 
-![XBuilder Screenshot](./docs/screenshot.jpeg)
+![XBuilder Screenshot](./docs/screenshot.jpg)
 
 ## How to try
 
-You can visit https://xbuilder.com to try XBuilder.
+You can try XBuilder online at https://xbuilder.com.
+
+For users in mainland China, we recommend visiting https://x.qiniu.com for optimal performance.
 
 ## How to develop
 

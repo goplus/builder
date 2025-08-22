@@ -50,11 +50,6 @@ func (p *Player) transport() Transport {
 	return DefaultTransport()
 }
 
-// taskRunner returns the [TaskRunner] instance used for executing tasks.
-func (p *Player) taskRunner() TaskRunner {
-	return DefaultTaskRunner()
-}
-
 // SetRole defines the character/persona that the AI should adopt during
 // interactions. The optional context provides extra context about the role.
 func (p *Player) SetRole__0(role string, context map[string]any) {
