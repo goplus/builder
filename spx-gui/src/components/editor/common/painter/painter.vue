@@ -208,11 +208,6 @@
         :canvas-height="canvasHeight"
       />
       
-      <!-- SVG导入工具组件 -->
-      <SvgImporter ref="svgImporterRef" />
-      
-      <!-- 图片加载工具组件 -->
-      <ImageLoader ref="imageLoaderRef" />
     </div>
     
     <!-- AI生成弹窗 -->
@@ -236,14 +231,11 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/generator.vue'
-import SvgImporter from './utils/SvgImporter.vue'
-import { useSvgExporter } from './utils/svg-exporter'
-import ImageLoader from './utils/ImageLoader.vue'
 import { canvasEventDelegator,type ToolHandler } from './utils/delegator'
+import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
-
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -255,9 +247,9 @@ const currentTool = ref<ToolType | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
-const svgImporterRef = ref<InstanceType<typeof SvgImporter> | null>(null)
-const imageLoaderRef = ref<InstanceType<typeof ImageLoader> | null>(null)
 
+// 导入导出管理器
+let importExportManager: ImportExportManager | null = null
 
 //事件分发器
 const initEventDelegator = (): void => {
@@ -267,8 +259,23 @@ const initEventDelegator = (): void => {
     reshape: reshapeRef.value as ToolHandler,
   })
 
-
   canvasEventDelegator.setCurrentTool(currentTool.value)
+}
+
+// 初始化导入导出管理器
+const initImportExportManager = (): void => {
+  importExportManager = createImportExportManager({
+    canvasWidth,
+    canvasHeight,
+    canvasRef,
+    allPaths,
+    currentTool,
+    reshapeRef,
+    backgroundRect,
+    backgroundImage,
+    isImportingFromProps,
+    emit: (event: string, data: any) => emit(event as any, data)
+  })
 }
 
 // 选择工具
@@ -298,11 +305,8 @@ const handleMouseUp = (): void => {
   canvasEventDelegator.delegateGlobalMouseUp()
 }
 
-
-
 // 状态管理
 const allPaths = ref<paper.Path[]>([])
-
 // 存储背景图片的引用
 const backgroundImage = ref<paper.Raster | null>(null)
 // 背景矩形（用于导出时隐藏）
@@ -313,7 +317,6 @@ const isImportingFromProps = ref<boolean>(false)
 const isFirstMount = ref<boolean>(true)
 // 保存当前选中的路径，用于导入后恢复控制点显示
 const selectedPathForRestore = ref<paper.Path | null>(null)
-
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
 
@@ -326,58 +329,10 @@ const emit = defineEmits<{
   (e: 'svg-change', svg: string): void
 }>()
 
-
-// 加载位图图片到画布（PNG/JPG/...）
-const loadImageToCanvas = (imageSrc: string): void => {
-  if (imageLoaderRef.value) {
-    imageLoaderRef.value.loadImageToCanvas(imageSrc)
-  }
-}
-
 // 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）
 const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
-  if (!paper.project) return
-  try {
-    const resp = await fetch(imageSrc)
-    // 先尝试从响应体的 blob.type 判断（对 blob: URL 更可靠）
-    let isSvg = false
-    let svgText: string | null = null
-    try {
-      const blob = await resp.clone().blob()
-      if (blob && typeof blob.type === 'string' && blob.type.includes('image/svg')) {
-        isSvg = true
-        svgText = await blob.text()
-      }
-    } catch {}
-
-    // 退化到 header 判断
-    if (!isSvg) {
-      const contentType = resp.headers.get('content-type') || ''
-      if (contentType.includes('image/svg')) {
-        isSvg = true
-        svgText = await resp.clone().text()
-      }
-    }
-
-    // 最后尝试直接将文本解析为 SVG（针对部分 blob: 无类型场景）
-    if (!isSvg) {
-      try {
-        const text = await resp.clone().text()
-        if (/^\s*<svg[\s\S]*<\/svg>\s*$/i.test(text)) {
-          isSvg = true
-          svgText = text
-        }
-      } catch {}
-    }
-
-    if (isSvg && svgText != null) {
-      importSvgToCanvas(svgText)
-    } else {
-      loadImageToCanvas(imageSrc)
-    }
-  } catch {
-    // 回退策略：按位图处理
-    loadImageToCanvas(imageSrc)
+  if (importExportManager) {
+    await importExportManager.importFile(imageSrc)
   }
 }
 
@@ -400,8 +355,6 @@ const initPaper = (): void => {
   paper.view.update()
 }
 
-
-
 //painter提供allPath接口给直线组件
 const getAllPathsValue = (): paper.Path[] => {
   return allPaths.value
@@ -412,7 +365,6 @@ const setAllPathsValue = (paths: paper.Path[]): void => {
 
 provide('getAllPathsValue',getAllPathsValue)
 provide('setAllPathsValue',setAllPathsValue)
-
 
 // 处理笔刷路径创建
 const handlePathCreated = (path: paper.Path): void => {
@@ -425,8 +377,6 @@ const handlePathCreated = (path: paper.Path): void => {
 const handlePathsUpdate = (paths: paper.Path[]): void => {
   allPaths.value = paths
 }
-
-
 
 // 显示AI生成弹窗
 const showAiDialog = (): void => {
@@ -465,55 +415,24 @@ const handleAiCancel = (): void => {
 }
 
 // 导入PNG图片到画布
-const importImageToCanvas = (imageUrl: string): void => {
-  if (!paper.project) return
-  
-  const raster = new paper.Raster(imageUrl)
-  
-  raster.onLoad = () => {
-    raster.position = paper.view.center
-    
-    // 保持原始尺寸，不进行自动缩放
-    // 如果需要缩放，用户可以手动调整
-    
-    // 添加点击事件处理
-    // raster.onMouseDown = (event: paper.MouseEvent) => {
-    //   if (currentTool.value === 'reshape') {
-    //     selectPathExclusive(null) // 清除路径选择
-    //     raster.selected = true
-    //     paper.view.update()
-    //   }
-    // }
-
-    paper.view.update()
-    // console.log('PNG图片已导入到画布')
-
-    exportSvgAndEmit()
-  }
-  
-  raster.onError = () => {
-    console.error('failed to load image')
+const importImageToCanvas = async (imageUrl: string): Promise<void> => {
+  if (importExportManager) {
+    await importExportManager.importImage(imageUrl)
   }
 }
 
-// 导入SVG到画布并转换为可编辑的路径（通过SVG导入组件）
-const importSvgToCanvas = (svgContent: string): void => {
-  if (svgImporterRef.value) {
-    svgImporterRef.value.importSvgToCanvas(svgContent)
+// 导入SVG到画布并转换为可编辑的路径
+const importSvgToCanvas = async (svgContent: string): Promise<void> => {
+  if (importExportManager) {
+    await importExportManager.importSvg(svgContent)
   }
 }
 
 // 清空画布
 const clearCanvas = (): void => {
-  if (reshapeRef.value) {
-    reshapeRef.value.hideControlPoints()
+  if (importExportManager) {
+    importExportManager.clearCanvas()
   }
-  allPaths.value.forEach((path: paper.Path) => {
-    if (path && path.parent) {
-      path.remove()
-    }
-  })
-  allPaths.value = []
   
   // 清理选中路径状态
   selectedPathForRestore.value = null
@@ -527,21 +446,6 @@ const clearCanvas = (): void => {
   if (drawBrushRef.value) {
     drawBrushRef.value.resetDrawing()
   }
-  
-  paper.project.clear()
-  
-  // 重新创建背景
-  const background = new paper.Path.Rectangle({
-    point: [0, 0],
-    size: [canvasWidth.value, canvasHeight.value],
-    fillColor: 'transparent'
-  })
-  backgroundRect.value = background
-  
-  paper.view.update()
-
-  // 导出变更
-  exportSvgAndEmit()
 }
 
 // 监听props中的imgSrc变化
@@ -622,6 +526,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('mouseup', handleMouseUp)
   initEventDelegator()
+  initImportExportManager()
   // 清理函数
   onUnmounted(() => {
     canvasEventDelegator.clearToolRefs()
@@ -630,21 +535,18 @@ onMounted(() => {
   })
 })
 
-// 导出当前画布为 SVG 并上报父组件
-const { exportSvgAndEmit } = useSvgExporter({
-  reshapeRef,
-  backgroundRect,
-  emit: (svg: string) => emit('svg-change', svg)
-})
+// 导出SVG的封装函数
+const exportSvgAndEmit = (): void => {
+  if (importExportManager) {
+    importExportManager.exportSvgAndEmit()
+  }
+}
 
 provide('currentTool', currentTool)
 provide('reshapeRef', reshapeRef)
 provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
-
-// 为图片加载组件提供必要的依赖
-provide('backgroundImage', backgroundImage)
 </script>
 
 <style scoped>
