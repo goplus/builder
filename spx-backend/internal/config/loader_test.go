@@ -2,6 +2,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,9 @@ import (
 
 func setTestEnv(t *testing.T) {
 	// Database
-	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
+	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True&loc=UTC&multiStatements=true")
+	t.Setenv("GOP_SPX_AUTO_MIGRATE", "true")
+	t.Setenv("GOP_SPX_MIGRATION_TIMEOUT", "10m")
 
 	// Redis
 	t.Setenv("REDIS_ADDR", "redis.example.com:6379")
@@ -56,7 +59,10 @@ func TestLoad(t *testing.T) {
 		assert.Equal(t, ":8080", config.Server.GetPort())
 
 		// Database
-		assert.Equal(t, "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True", config.Database.DSN)
+		assert.Equal(t, "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True&loc=UTC&multiStatements=true", config.Database.DSN)
+		assert.True(t, config.Database.AutoMigrate)
+		assert.Equal(t, 10*time.Minute, config.Database.MigrationTimeout)
+		assert.Equal(t, config.Database.MigrationTimeout, config.Database.GetMigrationTimeout())
 
 		// Redis
 		assert.Equal(t, "redis.example.com:6379", config.Redis.Addr)
@@ -169,5 +175,63 @@ func TestGetIntEnv(t *testing.T) {
 	t.Run("FloatValue", func(t *testing.T) {
 		t.Setenv("TEST_INT_FLOAT", "42.5")
 		assert.Equal(t, 0, getIntEnv("TEST_INT_FLOAT"))
+	})
+}
+
+func TestGetBoolEnv(t *testing.T) {
+	t.Run("TrueValues", func(t *testing.T) {
+		trueValues := []string{"true", "TRUE", "True", "1", "t", "T"}
+		for _, val := range trueValues {
+			t.Setenv("TEST_BOOL", val)
+			assert.True(t, getBoolEnv("TEST_BOOL"), "value: %s", val)
+		}
+	})
+
+	t.Run("FalseValues", func(t *testing.T) {
+		falseValues := []string{"false", "FALSE", "False", "0", "f", "F"}
+		for _, val := range falseValues {
+			t.Setenv("TEST_BOOL", val)
+			assert.False(t, getBoolEnv("TEST_BOOL"), "value: %s", val)
+		}
+	})
+
+	t.Run("EmptyValue", func(t *testing.T) {
+		t.Setenv("TEST_BOOL_EMPTY", "")
+		assert.False(t, getBoolEnv("TEST_BOOL_EMPTY"))
+	})
+
+	t.Run("NonExistentVariable", func(t *testing.T) {
+		assert.False(t, getBoolEnv("NON_EXISTENT_BOOL"))
+	})
+}
+
+func TestGetDurationEnv(t *testing.T) {
+	t.Run("ValidDuration", func(t *testing.T) {
+		t.Setenv("TEST_DURATION", "5m30s")
+		assert.Equal(t, 5*time.Minute+30*time.Second, getDurationEnv("TEST_DURATION"))
+	})
+
+	t.Run("Minutes", func(t *testing.T) {
+		t.Setenv("TEST_DURATION_MIN", "10m")
+		assert.Equal(t, 10*time.Minute, getDurationEnv("TEST_DURATION_MIN"))
+	})
+
+	t.Run("Seconds", func(t *testing.T) {
+		t.Setenv("TEST_DURATION_SEC", "45s")
+		assert.Equal(t, 45*time.Second, getDurationEnv("TEST_DURATION_SEC"))
+	})
+
+	t.Run("EmptyValue", func(t *testing.T) {
+		t.Setenv("TEST_DURATION_EMPTY", "")
+		assert.Equal(t, time.Duration(0), getDurationEnv("TEST_DURATION_EMPTY"))
+	})
+
+	t.Run("NonExistentVariable", func(t *testing.T) {
+		assert.Equal(t, time.Duration(0), getDurationEnv("NON_EXISTENT_DURATION"))
+	})
+
+	t.Run("InvalidDuration", func(t *testing.T) {
+		t.Setenv("TEST_DURATION_INVALID", "not-a-duration")
+		assert.Equal(t, time.Duration(0), getDurationEnv("TEST_DURATION_INVALID"))
 	})
 }

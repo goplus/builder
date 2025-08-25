@@ -2,11 +2,7 @@ name: Validate (lint, test & ...)
 
 on:
   push:
-    branches:
-      - '**'
   pull_request:
-    branches:
-      - '**'
 
 jobs:
   spx-gui-lint:
