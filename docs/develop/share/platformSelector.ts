@@ -2,7 +2,7 @@
  * 社交平台选择器组件
  */
 
-import { SocialPlatformConfigs, PlatformShare} from "./sharePlatform"
+import { SocialPlatformConfigs, PlatformShare} from "./platformShare"
 
 /**
  * 社交平台组件属性
