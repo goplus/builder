@@ -122,27 +122,25 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Game.onBackdrop#1`,
   `xgo:${packageSpx}?Game.backdropName`,
   `xgo:${packageSpx}?Game.backdropIndex`,
-  `xgo:${packageSpx}?Game.prevBackdrop#0`,
-  `xgo:${packageSpx}?Game.nextBackdrop#0`,
-  `xgo:${packageSpx}?Game.startBackdrop#0`,
+  `xgo:${packageSpx}?Game.setBackdrop#0`,
+  `xgo:${packageSpx}?Game.setBackdropAndWait#0`,
 
   `xgo:${packageSpx}?Game.broadcast#0`,
+  `xgo:${packageSpx}?Game.broadcastAndWait#0`,
 
-  `xgo:${packageSpx}?Game.play#3`,
-  `xgo:${packageSpx}?Game.play#4`,
+  `xgo:${packageSpx}?Game.play#0`,
+  `xgo:${packageSpx}?Game.playAndWait`,
+  `xgo:${packageSpx}?Game.pausePlaying`,
+  `xgo:${packageSpx}?Game.resumePlaying`,
+  `xgo:${packageSpx}?Game.stopPlaying`,
   `xgo:${packageSpx}?Game.stopAllSounds`,
-  `xgo:${packageSpx}?PlayContinue`,
-  `xgo:${packageSpx}?PlayPause`,
-  `xgo:${packageSpx}?PlayResume`,
-  `xgo:${packageSpx}?PlayRewind`,
-  `xgo:${packageSpx}?PlayStop`,
 
   `xgo:${packageSpx}?Game.volume`,
   `xgo:${packageSpx}?Game.changeVolume`,
   `xgo:${packageSpx}?Game.setVolume`,
 
-  `xgo:${packageSpx}?Game.changeEffect`,
-  `xgo:${packageSpx}?Game.setEffect`,
+  `xgo:${packageSpx}?Game.changeGraphicEffect`,
+  `xgo:${packageSpx}?Game.setGraphicEffect`,
   `xgo:${packageSpx}?Game.clearGraphicEffects`,
 
   `xgo:${packageSpx}?Sprite.onStart`,
@@ -151,7 +149,10 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.onMsg#1`,
   `xgo:${packageSpx}?Sprite.onSwipe#0`,
 
-  `xgo:${packageSpx}?Sprite.animate`,
+  `xgo:${packageSpx}?Sprite.animate#0`,
+  `xgo:${packageSpx}?Sprite.animate#1`,
+  `xgo:${packageSpx}?Sprite.animateAndWait`,
+  `xgo:${packageSpx}?Sprite.stopAnimation`,
 
   `xgo:${packageSpx}?Sprite.bounceOffEdge`,
 
@@ -215,18 +216,16 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.goBackLayers`,
 
   `xgo:${packageSpx}?Sprite.onCloned#0`,
-  `xgo:${packageSpx}?Sprite.onMoving#0`,
-  `xgo:${packageSpx}?Sprite.onTouchStart#0`,
   `xgo:${packageSpx}?Sprite.onTouchStart#2`,
-  `xgo:${packageSpx}?Sprite.onTurning#0`,
+  `xgo:${packageSpx}?Sprite.onTouchStart#4`,
 
   `xgo:${packageSpx}?Sprite.say#0`,
   `xgo:${packageSpx}?Sprite.say#1`,
   `xgo:${packageSpx}?Sprite.think#0`,
   `xgo:${packageSpx}?Sprite.think#1`,
 
-  `xgo:${packageSpx}?Sprite.changeEffect`,
-  `xgo:${packageSpx}?Sprite.setEffect`,
+  `xgo:${packageSpx}?Sprite.changeGraphicEffect`,
+  `xgo:${packageSpx}?Sprite.setGraphicEffect`,
   `xgo:${packageSpx}?Sprite.clearGraphicEffects`
 
   // TODO: definitions like `if-else` / `var`?
