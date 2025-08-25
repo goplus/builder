@@ -2,8 +2,8 @@ import { ref, props } from 'vue'
 
 //传入视频文件（方便复用在项目页面和录屏页面）
 defineProps<{
-    setRecordingURL: string,
-    recording?: File // 传的话就更快显示，内存上没有、不传的话就去URL上下后再显示
+    Recording: RecordData,
+    video?: File // 传的话就更快显示，内存上没有、不传的话就去URL上下后再显示
 }>()
 
 // 导入必要的类型和函数
@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 // 导入平台选择器组件
 import platformSelector from './platformSelector.vue'
+import { RecordData } from './module_RecordingApis'
 
 // 存储生成的二维码数据URL
 const qrCodeDataURL = ref<string>('')
