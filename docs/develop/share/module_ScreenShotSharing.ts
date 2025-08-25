@@ -1,10 +1,15 @@
-import { ref, props } from 'vue'
+import { ref, watch, defineProps } from 'vue'
+import { createPoster } from './module_poster'
+import type { ProjectData } from '@/apis/project'
 
 //传入截屏海报图片文件
 defineProps<{
-    poster: File
+    screenShot: File | null
+    projectData: ProjectData
 }>()
 
+const poster = ref<File | null>(null)
+// poster.value = await createPoster({img,projectData})
 
 //从 platfromSelect 得到当前点击的平台名称
 //从 platfromShare 拿到输出跳转 URL 的方法
@@ -15,12 +20,6 @@ import { sharePoster, directShare } from './platformShare'
 
 // 导入qrcode第三方库
 import QRCode from 'qrcode'
-
-// 定义要接收的事件
-const emit = defineEmits<{
-    'platformSelected': [platform: PlatformShare]
-    'qrCodeGenerated': [qrCodeDataURL: string]
-}>()
 
 // 导入平台选择器组件
 import platformSelector from './platformSelector.vue'

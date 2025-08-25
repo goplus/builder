@@ -5,7 +5,7 @@ import { useQuery } from '@/composables/useQuery'
 import { getProject } from '@/apis/project'
 import type { ProjectData } from '@/apis/project'
 
-const screenShotPoster = ref<File | null>(null)
+const screenShotImg = ref<File | null>(null)
 const showScreenShotSharing = ref(false)
 
 const {
@@ -23,20 +23,11 @@ const {
   }
 )
 
-const poster = ref<File | null>(null)
-
 async function onClickScreenShot() {
     window.pauseGame()
     const screenShotFile = window.getScreenshot()
-    try {
-        const screenShotPoster = await createPoster({ 
-            img: screenShotFile, 
-            projectData: projectData.value 
-        })
-        poster.value = screenShotPoster // 传入截屏海报文件
-        showScreenShotSharing.value = true
-    } catch (error) {
-    }
+    screenShotImg.value = screenShotFile
+    showScreenShotSharing.value = true
 }
 
 function closeScreenShotSharing() {
@@ -78,11 +69,8 @@ async function onClickRecord() {
         }
 
         const created = await RecordingURL.createRecord(params) // 1.调用 RecordingAPIs 存储到后端
-        // 应该是传入 RecordData 而不只是一个 URL
-        /*
         const gotRecordID = created.id// 2.调用 RecordingAPIs 获取视频存储ID
         const gotshowRecordingURL = `{created}` // 3.拼接ID 获得录屏展示页面的 URL 传给录屏展示模块
-        */
         setRecordingURL.value = gotshowRecordingURL
         recording.value = recordFile
         showRecordSharing.value = true // 唤起录屏分享弹窗
