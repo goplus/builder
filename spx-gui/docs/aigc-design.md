@@ -1,18 +1,17 @@
-# AIGC架构设计
-## 一、generator生成器
-生成器是aigc部分的主组件，负责整个ai生成组件的渲染。同时，负责调用封装好的接口，发起与后端的交互。并处理AI生成的相关逻辑。错误处理部分，则通过try-catch调用error.vue中的错误处理逻辑。
-## 二、error.vue 错误处理页面
-error作为错误处理组件，提供接口函数给generator使用。通过调用和参数传递，呼出相应的错误页面，给用户提供相应的错误信息。
-## 三、modelSelector 模型选择器
-主要是一个下拉菜单组件。给用户提供风格等预设，作为发后端的接口参数给generator使用。
-## 四、prompt组织区域
-此区域用于给用户选择提示词输入方式，并完成提示词输入流程。
-1.预设提示词：提供类似“完形填空”的效果。将用户填写完的prompt拼成整个字符串给generator发请求用
-2.自由输入提示词
-## 五、src/apis/picgc.ts api层
-将与后端ai交互的请求封装，供给generator使用
-* 架构设计图
-
+# AIGC Architecture Design
+## I. Generator
+The generator is the core component of the AIGC module, responsible for rendering the entire AI generation interface. It also invokes encapsulated APIs to initiate interactions with the backend and manages the logic of AI content generation. Error handling is implemented through a try-catch block that triggers the error-handling logic defined in error.vue.
+## II. error.vue – Error Handling Page
+The error component provides an error-handling interface for the generator. By invoking its functions and passing parameters, the generator can display the appropriate error page and present the user with corresponding error messages.
+## III. modelSelector – Model Selector
+The model selector is primarily a dropdown menu component. It allows users to choose styles and other presets, which are then passed as parameters to the backend through the generator.
+## IV. Prompt Organization Area
+This section lets users choose how to input prompts and complete the prompt-entry process:
+1.	Preset prompts – Provides a “fill-in-the-blank” style interaction. Once completed by the user, the prompt is concatenated into a full string and sent to the generator for requests.
+2.	Free-form prompt input – Users can directly enter custom prompts.
+## V. src/apis/picgc.ts – API Layer
+This module encapsulates all backend AI interaction requests and exposes them for use by the generator.
+* Architecture Diagram
 ```mermaid
 flowchart TD
     Backend((Backend))
