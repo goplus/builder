@@ -15,13 +15,6 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Emits
-interface Emits {
-  (e: 'path-created', path: paper.Path): void
-}
-
-const emit = defineEmits<Emits>()
-
 // 接口定义
 interface Point {
   x: number
@@ -31,6 +24,13 @@ interface Point {
 // 响应式变量
 const isDrawing = ref<boolean>(false)
 const currentPath = ref<paper.Path | null>(null)
+
+//注入父组件接口
+import { inject, type Ref } from 'vue'  
+
+const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
+const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
+const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 创建新路径
 const createNewPath = (startPoint: Point): paper.Path => {
@@ -69,7 +69,11 @@ const handleMouseUp = (point: Point): void => {
   
   // 完成当前路径绘制
   if (currentPath.value) {
-    emit('path-created', currentPath.value)
+    // 使用注入的接口而不是事件上报
+    const currentPaths = getAllPathsValue()
+    currentPaths.push(currentPath.value)
+    setAllPathsValue(currentPaths)
+    exportSvgAndEmit()
   }
   
   // 重置状态

@@ -161,7 +161,6 @@
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"
         :is-active="currentTool === 'brush'"
-        @path-created="handlePathCreated"
       />
       
       <!-- 变形工具组件 -->
@@ -169,8 +168,6 @@
         ref="reshapeRef"
         :is-active="currentTool === 'reshape'"
         :all-paths="allPaths"
-        @paths-update="handlePathsUpdate"
-        @svg-export="exportSvgAndEmit"
       />
       
       <!-- 橡皮工具组件 -->
@@ -366,17 +363,6 @@ const setAllPathsValue = (paths: paper.Path[]): void => {
 provide('getAllPathsValue',getAllPathsValue)
 provide('setAllPathsValue',setAllPathsValue)
 
-// 处理笔刷路径创建
-const handlePathCreated = (path: paper.Path): void => {
-  allPaths.value.push(path)
-  paper.view.update()
-  exportSvgAndEmit()
-}
-
-// 处理路径更新（由reshape组件触发）
-const handlePathsUpdate = (paths: paper.Path[]): void => {
-  allPaths.value = paths
-}
 
 // 显示AI生成弹窗
 const showAiDialog = (): void => {

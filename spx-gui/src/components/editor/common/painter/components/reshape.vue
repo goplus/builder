@@ -16,18 +16,19 @@ const props = defineProps<{
   allPaths: paper.Path[]
 }>()
 
-// Emits定义
-const emit = defineEmits<{
-  (e: 'paths-update', paths: paper.Path[]): void
-  (e: 'svg-export'): void
-}>()
-
 // 状态管理
 const isDragging = ref<boolean>(false)
 const selectedPoint = ref<ExtendedItem | null>(null)
 const controlPoints = ref<ExtendedItem[]>([])
 const mouseDownPath = ref<paper.Path | null>(null)
 const mouseDownPos = ref<paper.Point | null>(null)
+
+//注入父组件接口
+import { inject, type Ref } from 'vue'  
+
+const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
+const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
+const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 选中路径（独占选择）
 const selectPathExclusive = (path: paper.Path | null): void => {
@@ -322,7 +323,8 @@ const handleMouseUp = (): void => {
   }
 
   if (wasDragging) {
-    emit('svg-export')
+    // 使用注入的接口而不是事件上报
+    exportSvgAndEmit()
   }
 }
 
@@ -351,11 +353,16 @@ const deleteSelectedPath = (): void => {
   if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
     const pathToDelete = controlPoints.value[0].parentPath
     pathToDelete.remove()
-    const updatedPaths = props.allPaths.filter((path: paper.Path) => path !== pathToDelete)
+    
+    // 使用注入的接口更新路径数组
+    const updatedPaths = getAllPathsValue().filter((path: paper.Path) => path !== pathToDelete)
+    setAllPathsValue(updatedPaths)
+    
     hideControlPoints()
     paper.view.update()
-    emit('paths-update', updatedPaths)
-    emit('svg-export')
+    
+    // 使用注入的接口而不是事件上报
+    exportSvgAndEmit()
   }
 }
 
