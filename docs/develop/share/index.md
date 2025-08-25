@@ -11,11 +11,11 @@
 ### ProjectRunner
 通过ProjectRunner获取runner游戏引擎上暴露的方法
 ### DirectSharing
-直接分享弹窗
+项目页面上的直接分享弹窗，用于直接分享项目到各个平台
 ### ScreenShotSharing
-截屏分享弹窗
+项目页面上的截屏分享弹窗，用于接收截屏图片、调用Poster生成海报后分享到各个平台
 ### ProjectRecordingSharing
-录屏分享弹窗
+项目页面上的录屏分享弹窗，用于接收录屏后分享到各个平台
 ### Recording APIs
 spx-backend 提供的用于对 Recording 管理的 APIs
 
