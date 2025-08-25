@@ -42,18 +42,38 @@ async function handlePlatformChange(platform: PlatformShare) {
     console.log('当前选择的录屏分享平台:', platform)
     
     try {
-        // 录屏分享主要使用项目链接分享，调用shareURL方法
-        if (platform.shareType.supportProject && platform.shareFunction.shareURL) {
-            console.log('该平台支持录屏分享')
+        // 判断平台类型，决定调用哪种分享方法
+        // 通过检查是否支持视频分享来判断是否为视频平台
+        const isVideoPlatform = platform.shareType.supportVideo && platform.shareFunction.shareVideo
+        
+        if (isVideoPlatform) {
+            // TikTok、Bilibili、RedBook 等视频平台调用 shareVideo 方法
+            console.log('该平台支持视频分享，调用shareVideo方法')
             
-            // 调用platformShare中的directShare函数，传入录屏页面URL
-            const shareResult = await directShare(platform, props.setRecordingURL)
-            console.log('录屏分享结果:', shareResult)
-            
-            // 将分享结果URL转为二维码
-            await generateQRCode(shareResult)
+            // 确保有录制的视频文件
+            if (props.recording) {
+                const shareResult = await platform.shareFunction.shareVideo!(props.recording)
+                console.log('视频分享结果:', shareResult)
+                
+                // 将分享结果URL转为二维码
+                await generateQRCode(shareResult)
+            } else {
+                console.error('没有可用的录制视频文件')
+            }
         } else {
-            console.log('该平台不支持录屏分享')
+            // 其他平台调用 shareURL 方法
+            if (platform.shareType.supportProject && platform.shareFunction.shareURL) {
+                console.log('该平台支持链接分享，调用shareURL方法')
+                
+                // 调用platformShare中的directShare函数，传入录屏页面URL
+                const shareResult = await directShare(platform, props.setRecordingURL)
+                console.log('录屏分享结果:', shareResult)
+                
+                // 将分享结果URL转为二维码
+                await generateQRCode(shareResult)
+            } else {
+                console.log('该平台不支持录屏分享')
+            }
         }
     } catch (error) {
         console.error('录屏分享处理失败:', error)
@@ -83,5 +103,3 @@ async function generateQRCode(url: string) {
         console.error('录屏分享二维码生成失败:', error)
     }
 }
-
-
