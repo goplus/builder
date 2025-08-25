@@ -153,6 +153,54 @@ export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   return [urlRef, loadingRef] as const
 }
 
+/** 
+ * Get url for File with smooth transition (no flickering)
+ * This version keeps the old URL until the new one is ready
+ */
+export function useFileUrlSmooth(fileSource: WatchSource<File | undefined | null>) {
+  const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
+  watch(
+    fileSource,
+    (file, _, onCleanup) => {
+      if (file == null) {
+        urlRef.value = null
+        return
+      }
+      loadingRef.value = true
+      let cancelled = false
+      let fileUrlCleanup: (() => void) | null = null
+      onCleanup(() => {
+        cancelled = true
+        // Don't clear urlRef.value here - keep old URL until component unmounts
+        fileUrlCleanup?.()
+      })
+      file
+        .url((cleanup) => {
+          if (cancelled) {
+            cleanup()
+            return
+          }
+          fileUrlCleanup = cleanup
+        })
+        .then((url) => {
+          if (cancelled) return
+          // Only update URL when new URL is ready
+          urlRef.value = url
+        })
+        .catch((e) => {
+          if (e instanceof Cancelled) return
+          throw e
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
+    },
+    { immediate: true }
+  )
+  return [urlRef, loadingRef] as const
+}
+
 /**
  * Get image element (HTMLImageElement) based on given (image) file.
  * The image element is guaranteed to be loaded when set to ref.

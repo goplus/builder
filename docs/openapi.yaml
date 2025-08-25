@@ -1081,6 +1081,146 @@ paths:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
 
+  /image:
+    post:
+      tags:
+        - AI-SVG
+      summary: AI generate images
+      description: |
+        Generate AI-powered images and return image metadata including URLs, dimensions, and generation details.
+        
+        Supports multiple AI providers (svgio, recraft, openai) with automatic prompt translation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateImageParams"
+      responses:
+        "200":
+          description: Successfully generated image and returned metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageResponse"
+        "400":
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - "prompt must be at least 3 characters"
+                      - "provider must be one of: svgio, recraft, openai"
+        "500":
+          description: Internal server error during image generation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - "failed to generate image"
+
+  /image/svg:
+    post:
+      tags:
+        - AI-SVG
+      summary: Generate SVG image directly
+      description: |
+        Generate AI-powered SVG images and return the SVG file content directly in the response body.
+        
+        Returns actual SVG content instead of metadata, with generation details provided in response headers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateImageParams"
+      responses:
+        "200":
+          description: Successfully generated SVG image.
+          headers:
+            Content-Type:
+              description: MIME type of the response
+              schema:
+                type: string
+                example: "image/svg+xml"
+            Content-Disposition:
+              description: File download information
+              schema:
+                type: string
+                example: 'attachment; filename="img_abc123.svg"'
+            X-Image-Id:
+              description: Unique identifier for the generated image
+              schema:
+                type: string
+                example: "img_abc123"
+            X-Image-Width:
+              description: Width of the generated image in pixels
+              schema:
+                type: integer
+                example: 512
+            X-Image-Height:
+              description: Height of the generated image in pixels
+              schema:
+                type: integer
+                example: 512
+            X-Provider:
+              description: AI provider used for generation
+              schema:
+                type: string
+                example: "svgio"
+            X-Original-Prompt:
+              description: Original prompt provided by user (if available)
+              schema:
+                type: string
+                example: "A beautiful sunset over mountains"
+            X-Translated-Prompt:
+              description: Translated version of prompt (if translation was applied)
+              schema:
+                type: string
+                example: "A beautiful sunset over mountains"
+            X-Was-Translated:
+              description: Whether the prompt was automatically translated
+              schema:
+                type: string
+                example: "false"
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+                description: The generated SVG image content
+        "400":
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - "prompt must be at least 3 characters"
+                      - "provider must be one of: svgio, recraft, openai"
+        "500":
+          description: Internal server error during image generation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - "failed to generate SVG"
+
   /course:
     post:
       tags:
@@ -1978,6 +2118,135 @@ components:
             the AI should decide next steps based on previous command results.
           examples:
             - 0
+
+    GenerateImageParams:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          minLength: 3
+          description: The text prompt for image generation
+          examples:
+            - "A beautiful sunset over mountains"
+        negative_prompt:
+          type: string
+          description: Text describing what should not appear in the image
+          examples:
+            - "blurry, low quality"
+        style:
+          type: string
+          description: Style of the generated image
+          examples:
+            - "cartoon"
+            - "realistic"
+            - "sketch"
+        provider:
+          type: string
+          enum:
+            - svgio
+            - recraft
+            - openai
+          default: svgio
+          description: The AI provider to use for generation
+          examples:
+            - "svgio"
+        format:
+          type: string
+          description: Output format of the generated image
+          examples:
+            - "svg"
+            - "png"
+        skip_translate:
+          type: boolean
+          default: false
+          description: Whether to skip automatic prompt translation
+        model:
+          type: string
+          description: Specific model to use for generation
+          examples:
+            - "gpt-4"
+        size:
+          type: string
+          description: Size of the generated image
+          examples:
+            - "512x512"
+            - "1024x1024"
+        substyle:
+          type: string
+          description: Sub-style variant for the image
+          examples:
+            - "hand-drawn"
+        n:
+          type: integer
+          minimum: 1
+          description: Number of images to generate
+          examples:
+            - 1
+
+    ImageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the generated image
+          examples:
+            - "img_abc123"
+        svg_url:
+          type: string
+          format: uri
+          description: URL to access the generated SVG image
+          examples:
+            - "https://example.com/images/img_abc123.svg"
+        png_url:
+          type: string
+          format: uri
+          description: URL to access the PNG version of the image (if available)
+          examples:
+            - "https://example.com/images/img_abc123.png"
+        width:
+          type: integer
+          minimum: 1
+          description: Width of the generated image in pixels
+          examples:
+            - 512
+        height:
+          type: integer
+          minimum: 1
+          description: Height of the generated image in pixels
+          examples:
+            - 512
+        provider:
+          type: string
+          enum:
+            - svgio
+            - recraft
+            - openai
+          description: The AI provider used for generation
+          examples:
+            - "svgio"
+        original_prompt:
+          type: string
+          description: The original prompt provided by the user
+          examples:
+            - "A beautiful sunset over mountains"
+        translated_prompt:
+          type: string
+          description: The translated version of the prompt (if translation was applied)
+          examples:
+            - "A beautiful sunset over mountains"
+        was_translated:
+          type: boolean
+          description: Whether the prompt was automatically translated
+          examples:
+            - false
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the image was generated
+          examples:
+            - "2024-01-15T10:30:00Z"
 
     AIInteractionResponse:
       type: object
