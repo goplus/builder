@@ -10,6 +10,8 @@
 用于生成海报，包含图片、二维码和项目信息
 ### ProjectRunner
 通过ProjectRunner获取runner游戏引擎上暴露的方法
+### RecordingPage
+录屏业务的承载页面
 ### DirectSharing
 项目页面上的直接分享弹窗，用于直接分享项目到各个平台
 ### ScreenShotSharing
