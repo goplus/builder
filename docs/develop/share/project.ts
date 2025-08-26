@@ -5,7 +5,7 @@ import { useQuery } from '@/composables/useQuery'
 import { getProject } from '@/apis/project'
 import type { ProjectData } from '@/apis/project'
 
-const screenShotImg = ref<File | null>(null)
+const ScreenShotImg = ref<File | null>(null)
 const showScreenShotSharing = ref(false)
 
 const {
@@ -25,8 +25,8 @@ const {
 
 async function onClickScreenShot() {
     window.pauseGame()
-    const screenShotFile = window.getScreenshot()
-    screenShotImg.value = screenShotFile
+    const ScreenShotFile = window.getScreenshot()
+    ScreenShotImg.value = ScreenShotFile
     showScreenShotSharing.value = true
 }
 

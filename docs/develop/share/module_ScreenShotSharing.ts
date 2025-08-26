@@ -4,19 +4,18 @@ import type { ProjectData } from '@/apis/project'
 
 //传入截屏海报图片文件
 defineProps<{
-    screenShot: File | null
+    ScreenShot: File | null
     projectData: ProjectData
 }>()
 
-const poster = ref<File | null>(null)
-// poster.value = await createPoster({img,projectData})
+const poster = createPoster({ ScreenShot, projectData})
 
 //从 platfromSelect 得到当前点击的平台名称
 //从 platfromShare 拿到输出跳转 URL 的方法
 
 // 导入必要的类型和函数
 import type { PlatformShare } from './platformShare'
-import { sharePoster, directShare } from './platformShare'
+import { sharePoster } from './platformShare'
 
 // 导入qrcode第三方库
 import QRCode from 'qrcode'
