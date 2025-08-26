@@ -6,6 +6,10 @@ interface posterProps {
     projectData: ProjectData
 }
 
+interface PosterComponentInstance {
+    createPoster: () => Promise<File>
+}
+
 async function createPoster(props: posterProps): Promise<File> {
     const posterElement = document.createElement('div')
     // 在这里通过调用处理这个DOM节点 posterElement.className = 'poster-container'、填入props信息、二维码等等
@@ -27,5 +31,5 @@ async function createPoster(props: posterProps): Promise<File> {
 
 export { createPoster }
 
-export type { posterProps }
+export type { posterProps, PosterComponentInstance }
 
