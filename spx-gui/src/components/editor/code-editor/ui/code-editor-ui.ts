@@ -431,13 +431,19 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     const lineCntAfterPos = textDocument.getValueInRange({ start: pos, end: lineEndPos })
 
     this.editor.setPosition(toMonacoPosition(lineEndPos))
-    insertAtLine += 1
-    if (isPrecededByOpenBrace(lineCntBeforePos) || isFollowedByCloseBrace(lineCntAfterPos)) {
-      if (!content.startsWith('\n')) content = '\n' + content
-      if (!content.endsWith('\n')) content = content + '\n'
+
+    const precededByOpenBrace = isPrecededByOpenBrace(lineCntBeforePos)
+    const followedByCloseBrace = isFollowedByCloseBrace(lineCntAfterPos)
+    if (precededByOpenBrace || followedByCloseBrace) {
+      if (precededByOpenBrace && !content.startsWith('\n')) {
+        insertAtLine += 1
+        content = '\n' + content
+      }
+      if (followedByCloseBrace && !content.endsWith('\n')) content = content + '\n'
       return insert(content, range)
     }
 
+    insertAtLine += 1
     content = '\n' + content.replace(/\n$/, '')
     return insert(content, { start: lineEndPos, end: lineEndPos })
   }

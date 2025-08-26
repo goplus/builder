@@ -115,7 +115,8 @@ const spxLanguageConfiguration: monaco.languages.LanguageConfiguration = {
     increaseIndentPattern: new RegExp(
       '^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}"\'`]*|\\([^)"\'`]*)$'
     ),
-    decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|\\)[,]?)$')
+    // Modified based on copied version to decrease indent for `else` & `else if`
+    decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|}\\s*else\\b.*{|\\)[,]?)$')
   },
   folding: {
     markers: {

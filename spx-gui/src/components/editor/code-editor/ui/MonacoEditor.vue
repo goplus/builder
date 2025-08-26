@@ -39,7 +39,7 @@ watchEffect(async (onClenaup) => {
     detectIndentation: false,
     folding: true,
     foldingHighlight: true,
-    foldingStrategy: 'indentation',
+    foldingStrategy: 'auto',
     showFoldingControls: 'mouseover',
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
