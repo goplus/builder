@@ -1,12 +1,22 @@
 import { ref } from 'vue'
-import { createPoster } from './poster'
-import ScreenShotSharing from './ScreenShotSharing.vue'
+import { useModal, useMessage } from '@/components/ui'
+import ProjectScreenShotSharing from './ProjectRecordingSharing.vue'
+import ProjectRecordingSharing from './ProjectRecordingSharing.vue'
 import { useQuery } from '@/composables/useQuery'
 import { getProject } from '@/apis/project'
 import type { ProjectData } from '@/apis/project'
+import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import type { RecordData, CreateRecordParams } from './module_RecordingApis'
+import { RecordService } from './module_RecordingApis'
+import { saveFile } from '@/models/common/cloud'
+
+type ProjectProps = { owner: string; name: string }
+declare const props: ProjectProps
 
 const ScreenShotImg = ref<File | null>(null)
 const showScreenShotSharing = ref(false)
+
+const toaster = useMessage()
 
 const {
   data: projectData,
@@ -23,14 +33,12 @@ const {
   }
 )
 
-import { useModal } from '@/components/ui'
-import ProjectScreenShotSharing from './ProjectRecordingSharing.vue'
 const shareScreenShot = useModal(ProjectScreenShotSharing)
 
 async function handleScreenShotSharing(){
-    window.pauseGame()
+    ProjectRunner.pauseGame()
 
-    const ScreenShotFile = window.getScreenShot()
+    const ScreenShotFile = ProjectRunner.getScreenShot()
     ScreenShotImg.value = ScreenShotFile
 
     showScreenShotSharing.value = true
@@ -45,35 +53,28 @@ async function handleScreenShotSharing(){
         // cancelled 逻辑，可能用于调试
     }
 
-    window.resumeGame()
+    ProjectRunner.resumeGame()
 }
 
-
 //=========================================================
-
-import type { RecordData, CreateRecordParams } from './module_RecordingApis'
-import { RecordService } from './module_RecordingApis'
-import { saveFile } from '@/models/common/cloud'
 
 const isRecording = ref(false)
 const showRecordSharing = ref(false)
 const recording = ref<File | null>(null)
 const recordData = ref<RecordData | null>(null)
 
-import { useModal } from '@/components/ui'
-import ProjectRecordingSharing from './ProjectRecordingSharing.vue'
 const shareRecording = useModal(ProjectRecordingSharing)
 
 async function handleRecordingSharing() {
     isRecording.value = !isRecording.value
     
     if (!isRecording.value) {
-        window.startRecording()
+        ProjectRunner.startRecording()
     } else {
-        window.stopRecording()
+        ProjectRunner.stopRecording()
         isRecording.value = false
-        window.pauseGame()
-        const recordFile = window.getRecordedVideo()
+        ProjectRunner.pauseGame()
+        const recordFile = ProjectRunner.getRecordedVideo()
         recording.value = recordFile
 
         const RecordingURL = await saveFile(recordFile) // 存储到云端获得视频存储URL
@@ -96,7 +97,7 @@ async function handleRecordingSharing() {
                 toaster.success(`已分享到${result.platform}`)
             }else if (result.type === 'rerecord'){
                 isRecording.value = true
-                window.startRecording()
+                ProjectRunner.startRecording()
             }
         }catch(e){
             console.log(e)
@@ -104,6 +105,6 @@ async function handleRecordingSharing() {
         }
 
         showRecordSharing.value = false
-        window.resumeGame()
+        ProjectRunner.resumeGame()
     }
 }
