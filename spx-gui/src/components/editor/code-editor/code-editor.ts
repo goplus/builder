@@ -97,6 +97,9 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?forever`,
   `xgo:${packageSpx}?repeat`,
   `xgo:${packageSpx}?repeatUntil`,
+  'xgo:?for_iterate',
+  'xgo:?if_statement',
+  'xgo:?if_else_statement',
 
   `xgo:${packageSpx}?Game.wait`,
   `xgo:${packageSpx}?Game.waitUntil`,
