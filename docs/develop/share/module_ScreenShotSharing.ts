@@ -1,4 +1,4 @@
-import { ref, watch, defineProps } from 'vue'
+import { ref, watch, defineProps, defineEmits } from 'vue'
 import { createPoster } from './module_poster'
 import type { ProjectData } from '@/apis/project'
 
@@ -6,6 +6,12 @@ import type { ProjectData } from '@/apis/project'
 const props = defineProps<{
     ScreenShot: File | null
     projectData: ProjectData
+    showScreenShotSharing: boolean
+}>()
+
+const emit = defineEmits<{
+    cancelled: [] // 正常关闭
+    resolved: [] // 分享成功（后面可能需要统计点击后分享成功率）
 }>()
 
 const poster = createPoster({ img: props.ScreenShot, projectData: props.projectData })
