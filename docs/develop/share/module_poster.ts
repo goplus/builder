@@ -29,11 +29,11 @@ async function createPoster(props: posterProps): Promise<File> {
 const Poster = defineComponent({
     name: 'Poster',
     props: {
-        img: { type: Object as ()=> File, required: true },
-        projectData: { type: Object as ()=> ProjectData, requied: true}
-    }
-    setup(props){
-        return () => h('div', {class: 'poster-container'})
+        img: { type: Object as () => File, required: true },
+        projectData: { type: Object as () => ProjectData, required: true }
+    },
+    setup(props) {
+        return () => h('div', { class: 'poster-container' })
     }
 })
 

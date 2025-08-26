@@ -3,12 +3,12 @@ import { createPoster } from './module_poster'
 import type { ProjectData } from '@/apis/project'
 
 //传入截屏海报图片文件
-defineProps<{
+const props = defineProps<{
     ScreenShot: File | null
     projectData: ProjectData
 }>()
 
-const poster = createPoster({ ScreenShot, projectData})
+const poster = createPoster({ img: props.ScreenShot, projectData: props.projectData })
 
 //从 platfromSelect 得到当前点击的平台名称
 //从 platfromShare 拿到输出跳转 URL 的方法
