@@ -14,8 +14,8 @@ import (
 
 // ImageRecommendParams represents parameters for image recommendation.
 type ImageRecommendParams struct {
-	Text  string `json:"text"`
-	TopK  int    `json:"top_k,omitempty"`
+	Text string `json:"text"`
+	TopK int    `json:"top_k,omitempty"`
 }
 
 // Validate validates the image recommendation parameters.
@@ -24,7 +24,7 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 		return false, "text is required"
 	}
 	if p.TopK == 0 {
-		p.TopK = 8 // Default to top 8 results
+		p.TopK = 3 // Default to top 8 results
 	}
 	if p.TopK < 1 || p.TopK > 50 {
 		return false, "top_k must be between 1 and 50"
@@ -34,37 +34,36 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 
 // ImageRecommendResult represents the result of image recommendation.
 type ImageRecommendResult struct {
-	Query        string                    `json:"query"`
-	TotalImages  int                       `json:"total_images"`
-	ResultsCount int                       `json:"results_count"`
-	Results      []RecommendedImageResult  `json:"results"`
+	Query        string                   `json:"query"`
+	TotalImages  int                      `json:"total_images"`
+	ResultsCount int                      `json:"results_count"`
+	Results      []RecommendedImageResult `json:"results"`
 }
 
 // RecommendedImageResult represents a single recommended image result.
 type RecommendedImageResult struct {
-	ID             int64    `json:"id"`
-	URL            string   `json:"url"`
-	Similarity     float64  `json:"similarity"`
-	Rank           int      `json:"rank"`
-	Labels         []string `json:"labels,omitempty"`
-	ViewCount      int64    `json:"view_count"`
-	SelectionCount int64    `json:"selection_count"`
+	ID             int64     `json:"id"`
+	URL            string    `json:"url"`
+	Similarity     float64   `json:"similarity"`
+	Rank           int       `json:"rank"`
+	Labels         []string  `json:"labels,omitempty"`
+	ViewCount      int64     `json:"view_count"`
+	SelectionCount int64     `json:"selection_count"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
 // AlgorithmSearchRequest represents the request to spx-algorithm service.
 type AlgorithmSearchRequest struct {
-	Text      string   `json:"text"`
-	ImageURLs []string `json:"image_urls"`
-	TopK      int      `json:"top_k"`
+	Text string `json:"text"`
+	TopK int    `json:"top_k"`
 }
 
 // AlgorithmSearchResponse represents the response from spx-algorithm service.
 type AlgorithmSearchResponse struct {
-	Query        string                     `json:"query"`
-	TotalImages  int                        `json:"total_images"`
-	ResultsCount int                        `json:"results_count"`
-	Results      []AlgorithmImageResult     `json:"results"`
+	Query        string                 `json:"query"`
+	TotalImages  int                    `json:"total_images"`
+	ResultsCount int                    `json:"results_count"`
+	Results      []AlgorithmImageResult `json:"results"`
 }
 
 // AlgorithmImageResult represents a single image result from algorithm service.
@@ -79,55 +78,31 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("RecommendImages request - text: %q, top_k: %d", params.Text, params.TopK)
 
-	// Step 1: Get all available images from database
+	// Step 1: Call spx-algorithm service for semantic search
+	algorithmResp, err := ctrl.callAlgorithmService(ctx, params.Text, params.TopK)
+	if err != nil {
+		logger.Printf("Algorithm service call failed: %v", err)
+		return nil, fmt.Errorf("algorithm service call failed: %w", err)
+	}
+
+	// Step 2: Get database resources and create resource map by URL
 	var aiResources []model.AIResource
 	if err := ctrl.db.WithContext(ctx).Find(&aiResources).Error; err != nil {
 		logger.Printf("Failed to fetch AI resources: %v", err)
 		return nil, fmt.Errorf("failed to fetch AI resources: %w", err)
 	}
 
-	if len(aiResources) == 0 {
-		logger.Printf("No images found in database")
-		return &ImageRecommendResult{
-			Query:        params.Text,
-			TotalImages:  0,
-			ResultsCount: 0,
-			Results:      []RecommendedImageResult{},
-		}, nil
-	}
-
-	// Step 2: Prepare image URLs for algorithm service
-	imageURLs := make([]string, 0, len(aiResources))
 	resourceMap := make(map[string]*model.AIResource)
-	
+	logger.Printf("Found %d resources", len(aiResources))
 	for i := range aiResources {
-		imageURL := aiResources[i].URL
-		if imageURL != "" {
-			imageURLs = append(imageURLs, imageURL)
-			resourceMap[imageURL] = &aiResources[i]
+		if aiResources[i].URL != "" {
+			resourceMap[aiResources[i].URL] = &aiResources[i]
 		}
 	}
 
-	if len(imageURLs) == 0 {
-		logger.Printf("No valid image URLs found")
-		return &ImageRecommendResult{
-			Query:        params.Text,
-			TotalImages:  0,
-			ResultsCount: 0,
-			Results:      []RecommendedImageResult{},
-		}, nil
-	}
-
-	// Step 3: Call spx-algorithm service for semantic search
-	algorithmResp, err := ctrl.callAlgorithmService(ctx, params.Text, imageURLs, params.TopK)
-	if err != nil {
-		logger.Printf("Algorithm service call failed: %v", err)
-		return nil, fmt.Errorf("algorithm service call failed: %w", err)
-	}
-
-	// Step 4: Prepare response with resource information
+	// Step 3: Prepare response with resource information
 	results := make([]RecommendedImageResult, 0, len(algorithmResp.Results))
-	
+
 	for _, algResult := range algorithmResp.Results {
 		resource := resourceMap[algResult.ImagePath]
 		if resource == nil {
@@ -172,20 +147,19 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	return &ImageRecommendResult{
 		Query:        params.Text,
-		TotalImages:  len(imageURLs),
+		TotalImages:  algorithmResp.TotalImages,
 		ResultsCount: len(results),
 		Results:      results,
 	}, nil
 }
 
 // callAlgorithmService calls the spx-algorithm service for semantic search.
-func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, imageURLs []string, topK int) (*AlgorithmSearchResponse, error) {
-	algorithmURL := ctrl.getAlgorithmServiceURL() + "/api/search/url"
-	
+func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
+	algorithmURL := ctrl.getAlgorithmServiceURL() + "/api/search/resource"
+
 	reqData := AlgorithmSearchRequest{
-		Text:      text,
-		ImageURLs: imageURLs,
-		TopK:      topK,
+		Text: text,
+		TopK: topK,
 	}
 
 	reqBody, err := json.Marshal(reqData)
@@ -224,7 +198,7 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, i
 // updateResourceViewCount updates the view count for a resource.
 func (ctrl *Controller) updateResourceViewCount(ctx context.Context, resourceID int64) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	// Use UPSERT to create or update usage stats
 	var stats model.ResourceUsageStats
 	err := ctrl.db.WithContext(ctx).Where("ai_resource_id = ?", resourceID).First(&stats).Error
@@ -252,5 +226,5 @@ func (ctrl *Controller) updateResourceViewCount(ctx context.Context, resourceID 
 func (ctrl *Controller) getAlgorithmServiceURL() string {
 	// TODO: Get from config when available
 	// For now, use localhost default
-	return "http://localhost:5000"
+	return "http://100.100.35.128:5000"
 }
