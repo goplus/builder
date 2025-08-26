@@ -6,7 +6,7 @@ import type { ProjectData } from '@/apis/project'
 import type { PlatformShare } from './platformShare'
 
 const props = defineProps<{
-    ScreenShot: File | null
+    Screenshot: File
     projectData: ProjectData
     visible: boolean
 }>()
