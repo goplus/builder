@@ -6,12 +6,12 @@ import type { ProjectData } from '@/apis/project'
 const props = defineProps<{
     ScreenShot: File | null
     projectData: ProjectData
-    showScreenShotSharing: boolean
+    visible: boolean
 }>()
 
 const emit = defineEmits<{
     cancelled: [] // 正常关闭
-    resolved: [] // 分享成功（后面可能需要统计点击后分享成功率）
+    resolved: [platfrom: string] // 分享成功
 }>()
 
 const poster = createPoster({ img: props.ScreenShot, projectData: props.projectData })

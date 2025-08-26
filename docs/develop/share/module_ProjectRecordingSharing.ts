@@ -1,10 +1,9 @@
 import { ref, computed, defineProps, defineEmits } from 'vue'
 
-//传入视频文件（方便复用在项目页面和录屏页面）
 const props = defineProps<{
-    Recording: RecordData,
+    recording: RecordData,
     video?: File // 传的话就更快显示，内存上没有、不传的话就去URL上下后再显示
-    showRecordSharing: boolean
+    visible: boolean
 }>()
 
 const recordPageUrl = computed(() => {
@@ -18,21 +17,15 @@ import { directShare } from './platformShare'
 // 导入qrcode第三方库
 import QRCode from 'qrcode'
 
-/*
-// 定义要发射的事件
+type SharingResult = {
+    type: 'shared'
+    platform: string
+} | {
+    type: 'rerecord'
+}
 const emit = defineEmits<{
-    'update:isRecording': [value: boolean]
-    'update:showRecording': [value: boolean]
-    'reRecord': []
-    'platformSelected': [platform: PlatformShare]
-    'qrCodeGenerated': [qrCodeDataURL: string]
-}>()
-*/
-// 将逻辑处理统一移到父组件
-const emit = defineEmits<{
-    cancelled: [] // 正常关闭
-    resolved: [] // 分享成功（后面可能需要统计点击后分享成功率）
-    rerecord: [] // 需要软删除
+    cancelled: []
+    resolved: [result: SharingResult]
 }>()
 
 
