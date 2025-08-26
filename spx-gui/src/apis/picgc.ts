@@ -2,12 +2,11 @@
  * @desc Picture Generation APIs for AI image generation
  */
 
-// independent baseUrl
-const PICGC_BASE_URL = 'http://localhost:8080'
+import { apiBaseUrl } from '@/utils/env'
 
 // 简单的HTTP请求函数
 async function picgcRequest(path: string, options: RequestInit = {}) {
-  const url = PICGC_BASE_URL + path
+  const url = apiBaseUrl + path
   
   const response = await fetch(url, {
     headers: {
@@ -32,8 +31,24 @@ export type ImageModel = 'png' | 'svg'
 export interface GenerateImageRequest {
   /** The text prompt describing the desired image */
   prompt: string
+  /** Negative prompt for things to avoid */
   negative_prompt?: string
+  /** Image style (e.g., cartoon, realistic, etc.) */
+  style?: string
+  /** AI provider (e.g., svgio, claude, recraft) */
+  provider?: string
+  /** Output format (svg, png, etc.) */
   format?: string
+  /** Whether to skip translation */
+  skip_translate?: boolean
+  /** AI model to use (e.g., gpt-4) */
+  model?: string
+  /** Image size (e.g., "512x512") */
+  size?: string
+  /** Sub-style specification (e.g., hand-drawn) */
+  substyle?: string
+  /** Number of images to generate */
+  n?: number
 }
 
 /** Response from backend API */
@@ -54,13 +69,27 @@ export async function generateImage(
   prompt: string, 
   options?: {
     negative_prompt?: string
+    style?: string
+    provider?: string
     format?: string
+    skip_translate?: boolean
+    model?: string
+    size?: string
+    substyle?: string
+    n?: number
   }
 ): Promise<GenerateImageResponse> {
   const payload: GenerateImageRequest = {
     prompt,
     negative_prompt: options?.negative_prompt || 'text, watermark',
-    format: options?.format
+    style: options?.style,
+    provider: options?.provider,
+    format: options?.format,
+    skip_translate: options?.skip_translate,
+    model: options?.model,
+    size: options?.size,
+    substyle: options?.substyle,
+    n: options?.n
   }
 
   //生成图片的接口
@@ -80,7 +109,13 @@ export async function generateSvgDirect(
   prompt: string,
   options?: {
     negative_prompt?: string
+    style?: string
     format?: string
+    skip_translate?: boolean
+    model?: string
+    size?: string
+    substyle?: string
+    n?: number
   }
 ): Promise<{
   svgContent: string
@@ -91,16 +126,28 @@ export async function generateSvgDirect(
   const payload: GenerateImageRequest = {
     prompt,
     negative_prompt: options?.negative_prompt || 'text, watermark',
-    format: options?.format
+    style: options?.style,
+    provider: provider,
+    format: options?.format,
+    skip_translate: options?.skip_translate,
+    model: options?.model,
+    size: options?.size,
+    substyle: options?.substyle,
+    n: options?.n
   }
 
   let url = ''
+  console.log('provider', provider)
+  url = apiBaseUrl + '/image/svg'
   switch (provider) {
     case 'claude':
-      url = PICGC_BASE_URL + '/v1/images/claude/svg'
+      payload.provider = 'claude'
       break
     case 'recraft':
-      url = PICGC_BASE_URL + '/v1/images/recraft/svg'
+      payload.provider = 'recraft'
+      break
+    case 'svgio':
+      payload.provider = 'svgio'
       break
     default:
       throw new Error('Invalid provider')

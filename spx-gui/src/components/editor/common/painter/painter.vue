@@ -377,7 +377,7 @@ const handleAiConfirm = (data: {
   svgContent?: string;
 }): void => {
   // console.log('AI生成确认:', data)
-  if(data.model === 'claude' || data.model === 'recraft'){
+  if(data.model === 'claude' || data.model === 'recraft' || data.model === 'svgio'){
     data.model = 'svg'
   }else{
     data.model = 'png'
