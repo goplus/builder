@@ -16,6 +16,7 @@ type GenerateRequest struct {
 	Prompt         string   `json:"prompt"`
 	NegativePrompt string   `json:"negative_prompt,omitempty"`
 	Style          string   `json:"style,omitempty"`
+	Theme          string   `json:"theme,omitempty"`
 	Provider       Provider `json:"provider,omitempty"`
 	Format         string   `json:"format,omitempty"`
 	SkipTranslate  bool     `json:"skip_translate,omitempty"`

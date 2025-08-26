@@ -18,6 +18,7 @@ type GenerateSVGParams struct {
 	Prompt         string            `json:"prompt"`
 	NegativePrompt string            `json:"negative_prompt,omitempty"`
 	Style          string            `json:"style,omitempty"`
+	Theme          ThemeType         `json:"theme,omitempty"`
 	Provider       svggen.Provider   `json:"provider,omitempty"`
 	Format         string            `json:"format,omitempty"`
 	SkipTranslate  bool              `json:"skip_translate,omitempty"`
@@ -54,6 +55,11 @@ func (p *GenerateSVGParams) Validate() (bool, string) {
 		return false, "provider must be one of: svgio, recraft, openai"
 	}
 
+	// Validate theme
+	if !IsValidTheme(p.Theme) {
+		return false, "invalid theme type"
+	}
+
 	return true, ""
 }
 
@@ -85,13 +91,20 @@ type ImageResponse struct {
 // GenerateSVG generates an SVG image and returns the SVG content directly.
 func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGParams) (*SVGResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateSVG request - provider: %s, prompt: %q", params.Provider, params.Prompt)
+	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+
+	// Apply theme to prompt if specified
+	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
+	if params.Theme != ThemeNone {
+		logger.Printf("Theme applied - original: %q, enhanced: %q", params.Prompt, finalPrompt)
+	}
 
 	// Convert to svggen request
 	req := svggen.GenerateRequest{
-		Prompt:         params.Prompt,
+		Prompt:         finalPrompt,
 		NegativePrompt: params.NegativePrompt,
 		Style:          params.Style,
+		Theme:          string(params.Theme),
 		Provider:       params.Provider,
 		Format:         params.Format,
 		SkipTranslate:  params.SkipTranslate,
@@ -143,13 +156,20 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 // GenerateImage generates an image and returns metadata information.
 func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImageParams) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateImage request - provider: %s, prompt: %q", params.Provider, params.Prompt)
+	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+
+	// Apply theme to prompt if specified
+	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
+	if params.Theme != ThemeNone {
+		logger.Printf("Theme applied - original: %q, enhanced: %q", params.Prompt, finalPrompt)
+	}
 
 	// Convert to svggen request
 	req := svggen.GenerateRequest{
-		Prompt:         params.Prompt,
+		Prompt:         finalPrompt,
 		NegativePrompt: params.NegativePrompt,
 		Style:          params.Style,
+		Theme:          string(params.Theme),
 		Provider:       params.Provider,
 		Format:         params.Format,
 		SkipTranslate:  params.SkipTranslate,
@@ -227,4 +247,15 @@ func (ctrl *Controller) parseDataURL(dataURL string) ([]byte, error) {
 
 	// Not base64 encoded, return string bytes directly
 	return []byte(data), nil
+}
+
+// GetThemes returns all available themes with their information.
+func (ctrl *Controller) GetThemes(ctx context.Context) ([]ThemeInfo, error) {
+	logger := log.GetReqLogger(ctx)
+	logger.Printf("GetThemes request")
+	
+	themes := GetAllThemesInfo()
+	
+	logger.Printf("Returned %d themes", len(themes))
+	return themes, nil
 }
