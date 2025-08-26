@@ -1,4 +1,8 @@
-import { PlatformConfig, SocialPlatformConfigs } from "./platformShare"
+/**
+ * 直接分享组件
+*/
+// 导入必要的类型和函数
+import { PlatformConfig } from "./platformShare"
 import { createPoster } from "./poster"
 import { defineProps } from "vue"
 /**
@@ -6,10 +10,16 @@ import { defineProps } from "vue"
  */
 const props = defineProps<{
     projectData: {
+        // 项目数据
+        // 项目URL
         url: string
+        // 项目缩略图
+        thumbnail: string
     },
-    poster: File
+    platform: PlatformConfig
 }>()
+
+// 以下是伪代码
 /**
  * 模拟qrcode返回的DataURL
  */
@@ -19,16 +29,14 @@ const qrcode = {
     }
 }
 // 默认选择第一个平台
-const selectPlatform = SocialPlatformConfigs[0]
+const selectPlatform = props.platform
 // 二维码地址 - 默认空字符串
 let DataURL: string = ''
-
-const poster = new File([], 'poster.png', { type: 'image/png' })
 
 
 // 模拟poster返回的图片
 const posterData = await createPoster({
-    img: poster,   
+    img: props.projectData.thumbnail,   
     projectData: {
         name: 'test',
         description: 'test',
