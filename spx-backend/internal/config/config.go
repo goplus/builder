@@ -14,6 +14,7 @@ type Config struct {
 	Casdoor     CasdoorConfig
 	OpenAI      OpenAIConfig
 	AIGC        AIGCConfig
+	Algorithm   AlgorithmConfig
 	Providers   ProvidersConfig
 	Translation TranslationConfig
 }
@@ -137,6 +138,12 @@ func (c *OpenAIConfig) GetPremiumModelID() string {
 // AIGCConfig holds AIGC service configuration.
 type AIGCConfig struct {
 	Endpoint string
+}
+
+// AlgorithmConfig holds algorithm service configuration.
+type AlgorithmConfig struct {
+	Endpoint string
+	Timeout  time.Duration
 }
 
 // ProvidersConfig holds provider configurations for SVG generation.
