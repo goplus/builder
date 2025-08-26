@@ -44,8 +44,9 @@
         />
       </div>
       <div class="detail">
+        <!-- Use `v-show` instead of `v-if` to avoid exception. See details in https://github.com/goplus/builder/issues/2022 -->
         <ProcessDetail
-          v-if="activeMethod == null"
+          v-show="activeMethod == null"
           v-radar="{
             name: 'Original image',
             desc: 'Click to view the original image before any processing'
