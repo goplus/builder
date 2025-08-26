@@ -1,9 +1,9 @@
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import { createPoster } from './module_poster'
-import type { ProjectData } from '@/apis/project'
-import type { PlatformShare } from './platformShare'
 import { sharePoster, SocialPlatformConfigs } from './platformShare'
 import platformSelector from './platformSelector.vue'
+import type { ProjectData } from '@/apis/project'
+import type { PlatformShare } from './platformShare'
 
 const props = defineProps<{
     ScreenShot: File | null
@@ -46,9 +46,9 @@ async function handleSharePoster(): Promise<void> {
     }
     const posterFile = await createPoster({ img: props.ScreenShot, projectData: props.projectData })
     jumpUrl.value = await sharePoster(platform, posterFile, window.location.href)
-    emit('resolved', platform)
+    emit('resolved', selectedPlatformKey.value)
 }
 
-const shareJumpUrlQRCode = computed(() =>
+const JumpUrlQRCode = computed(() =>
     `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(jumpUrl.value)}`
 )
