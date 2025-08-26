@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // ImageRecommendParams represents parameters for image recommendation.
@@ -35,21 +34,16 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 // ImageRecommendResult represents the result of image recommendation.
 type ImageRecommendResult struct {
 	Query        string                   `json:"query"`
-	TotalImages  int                      `json:"total_images"`
 	ResultsCount int                      `json:"results_count"`
 	Results      []RecommendedImageResult `json:"results"`
 }
 
 // RecommendedImageResult represents a single recommended image result.
 type RecommendedImageResult struct {
-	ID             int64     `json:"id"`
-	URL            string    `json:"url"`
-	Similarity     float64   `json:"similarity"`
-	Rank           int       `json:"rank"`
-	Labels         []string  `json:"labels,omitempty"`
-	ViewCount      int64     `json:"view_count"`
-	SelectionCount int64     `json:"selection_count"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID         int64   `json:"id"`
+	URL        string  `json:"url"`
+	Similarity float64 `json:"similarity"`
+	Rank       int     `json:"rank"`
 }
 
 // AlgorithmSearchRequest represents the request to spx-algorithm service.
@@ -61,7 +55,6 @@ type AlgorithmSearchRequest struct {
 // AlgorithmSearchResponse represents the response from spx-algorithm service.
 type AlgorithmSearchResponse struct {
 	Query        string                 `json:"query"`
-	TotalImages  int                    `json:"total_images"`
 	ResultsCount int                    `json:"results_count"`
 	Results      []AlgorithmImageResult `json:"results"`
 }
@@ -85,69 +78,24 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		return nil, fmt.Errorf("algorithm service call failed: %w", err)
 	}
 
-	// Step 2: Get database resources and create resource map by URL
-	var aiResources []model.AIResource
-	if err := ctrl.db.WithContext(ctx).Find(&aiResources).Error; err != nil {
-		logger.Printf("Failed to fetch AI resources: %v", err)
-		return nil, fmt.Errorf("failed to fetch AI resources: %w", err)
-	}
-
-	resourceMap := make(map[string]*model.AIResource)
-	logger.Printf("Found %d resources", len(aiResources))
-	for i := range aiResources {
-		if aiResources[i].URL != "" {
-			resourceMap[aiResources[i].URL] = &aiResources[i]
-		}
-	}
-
-	// Step 3: Prepare response with resource information
+	// Step 2: Convert algorithm results to response format and fetch resource details
 	results := make([]RecommendedImageResult, 0, len(algorithmResp.Results))
 
 	for _, algResult := range algorithmResp.Results {
-		resource := resourceMap[algResult.ImagePath]
-		if resource == nil {
-			logger.Printf("Warning: resource not found for URL: %s", algResult.ImagePath)
-			continue
+		result := RecommendedImageResult{
+			ID:         0,
+			URL:        algResult.ImagePath,
+			Similarity: algResult.Similarity,
+			Rank:       algResult.Rank,
 		}
 
-		// Get usage stats
-		var stats model.ResourceUsageStats
-		ctrl.db.WithContext(ctx).Where("ai_resource_id = ?", resource.ID).First(&stats)
-
-		// Get labels
-		var labels []string
-		var resourceLabels []model.ResourceLabel
-		if err := ctrl.db.WithContext(ctx).Where("aiResourceId = ?", resource.ID).Find(&resourceLabels).Error; err == nil {
-			for _, rl := range resourceLabels {
-				var label model.Label
-				if err := ctrl.db.WithContext(ctx).Where("id = ?", rl.LabelID).First(&label).Error; err == nil {
-					labels = append(labels, label.LabelName)
-				}
-			}
-		}
-
-		results = append(results, RecommendedImageResult{
-			ID:             resource.ID,
-			URL:            resource.URL,
-			Similarity:     algResult.Similarity,
-			Rank:           algResult.Rank,
-			Labels:         labels,
-			ViewCount:      stats.ViewCount,
-			SelectionCount: stats.SelectionCount,
-			CreatedAt:      resource.CreatedAt,
-		})
-
-		// Update view count
-		go func(resourceID int64) {
-			ctrl.updateResourceViewCount(context.Background(), resourceID)
-		}(resource.ID)
+		results = append(results, result)
 	}
 
 	logger.Printf("Recommendation completed - found %d results", len(results))
 
 	return &ImageRecommendResult{
 		Query:        params.Text,
-		TotalImages:  algorithmResp.TotalImages,
 		ResultsCount: len(results),
 		Results:      results,
 	}, nil
@@ -195,32 +143,6 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	return &algorithmResp, nil
 }
 
-// updateResourceViewCount updates the view count for a resource.
-func (ctrl *Controller) updateResourceViewCount(ctx context.Context, resourceID int64) {
-	logger := log.GetReqLogger(ctx)
-
-	// Use UPSERT to create or update usage stats
-	var stats model.ResourceUsageStats
-	err := ctrl.db.WithContext(ctx).Where("ai_resource_id = ?", resourceID).First(&stats).Error
-	if err != nil {
-		// Create new record
-		stats = model.ResourceUsageStats{
-			AIResourceID: resourceID,
-			ViewCount:    1,
-			LastUsedAt:   time.Now(),
-		}
-		if err := ctrl.db.WithContext(ctx).Create(&stats).Error; err != nil {
-			logger.Printf("Failed to create usage stats for resource %d: %v", resourceID, err)
-		}
-	} else {
-		// Update existing record
-		stats.ViewCount++
-		stats.LastUsedAt = time.Now()
-		if err := ctrl.db.WithContext(ctx).Save(&stats).Error; err != nil {
-			logger.Printf("Failed to update usage stats for resource %d: %v", resourceID, err)
-		}
-	}
-}
 
 // getAlgorithmServiceURL returns the algorithm service URL from configuration.
 func (ctrl *Controller) getAlgorithmServiceURL() string {
