@@ -32,12 +32,12 @@
                   <div class="model-selector">
                     <div 
                       class="model-option"
-                      :class="{ active: selectedModel === 'claude' }"
-                      @click="selectedModel = 'claude'"
+                      :class="{ active: selectedModel === 'svgio' }"
+                      @click="selectedModel = 'svgio'"
                     >
                       <div class="model-icon">🖼️</div>
                       <div class="model-info">
-                        <div class="model-name">{{ $t({ en: 'Claude Vector', zh: 'Claude矢量图' }) }}</div>
+                        <div class="model-name">{{ $t({ en: 'SVGIO Vector', zh: 'SVGIO矢量图' }) }}</div>
                         <div class="model-desc">{{ $t({ en: 'Generate simple, accurate vector images', zh: '生成简单，精确的矢量图' }) }}</div>
                       </div>
                     </div>
@@ -168,7 +168,7 @@ import ErrorModal from './error.vue'
   }>()
   
   // 响应式数据
-  const selectedModel = ref<'claude' | 'recraft'>('claude')
+  const selectedModel = ref<'claude' | 'recraft' | 'svgio'>('claude')
   const prompt = ref('')
   const previewUrl = ref('')
   const isGenerating = ref(false)
@@ -209,7 +209,7 @@ import ErrorModal from './error.vue'
       prompt: prompt.value
     }
     
-    if (selectedModel.value === 'recraft' || selectedModel.value === 'claude') {
+    if (selectedModel.value === 'recraft' || selectedModel.value === 'claude' || selectedModel.value === 'svgio') {
       // SVG模式：传递原始SVG代码
       confirmData.svgContent = svgRawContent.value
       confirmData.url = previewUrl.value // 用于预览的blob URL
@@ -273,7 +273,7 @@ import ErrorModal from './error.vue'
     svgRawContent.value = ''
     
     try {
-      if (selectedModel.value === 'recraft' || selectedModel.value === 'claude') {
+      if (selectedModel.value === 'recraft' || selectedModel.value === 'claude' || selectedModel.value === 'svgio')  {
         const svgResult = await generateSvgDirect(selectedModel.value, prompt.value)
         
         // 直接获得SVG内容
