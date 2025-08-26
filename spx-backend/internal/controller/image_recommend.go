@@ -142,11 +142,11 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		// Get labels
 		var labels []string
 		var resourceLabels []model.ResourceLabel
-		if err := ctrl.db.WithContext(ctx).Where("resource_id = ?", resource.ID).Find(&resourceLabels).Error; err == nil {
+		if err := ctrl.db.WithContext(ctx).Where("aiResourceId = ?", resource.ID).Find(&resourceLabels).Error; err == nil {
 			for _, rl := range resourceLabels {
 				var label model.Label
 				if err := ctrl.db.WithContext(ctx).Where("id = ?", rl.LabelID).First(&label).Error; err == nil {
-					labels = append(labels, label.Name)
+					labels = append(labels, label.LabelName)
 				}
 			}
 		}
