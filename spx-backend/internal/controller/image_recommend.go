@@ -143,7 +143,6 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	return &algorithmResp, nil
 }
 
-
 // getAlgorithmServiceURL returns the algorithm service URL from configuration.
 func (ctrl *Controller) getAlgorithmServiceURL() string {
 	// TODO: Get from config when available

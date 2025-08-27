@@ -1,7 +1,6 @@
 package config
 
 import (
-
 	"time"
 )
 
@@ -148,8 +147,8 @@ type AlgorithmConfig struct {
 
 // ProvidersConfig holds provider configurations for SVG generation.
 type ProvidersConfig struct {
-	SVGIO   SVGIOConfig
-	Recraft RecraftConfig
+	SVGIO     SVGIOConfig
+	Recraft   RecraftConfig
 	SVGOpenAI OpenAISVGConfig
 }
 
@@ -180,8 +179,8 @@ type RecraftConfig struct {
 
 // RecraftEndpoints holds Recraft API endpoint configuration.
 type RecraftEndpoints struct {
-	Generate   string
-	Vectorize  string
+	Generate  string
+	Vectorize string
 }
 
 // OpenAISVGConfig holds OpenAI provider configuration for SVG generation (supports all OpenAI compatible models).

@@ -42,11 +42,11 @@ func TestAIResourceFields(t *testing.T) {
 		},
 		URL: "https://example.com/image.svg",
 	}
-	
+
 	if resource.URL == "" {
 		t.Error("AIResource URL field should not be empty")
 	}
-	
+
 	if resource.ID == 0 {
 		t.Error("AIResource ID should not be zero")
 	}
@@ -61,11 +61,11 @@ func TestLabelFields(t *testing.T) {
 		},
 		LabelName: "test-label",
 	}
-	
+
 	if label.LabelName == "" {
 		t.Error("Label LabelName field should not be empty")
 	}
-	
+
 	if label.ID == 0 {
 		t.Error("Label ID should not be zero")
 	}
@@ -81,15 +81,15 @@ func TestResourceUsageStatsFields(t *testing.T) {
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
-	
+
 	if stats.AIResourceID == 0 {
 		t.Error("ResourceUsageStats AIResourceID should not be zero")
 	}
-	
+
 	if stats.ViewCount < 0 {
 		t.Error("ResourceUsageStats ViewCount should not be negative")
 	}
-	
+
 	if stats.SelectionCount < 0 {
 		t.Error("ResourceUsageStats SelectionCount should not be negative")
 	}
