@@ -164,7 +164,7 @@ class ImageSearchService:
             logger.error(f"处理图片失败 {image_source}: {e}")
             return None
     
-    def search_images(self, text_query: str, image_paths: List[str], top_k: Optional[int] = None) -> List[Dict[str, Any]]:
+    def search_images(self, text_query: str, image_paths: List[str], top_k: Optional[int] = None, threshold: int = 0.25) -> List[Dict[str, Any]]:
         """
         根据文本查询搜索图片
         
@@ -172,6 +172,7 @@ class ImageSearchService:
             text_query: 查询文本
             image_paths: 图片路径列表（支持本地路径和网络URL）
             top_k: 返回前k张图片，None则返回所有
+            threshold: 仅返回高于阈值的图片
             
         Returns:
             排序后的结果列表，包含图片路径和相似度分数
@@ -236,6 +237,11 @@ class ImageSearchService:
         # 返回前k个结果
         if top_k is not None and top_k > 0:
             results = results[:top_k]
+        
+        # 根据阈值进行筛选
+        if threshold > 0:
+            results = [r for r in results if r['similarity'] >= threshold]
+            logger.info(f"阈值筛选后保留 {len(results)} 个结果（阈值: {threshold}）")
         
         logger.info(f"搜索完成，查询: '{text_query}', 找到 {len(results)} 个结果")
         return results

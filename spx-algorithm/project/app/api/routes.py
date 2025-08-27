@@ -220,7 +220,8 @@ def search_resource_svgs():
     接受JSON数据：
     {
         "text": "查询文本",
-        "k": 5  // 可选，返回前k张图片
+        "k": 5,  // 可选，返回前k张图片
+        "threshold": 0.25  // 可选，相似度阈值（0-1之间）
     }
     """
     try:
@@ -244,6 +245,14 @@ def search_resource_svgs():
                 return jsonify({
                     'error': 'k参数必须是正整数',
                     'code': 'INVALID_K'
+                }), 400
+        
+        threshold = data.get('threshold', 0.0)
+        if threshold is not None:
+            if not isinstance(threshold, (int, float)) or threshold < 0 or threshold > 1:
+                return jsonify({
+                    'error': 'threshold参数必须是0-1之间的数值',
+                    'code': 'INVALID_THRESHOLD'
                 }), 400
         
         # 获取resource目录路径（相对于项目根目录）
@@ -274,7 +283,7 @@ def search_resource_svgs():
             init_search_service()
         
         # 执行搜索
-        results = search_service.search_images(text_query, svg_paths, k)
+        results = search_service.search_images(text_query, svg_paths, k, threshold)
         
         # 处理结果，返回相对于resource目录的路径
         processed_results = []
