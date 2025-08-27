@@ -33,9 +33,9 @@ const resultContent = computed<string | null>(() => {
 
 <template>
   <section class="copilot-round">
-    <UserMessage :message="round.userMessage" />
+    <!-- <UserMessage :message="round.userMessage" /> -->
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
-    <div v-if="round.state !== RoundState.Initialized" class="state">
+    <!-- <div v-if="round.state !== RoundState.Initialized && round.state !== RoundState.Completed" class="state">
       <div v-if="round.state === RoundState.Loading || round.state === RoundState.InProgress" class="loading">
         <svg
           class="loading-icon"
@@ -83,7 +83,7 @@ const resultContent = computed<string | null>(() => {
         </svg>
         {{ $t({ en: 'Retry', zh: '重试' }) }}
       </button>
-    </div>
+    </div> -->
   </section>
 </template>
 
