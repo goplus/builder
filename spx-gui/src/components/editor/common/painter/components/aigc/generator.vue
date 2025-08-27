@@ -33,18 +33,7 @@
                 </div>
   
                 <!-- 提示词输入 -->
-                <div class="form-group">
-                  <label class="form-label">{{ $t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
-                  <textarea
-                    v-model="prompt"
-                    class="prompt-input"
-                    :placeholder="$t({ en: 'Please describe in detail the image content you want to generate, for example: a cute cartoon cat sitting on a rainbow with blue sky and white clouds in the background...', zh: '请详细描述您想要生成的图片内容，例如：一只可爱的卡通猫咪，坐在彩虹上，背景是蓝天白云...' })"
-                    rows="4"
-                  ></textarea>
-                  <div class="input-hint">
-                    {{ $t({ en: 'Tip: The more detailed the description, the better the generated image effect', zh: '提示：描述越详细，生成的图片效果越好' }) }}
-                  </div>
-                </div>
+                <PromptInput v-model="prompt" />
   
                 <!-- 生成按钮 -->
                 <div class="form-group">
@@ -123,10 +112,8 @@ import { ref, watch } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './error.vue'
 import ModelSelector from './modelSelector.vue'
+import PromptInput from './promptInput.vue'
 
-
-  
-  
   // Props
   interface Props {
     visible: boolean
@@ -150,7 +137,7 @@ import ModelSelector from './modelSelector.vue'
   
   // 模型选择器引用
   const modelSelectorRef = ref<InstanceType<typeof ModelSelector>>()
-  
+
   // 响应式数据
   const prompt = ref('')
   const previewUrl = ref('')
@@ -169,7 +156,7 @@ import ModelSelector from './modelSelector.vue'
   const getSelectedModel = () => {
     return modelSelectorRef.value?.selectedModel || null
   }
-  
+
   // 方法
   const handleGenerate = async () => {
     if (!prompt.value.trim()) return
@@ -194,7 +181,7 @@ import ModelSelector from './modelSelector.vue'
     if (!previewUrl.value) return
     
     const selectedModelInfo = getSelectedModel()
-    
+
     const confirmData: any = {
       model: selectedModelInfo,
       prompt: prompt.value
@@ -436,7 +423,7 @@ import ModelSelector from './modelSelector.vue'
     color: #374151;
     font-size: 14px;
   }
-  
+
   
   .model-option {
     border: 2px solid #e5e7eb;
@@ -479,28 +466,8 @@ import ModelSelector from './modelSelector.vue'
     color: #6b7280;
   }
   
-  .prompt-input {
-    width: 100%;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    resize: vertical;
-    min-height: 100px;
-    transition: border-color 0.2s;
-  }
-  
-  .prompt-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-  
-  .input-hint {
-    margin-top: 6px;
-    font-size: 12px;
-    color: #6b7280;
-  }
+
+
   
   .generate-btn {
     width: 100%;
@@ -527,7 +494,7 @@ import ModelSelector from './modelSelector.vue'
     background: #d1d5db;
     cursor: not-allowed;
   }
-  
+
   
   .preview-container {
     border: 2px dashed #d1d5db;
