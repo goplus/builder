@@ -728,6 +728,15 @@ export class CodeEditor extends Disposable {
     this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
 
+  async setLocale(locale: string) {
+    await this.lspClient.initialize({ signal: new AbortController().signal }, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+      locale
+    })
+  }
+
   private registerMCPTools(): void {
     // Register tools for code editor
     this.registry.registerTools(

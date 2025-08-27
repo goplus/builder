@@ -232,6 +232,13 @@ export class SpxLSPClient extends Disposable {
     })
   }
 
+  async initialize(
+    ctx: RequestContext,
+    params: lsp.InitializeParams
+  ): Promise<lsp.InitializeResult> {
+    return this.request<lsp.InitializeResult>(ctx, lsp.InitializeRequest.method, params)
+  }
+
   async workspaceExecuteCommandSpxGetDefinitions(
     ctx: RequestContext,
     ...params: spxGetDefinitions.Arguments
