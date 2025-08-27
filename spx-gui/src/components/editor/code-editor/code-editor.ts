@@ -729,12 +729,15 @@ export class CodeEditor extends Disposable {
   }
 
   async setLocale(locale: string) {
-    await this.lspClient.initialize({ signal: new AbortController().signal }, {
-      processId: null,
-      rootUri: null,
-      capabilities: {},
-      locale
-    })
+    await this.lspClient.initialize(
+      { signal: new AbortController().signal },
+      {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+        locale
+      }
+    )
   }
 
   private registerMCPTools(): void {
