@@ -50,6 +50,7 @@ type RecommendedImageResult struct {
 type AlgorithmSearchRequest struct {
 	Text string `json:"text"`
 	TopK int    `json:"top_k"`
+	Threshold float64 `json:"threshold"`
 }
 
 // AlgorithmSearchResponse represents the response from spx-algorithm service.
@@ -108,6 +109,7 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	reqData := AlgorithmSearchRequest{
 		Text: text,
 		TopK: topK,
+		Threshold: 0.27,
 	}
 
 	reqBody, err := json.Marshal(reqData)
