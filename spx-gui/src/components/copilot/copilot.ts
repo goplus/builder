@@ -305,6 +305,8 @@ export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
 
+  private maxRounds = 10
+
   constructor(
     topic: Topic,
     private copilot: Copilot
@@ -339,10 +341,18 @@ export class Session {
 
   private startCurrentRoundWithDelay = debounce(() => this.startCurrentRound(), 1000)
 
+  // Limit the number of rounds to prevent excessive historical messages
+  private limitRounds() {
+    if (this.rounds.length > this.maxRounds) {
+      this.rounds.splice(0, this.rounds.length - this.maxRounds)
+    }
+  }
+
   addUserMessage(m: UserMessage) {
     this.abortCurrentRound() // TODO: or should we wait for the current round to finish? Then there may be a user message queue
     const round = new Round(m, this.copilot, this)
     this.rounds.push(round)
+    this.limitRounds()
     if (m.type === 'event' && this.rounds.length > 1) {
       // If the user event is added in the middle of a session,
       // we delay the starting of the current round to introduce batching.
