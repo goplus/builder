@@ -2,7 +2,7 @@ package controller
 
 import (
 	"fmt"
-	
+
 	"github.com/goplus/builder/spx-backend/internal/svggen"
 )
 
@@ -10,23 +10,23 @@ import (
 type ThemeType string
 
 const (
-	ThemeNone       ThemeType = ""
-	ThemeCartoon    ThemeType = "cartoon"
-	ThemeRealistic  ThemeType = "realistic"
-	ThemeMinimal    ThemeType = "minimal"
-	ThemeFantasy    ThemeType = "fantasy"
-	ThemeRetro      ThemeType = "retro"
-	ThemeScifi      ThemeType = "scifi"
-	ThemeNature     ThemeType = "nature"
-	ThemeBusiness   ThemeType = "business"
+	ThemeNone      ThemeType = ""
+	ThemeCartoon   ThemeType = "cartoon"
+	ThemeRealistic ThemeType = "realistic"
+	ThemeMinimal   ThemeType = "minimal"
+	ThemeFantasy   ThemeType = "fantasy"
+	ThemeRetro     ThemeType = "retro"
+	ThemeScifi     ThemeType = "scifi"
+	ThemeNature    ThemeType = "nature"
+	ThemeBusiness  ThemeType = "business"
 )
 
 // ThemeInfo represents detailed information about a theme
 type ThemeInfo struct {
-	ID                 ThemeType       `json:"id"`
-	Name               string          `json:"name"`
-	Description        string          `json:"description"`
-	Prompt             string          `json:"prompt"`
+	ID                  ThemeType       `json:"id"`
+	Name                string          `json:"name"`
+	Description         string          `json:"description"`
+	Prompt              string          `json:"prompt"`
 	RecommendedProvider svggen.Provider `json:"recommended_provider"`
 }
 
@@ -70,15 +70,15 @@ var ThemeDescriptions = map[ThemeType]string{
 
 // ThemeProviders maps each theme to its recommended provider
 var ThemeProviders = map[ThemeType]svggen.Provider{
-	ThemeNone:      svggen.ProviderSVGIO,    // Default provider
-	ThemeCartoon:   svggen.ProviderRecraft,  // Recraft excels at cartoon styles
-	ThemeRealistic: svggen.ProviderRecraft,  // Recraft is good for realistic styles
-	ThemeMinimal:   svggen.ProviderSVGIO,    // SVGIO works well for minimal styles
-	ThemeFantasy:   svggen.ProviderRecraft,  // Recraft handles fantasy well
-	ThemeRetro:     svggen.ProviderRecraft,  // Recraft for retro styles
-	ThemeScifi:     svggen.ProviderRecraft,  // Recraft for sci-fi
-	ThemeNature:    svggen.ProviderRecraft,  // Recraft for nature themes
-	ThemeBusiness:  svggen.ProviderRecraft,  // Recraft for business styles
+	ThemeNone:      svggen.ProviderSVGIO,   // Default provider
+	ThemeCartoon:   svggen.ProviderRecraft, // Recraft excels at cartoon styles
+	ThemeRealistic: svggen.ProviderRecraft, // Recraft is good for realistic styles
+	ThemeMinimal:   svggen.ProviderSVGIO,   // SVGIO works well for minimal styles
+	ThemeFantasy:   svggen.ProviderRecraft, // Recraft handles fantasy well
+	ThemeRetro:     svggen.ProviderRecraft, // Recraft for retro styles
+	ThemeScifi:     svggen.ProviderRecraft, // Recraft for sci-fi
+	ThemeNature:    svggen.ProviderRecraft, // Recraft for nature themes
+	ThemeBusiness:  svggen.ProviderRecraft, // Recraft for business styles
 }
 
 // IsValidTheme checks if the given theme is valid
@@ -111,12 +111,12 @@ func ApplyThemeToPrompt(originalPrompt string, theme ThemeType) string {
 	if theme == ThemeNone {
 		return originalPrompt
 	}
-	
+
 	themeEnhancement := GetThemePromptEnhancement(theme)
 	if themeEnhancement == "" {
 		return originalPrompt
 	}
-	
+
 	return fmt.Sprintf("%s，%s", originalPrompt, themeEnhancement)
 }
 
@@ -138,10 +138,10 @@ func GetAvailableThemes() []ThemeType {
 // GetThemeInfo returns detailed information for a specific theme
 func GetThemeInfo(theme ThemeType) ThemeInfo {
 	return ThemeInfo{
-		ID:                 theme,
-		Name:               ThemeNames[theme],
-		Description:        ThemeDescriptions[theme],
-		Prompt:             ThemePrompts[theme],
+		ID:                  theme,
+		Name:                ThemeNames[theme],
+		Description:         ThemeDescriptions[theme],
+		Prompt:              ThemePrompts[theme],
 		RecommendedProvider: GetThemeRecommendedProvider(theme),
 	}
 }
@@ -150,10 +150,10 @@ func GetThemeInfo(theme ThemeType) ThemeInfo {
 func GetAllThemesInfo() []ThemeInfo {
 	themes := GetAvailableThemes()
 	result := make([]ThemeInfo, len(themes))
-	
+
 	for i, theme := range themes {
 		result[i] = GetThemeInfo(theme)
 	}
-	
+
 	return result
 }

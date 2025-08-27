@@ -15,17 +15,17 @@ import (
 
 // GenerateSVGParams represents parameters for SVG generation.
 type GenerateSVGParams struct {
-	Prompt         string            `json:"prompt"`
-	NegativePrompt string            `json:"negative_prompt,omitempty"`
-	Style          string            `json:"style,omitempty"`
-	Theme          ThemeType         `json:"theme,omitempty"`
-	Provider       svggen.Provider   `json:"provider,omitempty"`
-	Format         string            `json:"format,omitempty"`
-	SkipTranslate  bool              `json:"skip_translate,omitempty"`
-	Model          string            `json:"model,omitempty"`
-	Size           string            `json:"size,omitempty"`
-	Substyle       string            `json:"substyle,omitempty"`
-	NumImages      int               `json:"n,omitempty"`
+	Prompt         string          `json:"prompt"`
+	NegativePrompt string          `json:"negative_prompt,omitempty"`
+	Style          string          `json:"style,omitempty"`
+	Theme          ThemeType       `json:"theme,omitempty"`
+	Provider       svggen.Provider `json:"provider,omitempty"`
+	Format         string          `json:"format,omitempty"`
+	SkipTranslate  bool            `json:"skip_translate,omitempty"`
+	Model          string          `json:"model,omitempty"`
+	Size           string          `json:"size,omitempty"`
+	Substyle       string          `json:"substyle,omitempty"`
+	NumImages      int             `json:"n,omitempty"`
 }
 
 // Validate validates the SVG generation parameters.
@@ -75,29 +75,29 @@ type GenerateImageParams struct {
 
 // SVGResponse represents the response for direct SVG requests.
 type SVGResponse struct {
-	Data   []byte            `json:"-"` // SVG content
+	Data    []byte            `json:"-"` // SVG content
 	Headers map[string]string `json:"-"` // Response headers
 }
 
 // ImageResponse represents the response for image metadata requests.
 type ImageResponse struct {
-	ID               string            `json:"id"`
-	SVGURL           string            `json:"svg_url"`
-	PNGURL           string            `json:"png_url,omitempty"`
-	Width            int               `json:"width"`
-	Height           int               `json:"height"`
-	Provider         svggen.Provider   `json:"provider"`
-	OriginalPrompt   string            `json:"original_prompt,omitempty"`
-	TranslatedPrompt string            `json:"translated_prompt,omitempty"`
-	WasTranslated    bool              `json:"was_translated"`
-	CreatedAt        time.Time         `json:"created_at"`
+	ID               string          `json:"id"`
+	SVGURL           string          `json:"svg_url"`
+	PNGURL           string          `json:"png_url,omitempty"`
+	Width            int             `json:"width"`
+	Height           int             `json:"height"`
+	Provider         svggen.Provider `json:"provider"`
+	OriginalPrompt   string          `json:"original_prompt,omitempty"`
+	TranslatedPrompt string          `json:"translated_prompt,omitempty"`
+	WasTranslated    bool            `json:"was_translated"`
+	CreatedAt        time.Time       `json:"created_at"`
 }
 
 // GenerateSVG generates an SVG image and returns the SVG content directly.
 func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGParams) (*SVGResponse, error) {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
-	
+
 	if params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
@@ -169,7 +169,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImageParams) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
-	
+
 	if params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
@@ -272,9 +272,9 @@ func (ctrl *Controller) parseDataURL(dataURL string) ([]byte, error) {
 func (ctrl *Controller) GetThemes(ctx context.Context) ([]ThemeInfo, error) {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("GetThemes request")
-	
+
 	themes := GetAllThemesInfo()
-	
+
 	logger.Printf("Returned %d themes", len(themes))
 	return themes, nil
 }

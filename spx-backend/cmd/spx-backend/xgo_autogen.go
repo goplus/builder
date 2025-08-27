@@ -5,6 +5,12 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -15,11 +21,6 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/yap"
-	"net/http"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
 )
 
 const _ = true
@@ -216,6 +217,7 @@ type put_user struct {
 	yap.Handler
 	*AppV2
 }
+
 //line cmd/spx-backend/main.yap:30
 func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:30:1
@@ -351,6 +353,7 @@ func (this *AppV2) Main() {
 	_xgo_obj45 := &put_user{AppV2: this}
 	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45)
 }
+
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -382,6 +385,7 @@ func (this *delete_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/delete_course-series_#id.yap:10
 func (this *delete_course_series_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -420,6 +424,7 @@ func (this *delete_course_series_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/delete_course_#id.yap:10
 func (this *delete_course_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -458,6 +463,7 @@ func (this *delete_course_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/delete_project_#owner_#name.yap:10
 func (this *delete_project_owner_name) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -491,6 +497,7 @@ func (this *delete_project_owner_name) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/delete_project_#owner_#name_liking.yap:10
 func (this *delete_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -524,6 +531,7 @@ func (this *delete_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/delete_user_#username_following.yap:6
 func (this *delete_user_username_following) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -555,6 +563,7 @@ func (this *delete_user_username_following) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_asset_#id.yap:6
 func (this *get_asset_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -579,6 +588,7 @@ func (this *get_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_assets_list.yap:11
 func (this *get_assets_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -709,6 +719,7 @@ func (this *get_assets_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_course-series_#id.yap:6
 func (this *get_course_series_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -733,6 +744,7 @@ func (this *get_course_series_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_course-serieses_list.yap:11
 func (this *get_course_serieses_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -810,6 +822,7 @@ func (this *get_course_serieses_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_course_#id.yap:6
 func (this *get_course_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -834,6 +847,7 @@ func (this *get_course_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_courses_list.yap:11
 func (this *get_courses_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -918,6 +932,7 @@ func (this *get_courses_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_health.yap:6
 func (this *get_health) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -942,6 +957,7 @@ func (this *get_health) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_project-release_#owner_#project_#release.yap:10
 func (this *get_project_release_owner_project_release) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -970,6 +986,7 @@ func (this *get_project_release_owner_project_release) Classclone() yap.HandlerP
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_project-releases_list.yap:10
 func (this *get_project_releases_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1039,6 +1056,7 @@ func (this *get_project_releases_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_project_#owner_#name.yap:10
 func (this *get_project_owner_name) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1065,6 +1083,7 @@ func (this *get_project_owner_name) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_project_#owner_#name_liking.yap:10
 func (this *get_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1104,6 +1123,7 @@ func (this *get_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_projects_list.yap:14
 func (this *get_projects_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1291,6 +1311,7 @@ func (this *get_projects_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_themes.yap:10
 func (this *get_themes) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1315,6 +1336,7 @@ func (this *get_themes) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_user.yap:6
 func (this *get_user) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1346,6 +1368,7 @@ func (this *get_user) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_user_#username.yap:6
 func (this *get_user_username) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1370,6 +1393,7 @@ func (this *get_user_username) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_user_#username_following.yap:6
 func (this *get_user_username_following) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1407,6 +1431,7 @@ func (this *get_user_username_following) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_users_list.yap:10
 func (this *get_users_list) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1474,6 +1499,7 @@ func (this *get_users_list) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/get_util_upinfo.yap:6
 func (this *get_util_upinfo) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1505,6 +1531,7 @@ func (this *get_util_upinfo) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_ai_interaction_turn.yap:10
 func (this *post_ai_interaction_turn) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1545,6 +1572,7 @@ func (this *post_ai_interaction_turn) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_aigc_matting.yap:10
 func (this *post_aigc_matting) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1592,6 +1620,7 @@ func (this *post_aigc_matting) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_asset.yap:12
 func (this *post_asset) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1649,6 +1678,7 @@ func (this *post_asset) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_copilot_message.yap:12
 func (this *post_copilot_message) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1719,6 +1749,7 @@ func (this *post_copilot_message) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_copilot_stream_message.yap:12
 func (this *post_copilot_stream_message) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1793,6 +1824,7 @@ func (this *post_copilot_stream_message) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_course-series.yap:11
 func (this *post_course_series) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1847,6 +1879,7 @@ func (this *post_course_series) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_course.yap:11
 func (this *post_course) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1901,6 +1934,7 @@ func (this *post_course) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_image.yap:10
 func (this *post_image) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1941,6 +1975,7 @@ func (this *post_image) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_image_svg.yap:10
 func (this *post_image_svg) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -1989,6 +2024,7 @@ func (this *post_image_svg) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_images_recommend.yap:10
 func (this *post_images_recommend) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2029,6 +2065,7 @@ func (this *post_images_recommend) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_project-release.yap:10
 func (this *post_project_release) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2076,6 +2113,7 @@ func (this *post_project_release) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_project.yap:10
 func (this *post_project) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2123,6 +2161,7 @@ func (this *post_project) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_project_#owner_#name_liking.yap:10
 func (this *post_project_owner_name_liking) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2156,6 +2195,7 @@ func (this *post_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_project_#owner_#name_view.yap:10
 func (this *post_project_owner_name_view) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2189,6 +2229,7 @@ func (this *post_project_owner_name_view) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_user_#username_following.yap:6
 func (this *post_user_username_following) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2220,6 +2261,7 @@ func (this *post_user_username_following) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_util_fileurls.yap:10
 func (this *post_util_fileurls) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2260,6 +2302,7 @@ func (this *post_util_fileurls) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/post_workflow_stream_message.yap:12
 func (this *post_workflow_stream_message) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2334,6 +2377,7 @@ func (this *post_workflow_stream_message) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/put_asset_#id.yap:12
 func (this *put_asset_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2391,6 +2435,7 @@ func (this *put_asset_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/put_course-series_#id.yap:11
 func (this *put_course_series_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2445,6 +2490,7 @@ func (this *put_course_series_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/put_course_#id.yap:11
 func (this *put_course_id) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2499,6 +2545,7 @@ func (this *put_course_id) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/put_project_#owner_#name.yap:10
 func (this *put_project_owner_name) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2548,6 +2595,7 @@ func (this *put_project_owner_name) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+
 //line cmd/spx-backend/put_user.yap:10
 func (this *put_user) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
