@@ -1,3 +1,4 @@
+//<script setup> // expose、defineExpose需要在setup内执行
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick } from 'vue'
