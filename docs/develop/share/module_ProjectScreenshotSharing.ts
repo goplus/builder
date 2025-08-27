@@ -1,12 +1,12 @@
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import { createPoster } from './module_poster'
+import Poster from './poster'
 import { sharePoster, SocialPlatformConfigs } from './platformShare'
 import platformSelector from './platformSelector.vue'
-import type { ProjectData } from '@/apis/project'
+import { ProjectData } from '@/apis/project'
 import type { PlatformShare } from './platformShare'
 
 const props = defineProps<{
-    Screenshot: File
+    screenshot: File
     projectData: ProjectData
     visible: boolean
 }>()
@@ -44,7 +44,10 @@ async function handleSharePoster(): Promise<void> {
         emit('cancelled')
         return
     }
-    const posterFile = await createPoster({ img: props.ScreenShot, projectData: props.projectData })
+
+    const posterCompRef = ref<InstanceType<Poster>>()
+    const posterFile = await posterCompRef.value.createPoster({ img: props.screenShot, ProjectData: props.projectData})
+
     jumpUrl.value = await sharePoster(platform, posterFile, window.location.href)
     emit('resolved', selectedPlatformKey.value)
 }
