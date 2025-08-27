@@ -279,6 +279,73 @@ class MilvusVectorDatabase:
             logger.error(f"编码SVG失败 {url}: {e}")
             return None
     
+    def _encode_svg_content(self, svg_content: str) -> Optional[np.ndarray]:
+        """
+        直接处理SVG内容并编码为向量
+        
+        Args:
+            svg_content: SVG文件内容字符串
+            
+        Returns:
+            图片特征向量，失败返回None
+        """
+        try:
+            # 检查SVG内容是否为空
+            if not svg_content or len(svg_content.strip()) == 0:
+                logger.error("SVG内容为空")
+                return None
+            
+            # 检查是否安装了cairosvg
+            if cairosvg is None:
+                logger.error("SVG支持需要安装cairosvg库: pip install cairosvg")
+                return None
+            
+            # 将SVG字符串转换为字节
+            if isinstance(svg_content, str):
+                svg_bytes = svg_content.encode('utf-8')
+            else:
+                svg_bytes = svg_content
+            
+            # 将SVG转换为PNG
+            logger.info("开始转换SVG内容")
+            png_data = cairosvg.svg2png(
+                bytestring=svg_bytes, 
+                output_width=224, 
+                output_height=224,
+                background_color='white'
+            )
+            
+            # 转换为PIL图像
+            image = Image.open(io.BytesIO(png_data)).convert('RGB')
+            logger.info(f"SVG转换完成，图片尺寸: {image.size}, 模式: {image.mode}")
+            
+            # 检查图片内容
+            img_array = np.array(image)
+            unique_colors = len(np.unique(img_array.reshape(-1, img_array.shape[-1]), axis=0))
+            logger.info(f"图片唯一颜色数量: {unique_colors}")
+            
+            if unique_colors < 5:
+                logger.warning(f"图片颜色过少 ({unique_colors})，可能是空白图片")
+            
+            # 预处理图片
+            image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
+            
+            with torch.no_grad():
+                # 编码图片
+                image_features = self.model.encode_image(image_tensor)
+                
+                # 归一化
+                image_features /= image_features.norm(dim=-1, keepdim=True)
+                
+                vector = image_features.cpu().numpy().astype('float32').flatten()
+                logger.info(f"向量编码完成，形状: {vector.shape}, 范围: [{vector.min():.4f}, {vector.max():.4f}]")
+                
+                return vector
+                
+        except Exception as e:
+            logger.error(f"编码SVG内容失败: {e}")
+            return None
+    
     def add_image_by_url(self, id: int, url: str) -> bool:
         """
         增量式写入接口：根据URL下载SVG图片并添加到向量数据库
@@ -327,6 +394,55 @@ class MilvusVectorDatabase:
             logger.error(f"添加图片失败: ID={id}, URL={url}, 错误: {e}")
             return False
     
+    def add_image_with_svg(self, id: int, url: str, svg_content: str) -> bool:
+        """
+        增量式写入接口：直接处理SVG内容并添加到向量数据库
+        
+        Args:
+            id: 图片唯一标识ID
+            url: SVG图片的URL（用于记录，不会实际访问）
+            svg_content: SVG图片内容字符串
+            
+        Returns:
+            是否成功添加
+        """
+        try:
+            logger.info(f"开始处理图片: ID={id}, URL={url}")
+            
+            # 检查ID是否已存在
+            if self._record_exists(id):
+                logger.warning(f"ID {id} 已存在，将更新现有记录")
+                return self._update_existing_image_with_svg(id, url, svg_content)
+            
+            # 直接处理SVG内容编码图片
+            vector = self._encode_svg_content(svg_content)
+            if vector is None:
+                logger.error(f"SVG内容编码失败: ID={id}")
+                return False
+            
+            # 准备插入数据
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            entities = [
+                [id],                    # id
+                [url],                   # url
+                [vector.tolist()],       # vector
+                [current_time],          # added_at
+                [current_time]           # updated_at
+            ]
+            
+            # 插入数据到Milvus
+            insert_result = self.collection.insert(entities)
+            
+            # 刷新数据到磁盘
+            self.collection.flush()
+            
+            logger.info(f"图片成功添加到数据库: ID={id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"添加图片失败: ID={id}, URL={url}, 错误: {e}")
+            return False
+    
     def _record_exists(self, id: int) -> bool:
         """检查记录是否存在"""
         try:
@@ -349,6 +465,19 @@ class MilvusVectorDatabase:
             
             # 重新添加
             return self.add_image_by_url(id, url)
+            
+        except Exception as e:
+            logger.error(f"更新图片失败: ID={id}, URL={url}, 错误: {e}")
+            return False
+    
+    def _update_existing_image_with_svg(self, id: int, url: str, svg_content: str) -> bool:
+        """更新已存在的图片记录（使用SVG内容）"""
+        try:
+            # 先删除旧记录
+            self.remove_by_id(id)
+            
+            # 重新添加
+            return self.add_image_with_svg(id, url, svg_content)
             
         except Exception as e:
             logger.error(f"更新图片失败: ID={id}, URL={url}, 错误: {e}")

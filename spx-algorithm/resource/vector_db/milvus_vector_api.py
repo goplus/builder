@@ -87,12 +87,20 @@ def get_stats():
 @milvus_vector_bp.route('/add', methods=['POST'])
 def add_image_by_url():
     """
-    增量式写入接口：根据URL添加SVG图片到向量数据库
+    增量式写入接口：添加SVG图片到向量数据库
     
     接受JSON数据：
+    方式1 - 通过URL（原有方式）：
     {
         "id": 123,
         "url": "https://example.com/image.svg"
+    }
+    
+    方式2 - 直接提供SVG内容（推荐）：
+    {
+        "id": 123,
+        "url": "https://example.com/image.svg",
+        "svg_content": "<svg>...</svg>"
     }
     """
     try:
@@ -122,6 +130,7 @@ def add_image_by_url():
         
         image_id = data['id']
         image_url = data['url']
+        svg_content = data.get('svg_content')  # 可选的SVG内容
         
         # 验证参数类型
         if not isinstance(image_id, int):
@@ -136,9 +145,20 @@ def add_image_by_url():
                 'code': 'INVALID_URL_TYPE'
             }), 400
         
+        # 验证SVG内容（如果提供）
+        if svg_content is not None and (not isinstance(svg_content, str) or not svg_content.strip()):
+            return jsonify({
+                'error': 'svg_content参数必须是非空字符串',
+                'code': 'INVALID_SVG_CONTENT'
+            }), 400
+        
         # 添加图片到数据库
-        logger.info(f"开始添加图片: ID={image_id}, URL={image_url}")
-        success = vector_db.add_image_by_url(image_id, image_url.strip())
+        if svg_content:
+            logger.info(f"开始添加图片（使用SVG内容）: ID={image_id}, URL={image_url}")
+            success = vector_db.add_image_with_svg(image_id, image_url.strip(), svg_content.strip())
+        else:
+            logger.info(f"开始添加图片（从URL下载）: ID={image_id}, URL={image_url}")
+            success = vector_db.add_image_by_url(image_id, image_url.strip())
         
         if success:
             return jsonify({
@@ -391,10 +411,19 @@ def batch_add_images():
     批量添加接口：批量添加多个图片
     
     接受JSON数据：
+    方式1 - 通过URL：
     {
         "images": [
             {"id": 1, "url": "https://example.com/image1.svg"},
             {"id": 2, "url": "https://example.com/image2.svg"}
+        ]
+    }
+    
+    方式2 - 直接提供SVG内容（推荐）：
+    {
+        "images": [
+            {"id": 1, "url": "https://example.com/image1.svg", "svg_content": "<svg>...</svg>"},
+            {"id": 2, "url": "https://example.com/image2.svg", "svg_content": "<svg>...</svg>"}
         ]
     }
     """
@@ -433,6 +462,7 @@ def batch_add_images():
                 
                 image_id = img_data['id']
                 image_url = img_data['url']
+                svg_content = img_data.get('svg_content')
                 
                 # 验证数据类型
                 if not isinstance(image_id, int) or not isinstance(image_url, str):
@@ -444,8 +474,21 @@ def batch_add_images():
                     })
                     continue
                 
+                # 验证SVG内容（如果提供）
+                if svg_content is not None and (not isinstance(svg_content, str) or not svg_content.strip()):
+                    results.append({
+                        'index': i,
+                        'success': False,
+                        'error': 'svg_content必须是非空字符串',
+                        'data': img_data
+                    })
+                    continue
+                
                 # 添加图片
-                success = vector_db.add_image_by_url(image_id, image_url)
+                if svg_content:
+                    success = vector_db.add_image_with_svg(image_id, image_url, svg_content.strip())
+                else:
+                    success = vector_db.add_image_by_url(image_id, image_url)
                 
                 if success:
                     success_count += 1
