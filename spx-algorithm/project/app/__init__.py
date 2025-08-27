@@ -59,8 +59,9 @@ def create_app(config_name='default'):
             'version': '1.0.0',
             'endpoints': {
                 'health': '/api/health',
-                'search': '/api/search (POST)',
-                'search_by_url': '/api/search/url (POST)'
+                # 'search': '/api/search (POST)',
+                # 'search_by_url': '/api/search/url (POST)',
+                'search_resource': '/api/search/resource (POST)'
             }
         }
     
