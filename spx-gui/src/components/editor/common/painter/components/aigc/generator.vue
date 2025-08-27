@@ -28,31 +28,8 @@
               <div class="form-section">
                 <!-- 模型选择 -->
                 <div class="form-group">
-                  <label class="form-label">{{ $t({ en: 'Select Generation Model', zh: '选择生成模型' }) }}</label>
-                  <div class="model-selector">
-                    <div 
-                      class="model-option"
-                      :class="{ active: selectedModel === 'svgio' }"
-                      @click="selectedModel = 'svgio'"
-                    >
-                      <div class="model-icon">🖼️</div>
-                      <div class="model-info">
-                        <div class="model-name">{{ $t({ en: 'SVGIO Vector', zh: 'SVGIO矢量图' }) }}</div>
-                        <div class="model-desc">{{ $t({ en: 'Generate simple, accurate vector images', zh: '生成简单，精确的矢量图' }) }}</div>
-                      </div>
-                    </div>
-                    <div 
-                      class="model-option"
-                      :class="{ active: selectedModel === 'recraft' }"
-                      @click="selectedModel = 'recraft'"
-                    >
-                      <div class="model-icon">📐</div>
-                      <div class="model-info">
-                        <div class="model-name">{{ $t({ en: 'Recraft SVG Vector', zh: 'Recraft SVG矢量' }) }}</div>
-                        <div class="model-desc">{{ $t({ en: 'Generate fabulous editable vector graphics', zh: '生成精美的可编辑矢量图形' }) }}</div>
-                      </div>
-                    </div>
-                  </div>
+                  <label class="form-label">{{ $t({ en: 'Select style that you like', zh: '请选择适合你的风格' }) }}</label>
+                  <ModelSelector ref="modelSelectorRef" />
                 </div>
   
                 <!-- 提示词输入 -->
@@ -143,8 +120,12 @@
   
   <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { generateImage, generateSvgDirect } from '@/apis/picgc'
+import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './error.vue'
+import ModelSelector from './modelSelector.vue'
+
+
+  
   
   // Props
   interface Props {
@@ -167,8 +148,10 @@ import ErrorModal from './error.vue'
     'cancel': []
   }>()
   
+  // 模型选择器引用
+  const modelSelectorRef = ref<InstanceType<typeof ModelSelector>>()
+  
   // 响应式数据
-  const selectedModel = ref<'claude' | 'recraft' | 'svgio'>('claude')
   const prompt = ref('')
   const previewUrl = ref('')
   const isGenerating = ref(false)
@@ -180,6 +163,12 @@ import ErrorModal from './error.vue'
   // 错误处理相关状态
   const showErrorModal = ref(false)
   const errorType = ref('')
+
+
+  // 获取当前选中的模型信息
+  const getSelectedModel = () => {
+    return modelSelectorRef.value?.selectedModel || null
+  }
   
   // 方法
   const handleGenerate = async () => {
@@ -204,20 +193,22 @@ import ErrorModal from './error.vue'
   const handleConfirm = () => {
     if (!previewUrl.value) return
     
+    const selectedModelInfo = getSelectedModel()
+    
     const confirmData: any = {
-      model: selectedModel.value,
+      model: selectedModelInfo,
       prompt: prompt.value
     }
     
-    if (selectedModel.value === 'recraft' || selectedModel.value === 'claude' || selectedModel.value === 'svgio') {
+    // 根据模型ID判断是否为SVG模式
+    const modelId = selectedModelInfo?.id || ''
+    if (modelId === 'recraft' || modelId === 'claude' || modelId === 'svgio') {
       // SVG模式：传递原始SVG代码
       confirmData.svgContent = svgRawContent.value
       confirmData.url = previewUrl.value // 用于预览的blob URL
-      // console.log('SVG确认数据:', { svgContent: svgRawContent.value })
     } else {
       // PNG模式：传递图片URL
       confirmData.url = previewUrl.value
-      // console.log('PNG确认数据:', { url: previewUrl.value })
     }
     
     emit('confirm', confirmData)
@@ -234,7 +225,6 @@ import ErrorModal from './error.vue'
       prompt.value = ''
       previewUrl.value = ''
       isGenerating.value = false
-      selectedModel.value = 'claude'
     }, 300)
   }
   
@@ -272,9 +262,12 @@ import ErrorModal from './error.vue'
     previewUrl.value = ''
     svgRawContent.value = ''
     
+    const selectedModelInfo = getSelectedModel()
     try {
-      if (selectedModel.value === 'recraft' || selectedModel.value === 'claude' || selectedModel.value === 'svgio')  {
-        const svgResult = await generateSvgDirect(selectedModel.value, prompt.value)
+      if (selectedModelInfo !== null)  {
+        const svgResult = await generateSvgDirect(selectedModelInfo.recommended_provider, prompt.value,{
+          theme: selectedModelInfo.id,
+        })
         
         // 直接获得SVG内容
         svgRawContent.value = svgResult.svgContent
@@ -284,14 +277,7 @@ import ErrorModal from './error.vue'
         previewUrl.value = URL.createObjectURL(blob)
         
         imageSize.value = `${svgResult.width}x${svgResult.height}`
-      } else {
-        // PNG mod
-        const result = await generateImage(prompt.value)
-        
-        previewUrl.value = result.png_url
-        imageSize.value = `${result.width}x${result.height}`
       }
-      
     } catch (error) {
       console.error('failed to generate image:', error)
       
@@ -440,6 +426,7 @@ import ErrorModal from './error.vue'
   
   .form-group {
     margin-bottom: 24px;
+    width: 100%;
   }
   
   .form-label {
@@ -450,11 +437,6 @@ import ErrorModal from './error.vue'
     font-size: 14px;
   }
   
-  .model-selector {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
   
   .model-option {
     border: 2px solid #e5e7eb;
@@ -546,9 +528,6 @@ import ErrorModal from './error.vue'
     cursor: not-allowed;
   }
   
-  .preview-section .form-label {
-    margin-bottom: 12px;
-  }
   
   .preview-container {
     border: 2px dashed #d1d5db;
