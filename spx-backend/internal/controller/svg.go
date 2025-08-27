@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
 )
 
@@ -75,20 +76,19 @@ type GenerateImageParams struct {
 
 // SVGResponse represents the response for direct SVG requests.
 type SVGResponse struct {
-
-	Data    []byte            `json:"-"`         // SVG content
-	Headers map[string]string `json:"-"`         // Response headers
-	KodoURL string            `json:"kodo_url,omitempty"` // Kodo storage URL if stored
-
+	Data          []byte            `json:"-"`                    // SVG content
+	Headers       map[string]string `json:"-"`                    // Response headers
+	KodoURL       string            `json:"kodo_url,omitempty"`   // Kodo storage URL if stored
+	AIResourceID  int64             `json:"ai_resource_id,omitempty"` // Database record ID if stored
 }
 
 // ImageResponse represents the response for image metadata requests.
 type ImageResponse struct {
-
 	ID               string            `json:"id"`
 	SVGURL           string            `json:"svg_url"`
 	PNGURL           string            `json:"png_url,omitempty"`
 	KodoSVGURL       string            `json:"kodo_svg_url,omitempty"`      // Kodo storage URL for SVG
+	AIResourceID     int64             `json:"ai_resource_id,omitempty"`    // Database record ID if stored
 	Width            int               `json:"width"`
 	Height           int               `json:"height"`
 	Provider         svggen.Provider   `json:"provider"`
@@ -96,7 +96,6 @@ type ImageResponse struct {
 	TranslatedPrompt string            `json:"translated_prompt,omitempty"`
 	WasTranslated    bool              `json:"was_translated"`
 	CreatedAt        time.Time         `json:"created_at"`
-
 }
 
 // GenerateSVG generates an SVG image and returns the SVG content directly.
@@ -150,6 +149,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 
 	// Store SVG to Kodo
 	var kodoURL string
+	var aiResourceID int64
 	filename := fmt.Sprintf("%s.svg", result.ID)
 	uploadResult, err := ctrl.kodo.UploadFile(ctx, svgBytes, filename)
 	if err != nil {
@@ -158,6 +158,17 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 	} else {
 		kodoURL = uploadResult.KodoURL
 		logger.Printf("SVG uploaded to Kodo: %s", kodoURL)
+
+		// Save to database if Kodo upload successful
+		aiResource := &model.AIResource{
+			URL: kodoURL,
+		}
+		if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
+			logger.Printf("Failed to save AI resource to database: %v", dbErr)
+		} else {
+			aiResourceID = aiResource.ID
+			logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+		}
 	}
 
 	// Prepare response headers
@@ -183,9 +194,10 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 	}
 
 	return &SVGResponse{
-		Data:    svgBytes,
-		Headers: headers,
-		KodoURL: kodoURL,
+		Data:         svgBytes,
+		Headers:      headers,
+		KodoURL:      kodoURL,
+		AIResourceID: aiResourceID,
 	}, nil
 }
 
@@ -233,6 +245,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 
 	// Store SVG to Kodo if possible
 	var kodoSVGURL string
+	var aiResourceID int64
 	
 	if result.SVGURL != "" {
 		svgBytes, err := ctrl.getSVGContent(ctx, result.SVGURL)
@@ -246,6 +259,17 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 			} else {
 				kodoSVGURL = uploadResult.KodoURL
 				logger.Printf("SVG uploaded to Kodo: %s", kodoSVGURL)
+
+				// Save to database if Kodo upload successful
+				aiResource := &model.AIResource{
+					URL: kodoSVGURL,
+				}
+				if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
+					logger.Printf("Failed to save AI resource to database: %v", dbErr)
+				} else {
+					aiResourceID = aiResource.ID
+					logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+				}
 			}
 		}
 	}
@@ -255,6 +279,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 		SVGURL:           result.SVGURL,
 		PNGURL:           result.PNGURL,
 		KodoSVGURL:       kodoSVGURL,
+		AIResourceID:     aiResourceID,
 		Width:            result.Width,
 		Height:           result.Height,
 		Provider:         result.Provider,
