@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useModal, useMessage } from '@/components/ui'
-import ProjectScreenShotSharing from './ProjectRecordingSharing.vue'
+import ProjectScreenshotSharing from './ProjectRecordingSharing.vue'
 import ProjectRecordingSharing from './ProjectRecordingSharing.vue'
 import { useQuery } from '@/composables/useQuery'
 import { getProject } from '@/apis/project'
@@ -33,9 +33,9 @@ const {
   }
 )
 
-const shareScreenShot = useModal(ProjectScreenShotSharing)
+const shareScreenShot = useModal(ProjectScreenshotSharing)
 
-async function handleScreenShotSharing(){
+async function handleScreenshotSharing(){
     ProjectRunner.pauseGame()
 
     const ScreenShotFile = ProjectRunner.getScreenShot()
@@ -86,7 +86,7 @@ async function handleRecordingSharing() {
             thumbnailUrl: projectData.value.thumbnail || ''
         }
 
-        const created: RecordData = await RecordingURL.createRecord(params) // 1.调用 RecordingAPIs 存储到后端
+        const created: RecordData = await RecordingURL.createRecord(params) // 调用 RecordingAPIs 存储到后端
         recordData.value = created
         showRecordSharing.value = true // 唤起录屏分享弹窗
 
