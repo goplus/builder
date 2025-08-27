@@ -1,0 +1,9 @@
+# Milvus向量数据库依赖库
+torch>=1.9.0
+open-clip-torch
+Pillow>=8.0.0
+numpy>=1.20.0
+requests>=2.25.0
+cairosvg>=2.5.0  # SVG图片支持
+pymilvus>=2.3.0  # Milvus Python SDK
+flask>=2.0.0     # Web框架

@@ -88,7 +88,7 @@ start_service() {
         run:app
     
     # 等待服务启动
-    local max_wait=10
+    local max_wait=15
     local count=0
     
     while [ $count -lt $max_wait ]; do
