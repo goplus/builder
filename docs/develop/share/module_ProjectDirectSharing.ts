@@ -3,8 +3,8 @@
 */
 // 导入必要的类型和函数
 import { PlatformConfig } from "./platformShare"
-import { createPoster } from "./poster"
-import { defineProps } from "vue"
+import Poster from "./poster"
+import { defineProps, ref } from "vue"
 /**
  * 定义组件的props
  */
@@ -35,15 +35,9 @@ let DataURL: string = ''
 
 
 // 模拟poster返回的图片
-const posterData = await createPoster({
-    img: props.projectData.thumbnail,   
-    projectData: {
-        name: 'test',
-        description: 'test',
-        image: 'test',
-        video: 'test',
-    }
-})
+const posterCompRef = ref<InstanceType<Poster>>()
+const posterData = await posterCompRef.value.createPoster({ img: props.screenShot, ProjectData: props.projectData})
+
 // 模拟平台切换
 async function handPlatformChange(platform: PlatformConfig) {
     if (platform.shareType.supportProject && platform.shareFunction.shareURL) {
