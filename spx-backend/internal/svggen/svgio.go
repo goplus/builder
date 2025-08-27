@@ -63,12 +63,12 @@ func (s *SVGIOService) GenerateImage(ctx context.Context, req GenerateRequest) (
 		NegativePrompt: &req.NegativePrompt,
 		Style:          &req.Style,
 	}
-	
+
 	if req.NegativePrompt == "" {
 		defaultNegativePrompt := "NULL"
 		upReq.NegativePrompt = &defaultNegativePrompt
 	}
-	
+
 	if req.Style == "" {
 		defaultStyle := "FLAT_VECTOR"
 		upReq.Style = &defaultStyle
@@ -113,12 +113,12 @@ func (s *SVGIOService) GenerateImage(ctx context.Context, req GenerateRequest) (
 		logger.Printf("[SVGIO] Failed to decode response: %v", err)
 		return nil, err
 	}
-	
+
 	if !upResp.Success || len(upResp.Data) == 0 {
 		logger.Printf("[SVGIO] Invalid response: success=%v, data_count=%d", upResp.Success, len(upResp.Data))
 		return nil, errors.New("upstream no data")
 	}
-	
+
 	it := upResp.Data[0]
 	logger.Printf("[SVGIO] Successfully parsed response - ID: %s, SVG: %s, PNG: %s", it.ID, it.SVGURL, it.PNGURL)
 

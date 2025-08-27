@@ -40,7 +40,7 @@ func (s *OpenAIService) GenerateImage(ctx context.Context, req GenerateRequest) 
 
 	// OpenAI supports Chinese natively, so we use the prompt as-is
 	// Translation is handled at the ServiceManager level if needed
-	
+
 	// Build OpenAI prompt
 	prompt := s.buildSVGPrompt(req.Prompt, req.Style, req.NegativePrompt)
 

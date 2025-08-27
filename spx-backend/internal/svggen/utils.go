@@ -37,7 +37,7 @@ func ParseSizeFromString(size string) (width, height int) {
 	if size == "" {
 		return 1024, 1024
 	}
-	
+
 	// Simple parsing for common formats
 	switch size {
 	case "512x512":
