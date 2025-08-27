@@ -1,6 +1,10 @@
 package controller
 
-import "fmt"
+import (
+	"fmt"
+	
+	"github.com/goplus/builder/spx-backend/internal/svggen"
+)
 
 // ThemeType represents different SVG generation themes
 type ThemeType string
@@ -19,10 +23,11 @@ const (
 
 // ThemeInfo represents detailed information about a theme
 type ThemeInfo struct {
-	ID          ThemeType `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Prompt      string    `json:"prompt"`
+	ID                 ThemeType       `json:"id"`
+	Name               string          `json:"name"`
+	Description        string          `json:"description"`
+	Prompt             string          `json:"prompt"`
+	RecommendedProvider svggen.Provider `json:"recommended_provider"`
 }
 
 // ThemePrompts maps each theme to its corresponding prompt enhancement
@@ -63,6 +68,19 @@ var ThemeDescriptions = map[ThemeType]string{
 	ThemeBusiness:  "专业商务风格，现代企业形象",
 }
 
+// ThemeProviders maps each theme to its recommended provider
+var ThemeProviders = map[ThemeType]svggen.Provider{
+	ThemeNone:      svggen.ProviderSVGIO,    // Default provider
+	ThemeCartoon:   svggen.ProviderRecraft,  // Recraft excels at cartoon styles
+	ThemeRealistic: svggen.ProviderRecraft,  // Recraft is good for realistic styles
+	ThemeMinimal:   svggen.ProviderSVGIO,    // SVGIO works well for minimal styles
+	ThemeFantasy:   svggen.ProviderRecraft,  // Recraft handles fantasy well
+	ThemeRetro:     svggen.ProviderRecraft,  // Recraft for retro styles
+	ThemeScifi:     svggen.ProviderRecraft,  // Recraft for sci-fi
+	ThemeNature:    svggen.ProviderRecraft,  // Recraft for nature themes
+	ThemeBusiness:  svggen.ProviderRecraft,  // Recraft for business styles
+}
+
 // IsValidTheme checks if the given theme is valid
 func IsValidTheme(theme ThemeType) bool {
 	if theme == ThemeNone {
@@ -78,6 +96,14 @@ func GetThemePromptEnhancement(theme ThemeType) string {
 		return ""
 	}
 	return ThemePrompts[theme]
+}
+
+// GetThemeRecommendedProvider returns the recommended provider for a given theme
+func GetThemeRecommendedProvider(theme ThemeType) svggen.Provider {
+	if provider, exists := ThemeProviders[theme]; exists {
+		return provider
+	}
+	return svggen.ProviderSVGIO // Default fallback
 }
 
 // ApplyThemeToPrompt applies theme enhancement to the original prompt
@@ -112,10 +138,11 @@ func GetAvailableThemes() []ThemeType {
 // GetThemeInfo returns detailed information for a specific theme
 func GetThemeInfo(theme ThemeType) ThemeInfo {
 	return ThemeInfo{
-		ID:          theme,
-		Name:        ThemeNames[theme],
-		Description: ThemeDescriptions[theme],
-		Prompt:      ThemePrompts[theme],
+		ID:                 theme,
+		Name:               ThemeNames[theme],
+		Description:        ThemeDescriptions[theme],
+		Prompt:             ThemePrompts[theme],
+		RecommendedProvider: GetThemeRecommendedProvider(theme),
 	}
 }
 

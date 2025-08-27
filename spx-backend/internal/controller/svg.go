@@ -34,8 +34,13 @@ func (p *GenerateSVGParams) Validate() (bool, string) {
 		return false, "prompt must be at least 3 characters"
 	}
 
+	// Auto-select provider based on theme if not specified
 	if p.Provider == "" {
-		p.Provider = svggen.ProviderSVGIO // Default to SVGIO
+		if p.Theme != ThemeNone {
+			p.Provider = GetThemeRecommendedProvider(p.Theme)
+		} else {
+			p.Provider = svggen.ProviderSVGIO // Default fallback
+		}
 	}
 
 	// Validate provider
@@ -92,6 +97,13 @@ type ImageResponse struct {
 func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGParams) (*SVGResponse, error) {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	
+	if params.Theme != ThemeNone {
+		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
+		if params.Provider == recommendedProvider {
+			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
+		}
+	}
 
 	// Apply theme to prompt if specified
 	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
@@ -157,6 +169,13 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImageParams) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	
+	if params.Theme != ThemeNone {
+		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
+		if params.Provider == recommendedProvider {
+			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
+		}
+	}
 
 	// Apply theme to prompt if specified
 	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
