@@ -56,24 +56,172 @@ def remove_by_id(self, id: int) -> bool
 
 ### Milvus服务部署
 
-#### Docker方式（推荐）
-```bash
-# 启动Milvus standalone模式
-docker run -d \
-  --name milvus-standalone \
-  -p 19530:19530 \
-  -p 9091:9091 \
-  -v /tmp/milvus:/var/lib/milvus \
-  milvusdb/milvus:latest
+#### Docker Compose方式（推荐，已验证可用）
+
+**1. 创建docker-compose.yml文件：**
+```yaml
+version: '3.5'
+
+services:
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.3.0
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+    - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+
+volumes:
+  etcd:
+    driver: local
+  minio:
+    driver: local
+  milvus:
+    driver: local
 ```
 
-#### Docker Compose方式
+**2. 启动和管理服务：**
 ```bash
-# 下载配置文件
-wget https://github.com/milvus-io/milvus/releases/download/v2.3.0/milvus-standalone-docker-compose.yml -O docker-compose.yml
-
-# 启动服务
+# 启动所有服务
 docker-compose up -d
+
+# 检查服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f milvus-standalone
+
+# 停止服务
+docker-compose down
+
+# 完全清理（删除数据）
+docker-compose down -v
+```
+
+#### 官方快速启动脚本
+```bash
+# 下载官方启动脚本
+curl -sfL https://raw.githubusercontent.com/milvus-io/milvus/v2.3.0/scripts/standalone_embed.sh -o standalone_embed.sh
+
+# 给执行权限
+chmod +x standalone_embed.sh
+
+# 启动
+./standalone_embed.sh start
+
+# 停止
+./standalone_embed.sh stop
+```
+
+#### 验证Milvus服务启动成功
+
+**1. 检查容器状态：**
+```bash
+# 查看所有容器状态
+docker-compose ps
+
+# 应该看到类似输出：
+# milvus-etcd         Up (health: starting)
+# milvus-minio        Up (health: starting) 
+# milvus-standalone   Up (healthy)
+```
+
+**2. 测试连接：**
+```bash
+# 检查端口是否开放
+lsof -i :19530
+
+# Milvus健康检查
+curl http://localhost:9091/healthz
+# 应该返回: OK
+
+# Python连接测试
+python3 -c "from pymilvus import connections; connections.connect('default', host='localhost', port='19530'); print('Milvus连接成功!')"
+```
+
+**3. 管理界面：**
+- **MinIO控制台**: http://localhost:9001
+  - 用户名：minioadmin
+  - 密码：minioadmin
+- **Milvus健康检查**: http://localhost:9091/healthz
+
+#### 常见问题排查
+
+**1. 容器启动失败：**
+```bash
+# 查看详细日志
+docker-compose logs milvus-standalone
+
+# 强制清理重新启动
+docker-compose down -v
+docker system prune -f
+docker-compose up -d
+```
+
+**2. 端口冲突：**
+```bash
+# 检查端口占用
+lsof -i :19530
+lsof -i :9091
+
+# 如有冲突，可修改docker-compose.yml中的端口映射
+```
+
+**3. 权限问题：**
+```bash
+# 确保Docker有足够权限
+sudo chown -R $(id -u):$(id -g) /tmp/milvus
 ```
 
 ### 安装依赖
@@ -92,6 +240,33 @@ pip install -r requirements_milvus.txt
 - flask>=2.0.0
 
 ## 快速开始
+
+### 🚀 5分钟快速启动
+
+**1. 启动Milvus服务**
+```bash
+# 使用提供的docker-compose配置
+docker-compose up -d
+
+# 等待服务启动完成（约1-2分钟）
+docker-compose ps
+```
+
+**2. 验证服务运行**
+```bash
+# 健康检查
+curl http://localhost:9091/healthz
+# 应该返回: OK
+```
+
+**3. 启动API服务并测试**
+```bash
+# 启动Milvus API服务
+python3 milvus_vector_api.py &
+
+# 运行演示
+echo "2" | python3 demo_milvus_vector.py
+```
 
 ### 基本使用
 
@@ -286,17 +461,84 @@ success = db.remove_by_id(id)
 
 ## 运行演示
 
-### 基本演示
+### 前提条件
+确保Milvus服务已启动：
 ```bash
-python demo_milvus_vector.py
+# 检查服务状态
+docker-compose ps
+
+# 验证连接
+curl http://localhost:9091/healthz
 ```
 
-### 选择演示模式
+### 启动API服务
 ```bash
-python demo_milvus_vector.py direct     # 直接使用数据库类
-python demo_milvus_vector.py api        # API接口演示
-python demo_milvus_vector.py examples   # 显示使用示例
-python demo_milvus_vector.py migration  # 显示迁移指南
+# 启动Milvus向量数据库API服务
+python3 milvus_vector_api.py
+
+# 服务将在 http://localhost:5002 启动
+```
+
+### 运行演示程序
+```bash
+# 交互式演示
+python3 demo_milvus_vector.py
+
+# 选择模式2进行API接口演示
+```
+
+### 演示成功示例
+当Milvus服务正常运行时，你将看到类似输出：
+
+```
+=== API接口使用演示 ===
+
+1. 健康检查...
+   API服务正常运行
+   响应: {'service': 'milvus-vector-database-api', 'status': 'healthy'}
+
+2. 获取统计信息...
+
+3. 获取集合信息...
+
+4. 测试添加图片...
+   添加成功: ID=101
+   添加成功: ID=102
+
+5. 获取所有数据...
+   总记录数: 2
+   返回记录数: 2
+     ID: 101, URL: https://raw.githubusercontent.com/twitter/twemoji/...
+     ID: 102, URL: https://raw.githubusercontent.com/twitter/twemoji/...
+
+6. 测试文本搜索...
+   搜索 'dog' 的结果:
+   找到 2 个结果
+     ID: 101, 相似度: 0.3073
+     ID: 102, 相似度: 0.2435
+
+7. 测试批量添加...
+   批量添加结果: 成功 2/2
+
+8. 测试删除功能...
+
+=== API接口演示完成 ===
+```
+
+### 直接使用命令行测试
+```bash
+# 健康检查
+curl http://localhost:5002/api/milvus/health
+
+# 添加图片
+curl -X POST http://localhost:5002/api/milvus/add \
+  -H "Content-Type: application/json" \
+  -d '{"id": 123, "url": "https://example.com/image.svg"}'
+
+# 文本搜索
+curl -X POST http://localhost:5002/api/milvus/search \
+  -H "Content-Type: application/json" \
+  -d '{"text": "cat", "k": 5}'
 ```
 
 ## 技术架构
