@@ -2,6 +2,8 @@ package controller
 
 import (
 	"testing"
+
+	"github.com/goplus/builder/spx-backend/internal/svggen"
 )
 
 func TestIsValidTheme(t *testing.T) {
@@ -73,7 +75,7 @@ func TestApplyThemeToPrompt(t *testing.T) {
 func TestGetAvailableThemes(t *testing.T) {
 	themes := GetAvailableThemes()
 	expectedCount := 9 // ThemeNone + 8 themed options
-	
+
 	if len(themes) != expectedCount {
 		t.Errorf("GetAvailableThemes() returned %d themes, expected %d", len(themes), expectedCount)
 	}
@@ -137,14 +139,15 @@ func TestGenerateSVGParamsValidateWithTheme(t *testing.T) {
 
 func TestGetThemeInfo(t *testing.T) {
 	info := GetThemeInfo(ThemeCartoon)
-	
+
 	expected := ThemeInfo{
-		ID:          ThemeCartoon,
-		Name:        "卡通风格",
-		Description: "色彩鲜艳的卡通风格，适合可爱有趣的内容",
-		Prompt:      "必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节",
+		ID:                  ThemeCartoon,
+		Name:                "卡通风格",
+		Description:         "色彩鲜艳的卡通风格，适合可爱有趣的内容",
+		Prompt:              "必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节",
+		RecommendedProvider: "recraft",
 	}
-	
+
 	if info.ID != expected.ID {
 		t.Errorf("GetThemeInfo ID = %v, expected %v", info.ID, expected.ID)
 	}
@@ -157,16 +160,19 @@ func TestGetThemeInfo(t *testing.T) {
 	if info.Prompt != expected.Prompt {
 		t.Errorf("GetThemeInfo Prompt = %v, expected %v", info.Prompt, expected.Prompt)
 	}
+	if info.RecommendedProvider != expected.RecommendedProvider {
+		t.Errorf("GetThemeInfo RecommendedProvider = %v, expected %v", info.RecommendedProvider, expected.RecommendedProvider)
+	}
 }
 
 func TestGetAllThemesInfo(t *testing.T) {
 	themes := GetAllThemesInfo()
 	expectedCount := 9
-	
+
 	if len(themes) != expectedCount {
 		t.Errorf("GetAllThemesInfo returned %d themes, expected %d", len(themes), expectedCount)
 	}
-	
+
 	// Check that all themes have required fields
 	for _, theme := range themes {
 		if theme.ID == "" && theme.Name != "无主题" {
@@ -180,7 +186,7 @@ func TestGetAllThemesInfo(t *testing.T) {
 		}
 		// Description can be empty for some themes, so we don't check it
 	}
-	
+
 	// Check that ThemeNone is included
 	found := false
 	for _, theme := range themes {
@@ -191,5 +197,87 @@ func TestGetAllThemesInfo(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("ThemeNone not found in GetAllThemesInfo result")
+	}
+}
+
+func TestGetThemeRecommendedProvider(t *testing.T) {
+	tests := []struct {
+		theme    ThemeType
+		expected svggen.Provider
+	}{
+		{ThemeNone, svggen.ProviderSVGIO},
+		{ThemeCartoon, svggen.ProviderRecraft},
+		{ThemeRealistic, svggen.ProviderRecraft},
+		{ThemeMinimal, svggen.ProviderSVGIO},
+		{ThemeFantasy, svggen.ProviderRecraft},
+		{ThemeRetro, svggen.ProviderRecraft},
+		{ThemeScifi, svggen.ProviderRecraft},
+		{ThemeNature, svggen.ProviderRecraft},
+		{ThemeBusiness, svggen.ProviderRecraft},
+	}
+
+	for _, test := range tests {
+		result := GetThemeRecommendedProvider(test.theme)
+		if result != test.expected {
+			t.Errorf("GetThemeRecommendedProvider(%q) = %v, expected %v", test.theme, result, test.expected)
+		}
+	}
+}
+
+func TestGenerateSVGParamsAutoSelectProvider(t *testing.T) {
+	tests := []struct {
+		name             string
+		params           GenerateSVGParams
+		expectedProvider svggen.Provider
+		valid            bool
+	}{
+		{
+			name: "No theme, no provider - should use default",
+			params: GenerateSVGParams{
+				Prompt: "test prompt",
+			},
+			expectedProvider: svggen.ProviderSVGIO,
+			valid:            true,
+		},
+		{
+			name: "Cartoon theme, no provider - should use recraft",
+			params: GenerateSVGParams{
+				Prompt: "test prompt",
+				Theme:  ThemeCartoon,
+			},
+			expectedProvider: svggen.ProviderRecraft,
+			valid:            true,
+		},
+		{
+			name: "Minimal theme, no provider - should use svgio",
+			params: GenerateSVGParams{
+				Prompt: "test prompt",
+				Theme:  ThemeMinimal,
+			},
+			expectedProvider: svggen.ProviderSVGIO,
+			valid:            true,
+		},
+		{
+			name: "Cartoon theme with explicit provider - should keep explicit",
+			params: GenerateSVGParams{
+				Prompt:   "test prompt",
+				Theme:    ThemeCartoon,
+				Provider: svggen.ProviderOpenAI,
+			},
+			expectedProvider: svggen.ProviderOpenAI,
+			valid:            true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			valid, _ := test.params.Validate()
+			if valid != test.valid {
+				t.Errorf("Validate() = %v, expected %v", valid, test.valid)
+			}
+			if test.params.Provider != test.expectedProvider {
+				t.Errorf("Provider = %v, expected %v", test.params.Provider, test.expectedProvider)
+			}
+		})
 	}
 }
