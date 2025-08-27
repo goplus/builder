@@ -55,3 +55,5 @@ async function handleSharePoster(): Promise<void> {
 const JumpUrlQRCode = computed(() =>
     `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(jumpUrl.value)}`
 )
+
+//<Poster ref="posterCompRef" /> // 到时候挂载组件，及时更新渲染结果
