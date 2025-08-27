@@ -39,7 +39,7 @@ func NewOpenAITranslateService(cfg *config.Config, httpClient *http.Client, logg
 // Translate translates text from Chinese to English for image generation prompts.
 func (s *OpenAITranslateService) Translate(ctx context.Context, text string) (string, error) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	// Check if text contains Chinese characters
 	if !containsChinese(text) {
 		logger.Printf("[TRANSLATE] Text appears to be English already, skipping translation: %q", text)
