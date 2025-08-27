@@ -220,7 +220,7 @@ def search_resource_svgs():
     接受JSON数据：
     {
         "text": "查询文本",
-        "k": 5,  // 可选，返回前k张图片
+        "top_k": 5,  // 可选，返回前k张图片
         "threshold": 0.25  // 可选，相似度阈值（0-1之间）
     }
     """
@@ -239,7 +239,7 @@ def search_resource_svgs():
                 'code': 'MISSING_TEXT_QUERY'
             }), 400
         
-        k = data.get('k')
+        k = data.get('top_k')
         if k is not None:
             if not isinstance(k, int) or k <= 0:
                 return jsonify({
