@@ -4,7 +4,7 @@ import type { PlatformShare } from './platformShare'
 import { sharePoster, SocialPlatformConfigs } from './platformShare'
 
 const props = defineProps<{
-    Screenshot: File
+    screenshot: File
     projectData: ProjectData
     visible: boolean
 }>()
