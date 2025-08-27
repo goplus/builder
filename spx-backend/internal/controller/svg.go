@@ -70,8 +70,9 @@ type GenerateImageParams struct {
 
 // SVGResponse represents the response for direct SVG requests.
 type SVGResponse struct {
-	Data   []byte            `json:"-"` // SVG content
-	Headers map[string]string `json:"-"` // Response headers
+	Data    []byte            `json:"-"`         // SVG content
+	Headers map[string]string `json:"-"`         // Response headers
+	KodoURL string            `json:"kodo_url,omitempty"` // Kodo storage URL if stored
 }
 
 // ImageResponse represents the response for image metadata requests.
@@ -79,6 +80,7 @@ type ImageResponse struct {
 	ID               string            `json:"id"`
 	SVGURL           string            `json:"svg_url"`
 	PNGURL           string            `json:"png_url,omitempty"`
+	KodoSVGURL       string            `json:"kodo_svg_url,omitempty"`      // Kodo storage URL for SVG
 	Width            int               `json:"width"`
 	Height           int               `json:"height"`
 	Provider         svggen.Provider   `json:"provider"`
@@ -130,6 +132,18 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		return nil, fmt.Errorf("failed to get SVG content: %w", err)
 	}
 
+	// Store SVG to Kodo
+	var kodoURL string
+	filename := fmt.Sprintf("%s.svg", result.ID)
+	uploadResult, err := ctrl.kodo.UploadFile(ctx, svgBytes, filename)
+	if err != nil {
+		logger.Printf("Failed to upload SVG to Kodo: %v", err)
+		// Continue without Kodo storage, don't fail the request
+	} else {
+		kodoURL = uploadResult.KodoURL
+		logger.Printf("SVG uploaded to Kodo: %s", kodoURL)
+	}
+
 	// Prepare response headers
 	headers := map[string]string{
 		"Content-Type":        "image/svg+xml",
@@ -138,6 +152,11 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		"X-Image-Width":       strconv.Itoa(result.Width),
 		"X-Image-Height":      strconv.Itoa(result.Height),
 		"X-Provider":          string(result.Provider),
+	}
+	
+	// Add Kodo URL to headers if available
+	if kodoURL != "" {
+		headers["X-Kodo-URL"] = kodoURL
 	}
 
 	// Add translation info if available
@@ -150,6 +169,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 	return &SVGResponse{
 		Data:    svgBytes,
 		Headers: headers,
+		KodoURL: kodoURL,
 	}, nil
 }
 
@@ -188,10 +208,30 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 
 	logger.Printf("Image generation successful - ID: %s", result.ID)
 
+	// Store SVG to Kodo if possible
+	var kodoSVGURL string
+	
+	if result.SVGURL != "" {
+		svgBytes, err := ctrl.getSVGContent(ctx, result.SVGURL)
+		if err != nil {
+			logger.Printf("Failed to get SVG content for Kodo storage: %v", err)
+		} else {
+			filename := fmt.Sprintf("%s.svg", result.ID)
+			uploadResult, err := ctrl.kodo.UploadFile(ctx, svgBytes, filename)
+			if err != nil {
+				logger.Printf("Failed to upload SVG to Kodo: %v", err)
+			} else {
+				kodoSVGURL = uploadResult.KodoURL
+				logger.Printf("SVG uploaded to Kodo: %s", kodoSVGURL)
+			}
+		}
+	}
+
 	return &ImageResponse{
 		ID:               result.ID,
 		SVGURL:           result.SVGURL,
 		PNGURL:           result.PNGURL,
+		KodoSVGURL:       kodoSVGURL,
 		Width:            result.Width,
 		Height:           result.Height,
 		Provider:         result.Provider,
@@ -201,7 +241,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 		CreatedAt:        result.CreatedAt,
 	}, nil
 }
-
+	
 // getSVGContent retrieves SVG content from URL or data URL.
 func (ctrl *Controller) getSVGContent(ctx context.Context, svgURL string) ([]byte, error) {
 	if strings.HasPrefix(svgURL, "data:") {
