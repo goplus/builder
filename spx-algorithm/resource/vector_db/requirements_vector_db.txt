@@ -1,8 +1,0 @@
-# 向量数据库依赖库
-torch>=1.9.0
-open-clip-torch
-Pillow>=8.0.0
-numpy>=1.20.0
-faiss-cpu>=1.7.0  # 或者使用 faiss-gpu 如果有GPU支持
-requests>=2.25.0
-cairosvg>=2.5.0  # SVG图片支持
