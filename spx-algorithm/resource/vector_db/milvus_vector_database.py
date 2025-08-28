@@ -10,9 +10,18 @@ import requests
 from urllib.parse import urlparse
 try:
     import cairosvg
+    HAS_CAIROSVG = True
 except ImportError:
     cairosvg = None
+    HAS_CAIROSVG = False
+    import warnings
+    warnings.warn("cairosvg not installed. SVG support will be limited. Install with: pip install cairosvg")
 from datetime import datetime
+
+
+def get_current_timestamp() -> str:
+    """获取当前时间戳的统一格式"""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 try:
     from pymilvus import (
@@ -89,21 +98,28 @@ class MilvusVectorDatabase:
     
     def _init_milvus(self):
         """初始化Milvus连接和集合"""
-        try:
-            # 连接到Milvus
-            connections.connect(
-                alias=self.alias,
-                host=self.host,
-                port=self.port
-            )
-            logger.info(f"Milvus连接成功: {self.host}:{self.port}")
-            
-            # 创建或加载集合
-            self._create_or_load_collection()
-            
-        except Exception as e:
-            logger.error(f"Milvus初始化失败: {e}")
-            raise
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # 连接到Milvus
+                connections.connect(
+                    alias=self.alias,
+                    host=self.host,
+                    port=self.port
+                )
+                logger.info(f"Milvus连接成功: {self.host}:{self.port}")
+                
+                # 创建或加载集合
+                self._create_or_load_collection()
+                return
+                
+            except Exception as e:
+                logger.warning(f"Milvus连接尝试 {attempt + 1}/{max_retries} 失败: {e}")
+                if attempt == max_retries - 1:
+                    logger.error(f"Milvus初始化最终失败: {e}")
+                    raise
+                import time
+                time.sleep(2 ** attempt)  # 指数退避
     
     def _create_or_load_collection(self):
         """创建或加载Milvus集合"""
@@ -177,6 +193,67 @@ class MilvusVectorDatabase:
             logger.error(f"创建索引失败: {e}")
             raise
     
+    def _convert_svg_to_vector(self, svg_data: bytes, source_info: str = "") -> Optional[np.ndarray]:
+        """
+        将SVG数据转换为向量
+        
+        Args:
+            svg_data: SVG文件字节数据
+            source_info: 数据源信息（用于日志）
+            
+        Returns:
+            图片特征向量，失败返回None
+        """
+        try:
+            # 检查SVG内容是否为空
+            if len(svg_data) == 0:
+                logger.error(f"SVG内容为空: {source_info}")
+                return None
+            
+            # 检查是否安装了cairosvg
+            if not HAS_CAIROSVG:
+                logger.error("SVG支持需要安装cairosvg库: pip install cairosvg")
+                return None
+            
+            # 将SVG转换为PNG
+            logger.info(f"开始转换SVG: {source_info}")
+            png_data = cairosvg.svg2png(
+                bytestring=svg_data, 
+                output_width=224, 
+                output_height=224,
+                background_color='white'
+            )
+            
+            # 转换为PIL图像
+            image = Image.open(io.BytesIO(png_data)).convert('RGB')
+            logger.info(f"SVG转换完成，图片尺寸: {image.size}, 模式: {image.mode}")
+            
+            # 检查图片内容
+            img_array = np.array(image)
+            unique_colors = len(np.unique(img_array.reshape(-1, img_array.shape[-1]), axis=0))
+            logger.info(f"图片唯一颜色数量: {unique_colors}")
+            
+            if unique_colors < 5:
+                logger.warning(f"图片颜色过少 ({unique_colors})，可能是空白图片")
+            
+            # 预处理图片
+            image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
+            
+            with torch.no_grad():
+                # 编码图片
+                image_features = self.model.encode_image(image_tensor)
+                # 归一化
+                image_features /= image_features.norm(dim=-1, keepdim=True)
+                
+                vector = image_features.cpu().numpy().astype('float32').flatten()
+                logger.info(f"向量编码完成，形状: {vector.shape}, 范围: [{vector.min():.4f}, {vector.max():.4f}]")
+                
+                return vector
+                
+        except Exception as e:
+            logger.error(f"转换SVG为向量失败 {source_info}: {e}")
+            return None
+
     def _download_svg_from_url(self, url: str) -> Optional[bytes]:
         """
         从URL下载SVG内容
@@ -230,50 +307,8 @@ class MilvusVectorDatabase:
             if svg_content is None:
                 return None
             
-            # 检查SVG内容是否为空
-            if len(svg_content) == 0:
-                logger.error(f"下载的SVG内容为空: {url}")
-                return None
-            
-            # 检查是否安装了cairosvg
-            if cairosvg is None:
-                logger.error("SVG支持需要安装cairosvg库: pip install cairosvg")
-                return None
-            
-            # 将SVG转换为PNG
-            logger.info(f"开始转换SVG: {url}")
-            png_data = cairosvg.svg2png(
-                bytestring=svg_content, 
-                output_width=224, 
-                output_height=224,
-                background_color='white'
-            )
-            
-            # 转换为PIL图像
-            image = Image.open(io.BytesIO(png_data)).convert('RGB')
-            logger.info(f"SVG转换完成，图片尺寸: {image.size}, 模式: {image.mode}")
-            
-            # 检查图片内容
-            img_array = np.array(image)
-            unique_colors = len(np.unique(img_array.reshape(-1, img_array.shape[-1]), axis=0))
-            logger.info(f"图片唯一颜色数量: {unique_colors}")
-            
-            if unique_colors < 5:
-                logger.warning(f"图片颜色过少 ({unique_colors})，可能是空白图片")
-            
-            # 预处理图片
-            image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
-            
-            with torch.no_grad():
-                # 编码图片
-                image_features = self.model.encode_image(image_tensor)
-                # 归一化
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-                
-                vector = image_features.cpu().numpy().astype('float32').flatten()
-                logger.info(f"向量编码完成，形状: {vector.shape}, 范围: [{vector.min():.4f}, {vector.max():.4f}]")
-                
-                return vector
+            # 使用统一的SVG转换方法
+            return self._convert_svg_to_vector(svg_content, url)
                 
         except Exception as e:
             logger.error(f"编码SVG失败 {url}: {e}")
@@ -295,52 +330,14 @@ class MilvusVectorDatabase:
                 logger.error("SVG内容为空")
                 return None
             
-            # 检查是否安装了cairosvg
-            if cairosvg is None:
-                logger.error("SVG支持需要安装cairosvg库: pip install cairosvg")
-                return None
-            
             # 将SVG字符串转换为字节
             if isinstance(svg_content, str):
                 svg_bytes = svg_content.encode('utf-8')
             else:
                 svg_bytes = svg_content
             
-            # 将SVG转换为PNG
-            logger.info("开始转换SVG内容")
-            png_data = cairosvg.svg2png(
-                bytestring=svg_bytes, 
-                output_width=224, 
-                output_height=224,
-                background_color='white'
-            )
-            
-            # 转换为PIL图像
-            image = Image.open(io.BytesIO(png_data)).convert('RGB')
-            logger.info(f"SVG转换完成，图片尺寸: {image.size}, 模式: {image.mode}")
-            
-            # 检查图片内容
-            img_array = np.array(image)
-            unique_colors = len(np.unique(img_array.reshape(-1, img_array.shape[-1]), axis=0))
-            logger.info(f"图片唯一颜色数量: {unique_colors}")
-            
-            if unique_colors < 5:
-                logger.warning(f"图片颜色过少 ({unique_colors})，可能是空白图片")
-            
-            # 预处理图片
-            image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
-            
-            with torch.no_grad():
-                # 编码图片
-                image_features = self.model.encode_image(image_tensor)
-                
-                # 归一化
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-                
-                vector = image_features.cpu().numpy().astype('float32').flatten()
-                logger.info(f"向量编码完成，形状: {vector.shape}, 范围: [{vector.min():.4f}, {vector.max():.4f}]")
-                
-                return vector
+            # 使用统一的SVG转换方法
+            return self._convert_svg_to_vector(svg_bytes, "SVG内容")
                 
         except Exception as e:
             logger.error(f"编码SVG内容失败: {e}")
@@ -372,7 +369,7 @@ class MilvusVectorDatabase:
                 return False
             
             # 准备插入数据
-            current_time = datetime.now().isoformat()
+            current_time = get_current_timestamp()
             entities = [
                 [id],                    # id
                 [url],                   # url
@@ -382,7 +379,7 @@ class MilvusVectorDatabase:
             ]
             
             # 插入数据到Milvus
-            insert_result = self.collection.insert(entities)
+            self.collection.insert(entities)
             
             # 刷新数据到磁盘
             self.collection.flush()
@@ -421,7 +418,7 @@ class MilvusVectorDatabase:
                 return False
             
             # 准备插入数据
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time = get_current_timestamp()
             entities = [
                 [id],                    # id
                 [url],                   # url
@@ -431,7 +428,7 @@ class MilvusVectorDatabase:
             ]
             
             # 插入数据到Milvus
-            insert_result = self.collection.insert(entities)
+            self.collection.insert(entities)
             
             # 刷新数据到磁盘
             self.collection.flush()
@@ -655,39 +652,39 @@ class MilvusVectorDatabase:
             pass
 
 
-if __name__ == "__main__":
-    # 设置日志
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+# if __name__ == "__main__":
+#     # 设置日志
+#     logging.basicConfig(
+#         level=logging.INFO,
+#         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+#     )
     
-    # 创建数据库实例
-    db = MilvusVectorDatabase()
+#     # 创建数据库实例
+#     db = MilvusVectorDatabase()
     
-    # 示例：添加图片
-    test_urls = [
-        "https://example.com/dog.svg",
-        "https://example.com/cat.svg",
-        "https://example.com/bird.svg"
-    ]
+#     # 示例：添加图片
+#     test_urls = [
+#         "https://example.com/dog.svg",
+#         "https://example.com/cat.svg",
+#         "https://example.com/bird.svg"
+#     ]
     
-    try:
-        # 测试增量写入
-        for i, url in enumerate(test_urls, 1):
-            success = db.add_image_by_url(i, url)
-            print(f"添加图片 {i}: {'成功' if success else '失败'}")
+#     try:
+#         # 测试增量写入
+#         for i, url in enumerate(test_urls, 1):
+#             success = db.add_image_by_url(i, url)
+#             print(f"添加图片 {i}: {'成功' if success else '失败'}")
         
-        # 测试读取所有数据
-        all_data = db.get_all_data()
-        print(f"\n数据库中共有 {len(all_data)} 条记录:")
-        for data in all_data:
-            print(f"ID: {data['id']}, URL: {data['url']}, 向量维度: {len(data['vector'])}")
+#         # 测试读取所有数据
+#         all_data = db.get_all_data()
+#         print(f"\n数据库中共有 {len(all_data)} 条记录:")
+#         for data in all_data:
+#             print(f"ID: {data['id']}, URL: {data['url']}, 向量维度: {len(data['vector'])}")
         
-        # 显示统计信息
-        stats = db.get_database_stats()
-        print(f"\n数据库统计信息: {stats}")
+#         # 显示统计信息
+#         stats = db.get_database_stats()
+#         print(f"\n数据库统计信息: {stats}")
         
-    finally:
-        # 关闭连接
-        db.close_connection()
+#     finally:
+#         # 关闭连接
+#         db.close_connection()

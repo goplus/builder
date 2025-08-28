@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from functools import wraps
 from flask import Blueprint, request, jsonify
 from milvus_vector_database import MilvusVectorDatabase
 
@@ -9,12 +10,12 @@ logger = logging.getLogger(__name__)
 milvus_vector_bp = Blueprint('milvus_vector', __name__, url_prefix='/api/milvus')
 
 # 全局数据库实例
-vector_db = None
+vector_db: Optional[MilvusVectorDatabase] = None
 
 
 def init_milvus_vector_db(collection_name: str = 'cloud_vector_collection',
                          host: str = 'localhost', 
-                         port: str = '19530'):
+                         port: str = '19530') -> None:
     """初始化Milvus向量数据库"""
     global vector_db
     if vector_db is None:
@@ -28,6 +29,68 @@ def init_milvus_vector_db(collection_name: str = 'cloud_vector_collection',
         except Exception as e:
             logger.error(f"Milvus向量数据库初始化失败: {e}")
             raise
+
+
+def ensure_db_initialized(f):
+    """装饰器：确保数据库已初始化"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        global vector_db
+        if vector_db is None:
+            return jsonify({
+                'error': '数据库未初始化',
+                'code': 'DATABASE_NOT_INITIALIZED'
+            }), 500
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def validate_json_request(required_fields: List[str], field_validators: Dict[str, Any] = None):
+    """装饰器：验证JSON请求参数和类型"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            data = request.get_json()
+            if not data:
+                return jsonify({
+                    'error': '请求体必须是有效的JSON',
+                    'code': 'INVALID_JSON'
+                }), 400
+            
+            # 验证必需字段存在
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({
+                        'error': f'缺少必需参数: {field}',
+                        'code': f'MISSING_{field.upper()}'
+                    }), 400
+            
+            # 验证字段类型（如果提供了验证器）
+            if field_validators:
+                for field, validator in field_validators.items():
+                    if field in data:
+                        if isinstance(validator, type):
+                            if not isinstance(data[field], validator):
+                                return jsonify({
+                                    'error': f'{field}参数类型错误，应为{validator.__name__}',
+                                    'code': f'INVALID_{field.upper()}_TYPE'
+                                }), 400
+                        elif callable(validator):
+                            try:
+                                if not validator(data[field]):
+                                    return jsonify({
+                                        'error': f'{field}参数验证失败',
+                                        'code': f'INVALID_{field.upper()}'
+                                    }), 400
+                            except Exception:
+                                return jsonify({
+                                    'error': f'{field}参数验证出错',
+                                    'code': f'INVALID_{field.upper()}'
+                                }), 400
+            
+            return f(data, *args, **kwargs)
+        return decorated_function
+    return decorator
 
 
 @milvus_vector_bp.route('/', methods=['GET'])
@@ -60,21 +123,15 @@ def health_check():
 
 
 @milvus_vector_bp.route('/stats', methods=['GET'])
+@ensure_db_initialized
 def get_stats():
     """获取数据库统计信息接口"""
     try:
-        if vector_db is None:
-            return jsonify({
-                'error': '数据库未初始化',
-                'code': 'DATABASE_NOT_INITIALIZED'
-            }), 500
-        
         stats = vector_db.get_database_stats()
         return jsonify({
             'success': True,
             'stats': stats
         })
-    
     except Exception as e:
         logger.error(f"获取统计信息失败: {e}")
         return jsonify({
@@ -85,7 +142,12 @@ def get_stats():
 
 
 @milvus_vector_bp.route('/add', methods=['POST'])
-def add_image_by_url():
+@validate_json_request(['id', 'url'], {
+    'id': int,
+    'url': lambda x: isinstance(x, str) and len(x.strip()) > 0,
+    'svg_content': lambda x: x is None or (isinstance(x, str) and len(x.strip()) > 0)
+})
+def add_image_by_url(data: Dict[str, Any]):
     """
     增量式写入接口：添加SVG图片到向量数据库
     
@@ -107,65 +169,26 @@ def add_image_by_url():
         if vector_db is None:
             init_milvus_vector_db()
         
-        # 检查请求数据
-        data = request.get_json()
-        if not data:
-            return jsonify({
-                'error': '请求体必须是有效的JSON',
-                'code': 'INVALID_JSON'
-            }), 400
-        
-        # 验证必需参数
-        if 'id' not in data:
-            return jsonify({
-                'error': '缺少必需参数: id',
-                'code': 'MISSING_ID'
-            }), 400
-        
-        if 'url' not in data:
-            return jsonify({
-                'error': '缺少必需参数: url',
-                'code': 'MISSING_URL'
-            }), 400
-        
         image_id = data['id']
-        image_url = data['url']
-        svg_content = data.get('svg_content')  # 可选的SVG内容
-        
-        # 验证参数类型
-        if not isinstance(image_id, int):
-            return jsonify({
-                'error': 'id参数必须是整数',
-                'code': 'INVALID_ID_TYPE'
-            }), 400
-        
-        if not isinstance(image_url, str) or not image_url.strip():
-            return jsonify({
-                'error': 'url参数必须是非空字符串',
-                'code': 'INVALID_URL_TYPE'
-            }), 400
-        
-        # 验证SVG内容（如果提供）
-        if svg_content is not None and (not isinstance(svg_content, str) or not svg_content.strip()):
-            return jsonify({
-                'error': 'svg_content参数必须是非空字符串',
-                'code': 'INVALID_SVG_CONTENT'
-            }), 400
+        image_url = data['url'].strip()
+        svg_content = data.get('svg_content')
+        if svg_content:
+            svg_content = svg_content.strip()
         
         # 添加图片到数据库
         if svg_content:
             logger.info(f"开始添加图片（使用SVG内容）: ID={image_id}, URL={image_url}")
-            success = vector_db.add_image_with_svg(image_id, image_url.strip(), svg_content.strip())
+            success = vector_db.add_image_with_svg(image_id, image_url, svg_content)
         else:
             logger.info(f"开始添加图片（从URL下载）: ID={image_id}, URL={image_url}")
-            success = vector_db.add_image_by_url(image_id, image_url.strip())
+            success = vector_db.add_image_by_url(image_id, image_url)
         
         if success:
             return jsonify({
                 'success': True,
                 'message': '图片成功添加到向量数据库',
                 'id': image_id,
-                'url': image_url.strip()
+                'url': image_url
             })
         else:
             return jsonify({
@@ -173,7 +196,7 @@ def add_image_by_url():
                 'error': '添加图片失败，请检查URL是否有效',
                 'code': 'ADD_IMAGE_FAILED',
                 'id': image_id,
-                'url': image_url.strip()
+                'url': image_url
             }), 400
     
     except Exception as e:
@@ -186,6 +209,7 @@ def add_image_by_url():
 
 
 @milvus_vector_bp.route('/data', methods=['GET'])
+@ensure_db_initialized
 def get_all_data():
     """
     读取所有数据接口：返回数据库中的所有图片信息
@@ -269,7 +293,12 @@ def get_all_data():
 
 
 @milvus_vector_bp.route('/search', methods=['POST'])
-def search_by_text():
+@validate_json_request(['text'], {
+    'text': lambda x: isinstance(x, str) and len(x.strip()) > 0,
+    'k': lambda x: isinstance(x, int) and x > 0
+})
+@ensure_db_initialized
+def search_by_text(data: Dict[str, Any]):
     """
     文本搜索接口：通过文本搜索相似图片
     
@@ -279,6 +308,7 @@ def search_by_text():
         "k": 10
     }
     """
+    global vector_db
     try:
         if vector_db is None:
             return jsonify({
@@ -338,7 +368,9 @@ def search_by_text():
 
 
 @milvus_vector_bp.route('/delete', methods=['DELETE'])
-def delete_by_id():
+@validate_json_request(['id'], {'id': int})
+@ensure_db_initialized
+def delete_by_id(data: Dict[str, Any]):
     """
     删除接口：根据ID删除图片记录
     
@@ -347,6 +379,7 @@ def delete_by_id():
         "id": 123
     }
     """
+    global vector_db
     try:
         if vector_db is None:
             return jsonify({
@@ -426,7 +459,9 @@ def batch_add_images():
             {"id": 2, "url": "https://example.com/image2.svg", "svg_content": "<svg>...</svg>"}
         ]
     }
-    """
+    """ 
+    global vector_db
+
     try:
         if vector_db is None:
             init_milvus_vector_db()
@@ -533,15 +568,10 @@ def batch_add_images():
 
 # Milvus特有功能
 @milvus_vector_bp.route('/collection/info', methods=['GET'])
+@ensure_db_initialized
 def get_collection_info():
     """获取Milvus集合详细信息"""
     try:
-        if vector_db is None:
-            return jsonify({
-                'error': '数据库未初始化',
-                'code': 'DATABASE_NOT_INITIALIZED'
-            }), 500
-        
         collection_info = {
             'collection_name': vector_db.collection_name,
             'schema': {
@@ -605,5 +635,6 @@ if __name__ == "__main__":
     print("  DELETE /api/milvus/delete - 删除图片")
     print("  POST /api/milvus/batch/add - 批量添加图片")
     print("  GET  /api/milvus/collection/info - 获取集合信息")
-    
+
+    init_milvus_vector_db()
     app.run(host='0.0.0.0', port=5002, debug=True)
