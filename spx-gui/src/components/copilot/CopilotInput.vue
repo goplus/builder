@@ -15,8 +15,8 @@ const loading = computed(() => {
 
 const placeholder = computed(() => {
   if (round.value != null) {
-    if (round.value.state === RoundState.Loading) return { en: 'Thinking...', zh: '思考中...' }
-    if (round.value.state === RoundState.InProgress) return { en: 'Working...', zh: '工作中...' }
+    if (round.value.state === RoundState.Loading) return { en: 'Thinking', zh: '思考中' }
+    if (round.value.state === RoundState.InProgress) return { en: 'Working', zh: '工作中' }
   }
   return { en: 'Input your problem here', zh: '在这里输入你的问题' }
 })
@@ -48,6 +48,11 @@ defineExpose({ focus })
 <template>
   <div class="copilot-input" :class="{ loading }" @click="focus">
     <div class="content">
+      <svg v-if="loading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="2.99674" cy="7.99674" r="1.66667" fill="#0BC0CF" />
+        <circle opacity="0.5" cx="7.99674" cy="7.99674" r="1.66667" fill="#0BC0CF" />
+        <circle cx="12.9967" cy="7.99674" r="1.66667" fill="#0BC0CF" />
+      </svg>
       <div class="input-wrapper" :data-value="inputStr">
         <textarea
           ref="textareaRef"
@@ -59,19 +64,21 @@ defineExpose({ focus })
           @keypress.enter.prevent="handleSubmit"
         ></textarea>
       </div>
-      <button class="submit-btn" @click="handleSubmit">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <button class="submit-btn" :class="{ disabled: inputStr.length === 0 }" @click="handleSubmit">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path
-            d="M18.6357 15.6701L20.3521 10.5208C21.8516 6.02242 22.6013 3.77322 21.414 2.58595C20.2268 1.39869 17.9776 2.14842 13.4792 3.64788L8.32987 5.36432C4.69923 6.57453 2.88392 7.17964 2.36806 8.06698C1.87731 8.91112 1.87731 9.95369 2.36806 10.7978C2.88392 11.6852 4.69923 12.2903 8.32987 13.5005C8.77981 13.6505 9.28601 13.5434 9.62294 13.2096L15.1286 7.75495C15.4383 7.44808 15.9382 7.45041 16.245 7.76015C16.5519 8.06989 16.5496 8.56975 16.2398 8.87662L10.8231 14.2432C10.4518 14.6111 10.3342 15.1742 10.4995 15.6701C11.7097 19.3007 12.3148 21.1161 13.2022 21.6319C14.0463 22.1227 15.0889 22.1227 15.933 21.6319C16.8204 21.1161 17.4255 19.3008 18.6357 15.6701Z"
-            fill="currentColor"
+            d="M10 16.6665L10 3.33317M10 3.33317L5 8.33317M10 3.33317L15 8.33317"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           />
         </svg>
       </button>
       <button class="cancel-btn" @click="handleAbort">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
           <path
-            d="M12 22.75C6.072 22.75 1.25 17.928 1.25 12C1.25 6.072 6.072 1.25 12 1.25C17.928 1.25 22.75 6.072 22.75 12C22.75 17.928 17.928 22.75 12 22.75ZM12 2.75C6.899 2.75 2.75 6.899 2.75 12C2.75 17.101 6.899 21.25 12 21.25C17.101 21.25 21.25 17.101 21.25 12C21.25 6.899 17.101 2.75 12 2.75ZM14.188 16.25H9.81299C8.52199 16.25 7.75098 15.479 7.75098 14.188V9.81299C7.75098 8.52099 8.52199 7.75098 9.81299 7.75098H14.188C15.479 7.75098 16.25 8.52199 16.25 9.81299V14.188C16.25 15.479 15.479 16.25 14.188 16.25Z"
-            fill="currentColor"
+            d="M14 27.4375C6.59 27.4375 0.5625 21.41 0.5625 14C0.5625 6.59 6.59 0.5625 14 0.5625C21.41 0.5625 27.4375 6.59 27.4375 14C27.4375 21.41 21.41 27.4375 14 27.4375ZM14 2.4375C7.62375 2.4375 2.4375 7.62375 2.4375 14C2.4375 20.3762 7.62375 25.5625 14 25.5625C20.3762 25.5625 25.5625 20.3762 25.5625 14C25.5625 7.62375 20.3762 2.4375 14 2.4375ZM16.735 19.3125H11.2662C9.65248 19.3125 8.68872 18.3487 8.68872 16.735V11.2662C8.68872 9.65124 9.65248 8.68872 11.2662 8.68872H16.735C18.3487 8.68872 19.3125 9.65248 19.3125 11.2662V16.735C19.3125 18.3487 18.3487 19.3125 16.735 19.3125Z"
+            fill="#24292F"
           />
         </svg>
       </button>
@@ -80,19 +87,11 @@ defineExpose({ focus })
 </template>
 
 <style lang="scss" scoped>
-.copilot-input {
-  border-radius: 8px;
-  background: #c390ff;
-  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
-}
-
 .content {
   display: flex;
-  margin: 1px;
-  padding: 7px 11px;
+  padding: 12px 14px;
   align-items: center;
-  gap: 16px;
-  border-radius: 7px;
+  gap: 10px;
   background: var(--ui-color-grey-100);
 }
 
@@ -102,7 +101,7 @@ defineExpose({ focus })
   min-width: 0;
   min-height: 20px;
 
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
 
   // auto resize based on content height
@@ -144,24 +143,40 @@ defineExpose({ focus })
 
 .submit-btn,
 .cancel-btn {
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   display: flex;
-  padding: 8px;
   justify-content: center;
   align-items: center;
-  gap: 8px;
   border: none;
   cursor: pointer;
-  border-radius: 12px;
-  color: var(--ui-color-grey-100);
-  background: var(--Gradient, linear-gradient(180deg, #9a77ff 0%, #735ffa 100%));
+  border-radius: 32px;
 }
 
 .submit-btn {
+  padding: 6px;
+  background: var(--Gradient, linear-gradient(180deg, #9a77ff 0%, #735ffa 100%));
+  stroke: var(--ui-color-grey-100);
   display: flex;
+
+  &.disabled {
+    background: var(--ui-color-grey-400);
+    & > svg {
+      stroke: var(--ui-color-grey-800);
+    }
+  }
 }
+
 .cancel-btn {
+  padding: 0;
   display: none;
+  background: transparent;
+
+  & > svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .copilot-input.loading {
