@@ -3,9 +3,38 @@ import { ref, computed, defineProps, defineEmits } from 'vue'
 // TODO: 暂时注释掉，等 platformShare 模块修复后再启用
 // import { directShare, shareVideo, SocialPlatformConfigs } from './platformShare'
 // import platformSelector from './platformSelector.vue'
-import type { RecordData } from './RecordingApis.ts'
+// import type { RecordData } from './RecordingApis.ts'
 // TODO: 暂时注释掉，等 platformShare 模块修复后再启用
 // import type { PlatformShare } from './platformShare'
+
+
+//==================================
+type RecordData = {
+    /** Unique identifier */
+    id: string
+    /** Creation timestamp */
+    createdAt: string
+    /** Last update timestamp */
+    updatedAt: string
+    /** Unique username of the user who created the record */
+    owner: string
+    /** Full name of the project, in the format `owner/project` */
+    projectFullName: string
+    /** Display title of the record */
+    title: string
+    /** Brief description of the record */
+    description: string
+    /** URL of the recorded video file */
+    videoUrl: string
+    /** URL of the thumbnail image */
+    thumbnailUrl: string
+    /** Number of times the record has been viewed */
+    viewCount: number
+    /** Number of likes the record has received */
+    likeCount: number
+}
+//============================================
+
 
 const props = defineProps<{
     recording: RecordData,

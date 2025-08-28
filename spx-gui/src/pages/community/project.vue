@@ -38,9 +38,11 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
-// TODO: 添加分享组件
+import { useModal, useMessage } from '@/components/ui'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
+import { getProject } from '@/apis/project'
+import type { ProjectData } from '@/apis/project'
 
 const props = defineProps<{
   owner: string
@@ -204,33 +206,6 @@ const handleShare = useMessageHandle(() => shareProject(props.owner, props.name)
   zh: '分享项目失败'
 })
 
-// TODO: 添加分享组件的状态管理
-const screenshotSharingVisible = ref(false)
-const recordingSharingVisible = ref(false)
-const currentScreenshot = ref<File | null>(null)
-
-const handleScreenshotSharing = () => {
-  // TODO: 暂时创建一个模拟的截图文件用于测试
-  const mockScreenshot = new File(['mock screenshot data'], 'screenshot.png', { type: 'image/png' })
-  currentScreenshot.value = mockScreenshot
-  screenshotSharingVisible.value = true
-}
-
-const handleRecordingSharing = () => {
-  recordingSharingVisible.value = true
-}
-
-const handleScreenshotSharingResolved = (platform: string) => {
-  console.log('Screenshot shared to platform:', platform)
-  screenshotSharingVisible.value = false
-  currentScreenshot.value = null
-}
-
-const handleRecordingSharingResolved = (result: any) => {
-  console.log('Recording sharing result:', result)
-  recordingSharingVisible.value = false
-}
-
 const createProject = useCreateProject()
 
 const handleRemix = useMessageHandle(
@@ -309,8 +284,34 @@ const remixesRet = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
-// 响应式断点
-const isMobile = useResponsive('mobile')
+//==============================
+const screenshotImg = ref<File | null>(null)
+const showScreenShotSharing = ref(false)
+
+const toaster = useMessage()
+
+const shareScreenshot = useModal(ProjectScreenshotSharing)
+
+async function handleScreenshotSharing(){
+  ProjectRunner.pauseGame()
+
+  const ScreenshotFile = ProjectRunner.getScreenShot()
+  screenshotImg.value = ScreenshotFile
+
+  showScreenShotSharing.value = true
+
+  try{
+    // const result = await shareScreenshot()
+    toaster.success(`成功`)
+  }catch(e){
+    console.log(e)
+  }
+
+  ProjectRunner.resumeGame()
+}
+
+//==============================
+
 </script>
 
 <template>
@@ -349,39 +350,19 @@ const isMobile = useResponsive('mobile')
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
-          <UIButton
-            v-if="runnerState === 'running' && !isMobile"
-            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
-            type="boring"
-            :loading="false"
-            @click="handleScreenshotSharing"
-          >
+          <UIButton v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }" type="boring"
+            @click="handleScreenshotSharing"> <!--&& !isMobile"-->
             <template #icon>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
                 <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
-                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5"
+                  fill="none" />
               </svg>
             </template>
             {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
           </UIButton>
-
-          <UIButton
-            v-if="runnerState === 'running' && !isMobile"
-            v-radar="{ name: 'Record button', desc: 'Click to start recording' }"
-            type="primary"
-            @click="handleRecordingSharing"
-          >
-            <template #icon>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" />
-                <circle cx="8" cy="8" r="2" fill="currentColor" />
-                <circle cx="12" cy="6" r="1" fill="currentColor" />
-              </svg>
-            </template>
-            {{ $t({ en: 'Record', zh: '录屏' }) }}
-          </UIButton>
-
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
@@ -579,24 +560,6 @@ const isMobile = useResponsive('mobile')
       </template>
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
-    
-    <!-- TODO: 添加分享组件的模态框 -->
-    <ProjectScreenshotSharing
-      v-if="screenshotSharingVisible && currentScreenshot && project"
-      :screenshot="currentScreenshot"
-      :project-data="project as any"
-      :visible="screenshotSharingVisible"
-      @cancelled="screenshotSharingVisible = false"
-      @resolved="handleScreenshotSharingResolved"
-    />
-    
-    <ProjectRecordingSharing
-      v-if="recordingSharingVisible && project"
-      :recording="{ id: 'mock', createdAt: new Date(), updatedAt: new Date(), owner: project?.owner || '', name: project?.name || '', description: '', instructions: '', visibility: 'public', viewCount: 0, likeCount: 0, remixCount: 0, videoUrl: '' } as any"
-      :visible="recordingSharingVisible"
-      @cancelled="recordingSharingVisible = false"
-      @resolved="handleRecordingSharingResolved"
-    />
   </CenteredWrapper>
 </template>
 

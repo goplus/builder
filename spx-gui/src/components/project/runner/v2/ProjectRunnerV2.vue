@@ -158,8 +158,27 @@ onMounted(() => {
 
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
-defineExpose({
 
+defineExpose({
+  // 暴露暂停方法
+  async pauseGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow
+    if (win && typeof win.pauseGame === 'function') {
+      return win.pauseGame()
+    }
+  },
+  // 暴露恢复方法
+  async resumeGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow
+    if (win && typeof win.resumeGame === 'function') {
+      return win.resumeGame()
+    }
+  },
+  // 暴露截图方法
   async getScreenShot(): Promise<File | null> {
     const iframe = iframeRef.value
     if (!iframe) return null
@@ -175,6 +194,24 @@ defineExpose({
     } catch (e) {
       console.warn('getScreenShot error:', e)
       return null
+    }
+  },
+  // 暴露录屏开始方法
+  async startRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow
+    if (win && typeof win.startRecording === 'function') {
+      return win.startRecording()
+    }
+  },
+  // 暴露录屏结束方法
+  async stopRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow
+    if (win && typeof win.stopRecording === 'function') {
+      return win.stopRecording()
     }
   },
 
