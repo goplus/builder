@@ -375,6 +375,25 @@ export interface ICopilotContextProvider {
   provideContext(): string
 }
 
+/** A quick input represents a UI element (typically a button) which helps the user to quickly send some message */
+export type QuickInput = {
+  /** Text for the quick input, will be displayed on the UI element */
+  text: LocaleMessage
+  /** Message to send when the user accepts the quick input */
+  message: UserMessage
+}
+
+/** IQuickInputProvider is an interface for quick input providers. */
+export interface IQuickInputProvider {
+  /** Provide quick inputs based on the last copilot message. */
+  provideQuickInput(
+    /** The last copilot message, may not exist. */
+    lastCopilotMessage: CopilotMessage | null,
+    /** The current topic, may not exist. */
+    topic: Topic | null
+  ): QuickInput[]
+}
+
 export type CustomElementDefinition = {
   /** Tag name for the tool. */
   tagName: string
@@ -417,8 +436,15 @@ export interface IStorage {
   get(): string | null
 }
 
+const defaultTopic: Topic = {
+  title: { en: 'New chat', zh: '新会话' },
+  description: '',
+  reactToEvents: false
+}
+
 export class Copilot extends Disposable {
   private contextProviders: ICopilotContextProvider[] = shallowReactive([])
+  private quickInputProviders: IQuickInputProvider[] = shallowReactive([])
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
@@ -516,6 +542,16 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     return Array.from(this.customElementMap.values())
   }
 
+  getQuickInputs(): QuickInput[] {
+    const session = this.currentSession
+    const topic = session?.topic ?? null
+    const lastRound = session?.rounds.at(-1)
+    if (lastRound != null && lastRound.state !== RoundState.Completed) return []
+    const lastMessage = lastRound?.resultMessages.at(-1)
+    const lastCopilotMessage = lastMessage?.role === 'copilot' ? lastMessage : null
+    return this.quickInputProviders.map((provider) => provider.provideQuickInput(lastCopilotMessage, topic)).flat()
+  }
+
   /**
    * Start a new session for the copilot.
    * If a session is already running, it will be ended first.
@@ -569,7 +605,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * Add a user message in current session.
    * If no session is running, a new session will be started with given message and topic.
    */
-  addUserMessage(content: string, topic: Topic): void {
+  addUserTextMessage(content: string, topic: Topic = defaultTopic): void {
     this.open()
     const userMessage: UserTextMessage = {
       type: 'text',
@@ -606,6 +642,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     return () => {
       const index = this.contextProviders.indexOf(provider)
       if (index !== -1) this.contextProviders.splice(index, 1)
+    }
+  }
+
+  registerQuickInputProvider(provider: IQuickInputProvider): Disposer {
+    this.quickInputProviders.push(provider)
+    return () => {
+      const index = this.quickInputProviders.indexOf(provider)
+      if (index !== -1) this.quickInputProviders.splice(index, 1)
     }
   }
 
