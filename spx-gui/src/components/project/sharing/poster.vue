@@ -155,7 +155,7 @@ defineExpose({
 }
 
 .poster-decoration {
-  color: white;
+  color: #333333;
   text-align: left;
   position: relative;
   display: flex;
@@ -173,22 +173,24 @@ defineExpose({
   font-weight: 800;
   margin-bottom: 8px;
   line-height: 1.3;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
   letter-spacing: -0.02em;
+  color: #1a1a1a;
 }
 
-.creator-info {
+.owner-info {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
   margin-bottom: 8px;
   opacity: 0.9;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  color: #2d2d2d;
   
   :deep(.ui-icon) {
     width: 14px;
@@ -209,8 +211,9 @@ defineExpose({
   font-size: 13px;
   margin-bottom: 12px;
   opacity: 0.85;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
   line-height: 1.4;
+  color: #404040;
   
   :deep(.ui-icon) {
     width: 14px;
@@ -228,6 +231,30 @@ defineExpose({
   }
 }
 
+.project-viewcnt,
+.project-likecnt,
+.project-remixcnt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  color: #2d2d2d;
+  
+  :deep(.ui-icon) {
+    width: 14px;
+    height: 14px;
+    opacity: 0.8;
+  }
+  
+  span {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+}
+
+/*
 .project-stats {
   display: flex;
   gap: 20px;
@@ -267,20 +294,22 @@ defineExpose({
     letter-spacing: -0.01em;
   }
 }
+*/
 
 .branding {
   display: flex;
   align-items: center;
   height: 60px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.1);
   padding: 12px 20px;
   border-radius: 24px;
   backdrop-filter: blur(4px);
   box-sizing: border-box;
   transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
   }
 }
