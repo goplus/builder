@@ -36,7 +36,7 @@ function resolveSelectedPlatform(): PlatformShare | null {
 }
 
 async function handleSharePoster(): Promise<void> {
-    if (!props.ScreenShot) {
+    if (!props.screenshot) {
         emit('cancelled')
         return
     }
