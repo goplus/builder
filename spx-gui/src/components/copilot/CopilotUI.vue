@@ -21,7 +21,7 @@ const panelBoundBuffer = [20, 10]
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useBottomSticky, useContentSize } from '@/utils/dom'
-import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { assertNever, localStorageRef, timeout, until } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
@@ -102,7 +102,7 @@ watch(
         bottom,
         state
       }
-      await timeout(0)
+      await until(() => !!triggerWidth.value)
       if (state === State.Move) {
         snapAnimatedToSide(triggerPosition.value)
       } else {
@@ -268,7 +268,7 @@ onMounted(async () => {
       triggerPosition.value = panelPosition.value
     }
   } else {
-    await untilNotNull(() => triggerWidth.value)
+    await until(() => !!triggerWidth.value)
     const { triggerW } = fixResizeNullable()
     let statePosition = triggerPosition.value
     if (statePosition.state === State.Move) {
