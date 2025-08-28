@@ -161,7 +161,7 @@ describe('Copilot', () => {
     expect(parsedData.rounds).toEqual([])
 
     // Add a user message
-    copilot.addUserMessage('What is the weather today?', topic)
+    copilot.addUserTextMessage('What is the weather today?', topic)
     expect(copilot.currentSession?.rounds.length).toBe(1)
     const userMessage = copilot.currentSession?.rounds[0].userMessage
     expect(userMessage?.type).toBe('text')
@@ -225,7 +225,7 @@ describe('Copilot', () => {
     const topic = createBasicTopic('Ending Test', 'Testing session ending')
 
     await copilot.startSession(topic)
-    copilot.addUserMessage('Hello', topic)
+    copilot.addUserTextMessage('Hello', topic)
 
     // Wait for session to be saved
     await waitForThrottledSave()
@@ -248,13 +248,13 @@ describe('Copilot', () => {
     await copilot.startSession(topic)
 
     // Add messages in quick succession
-    copilot.addUserMessage('First question', topic)
+    copilot.addUserTextMessage('First question', topic)
     await timeout(100)
 
-    copilot.addUserMessage('Second question', topic)
+    copilot.addUserTextMessage('Second question', topic)
     await timeout(100)
 
-    copilot.addUserMessage('Third question', topic)
+    copilot.addUserTextMessage('Third question', topic)
 
     // Wait for completion
     await waitForCompletion()
@@ -307,7 +307,7 @@ describe('Copilot', () => {
     await copilot.startSession(topic)
 
     // Add a user message to trigger streaming response
-    copilot.addUserMessage('Tell me something', topic)
+    copilot.addUserTextMessage('Tell me something', topic)
 
     // Wait a bit for streaming to start but not complete (the mock will never complete)
     await timeout(100)

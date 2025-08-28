@@ -15,7 +15,7 @@ require (
 	github.com/qiniu/go-sdk/v7 v7.25.4
 	github.com/qiniu/x v1.15.1
 	github.com/redis/go-redis/v9 v9.12.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.1

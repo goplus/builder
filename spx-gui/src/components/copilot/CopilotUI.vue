@@ -21,45 +21,36 @@ const panelBoundBuffer = [20, 10]
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useBottomSticky, useContentSize } from '@/utils/dom'
-import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
-import { initiateSignIn, isSignedIn, useSignedInUser } from '@/stores/user'
+import { assertNever, localStorageRef, timeout, until } from '@/utils/utils'
+import { useMessageHandle } from '@/utils/exception'
+import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
-import { providePopupContainer, UIIcon, UITooltip } from '@/components/ui'
+import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
+import { type QuickInput, RoundState } from './copilot'
 import logoSrc from './logo.png'
 
 const copilot = useCopilot()
 
-const bodyRef = ref<HTMLElement | null>(null)
+const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
 
-const { data: signedInUser } = useSignedInUser()
-
 const session = computed(() => copilot.currentSession)
-
-const title = computed(() => {
-  if (session.value == null) return null
-  return session.value.topic.title
-})
 
 const rounds = computed(() => {
   if (session.value == null || session.value.rounds.length === 0) return null
   return session.value.rounds
 })
 
+const lastRound = computed(() => rounds.value?.at(-1))
+
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
-async function handleNewSession() {
-  copilot.endCurrentSession()
-  await timeout(100) // TODO
-  inputRef.value?.focus()
-}
-
-useBottomSticky(bodyRef)
+useBottomSticky(outputRef)
 
 providePopupContainer(panelRef)
 
@@ -111,7 +102,7 @@ watch(
         bottom,
         state
       }
-      await timeout(0)
+      await until(() => !!triggerWidth.value)
       if (state === State.Move) {
         snapAnimatedToSide(triggerPosition.value)
       } else {
@@ -238,13 +229,13 @@ useDraggable(triggerRef, {
   }
 })
 
-const headerRef = ref<HTMLElement>()
+const footerRef = ref<HTMLElement>()
 const panelPosition = localStorageRef('spx-gui-copilot-panel-position', { right: 10, bottom: 20, state: State.Right })
 function refreshPanelPosition(position: StatePosition) {
   const { panelW, panelH } = fixResizeNullable()
   panelPosition.value = clampToWindowBounds(getDirection(position, panelW), panelW, panelH, panelBoundBuffer)
 }
-useDraggable(headerRef, {
+useDraggable(footerRef, {
   onDragStart() {
     const statePosition = panelPosition.value
     position.right = statePosition.right
@@ -277,7 +268,7 @@ onMounted(async () => {
       triggerPosition.value = panelPosition.value
     }
   } else {
-    await untilNotNull(() => triggerWidth.value)
+    await until(() => !!triggerWidth.value)
     const { triggerW } = fixResizeNullable()
     let statePosition = triggerPosition.value
     if (statePosition.state === State.Move) {
@@ -286,6 +277,22 @@ onMounted(async () => {
     }
   }
 })
+
+const quickInputs = computed(() => copilot.getQuickInputs())
+
+const handleQuickInputClick = useMessageHandle(
+  ({ message }: QuickInput) => {
+    switch (message.type) {
+      case 'text':
+        return copilot.addUserTextMessage(message.content)
+      case 'event':
+        return copilot.notifyUserEvent(message.name, message.detail)
+      default:
+        assertNever(message)
+    }
+  },
+  { en: 'Failed to send message', zh: '发送消息失败' }
+).fn
 
 // TODO: prevent click in copilot panel from closing other dropdowns
 </script>
@@ -321,60 +328,24 @@ onMounted(async () => {
       class="copilot-panel"
       :style="{ right: `${panelPosition.right}px`, bottom: `${panelPosition.bottom}px` }"
     >
-      <header ref="headerRef" class="header">
-        <h4 class="title">{{ $t(title) || '&nbsp;' }}</h4>
-        <template v-if="StateIndicator != null">
-          <StateIndicator />
-        </template>
-        <UITooltip v-if="session != null && session.topic.endable !== false">
-          {{ $t({ en: 'New chat', zh: '新建会话' }) }}
-          <template #trigger>
-            <button class="btn">
-              <UIIcon class="icon" type="plus" @click="handleNewSession" />
-            </button>
-          </template>
-        </UITooltip>
-        <button v-if="session == null" class="btn" disabled>
-          <UIIcon class="icon" type="plus" />
-        </button>
-        <UITooltip>
-          {{ $t({ en: 'Close the panel', zh: '关闭对话框' }) }}
-          <template #trigger>
-            <button class="btn">
-              <UIIcon class="icon" type="close" @click="copilot.close()" />
-            </button>
-          </template>
-        </UITooltip>
-      </header>
-      <div ref="bodyRef" class="body">
+      <div class="body">
         <template v-if="isSignedIn()">
-          <ul v-if="rounds != null" class="messages">
-            <CopilotRound
-              v-for="(round, i) in rounds"
-              :key="i"
-              :round="round"
-              :is-last-round="i === rounds.length - 1"
-            />
-          </ul>
-          <div v-else class="placeholder">
-            <img class="logo" :src="logoSrc" alt="Copilot" />
-            <h4 class="title">
-              {{
-                $t({
-                  en: `Hi, ${signedInUser?.displayName}`,
-                  zh: `你好，${signedInUser?.displayName}`
-                })
-              }}
-            </h4>
-            <p class="description">
-              {{
-                $t({
-                  en: 'I can help you with XBuilder, please type your question or what you want to do below.',
-                  zh: '我可以帮助你了解并使用 XBuilder，请在下方输入你的问题或想做的事。'
-                })
-              }}
-            </p>
+          <div
+            v-if="lastRound && ![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)"
+            ref="outputRef"
+            class="output"
+          >
+            <CopilotRound :round="lastRound" is-last-round />
+            <div v-if="quickInputs.length > 0" class="quick-inputs">
+              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                <template #trigger>
+                  <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
+                </template>
+              </UITooltip>
+            </div>
           </div>
+          <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
         </template>
         <template v-else>
           <div class="placeholder">
@@ -383,8 +354,8 @@ onMounted(async () => {
             <p class="description">
               {{
                 $t({
-                  en: 'I can help you with XBuilder, please sign in to continue',
-                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续'
+                  en: 'Please sign in to continue',
+                  zh: '请先登录以继续'
                 })
               }}
             </p>
@@ -392,11 +363,14 @@ onMounted(async () => {
           </div>
         </template>
       </div>
-      <footer class="footer">
-        <template v-if="isSignedIn()">
-          <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
-        </template>
-      </footer>
+      <div ref="footerRef" class="footer">
+        <div v-if="StateIndicator != null" style="display: flex">
+          <StateIndicator />
+        </div>
+        <button class="btn" @click="copilot.close()">
+          <img class="logo" draggable="false" :src="logoSrc" alt="Copilot" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -453,138 +427,161 @@ onMounted(async () => {
   right: 10px;
   bottom: 20px;
   width: 340px;
-  height: 680px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: stretch;
-
-  border-radius: 8px;
-  border: 1px solid var(--ui-color-grey-400);
-  background-color: var(--ui-color-grey-100);
-  box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
-}
-
-.header {
-  padding: 12px;
-  display: flex;
-  align-items: center;
   gap: 8px;
-  cursor: move;
-
-  .title {
-    flex: 1 1 0;
-  }
-
-  .btn {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border: none;
-    background: none;
-    border-radius: 50%;
-    color: var(--ui-color-grey-700);
-    transition: background-color 0.2s;
-
-    &:not(:disabled) {
-      cursor: pointer;
-      &:hover {
-        background-color: var(--ui-color-grey-400);
-      }
-      &:active {
-        background-color: var(--ui-color-grey-500);
-      }
-    }
-
-    &:disabled {
-      cursor: not-allowed;
-      color: var(--ui-color-grey-600);
-    }
-
-    .icon {
-      width: 18px;
-      height: 18px;
-    }
-  }
 }
 
 .body {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  padding: 1px;
+  border-radius: 16px;
+  box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 
-  .placeholder {
-    flex: 1 1 0;
-    padding: 0 30px;
+  .output {
+    border-radius: 16px 16px 0 0;
+    background: var(--ui-color-grey-100);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .quick-inputs {
+    padding: 0 16px 16px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+    background: var(--ui-color-grey-100);
+  }
 
-    .logo {
-      width: 90px;
-    }
+  .input {
+    border-radius: 16px;
+    overflow: hidden;
+  }
 
-    .title {
-      margin-top: 8px;
-      font-size: 20px;
-      line-height: 1.4;
-      color: var(--ui-color-title);
-    }
-
-    .description {
-      margin-top: 16px;
-      font-size: 13px;
-      line-height: 20px;
-      text-align: center;
-      color: var(--ui-color-grey-800);
-    }
-
-    .sign-button {
-      position: relative;
-      border: none;
-      width: 78px;
-      height: 32px;
-      font-weight: 600;
-      margin-top: 40px;
-      color: var(--ui-color-purple-main);
-      background-color: transparent;
-      outline: none;
-
-      &::before {
-        content: '';
-        position: absolute;
-        background: linear-gradient(to right, #72bbff 0%, #c390ff 100%);
-        border-radius: 8px;
-        padding: 1px;
-        inset: 0;
-        mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        mask-composite: exclude;
-      }
-
-      &:hover {
-        cursor: pointer;
-        background-color: var(--ui-color-purple-100);
-      }
-    }
+  .output ~ .input {
+    margin-top: 1px;
+    border-radius: 0 0 16px 16px;
   }
 }
 
 .footer {
-  padding: 12px 16px;
+  align-self: center;
   display: flex;
+  height: 36px;
+  padding: 4px 6px;
+  justify-content: center;
+  align-items: center;
+  border-radius: 100px;
+  border: 1px solid var(--ui-color-grey-400);
+  background: var(--ui-color-grey-100);
+  box-shadow: 0 8px 28px -16px rgba(0, 0, 0, 0.08);
 
-  .input {
-    flex: 1 1 0;
-    min-width: 0;
+  .logo {
+    width: 24px;
+  }
+
+  &:hover {
+    cursor: move;
+  }
+
+  & > :not(:last-child)::after {
+    content: '|';
+    margin: 0 6px;
+    color: var(--ui-color-grey-400);
+  }
+}
+
+.btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: none;
+  border-radius: 50%;
+  color: var(--ui-color-grey-700);
+  transition: background-color 0.2s;
+  outline: none;
+
+  &:not(:disabled) {
+    cursor: pointer;
+    &:hover {
+      background-color: var(--ui-color-grey-400);
+    }
+    &:active {
+      background-color: var(--ui-color-grey-500);
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--ui-color-grey-600);
+  }
+}
+
+.placeholder {
+  flex: 1 1 0;
+  padding: 0 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--ui-color-grey-100);
+  padding: 32px;
+  border-radius: 16px;
+
+  .logo {
+    width: 90px;
+  }
+
+  .title {
+    margin-top: 8px;
+    font-size: 20px;
+    line-height: 1.4;
+    color: var(--ui-color-title);
+  }
+
+  .description {
+    margin-top: 16px;
+    font-size: 13px;
+    line-height: 20px;
+    text-align: center;
+    color: var(--ui-color-grey-800);
+  }
+
+  .sign-button {
+    position: relative;
+    border: none;
+    width: 78px;
+    height: 32px;
+    font-weight: 600;
+    margin-top: 40px;
+    color: var(--ui-color-purple-main);
+    background-color: transparent;
+    outline: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      background: linear-gradient(to right, #72bbff 0%, #c390ff 100%);
+      border-radius: 8px;
+      padding: 1px;
+      inset: 0;
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+    }
+
+    &:hover {
+      cursor: pointer;
+      background-color: var(--ui-color-purple-100);
+    }
   }
 }
 </style>
