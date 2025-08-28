@@ -14,7 +14,8 @@ import {
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
-import { escapeHTML } from '@/utils/utils'
+import { escapeHTML, until } from '@/utils/utils'
+import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
 import type { Sprite } from '@/models/sprite'
 import { Project } from '@/models/project'
@@ -174,13 +175,13 @@ const lineEndSchema = z.number().optional().describe('Line number to end at, 1-b
 /** Process code content and return in LLM-friendly format. */
 function processCode(code: string, { lineStart = 1, lineEnd }: LineRangeParams) {
   const allLines = code.split(/\r?\n/)
-  const lines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((o, line, i) => {
+  const sampledLines = allLines.slice(lineStart - 1, lineEnd).reduce<Record<string, string>>((o, line, i) => {
     o[i + lineStart] = line
     return o
   }, {})
   return {
-    lines,
-    fileLineNum: allLines.length
+    lineCount: allLines.length,
+    sampledLines
   }
 }
 
@@ -349,9 +350,7 @@ class CodeContextProvider implements ICopilotContextProvider {
     const lineStart = Math.max(line - threshold, 1)
     const lineEnd = lineStart + threshold * 2
     const code = activeTextDocument.getValue()
-    const result = processCode(code, { lineStart, lineEnd })
-    return `Part of code around line ${line}:
-${JSON.stringify(result)}`
+    return processCode(code, { lineStart, lineEnd })
   }
 
   provideContext(): string {
@@ -370,8 +369,10 @@ ${JSON.stringify(result)}`
 The user is now viewing / editing code of file \`${codeFilePath}\`. \
 Cursor position: ${cursorPositionStr}. \
 Selection: ${selectionStr}.`
-    const surroundingCode = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
-    if (surroundingCode != null) result += '\n' + surroundingCode
+    const code = this.sampleCode(activeTextDocument, cursorPosition?.line ?? 1)
+    result += `
+Code content of \`${codeFilePath}\`:
+${JSON.stringify(code)}`
     return result
   }
 }
@@ -439,9 +440,12 @@ copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
 
+const isRouteLoaded = useIsRouteLoaded()
+
 watch(
   router.currentRoute,
-  debounce((route) => {
+  debounce(async (route) => {
+    await until(isRouteLoaded)
     copilot.notifyUserEvent({ en: 'Page navigation', zh: '页面切换' }, `User navigated to ${route.fullPath}`)
   }, 100)
 )

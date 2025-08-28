@@ -2,6 +2,7 @@
 import { onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/utils/i18n'
+import { useIsRouteLoaded } from '@/utils/route-loading'
 
 import { isTutorialTopic, provideTutorial, Tutorial } from './tutorial'
 
@@ -13,8 +14,9 @@ import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
 const i18n = useI18n()
 const copilot = useCopilot()
 const router = useRouter()
+const isRouteLoaded = useIsRouteLoaded()
 
-const tutorial = new Tutorial(copilot, router)
+const tutorial = new Tutorial(copilot, router, isRouteLoaded)
 
 onUnmounted(
   copilot.registerCustomElement({
