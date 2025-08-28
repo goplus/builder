@@ -308,6 +308,9 @@ const remixesRet = useQuery(
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
+
+// 响应式断点
+const isMobile = useResponsive('mobile')
 </script>
 
 <template>
@@ -346,6 +349,39 @@ const remixesRet = useQuery(
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
+          <UIButton
+            v-if="runnerState === 'running' && !isMobile"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+            type="boring"
+            :loading="false"
+            @click="handleScreenshotSharing"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5" fill="none" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+          </UIButton>
+
+          <UIButton
+            v-if="runnerState === 'running' && !isMobile"
+            v-radar="{ name: 'Record button', desc: 'Click to start recording' }"
+            type="primary"
+            @click="handleRecordingSharing"
+          >
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" fill="currentColor" />
+                <circle cx="12" cy="6" r="1" fill="currentColor" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Record', zh: '录屏' }) }}
+          </UIButton>
+
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
@@ -432,26 +468,6 @@ const remixesRet = useQuery(
                 icon="share"
                 @click="handleShare.fn"
                 >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
-              >
-              <!-- TODO: 添加截图分享按钮 -->
-              <UIButton
-                v-if="project.visibility === Visibility.Public"
-                v-radar="{ name: 'Screenshot sharing button', desc: 'Click to share project screenshot' }"
-                type="boring"
-                size="large"
-                icon="file"
-                @click="handleScreenshotSharing"
-                >{{ $t({ en: 'Screenshot Share', zh: '截图分享' }) }}</UIButton
-              >
-              <!-- TODO: 添加录制分享按钮 -->
-              <UIButton
-                v-if="project.visibility === Visibility.Public"
-                v-radar="{ name: 'Recording sharing button', desc: 'Click to share project recording' }"
-                type="boring"
-                size="large"
-                icon="play"
-                @click="handleRecordingSharing"
-                >{{ $t({ en: 'Recording Share', zh: '录制分享' }) }}</UIButton
               >
               <UIButton
                 v-else
