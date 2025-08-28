@@ -65,6 +65,8 @@ interface IframeWindow extends Window {
   startRecording?: () => void
   stopRecording?: () => Promise<unknown>
   getRecordedVideo?: () => Blob | Promise<Blob>
+  pauseGame?: () => void
+  resumeGame?: () => void
 }
 
 const iframeRef = ref<HTMLIFrameElement>()
@@ -164,25 +166,18 @@ const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
 
 defineExpose({
-  // 暴露暂停方法
   async pauseGame() {
-    const iframe = iframeRef.value
-    if (!iframe) return
-    const win = iframe.contentWindow
-    if (win && typeof win.pauseGame === 'function') {
-      return win.pauseGame()
-    }
+    const iframeWindow = iframeWindowRef.value
+    if (iframeWindow == null) return
+    this.pauseGame()
   },
-  // 暴露恢复方法
   async resumeGame() {
     const iframe = iframeRef.value
-    if (!iframe) return
-    const win = iframe.contentWindow
-    if (win && typeof win.resumeGame === 'function') {
-      return win.resumeGame()
-    }
+    const iframeWindow = iframeWindowRef.value
+    if (iframeWindow == null) return
+    this.resumeGame()
   },
-  // 暴露截图方法
+  //=============================================
   async getScreenShot(): Promise<File | null> {
     const iframe = iframeRef.value
     if (!iframe) return null
@@ -200,22 +195,18 @@ defineExpose({
       return null
     }
   },
-  // 暴露录屏开始方法
+  //=============================================
   async startRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.startRecording === 'function') {
-      return win.startRecording()
-    }
+    const iframeWindow = iframeWindowRef.value
+    if (iframeWindow == null) return
+    this.startRecording()
   },
   async stopRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.stopRecording === 'function') {
-      return await win.stopRecording()
-    }
+    const iframeWindow = iframeWindowRef.value
+    if (iframeWindow == null) return
+    this.stopRecording()
   },
   async getRecordedVideo(): Promise<Blob | null> {
     const iframe = iframeRef.value
