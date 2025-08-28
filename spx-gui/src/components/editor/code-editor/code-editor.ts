@@ -180,6 +180,7 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.xpos`,
   `xgo:${packageSpx}?Sprite.ypos`,
   `xgo:${packageSpx}?Sprite.step#0`,
+  `xgo:${packageSpx}?Sprite.step#1`,
   `xgo:${packageSpx}?Sprite.stepTo#1`,
   `xgo:${packageSpx}?Sprite.stepTo#4`,
   `xgo:${packageSpx}?Sprite.glide#0`,
@@ -232,6 +233,14 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.think#0`,
   `xgo:${packageSpx}?Sprite.think#1`,
 
+  `xgo:${packageSpx}?Sprite.play#1`,
+  `xgo:${packageSpx}?Sprite.play#0`,
+  `xgo:${packageSpx}?Sprite.playAndWait`,
+  `xgo:${packageSpx}?Sprite.pausePlaying`,
+  `xgo:${packageSpx}?Sprite.resumePlaying`,
+  `xgo:${packageSpx}?Sprite.stopPlaying`,
+  `xgo:${packageSpx}?Sprite.stopAllSounds`,
+
   `xgo:${packageSpx}?Sprite.volume`,
   `xgo:${packageSpx}?Sprite.changeVolume`,
   `xgo:${packageSpx}?Sprite.setVolume`,
@@ -239,8 +248,6 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.changeGraphicEffect`,
   `xgo:${packageSpx}?Sprite.setGraphicEffect`,
   `xgo:${packageSpx}?Sprite.clearGraphicEffects`
-
-  // TODO: definitions like `if-else` / `var`?
 ]
 
 class APIReferenceProvider implements IAPIReferenceProvider {
