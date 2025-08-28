@@ -15,6 +15,9 @@ requests>=2.31.0
 # SVG处理
 cairosvg>=2.7.0
 
+# 向量数据库
+pymilvus>=2.3.0
+
 # 开发和测试工具
 pytest>=7.4.0
 pytest-flask>=1.2.0

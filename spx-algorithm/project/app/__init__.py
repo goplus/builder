@@ -61,7 +61,14 @@ def create_app(config_name='default'):
                 'health': '/api/health',
                 # 'search': '/api/search (POST)',
                 # 'search_by_url': '/api/search/url (POST)',
-                'search_resource': '/api/search/resource (POST)'
+                'search_resource': '/api/search/resource (POST)',
+                'vector_db_health': '/api/vector/health',
+                'vector_db_stats': '/api/vector/stats',
+                'vector_db_add': '/api/vector/add (POST)',
+                'vector_db_data': '/api/vector/data',
+                'vector_db_search': '/api/vector/search (POST)',
+                'vector_db_delete': '/api/vector/delete (DELETE)',
+                'vector_db_batch_add': '/api/vector/batch/add (POST)'
             }
         }
     

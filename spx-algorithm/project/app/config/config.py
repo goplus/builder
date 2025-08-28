@@ -20,6 +20,12 @@ class Config:
     CLIP_MODEL_NAME = os.environ.get('CLIP_MODEL_NAME') or 'ViT-B-32'
     CLIP_PRETRAINED = os.environ.get('CLIP_PRETRAINED') or 'laion2b_s34b_b79k'
     
+    # Milvus向量数据库配置
+    MILVUS_HOST = os.environ.get('MILVUS_HOST') or 'localhost'
+    MILVUS_PORT = os.environ.get('MILVUS_PORT') or '19530'
+    MILVUS_COLLECTION_NAME = os.environ.get('MILVUS_COLLECTION_NAME') or 'spx_vector_collection'
+    MILVUS_DIMENSION = int(os.environ.get('MILVUS_DIMENSION', '512'))
+    
     # API配置
     JSON_SORT_KEYS = False
     JSONIFY_PRETTYPRINT_REGULAR = True
