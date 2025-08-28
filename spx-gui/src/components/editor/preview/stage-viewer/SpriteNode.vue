@@ -15,7 +15,7 @@ import type { Action } from '@/models/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { nomalizeDegree, round, useAsyncComputed } from '@/utils/utils'
-import { useFileImg } from '@/utils/file'
+import { useFileImgSmooth } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { getNodeId } from './node'
 
@@ -29,7 +29,7 @@ const nodeRef = ref<KonvaNodeInstance<Image>>()
 const editorCtx = useEditorCtx()
 const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const [image] = useFileImg(() => costume.value?.img)
+const [image] = useFileImgSmooth(() => costume.value?.img)
 const rawSize = useAsyncComputed(async () => costume.value?.getRawSize() ?? null)
 
 const nodeId = computed(() => getNodeId(props.sprite))
