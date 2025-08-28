@@ -416,3 +416,9 @@ export function createResettableObject<T extends object>(getter: () => T): [T, (
     }
   ]
 }
+
+/** Helper function for exhaustive checks of discriminated unions in TypeScript. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function assertNever(input: never): never {
+  throw new Error(`Unreachable code reached with input: ${input}`)
+}

@@ -21,19 +21,20 @@ const panelBoundBuffer = [20, 10]
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useBottomSticky, useContentSize } from '@/utils/dom'
-import { localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
+import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable } from '@/utils/draggable'
-import { providePopupContainer } from '@/components/ui'
+import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
+import { type QuickInput, RoundState } from './copilot'
 import logoSrc from './logo.png'
-import { RoundState } from './copilot'
 
 const copilot = useCopilot()
 
-const messagesRef = ref<HTMLElement | null>(null)
+const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
@@ -49,7 +50,7 @@ const lastRound = computed(() => rounds.value?.at(-1))
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
-useBottomSticky(messagesRef)
+useBottomSticky(outputRef)
 
 providePopupContainer(panelRef)
 
@@ -277,6 +278,22 @@ onMounted(async () => {
   }
 })
 
+const quickInputs = computed(() => copilot.getQuickInputs())
+
+const handleQuickInputClick = useMessageHandle(
+  ({ message }: QuickInput) => {
+    switch (message.type) {
+      case 'text':
+        return copilot.addUserTextMessage(message.content)
+      case 'event':
+        return copilot.notifyUserEvent(message.name, message.detail)
+      default:
+        assertNever(message)
+    }
+  },
+  { en: 'Failed to send message', zh: '发送消息失败' }
+).fn
+
 // TODO: prevent click in copilot panel from closing other dropdowns
 </script>
 
@@ -315,10 +332,18 @@ onMounted(async () => {
         <template v-if="isSignedIn()">
           <div
             v-if="lastRound && ![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)"
-            ref="messagesRef"
-            class="messages"
+            ref="outputRef"
+            class="output"
           >
             <CopilotRound :round="lastRound" is-last-round />
+            <div v-if="quickInputs.length > 0" class="quick-inputs">
+              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                <template #trigger>
+                  <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
+                </template>
+              </UITooltip>
+            </div>
           </div>
           <CopilotInput ref="inputRef" class="input" :copilot="copilot" />
         </template>
@@ -415,12 +440,19 @@ onMounted(async () => {
   box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
   background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 
-  .messages {
-    background: var(--ui-color-grey-100);
+  .output {
     border-radius: 16px 16px 0 0;
-    margin-bottom: 1px;
+    background: var(--ui-color-grey-100);
     max-height: 300px;
     overflow-y: auto;
+  }
+
+  .quick-inputs {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background: var(--ui-color-grey-100);
   }
 
   .input {
@@ -428,7 +460,8 @@ onMounted(async () => {
     overflow: hidden;
   }
 
-  .messages ~ .input {
+  .output ~ .input {
+    margin-top: 1px;
     border-radius: 0 0 16px 16px;
   }
 }
