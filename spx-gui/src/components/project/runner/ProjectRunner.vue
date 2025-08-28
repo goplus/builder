@@ -29,6 +29,13 @@ defineExpose({
   },
   async rerun() {
     return projectRunnerRef.value?.rerun()
+  },
+  async getScreenShot(): Promise<File | null> {
+    // 调用 ProjectRunnerV2 的截图方法
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.getScreenShot === 'function') {
+      return await projectRunnerRef.value.getScreenShot()
+    }
+    return null
   }
 })
 </script>

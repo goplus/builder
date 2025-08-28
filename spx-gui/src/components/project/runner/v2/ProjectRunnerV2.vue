@@ -159,6 +159,25 @@ onMounted(() => {
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
 defineExpose({
+
+  async getScreenShot(): Promise<File | null> {
+    const iframe = iframeRef.value
+    if (!iframe) return null
+    const win = iframe.contentWindow
+    if (!win) return null
+    try {
+      const doc = win.document
+      const canvas = doc.getElementById('game-canvas') as HTMLCanvasElement | null
+      if (!canvas) return null
+      const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) return null
+      return new File([blob], 'screenshot.png', { type: 'image/png' })
+    } catch (e) {
+      console.warn('getScreenShot error:', e)
+      return null
+    }
+  },
+
   async run(signal?: AbortSignal) {
     loading.value = true
     failed.value = false

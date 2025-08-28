@@ -21,7 +21,7 @@ const imgUrl = computed(() => {
 
 const posterElementRef = ref<HTMLElement>()
 
-const truncatedDescription = props.projectData.description
+const truncatedDescription = computed(() => props.projectData.description || '')
 
 const createPoster = async (): Promise<File> => {
   if (!posterElementRef.value || !props.projectData) {
@@ -36,7 +36,7 @@ const createPoster = async (): Promise<File> => {
   })
 
   const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((b) => resolve(b), 'image/png')
+    canvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
   )
 
   if (!blob) throw new Error('Failed to generate poster')
@@ -50,7 +50,7 @@ defineExpose({
 </script>
 
 <template>
-    <div class="poster">
+    <div ref="posterElementRef" class="poster">
         <div class="img-area">
             <img v-if="img" :src="imgUrl" class="img"/>
             <div v-else class="img-placeholder">
@@ -66,7 +66,7 @@ defineExpose({
                 <UIIcon type="statePublic" />
                 <span>{{ $t({ en: 'Creator by', zh: '创作者'}) }}: {{ props.projectData.owner }}</span>
             </div>
-            <div v-if="props.projectData.description" class="project-description">
+            <div v-if="truncatedDescription" class="project-description">
                 <UIIcon type="info" />
                 <span>{{ truncatedDescription }}</span>
             </div>
@@ -87,7 +87,7 @@ defineExpose({
                     <img :src="logo" style="height: 40px; vertical-align: middle;" />
                 </div>
                 <div v-if="projectUrlQRCode" class="project-qrcode">
-                    <canvas ref="projectQrCanvas" class="project-qr-canvas"></canvas>
+                    <canvas class="project-qr-canvas"></canvas>
                 </div>
             </div>
         </div>
@@ -98,7 +98,7 @@ defineExpose({
 .poster {
   width: 100%;
   height: 100%;
-  background-image: posterBackground;
+  background-image: url('./postBackground.jpg');
   background-size: cover;
   background-position: center;
   padding: 32px;
@@ -327,5 +327,4 @@ defineExpose({
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
 }
-
 </style>
