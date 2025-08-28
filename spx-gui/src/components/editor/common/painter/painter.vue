@@ -186,6 +186,7 @@
       
       <!-- 圆形工具组件 -->
       <CircleTool
+        ref="circleToolRef"
         :is-active="currentTool === 'circle'"
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"
@@ -244,6 +245,7 @@ const currentTool = ref<ToolType | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
+const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null
@@ -254,6 +256,7 @@ const initEventDelegator = (): void => {
     line: drawLineRef.value as ToolHandler,
     brush: drawBrushRef.value as ToolHandler,
     reshape: reshapeRef.value as ToolHandler,
+    circle: circleToolRef.value as ToolHandler,
   })
 
   canvasEventDelegator.setCurrentTool(currentTool.value)
@@ -479,7 +482,7 @@ watch(currentTool, (newTool) => {
 })
 
 // 监听工具引用变化，更新委托器
-watch([drawLineRef, drawBrushRef, reshapeRef], () => {
+watch([drawLineRef, drawBrushRef, reshapeRef, circleToolRef], () => {
   initEventDelegator()
 }, { deep: true })
 

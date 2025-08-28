@@ -141,6 +141,8 @@ export class CanvasEventDelegator {
       handler.handleMouseDrag({ x: point.x, y: point.y })
     } else if (this.currentTool === 'reshape' && handler.handleMouseMove) {
       handler.handleMouseMove(point)
+    } else if (this.currentTool === 'circle' && handler.handleMouseMove) {
+      handler.handleMouseMove(point)
     }
   }
 
@@ -156,7 +158,7 @@ export class CanvasEventDelegator {
     const handler = this.toolRefs[this.currentTool]
     if (!handler?.handleMouseUp) return
 
-    // brush 工具需要 {x, y} 格式
+    // brush 工具需要 {x, y} 格式，其他工具使用 paper.Point
     if (this.currentTool === 'brush') {
       handler.handleMouseUp({ x: point.x, y: point.y })
     } else {
