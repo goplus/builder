@@ -388,7 +388,7 @@ const handleAiConfirm = (data: {
 
   if (data.model === 'svg' && data.svgContent) {
     // 处理SVG导入
-    importSvgToCanvas(data.svgContent)
+    importSvgFromPicgcToCanvas(data.svgContent)
   } else if (data.model === 'png' && data.url) {
     // 处理PNG图片导入
     importImageToCanvas(data.url)
@@ -416,6 +416,14 @@ const importSvgToCanvas = async (svgContent: string): Promise<void> => {
     await importExportManager.importSvg(svgContent)
   }
 }
+//aigc导入svg
+const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => {
+  if (importExportManager) {
+    await importExportManager.importSvgFromPicgc(svgContent)
+  }
+}
+
+
 
 // 清空画布
 const clearCanvas = (): void => {
