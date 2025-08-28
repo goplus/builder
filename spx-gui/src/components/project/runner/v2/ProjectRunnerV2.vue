@@ -61,6 +61,12 @@ interface IframeWindow extends Window {
    * It is set to `true` before reloading and reset to `false` after reloaded.
    */
   __xb_is_stale?: boolean
+  // 新增录屏相关API
+  startRecording?: () => void
+  stopRecording?: () => Promise<unknown>
+  getRecordedVideo?: () => Blob | Promise<Blob>
+  pauseGame?: () => void
+  resumeGame?: () => void
 }
 
 const iframeRef = ref<HTMLIFrameElement>()
@@ -164,16 +170,15 @@ defineExpose({
   async pauseGame() {
     const iframe = iframeRef.value
     if (!iframe) return
-    const win = iframe.contentWindow
+    const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.pauseGame === 'function') {
       return win.pauseGame()
     }
   },
-  // 暴露恢复方法
   async resumeGame() {
     const iframe = iframeRef.value
     if (!iframe) return
-    const win = iframe.contentWindow
+    const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.resumeGame === 'function') {
       return win.resumeGame()
     }
@@ -200,19 +205,31 @@ defineExpose({
   async startRecording() {
     const iframe = iframeRef.value
     if (!iframe) return
-    const win = iframe.contentWindow
+    const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.startRecording === 'function') {
       return win.startRecording()
     }
   },
-  // 暴露录屏结束方法
   async stopRecording() {
     const iframe = iframeRef.value
     if (!iframe) return
-    const win = iframe.contentWindow
+    const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.stopRecording === 'function') {
-      return win.stopRecording()
+      return await win.stopRecording()
     }
+  },
+  async getRecordedVideo(): Promise<Blob | null> {
+    const iframe = iframeRef.value
+    if (!iframe) return null
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.getRecordedVideo === 'function') {
+      const result = win.getRecordedVideo()
+      if (result instanceof Promise) {
+        return await result
+      }
+      return result
+    }
+    return null
   },
 
   async run(signal?: AbortSignal) {

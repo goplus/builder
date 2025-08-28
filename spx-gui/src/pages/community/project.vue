@@ -102,7 +102,18 @@ watch(
 const isOwner = computed(() => props.owner === getSignedInUsername())
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
-const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
+// 明确暴露了 pauseGame/resumeGame/getScreenShot 的类型
+interface ProjectRunnerExpose {
+  pauseGame: () => Promise<void>
+  resumeGame: () => Promise<void>
+  getScreenShot: () => Promise<File | null>
+  run: (signal?: AbortSignal) => Promise<void>
+  stop: () => Promise<void>
+  rerun: () => Promise<void>
+  startRecording?: () => Promise<void>
+  stopRecording?: () => Promise<void>
+}
+const projectRunnerRef = ref<ProjectRunnerExpose | null>(null)
 const isFullScreenRunning = ref(false)
 
 const likeCount = computed(() => {
@@ -292,22 +303,43 @@ const toaster = useMessage()
 
 const shareScreenshot = useModal(ProjectScreenshotSharing)
 
-async function handleScreenshotSharing(){
-  ProjectRunner.pauseGame()
+const {
+  data: projectData,
+} = useQuery(
+  async (ctx) => {
+    return await getProject(props.owner, props.name, ctx.signal)
+  },
+  {
+    en: 'Failed to load project',
+    zh: '加载项目失败'
+  }
+)
 
-  const ScreenshotFile = ProjectRunner.getScreenShot()
-  screenshotImg.value = ScreenshotFile
+async function handleScreenshotSharing() {
+  await projectRunnerRef.value?.pauseGame()
+
+  const ScreenshotFile = await projectRunnerRef.value?.getScreenShot()
+  screenshotImg.value = ScreenshotFile ?? null
 
   showScreenShotSharing.value = true
 
-  try{
-    // const result = await shareScreenshot()
-    toaster.success(`成功`)
-  }catch(e){
+  try {
+    if (ScreenshotFile && projectData.value) {
+      await shareScreenshot({
+        screenshot: ScreenshotFile,
+        projectData: projectData.value
+      })
+      toaster.success(`成功`)
+    } else {
+      toaster.error('截图失败')
+    }
+  } catch (e) {
     console.log(e)
   }
 
-  ProjectRunner.resumeGame()
+  showScreenShotSharing.value = false
+
+  await projectRunnerRef.value?.resumeGame()
 }
 
 //==============================
