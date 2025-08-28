@@ -214,28 +214,12 @@ export const setLayer1: DefinitionDocumentationItem = {
     name: 'Sprite.setLayer',
     overloadId: '1'
   },
-  insertSnippet: 'setLayer ${1:Forward} ${2:1}',
-  insertSnippetParameterHints: ['dir', 'delta'],
-  overview: 'setLayer dir, delta',
+  insertSnippet: 'setLayer ${1:Forward}, ${2:1}',
+  insertSnippetParameterHints: ['direction', 'delta'],
+  overview: 'setLayer direction, delta',
   detail: makeBasicMarkdownString({
-    en: 'Send the sprite to forward/backward, with given dir delta',
+    en: 'Send the sprite to forward/backward, with given direction delta',
     zh: '将精灵移到前/后，同时指定方向变化量'
-  })
-}
-
-export const goBackLayers: DefinitionDocumentationItem = {
-  categories: [categories.look.visibility],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.goBackLayers'
-  },
-  insertSnippet: 'goBackLayers ${1:1}',
-  insertSnippetParameterHints: ['num'],
-  overview: 'goBackLayers num',
-  detail: makeBasicMarkdownString({
-    en: 'Send the sprite back by given layers. Positive number moves back, negative number moves front',
-    zh: '指定层数调整精灵层级；正数表示向后移动，负数表示向前移动'
   })
 }
 
@@ -533,8 +517,8 @@ export const step1: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['distance', 'speed'],
   overview: 'step distance, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading. Animation for state "step" will be played, and specify the animation playback speed',
-    zh: '向前行走，自动播放“行走”状态的动画，同时指定动画播放速度'
+    en: 'Step toward current heading. Animation for state "step" will be played, and specify the step speed',
+    zh: '向前行走，自动播放“行走”状态的动画，同时指定行走速度'
   })
 }
 
@@ -550,8 +534,8 @@ export const step2: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['distance', 'speed', 'animation'],
   overview: 'step distance, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '向前行走，播放动画（指定名字），同时指定动画播放速度'
+    en: 'Step toward current heading. Animation be played by specifying name, and specify the step speed',
+    zh: '向前行走，播放动画（指定名字），同时指定行走速度'
   })
 }
 
@@ -567,8 +551,8 @@ export const stepTo1: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target'],
   overview: 'stepTo target',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite name. Animation for state "step" will be played',
-    zh: '行走到指定精灵名字，自动播放“行走”状态的动画'
+    en: 'Step to the sprite with given name. Animation for state "step" will be played',
+    zh: '行走到精灵（指定名字），自动播放“行走”状态的动画'
   })
 }
 
@@ -582,8 +566,8 @@ export const stepTo0: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:sprite}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite. Animation for state "step" will be played',
-    zh: '行走到指定精灵，自动播放“行走”状态的动画'
+    en: 'Step to the sprite with given sprite. Animation for state "step" will be played',
+    zh: '行走到精灵（指定精灵），自动播放“行走”状态的动画'
   })
 }
 
@@ -597,8 +581,8 @@ export const stepTo2: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:specialObj}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified special object. Animation for state "step" will be played',
-    zh: '行走到指定特殊对象，自动播放“行走”状态的动画'
+    en: 'Step to the sprite with given special object. Animation for state "step" will be played',
+    zh: '行走到精灵（指定特殊对象），自动播放“行走”状态的动画'
   })
 }
 
@@ -614,8 +598,8 @@ export const stepTo4: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target', 'speed'],
   overview: 'stepTo target, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite name. Animation for state "step" will be played, and specify the animation playback speed',
-    zh: '行走到指定精灵名称，自动播放“行走”状态的动画， 同时指定动画播放速度'
+    en: 'Step to the sprite with given name. Animation for state "step" will be played, and specify the step speed',
+    zh: '行走到精灵（指定名字），自动播放“行走”状态的动画，同时指定行走速度'
   })
 }
 
@@ -629,8 +613,8 @@ export const stepTo3: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:sprite}, ${2:1}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite. Animation for state "step" will be played, and specify the animation playback speed',
-    zh: '行走到指定精灵，自动播放“行走”状态的动画， 同时指定动画播放速度'
+    en: 'Step to the sprite with given sprite. Animation for state "step" will be played, and specify the step speed',
+    zh: '行走到精灵（指定精灵），自动播放“行走”状态的动画，同时指定行走速度'
   })
 }
 
@@ -644,8 +628,8 @@ export const stepTo5: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:specialObj}, ${2:1}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified special object. Animation for state "step" will be played, and specify the animation playback speed',
-    zh: '行走到指定特殊对象，自动播放“行走”状态的动画， 同时指定动画播放速度'
+    en: 'Step to the sprite with given special object. Animation for state "step" will be played, and specify the step speed',
+    zh: '行走到精灵（指定特殊对象），自动播放“行走”状态的动画，同时指定行走速度'
   })
 }
 
@@ -661,8 +645,8 @@ export const stepTo7: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target', 'speed', 'animation'],
   overview: 'stepTo target, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite name. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '行走到指定精灵名称，播放动画（指定名字）， 同时指定动画播放速度'
+    en: 'Step to the sprite with given name. Animation be played by specifying name, and specify the step speed',
+    zh: '行走到精灵（指定名字），播放动画（指定名字），同时指定行走速度'
   })
 }
 
@@ -676,8 +660,8 @@ export const stepTo6: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified sprite. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '行走到指定精灵，播放动画（指定名字）， 同时指定动画播放速度'
+    en: 'Step to the sprite with given sprite. Animation be played by specifying name, and specify the step speed',
+    zh: '行走到指定精灵（指定精灵），播放动画（指定名字），同时指定行走速度'
   })
 }
 
@@ -691,8 +675,8 @@ export const stepTo8: DefinitionDocumentationItem = {
   },
   insertSnippet: 'stepTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
-    en: 'Step to the specified special object. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '行走到指定特殊对象，播放动画（指定名字）， 同时指定动画播放速度'
+    en: 'Step to the sprite with given special object. Animation be played by specifying name, and specify the step speed',
+    zh: '行走到精灵（指定特殊对象），播放动画（指定名字），同时指定行走速度'
   })
 }
 
@@ -985,8 +969,8 @@ export const turnTo1: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target'],
   overview: 'turnTo target',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite name',
-    zh: '转向指定精灵名字'
+    en: 'Turn to the sprite with given name',
+    zh: '转向到精灵（指定名字）'
   })
 }
 
@@ -1000,8 +984,8 @@ export const turnTo0: DefinitionDocumentationItem = {
   },
   insertSnippet: 'turnTo ${1:sprite}',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite',
-    zh: '转向指定精灵'
+    en: 'Turn to sprite with given sprite',
+    zh: '转向到精灵（指定精灵）'
   })
 }
 export const turnTo2: DefinitionDocumentationItem = {
@@ -1045,8 +1029,8 @@ export const turnTo5: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target', 'speed'],
   overview: 'turnTo target, speed',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite name, and specify the animation playback speed',
-    zh: '转向到指定精灵名字，同时指定动画播放速度'
+    en: 'Turn to the sprite with given name, and specify the animation playback speed',
+    zh: '转向到精灵（指定名字），同时指定动画播放速度'
   })
 }
 
@@ -1060,8 +1044,8 @@ export const turnTo4: DefinitionDocumentationItem = {
   },
   insertSnippet: 'turnTo ${1:sprite}, ${2:1}',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite, and specify the animation playback speed',
-    zh: '转向到指定精灵，同时指定动画播放速度'
+    en: 'Turn to the sprite with given sprite, and specify the animation playback speed',
+    zh: '转向到精灵（指定精灵），同时指定动画播放速度'
   })
 }
 
@@ -1107,8 +1091,8 @@ export const turnTo9: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['target', 'speed', 'animation'],
   overview: 'turnTo target, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite name. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '转向到指定精灵名字，播放动画（指定名字），同时指定动画播放速度'
+    en: 'Turn to the sprite with given name. Animation be played by specifying name, and specify the animation playback speed',
+    zh: '转向到精灵（指定名字），播放动画（指定名字），同时指定动画播放速度'
   })
 }
 
@@ -1122,35 +1106,35 @@ export const turnTo8: DefinitionDocumentationItem = {
   },
   insertSnippet: 'turnTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite. Animation be played by specifying name, and specify the animation playback speed',
-    zh: '转向到指定精灵，播放动画（指定名字），同时指定动画播放速度'
+    en: 'Turn to the sprite with given sprite. Animation be played by specifying name, and specify the animation playback speed',
+    zh: '转向到精灵（指定精灵），播放动画（指定名字），同时指定动画播放速度'
   })
 }
 
-export const turnTo10: DefinitionDocumentationItem = {
+export const turnToA: DefinitionDocumentationItem = {
   ...turnTo9,
   hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '10'
+    overloadId: 'a'
   },
-  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'turnTo ${1:Right}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given direction. Animation be played by specifying name, and specify the animation playback speed',
     zh: '转向到指定方向，播放动画（指定名字），同时指定动画播放速度'
   })
 }
 
-export const turnTo11: DefinitionDocumentationItem = {
+export const turnTo: DefinitionDocumentationItem = {
   ...turnTo9,
   hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '11'
+    overloadId: 'b'
   },
-  insertSnippet: 'turnTo ${1:Right}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given special object. Animation be played by specifying name, and specify the animation playback speed',
     zh: '转向到指定特殊对象，播放动画（指定名字），同时指定动画播放速度'
@@ -1496,7 +1480,7 @@ export const setBackdrop2: DefinitionDocumentationItem = {
   definition: {
     package: packageSpx,
     name: 'Game.setBackdrop',
-    overloadId: '1'
+    overloadId: '2'
   }
 }
 
@@ -2946,10 +2930,10 @@ export const turningInfoDir: DefinitionDocumentationItem = {
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
 
-export const Front = defineConst('Front', [categories.look.visibility], { en: 'Front item', zh: '最前' })
-export const Back = defineConst('Back', [categories.look.visibility], { en: 'Back item', zh: '最后' })
-export const Forward = defineConst('Forward', [categories.look.visibility], { en: 'Forward item', zh: '前移' })
-export const Backward = defineConst('Backward', [categories.look.visibility], { en: 'Backward item', zh: '后移' })
+export const Front = defineConst('Front', [categories.look.visibility], { en: 'Front', zh: '最前' })
+export const Back = defineConst('Back', [categories.look.visibility], { en: 'Back', zh: '最后' })
+export const Forward = defineConst('Forward', [categories.look.visibility], { en: 'Forward', zh: '前移' })
+export const Backward = defineConst('Backward', [categories.look.visibility], { en: 'Backward', zh: '后移' })
 
 export const up = defineConst('Up', [categories.motion.heading], {
   en: 'Up direction, i.e., 0 degree',

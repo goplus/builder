@@ -126,11 +126,13 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Game.backdropName`,
   `xgo:${packageSpx}?Game.backdropIndex`,
   `xgo:${packageSpx}?Game.setBackdrop#0`,
+  `xgo:${packageSpx}?Game.setBackdrop#3`,
   `xgo:${packageSpx}?Game.setBackdropAndWait#0`,
 
   `xgo:${packageSpx}?Game.broadcast#0`,
   `xgo:${packageSpx}?Game.broadcastAndWait#0`,
 
+  `xgo:${packageSpx}?Game.play#1`,
   `xgo:${packageSpx}?Game.play#0`,
   `xgo:${packageSpx}?Game.playAndWait`,
   `xgo:${packageSpx}?Game.pausePlaying`,
@@ -161,9 +163,9 @@ const apiReferenceItems = [
 
   `xgo:${packageSpx}?Sprite.heading`,
   `xgo:${packageSpx}?Sprite.turn#0`,
+  `xgo:${packageSpx}?Sprite.turn#1`,
   `xgo:${packageSpx}?Sprite.turnTo#1`,
   `xgo:${packageSpx}?Sprite.turnTo#5`,
-  `xgo:${packageSpx}?Sprite.turnTo#9`,
   `xgo:${packageSpx}?Sprite.changeHeading`,
   `xgo:${packageSpx}?Sprite.setHeading`,
   `xgo:${packageSpx}?Up`,
@@ -180,7 +182,6 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.step#0`,
   `xgo:${packageSpx}?Sprite.stepTo#1`,
   `xgo:${packageSpx}?Sprite.stepTo#4`,
-  `xgo:${packageSpx}?Sprite.stepTo#7`,
   `xgo:${packageSpx}?Sprite.glide#0`,
   `xgo:${packageSpx}?Sprite.glide#2`,
   `xgo:${packageSpx}?Sprite.glide#3`,
@@ -219,6 +220,8 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.setLayer#1`,
   `xgo:${packageSpx}?Front`,
   `xgo:${packageSpx}?Back`,
+  `xgo:${packageSpx}?Forward`,
+  `xgo:${packageSpx}?Backward`,
 
   `xgo:${packageSpx}?Sprite.onCloned#0`,
   `xgo:${packageSpx}?Sprite.onTouchStart#0`,
@@ -228,6 +231,10 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.say#1`,
   `xgo:${packageSpx}?Sprite.think#0`,
   `xgo:${packageSpx}?Sprite.think#1`,
+
+  `xgo:${packageSpx}?Sprite.volume`,
+  `xgo:${packageSpx}?Sprite.changeVolume`,
+  `xgo:${packageSpx}?Sprite.setVolume`,
 
   `xgo:${packageSpx}?Sprite.changeGraphicEffect`,
   `xgo:${packageSpx}?Sprite.setGraphicEffect`,
