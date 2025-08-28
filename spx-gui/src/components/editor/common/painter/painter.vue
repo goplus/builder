@@ -319,6 +319,10 @@ const isFirstMount = ref<boolean>(true)
 const selectedPathForRestore = ref<paper.Path | null>(null)
 // AI生成弹窗状态
 const aiDialogVisible = ref<boolean>(false)
+// 记录上一次导入的图片地址，避免重复导入
+const lastImportedSrc = ref<string | null>(null)
+// 标记：由内部导出导致的外部 imgSrc 变化，跳过一次导入
+const skipNextImport = ref<boolean>(false)
 
 const props = defineProps<{
   imgSrc: string | null
@@ -450,9 +454,14 @@ watch(
   () => props.imgSrc,
   async (newImgSrc) => {
     if (!newImgSrc) return
-    
-    // 只在第一次挂载时导入图片
-    if (!isFirstMount.value) {
+
+    // 已经是当前内容则不处理
+    if (lastImportedSrc.value === newImgSrc) return
+    // 如果是组件内部导出导致的外部更新，跳过一次导入，防止重置画布状态
+    if (skipNextImport.value) {
+      lastImportedSrc.value = newImgSrc
+      skipNextImport.value = false
+      isFirstMount.value = false
       return
     }
     
@@ -481,6 +490,7 @@ watch(
       selectedPathForRestore.value = null
       isImportingFromProps.value = false
       isFirstMount.value = false // 标记第一次挂载已完成
+      lastImportedSrc.value = newImgSrc
     }, 200)
   },
   { immediate: true }
@@ -535,6 +545,8 @@ onMounted(() => {
 // 导出SVG的封装函数
 const exportSvgAndEmit = (): void => {
   if (importExportManager) {
+    // 标记接下来由父组件更新的 imgSrc 为内部导出触发
+    skipNextImport.value = true
     importExportManager.exportSvgAndEmit()
   }
 }
