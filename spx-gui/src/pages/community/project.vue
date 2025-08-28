@@ -38,6 +38,9 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+// TODO: 添加分享组件
+import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
+import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 
 const props = defineProps<{
   owner: string
@@ -200,6 +203,33 @@ const handleShare = useMessageHandle(() => shareProject(props.owner, props.name)
   en: 'Failed to share project',
   zh: '分享项目失败'
 })
+
+// TODO: 添加分享组件的状态管理
+const screenshotSharingVisible = ref(false)
+const recordingSharingVisible = ref(false)
+const currentScreenshot = ref<File | null>(null)
+
+const handleScreenshotSharing = () => {
+  // TODO: 暂时创建一个模拟的截图文件用于测试
+  const mockScreenshot = new File(['mock screenshot data'], 'screenshot.png', { type: 'image/png' })
+  currentScreenshot.value = mockScreenshot
+  screenshotSharingVisible.value = true
+}
+
+const handleRecordingSharing = () => {
+  recordingSharingVisible.value = true
+}
+
+const handleScreenshotSharingResolved = (platform: string) => {
+  console.log('Screenshot shared to platform:', platform)
+  screenshotSharingVisible.value = false
+  currentScreenshot.value = null
+}
+
+const handleRecordingSharingResolved = (result: any) => {
+  console.log('Recording sharing result:', result)
+  recordingSharingVisible.value = false
+}
 
 const createProject = useCreateProject()
 
@@ -403,6 +433,26 @@ const remixesRet = useQuery(
                 @click="handleShare.fn"
                 >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
               >
+              <!-- TODO: 添加截图分享按钮 -->
+              <UIButton
+                v-if="project.visibility === Visibility.Public"
+                v-radar="{ name: 'Screenshot sharing button', desc: 'Click to share project screenshot' }"
+                type="boring"
+                size="large"
+                icon="file"
+                @click="handleScreenshotSharing"
+                >{{ $t({ en: 'Screenshot Share', zh: '截图分享' }) }}</UIButton
+              >
+              <!-- TODO: 添加录制分享按钮 -->
+              <UIButton
+                v-if="project.visibility === Visibility.Public"
+                v-radar="{ name: 'Recording sharing button', desc: 'Click to share project recording' }"
+                type="boring"
+                size="large"
+                icon="play"
+                @click="handleRecordingSharing"
+                >{{ $t({ en: 'Recording Share', zh: '录制分享' }) }}</UIButton
+              >
               <UIButton
                 v-else
                 v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
@@ -513,6 +563,24 @@ const remixesRet = useQuery(
       </template>
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
+    
+    <!-- TODO: 添加分享组件的模态框 -->
+    <ProjectScreenshotSharing
+      v-if="screenshotSharingVisible && currentScreenshot && project"
+      :screenshot="currentScreenshot"
+      :project-data="project as any"
+      :visible="screenshotSharingVisible"
+      @cancelled="screenshotSharingVisible = false"
+      @resolved="handleScreenshotSharingResolved"
+    />
+    
+    <ProjectRecordingSharing
+      v-if="recordingSharingVisible && project"
+      :recording="{ id: 'mock', createdAt: new Date(), updatedAt: new Date(), owner: project?.owner || '', name: project?.name || '', description: '', instructions: '', visibility: 'public', viewCount: 0, likeCount: 0, remixCount: 0, videoUrl: '' } as any"
+      :visible="recordingSharingVisible"
+      @cancelled="recordingSharingVisible = false"
+      @resolved="handleRecordingSharingResolved"
+    />
   </CenteredWrapper>
 </template>
 
