@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -169,6 +172,12 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		} else {
 			aiResourceID = aiResource.ID
 			logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+			
+			// Call vector service to add SVG data
+			if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoURL, svgBytes); vectorErr != nil {
+				logger.Printf("Failed to call vector service: %v", vectorErr)
+				// Don't fail the request, just log the error
+			}
 		}
 	}
 
@@ -270,6 +279,12 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 				} else {
 					aiResourceID = aiResource.ID
 					logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+					
+					// Call vector service to add SVG data
+					if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoSVGURL, svgBytes); vectorErr != nil {
+						logger.Printf("Failed to call vector service: %v", vectorErr)
+						// Don't fail the request, just log the error
+					}
 				}
 			}
 		}
@@ -289,6 +304,44 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 		WasTranslated:    result.WasTranslated,
 		CreatedAt:        result.CreatedAt,
 	}, nil
+}
+
+// VectorAddRequest represents the request payload for vector service
+type VectorAddRequest struct {
+	ID         int64  `json:"id"`
+	URL        string `json:"url"`
+	SVGContent string `json:"svg_content"`
+}
+
+// callVectorService calls the vector service API to add SVG data
+func (ctrl *Controller) callVectorService(ctx context.Context, id int64, url string, svgContent []byte) error {
+	logger := log.GetReqLogger(ctx)
+	
+	// Prepare request payload
+	req := VectorAddRequest{
+		ID:         id,
+		URL:        url,
+		SVGContent: string(svgContent),
+	}
+	
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to marshal vector request: %w", err)
+	}
+	
+	// Make HTTP request to vector service
+	resp, err := http.Post("http://100.100.35.128:5000/api/vector/add", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to call vector service: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("vector service returned status: %d", resp.StatusCode)
+	}
+	
+	logger.Printf("Successfully called vector service for ID: %d, URL: %s", id, url)
+	return nil
 }
 	
 // getSVGContent retrieves SVG content from URL or data URL.

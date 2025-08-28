@@ -14,7 +14,7 @@ import (
 
 // ImageRecommendParams represents parameters for image recommendation.
 type ImageRecommendParams struct {
-	Text string `json:"text"`
+	Text string `json:"prompt"`
 	TopK int    `json:"top_k,omitempty"`
 }
 
@@ -148,7 +148,7 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	reqData := AlgorithmSearchRequest{
 		Text: text,
 		TopK: topK,
-		Threshold: 0.27,
+		Threshold: 0.1,
 	}
 
 	reqBody, err := json.Marshal(reqData)
