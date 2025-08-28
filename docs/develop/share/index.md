@@ -82,7 +82,6 @@ graph TB
     PlatformSelector --> PlatformShare    
     
     %% 截屏分享流程  
-    ScreenShotSharing --> ProjectRunner
     ScreenShotSharing --> Poster
     DirectSharing --> Poster
     
