@@ -14,6 +14,12 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/svggen"
 )
 
+var validProviders = []svggen.Provider{
+	svggen.ProviderSVGIO,
+	svggen.ProviderRecraft,
+	svggen.ProviderOpenAI,
+}
+
 // GenerateSVGParams represents parameters for SVG generation.
 type GenerateSVGParams struct {
 	Prompt         string          `json:"prompt"`
@@ -45,11 +51,6 @@ func (p *GenerateSVGParams) Validate() (bool, string) {
 	}
 
 	// Validate provider
-	validProviders := []svggen.Provider{
-		svggen.ProviderSVGIO,
-		svggen.ProviderRecraft,
-		svggen.ProviderOpenAI,
-	}
 	isValid := false
 	for _, vp := range validProviders {
 		if p.Provider == vp {

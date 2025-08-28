@@ -93,18 +93,18 @@ func (sm *ServiceManager) GetProvider(providerType Provider) ProviderService {
 // GenerateImage generates an image using the specified provider.
 func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	provider := sm.GetProvider(req.Provider)
 	if provider == nil {
 		logger.Printf("provider not configured: %s", string(req.Provider))
 		return nil, errors.New("provider not configured: " + string(req.Provider))
 	}
-	
+
 	// Handle translation for providers that need it
 	originalPrompt := req.Prompt
 	translatedPrompt := req.Prompt
 	wasTranslated := false
-	
+
 	// Only translate for SVGIO provider (Recraft and OpenAI support Chinese natively)
 	if !req.SkipTranslate && sm.translateService != nil && req.Provider == ProviderSVGIO {
 		translated, err := sm.translateService.Translate(ctx, req.Prompt)
@@ -118,20 +118,20 @@ func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest
 			logger.Printf("prompt translated: %q -> %q", originalPrompt, translatedPrompt)
 		}
 	}
-	
+
 	logger.Printf("generating image with provider: %s", string(req.Provider))
 	resp, err := provider.GenerateImage(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Add translation information to response
 	if wasTranslated {
 		resp.OriginalPrompt = originalPrompt
 		resp.TranslatedPrompt = translatedPrompt
 		resp.WasTranslated = wasTranslated
 	}
-	
+
 	return resp, nil
 }
 
