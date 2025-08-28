@@ -528,7 +528,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       icon: 'copilot',
       title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
-        this.copilot.addUserMessage(problem, {
+        this.copilot.addUserTextMessage(problem, {
           title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
           description: '',
           reactToEvents: false
@@ -568,7 +568,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
             }
             break
         }
-        this.copilot.addUserMessage(this.i18n.t(message), {
+        this.copilot.addUserTextMessage(this.i18n.t(message), {
           title: { en: 'Explain', zh: '解释' },
           description: '',
           reactToEvents: false
@@ -586,7 +586,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           en: `Review code ${codeLink}:\n\n${codeBlock}`,
           zh: `审查代码 ${codeLink}：\n\n${codeBlock}`
         })
-        this.copilot.addUserMessage(message, {
+        this.copilot.addUserTextMessage(message, {
           title: { en: 'Review', zh: '审查' },
           description: '',
           reactToEvents: false
@@ -603,7 +603,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           en: `How to fix this problem:\n\n${codeLink}\n\n> ${problem.message}`,
           zh: `如何修复这个问题：\n\n${codeLink}\n\n> ${problem.message}`
         })
-        this.copilot.addUserMessage(message, {
+        this.copilot.addUserTextMessage(message, {
           title: { en: 'Fix problem', zh: '修复问题' },
           description: '',
           reactToEvents: false

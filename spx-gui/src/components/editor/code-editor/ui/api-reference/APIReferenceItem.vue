@@ -135,6 +135,7 @@ function handleMouseUp(e: MouseEvent) {
   transition: 0.2s;
   cursor: pointer;
   scroll-margin-top: 42px; // 42px for sticky title, to ensure the item correctly scrolled-into-view
+  scroll-margin-bottom: 16px; // with 16px offset it is easier to be found when scrolled into view
 
   // Preserve `border-radius` when dragging, see details: https://github.com/react-dnd/react-dnd/issues/788
   transform: translate(0, 0);

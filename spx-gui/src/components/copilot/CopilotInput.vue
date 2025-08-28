@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { RoundState, type Topic, type Copilot } from './copilot'
+import { RoundState, type Copilot } from './copilot'
 
 const props = defineProps<{
   copilot: Copilot
@@ -21,17 +21,11 @@ const placeholder = computed(() => {
   return { en: 'Input your problem here', zh: '在这里输入你的问题' }
 })
 
-const defaultTopic: Topic = {
-  title: { en: 'New chat', zh: '新会话' },
-  description: '',
-  reactToEvents: false
-}
-
 function handleSubmit() {
   const problem = inputStr.value.trim()
   if (problem === '') return
   inputStr.value = ''
-  props.copilot.addUserMessage(problem, defaultTopic)
+  props.copilot.addUserTextMessage(problem)
 }
 
 function handleAbort() {
