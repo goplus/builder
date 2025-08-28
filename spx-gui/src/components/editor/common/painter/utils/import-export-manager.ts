@@ -99,63 +99,68 @@ export class ImportExportManager {
    */
   async importSvg(svgContent: string, options: ImportOptions = {}): Promise<boolean> {
     const {
-      clearCanvas = false,
-      position = 'center',
-      updatePaths = true,
-      triggerExport = true
-    } = options
+        clearCanvas = false,
+        position = 'center', 
+        updatePaths = true,
+        triggerExport = true
+    } = options;
 
     if (!paper.project) {
-      console.warn('Paper project not initialized')
-      return false
+        console.warn('Paper project not initialized');
+        return false;
     }
 
     try {
-      if (clearCanvas) {
-        this.clearCanvas(false) // 清空但不触发导出
-      }
+        if (clearCanvas) {
+            this.clearCanvas(false); // 清空但不触发导出
+        }
 
-      // 解析SVG内容
-      const parser = new DOMParser()
-      const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml')
-      const svgElement = svgDoc.documentElement
+        // 解析SVG内容
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+        const svgElement = svgDoc.documentElement;
 
-      if (svgElement.nodeName !== 'svg') {
-        console.error('Invalid SVG content')
-        return false
-      }
+        if (svgElement.nodeName !== 'svg') {
+            console.error('Invalid SVG content');
+            return false;
+        }
 
-      // 导入SVG到Paper.js
-      const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
-      
-      if (!importedItem) {
-        console.error('Failed to import SVG')
-        return false
-      }
+        const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement);
+        
+        if (!importedItem) {
+            console.error('Failed to import SVG');
+            return false;
+        }
 
-      // 设置位置
-      if (position === 'center') {
-        importedItem.position = paper.view.center
-      }
 
-      // 收集可编辑路径
-      if (updatePaths) {
-        this.collectPathsFromImport(importedItem)
-      }
+        const targetSize = new paper.Size(512, 512);
 
-      paper.view.update()
+        const targetBounds = new paper.Rectangle({
+            center: paper.view.center,
+            size: targetSize
+        });
 
-      // 触发导出（避免循环导入）
-      if (triggerExport && !this.dependencies.isImportingFromProps.value) {
-        this.exportSvgAndEmit()
-      }
+        importedItem.fitBounds(targetBounds);
 
-      return true
+
+        // 收集可编辑路径
+        if (updatePaths) {
+            this.collectPathsFromImport(importedItem);
+        }
+
+        paper.view.update();
+
+        // 触发导出（避免循环导入）
+        if (triggerExport && !this.dependencies.isImportingFromProps.value) {
+            this.exportSvgAndEmit();
+        }
+
+        return true;
     } catch (error) {
-      console.error('Failed to import SVG:', error)
-      return false
+        console.error('Failed to import SVG:', error);
+        return false;
     }
-  }
+}
 
   /**
    * 导入图片（PNG/JPG等）到画布

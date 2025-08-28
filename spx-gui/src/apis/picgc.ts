@@ -95,41 +95,11 @@ export async function generateSvgDirect(
 
   // 获取SVG内容
   const svgContent = await response.text()
-  console.log('svgContent', svgContent)
-  // 从响应头获取元数据
-  const id = response.headers.get('X-Image-Id') || 'unknown'
-  const width = parseInt('512')
-  const height = parseInt('512')
-
-  // 修改SVG内容的尺寸：大小为512*512
-  const modifiedSvgContent = svgContent.replace(
-    /<svg([^>]*?)>/,
-    (match: string, attributes: string) => {
-      // 解析现有属性
-      let newAttributes = attributes
-      
-      // 更新或添加width属性
-      if (newAttributes.includes('width=')) {
-        newAttributes = newAttributes.replace(/width="[^"]*"/, `width="${width}"`)
-      } else {
-        newAttributes += ` width="${width}"`
-      }
-      
-      // 更新或添加height属性
-      if (newAttributes.includes('height=')) {
-        newAttributes = newAttributes.replace(/height="[^"]*"/, `height="${height}"`)
-      } else {
-        newAttributes += ` height="${height}"`
-      }
-      console.log('newAttributes',newAttributes) 
-      return `<svg${newAttributes}>`
-    }
-  )
 
   return {
-    svgContent: modifiedSvgContent,
-    id,
-    width,
-    height
+    svgContent:svgContent,
+    id:'',
+    width:512,
+    height:512
   }
 }
