@@ -377,25 +377,17 @@ const showAiDialog = (): void => {
 }
 
 // 处理AI生成确认
-const handleAiConfirm = (data: { 
+const handleAiConfirm = async (data: { 
   model: string; 
   prompt: string; 
   url?: string; 
   svgContent?: string;
-}): void => {
-  // console.log('AI生成确认:', data)
-  if(data.model === 'claude' || data.model === 'recraft' || data.model === 'svgio'){
-    data.model = 'svg'
-  }else{
-    data.model = 'png'
-  }
-
-  if (data.model === 'svg' && data.svgContent) {
-    // 处理SVG导入
-    importSvgFromPicgcToCanvas(data.svgContent)
-  } else if (data.model === 'png' && data.url) {
-    // 处理PNG图片导入
-    importImageToCanvas(data.url)
+}): Promise<void> => {
+  console.log('AI生成确认:', data)
+  console.log('data.url', data.url)
+  
+  if (data.svgContent) {
+    await importSvgFromPicgcToCanvas(data.svgContent)
   }
   
   aiDialogVisible.value = false

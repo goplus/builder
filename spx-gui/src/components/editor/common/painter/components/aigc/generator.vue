@@ -49,25 +49,38 @@
               </div>
   
               <!-- 右侧预览区域 -->
-              <div class="preview-section" :class="{ visible: previewUrl || isGenerating }">
+              <div class="preview-section" :class="{ visible: previewUrls.length > 0 || isGenerating }">
                 <label class="form-label">{{ $t({ en: 'Preview', zh: '预览效果' }) }}</label>
                 <div class="preview-container">
                   <div v-if="isGenerating" class="preview-loading">
                     <div class="loading-spinner large"></div>
                     <div class="loading-text">{{ $t({ en: 'AI is generating images for you...', zh: 'AI正在为您生成图片...' }) }}</div>
                   </div>
-                  <div v-else-if="previewUrl" class="preview-image-wrapper">
-                    <img 
-                      :src="previewUrl" 
-                      :alt="$t({ en: 'AI generated image preview', zh: 'AI生成的图片预览' })"
-                      class="preview-image"
-                      @load="handleImageLoad"
-                      @error="handleImageError"
-                    />
-                    <!-- <div class="preview-info">
-                      <span class="model-tag">{{ selectedModel.toUpperCase() }}</span>
-                      <span class="size-info">{{ imageSize }}</span>
-                    </div> -->
+                  <div v-else-if="previewUrls.length > 0" class="preview-images-wrapper">
+                    <div class="images-grid">
+                      <div 
+                        v-for="(url, index) in previewUrls" 
+                        :key="index"
+                        class="image-item"
+                        :class="{ selected: selectedImageIndex === index }"
+                        @click="selectImage(index)"
+                      >
+                        <img 
+                          :src="url" 
+                          :alt="$t({ en: 'AI generated image preview', zh: 'AI生成的图片预览' }) + ` ${index + 1}`"
+                          class="preview-image"
+                          @load="handleImageLoad"
+                          @error="handleImageError"
+                        />
+                        <div class="image-overlay">
+                          <div class="image-number">{{ index + 1 }}</div>
+                          <div v-if="selectedImageIndex === index" class="selected-indicator">✓</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="selectedImageIndex >= 0" class="selection-hint">
+                      {{ $t({ en: `Selected image ${selectedImageIndex + 1}`, zh: `已选择图片 ${selectedImageIndex + 1}` }) }}
+                    </div>
                   </div>
                   <div v-else class="preview-placeholder">
                     <div class="placeholder-icon">🖼️</div>
@@ -88,7 +101,7 @@
             </button>
             <button 
               class="btn btn-primary"
-              :disabled="!previewUrl || isGenerating"
+              :disabled="selectedImageIndex < 0 || isGenerating"
               @click="handleConfirm"
             >
               {{ $t({ en: 'Confirm Use', zh: '确认使用' }) }}
@@ -140,12 +153,13 @@ import PromptInput from './promptInput.vue'
 
   // 响应式数据
   const prompt = ref('')
-  const previewUrl = ref('')
+  const previewUrls = ref<string[]>([])
+  const selectedImageIndex = ref<number>(-1)
   const isGenerating = ref(false)
   const imageSize = ref('')
   
   // 存储SVG原始代码
-  const svgRawContent = ref('')
+  const svgRawContents = ref<string[]>([])
   
   // 错误处理相关状态
   const showErrorModal = ref(false)
@@ -157,17 +171,23 @@ import PromptInput from './promptInput.vue'
     return modelSelectorRef.value?.selectedModel || null
   }
 
+  // 添加图片选择方法
+  const selectImage = (index: number) => {
+    selectedImageIndex.value = index
+  }
+
   // 方法
   const handleGenerate = async () => {
     if (!prompt.value.trim()) return
     
     isGenerating.value = true
-    previewUrl.value = ''
+    previewUrls.value = []
+    selectedImageIndex.value = -1
     
     try {
   
       await handleRealGenerate()
-      // previewUrl 在 handleRealGenerate 中已经设置
+      // previewUrls 在 handleRealGenerate 中已经设置
       // imageSize 在 handleRealGenerate 中已经设置
       
     } catch (error) {
@@ -178,26 +198,20 @@ import PromptInput from './promptInput.vue'
   }
   
   const handleConfirm = () => {
-    if (!previewUrl.value) return
+    if (selectedImageIndex.value < 0 || selectedImageIndex.value >= previewUrls.value.length) return
     
     const selectedModelInfo = getSelectedModel()
+    const selectedUrl = previewUrls.value[selectedImageIndex.value]
+    const selectedSvgContent = svgRawContents.value[selectedImageIndex.value]
 
     const confirmData: any = {
       model: selectedModelInfo,
-      prompt: prompt.value
+      prompt: prompt.value,
+      url: selectedUrl,
+      svgContent: selectedSvgContent
     }
     
-    // 根据模型ID判断是否为SVG模式
-    const modelId = selectedModelInfo?.id || ''
-    if (modelId === 'recraft' || modelId === 'claude' || modelId === 'svgio') {
-      // SVG模式：传递原始SVG代码
-      confirmData.svgContent = svgRawContent.value
-      confirmData.url = previewUrl.value // 用于预览的blob URL
-    } else {
-      // PNG模式：传递图片URL
-      confirmData.url = previewUrl.value
-    }
-    
+
     emit('confirm', confirmData)
     
     handleCancel()
@@ -210,7 +224,8 @@ import PromptInput from './promptInput.vue'
     // 重置状态
     setTimeout(() => {
       prompt.value = ''
-      previewUrl.value = ''
+      previewUrls.value = []
+      selectedImageIndex.value = -1
       isGenerating.value = false
     }, 300)
   }
@@ -221,7 +236,7 @@ import PromptInput from './promptInput.vue'
   
   const handleImageError = () => {
     console.error('failed to load image')
-    previewUrl.value = ''
+    // 图片加载错误时的处理逻辑
   }
   
   // 错误处理方法
@@ -246,25 +261,35 @@ import PromptInput from './promptInput.vue'
     if (!prompt.value.trim()) return
     
     isGenerating.value = true
-    previewUrl.value = ''
-    svgRawContent.value = ''
+    previewUrls.value = []
+    svgRawContents.value = []
+    selectedImageIndex.value = -1
     
     const selectedModelInfo = getSelectedModel()
     try {
-      if (selectedModelInfo !== null)  {
-        const svgResult = await generateSvgDirect(selectedModelInfo.recommended_provider, prompt.value,{
+      // 调用后端API生成四张图片
+      let svgResult
+      if (selectedModelInfo !== null) {
+        svgResult = await generateSvgDirect(selectedModelInfo.recommended_provider, prompt.value, {
           theme: selectedModelInfo.id,
         })
-        
-        // 直接获得SVG内容
-        svgRawContent.value = svgResult.svgContent
-        
-        // 创建blob URL用于预览
-        const blob = new Blob([svgResult.svgContent], { type: 'image/svg+xml' })
-        previewUrl.value = URL.createObjectURL(blob)
+      } else {
+        svgResult = await generateSvgDirect('svgio', prompt.value, {
+        })
+      }
+      
+      // 处理返回的四张图片
+      if (svgResult.svgContents && svgResult.svgContents.length > 0) {
+        // 直接使用返回的blob URLs
+        previewUrls.value = svgResult.svgContents.map(item => item.blob)
+        // 为每个图片创建对应的SVG内容占位符（实际上这里是blob URL）
+        svgRawContents.value = svgResult.svgContents.map(item => item.svgContent)
         
         imageSize.value = `${svgResult.width}x${svgResult.height}`
+      }else{
+        showError('server')
       }
+      
     } catch (error) {
       console.error('failed to generate image:', error)
       
@@ -305,7 +330,8 @@ import PromptInput from './promptInput.vue'
       // 弹窗关闭时重置状态
       setTimeout(() => {
         prompt.value = ''
-        previewUrl.value = ''
+        previewUrls.value = []
+        selectedImageIndex.value = -1
         isGenerating.value = false
       }, 300)
     }
@@ -538,21 +564,103 @@ import PromptInput from './promptInput.vue'
     font-size: 14px;
   }
   
-  .preview-image-wrapper {
-    position: relative;
+  .preview-images-wrapper {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 16px;
+  }
+
+  .images-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
     width: 100%;
   }
+
+  .image-item {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+  }
+
+  .image-item:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+
+  .image-item.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
   
   .preview-image {
-    max-width: 100%;
-    max-height: 250px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    height: 120px;
+    border-radius: 6px;
     object-fit: contain;
+    background: white;
+  }
+
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .image-item:hover .image-overlay {
+    opacity: 1;
+  }
+
+  .image-item.selected .image-overlay {
+    opacity: 1;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .image-number {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .selected-indicator {
+    background: #3b82f6;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .selection-hint {
+    text-align: center;
+    color: #3b82f6;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px;
+    background: #eff6ff;
+    border-radius: 6px;
   }
   
   .preview-info {
@@ -642,7 +750,7 @@ import PromptInput from './promptInput.vue'
   
 
   
-  /* 响应式设计 */
+    /* 响应式设计 */
   @media (max-width: 768px) {
     .dialog-content {
       max-width: 95%;
@@ -662,8 +770,15 @@ import PromptInput from './promptInput.vue'
     .preview-container {
       min-height: 200px;
     }
-  
 
+    .images-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .preview-image {
+      height: 100px;
+    }
   }
   </style>
   

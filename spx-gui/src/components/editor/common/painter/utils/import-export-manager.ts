@@ -201,12 +201,13 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
       });
 
       importedItem.fitBounds(targetBounds);
-
+        console.log('importedItem',importedItem)
 
       // 收集可编辑路径
       if (updatePaths) {
           this.collectPathsFromImport(importedItem);
       }
+        console.log('updatePaths',updatePaths)
 
       paper.view.update();
 
