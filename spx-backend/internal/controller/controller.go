@@ -73,6 +73,8 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	// Initialize SVG generation service manager
 	svggenManager := svggen.NewServiceManager(cfg, log.GetLogger())
+	// Set copilot instance for OpenAI services
+	svggenManager.SetCopilot(cpt)
 
 	return &Controller{
 		db:            db,

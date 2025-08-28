@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	qlog "github.com/qiniu/x/log"
 )
@@ -24,6 +25,7 @@ type ServiceManager struct {
 	translateService TranslateService
 	httpClient       *http.Client
 	logger           *qlog.Logger
+	config           *config.Config
 }
 
 // NewServiceManager creates a new service manager.
@@ -35,6 +37,7 @@ func NewServiceManager(cfg *config.Config, logger *qlog.Logger) *ServiceManager 
 	sm := &ServiceManager{
 		httpClient: httpClient,
 		logger:     logger,
+		config:     cfg,
 	}
 
 	// Initialize providers based on configuration
@@ -46,13 +49,19 @@ func NewServiceManager(cfg *config.Config, logger *qlog.Logger) *ServiceManager 
 		sm.recraftService = NewRecraftService(cfg, httpClient, logger)
 	}
 
-	if cfg.Providers.SVGOpenAI.Enabled {
-		sm.openaiService = NewOpenAIService(cfg, httpClient, logger)
-		// Initialize translation service using the same OpenAI configuration
-		sm.translateService = NewOpenAITranslateService(cfg, httpClient, logger)
-	}
+	// Note: OpenAI service initialization needs copilot instance
+	// It will be set later via SetCopilot method
 
 	return sm
+}
+
+// SetCopilot sets the copilot instance and initializes OpenAI services.
+func (sm *ServiceManager) SetCopilot(copilot *copilot.Copilot) {
+	if sm.config.Providers.SVGOpenAI.Enabled {
+		sm.openaiService = NewOpenAIService(sm.config, copilot, sm.logger)
+		// Initialize translation service using the same copilot configuration
+		sm.translateService = NewOpenAITranslateService(sm.config, sm.httpClient, sm.logger)
+	}
 }
 
 // RegisterProvider registers a new provider.

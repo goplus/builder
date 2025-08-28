@@ -1,35 +1,30 @@
 package svggen
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	qlog "github.com/qiniu/x/log"
 )
 
 // OpenAIService implements OpenAI compatible API calls.
 type OpenAIService struct {
-	config     *config.OpenAISVGConfig
-	httpClient *http.Client
-	logger     *qlog.Logger
+	config  *config.OpenAISVGConfig
+	copilot *copilot.Copilot
 }
 
 // NewOpenAIService creates a new OpenAI service instance.
-func NewOpenAIService(cfg *config.Config, httpClient *http.Client, logger *qlog.Logger) *OpenAIService {
+func NewOpenAIService(cfg *config.Config, copilot *copilot.Copilot, logger *qlog.Logger) *OpenAIService {
 	return &OpenAIService{
-		config:     &cfg.Providers.SVGOpenAI,
-		httpClient: httpClient,
-		logger:     logger,
+		config:  &cfg.Providers.SVGOpenAI,
+		copilot: copilot,
 	}
 }
 
@@ -38,21 +33,14 @@ func (s *OpenAIService) GenerateImage(ctx context.Context, req GenerateRequest) 
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("[OPENAI] Starting SVG generation request...")
 
-	// OpenAI supports Chinese natively, so we use the prompt as-is
-	// Translation is handled at the ServiceManager level if needed
-	
-	// Build OpenAI prompt
+	// Build SVG generation prompt
 	prompt := s.buildSVGPrompt(req.Prompt, req.Style, req.NegativePrompt)
 
-	// Build OpenAI API request
-	openaiReq := OpenAIGenerateReq{
-		Model:       s.getModelFromConfig(req.Model),
-		MaxTokens:   s.config.MaxTokens,
-		Temperature: s.config.Temperature,
-		Messages: []OpenAIMessage{
-			{
-				Role: "system",
-				Content: `You are a world-class SVG graphics designer and vector artist with expertise in creating stunning, precise, and semantically meaningful SVG illustrations. Your specialties include:
+	// Create copilot parameters
+	params := &copilot.Params{
+		System: copilot.Content{
+			Type: copilot.ContentTypeText,
+			Text: `You are a world-class SVG graphics designer and vector artist with expertise in creating stunning, precise, and semantically meaningful SVG illustrations. Your specialties include:
 
 1. **Technical Excellence**: You create perfectly valid, optimized SVG code that renders flawlessly across all browsers and devices
 2. **Visual Design**: You have an exceptional eye for composition, color theory, typography, and visual hierarchy
@@ -69,70 +57,31 @@ When creating SVG graphics, you:
 - Follow accessibility best practices when relevant
 
 You respond ONLY with clean, valid SVG code - no explanations, no code blocks, just the pure SVG markup ready to render.`,
-			},
+		},
+		Messages: []copilot.Message{
 			{
-				Role:    "user",
-				Content: prompt,
+				Role: copilot.RoleUser,
+				Content: copilot.Content{
+					Type: copilot.ContentTypeText,
+					Text: prompt,
+				},
 			},
 		},
 	}
 
-	body, err := json.Marshal(openaiReq)
+	logger.Printf("[OPENAI] Sending request to copilot service")
+
+	// Call copilot service - using premium=false for regular requests
+	result, err := s.copilot.Message(ctx, params, false)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		logger.Printf("[OPENAI] Copilot request failed: %v", err)
+		return nil, fmt.Errorf("copilot request: %w", err)
 	}
 
-	url := s.config.BaseURL + "chat/completions"
-	logger.Printf("[OPENAI] Sending request to %s", url)
+	logger.Printf("[OPENAI] Received response from copilot")
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+s.getAPIKey())
-
-	resp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		logger.Printf("[OPENAI] HTTP request failed: %v", err)
-		return nil, fmt.Errorf("http request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	logger.Printf("[OPENAI] Received response with status: %s", resp.Status)
-
-	if resp.StatusCode >= 300 {
-		var errResp map[string]any
-		_ = json.NewDecoder(resp.Body).Decode(&errResp)
-		logger.Printf("[OPENAI] Error response body: %+v", errResp)
-		return nil, fmt.Errorf("openai API error: %s", resp.Status)
-	}
-
-	var openaiResp OpenAIGenerateResp
-	if err := json.NewDecoder(resp.Body).Decode(&openaiResp); err != nil {
-		logger.Printf("[OPENAI] Failed to decode response: %v", err)
-		return nil, fmt.Errorf("decode openai response: %w", err)
-	}
-
-	// Add debug information
-	logger.Printf("[OPENAI] Response structure: ID=%s, Object=%s, Model=%s, Choices length=%d",
-		openaiResp.ID, openaiResp.Object, openaiResp.Model, len(openaiResp.Choices))
-
-	// If there's content, print the first choice's content
-	if len(openaiResp.Choices) > 0 {
-		firstChoice := openaiResp.Choices[0]
-		logger.Printf("[OPENAI] First choice: Role=%s, Content prefix=%s",
-			firstChoice.Message.Role, s.truncateString(firstChoice.Message.Content, 100))
-	}
-
-	if len(openaiResp.Choices) == 0 {
-		logger.Printf("[OPENAI] Choices array is empty, response: %+v", openaiResp)
-		return nil, fmt.Errorf("no choices in openai response")
-	}
-
-	// Extract SVG code
-	svgContent := openaiResp.Choices[0].Message.Content
+	// Extract SVG code from response
+	svgContent := result.Message.Content.Text
 	svgCode := s.extractSVGCode(svgContent)
 
 	if svgCode == "" {
@@ -140,7 +89,7 @@ You respond ONLY with clean, valid SVG code - no explanations, no code blocks, j
 		return nil, fmt.Errorf("no valid SVG generated")
 	}
 
-	// Generate temporary SVG file URL (in actual application, might need to save to file service)
+	// Generate temporary SVG file URL
 	imageID := GenerateImageID(ProviderOpenAI)
 	svgURL := s.createSVGDataURL(svgCode)
 
@@ -246,25 +195,4 @@ func (s *OpenAIService) encodeSVGToBase64(svgCode string) string {
 	return base64.StdEncoding.EncodeToString([]byte(svgCode))
 }
 
-// truncateString truncates string for logging.
-func (s *OpenAIService) truncateString(str string, maxLen int) string {
-	if len(str) <= maxLen {
-		return str
-	}
-	return str[:maxLen] + "..."
-}
 
-// getModelFromConfig gets model name from configuration or request.
-func (s *OpenAIService) getModelFromConfig(requestModel string) string {
-	if requestModel != "" {
-		return requestModel
-	}
-	return s.config.DefaultModel
-}
-
-// getAPIKey gets the API key from environment or configuration.
-func (s *OpenAIService) getAPIKey() string {
-	// Get API key from environment variable
-	// In production, consider using a more secure method like AWS Secrets Manager
-	return os.Getenv("SVG_OPENAI_API_KEY")
-}
