@@ -166,18 +166,24 @@ const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
 
 defineExpose({
+  // 暴露暂停方法
   async pauseGame() {
-    const iframeWindow = iframeWindowRef.value
-    if (iframeWindow == null) return
-    this.pauseGame()
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.pauseGame === 'function') {
+      return win.pauseGame()
+    }
   },
   async resumeGame() {
     const iframe = iframeRef.value
-    const iframeWindow = iframeWindowRef.value
-    if (iframeWindow == null) return
-    this.resumeGame()
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.resumeGame === 'function') {
+      return win.resumeGame()
+    }
   },
-  //=============================================
+  // 暴露截图方法
   async getScreenShot(): Promise<File | null> {
     const iframe = iframeRef.value
     if (!iframe) return null
@@ -195,18 +201,22 @@ defineExpose({
       return null
     }
   },
-  //=============================================
+  // 暴露录屏开始方法
   async startRecording() {
     const iframe = iframeRef.value
-    const iframeWindow = iframeWindowRef.value
-    if (iframeWindow == null) return
-    this.startRecording()
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.startRecording === 'function') {
+      return win.startRecording()
+    }
   },
   async stopRecording() {
     const iframe = iframeRef.value
-    const iframeWindow = iframeWindowRef.value
-    if (iframeWindow == null) return
-    this.stopRecording()
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.stopRecording === 'function') {
+      return await win.stopRecording()
+    }
   },
   async getRecordedVideo(): Promise<Blob | null> {
     const iframe = iframeRef.value
