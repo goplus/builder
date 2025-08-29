@@ -153,6 +153,54 @@ export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   return [urlRef, loadingRef] as const
 }
 
+/** 
+ * Get url for File with smooth transition (no flickering)
+ * This version keeps the old URL until the new one is ready
+ */
+export function useFileUrlSmooth(fileSource: WatchSource<File | undefined | null>) {
+  const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
+  watch(
+    fileSource,
+    (file, _, onCleanup) => {
+      if (file == null) {
+        urlRef.value = null
+        return
+      }
+      loadingRef.value = true
+      let cancelled = false
+      let fileUrlCleanup: (() => void) | null = null
+      onCleanup(() => {
+        cancelled = true
+        // Don't clear urlRef.value here - keep old URL until component unmounts
+        fileUrlCleanup?.()
+      })
+      file
+        .url((cleanup) => {
+          if (cancelled) {
+            cleanup()
+            return
+          }
+          fileUrlCleanup = cleanup
+        })
+        .then((url) => {
+          if (cancelled) return
+          // Only update URL when new URL is ready
+          urlRef.value = url
+        })
+        .catch((e) => {
+          if (e instanceof Cancelled) return
+          throw e
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
+    },
+    { immediate: true }
+  )
+  return [urlRef, loadingRef] as const
+}
+
 /**
  * Get image element (HTMLImageElement) based on given (image) file.
  * The image element is guaranteed to be loaded when set to ref.
@@ -186,6 +234,60 @@ export function useFileImg(fileSource: WatchSource<File | undefined>) {
       )
       img.src = url
     }
+  })
+  const loading = computed(() => urlLoadingRef.value || imgLoadingRef.value)
+  return [imgRef, loading] as const
+}
+
+/**
+ * Get image element based on file, with smooth swap (no flicker).
+ * Keeps the previous image until the next one finishes loading.
+ */
+export function useFileImgSmooth(fileSource: WatchSource<File | undefined | null>) {
+  const [urlRef, urlLoadingRef] = useFileUrlSmooth(fileSource)
+  const imgRef = ref<HTMLImageElement | null>(null)
+  const imgLoadingRef = ref(false)
+  watch(urlRef, (url, _, onCleanup) => {
+    let cancelled = false
+    let nextImg: HTMLImageElement | null = null
+    const cleanup = () => {
+      if (nextImg) {
+        nextImg.onload = null
+        nextImg.onerror = null
+      }
+    }
+    onCleanup(() => {
+      cancelled = true
+      cleanup()
+      // Do not clear imgRef here to avoid flicker during swap
+    })
+    if (url == null) {
+      // If there is no url at all (e.g., costume removed), clear image
+      imgRef.value = null
+      imgLoadingRef.value = false
+      return
+    }
+    imgLoadingRef.value = true
+    nextImg = new window.Image()
+    nextImg.addEventListener(
+      'load',
+      () => {
+        if (cancelled) return
+        // Swap to new image only when loaded
+        imgRef.value = nextImg
+        imgLoadingRef.value = false
+      },
+      { once: true }
+    )
+    nextImg.addEventListener(
+      'error',
+      () => {
+        if (cancelled) return
+        imgLoadingRef.value = false
+      },
+      { once: true }
+    )
+    nextImg.src = url
   })
   const loading = computed(() => urlLoadingRef.value || imgLoadingRef.value)
   return [imgRef, loading] as const

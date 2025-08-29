@@ -1,7 +1,9 @@
 <template>
-  <div class="ui-img" :style="imgStyle">
+  <div class="ui-img">
+    <img v-if="src" :src="src" :style="imgElStyle" />
     <UILoading :visible="loading" cover :mask="false" />
   </div>
+  
 </template>
 
 <script setup lang="ts">
@@ -20,12 +22,11 @@ const props = withDefaults(
     size: 'contain'
   }
 )
-const imgStyle = computed(() =>
+const imgElStyle = computed(() =>
   props.src == null
     ? null
     : {
-        backgroundImage: `url("${props.src}")`,
-        backgroundSize: props.size
+        objectFit: props.size
       }
 )
 </script>
@@ -33,10 +34,14 @@ const imgStyle = computed(() =>
 <style lang="scss" scoped>
 .ui-img {
   position: relative;
-  background-position: center;
-  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.ui-img img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 </style>
