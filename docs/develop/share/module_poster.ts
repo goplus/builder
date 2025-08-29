@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas'
 import { ref, nextTick } from 'vue'
 
 const props = defineProps<{
-  img: File
+  img: string | File
   projectData: ProjectData
 }>()
 
