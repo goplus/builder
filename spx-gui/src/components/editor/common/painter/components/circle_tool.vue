@@ -1,19 +1,14 @@
 <template>
   <!-- 临时圆形预览 -->
-  <svg 
-    v-if="isDrawing && startPoint"
-    class="preview-layer"
-    :width="canvasWidth" 
-    :height="canvasHeight"
-  >
-    <ellipse 
-      :cx="centerPoint.x" 
-      :cy="centerPoint.y" 
-      :rx="Math.abs(radiusX)" 
-      :ry="Math.abs(radiusY)" 
+  <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
+    <ellipse
+      :cx="centerPoint.x"
+      :cy="centerPoint.y"
+      :rx="Math.abs(radiusX)"
+      :ry="Math.abs(radiusY)"
       fill="none"
-      stroke="#2196f3" 
-      stroke-width="3" 
+      stroke="#2196f3"
+      stroke-width="3"
       stroke-dasharray="5,5"
     />
   </svg>
@@ -72,7 +67,7 @@ const radiusY = computed(() => {
 // 创建圆形/椭圆路径
 const createCircle = (center: Point, rx: number, ry: number): paper.Path => {
   let shape: paper.Path
-  
+
   if (Math.abs(rx - ry) < 5) {
     // 如果 rx 和 ry 相近，创建圆形
     const radius = (rx + ry) / 2
@@ -87,35 +82,35 @@ const createCircle = (center: Point, rx: number, ry: number): paper.Path => {
       size: new paper.Size(rx * 2, ry * 2)
     })
   }
-  
+
   shape.strokeColor = new paper.Color('#2196f3')
   shape.strokeWidth = 3
   shape.fillColor = null
-  
+
   // 设置线段连接方式为圆滑
   shape.strokeCap = 'round'
   shape.strokeJoin = 'round'
-  
+
   // 添加悬停效果
   shape.onMouseEnter = () => {
     shape.strokeColor = new paper.Color('#1976d2')
     shape.strokeWidth = 4
     paper.view.update()
   }
-  
+
   shape.onMouseLeave = () => {
     shape.strokeColor = new paper.Color('#2196f3')
     shape.strokeWidth = 3
     paper.view.update()
   }
-  
+
   return shape
 }
 
 // 处理鼠标按下
 const handleMouseDown = (point: paper.Point): void => {
   if (!props.isActive) return
-  
+
   // 开始画圆
   isDrawing.value = true
   startPoint.value = { x: point.x, y: point.y }
@@ -125,36 +120,32 @@ const handleMouseDown = (point: paper.Point): void => {
 // 处理鼠标移动（更新预览）
 const handleMouseMove = (point: paper.Point): void => {
   if (!props.isActive || !isDrawing.value || !startPoint.value) return
-  
+
   currentPoint.value = { x: point.x, y: point.y }
 }
 
 // 处理鼠标释放
 const handleMouseUp = (point: paper.Point): void => {
   if (!props.isActive || !isDrawing.value || !startPoint.value) return
-  
+
   // 更新最终位置
   currentPoint.value = { x: point.x, y: point.y }
-  
+
   // 检查是否有足够的尺寸来创建圆形
   const minSize = 10
   if (radiusX.value < minSize && radiusY.value < minSize) {
     resetDrawing()
     return
   }
-  
+
   // 完成绘制
-  const circle = createCircle(
-    centerPoint.value,
-    radiusX.value,
-    radiusY.value
-  )
-  
+  const circle = createCircle(centerPoint.value, radiusX.value, radiusY.value)
+
   const currentPaths = getAllPathsValue()
   currentPaths.push(circle)
   setAllPathsValue(currentPaths)
   exportSvgAndEmit()
-  
+
   // 重置状态
   resetDrawing()
 }
@@ -167,11 +158,14 @@ const resetDrawing = (): void => {
 }
 
 // 监听工具切换，重置状态
-watch(() => props.isActive, (newValue) => {
-  if (!newValue) {
-    resetDrawing()
+watch(
+  () => props.isActive,
+  (newValue) => {
+    if (!newValue) {
+      resetDrawing()
+    }
   }
-})
+)
 
 // 暴露方法给父组件和事件委托器
 defineExpose({

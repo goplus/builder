@@ -2,11 +2,11 @@
   <!-- 提示词输入 -->
   <div class="form-group">
     <label class="form-label">{{ $t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
-    
+
     <!-- 模板类型选择按钮 -->
     <div class="template-buttons">
-      <button 
-        v-for="templateType in templateTypes" 
+      <button
+        v-for="templateType in templateTypes"
         :key="templateType.key"
         :class="['template-button', { active: activeTemplate === templateType.key }]"
         @click="switchTemplate(templateType.key)"
@@ -14,11 +14,11 @@
         {{ templateType.label }}
       </button>
     </div>
-    
+
     <div class="prompt-template">
       <template v-for="(part, index) in templateParts" :key="index">
         <span v-if="part.type === 'text'" class="template-text">{{ part.content }}</span>
-        <n-input 
+        <n-input
           v-else
           v-model:value="inputs[part.index!]"
           :placeholder="part.placeholder"
@@ -55,7 +55,6 @@ const emit = defineEmits<{
 
 const fullFilled = ref(false)
 
-
 // 定义不同类型的模板
 const templates = {
   sprite: '一个（可爱）的（猫咪），颜色是（橘色）',
@@ -69,7 +68,7 @@ const templateTypes = [
   { key: 'sprite' as const, label: '精灵' },
   { key: 'prop' as const, label: '道具' },
   { key: 'decoration' as const, label: '装饰' },
-  { key: 'advance' as const, label: '高级'}
+  { key: 'advance' as const, label: '高级' }
 ] as const
 
 // 当前激活的模板类型
@@ -92,11 +91,11 @@ const templateParts = computed((): TemplatePart[] => {
   const templateStr = template.value
   let inputIndex = 0
   let currentPos = 0
-  
+
   // 查找所有的()占位符
   const regex = /（[^）]*）/g
   let match
-  
+
   while ((match = regex.exec(templateStr)) !== null) {
     // 添加前面的固定文本
     if (match.index > currentPos) {
@@ -105,7 +104,7 @@ const templateParts = computed((): TemplatePart[] => {
         content: templateStr.slice(currentPos, match.index)
       })
     }
-    
+
     // 添加输入框
     const placeholderText = match[0].slice(1, -1) // 去掉（）
     parts.push({
@@ -113,11 +112,11 @@ const templateParts = computed((): TemplatePart[] => {
       index: inputIndex,
       placeholder: placeholderText || ``
     })
-    
+
     inputIndex++
     currentPos = match.index + match[0].length
   }
-  
+
   // 添加最后的固定文本
   if (currentPos < templateStr.length) {
     parts.push({
@@ -125,7 +124,7 @@ const templateParts = computed((): TemplatePart[] => {
       content: templateStr.slice(currentPos)
     })
   }
-  
+
   return parts
 })
 
@@ -133,12 +132,16 @@ const templateParts = computed((): TemplatePart[] => {
 const inputs = ref<string[]>([])
 
 // 确保inputs数组长度与输入框数量一致
-const inputCount = computed(() => templateParts.value.filter(part => part.type === 'input').length)
+const inputCount = computed(() => templateParts.value.filter((part) => part.type === 'input').length)
 
 // 监听模板变化，重新初始化inputs数组
-watch([template, inputCount], () => {
-  inputs.value = new Array(inputCount.value).fill('')
-}, { immediate: true })
+watch(
+  [template, inputCount],
+  () => {
+    inputs.value = new Array(inputCount.value).fill('')
+  },
+  { immediate: true }
+)
 
 // 切换模板
 const switchTemplate = (templateKey: keyof typeof templates) => {
@@ -149,13 +152,13 @@ const switchTemplate = (templateKey: keyof typeof templates) => {
 const previewText = computed(() => {
   let result = template.value
   let inputIndex = 0
-  
+
   result = result.replace(/（[^）]*）/g, () => {
     const value = inputs.value[inputIndex] || ''
     inputIndex++
     return value
   })
-  
+
   return result
 })
 
@@ -163,16 +166,13 @@ const previewText = computed(() => {
 const updatePrompt = () => {
   const prompt = previewText.value
   emit('update:modelValue', prompt)
-  const filled = inputs.value.every(input => input.trim() !== '')
+  const filled = inputs.value.every((input) => input.trim() !== '')
   fullFilled.value = filled
 }
-
 
 defineExpose({
   fullFilled
 })
-
-
 </script>
 
 <style scoped>

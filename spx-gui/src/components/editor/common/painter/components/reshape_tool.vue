@@ -24,7 +24,7 @@ const mouseDownPath = ref<paper.Path | null>(null)
 const mouseDownPos = ref<paper.Point | null>(null)
 
 //注入父组件接口
-import { inject } from 'vue'  
+import { inject } from 'vue'
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
@@ -49,22 +49,22 @@ const createControlPoint = (position: paper.Point): ExtendedItem => {
     strokeColor: '#cc0000',
     strokeWidth: 2
   }) as ExtendedItem
-  
+
   point.isControlPoint = true
-  
+
   // 添加悬停效果
   point.onMouseEnter = () => {
     point.fillColor = new paper.Color('#ff6666')
     point.scale(1.25)
     paper.view.update()
   }
-  
+
   point.onMouseLeave = () => {
     point.fillColor = new paper.Color('#ff4444')
     point.scale(0.8)
     paper.view.update()
   }
-  
+
   return point
 }
 
@@ -72,7 +72,7 @@ const createControlPoint = (position: paper.Point): ExtendedItem => {
 const showControlPoints = (path: paper.Path): void => {
   hideControlPoints()
   selectPathExclusive(path)
-  
+
   if (path && path.segments) {
     path.segments.forEach((segment: paper.Segment, index: number) => {
       const controlPoint = createControlPoint(segment.point)
@@ -119,19 +119,19 @@ const getPathAtPoint = (point: paper.Point): paper.Path | null => {
     fill: true,
     tolerance: 15
   })
-  
+
   if (hitResult && hitResult.item && !(hitResult.item as ExtendedItem).isControlPoint) {
     let targetItem = hitResult.item
-    
+
     while (targetItem.parent && targetItem.parent !== paper.project.activeLayer) {
       targetItem = targetItem.parent
     }
-    
-    const pathInArray = props.allPaths.find(path => path === targetItem || path === hitResult.item)
+
+    const pathInArray = props.allPaths.find((path) => path === targetItem || path === hitResult.item)
     if (pathInArray) {
       return pathInArray
     }
-    
+
     if (hitResult.item instanceof paper.Path || hitResult.item instanceof paper.CompoundPath) {
       return hitResult.item as paper.Path
     }
@@ -147,7 +147,7 @@ const getControlPointAtPoint = (point: paper.Point): ExtendedItem | null => {
     fill: true,
     tolerance: 15
   })
-  
+
   if (hitResult && hitResult.item && (hitResult.item as ExtendedItem).isControlPoint) {
     return hitResult.item as ExtendedItem
   }
@@ -158,12 +158,12 @@ const getControlPointAtPoint = (point: paper.Point): ExtendedItem | null => {
 const smoothLocalSegments = (path: paper.Path, segmentIndex: number): void => {
   const segments = path.segments
   const currentSegment = segments[segmentIndex]
-  
+
   if (!currentSegment) return
-  
+
   const prevIndex = Math.max(0, segmentIndex - 1)
   const nextIndex = Math.min(segments.length - 1, segmentIndex + 1)
-  
+
   if (segmentIndex === 0 || segmentIndex === segments.length - 1) {
     if (segmentIndex === 0 && segments.length > 1) {
       const nextSeg = segments[1]
@@ -181,23 +181,23 @@ const smoothLocalSegments = (path: paper.Path, segmentIndex: number): void => {
 
 // 计算局部贝塞尔曲线控制点
 const calculateLocalHandles = (
-  currentSeg: paper.Segment, 
-  nextSeg: paper.Segment | null, 
+  currentSeg: paper.Segment,
+  nextSeg: paper.Segment | null,
   prevSeg: paper.Segment | null
 ): void => {
   currentSeg.clearHandles()
-  
+
   if (nextSeg && prevSeg) {
     const vector1 = currentSeg.point.subtract(prevSeg.point)
     const vector2 = nextSeg.point.subtract(currentSeg.point)
-    
+
     const angle1 = vector1.angle
     const angle2 = vector2.angle
     const avgAngle = (angle1 + angle2) / 2
-    
+
     const length1 = vector1.length * 0.3
     const length2 = vector2.length * 0.3
-    
+
     currentSeg.handleIn = new paper.Point({
       angle: avgAngle + 180,
       length: length1
@@ -225,8 +225,9 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
     smoothLocalSegments(path, insertIndex)
 
     showControlPoints(path)
-    
-    const created = controlPoints.value.find((p: ExtendedItem) => p.parentPath === path && p.segmentIndex === insertIndex) || null
+
+    const created =
+      controlPoints.value.find((p: ExtendedItem) => p.parentPath === path && p.segmentIndex === insertIndex) || null
     paper.view.update()
     return created
   }
@@ -236,7 +237,7 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
 // 处理鼠标按下
 const handleMouseDown = (point: paper.Point): void => {
   if (!props.isActive) return
-  
+
   const controlPoint = getControlPointAtPoint(point)
   if (controlPoint) {
     isDragging.value = true
@@ -257,12 +258,8 @@ const handleMouseDown = (point: paper.Point): void => {
 // 处理鼠标移动
 const handleMouseMove = (point: paper.Point): void => {
   if (!props.isActive) return
-  
-  if (
-    !isDragging.value &&
-    mouseDownPath.value &&
-    mouseDownPos.value
-  ) {
+
+  if (!isDragging.value && mouseDownPath.value && mouseDownPos.value) {
     const dx = point.x - mouseDownPos.value.x
     const dy = point.y - mouseDownPos.value.y
     const dist2 = dx * dx + dy * dy
@@ -279,7 +276,7 @@ const handleMouseMove = (point: paper.Point): void => {
 
   if (isDragging.value && selectedPoint.value) {
     selectedPoint.value.position = point
-    
+
     if (selectedPoint.value.parentPath && selectedPoint.value.segmentIndex !== undefined) {
       const segment = selectedPoint.value.parentPath.segments[selectedPoint.value.segmentIndex]
       if (segment) {
@@ -287,7 +284,7 @@ const handleMouseMove = (point: paper.Point): void => {
         smoothLocalSegments(selectedPoint.value.parentPath, selectedPoint.value.segmentIndex)
       }
     }
-    
+
     paper.view.update()
   }
 }
@@ -295,10 +292,10 @@ const handleMouseMove = (point: paper.Point): void => {
 // 处理鼠标释放
 const handleMouseUp = (): void => {
   if (!props.isActive) return
-  
+
   const prevSelected = selectedPoint.value
   const wasDragging = isDragging.value
-  
+
   if (isDragging.value) {
     isDragging.value = false
     selectedPoint.value = null
@@ -331,19 +328,19 @@ const handleMouseUp = (): void => {
 // 处理点击
 const handleClick = (point: paper.Point): void => {
   if (!props.isActive) return
-  
+
   const controlPoint = getControlPointAtPoint(point)
   if (controlPoint) {
     return
   }
-  
+
   const clickedPath = getPathAtPoint(point)
   if (clickedPath) {
     showControlPoints(clickedPath)
     paper.view.update()
     return
   }
-  
+
   hideControlPoints()
   paper.view.update()
 }
@@ -353,14 +350,14 @@ const deleteSelectedPath = (): void => {
   if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
     const pathToDelete = controlPoints.value[0].parentPath
     pathToDelete.remove()
-    
+
     // 使用注入的接口更新路径数组
     const updatedPaths = getAllPathsValue().filter((path: paper.Path) => path !== pathToDelete)
     setAllPathsValue(updatedPaths)
-    
+
     hideControlPoints()
     paper.view.update()
-    
+
     // 使用注入的接口而不是事件上报
     exportSvgAndEmit()
   }
@@ -369,7 +366,7 @@ const deleteSelectedPath = (): void => {
 // 键盘事件处理
 const handleKeyDown = (event: KeyboardEvent): void => {
   if (!props.isActive) return
-  
+
   if (event.key === 'Escape') {
     hideControlPoints()
     paper.view.update()
@@ -379,11 +376,14 @@ const handleKeyDown = (event: KeyboardEvent): void => {
 }
 
 // 监听工具激活状态
-watch(() => props.isActive, (isActive) => {
-  if (!isActive) {
-    hideControlPoints()
+watch(
+  () => props.isActive,
+  (isActive) => {
+    if (!isActive) {
+      hideControlPoints()
+    }
   }
-})
+)
 
 // 暴露方法给父组件
 defineExpose({
@@ -398,7 +398,7 @@ defineExpose({
 </script>
 
 <template>
-  <div style="display: none;">
+  <div style="display: none">
     <!-- 这个组件不渲染任何视觉内容，只提供逻辑 -->
   </div>
 </template>

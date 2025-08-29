@@ -42,21 +42,18 @@ async function handleSvgChange(svg: string) {
   const name = props.costume.name.replace(/[\\/:*?"<>|]/g, '-') + '.svg'
   const file = fromText(name, svg, { type: 'image/svg+xml' })
   // console.log('创建新文件:', name, '类型:', file.type)
-  
+
   // 保存原始的分辨率设置
   const originalBitmapResolution = props.costume.bitmapResolution
-  
+
   // 历史记录包装
-  await editorCtx.project.history.doAction(
-    { name: { en: 'Update costume image', zh: '更新造型图片' } },
-    () => {
-      // console.log('执行 setImg')
-      props.costume.setImg(file)
-      // 保持原始分辨率，不要强制改为1
-      props.costume.setBitmapResolution(originalBitmapResolution)
-      // console.log('setImg 完成')
-    }
-  )
+  await editorCtx.project.history.doAction({ name: { en: 'Update costume image', zh: '更新造型图片' } }, () => {
+    // console.log('执行 setImg')
+    props.costume.setImg(file)
+    // 保持原始分辨率，不要强制改为1
+    props.costume.setBitmapResolution(originalBitmapResolution)
+    // console.log('setImg 完成')
+  })
   // console.log('handleSvgChange 完成')
 }
 </script>

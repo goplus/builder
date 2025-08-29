@@ -1,18 +1,13 @@
 <template>
   <!-- 临时直线预览 -->
-  <svg 
-    v-if="isDrawing && startPoint"
-    class="preview-layer"
-    :width="canvasWidth" 
-    :height="canvasHeight"
-  >
-    <line 
-      :x1="startPoint.x" 
-      :y1="startPoint.y" 
-      :x2="previewPoint.x" 
-      :y2="previewPoint.y" 
-      stroke="#2196f3" 
-      stroke-width="3" 
+  <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
+    <line
+      :x1="startPoint.x"
+      :y1="startPoint.y"
+      :x2="previewPoint.x"
+      :y2="previewPoint.y"
+      stroke="#2196f3"
+      stroke-width="3"
       stroke-dasharray="5,5"
     />
   </svg>
@@ -50,13 +45,11 @@ const startPoint = ref<Point | null>(null)
 const previewPoint = ref<Point>({ x: 0, y: 0 })
 
 //注入父组件接口
-import { inject } from 'vue'  
+import { inject } from 'vue'
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
-
-
 
 // 创建直线路径
 const createLine = (start: Point, end: Point): paper.Path => {
@@ -65,31 +58,31 @@ const createLine = (start: Point, end: Point): paper.Path => {
   line.add(new paper.Point(end.x, end.y))
   line.strokeColor = new paper.Color('#2196f3')
   line.strokeWidth = 3
-  
+
   // 设置线段连接方式为圆滑
   line.strokeCap = 'round'
   line.strokeJoin = 'round'
-  
+
   // 添加悬停效果
   line.onMouseEnter = () => {
     line.strokeColor = new paper.Color('#1976d2')
     line.strokeWidth = 4
     paper.view.update()
   }
-  
+
   line.onMouseLeave = () => {
     line.strokeColor = new paper.Color('#2196f3')
     line.strokeWidth = 3
     paper.view.update()
   }
-  
+
   return line
 }
 
 // 处理画布点击
 const handleCanvasClick = (point: Point): void => {
   if (!props.isActive) return
-  
+
   if (!isDrawing.value) {
     // 开始画线
     isDrawing.value = true
@@ -110,7 +103,7 @@ const handleCanvasClick = (point: Point): void => {
 // 处理鼠标移动（更新预览）
 const handleMouseMove = (point: Point): void => {
   if (!props.isActive || !isDrawing.value || !startPoint.value) return
-  
+
   previewPoint.value = { x: point.x, y: point.y }
 }
 
@@ -122,11 +115,14 @@ const resetDrawing = (): void => {
 }
 
 // 监听工具切换，重置状态
-watch(() => props.isActive, (newValue) => {
-  if (!newValue) {
-    resetDrawing()
+watch(
+  () => props.isActive,
+  (newValue) => {
+    if (!newValue) {
+      resetDrawing()
+    }
   }
-})
+)
 
 // 暴露方法给父组件
 defineExpose({

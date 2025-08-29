@@ -68,12 +68,9 @@ export class CanvasEventDelegator {
    */
   private getCanvasPoint(event: MouseEvent, canvasRef: HTMLCanvasElement | null): paper.Point | null {
     if (!canvasRef) return null
-    
+
     const rect = canvasRef.getBoundingClientRect()
-    return new paper.Point(
-      event.clientX - rect.left,
-      event.clientY - rect.top
-    )
+    return new paper.Point(event.clientX - rect.left, event.clientY - rect.top)
   }
 
   /**
@@ -81,7 +78,7 @@ export class CanvasEventDelegator {
    */
   delegateClick(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
     if (!this.currentTool) return
-    
+
     const point = this.getCanvasPoint(event, canvasRef)
     if (!point) return
 
@@ -106,7 +103,7 @@ export class CanvasEventDelegator {
    */
   delegateMouseDown(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
     if (!this.currentTool) return
-    
+
     const point = this.getCanvasPoint(event, canvasRef)
     if (!point) return
 
@@ -126,7 +123,7 @@ export class CanvasEventDelegator {
    */
   delegateMouseMove(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
     if (!this.currentTool) return
-    
+
     const point = this.getCanvasPoint(event, canvasRef)
     if (!point) return
 
@@ -150,7 +147,7 @@ export class CanvasEventDelegator {
    */
   delegateMouseUp(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
     if (!this.currentTool) return
-    
+
     const point = this.getCanvasPoint(event, canvasRef)
     if (!point) return
 
@@ -170,7 +167,7 @@ export class CanvasEventDelegator {
    */
   delegateGlobalMouseUp(): void {
     if (!this.currentTool) return
-    
+
     const handler = this.toolRefs[this.currentTool]
     if (!handler?.handleMouseUp) return
 
