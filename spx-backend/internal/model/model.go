@@ -33,8 +33,8 @@ func (_deleted_at_is_null) GormDataType() string {
 	return "bit(1) GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END) STORED"
 }
 
-// OpenDB opens the database with the given dsn and models to be migrated.
-func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, models ...any) (*gorm.DB, error) {
+// OpenDB opens the database with the given dsn.
+func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int) (*gorm.DB, error) {
 	dialector := mysql.New(mysql.Config{DSN: dsn})
 	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger:  gormsentry.New(logger.Discard, nil, gormsentry.DefaultConfig()),
@@ -49,11 +49,6 @@ func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, mod
 	}
 	sqlDB.SetMaxOpenConns(maxOpenConns)
 	sqlDB.SetMaxIdleConns(maxIdleConns)
-	if len(models) > 0 {
-		if err := db.WithContext(ctx).AutoMigrate(models...); err != nil {
-			return nil, fmt.Errorf("failed to auto migrate models: %w", err)
-		}
-	}
 	return db, nil
 }
 

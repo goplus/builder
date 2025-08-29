@@ -17,6 +17,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/migration"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
@@ -47,6 +48,14 @@ if err != nil {
 	logger.Fatalln("failed to initialize sentry:", err)
 }
 defer sentry.Flush(10 * time.Second)
+
+// Execute automatic migration for database if enabled.
+if cfg.Database.AutoMigrate {
+	migrator := migration.New(cfg.Database.DSN, cfg.Database.GetMigrationTimeout())
+	if err := migrator.Migrate(); err != nil {
+		logger.Fatalln("failed to migrate database:", err)
+	}
+}
 
 // Initialize database.
 db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
