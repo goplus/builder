@@ -3,8 +3,8 @@ import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
-import logo from './logo.svg'
-import posterBackground from './postBackground.jpg'
+import logo from './logos/XBuilderLogo.svg'
+import PosterBackground from './postBackground.jpg'
 
 const props = defineProps<{
   img: File
