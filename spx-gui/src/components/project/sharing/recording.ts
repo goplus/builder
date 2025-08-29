@@ -1,6 +1,6 @@
-import type { ByPage, PaginationParams } from './common'
-import { client, ownerAll, Visibility } from './common'
-import { ApiException, ApiExceptionCode } from './common/exception'
+import type { ByPage, PaginationParams } from '../../../apis/common'
+import { client, ownerAll, Visibility } from '../../../apis/common'
+import { ApiException, ApiExceptionCode } from '../../../apis/common/exception'
 
 export { Visibility, ownerAll }
 
