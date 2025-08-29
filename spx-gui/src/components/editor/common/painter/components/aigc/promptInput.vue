@@ -53,6 +53,9 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const fullFilled = ref(false)
+
+
 // 定义不同类型的模板
 const templates = {
   sprite: '一个（可爱）的（猫咪），颜色是（橘色）',
@@ -63,11 +66,11 @@ const templates = {
 
 // 模板类型定义
 const templateTypes = [
-  { key: 'sprite', label: '精灵' },
-  { key: 'prop', label: '道具' },
-  { key: 'decoration', label: '装饰' },
-  { key: 'advance', label: '高级'}
-]
+  { key: 'sprite' as const, label: '精灵' },
+  { key: 'prop' as const, label: '道具' },
+  { key: 'decoration' as const, label: '装饰' },
+  { key: 'advance' as const, label: '高级'}
+] as const
 
 // 当前激活的模板类型
 const activeTemplate = ref<keyof typeof templates>('sprite')
@@ -160,7 +163,16 @@ const previewText = computed(() => {
 const updatePrompt = () => {
   const prompt = previewText.value
   emit('update:modelValue', prompt)
+  const filled = inputs.value.every(input => input.trim() !== '')
+  fullFilled.value = filled
 }
+
+
+defineExpose({
+  fullFilled
+})
+
+
 </script>
 
 <style scoped>
