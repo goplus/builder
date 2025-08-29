@@ -25,7 +25,7 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 		return false, "text is required"
 	}
 	if p.TopK == 0 {
-		p.TopK = 3 // Default to top 3 results
+		p.TopK = 4 // Default to top 4 results
 	}
 	if p.TopK < 1 || p.TopK > 50 {
 		return false, "top_k must be between 1 and 50"
@@ -176,7 +176,7 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	reqData := AlgorithmSearchRequest{
 		Text:      text,
 		TopK:      topK,
-		Threshold: 0.25,
+		Threshold: 0.2,
 	}
 
 	reqBody, err := json.Marshal(reqData)
