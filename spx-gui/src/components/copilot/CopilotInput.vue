@@ -95,7 +95,7 @@ defineExpose({ focus })
   min-width: 0;
   min-height: 20px;
 
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
 
   // auto resize based on content height

@@ -435,6 +435,7 @@ const handleQuickInputClick = useMessageHandle(
 }
 
 .body {
+  overflow: hidden;
   padding: 1px;
   border-radius: 16px;
   box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
