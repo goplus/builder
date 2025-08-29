@@ -5,11 +5,9 @@ import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
 import logo from './logos/XBuilderLogo.svg'
 import PosterBackground from './postBackground.jpg'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
-import { useExternalUrl } from '@/utils/utils'
 
 const props = defineProps<{
-  img?: string | File
+  img?: File
   projectData: ProjectData
 }>()
 
@@ -17,48 +15,15 @@ const projectUrlQRCode = computed(() =>
     `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(window.location.href)}`
 )
 
-const resolvedImgUrl = ref<string>('')
-
-// Convert cross-origin URL to an object URL to work under COEP
-const finalImgUrl = useExternalUrl(() => resolvedImgUrl.value || null)
-
-watch(
-  () => props.img,
-  async (img, _, onCleanup) => {
-    // cleanup for previous object URL
-    let objectUrlToRevoke: string | null = null
-    const cleanup = () => {
-      if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke)
-      objectUrlToRevoke = null
+const imgUrl = computed(() => {
+    if (props.img && props.img instanceof File) {
+        return URL.createObjectURL(props.img)
     }
-    onCleanup(cleanup)
-
-    if (!img) {
-      resolvedImgUrl.value = ''
-      return
+    if (props.projectData.thumbnail){
+        console.log('拿到缩略图')
+        return props.projectData.thumbnail
     }
-    if (typeof img === 'string') {
-      if (img.startsWith('kodo://') || img.startsWith('kodo:')) {
-        try {
-          resolvedImgUrl.value = await universalUrlToWebUrl(img as any)
-        } catch {
-          resolvedImgUrl.value = ''
-        }
-      } else {
-        resolvedImgUrl.value = img
-      }
-      return
-    }
-    try {
-      const url = URL.createObjectURL(img)
-      objectUrlToRevoke = url
-      resolvedImgUrl.value = url
-    } catch {
-      resolvedImgUrl.value = ''
-    }
-  },
-  { immediate: true }
-)
+})
 
 const posterElementRef = ref<HTMLElement>()
 
@@ -207,7 +172,7 @@ defineExpose({
 <template>
     <div ref="posterElementRef" class="poster-background">
         <div class="screenshot-area">
-            <img v-if="finalImgUrl" :src="finalImgUrl" :alt="props.projectData.name" class="screenshot-image"/>
+            <img v-if="props.img || props.projectData.thumbnail" :src="imgUrl" :alt="props.projectData.name" class="screenshot-image"/>
             <div v-else class="screenshot-placeholder">
                 <UIIcon type="file" />
                 <span>{{ $t({ en: 'No Image', zh: '暂无截屏'}) }}</span>
