@@ -1,0 +1,28 @@
+# Web框架
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# 机器学习和计算机视觉
+torch>=1.13.0
+torchvision>=0.14.0
+open_clip_torch>=2.20.0
+Pillow>=9.5.0
+numpy==1.24.0
+
+# HTTP客户端
+requests>=2.31.0
+
+# SVG处理
+cairosvg>=2.7.0
+
+# 向量数据库
+pymilvus>=2.3.0
+
+# 开发和测试工具
+pytest>=7.4.0
+pytest-flask>=1.2.0
+black>=23.0.0
+flake8>=6.0.0
+
+# 生产环境
+gunicorn>=21.2.0

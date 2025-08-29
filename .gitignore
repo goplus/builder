@@ -21,6 +21,12 @@ go.work
 .idea/
 *.wasm
 
+# Ignore spx-algorithm directories and SVG files
+spx-algorithm/demo/
+spx-algorithm/client/
+spx-algorithm/resource/*.svg
+spx-algorithm/resource/vector_db/*.svg
+
 # Claude相关文件
 CLAUDE.md
 **/CLAUDE.md
