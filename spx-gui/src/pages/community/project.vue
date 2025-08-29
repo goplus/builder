@@ -210,13 +210,6 @@ function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
 }
 
-const shareProject = useShareProject()
-
-const handleShare = useMessageHandle(() => shareProject(props.owner, props.name), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
-
 const createProject = useCreateProject()
 
 const handleRemix = useMessageHandle(
@@ -314,6 +307,15 @@ const {
     zh: '加载项目失败'
   }
 )
+
+const shareProject = useShareProject()
+
+const handleShare = useMessageHandle(() => {
+  shareProject(projectData.value)
+}, {
+  en: 'Failed to share project',
+  zh: '分享项目失败'
+})
 
 async function handleScreenshotSharing() {
   await projectRunnerRef.value?.pauseGame()
