@@ -20,6 +20,26 @@ type Position = {
   y: number
   half: 'lower' | 'upper'
 }
+
+function calcRevealDOMRect(spotlightEl: HTMLElement, placement: Placement) {
+  const rect = spotlightEl.getBoundingClientRect()
+  let { width, height, left, top } = rect
+
+  switch (placement) {
+    case Placement.TOP_RIGHT:
+      top -= height
+      break
+    case Placement.TOP_LEFT:
+      left -= width
+      top -= height
+      break
+    case Placement.BOTTOM_LEFT:
+      left -= width
+      break
+  }
+
+  return new DOMRect(left, top, width, height)
+}
 </script>
 
 <script lang="ts" setup>
@@ -138,12 +158,17 @@ function providerAttachEl() {
   return attachEl
 }
 
-function syncPlacementAndPosition() {
-  const attachEl = providerAttachEl()
+function providerSpotlightEl() {
   const spotlightEl = spotlightRef.value
   if (!spotlightEl) {
     throw new Error('SpotlightUI element is not mounted yet')
   }
+  return spotlightEl
+}
+
+function syncPlacementAndPosition() {
+  const attachEl = providerAttachEl()
+  const spotlightEl = providerSpotlightEl()
   const attachRect = getRect(attachEl)
   let spotlightRect = getRect(spotlightEl)
 
@@ -170,7 +195,11 @@ watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
     if (!value) return
-    requestAnimationFrame(() => attachElement(value.el))
+    requestAnimationFrame(() => {
+      attachElement(value.el)
+      const spotlightEl = providerSpotlightEl()
+      spotlight.emit('onReveal', { target: spotlightEl, rect: calcRevealDOMRect(spotlightEl, placementRef.value) })
+    })
 
     resizeObserver.observe(document.body)
     document.body.addEventListener('scroll', throttledHandleRefresh, { capture: true, passive: true })

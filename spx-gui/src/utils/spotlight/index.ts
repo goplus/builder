@@ -1,6 +1,6 @@
 import type { App, InjectionKey } from 'vue'
 import { inject, ref } from 'vue'
-import { Disposable } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 
 export { default as SpotlightUI } from './SpotlightUI.vue'
 
@@ -8,6 +8,11 @@ export type SpotlightItem = {
   el: HTMLElement
   timer: NodeJS.Timeout
   tips: string
+}
+
+export type RevealEvent = {
+  target: HTMLElement
+  rect: DOMRect
 }
 
 export const spotlightKey: InjectionKey<Spotlight> = Symbol('spotlight')
@@ -20,7 +25,7 @@ export function useSpotlight() {
   return spotlight
 }
 
-export class Spotlight extends Disposable {
+export class Spotlight extends Emitter<{ onReveal: RevealEvent }> {
   spotlightItem = ref<SpotlightItem | null>(null)
 
   protected createTimeout() {
