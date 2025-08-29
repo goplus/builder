@@ -25,6 +25,7 @@ import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
+import { useUpdateRouteLoaded } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
 import { clear } from '@/models/common/local'
 import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
@@ -127,6 +128,8 @@ const allQueryRet = useQuery(
     ]),
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
+
+useUpdateRouteLoaded(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
 
 const publishProject = usePublishProject()
 
