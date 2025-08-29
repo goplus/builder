@@ -80,7 +80,6 @@ export class CanvasEventDelegator {
    * 委托画布点击事件
    */
   delegateClick(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
-    console.log('delegateClick', this.currentTool)
     if (!this.currentTool) return
     
     const point = this.getCanvasPoint(event, canvasRef)

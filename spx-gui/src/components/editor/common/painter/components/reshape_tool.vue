@@ -24,7 +24,7 @@ const mouseDownPath = ref<paper.Path | null>(null)
 const mouseDownPos = ref<paper.Point | null>(null)
 
 //注入父组件接口
-import { inject, type Ref } from 'vue'  
+import { inject } from 'vue'  
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!

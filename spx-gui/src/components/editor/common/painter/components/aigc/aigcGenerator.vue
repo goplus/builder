@@ -123,7 +123,7 @@
   <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
-import ErrorModal from './error.vue'
+import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
 import PromptInput from './promptInput.vue'
 
@@ -294,26 +294,20 @@ import PromptInput from './promptInput.vue'
       console.error('failed to generate image:', error)
       
       let errorType = 'default'
-      let errorKey = 'default'
       
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
           errorType = 'timeout'
-          errorKey = 'timeout'
         } else if (error.message.includes('network')) {
           errorType = 'network' 
-          errorKey = 'network'
         } else if (error.message.includes('400')) {
           errorType = 'params'
-          errorKey = 'params'
         } else if (error.message.includes('500')) {
           errorType = 'server'
-          errorKey = 'server'
         }
       }
       if (String(error).includes('fetch') || String(error).includes('net')) {
         errorType = 'network'
-        errorKey = 'network'
       }
       
       // Use a simple fallback message for script context, real i18n will be handled in template

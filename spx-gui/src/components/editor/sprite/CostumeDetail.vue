@@ -14,7 +14,7 @@ import type { Sprite } from '@/models/sprite'
 import { useRenameCostume } from '@/components/asset'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
-import Painter from '@/components/editor/common/painter/painter.vue'
+import Painter from '@/components/editor/common/painter/paintBoard.vue'
 import { useFileUrl } from '@/utils/file'
 import { fromText } from '@/models/common/file'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -39,7 +39,7 @@ async function handleSvgChange(svg: string) {
   // console.log('handleSvgChange 被调用，SVG 长度:', svg?.length)
   // 用导出的 SVG 替换 costume.img
   // 继承原文件名的基础名，改后缀为 .svg
-  const name = props.costume.name.replace(/[\\/\\:*?\"<>|]/g, '-') + '.svg'
+  const name = props.costume.name.replace(/[\\/:*?"<>|]/g, '-') + '.svg'
   const file = fromText(name, svg, { type: 'image/svg+xml' })
   // console.log('创建新文件:', name, '类型:', file.type)
   

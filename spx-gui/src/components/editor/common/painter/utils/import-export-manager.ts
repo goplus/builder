@@ -160,7 +160,6 @@ export class ImportExportManager {
 async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promise<boolean> {
   const {
       clearCanvas = false,
-      position = 'center', 
       updatePaths = true,
       triggerExport = true
   } = options;
@@ -201,13 +200,11 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
       });
 
       importedItem.fitBounds(targetBounds);
-        console.log('importedItem',importedItem)
 
       // 收集可编辑路径
       if (updatePaths) {
           this.collectPathsFromImport(importedItem);
       }
-        console.log('updatePaths',updatePaths)
 
       paper.view.update();
 
@@ -302,7 +299,9 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
           isSvg = true
           content = await blob.text()
         }
-      } catch {}
+      } catch {
+        //暂时无需处理
+      }
 
       // 方法2: 通过响应头判断
       if (!isSvg) {
@@ -321,7 +320,9 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
             isSvg = true
             content = text
           }
-        } catch {}
+        } catch {
+          //暂时无需处理
+        }
       }
 
       // 根据类型导入

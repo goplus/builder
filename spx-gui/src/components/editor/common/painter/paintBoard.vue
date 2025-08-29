@@ -7,8 +7,8 @@
         <div class="tool-grid">
           <button 
             :class="['tool-btn', { active: currentTool === 'line' }]"
-            @click="selectTool('line')"
             :title="$t({ en: 'Line Tool', zh: '直线工具' })"
+            @click="selectTool('line')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="7" y1="17" x2="17" y2="7"></line>
@@ -18,8 +18,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'brush' }]"
-            @click="selectTool('brush')"
             :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
+            @click="selectTool('brush')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
@@ -30,8 +30,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'reshape' }]"
-            @click="selectTool('reshape')"
             :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
+            @click="selectTool('reshape')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
@@ -42,8 +42,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'eraser' }]"
-            @click="selectTool('eraser')"
             :title="$t({ en: 'Eraser Tool', zh: '橡皮工具' })"
+            @click="selectTool('eraser')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
@@ -55,8 +55,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'rectangle' }]"
-            @click="selectTool('rectangle')"
             :title="$t({ en: 'Rectangle Tool', zh: '矩形工具' })"
+            @click="selectTool('rectangle')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect width="18" height="12" x="3" y="6" rx="2"></rect>
@@ -66,8 +66,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'circle' }]"
-            @click="selectTool('circle')"
             :title="$t({ en: 'Circle Tool', zh: '圆形工具' })"
+            @click="selectTool('circle')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="9"></circle>
@@ -77,8 +77,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'fill' }]"
-            @click="selectTool('fill')"
             :title="$t({ en: 'Fill Tool', zh: '填充颜色工具' })"
+            @click="selectTool('fill')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 12l2 2 4-4"></path>
@@ -92,8 +92,8 @@
           
           <button 
             :class="['tool-btn', { active: currentTool === 'text' }]"
-            @click="selectTool('text')"
             :title="$t({ en: 'Text Tool', zh: '插入文本工具' })"
+            @click="selectTool('text')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 7V4h16v3"></path>
@@ -107,7 +107,7 @@
       
       <div class="tool-section">
         <h3 class="tool-title">{{ $t({ en: 'AI Tools', zh: 'AI工具' }) }}</h3>
-        <button class="tool-btn ai-btn" @click="showAiDialog" :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })">
+        <button class="tool-btn ai-btn" :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })" @click="showAiDialog">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 12l2 2 4-4"></path>
             <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
@@ -125,7 +125,7 @@
       
       <div class="tool-section">
         <h3 class="tool-title">{{ $t({ en: 'Actions', zh: '操作' }) }}</h3>
-        <button class="tool-btn action-btn" @click="clearCanvas" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })">
+        <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3,6 5,6 21,6"></polyline>
             <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
@@ -222,13 +222,13 @@ import { ref, onMounted, onUnmounted, watch, provide } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
-import Reshape from './components/reshape.vue'
+import Reshape from './components/reshape_tool.vue'
 import EraserTool from './components/eraser_tool.vue'
 import RectangleTool from './components/rectangle_tool.vue'
 import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
-import AiGenerate from './components/aigc/generator.vue'
+import AiGenerate from './components/aigc/aigcGenerator.vue'
 import { canvasEventDelegator,type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 
@@ -286,7 +286,6 @@ const selectTool = (tool: ToolType): void => {
 }
 
 const handleCanvasClick = (event: MouseEvent): void => {
-  console.log('handleCanvasClick')
   canvasEventDelegator.delegateClick(event, canvasRef.value)
 }
 const handleMouseDown = (event: MouseEvent): void => {
@@ -383,8 +382,7 @@ const handleAiConfirm = async (data: {
   url?: string; 
   svgContent?: string;
 }): Promise<void> => {
-  console.log('AI生成确认:', data)
-  console.log('data.url', data.url)
+
   
   if (data.svgContent) {
     await importSvgFromPicgcToCanvas(data.svgContent)
@@ -400,18 +398,18 @@ const handleAiCancel = (): void => {
 }
 
 // 导入PNG图片到画布
-const importImageToCanvas = async (imageUrl: string): Promise<void> => {
-  if (importExportManager) {
-    await importExportManager.importImage(imageUrl)
-  }
-}
+// const importImageToCanvas = async (imageUrl: string): Promise<void> => {
+//   if (importExportManager) {
+//     await importExportManager.importImage(imageUrl)
+//   }
+// }
 
 // 导入SVG到画布并转换为可编辑的路径
-const importSvgToCanvas = async (svgContent: string): Promise<void> => {
-  if (importExportManager) {
-    await importExportManager.importSvg(svgContent)
-  }
-}
+// const importSvgToCanvas = async (svgContent: string): Promise<void> => {
+//   if (importExportManager) {
+//     await importExportManager.importSvg(svgContent)
+//   }
+// }
 //aigc导入svg
 const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => {
   if (importExportManager) {

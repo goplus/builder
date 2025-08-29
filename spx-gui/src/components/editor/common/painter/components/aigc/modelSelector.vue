@@ -22,8 +22,8 @@
             <button 
               v-if="loadingState.hasError" 
               class="retry-btn" 
-              @click="retryLoadModels"
               :disabled="loadingState.isLoading"
+              @click="retryLoadModels"
             >
               {{ loadingState.isLoading ? '加载中...' : '重试' }}
             </button>
@@ -49,8 +49,8 @@
           
           <!-- 模型列表 -->
           <div 
-            v-else
             v-for="model in models" 
+            v-else
             :key="model.id"
             class="model-item"
             :class="{ active: prevSelectedModel?.id === model.id }"

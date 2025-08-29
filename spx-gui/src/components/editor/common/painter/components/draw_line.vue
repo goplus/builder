@@ -50,7 +50,7 @@ const startPoint = ref<Point | null>(null)
 const previewPoint = ref<Point>({ x: 0, y: 0 })
 
 //注入父组件接口
-import { inject, type Ref } from 'vue'  
+import { inject } from 'vue'  
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!

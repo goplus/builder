@@ -3,9 +3,7 @@
  */
 
 import { apiBaseUrl } from '@/utils/env'
-import { File, toText } from '@/models/common/file'
-import { useFileUrl } from '@/utils/file'
-import { ref, watch } from 'vue'
+import { toText } from '@/models/common/file'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 /** Image generation model types */
@@ -152,9 +150,9 @@ export async function generateSvgDirect(
   
 
   // 这个数组的每个元素都是由上面的 kodo 链接转换得到的 blob 链接
-  let svgContents: {blob: string, svgContent: string}[] = []
+  const svgContents: {blob: string, svgContent: string}[] = []
   for (let index = 0; index < imageUrls.length; index++) {
-    let s = imageUrls[index]
+    const s = imageUrls[index]
     // 假设 s 是 kodo 链接
     const result = await convertKodoUrlToBlobUrl(s)
     svgContents.push({
@@ -162,7 +160,6 @@ export async function generateSvgDirect(
       svgContent: result.svgContent
     })
   }
-  console.log('svgContents',svgContents)
 
   return {
     svgContents:svgContents,

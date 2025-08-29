@@ -26,7 +26,7 @@ const isDrawing = ref<boolean>(false)
 const currentPath = ref<paper.Path | null>(null)
 
 //注入父组件接口
-import { inject, type Ref } from 'vue'  
+import { inject } from 'vue'  
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
@@ -64,7 +64,7 @@ const handleMouseDrag = (point: Point): void => {
 }
 
 // 处理鼠标释放
-const handleMouseUp = (point: Point): void => {
+const handleMouseUp = (): void => {
   if (!props.isActive || !isDrawing.value) return
   
   // 完成当前路径绘制

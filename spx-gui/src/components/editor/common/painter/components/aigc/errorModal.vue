@@ -109,8 +109,6 @@ const errorMessage = computed(() => {
         return 'Image generation failed, please try again later'
     }
   }
-  console.log($t)
-  console.log(props.errorType)
   // 根据错误类型返回对应的错误信息
   switch (props.errorType) {
     case 'timeout':
