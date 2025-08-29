@@ -153,7 +153,7 @@ export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   return [urlRef, loadingRef] as const
 }
 
-/** 
+/**
  * Get url for File with smooth transition (no flickering)
  * This version keeps the old URL until the new one is ready
  */

@@ -3,7 +3,6 @@
     <img v-if="src" :src="src" :style="imgElStyle" />
     <UILoading :visible="loading" cover :mask="false" />
   </div>
-  
 </template>
 
 <script setup lang="ts">
