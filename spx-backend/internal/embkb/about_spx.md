@@ -157,7 +157,33 @@ You MUST follow these IMPORTANT guidelines:
 	}
 	```
 
-* Use `broadcast`/`onMsg` to communicate between sprites & the stage, instead of directly calling functions of other sprites.
+* Access a sprite instance by name via a pre-defined global variable.
+
+	For example, if you have a sprite named `Player`, you can reference it directly from the stage or any other sprite:
+
+	```spx
+	onStart => {
+		// You don't need to define the variable `Player` in your code, it's done by the engine
+		println "Position of Player: " + Player.xpos + ", " + Player.ypos
+		Player.step 100
+	}
+	```
+
+* Use `broadcast`/`onMsg` to decouple interactions between sprites & stage.
+
+	Though we can directly call methods on other sprites, using `broadcast` and `onMsg` promotes better separation of concerns and makes the code more maintainable. Here's an example:
+
+	```spx
+	// Code of Sprite A
+	onClick => {
+		broadcast "a-clicked"
+	}
+
+	// Code of Sprite B
+	onMsg "a-clicked", => {
+		say "Sprite A was clicked"
+	}
+	```
 
 * Prefer higher-level APIs over low-level APIs
 
@@ -175,4 +201,3 @@ You MUST follow these IMPORTANT guidelines:
 * Costume 造型
 * Widget 控件
 * Monitor 监视器
-

@@ -140,7 +140,7 @@ export const die: DefinitionDocumentationItem = {
   insertSnippet: 'die',
   overview: 'die',
   detail: makeBasicMarkdownString({
-    en: 'Let the sprite die. Animation for state "die" will be played.',
+    en: 'Let the sprite die. Animation for state "die" will be played',
     zh: '让精灵死亡，自动播放“死亡”状态的动画'
   })
 }
@@ -534,7 +534,7 @@ export const step2: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['distance', 'speed', 'animation'],
   overview: 'step distance, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading with given distance, speed and animation.',
+    en: 'Step toward current heading with given distance, speed and animation',
     zh: '向前行走，并指定距离、速度和动画'
   })
 }
