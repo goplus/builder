@@ -20,3 +20,7 @@ go.work
 
 .idea/
 *.wasm
+
+# Claude相关文件
+CLAUDE.md
+**/CLAUDE.md

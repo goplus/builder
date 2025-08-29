@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"bytes"
 	"context"
+	"crypto/md5"
 	"errors"
+	"fmt"
 	_ "image/png"
 	"strconv"
 	"time"
@@ -12,12 +15,15 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/svggen"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
+	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
 	"gorm.io/gorm"
 )
 
@@ -34,6 +40,7 @@ type Controller struct {
 	workflow      *workflow.Workflow
 	aiInteraction *aiinteraction.AIInteraction
 	aigc          *aigc.AigcClient
+	svggen        *svggen.ServiceManager
 }
 
 // New creates a new controller.
@@ -64,6 +71,11 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
 
+	// Initialize SVG generation service manager
+	svggenManager := svggen.NewServiceManager(cfg, log.GetLogger())
+	// Set copilot instance for OpenAI services
+	svggenManager.SetCopilot(cpt)
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoClient,
@@ -71,6 +83,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		workflow:      stdflow,
 		aiInteraction: aiInteraction,
 		aigc:          aigcClient,
+		svggen:        svggenManager,
 	}, nil
 }
 
@@ -196,6 +209,70 @@ func newKodoClient(cfg config.KodoConfig) *kodoClient {
 		bucketRegion: cfg.BucketRegion,
 		baseUrl:      cfg.BaseURL,
 	}
+}
+
+// UploadFileResult represents the result of a file upload to Kodo.
+type UploadFileResult struct {
+	Key      string `json:"key"`      // File key in the bucket
+	Hash     string `json:"hash"`     // File hash
+	Size     int64  `json:"size"`     // File size in bytes
+	KodoURL  string `json:"kodo_url"` // Internal kodo:// URL
+}
+
+// UploadFile uploads file content to Kodo storage.
+func (k *kodoClient) UploadFile(ctx context.Context, data []byte, filename string) (*UploadFileResult, error) {
+	// Generate file key with prefix
+	hash := fmt.Sprintf("%x", md5.Sum(data))
+	key := fmt.Sprintf("ai-generated/%s-%s", hash[:8], filename)
+	
+	// Create upload policy
+	putPolicy := qiniuStorage.PutPolicy{
+		Scope: k.bucket,
+	}
+	
+	// Generate upload token
+	upToken := putPolicy.UploadToken(k.cred)
+	
+	// Configure upload settings
+	cfg := qiniuStorage.Config{}
+	// Use specified region if available
+	if k.bucketRegion != "" {
+		// Map region names to Qiniu regions (this might need adjustment based on actual region names)
+		switch k.bucketRegion {
+		case "z0", "cn-east-1":
+			cfg.Zone = &qiniuStorage.ZoneHuadong
+		case "z1", "cn-north-1":
+			cfg.Zone = &qiniuStorage.ZoneHuabei
+		case "z2", "cn-south-1":
+			cfg.Zone = &qiniuStorage.ZoneHuanan
+		case "na0", "us-north-1":
+			cfg.Zone = &qiniuStorage.ZoneBeimei
+		case "as0", "ap-southeast-1":
+			cfg.Zone = &qiniuStorage.ZoneXinjiapo
+		}
+	}
+	cfg.UseHTTPS = true
+	cfg.UseCdnDomains = false
+	
+	// Create form uploader
+	formUploader := qiniuStorage.NewFormUploader(&cfg)
+	
+	// Upload file
+	ret := qiniuStorage.PutRet{}
+	err := formUploader.Put(ctx, &ret, upToken, key, bytes.NewReader(data), int64(len(data)), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload file to Kodo: %w", err)
+	}
+	
+	// Generate kodo:// URL
+	kodoURL := fmt.Sprintf("kodo://%s/%s", k.bucket, ret.Key)
+	
+	return &UploadFileResult{
+		Key:     ret.Key,
+		Hash:    ret.Hash,
+		Size:    int64(len(data)),
+		KodoURL: kodoURL,
+	}, nil
 }
 
 // ModelDTO is the data transfer object for models.
