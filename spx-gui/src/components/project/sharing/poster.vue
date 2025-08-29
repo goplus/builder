@@ -5,6 +5,8 @@ import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
 import logo from './logos/XBuilderLogo.svg'
 import PosterBackground from './postBackground.jpg'
+import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { useExternalUrl } from '@/utils/utils'
 
 const props = defineProps<{
   img?: File
