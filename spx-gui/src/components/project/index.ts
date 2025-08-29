@@ -7,6 +7,7 @@ import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
+import ProjectDirectSharing from './sharing/ProjectDirectSharing.vue'
 /**
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
@@ -60,7 +61,7 @@ export function useRemoveProject() {
 }
 
 export function useShareProject() {
-  const modal = useModal(ProjectSharingLinkModal)
+  const modal = useModal(ProjectDirectSharing)
 
   return async function shareProject(owner: string, name: string) {
     await modal({ owner, name })
