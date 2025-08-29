@@ -30,8 +30,17 @@
           {{ $t({ en: 'Copy', zh: '复制' }) }}
         </UIButton>
       </div>
-      <PlatformSelector @change="handlePlatformChange" />
-      <div class="qrcode">
+      <PlatformSelector v-model="selectedPlatform" @change="handlePlatformChange" />
+      <div v-if="!selectedPlatform?.shareType.supportURL" class="share-content-row">
+        <Poster
+          ref="posterCompRef"
+          :img="props.projectData.thumbnail" 
+          :project-data="props.projectData"/>
+        <div class="qrcode side">
+          <img :src="qrcodeURL" alt="QR Code"/>
+        </div>
+      </div>
+      <div v-else class="qrcode">
         <img :src="qrcodeURL" alt="QR Code"/>
       </div>
     </UIFormModal>
@@ -39,16 +48,17 @@
   
 <script setup lang="ts">
   import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
-  import PlatformSelector from './platformSelector.vue'
   import { useMessageHandle } from '@/utils/exception'
-  import { computed, ref } from 'vue'
   import { getProjectShareRoute } from '@/router'
+  import { computed, ref } from 'vue'
   import type { PlatformConfig } from './platformShare'
+  import type { ProjectData } from '@/apis/project'
+  import PlatformSelector from './platformSelector.vue'
+  import Poster from './poster.vue'
   import QRCode from 'qrcode'
 
   const props = defineProps<{
-    owner: string
-    name: string
+    projectData: ProjectData    
     visible: boolean
   }>()
   
@@ -56,9 +66,13 @@
     cancelled: []
     resolved: []
   }>()
+
+  // 组件引用
+  const posterCompRef = ref<InstanceType<typeof Poster>>()
   
   const projectSharingLink = computed(() => {
-    return `${location.origin}${getProjectShareRoute(props.owner, props.name)}`
+    console.log("projectSharingLink", props.projectData)
+    return `${location.origin}${getProjectShareRoute(props.projectData.owner, props.projectData.name)}`
   })
   
   const handleCopy = useMessageHandle(
@@ -168,6 +182,19 @@
   .qrcode img {
     width: 100px;
     height: 100px;
+  }
+
+  .share-content-row {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  .qrcode.side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
   
