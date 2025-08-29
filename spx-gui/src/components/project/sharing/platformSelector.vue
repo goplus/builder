@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, defineEmits, onMounted } from 'vue'
+    import { ref, defineEmits, onMounted, defineProps, watch } from 'vue'
     import { SocialPlatformConfigs, type PlatformConfig } from "./platformShare"
     import qqIcon from './logos/qq.svg'
     import wechatIcon from './logos/微信.svg'
@@ -7,15 +7,22 @@
     import xiaohongshuIcon from './logos/小红书.svg'
     import bilibiliIcon from './logos/bilibili.svg'
 
+    const props = defineProps<{
+        modelValue?: PlatformConfig
+    }>()
+
     const emit = defineEmits<{
         /** 平台选择变化事件 */
         'change': [platform: PlatformConfig]
+        /** v-model 更新 */
+        'update:modelValue': [platform: PlatformConfig]
     }>()
 
-    const selectedPlatform = ref<PlatformConfig>(SocialPlatformConfigs[0])
+    const selectedPlatform = ref<PlatformConfig>(props.modelValue ?? SocialPlatformConfigs[0])
 
     const handlePlatformChange = (platform: PlatformConfig) => {
         selectedPlatform.value = platform
+        emit('update:modelValue', platform)
         emit('change', platform)
     }
 
@@ -23,8 +30,19 @@
 
     // 初次加载时，将默认选择的平台传递给父组件
     onMounted(() => {
+        emit('update:modelValue', selectedPlatform.value)
         emit('change', selectedPlatform.value)
     })
+
+    // 监听父组件传入的值，保持同步
+    watch(
+        () => props.modelValue,
+        (val) => {
+            if (val && val.basicInfo.name !== selectedPlatform.value.basicInfo.name) {
+                selectedPlatform.value = val
+            }
+        }
+    )
 </script>
 
 <template>

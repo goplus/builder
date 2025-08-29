@@ -47,6 +47,12 @@ export interface PlatformConfig {
  */
 const platformUrl = 'https://example.com'
 
+declare global {
+    interface Window {
+        mqq: any
+    }
+}
+
 /**
  * QQ平台实现
  */
@@ -65,6 +71,13 @@ class QQPlatform implements PlatformConfig {
     
     shareFunction = {
         shareURL: async (url: string) => {
+
+            window.mqq.invoke("data","setShareInfo", {
+                share_url: url,
+                title: 'H5应用',
+                desc: 'H5开放平台',
+                image_url: 'http://i.gtimg.cn/open/app_icon/05/58/35/77/1105583577_100_m.png'
+            });
             return `url:${url}`
         },
         shareImage: async (image: File) => {
@@ -170,6 +183,6 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
     new QQPlatform(),
     new WeChatPlatform(),
     new DouyinPlatform(),
-    new BilibiliPlatform(),
     new XiaohongshuPlatform(), 
+    new BilibiliPlatform(),
 ]
