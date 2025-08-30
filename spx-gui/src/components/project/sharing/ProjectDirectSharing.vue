@@ -34,7 +34,6 @@
       <div v-if="!selectedPlatform?.shareType.supportURL" class="share-content-row">
         <Poster
           ref="posterCompRef"
-          :img="props.projectData.thumbnail" 
           :project-data="props.projectData"/>
         <div class="qrcode side">
           <img :src="qrcodeURL" alt="QR Code"/>
@@ -81,7 +80,7 @@
     { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
   )
   
-  const selectedPlatform = ref<PlatformConfig | null>(null)
+  const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 
   const qrcodeURL = ref<string>('')
 
