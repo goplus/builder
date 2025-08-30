@@ -17,14 +17,38 @@ const projectUrlQRCode = computed(() =>
     `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(window.location.href)}`
 )
 
-const imgUrl = computed(() => {
+// 处理用户上传的图片
+const uploadedImgUrl = computed(() => {
     if (props.img && props.img instanceof File) {
         return URL.createObjectURL(props.img)
     }
-    if (props.projectData.thumbnail){
-        console.log('拿到缩略图')
-        return props.projectData.thumbnail
+    return null
+})
+
+// 处理项目缩略图
+const thumbnailWebUrl = ref<string | null>(null)
+watch(() => props.projectData.thumbnail, async (thumbnail) => {
+    if (thumbnail) {
+        console.log('拿到缩略图:', thumbnail)
+        try {
+            // 将 kodo:// URL 转换为可用的 HTTP URL
+            const webUrl = await universalUrlToWebUrl(thumbnail)
+            thumbnailWebUrl.value = webUrl
+        } catch (error) {
+            console.error('转换缩略图URL失败:', error)
+            thumbnailWebUrl.value = null
+        }
+    } else {
+        thumbnailWebUrl.value = null
     }
+}, { immediate: true })
+
+// 使用 useExternalUrl 处理跨域图片
+const safeImgUrl = useExternalUrl(thumbnailWebUrl)
+
+// 最终的图片URL
+const imgUrl = computed(() => {
+    return uploadedImgUrl.value || safeImgUrl.value || ''
 })
 
 const posterElementRef = ref<HTMLElement>()
@@ -174,7 +198,7 @@ defineExpose({
 <template>
     <div ref="posterElementRef" class="poster-background">
         <div class="screenshot-area">
-            <img v-if="props.img || props.projectData.thumbnail" :src="imgUrl" :alt="props.projectData.name" class="screenshot-image"/>
+            <img v-if="imgUrl" :src="imgUrl" :alt="props.projectData.name" class="screenshot-image"/>
             <div v-else class="screenshot-placeholder">
                 <UIIcon type="file" />
                 <span>{{ $t({ en: 'No Image', zh: '暂无截屏'}) }}</span>
