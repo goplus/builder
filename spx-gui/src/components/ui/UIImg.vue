@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UILoading from './loading/UILoading.vue'
+import { useExternalUrl } from '@/utils/utils'
 
 const props = withDefaults(
   defineProps<{
@@ -20,11 +21,15 @@ const props = withDefaults(
     size: 'contain'
   }
 )
+
+// 使用 useExternalUrl 处理跨域图片
+const safeImgUrl = useExternalUrl(() => props.src)
+
 const imgStyle = computed(() =>
-  props.src == null
+  safeImgUrl.value == null
     ? null
     : {
-        backgroundImage: `url("${props.src}")`,
+        backgroundImage: `url("${safeImgUrl.value}")`,
         backgroundSize: props.size
       }
 )

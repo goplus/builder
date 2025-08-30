@@ -123,21 +123,36 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
       // 设置高分辨率渲染
       ctx.scale(pixelRatio, pixelRatio)
       
-      const img = new window.Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        // 清除canvas
-        ctx.clearRect(0, 0, displayWidth, displayHeight)
+      try {
+        // 使用 fetch 获取图片以绕过 COEP 限制
+        const response = await fetch(qrCodeUrl)
+        const blob = await response.blob()
+        const objectUrl = URL.createObjectURL(blob)
         
-        // 计算居中位置
-        const imgSize = Math.min(displayWidth, displayHeight)
-        const x = (displayWidth - imgSize) / 2
-        const y = (displayHeight - imgSize) / 2
-        
-        // 绘制二维码
-        ctx.drawImage(img, x, y, imgSize, imgSize)
+        const img = new window.Image()
+        img.onload = () => {
+          // 清除canvas
+          ctx.clearRect(0, 0, displayWidth, displayHeight)
+          
+          // 计算居中位置
+          const imgSize = Math.min(displayWidth, displayHeight)
+          const x = (displayWidth - imgSize) / 2
+          const y = (displayHeight - imgSize) / 2
+          
+          // 绘制二维码
+          ctx.drawImage(img, x, y, imgSize, imgSize)
+          
+          // 清理 objectUrl
+          URL.revokeObjectURL(objectUrl)
+        }
+        img.onerror = () => {
+          console.error('Failed to load QR code image')
+          URL.revokeObjectURL(objectUrl)
+        }
+        img.src = objectUrl
+      } catch (error) {
+        console.error('Failed to fetch QR code:', error)
       }
-      img.src = qrCodeUrl
     }
   } catch (error) {
     console.error('生成二维码失败:', error)

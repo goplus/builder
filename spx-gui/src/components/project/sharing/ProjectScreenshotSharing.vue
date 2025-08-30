@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits, watch, nextTick } from 'vue'
+import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted } from 'vue'
 import Poster from './poster.vue'
 import PlatformSelector from './platformSelector.vue'
 import type { ProjectData } from '@/apis/project'
@@ -24,6 +24,19 @@ const selectedPlatform = ref<PlatformConfig | null>(null)
 const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
 const isGeneratingQR = ref(false)
+
+// 清理 object URLs
+const createdObjectUrls = new Set<string>()
+
+onUnmounted(() => {
+    // 清理所有创建的 object URLs
+    createdObjectUrls.forEach(url => {
+        if (url.startsWith('blob:')) {
+            URL.revokeObjectURL(url)
+        }
+    })
+    createdObjectUrls.clear()
+})
 
 // 处理平台选择变化
 function handlePlatformChange(platform: PlatformConfig) {
@@ -67,7 +80,18 @@ async function generateShareQRCode() {
         
         // 生成二维码
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shareUrl)}&margin=3`
-        qrCodeData.value = qrCodeUrl
+        
+        try {
+            // 使用 fetch 获取二维码图片以绕过 COEP 限制
+            const response = await fetch(qrCodeUrl)
+            const blob = await response.blob()
+            const objectUrl = URL.createObjectURL(blob)
+            createdObjectUrls.add(objectUrl)
+            qrCodeData.value = objectUrl
+        } catch (error) {
+            console.error('获取二维码图片失败:', error)
+            qrCodeData.value = qrCodeUrl // 回退到原始URL
+        }
 
         console.log(`${platform.basicInfo.label.zh}分享二维码已生成`)
     } catch (error) {

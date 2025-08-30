@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits } from 'vue'
+import { useExternalUrl } from '@/utils/utils'
 // TODO: 暂时注释掉，等 platformShare 模块修复后再启用
 // import { directShare, shareVideo, SocialPlatformConfigs } from './platformShare'
 // import platformSelector from './platformSelector.vue'
@@ -124,9 +125,12 @@ async function handleShareRecording(): Promise<void> {
     emit('resolved', { type: 'shared', platform: selectedPlatformKey.value })
 }
 
-const JumpUrlQRCode = computed(() =>
+// 使用 useExternalUrl 处理二维码图片的跨域问题
+const qrCodeUrl = computed(() =>
     `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(jumpUrl.value)}`
 )
+
+const JumpUrlQRCode = useExternalUrl(qrCodeUrl)
 </script>
 
 <template>
