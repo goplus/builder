@@ -1,0 +1,30 @@
+# SPX Algorithm - 重构后的依赖文件
+
+# Web框架
+Flask>=2.3.0
+Werkzeug>=2.3.0
+
+# 深度学习和图像处理
+torch>=2.0.0
+open_clip_torch>=2.20.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# HTTP请求和SVG处理
+requests>=2.31.0
+cairosvg>=2.7.0
+
+# 向量数据库
+pymilvus>=2.3.0
+
+# 配置管理和环境变量
+python-dotenv>=1.0.0
+
+# 生产部署
+gunicorn>=21.2.0
+
+# 开发和测试（可选）
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# flake8>=6.0.0
+# black>=23.0.0
