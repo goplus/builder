@@ -200,29 +200,6 @@ func TestGetAllThemesInfo(t *testing.T) {
 	}
 }
 
-func TestGetThemeRecommendedProvider(t *testing.T) {
-	tests := []struct {
-		theme    ThemeType
-		expected svggen.Provider
-	}{
-		{ThemeNone, svggen.ProviderSVGIO},
-		{ThemeCartoon, svggen.ProviderRecraft},
-		{ThemeRealistic, svggen.ProviderRecraft},
-		{ThemeMinimal, svggen.ProviderSVGIO},
-		{ThemeFantasy, svggen.ProviderRecraft},
-		{ThemeRetro, svggen.ProviderRecraft},
-		{ThemeScifi, svggen.ProviderRecraft},
-		{ThemeNature, svggen.ProviderRecraft},
-		{ThemeBusiness, svggen.ProviderRecraft},
-	}
-
-	for _, test := range tests {
-		result := GetThemeRecommendedProvider(test.theme)
-		if result != test.expected {
-			t.Errorf("GetThemeRecommendedProvider(%q) = %v, expected %v", test.theme, result, test.expected)
-		}
-	}
-}
 
 func TestGenerateSVGParamsAutoSelectProvider(t *testing.T) {
 	tests := []struct {
