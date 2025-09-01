@@ -2,11 +2,6 @@
  * 直接分享组件
 */
 // 导入必要的类型和函数
-<!--
- * @FileDescription: 实现截屏分享弹窗管理
- * @Author: ceilf6
- * @Date: 2025.9.1
- -->
 import { PlatformConfig } from "./platformShare"
 import Poster from "./poster"
 import { defineProps, ref } from "vue"
