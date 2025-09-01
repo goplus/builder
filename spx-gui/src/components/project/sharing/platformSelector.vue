@@ -12,9 +12,7 @@
     }>()
 
     const emit = defineEmits<{
-        /** 平台选择变化事件 */
-        'change': [platform: PlatformConfig]
-        /** v-model 更新 */
+        /** v-model 更新（平台选择变化） */
         'update:modelValue': [platform: PlatformConfig]
     }>()
 
@@ -23,7 +21,6 @@
     const handlePlatformChange = (platform: PlatformConfig) => {
         selectedPlatform.value = platform
         emit('update:modelValue', platform)
-        emit('change', platform)
     }
 
     const socialPlatforms = ref<PlatformConfig[]>(SocialPlatformConfigs)
@@ -31,7 +28,6 @@
     // 初次加载时，将默认选择的平台传递给父组件
     onMounted(() => {
         emit('update:modelValue', selectedPlatform.value)
-        emit('change', selectedPlatform.value)
     })
 
     // 监听父组件传入的值，保持同步
