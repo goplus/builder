@@ -28,6 +28,7 @@ type ThemeInfo struct {
 	Description         string          `json:"description"`
 	Prompt              string          `json:"prompt"`
 	RecommendedProvider svggen.Provider `json:"recommended_provider"`
+	PreviewURL          string          `json:"preview_url"`
 }
 
 // ThemePrompts maps each theme to its corresponding prompt enhancement
@@ -55,6 +56,19 @@ var ThemeNames = map[ThemeType]string{
 	ThemeBusiness:  "商务风格",
 }
 
+// ThemePreviewPrompts maps each theme to its preview generation prompt
+var ThemePreviewPrompts = map[ThemeType]string{
+	ThemeNone:      "Create a simple, clean design preview showing basic shapes and neutral colors",
+	ThemeCartoon:   "Create a colorful cartoon-style preview with bright colors, simple geometric shapes, cute characters or objects, playful and fun atmosphere",
+	ThemeRealistic: "Create a realistic, detailed preview with photographic quality, fine details, natural lighting, professional high-quality rendering",
+	ThemeMinimal:   "Create a minimalist preview with clean lines, geometric shapes, lots of white space, limited color palette (black, white, or single accent color)",
+	ThemeFantasy:   "Create a fantasy-themed preview with magical elements, mystical creatures, enchanted atmosphere, dreamy colors and supernatural effects",
+	ThemeRetro:     "Create a retro/vintage preview with classic design elements, nostalgic color schemes, old-fashioned aesthetics, vintage typography or patterns",
+	ThemeScifi:     "Create a sci-fi preview with futuristic elements, neon colors, metallic surfaces, technological devices, space or cyberpunk atmosphere",
+	ThemeNature:    "Create a nature-themed preview with organic elements, plants, natural textures, earth tones and green colors, outdoor scenery",
+	ThemeBusiness:  "Create a professional business preview with modern corporate design, clean professional aesthetics, business icons or charts",
+}
+
 // ThemeDescriptions maps each theme to its description
 var ThemeDescriptions = map[ThemeType]string{
 	ThemeNone:      "不应用任何特定主题风格",
@@ -70,7 +84,7 @@ var ThemeDescriptions = map[ThemeType]string{
 
 // ThemeProviders maps each theme to its recommended provider
 var ThemeProviders = map[ThemeType]svggen.Provider{
-	ThemeNone:      svggen.ProviderSVGIO,   // Default provider
+	ThemeNone:      svggen.ProviderOpenAI,   // Default provider
 	ThemeCartoon:   svggen.ProviderRecraft, // Recraft excels at cartoon styles
 	ThemeRealistic: svggen.ProviderRecraft, // Recraft is good for realistic styles
 	ThemeMinimal:   svggen.ProviderSVGIO,   // SVGIO works well for minimal styles
@@ -135,6 +149,27 @@ func GetAvailableThemes() []ThemeType {
 	}
 }
 
+// ThemePreviewURLs maps each theme to its preview image URL
+var ThemePreviewURLs = map[ThemeType]string{
+	ThemeNone:      "kodo://goplus-builder-usercontent-test/files/d39c908e01500cc777fbc98be99eae4e-54273.jpg",
+	ThemeCartoon:   "kodo://goplus-builder-usercontent-test/files/0a5812620550338caed6c6f3d7cc858d-89145.svg",
+	ThemeRealistic: "kodo://goplus-builder-usercontent-test/files/f11ef23e709f1e23f7aafb2a04923208-336687.svg",
+	ThemeMinimal:   "kodo://goplus-builder-usercontent-test/files/9fa5c9b82e17d9833934dae6e233a13c-56750.svg",
+	ThemeFantasy:   "kodo://goplus-builder-usercontent-test/files/0e21bf8fed236c7d9d3fe0f472429629-153495.svg",
+	ThemeRetro:     "kodo://goplus-builder-usercontent-test/files/0185cc215cb268378e2a67427ad854a1-180335.jpg",
+	ThemeScifi:     "kodo://goplus-builder-usercontent-test/files/58cdec62945556dc327dfc8117ea1ab9-142801.jpg",
+	ThemeNature:    "kodo://goplus-builder-usercontent-test/files/cd7768e5fb3ef6f0bd2e2125f9298da7-181247.jpg",
+	ThemeBusiness:  "kodo://goplus-builder-usercontent-test/files/9918818066ba6ad7478a5f79870adad2-122571.jpg",
+}
+
+// GetThemePreviewURL returns the preview image URL for a specific theme
+func GetThemePreviewURL(theme ThemeType) string {
+	if url, exists := ThemePreviewURLs[theme]; exists {
+		return url
+	}
+	return "https://img.recraft.ai/FalrtQiAGrRlsDJ8wugqlVoQPHL1eSLsaZhy0AHTuB4/rs:fit:1024:1024:0/raw:1/plain/abs://external/images/bfd6dd23-a744-409e-931d-b8c38409fa41" // Default fallback
+}
+
 // GetThemeInfo returns detailed information for a specific theme
 func GetThemeInfo(theme ThemeType) ThemeInfo {
 	return ThemeInfo{
@@ -143,6 +178,7 @@ func GetThemeInfo(theme ThemeType) ThemeInfo {
 		Description:         ThemeDescriptions[theme],
 		Prompt:              ThemePrompts[theme],
 		RecommendedProvider: GetThemeRecommendedProvider(theme),
+		PreviewURL:          GetThemePreviewURL(theme),
 	}
 }
 
