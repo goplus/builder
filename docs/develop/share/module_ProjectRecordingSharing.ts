@@ -1,3 +1,8 @@
+<!--
+ * @FileDescription: 实现录屏分享弹窗管理
+ * @Author: ceilf6
+ * @Date: 2025.9.1
+ -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import { directShare, shareVideo, SocialPlatformConfigs } from './platformShare'
 import type { RecordData } from './module_RecordingApis'
