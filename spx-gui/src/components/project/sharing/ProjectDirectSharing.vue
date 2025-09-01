@@ -36,7 +36,11 @@
         ref="posterCompRef"
         :project-data="props.projectData"/>
       <div class="qrcode side">
-        <img :src="qrcodeURL" alt="QR Code"/>
+        <img v-if="qrcodeURL" :src="qrcodeURL" alt="QR Code"/>
+        <div v-else class="unsupported-container">
+          <img :src="unsupport" alt="Unsupport"/>
+          <span class="unsupported-text">{{ $t({ en: 'Unsupported', zh: '暂不支持' }) }}</span>
+        </div>
         <button
           class="download-btn"
           @click="handleDownloadPoster"
@@ -58,6 +62,7 @@ import { getProjectShareRoute } from '@/router'
 import { computed, ref, onUnmounted } from 'vue'
 import type { PlatformConfig } from './platformShare'
 import type { ProjectData } from '@/apis/project'
+import unsupport from "./logos/暂不支持.svg"
 import PlatformSelector from './platformSelector.vue'
 import Poster from './poster.vue'
 import QRCode from 'qrcode'
@@ -137,7 +142,7 @@ const handlePlatformChange = async (platform: PlatformConfig) => {
       )
       qrcodeURL.value = url
   }
-  else {
+  else if(platform.shareType.supportImage) {
       // TODO: 如果平台不支持URL分享，可以考虑其他分享方式
       // qrcodeURL.value = platform.shareFunction.shareImage(projectSharingLink.value)
       // 生成带平台颜色的二维码
@@ -153,6 +158,9 @@ const handlePlatformChange = async (platform: PlatformConfig) => {
           }
       )
       qrcodeURL.value = url
+  }
+  else{
+    qrcodeURL.value = ''
   }
 }
 
@@ -219,5 +227,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.unsupported-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.unsupported-text {
+  font-size: 12px;
+  color: var(--ui-color-hint-2);
+  text-align: center;
 }
 </style>
