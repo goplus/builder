@@ -71,13 +71,17 @@ class QQPlatform implements PlatformConfig {
     
     shareFunction = {
         shareURL: async (url: string) => {
-
-            window.mqq.invoke("data","setShareInfo", {
-                share_url: url,
-                title: 'H5应用',
-                desc: 'H5开放平台',
-                image_url: 'http://i.gtimg.cn/open/app_icon/05/58/35/77/1105583577_100_m.png'
-            });
+            // 检查是否在 QQ 环境中
+            if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+                window.mqq.invoke("data","setShareInfo", {
+                    share_url: url,
+                    title: 'H5应用',
+                    desc: 'H5开放平台',
+                    image_url: 'http://i.gtimg.cn/open/app_icon/05/58/35/77/1105583577_100_m.png'
+                });
+            } else {
+                console.warn('QQ API not available in current environment');
+            }
             return `url:${url}`
         },
         shareImage: async (image: File) => {
