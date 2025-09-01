@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import Poster from './poster.vue'
 import PlatformSelector from './platformSelector.vue'
 import type { ProjectData } from '@/apis/project'

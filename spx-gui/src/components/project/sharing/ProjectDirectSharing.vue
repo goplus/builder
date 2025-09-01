@@ -30,7 +30,7 @@
         {{ $t({ en: 'Copy', zh: '复制' }) }}
       </UIButton>
     </div>
-    <PlatformSelector v-model="selectedPlatform" @update:modelValue="handlePlatformChange" />
+    <PlatformSelector v-model="selectedPlatform" @update:model-value="handlePlatformChange" />
     <div v-if="!selectedPlatform?.shareType.supportURL" class="share-content-row">
       <Poster
         ref="posterCompRef"
@@ -79,7 +79,6 @@ const posterCompRef = ref<InstanceType<typeof Poster>>()
 const createdObjectUrls = new Set<string>()
 
 const projectSharingLink = computed(() => {
-  console.log("projectSharingLink", props.projectData)
   return `${location.origin}${getProjectShareRoute(props.projectData.owner, props.projectData.name)}`
 })
 
@@ -118,12 +117,7 @@ const generateQRCode = async (url: string, options?: {
 
   const qrOptions = { ...defaultOptions, ...options }
 
-  try {
-    return await QRCode.toDataURL(url, qrOptions)
-  } catch (error) {
-    console.error('Failed to generate QR code:', error)
-    throw error
-  }
+  return await QRCode.toDataURL(url, qrOptions)
 }
 
 const handlePlatformChange = async (platform: PlatformConfig) => {
