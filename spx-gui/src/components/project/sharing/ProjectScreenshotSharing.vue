@@ -117,6 +117,35 @@ async function handleSharePoster(): Promise<void> {
     }
 }
 
+// 处理一键下载海报
+async function handleDownloadPoster(): Promise<void> {
+    try {
+        if (!posterCompRef.value) {
+            console.error('Poster component not ready')
+            return
+        }
+        
+        // 生成海报文件
+        const posterFile = await posterCompRef.value.createPoster()
+        
+        // 创建下载链接
+        const url = URL.createObjectURL(posterFile)
+        createdObjectUrls.add(url)
+        
+        // 创建临时下载链接并触发下载
+        const link = document.createElement('a')
+        link.href = url
+        link.download = posterFile.name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        console.log('海报下载完成')
+    } catch (error) {
+        console.error('下载海报失败:', error)
+    }
+}
+
 // 监听弹窗显示状态
 watch(() => props.visible, (newVisible) => {
     if (newVisible) {
@@ -173,10 +202,9 @@ watch(() => props.visible, (newVisible) => {
                             </div>
                             <button 
                                 class="download-btn"
-                                :disabled="!qrCodeData"
-                                @click="handleSharePoster"
+                                @click="handleDownloadPoster"
                             >
-                                {{ $t({ en: 'Generate Share', zh: '生成分享' }) }}
+                                {{ $t({ en: 'Download Poster', zh: '下载海报' }) }}
                             </button>
                         </div>
                     </div>

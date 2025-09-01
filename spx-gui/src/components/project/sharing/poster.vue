@@ -191,9 +191,15 @@ const createPoster = async (): Promise<File> => {
 
   await nextTick() // 确保 DOM 已经更新
 
+  // 获取实际元素的尺寸
+  const rect = posterElementRef.value.getBoundingClientRect()
+  
   const canvas = await html2canvas(posterElementRef.value, {
-    width: 800,
-    height: 1000
+    width: rect.width,
+    height: rect.height,
+    scale: 2, // 使用2倍缩放提高图片质量
+    useCORS: true,
+    allowTaint: true
   })
 
   const blob = await new Promise<Blob | null>((resolve) =>
@@ -260,7 +266,7 @@ defineExpose({
 <style scoped lang="scss">
 .poster-background {
   width: 300px;
-  height: 100%;
+  min-height: 400px;
   background-image: url('./postBackground.jpg');
   background-size: cover;
   background-position: center;
@@ -271,7 +277,7 @@ defineExpose({
   overflow: hidden;
   /* box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); */
   transition: all 0.3s ease;
-  max-height: 500px;
+  box-sizing: border-box;
 }
 
 .screenshot-area {
