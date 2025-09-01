@@ -55,6 +55,12 @@ defineExpose({
     if (projectRunnerRef.value && typeof projectRunnerRef.value.stopRecording === 'function') {
       return await projectRunnerRef.value.stopRecording()
     }
+  },
+  async getRecordedVideo(): Promise<File | null> {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.getRecordedVideo === 'function') {
+      return await projectRunnerRef.value.getRecordedVideo()
+    }
+    return null
   }
 })
 </script>

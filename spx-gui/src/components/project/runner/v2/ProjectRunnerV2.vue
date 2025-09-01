@@ -204,32 +204,263 @@ defineExpose({
   // 暴露录屏开始方法
   async startRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.startRecording === 'function') {
-      return win.startRecording()
+    if (!iframe) {
+      console.warn('startRecording: iframe not found')
+      throw new Error('运行环境未准备好')
     }
+    const win = iframe.contentWindow as IframeWindow
+    if (!win) {
+      console.warn('startRecording: iframe contentWindow not found')
+      throw new Error('运行环境未准备好')
+    }
+    if (typeof win.startRecording !== 'function') {
+      console.warn('startRecording: startRecording method not available in iframe')
+      throw new Error('录制功能不可用')
+    }
+    console.log('调用 iframe startRecording 方法')
+    return win.startRecording()
   },
   async stopRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (!iframe) {
+      console.warn('stopRecording: iframe not found')
+      throw new Error('运行环境未准备好')
+    }
     const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.stopRecording === 'function') {
-      return await win.stopRecording()
+    if (!win) {
+      console.warn('stopRecording: iframe contentWindow not found')
+      throw new Error('运行环境未准备好')
+    }
+    if (typeof win.stopRecording !== 'function') {
+      console.warn('stopRecording: stopRecording method not available in iframe')
+      throw new Error('录制功能不可用')
+    }
+    console.log('调用 iframe stopRecording 方法')
+    
+    try {
+      const result = await win.stopRecording()
+      console.log('stopRecording 完成:', result)
+      
+      // 等待一段时间确保录制数据准备完毕
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      return result
+    } catch (error) {
+      console.error('stopRecording 执行失败:', error)
+      throw error
     }
   },
-  async getRecordedVideo(): Promise<Blob | null> {
-    const iframe = iframeRef.value
-    if (!iframe) return null
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.getRecordedVideo === 'function') {
-      const result = win.getRecordedVideo()
-      if (result instanceof Promise) {
-        return await result
-      }
-      return result
+  async getRecordedVideo(): Promise<globalThis.File | null> {
+    const win = iframeWindowRef.value
+    if (!win) {
+      console.warn('getRecordedVideo: iframe window not available')
+      return null
     }
-    return null
+    if (typeof win.getRecordedVideo !== 'function') {
+      console.warn('getRecordedVideo: getRecordedVideo method not available in iframe')
+      return null
+    }
+    
+    try {
+      console.log('调用 iframe getRecordedVideo 方法')
+      
+      // 在 iframe 内部添加安全检查
+      const safeGetRecordedVideo = async () => {
+        try {
+          // 检查方法是否存在
+          if (typeof win.getRecordedVideo !== 'function') {
+            console.warn('getRecordedVideo 方法不存在')
+            return null
+          }
+          
+          // 添加详细的引擎状态检查
+          const godotModule = (win as any).Module
+          if (!godotModule) {
+            console.warn('Godot 引擎模块未加载')
+            return null
+          }
+          
+          console.log('引擎模块状态:', {
+            hasGetRecordedVideoBlob: typeof godotModule.getRecordedVideoBlob,
+            hasDownloadRecordedVideo: typeof godotModule.downloadRecordedVideo,
+            hasSetRecorderCanvas: typeof godotModule.setRecorderCanvas,
+            hasTryStartRecording: typeof godotModule.tryStartRecording,
+            hasTryStopRecording: typeof godotModule.tryStopRecording
+          })
+          
+          // 检查是否有录制数据可用
+          let hasData = false
+          try {
+            // 尝试通过引擎内部方法检查数据
+            if (typeof godotModule._godot_video_recorder_has_data === 'function') {
+              hasData = godotModule._godot_video_recorder_has_data() === 1
+              console.log('录制数据检查结果（内部方法）:', hasData)
+            }
+          } catch (checkError) {
+            console.warn('检查录制数据时出错:', checkError)
+          }
+          
+          // 如果没有数据，先等待一小段时间再检查
+          if (!hasData) {
+            console.log('当前没有录制数据，等待500ms后重试...')
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // 再次检查
+            try {
+              if (typeof godotModule._godot_video_recorder_has_data === 'function') {
+                hasData = godotModule._godot_video_recorder_has_data() === 1
+                console.log('等待后的录制数据检查结果:', hasData)
+              }
+            } catch (checkError) {
+              console.warn('重新检查录制数据时出错:', checkError)
+            }
+          }
+          
+          // 尝试调用原始方法
+          console.log('调用录制方法获取视频...')
+          
+          // 多重策略获取录制视频
+          let result = null
+          
+          // 策略1: 尝试直接从引擎模块获取
+          try {
+            console.log('策略1: 直接调用引擎的 getRecordedVideoBlob...')
+            const blob = godotModule.getRecordedVideoBlob()
+            if (blob && blob instanceof Blob && blob.size > 0) {
+              console.log('策略1成功: 直接获取到有效的 Blob', { size: blob.size, type: blob.type })
+              result = blob
+            } else {
+              console.log('策略1失败: 引擎返回无效数据', blob)
+            }
+          } catch (directError) {
+            console.warn('策略1失败: 直接调用引擎方法出错', directError)
+          }
+          
+          // 策略2: 如果策略1失败，等待一段时间后重试
+          if (!result) {
+            console.log('策略2: 等待1秒后重试直接调用...')
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            
+            try {
+              const blob = godotModule.getRecordedVideoBlob()
+              if (blob && blob instanceof Blob && blob.size > 0) {
+                console.log('策略2成功: 延迟获取到有效的 Blob', { size: blob.size, type: blob.type })
+                result = blob
+              } else {
+                console.log('策略2失败: 延迟后仍然无效', blob)
+              }
+            } catch (retryError) {
+              console.warn('策略2失败: 重试时出错', retryError)
+            }
+          }
+          
+          // 策略3: 如果前面都失败，尝试通过 GameApp 包装方法（但要避免原始错误）
+          if (!result) {
+            console.log('策略3: 尝试通过 GameApp 包装方法...')
+            try {
+              // 先检查 GameApp 是否有 gameApp 实例
+              const gameApp = (win as any).gameApp
+              if (gameApp && typeof gameApp.getRecordedVideo === 'function') {
+                console.log('找到 gameApp 实例，尝试调用其 getRecordedVideo 方法')
+                const appResult = gameApp.getRecordedVideo()
+                if (appResult && appResult instanceof Blob && appResult.size > 0) {
+                  console.log('策略3成功: GameApp方法获取成功', { size: appResult.size, type: appResult.type })
+                  result = appResult
+                }
+              } else {
+                console.log('gameApp 实例不可用')
+              }
+            } catch (appError) {
+              console.warn('策略3失败: GameApp方法出错', appError)
+            }
+          }
+          
+          // 策略4: 最后尝试原始的 win.getRecordedVideo()（如果其他都失败）
+          if (!result) {
+            console.log('策略4: 最后尝试原始的 win.getRecordedVideo()...')
+            try {
+              result = win.getRecordedVideo()
+            } catch (originalError) {
+              console.error('策略4失败: 原始方法也失败', originalError)
+              // 这里不抛出错误，让它返回 null
+            }
+          }
+          
+          console.log('getRecordedVideo 返回结果:', {
+            result,
+            type: typeof result,
+            isNull: result === null,
+            isUndefined: result === undefined,
+            isPromise: result instanceof Promise,
+            hasLength: result && 'length' in result ? (result as any).length : 'N/A',
+            hasSize: result && 'size' in result ? (result as any).size : 'N/A'
+          })
+          
+          return result
+        } catch (innerError) {
+          console.error('iframe 内部 getRecordedVideo 调用失败:', innerError)
+          console.error('错误详情:', {
+            name: (innerError as Error).name,
+            message: (innerError as Error).message,
+            stack: (innerError as Error).stack
+          })
+          return null
+        }
+      }
+      
+      const result = await safeGetRecordedVideo()
+      let blob: Blob | null = null
+      
+      if (result instanceof Promise) {
+        console.log('等待录制结果...')
+        try {
+          blob = await result
+        } catch (promiseError) {
+          console.error('等待录制结果时出错:', promiseError)
+          return null
+        }
+      } else {
+        blob = result
+      }
+      
+      if (!blob) {
+        console.warn('getRecordedVideo: 未获取到录制数据')
+        return null
+      }
+      
+      // 检查 blob 是否有效
+      if (!(blob instanceof Blob)) {
+        console.warn('getRecordedVideo: 返回的不是 Blob 对象', typeof blob)
+        return null
+      }
+      
+      if (blob.size === 0) {
+        console.warn('getRecordedVideo: 录制数据为空 (size = 0)')
+        return null
+      }
+      
+      console.log('录制数据获取成功:', {
+        size: blob.size,
+        type: blob.type
+      })
+      
+      // 将 Blob 转换为 File
+      const file = new File([blob], 'recording.mp4', { 
+        type: blob.type || 'video/mp4',
+        lastModified: Date.now()
+      })
+      
+      console.log('录制文件创建成功:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      })
+      
+      return file
+    } catch (error) {
+      console.error('getRecordedVideo 执行失败:', error)
+      return null
+    }
   },
 
   async run(signal?: AbortSignal) {

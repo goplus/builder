@@ -46,6 +46,19 @@ import type { ProjectData } from '@/apis/project'
 import type { RecordData, CreateRecordParams } from '../../components/project/sharing/recording'
 import { createRecord } from '../../components/project/sharing/recording'
 import { saveFile } from '@/models/common/cloud'
+import { File } from '@/models/common/file'
+
+// 将 Web File 转换为项目内部的 File 对象
+function createProjectFile(webFile: globalThis.File): File {
+    const loader = async () => {
+        return await webFile.arrayBuffer()
+    }
+    
+    return new File(webFile.name, loader, {
+        type: webFile.type,
+        lastModified: webFile.lastModified
+    })
+}
 
 const props = defineProps<{
   owner: string
@@ -109,12 +122,13 @@ const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: p
 interface ProjectRunnerExpose {
   pauseGame: () => Promise<void>
   resumeGame: () => Promise<void>
-  getScreenShot: () => Promise<File | null>
+  getScreenShot: () => Promise<globalThis.File | null>
   run: (signal?: AbortSignal) => Promise<void>
   stop: () => Promise<void>
   rerun: () => Promise<void>
   startRecording?: () => Promise<void>
   stopRecording?: () => Promise<void>
+  getRecordedVideo?: () => Promise<globalThis.File | null>
 }
 const projectRunnerRef = ref<ProjectRunnerExpose | null>(null)
 const isFullScreenRunning = ref(false)
@@ -292,7 +306,7 @@ const remixesRet = useQuery(
 )
 
 //==============================
-const screenshotImg = ref<File | null>(null)
+const screenshotImg = ref<globalThis.File | null>(null)
 const showScreenShotSharing = ref(false)
 
 const toaster = useMessage()
@@ -351,62 +365,117 @@ async function handleScreenshotSharing() {
 //=======
 
 const isRecording = ref(false)
+const recordingStartTime = ref<number | null>(null)
 const showRecordSharing = ref(false)
-const recording = ref<File | null>(null)
+const recording = ref<globalThis.File | null>(null)
 const recordData = ref<RecordData | null>(null)
 
 const shareRecording = useModal(ProjectRecordingSharing)
 
 async function handleRecordingSharing() {
-    isRecording.value = !isRecording.value
-    
-    if (!isRecording.value) {
-        ProjectRunner.startRecording()
-    } else {
-        ProjectRunner.stopRecording()
-        isRecording.value = false
-        ProjectRunner.pauseGame()
-        const recordFile = ProjectRunner.getRecordedVideo()
-        recording.value = recordFile
-
-        const RecordingURL = await saveFile(recordFile) // 存储到云端获得视频存储URL
-        
-        if (!projectData.value) {
-            toaster.error('项目数据加载失败')
-            return
-        }
-        
-        const params: CreateRecordParams = {
-            projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
-            title: projectData.value.name,
-            description: projectData.value.description ?? '',
-            videoUrl: RecordingURL,
-            thumbnailUrl: projectData.value.thumbnail || ''
-        }
-
-        const created: RecordData = await createRecord(params) // 调用 RecordingAPIs 存储到后端
-        recordData.value = created
-        showRecordSharing.value = true // 唤起录屏分享弹窗
-
-        try{
-            const result = await shareRecording({
-                recording: created,
-                video: recordFile
-            })
-
-            if (result.type === 'shared'){
-                toaster.success(`已分享到${result.platform}`)
-            }else if (result.type === 'rerecord'){
-                isRecording.value = true
-                ProjectRunner.startRecording()
+    if (isRecording.value) {
+        // 当前正在录制，停止录制
+        try {
+            await projectRunnerRef.value?.stopRecording?.()
+            await projectRunnerRef.value?.pauseGame()
+            
+            console.log('录制已停止，等待一秒后获取录制文件...')
+            // 等待一秒确保录制完全停止
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            
+            // 添加更多调试信息
+            console.log('检查录制功能可用性...')
+            if (!projectRunnerRef.value?.getRecordedVideo) {
+                console.error('getRecordedVideo 方法不存在')
+                toaster.error('录制功能不可用')
+                await projectRunnerRef.value?.resumeGame()
+                isRecording.value = false
+                return
             }
-        }catch(e){
-            console.log(e)
-            // cancelled 逻辑，可能用于调试
-        }
+            
+            console.log('开始获取录制文件...')
+            const recordFile = await projectRunnerRef.value?.getRecordedVideo?.()
+            console.log('录制文件:', recordFile)
+            
+            if (!recordFile) {
+                console.error('录制视频获取失败: recordFile 为空')
+                toaster.error('录制视频获取失败，请重试')
+                await projectRunnerRef.value?.resumeGame()
+                isRecording.value = false
+                return
+            }
+            
+            recording.value = recordFile
 
-        showRecordSharing.value = false
-        ProjectRunner.resumeGame()
+            try {
+                const projectFile = createProjectFile(recordFile)
+                const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
+                
+                if (!projectData.value) {
+                    toaster.error('项目数据加载失败')
+                    await projectRunnerRef.value?.resumeGame()
+                    isRecording.value = false
+                    return
+                }
+                
+                const params: CreateRecordParams = {
+                    projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+                    title: projectData.value.name,
+                    description: projectData.value.description ?? '',
+                    videoUrl: RecordingURL,
+                    thumbnailUrl: projectData.value.thumbnail || ''
+                }
+
+                const created: RecordData = await createRecord(params) // 调用 RecordingAPIs 存储到后端
+                recordData.value = created
+
+                try {
+                    const result = await shareRecording({
+                        recording: created,
+                        video: recordFile
+                    })
+
+                    if (result.type === 'shared') {
+                        toaster.success(`已分享到${result.platform}`)
+                    } else if (result.type === 'rerecord') {
+                        isRecording.value = true
+                        await projectRunnerRef.value?.startRecording?.()
+                        return // 不恢复游戏，继续录制
+                    }
+                } catch (e) {
+                    console.log(e)
+                    // cancelled 逻辑，用户取消分享
+                }
+            } catch (error) {
+                console.error('录制处理失败:', error)
+                toaster.error('录制处理失败')
+            }
+
+            await projectRunnerRef.value?.resumeGame()
+            isRecording.value = false
+        } catch (error) {
+            console.error('停止录制失败:', error)
+            toaster.error('停止录制失败')
+            isRecording.value = false
+        }
+    } else {
+        // 开始录制
+        try {
+            // 检查录制功能是否可用
+            if (!projectRunnerRef.value?.startRecording) {
+                toaster.error('录制功能不可用，请确保项目正在运行')
+                return
+            }
+            
+            console.log('开始录制...')
+            await projectRunnerRef.value?.startRecording?.()
+            isRecording.value = true
+            toaster.success('录制已开始，再次点击停止录制')
+        } catch (error) {
+            console.error('开始录制失败:', error)
+            const errorMessage = error instanceof Error ? error.message : '未知错误'
+            toaster.error(`开始录制失败: ${errorMessage}`)
+        }
     }
 }
 
@@ -464,17 +533,19 @@ async function handleRecordingSharing() {
             {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
           </UIButton>
           <UIButton v-if="runnerState === 'running'"
-            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }" type="boring"
-            @click="handleRecordingSharing"> <!--&& !isMobile"-->
+            v-radar="{ name: 'Recording button', desc: 'Click to start/stop recording' }" 
+            :type="isRecording ? 'danger' : 'boring'"
+            @click="handleRecordingSharing">
             <template #icon>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
-                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
-                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5"
-                  fill="none" />
+              <svg v-if="!isRecording" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" fill="currentColor" />
+              </svg>
+              <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="5" width="6" height="6" fill="currentColor" />
               </svg>
             </template>
-            {{ $t({ en: 'Record', zh: '录屏' }) }}
+            {{ isRecording ? $t({ en: 'Stop Recording', zh: '停止录制' }) : $t({ en: 'Start Recording', zh: '开始录制' }) }}
           </UIButton>
           <UIButton
             v-if="runnerState === 'initial'"
