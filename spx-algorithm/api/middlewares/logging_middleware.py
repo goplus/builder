@@ -5,9 +5,8 @@
 import time
 import logging
 from flask import request, g
-from common.utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def setup_logging_middleware(app):
