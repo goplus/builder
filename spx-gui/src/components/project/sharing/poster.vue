@@ -7,6 +7,7 @@ import logo from './logos/XBuilderLogo.svg'
 import PosterBackground from './postBackground.jpg'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useExternalUrl } from '@/utils/utils'
+import QRCode from 'qrcode'
 
 const props = defineProps<{
   img?: File
@@ -115,19 +116,21 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
     canvas.width = displayWidth * pixelRatio
     canvas.height = displayHeight * pixelRatio
     
-    // 使用外部API生成二维码
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${displayWidth * pixelRatio}x${displayHeight * pixelRatio}&data=${encodeURIComponent(url)}&margin=2`
-    
     const ctx = canvas.getContext('2d')
     if (ctx) {
       // 设置高分辨率渲染
       ctx.scale(pixelRatio, pixelRatio)
       
       try {
-        // 使用 fetch 获取图片以绕过 COEP 限制
-        const response = await fetch(qrCodeUrl)
-        const blob = await response.blob()
-        const objectUrl = URL.createObjectURL(blob)
+        // 使用 qrcode 库生成二维码
+        const qrDataURL = await QRCode.toDataURL(url, {
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          },
+          width: displayWidth * pixelRatio,
+          margin: 1
+        })
         
         const img = new window.Image()
         img.onload = () => {
@@ -141,17 +144,13 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
           
           // 绘制二维码
           ctx.drawImage(img, x, y, imgSize, imgSize)
-          
-          // 清理 objectUrl
-          URL.revokeObjectURL(objectUrl)
         }
         img.onerror = () => {
           console.error('Failed to load QR code image')
-          URL.revokeObjectURL(objectUrl)
         }
-        img.src = objectUrl
+        img.src = qrDataURL
       } catch (error) {
-        console.error('Failed to fetch QR code:', error)
+        console.error('生成二维码失败:', error)
       }
     }
   } catch (error) {
@@ -191,15 +190,9 @@ const createPoster = async (): Promise<File> => {
 
   await nextTick() // 确保 DOM 已经更新
 
-  // 获取实际元素的尺寸
-  const rect = posterElementRef.value.getBoundingClientRect()
-  
   const canvas = await html2canvas(posterElementRef.value, {
-    width: rect.width,
-    height: rect.height,
-    scale: 2, // 使用2倍缩放提高图片质量
-    useCORS: true,
-    allowTaint: true
+    width: 800,
+    height: 1000
   })
 
   const blob = await new Promise<Blob | null>((resolve) =>
@@ -266,7 +259,7 @@ defineExpose({
 <style scoped lang="scss">
 .poster-background {
   width: 300px;
-  min-height: 400px;
+  height: 100%;
   background-image: url('./postBackground.jpg');
   background-size: cover;
   background-position: center;
@@ -277,7 +270,7 @@ defineExpose({
   overflow: hidden;
   /* box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); */
   transition: all 0.3s ease;
-  box-sizing: border-box;
+  max-height: 500px;
 }
 
 .screenshot-area {

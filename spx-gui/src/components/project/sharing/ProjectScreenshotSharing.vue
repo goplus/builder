@@ -4,6 +4,7 @@ import Poster from './poster.vue'
 import PlatformSelector from './platformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import type { PlatformConfig } from './platformShare'
+import QRCode from 'qrcode'
 
 const props = defineProps<{
     screenshot: File
@@ -78,19 +79,20 @@ async function generateShareQRCode() {
 
         jumpUrl.value = shareUrl
         
-        // 生成二维码
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shareUrl)}&margin=3`
-        
+        // 使用 qrcode 库生成二维码
         try {
-            // 使用 fetch 获取二维码图片以绕过 COEP 限制
-            const response = await fetch(qrCodeUrl)
-            const blob = await response.blob()
-            const objectUrl = URL.createObjectURL(blob)
-            createdObjectUrls.add(objectUrl)
-            qrCodeData.value = objectUrl
+            const qrDataURL = await QRCode.toDataURL(shareUrl, {
+                color: {
+                    dark: selectedPlatform.value?.basicInfo.color || '#000000',
+                    light: '#FFFFFF'
+                },
+                width: 120,
+                margin: 1
+            })
+            qrCodeData.value = qrDataURL
         } catch (error) {
-            console.error('获取二维码图片失败:', error)
-            qrCodeData.value = qrCodeUrl // 回退到原始URL
+            console.error('生成二维码失败:', error)
+            qrCodeData.value = ''
         }
 
         console.log(`${platform.basicInfo.label.zh}分享二维码已生成`)
