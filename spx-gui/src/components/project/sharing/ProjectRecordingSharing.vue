@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue'
+import { ref, computed } from 'vue'
 import { useExternalUrl } from '@/utils/utils'
 // TODO: 暂时注释掉，等 platformShare 模块修复后再启用
 // import { directShare, shareVideo, SocialPlatformConfigs } from './platformShare'
