@@ -38,6 +38,14 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import { useModal, useMessage } from '@/components/ui'
+import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
+import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
+import { getProject } from '@/apis/project'
+import type { ProjectData } from '@/apis/project'
+import type { RecordData, CreateRecordParams } from '../../components/project/sharing/recording'
+import { createRecord } from '../../components/project/sharing/recording'
+import { saveFile } from '@/models/common/cloud'
 
 const props = defineProps<{
   owner: string
@@ -97,7 +105,18 @@ watch(
 const isOwner = computed(() => props.owner === getSignedInUsername())
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
-const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
+// 明确暴露了 pauseGame/resumeGame/getScreenShot 的类型
+interface ProjectRunnerExpose {
+  pauseGame: () => Promise<void>
+  resumeGame: () => Promise<void>
+  getScreenShot: () => Promise<File | null>
+  run: (signal?: AbortSignal) => Promise<void>
+  stop: () => Promise<void>
+  rerun: () => Promise<void>
+  startRecording?: () => Promise<void>
+  stopRecording?: () => Promise<void>
+}
+const projectRunnerRef = ref<ProjectRunnerExpose | null>(null)
 const isFullScreenRunning = ref(false)
 
 const likeCount = computed(() => {
@@ -194,13 +213,6 @@ function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
 }
 
-const shareProject = useShareProject()
-
-const handleShare = useMessageHandle(() => shareProject(props.owner, props.name), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
-
 const createProject = useCreateProject()
 
 const handleRemix = useMessageHandle(
@@ -278,6 +290,128 @@ const remixesRet = useQuery(
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
+
+//==============================
+const screenshotImg = ref<File | null>(null)
+const showScreenShotSharing = ref(false)
+
+const toaster = useMessage()
+
+const shareScreenshot = useModal(ProjectScreenshotSharing)
+
+const {
+  data: projectData,
+} = useQuery(
+  async (ctx) => {
+    return await getProject(props.owner, props.name, ctx.signal)
+  },
+  {
+    en: 'Failed to load project',
+    zh: '加载项目失败'
+  }
+)
+
+const shareProject = useShareProject()
+
+const handleShare = useMessageHandle(() => {
+  if (!projectData.value) return
+  shareProject(projectData.value)
+}, {
+  en: 'Failed to share project',
+  zh: '分享项目失败'
+})
+
+async function handleScreenshotSharing() {
+  await projectRunnerRef.value?.pauseGame()
+
+  const ScreenshotFile = await projectRunnerRef.value?.getScreenShot()
+  screenshotImg.value = ScreenshotFile ?? null
+
+  showScreenShotSharing.value = true
+
+  try {
+    if (ScreenshotFile && projectData.value) {
+      await shareScreenshot({
+        screenshot: ScreenshotFile,
+        projectData: projectData.value
+      })
+      toaster.success(`成功`)
+    } else {
+      toaster.error('截图失败')
+    }
+  } catch (e) {
+    console.log(e)
+  }
+
+  showScreenShotSharing.value = false
+
+  await projectRunnerRef.value?.resumeGame()
+}
+
+//=======
+
+const isRecording = ref(false)
+const showRecordSharing = ref(false)
+const recording = ref<File | null>(null)
+const recordData = ref<RecordData | null>(null)
+
+const shareRecording = useModal(ProjectRecordingSharing)
+
+async function handleRecordingSharing() {
+    isRecording.value = !isRecording.value
+    
+    if (!isRecording.value) {
+        ProjectRunner.startRecording()
+    } else {
+        ProjectRunner.stopRecording()
+        isRecording.value = false
+        ProjectRunner.pauseGame()
+        const recordFile = ProjectRunner.getRecordedVideo()
+        recording.value = recordFile
+
+        const RecordingURL = await saveFile(recordFile) // 存储到云端获得视频存储URL
+        
+        if (!projectData.value) {
+            toaster.error('项目数据加载失败')
+            return
+        }
+        
+        const params: CreateRecordParams = {
+            projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+            title: projectData.value.name,
+            description: projectData.value.description ?? '',
+            videoUrl: RecordingURL,
+            thumbnailUrl: projectData.value.thumbnail || ''
+        }
+
+        const created: RecordData = await createRecord(params) // 调用 RecordingAPIs 存储到后端
+        recordData.value = created
+        showRecordSharing.value = true // 唤起录屏分享弹窗
+
+        try{
+            const result = await shareRecording({
+                recording: created,
+                video: recordFile
+            })
+
+            if (result.type === 'shared'){
+                toaster.success(`已分享到${result.platform}`)
+            }else if (result.type === 'rerecord'){
+                isRecording.value = true
+                ProjectRunner.startRecording()
+            }
+        }catch(e){
+            console.log(e)
+            // cancelled 逻辑，可能用于调试
+        }
+
+        showRecordSharing.value = false
+        ProjectRunner.resumeGame()
+    }
+}
+
+//==============================
+
 </script>
 
 <template>
@@ -316,6 +450,32 @@ const remixesRet = useQuery(
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
+          <UIButton v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }" type="boring"
+            @click="handleScreenshotSharing"> <!--&& !isMobile"-->
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5"
+                  fill="none" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+          </UIButton>
+          <UIButton v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }" type="boring"
+            @click="handleRecordingSharing"> <!--&& !isMobile"-->
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5"
+                  fill="none" />
+              </svg>
+            </template>
+            {{ $t({ en: 'Record', zh: '录屏' }) }}
+          </UIButton>
           <UIButton
             v-if="runnerState === 'initial'"
             v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"

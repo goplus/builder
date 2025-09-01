@@ -29,6 +29,32 @@ defineExpose({
   },
   async rerun() {
     return projectRunnerRef.value?.rerun()
+  },
+  async getScreenShot(): Promise<File | null> {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.getScreenShot === 'function') {
+      return await projectRunnerRef.value.getScreenShot()
+    }
+    return null
+  },
+  async pauseGame() {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.pauseGame === 'function') {
+      return await projectRunnerRef.value.pauseGame()
+    }
+  },
+  async resumeGame() {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.resumeGame === 'function') {
+      return await projectRunnerRef.value.resumeGame()
+    }
+  },
+  async startRecording() {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.startRecording === 'function') {
+      return await projectRunnerRef.value.startRecording()
+    }
+  },
+  async stopRecording() {
+    if (projectRunnerRef.value && typeof projectRunnerRef.value.stopRecording === 'function') {
+      return await projectRunnerRef.value.stopRecording()
+    }
   }
 })
 </script>
