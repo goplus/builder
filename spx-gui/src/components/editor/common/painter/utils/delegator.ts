@@ -142,6 +142,8 @@ export class CanvasEventDelegator {
       handler.handleMouseMove(point)
     } else if (this.currentTool === 'circle' && handler.handleMouseMove) {
       handler.handleMouseMove(point)
+    } else if (this.currentTool === 'rectangle' && handler.handleMouseMove) {
+      handler.handleMouseMove(point)
     }
   }
 
