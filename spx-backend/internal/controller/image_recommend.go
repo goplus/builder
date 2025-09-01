@@ -44,7 +44,7 @@ func (p *ImageRecommendParams) GetProviderForTheme() svggen.Provider {
 	if p.Theme != ThemeNone {
 		return GetThemeRecommendedProvider(p.Theme)
 	}
-	return svggen.ProviderSVGIO // Default fallback
+	return svggen.ProviderOpenAI // Default fallback
 }
 
 // ImageRecommendResult represents the result of image recommendation.
