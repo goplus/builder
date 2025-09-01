@@ -90,6 +90,9 @@ export class CanvasEventDelegator {
       // line 工具需要 {x, y} 格式
       if (this.currentTool === 'line') {
         handler.handleCanvasClick({ x: point.x, y: point.y })
+      } else if (this.currentTool === 'fill') {
+        // fill 工具需要 paper.Point 格式
+        handler.handleCanvasClick(point)
       } else {
         handler.handleCanvasClick(point)
       }

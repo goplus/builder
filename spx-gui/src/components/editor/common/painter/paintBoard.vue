@@ -185,6 +185,7 @@
 
       <!-- 矩形工具组件 -->
       <RectangleTool
+        ref="rectangleToolRef"
         :is-active="currentTool === 'rectangle'"
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"
@@ -199,7 +200,12 @@
       />
 
       <!-- 填充颜色工具组件 -->
-      <FillTool :is-active="currentTool === 'fill'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
+      <FillTool
+        ref="fillToolRef"
+        :is-active="currentTool === 'fill'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
 
       <!-- 插入文本工具组件 -->
       <TextTool :is-active="currentTool === 'text'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
@@ -239,6 +245,8 @@ const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
+const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
+const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null
@@ -249,7 +257,9 @@ const initEventDelegator = (): void => {
     line: drawLineRef.value as ToolHandler,
     brush: drawBrushRef.value as ToolHandler,
     reshape: reshapeRef.value as ToolHandler,
-    circle: circleToolRef.value as ToolHandler
+    circle: circleToolRef.value as ToolHandler,
+    rectangle: rectangleToolRef.value as ToolHandler,
+    fill: fillToolRef.value as ToolHandler
   })
 
   canvasEventDelegator.setCurrentTool(currentTool.value)
@@ -479,7 +489,7 @@ watch(currentTool, (newTool) => {
 
 // 监听工具引用变化，更新委托器
 watch(
-  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef],
+  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef],
   () => {
     initEventDelegator()
   },
