@@ -7,6 +7,7 @@ import logo from './logos/XBuilderLogo.svg'
 import PosterBackground from './postBackground.jpg'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useExternalUrl } from '@/utils/utils'
+import QRCode from 'qrcode'
 
 const props = defineProps<{
   img?: File
@@ -115,19 +116,21 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
     canvas.width = displayWidth * pixelRatio
     canvas.height = displayHeight * pixelRatio
     
-    // 使用外部API生成二维码
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${displayWidth * pixelRatio}x${displayHeight * pixelRatio}&data=${encodeURIComponent(url)}&margin=2`
-    
     const ctx = canvas.getContext('2d')
     if (ctx) {
       // 设置高分辨率渲染
       ctx.scale(pixelRatio, pixelRatio)
       
       try {
-        // 使用 fetch 获取图片以绕过 COEP 限制
-        const response = await fetch(qrCodeUrl)
-        const blob = await response.blob()
-        const objectUrl = URL.createObjectURL(blob)
+        // 使用 qrcode 库生成二维码
+        const qrDataURL = await QRCode.toDataURL(url, {
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          },
+          width: displayWidth * pixelRatio,
+          margin: 1
+        })
         
         const img = new window.Image()
         img.onload = () => {
@@ -141,17 +144,13 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
           
           // 绘制二维码
           ctx.drawImage(img, x, y, imgSize, imgSize)
-          
-          // 清理 objectUrl
-          URL.revokeObjectURL(objectUrl)
         }
         img.onerror = () => {
           console.error('Failed to load QR code image')
-          URL.revokeObjectURL(objectUrl)
         }
-        img.src = objectUrl
+        img.src = qrDataURL
       } catch (error) {
-        console.error('Failed to fetch QR code:', error)
+        console.error('生成二维码失败:', error)
       }
     }
   } catch (error) {

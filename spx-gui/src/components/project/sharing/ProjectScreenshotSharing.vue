@@ -4,6 +4,7 @@ import Poster from './poster.vue'
 import PlatformSelector from './platformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import type { PlatformConfig } from './platformShare'
+import QRCode from 'qrcode'
 
 const props = defineProps<{
     screenshot: File
@@ -78,19 +79,20 @@ async function generateShareQRCode() {
 
         jumpUrl.value = shareUrl
         
-        // 生成二维码
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shareUrl)}&margin=3`
-        
+        // 使用 qrcode 库生成二维码
         try {
-            // 使用 fetch 获取二维码图片以绕过 COEP 限制
-            const response = await fetch(qrCodeUrl)
-            const blob = await response.blob()
-            const objectUrl = URL.createObjectURL(blob)
-            createdObjectUrls.add(objectUrl)
-            qrCodeData.value = objectUrl
+            const qrDataURL = await QRCode.toDataURL(shareUrl, {
+                color: {
+                    dark: selectedPlatform.value?.basicInfo.color || '#000000',
+                    light: '#FFFFFF'
+                },
+                width: 120,
+                margin: 1
+            })
+            qrCodeData.value = qrDataURL
         } catch (error) {
-            console.error('获取二维码图片失败:', error)
-            qrCodeData.value = qrCodeUrl // 回退到原始URL
+            console.error('生成二维码失败:', error)
+            qrCodeData.value = ''
         }
 
         console.log(`${platform.basicInfo.label.zh}分享二维码已生成`)
@@ -114,6 +116,35 @@ async function handleSharePoster(): Promise<void> {
         emit('resolved', selectedPlatform.value.basicInfo.name)
     } else {
         emit('cancelled')
+    }
+}
+
+// 处理一键下载海报
+async function handleDownloadPoster(): Promise<void> {
+    try {
+        if (!posterCompRef.value) {
+            console.error('Poster component not ready')
+            return
+        }
+        
+        // 生成海报文件
+        const posterFile = await posterCompRef.value.createPoster()
+        
+        // 创建下载链接
+        const url = URL.createObjectURL(posterFile)
+        createdObjectUrls.add(url)
+        
+        // 创建临时下载链接并触发下载
+        const link = document.createElement('a')
+        link.href = url
+        link.download = posterFile.name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        console.log('海报下载完成')
+    } catch (error) {
+        console.error('下载海报失败:', error)
     }
 }
 
@@ -173,10 +204,9 @@ watch(() => props.visible, (newVisible) => {
                             </div>
                             <button 
                                 class="download-btn"
-                                :disabled="!qrCodeData"
-                                @click="handleSharePoster"
+                                @click="handleDownloadPoster"
                             >
-                                {{ $t({ en: 'Generate Share', zh: '生成分享' }) }}
+                                {{ $t({ en: 'Download Poster', zh: '下载海报' }) }}
                             </button>
                         </div>
                     </div>
