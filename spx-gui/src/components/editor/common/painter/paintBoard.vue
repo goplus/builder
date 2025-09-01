@@ -283,9 +283,20 @@ const initImportExportManager = (): void => {
 
 // 选择工具
 const selectTool = (tool: ToolType): void => {
+  const wasAlreadyActive = currentTool.value === tool
+
   currentTool.value = tool
   // 更新委托器的当前工具
   canvasEventDelegator.setCurrentTool(tool)
+
+  // 如果是填充工具且已经激活，重新触发颜色选择器
+  if (tool === 'fill' && wasAlreadyActive && fillToolRef.value) {
+    // 触发填充工具的颜色选择器显示
+    const fillTool = fillToolRef.value as any
+    if (fillTool.showColorPicker) {
+      fillTool.showColorPicker()
+    }
+  }
 }
 
 const handleCanvasClick = (event: MouseEvent): void => {

@@ -1,11 +1,22 @@
 <template>
   <div class="fill-tool">
-    <!-- 填充工具不需要可视化界面元素，只处理点击事件 -->
+    <!-- 颜色选择器弹窗 -->
+    <n-modal v-model:show="showColorPicker" :mask-closable="false">
+      <div class="color-picker-modal">
+        <h3>选择填充颜色</h3>
+        <n-color-picker v-model:value="selectedColor" :actions="['clear']" />
+        <div class="modal-buttons">
+          <n-button @click="handleColorCancel">取消</n-button>
+          <n-button type="primary" @click="handleColorConfirm">确认</n-button>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { watch, inject } from 'vue'
+import { watch, inject, ref } from 'vue'
+import { NModal, NColorPicker, NButton } from 'naive-ui'
 import paper from 'paper'
 
 // Props
@@ -22,8 +33,21 @@ const props = defineProps<Props>()
 // const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
-// 默认填充颜色
-const fillColor = '#00ff00' // 绿色
+// 颜色选择器相关状态
+const showColorPicker = ref(false)
+const selectedColor = ref('#ffffff00') // 默认绿色
+const fillColor = ref('#ffffff00') // 当前填充颜色
+
+// 颜色选择器处理函数
+const handleColorConfirm = (): void => {
+  fillColor.value = selectedColor.value
+  showColorPicker.value = false
+}
+
+const handleColorCancel = (): void => {
+  showColorPicker.value = false
+  selectedColor.value = fillColor.value // 恢复之前的颜色
+}
 
 // 区域填充实现 - 使用paper.js的hit test
 const smartFill = (point: paper.Point): void => {
@@ -47,7 +71,7 @@ const smartFill = (point: paper.Point): void => {
     // console.log('Current fillColor:', targetPath.fillColor)
 
     // 设置填充颜色（无论之前是否有填充色）
-    targetPath.fillColor = new paper.Color(fillColor)
+    targetPath.fillColor = new paper.Color(fillColor.value)
 
     // console.log('Set new fillColor:', targetPath.fillColor)
 
@@ -66,28 +90,64 @@ const smartFill = (point: paper.Point): void => {
 const handleCanvasClick = (point: paper.Point): void => {
   if (!props.isActive) return
 
-  // console.log('Fill tool clicked at:', point)
+  // 直接执行填充，不再显示颜色选择器
   smartFill(point)
 }
 
-// 监听工具切换，确保只在激活时响应
+// 监听工具切换，每次激活时显示颜色选择器
 watch(
   () => props.isActive,
   (newValue) => {
     if (newValue) {
-      // console.log('Fill tool activated')
+      // 每次工具被激活时都显示颜色选择器
+      selectedColor.value = fillColor.value
+      showColorPicker.value = true
+    } else {
+      // 工具被取消激活时，关闭弹窗
+      showColorPicker.value = false
     }
   }
 )
 
+// 显示颜色选择器的方法
+const showColorPickerDialog = (): void => {
+  selectedColor.value = fillColor.value
+  showColorPicker.value = true
+}
+
 // 暴露方法给父组件
 defineExpose({
-  handleCanvasClick
+  handleCanvasClick,
+  showColorPicker: showColorPickerDialog
 })
 </script>
 
 <style scoped>
 .fill-tool {
-  /* 填充工具不需要特殊样式 */
+  position: relative;
+}
+
+.color-picker-modal {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 400px;
+  min-width: 320px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.color-picker-modal h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
 </style>
