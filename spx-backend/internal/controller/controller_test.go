@@ -13,7 +13,7 @@ import (
 )
 
 func setTestEnv(t *testing.T) {
-	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
+	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True&loc=UTC&multiStatements=true")
 
 	t.Setenv("KODO_AK", "test-kodo-ak")
 	t.Setenv("KODO_SK", "test-kodo-sk")
