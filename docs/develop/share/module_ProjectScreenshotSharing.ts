@@ -1,9 +1,16 @@
+<!--
+ * @FileDescription: 实现截屏分享弹窗管理
+ * @Author: ceilf6
+ * @Date: 2025.9.1
+ -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import Poster from './poster'
 import { sharePoster, SocialPlatformConfigs } from './platformShare'
 import platformSelector from './platformSelector.vue'
 import { ProjectData } from '@/apis/project'
 import type { PlatformShare } from './platformShare'
+import { sharePoster, SocialPlatformConfigs } from './platformShare'
+import Poster from './poster.vue'
 
 const props = defineProps<{
     screenshot: File
@@ -16,13 +23,10 @@ const emit = defineEmits<{
     resolved: [platfrom: string]
 }>()
 
-const projectUrlQRCode = computed(() =>
-    `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(window.location.href)}`
-)
-
 const selectedPlatformKey = ref<string>(SocialPlatformConfigs[0]?.name ?? '')
 const selectedPlatform = ref<PlatformShare | null>(null)
 const jumpUrl = ref<string>('')
+=======
 
 function handlePlatformChange(p: PlatformShare){
     selectedPlatform.value = p
