@@ -7,19 +7,19 @@ export interface ImportExportDependencies {
   canvasWidth: Ref<number>
   canvasHeight: Ref<number>
   canvasRef: Ref<HTMLCanvasElement | null>
-  
+
   // 路径管理
   allPaths: Ref<paper.Path[]>
-  
+
   // 工具和状态
   currentTool: Ref<string | null>
   reshapeRef: Ref<any>
   backgroundRect: Ref<paper.Path | null>
   backgroundImage: Ref<paper.Raster | null>
-  
+
   // 状态标记
   isImportingFromProps: Ref<boolean>
-  
+
   // 回调函数
   emit: (event: string, data: any) => void
 }
@@ -53,10 +53,7 @@ export class ImportExportManager {
    * 导出当前画布为SVG
    */
   exportSvg(options: ExportOptions = {}): string | null {
-    const { 
-      embedImages = true, 
-      bounds = paper.view.bounds 
-    } = options
+    const { embedImages = true, bounds = paper.view.bounds } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -68,8 +65,8 @@ export class ImportExportManager {
       this.hideControlPointsForExport()
       const prevVisible = this.hideBackgroundForExport()
 
-      const svgStr = paper.project.exportSVG({ 
-        asString: true, 
+      const svgStr = paper.project.exportSVG({
+        asString: true,
         embedImages,
         bounds
       }) as string
@@ -98,12 +95,7 @@ export class ImportExportManager {
    * 导入SVG到画布
    */
   async importSvg(svgContent: string, options: ImportOptions = {}): Promise<boolean> {
-    const {
-      clearCanvas = false,
-      position = 'center',
-      updatePaths = true,
-      triggerExport = true
-    } = options
+    const { clearCanvas = false, position = 'center', updatePaths = true, triggerExport = true } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -127,7 +119,7 @@ export class ImportExportManager {
 
       // 导入SVG到Paper.js
       const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
-      
+
       if (!importedItem) {
         console.error('Failed to import SVG')
         return false
@@ -157,81 +149,69 @@ export class ImportExportManager {
     }
   }
 
-async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promise<boolean> {
-  const {
-      clearCanvas = false,
-      position = 'center', 
-      updatePaths = true,
-      triggerExport = true
-  } = options;
+  async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promise<boolean> {
+    const { clearCanvas = false, updatePaths = true, triggerExport = true } = options
 
-  if (!paper.project) {
-      console.warn('Paper project not initialized');
-      return false;
-  }
+    if (!paper.project) {
+      console.warn('Paper project not initialized')
+      return false
+    }
 
-  try {
+    try {
       if (clearCanvas) {
-          this.clearCanvas(false); // 清空但不触发导出
+        this.clearCanvas(false) // 清空但不触发导出
       }
 
       // 解析SVG内容
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
-      const svgElement = svgDoc.documentElement;
+      const parser = new DOMParser()
+      const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml')
+      const svgElement = svgDoc.documentElement
 
       if (svgElement.nodeName !== 'svg') {
-          console.error('Invalid SVG content');
-          return false;
+        console.error('Invalid SVG content')
+        return false
       }
 
-      const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement);
-      
+      const importedItem = paper.project.importSVG(svgElement as unknown as SVGElement)
+
       if (!importedItem) {
-          console.error('Failed to import SVG');
-          return false;
+        console.error('Failed to import SVG')
+        return false
       }
 
-
-      const targetSize = new paper.Size(512, 512);
+      const targetSize = new paper.Size(512, 512)
 
       const targetBounds = new paper.Rectangle({
-          center: paper.view.center,
-          size: targetSize
-      });
+        center: paper.view.center,
+        size: targetSize
+      })
 
-      importedItem.fitBounds(targetBounds);
-        console.log('importedItem',importedItem)
+      importedItem.fitBounds(targetBounds)
 
       // 收集可编辑路径
       if (updatePaths) {
-          this.collectPathsFromImport(importedItem);
+        this.collectPathsFromImport(importedItem)
       }
-        console.log('updatePaths',updatePaths)
 
-      paper.view.update();
+      paper.view.update()
 
       // 触发导出（避免循环导入）
       if (triggerExport && !this.dependencies.isImportingFromProps.value) {
-          this.exportSvgAndEmit();
+        this.exportSvgAndEmit()
       }
 
-      return true;
-  } catch (error) {
-      console.error('Failed to import SVG:', error);
-      return false;
+      return true
+    } catch (error) {
+      console.error('Failed to import SVG:', error)
+      return false
+    }
   }
-}
-
 
   /**
    * 导入图片（PNG/JPG等）到画布
    */
   async importImage(imageSrc: string, options: ImportOptions = {}): Promise<boolean> {
-    const {
-      position = 'center',
-      triggerExport = true
-    } = options
+    const { position = 'center', triggerExport = true } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -251,19 +231,19 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
 
       // 创建新的光栅图像
       const raster = new paper.Raster(imageSrc)
-      
+
       raster.onLoad = () => {
         try {
           if (position === 'center') {
             raster.position = paper.view.center
           }
-          
+
           // 将图片放到最底层作为背景
           raster.sendToBack()
-          
+
           // 更新背景图片引用
           this.dependencies.backgroundImage.value = raster
-          
+
           paper.view.update()
 
           if (triggerExport) {
@@ -290,7 +270,7 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
   async importFile(fileUrl: string, options: ImportOptions = {}): Promise<boolean> {
     try {
       const response = await fetch(fileUrl)
-      
+
       // 尝试判断是否为SVG
       let isSvg = false
       let content: string | null = null
@@ -302,7 +282,9 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
           isSvg = true
           content = await blob.text()
         }
-      } catch {}
+      } catch {
+        //暂时无需处理
+      }
 
       // 方法2: 通过响应头判断
       if (!isSvg) {
@@ -321,7 +303,9 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
             isSvg = true
             content = text
           }
-        } catch {}
+        } catch {
+          //暂时无需处理
+        }
       }
 
       // 根据类型导入
@@ -405,7 +389,7 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
     const collectPaths = (item: paper.Item): void => {
       if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
         allPaths.push(item)
-        
+
         // 添加鼠标事件处理
         item.onMouseDown = () => {
           if (this.dependencies.currentTool.value === 'reshape' && this.dependencies.reshapeRef.value) {
@@ -415,7 +399,7 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
         }
       } else if (item instanceof paper.Group || item instanceof paper.CompoundPath) {
         if (item.children) {
-          item.children.forEach(child => collectPaths(child))
+          item.children.forEach((child) => collectPaths(child))
         }
       }
     }
@@ -451,7 +435,6 @@ async importSvgFromPicgc(svgContent: string, options: ImportOptions = {}): Promi
       this.dependencies.backgroundRect.value.visible = prevVisible
     }
   }
-
 }
 
 // 创建单例实例

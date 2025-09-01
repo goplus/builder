@@ -1,25 +1,13 @@
 <template>
   <!-- 错误提示弹窗 -->
-  <div 
-    v-if="visible" 
-    class="error-modal-overlay"
-    @click="handleClose"
-  >
-    <div 
-      class="error-modal-content"
-      @click.stop
-    >
+  <div v-if="visible" class="error-modal-overlay" @click="handleClose">
+    <div class="error-modal-content" @click.stop>
       <div class="error-modal-header">
         <div class="error-icon">⚠️</div>
         <h3 class="error-title">{{ $t({ en: 'Generation Failed', zh: '生成失败' }) }}</h3>
-        <button 
-          class="error-close-btn"
-          @click="handleClose"
-        >
-          ×
-        </button>
+        <button class="error-close-btn" @click="handleClose">×</button>
       </div>
-      
+
       <div class="error-modal-body">
         <p class="error-message">
           {{ errorMessage }}
@@ -27,26 +15,28 @@
         <div class="error-suggestions">
           <h4 class="suggestions-title">{{ $t({ en: 'Suggestions:', zh: '建议：' }) }}</h4>
           <ul class="suggestions-list">
-            <li v-if="errorType === 'timeout'">{{ $t({ en: 'Try simplifying your description', zh: '尝试简化您的描述' }) }}</li>
-            <li v-if="errorType === 'network'">{{ $t({ en: 'Check your network connection', zh: '检查网络连接状态' }) }}</li>
-            <li v-if="errorType === 'params'">{{ $t({ en: 'Ensure prompt is at least 3 characters', zh: '确保提示词至少3个字符' }) }}</li>
-            <li v-if="errorType === 'default' || errorType === 'server'">{{ $t({ en: 'Try again in a few moments', zh: '稍后再试' }) }}</li>
+            <li v-if="errorType === 'timeout'">
+              {{ $t({ en: 'Try simplifying your description', zh: '尝试简化您的描述' }) }}
+            </li>
+            <li v-if="errorType === 'network'">
+              {{ $t({ en: 'Check your network connection', zh: '检查网络连接状态' }) }}
+            </li>
+            <li v-if="errorType === 'params'">
+              {{ $t({ en: 'Ensure prompt is at least 3 characters', zh: '确保提示词至少3个字符' }) }}
+            </li>
+            <li v-if="errorType === 'default' || errorType === 'server'">
+              {{ $t({ en: 'Try again in a few moments', zh: '稍后再试' }) }}
+            </li>
             <li>{{ $t({ en: 'Contact support if the problem persists', zh: '如问题持续存在，请联系技术支持' }) }}</li>
           </ul>
         </div>
       </div>
-      
+
       <div class="error-modal-footer">
-        <button 
-          class="btn btn-secondary"
-          @click="handleClose"
-        >
+        <button class="btn btn-secondary" @click="handleClose">
           {{ $t({ en: 'Close', zh: '关闭' }) }}
         </button>
-        <button 
-          class="btn btn-primary"
-          @click="handleRetry"
-        >
+        <button class="btn btn-primary" @click="handleRetry">
           {{ $t({ en: 'Retry', zh: '重试' }) }}
         </button>
       </div>
@@ -65,14 +55,14 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
-  errorType: 'default',
+  errorType: 'default'
 })
 
 // Emits
 const emit = defineEmits<{
   'update:visible': [value: boolean]
-  'close': []
-  'retry': []
+  close: []
+  retry: []
 }>()
 
 // 获取全局属性
@@ -92,8 +82,6 @@ const handleRetry = () => {
 
 // 错误消息计算属性
 const errorMessage = computed(() => {
-
-  
   // 如果 $t 不可用，默认返回英文
   if (!$t) {
     switch (props.errorType) {
@@ -109,16 +97,23 @@ const errorMessage = computed(() => {
         return 'Image generation failed, please try again later'
     }
   }
-  console.log($t)
-  console.log(props.errorType)
   // 根据错误类型返回对应的错误信息
   switch (props.errorType) {
     case 'timeout':
-      return $t({ en: 'Generation timeout, please try simplifying the description or try again later', zh: '生成超时，请尝试简化描述或稍后重试' })
+      return $t({
+        en: 'Generation timeout, please try simplifying the description or try again later',
+        zh: '生成超时，请尝试简化描述或稍后重试'
+      })
     case 'network':
-      return $t({ en: 'Network connection error, please check your network connection', zh: '网络连接异常，请检查网络连接' })
+      return $t({
+        en: 'Network connection error, please check your network connection',
+        zh: '网络连接异常，请检查网络连接'
+      })
     case 'params':
-      return $t({ en: 'Request parameter error, please check the prompt length (at least 3 characters)', zh: '请求参数错误，请检查提示词长度（至少3个字符）' })
+      return $t({
+        en: 'Request parameter error, please check the prompt length (at least 3 characters)',
+        zh: '请求参数错误，请检查提示词长度（至少3个字符）'
+      })
     case 'server':
       return $t({ en: 'Server internal error, please try again later', zh: '服务器内部错误，请稍后重试' })
     default:
@@ -318,11 +313,11 @@ const errorMessage = computed(() => {
     max-width: 95%;
     margin: 20px;
   }
-  
+
   .error-modal-footer {
     flex-direction: column-reverse;
   }
-  
+
   .error-modal-footer .btn {
     width: 100%;
   }

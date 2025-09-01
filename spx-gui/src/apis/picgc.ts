@@ -3,9 +3,7 @@
  */
 
 import { apiBaseUrl } from '@/utils/env'
-import { File, toText } from '@/models/common/file'
-import { useFileUrl } from '@/utils/file'
-import { ref, watch } from 'vue'
+import { toText } from '@/models/common/file'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 /** Image generation model types */
@@ -30,7 +28,7 @@ export interface GenerateImageRequest {
   /** Sub-theme specification (e.g., hand-drawn) */
   substyle?: string
   /** Number of images to generate */
-  n?: number,
+  n?: number
   top_k?: number
 }
 
@@ -47,12 +45,11 @@ export interface GenerateImageResponse {
   created_at: string
 }
 
-
 /**
  * 直接生成并返回SVG内容
  */
 export async function generateSvgDirect(
-  provider: string,//通过这个参数选择供应商:claude,recraft
+  provider: string, //通过这个参数选择供应商:claude,recraft
   prompt: string,
   options?: {
     negative_prompt?: string
@@ -61,11 +58,11 @@ export async function generateSvgDirect(
     skip_translate?: boolean
     size?: string
     substyle?: string
-    n?: number,
+    n?: number
     top_k?: number
   }
 ): Promise<{
-  svgContents: {blob: string, svgContent: string}[]
+  svgContents: { blob: string; svgContent: string }[]
   id: string
   width: number
   height: number
@@ -86,15 +83,15 @@ export async function generateSvgDirect(
   let url = ''
   url = apiBaseUrl + '/images/recommend'
   payload.provider = 'openai'
-  if(options?.top_k){
+  if (options?.top_k) {
     payload.top_k = options.top_k
-  }else{
+  } else {
     payload.top_k = 4
   }
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)
   })
@@ -105,56 +102,58 @@ export async function generateSvgDirect(
   }
   // 获取后端返回的原始数据
   const backendResponse = await response.json()
-  
+
   // 将后端response整理成所需的数组格式
   const imageUrls = backendResponse.results.map((result: any) => result.image_path)
 
-
-  async function convertKodoUrlToBlobUrl(kodoUrl: string, fileName?: string): Promise<{blob: string, svgContent: string}> {
+  async function convertKodoUrlToBlobUrl(
+    kodoUrl: string,
+    fileName?: string
+  ): Promise<{ blob: string; svgContent: string }> {
     // 1. 创建 File 实例
     const file = createFileWithUniversalUrl(kodoUrl, fileName)
-    
+
     // 2. 获取SVG文本内容
     const svgContent = await toText(file)
-    
+
     // 3. 获取 blob URL
     const blobUrl = await new Promise<string>((resolve, reject) => {
       let cleanup: (() => void) | null = null
-      
-      file.url((disposer) => {
-        cleanup = disposer
-      })
-      .then((url) => {
-        resolve(url)
-      })
-      .catch((error) => {
-        reject(error)
-      })
-      
+
+      file
+        .url((disposer) => {
+          cleanup = disposer
+        })
+        .then((url) => {
+          resolve(url)
+        })
+        .catch((error) => {
+          reject(error)
+        })
+
       // 设置超时
       const timeoutId = setTimeout(() => {
         cleanup?.() // 清理资源
         reject(new Error('获取 blob URL 超时'))
       }, 10000)
-      
+
       // 成功后清除超时
       Promise.resolve().then(() => {
         clearTimeout(timeoutId)
       })
     })
-    
+
     // 4. 返回包含blob和svgContent的对象
     return {
       blob: blobUrl,
       svgContent: svgContent
     }
   }
-  
 
   // 这个数组的每个元素都是由上面的 kodo 链接转换得到的 blob 链接
-  let svgContents: {blob: string, svgContent: string}[] = []
+  const svgContents: { blob: string; svgContent: string }[] = []
   for (let index = 0; index < imageUrls.length; index++) {
-    let s = imageUrls[index]
+    const s = imageUrls[index]
     // 假设 s 是 kodo 链接
     const result = await convertKodoUrlToBlobUrl(s)
     svgContents.push({
@@ -162,12 +161,11 @@ export async function generateSvgDirect(
       svgContent: result.svgContent
     })
   }
-  console.log('svgContents',svgContents)
 
   return {
-    svgContents:svgContents,
-    id:'',
-    width:512,
-    height:512
+    svgContents: svgContents,
+    id: '',
+    width: 512,
+    height: 512
   }
 }

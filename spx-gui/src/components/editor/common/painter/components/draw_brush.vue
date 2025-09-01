@@ -26,7 +26,7 @@ const isDrawing = ref<boolean>(false)
 const currentPath = ref<paper.Path | null>(null)
 
 //注入父组件接口
-import { inject, type Ref } from 'vue'  
+import { inject } from 'vue'
 
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
@@ -39,17 +39,17 @@ const createNewPath = (startPoint: Point): paper.Path => {
   path.strokeWidth = 2
   path.strokeCap = 'round'
   path.strokeJoin = 'round'
-  
+
   // 添加起始点
   path.add(new paper.Point(startPoint.x, startPoint.y))
-  
+
   return path
 }
 
 // 处理鼠标按下
 const handleMouseDown = (point: Point): void => {
   if (!props.isActive) return
-  
+
   isDrawing.value = true
   currentPath.value = createNewPath(point)
 }
@@ -57,16 +57,16 @@ const handleMouseDown = (point: Point): void => {
 // 处理鼠标拖拽
 const handleMouseDrag = (point: Point): void => {
   if (!props.isActive || !isDrawing.value || !currentPath.value) return
-  
+
   // 向当前路径添加点
   currentPath.value.add(new paper.Point(point.x, point.y))
   paper.view.update()
 }
 
 // 处理鼠标释放
-const handleMouseUp = (point: Point): void => {
+const handleMouseUp = (): void => {
   if (!props.isActive || !isDrawing.value) return
-  
+
   // 完成当前路径绘制
   if (currentPath.value) {
     // 使用注入的接口而不是事件上报
@@ -75,7 +75,7 @@ const handleMouseUp = (point: Point): void => {
     setAllPathsValue(currentPaths)
     exportSvgAndEmit()
   }
-  
+
   // 重置状态
   resetDrawing()
   paper.view.update()
@@ -88,11 +88,14 @@ const resetDrawing = (): void => {
 }
 
 // 监听工具切换，重置状态
-watch(() => props.isActive, (newValue) => {
-  if (!newValue) {
-    resetDrawing()
+watch(
+  () => props.isActive,
+  (newValue) => {
+    if (!newValue) {
+      resetDrawing()
+    }
   }
-})
+)
 
 // 暴露方法给父组件
 defineExpose({
