@@ -1,3 +1,8 @@
+<!--
+ * @FileDescription: 实现截屏分享弹窗管理
+ * @Author: ceilf6
+ * @Date: 2025.9.1
+ -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import type { ProjectData } from '@/apis/project'
 import type { PlatformShare } from './platformShare'
