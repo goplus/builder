@@ -4,7 +4,7 @@
  * @Date: 2025.9.1
  -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import Poster from './poster'
+import Poster from './ProjectPoster'
 import { sharePoster, SocialPlatformConfigs } from './platformShare'
 import platformSelector from './platformSelector.vue'
 import { ProjectData } from '@/apis/project'
