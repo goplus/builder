@@ -23,7 +23,7 @@ See API design in [`module_PlatformSelector.ts`](./module_PlatformSelector.ts).
 ### Poster
 用于生成海报，包含图片、二维码和项目信息。
 
-See API design in [`module_Poster.ts`](./module_Poster.ts).
+See API design in [`module_ProjectPoster.ts`](./module_ProjectPoster.ts).
 
 ### ProjectRunner
 通过 ProjectRunner 获取 runner 游戏引擎上暴露的方法，控制游戏画面。
@@ -45,12 +45,12 @@ See API design in [`module_RecordingAPIs.ts`](./module_RecordingAPIs.ts).
 ### DirectSharing
 项目页面上的直接分享弹窗，用于直接分享项目到各个平台，调用 Poster 模块以生成海报图片。
 
-See API design in [`module_DirectSharing.ts`](./module_DirectSharing.ts).
+See API design in [`module_ProjectDirectSharing.ts`](./module_ProjectDirectSharing.ts).
 
 ### ScreenShotSharing
 项目页面上的截屏分享弹窗，用于接收截屏图片（通过 ProjectRunner 模块）、调用Poster生成海报后分享到各个平台。
 
-See API design in [`module_ScreenShotSharing.ts`](./module_ScreenShotSharing.ts).
+See API design in [`module_ProjectScreenShotSharing.ts`](./module_ProjectScreenShotSharing.ts).
 
 ### ProjectRecordingSharing
 项目页面上的录屏分享弹窗，用于接收录屏后分享到各个平台，调用 Recording APIs 创建并存储对应的 Recording 记录。
