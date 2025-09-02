@@ -4,9 +4,9 @@
  * @Date: 2025.9.1
  -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import { directShare, shareVideo, SocialPlatformConfigs } from './module_PlatformShare'
-import type { RecordData } from './module_RecordingApis'
-import type { PlatformShare } from './module_PlatformShare'
+import { directShare, shareVideo, SocialPlatformConfigs } from './module_platformShare'
+import type { RecordingData } from './module_RecordingApis'
+import type { PlatformShare } from './module_platformShare'
 
 const props = defineProps<{
     recording: Promise<RecordData>,
