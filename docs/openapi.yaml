@@ -2107,6 +2107,11 @@ components:
           $ref: "#/components/schemas/AIInteractionCommandResult"
           nullable: true
           description: Result of executing the command requested in the response.
+        isInitial:
+          type: boolean
+          description: Indicates whether this turn is the initial turn of an interaction sequence.
+          examples:
+            - true
 
     AIInteractionCommandSpec:
       type: object

@@ -81,6 +81,10 @@ type Turn struct {
 
 	// ExecutedCommandResult contains the result of executing the command requested in the response.
 	ExecutedCommandResult *CommandResult `json:"executedCommandResult,omitempty"`
+
+	// IsInitial indicates whether this turn is the initial turn of an
+	// interaction sequence (i.e., ContinuationTurn == 0).
+	IsInitial bool `json:"isInitial,omitempty"`
 }
 
 // CommandSpec defines a command that can be called by the AI.
