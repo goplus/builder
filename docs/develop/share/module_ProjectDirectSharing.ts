@@ -5,9 +5,8 @@
 import { defineProps, ref, defineEmits } from "vue";
 import { PlatformConfig } from "./module_platformShare";
 import { ProjectData } from "@/apis/project";
-import platformSelector from "./platformSelector.vue";
+import platformSelector from "./module_platformSelector";
 import Poster from "./module_poster";
-
 /**
  * 定义组件的props
  */
