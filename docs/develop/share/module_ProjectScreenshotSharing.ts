@@ -5,10 +5,10 @@
  -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import Poster from './module_ProjectPoster'
-import platformSelector from './module_platformSelector.vue'
+import platformSelector from './module_PlatformSelector.vue'
 import { ProjectData } from '@/apis/project'
-import type { PlatformShare } from './module_platformShare'
-import { sharePoster, SocialPlatformConfigs } from './module_platformShare'
+import type { PlatformShare } from './module_PlatformShare'
+import { sharePoster, SocialPlatformConfigs } from './module_PlatformShare'
 import Poster from './poster.vue'
 
 const props = defineProps<{

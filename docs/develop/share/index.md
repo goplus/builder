@@ -13,7 +13,7 @@
 
 ### PlatformShare
 
-负责与外部平台的集成。目前支持：QQ、微信、抖音、小红书、B 站。为三种分享方式提供第三方平台的接口支持。
+负责与外部平台的集成。目前支持：QQ、微信、抖音、小红书、B 站。为三种分享方式提供第三方平台的接口支持
 
 See API design in [`module_PlatformShare.ts`](./module_PlatformShare.ts).
 
@@ -37,43 +37,24 @@ See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 
 ### Recording
 
-录屏的展示模块。
-
-包括录屏卡片和录屏详情
+录屏的展示模块，包括录屏卡片和录屏详情
 
 See API design in [`module_Recording.ts`](./module_Recording.ts).
 
+### MobileKeyboard
+移动键盘的组件，负责键盘的展示与编辑逻辑，与 Project 绑定。
+
+See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
+
 ### Recording APIs
 
-spx-backend 提供的用于对 Recording 管理的 APIs。
+spx-backend 提供的用于对 Recording 管理的 APIs
 
 See API design in [`module_RecordingAPIs.ts`](./module_RecordingAPIs.ts).
 
-### RecordingItem
+### Project APIs
 
-录屏条目显示组件，用于在各种列表环境中展示单个录屏记录（公共录屏列表、用户录屏列表等）。支持不同的显示模式，为用户自己的录屏提供编辑/删除操作。
-
-See details in [`RecordingItem`](./module_RecordItem.ts).
-
-### MobileKeyboard
-
-#### MobileKeyboard Edit
-
-用于编辑移动键盘布局。它提供了通用的按键池和固定的编辑区域，用户可以将对应的按键拖拽到目标区域
-
-#### MobileKeyboard View
-
-用于展示移动键盘布局。它会在相应区域显示已分配的按键，并反映当前键盘的状态。详情见
-
-#### UIKeyBtn
-
-键盘中的核心按键组件，负责单个按键的展示与交互逻辑。它同时服务于 编辑 和 查看 组件，并通过 projectRunner 与游戏画布交互，实现按键映射功能。
-
-See details in [`MobileKeyboard`](./module_mobileKeyboard.ts).
-
-### ProjectAPIs
-
-包含：spx-backend 提供的用于移动键盘管理的 HTTP 接口。包括 编辑 和 查看 功能。
+spx-backend 的 Project 管理相关 API 中，有一部分因支持 mobileKeyboard 的加入而被修改。
 
 See details in [`ProjectAPIs`](./module_ProjectAPIs.ts).
 
@@ -120,6 +101,9 @@ graph TB
     ProjectRecordingSharing["`**ProjectRecordingSharing**
     录屏分享弹窗`"]
 
+    VirtualKeyboard["`**VirtualKeyboard**
+    虚拟键盘模块`"]
+
     %% 平台相关模块
     PlatformSelector["`**PlatformSelector**
     平台选择组件`"]
@@ -137,14 +121,22 @@ graph TB
     RecordingAPIs["`**Recording APIs**
     录屏管理API服务`"]
 
-    %% 主界面到分享弹窗
+    %% 主界面到分享弹窗和虚拟键盘
     BuilderUI --> DirectSharing
     BuilderUI --> ScreenShotSharing
     BuilderUI --> ProjectRecordingSharing
     BuilderUI --> ProjectRunner
+    BuilderUI --> VirtualKeyboard
+
+    %% 虚拟键盘与游戏引擎和API的交互
+    VirtualKeyboard --> ProjectRunner
+    VirtualKeyboard --> ProjectAPIs
+
+    %% Project APIs
+    ProjectAPIs["`**Project APIs**
+    项目管理API服务`"]
 
     %% 分享弹窗到平台选择器
-
     ScreenShotSharing --> PlatformSelector
     DirectSharing --> PlatformSelector
     ProjectRecordingSharing --> PlatformSelector
@@ -168,10 +160,12 @@ graph TB
     classDef uiModule fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef apiModule fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef builderModule fill:#fafafa,stroke:#424242,stroke-width:2px
+    classDef keyboardModule fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 
     class Poster,ProjectRunner,RecordingPage coreModule
     class PlatformSelector,PlatformShare platformModule
     class DirectSharing,ScreenShotSharing,ProjectRecordingSharing uiModule
-    class RecordingAPIs apiModule
+    class RecordingAPIs,ProjectAPIs apiModule
     class BuilderUI builderModule
+    class VirtualKeyboard keyboardModule
 ```
