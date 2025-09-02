@@ -11,7 +11,7 @@ import {
   type ListRecordingParams,
 } from "./module_RecordingApis";
 
-import { type RecordingItemContext } from "./module_Recording";
+import { type RecordItemContext } from "./module_RecordingItem";
 declare const recordingApis: RecordingService;
 
 /**
@@ -49,7 +49,7 @@ export function RecordingExample() {
  */
 function renderRecordItem(
   record: RecordingData,
-  context: RecordingItemContext = "public",
+  context: RecordItemContext = "public",
   emits?: {
     removed: () => void;
   }
@@ -70,7 +70,6 @@ function renderRecordItem(
   };
 
   return `
-  <RouterLink :to="'/recording/${record.id}'" class="link">
     <div class="record-item" data-id="${record.id}">
       <!-- 缩略图 -->
       <div class="thumbnail">
@@ -102,7 +101,6 @@ function renderRecordItem(
           : ""
       }
     </div>
-  </RouterLink>
   `;
 }
 
