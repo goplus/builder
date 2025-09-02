@@ -181,7 +181,7 @@ watch(() => props.visible, (newVisible) => {
                             :project-data="projectData" 
                         />
                         <div class="poster-platform-selector">
-                            <PlatformSelector @change="handlePlatformChange" />
+                            <PlatformSelector @update:modelValue="handlePlatformChange" />
                         </div>
                     </div>
                     <div class="qr-section">

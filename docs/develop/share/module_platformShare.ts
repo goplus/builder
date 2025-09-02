@@ -35,27 +35,27 @@ export interface ShareFunction {
 }
 
 /**
- * 平台接口 - 只包含分享相关的功能，不包含basicInfo
- */
-export interface PlatformShare {
-    shareType: ShareType
-    shareFunction: ShareFunction
-}
-
-/**
  * 平台配置接口 - 包含平台的基本信息和分享功能
  */
-export interface PlatformConfig extends BasicInfo, PlatformShare {}
-
+export interface PlatformConfig {
+    shareType: ShareType
+    basicInfo: BasicInfo
+    shareFunction: ShareFunction
+}
+/**
+ * 平台跳转链接的示例，方便后续接口使用
+ */
+const platformUrl = 'https://example.com'
 /**
  * QQ平台实现
  */
 class QQPlatform implements PlatformConfig {
-    name = 'qq'
-    label = { en: 'QQ', zh: 'QQ' }
-    color = '#FF6B35'
-    platformUrl = 'https://im.qq.com'
-    
+    basicInfo = {
+        name: 'qq',
+        label: { en: 'QQ', zh: 'QQ' },
+        color: '#FF6B35'
+    }
+
     shareType = {
         supportProject: true,
         supportPoster: true,
@@ -67,10 +67,10 @@ class QQPlatform implements PlatformConfig {
             return `url:${url}`
         },
         shareImage: async (image: File) => {
-            return `platformUrl:${this.platformUrl},image:${image}`
+            return `platformUrl:${platformUrl},image:${image}`
         },
         shareVideo: async (video: File) => {
-            return `platformUrl:${this.platformUrl},video:${video}`
+            return `platformUrl:${platformUrl},video:${video}`
         }
     }
 }
@@ -79,11 +79,12 @@ class QQPlatform implements PlatformConfig {
  * 微信平台实现 - 只支持项目分享和海报分享
  */
 class WeChatPlatform implements PlatformConfig {
-    name = 'wechat'
-    label = { en: 'WeChat', zh: '微信' }
-    color = '#07C160'
-    platformUrl = 'https://weixin.qq.com'
-    
+    basicInfo = {
+        name: 'wechat',
+        label: { en: 'WeChat', zh: '微信' },
+        color: '#07C160'
+    }
+
     shareType = {
         supportProject: true,
         supportPoster: true,
@@ -95,29 +96,17 @@ class WeChatPlatform implements PlatformConfig {
             return `url:${url}`
         },
         shareImage: async (image: File) => {
-            return `platformUrl:${this.platformUrl},image:${image}`
+            return `platformUrl:${platformUrl},image:${image}`
         }
         // 不实现 shareVideo，因为不支持
     }
 }
 
-//class WeChatPlatform implements Platform { ... }
-//class DouyinPlatform implements Platform { ... }
-
-
 // 导出平台配置数组 - 包含完整的平台信息
 export const SocialPlatformConfigs: PlatformConfig[] = [
     new QQPlatform(),
     new WeChatPlatform(),
-
 ]
-
-// 导出平台功能数组 - 只包含分享功能，不包含basicInfo
-export const SocialPlatforms: PlatformShare[] = SocialPlatformConfigs.map(config => ({
-    shareType: config.shareType,
-    shareFunction: config.shareFunction
-}))
-
 
 /**
  * 直接分享
@@ -125,7 +114,7 @@ export const SocialPlatforms: PlatformShare[] = SocialPlatformConfigs.map(config
  * @param projectUrl 项目链接
  * @returns 分享数据
  */
-export async function directShare(platform: PlatformShare, projectUrl: string) {
+export async function directShare(platform: PlatformConfig, projectUrl: string) {
     if (platform.shareType.supportProject && platform.shareFunction.shareURL) {
         const data = await platform.shareFunction.shareURL(projectUrl)
         return data
@@ -140,7 +129,7 @@ export async function directShare(platform: PlatformShare, projectUrl: string) {
  * @param projectUrl 项目链接
  * @returns 分享数据
  */
-export async function sharePoster(platform: PlatformShare, image: File, projectUrl: string) {
+export async function sharePoster(platform: PlatformConfig, image: File, projectUrl: string) {
     if (platform.shareType.supportPoster && platform.shareFunction.shareImage) {
         const data = await platform.shareFunction.shareImage(image)
         return data
@@ -152,10 +141,9 @@ export async function sharePoster(platform: PlatformShare, image: File, projectU
  * 分享视频
  * @param platform 平台
  * @param video 视频文件
- * @param projectUrl 项目链接
  * @returns 分享数据
  */
-export async function shareVideo(platform: PlatformShare, video: File) {
+export async function shareVideo(platform: PlatformConfig, video: File) {
     if (platform.shareType.supportVideo && platform.shareFunction.shareVideo) {
         const data = await platform.shareFunction.shareVideo(video)
         return data

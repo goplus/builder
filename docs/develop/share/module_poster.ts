@@ -1,10 +1,15 @@
 //<script setup> // expose、defineExpose需要在setup内执行
+<!--
+ * @FileDescription: 实现创建海报复用功能
+ * @Author: ceilf6
+ * @Date: 2025.9.1
+ -->
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick } from 'vue'
 
 const props = defineProps<{
-  img: File
+  img?: File
   projectData: ProjectData
 }>()
 
