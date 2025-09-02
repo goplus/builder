@@ -63,7 +63,7 @@ interface IframeWindow extends Window {
   __xb_is_stale?: boolean
   // 新增录屏相关API
   startRecording?: () => void
-  stopRecording?: () => Promise<unknown>
+  stopRecording?: () => Promise<Blob> // stopRecording 直接返回 Blob
   getRecordedVideo?: () => Blob | Promise<Blob>
   pauseGame?: () => void
   resumeGame?: () => void
@@ -239,12 +239,25 @@ defineExpose({
     
     try {
       const result = await win.stopRecording()
-      console.log('stopRecording 完成:', result)
+      console.log('stopRecording 原始结果:', {
+        result,
+        type: typeof result,
+        isBlob: result instanceof Blob,
+        size: result?.size,
+        mimeType: result?.type
+      })
       
-      // 等待一段时间确保录制数据准备完毕
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      return result
+      // 验证返回的结果 - 使用更宽松的检查，避免跨 iframe 的 instanceof 问题
+      if (result && typeof result === 'object' && result.size > 0 && result.type) {
+        console.log('stopRecording 返回有效的录制数据:', {
+          size: result.size,
+          type: result.type
+        })
+        return result
+      } else {
+        console.warn('stopRecording 返回无效数据:', result)
+        throw new Error('录制数据无效')
+      }
     } catch (error) {
       console.error('stopRecording 执行失败:', error)
       throw error

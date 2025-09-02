@@ -376,34 +376,17 @@ async function handleRecordingSharing() {
     if (isRecording.value) {
         // 当前正在录制，停止录制
         try {
-            await projectRunnerRef.value?.stopRecording?.()
+            console.log('正在停止录制...')
+            const recordBlob = await projectRunnerRef.value?.stopRecording?.()
             await projectRunnerRef.value?.pauseGame()
             
-            console.log('录制已停止，等待一秒后获取录制文件...')
-            // 等待一秒确保录制完全停止
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            console.log('录制已停止，获得 Blob:', recordBlob)
             
-            // 添加更多调试信息
-            console.log('检查录制功能可用性...')
-            if (!projectRunnerRef.value?.getRecordedVideo) {
-                console.error('getRecordedVideo 方法不存在')
-                toaster.error('录制功能不可用')
-                await projectRunnerRef.value?.resumeGame()
-                isRecording.value = false
-                return
-            }
-            
-            console.log('开始获取录制文件...')
-            const recordFile = await projectRunnerRef.value?.getRecordedVideo?.()
-            console.log('录制文件:', recordFile)
-            
-            if (!recordFile) {
-                console.error('录制视频获取失败: recordFile 为空')
-                toaster.error('录制视频获取失败，请重试')
-                await projectRunnerRef.value?.resumeGame()
-                isRecording.value = false
-                return
-            }
+            // 将 Blob 转换为 File 对象
+            const fileExtension = recordBlob?.type?.includes('webm') ? 'webm' : 'mp4'
+            const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, { 
+                type: recordBlob?.type || 'video/webm' 
+            })
             
             recording.value = recordFile
 

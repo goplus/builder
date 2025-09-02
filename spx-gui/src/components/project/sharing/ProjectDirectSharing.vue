@@ -53,7 +53,7 @@
   import type { PlatformConfig } from './platformShare'
   import type { ProjectData } from '@/apis/project'
   import PlatformSelector from './platformSelector.vue'
-  import Poster from './poster.vue'
+  import Poster from './ProjectPoster.vue'
   import QRCode from 'qrcode'
 
   const props = defineProps<{
