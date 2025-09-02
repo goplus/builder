@@ -4,12 +4,11 @@
  * @Date: 2025.9.1
  -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import Poster from './ProjectPoster'
-import { sharePoster, SocialPlatformConfigs } from './platformShare'
-import platformSelector from './platformSelector.vue'
+import Poster from './module_ProjectPoster'
+import platformSelector from './module_platformSelector.vue'
 import { ProjectData } from '@/apis/project'
-import type { PlatformShare } from './platformShare'
-import { sharePoster, SocialPlatformConfigs } from './platformShare'
+import type { PlatformShare } from './module_platformShare'
+import { sharePoster, SocialPlatformConfigs } from './module_platformShare'
 import Poster from './poster.vue'
 
 const props = defineProps<{
