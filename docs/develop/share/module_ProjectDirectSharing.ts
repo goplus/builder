@@ -2,12 +2,9 @@
  * 直接分享组件
  */
 // 导入必要的类型和函数
-import { defineProps, ref, defineEmits } from "vue";
 import { PlatformConfig } from "./module_platformShare";
-import { ProjectData } from "@/apis/project";
-import platformSelector from "./platformSelector.vue";
-import Poster from "./module_poster";
-
+import Poster from "./module_ProjectPoster";
+import { defineProps, ref, defineEmits } from "vue";
 /**
  * 定义组件的props
  */
