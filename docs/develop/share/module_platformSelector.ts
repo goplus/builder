@@ -1,7 +1,7 @@
 /**
  * 社交平台选择器组件
  */
-import { SocialPlatformConfigs, PlatformConfig} from "./module_platformShare"
+import { SocialPlatformConfigs, PlatformConfig} from "./module_PlatformShare"
 import { defineProps, defineEmits } from 'vue'
 
 const props = defineProps<{
