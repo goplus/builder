@@ -68,43 +68,63 @@ const shareRecording = useModal(ProjectRecordingSharing)
 async function handleRecordingSharing() {
     isRecording.value = !isRecording.value
     
-    if (!isRecording.value) {
+    if (isRecording.value) {
+        // 开始录制
         ProjectRunner.startRecording()
     } else {
-        ProjectRunner.stopRecording()
-        isRecording.value = false
-        ProjectRunner.pauseGame()
-        const recordFile = ProjectRunner.getRecordedVideo()
-        recording.value = recordFile
+        // 停止录制
+        try {
+            console.log('正在停止录制...')
+            const recordBlob = await ProjectRunner.stopRecording() // stopRecording 直接返回 Blob
+            ProjectRunner.pauseGame()
+            
+            console.log('录制已停止，获得 Blob:', recordBlob)
+            
+            // 将 Blob 转换为 File 对象
+            const fileExtension = recordBlob?.type?.includes('webm') ? 'webm' : 'mp4'
+            const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, { 
+                type: recordBlob?.type || 'video/webm' 
+            })
+            recording.value = recordFile
 
-        const RecordingURL = await saveFile(recordFile) // 存储到云端获得视频存储URL
-        const params: CreateRecordParams = {
-            projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
-            title: projectData.value.name,
-            description: projectData.value.description ?? '',
-            videoUrl: RecordingURL,
-            thumbnailUrl: projectData.value.thumbnail || ''
-        }
-
-        const created: RecordData = await RecordingURL.createRecord(params) // 调用 RecordingAPIs 存储到后端
-        recordData.value = created
-        showRecordSharing.value = true // 唤起录屏分享弹窗
-
-        try{
-            const result = await shareRecording()
-
-            if (result.type === 'shared'){
-                toaster.success(`已分享到${result.platform}`)
-            }else if (result.type === 'rerecord'){
-                isRecording.value = true
-                ProjectRunner.startRecording()
+            const RecordingURL = await saveFile(recordFile) // 存储到云端获得视频存储URL
+            const params: CreateRecordParams = {
+                projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+                title: projectData.value.name,
+                description: projectData.value.description ?? '',
+                videoUrl: RecordingURL,
+                thumbnailUrl: projectData.value.thumbnail || ''
             }
-        }catch(e){
-            console.log(e)
-            // cancelled 逻辑，可能用于调试
-        }
 
-        showRecordSharing.value = false
-        ProjectRunner.resumeGame()
+            const created: RecordData = await RecordService.createRecord(params) // 调用 RecordingAPIs 存储到后端
+            recordData.value = created
+            showRecordSharing.value = true // 唤起录屏分享弹窗
+
+            try{
+                const result = await shareRecording({
+                    recording: created,
+                    video: recordFile
+                })
+
+                if (result.type === 'shared'){
+                    toaster.success(`已分享到${result.platform}`)
+                }else if (result.type === 'rerecord'){
+                    isRecording.value = true
+                    ProjectRunner.startRecording()
+                    return // 不恢复游戏，继续录制
+                }
+            }catch(e){
+                console.log(e)
+                // cancelled 逻辑，用户取消分享
+            }
+
+            showRecordSharing.value = false
+            ProjectRunner.resumeGame()
+        } catch (error) {
+            console.error('录制处理失败:', error)
+            toaster.error('录制处理失败，请重试')
+            ProjectRunner.resumeGame()
+            isRecording.value = false
+        }
     }
 }
