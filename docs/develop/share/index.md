@@ -13,7 +13,7 @@
 
 ### PlatformShare
 
-负责与外部平台的集成。目前支持：QQ、微信、抖音、小红书、B 站。为三种分享方式提供第三方平台的接口支持
+负责与外部平台的集成。目前支持：QQ、微信、抖音、小红书、B 站。为三种分享方式提供第三方平台的接口支持。
 
 See API design in [`module_PlatformShare.ts`](./module_PlatformShare.ts).
 
@@ -27,7 +27,7 @@ See API design in [`module_PlatformSelector.ts`](./module_PlatformSelector.ts).
 
 用于生成海报，包含图片、二维码和项目信息。
 
-See API design in [`module_ProjectPoster.ts`](./module_ProjectPoster.ts).
+See API design in [`module_Poster.ts`](./module_Poster.ts).
 
 ### ProjectRunner
 
@@ -35,28 +35,17 @@ See API design in [`module_ProjectPoster.ts`](./module_ProjectPoster.ts).
 
 See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 
-### Recording
+### RecordingPage
 
-录屏的展示模块，包括录屏卡片和录屏详情
+录屏业务的承载页面。
 
-See API design in [`module_Recording.ts`](./module_Recording.ts).
-
-### MobileKeyboard
-移动键盘的组件，负责键盘的展示与编辑逻辑，与 Project 绑定。
-
-See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
+See API design in [`module_RecordingPage.ts`](./module_RecordingPage.ts).
 
 ### Recording APIs
 
-spx-backend 提供的用于对 Recording 管理的 APIs
+spx-backend 提供的用于对 Recording 管理的 APIs。
 
 See API design in [`module_RecordingAPIs.ts`](./module_RecordingAPIs.ts).
-
-### Project APIs
-
-spx-backend 的 Project 管理相关 API 中，有一部分因支持 mobileKeyboard 的加入而被修改。
-
-See details in [`ProjectAPIs`](./module_ProjectAPIs.ts).
 
 ## UI 层（分享弹窗）
 
@@ -64,13 +53,13 @@ See details in [`ProjectAPIs`](./module_ProjectAPIs.ts).
 
 项目页面上的直接分享弹窗，用于直接分享项目到各个平台，调用 Poster 模块以生成海报图片。
 
-See API design in [`module_ProjectDirectSharing.ts`](./module_ProjectDirectSharing.ts).
+See API design in [`module_DirectSharing.ts`](./module_DirectSharing.ts).
 
 ### ScreenShotSharing
 
 项目页面上的截屏分享弹窗，用于接收截屏图片（通过 ProjectRunner 模块）、调用 Poster 生成海报后分享到各个平台。
 
-See API design in [`module_ProjectScreenShotSharing.ts`](./module_ProjectScreenShotSharing.ts).
+See API design in [`module_ScreenShotSharing.ts`](./module_ScreenShotSharing.ts).
 
 ### ProjectRecordingSharing
 
@@ -84,108 +73,75 @@ See API design in [`module_ProjectRecordingSharing.ts`](./module_ProjectRecordin
 
 ```mermaid
 graph TB
-    %% 主界面层
-    subgraph MainLayer["主界面层"]
-        BuilderUI["`**Builder UI**
-        项目主界面
-        录屏展示界面`"]
-    end
+    %% XBuilder 主界面
+    BuilderUI["`**Builder UI**
+    Project 主界面`"]
 
-    %% 功能模块层
-    subgraph FunctionLayer["功能模块层"]
-        VirtualKeyboard["`**VirtualKeyboard**
-        虚拟键盘模块`"]
-        
-        ProjectRunner["`**ProjectRunner**
-        游戏引擎接口模块`"]
-        
-        Recording["`**Recording**
-        录屏展示模块`"]
-    end
+    %% 分享方式 UI 层
+    DirectSharing["`**DirectSharing**
+    直接分享弹窗`"]
 
-    %% API 服务层
-    subgraph APILayer["API 服务层"]
-        RecordingAPIs["`**Recording APIs**
-        录屏管理服务`"]
-        
-        ProjectAPIs["`**Project APIs**
-        项目管理服务`"]
-    end
+    ScreenShotSharing["`**ScreenShotSharing**
+    截屏分享弹窗`"]
 
-    %% 分享界面层
-    subgraph ShareLayer["分享界面层"]
-        DirectSharing["`**DirectSharing**
-        直接分享弹窗`"]
-        
-        ProjectRecordingSharing["`**ProjectRecordingSharing**
-        录屏分享弹窗`"]
-        
-        ScreenShotSharing["`**ScreenShotSharing**
-        截屏分享弹窗`"]
-    end
+    ProjectRunner["`**ProjectRunner**
+    游戏引擎接口模块`"]
 
-    %% 平台集成层
-    subgraph PlatformLayer["平台集成层"]
-        PlatformSelector["`**PlatformSelector**
-        平台选择组件`"]
-        
-        PlatformShare["`**PlatformShare**
-        第三方平台集成`"]
-    end
+    ProjectRecordingSharing["`**ProjectRecordingSharing**
+    录屏分享弹窗`"]
 
-    %% 核心处理层
-    subgraph CoreLayer["核心处理层"]
-        Poster["`**Poster**
-        海报生成模块`"]
-    end
+    %% 平台相关模块
+    PlatformSelector["`**PlatformSelector**
+    平台选择组件`"]
 
-    %% 主要流程连接
-    BuilderUI --> VirtualKeyboard
-    BuilderUI --> ProjectRunner
-    BuilderUI --> Recording
+    PlatformShare["`**PlatformShare**
+    第三方平台集成模块`"]
+
+    %% 核心功能模块
+    Poster["`**Poster**
+    海报生成模块`"]
+
+    RecordingPage["`**RecordingPage**
+    录屏业务承载页面`"]
+
+    RecordingAPIs["`**Recording APIs**
+    录屏管理API服务`"]
+
+    %% 主界面到分享弹窗
     BuilderUI --> DirectSharing
     BuilderUI --> ScreenShotSharing
     BuilderUI --> ProjectRecordingSharing
+    BuilderUI --> ProjectRunner
 
-    %% 功能模块间连接
-    VirtualKeyboard --> ProjectRunner
-    VirtualKeyboard --> ProjectAPIs
+    %% 分享弹窗到平台选择器
 
-    %% 分享流程连接
-    DirectSharing --> PlatformSelector
     ScreenShotSharing --> PlatformSelector
+    DirectSharing --> PlatformSelector
     ProjectRecordingSharing --> PlatformSelector
 
-    %% 平台处理流程
+    %% 平台选择器到平台集成
     PlatformSelector --> PlatformShare
 
-    %% 内容生成流程
-    DirectSharing --> Poster
+    %% 截屏分享流程
     ScreenShotSharing --> Poster
+    DirectSharing --> Poster
 
-    %% API 调用关系
+    %% 录屏分享流程
     ProjectRecordingSharing --> RecordingAPIs
-    Recording --> RecordingAPIs
 
-    %% 去掉所有subgraph的背景色，只保留边框
-    %%{init: {"theme": "base", "themeVariables": {"primaryColor": "transparent", "primaryTextColor": "#000", "primaryBorderColor": "#000", "lineColor": "#000", "secondaryColor": "transparent", "tertiaryColor": "transparent", "background": "transparent", "mainBkg": "transparent", "secondaryBkg": "transparent"}}}%%
+    %% 底层协作
+    RecordingPage --> RecordingAPIs
 
     %% 样式定义
-    classDef uiLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
-    classDef unifiedLayer fill:#f5f5f5,stroke:#757575,stroke-width:2px,color:#000
-    classDef shareLayer fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
-    classDef apiLayer fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef coreModule fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef platformModule fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef uiModule fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef apiModule fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef builderModule fill:#fafafa,stroke:#424242,stroke-width:2px
 
-    class BuilderUI uiLayer
-    class VirtualKeyboard,ProjectRunner,Recording,PlatformSelector,PlatformShare,Poster unifiedLayer
-    class DirectSharing,ScreenShotSharing,ProjectRecordingSharing shareLayer
-    class RecordingAPIs,ProjectAPIs apiLayer
-
-    %% 设置所有subgraph为完全透明，无边框
-    style MainLayer fill:transparent,stroke:transparent,stroke-width:0px
-    style FunctionLayer fill:transparent,stroke:transparent,stroke-width:0px
-    style APILayer fill:transparent,stroke:transparent,stroke-width:0px
-    style ShareLayer fill:transparent,stroke:transparent,stroke-width:0px
-    style PlatformLayer fill:transparent,stroke:transparent,stroke-width:0px
-    style CoreLayer fill:transparent,stroke:transparent,stroke-width:0px
+    class Poster,ProjectRunner,RecordingPage coreModule
+    class PlatformSelector,PlatformShare platformModule
+    class DirectSharing,ScreenShotSharing,ProjectRecordingSharing uiModule
+    class RecordingAPIs apiModule
+    class BuilderUI builderModule
 ```
