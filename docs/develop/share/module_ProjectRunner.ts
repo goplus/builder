@@ -1,10 +1,10 @@
 interface IframeWindow extends Window {
-  startRecording?: () => void
-  stopRecording?: () => Promise<Blob> // stopRecording 直接返回 Blob
-  getScreenshot?: () => Blob | Promise<Blob>
-  pauseGame?: () => void
-  resumeGame?: () => void
-  dispatchKeyToEvent?: (type: string, code: string)=>void
+  startRecording?: () => void;
+  stopRecording?: () => Promise<Blob>; // stopRecording 直接返回 Blob
+  getScreenshot?: () => Blob | Promise<Blob>;
+  pauseGame?: () => void;
+  resumeGame?: () => void;
+  dispatchKeyToEvent?: (type: string, code: string) => void;
 }
 
 defineExpose({
@@ -23,7 +23,7 @@ defineExpose({
   async stopRecording() {
     // 暴露停止录屏方法
   },
-  async dispatchKeyToEvent(type: string, code: string){
+  async dispatchKeyToEvent(type: string, code: string) {
     // 暴露虚拟键盘绑定方法
-  }
-})
+  },
+});
