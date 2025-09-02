@@ -1,4 +1,4 @@
-import type { ProjectRunnerInstance } from "./projectRunner";
+import { dispatchKeyToEvent } from "./module_ProjectAPIs";
 import type { MobileKeyboardZoneToKeyMapping } from "./module_ProjectAPIs";
 export enum MobileKeyboardType {
   NoKeyboard = 1,
@@ -27,40 +27,35 @@ export declare function KeyboardEditorModal(
  * Mobile Keyboard View Component
  *
  * Manages the mobile keyboard layout and handles key event dispatching to ProjectRunner.
- * This component acts as the bridge between UIKeyBtn components and ProjectRunner.
+ * Now uses the globally exposed dispatchKeyToEvent method instead of requiring a ref.
  *
  * ## Props:
- * - `ZoneToKeyMapping`: ZoneToKeyMapping keyboard zone to key mapping configuration
- * - `projectRunnerRef`: ProjectRunner component reference
+ * - `ZoneToKeyMapping`: keyboard zone to key mapping configuration
  *
  * ## Slots:
- * - `gameView`: Should contain ProjectRunner component with ref
+ * - `gameView`: Should contain ProjectRunner component
  *
  * use:
  * ```vue
- * let projectRunnerRef: ProjectRunnerInstance | null = null;
- *
- * <MobileKeyboardView :ZoneToKeyMapping="{ zones: { lt: 'Q', rt: 'E' } }" :projectRunnerRef="projectRunnerRef">
- *   <template >
- *     <ProjectRunner ref="projectRunnerRef" :project="project" />
+ * <MobileKeyboardView :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }">
+ *   <template>
+ *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
 export type MobileKeyboardViewProps = {
   ZoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-  projectRunnerRef: ProjectRunnerInstance | null;
 };
 
 export declare function MobileKeyboardView({
   ZoneToKeyMapping,
-  projectRunnerRef,
 }: MobileKeyboardViewProps): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
 //   const handleKeyEvent = (type: string, key: string, code: string) => {
-//     projectRunnerRef?.dispatchKeyToEvent(type, key, code);
+//     dispatchKeyToEvent(type, code);
 //   };
 
 //   const keyButtons = zones
