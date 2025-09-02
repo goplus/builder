@@ -143,3 +143,9 @@ export interface ProjectService {
     signal?: AbortSignal
   ): Promise<ProjectData>;
 }
+
+/**
+ * 全局暴露的键盘事件分发方法
+ * ProjectRunner 组件会暴露这个方法供其他组件调用
+ */
+export declare function dispatchKeyToEvent(type: string, code: string): void;
