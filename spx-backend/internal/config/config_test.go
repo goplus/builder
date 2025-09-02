@@ -104,6 +104,60 @@ func TestRedisConfigGetPoolSize(t *testing.T) {
 	})
 }
 
+func TestOpenAIConfigGetLiteAPIKey(t *testing.T) {
+	t.Run("WithLiteKey", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			APIKey:     "standard-key",
+			LiteAPIKey: "lite-key",
+		}
+		assert.Equal(t, "lite-key", cfg.GetLiteAPIKey())
+	})
+
+	t.Run("WithoutLiteKey", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			APIKey:     "standard-key",
+			LiteAPIKey: "",
+		}
+		assert.Equal(t, "standard-key", cfg.GetLiteAPIKey())
+	})
+}
+
+func TestOpenAIConfigGetLiteAPIEndpoint(t *testing.T) {
+	t.Run("WithLiteEndpoint", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			APIEndpoint:     "https://api.openai.com/v1",
+			LiteAPIEndpoint: "https://lite.openai.com/v1",
+		}
+		assert.Equal(t, "https://lite.openai.com/v1", cfg.GetLiteAPIEndpoint())
+	})
+
+	t.Run("WithoutLiteEndpoint", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			APIEndpoint:     "https://api.openai.com/v1",
+			LiteAPIEndpoint: "",
+		}
+		assert.Equal(t, "https://api.openai.com/v1", cfg.GetLiteAPIEndpoint())
+	})
+}
+
+func TestOpenAIConfigGetLiteModelID(t *testing.T) {
+	t.Run("WithLiteModel", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			ModelID:     "gpt-3.5-turbo",
+			LiteModelID: "gpt-4o-mini",
+		}
+		assert.Equal(t, "gpt-4o-mini", cfg.GetLiteModelID())
+	})
+
+	t.Run("WithoutLiteModel", func(t *testing.T) {
+		cfg := &OpenAIConfig{
+			ModelID:     "gpt-3.5-turbo",
+			LiteModelID: "",
+		}
+		assert.Equal(t, "gpt-3.5-turbo", cfg.GetLiteModelID())
+	})
+}
+
 func TestOpenAIConfigGetPremiumAPIKey(t *testing.T) {
 	t.Run("WithPremiumKey", func(t *testing.T) {
 		cfg := &OpenAIConfig{

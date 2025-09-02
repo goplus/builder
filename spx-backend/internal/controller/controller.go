@@ -54,6 +54,12 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		option.WithHTTPClient(traceClient),
 	)
 
+	openaiLiteClient := openai.NewClient(
+		option.WithAPIKey(cfg.OpenAI.GetLiteAPIKey()),
+		option.WithBaseURL(cfg.OpenAI.GetLiteAPIEndpoint()),
+		option.WithHTTPClient(traceClient),
+	)
+
 	openaiPremiumClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.GetPremiumAPIKey()),
 		option.WithBaseURL(cfg.OpenAI.GetPremiumAPIEndpoint()),
@@ -67,12 +73,12 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	stdflow := NewWorkflow("stdflow", cpt, db)
 
-	aiDescription, err := aidescription.New(openaiClient, cfg.OpenAI.ModelID)
+	aiDescription, err := aidescription.New(openaiLiteClient, cfg.OpenAI.GetLiteModelID())
 	if err != nil {
 		return nil, err
 	}
 
-	aiInteraction, err := aiinteraction.New(openaiClient, cfg.OpenAI.ModelID)
+	aiInteraction, err := aiinteraction.New(openaiLiteClient, cfg.OpenAI.GetLiteModelID())
 	if err != nil {
 		return nil, err
 	}
