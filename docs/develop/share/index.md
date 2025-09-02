@@ -35,17 +35,53 @@ See API design in [`module_Poster.ts`](./module_Poster.ts).
 
 See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 
+<<<<<<< HEAD
 ### RecordingPage
 
 录屏业务的承载页面。
+=======
+### Recording
+>>>>>>> b8085079 (feat:recoding doc and mobileKeyboard)
 
-See API design in [`module_RecordingPage.ts`](./module_RecordingPage.ts).
+录屏的展示模块。
+
+包括录屏卡片和录屏详情
+
+See API design in [`module_Recording.ts`](./module_Recording.ts).
 
 ### Recording APIs
 
 spx-backend 提供的用于对 Recording 管理的 APIs。
 
 See API design in [`module_RecordingAPIs.ts`](./module_RecordingAPIs.ts).
+
+### RecordingItem
+
+录屏条目显示组件，用于在各种列表环境中展示单个录屏记录（公共录屏列表、用户录屏列表等）。支持不同的显示模式，为用户自己的录屏提供编辑/删除操作。
+
+See details in [`RecordingItem`](./module_RecordItem.ts).
+
+### MobileKeyboard
+
+#### MobileKeyboard Edit
+
+用于编辑移动键盘布局。它提供了通用的按键池和固定的编辑区域，用户可以将对应的按键拖拽到目标区域
+
+#### MobileKeyboard View
+
+用于展示移动键盘布局。它会在相应区域显示已分配的按键，并反映当前键盘的状态。详情见
+
+#### UIKeyBtn
+
+键盘中的核心按键组件，负责单个按键的展示与交互逻辑。它同时服务于 编辑 和 查看 组件，并通过 projectRunner 与游戏画布交互，实现按键映射功能。
+
+See details in [`MobileKeyboard`](./module_mobileKeyboard.ts).
+
+### ProjectAPIs
+
+包含：spx-backend 提供的用于移动键盘管理的 HTTP 接口。包括 编辑 和 查看 功能。
+
+See details in [`ProjectAPIs`](./module_ProjectAPIs.ts).
 
 ## UI 层（分享弹窗）
 
@@ -101,8 +137,13 @@ graph TB
     Poster["`**Poster**
     海报生成模块`"]
 
+<<<<<<< HEAD
     RecordingPage["`**RecordingPage**
     录屏业务承载页面`"]
+=======
+    RecordingPage["`**Recording**
+    录屏的展示模块`"]
+>>>>>>> b8085079 (feat:recoding doc and mobileKeyboard)
 
     RecordingAPIs["`**Recording APIs**
     录屏管理API服务`"]
