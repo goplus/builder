@@ -48,6 +48,7 @@ See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 See API design in [`module_Recording.ts`](./module_Recording.ts).
 
 ### MobileKeyboard
+
 移动键盘的组件，负责键盘的展示与编辑逻辑，与 Project 绑定。
 
 See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
@@ -137,7 +138,9 @@ graph TB
     BuilderUI --> ScreenShotSharing
     BuilderUI --> ProjectRecordingSharing
     BuilderUI --> ProjectRunner
+    BuilderUI --> RecordingPage
     BuilderUI --> VirtualKeyboard
+
 
     %% 虚拟键盘与游戏引擎和API的交互
     VirtualKeyboard --> ProjectRunner
