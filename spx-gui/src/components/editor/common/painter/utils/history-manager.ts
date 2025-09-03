@@ -17,7 +17,7 @@ export class HistoryManager {
   private currentIndex: number = -1
   private restoreCallback: CanvasRestoreCallback | null = null
   private initialState: string = '' // 保存初始空白状态
-  
+
   constructor(storageKey: string = 'paintboard_history', maxHistorySize: number = 64) {
     this.storageKey = storageKey
     this.maxHistorySize = maxHistorySize
@@ -78,13 +78,13 @@ export class HistoryManager {
    * 添加新的历史状态
    */
   addState(svgContent: string, description?: string): void {
-    console.log(svgContent,'svgContent')
+    console.log(svgContent, 'svgContent')
     if (!svgContent || svgContent.trim() === '') {
       return
     }
 
     const history = this.getHistoryFromStorage()
-    
+
     // 创建新的历史状态
     const newState: HistoryState = {
       svgContent,
@@ -99,7 +99,7 @@ export class HistoryManager {
 
     // 添加新状态
     history.push(newState)
-    console.log(history.length,'history')
+    console.log(history.length, 'history')
     this.currentIndex = history.length - 1
 
     // 限制历史记录大小
@@ -121,7 +121,7 @@ export class HistoryManager {
     }
 
     const history = this.getHistoryFromStorage()
-    
+
     // 如果当前在第一个历史记录，撤销到初始空白状态
     if (this.currentIndex === 0) {
       this.currentIndex = -1
@@ -142,7 +142,7 @@ export class HistoryManager {
     // 正常撤销到上一个历史记录
     this.currentIndex--
     const previousState = history[this.currentIndex]
-    
+
     if (previousState && this.restoreCallback) {
       try {
         await this.restoreCallback(previousState.svgContent)
@@ -154,7 +154,7 @@ export class HistoryManager {
         return false
       }
     }
-    
+
     return false
   }
 
@@ -169,7 +169,7 @@ export class HistoryManager {
     this.currentIndex++
     const history = this.getHistoryFromStorage()
     const nextState = history[this.currentIndex]
-    
+
     if (nextState && this.restoreCallback) {
       try {
         await this.restoreCallback(nextState.svgContent)
@@ -181,7 +181,7 @@ export class HistoryManager {
         return false
       }
     }
-    
+
     return false
   }
 
@@ -208,7 +208,7 @@ export class HistoryManager {
     if (this.currentIndex < 0) {
       return null
     }
-    
+
     const history = this.getHistoryFromStorage()
     return history[this.currentIndex] || null
   }
