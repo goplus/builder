@@ -14,10 +14,10 @@ export type BasicInfo = {
  * 支持分享方式接口
  */
 export type ShareType = {
-  /** 分享项目页面 */
-  supportProject: boolean;
-  /** 分享海报 */
-  supportPoster: boolean;
+  /** 分享链接 */
+  supportURL: boolean;
+  /** 分享图片 */
+  supportImage: boolean;
   /** 分享视频 */
   supportVideo: boolean;
 };
@@ -57,8 +57,8 @@ class QQPlatform implements PlatformConfig {
   };
 
   shareType = {
-    supportProject: true,
-    supportPoster: true,
+    supportURL: true,
+    supportImage: true,
     supportVideo: true,
   };
 
@@ -86,8 +86,8 @@ class WeChatPlatform implements PlatformConfig {
   };
 
   shareType = {
-    supportProject: true,
-    supportPoster: true,
+    supportURL: true,
+    supportImage: true,
     supportVideo: false,
   };
 
@@ -107,53 +107,3 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
   new QQPlatform(),
   new WeChatPlatform(),
 ];
-
-/**
- * 直接分享
- * @param platform 平台
- * @param projectUrl 项目链接
- * @returns 分享数据
- */
-export async function directShare(
-  platform: PlatformConfig,
-  projectUrl: string
-) {
-  if (platform.shareType.supportProject && platform.shareFunction.shareURL) {
-    const data = await platform.shareFunction.shareURL(projectUrl);
-    return data;
-  }
-  throw new Error("Platform does not support project sharing");
-}
-
-/**
- * 分享海报
- * @param platform 平台
- * @param image 图片文件
- * @param projectUrl 项目链接
- * @returns 分享数据
- */
-export async function sharePoster(
-  platform: PlatformConfig,
-  image: File,
-  projectUrl: string
-) {
-  if (platform.shareType.supportPoster && platform.shareFunction.shareImage) {
-    const data = await platform.shareFunction.shareImage(image);
-    return data;
-  }
-  throw new Error("Platform does not support poster sharing");
-}
-
-/**
- * 分享视频
- * @param platform 平台
- * @param video 视频文件
- * @returns 分享数据
- */
-export async function shareVideo(platform: PlatformConfig, video: File) {
-  if (platform.shareType.supportVideo && platform.shareFunction.shareVideo) {
-    const data = await platform.shareFunction.shareVideo(video);
-    return data;
-  }
-  throw new Error("Platform does not support video sharing");
-}
