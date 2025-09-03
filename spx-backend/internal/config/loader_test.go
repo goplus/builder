@@ -92,6 +92,9 @@ func TestLoad(t *testing.T) {
 		assert.Equal(t, "test-openai-key", config.OpenAI.APIKey)
 		assert.Equal(t, "https://api.openai.com/v1", config.OpenAI.APIEndpoint)
 		assert.Equal(t, "gpt-3.5-turbo", config.OpenAI.ModelID)
+		assert.Empty(t, config.OpenAI.LiteAPIKey)
+		assert.Empty(t, config.OpenAI.LiteAPIEndpoint)
+		assert.Empty(t, config.OpenAI.LiteModelID)
 		assert.Empty(t, config.OpenAI.PremiumAPIKey)
 		assert.Empty(t, config.OpenAI.PremiumAPIEndpoint)
 		assert.Empty(t, config.OpenAI.PremiumModelID)
@@ -114,6 +117,26 @@ func TestLoad(t *testing.T) {
 		assert.True(t, config.Redis.IsClusterMode())
 		expected := []string{"node1:6379", "node2:6379", "node3:6379"}
 		assert.Equal(t, expected, config.Redis.GetAddr())
+	})
+
+	t.Run("LiteConfig", func(t *testing.T) {
+		setTestEnv(t)
+		t.Setenv("OPENAI_LITE_API_KEY", "lite-key")
+		t.Setenv("OPENAI_LITE_API_ENDPOINT", "https://lite.openai.com/v1")
+		t.Setenv("OPENAI_LITE_MODEL_ID", "gpt-4o-mini")
+
+		logger := log.GetLogger()
+		config, err := Load(logger)
+		require.NoError(t, err)
+		require.NotNil(t, config)
+
+		// OpenAI
+		assert.Equal(t, "lite-key", config.OpenAI.LiteAPIKey)
+		assert.Equal(t, config.OpenAI.LiteAPIKey, config.OpenAI.GetLiteAPIKey())
+		assert.Equal(t, "https://lite.openai.com/v1", config.OpenAI.LiteAPIEndpoint)
+		assert.Equal(t, config.OpenAI.LiteAPIEndpoint, config.OpenAI.GetLiteAPIEndpoint())
+		assert.Equal(t, "gpt-4o-mini", config.OpenAI.LiteModelID)
+		assert.Equal(t, config.OpenAI.LiteModelID, config.OpenAI.GetLiteModelID())
 	})
 
 	t.Run("PremiumConfig", func(t *testing.T) {
