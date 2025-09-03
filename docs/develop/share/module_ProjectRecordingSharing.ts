@@ -5,7 +5,7 @@
  -->
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import { directShare, shareVideo, SocialPlatformConfigs } from './module_PlatformShare'
-import type { RecordingData } from './module_RecordingApis'
+import type { RecordData } from './module_RecordingApis'
 import type { PlatformShare } from './module_PlatformShare'
 
 const props = defineProps<{
