@@ -77,6 +77,8 @@ async function handleRecordingSharing() {
     recording.value = recordFile;
 
     const RecordingURL = await saveFile(recordFile); // 存储到云端获得视频存储URL
+    // 等待时间过久，先已改为通过传入 Promise 实现异步优化
+
     const params: CreateRecordParams = {
       projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
       title: projectData.value.name,
