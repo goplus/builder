@@ -78,7 +78,6 @@ export class HistoryManager {
    * 添加新的历史状态
    */
   addState(svgContent: string, description?: string): void {
-    console.log(svgContent, 'svgContent')
     if (!svgContent || svgContent.trim() === '') {
       return
     }
@@ -99,7 +98,6 @@ export class HistoryManager {
 
     // 添加新状态
     history.push(newState)
-    console.log(history.length, 'history')
     this.currentIndex = history.length - 1
 
     // 限制历史记录大小

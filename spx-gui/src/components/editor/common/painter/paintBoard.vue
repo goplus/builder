@@ -401,7 +401,6 @@ const setAllPathsValue = (paths: paper.Path[]): void => {
   if (svgContent) {
     historyManager.value.addState(svgContent)
   }
-  console.log(historyManager.value, 'historyManager')
   allPaths.value = paths
 }
 
