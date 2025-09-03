@@ -1,6 +1,6 @@
 # 代码编辑器 Code Editor
 
-Code Editor 是 Go+ Builder 中辅助用户编写 spx 代码的工具。
+Code Editor 是 XBuilder 中辅助用户编写 spx 代码的工具。
 
 除了界面结构上属于 Code Editor 的部分外，该文档还会涉及一些界面上属于其他部分，但同样影响代码编写过程的内容，如项目调试、资源修改等。
 

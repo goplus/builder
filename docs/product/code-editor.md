@@ -1,6 +1,6 @@
 # Code Editor
 
-The Code Editor is a tool in Go+ Builder that assists users in writing spx code.
+The Code Editor is a tool in XBuilder that assists users in writing spx code.
 
 In addition to the parts that belong to the Code Editor in terms of interface structure, this document will also cover some parts of the interface that belong to other sections but also affect the code writing process, such as project debugging, resource modification, etc.
 
