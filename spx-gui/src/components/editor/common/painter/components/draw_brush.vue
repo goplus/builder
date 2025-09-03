@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { type Ref, ref, watch } from 'vue'
 import paper from 'paper'
 
 // Props
@@ -24,6 +24,7 @@ interface Point {
 // 响应式变量
 const isDrawing = ref<boolean>(false)
 const currentPath = ref<paper.Path | null>(null)
+const canvasColor = inject<Ref<string>>('canvasColor', ref('#000'))
 
 //注入父组件接口
 import { inject } from 'vue'
@@ -35,7 +36,7 @@ const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 // 创建新路径
 const createNewPath = (startPoint: Point): paper.Path => {
   const path = new paper.Path()
-  path.strokeColor = new paper.Color('black')
+  path.strokeColor = new paper.Color(canvasColor.value)
   path.strokeWidth = 2
   path.strokeCap = 'round'
   path.strokeJoin = 'round'
