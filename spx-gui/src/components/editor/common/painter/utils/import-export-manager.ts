@@ -1,5 +1,6 @@
 import paper from 'paper'
 import type { Ref } from 'vue'
+import { clearCanvas } from './clear-canvas'
 
 // 导入导出相关的接口定义
 export interface ImportExportDependencies {
@@ -325,59 +326,17 @@ export class ImportExportManager {
    * 清空画布
    */
   clearCanvas(triggerExport: boolean = true): void {
-    if (!paper.project) return
-
-    try {
-      // 隐藏控制点
-      this.hideControlPointsForExport()
-
-      // 移除所有路径
-      this.dependencies.allPaths.value.forEach((path: paper.Path) => {
-        if (path && path.parent) {
-          path.remove()
-        }
-      })
-      this.dependencies.allPaths.value = []
-
-      // 清空项目
-      paper.project.clear()
-
-      // 重新创建背景
-      this.createBackground()
-
-      // 重置状态
-      this.resetToolStates()
-
-      paper.view.update()
-
-      if (triggerExport) {
-        this.exportSvgAndEmit()
-      }
-    } catch (error) {
-      console.error('Failed to clear canvas:', error)
-    }
-  }
-
-  /**
-   * 创建画布背景
-   */
-  private createBackground(): void {
-    const background = new paper.Path.Rectangle({
-      point: [0, 0],
-      size: [this.dependencies.canvasWidth.value, this.dependencies.canvasHeight.value],
-      fillColor: 'transparent'
-    })
-    this.dependencies.backgroundRect.value = background
-  }
-
-  /**
-   * 重置工具状态
-   */
-  private resetToolStates(): void {
-    // 通过reshape引用重置
-    if (this.dependencies.reshapeRef.value?.resetDrawing) {
-      this.dependencies.reshapeRef.value.resetDrawing()
-    }
+    clearCanvas(
+      {
+        canvasWidth: this.dependencies.canvasWidth,
+        canvasHeight: this.dependencies.canvasHeight,
+        allPaths: this.dependencies.allPaths,
+        reshapeRef: this.dependencies.reshapeRef,
+        backgroundRect: this.dependencies.backgroundRect,
+        exportSvgAndEmit: () => this.exportSvgAndEmit()
+      },
+      triggerExport
+    )
   }
 
   /**
