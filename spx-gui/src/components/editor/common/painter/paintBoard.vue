@@ -230,6 +230,7 @@ import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
+import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
@@ -430,9 +431,14 @@ const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => 
 
 // 清空画布
 const clearCanvas = (): void => {
-  if (importExportManager) {
-    importExportManager.clearCanvas()
-  }
+  clearCanvasFunction({
+    canvasWidth,
+    canvasHeight,
+    allPaths,
+    reshapeRef,
+    backgroundRect,
+    exportSvgAndEmit
+  })
 
   // 清理选中路径状态
   selectedPathForRestore.value = null
