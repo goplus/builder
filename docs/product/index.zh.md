@@ -1,12 +1,12 @@
-# Go+ Builder
+# XBuilder
 
-Go+ Builder 是一个编辑器，编辑的对象是游戏项目。游戏基于 spx 技术实现，spx 是基于 Go+ 语言的游戏引擎。
+XBuilder 是一个编辑器，编辑的对象是游戏项目。游戏基于 spx 技术实现，spx 是基于 XGo 语言的游戏引擎。
 
-Go+ 的目标用户是学习编程的 10 岁左右未成年人。
+XBuilder 的目标用户是学习编程的 10 岁左右未成年人。
 
 ## 基本概念
 
-Go+ Builder 中的基本概念有：
+XBuilder 中的基本概念有：
 
 * 用户 User
 * 项目 Project
@@ -107,11 +107,11 @@ Asset 包含以下信息：
 
 ## User Story
 
-这里简述 Go+ Builder 几个基本用户场景对应的逻辑：
+这里简述 XBuilder 几个基本用户场景对应的逻辑：
 
 ### Project 创建与保存
 
-用户通过 Go+ Builder 可以创建新 Project，然后进行编辑：
+用户通过 XBuilder 可以创建新 Project，然后进行编辑：
 
 * 编辑 Project Name
 * 编辑 Stage 信息
@@ -203,7 +203,7 @@ Asset 包含以下信息：
 
 ### 从 Scratch 项目导入 Asset
 
-用户可以在 Go+ Builder 编辑器中选择导入一个 Scratch 项目文件（这个文件来自于 Scratch 编辑器的导出功能）。Go+ Builder 编辑器会解析并列出其中所有的 Asset，用户可以选择并导入到当前 Project 中。
+用户可以在 XBuilder 编辑器中选择导入一个 Scratch 项目文件（这个文件来自于 Scratch 编辑器的导出功能）。XBuilder 编辑器会解析并列出其中所有的 Asset，用户可以选择并导入到当前 Project 中。
 
 后续对于 Asset 的编辑与普通的编辑相同，这里不做赘述。
 

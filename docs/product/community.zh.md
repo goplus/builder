@@ -35,13 +35,13 @@
 
 ### 用户 User
 
-在 [Go+ Builder Product](./index.zh.md) 基础上，对 User 的基本信息进行扩充如下：
+在 [XBuilder Product](./index.zh.md) 基础上，对 User 的基本信息进行扩充如下：
 
 * Description: 对自己的描述
 
 ### 项目 Project
 
-在 [Go+ Builder Product](./index.zh.md) 基础上，对 Project 信息进行扩充如下：
+在 [XBuilder Product](./index.zh.md) 基础上，对 Project 信息进行扩充如下：
 
 * Description: 描述，对 Project 的描述
 * Instructions: 游戏的操作说明
@@ -106,7 +106,7 @@ Unpublish 是这样的动作：
 
 ### 编辑 Project
 
-除了在 [Go+ Builder Product](./index.zh.md) 中提到的编辑 Project 的动作，用户还可以在编辑器中：
+除了在 [XBuilder Product](./index.zh.md) 中提到的编辑 Project 的动作，用户还可以在编辑器中：
 
 * Publish / Unpublish Project
 

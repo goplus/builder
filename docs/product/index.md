@@ -1,12 +1,12 @@
-# Go+ Builder
+# XBuilder
 
-Go+ Builder is an editor that aims for game projects. The game is implemented based on spx technology, which is a game engine based on the Go+ language.
+XBuilder is an editor that aims for game projects. The game is implemented based on spx technology, which is a game engine based on the XGo language.
 
-The target users of Go+ are children around 10 years old who are learning programming.
+The target users of XBuilder are children around 10 years old who are learning programming.
 
 ## Basic Concepts
 
-The basic concepts in Go+ Builder are:
+The basic concepts in XBuilder are:
 
 * User
 * Project
@@ -107,11 +107,11 @@ Asset contains the following information:
 
 ## User Story
 
-Here is a brief description of the logic corresponding to several basic user scenarios of Go+ Builder:
+Here is a brief description of the logic corresponding to several basic user scenarios of XBuilder:
 
 ### Project Creation and Saving
 
-Users can create a new Project through Go+ Builder and then edit it:
+Users can create a new Project through XBuilder and then edit it:
 
 * Edit Project Name
 * Edit Stage information
@@ -203,7 +203,7 @@ In the offline state, part of the editor is available, and the specific behavior
 
 ### Importing Assets from Scratch Projects
 
-Users can choose to import a Scratch project file (obtained from the export function of the Scratch editor) in the Go+ Builder editor. The Go+ Builder editor will parse and list all the Assets in it, and users can choose and import them into the current Project.
+Users can choose to import a Scratch project file (obtained from the export function of the Scratch editor) in the XBuilder editor. The XBuilder editor will parse and list all the Assets in it, and users can choose and import them into the current Project.
 
 The subsequent editing of Assets is the same as normal editing and will not be repeated here.
 
