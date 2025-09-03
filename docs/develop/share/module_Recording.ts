@@ -23,5 +23,6 @@ export declare function RecordingItem(
   },
   emits: {
     removed: () => void;
+    updated: () => void;
   }
 );
