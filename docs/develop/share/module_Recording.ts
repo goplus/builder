@@ -3,7 +3,7 @@
 // 路由会自动把id作为props传给RecordingPage
 export declare function RecordingPage(props: { id: string });
 
-import { RecordingData } from "./module_RecordingApis";
+import { RecordingData } from "./module_RecordingAPIs";
 
 /**
  * Context (list) where the record item is used
