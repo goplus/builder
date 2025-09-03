@@ -1,4 +1,4 @@
-import { packageSpx } from '@/utils/spx'
+import { back, backward, forward, front, packageSpx } from '@/utils/spx'
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../../common'
 import { defineConst } from './common'
 
@@ -2930,10 +2930,10 @@ export const turningInfoDir: DefinitionDocumentationItem = {
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
 
-export const Front = defineConst('Front', [categories.look.visibility], { en: 'Front', zh: '最前' })
-export const Back = defineConst('Back', [categories.look.visibility], { en: 'Back', zh: '最后' })
-export const Forward = defineConst('Forward', [categories.look.visibility], { en: 'Forward', zh: '前移' })
-export const Backward = defineConst('Backward', [categories.look.visibility], { en: 'Backward', zh: '后移' })
+export const Front = defineConst(front.name, [categories.look.visibility], front.text)
+export const Back = defineConst(back.name, [categories.look.visibility], back.text)
+export const Forward = defineConst(forward.name, [categories.look.visibility], forward.text)
+export const Backward = defineConst(backward.name, [categories.look.visibility], backward.text)
 
 export const up = defineConst('Up', [categories.motion.heading], {
   en: 'Up direction, i.e., 0 degree',

@@ -667,6 +667,10 @@ export enum InputType {
   SpxResourceName = 'spx-resource-name',
   /** `Direction` in spx */
   SpxDirection = 'spx-direction',
+  /** `layerAction` in spx */
+  SpxLayerAction = 'spx-layer-action',
+  /** `dirAction` in spx */
+  SpxDirAction = 'spx-dir-action',
   /** `Color` in spx */
   SpxColor = 'spx-color',
   /** `EffectKind` in spx */
@@ -694,6 +698,8 @@ export type InputTypedValue =
       value: ResourceURI
     }
   | { type: InputType.SpxDirection; value: number }
+  | { type: InputType.SpxLayerAction; value: string }
+  | { type: InputType.SpxDirAction; value: string }
   | {
       type: InputType.SpxColor
       value: ColorValue
@@ -745,6 +751,8 @@ export type InputSlotAccept =
         | InputType.String
         | InputType.Boolean
         | InputType.SpxDirection
+        | InputType.SpxLayerAction
+        | InputType.SpxDirAction
         | InputType.SpxColor
         | InputType.SpxEffectKind
         | InputType.SpxKey
@@ -796,6 +804,8 @@ export function exprForInput(input: Input) {
     case InputType.SpxPlayAction:
     case InputType.SpxSpecialObj:
     case InputType.SpxRotationStyle:
+    case InputType.SpxLayerAction:
+    case InputType.SpxDirAction:
       return input.value
     default:
       return null

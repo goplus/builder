@@ -206,6 +206,27 @@ export const effectKinds = [
   { name: 'GhostEffect', text: { en: 'Ghost', zh: '幽灵' } }
 ]
 
+export const front = {
+  name: 'Front',
+  text: { en: 'Front', zh: '最前' }
+}
+export const back = {
+  name: 'Back',
+  text: { en: 'Back', zh: '最后' }
+}
+export const forward = {
+  name: 'Forward',
+  text: { en: 'Forward', zh: '前移' }
+}
+export const backward = {
+  name: 'Backward',
+  text: { en: 'Backward', zh: '后移' }
+}
+
+export const layerActions = [front, back]
+
+export const dirActions = [forward, backward]
+
 export type KeyDefinition = {
   /** Name in spx */
   name: string
