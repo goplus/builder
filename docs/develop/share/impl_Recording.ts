@@ -9,7 +9,7 @@ import {
   type RecordingData,
   type RecordingService,
   type ListRecordingParams,
-} from "./module_RecordingApis";
+} from "./module_RecordingAPIs";
 
 import { type RecordingItemContext } from "./module_Recording";
 declare const recordingApis: RecordingService;

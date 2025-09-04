@@ -25,7 +25,7 @@ const emit = defineEmits<{
 const selectedPlatformKey = ref<string>(SocialPlatformConfigs[0]?.name ?? '')
 const selectedPlatform = ref<PlatformShare | null>(null)
 const jumpUrl = ref<string>('')
-=======
+
 
 function handlePlatformChange(p: PlatformShare){
     selectedPlatform.value = p

@@ -1,9 +1,9 @@
 import { dispatchKeyToEvent } from "./module_ProjectAPIs";
-import type { MobileKeyboardZoneToKeyMapping } from "./module_ProjectAPIs";
-export enum MobileKeyboardType {
-  NoKeyboard = 1,
-  CustomKeyboard = 2,
-}
+import type {
+  MobileKeyboardZoneToKeyMapping,
+  MobileKeyboardType,
+} from "./module_ProjectAPIs";
+
 export type KeyboardConfig = {
   type: MobileKeyboardType;
   mapping: MobileKeyboardZoneToKeyMapping;
@@ -16,7 +16,7 @@ export declare function useModal<T>(
 
 export declare function KeyboardEditorModal(
   props: {
-    ZoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
   },
   emits: {
     resolved: (result: MobileKeyboardZoneToKeyMapping) => void;
@@ -45,11 +45,11 @@ export declare function KeyboardEditorModal(
  * ```
  */
 export type MobileKeyboardViewProps = {
-  ZoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+  zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
 };
 
 export declare function MobileKeyboardView({
-  ZoneToKeyMapping,
+  zoneToKeyMapping,
 }: MobileKeyboardViewProps): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);

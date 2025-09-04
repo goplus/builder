@@ -28,6 +28,15 @@ export type MobileKeyboardZoneToKeyMapping = {
   [zone in MobileKeyboardZone]: string | null;
 };
 /**
+ * Mobile keyboard type
+ * - NoKeyboard: No keyboard
+ * - CustomKeyboard: Custom keyboard
+ */
+export enum MobileKeyboardType {
+  NoKeyboard = 1,
+  CustomKeyboard = 2,
+}
+/**
  * Updated project data structure with mobile keyboard support
  */
 export type ProjectData = {
@@ -66,7 +75,7 @@ export type ProjectData = {
   /** Number of remixes associated with the project */
   remixCount: number;
   /** Mobile keyboard type */
-  mobileKeyboardType: number;
+  mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
   mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
 };
@@ -84,7 +93,7 @@ export type AddProjectParams = {
   /** Universal URL of the project's thumbnail image */
   thumbnail?: string;
   /** Mobile keyboard type */
-  mobileKeyboardType: number;
+  mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
   mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
 };
@@ -100,7 +109,7 @@ export type AddProjectByRemixParams = {
   /** Visibility of the project */
   visibility: Visibility;
   /** Mobile keyboard type */
-  mobileKeyboardType: number;
+  mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
   mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
 };
@@ -120,7 +129,7 @@ export type UpdateProjectParams = {
   /** Universal URL of the project's thumbnail image */
   thumbnail?: string;
   /** Mobile keyboard type */
-  mobileKeyboardType?: number;
+  mobileKeyboardType?: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
   mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
 };
