@@ -19,8 +19,8 @@ const panelBoundBuffer = [20, 10]
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch, type WatchSource } from 'vue'
-import { useBottomSticky, useContentSize } from '@/utils/dom'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
+import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, until } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
@@ -30,9 +30,11 @@ import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
+import { useSpotlight } from '@/utils/spotlight'
 import logoSrc from './logo.png'
 
 const copilot = useCopilot()
+const spotlight = useSpotlight()
 
 const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
@@ -293,6 +295,26 @@ const handleQuickInputClick = useMessageHandle(
   },
   { en: 'Failed to send message', zh: '发送消息失败' }
 ).fn
+
+onBeforeUnmount(
+  spotlight.on('onReveal', ({ rect }) => {
+    const panelEl = panelRef.value
+    if (copilot.active && panelEl) {
+      const isIntersecting = isRectIntersecting(rect, panelEl.getBoundingClientRect())
+      if (isIntersecting) {
+        const { panelW } = fixResizeNullable()
+        const { right, bottom, state } = panelPosition.value
+
+        let offset = panelW + rect.width
+        refreshPanelPosition({
+          right: right + (right - panelW > 0 ? -offset : offset),
+          bottom,
+          state
+        })
+      }
+    }
+  })
+)
 
 // TODO: prevent click in copilot panel from closing other dropdowns
 </script>
