@@ -14,9 +14,20 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     cancelled: []
-    resolved: [platfrom: string]
+    resolved: [platform: string]
 }>()
 
+// 组件引用
+const posterCompRef = ref<InstanceType<typeof Poster>>()
+
+// 平台相关状态
+const selectedPlatform = ref<PlatformConfig | null>(null)
+const jumpUrl = ref<string>('')
+const qrCodeData = ref<string>('')
+const isGeneratingQR = ref(false)
+
+// 清理 object URLs
+const createdObjectUrls = new Set<string>()
 </script>
 
 <template>
