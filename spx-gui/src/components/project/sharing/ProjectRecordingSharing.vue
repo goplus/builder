@@ -2,7 +2,7 @@
 import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted } from 'vue'
 import { useExternalUrl } from '@/utils/utils'
 import PlatformSelector from './platformSelector.vue'
-import type { RecordingData } from './recording'
+import type { RecordingData } from '../apis/recording'
 import type { PlatformConfig } from './platformShare'
 import { SocialPlatformConfigs } from './platformShare'
 import QRCode from 'qrcode'
