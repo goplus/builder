@@ -11,21 +11,21 @@ defineExpose({
   async pauseGame(): Promise<void> {
     // 暴露暂停方法
   },
-  async resumeGame():Promise<void> {
+  async resumeGame(): Promise<void> {
     // 暴露恢复方法
   },
-  async takeScreenshot():Promise<Blob> {
+  async takeScreenshot(): Promise<Blob> {
     // 暴露截屏方法
-    return screenshot
+    return screenshot;
   },
-  async startRecording():Promise<void> {
+  async startRecording(): Promise<void> {
     // 暴露开始录屏方法
   },
-  async stopRecording():Promise<Blob> {
+  async stopRecording(): Promise<Blob> {
     // 暴露停止录屏方法
-    return recordedVideo
+    return recordedVideo;
   },
-  async dispatchKeyToEvent(type: string, code: string):Promise<void> {
+  async dispatchKeyToEvent(type: string, code: string): Promise<void> {
     // 暴露虚拟键盘绑定方法
   },
 });
