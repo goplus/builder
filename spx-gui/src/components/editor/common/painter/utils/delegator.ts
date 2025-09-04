@@ -87,8 +87,8 @@ export class CanvasEventDelegator {
 
     // 优先调用 handleCanvasClick，如果不存在则调用 handleClick
     if (handler.handleCanvasClick) {
-      // line 工具需要 {x, y} 格式
-      if (this.currentTool === 'line') {
+      // line 和 text 工具需要 {x, y} 格式
+      if (this.currentTool === 'line' || this.currentTool === 'text') {
         handler.handleCanvasClick({ x: point.x, y: point.y })
       } else if (this.currentTool === 'fill') {
         // fill 工具需要 paper.Point 格式
