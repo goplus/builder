@@ -1,7 +1,7 @@
 interface IframeWindow extends Window {
   startRecording?: () => void;
   stopRecording?: () => Promise<Blob>; // stopRecording 直接返回 Blob
-  getScreenshot?: () => Blob | Promise<Blob>;
+  takeScreenshot?: () => Blob | Promise<Blob>;
   pauseGame?: () => void;
   resumeGame?: () => void;
   dispatchKeyToEvent?: (type: string, code: string) => void;
@@ -14,8 +14,9 @@ defineExpose({
   async resumeGame():Promise<void> {
     // 暴露恢复方法
   },
-  async getScreenshot():Promise<void> {
+  async takeScreenshot():Promise<Blob> {
     // 暴露截屏方法
+    return screenshot
   },
   async startRecording():Promise<void> {
     // 暴露开始录屏方法
