@@ -116,9 +116,9 @@ class MilvusOperations:
             logger.error(f"创建索引失败: {e}")
             raise
     
-    def insert(self, id: int, url: str, vector: List[float]) -> bool:
+    def upsert(self, id: int, url: str, vector: List[float]) -> bool:
         """
-        插入数据
+        插入或更新数据（如果记录已存在则更新，否则插入）
         
         Args:
             id: 图片ID
@@ -126,7 +126,7 @@ class MilvusOperations:
             vector: 特征向量
             
         Returns:
-            是否插入成功
+            是否操作成功
         """
         try:
             current_time = get_current_timestamp()
@@ -138,41 +138,17 @@ class MilvusOperations:
                 [current_time]           # updated_at
             ]
             
-            # 插入数据到Milvus
-            self.collection.insert(entities)
+            # 使用Milvus原生的upsert方法
+            self.collection.upsert(entities)
             
             # 刷新数据到磁盘
             self.collection.flush()
             
-            logger.info(f"数据成功插入: ID={id}")
+            logger.info(f"数据成功upsert: ID={id}")
             return True
             
         except Exception as e:
-            logger.error(f"插入数据失败: ID={id}, 错误: {e}")
-            return False
-    
-    def update(self, id: int, url: str, vector: List[float]) -> bool:
-        """
-        更新数据（先删除后插入）
-        
-        Args:
-            id: 图片ID
-            url: 图片URL
-            vector: 特征向量
-            
-        Returns:
-            是否更新成功
-        """
-        try:
-            # 先删除旧记录
-            if self.record_exists(id):
-                self.delete_by_id(id)
-            
-            # 重新插入
-            return self.insert(id, url, vector)
-            
-        except Exception as e:
-            logger.error(f"更新数据失败: ID={id}, 错误: {e}")
+            logger.error(f"数据upsert失败: ID={id}, 错误: {e}")
             return False
     
     def delete_by_id(self, id: int) -> bool:
