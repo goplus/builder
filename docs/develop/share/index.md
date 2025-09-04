@@ -35,13 +35,7 @@ See API design in [`module_ProjectPoster.ts`](./module_ProjectPoster.ts).
 
 See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 
-<<<<<<< HEAD
-### RecordingPage
-
-录屏业务的承载页面。
-=======
 ### Recording
->>>>>>> b8085079 (feat:recoding doc and mobileKeyboard)
 
 录屏的展示模块，包括录屏卡片和录屏详情
 
@@ -122,13 +116,8 @@ graph TB
     Poster["`**Poster**
     海报生成模块`"]
 
-<<<<<<< HEAD
-    RecordingPage["`**RecordingPage**
-    录屏业务承载页面`"]
-=======
     RecordingPage["`**Recording**
     录屏的展示模块`"]
->>>>>>> b8085079 (feat:recoding doc and mobileKeyboard)
 
     RecordingAPIs["`**Recording APIs**
     录屏管理API服务`"]
