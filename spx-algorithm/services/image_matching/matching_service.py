@@ -56,12 +56,8 @@ class ImageMatchingService:
                 logger.error(f"图片向量化失败: ID={id}, URL={url}")
                 return False
             
-            # 检查记录是否已存在
-            if self.milvus_ops.record_exists(id):
-                logger.warning(f"ID {id} 已存在，将更新现有记录")
-                success = self.milvus_ops.update(id, url, vector.tolist())
-            else:
-                success = self.milvus_ops.insert(id, url, vector.tolist())
+            # 使用upsert方法处理插入或更新
+            success = self.milvus_ops.upsert(id, url, vector.tolist())
             
             if success:
                 logger.info(f"图片成功添加: ID={id}")
@@ -95,12 +91,8 @@ class ImageMatchingService:
                 logger.error(f"SVG向量化失败: ID={id}")
                 return False
             
-            # 检查记录是否已存在
-            if self.milvus_ops.record_exists(id):
-                logger.warning(f"ID {id} 已存在，将更新现有记录")
-                success = self.milvus_ops.update(id, url, vector.tolist())
-            else:
-                success = self.milvus_ops.insert(id, url, vector.tolist())
+            # 使用upsert方法处理插入或更新
+            success = self.milvus_ops.upsert(id, url, vector.tolist())
             
             if success:
                 logger.info(f"SVG图片成功添加: ID={id}")
