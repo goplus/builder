@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -84,7 +85,7 @@ type AlgorithmImageResult struct {
 	Rank       int     `json:"rank"`
 }
 
-// RecommendImages recommends similar images based on text prompt.
+// RecommendImages recommends similar images based on text prompt using dual-path search strategy.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
 	
@@ -96,54 +97,38 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Using theme-recommended provider: %s for theme: %s", provider, params.Theme)
 	}
 
-	// Apply theme to prompt if specified
-	finalPrompt := ApplyThemeToPrompt(params.Text, params.Theme)
+	var foundResults []RecommendedImageResult
+	var err error
+
 	if params.Theme != ThemeNone {
-		logger.Printf("Theme applied - original: %q, enhanced: %q", params.Text, finalPrompt)
+		// Use dual-path search strategy for theme-based requests
+		foundResults, err = ctrl.dualPathSearch(ctx, params)
+	} else {
+		// Use single semantic search for non-themed requests
+		foundResults, err = ctrl.singleSemanticSearch(ctx, params)
 	}
 
-	// Step 1: Call spx-algorithm service for semantic search with enhanced prompt
-	algorithmResp, err := ctrl.callAlgorithmService(ctx, finalPrompt, params.TopK)
 	if err != nil {
-		logger.Printf("Algorithm service call failed: %v", err)
-		return nil, fmt.Errorf("algorithm service call failed: %w", err)
+		logger.Printf("Search failed: %v", err)
+		return nil, fmt.Errorf("search failed: %w", err)
 	}
 
-	// Step 2: Query database to get KodoURLs for found images
-	foundResults := make([]RecommendedImageResult, 0, params.TopK)
-	for _, algResult := range algorithmResp.Results {
-		var aiResource struct {
-			ID  int64  `json:"id"`
-			URL string `json:"url"`
-		}
+	logger.Printf("Found %d matching images from search", len(foundResults))
 
-		//err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
-		//if err == nil {
-		// Found matching resource in database
-		foundResults = append(foundResults, RecommendedImageResult{
-			ID:         aiResource.ID,
-			ImagePath:  algResult.ImagePath,
-			Similarity: algResult.Similarity,
-			Rank:       algResult.Rank,
-			Source:     "search",
-		})
-
-		if len(foundResults) >= params.TopK {
-			break // We have enough results
-		}
-		// } else {
-		// 	logger.Printf("Image not found in database: %s", algResult.ImagePath)
-		// }
-	}
-
-	logger.Printf("Found %d matching images in database", len(foundResults))
-
-	// Step 3: Generate AI SVGs if we don't have enough results
+	// Generate AI SVGs if we don't have enough results
 	if len(foundResults) < params.TopK {
 		needed := params.TopK - len(foundResults)
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
-		generatedResults, err := ctrl.generateAISVGs(ctx, finalPrompt, provider, needed, len(foundResults))
+		// Get optimized prompt for AI generation
+		var aiPrompt string
+		if params.Theme != ThemeNone {
+			aiPrompt = OptimizePromptWithAnalysis(params.Text, params.Theme)
+		} else {
+			aiPrompt = params.Text
+		}
+
+		generatedResults, err := ctrl.generateAISVGs(ctx, aiPrompt, provider, needed, len(foundResults))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -152,7 +137,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		}
 	}
 
-	// Step 4: Update ranks to be sequential
+	// Update ranks to be sequential
 	for i := range foundResults {
 		foundResults[i].Rank = i + 1
 	}
@@ -162,8 +147,13 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
+	finalQuery := params.Text
+	if params.Theme != ThemeNone {
+		finalQuery = OptimizePromptWithAnalysis(params.Text, params.Theme)
+	}
+
 	return &ImageRecommendResult{
-		Query:        finalPrompt,
+		Query:        finalQuery,
 		ResultsCount: len(foundResults),
 		Results:      foundResults,
 	}, nil
@@ -321,4 +311,228 @@ func (ctrl *Controller) getAlgorithmServiceURL() string {
 	// TODO: Get from config when available
 	// For now, use localhost default
 	return "http://100.100.35.128:5000"
+}
+
+// dualPathSearch implements the dual-path search strategy for themed requests
+func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecommendParams) ([]RecommendedImageResult, error) {
+	logger := log.GetReqLogger(ctx)
+	
+	// Calculate split for dual search (70% semantic, 30% theme-optimized)
+	semanticCount := params.TopK * 7 / 10
+	themeCount := params.TopK - semanticCount
+	
+	logger.Printf("Dual-path search: %d semantic + %d theme-optimized = %d total", semanticCount, themeCount, params.TopK)
+	
+	// Channel to collect search results
+	type searchResult struct {
+		results []RecommendedImageResult
+		source  string
+		err     error
+	}
+	resultChan := make(chan searchResult, 2)
+	
+	// Start semantic search concurrently
+	go func() {
+		semanticPrompt := GetOptimizedPromptForSearch(params.Text, params.Theme, "semantic")
+		logger.Printf("Semantic search prompt: %q", semanticPrompt)
+		
+		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
+		if err != nil {
+			resultChan <- searchResult{err: err, source: "semantic"}
+			return
+		}
+		
+		results := ctrl.processAlgorithmResults(algorithmResp.Results, "semantic_search")
+		resultChan <- searchResult{results: results, source: "semantic"}
+	}()
+	
+	// Start theme search concurrently
+	go func() {
+		themePrompt := GetOptimizedPromptForSearch(params.Text, params.Theme, "theme")
+		logger.Printf("Theme search prompt: %q", themePrompt)
+		
+		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
+		if err != nil {
+			resultChan <- searchResult{err: err, source: "theme"}
+			return
+		}
+		
+		results := ctrl.processAlgorithmResults(algorithmResp.Results, "theme_search")
+		resultChan <- searchResult{results: results, source: "theme"}
+	}()
+	
+	// Collect results from both searches
+	var semanticResults, themeResults []RecommendedImageResult
+	var searchErrors []error
+	
+	for i := 0; i < 2; i++ {
+		select {
+		case result := <-resultChan:
+			if result.err != nil {
+				logger.Printf("%s search failed: %v", result.source, result.err)
+				searchErrors = append(searchErrors, result.err)
+			} else {
+				if result.source == "semantic" {
+					semanticResults = result.results
+					logger.Printf("Semantic search completed: %d results", len(semanticResults))
+				} else {
+					themeResults = result.results
+					logger.Printf("Theme search completed: %d results", len(themeResults))
+				}
+			}
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	
+	// If both searches failed, return error
+	if len(searchErrors) == 2 {
+		return nil, fmt.Errorf("both searches failed: semantic=%v, theme=%v", searchErrors[0], searchErrors[1])
+	}
+	
+	// Fuse and score results
+	fusedResults := ctrl.fuseSearchResults(semanticResults, themeResults, params.Theme)
+	
+	// Limit to requested top_k
+	if len(fusedResults) > params.TopK {
+		fusedResults = fusedResults[:params.TopK]
+	}
+	
+	return fusedResults, nil
+}
+
+// singleSemanticSearch implements single semantic search for non-themed requests
+func (ctrl *Controller) singleSemanticSearch(ctx context.Context, params *ImageRecommendParams) ([]RecommendedImageResult, error) {
+	logger := log.GetReqLogger(ctx)
+	
+	logger.Printf("Single semantic search for prompt: %q", params.Text)
+	
+	algorithmResp, err := ctrl.callAlgorithmService(ctx, params.Text, params.TopK)
+	if err != nil {
+		return nil, fmt.Errorf("algorithm service call failed: %w", err)
+	}
+	
+	results := ctrl.processAlgorithmResults(algorithmResp.Results, "search")
+	
+	logger.Printf("Semantic search completed: %d results", len(results))
+	return results, nil
+}
+
+// processAlgorithmResults processes algorithm service results into RecommendedImageResult format
+func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
+	results := make([]RecommendedImageResult, 0, len(algResults))
+	
+	for _, algResult := range algResults {
+		var aiResource struct {
+			ID  int64  `json:"id"`
+			URL string `json:"url"`
+		}
+		
+		// TODO: Enable database lookup when ready
+		// err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		// if err == nil {
+			// Found matching resource in database
+			results = append(results, RecommendedImageResult{
+				ID:         aiResource.ID,
+				ImagePath:  algResult.ImagePath,
+				Similarity: algResult.Similarity,
+				Rank:       algResult.Rank,
+				Source:     source,
+			})
+		// } else {
+		// 	logger.Printf("Image not found in database: %s", algResult.ImagePath)
+		// }
+	}
+	
+	return results
+}
+
+// fuseSearchResults fuses and re-scores results from semantic and theme searches
+func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []RecommendedImageResult, theme ThemeType) []RecommendedImageResult {
+	logger := log.GetReqLogger(context.Background())
+	
+	// Combine all results
+	allResults := make([]RecommendedImageResult, 0, len(semanticResults)+len(themeResults))
+	
+	// Add semantic results
+	for _, result := range semanticResults {
+		allResults = append(allResults, result)
+	}
+	
+	// Add theme results (with deduplication)
+	for _, result := range themeResults {
+		if !ctrl.isDuplicateResult(result, allResults) {
+			allResults = append(allResults, result)
+		} else {
+			logger.Printf("Deduplicated theme result: %s", result.ImagePath)
+		}
+	}
+	
+	// Re-score all results with theme relevance
+	for i := range allResults {
+		semanticScore := allResults[i].Similarity
+		
+		// Calculate theme relevance score (simplified - in production this could use ML)
+		themeScore := ctrl.calculateThemeRelevance(allResults[i].ImagePath, theme)
+		
+		// Weight combination: 70% semantic + 30% theme
+		allResults[i].Similarity = semanticScore*0.7 + themeScore*0.3
+		
+		logger.Printf("Result %s: semantic=%.3f, theme=%.3f, final=%.3f", 
+			allResults[i].ImagePath, semanticScore, themeScore, allResults[i].Similarity)
+	}
+	
+	// Sort by final similarity score
+	for i := 0; i < len(allResults)-1; i++ {
+		for j := i + 1; j < len(allResults); j++ {
+			if allResults[i].Similarity < allResults[j].Similarity {
+				allResults[i], allResults[j] = allResults[j], allResults[i]
+			}
+		}
+	}
+	
+	logger.Printf("Fused %d semantic + %d theme results into %d total results", 
+		len(semanticResults), len(themeResults), len(allResults))
+	
+	return allResults
+}
+
+// isDuplicateResult checks if a result is already in the collection
+func (ctrl *Controller) isDuplicateResult(result RecommendedImageResult, existing []RecommendedImageResult) bool {
+	for _, existingResult := range existing {
+		if result.ImagePath == existingResult.ImagePath {
+			return true
+		}
+	}
+	return false
+}
+
+
+// TODO 这里计划使用CLIP模型来实现
+// calculateThemeRelevance calculates theme relevance score for an image
+func (ctrl *Controller) calculateThemeRelevance(imagePath string, theme ThemeType) float64 {
+	// Simplified theme relevance calculation
+	// In production, this could use ML models or metadata analysis
+	
+	// For now, assign scores based on theme source
+	switch theme {
+	case ThemeCartoon:
+		// Higher scores for images likely to be cartoon-style
+		if strings.Contains(imagePath, "cartoon") || strings.Contains(imagePath, "cute") {
+			return 0.9
+		}
+		return 0.7
+	case ThemeRealistic:
+		if strings.Contains(imagePath, "realistic") || strings.Contains(imagePath, "photo") {
+			return 0.9
+		}
+		return 0.6
+	case ThemeMinimal:
+		if strings.Contains(imagePath, "minimal") || strings.Contains(imagePath, "simple") {
+			return 0.9
+		}
+		return 0.7
+	default:
+		return 0.8 // Default theme relevance
+	}
 }
