@@ -1,18 +1,20 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch } from 'vue'
-  import { SocialPlatformConfigs, type PlatformConfig } from "./platform-share"
-  const props = defineProps<{
+  import type { PlatformConfig } from "./platform-share"
+  
+  defineProps<{
         modelValue?: PlatformConfig
     }>()
 
-  const emit = defineEmits<{
+  defineEmits<{
       /** v-model 更新（平台选择变化） */
       'update:model-value': [platform: PlatformConfig]
   }>()
 </script>
 
 <template>
-
+  <div>
+    <!-- Platform selector component content will be implemented here -->
+  </div>
 </template>
 <style scoped lang="scss">
 </style>
