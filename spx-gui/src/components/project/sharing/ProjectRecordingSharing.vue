@@ -8,7 +8,7 @@ import QRCode from 'qrcode'
 
 const props = defineProps<{
   recording: Promise<RecordingData>
-  video?: File
+  video?: globalThis.File
   visible: boolean
 }>()
 
@@ -146,6 +146,7 @@ async function generateShareQRCode() {
       console.error('生成二维码失败:', error)
       qrCodeData.value = ''
     }
+
   } catch (error) {
     console.error('生成分享二维码失败:', error)
   } finally {

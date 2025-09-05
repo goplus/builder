@@ -297,7 +297,9 @@ const remixesRet = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
-const { data: projectData } = useQuery(
+const {
+  data: projectData,
+} = useQuery(
   async (ctx) => {
     return await getProject(props.owner, props.name, ctx.signal)
   },
@@ -309,6 +311,7 @@ const { data: projectData } = useQuery(
 
 const toaster = useMessage()
 const isRecording = ref(false)
+const recordingStartTime = ref<number | null>(null)
 const recording = ref<globalThis.File | null>(null)
 const recordData = ref<RecordingData | null>(null)
 
@@ -400,6 +403,7 @@ async function handleRecordingSharing() {
 
       await projectRunnerRef.value?.startRecording?.()
       isRecording.value = true
+      recordingStartTime.value = Date.now()
       toaster.success('录制已开始，再次点击停止录制')
     } catch (error) {
       console.error('开始录制失败:', error)
