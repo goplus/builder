@@ -6,14 +6,14 @@ tool github.com/goplus/xgolsw/cmd/pkgdatagen
 
 require (
 	github.com/goplus/builder/tools/ai v0.0.0
-	github.com/goplus/xgolsw v0.11.0
+	github.com/goplus/xgolsw v0.11.1
 )
 
 require (
-	github.com/goplus/gogen v0.0.0-20250825100505-c0f84643193c // indirect
+	github.com/goplus/gogen v1.19.2 // indirect
 	github.com/goplus/mod v0.17.1 // indirect
 	github.com/goplus/spbase v0.1.0 // indirect
-	github.com/goplus/spx/v2 v2.0.0-pre.9 // indirect
+	github.com/goplus/spx/v2 v2.0.0-pre.10 // indirect
 	github.com/goplus/xgo v0.0.0-20250826104338-05cc4b01eeed // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e // indirect
