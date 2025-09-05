@@ -8,11 +8,11 @@ import type {
 } from "@/apis/project";
 
 defineOptions({ name: 'MobileKeyboardEdit' })
-const props = defineProps<{
+defineProps<{
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping,
 
 }>()
-const emit = defineEmits<{
+defineEmits<{
     resolved: [result: MobileKeyboardZoneToKeyMapping]
 }>()
 

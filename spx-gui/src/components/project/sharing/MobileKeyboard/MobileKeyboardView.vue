@@ -8,7 +8,7 @@ import type {
 } from "@/apis/project";
 
 defineOptions({ name: 'MobileKeyboardView' })
-const props = defineProps<{
+defineProps<{
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping
 }>()
 

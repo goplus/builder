@@ -7,7 +7,7 @@
 
 defineOptions({ name: 'Recording' })
 
-const props = defineProps<{
+defineProps<{
     id: string
 }>()
 
