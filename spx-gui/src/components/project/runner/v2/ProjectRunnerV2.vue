@@ -185,8 +185,7 @@ defineExpose({
     if (!iframe) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.startRecording === 'function') {
-      const result = win.startRecording()
-      return result
+      return win.startRecording()
     }
   },
   async takeScreenshot() {
@@ -194,7 +193,7 @@ defineExpose({
     if (!iframe) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.takeScreenshot === 'function') {
-      const result = win.takeScreenshot()
+      const result = await win.takeScreenshot()
       return result
     }
   },
@@ -203,7 +202,8 @@ defineExpose({
     if (!iframe) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.stopRecording === 'function') {
-      return win.stopRecording()
+      const result = await win.stopRecording()
+      return result
     }
   },
   async run(signal?: AbortSignal) {
