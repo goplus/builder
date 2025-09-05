@@ -123,7 +123,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		// Get optimized prompt for AI generation
 		var aiPrompt string
 		if params.Theme != ThemeNone {
-			aiPrompt = OptimizePromptWithAnalysis(params.Text, params.Theme)
+			aiPrompt = OptimizePromptWithAnalysis(ctx, params.Text, params.Theme, ctrl.copilot)
 		} else {
 			aiPrompt = params.Text
 		}
@@ -149,7 +149,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	finalQuery := params.Text
 	if params.Theme != ThemeNone {
-		finalQuery = OptimizePromptWithAnalysis(params.Text, params.Theme)
+		finalQuery = OptimizePromptWithAnalysis(ctx, params.Text, params.Theme, ctrl.copilot)
 	}
 
 	return &ImageRecommendResult{
@@ -333,7 +333,7 @@ func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecomme
 	
 	// Start semantic search concurrently
 	go func() {
-		semanticPrompt := GetOptimizedPromptForSearch(params.Text, params.Theme, "semantic")
+		semanticPrompt := GetOptimizedPromptForSearch(ctx, params.Text, params.Theme, "semantic", ctrl.copilot)
 		logger.Printf("Semantic search prompt: %q", semanticPrompt)
 		
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
@@ -348,7 +348,7 @@ func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecomme
 	
 	// Start theme search concurrently
 	go func() {
-		themePrompt := GetOptimizedPromptForSearch(params.Text, params.Theme, "theme")
+		themePrompt := GetOptimizedPromptForSearch(ctx, params.Text, params.Theme, "theme", ctrl.copilot)
 		logger.Printf("Theme search prompt: %q", themePrompt)
 		
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
