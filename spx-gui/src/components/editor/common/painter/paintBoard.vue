@@ -239,6 +239,7 @@ type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle'
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasWidth = ref<number>(800)
 const canvasHeight = ref<number>(600)
+const canvasColor = ref<string>('#1f11ff')
 
 // 工具状态
 const currentTool = ref<ToolType | null>(null)
@@ -564,6 +565,7 @@ provide('reshapeRef', reshapeRef)
 provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
+provide('canvasColor', canvasColor)
 </script>
 
 <style scoped>
