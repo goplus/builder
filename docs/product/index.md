@@ -1,12 +1,12 @@
-# Go+ Builder
+# XBuilder
 
-Go+ Builder is an editor that aims for game projects. The game is implemented based on spx technology, which is a game engine based on the Go+ language.
+XBuilder is an editor that aims for game projects. The game is implemented based on spx technology, which is a game engine based on the XGo language.
 
-The target users of Go+ are children around 10 years old who are learning programming.
+The target users of XBuilder are children around 10 years old who are learning programming.
 
 ## Basic Concepts
 
-The basic concepts in Go+ Builder are:
+The basic concepts in XBuilder are:
 
 * User
 * Project
@@ -42,13 +42,10 @@ The basic information includes:
 
 In addition, the game content Game corresponding to the Project includes:
 
-* Stage: Stage information, which contains the global state, logic, background, etc. during the game runtime; one Project corresponds to one Stage.
-* Sprites: Sprite list, one Project can correspond to 0 or more Sprites.
-* Sounds: Sound list, one Project can correspond to 0 or more Sounds.
-* Zorder: Z-axis order, which records the order of all Sprites (and other special content) in the Z-axis of the current Project, that is, the rendering hierarchy.
-* Config: Other configuration information, such as camera behavior.
+* Scenes: Scene list. One Project can have 0 or more Scenes; each Scene owns an independent Stage (including script, backdrops, sprites, widgets, Zorder, Config, etc.).
+* Config: Other configuration information, such as camera behavior (if there are global items).
 
-A Project corresponds to a runnable game. It can be seen as the result of "performing" 0 or more Sprites on a Stage, and Sound can be used (played) by the Stage or Sprite in the same Project during the performance.
+A Project corresponds to a runnable game. It can be seen as performing across multiple Scenes; each Scene has its own Stage and contents, and Sound can be used (played) by the Stage or Sprite within a Scene during the performance.
 
 Because User Name is globally unique, and Project Name is unique under the current User, a Project can be uniquely identified by User Name + Project Name. For example, we can use `alice/my-test-game` to identify the Project named `my-test-game` owned by User `alice`.
 
@@ -107,11 +104,11 @@ Asset contains the following information:
 
 ## User Story
 
-Here is a brief description of the logic corresponding to several basic user scenarios of Go+ Builder:
+Here is a brief description of the logic corresponding to several basic user scenarios of XBuilder:
 
 ### Project Creation and Saving
 
-Users can create a new Project through Go+ Builder and then edit it:
+Users can create a new Project through XBuilder and then edit it:
 
 * Edit Project Name
 * Edit Stage information
@@ -203,7 +200,7 @@ In the offline state, part of the editor is available, and the specific behavior
 
 ### Importing Assets from Scratch Projects
 
-Users can choose to import a Scratch project file (obtained from the export function of the Scratch editor) in the Go+ Builder editor. The Go+ Builder editor will parse and list all the Assets in it, and users can choose and import them into the current Project.
+Users can choose to import a Scratch project file (obtained from the export function of the Scratch editor) in the XBuilder editor. The XBuilder editor will parse and list all the Assets in it, and users can choose and import them into the current Project.
 
 The subsequent editing of Assets is the same as normal editing and will not be repeated here.
 
