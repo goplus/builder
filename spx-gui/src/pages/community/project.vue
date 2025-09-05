@@ -39,7 +39,8 @@ import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { getProject } from '@/apis/project'
-// import type { ProjectData } from '@/apis/project'
+import { SocialPlatformConfigs } from '@/components/project/sharing/platform-share'
+import { getProjectShareRoute } from '@/router'
 
 const props = defineProps<{
   owner: string
@@ -296,6 +297,13 @@ const remixesRet = useQuery(
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
+
+const projectSharingLink = computed(() => {
+  return `${location.origin}${getProjectShareRoute(props.owner, props.name)}`
+})
+
+const sharePlatforms = SocialPlatformConfigs
+sharePlatforms[0].shareFunction.shareURL?.(projectSharingLink.value)
 </script>
 
 <template>

@@ -15,9 +15,9 @@ export type BasicInfo = {
  * 支持分享方式接口
  */
 export type ShareType = {
-  /** 分享项目页面 */
+  /** 分享链接 */
   supportURL: boolean
-  /** 分享海报 */
+  /** 分享图片 */
   supportImage: boolean
   /** 分享视频 */
   supportVideo: boolean
@@ -48,6 +48,32 @@ export interface PlatformConfig {
  */
 const platformUrl = 'https://example.com'
 
+/**
+ * 从URL中提取owner和name
+ * @param url 项目URL，格式如：https://x.qiniu.com/project/nighca_85ff/Walk
+ * @returns 拼接后的字符串，格式如：nighca_85ff-Walk
+ */
+function extractOwnerAndName(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/').filter((part) => part)
+
+    // 查找 'project' 的位置
+    const projectIndex = pathParts.indexOf('project')
+    if (projectIndex !== -1 && pathParts.length > projectIndex + 2) {
+      const owner = pathParts[projectIndex + 1]
+      const name = pathParts[projectIndex + 2]
+      return `${owner}-${name}`
+    }
+
+    // 如果找不到标准格式，返回默认值
+    return 'XBuilder'
+  } catch (error) {
+    console.warn('Failed to parse URL:', url, error)
+    return 'XBuilder'
+  }
+}
+
 declare global {
   interface Window {
     mqq: any
@@ -77,11 +103,13 @@ class QQPlatform implements PlatformConfig {
       // console.log('shareURL: QQ platform:' + url);
       // 检查是否在 QQ 环境中
 
+      const projectTitle = extractOwnerAndName(url)
+
       if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
         window.mqq.invoke('data', 'setShareInfo', {
           share_url: url,
-          title: 'H5应用',
-          desc: 'H5开放平台',
+          title: projectTitle,
+          desc: 'XBuilder分享你的创意作品',
           image_url: logoSrc
         })
       } else {
@@ -116,6 +144,8 @@ class WeChatPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
+      // const projectTitle = extractOwnerAndName(url)
+      // 可以在这里添加微信分享逻辑，使用 projectTitle
       return `url:${url}`
     },
 
