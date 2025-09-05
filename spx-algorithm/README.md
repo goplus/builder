@@ -1,33 +1,33 @@
 # SPX Algorithm - 图像搜索推荐模块
 
-重构后的 SPX 算法推荐模块，提供基于 CLIP 模型和 Milvus 向量数据库的智能图像搜索服务。
+重构后的 SPX 算法推荐模块，提供基于资源管理的智能图像搜索服务。
 
 ## 项目概述
 
 本项目是一个独立的算法推荐模块，采用清晰的分层架构设计，自下而上分别为：
 
-- **数据库层**：包含 Milvus 向量数据库和 MySQL 数据库（预留）
-- **服务实现层**：基于 CLIP 和 Milvus 的图文匹配服务，以及基于用户反馈的 LTR 重排序服务（预留）
+- **数据库层**：底层数据存储和索引
+- **服务实现层**：图文语义匹配和重排序服务
 - **融合协调层**：将多个排序方案组织起来的编排器
-- **API 层**：对外暴露的 RESTful API 接口
+- **API 层**：对外暴露基于资源管理的 RESTful API 接口
 
 ## 主要特性
 
-- ✅ **图文语义匹配**：基于 OpenCLIP 模型的跨模态检索
-- ✅ **向量数据库**：使用 Milvus 进行高效向量存储和检索
+- ✅ **智能图像搜索**：基于语义理解的图像检索
+- ✅ **资源管理**：统一的资源添加、查询、删除接口
 - ✅ **SVG 图片支持**：专门优化的 SVG 图片处理流程
-- ✅ **批量操作**：支持批量添加和处理图片
+- ✅ **批量操作**：支持批量添加和处理资源
 - ✅ **分层架构**：清晰的模块化设计，易于扩展和维护
 - ✅ **配置管理**：支持多环境配置（开发/测试/生产）
 - ✅ **健康检查**：完整的服务健康监控
+- ✅ **内部调试API**：专门用于系统调试和维护的内部接口
 - 🚧 **LTR 重排序**：基于用户反馈的学习排序（规划中）
-- 🚧 **MySQL 集成**：用户行为数据存储（规划中）
 
 ## 技术栈
 
 - **Web 框架**：Flask
 - **深度学习**：PyTorch + OpenCLIP
-- **向量数据库**：Milvus
+- **数据存储**：高效的向量存储和检索系统
 - **图像处理**：Pillow + CairoSVG
 - **配置管理**：基于 dataclass 的分环境配置
 
@@ -35,13 +35,13 @@
 
 ```
 ┌─────────────────┐
-│     API层       │  ← 对外接口服务
+│     API层       │  ← 资源管理接口 + 内部调试接口
 ├─────────────────┤
 │   融合协调层     │  ← 排序方案编排
 ├─────────────────┤
 │   服务实现层     │  ← 图文匹配 + 重排序
 ├─────────────────┤
-│    数据库层     │  ← Milvus + MySQL
+│    数据库层     │  ← 高效数据存储
 └─────────────────┘
 ```
 
@@ -59,19 +59,17 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 2. 启动 Milvus
+### 2. 启动数据存储服务
 
-使用 Docker 启动 Milvus 向量数据库：
+启动底层数据存储服务：
 
 ```bash
 # 使用 docker-compose（推荐）
 cd resource/vector_db
 docker-compose up -d
 
-# 或使用单容器
-docker run -d --name milvus-standalone \
-  -p 19530:19530 -p 9091:9091 \
-  milvusdb/milvus:latest
+# 确保数据存储服务正常运行
+# 服务将在默认端口启动
 ```
 
 ### 3. 配置环境变量（可选）
@@ -87,11 +85,11 @@ SECRET_KEY=your-secret-key
 CLIP_MODEL_NAME=ViT-B-32
 CLIP_PRETRAINED=laion2b_s34b_b79k
 
-# Milvus 配置
-MILVUS_HOST=localhost
-MILVUS_PORT=19530
-MILVUS_COLLECTION_NAME=spx_vector_collection
-MILVUS_DIMENSION=512
+# 数据存储配置
+STORAGE_HOST=localhost
+STORAGE_PORT=19530
+COLLECTION_NAME=spx_resources
+VECTOR_DIMENSION=512
 
 # 重排序配置
 ENABLE_RERANKING=false
@@ -121,29 +119,14 @@ GET /
 
 #### 健康检查
 ```http
-GET /api/health
-GET /api/vector/health
+GET /v1/health
 ```
 
-### 图像搜索
+### 资源管理
 
-#### 语义搜索（推荐使用）
+#### 添加单个资源
 ```http
-POST /api/search/resource
-Content-Type: application/json
-
-{
-  "text": "dog running in park",
-  "top_k": 10,
-  "threshold": 0.3
-}
-```
-
-### 向量数据库操作
-
-#### 添加图片
-```http
-POST /api/vector/add
+POST /v1/resource/add
 Content-Type: application/json
 
 {
@@ -153,13 +136,13 @@ Content-Type: application/json
 }
 ```
 
-#### 批量添加
+#### 批量添加资源
 ```http
-POST /api/vector/batch/add
+POST /v1/resource/batch
 Content-Type: application/json
 
 {
-  "images": [
+  "resources": [
     {
       "id": 1, 
       "url": "https://example.com/1.svg",
@@ -170,35 +153,37 @@ Content-Type: application/json
 }
 ```
 
-#### 向量搜索
+#### 搜索资源
 ```http
-POST /api/vector/search
+POST /v1/resource/search
 Content-Type: application/json
 
 {
-  "text": "butterfly",
-  "k": 5
+  "text": "dog running in park",
+  "top_k": 10,
+  "threshold": 0.3
 }
 ```
 
-#### 获取统计信息
+### 内部调试和管理接口（仅用于系统维护）
+
+这些接口仅供系统管理员和开发人员调试使用，生产环境建议限制访问权限：
+
+#### 系统状态和调试
 ```http
-GET /api/vector/stats
+GET /v1/internal/health                    # 内部健康检查
+GET /v1/internal/vectors?include_vectors=true&limit=10  # 获取向量数据
+POST /v1/internal/vectors/search           # 向量搜索调试
+GET /v1/internal/database/stats            # 详细数据库统计
+GET /v1/internal/vectors/{id}              # 获取特定资源向量
 ```
 
-#### 获取所有数据
+#### 资源管理（内部）
 ```http
-GET /api/vector/data?include_vectors=false&limit=20&offset=0
-```
-
-#### 删除图片
-```http
-DELETE /api/vector/delete
-Content-Type: application/json
-
-{
-  "id": 123
-}
+GET /v1/internal/resources?limit=20&offset=0    # 获取资源列表
+DELETE /v1/internal/resources/{id}              # 删除资源
+POST /v1/internal/resources/search              # 内部资源搜索
+GET /v1/internal/resources/stats                # 详细资源统计
 ```
 
 ## 项目结构
@@ -222,8 +207,8 @@ spx-algorithm/
 │   └── pipeline_service.py     # 搜索管道服务
 ├── api/                        # API层
 │   ├── routes/                 # 路由
-│   │   ├── search_routes.py    # 搜索相关路由
-│   │   ├── vector_routes.py    # 向量数据库路由
+│   │   ├── resource_routes.py  # 资源管理路由（添加、搜索）
+│   │   ├── internal_routes.py  # 内部调试路由
 │   │   └── health_routes.py    # 健康检查路由
 │   ├── schemas/                # 请求/响应模式
 │   └── middlewares/            # 中间件
@@ -259,10 +244,10 @@ export FLASK_ENV=production
 |-------|------|--------|
 | `CLIP_MODEL_NAME` | CLIP 模型名称 | `ViT-B-32` |
 | `CLIP_PRETRAINED` | 预训练权重 | `laion2b_s34b_b79k` |
-| `MILVUS_HOST` | Milvus 服务器地址 | `localhost` |
-| `MILVUS_PORT` | Milvus 服务器端口 | `19530` |
-| `MILVUS_COLLECTION_NAME` | 集合名称 | `spx_vector_collection` |
-| `MILVUS_DIMENSION` | 向量维度 | `512` |
+| `STORAGE_HOST` | 存储服务器地址 | `localhost` |
+| `STORAGE_PORT` | 存储服务器端口 | `19530` |
+| `COLLECTION_NAME` | 资源集合名称 | `spx_resources` |
+| `VECTOR_DIMENSION` | 向量维度 | `512` |
 | `ENABLE_RERANKING` | 是否启用重排序 | `false` |
 
 ## 开发指南
@@ -322,17 +307,36 @@ gunicorn -w 4 -b 0.0.0.0:5000 \
 
 ## 性能指标
 
-- **搜索延迟**：< 100ms（向量搜索）
-- **批量处理**：支持单次最多 1000 张图片
+- **搜索延迟**：< 100ms（语义搜索）
+- **批量处理**：支持单次最多 1000 个资源
 - **并发支持**：支持多用户同时访问
-- **存储容量**：支持百万级图片向量
+- **存储容量**：支持百万级资源
+
+## 接口设计说明
+
+本模块专注于算法服务的核心功能，采用了统一的资源导向API设计：
+
+### 对外接口（`/v1/resource/`）
+- **添加资源**：`POST /v1/resource/add` - 添加单个资源
+- **批量添加**：`POST /v1/resource/batch` - 批量添加资源
+- **搜索资源**：`POST /v1/resource/search` - 基于语义的资源搜索
+
+### 内部接口（`/v1/internal/`）
+- **系统调试**：向量数据查看、详细搜索调试
+- **资源管理**：列表查询、删除、统计等管理功能
+- **数据库维护**：底层数据库状态和配置信息
+
+### 设计原则
+- **统一性**：所有资源相关操作都在 `/v1/resource/` 下，避免接口分散
+- **简洁性**：对外只暴露核心的添加和搜索功能，隐藏复杂的管理操作
+- **职责分离**：业务功能与调试维护功能严格分离
 
 ## 故障排除
 
 ### 常见问题
 
-1. **Milvus 连接失败**
-   - 检查 Milvus 服务是否启动
+1. **数据存储服务连接失败**
+   - 检查底层存储服务是否启动
    - 确认网络连接和端口配置
 
 2. **CLIP 模型加载慢**
@@ -342,3 +346,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 \
 3. **SVG 处理失败**
    - 确保安装了 CairoSVG：`pip install cairosvg`
    - 在 Windows 上可能需要额外的系统依赖
+
+4. **内部调试接口访问**
+   - 内部调试接口仅供开发和维护使用
+   - 生产环境建议限制这些接口的访问权限

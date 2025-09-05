@@ -7,7 +7,7 @@ import logging
 from flask import Flask
 
 from config import get_flask_config, get_orchestrator_config
-from api.routes import search_bp, vector_bp, health_bp, init_all_orchestrators
+from api.routes import resource_bp, internal_bp, health_bp, init_all_orchestrators
 from api.middlewares.logging_middleware import setup_logging_middleware
 
 # 配置日志
@@ -43,8 +43,8 @@ def create_app(config_name: str = None) -> Flask:
     setup_logging_middleware(app)
     
     # 注册蓝图
-    app.register_blueprint(search_bp)
-    app.register_blueprint(vector_bp) 
+    app.register_blueprint(resource_bp) 
+    app.register_blueprint(internal_bp)
     app.register_blueprint(health_bp)
     
     # 添加根路由
@@ -54,17 +54,13 @@ def create_app(config_name: str = None) -> Flask:
         return {
             "message": "SPX Algorithm API",
             "version": "2.0.0",
-            "description": "重构后的图像搜索算法API",
+            "description": "重构后的图像搜索算法API - 基于资源管理",
             "endpoints": {
-                "health": "/api/health",
-                "search_resource": "/api/search/resource (POST)",
-                "vector_health": "/api/vector/health", 
-                "vector_stats": "/api/vector/stats",
-                "vector_add": "/api/vector/add (POST)",
-                "vector_batch_add": "/api/vector/batch/add (POST)",
-                "vector_search": "/api/vector/search (POST)",
-                "vector_data": "/api/vector/data",
-                "vector_delete": "/api/vector/delete (DELETE)"
+                "health": "/v1/health",
+                "add_resource": "/v1/resource/add (POST)",
+                "batch_add_resources": "/v1/resource/batch (POST)",
+                "search_resources": "/v1/resource/search (POST)",
+                "internal_debug": "/v1/internal/* (仅用于调试和管理)"
             }
         }
     
