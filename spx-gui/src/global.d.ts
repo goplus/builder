@@ -26,3 +26,9 @@ declare module 'vue' {
 // This empty `export {}` is required for `declare` to work, because there's no other exports for this module.
 // See details in https://www.typescriptlang.org/docs/handbook/declaration-files/templates/global-modifying-module-d-ts.html
 export {}
+
+declare module '*.vue' {
+  import { type DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
+}

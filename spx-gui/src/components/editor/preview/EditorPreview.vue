@@ -8,6 +8,15 @@
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
       <UIButton
+        v-radar="{ name: 'Edit stage button', desc: 'Open stage editor modal' }"
+        class="button"
+        type="boring"
+        icon="edit2"
+        @click="openStageEditor"
+      >
+        {{ $t({ en: 'Edit stage', zh: '编辑舞台' }) }}
+      </UIButton>
+      <UIButton
         ref="runButtonRef"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
         class="button"
@@ -81,10 +90,11 @@ import { ref, computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
 import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import StageEditorModal from '@/components/editor/stage/StageEditorModal.vue'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
@@ -104,6 +114,15 @@ function handleExit(code: number) {
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
+const invokeStageEditor = useModal(StageEditorModal)
+
+async function openStageEditor() {
+  try {
+  await invokeStageEditor({ project: editorCtx.project })
+  } catch (e) {
+    // cancelled
+  }
+}
 
 async function checkAndNotifyError() {
   const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()

@@ -11,6 +11,18 @@
       >
         <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
       </div>
+      <div
+        v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
+        class="overview"
+      >
+        <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+      </div>
+      <div
+        v-radar="{ name: 'Stage overview', desc: 'Overview of the stage, click to view stage details' }"
+        class="overview"
+      >
+        <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
+      </div>
     </main>
   </section>
 </template>
