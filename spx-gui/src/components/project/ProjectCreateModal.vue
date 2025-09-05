@@ -92,7 +92,8 @@ const handleSubmit = useMessageHandle(
       await addProject({
         name: projectName,
         visibility: Visibility.Private,
-        remixSource: props.remixSource
+        remixSource: props.remixSource,
+        mobileKeyboardType: 1
       })
     } else {
       const username = await untilNotNull(signedInUsername)

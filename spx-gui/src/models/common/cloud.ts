@@ -76,7 +76,10 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
         },
         signal
       )
-    : addProject({ name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
+    : addProject(
+        { name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection, mobileKeyboardType: 1 },
+        signal
+      ))
   signal?.throwIfAborted()
 
   metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }
