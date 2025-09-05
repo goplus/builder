@@ -14,9 +14,22 @@ const props = defineProps<{
   projectData: ProjectData
 }>()
 
-const projectUrlQRCode = computed(
-  () => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(window.location.href)}`
-)
+const projectUrlQRCode = computed(async () => {
+  try {
+    const currentUrl = window.location.href
+    const qrDataURL = await QRCode.toDataURL(currentUrl, {
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      width: 220,
+      margin: 1
+    })
+    return qrDataURL
+  } catch (error) {
+    return null
+  }
+})
 
 // 处理用户上传的图片
 const uploadedImgUrl = computed(() => {
@@ -165,7 +178,7 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
 
 // 生成二维码
 const renderQRCode = async () => {
-  if (projectQrCanvas.value && projectUrlQRCode.value) {
+  if (projectQrCanvas.value) {
     const currentUrl = getCurrentProjectUrl()
     await drawQRCodeToCanvas(projectQrCanvas.value, currentUrl)
   }
@@ -252,7 +265,7 @@ defineExpose({
         <div class="branding">
           <img :src="logo" alt="logo" class="branding-logo" style="height: 40px; vertical-align: middle" />
         </div>
-        <div v-if="projectUrlQRCode" class="project-qrcode">
+        <div class="project-qrcode">
           <canvas ref="projectQrCanvas" class="project-qr-canvas"></canvas>
         </div>
       </div>
