@@ -38,6 +38,8 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import { getProject } from '@/apis/project'
+// import type { ProjectData } from '@/apis/project'
 
 const props = defineProps<{
   owner: string
@@ -194,12 +196,28 @@ function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
 }
 
+const { data: projectData } = useQuery(
+  async (ctx) => {
+    return await getProject(props.owner, props.name, ctx.signal)
+  },
+  {
+    en: 'Failed to load project',
+    zh: '加载项目失败'
+  }
+)
+
 const shareProject = useShareProject()
 
-const handleShare = useMessageHandle(() => shareProject(props.owner, props.name), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
+const handleShare = useMessageHandle(
+  () => {
+    if (!projectData.value) return
+    shareProject(projectData.value)
+  },
+  {
+    en: 'Failed to share project',
+    zh: '分享项目失败'
+  }
+)
 
 const createProject = useCreateProject()
 

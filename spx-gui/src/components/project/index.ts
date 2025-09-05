@@ -2,11 +2,13 @@ import { useModal, useConfirmDialog } from '@/components/ui'
 import { Visibility, deleteProject } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
+import type { ProjectData } from '@/apis/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
-import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
+// import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
+import ProjectDirectShare from './sharing/ProjectDirectShare.vue'
 /**
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
@@ -60,10 +62,15 @@ export function useRemoveProject() {
 }
 
 export function useShareProject() {
-  const modal = useModal(ProjectSharingLinkModal)
+  // const modal = useModal(ProjectSharingLinkModal)
 
-  return async function shareProject(owner: string, name: string) {
-    await modal({ owner, name })
+  // return async function shareProject(owner: string, name: string) {
+  //   await modal({ owner, name })
+  // }
+  const modal = useModal(ProjectDirectShare)
+
+  return async function shareProject(projectData: ProjectData) {
+    await modal({ projectData })
   }
 }
 

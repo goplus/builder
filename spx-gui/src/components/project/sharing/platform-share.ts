@@ -1,3 +1,4 @@
+import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
@@ -14,9 +15,9 @@ export type BasicInfo = {
  * 支持分享方式接口
  */
 export type ShareType = {
-  /** 分享链接 */
+  /** 分享项目页面 */
   supportURL: boolean
-  /** 分享图片 */
+  /** 分享海报 */
   supportImage: boolean
   /** 分享视频 */
   supportVideo: boolean
@@ -46,6 +47,15 @@ export interface PlatformConfig {
  * 平台跳转链接的示例，方便后续接口使用
  */
 const platformUrl = 'https://example.com'
+
+declare global {
+  interface Window {
+    mqq: any
+    wx: any
+    sha1: any
+  }
+}
+
 /**
  * QQ平台实现
  */
@@ -53,7 +63,7 @@ class QQPlatform implements PlatformConfig {
   basicInfo = {
     name: 'qq',
     label: { en: 'QQ', zh: 'QQ' },
-    color: '#FF6B35'
+    color: '#68a5e1'
   }
 
   shareType = {
@@ -64,6 +74,19 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
+      // console.log('shareURL: QQ platform:' + url);
+      // 检查是否在 QQ 环境中
+
+      if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+        window.mqq.invoke('data', 'setShareInfo', {
+          share_url: url,
+          title: 'H5应用',
+          desc: 'H5开放平台',
+          image_url: logoSrc
+        })
+      } else {
+        console.warn('QQ API not available in current environment')
+      }
       return `url:${url}`
     },
     shareImage: async (image: File) => {
@@ -82,7 +105,7 @@ class WeChatPlatform implements PlatformConfig {
   basicInfo = {
     name: 'wechat',
     label: { en: 'WeChat', zh: '微信' },
-    color: '#07C160'
+    color: '#28c445'
   }
 
   shareType = {
@@ -95,6 +118,7 @@ class WeChatPlatform implements PlatformConfig {
     shareURL: async (url: string) => {
       return `url:${url}`
     },
+
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
     }
