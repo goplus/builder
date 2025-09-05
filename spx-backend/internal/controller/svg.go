@@ -114,11 +114,8 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		}
 	}
 
-	// Apply theme to prompt if specified
-	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
-	if params.Theme != ThemeNone {
-		logger.Printf("Theme applied - original: %q, enhanced: %q", params.Prompt, finalPrompt)
-	}
+	// Use prompt as-is, assuming it's already optimized by the caller
+	finalPrompt := params.Prompt
 
 	// Convert to svggen request
 	req := svggen.GenerateRequest{
@@ -223,11 +220,8 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 		}
 	}
 
-	// Apply theme to prompt if specified
-	finalPrompt := ApplyThemeToPrompt(params.Prompt, params.Theme)
-	if params.Theme != ThemeNone {
-		logger.Printf("Theme applied - original: %q, enhanced: %q", params.Prompt, finalPrompt)
-	}
+	// Use prompt as-is, assuming it's already optimized by the caller
+	finalPrompt := params.Prompt
 
 	// Convert to svggen request
 	req := svggen.GenerateRequest{

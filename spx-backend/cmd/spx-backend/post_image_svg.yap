@@ -18,6 +18,12 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
+// Optimize prompt with theme analysis before generation
+if params.Theme != controller.ThemeNone {
+	params.Prompt = controller.OptimizePromptWithAnalysis(ctx.Context(), params.Prompt, params.Theme, ctrl.GetCopilot())
+	params.Theme = controller.ThemeNone // Reset theme to avoid double processing
+}
+
 result, err := ctrl.GenerateSVG(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
