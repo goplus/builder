@@ -8,14 +8,14 @@ import type { ProjectData } from '@/apis/project'
 // import QRCode from 'qrcode'
 
 defineProps<{
-    screenshot: File
-    projectData: ProjectData
-    visible: boolean
+  screenshot: File
+  projectData: ProjectData
+  visible: boolean
 }>()
 
 defineEmits<{
-    cancelled: []
-    resolved: [platform: string]
+  cancelled: []
+  resolved: [platform: string]
 }>()
 
 // 组件引用
@@ -35,5 +35,4 @@ defineEmits<{
   <div>Project Screenshot Sharing - TODO</div>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

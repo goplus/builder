@@ -1,4 +1,5 @@
-<script setup lang="ts"> // expose、defineExpose需要在setup内执行
+<script setup lang="ts">
+// expose、defineExpose需要在setup内执行
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick } from 'vue'
@@ -29,9 +30,7 @@ const createPoster = async (): Promise<File> => {
     height: 800
   })
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
-  )
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b: Blob | null) => resolve(b), 'image/png'))
 
   if (!blob) throw new Error('Failed to generate poster')
 
@@ -47,5 +46,4 @@ defineExpose({
   <div>Project Poster - TODO</div>
 </template>
 
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

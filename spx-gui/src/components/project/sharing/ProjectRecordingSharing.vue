@@ -9,20 +9,22 @@ import type { RecordingData } from '@/apis/recording'
 // import QRCode from 'qrcode'
 
 defineProps<{
-    recording: Promise<RecordingData>,
-    video?: File
-    visible: boolean
+  recording: Promise<RecordingData>
+  video?: File
+  visible: boolean
 }>()
 
-type SharingResult = {
-    type: 'shared'
-    platform: string
-} | {
-    type: 'rerecord'
-}
+type SharingResult =
+  | {
+      type: 'shared'
+      platform: string
+    }
+  | {
+      type: 'rerecord'
+    }
 defineEmits<{
-    cancelled: []
-    resolved: [result: SharingResult]
+  cancelled: []
+  resolved: [result: SharingResult]
 }>()
 
 // const currentRecording = ref<RecordingData | null>(null)
@@ -42,5 +44,4 @@ defineEmits<{
   <div>Project Recording Sharing - TODO</div>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

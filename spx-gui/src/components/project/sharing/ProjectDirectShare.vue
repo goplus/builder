@@ -1,29 +1,28 @@
 <script setup lang="ts">
-    // import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
-    // import { useMessageHandle } from '@/utils/exception'
-    // import { getProjectShareRoute } from '@/router'
-    // import { computed, ref, onUnmounted } from 'vue'
-    // import type { PlatformConfig } from './platform-share'
-    import type { ProjectData } from '@/apis/project'
-    // import PlatformSelector from './PlatformSelector.vue'
-    // import Poster from './ProjectPoster.vue'
-    // import QRCode from 'qrcode'
-    // import unsupport from '@/assets/unsupport.svg'
+// import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
+// import { useMessageHandle } from '@/utils/exception'
+// import { getProjectShareRoute } from '@/router'
+// import { computed, ref, onUnmounted } from 'vue'
+// import type { PlatformConfig } from './platform-share'
+import type { ProjectData } from '@/apis/project'
+// import PlatformSelector from './PlatformSelector.vue'
+// import Poster from './ProjectPoster.vue'
+// import QRCode from 'qrcode'
+// import unsupport from '@/assets/unsupport.svg'
 
-    defineProps<{
-    projectData: ProjectData    
-    visible: boolean
-    }>()
+defineProps<{
+  projectData: ProjectData
+  visible: boolean
+}>()
 
-    defineEmits<{
-    cancelled: []
-    resolved: []
-    }>()
+defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
 </script>
 
 <template>
   <div>Project Direct Share - TODO</div>
 </template>
 
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

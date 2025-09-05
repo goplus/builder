@@ -57,11 +57,19 @@ export enum MobileKeyboardType {
 }
 
 export const MOBILE_KEYBOARD_ZONES = [
-  'lt', 'rt', 'lbUp', 'lbLeft', 'lbRight', 
-  'lbDown', 'rbA', 'rbB', 'rbX', 'rbY'
+  'lt',
+  'rt',
+  'lbUp',
+  'lbLeft',
+  'lbRight',
+  'lbDown',
+  'rbA',
+  'rbB',
+  'rbX',
+  'rbY'
 ] as const
 
-export type MobileKeyboardZone = typeof MOBILE_KEYBOARD_ZONES[number]
+export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number]
 
 export type MobileKeyboardZoneToKeyMapping = { [zone: string]: string | null }
 
@@ -71,7 +79,10 @@ export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility' | 
   mobileKeyboardZoneToKey?: { [zone: string]: string | null }
 }
 
-export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail' | 'mobileKeyboardType'> & {
+export type AddProjectParams = Pick<
+  ProjectData,
+  'name' | 'files' | 'visibility' | 'thumbnail' | 'mobileKeyboardType'
+> & {
   mobileKeyboardZoneToKey?: { [zone: string]: string | null }
 }
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
@@ -79,7 +90,9 @@ export async function addProject(params: AddProjectParams | AddProjectByRemixPar
 }
 
 export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
-  Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail' | 'mobileKeyboardType' | 'mobileKeyboardZoneToKey'>>
+  Partial<
+    Pick<ProjectData, 'description' | 'instructions' | 'thumbnail' | 'mobileKeyboardType' | 'mobileKeyboardZoneToKey'>
+  >
 export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
