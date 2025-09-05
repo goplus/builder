@@ -4,21 +4,22 @@ import (
 	"fmt"
 
 	"github.com/goplus/builder/spx-backend/internal/svggen"
+	"github.com/goplus/builder/spx-backend/internal/types"
 )
 
-// ThemeType represents different SVG generation themes
-type ThemeType string
+// Re-export types for backward compatibility
+type ThemeType = types.ThemeType
 
 const (
-	ThemeNone      ThemeType = ""
-	ThemeCartoon   ThemeType = "cartoon"
-	ThemeRealistic ThemeType = "realistic"
-	ThemeMinimal   ThemeType = "minimal"
-	ThemeFantasy   ThemeType = "fantasy"
-	ThemeRetro     ThemeType = "retro"
-	ThemeScifi     ThemeType = "scifi"
-	ThemeNature    ThemeType = "nature"
-	ThemeBusiness  ThemeType = "business"
+	ThemeNone      = types.ThemeNone
+	ThemeCartoon   = types.ThemeCartoon
+	ThemeRealistic = types.ThemeRealistic
+	ThemeMinimal   = types.ThemeMinimal
+	ThemeFantasy   = types.ThemeFantasy
+	ThemeRetro     = types.ThemeRetro
+	ThemeScifi     = types.ThemeScifi
+	ThemeNature    = types.ThemeNature
+	ThemeBusiness  = types.ThemeBusiness
 )
 
 // ThemeInfo represents detailed information about a theme
@@ -69,22 +70,12 @@ var ThemePreviewPrompts = map[ThemeType]string{
 	ThemeBusiness:  "Create a professional business preview with modern corporate design, clean professional aesthetics, business icons or charts",
 }
 
-// ThemeDescriptions maps each theme to its description
-var ThemeDescriptions = map[ThemeType]string{
-	ThemeNone:      "不应用任何特定主题风格",
-	ThemeCartoon:   "色彩鲜艳的卡通风格，适合可爱有趣的内容",
-	ThemeRealistic: "高度写实的风格，细节丰富逼真",
-	ThemeMinimal:   "极简主义风格，简洁干净的设计",
-	ThemeFantasy:   "充满魔法和超自然元素的奇幻风格",
-	ThemeRetro:     "怀旧复古风格，经典老式美学",
-	ThemeScifi:     "未来科技风格，充满科幻元素",
-	ThemeNature:    "自然有机风格，使用自然元素和大地色调",
-	ThemeBusiness:  "专业商务风格，现代企业形象",
-}
+// ThemeDescriptions maps each theme to its description (re-exported)
+var ThemeDescriptions = types.ThemeDescriptions
 
 // ThemeProviders maps each theme to its recommended provider
 var ThemeProviders = map[ThemeType]svggen.Provider{
-	ThemeNone:      svggen.ProviderOpenAI,   // Default provider
+	ThemeNone:      svggen.ProviderOpenAI,  // Default provider
 	ThemeCartoon:   svggen.ProviderRecraft, // Recraft excels at cartoon styles
 	ThemeRealistic: svggen.ProviderRecraft, // Recraft is good for realistic styles
 	ThemeMinimal:   svggen.ProviderSVGIO,   // SVGIO works well for minimal styles
@@ -95,13 +86,9 @@ var ThemeProviders = map[ThemeType]svggen.Provider{
 	ThemeBusiness:  svggen.ProviderRecraft, // Recraft for business styles
 }
 
-// IsValidTheme checks if the given theme is valid
+// IsValidTheme checks if the given theme is valid (re-exported)
 func IsValidTheme(theme ThemeType) bool {
-	if theme == ThemeNone {
-		return true
-	}
-	_, exists := ThemePrompts[theme]
-	return exists
+	return types.IsValidTheme(theme)
 }
 
 // GetThemePromptEnhancement returns the prompt enhancement for a given theme
