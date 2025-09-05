@@ -159,6 +159,38 @@ onMounted(() => {
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
 defineExpose({
+  async pauseGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.pauseGame === 'function') {
+      return win.pauseGame()
+    }
+  },
+  async resumeGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.resumeGame === 'function') {
+      return win.resumeGame()
+    }
+  },
+  async startRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.startRecording === 'function') {
+      return win.startRecording()
+    }
+  },
+  async stopRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.stopRecording === 'function') {
+      return win.stopRecording()
+    }
+  },
   async run(signal?: AbortSignal) {
     loading.value = true
     failed.value = false

@@ -38,6 +38,15 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import { useModal, useMessage } from '@/components/ui'
+import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
+import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
+import { getProject } from '@/apis/project'
+import type { ProjectData } from '@/apis/project'
+import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
+import { createRecording } from '@/apis/recording'
+import { saveFile } from '@/models/common/cloud'
+import { File } from '@/models/common/file'
 
 const props = defineProps<{
   owner: string
@@ -278,6 +287,128 @@ const remixesRet = useQuery(
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )
+
+const {
+  data: projectData,
+} = useQuery(
+  async (ctx) => {
+    return await getProject(props.owner, props.name, ctx.signal)
+  },
+  {
+    en: 'Failed to load project',
+    zh: '加载项目失败'
+  }
+)
+
+const toaster = useMessage()
+const isRecording = ref(false)
+const recordingStartTime = ref<number | null>(null)
+const showRecordSharing = ref(false)
+const recording = ref<globalThis.File | null>(null)
+const recordData = ref<RecordingData | null>(null)
+
+const shareRecording = useModal(ProjectRecordingSharing)
+
+async function handleRecordingSharing() {
+    if (isRecording.value) {
+        // 当前正在录制，停止录制
+        try {
+            await projectRunnerRef.value?.pauseGame() // 先暂停游戏，防止间隙
+            // console.log('正在停止录制...')
+            const recordBlob = await projectRunnerRef.value?.stopRecording?.()
+            
+            console.log('录制已停止，获得 Blob:', recordBlob)
+            
+            if (!recordBlob) {
+                toaster.error('录制失败，未获得录制数据')
+                isRecording.value = false
+                return
+            }
+            
+            // 将 Blob 转换为 File 对象
+            const fileExtension = recordBlob.type?.includes('webm') ? 'webm' : 'mp4'
+            const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, { 
+                type: recordBlob.type || 'video/webm' 
+            })
+            
+            recording.value = recordFile
+
+            // 创建异步处理录制数据的 Promise
+            const recordingPromise = (async (): Promise<RecordingData> => {
+                try {
+                    if (!projectData.value) {
+                        throw new Error('项目数据加载失败')
+                    }
+
+                    const projectFile = createProjectFile(recordFile)
+                    const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
+                    
+                    console.log('视频上传完成:', RecordingURL)
+                    
+                    const params: CreateRecordingParams = {
+                        projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+                        title: projectData.value.name,
+                        description: projectData.value.description ?? '',
+                        videoUrl: RecordingURL,
+                        thumbnailUrl: projectData.value.thumbnail || ''
+                    }
+
+                    const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
+                    recordData.value = created
+                    return created
+                } catch (error) {
+                    console.error('录制处理失败:', error)
+                    throw error
+                }
+            })()
+
+            try {
+                const result = await shareRecording({
+                    recording: recordingPromise,
+                    video: recordFile
+                })
+
+                if (result.type === 'shared') {
+                    toaster.success(`已分享到${result.platform}`)
+                } else if (result.type === 'rerecord') {
+                    // 先恢复游戏，然后开始新的录制
+                    await projectRunnerRef.value?.resumeGame()
+                    isRecording.value = true
+                    await projectRunnerRef.value?.startRecording?.()
+                    return
+                }
+            } catch (e) {
+                console.log(e)
+                // cancelled 逻辑，用户取消分享
+            }
+
+            await projectRunnerRef.value?.resumeGame()
+            isRecording.value = false
+        } catch (error) {
+            console.error('停止录制失败:', error)
+            toaster.error('停止录制失败')
+            isRecording.value = false
+        }
+    } else {
+        // 开始录制
+        try {
+            // 检查录制功能是否可用
+            if (!projectRunnerRef.value?.startRecording) {
+                toaster.error('录制功能不可用，请确保项目正在运行')
+                return
+            }
+            
+            console.log('开始录制...')
+            await projectRunnerRef.value?.startRecording?.()
+            isRecording.value = true
+            toaster.success('录制已开始，再次点击停止录制')
+        } catch (error) {
+            console.error('开始录制失败:', error)
+            const errorMessage = error instanceof Error ? error.message : '未知错误'
+            toaster.error(`开始录制失败: ${errorMessage}`)
+        }
+    }
+}
 </script>
 
 <template>
