@@ -30,7 +30,6 @@ const selectedPlatform = ref<PlatformConfig | null>(null)
 const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
 const isGeneratingQR = ref(false)
-const isSharing = ref(false)
 
 // 录制数据和视频源
 const currentRecording = ref<RecordingData | null>(null)
@@ -147,7 +146,6 @@ async function generateShareQRCode() {
       console.error('生成二维码失败:', error)
       qrCodeData.value = ''
     }
-
   } catch (error) {
     console.error('生成分享二维码失败:', error)
   } finally {
