@@ -29,7 +29,7 @@ const createPoster = async (): Promise<File> => {
   })
 
   const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((b) => resolve(b), 'image/png')
+    canvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
   )
 
   if (!blob) throw new Error('Failed to generate poster')
