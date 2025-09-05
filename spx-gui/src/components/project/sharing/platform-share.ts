@@ -1,3 +1,4 @@
+import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
@@ -46,6 +47,41 @@ export interface PlatformConfig {
  * 平台跳转链接的示例，方便后续接口使用
  */
 const platformUrl = 'https://example.com'
+
+/**
+ * 从URL中提取owner和name
+ * @param url 项目URL，格式如：https://x.qiniu.com/project/nighca_85ff/Walk
+ * @returns 拼接后的字符串，格式如：nighca_85ff-Walk
+ */
+function extractOwnerAndName(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/').filter((part) => part)
+
+    // 查找 'project' 的位置
+    const projectIndex = pathParts.indexOf('project')
+    if (projectIndex !== -1 && pathParts.length > projectIndex + 2) {
+      const owner = pathParts[projectIndex + 1]
+      const name = pathParts[projectIndex + 2]
+      return `${owner}-${name}`
+    }
+
+    // 如果找不到标准格式，返回默认值
+    return 'XBuilder'
+  } catch (error) {
+    console.warn('Failed to parse URL:', url, error)
+    return 'XBuilder'
+  }
+}
+
+declare global {
+  interface Window {
+    mqq: any
+    wx: any
+    sha1: any
+  }
+}
+
 /**
  * QQ平台实现
  */
@@ -53,7 +89,7 @@ class QQPlatform implements PlatformConfig {
   basicInfo = {
     name: 'qq',
     label: { en: 'QQ', zh: 'QQ' },
-    color: '#FF6B35'
+    color: '#68a5e1'
   }
 
   shareType = {
@@ -64,6 +100,21 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
+      // console.log('shareURL: QQ platform:' + url);
+      // 检查是否在 QQ 环境中
+
+      const projectTitle = extractOwnerAndName(url)
+
+      if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+        window.mqq.invoke('data', 'setShareInfo', {
+          share_url: url,
+          title: projectTitle,
+          desc: 'XBuilder分享你的创意作品',
+          image_url: logoSrc
+        })
+      } else {
+        console.warn('QQ API not available in current environment')
+      }
       return `url:${url}`
     },
     shareImage: async (image: File) => {
@@ -82,7 +133,7 @@ class WeChatPlatform implements PlatformConfig {
   basicInfo = {
     name: 'wechat',
     label: { en: 'WeChat', zh: '微信' },
-    color: '#07C160'
+    color: '#28c445'
   }
 
   shareType = {
@@ -93,8 +144,11 @@ class WeChatPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
+      // const projectTitle = extractOwnerAndName(url)
+      // 可以在这里添加微信分享逻辑，使用 projectTitle
       return `url:${url}`
     },
+
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
     }
