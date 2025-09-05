@@ -32,7 +32,7 @@ const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 选中路径（独占选择）
 const selectPathExclusive = (path: paper.Path | null): void => {
-  props.allPaths.forEach((p: paper.Path) => {
+  getAllPathsValue().forEach((p: paper.Path) => {
     p.selected = false
   })
   if (path) {
@@ -102,7 +102,7 @@ const hideControlPoints = (): void => {
     }
   })
   controlPoints.value = []
-  props.allPaths.forEach((p: paper.Path) => {
+  getAllPathsValue().forEach((p: paper.Path) => {
     p.selected = false
   })
   if (paper.project) {
@@ -127,7 +127,7 @@ const getPathAtPoint = (point: paper.Point): paper.Path | null => {
       targetItem = targetItem.parent
     }
 
-    const pathInArray = props.allPaths.find((path) => path === targetItem || path === hitResult.item)
+    const pathInArray = getAllPathsValue().find((path) => path === targetItem || path === hitResult.item)
     if (pathInArray) {
       return pathInArray
     }
@@ -320,7 +320,8 @@ const handleMouseUp = (): void => {
   }
 
   if (wasDragging) {
-    // 使用注入的接口而不是事件上报
+    const currentPaths = getAllPathsValue()
+    setAllPathsValue([...currentPaths]) // 触发数据更新
     exportSvgAndEmit()
   }
 }
