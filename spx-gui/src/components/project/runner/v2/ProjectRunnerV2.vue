@@ -185,8 +185,7 @@ defineExpose({
     if (!iframe) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.startRecording === 'function') {
-      const result = win.startRecording()
-      return result
+      return win.startRecording()
     }
   },
   async takeScreenshot() {
