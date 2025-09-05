@@ -2,9 +2,9 @@
 import { ref, onMounted, watch } from 'vue'
 import { SocialPlatformConfigs, type PlatformConfig } from './platform-share'
 import qqIcon from './logos/qq.svg'
-import wechatIcon from './logos/微信.svg'
-import douyinIcon from './logos/抖音.svg'
-import xiaohongshuIcon from './logos/小红书.svg'
+import wechatIcon from './logos/wexin.svg'
+import douyinIcon from './logos/douyin.svg'
+import xiaohongshuIcon from './logos/xiaohongshu.svg'
 import bilibiliIcon from './logos/bilibili.svg'
 
 const props = defineProps<{
