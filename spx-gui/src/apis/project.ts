@@ -47,7 +47,7 @@ export type ProjectData = {
   releaseCount: number
   /** Number of remixes associated with the project */
   remixCount: number
-  mobileKeyboardType: number
+  mobileKeyboardType: MobileKeyboardType
   mobileKeyboardZoneToKey?: { [zone: string]: string | null }
 }
 
@@ -62,6 +62,8 @@ export const MOBILE_KEYBOARD_ZONES = [
 ] as const
 
 export type MobileKeyboardZone = typeof MOBILE_KEYBOARD_ZONES[number]
+
+export type MobileKeyboardZoneToKeyMapping = { [zone: string]: string | null }
 
 export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility' | 'mobileKeyboardType'> & {
   /** Full name of the project or project release to remix from. */

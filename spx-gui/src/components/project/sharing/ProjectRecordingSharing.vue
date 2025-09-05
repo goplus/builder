@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted } from 'vue'
 import { useExternalUrl } from '@/utils/utils'
-import PlatformSelector from './platformSelector.vue'
-import type { RecordingData } from '../apis/recording'
+import PlatformSelector from './PlatformSelector.vue'
+import type { RecordingData } from '@/apis/recording'
 import type { PlatformConfig } from './platform-share'
 import { SocialPlatformConfigs } from './platform-share'
 import QRCode from 'qrcode'

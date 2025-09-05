@@ -3,12 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import type { RecordingData } from '@apis/RecordingAPIs';
+import type { RecordingData } from '@/apis/recording';
 
 defineOptions({ name: 'RecordingItem' })
 export type RecordingItemContext = "public" | "mine";
 const props = defineProps<{
-    recording: ReplayRecordingData
+    recording: RecordingData
     context?: RecordingItemContext
 }>()
 withDefaults(props, {

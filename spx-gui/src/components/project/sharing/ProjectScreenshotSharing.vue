@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted } from 'vue'
 import Poster from './ProjectPoster.vue'
-import PlatformSelector from './platformSelector.vue'
+import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import type { PlatformConfig } from './platform-share'
 import QRCode from 'qrcode'

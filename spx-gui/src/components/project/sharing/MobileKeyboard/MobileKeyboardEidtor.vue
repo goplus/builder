@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import type {
     MobileKeyboardZoneToKeyMapping,
-} from "@apis/ProjectAPIs";
+} from "@/apis/project";
 
 defineOptions({ name: 'MobileKeyboardEdit' })
 const props = defineProps<{
