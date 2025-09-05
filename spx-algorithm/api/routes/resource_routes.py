@@ -7,21 +7,21 @@ from functools import wraps
 
 from flask import Blueprint, request, jsonify
 
-from orchestrator.ranking_orchestrator import RankingOrchestrator
+from coordinator.search_coordinator import SearchCoordinator
 
 logger = logging.getLogger(__name__)
 
 resource_bp = Blueprint('resource', __name__, url_prefix='/v1/resource')
 
-# 全局编排器实例
-orchestrator = None
+# 全局协调器实例
+coordinator = None
 
 
-def init_orchestrator(config: dict):
-    """初始化编排器"""
-    global orchestrator
-    if orchestrator is None:
-        orchestrator = RankingOrchestrator(config)
+def init_coordinator(config: dict):
+    """初始化协调器"""
+    global coordinator
+    if coordinator is None:
+        coordinator = SearchCoordinator(config)
 
 
 def validate_json_request(required_fields: list, field_validators: dict = None):
@@ -56,12 +56,12 @@ def validate_json_request(required_fields: list, field_validators: dict = None):
     return decorator
 
 
-def ensure_orchestrator_initialized(f):
+def ensure_coordinator_initialized(f):
     """装饰器：确保编排器已初始化"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        global orchestrator
-        if orchestrator is None:
+        global coordinator
+        if coordinator is None:
             return jsonify({
                 'error': '资源服务未初始化',
                 'code': 'SERVICE_NOT_INITIALIZED'
@@ -76,7 +76,7 @@ def ensure_orchestrator_initialized(f):
     'url': lambda x: isinstance(x, str) and len(x.strip()) > 0,
     'svg_content': lambda x: isinstance(x, str) and len(x.strip()) > 0
 })
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def add_resource(data: dict):
     """
     添加单个资源
@@ -95,7 +95,7 @@ def add_resource(data: dict):
         
         logger.info(f"收到添加资源请求: ID={resource_id}, URL={resource_url}")
         
-        success = orchestrator.add_image(resource_id, resource_url, svg_content)
+        success = coordinator.add_image(resource_id, resource_url, svg_content)
         
         if success:
             return jsonify({
@@ -124,7 +124,7 @@ def add_resource(data: dict):
 
 @resource_bp.route('/batch', methods=['POST'])
 @validate_json_request(['resources'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def batch_add_resources(data: dict):
     """
     批量添加资源
@@ -154,7 +154,7 @@ def batch_add_resources(data: dict):
         
         logger.info(f"收到批量添加请求，资源数量: {len(resources)}")
         
-        # 将resources转换为images格式以兼容现有的orchestrator接口
+        # 将resources转换为images格式以兼容现有的coordinator接口
         images = []
         for resource in resources:
             images.append({
@@ -163,7 +163,7 @@ def batch_add_resources(data: dict):
                 'svg_content': resource.get('svg_content')
             })
         
-        result = orchestrator.batch_add_images(images)
+        result = coordinator.batch_add_images(images)
         
         return jsonify(result)
     
@@ -183,7 +183,7 @@ def batch_add_resources(data: dict):
     'top_k': lambda x: isinstance(x, int) and x > 0,
     'threshold': lambda x: isinstance(x, (int, float)) and 0 <= x <= 1
 })
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def search_resources(data: dict):
     """
     搜索资源
@@ -203,7 +203,7 @@ def search_resources(data: dict):
         logger.info(f"收到资源搜索请求: query='{text_query}', top_k={top_k}, threshold={threshold}")
         
         # 执行搜索
-        result = orchestrator.search(
+        result = coordinator.search(
             query_text=text_query,
             top_k=top_k,
             threshold=threshold

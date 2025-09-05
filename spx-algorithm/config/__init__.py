@@ -49,21 +49,21 @@ def get_flask_config(config_name: str = None) -> dict:
     return config.to_dict()
 
 
-def get_orchestrator_config(config_name: str = None) -> dict:
+def get_coordinator_config(config_name: str = None) -> dict:
     """
-    获取编排器配置
+    获取协调器配置
     
     Args:
         config_name: 配置名称
         
     Returns:
-        编排器配置字典
+        协调器配置字典
     """
     config = get_config(config_name)
-    return config.get_orchestrator_config()
+    return config.get_coordinator_config()
 
 
 __all__ = [
     'BaseConfig', 'DevelopmentConfig', 'ProductionConfig', 'TestingConfig',
-    'get_config', 'get_flask_config', 'get_orchestrator_config'
+    'get_config', 'get_flask_config', 'get_coordinator_config'
 ]

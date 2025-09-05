@@ -54,8 +54,8 @@ class BaseConfig:
             'JSONIFY_PRETTYPRINT_REGULAR': self.JSONIFY_PRETTYPRINT_REGULAR
         }
     
-    def get_orchestrator_config(self) -> Dict[str, Any]:
-        """获取编排器配置"""
+    def get_coordinator_config(self) -> Dict[str, Any]:
+        """获取协调器配置"""
         return {
             'image_matching': {
                 'model_name': self.CLIP_MODEL_NAME,

@@ -6,8 +6,8 @@ import os
 import logging
 from flask import Flask
 
-from config import get_flask_config, get_orchestrator_config
-from api.routes import resource_bp, internal_bp, health_bp, init_all_orchestrators
+from config import get_flask_config, get_coordinator_config
+from api.routes import resource_bp, internal_bp, health_bp, init_all_coordinators
 from api.middlewares.logging_middleware import setup_logging_middleware
 
 # 配置日志
@@ -64,15 +64,15 @@ def create_app(config_name: str = None) -> Flask:
             }
         }
     
-    # 初始化编排器
-    orchestrator_config = get_orchestrator_config(config_name)
+    # 初始化协调器
+    coordinator_config = get_coordinator_config(config_name)
     
     with app.app_context():
         try:
-            init_all_orchestrators(orchestrator_config)
-            logger.info("编排器初始化成功")
+            init_all_coordinators(coordinator_config)
+            logger.info("协调器初始化成功")
         except Exception as e:
-            logger.error(f"编排器初始化失败: {e}")
+            logger.error(f"协调器初始化失败: {e}")
             # 在开发环境可以选择不抛出异常，继续运行
             if config_name != 'development':
                 raise

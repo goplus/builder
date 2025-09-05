@@ -8,7 +8,7 @@
 
 - **数据库层**：底层数据存储和索引
 - **服务实现层**：图文语义匹配和重排序服务
-- **融合协调层**：将多个排序方案组织起来的编排器
+- **融合协调层**：将多个排序方案组织起来的协调器
 - **API 层**：对外暴露基于资源管理的 RESTful API 接口
 
 ## 主要特性
@@ -202,9 +202,8 @@ spx-algorithm/
 │   │   ├── vector_service.py   # 向量化服务
 │   │   └── matching_service.py # 匹配业务逻辑
 │   └── reranking/              # LTR重排序服务（预留）
-├── orchestrator/               # 融合协调层
-│   ├── ranking_orchestrator.py # 排序方案编排器
-│   └── pipeline_service.py     # 搜索管道服务
+├── coordinator/                # 融合协调层
+│   └── search_coordinator.py    # 搜索协调器
 ├── api/                        # API层
 │   ├── routes/                 # 路由
 │   │   ├── resource_routes.py  # 资源管理路由（添加、搜索）
@@ -256,7 +255,7 @@ export FLASK_ENV=production
 
 1. **数据库层**：在 `database/` 目录下扩展数据访问逻辑
 2. **服务层**：在 `services/` 目录下实现业务逻辑
-3. **编排层**：在 `orchestrator/` 目录下协调多个服务
+3. **协调层**：在 `coordinator/` 目录下协调多个服务
 4. **API层**：在 `api/routes/` 目录下添加新的路由
 
 ### 架构原则

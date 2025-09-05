@@ -8,21 +8,21 @@ from functools import wraps
 
 from flask import Blueprint, request, jsonify
 
-from orchestrator.ranking_orchestrator import RankingOrchestrator
+from coordinator.search_coordinator import SearchCoordinator
 
 logger = logging.getLogger(__name__)
 
 internal_bp = Blueprint('internal', __name__, url_prefix='/v1/internal')
 
-# 全局编排器实例
-orchestrator = None
+# 全局协调器实例
+coordinator = None
 
 
-def init_orchestrator(config: dict):
-    """初始化编排器"""
-    global orchestrator
-    if orchestrator is None:
-        orchestrator = RankingOrchestrator(config)
+def init_coordinator(config: dict):
+    """初始化协调器"""
+    global coordinator
+    if coordinator is None:
+        coordinator = SearchCoordinator(config)
 
 
 def validate_json_request(required_fields: list, field_validators: dict = None):
@@ -57,12 +57,12 @@ def validate_json_request(required_fields: list, field_validators: dict = None):
     return decorator
 
 
-def ensure_orchestrator_initialized(f):
+def ensure_coordinator_initialized(f):
     """装饰器：确保编排器已初始化"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        global orchestrator
-        if orchestrator is None:
+        global coordinator
+        if coordinator is None:
             return jsonify({
                 'error': '内部服务未初始化',
                 'code': 'SERVICE_NOT_INITIALIZED'
@@ -72,11 +72,11 @@ def ensure_orchestrator_initialized(f):
 
 
 @internal_bp.route('/health', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def health_check():
     """内部健康检查"""
     try:
-        health_info = orchestrator.health_check()
+        health_info = coordinator.health_check()
         
         if health_info.get('status') == 'healthy':
             return jsonify({
@@ -101,7 +101,7 @@ def health_check():
 
 
 @internal_bp.route('/vectors', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def get_vector_data():
     """
     获取向量数据（用于调试）
@@ -118,7 +118,7 @@ def get_vector_data():
         
         logger.info(f"获取向量数据: include_vectors={include_vectors}, limit={limit}, offset={offset}")
         
-        data = orchestrator.get_all_data(include_vectors, limit, offset)
+        data = coordinator.get_all_data(include_vectors, limit, offset)
         
         return jsonify({
             'success': True,
@@ -144,7 +144,7 @@ def get_vector_data():
     'text': lambda x: isinstance(x, str) and len(x.strip()) > 0,
     'k': lambda x: isinstance(x, int) and x > 0
 })
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def debug_vector_search(data: dict):
     """
     向量搜索调试接口（返回详细的向量相似度信息）
@@ -162,7 +162,7 @@ def debug_vector_search(data: dict):
         logger.info(f"收到向量搜索调试请求: query='{text_query}', k={k}")
         
         # 执行搜索
-        result = orchestrator.search(
+        result = coordinator.search(
             query_text=text_query,
             top_k=k,
             threshold=0.0
@@ -197,11 +197,11 @@ def debug_vector_search(data: dict):
 
 
 @internal_bp.route('/database/stats', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def get_detailed_database_stats():
     """获取详细的数据库统计信息（包含向量数据库详情）"""
     try:
-        stats = orchestrator.get_stats()
+        stats = coordinator.get_stats()
         
         # 添加更多调试信息
         detailed_stats = {
@@ -228,7 +228,7 @@ def get_detailed_database_stats():
 
 
 @internal_bp.route('/database/collection/info', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def get_collection_info():
     """获取向量数据库集合信息（调试用）"""
     try:
@@ -258,7 +258,7 @@ def get_collection_info():
 
 
 @internal_bp.route('/vectors/<int:resource_id>', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def get_resource_vector(resource_id: int):
     """获取特定资源的向量数据（调试用）"""
     try:
@@ -266,7 +266,7 @@ def get_resource_vector(resource_id: int):
         
         # 这里应该调用底层操作获取特定资源的向量
         # 目前通过get_all_data筛选（效率不高，仅用于调试）
-        all_data = orchestrator.get_all_data(include_vectors=True, limit=None, offset=0)
+        all_data = coordinator.get_all_data(include_vectors=True, limit=None, offset=0)
         
         resource_data = None
         for item in all_data:
@@ -297,7 +297,7 @@ def get_resource_vector(resource_id: int):
 
 
 @internal_bp.route('/resources', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def list_resources():
     """
     获取资源列表（内部调试用）
@@ -312,8 +312,8 @@ def list_resources():
         
         logger.info(f"内部获取资源列表: limit={limit}, offset={offset}")
         
-        # 调用orchestrator获取数据，但不包含向量数据
-        data = orchestrator.get_all_data(include_vectors=False, limit=limit, offset=offset)
+        # 调用coordinator获取数据，但不包含向量数据
+        data = coordinator.get_all_data(include_vectors=False, limit=limit, offset=offset)
         
         return jsonify({
             'success': True,
@@ -334,7 +334,7 @@ def list_resources():
 
 
 @internal_bp.route('/resources/<int:resource_id>', methods=['DELETE'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def delete_resource(resource_id: int):
     """
     删除资源（内部调试用）
@@ -345,7 +345,7 @@ def delete_resource(resource_id: int):
     try:
         logger.info(f"内部删除资源请求: ID={resource_id}")
         
-        success = orchestrator.remove_image(resource_id)
+        success = coordinator.remove_image(resource_id)
         
         if success:
             return jsonify({
@@ -376,7 +376,7 @@ def delete_resource(resource_id: int):
     'limit': lambda x: isinstance(x, int) and x > 0,
     'threshold': lambda x: isinstance(x, (int, float)) and 0 <= x <= 1
 })
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def internal_search_resources(data: dict):
     """
     内部资源搜索（用于调试，返回详细信息）
@@ -396,7 +396,7 @@ def internal_search_resources(data: dict):
         logger.info(f"内部资源搜索请求: query='{text_query}', limit={limit}, threshold={threshold}")
         
         # 执行搜索
-        result = orchestrator.search(
+        result = coordinator.search(
             query_text=text_query,
             top_k=limit,
             threshold=threshold
@@ -435,11 +435,11 @@ def internal_search_resources(data: dict):
 
 
 @internal_bp.route('/resources/stats', methods=['GET'])
-@ensure_orchestrator_initialized
+@ensure_coordinator_initialized
 def get_internal_resource_stats():
     """获取详细的资源统计信息（内部调试用）"""
     try:
-        stats = orchestrator.get_stats()
+        stats = coordinator.get_stats()
         
         # 添加更多调试信息
         detailed_stats = {
