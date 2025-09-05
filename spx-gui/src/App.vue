@@ -20,11 +20,12 @@
 import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
-import CopilotRoot from './components/copilot/CopilotRoot.vue'
-import CopilotUI from './components/copilot/CopilotUI.vue'
-import TutorialRoot from './components/tutorials/TutorialRoot.vue'
+import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
+import CopilotUI from '@/components/copilot/CopilotUI.vue'
+import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
 import { SpotlightUI } from '@/utils/spotlight'
-import { useI18n } from './utils/i18n'
+import { useI18n } from '@/utils/i18n'
+import { useInstallRouteLoading } from '@/utils/route-loading'
 
 const { t } = useI18n()
 
@@ -40,6 +41,8 @@ const config = computed<Config>(() => ({
     retryText: t({ en: 'Retry', zh: '重试' })
   }
 }))
+
+useInstallRouteLoading()
 </script>
 
 <style lang="scss">

@@ -14,7 +14,7 @@ export function createAppState() {
   }
 }
 
-export function useAppProvide(key: InjectionKey<unknown>, value: unknown) {
+export function useAppProvide<T>(key: InjectionKey<T>, value: T) {
   const map = inject(stateKey)
   if (map == null) throw new Error('useAppProvide must be called after install')
   map.set(key, value)

@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { RoundState, type Round } from './copilot'
 import MarkdownView from './MarkdownView.vue'
-import UserMessage from './UserMessage.vue'
 
 const props = defineProps<{
   round: Round
@@ -33,26 +32,8 @@ const resultContent = computed<string | null>(() => {
 
 <template>
   <section class="copilot-round">
-    <UserMessage :message="round.userMessage" />
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized" class="state">
-      <div v-if="round.state === RoundState.Loading || round.state === RoundState.InProgress" class="loading">
-        <svg
-          class="loading-icon"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="4.99668" cy="9.99668" r="1.66667" fill="#0BC0CF" />
-          <circle opacity="0.5" cx="9.99668" cy="9.99668" r="1.66667" fill="#0BC0CF" />
-          <circle cx="14.9967" cy="9.99668" r="1.66667" fill="#0BC0CF" />
-        </svg>
-        <template v-if="round.state === RoundState.Loading">
-          <p>{{ $t({ en: 'Thinking', zh: '思考中' }) }}</p>
-        </template>
-      </div>
       <div v-if="round.state === RoundState.Cancelled" class="cancelled">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -90,26 +71,29 @@ const resultContent = computed<string | null>(() => {
 <style lang="scss" scoped>
 .copilot-round {
 }
-.copilot-round + .copilot-round {
-  border-top: 1px solid #e3e9ee;
-}
+
 .answer {
   padding: 20px 16px;
   align-self: stretch;
-  border-top: 1px solid #e3e9ee;
 }
 
 .state {
-  padding: 0px 16px 20px;
   display: flex;
   align-self: stretch;
   flex-direction: column;
   gap: 4px;
   align-items: flex-start;
   font-size: 12px;
+
+  &:not(:empty) {
+    padding: 16px 20px;
+  }
 }
 
-.loading,
+.answer ~ .state {
+  padding-top: 0;
+}
+
 .cancelled,
 .failed {
   display: flex;
@@ -118,33 +102,6 @@ const resultContent = computed<string | null>(() => {
   align-self: stretch;
 
   line-height: 20px;
-}
-
-.loading-icon {
-  circle {
-    animation: circle-animation 0.6s linear infinite;
-    &:nth-child(1) {
-      animation-delay: 0s;
-    }
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-  }
-
-  @keyframes circle-animation {
-    0% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
 }
 
 .cancelled {

@@ -120,6 +120,16 @@ export class Sound extends Disposable {
     })
   }
 
+  clone(preserveId = false) {
+    return new Sound(this.name, this.file, {
+      id: preserveId ? this.id : undefined,
+      rate: this.rate,
+      sampleCount: this.sampleCount,
+      assetMetadata: this.assetMetadata ?? undefined,
+      extraConfig: this.extraConfig
+    })
+  }
+
   static async loadAll(files: Files, options?: SoundExportLoadOptions) {
     const soundNames = listDirs(files, soundAssetPath)
     const sounds = (

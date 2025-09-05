@@ -1,4 +1,4 @@
-import { packageSpx } from '@/utils/spx'
+import { back, backward, forward, front, packageSpx } from '@/utils/spx'
 import { DefinitionKind, type DefinitionDocumentationItem, makeBasicMarkdownString, categories } from '../../common'
 import { defineConst } from './common'
 
@@ -84,17 +84,18 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '0'
   },
-  insertSnippet: 'onTouchStart sprite => {\n\t$0\n}',
-  overview: 'onTouchStart sprite => {}',
+  insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'onTouchStart name, sprite => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to sprite touching another sprite',
-    zh: '精灵与其他精灵接触时执行'
+    en: 'Listen to sprite touching another sprite with given name',
+    zh: '精灵与指定名字的其他精灵接触时执行'
   })
 }
 
 export const onTouchStart1: DefinitionDocumentationItem = {
   ...onTouchStart0,
-  hiddenFromList: true, // duplicate with `onTouchStart0`
+  hiddenFromList: true, // duplicate with `onTouchStart0
   definition: {
     package: packageSpx,
     name: 'Sprite.onTouchStart',
@@ -110,12 +111,12 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '2'
   },
-  insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
-  insertSnippetParameterHints: ['sprite'],
-  overview: 'onTouchStart name, sprite => {}',
+  insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
+  insertSnippetParameterHints: ['sprites'],
+  overview: 'onTouchStart names, sprite => {}',
   detail: makeBasicMarkdownString({
-    en: 'Listen to sprite touching another sprite with given name',
-    zh: '精灵与指定名字的其他精灵接触时执行'
+    en: 'Listen to sprite touching another sprite with one of given names',
+    zh: '精灵与任一指定名字的其他精灵接触时执行，支持指定多个名字'
   })
 }
 
@@ -129,85 +130,6 @@ export const onTouchStart3: DefinitionDocumentationItem = {
   }
 }
 
-export const onTouchStart4: DefinitionDocumentationItem = {
-  categories: [categories.event.sensing],
-  kind: DefinitionKind.Listen,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onTouchStart',
-    overloadId: '4'
-  },
-  insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
-  insertSnippetParameterHints: ['sprites'],
-  overview: 'onTouchStart names, sprite => {}',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to sprite touching another sprite with one of given names',
-    zh: '精灵与任一指定名字的其他精灵接触时执行，支持指定多个名字'
-  })
-}
-
-export const onTouchStart5: DefinitionDocumentationItem = {
-  ...onTouchStart4,
-  hiddenFromList: true, // duplicate with `onTouchStart4
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onTouchStart',
-    overloadId: '5'
-  }
-}
-
-export const onMoving0: DefinitionDocumentationItem = {
-  categories: [categories.event.motion],
-  kind: DefinitionKind.Listen,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onMoving',
-    overloadId: '0'
-  },
-  insertSnippet: 'onMoving info => {\n\t$0\n}',
-  overview: 'onMoving info => {}',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to the sprite moving',
-    zh: '精灵移动时执行'
-  })
-}
-
-export const onMoving1: DefinitionDocumentationItem = {
-  ...onMoving0,
-  hiddenFromList: true, // duplicate with `onMoving0`
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onMoving',
-    overloadId: '1'
-  }
-}
-
-export const onTurning0: DefinitionDocumentationItem = {
-  categories: [categories.event.motion],
-  kind: DefinitionKind.Listen,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onTurning',
-    overloadId: '0'
-  },
-  insertSnippet: 'onTurning info => {\n\t$0\n}',
-  overview: 'onTurning info => {}',
-  detail: makeBasicMarkdownString({
-    en: 'Listen to the sprite turning',
-    zh: '精灵转向时执行'
-  })
-}
-
-export const onTurning1: DefinitionDocumentationItem = {
-  ...onTurning0,
-  hiddenFromList: true, // duplicate with `onTurning0`
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.onTurning',
-    overloadId: '1'
-  }
-}
-
 export const die: DefinitionDocumentationItem = {
   categories: [categories.game.sprite],
   kind: DefinitionKind.Command,
@@ -218,7 +140,7 @@ export const die: DefinitionDocumentationItem = {
   insertSnippet: 'die',
   overview: 'die',
   detail: makeBasicMarkdownString({
-    en: 'Let the sprite die. Animation for state "die" will be played.',
+    en: 'Let the sprite die. Animation for state "die" will be played',
     zh: '让精灵死亡，自动播放“死亡”状态的动画'
   })
 }
@@ -268,49 +190,36 @@ export const visible: DefinitionDocumentationItem = {
   })
 }
 
-export const gotoBack: DefinitionDocumentationItem = {
+export const setLayer0: DefinitionDocumentationItem = {
   categories: [categories.look.visibility],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.gotoBack'
+    name: 'Sprite.setLayer',
+    overloadId: '0'
   },
-  insertSnippet: 'gotoBack',
-  overview: 'gotoBack',
+  insertSnippet: 'setLayer ${1:Front}',
+  insertSnippetParameterHints: ['layer'],
+  overview: 'setLayer layer',
   detail: makeBasicMarkdownString({
-    en: 'Send the sprite to back',
-    zh: '将精灵移到最后'
+    en: 'Send the sprite to front/back',
+    zh: '将精灵移到最前/后'
   })
 }
-
-export const gotoFront: DefinitionDocumentationItem = {
+export const setLayer1: DefinitionDocumentationItem = {
   categories: [categories.look.visibility],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.gotoFront'
+    name: 'Sprite.setLayer',
+    overloadId: '1'
   },
-  insertSnippet: 'gotoFront',
-  overview: 'gotoFront',
+  insertSnippet: 'setLayer ${1:Forward}, ${2:1}',
+  insertSnippetParameterHints: ['direction', 'layers'],
+  overview: 'setLayer direction, layers',
   detail: makeBasicMarkdownString({
-    en: 'Send the sprite to front',
-    zh: '将精灵移到最前'
-  })
-}
-
-export const goBackLayers: DefinitionDocumentationItem = {
-  categories: [categories.look.visibility],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.goBackLayers'
-  },
-  insertSnippet: 'goBackLayers ${1:1}',
-  insertSnippetParameterHints: ['num'],
-  overview: 'goBackLayers num',
-  detail: makeBasicMarkdownString({
-    en: 'Send the sprite back by given layers. Positive number moves back, negative number moves front',
-    zh: '指定层数调整精灵层级；正数表示向后移动，负数表示向前移动'
+    en: 'Send the sprite forward or backward, with given layers',
+    zh: '将精灵向前或向后移动，并指定层数'
   })
 }
 
@@ -346,12 +255,13 @@ export const setCostume: DefinitionDocumentationItem = {
   })
 }
 
-export const animate: DefinitionDocumentationItem = {
+export const animate0: DefinitionDocumentationItem = {
   categories: [categories.look.animation],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.animate'
+    name: 'Sprite.animate',
+    overloadId: '0'
   },
   insertSnippet: 'animate ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   insertSnippetParameterHints: ['name'],
@@ -359,6 +269,55 @@ export const animate: DefinitionDocumentationItem = {
   detail: makeBasicMarkdownString({
     en: 'Play animation with given name',
     zh: '播放动画（指定名字）'
+  })
+}
+
+export const animate1: DefinitionDocumentationItem = {
+  categories: [categories.look.animation],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.animate',
+    overloadId: '1'
+  },
+  insertSnippet: 'animate ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}, ${2:true}',
+  insertSnippetParameterHints: ['name', 'loop'],
+  overview: 'animate name, loop',
+  detail: makeBasicMarkdownString({
+    en: 'Loop the animation with given name',
+    zh: '循环播放动画（指定名字）'
+  })
+}
+
+export const animateAndWait: DefinitionDocumentationItem = {
+  categories: [categories.look.animation],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.animateAndWait'
+  },
+  insertSnippet: 'animateAndWait ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'animateAndWait name',
+  detail: makeBasicMarkdownString({
+    en: 'Play animation with given name, with waiting for animation to complete',
+    zh: '播放动画（指定名字），等待动画播放结束'
+  })
+}
+
+export const stopAnimation: DefinitionDocumentationItem = {
+  categories: [categories.look.animation],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stopAnimation'
+  },
+  insertSnippet: 'stopAnimation ${1:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'stopAnimation name',
+  detail: makeBasicMarkdownString({
+    en: 'Stop animation with given name',
+    zh: '停止动画（指定名字）'
   })
 }
 
@@ -529,42 +488,6 @@ export const answer: DefinitionDocumentationItem = {
   })
 }
 
-export const move0: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.move',
-    overloadId: '0'
-  },
-  insertSnippet: 'move ${1:100}',
-  insertSnippetParameterHints: ['distance'],
-  overview: 'move distance',
-  detail: makeBasicMarkdownString({
-    en: 'Move given distance toward current heading',
-    zh: '向当前朝向移动指定的距离'
-  }),
-  hiddenFromList: true // not recommended to use
-}
-
-export const move1: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.move',
-    overloadId: '1'
-  },
-  insertSnippet: 'move ${1:100}',
-  insertSnippetParameterHints: ['distance'],
-  overview: 'move distance',
-  detail: makeBasicMarkdownString({
-    en: 'Move given distance toward current heading',
-    zh: '向当前朝向移动指定的距离'
-  }),
-  hiddenFromList: true // duplicate with `move0`
-}
-
 export const step0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
@@ -577,8 +500,8 @@ export const step0: DefinitionDocumentationItem = {
   insertSnippetParameterHints: ['distance'],
   overview: 'step distance',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading. Animation for state "step" will be played',
-    zh: '向前行走，自动播放“行走”状态的动画'
+    en: 'Step toward current heading with given distance. Animation for state "step" will be played',
+    zh: '向前行走（指定距离），自动播放“行走”状态的动画'
   })
 }
 
@@ -590,12 +513,12 @@ export const step1: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '1'
   },
-  insertSnippet: 'step ${1:100}, ${2:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
-  insertSnippetParameterHints: ['distance', 'animation'],
-  overview: 'step distance, animation',
+  insertSnippet: 'step ${1:100}, ${2:1}',
+  insertSnippetParameterHints: ['distance', 'speed'],
+  overview: 'step distance, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading. Animation with given name will be played',
-    zh: '向前行走，并播放指定名字的动画'
+    en: 'Step toward current heading with given distance and speed. Animation for state "step" will be played',
+    zh: '向前行走（指定距离和速度），自动播放“行走”状态的动画'
   })
 }
 
@@ -607,66 +530,153 @@ export const step2: DefinitionDocumentationItem = {
     name: 'Sprite.step',
     overloadId: '2'
   },
-  insertSnippet: 'step ${1:100}',
-  insertSnippetParameterHints: ['distance'],
-  overview: 'step distance',
+  insertSnippet: 'step ${1:100}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['distance', 'speed', 'animation'],
+  overview: 'step distance, speed, animation',
   detail: makeBasicMarkdownString({
-    en: 'Step toward current heading. Animation for state "step" will be played',
-    zh: '向前行走，自动播放“行走”状态的动画'
-  }),
-  hiddenFromList: true // duplicate with `step0`
-}
-
-export const goto0: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.goto',
-    overloadId: '0'
-  },
-  insertSnippet: 'goto ${1:sprite}',
-  overview: 'goto sprite',
-  detail: makeBasicMarkdownString({
-    en: 'Move to given sprite',
-    zh: '移动到指定精灵'
-  }),
-  hiddenFromList: true // similar to `goto1`, but `goto1` is more recommended
-  // TODO: unhide this (& similar items) when [work class embed](https://github.com/goplus/xgo/pull/2301) is supported
-  // See details in https://github.com/goplus/builder/issues/1636
-}
-
-export const goto1: DefinitionDocumentationItem = {
-  categories: [categories.motion.position],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.goto',
-    overloadId: '1'
-  },
-  insertSnippet: 'goto ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
-  insertSnippetParameterHints: ['sprite'],
-  overview: 'goto name',
-  detail: makeBasicMarkdownString({
-    en: 'Move to the sprite with given name',
-    zh: '移动到指定名字的精灵'
+    en: 'Step toward current heading with given distance, speed and animation',
+    zh: '向前行走，并指定距离、速度和动画'
   })
 }
 
-export const goto2: DefinitionDocumentationItem = {
+export const stepTo1: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.goto',
+    name: 'Sprite.stepTo',
+    overloadId: '1'
+  },
+  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
+  insertSnippetParameterHints: ['target'],
+  overview: 'stepTo target',
+  detail: makeBasicMarkdownString({
+    en: 'Step to the sprite with given name. Animation for state "step" will be played',
+    zh: '行走到精灵（指定名字），自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo0: DefinitionDocumentationItem = {
+  ...step1,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '0'
+  },
+  insertSnippet: 'stepTo ${1:sprite}',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given sprite. Animation for state "step" will be played',
+    zh: '行走到指定精灵，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo2: DefinitionDocumentationItem = {
+  ...step1,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
     overloadId: '2'
   },
-  insertSnippet: 'goto ${1:Mouse}',
-  insertSnippetParameterHints: ['object'],
-  overview: 'goto obj',
+  insertSnippet: 'stepTo ${1:specialObj}',
   detail: makeBasicMarkdownString({
-    en: 'Move to given obj',
-    zh: '移动到指定对象'
+    en: 'Step to the given object. Animation for state "step" will be played',
+    zh: '行走到指定对象，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo4: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '4'
+  },
+  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
+  insertSnippetParameterHints: ['target', 'speed'],
+  overview: 'stepTo target, speed',
+  detail: makeBasicMarkdownString({
+    en: 'Step to the sprite with given name and specify speed. Animation for state "step" will be played',
+    zh: '行走到精灵（指定名字），并指定行走速度，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo3: DefinitionDocumentationItem = {
+  ...stepTo4,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '3'
+  },
+  insertSnippet: 'stepTo ${1:sprite}, ${2:1}',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given sprite and specify speed. Animation for state "step" will be played',
+    zh: '行走到指定精灵，并指定行走速度，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo5: DefinitionDocumentationItem = {
+  ...stepTo4,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '5'
+  },
+  insertSnippet: 'stepTo ${1:specialObj}, ${2:1}',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given object and specify the step speed. Animation for state "step" will be played',
+    zh: '行走到指定对象，并指定行走速度，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo7: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '7'
+  },
+  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['target', 'speed', 'animation'],
+  overview: 'stepTo target, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Step to the sprite with given name and specify speed and animation',
+    zh: '行走到指定精灵，并指定行走速度和动画'
+  })
+}
+
+export const stepTo6: DefinitionDocumentationItem = {
+  ...stepTo7,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '6'
+  },
+  insertSnippet: 'stepTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given sprite and specify speed and animation',
+    zh: '行走到指定精灵，并指定行走速度和动画'
+  })
+}
+
+export const stepTo8: DefinitionDocumentationItem = {
+  ...stepTo7,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '8'
+  },
+  insertSnippet: 'stepTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given object and specify speed and animation',
+    zh: '行走到指定对象，并指定行走速度和动画'
   })
 }
 
@@ -913,21 +923,38 @@ export const turn0: DefinitionDocumentationItem = {
   })
 }
 
-export const turnTo0: DefinitionDocumentationItem = {
+export const turn1: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.turnTo',
-    overloadId: '0'
+    name: 'Sprite.turn',
+    overloadId: '1'
   },
-  insertSnippet: 'turnTo ${1:sprite}',
-  overview: 'turnTo sprite',
+  insertSnippet: 'turn ${1:Right}, ${2:1}',
+  insertSnippetParameterHints: ['direction', 'speed'],
+  overview: 'turn direction, speed',
   detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite',
-    zh: '转向指定精灵'
-  }),
-  hiddenFromList: true // similar to `turnTo1`, but `turnTo1` is more recommended
+    en: 'Turn by given direction and specify the turn speed',
+    zh: '指定方向旋转，并指定旋转速度'
+  })
+}
+
+export const turn2: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turn',
+    overloadId: '2'
+  },
+  insertSnippet: 'turn ${1:Right}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['direction', 'speed', 'animation'],
+  overview: 'turn direction, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Turn by given direction, specify the turn speed and animation',
+    zh: '指定方向旋转，并指定旋转速度和动画'
+  })
 }
 
 export const turnTo1: DefinitionDocumentationItem = {
@@ -939,45 +966,178 @@ export const turnTo1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
-  insertSnippetParameterHints: ['sprite'],
-  overview: 'turnTo sprite',
+  insertSnippetParameterHints: ['target'],
+  overview: 'turnTo target',
   detail: makeBasicMarkdownString({
-    en: 'Turn to sprite with given name',
+    en: 'Turn to the sprite with given name',
     zh: '转向指定名字的精灵'
   })
 }
 
+export const turnTo0: DefinitionDocumentationItem = {
+  ...turnTo1,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '0'
+  },
+  insertSnippet: 'turnTo ${1:sprite}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given sprite',
+    zh: '转向指定精灵'
+  })
+}
 export const turnTo2: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
+  ...turnTo1,
+  hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '2'
   },
-  insertSnippet: 'turnTo ${1:Left}',
-  insertSnippetParameterHints: ['direction'],
-  overview: 'turnTo direction',
+  insertSnippet: 'turnTo ${1:Right}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given direction',
     zh: '转向指定方向'
   })
 }
-
 export const turnTo3: DefinitionDocumentationItem = {
-  categories: [categories.motion.heading],
-  kind: DefinitionKind.Command,
+  ...turnTo1,
+  hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '3'
   },
-  insertSnippet: 'turnTo ${1:Mouse}',
-  insertSnippetParameterHints: ['object'],
-  overview: 'turnTo obj',
+  insertSnippet: 'turnTo ${1:specialObj}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object',
     zh: '转向指定对象'
+  })
+}
+
+export const turnTo5: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '5'
+  },
+  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
+  insertSnippetParameterHints: ['target', 'speed'],
+  overview: 'turnTo target, speed',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to the sprite with given name, and specify the turn speed',
+    zh: '转向精灵（指定名字），并指定旋转速度'
+  })
+}
+
+export const turnTo4: DefinitionDocumentationItem = {
+  ...turnTo5,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '4'
+  },
+  insertSnippet: 'turnTo ${1:sprite}, ${2:1}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given sprite, and specify the turn speed',
+    zh: '转向指定精灵，并指定旋转速度'
+  })
+}
+
+export const turnTo6: DefinitionDocumentationItem = {
+  ...turnTo5,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '6'
+  },
+  insertSnippet: 'turnTo ${1:Right}, ${2:1}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given direction, and specify the turn speed',
+    zh: '转向指定方向，并指定旋转速度'
+  })
+}
+
+export const turnTo7: DefinitionDocumentationItem = {
+  ...turnTo5,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '7'
+  },
+  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given object, and specify the turn speed',
+    zh: '转向指定对象，并指定旋转速度'
+  })
+}
+
+export const turnTo9: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '9'
+  },
+  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['target', 'speed', 'animation'],
+  overview: 'turnTo target, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to the sprite with given name, and specify the turn speed and animation',
+    zh: '转向精灵（指定名字），并指定旋转速度和动画'
+  })
+}
+
+export const turnTo8: DefinitionDocumentationItem = {
+  ...turnTo9,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '8'
+  },
+  insertSnippet: 'turnTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given sprite, and specify the turn speed and animation',
+    zh: '转向指定精灵，并指定旋转速度和动画'
+  })
+}
+
+export const turnToA: DefinitionDocumentationItem = {
+  ...turnTo9,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: 'a'
+  },
+  insertSnippet: 'turnTo ${1:Right}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given direction, and specify the turn speed and animation',
+    zh: '转向指定方向，并指定旋转速度和动画'
+  })
+}
+
+export const turnTo: DefinitionDocumentationItem = {
+  ...turnTo9,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: 'b'
+  },
+  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given object, and specify the turn speed and animation',
+    zh: '转向指定对象，并指定旋转速度和动画'
   })
 }
 
@@ -1060,32 +1220,32 @@ export const changeSize: DefinitionDocumentationItem = {
   })
 }
 
-export const gameSetEffect: DefinitionDocumentationItem = {
+export const gameSetGraphicEffect: DefinitionDocumentationItem = {
   categories: [categories.look.effect],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.setEffect'
+    name: 'Game.setGraphicEffect'
   },
-  insertSnippet: 'setEffect ${1:ColorEffect}, ${2:100}',
+  insertSnippet: 'setGraphicEffect ${1:ColorEffect}, ${2:100}',
   insertSnippetParameterHints: ['kind', 'value'],
-  overview: 'setEffect kind, value',
+  overview: 'setGraphicEffect kind, value',
   detail: makeBasicMarkdownString({
     en: 'Set graphic effect of the stage',
     zh: '设置舞台特效'
   })
 }
 
-export const gameChangeEffect: DefinitionDocumentationItem = {
+export const gameChangeGraphicEffect: DefinitionDocumentationItem = {
   categories: [categories.look.effect],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.changeEffect'
+    name: 'Game.changeGraphicEffect'
   },
-  insertSnippet: 'changeEffect ${1:ColorEffect}, ${2:10}',
+  insertSnippet: 'changeGraphicEffect ${1:ColorEffect}, ${2:10}',
   insertSnippetParameterHints: ['kind', 'value'],
-  overview: 'changeEffect kind, value',
+  overview: 'changeGraphicEffect kind, value',
   detail: makeBasicMarkdownString({
     en: 'Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110',
     zh: '调整舞台特效。例如，初始特效值 100，改变 10 后将变为 110'
@@ -1107,32 +1267,32 @@ export const gameClearGraphicEffects: DefinitionDocumentationItem = {
   })
 }
 
-export const spriteSetEffect: DefinitionDocumentationItem = {
+export const spriteSetGraphicEffect: DefinitionDocumentationItem = {
   categories: [categories.look.effect],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.setEffect'
+    name: 'Sprite.setGraphicEffect'
   },
-  insertSnippet: 'setEffect ${1:ColorEffect}, ${2:100}',
+  insertSnippet: 'setGraphicEffect ${1:ColorEffect}, ${2:100}',
   insertSnippetParameterHints: ['kind', 'value'],
-  overview: 'setEffect kind, value',
+  overview: 'setGraphicEffect kind, value',
   detail: makeBasicMarkdownString({
     en: 'Set graphic effect of the sprite',
     zh: '设置精灵特效'
   })
 }
 
-export const spriteChangeEffect: DefinitionDocumentationItem = {
+export const spriteChangeGraphicEffect: DefinitionDocumentationItem = {
   categories: [categories.look.effect],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.changeEffect'
+    name: 'Sprite.changeGraphicEffect'
   },
-  insertSnippet: 'changeEffect ${1:ColorEffect}, ${2:10}',
+  insertSnippet: 'changeGraphicEffect ${1:ColorEffect}, ${2:10}',
   insertSnippetParameterHints: ['kind', 'value'],
-  overview: 'changeEffect kind, value',
+  overview: 'changeGraphicEffect kind, value',
   detail: makeBasicMarkdownString({
     en: 'Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110',
     zh: '调整精灵特效。例如，初始特效值 100，改变 10 后将变为 110'
@@ -1281,103 +1441,123 @@ export const backdropIndex: DefinitionDocumentationItem = {
   })
 }
 
-export const startBackdrop0: DefinitionDocumentationItem = {
+export const setBackdrop0: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.startBackdrop',
+    name: 'Game.setBackdrop',
     overloadId: '0'
   },
-  insertSnippet: 'startBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}',
+  insertSnippet: 'setBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}',
   insertSnippetParameterHints: ['name'],
-  overview: 'startBackdrop name',
+  overview: 'setBackdrop name',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name',
     zh: '（指定名字）切换背景'
   })
 }
 
-export const startBackdrop1: DefinitionDocumentationItem = {
+export const setBackdrop1: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.startBackdrop',
+    name: 'Game.setBackdrop',
     overloadId: '1'
   },
-  insertSnippet: 'startBackdrop ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}, ${2:true}',
-  insertSnippetParameterHints: ['backdrop', 'wait'],
-  overview: 'startBackdrop name, true',
+  insertSnippet: 'setBackdrop ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'setBackdrop index',
+  detail: makeBasicMarkdownString({
+    en: 'Set the current backdrop by specifying index',
+    zh: '（指定序号）切换背景'
+  })
+}
+export const setBackdrop2: DefinitionDocumentationItem = {
+  ...setBackdrop1,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Game.setBackdrop',
+    overloadId: '2'
+  }
+}
+
+export const setBackdrop3: DefinitionDocumentationItem = {
+  categories: [categories.look.backdrop],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.setBackdrop',
+    overloadId: '3'
+  },
+  insertSnippet: 'setBackdrop ${1:Next}',
+  insertSnippetParameterHints: ['action'],
+  overview: 'setBackdrop action',
+  detail: makeBasicMarkdownString({
+    en: 'Switch to the Next/Prev backdrop',
+    zh: '切换到下一个/上一个背景'
+  })
+}
+
+export const setBackdropAndWait0: DefinitionDocumentationItem = {
+  categories: [categories.look.backdrop],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.setBackdropAndWait',
+    overloadId: '0'
+  },
+  insertSnippet: 'setBackdropAndWait ${1:"${BUILDER_FIRST_BACKDROP_NAME:bg1}"}',
+  insertSnippetParameterHints: ['name'],
+  overview: 'setBackdropAndWait name',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name, with waiting for related (`onBackdrop`) behaviors to complete',
     zh: '（指定名字）切换背景，并等待关联的（`onBackdrop`）行为结束'
   })
 }
 
-export const nextBackdrop0: DefinitionDocumentationItem = {
+export const setBackdropAndWait1: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.nextBackdrop',
-    overloadId: '0'
-  },
-  insertSnippet: 'nextBackdrop',
-  overview: 'nextBackdrop',
-  detail: makeBasicMarkdownString({
-    en: 'Switch to the next backdrop',
-    zh: '切换到下一个背景'
-  })
-}
-
-export const nextBackdrop1: DefinitionDocumentationItem = {
-  categories: [categories.look.backdrop],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Game.nextBackdrop',
+    name: 'Game.setBackdropAndWait',
     overloadId: '1'
   },
-  insertSnippet: 'nextBackdrop ${2:true}',
-  insertSnippetParameterHints: ['wait'],
-  overview: 'nextBackdrop true',
+  insertSnippet: 'setBackdropAndWait ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'setBackdropAndWait index',
   detail: makeBasicMarkdownString({
-    en: 'Switch to the next backdrop, with waiting for related (`onBackdrop`) behaviors to complete',
-    zh: '切换到下一个背景，并等待关联的（`onBackdrop`）行为结束'
+    en: 'Set the current backdrop by specifying index, with waiting for related (`onBackdrop`) behaviors to complete',
+    zh: '（指定序号）切换背景，并等待关联的（`onBackdrop`）行为结束'
   })
 }
+export const setBackdropAndWait2: DefinitionDocumentationItem = {
+  ...setBackdropAndWait1,
+  hiddenFromList: true,
+  definition: {
+    package: packageSpx,
+    name: 'Game.setBackdropAndWait',
+    overloadId: '2'
+  }
+}
 
-export const prevBackdrop0: DefinitionDocumentationItem = {
+export const setBackdropAndWait3: DefinitionDocumentationItem = {
   categories: [categories.look.backdrop],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.prevBackdrop',
-    overloadId: '0'
+    name: 'Game.setBackdropAndWait',
+    overloadId: '3'
   },
-  insertSnippet: 'prevBackdrop',
-  overview: 'prevBackdrop',
+  insertSnippet: 'setBackdropAndWait ${1:Next}',
+  insertSnippetParameterHints: ['action'],
+  overview: 'setBackdropAndWait action',
   detail: makeBasicMarkdownString({
-    en: 'Switch to the previous backdrop',
-    zh: '切换到上一个背景'
-  })
-}
-
-export const prevBackdrop1: DefinitionDocumentationItem = {
-  categories: [categories.look.backdrop],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Game.prevBackdrop',
-    overloadId: '1'
-  },
-  insertSnippet: 'prevBackdrop ${1:true}',
-  insertSnippetParameterHints: ['wait'],
-  overview: 'prevBackdrop true',
-  detail: makeBasicMarkdownString({
-    en: 'Switch to the previous backdrop, with waiting for related (`onBackdrop`) behaviors to complete',
-    zh: '切换到上一个背景，并等待关联的（`onBackdrop`）行为结束'
+    en: 'Switch to the Next/Prev backdrop, with waiting for related (`onBackdrop`) behaviors to complete',
+    zh: '切换到下一个/上一个背景，并等待关联的（`onBackdrop`）行为结束'
   })
 }
 
@@ -1463,7 +1643,7 @@ export const waitUntil: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.waitUntil'
+    name: 'waitUntil'
   },
   insertSnippet: 'waitUntil ${1:true}',
   insertSnippetParameterHints: ['condition'],
@@ -1559,14 +1739,13 @@ export const gamePlay0: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '0'
   },
-  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}',
-  insertSnippetParameterHints: ['sound'],
-  overview: 'play sound',
+  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:true}',
+  insertSnippetParameterHints: ['sound', 'loop'],
+  overview: 'play sound, loop',
   detail: makeBasicMarkdownString({
-    en: 'Play given sound',
-    zh: '播放指定声音'
-  }),
-  hiddenFromList: true // similar to `play3`, but `play3` is more recommended
+    en: 'Play sound with given name in a loop',
+    zh: '循环播放声音（指定名字）'
+  })
 }
 
 export const gamePlay1: DefinitionDocumentationItem = {
@@ -1577,82 +1756,76 @@ export const gamePlay1: DefinitionDocumentationItem = {
     name: 'Game.play',
     overloadId: '1'
   },
-  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:true}',
-  insertSnippetParameterHints: ['sound', 'wait'],
-  overview: 'play sound, wait',
-  detail: makeBasicMarkdownString({
-    en: 'Play given sound with waiting',
-    zh: '播放指定声音并等待播放完成'
-  }),
-  hiddenFromList: true // similar to `play4`, but `play4` is more recommended
-}
-
-export const gamePlay2: DefinitionDocumentationItem = {
-  categories: [categories.sound.playControl],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Game.play',
-    overloadId: '2'
-  },
-  insertSnippet: 'play ${1:${BUILDER_FIRST_SOUND_NAME:s1}}, ${2:{}}',
-  insertSnippetParameterHints: ['sound', 'options'],
-  overview: 'play sound, options',
-  detail: makeBasicMarkdownString({
-    en: 'Control sound playback',
-    zh: '控制声音播放行为'
-  }),
-  hiddenFromList: true // similar to `play5`, but `play5` is more recommended
-}
-
-export const gamePlay3: DefinitionDocumentationItem = {
-  categories: [categories.sound.playControl],
-  kind: DefinitionKind.Command,
-  definition: {
-    package: packageSpx,
-    name: 'Game.play',
-    overloadId: '3'
-  },
   insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
   insertSnippetParameterHints: ['sound'],
-  overview: 'play name',
+  overview: 'play sound',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name',
     zh: '播放声音（指定名字）'
   })
 }
 
-export const gamePlay4: DefinitionDocumentationItem = {
+export const gamePlayAndWait: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.play',
-    overloadId: '4'
+    name: 'Game.playAndWait'
   },
-  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:true}',
-  insertSnippetParameterHints: ['sound', 'wait'],
-  overview: 'play name, wait',
+  insertSnippet: 'playAndWait ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
+  overview: 'playAndWait sound',
   detail: makeBasicMarkdownString({
-    en: 'Play sound with given name and wait',
+    en: 'Play sound with waiting',
     zh: '播放声音（指定名字）并等待播放完成'
   })
 }
 
-export const gamePlay5: DefinitionDocumentationItem = {
+export const gamePausePlaying: DefinitionDocumentationItem = {
   categories: [categories.sound.playControl],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.play',
-    overloadId: '5'
+    name: 'Game.pausePlaying'
   },
-  insertSnippet: 'play ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}, ${2:{ Action: PlayStop }}',
-  insertSnippetParameterHints: ['sound', 'options'],
-  overview: 'play name, options',
+  insertSnippet: 'pausePlaying ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
+  overview: 'pausePlaying sound',
   detail: makeBasicMarkdownString({
-    en: 'Control sound playback',
-    zh: '控制声音播放行为'
+    en: 'Pause sound with given name',
+    zh: '暂停声音（指定名字）'
+  })
+}
+
+export const gameResumePlaying: DefinitionDocumentationItem = {
+  categories: [categories.sound.playControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.resumePlaying'
+  },
+  insertSnippet: 'resumePlaying ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
+  overview: 'resume sound',
+  detail: makeBasicMarkdownString({
+    en: 'Resume sound with given name',
+    zh: '恢复声音（指定名字）'
+  })
+}
+
+export const gameStopPlaying: DefinitionDocumentationItem = {
+  categories: [categories.sound.playControl],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.stopPlaying'
+  },
+  insertSnippet: 'stopPlaying ${1:"${BUILDER_FIRST_SOUND_NAME:s1}"}',
+  insertSnippetParameterHints: ['sound'],
+  overview: 'stop sound',
+  detail: makeBasicMarkdownString({
+    en: 'Stop sound with given name',
+    zh: '停止声音（指定名字）'
   })
 }
 
@@ -1674,39 +1847,35 @@ export const spritePlay1: DefinitionDocumentationItem = {
   }
 }
 
-export const spritePlay2: DefinitionDocumentationItem = {
-  ...gamePlay2,
+export const spritePlayAndWait: DefinitionDocumentationItem = {
+  ...gamePlayAndWait,
   definition: {
     package: packageSpx,
-    name: 'Sprite.play',
-    overloadId: '2'
+    name: 'Sprite.playAndWait'
   }
 }
 
-export const spritePlay3: DefinitionDocumentationItem = {
-  ...gamePlay3,
+export const spritePausePlaying: DefinitionDocumentationItem = {
+  ...gamePausePlaying,
   definition: {
     package: packageSpx,
-    name: 'Sprite.play',
-    overloadId: '3'
+    name: 'Sprite.pausePlaying'
   }
 }
 
-export const spritePlay4: DefinitionDocumentationItem = {
-  ...gamePlay4,
+export const spriteResumePlaying: DefinitionDocumentationItem = {
+  ...gameResumePlaying,
   definition: {
     package: packageSpx,
-    name: 'Sprite.play',
-    overloadId: '4'
+    name: 'Sprite.resumePlaying'
   }
 }
 
-export const spritePlay5: DefinitionDocumentationItem = {
-  ...gamePlay5,
+export const spriteGameStopPlaying: DefinitionDocumentationItem = {
+  ...gameStopPlaying,
   definition: {
     package: packageSpx,
-    name: 'Sprite.play',
-    overloadId: '5'
+    name: 'Sprite.stopPlaying'
   }
 }
 
@@ -1844,26 +2013,43 @@ export const broadcast1: DefinitionDocumentationItem = {
     name: 'Game.broadcast',
     overloadId: '1'
   },
-  insertSnippet: 'broadcast ${1:"ping"}, ${2:true}',
-  insertSnippetParameterHints: ['msg', 'wait'],
-  overview: 'broadcast msg, true',
+  insertSnippet: 'broadcast ${1:"ping"}, ${2:1}',
+  insertSnippetParameterHints: ['msg', 'data'],
+  overview: 'broadcast msg, data',
   detail: makeBasicMarkdownString({
-    en: 'Broadcast a message with waiting for related (`onMsg`) behaviors to complete',
-    zh: '广播一条消息并等待关联的（`onMsg`）行为结束'
+    en: 'Broadcast a message along with extra data',
+    zh: '广播一条消息，携带额外的数据'
   })
 }
 
-export const broadcast2: DefinitionDocumentationItem = {
+export const broadcastAndWait0: DefinitionDocumentationItem = {
   categories: [categories.event.message],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.broadcast',
-    overloadId: '2'
+    name: 'Game.broadcastAndWait',
+    overloadId: '0'
   },
-  insertSnippet: 'broadcast ${1:"ping"}, ${2:1}, ${3:true}',
-  insertSnippetParameterHints: ['msg', 'data', 'wait'],
-  overview: 'broadcast msg, data, true',
+  insertSnippet: 'broadcastAndWait ${1:"ping"}',
+  insertSnippetParameterHints: ['msg'],
+  overview: 'broadcastAndWait msg',
+  detail: makeBasicMarkdownString({
+    en: 'Broadcast a message, with waiting for related (`onMsg`) behaviors to complete',
+    zh: '广播一条消息, 并等待关联的（`onMsg`）行为结束'
+  })
+}
+
+export const broadcastAndWait1: DefinitionDocumentationItem = {
+  categories: [categories.event.message],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Game.broadcastAndWait',
+    overloadId: '1'
+  },
+  insertSnippet: 'broadcastAndWait ${1:"ping"}, ${2:1}',
+  insertSnippetParameterHints: ['msg', 'data'],
+  overview: 'broadcastAndWait msg, data',
   detail: makeBasicMarkdownString({
     en: 'Broadcast a message along with extra data, with waiting for related (`onMsg`) behaviors to complete',
     zh: '广播一条消息，携带额外的数据，并等待关联的（`onMsg`）行为结束'
@@ -2744,6 +2930,11 @@ export const turningInfoDir: DefinitionDocumentationItem = {
 export const prev = defineConst('Prev', [], { en: 'Previous item', zh: '上一项' })
 export const next = defineConst('Next', [], { en: 'Next item', zh: '下一项' })
 
+export const Front = defineConst(front.name, [categories.look.visibility], front.text)
+export const Back = defineConst(back.name, [categories.look.visibility], back.text)
+export const Forward = defineConst(forward.name, [categories.look.visibility], forward.text)
+export const Backward = defineConst(backward.name, [categories.look.visibility], backward.text)
+
 export const up = defineConst('Up', [categories.motion.heading], {
   en: 'Up direction, i.e., 0 degree',
   zh: '上，即角度 0'
@@ -2786,9 +2977,3 @@ export const edgeBottom = defineConst('EdgeBottom', [categories.sensing.distance
   en: 'Bottom edge of the stage',
   zh: '舞台下边缘'
 })
-
-export const playRewind = defineConst('PlayRewind', [], { en: 'Rewind', zh: '倒带' })
-export const playContinue = defineConst('PlayContinue', [], { en: 'Continue', zh: '继续' })
-export const playPause = defineConst('PlayPause', [], { en: 'Pause', zh: '暂停' })
-export const playResume = defineConst('PlayResume', [], { en: 'Resume', zh: '恢复' })
-export const playStop = defineConst('PlayStop', [], { en: 'Stop', zh: '停止' })

@@ -143,8 +143,8 @@ const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs
   'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
   'gdspx.wasm': `${runnerBaseUrl}/gdspx.wasm`,
-  'godot.editor.wasm': `${runnerBaseUrl}/godot.editor.wasm`,
-  'godot.editor.pck': `${runnerBaseUrl}/godot.editor.pck`
+  'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
+  'engine.zip': `${runnerBaseUrl}/engine.zip`
 }
 
 onMounted(() => {

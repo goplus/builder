@@ -125,4 +125,67 @@ describe('Sprite', () => {
     expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.default])
     expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die])
   })
+
+  it('should clone correctly', () => {
+    const sprite = new Sprite('MySprite')
+
+    sprite.addCostume(makeCostume('costume1'))
+    sprite.addCostume(makeCostume('costume2'))
+
+    const animation1 = new Animation('animation1')
+    animation1.setCostumes([makeCostume('costume3'), makeCostume('costume4')])
+    sprite.addAnimation(animation1)
+
+    const animation2 = new Animation('animation2')
+    animation2.setCostumes([makeCostume('costume5'), makeCostume('costume6')])
+    sprite.addAnimation(animation2)
+
+    const clone = sprite.clone()
+    expect(clone.id).not.toEqual(sprite.id)
+    expect(clone.name).toEqual(sprite.name)
+
+    expect(clone.costumes.length).toEqual(sprite.costumes.length)
+    expect(clone.costumes.map(({ name }) => name)).toEqual(['costume1', 'costume2'])
+    expect(clone.costumes[0].id).not.toEqual(sprite.costumes[0].id)
+    expect(clone.costumes[1].id).not.toEqual(sprite.costumes[1].id)
+
+    expect(clone.animations.length).toEqual(sprite.animations.length)
+
+    expect(clone.animations[0].name).toEqual(sprite.animations[0].name)
+    expect(clone.animations[0].costumes.length).toEqual(sprite.animations[0].costumes.length)
+    expect(clone.animations[0].costumes.map(({ name }) => name)).toEqual(['costume3', 'costume4'])
+
+    expect(clone.animations[1].name).toEqual(sprite.animations[1].name)
+    expect(clone.animations[1].costumes.length).toEqual(sprite.animations[1].costumes.length)
+    expect(clone.animations[1].costumes.map(({ name }) => name)).toEqual(['costume5', 'costume6'])
+  })
+
+  it('should clone correctly by preserveId', () => {
+    const sprite = new Sprite('MySprite')
+    sprite.addCostume(makeCostume('costume1'))
+    const animation1 = new Animation('animation1')
+    sprite.addAnimation(animation1)
+
+    const clone = sprite.clone(true)
+    expect(clone.id).toEqual(sprite.id)
+    expect(clone.costumes[0].id).toEqual(sprite.costumes[0].id)
+    expect(clone.animations[0].id).toEqual(sprite.animations[0].id)
+  })
+
+  it('should clone getAnimationBoundStates correctly', () => {
+    const sprite = new Sprite('MySprite')
+    const animation1 = new Animation('animation1')
+    const animation2 = new Animation('animation2')
+    sprite.addAnimation(animation1)
+    sprite.addAnimation(animation2)
+
+    sprite.setAnimationBoundStates(animation1.id, [State.default, State.step])
+    sprite.setAnimationBoundStates(animation2.id, [State.die])
+
+    const clone = sprite.clone()
+
+    expect(clone.getDefaultAnimation()?.name).toEqual(animation1.name)
+    expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.default, State.step])
+    expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.die])
+  })
 })

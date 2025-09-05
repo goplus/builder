@@ -94,7 +94,7 @@ ${xgoTable}
     { header: true }
   ).trim()
   return `\
-# SPX APIs
+# spx APIs
 
 ## Game
 

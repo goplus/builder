@@ -1,9 +1,10 @@
 import { inject, provide } from 'vue'
-import type { InjectionKey } from 'vue'
+import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
-import { timeout, localStorageRef } from '@/utils/utils'
+import { timeout, localStorageRef, until } from '@/utils/utils'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
+import { tagName as highlightLinkTagName } from '@/components/copilot/custom-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
 import type { CourseSeries } from '@/apis/course-series'
 
@@ -28,13 +29,22 @@ export function provideTutorial(tutorial: Tutorial) {
   provide(tutorialKey, tutorial)
 }
 
+export type TutorialTopic = Topic & {
+  isTutorialTopic: true
+}
+
+export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
+  return (topic as TutorialTopic).isTutorialTopic === true
+}
+
 export class Tutorial {
   private course = localStorageRef<Course | null>('spx-gui-tutorial-course', null)
   private series = localStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
 
   constructor(
     private copilot: Copilot,
-    private router: Router
+    private router: Router,
+    private isRouteLoaded: Ref<boolean>
   ) {}
 
   get currentCourse(): Course | null {
@@ -55,7 +65,8 @@ export class Tutorial {
 
       if (entrypoint) {
         await this.router.push(entrypoint)
-        await timeout(100) // Wait for the router to finish navigation
+        await until(this.isRouteLoaded)
+        await timeout(100) // Wait for detailed UI rendering
       }
 
       await this.copilot.startSession(this.generateTopic(course))
@@ -74,9 +85,10 @@ export class Tutorial {
     }
   }
 
-  protected generateTopic(course: Course): Topic {
+  protected generateTopic(course: Course): TutorialTopic {
     const { id, title, prompt, references, entrypoint } = course
     return {
+      isTutorialTopic: true,
       title: { en: title, zh: title },
       description: `\
 You are assisting the user in learning the course: ${course.title}.
@@ -102,10 +114,10 @@ First do some preparation:
 * Split the course into smaller steps.
 
   Each step should be clear and simple. For example:
-  
-  - Click button "remove"
-  - Drag API \`say "Hi"\` from API References into the code editor
-  - Hover card of project A and select menu item "edit"
+
+  - Click <${highlightLinkTagName} target-id="2oK65oKh" tip="Click to remove">button remove</${highlightLinkTagName}>
+  - Drag API <${highlightLinkTagName} target-id="g4Vgrb2e" tip="Drag into code editor">say "Hi"</${highlightLinkTagName}> from API References into the code editor
+  - Hover <${highlightLinkTagName} target-id="13gEUydc" tip="Hover to see the dropdown menu">card of project A</${highlightLinkTagName}> and select menu item "edit"
 
   If there's already defined steps in the course, divide them into smaller steps as needed.
 
@@ -150,7 +162,7 @@ This is an example for messages between you and the user in a course:
   2. Hover the first project in list and click the "Remove" in corner menu.
   3. Confirm the removal in the popup dialog.
 
-  Now let's start with the first step. Please go to the "my projects" page.
+  Now let's start with the first step. Please click <${highlightLinkTagName} target-id="DgdwNmp8" tip="Click to go to My projects">My projects</${highlightLinkTagName}> to go to the "my projects" page.
 
 - User event
 
@@ -158,7 +170,7 @@ This is an example for messages between you and the user in a course:
 
 - Copilot message
 
-  Great! You are now on the "my projects" page. Please hover the first project in the list and click the "Remove" in the corner menu.
+  Great! You are now on the "my projects" page. Please hover <${highlightLinkTagName} target-id="U41-JvCA" tip="Hover to see the corner menu">the first project in the list</${highlightLinkTagName}> and click the "Remove" in the corner menu.
 
 - User event
 
@@ -166,7 +178,7 @@ This is an example for messages between you and the user in a course:
 
 - Copilot message
 
-  Please confirm the removal of the project.
+  Please confirm the removal of the project by clicking <${highlightLinkTagName} target-id="U41-JvCA" tip="Click to confirm">the confirm button</${highlightLinkTagName}>.
 
 - User event
 
