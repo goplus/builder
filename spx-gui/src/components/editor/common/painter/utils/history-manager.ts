@@ -119,7 +119,6 @@ export class HistoryManager {
     }
 
     const history = this.getHistoryFromStorage()
-
     // 如果当前在第一个历史记录，撤销到初始空白状态
     if (this.currentIndex === 0) {
       this.currentIndex = -1
@@ -140,7 +139,6 @@ export class HistoryManager {
     // 正常撤销到上一个历史记录
     this.currentIndex--
     const previousState = history[this.currentIndex]
-
     if (previousState && this.restoreCallback) {
       try {
         await this.restoreCallback(previousState.svgContent)
@@ -152,7 +150,6 @@ export class HistoryManager {
         return false
       }
     }
-
     return false
   }
 

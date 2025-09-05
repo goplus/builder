@@ -455,9 +455,11 @@ const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => 
 // 清空画布
 const clearCanvas = (): void => {
   if (!historyManager.value || !importExportManager) return
-  const svgContent = importExportManager.exportSvg()
-  if (svgContent) {
-    historyManager.value.addState(svgContent, 'Clear')
+
+  // 先保存清空前的状态（用于撤销）
+  const svgContentBeforeClear = importExportManager.exportSvg()
+  if (svgContentBeforeClear) {
+    historyManager.value.addState(svgContentBeforeClear, 'Before Clear')
   }
 
   clearCanvasFunction({
@@ -480,6 +482,12 @@ const clearCanvas = (): void => {
   // 重置笔刷绘制状态
   if (drawBrushRef.value) {
     drawBrushRef.value.resetDrawing()
+  }
+
+  // 保存清空后的状态（用于重做）
+  const svgContentAfterClear = importExportManager.exportSvg()
+  if (svgContentAfterClear) {
+    historyManager.value.addState(svgContentAfterClear, 'Clear')
   }
 }
 
