@@ -41,8 +41,11 @@ export function useDraggable(
         return
       }
       dragging = true
-      onDragMove?.({ x: offsetX, y: offsetY })
+      const shouldStopDragging = onDragMove?.({ x: offsetX, y: offsetY })
       lastPos = { x: e.clientX, y: e.clientY }
+      if (shouldStopDragging) {
+        onMouseUp()
+      }
     }
 
     const onMouseUp = () => {

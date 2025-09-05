@@ -86,6 +86,7 @@ defineExpose({ focus })
   padding: 12px 14px;
   align-items: center;
   gap: 10px;
+  height: 100%;
   background: var(--ui-color-grey-100);
 }
 
