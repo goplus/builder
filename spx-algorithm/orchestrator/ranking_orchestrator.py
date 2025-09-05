@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 
 from services.image_matching.matching_service import ImageMatchingService
 from services.reranking.rerank_service import RerankService
-from database.milvus.config import MilvusConfig
+from database.resource_vector.config import MilvusConfig
 from .pipeline_service import SearchPipelineService
 
 logger = logging.getLogger(__name__)

@@ -6,8 +6,8 @@ import logging
 from typing import List, Dict, Any, Optional
 import numpy as np
 
-from database.milvus.operations import MilvusOperations
-from database.milvus.config import MilvusConfig
+from database.resource_vector.operations import MilvusOperations
+from database.resource_vector.config import MilvusConfig
 from .vector_service import VectorService
 from .clip_service import CLIPService
 
