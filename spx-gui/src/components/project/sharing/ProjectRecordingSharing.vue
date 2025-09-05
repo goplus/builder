@@ -146,7 +146,6 @@ async function generateShareQRCode() {
       console.error('生成二维码失败:', error)
       qrCodeData.value = ''
     }
-
   } catch (error) {
     console.error('生成分享二维码失败:', error)
   } finally {
