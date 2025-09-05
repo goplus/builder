@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted, watch } from 'vue'
-  import { SocialPlatformConfigs, type PlatformConfig } from "./platformShare"
+  import { SocialPlatformConfigs, type PlatformConfig } from "./platform-share"
   const props = defineProps<{
         modelValue?: PlatformConfig
     }>()

@@ -3,7 +3,7 @@ import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted }
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './platformSelector.vue'
 import type { ProjectData } from '@/apis/project'
-import type { PlatformConfig } from './platformShare'
+import type { PlatformConfig } from './platform-share'
 import QRCode from 'qrcode'
 
 const props = defineProps<{

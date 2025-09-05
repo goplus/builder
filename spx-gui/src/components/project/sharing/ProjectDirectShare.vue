@@ -3,7 +3,7 @@
     // import { useMessageHandle } from '@/utils/exception'
     // import { getProjectShareRoute } from '@/router'
     import { computed, ref, onUnmounted } from 'vue'
-    import type { PlatformConfig } from './platformShare'
+    import type { PlatformConfig } from './platform-share'
     import type { ProjectData } from '@/apis/project'
     import PlatformSelector from './PlatformSelector.vue'
     import Poster from './ProjectPoster.vue'

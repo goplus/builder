@@ -3,8 +3,8 @@ import { ref, computed, defineProps, defineEmits, watch, nextTick, onUnmounted }
 import { useExternalUrl } from '@/utils/utils'
 import PlatformSelector from './platformSelector.vue'
 import type { RecordingData } from '../apis/recording'
-import type { PlatformConfig } from './platformShare'
-import { SocialPlatformConfigs } from './platformShare'
+import type { PlatformConfig } from './platform-share'
+import { SocialPlatformConfigs } from './platform-share'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
