@@ -5,8 +5,8 @@ import html2canvas from 'html2canvas'
 import { ref, nextTick, computed, onMounted, onUnmounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
 import logo from './logos/xbuilder-logo.svg'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
-import { useExternalUrl } from '@/utils/utils'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
+import { useAsyncComputed } from '@/utils/utils'
 import { getProjectPageRoute } from '@/router'
 import QRCode from 'qrcode'
 
@@ -47,31 +47,16 @@ onUnmounted(() => {
 })
 
 // Handle project thumbnail
-const thumbnailWebUrl = ref<string | null>(null)
-watch(
-  () => props.projectData.thumbnail,
-  async (newThumbnail) => {
-    if (newThumbnail) {
-      try {
-        const webUrl = await universalUrlToWebUrl(newThumbnail)
-        thumbnailWebUrl.value = webUrl
-      } catch (error) {
-        console.error('Failed to convert thumbnail URL:', error)
-        thumbnailWebUrl.value = null
-      }
-    } else {
-      thumbnailWebUrl.value = null
-    }
-  },
-  { immediate: true }
-)
-
-// 使用useExternalUrl来安全地处理外部URL
-const safeImgUrl = useExternalUrl(() => thumbnailWebUrl.value)
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+  const thumbnail = props.projectData.thumbnail
+  if (!thumbnail) return null
+  const file = createFileWithUniversalUrl(thumbnail)
+  return file.url(onCleanup)
+})
 
 // Final image URL
 const imgUrl = computed(() => {
-  return uploadedImgUrl.value || safeImgUrl.value || ''
+  return uploadedImgUrl.value || thumbnailUrl.value || ''
 })
 
 const posterElementRef = ref<HTMLElement>()
