@@ -5,8 +5,8 @@ import html2canvas from 'html2canvas'
 import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
 import logo from './logos/xbuilder-logo.svg'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
-import { useExternalUrl } from '@/utils/utils'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
+import { useAsyncComputed } from '@/utils/utils'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -33,39 +33,23 @@ const projectUrlQRCode = computed(async () => {
 
 // 处理用户上传的图片
 const uploadedImgUrl = computed(() => {
-  if (props.img && props.img instanceof File) {
+  if (props.img != null) { // consider of 0
     return URL.createObjectURL(props.img)
   }
   return null
 })
 
 // 处理项目缩略图
-const thumbnailWebUrl = ref<string | null>(null)
-watch(
-  () => props.projectData.thumbnail,
-  async (thumbnail) => {
-    if (thumbnail) {
-      try {
-        // 将 kodo:// URL 转换为可用的 HTTP URL
-        const webUrl = await universalUrlToWebUrl(thumbnail)
-        thumbnailWebUrl.value = webUrl
-      } catch (error) {
-        console.error('转换缩略图URL失败:', error)
-        thumbnailWebUrl.value = null
-      }
-    } else {
-      thumbnailWebUrl.value = null
-    }
-  },
-  { immediate: true }
-)
-
-// 使用 useExternalUrl 处理跨域图片
-const safeImgUrl = useExternalUrl(thumbnailWebUrl)
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+  const thumbnail = props.projectData.thumbnail
+  if (!thumbnail) return null
+  const file = createFileWithUniversalUrl(thumbnail)
+  return file.url(onCleanup)
+})
 
 // 最终的图片URL
 const imgUrl = computed(() => {
-  return uploadedImgUrl.value || safeImgUrl.value || ''
+  return uploadedImgUrl.value || thumbnailUrl.value || ''
 })
 
 const posterElementRef = ref<HTMLElement>()
