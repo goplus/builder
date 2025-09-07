@@ -104,8 +104,6 @@ const getProjectUrl = () => {
 
 // 渲染二维码到canvas
 const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
-  if (!canvas) return
-
   try {
     // 获取CSS中定义的尺寸
     const computedStyle = window.getComputedStyle(canvas)
