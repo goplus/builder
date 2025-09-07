@@ -15,26 +15,10 @@ const props = defineProps<{
   projectData: ProjectData
 }>()
 
-const projectUrlQRCode = computed(async () => {
-  try {
-    const projectUrl = getProjectUrl()
-    const qrDataURL = await QRCode.toDataURL(projectUrl, {
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      width: 220,
-      margin: 1
-    })
-    return qrDataURL
-  } catch (error) {
-    return null
-  }
-})
-
 // 处理用户上传的图片
 const uploadedImgUrl = computed(() => {
-  if (props.img != null) { // consider of 0
+  if (props.img != null) {
+    // consider of 0
     return URL.createObjectURL(props.img)
   }
   return null
