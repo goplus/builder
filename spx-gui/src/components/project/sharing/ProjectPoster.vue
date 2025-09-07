@@ -7,6 +7,7 @@ import { UIIcon } from '@/components/ui'
 import logo from './logos/xbuilder-logo.svg'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useAsyncComputed } from '@/utils/utils'
+import { getProjectPageRoute } from '@/router'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -16,8 +17,8 @@ const props = defineProps<{
 
 const projectUrlQRCode = computed(async () => {
   try {
-    const currentUrl = window.location.href
-    const qrDataURL = await QRCode.toDataURL(currentUrl, {
+    const projectUrl = getProjectUrl()
+    const qrDataURL = await QRCode.toDataURL(projectUrl, {
       color: {
         dark: '#000000',
         light: '#FFFFFF'
@@ -95,9 +96,10 @@ const truncatedDescription = computed(() => {
 })
 // =============================================
 
-// 获取当前项目URL
-const getCurrentProjectUrl = () => {
-  return window.location.origin + window.location.pathname
+// 获取项目URL
+const getProjectUrl = () => {
+  const projectPath = getProjectPageRoute(props.projectData.owner, props.projectData.name)
+  return window.location.origin + projectPath
 }
 
 // 渲染二维码到canvas
@@ -163,8 +165,8 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
 // 生成二维码
 const renderQRCode = async () => {
   if (projectQrCanvas.value) {
-    const currentUrl = getCurrentProjectUrl()
-    await drawQRCodeToCanvas(projectQrCanvas.value, currentUrl)
+    const projectUrl = getProjectUrl()
+    await drawQRCodeToCanvas(projectQrCanvas.value, projectUrl)
   }
 }
 
