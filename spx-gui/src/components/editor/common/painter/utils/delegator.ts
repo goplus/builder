@@ -1,7 +1,16 @@
 import paper from 'paper'
 
 // 工具类型定义
-export type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
+export type ToolType =
+  | 'line'
+  | 'brush'
+  | 'reshape'
+  | 'eraser'
+  | 'rectangle'
+  | 'circle'
+  | 'fill'
+  | 'text'
+  | 'selectColor'
 
 // 事件类型定义
 export type EventType = 'click' | 'mousedown' | 'mousemove' | 'mouseup' | 'drag'
@@ -32,6 +41,7 @@ export interface ToolRefs {
   circle?: ToolHandler
   fill?: ToolHandler
   text?: ToolHandler
+  selectColor?: ToolHandler
 }
 
 /**
