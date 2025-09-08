@@ -161,6 +161,9 @@
               </svg>
               <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
             </button>
+
+            <!-- 当前颜色显示（选择颜色） -->
+            <SelectColor ref="selectColorRef" :is-active="currentTool === 'selectColor'" />
           </div>
         </div>
       </div>
@@ -249,15 +252,17 @@ import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
 import { HistoryManager } from './utils/history-manager'
+import SelectColor from './components/select-color.vue'
 
 // 工具类型
-type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
+type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text' | 'selectColor'
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasWidth = ref<number>(800)
 const canvasHeight = ref<number>(600)
 import { getCanvasSize } from './utils/canvasSize'
+const canvasColor = ref<string>('#1f11ff')
 
 // 工具状态
 const currentTool = ref<ToolType | null>(null)
@@ -267,6 +272,8 @@ const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
 const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
 const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
+const selectColorRef = ref<InstanceType<typeof SelectColor> | null>(null)
+const textToolRef = ref<InstanceType<typeof TextTool> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null
@@ -279,7 +286,9 @@ const initEventDelegator = (): void => {
     reshape: reshapeRef.value as ToolHandler,
     circle: circleToolRef.value as ToolHandler,
     rectangle: rectangleToolRef.value as ToolHandler,
-    fill: fillToolRef.value as ToolHandler
+    fill: fillToolRef.value as ToolHandler,
+    text: textToolRef.value as ToolHandler,
+    selectColor: selectColorRef.value as ToolHandler
   })
 
   canvasEventDelegator.setCurrentTool(currentTool.value)
@@ -571,7 +580,7 @@ watch(currentTool, (newTool) => {
 
 // 监听工具引用变化，更新委托器
 watch(
-  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef],
+  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef, textToolRef, selectColorRef],
   () => {
     initEventDelegator()
   },
@@ -672,6 +681,7 @@ provide('reshapeRef', reshapeRef)
 provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
+provide('canvasColor', canvasColor)
 </script>
 
 <style scoped>
