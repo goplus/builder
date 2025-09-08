@@ -77,19 +77,6 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string, title?: string, desc?: string) => {
-      // console.log('shareURL: QQ platform:' + url);
-      // 检查是否在 QQ 环境中
-
-      if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
-        window.mqq.invoke('data', 'setShareInfo', {
-          share_url: url,
-          title: title || 'XBulider',
-          desc: desc || 'XBuilder分享你的创意作品',
-          image_url: logoSrc
-        })
-      } else {
-        console.warn('QQ API not available in current environment')
-      }
       return `url:${url}`
     },
     shareImage: async (image: File) => {

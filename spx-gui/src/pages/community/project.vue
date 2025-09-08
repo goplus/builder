@@ -322,16 +322,6 @@ const projectSharingLink = computed(() => {
 const sharePlatforms = SocialPlatformConfigs
 sharePlatforms[0].shareFunction.shareURL?.(projectSharingLink.value, props.name + props.owner)
 
-const { data: projectData } = useQuery(
-  async (ctx) => {
-    return await getProject(props.owner, props.name, ctx.signal)
-  },
-  {
-    en: 'Failed to load project',
-    zh: '加载项目失败'
-  }
-)
-
 const toaster = useMessage()
 const isRecording = ref(false)
 const recording = ref<globalThis.File | null>(null)
