@@ -41,7 +41,7 @@ func (p *Sb2xbpParams) Validate() (ok bool, msg string) {
 	return true, ""
 }
 
-// ConvertXBP converts a file from Scratch format to XBP format.
+// Convert converts a file from Scratch format to XBP format.
 func (ctrl *Controller) Convert(ctx context.Context, params *Sb2xbpParams) (result *XBPResult, err error) {
 	g, err := sbio.OpenFromBytes(params.File.Data, params.File.Version)
 	if err != nil {
