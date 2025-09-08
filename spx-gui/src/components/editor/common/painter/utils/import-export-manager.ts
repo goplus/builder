@@ -126,10 +126,8 @@ export class ImportExportManager {
         return false
       }
 
-      // 设置位置
-      if (position === 'center') {
-        importedItem.position = paper.view.center
-      }
+      // 自动调整大小并设置位置
+      this.fitItemToCanvas(importedItem, position)
 
       // 收集可编辑路径
       if (updatePaths) {
@@ -235,9 +233,8 @@ export class ImportExportManager {
 
       raster.onLoad = () => {
         try {
-          if (position === 'center') {
-            raster.position = paper.view.center
-          }
+          // 自动调整大小并设置位置
+          this.fitItemToCanvas(raster, position)
 
           // 将图片放到最底层作为背景
           raster.sendToBack()
@@ -337,6 +334,38 @@ export class ImportExportManager {
       },
       triggerExport
     )
+  }
+
+  /**
+   * 自动调整导入项目的大小以适应画布
+   */
+  private fitItemToCanvas(item: paper.Item, position: 'center' | 'original' = 'center'): void {
+    if (!item || !paper.view) return
+
+    const itemBounds = item.bounds
+    const viewBounds = paper.view.bounds
+
+
+    // 计算画布的可用区域
+    const availableWidth = viewBounds.width
+    const availableHeight = viewBounds.height
+
+
+    // 检查是否需要缩放
+    if (itemBounds.width > availableWidth || itemBounds.height > availableHeight) {
+      // 计算缩放比例，保持宽高比
+      const scaleX = availableWidth / itemBounds.width
+      const scaleY = availableHeight / itemBounds.height
+      const scale = Math.min(scaleX, scaleY)
+
+      // 应用缩放
+      item.scale(scale)
+    }
+
+    // 设置位置
+    if (position === 'center') {
+      item.position = paper.view.center
+    }
   }
 
   /**
