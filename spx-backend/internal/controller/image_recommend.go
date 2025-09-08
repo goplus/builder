@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
 )
@@ -18,6 +19,17 @@ type ImageRecommendParams struct {
 	Text  string    `json:"prompt"`
 	TopK  int       `json:"top_k,omitempty"`
 	Theme ThemeType `json:"theme,omitempty"`
+}
+
+// PromptAnalysisContext holds cached prompt analysis and optimized prompts for a request.
+// This prevents multiple AI calls for the same prompt analysis within a single request.
+type PromptAnalysisContext struct {
+	OriginalPrompt    string          // Original user prompt
+	Theme             ThemeType       // Theme being applied
+	Analysis          PromptAnalysis  // Cached AI analysis result (only computed once)
+	OptimizedPrompt   string          // Fully optimized prompt for AI generation
+	SemanticPrompt    string          // Optimized prompt for semantic search
+	ThemePrompt       string          // Optimized prompt for theme search
 }
 
 // Validate validates the image recommendation parameters.
@@ -46,6 +58,82 @@ func (p *ImageRecommendParams) GetProviderForTheme() svggen.Provider {
 		return GetThemeRecommendedProvider(p.Theme)
 	}
 	return svggen.ProviderOpenAI // Default fallback
+}
+
+// NewPromptAnalysisContext creates a new prompt analysis context with cached optimization results.
+// This performs AI analysis only once and caches all optimized prompt variations.
+func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme ThemeType, copilotClient *copilot.Copilot) *PromptAnalysisContext {
+	logger := log.GetReqLogger(ctx)
+	
+	analysisCtx := &PromptAnalysisContext{
+		OriginalPrompt: originalPrompt,
+		Theme:          theme,
+	}
+	
+	// If no theme, use original prompt for all variations
+	if theme == ThemeNone {
+		analysisCtx.OptimizedPrompt = originalPrompt
+		analysisCtx.SemanticPrompt = originalPrompt
+		analysisCtx.ThemePrompt = originalPrompt
+		// Analysis is not needed for ThemeNone, but initialize with defaults
+		analysisCtx.Analysis = PromptAnalysis{
+			Type:       "default",
+			Emotion:    "neutral", 
+			Complexity: "simple",
+			Keywords:   extractKeywords(originalPrompt),
+		}
+		return analysisCtx
+	}
+	
+	// Step 1: Perform AI analysis only once (this is the expensive operation)
+	logger.Printf("Performing prompt analysis for: %q", originalPrompt)
+	analysisCtx.Analysis = AnalyzePromptType(ctx, originalPrompt, copilotClient)
+	logger.Printf("Analysis completed - Type: %s, Emotion: %s, Complexity: %s", 
+		analysisCtx.Analysis.Type, analysisCtx.Analysis.Emotion, analysisCtx.Analysis.Complexity)
+	
+	// Step 2: Build all prompt variations using cached analysis (no additional AI calls)
+	analysisCtx.OptimizedPrompt = buildOptimizedPromptFromAnalysis(originalPrompt, theme, analysisCtx.Analysis)
+	analysisCtx.SemanticPrompt = buildSemanticPrompt(originalPrompt, theme)
+	analysisCtx.ThemePrompt = analysisCtx.OptimizedPrompt // Use fully optimized for theme search
+	
+	logger.Printf("Prompt optimization completed - Original: %q, Optimized: %q", 
+		originalPrompt, analysisCtx.OptimizedPrompt)
+	
+	return analysisCtx
+}
+
+// buildOptimizedPromptFromAnalysis builds a fully optimized prompt using cached analysis.
+// This replaces OptimizePromptWithAnalysis but uses pre-computed analysis instead of making AI calls.
+func buildOptimizedPromptFromAnalysis(userPrompt string, theme ThemeType, analysis PromptAnalysis) string {
+	if theme == ThemeNone {
+		return userPrompt
+	}
+	
+	// Get theme enhancement
+	themePrompt := GetThemePromptEnhancement(theme)
+	
+	// Get quality enhancement based on cached complexity
+	qualityPrompt := QualityPrompts[analysis.Complexity]
+	
+	// Get style enhancement based on cached type
+	stylePrompt := StylePrompts[analysis.Type]
+	
+	// Get technical requirements
+	technicalPrompt := TechnicalPrompts[theme]
+	
+	// Combine all prompts using the same logic as original
+	return buildNaturalPrompt(userPrompt, themePrompt, qualityPrompt, stylePrompt, technicalPrompt)
+}
+
+// buildSemanticPrompt builds a lighter prompt variation optimized for semantic search.
+// This maintains semantic relevance while adding minimal theme enhancement.
+func buildSemanticPrompt(userPrompt string, theme ThemeType) string {
+	if theme == ThemeNone {
+		return userPrompt
+	}
+	// Light theme enhancement for semantic search to maintain relevance
+	themePrompt := GetThemePromptEnhancement(theme)
+	return fmt.Sprintf("%s，%s", userPrompt, themePrompt)
 }
 
 // ImageRecommendResult represents the result of image recommendation.
@@ -86,6 +174,8 @@ type AlgorithmImageResult struct {
 }
 
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
+// PERFORMANCE OPTIMIZATION: This method now performs AI prompt analysis only once per request
+// and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
 	
@@ -97,15 +187,19 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Using theme-recommended provider: %s for theme: %s", provider, params.Theme)
 	}
 
+	// OPTIMIZATION: Create prompt analysis context once at the beginning
+	// This performs AI analysis only once and caches all optimized prompt variations
+	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot)
+
 	var foundResults []RecommendedImageResult
 	var err error
 
 	if params.Theme != ThemeNone {
 		// Use dual-path search strategy for theme-based requests
-		foundResults, err = ctrl.dualPathSearch(ctx, params)
+		foundResults, err = ctrl.dualPathSearchOptimized(ctx, params, promptCtx)
 	} else {
 		// Use single semantic search for non-themed requests
-		foundResults, err = ctrl.singleSemanticSearch(ctx, params)
+		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, params, promptCtx)
 	}
 
 	if err != nil {
@@ -120,15 +214,8 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		needed := params.TopK - len(foundResults)
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
-		// Get optimized prompt for AI generation
-		var aiPrompt string
-		if params.Theme != ThemeNone {
-			aiPrompt = OptimizePromptWithAnalysis(ctx, params.Text, params.Theme, ctrl.copilot)
-		} else {
-			aiPrompt = params.Text
-		}
-
-		generatedResults, err := ctrl.generateAISVGs(ctx, aiPrompt, provider, needed, len(foundResults))
+		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
+		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, needed, len(foundResults))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -147,13 +234,9 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
-	finalQuery := params.Text
-	if params.Theme != ThemeNone {
-		finalQuery = OptimizePromptWithAnalysis(ctx, params.Text, params.Theme, ctrl.copilot)
-	}
-
+	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	return &ImageRecommendResult{
-		Query:        finalQuery,
+		Query:        promptCtx.OptimizedPrompt,
 		ResultsCount: len(foundResults),
 		Results:      foundResults,
 	}, nil
@@ -202,13 +285,17 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	return &algorithmResp, nil
 }
 
-// generateAISVGs generates AI SVG images concurrently to fill the gap when not enough images are found.
-// The text parameter should already have theme enhancement applied.
-func (ctrl *Controller) generateAISVGs(ctx context.Context, finalPrompt string, provider svggen.Provider, count int, startRank int) ([]RecommendedImageResult, error) {
+
+// generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
+// PERFORMANCE OPTIMIZATION: Uses cached optimized prompt instead of calling OptimizePromptWithAnalysis.
+// The finalPrompt parameter should already have all theme and analysis enhancements applied.
+func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt string, provider svggen.Provider, count int, startRank int) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
 	if count <= 0 {
 		return nil, nil
 	}
+
+	logger.Printf("Generating %d AI SVGs with optimized prompt: %q", count, finalPrompt)
 
 	// Channel to collect results
 	type generateResult struct {
@@ -221,11 +308,11 @@ func (ctrl *Controller) generateAISVGs(ctx context.Context, finalPrompt string, 
 	// Start concurrent generation
 	for i := range count {
 		go func(index int) {
-			// Create SVG generation parameters - text already has theme applied, so use ThemeNone to avoid double application
+			// Create SVG generation parameters - prompt already optimized, so use ThemeNone to avoid double application
 			params := &GenerateSVGParams{
 				Prompt:   finalPrompt,
 				Provider: provider,
-				Theme:    ThemeNone, // Use ThemeNone since text already has theme enhancement applied
+				Theme:    ThemeNone, // Use ThemeNone since prompt already has all enhancements applied
 			}
 
 			// Validate parameters
@@ -313,8 +400,10 @@ func (ctrl *Controller) getAlgorithmServiceURL() string {
 	return "http://100.100.35.128:5000"
 }
 
-// dualPathSearch implements the dual-path search strategy for themed requests
-func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecommendParams) ([]RecommendedImageResult, error) {
+
+// dualPathSearchOptimized implements optimized dual-path search using cached prompt analysis.
+// PERFORMANCE OPTIMIZATION: Uses pre-computed prompts from PromptAnalysisContext instead of making AI calls.
+func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *ImageRecommendParams, promptCtx *PromptAnalysisContext) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
 	
 	// Calculate split for dual search (70% semantic, 30% theme-optimized)
@@ -331,9 +420,9 @@ func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecomme
 	}
 	resultChan := make(chan searchResult, 2)
 	
-	// Start semantic search concurrently
+	// Start semantic search concurrently using cached prompt
 	go func() {
-		semanticPrompt := GetOptimizedPromptForSearch(ctx, params.Text, params.Theme, "semantic", ctrl.copilot)
+		semanticPrompt := promptCtx.SemanticPrompt
 		logger.Printf("Semantic search prompt: %q", semanticPrompt)
 		
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
@@ -346,9 +435,9 @@ func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecomme
 		resultChan <- searchResult{results: results, source: "semantic"}
 	}()
 	
-	// Start theme search concurrently
+	// Start theme search concurrently using cached prompt
 	go func() {
-		themePrompt := GetOptimizedPromptForSearch(ctx, params.Text, params.Theme, "theme", ctrl.copilot)
+		themePrompt := promptCtx.ThemePrompt
 		logger.Printf("Theme search prompt: %q", themePrompt)
 		
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
@@ -401,13 +490,17 @@ func (ctrl *Controller) dualPathSearch(ctx context.Context, params *ImageRecomme
 	return fusedResults, nil
 }
 
-// singleSemanticSearch implements single semantic search for non-themed requests
-func (ctrl *Controller) singleSemanticSearch(ctx context.Context, params *ImageRecommendParams) ([]RecommendedImageResult, error) {
+
+// singleSemanticSearchOptimized implements optimized single semantic search using cached prompt analysis.
+// PERFORMANCE OPTIMIZATION: Uses pre-computed prompt from PromptAnalysisContext.
+func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, params *ImageRecommendParams, promptCtx *PromptAnalysisContext) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
 	
-	logger.Printf("Single semantic search for prompt: %q", params.Text)
+	// Use the cached semantic prompt (for ThemeNone, this will be the original prompt)
+	searchPrompt := promptCtx.SemanticPrompt
+	logger.Printf("Single semantic search for prompt: %q", searchPrompt)
 	
-	algorithmResp, err := ctrl.callAlgorithmService(ctx, params.Text, params.TopK)
+	algorithmResp, err := ctrl.callAlgorithmService(ctx, searchPrompt, params.TopK)
 	if err != nil {
 		return nil, fmt.Errorf("algorithm service call failed: %w", err)
 	}
