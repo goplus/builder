@@ -1103,6 +1103,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
 
+  /scratch-convert:
+    post:
+      tags:
+        - Utils
+      summary: Convert Scratch to XBP
+      description: |
+        Convert a Scratch format file to XBP (XBuilder Project) format.
+
+        This endpoint accepts a Scratch project file (version 2 or 3) and converts it to the XBP format
+        used by the XBuilder platform. An optional mapping can be provided to rename sprites and other elements
+        during conversion.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Sb2xbpRequest"
+      responses:
+        "201":
+          description: Successfully converted Scratch file to XBP format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sb2xbpResponse"
+        "400":
+          description: Invalid request parameters or file format.
+
   /course:
     post:
       tags:
@@ -2180,6 +2207,55 @@ components:
           description: Number of turns that were archived.
           examples:
             - 5
+
+    Sb2xbpRequest:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          $ref: "#/components/schemas/Sb2xbpFile"
+          description: The Scratch file to be converted.
+        mapping:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            Optional mapping to rename sprites and other elements during conversion.
+            Key is the original name, value is the new name.
+          examples:
+            - Sprite1: Hero
+              Sprite2: Enemy
+
+    Sb2xbpResponse:
+      type: object
+      properties:
+        file:
+          $ref: "#/components/schemas/Sb2xbpFile"
+          description: The converted XBP file.
+
+    Sb2xbpFile:
+      type: object
+      required:
+        - data
+        - version
+      properties:
+        data:
+          type: string
+          format: byte
+          description: Base64 encoded file data.
+          examples:
+            - UEsDBBQAAAAIAA==
+        version:
+          type: integer
+          format: int32
+          enum: [1, 2, 3]
+          description: |
+            File format version.
+            - For Scratch files: 2 or 3
+            - For XBP files: 1
+          examples:
+            - 2
 
     UpInfo:
       type: object
