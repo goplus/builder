@@ -315,18 +315,15 @@ const recordData = ref<RecordingData | null>(null)
 
 const shareRecording = useModal(ProjectRecordingSharing)
 
-async function handleRecordingSharing() {
-  if (isRecording.value) {
-    // 当前正在录制，停止录制
-    try {
+const handleRecordingSharing = useMessageHandle(
+  async () => {
+    if (isRecording.value) {
+      // 当前正在录制，停止录制
       await projectRunnerRef.value?.pauseGame() // 先暂停游戏，防止间隙
-      // console.log('正在停止录制...')
       const recordBlob = await projectRunnerRef.value?.stopRecording?.()
 
       if (!recordBlob) {
-        toaster.error('录制失败，未获得录制数据')
-        isRecording.value = false
-        return
+        throw new Error('录制失败，未获得录制数据')
       }
 
       // 将 Blob 转换为 File 对象
@@ -339,29 +336,24 @@ async function handleRecordingSharing() {
 
       // 创建异步处理录制数据的 Promise
       const recordingPromise = (async (): Promise<RecordingData> => {
-        try {
-          if (!projectData.value) {
-            throw new Error('项目数据加载失败')
-          }
-
-          const projectFile = createProjectFile(recordFile)
-          const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
-
-          const params: CreateRecordingParams = {
-            projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
-            title: projectData.value.name,
-            description: projectData.value.description ?? '',
-            videoUrl: RecordingURL,
-            thumbnailUrl: projectData.value.thumbnail || ''
-          }
-
-          const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
-          recordData.value = created
-          return created
-        } catch (error) {
-          console.error('录制处理失败:', error)
-          throw error
+        if (!projectData.value) {
+          throw new Error('项目数据加载失败')
         }
+
+        const projectFile = createProjectFile(recordFile)
+        const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
+
+        const params: CreateRecordingParams = {
+          projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+          title: projectData.value.name,
+          description: projectData.value.description ?? '',
+          videoUrl: RecordingURL,
+          thumbnailUrl: projectData.value.thumbnail || ''
+        }
+
+        const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
+        recordData.value = created
+        return created
       })()
 
       try {
@@ -371,45 +363,55 @@ async function handleRecordingSharing() {
         })
 
         if (result.type === 'shared') {
-          toaster.success(`已分享到${result.platform}`)
+          // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
+          return result.platform
         } else if (result.type === 'rerecord') {
           // 先恢复游戏，然后开始新的录制
           await projectRunnerRef.value?.resumeGame()
           isRecording.value = true
           await projectRunnerRef.value?.startRecording?.()
-          return
+          return null // 明确返回 null 表示停止录制但没有分享
         }
       } catch (e) {
         // cancelled 逻辑，用户取消分享
+        throw e
+      } finally {
+        await projectRunnerRef.value?.resumeGame()
+        isRecording.value = false
       }
-
-      await projectRunnerRef.value?.resumeGame()
-      isRecording.value = false
-    } catch (error) {
-      console.error('停止录制失败:', error)
-      toaster.error('停止录制失败')
-      isRecording.value = false
-    }
-  } else {
-    // 开始录制
-    try {
+    } else {
+      // 开始录制
       // 检查录制功能是否可用
       if (!projectRunnerRef.value?.startRecording) {
-        toaster.error('录制功能不可用，请确保项目正在运行')
-        return
+        throw new Error('录制功能不可用，请确保项目正在运行')
       }
 
       await projectRunnerRef.value?.startRecording?.()
       isRecording.value = true
       recordingStartTime.value = Date.now()
-      toaster.success('录制已开始，再次点击停止录制')
-    } catch (error) {
-      console.error('开始录制失败:', error)
-      const errorMessage = error instanceof Error ? error.message : '未知错误'
-      toaster.error(`开始录制失败: ${errorMessage}`)
+      // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
+      return undefined // 明确返回 undefined 表示开始录制
+    }
+  },
+  {
+    en: 'Recording operation failed',
+    zh: '录制操作失败'
+  },
+  (result) => {
+    // 注意：这里的 isRecording.value 状态可能已经在函数执行过程中改变了
+    // 我们需要根据返回值来判断是开始录制还是停止录制
+    if (result) {
+      // 有返回值说明是分享成功
+      return { en: `Shared to ${result}`, zh: `已分享到${result}` }
+    } else if (result === null) {
+      // 明确返回 null 说明是停止录制但没有分享
+      return { en: 'Recording stopped', zh: '录制已停止' }
+    } else {
+      // undefined 说明是开始录制
+      return { en: 'Recording started, click again to stop', zh: '录制已开始，再次点击停止录制' }
     }
   }
-}
+)
 </script>
 
 <template>
@@ -452,7 +454,8 @@ async function handleRecordingSharing() {
             v-if="runnerState === 'running'"
             v-radar="{ name: 'Recording button', desc: 'Click to start/stop recording' }"
             :type="isRecording ? 'danger' : 'boring'"
-            @click="handleRecordingSharing"
+            :loading="handleRecordingSharing.isLoading.value"
+            @click="handleRecordingSharing.fn"
           >
             <template #icon>
               <svg
