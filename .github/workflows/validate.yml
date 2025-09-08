@@ -78,6 +78,10 @@ jobs:
         env:
             GOPLUS_TOKEN: ${{ secrets.GOPLUS_TOKEN }}
         run: |
+          if [ -z "$GOPLUS_TOKEN" ]; then
+            echo "ERROR: GOPLUS_TOKEN is not set. Skipping git configuration."
+            exit 1
+          fi
           git config --global url."https://${GOPLUS_TOKEN}@github.com/".insteadOf "https://github.com/"
           git config --global url."https://${GOPLUS_TOKEN}@github.com/".insteadOf "git@github.com:"
           echo "Git configuration applied:"
@@ -98,9 +102,17 @@ jobs:
           go env GONOSUMDB
 
       - name: Clear Go module cache and verify access
+        env:
+          GOPLUS_TOKEN: ${{ secrets.GOPLUS_TOKEN }}
         run: |
           go clean -modcache
           echo "Testing git access to private repo..."
+          echo "Token length: ${#GOPLUS_TOKEN}"
+          if [ -z "$GOPLUS_TOKEN" ]; then
+            echo "ERROR: GOPLUS_TOKEN is empty!"
+          else
+            echo "Token is set (first 4 chars: ${GOPLUS_TOKEN:0:4}...)"
+          fi
           git ls-remote https://github.com/goplus/sb2xbp.git || echo "Git access test failed"
 
       - name: Run unit test cases
