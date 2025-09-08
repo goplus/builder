@@ -23,6 +23,7 @@ export enum ApiExceptionCode {
   errorUnauthorized = 40100,
   errorForbidden = 40300,
   errorNotFound = 40400,
+  errorQuotaExceeded = 42900,
   errorUnknown = 50000
 }
 
@@ -42,6 +43,10 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorNotFound]: {
     en: 'resource not exist',
     zh: '资源不存在'
+  },
+  [ApiExceptionCode.errorQuotaExceeded]: {
+    en: 'quota exceeded',
+    zh: '超出配额'
   },
   [ApiExceptionCode.errorUnknown]: {
     en: 'something wrong with the server',
