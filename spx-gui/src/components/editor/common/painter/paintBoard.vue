@@ -1,182 +1,169 @@
 <template>
   <div class="painter-container">
-    
-
     <!-- 顶部工具栏 -->
     <div class="toolbar-top">
-        <div class="tool-section">
-          <button
-            class="tool-btn ai-btn"
-            :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })"
-            @click="showAiDialog"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 12l2 2 4-4"></path>
-              <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path
-                d="M18.364 18.364c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-.024-.39-1.414 0-.39 1.024 0 1.414z"
-              ></path>
-              <path
-                d="M4.222 4.222c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-1.024-.39-1.414 0-.39 1.024 0 1.414z"
-              ></path>
-              <path
-                d="M18.364 5.636c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
-              ></path>
-              <path
-                d="M4.222 19.778c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
-              ></path>
-            </svg>
-            <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
-          </button>
-        </div>
+      <div class="tool-section">
+        <button
+          class="tool-btn ai-btn"
+          :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })"
+          @click="showAiDialog"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12l2 2 4-4"></path>
+            <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+            <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+            <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+            <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+            <path
+              d="M18.364 18.364c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-.024-.39-1.414 0-.39 1.024 0 1.414z"
+            ></path>
+            <path
+              d="M4.222 4.222c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-1.024-.39-1.414 0-.39 1.024 0 1.414z"
+            ></path>
+            <path
+              d="M18.364 5.636c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
+            ></path>
+            <path
+              d="M4.222 19.778c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
+            ></path>
+          </svg>
+          <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
+        </button>
+      </div>
 
-        <div class="tool-section">
-          <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3,6 5,6 21,6"></polyline>
-              <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
-            </svg>
-            <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
-          </button>
-          <button
-            class="tool-btn action-btn"
-            :disabled="!canUndo"
-            :title="$t({ en: 'Undo', zh: '撤销' })"
-            @click="undo"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 7l3-3 9 9 4-4 2 2-6 6-4-4"></path>
-            </svg>
-            <span>{{ $t({ en: 'Undo', zh: '撤销' }) }}</span>
-          </button>
-          <button
-            class="tool-btn action-btn"
-            :disabled="!canRedo"
-            :title="$t({ en: 'Redo', zh: '重做' })"
-            @click="redo"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 7v6h-6"></path>
-              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
-            </svg>
-            <span>{{ $t({ en: 'Redo', zh: '重做' }) }}</span>
-          </button>
-        </div>
+      <div class="tool-section">
+        <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3,6 5,6 21,6"></polyline>
+            <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+          </svg>
+          <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
+        </button>
+        <button class="tool-btn action-btn" :disabled="!canUndo" :title="$t({ en: 'Undo', zh: '撤销' })" @click="undo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7l3-3 9 9 4-4 2 2-6 6-4-4"></path>
+          </svg>
+          <span>{{ $t({ en: 'Undo', zh: '撤销' }) }}</span>
+        </button>
+        <button class="tool-btn action-btn" :disabled="!canRedo" :title="$t({ en: 'Redo', zh: '重做' })" @click="redo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7v6h-6"></path>
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+          </svg>
+          <span>{{ $t({ en: 'Redo', zh: '重做' }) }}</span>
+        </button>
+      </div>
     </div>
-    
 
     <!-- 右侧区域（工具栏+画板） -->
     <div class="right-panel">
       <!-- 左侧工具栏 -->
-    <div class="toolbar">
-      <div class="tool-section">
-        <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
-        <div class="tool-grid">
-          <button
-            :class="['tool-btn', { active: currentTool === 'line' }]"
-            :title="$t({ en: 'Line Tool', zh: '直线工具' })"
-            @click="selectTool('line')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-            </svg>
-            <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
-          </button>
+      <div class="toolbar">
+        <div class="tool-section">
+          <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
+          <div class="tool-grid">
+            <button
+              :class="['tool-btn', { active: currentTool === 'line' }]"
+              :title="$t({ en: 'Line Tool', zh: '直线工具' })"
+              @click="selectTool('line')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+              </svg>
+              <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'brush' }]"
-            :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
-            @click="selectTool('brush')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
-              <path
-                d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"
-              ></path>
-            </svg>
-            <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'brush' }]"
+              :title="$t({ en: 'Brush Tool', zh: '笔刷工具' })"
+              @click="selectTool('brush')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+                <path
+                  d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"
+                ></path>
+              </svg>
+              <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'reshape' }]"
-            :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
-            @click="selectTool('reshape')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
-              <path d="m13 13 6 6"></path>
-            </svg>
-            <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'reshape' }]"
+              :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
+              @click="selectTool('reshape')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                <path d="m13 13 6 6"></path>
+              </svg>
+              <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'eraser' }]"
-            :title="$t({ en: 'Eraser Tool', zh: '橡皮工具' })"
-            @click="selectTool('eraser')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
-              <path d="M22 21H7"></path>
-              <path d="m5 11 9 9"></path>
-            </svg>
-            <span>{{ $t({ en: 'Eraser', zh: '橡皮' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'eraser' }]"
+              :title="$t({ en: 'Eraser Tool', zh: '橡皮工具' })"
+              @click="selectTool('eraser')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                <path d="M22 21H7"></path>
+                <path d="m5 11 9 9"></path>
+              </svg>
+              <span>{{ $t({ en: 'Eraser', zh: '橡皮' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'rectangle' }]"
-            :title="$t({ en: 'Rectangle Tool', zh: '矩形工具' })"
-            @click="selectTool('rectangle')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect width="18" height="12" x="3" y="6" rx="2"></rect>
-            </svg>
-            <span>{{ $t({ en: 'Rectangle', zh: '矩形' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'rectangle' }]"
+              :title="$t({ en: 'Rectangle Tool', zh: '矩形工具' })"
+              @click="selectTool('rectangle')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="12" x="3" y="6" rx="2"></rect>
+              </svg>
+              <span>{{ $t({ en: 'Rectangle', zh: '矩形' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'circle' }]"
-            :title="$t({ en: 'Circle Tool', zh: '圆形工具' })"
-            @click="selectTool('circle')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="9"></circle>
-            </svg>
-            <span>{{ $t({ en: 'Circle', zh: '圆形' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'circle' }]"
+              :title="$t({ en: 'Circle Tool', zh: '圆形工具' })"
+              @click="selectTool('circle')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"></circle>
+              </svg>
+              <span>{{ $t({ en: 'Circle', zh: '圆形' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'fill' }]"
-            :title="$t({ en: 'Fill Tool', zh: '填充颜色工具' })"
-            @click="selectTool('fill')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 12l2 2 4-4"></path>
-              <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-              <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-            </svg>
-            <span>{{ $t({ en: 'Fill', zh: '填充' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'fill' }]"
+              :title="$t({ en: 'Fill Tool', zh: '填充颜色工具' })"
+              @click="selectTool('fill')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4"></path>
+                <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+                <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+                <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+                <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              </svg>
+              <span>{{ $t({ en: 'Fill', zh: '填充' }) }}</span>
+            </button>
 
-          <button
-            :class="['tool-btn', { active: currentTool === 'text' }]"
-            :title="$t({ en: 'Text Tool', zh: '插入文本工具' })"
-            @click="selectTool('text')"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 7V4h16v3"></path>
-              <path d="M9 20h6"></path>
-              <path d="M12 4v16"></path>
-            </svg>
-            <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
-          </button>
+            <button
+              :class="['tool-btn', { active: currentTool === 'text' }]"
+              :title="$t({ en: 'Text Tool', zh: '插入文本工具' })"
+              @click="selectTool('text')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 7V4h16v3"></path>
+                <path d="M9 20h6"></path>
+                <path d="M12 4v16"></path>
+              </svg>
+              <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
       <!-- 画布区域 -->
       <div class="canvas-wrapper">
@@ -271,7 +258,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasWidth = ref<number>(800)
 const canvasHeight = ref<number>(600)
 import { getCanvasSize } from './utils/canvasSize'
-
 
 // 工具状态
 const currentTool = ref<ToolType | null>(null)
@@ -404,9 +390,7 @@ const initPaper = (): void => {
     size: [canvasWidth.value, canvasHeight.value],
     fillColor: 'transparent'
   })
-  console.log(canvasWidth.value,canvasHeight.value,'canvasWidth.value,canvasHeight.value')
   backgroundRect.value = background
-  console.log(backgroundRect.value,'backgroundRect.value')
 
   // 初始图片加载交由下面的 watch 处理
 
@@ -877,7 +861,6 @@ canvas:hover {
   flex-direction: row;
   flex: 1;
 }
-
 
 .toolbar-top {
   display: flex;
