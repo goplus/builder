@@ -190,6 +190,11 @@ func NewMessageNode(copit *copilot.Copilot) *workflow.LLMNode {
 	return workflow.NewLLMNode(copit, system, true)
 }
 
+// GetCopilot returns the copilot instance
+func (ctrl *Controller) GetCopilot() *copilot.Copilot {
+	return ctrl.copilot
+}
+
 // kodoClient is the client for Kodo.
 type kodoClient struct {
 	cred         *qiniuAuth.Credentials
