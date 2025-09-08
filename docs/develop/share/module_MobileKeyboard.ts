@@ -51,6 +51,7 @@ type SystemKeyType = {
   icon: IconType;
   loading: boolean;
   disabled: boolean;
+  action: string;
 };
 
 export declare function MobileKeyboardView(
@@ -59,8 +60,7 @@ export declare function MobileKeyboardView(
     systemKeyConfig: SystemKeyType[];
   },
   emits: {
-    handleSysA: () => void;
-    handleSysB: () => void;
+    handleSysBtn: (action: string) => void;
   }
 ): UI;
 //  {
@@ -77,10 +77,10 @@ export declare function MobileKeyboardView(
 //       <div className="keyboard-zones">
 //         ${keyButtons}
 //       </div>
-//       <div className="systemA" @click="handleSysA">
+//       <div className="systemA" @click="emit('handleSysBtn', systemKeyConfig[0].action)">
 //         ${systemKeyConfig[0]}
 //       </div>
-//       <div className="systemB" @click="handleSysB">
+//       <div className="systemB" @click="emit('handleSysBtn', systemKeyConfig[1].action)">
 //         ${systemKeyConfig[1]}
 //       </div>
 //     </div>
