@@ -4,14 +4,29 @@ import type {
 } from "../../../spx-gui/src/apis/common/index.ts";
 import { type ProjectRelease } from "../../../spx-gui/src/apis/project-release.ts";
 
-export type KeyBtn = {
-  value: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+/**
+ * Valid mobile keyboard zones
+ */
+export const MOBILE_KEYBOARD_ZONES = [
+  "lt",
+  "rt",
+  "lbUp",
+  "lbLeft",
+  "lbRight",
+  "lbDown",
+  "rbA",
+  "rbB",
+  "rbX",
+  "rbY",
+] as const;
+
+export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number];
+/**
+ * Zone to key mapping for mobile keyboard
+ */
+export type MobileKeyboardZoneToKeyMapping = {
+  [zone in MobileKeyboardZone]: string | null;
 };
-export type MobileKeyboardZoneToKeyMapping = KeyBtn[];
 /**
  * Mobile keyboard type
  * - NoKeyboard: No keyboard
