@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/base64"
 
 	gotypes "go/types"
 
@@ -20,7 +21,7 @@ type Sb2xbpParams struct {
 }
 
 type File struct {
-	Data    []byte `json:"data"`
+	Data    string `json:"data"` // Base64 encoded file data
 	Version int    `json:"version"`
 }
 
@@ -29,7 +30,7 @@ type XBPResult struct {
 }
 
 func (p *Sb2xbpParams) Validate() (ok bool, msg string) {
-	if p.File.Data == nil {
+	if p.File.Data == "" {
 		return false, "file data is required"
 	}
 	if p.File.Version != 2 && p.File.Version != 3 {
@@ -43,7 +44,13 @@ func (p *Sb2xbpParams) Validate() (ok bool, msg string) {
 
 // Convert converts a file from Scratch format to XBP format.
 func (ctrl *Controller) Convert(ctx context.Context, params *Sb2xbpParams) (result *XBPResult, err error) {
-	g, err := sbio.OpenFromBytes(params.File.Data, params.File.Version)
+	// Decode base64 input data
+	inputData, err := base64.StdEncoding.DecodeString(params.File.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	g, err := sbio.OpenFromBytes(inputData, params.File.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +92,11 @@ func (ctrl *Controller) Convert(ctx context.Context, params *Sb2xbpParams) (resu
 		return nil, err
 	}
 
+	// Encode output data to base64
+	outputData := base64.StdEncoding.EncodeToString(xbpdata)
+
 	return &XBPResult{File: File{
-		Data:    xbpdata,
+		Data:    outputData,
 		Version: 1,
 	}}, nil
 }

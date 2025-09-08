@@ -1005,6 +1005,9 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+              schema:
+                type: string
+                format: binary
         "429":
           description: Insufficient quota to perform this operation.
 
@@ -1058,6 +1061,9 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
+              schema:
+                type: string
+                format: binary
         "429":
           description: Insufficient quota to perform this operation.
 
