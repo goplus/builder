@@ -1,6 +1,76 @@
 <template>
   <div class="painter-container">
-    <!-- 左侧工具栏 -->
+    
+
+    <!-- 顶部工具栏 -->
+    <div class="toolbar-top">
+        <div class="tool-section">
+          <button
+            class="tool-btn ai-btn"
+            :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })"
+            @click="showAiDialog"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4"></path>
+              <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
+              <path
+                d="M18.364 18.364c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-.024-.39-1.414 0-.39 1.024 0 1.414z"
+              ></path>
+              <path
+                d="M4.222 4.222c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-1.024-.39-1.414 0-.39 1.024 0 1.414z"
+              ></path>
+              <path
+                d="M18.364 5.636c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
+              ></path>
+              <path
+                d="M4.222 19.778c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
+              ></path>
+            </svg>
+            <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
+          </button>
+        </div>
+
+        <div class="tool-section">
+          <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3,6 5,6 21,6"></polyline>
+              <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+            </svg>
+            <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
+          </button>
+          <button
+            class="tool-btn action-btn"
+            :disabled="!canUndo"
+            :title="$t({ en: 'Undo', zh: '撤销' })"
+            @click="undo"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7l3-3 9 9 4-4 2 2-6 6-4-4"></path>
+            </svg>
+            <span>{{ $t({ en: 'Undo', zh: '撤销' }) }}</span>
+          </button>
+          <button
+            class="tool-btn action-btn"
+            :disabled="!canRedo"
+            :title="$t({ en: 'Redo', zh: '重做' })"
+            @click="redo"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 7v6h-6"></path>
+              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+            </svg>
+            <span>{{ $t({ en: 'Redo', zh: '重做' }) }}</span>
+          </button>
+        </div>
+    </div>
+    
+
+    <!-- 右侧区域（工具栏+画板） -->
+    <div class="right-panel">
+      <!-- 左侧工具栏 -->
     <div class="toolbar">
       <div class="tool-section">
         <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
@@ -106,127 +176,69 @@
           </button>
         </div>
       </div>
-
-      <div class="tool-section">
-        <h3 class="tool-title">{{ $t({ en: 'AI Tools', zh: 'AI工具' }) }}</h3>
-        <button
-          class="tool-btn ai-btn"
-          :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })"
-          @click="showAiDialog"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 12l2 2 4-4"></path>
-            <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-            <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-            <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-            <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
-            <path
-              d="M18.364 18.364c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-.024-.39-1.414 0-.39 1.024 0 1.414z"
-            ></path>
-            <path
-              d="M4.222 4.222c.39.39 1.024.39 1.414 0s.39-1.024 0-1.414-1.024-.39-1.414 0-.39 1.024 0 1.414z"
-            ></path>
-            <path
-              d="M18.364 5.636c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
-            ></path>
-            <path
-              d="M4.222 19.778c.39-.39.39-1.024 0-1.414s-1.024-.39-1.414 0-.39 1.024 0 1.414 1.024.39 1.414 0z"
-            ></path>
-          </svg>
-          <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
-        </button>
-      </div>
-
-      <div class="tool-section">
-        <h3 class="tool-title">{{ $t({ en: 'Actions', zh: '操作' }) }}</h3>
-        <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3,6 5,6 21,6"></polyline>
-            <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
-          </svg>
-          <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
-        </button>
-        <button class="tool-btn action-btn" :disabled="!canUndo" :title="$t({ en: 'Undo', zh: '撤销' })" @click="undo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 7l3-3 9 9 4-4 2 2-6 6-4-4"></path>
-          </svg>
-          <span>{{ $t({ en: 'Undo', zh: '撤销' }) }}</span>
-        </button>
-        <button class="tool-btn action-btn" :disabled="!canRedo" :title="$t({ en: 'Redo', zh: '重做' })" @click="redo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 7v6h-6"></path>
-            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
-          </svg>
-          <span>{{ $t({ en: 'Redo', zh: '重做' }) }}</span>
-        </button>
-      </div>
     </div>
 
-    <!-- 画布区域 -->
-    <div class="canvas-wrapper">
-      <canvas
-        ref="canvasRef"
-        :width="canvasWidth"
-        :height="canvasHeight"
-        @click="handleCanvasClick"
-        @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove"
-        @mouseup="handleCanvasMouseUp"
-      ></canvas>
+      <!-- 画布区域 -->
+      <div class="canvas-wrapper">
+        <canvas
+          ref="canvasRef"
+          :width="canvasWidth"
+          :height="canvasHeight"
+          @click="handleCanvasClick"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          @mouseup="handleCanvasMouseUp"
+        ></canvas>
 
-      <!-- 直线绘制组件 -->
-      <DrawLine
-        ref="drawLineRef"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-        :is-active="currentTool === 'line'"
-      />
+        <!-- 直线绘制组件 -->
+        <DrawLine
+          ref="drawLineRef"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+          :is-active="currentTool === 'line'"
+        />
 
-      <!-- 笔刷绘制组件 -->
-      <DrawBrush
-        ref="drawBrushRef"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-        :is-active="currentTool === 'brush'"
-      />
+        <!-- 笔刷绘制组件 -->
+        <DrawBrush
+          ref="drawBrushRef"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+          :is-active="currentTool === 'brush'"
+        />
 
-      <!-- 变形工具组件 -->
-      <Reshape ref="reshapeRef" :is-active="currentTool === 'reshape'" :all-paths="allPaths" />
+        <!-- 变形工具组件 -->
+        <Reshape ref="reshapeRef" :is-active="currentTool === 'reshape'" :all-paths="allPaths" />
 
-      <!-- 橡皮工具组件 -->
-      <EraserTool :is-active="currentTool === 'eraser'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
+        <!-- 橡皮工具组件 -->
+        <EraserTool :is-active="currentTool === 'eraser'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
 
-      <!-- 矩形工具组件 -->
-      <RectangleTool
-        ref="rectangleToolRef"
-        :is-active="currentTool === 'rectangle'"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-      />
+        <!-- 矩形工具组件 -->
+        <RectangleTool
+          ref="rectangleToolRef"
+          :is-active="currentTool === 'rectangle'"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+        />
 
-      <!-- 圆形工具组件 -->
-      <CircleTool
-        ref="circleToolRef"
-        :is-active="currentTool === 'circle'"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-      />
+        <!-- 圆形工具组件 -->
+        <CircleTool
+          ref="circleToolRef"
+          :is-active="currentTool === 'circle'"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+        />
 
-      <!-- 填充颜色工具组件 -->
-      <FillTool
-        ref="fillToolRef"
-        :is-active="currentTool === 'fill'"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-      />
+        <!-- 填充颜色工具组件 -->
+        <FillTool
+          ref="fillToolRef"
+          :is-active="currentTool === 'fill'"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+        />
 
-      <!-- 插入文本工具组件 -->
-      <TextTool
-        ref="textToolRef"
-        :is-active="currentTool === 'text'"
-        :canvas-width="canvasWidth"
-        :canvas-height="canvasHeight"
-      />
+        <!-- 插入文本工具组件 -->
+        <TextTool :is-active="currentTool === 'text'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
+      </div>
     </div>
 
     <!-- AI生成弹窗 -->
@@ -258,7 +270,8 @@ type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle'
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasWidth = ref<number>(800)
 const canvasHeight = ref<number>(600)
-const canvasColor = ref<string>('#1f11ff')
+import { getCanvasSize } from './utils/canvasSize'
+
 
 // 工具状态
 const currentTool = ref<ToolType | null>(null)
@@ -268,7 +281,6 @@ const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
 const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
 const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
-const textToolRef = ref<InstanceType<typeof TextTool> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null
@@ -281,8 +293,7 @@ const initEventDelegator = (): void => {
     reshape: reshapeRef.value as ToolHandler,
     circle: circleToolRef.value as ToolHandler,
     rectangle: rectangleToolRef.value as ToolHandler,
-    fill: fillToolRef.value as ToolHandler,
-    text: textToolRef.value as ToolHandler
+    fill: fillToolRef.value as ToolHandler
   })
 
   canvasEventDelegator.setCurrentTool(currentTool.value)
@@ -381,6 +392,9 @@ const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
 // 初始化 Paper.js
 const initPaper = (): void => {
   if (!canvasRef.value) return
+  let { width, height } = getCanvasSize(canvasRef.value)
+  canvasWidth.value = width
+  canvasHeight.value = height
 
   paper.setup(canvasRef.value)
 
@@ -390,7 +404,9 @@ const initPaper = (): void => {
     size: [canvasWidth.value, canvasHeight.value],
     fillColor: 'transparent'
   })
+  console.log(canvasWidth.value,canvasHeight.value,'canvasWidth.value,canvasHeight.value')
   backgroundRect.value = background
+  console.log(backgroundRect.value,'backgroundRect.value')
 
   // 初始图片加载交由下面的 watch 处理
 
@@ -571,7 +587,7 @@ watch(currentTool, (newTool) => {
 
 // 监听工具引用变化，更新委托器
 watch(
-  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef, textToolRef],
+  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef],
   () => {
     initEventDelegator()
   },
@@ -672,12 +688,12 @@ provide('reshapeRef', reshapeRef)
 provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
-provide('canvasColor', canvasColor)
 </script>
 
 <style scoped>
 .painter-container {
   display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
   background-color: #f5f5f5;
@@ -685,12 +701,13 @@ provide('canvasColor', canvasColor)
 
 /* 工具栏样式 */
 .toolbar {
-  width: 200px;
+  width: auto;
   background-color: #ffffff;
   border-right: 1px solid #e0e0e0;
   padding: 16px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 24px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
@@ -788,11 +805,12 @@ provide('canvasColor', canvasColor)
 
 /* 画布区域样式 */
 .canvas-wrapper {
-  flex: 1;
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 canvas {
@@ -801,6 +819,8 @@ canvas {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 canvas:hover {
@@ -847,6 +867,89 @@ canvas:hover {
 }
 
 .tool-btn:disabled:hover {
+  background-color: #fff;
+  border-color: #e0e0e0;
+  color: #666;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+}
+
+
+.toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 20%;
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 16px;
+  z-index: 10;
+}
+
+.toolbar-top .tool-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-top .tool-section .tool-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  padding: 0 8px 0 0;
+  border-right: 1px solid #e0e0e0;
+  white-space: nowrap;
+}
+
+.toolbar-top .tool-section .tool-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #666;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 36px;
+}
+
+.toolbar-top .tool-section .tool-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
+.toolbar-top .tool-section .tool-btn svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.toolbar-top .tool-section .tool-btn span {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.toolbar-top .tool-section .tool-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-top .tool-section .tool-btn:disabled:hover {
   background-color: #fff;
   border-color: #e0e0e0;
   color: #666;
