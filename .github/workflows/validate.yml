@@ -68,6 +68,11 @@ jobs:
           go-version: 1.24.x
           xgo-version: 1.5.x
 
+      - name: Configure Go private modules
+        run: |
+          go env -w GOPRIVATE=github.com/goplus/sb2xbp
+          go env -w GONOSUMDB=github.com/goplus/sb2xbp
+
       - name: Run unit test cases
         working-directory: spx-backend
         run: go test -v -race ./...
@@ -81,6 +86,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+
+      - name: Configure Go private modules
+        run: |
+          go env -w GOPRIVATE=github.com/goplus/sb2xbp
+          go env -w GONOSUMDB=github.com/goplus/sb2xbp
 
       - name: Run unit test cases
         working-directory: tools/ai
