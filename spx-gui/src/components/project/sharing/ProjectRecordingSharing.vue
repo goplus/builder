@@ -8,7 +8,7 @@ import QRCode from 'qrcode'
 
 const props = defineProps<{
   recording: Promise<RecordingData>
-  video?: globalThis.File
+  video?: File
   visible: boolean
 }>()
 
