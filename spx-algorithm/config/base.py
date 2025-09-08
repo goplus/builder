@@ -37,6 +37,10 @@ class BaseConfig:
     LTR_TRAINING_BATCH_SIZE: int = field(default_factory=lambda: int(os.environ.get('LTR_TRAINING_BATCH_SIZE', '1000')))
     LTR_MODEL_AUTO_RETRAIN: bool = field(default_factory=lambda: os.environ.get('LTR_MODEL_AUTO_RETRAIN', 'false').lower() == 'true')
     
+    # 重排序候选数量配置
+    LTR_COARSE_MULTIPLIER: int = field(default_factory=lambda: int(os.environ.get('LTR_COARSE_MULTIPLIER', '3')))  # 粗排数量倍数
+    LTR_MAX_CANDIDATES: int = field(default_factory=lambda: int(os.environ.get('LTR_MAX_CANDIDATES', '100')))  # 粗排最大数量
+    
     # Flask配置
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB
     JSON_AS_ASCII: bool = False
@@ -59,6 +63,8 @@ class BaseConfig:
             'FEEDBACK_DB_PATH': self.FEEDBACK_DB_PATH,
             'LTR_TRAINING_BATCH_SIZE': self.LTR_TRAINING_BATCH_SIZE,
             'LTR_MODEL_AUTO_RETRAIN': self.LTR_MODEL_AUTO_RETRAIN,
+            'LTR_COARSE_MULTIPLIER': self.LTR_COARSE_MULTIPLIER,
+            'LTR_MAX_CANDIDATES': self.LTR_MAX_CANDIDATES,
             'MAX_CONTENT_LENGTH': self.MAX_CONTENT_LENGTH,
             'JSON_AS_ASCII': self.JSON_AS_ASCII,
             'JSONIFY_PRETTYPRINT_REGULAR': self.JSONIFY_PRETTYPRINT_REGULAR
@@ -80,6 +86,8 @@ class BaseConfig:
                 'model_path': self.LTR_MODEL_PATH,
                 'feedback_db_path': self.FEEDBACK_DB_PATH,
                 'training_batch_size': self.LTR_TRAINING_BATCH_SIZE,
-                'auto_retrain': self.LTR_MODEL_AUTO_RETRAIN
+                'auto_retrain': self.LTR_MODEL_AUTO_RETRAIN,
+                'coarse_multiplier': self.LTR_COARSE_MULTIPLIER,
+                'max_candidates': self.LTR_MAX_CANDIDATES
             }
         }

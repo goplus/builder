@@ -130,12 +130,22 @@ class SearchCoordinator:
             
             # 第二阶段：重排序（细排，如果启用）
             final_results = matching_results
-            pipeline_stages = ['coarse_ranking']
+            if threshold > 0:
+                pipeline_stages = ['coarse_ranking', 'threshold_filtering']
+            else:
+                pipeline_stages = ['coarse_ranking']
             
             if self.enable_reranking and self.rerank_service:
-                logger.info("执行细排阶段")
-                final_results = self._execute_fine_ranking(query_text, matching_results, **kwargs)
-                pipeline_stages.append('fine_ranking')
+                if matching_results:  # 只有在有符合条件的候选时才进行LTR重排序
+                    logger.info("执行细排阶段")
+                    # 细排阶段需要传入top_k参数，确保最终返回正确数量的结果
+                    final_results = self._execute_fine_ranking(query_text, matching_results, top_k, **kwargs)
+                    pipeline_stages.append('fine_ranking')
+                else:
+                    logger.info("无符合阈值的候选结果，跳过细排阶段")
+            else:
+                # 未启用重排序时，确保只返回top_k个结果
+                final_results = matching_results[:top_k]
             
             logger.info(f"搜索流程完成，返回 {len(final_results)} 个结果")
             
@@ -168,7 +178,7 @@ class SearchCoordinator:
         
         Args:
             query_text: 查询文本
-            top_k: 返回结果数量
+            top_k: 最终需要返回的结果数量
             threshold: 相似度阈值
             
         Returns:
@@ -177,10 +187,24 @@ class SearchCoordinator:
         try:
             logger.info("执行粗排阶段（图文匹配）")
             
-            # 通过图文匹配服务搜索
-            results = self.image_matching_service.search_by_text(query_text, top_k, threshold)
+            # 如果启用了重排序，粗排阶段需要检索更多结果供LTR重排序使用
+            if self.enable_reranking and self.rerank_service:
+                # 从配置获取粗排候选数量参数
+                coarse_multiplier = self.config.get('reranking', {}).get('coarse_multiplier', 3)
+                max_candidates = self.config.get('reranking', {}).get('max_candidates', 100)
+                
+                # 粗排检索数量：取top_k的倍数，但限制在合理范围内
+                coarse_top_k = max(min(top_k * coarse_multiplier, max_candidates), min(top_k + 10, 20))
+                logger.info(f"启用重排序，粗排检索 {coarse_top_k} 个候选结果 (multiplier={coarse_multiplier}, max={max_candidates})")
+            else:
+                # 未启用重排序，直接按需求数量检索
+                coarse_top_k = top_k
+                logger.info(f"未启用重排序，粗排检索 {coarse_top_k} 个结果")
             
-            logger.info(f"粗排完成，返回 {len(results)} 个结果")
+            # 通过图文匹配服务搜索，应用threshold过滤
+            results = self.image_matching_service.search_by_text(query_text, coarse_top_k, threshold)
+            
+            logger.info(f"粗排+阈值过滤完成，返回 {len(results)} 个符合条件的候选结果")
             return results
             
         except Exception as e:
@@ -188,20 +212,21 @@ class SearchCoordinator:
             return []
     
     def _execute_fine_ranking(self, query_text: str, candidates: List[Dict[str, Any]], 
-                             **kwargs) -> List[Dict[str, Any]]:
+                             top_k: int, **kwargs) -> List[Dict[str, Any]]:
         """
-        执行细排阶段：基于LTR模型的精准排序
+        执行细排阶段：基于LTR模型的精准排序，并返回前top_k个结果
         
         Args:
             query_text: 查询文本
-            candidates: 候选结果列表
+            candidates: 候选结果列表（已通过threshold过滤）
+            top_k: 最终需要返回的结果数量
             **kwargs: 其他参数
             
         Returns:
-            细排后的结果列表
+            细排后的前top_k个结果列表
         """
         try:
-            logger.info(f"执行细排阶段（LTR重排序），候选数: {len(candidates)}")
+            logger.info(f"执行细排阶段（LTR重排序），已过滤候选数: {len(candidates)}, 目标返回数: {top_k}")
             
             # 获取用户上下文
             user_context = kwargs.get('user_context')
@@ -214,13 +239,16 @@ class SearchCoordinator:
                 query_text, candidates_with_vectors, user_context
             )
             
-            logger.info(f"LTR细排完成，返回 {len(reranked_results)} 个结果")
-            return reranked_results
+            # 取前top_k个结果（如果候选数少于top_k，返回全部）
+            final_results = reranked_results[:top_k]
+            
+            logger.info(f"LTR细排完成，从 {len(reranked_results)} 个重排序结果中返回前 {len(final_results)} 个")
+            return final_results
             
         except Exception as e:
             logger.error(f"细排阶段异常: {e}")
-            # 细排失败时返回原始结果
-            return candidates
+            # 细排失败时返回原始结果的前top_k个
+            return candidates[:top_k]
     
     def _ensure_candidates_have_vectors(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
