@@ -315,13 +315,6 @@ const remixesRet = useQuery(
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
-const projectSharingLink = computed(() => {
-  return `${location.origin}${getProjectShareRoute(props.owner, props.name)}`
-})
-
-const sharePlatforms = SocialPlatformConfigs
-sharePlatforms[0].shareFunction.shareURL?.(projectSharingLink.value, props.name + props.owner)
-
 const toaster = useMessage()
 const isRecording = ref(false)
 const recording = ref<globalThis.File | null>(null)

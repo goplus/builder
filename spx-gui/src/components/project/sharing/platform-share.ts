@@ -28,7 +28,7 @@ export type ShareType = {
  */
 export interface ShareFunction {
   /** 分享项目页面方法 */
-  shareURL?: (url: string, title: string, desc?: string) => Promise<string>
+  shareURL?: (url: string) => Promise<string>
   /** 分享海报方法 */
   shareImage?: (image: File) => Promise<string>
   /** 分享视频方法 */
@@ -76,7 +76,7 @@ class QQPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareURL: async (url: string, title?: string, desc?: string) => {
+    shareURL: async (url: string) => {
       return `url:${url}`
     },
     shareImage: async (image: File) => {
