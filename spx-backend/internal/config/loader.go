@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/qiniu/x/log"
@@ -23,7 +24,9 @@ func Load(logger *log.Logger) (*Config, error) {
 			Port: os.Getenv("PORT"),
 		},
 		Database: DatabaseConfig{
-			DSN: mustGetEnv(logger, "GOP_SPX_DSN"),
+			DSN:              mustGetEnv(logger, "GOP_SPX_DSN"),
+			AutoMigrate:      getBoolEnv("GOP_SPX_AUTO_MIGRATE"),
+			MigrationTimeout: getDurationEnv("GOP_SPX_MIGRATION_TIMEOUT"),
 		},
 		Sentry: SentryConfig{
 			DSN:        os.Getenv("SENTRY_DSN"),
@@ -54,6 +57,9 @@ func Load(logger *log.Logger) (*Config, error) {
 			APIKey:             mustGetEnv(logger, "OPENAI_API_KEY"),
 			APIEndpoint:        mustGetEnv(logger, "OPENAI_API_ENDPOINT"),
 			ModelID:            mustGetEnv(logger, "OPENAI_MODEL_ID"),
+			LiteAPIKey:         os.Getenv("OPENAI_LITE_API_KEY"),
+			LiteAPIEndpoint:    os.Getenv("OPENAI_LITE_API_ENDPOINT"),
+			LiteModelID:        os.Getenv("OPENAI_LITE_MODEL_ID"),
 			PremiumAPIKey:      os.Getenv("OPENAI_PREMIUM_API_KEY"),
 			PremiumAPIEndpoint: os.Getenv("OPENAI_PREMIUM_API_ENDPOINT"),
 			PremiumModelID:     os.Getenv("OPENAI_PREMIUM_MODEL_ID"),
@@ -94,4 +100,24 @@ func getFloatEnv(key string, defaultValue float64) float64 {
 		return defaultValue
 	}
 	return floatValue
+}
+
+// getBoolEnv gets a boolean environment variable value or returns false if not set.
+func getBoolEnv(key string) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return false
+	}
+	boolValue, _ := strconv.ParseBool(value)
+	return boolValue
+}
+
+// getDurationEnv gets a duration environment variable value or returns 0 if not set.
+func getDurationEnv(key string) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return 0
+	}
+	duration, _ := time.ParseDuration(value)
+	return duration
 }

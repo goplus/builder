@@ -61,6 +61,11 @@ interface IframeWindow extends Window {
    * It is set to `true` before reloading and reset to `false` after reloaded.
    */
   __xb_is_stale?: boolean
+  startRecording?: () => void
+  stopRecording?: () => Promise<Blob> // stopRecording 直接返回 Blob
+  takeScreenshot?: () => Promise<Blob>
+  pauseGame?: () => void
+  resumeGame?: () => void
 }
 
 const iframeRef = ref<HTMLIFrameElement>()
@@ -143,8 +148,8 @@ const assetURLs = {
   // TODO: include these assets as "static asset" to generate immutable URLs
   'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
   'gdspx.wasm': `${runnerBaseUrl}/gdspx.wasm`,
-  'godot.editor.wasm': `${runnerBaseUrl}/godot.editor.wasm`,
-  'godot.editor.pck': `${runnerBaseUrl}/godot.editor.pck`
+  'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
+  'engine.zip': `${runnerBaseUrl}/engine.zip`
 }
 
 onMounted(() => {
@@ -159,6 +164,48 @@ onMounted(() => {
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
 defineExpose({
+  async pauseGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.pauseGame === 'function') {
+      return win.pauseGame()
+    }
+  },
+  async resumeGame() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.resumeGame === 'function') {
+      return win.resumeGame()
+    }
+  },
+  async startRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.startRecording === 'function') {
+      return win.startRecording()
+    }
+  },
+  async takeScreenshot() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.takeScreenshot === 'function') {
+      const result = await win.takeScreenshot()
+      return result
+    }
+  },
+  async stopRecording() {
+    const iframe = iframeRef.value
+    if (!iframe) return
+    const win = iframe.contentWindow as IframeWindow
+    if (win && typeof win.stopRecording === 'function') {
+      const result = await win.stopRecording()
+      return result
+    }
+  },
   async run(signal?: AbortSignal) {
     loading.value = true
     failed.value = false

@@ -24,7 +24,7 @@ const { fn: handleExitTutorial } = useMessageHandle(
 </script>
 
 <template>
-  <UIDropdownWithTooltip placement="bottom">
+  <UIDropdownWithTooltip placement="top">
     <template #trigger>
       <div class="tutorial-state-indicator">
         <UIIcon class="icon-tutorial" type="tutorial" />

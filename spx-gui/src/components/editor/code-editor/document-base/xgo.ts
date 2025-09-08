@@ -8,11 +8,23 @@ export const forIterate: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_iterate' },
-  insertSnippet: 'for ${1:i}, ${2:v} <- ${3:set} {\n\t$0\n}',
-  overview: 'for i, v <- set {}',
+  insertSnippet: 'for ${1:v} in ${2:[]} {\n\t$0\n}',
+  overview: 'for v in arr {}',
   detail: makeBasicMarkdownString({
-    en: 'Iterate within given set',
-    zh: '遍历指定集合'
+    en: 'Iterate within given list',
+    zh: '遍历指定列表'
+  })
+}
+
+export const forIterateWithIndex: DefinitionDocumentationItem = {
+  categories: [categories.control.flowControl],
+  kind: DefinitionKind.Statement,
+  definition: { name: 'for_iterate_with_index' },
+  insertSnippet: 'for ${1:i}, ${2:v} in ${3:[]} {\n\t$0\n}',
+  overview: 'for i, v in arr {}',
+  detail: makeBasicMarkdownString({
+    en: 'Iterate with index within given list',
+    zh: '遍历指定列表（带序号）'
   })
 }
 
@@ -20,7 +32,7 @@ export const forLoopWithCondition: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_loop_with_condition' },
-  insertSnippet: 'for ${1:condition} {\n\t$0\n}',
+  insertSnippet: 'for ${1:true} {\n\t$0\n}',
   overview: 'for condition {}',
   detail: makeBasicMarkdownString({
     en: 'Loop with condition',
@@ -32,8 +44,8 @@ export const forLoopWithRange: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'for_loop_with_range' },
-  insertSnippet: 'for ${1:i} <- ${2:start}:${3:end} {\n\t$0\n}',
-  overview: 'for i <- start:end {}',
+  insertSnippet: 'for ${1:i} in ${2:1}:${3:5} {\n\t$0\n}',
+  overview: 'for i in start:end {}',
   detail: makeBasicMarkdownString({
     en: 'Loop with range',
     zh: '指定范围循环'
@@ -44,7 +56,7 @@ export const ifStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'if_statement' },
-  insertSnippet: 'if ${1:condition} {\n\t$0\n}',
+  insertSnippet: 'if ${1:true} {\n\t$0\n}',
   overview: 'if condition {}',
   detail: makeBasicMarkdownString({
     en: 'If statement',
@@ -56,7 +68,7 @@ export const ifElseStatement: DefinitionDocumentationItem = {
   categories: [categories.control.flowControl],
   kind: DefinitionKind.Statement,
   definition: { name: 'if_else_statement' },
-  insertSnippet: 'if ${1:condition} {\n\t$0\n} else {\n\t$0\n}',
+  insertSnippet: 'if ${1:true} {\n\t$2\n} else {\n\t$0\n}',
   overview: 'if condition {} else {}',
   detail: makeBasicMarkdownString({
     en: 'If else statement',

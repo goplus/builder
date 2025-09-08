@@ -74,6 +74,7 @@ import { ref, computed, watch } from 'vue'
 import { UIIcon, UITab, UITabs } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
+import { stripExt } from '@/utils/path'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
@@ -164,7 +165,8 @@ const handleSave = useMessageHandle(
     }
 
     const blob = await waveformPlayerRef.value.exportWav()
-    const newFile = fromBlob(props.sound.file.name, blob)
+    const newFileName = stripExt(props.sound.file.name) + '.wav'
+    const newFile = fromBlob(newFileName, blob)
     const sname = props.sound.name
     const action = { name: { en: `Update sound ${sname}`, zh: `修改声音 ${sname}` } }
     await editorCtx.project.history.doAction(action, () => props.sound.setFile(newFile))

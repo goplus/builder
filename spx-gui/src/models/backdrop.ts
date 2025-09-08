@@ -78,6 +78,14 @@ export class Backdrop {
     })
   }
 
+  clone(preserveId = false) {
+    return new Backdrop(this.name, this.img, {
+      id: preserveId ? this.id : undefined,
+      bitmapResolution: this.bitmapResolution,
+      assetMetadata: this.assetMetadata ?? undefined
+    })
+  }
+
   static load(
     { name, path, builder_id: id, builder_assetMetadata: assetMetadata, ...inits }: RawBackdropConfig,
     files: Files,

@@ -3,6 +3,7 @@ package config
 import (
 	"slices"
 	"strings"
+	"time"
 )
 
 // Config holds all configuration for the application.
@@ -38,7 +39,17 @@ type SentryConfig struct {
 
 // DatabaseConfig holds database configuration.
 type DatabaseConfig struct {
-	DSN string
+	DSN              string
+	AutoMigrate      bool
+	MigrationTimeout time.Duration
+}
+
+// GetMigrationTimeout returns the migration timeout, defaulting to 5 minutes.
+func (c *DatabaseConfig) GetMigrationTimeout() time.Duration {
+	if c.MigrationTimeout > 0 {
+		return c.MigrationTimeout
+	}
+	return 5 * time.Minute
 }
 
 // RedisConfig holds Redis configuration.
@@ -104,9 +115,37 @@ type OpenAIConfig struct {
 	APIEndpoint string
 	ModelID     string
 
+	LiteAPIKey      string
+	LiteAPIEndpoint string
+	LiteModelID     string
+
 	PremiumAPIKey      string
 	PremiumAPIEndpoint string
 	PremiumModelID     string
+}
+
+// GetLiteAPIKey returns the lite API key, falling back to standard API key.
+func (c *OpenAIConfig) GetLiteAPIKey() string {
+	if c.LiteAPIKey != "" {
+		return c.LiteAPIKey
+	}
+	return c.APIKey
+}
+
+// GetLiteAPIEndpoint returns the lite API endpoint, falling back to standard endpoint.
+func (c *OpenAIConfig) GetLiteAPIEndpoint() string {
+	if c.LiteAPIEndpoint != "" {
+		return c.LiteAPIEndpoint
+	}
+	return c.APIEndpoint
+}
+
+// GetLiteModelID returns the lite model ID, falling back to standard model ID.
+func (c *OpenAIConfig) GetLiteModelID() string {
+	if c.LiteModelID != "" {
+		return c.LiteModelID
+	}
+	return c.ModelID
 }
 
 // GetPremiumAPIKey returns the premium API key, falling back to standard API key.

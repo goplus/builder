@@ -17,6 +17,8 @@ import DecimalInput, * as decimalInput from './DecimalInput.vue'
 import StringInput, * as stringInput from './StringInput.vue'
 import ResourceInput, * as resourceInput from './ResourceInput.vue'
 import SpxDirectionInput, * as spxDirectionInput from './SpxDirectionInput.vue'
+import SpxLayerActionInput, * as spxLayerActionInput from './SpxLayerActionInput.vue'
+import SpxDirActionInput, * as spxDirActionInput from './SpxDirActionInput.vue'
 import SpxColorInput, * as spxColorInput from './spx-color-input/SpxColorInput.vue'
 import SpxEffectKindInput, * as spxEffectKindInput from './spx-effect-input/SpxEffectKindInput.vue'
 import SpxKeyInput, * as spxKeyInput from './SpxKeyInput.vue'
@@ -66,6 +68,10 @@ function getDefaultValue(): InputTypedValue['value'] | null {
       return resourceInput.getDefaultValue()
     case InputType.SpxDirection:
       return spxDirectionInput.getDefaultValue()
+    case InputType.SpxLayerAction:
+      return spxLayerActionInput.getDefaultValue()
+    case InputType.SpxDirAction:
+      return spxDirActionInput.getDefaultValue()
     case InputType.SpxColor:
       return spxColorInput.getDefaultValue()
     case InputType.SpxEffectKind:
@@ -101,6 +107,10 @@ const inPlaceValueTitle = computed(() => {
     }
     case InputType.SpxDirection:
       return { en: 'Select a direction', zh: '选择方向' }
+    case InputType.SpxLayerAction:
+      return { en: 'Select a layer', zh: '选择向最前/后移' }
+    case InputType.SpxDirAction:
+      return { en: 'Select a direction', zh: '选择向前/向后' }
     case InputType.SpxColor:
       return { en: 'Select a color', zh: '选取颜色' }
     case InputType.SpxEffectKind:
@@ -221,6 +231,18 @@ function handlePredefinedNameUpdate(name: string | null) {
       />
       <SpxDirectionInput
         v-if="acceptSnapshot.type === InputType.SpxDirection"
+        :value="inPlaceValue"
+        @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
+      />
+      <SpxLayerActionInput
+        v-if="acceptSnapshot.type === InputType.SpxLayerAction"
+        :value="inPlaceValue"
+        @update:value="handleInPlaceValueUpdate"
+        @submit="emit('submit')"
+      />
+      <SpxDirActionInput
+        v-if="acceptSnapshot.type === InputType.SpxDirAction"
         :value="inPlaceValue"
         @update:value="handleInPlaceValueUpdate"
         @submit="emit('submit')"

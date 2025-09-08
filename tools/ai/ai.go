@@ -50,11 +50,6 @@ func (p *Player) transport() Transport {
 	return DefaultTransport()
 }
 
-// taskRunner returns the [TaskRunner] instance used for executing tasks.
-func (p *Player) taskRunner() TaskRunner {
-	return DefaultTaskRunner()
-}
-
 // SetRole defines the character/persona that the AI should adopt during
 // interactions. The optional context provides extra context about the role.
 func (p *Player) SetRole__0(role string, context map[string]any) {
@@ -112,11 +107,11 @@ func (p *Player) Think__1(msg string) {
 }
 func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
-		transportTimeout    = 15 * time.Second      // Timeout for each transport call.
-		maxTransportRetries = 3                     // Maximum number of retries for each AI transport call.
-		maxTurns            = 20                    // Maximum number of turns in a single call to prevent infinite loops.
-		backoffBase         = 50 * time.Millisecond // Base time for exponential backoff calculation.
-		backoffCap          = time.Second           // Maximum backoff time cap.
+		transportTimeout    = 45 * time.Second       // Timeout for each transport call.
+		maxTransportRetries = 3                      // Maximum number of retries for each AI transport call.
+		maxTurns            = 20                     // Maximum number of turns in a single call to prevent infinite loops.
+		backoffBase         = 100 * time.Millisecond // Base time for exponential backoff calculation.
+		backoffCap          = 2 * time.Second        // Maximum backoff time cap.
 	)
 
 	var (
