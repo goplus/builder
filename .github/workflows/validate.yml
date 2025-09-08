@@ -12,7 +12,7 @@ jobs:
 
       - name: Configure Git for private repos
         run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GOPLUS_DEPLOY_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Enable Corepack
         run: corepack enable
@@ -73,7 +73,7 @@ jobs:
 
       - name: Configure Git for private repos
         run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GOPLUS_DEPLOY_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Go & XGo
         uses: goplus/setup-xgo@v1
@@ -98,7 +98,7 @@ jobs:
 
       - name: Configure Git for private repos
         run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GOPLUS_DEPLOY_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Setup Go
         uses: actions/setup-go@v6
