@@ -63,9 +63,11 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Configure Git for private repos
+        env:
+            GOPLUS_TOKEN: ${{ secrets.GOPLUS_TOKEN }}
         run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@secrets.com".insteadOf "https://github.com"
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com".insteadOf "git@github.com:"
+          git config --global url."https://${GOPLUS_TOKEN}@secrets.com".insteadOf "https://github.com"
+          git config --global url."https://${GOPLUS_TOKEN}@github.com".insteadOf "git@github.com:"
 
       - name: Set up Go & XGo
         uses: goplus/setup-xgo@v1
