@@ -4,9 +4,9 @@ package model
 type Recording struct {
 	Model
 
-	// UserID is the ID of the user who created the recording.
-	UserID int64 `gorm:"column:user_id;index"`
-	User   User  `gorm:"foreignKey:UserID"`
+	// OwnerID is the ID of the user who created the recording.
+	OwnerID int64 `gorm:"column:owner_id;index"`
+	Owner   User  `gorm:"foreignKey:OwnerID"`
 
 	// ProjectID is the ID of the project that the recording is associated with.
 	ProjectID int64   `gorm:"column:project_id;index"`

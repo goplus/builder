@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
@@ -32,7 +31,7 @@ type RecordingDTO struct {
 func toRecordingDTO(mRecording model.Recording) RecordingDTO {
 	return RecordingDTO{
 		ModelDTO: toModelDTO(mRecording.Model),
-		Owner:    mRecording.User.Username,
+		Owner:    mRecording.Owner.Username,
 		ProjectFullName: ProjectFullName{
 			Owner:   mRecording.Project.Owner.Username,
 			Project: mRecording.Project.Name,
@@ -46,17 +45,17 @@ func toRecordingDTO(mRecording model.Recording) RecordingDTO {
 	}
 }
 
-// 添加描述验证规则
+// Add description validation rule
 var recordingDescriptionRE = regexp.MustCompile(`^.{0,200}$`)
 
-// 修改标题验证规则
+// Add title validation rule
 var recordingTitleRE = regexp.MustCompile(`^.{1,20}$`)
 
 // ensureRecording ensures the recording exists and the user has access to it.
 func (ctrl *Controller) ensureRecording(ctx context.Context, id string, ownedOnly bool) (*model.Recording, error) {
 	var mRecording model.Recording
 	if err := ctrl.db.WithContext(ctx).
-		Preload("User").
+		Preload("Owner").
 		Preload("Project.Owner").
 		Where("id = ?", id).
 		First(&mRecording).
@@ -64,9 +63,8 @@ func (ctrl *Controller) ensureRecording(ctx context.Context, id string, ownedOnl
 		return nil, fmt.Errorf("failed to get recording: %w", err)
 	}
 
-	// Permission check logic remains unchanged
 	if ownedOnly {
-		if _, err := authn.EnsureUser(ctx, mRecording.UserID); err != nil {
+		if _, err := authn.EnsureUser(ctx, mRecording.OwnerID); err != nil {
 			return nil, err
 		}
 	}
@@ -76,25 +74,18 @@ func (ctrl *Controller) ensureRecording(ctx context.Context, id string, ownedOnl
 
 // CreateRecordingParams holds parameters for creating a recording.
 type CreateRecordingParams struct {
-	ProjectFullName string `json:"projectFullName"`
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	VideoURL        string `json:"videoUrl"`
-	ThumbnailURL    string `json:"thumbnailUrl"`
+	ProjectFullName ProjectFullName `json:"projectFullName"`
+	Title           string          `json:"title"`
+	Description     string          `json:"description"`
+	VideoURL        string          `json:"videoUrl"`
+	ThumbnailURL    string          `json:"thumbnailUrl"`
 }
 
 // Validate validates the CreateRecordingParams.
 func (p *CreateRecordingParams) Validate() (ok bool, msg string) {
-	if p.ProjectFullName == "" {
-		return false, "missing projectFullName"
+	if !p.ProjectFullName.IsValid() {
+		return false, "invalid projectFullName"
 	}
-
-	// 验证 projectFullName 格式（参考 ProjectFullName.IsValid()）
-	parts := strings.Split(p.ProjectFullName, "/")
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return false, "invalid projectFullName format, expected: owner/project"
-	}
-
 	if p.Title == "" {
 		return false, "missing title"
 	} else if !recordingTitleRE.Match([]byte(p.Title)) {
@@ -116,26 +107,13 @@ func (ctrl *Controller) CreateRecording(ctx context.Context, params *CreateRecor
 		return nil, authn.ErrUnauthorized
 	}
 
-	if ok, msg := params.Validate(); !ok {
-		return nil, fmt.Errorf("validation failed: %s", msg)
-	}
-
-    pfn, err := ParseProjectFullName(params.ProjectFullName)
-    if err != nil {
-        return nil, fmt.Errorf("invalid projectFullName: %w", err)
-    }
-
-	mProject, err := ctrl.ensureProject(ctx, pfn, false)
+    mProject, err := ctrl.ensureProject(ctx, params.ProjectFullName, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if mProject.Visibility == model.VisibilityPrivate && mProject.OwnerID != mUser.ID {
-		return nil, fmt.Errorf("cannot recording private project")
-	}
-
 	mRecording := model.Recording{
-		UserID:       mUser.ID,
+		OwnerID:      mUser.ID,
 		ProjectID:    mProject.ID,
 		Title:        params.Title,
 		Description:  params.Description,
@@ -171,7 +149,7 @@ func (ctrl *Controller) GetRecording(ctx context.Context, id string) (*Recording
 
 // DeleteRecording deletes a recording by owner and name.
 func (ctrl *Controller) DeleteRecording(ctx context.Context, id string) error {
-	mUser, ok := authn.UserFromContext(ctx)
+	_, ok := authn.UserFromContext(ctx)
 	if !ok {
 		return authn.ErrUnauthorized
 	}
@@ -181,21 +159,16 @@ func (ctrl *Controller) DeleteRecording(ctx context.Context, id string) error {
 		return err
 	}
 
-	// Additional check: ensure the current user is the owner of the recording
-	if recording.UserID != mUser.ID {
-		return authn.ErrUnauthorized
-	}
-
 	return ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        if err := tx.Delete(recording).Error; err != nil {
+		if err := tx.Delete(recording).Error; err != nil {
 			return fmt.Errorf("failed to delete recording: %w", err)
-        }
+		}
 
-        if err := tx.Where("recording_id = ?", recording.ID).Delete(&model.UserRecordingRelationship{}).Error; err != nil {
+		if err := tx.Where("recording_id = ?", recording.ID).Delete(&model.UserRecordingRelationship{}).Error; err != nil {
 			return fmt.Errorf("failed to delete user_recording_relationship: %w", err)
-        }
-        return nil
-    })
+		}
+		return nil
+	})
 }
 
 // RecordRecordingView records a view for the specified recording as the authenticated user.
@@ -464,7 +437,7 @@ func (ctrl *Controller) ListRecordings(ctx context.Context, params *ListRecordin
 
 	if params.Keyword != nil {
 		keyword := "%" + *params.Keyword + "%"
-		query = query.Where("recording.title LIKE ? OR recording.description LIKE ?", keyword, keyword) // ✅ 改为title和description
+		query = query.Where("recording.title LIKE ? OR recording.description LIKE ?", keyword, keyword) 
 	}
 
 	if params.ProjectFullName != nil {
@@ -553,7 +526,7 @@ func (p *UpdateRecordingParams) Diff(mRecording *model.Recording) map[string]any
 
 // UpdateRecording updates a recording.
 func (ctrl *Controller) UpdateRecording(ctx context.Context, id string, params *UpdateRecordingParams) (*RecordingDTO, error) {
-	mUser, ok := authn.UserFromContext(ctx)
+	_, ok := authn.UserFromContext(ctx)
 	if !ok {
 		return nil, authn.ErrUnauthorized
 	}
@@ -561,11 +534,6 @@ func (ctrl *Controller) UpdateRecording(ctx context.Context, id string, params *
 	mRecording, err := ctrl.ensureRecording(ctx, id, true) // ownedOnly=true
 	if err != nil {
 		return nil, err
-	}
-
-	// Additional check: ensure the current user is the owner of the recording
-	if mRecording.UserID != mUser.ID {
-		return nil, authn.ErrUnauthorized
 	}
 
 	updates := params.Diff(mRecording)

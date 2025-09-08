@@ -1,7 +1,7 @@
 // Create a recording.
 //
 // Request:
-//   POST /recordings
+//   POST /recording
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
