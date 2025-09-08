@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// expose and defineExpose need to be executed within setup
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick, computed, onMounted, onUnmounted, watch } from 'vue'
