@@ -345,11 +345,9 @@ export class ImportExportManager {
     const itemBounds = item.bounds
     const viewBounds = paper.view.bounds
 
-
     // 计算画布的可用区域
     const availableWidth = viewBounds.width
     const availableHeight = viewBounds.height
-
 
     // 检查是否需要缩放
     if (itemBounds.width > availableWidth || itemBounds.height > availableHeight) {
