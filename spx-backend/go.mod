@@ -41,6 +41,9 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
+	github.com/goplus/gogen v1.19.0 // indirect
+	github.com/goplus/sb2xbp v0.0.0-20250906030214-de2e537ceda6 // indirect
+	github.com/goplus/xgo v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
