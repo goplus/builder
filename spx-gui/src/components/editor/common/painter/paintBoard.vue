@@ -208,7 +208,12 @@
       />
 
       <!-- 插入文本工具组件 -->
-      <TextTool :is-active="currentTool === 'text'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
+      <TextTool
+        ref="textToolRef"
+        :is-active="currentTool === 'text'"
+        :canvas-width="canvasWidth"
+        :canvas-height="canvasHeight"
+      />
     </div>
 
     <!-- AI生成弹窗 -->
@@ -248,6 +253,7 @@ const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
 const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
 const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
 const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
+const textToolRef = ref<InstanceType<typeof TextTool> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null
@@ -260,7 +266,8 @@ const initEventDelegator = (): void => {
     reshape: reshapeRef.value as ToolHandler,
     circle: circleToolRef.value as ToolHandler,
     rectangle: rectangleToolRef.value as ToolHandler,
-    fill: fillToolRef.value as ToolHandler
+    fill: fillToolRef.value as ToolHandler,
+    text: textToolRef.value as ToolHandler
   })
 
   canvasEventDelegator.setCurrentTool(currentTool.value)
@@ -506,7 +513,7 @@ watch(currentTool, (newTool) => {
 
 // 监听工具引用变化，更新委托器
 watch(
-  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef],
+  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef, textToolRef],
   () => {
     initEventDelegator()
   },
