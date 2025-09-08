@@ -55,16 +55,16 @@ func (ctrl *Controller) Convert(ctx context.Context, params *Sb2xbpParams) (resu
 		return nil, err
 	}
 
-	varentType := types.Variant
-	varentSlice := types.List
+	variantType := types.Variant
+	variantSlice := types.List
 	info := &sbtypinf.TypeInfo{
 		VarDefs:  make(map[sbio.Variable]gotypes.Type),
 		ListDefs: make(map[sbio.List]gotypes.Type),
 		FuncDefs: make(map[ast.Def]*gotypes.Signature),
 	}
 	err = sbtypinf.Do("main", g, &sbtypinf.Config{
-		TyValue: varentType,
-		TyList:  varentSlice,
+		TyValue: variantType,
+		TyList:  variantSlice,
 	}, info)
 	if err != nil {
 		return nil, err
@@ -86,6 +86,9 @@ func (ctrl *Controller) Convert(ctx context.Context, params *Sb2xbpParams) (resu
 			return s
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	xbpdata, err := w.Bytes()
 	if err != nil {
