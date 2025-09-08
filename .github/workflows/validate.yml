@@ -72,7 +72,8 @@ jobs:
         env:
             GOPLUS_TOKEN: ${{ secrets.GOPLUS_TOKEN }}
         run: |
-          git config --global url."https://${GOPLUS_TOKEN}@github.com".insteadOf "git@github.com:"
+          git config --global url."https://${GOPLUS_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${GOPLUS_TOKEN}@github.com/".insteadOf "git@github.com:"
 
       - name: Configure Go private modules
         run: |
