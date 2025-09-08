@@ -4,6 +4,9 @@
 //   GET /recording/:id/liking
 
 ctx := &Context
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
+    return
+}
 
 isLiking, err := ctrl.HasLikedRecording(ctx.Context(), ${id})
 if err != nil {
