@@ -166,15 +166,15 @@ const progressRef = ref<Progress>({ percentage: 0, desc: null })
 defineExpose({
   async pauseGame() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.pauseGame === 'function') {
+    if (win?.pauseGame) {
       return win.pauseGame()
     }
   },
   async resumeGame() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.resumeGame === 'function') {
       return win.resumeGame()
@@ -182,7 +182,7 @@ defineExpose({
   },
   async startRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.startRecording === 'function') {
       return win.startRecording()
@@ -190,7 +190,7 @@ defineExpose({
   },
   async takeScreenshot() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.takeScreenshot === 'function') {
       const result = await win.takeScreenshot()
@@ -199,7 +199,7 @@ defineExpose({
   },
   async stopRecording() {
     const iframe = iframeRef.value
-    if (!iframe) return
+    if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow
     if (win && typeof win.stopRecording === 'function') {
       const result = await win.stopRecording()
