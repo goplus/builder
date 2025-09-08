@@ -62,15 +62,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Configure Git
+      - name: Configure Git for private repos
         run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-
+          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com".insteadOf "https://github.com"
+          git config --global url."https://${{ secrets.GH_TOKEN }}@github.com".insteadOf "git@github.com:"
       - name: Set up Go & XGo
         uses: goplus/setup-xgo@v1
         with:
