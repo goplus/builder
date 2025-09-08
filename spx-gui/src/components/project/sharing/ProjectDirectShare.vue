@@ -45,7 +45,7 @@
       </div>
     </div>
     <div v-else class="qrcode">
-      <img :src="qrcodeURL" alt="QR Code" />
+      <img v-if="qrcodeURL" :src="qrcodeURL" alt="QR Code" />
     </div>
   </UIFormModal>
 </template>
@@ -90,7 +90,7 @@ const handleCopy = useMessageHandle(
 
 const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 
-const qrcodeURL = ref<string>('')
+const qrcodeURL = ref<string | null>(null)
 
 /**
  * 生成二维码的可复用方法
@@ -150,13 +150,15 @@ const handlePlatformChange = async (platform: PlatformConfig) => {
     })
     qrcodeURL.value = url
   } else {
-    qrcodeURL.value = ''
+    qrcodeURL.value = null
   }
 }
 
 const handleDownloadPoster = async () => {
-  const posterFile = await posterCompRef.value?.createPoster()
-  const url = URL.createObjectURL(posterFile as Blob)
+  if (posterCompRef.value == null) return
+
+  const posterFile = await posterCompRef.value.createPoster()
+  const url = URL.createObjectURL(posterFile)
   createdObjectUrls.add(url)
   const link = document.createElement('a')
   link.href = url
@@ -167,9 +169,7 @@ const handleDownloadPoster = async () => {
 onUnmounted(() => {
   // 清理所有创建的 object URLs
   createdObjectUrls.forEach((url) => {
-    if (url.startsWith('blob:')) {
-      URL.revokeObjectURL(url)
-    }
+    URL.revokeObjectURL(url)
   })
   createdObjectUrls.clear()
 })

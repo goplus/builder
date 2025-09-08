@@ -28,7 +28,7 @@ export type ShareType = {
  */
 export interface ShareFunction {
   /** 分享项目页面方法 */
-  shareURL?: (url: string) => Promise<string>
+  shareURL?: (url: string, title: string, desc?: string) => Promise<string>
   /** 分享海报方法 */
   shareImage?: (image: File) => Promise<string>
   /** 分享视频方法 */
@@ -48,32 +48,9 @@ export interface PlatformConfig {
  */
 const platformUrl = 'https://example.com'
 
-/**
- * 从URL中提取owner和name
- * @param url 项目URL，格式如：https://x.qiniu.com/project/nighca_85ff/Walk
- * @returns 拼接后的字符串，格式如：nighca_85ff-Walk
- */
-function extractOwnerAndName(url: string): string {
-  try {
-    const urlObj = new URL(url)
-    const pathParts = urlObj.pathname.split('/').filter((part) => part)
-
-    // 查找 'project' 的位置
-    const projectIndex = pathParts.indexOf('project')
-    if (projectIndex !== -1 && pathParts.length > projectIndex + 2) {
-      const owner = pathParts[projectIndex + 1]
-      const name = pathParts[projectIndex + 2]
-      return `${owner}-${name}`
-    }
-
-    // 如果找不到标准格式，返回默认值
-    return 'XBuilder'
-  } catch (error) {
-    console.warn('Failed to parse URL:', url, error)
-    return 'XBuilder'
-  }
-}
-
+/*
+来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
+*/
 declare global {
   interface Window {
     mqq: any
@@ -99,17 +76,15 @@ class QQPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareURL: async (url: string) => {
+    shareURL: async (url: string, title?: string, desc?: string) => {
       // console.log('shareURL: QQ platform:' + url);
       // 检查是否在 QQ 环境中
-
-      const projectTitle = extractOwnerAndName(url)
 
       if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
         window.mqq.invoke('data', 'setShareInfo', {
           share_url: url,
-          title: projectTitle,
-          desc: 'XBuilder分享你的创意作品',
+          title: title || 'XBulider',
+          desc: desc || 'XBuilder分享你的创意作品',
           image_url: logoSrc
         })
       } else {

@@ -303,7 +303,7 @@ const projectSharingLink = computed(() => {
 })
 
 const sharePlatforms = SocialPlatformConfigs
-sharePlatforms[0].shareFunction.shareURL?.(projectSharingLink.value)
+sharePlatforms[0].shareFunction.shareURL?.(projectSharingLink.value, props.name + props.owner)
 </script>
 
 <template>
