@@ -29,6 +29,21 @@ defineExpose({
   },
   async rerun() {
     return projectRunnerRef.value?.rerun()
+  },
+  async pauseGame() {
+    return projectRunnerRef.value?.pauseGame()
+  },
+  async resumeGame() {
+    return projectRunnerRef.value?.resumeGame()
+  },
+  async startRecording() {
+    return projectRunnerRef.value?.startRecording()
+  },
+  async stopRecording() {
+    return projectRunnerRef.value?.stopRecording()
+  },
+  async takeScreenshot() {
+    return projectRunnerRef.value?.takeScreenshot()
   }
 })
 </script>
