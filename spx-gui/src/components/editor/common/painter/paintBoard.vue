@@ -146,6 +146,19 @@
           </svg>
           <span>{{ $t({ en: 'Clear', zh: '清空' }) }}</span>
         </button>
+        <button class="tool-btn action-btn" :disabled="!canUndo" :title="$t({ en: 'Undo', zh: '撤销' })" @click="undo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7l3-3 9 9 4-4 2 2-6 6-4-4"></path>
+          </svg>
+          <span>{{ $t({ en: 'Undo', zh: '撤销' }) }}</span>
+        </button>
+        <button class="tool-btn action-btn" :disabled="!canRedo" :title="$t({ en: 'Redo', zh: '重做' })" @click="redo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7v6h-6"></path>
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+          </svg>
+          <span>{{ $t({ en: 'Redo', zh: '重做' }) }}</span>
+        </button>
       </div>
     </div>
 
@@ -222,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, provide } from 'vue'
+import { ref, onMounted, onUnmounted, watch, provide, computed } from 'vue'
 import paper from 'paper'
 import DrawLine from './components/draw_line.vue'
 import DrawBrush from './components/draw_brush.vue'
@@ -236,6 +249,7 @@ import AiGenerate from './components/aigc/aigcGenerator.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
+import { HistoryManager } from './utils/history-manager'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text'
@@ -346,6 +360,8 @@ const lastImportedSrc = ref<string | null>(null)
 // 标记：由内部导出导致的外部 imgSrc 变化，跳过一次导入
 const skipNextImport = ref<boolean>(false)
 
+const historyManager = ref<HistoryManager | null>(null)
+
 const props = defineProps<{
   imgSrc: string | null
   imgLoading: boolean
@@ -386,6 +402,13 @@ const getAllPathsValue = (): paper.Path[] => {
   return allPaths.value
 }
 const setAllPathsValue = (paths: paper.Path[]): void => {
+  //历史记录保存
+  if (!historyManager.value || !importExportManager) return
+
+  const svgContent = importExportManager.exportSvg()
+  if (svgContent) {
+    historyManager.value.addState(svgContent)
+  }
   allPaths.value = paths
 }
 
@@ -439,6 +462,14 @@ const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => 
 
 // 清空画布
 const clearCanvas = (): void => {
+  if (!historyManager.value || !importExportManager) return
+
+  // 先保存清空前的状态（用于撤销）
+  const svgContentBeforeClear = importExportManager.exportSvg()
+  if (svgContentBeforeClear) {
+    historyManager.value.addState(svgContentBeforeClear, 'Before Clear')
+  }
+
   clearCanvasFunction({
     canvasWidth,
     canvasHeight,
@@ -460,7 +491,32 @@ const clearCanvas = (): void => {
   if (drawBrushRef.value) {
     drawBrushRef.value.resetDrawing()
   }
+
+  // 保存清空后的状态（用于重做）
+  const svgContentAfterClear = importExportManager.exportSvg()
+  if (svgContentAfterClear) {
+    historyManager.value.addState(svgContentAfterClear, 'Clear')
+  }
 }
+
+//Undo/Redo
+const undo = async (): Promise<void> => {
+  if (historyManager.value) {
+    await historyManager.value.undo()
+  }
+  exportSvgAndEmit()
+}
+
+const redo = async (): Promise<void> => {
+  if (historyManager.value) {
+    await historyManager.value.redo()
+  }
+  exportSvgAndEmit()
+}
+
+// 添加计算属性用于按钮状态
+const canUndo = computed(() => historyManager.value?.canUndo() ?? false)
+const canRedo = computed(() => historyManager.value?.canRedo() ?? false)
 
 // 监听props中的imgSrc变化
 watch(
@@ -496,7 +552,8 @@ watch(
 
     // 加载新内容
     await loadFileToCanvas(newImgSrc)
-
+    historyManager.value?.clearHistory()
+    historyManager.value?.setInitialState(importExportManager?.exportSvg() || '')
     // 导入完成后清理状态，不自动恢复控制点显示
     // 让用户主动点击路径来显示控制点，避免干扰绘制体验
     setTimeout(() => {
@@ -524,8 +581,51 @@ watch(
 onMounted(() => {
   initPaper()
 
+  // 初始化历史管理器
+  historyManager.value = new HistoryManager('paintboard_history', 64)
+
+  // 设置画布恢复回调函数
+  historyManager.value.setRestoreCallback(async (svgContent: string) => {
+    // 清空当前画布
+    if (paper.project) {
+      paper.project.clear()
+      const background = new paper.Path.Rectangle({
+        point: [0, 0],
+        size: [canvasWidth.value, canvasHeight.value],
+        fillColor: 'transparent'
+      })
+      backgroundRect.value = background
+      allPaths.value = []
+      backgroundImage.value = null
+    }
+
+    // 导入历史状态
+    if (importExportManager) {
+      await importExportManager.importSvg(svgContent, {
+        clearCanvas: false,
+        triggerExport: false
+      })
+    }
+
+    paper.view.update()
+  })
+
   // 添加键盘事件监听
   const handleKeyDown = (event: KeyboardEvent): void => {
+    // 处理撤销/重做快捷键
+    if (event.ctrlKey || event.metaKey) {
+      if (event.key === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        undo()
+      } else if (event.key === 'z' && event.shiftKey) {
+        event.preventDefault()
+        redo()
+      } else if (event.key === 'y') {
+        event.preventDefault()
+        redo()
+      }
+    }
+
     if (event.key === 'Escape') {
       if (reshapeRef.value) {
         reshapeRef.value.hideControlPoints()
@@ -739,5 +839,16 @@ canvas:hover {
   .canvas-wrapper {
     padding: 12px;
   }
+}
+
+.tool-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tool-btn:disabled:hover {
+  background-color: #fff;
+  border-color: #e0e0e0;
+  color: #666;
 }
 </style>
