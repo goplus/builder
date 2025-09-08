@@ -56,6 +56,9 @@ type Project struct {
 	// RemixCount is the number of times the project has been remixed.
 	RemixCount int64 `gorm:"column:remix_count;index"`
 
+	// ProjectContext is the related context information (optional lazy loading)
+	ProjectContext *ProjectContext `gorm:"foreignKey:ProjectID"`
+
 	// Migration only fields. Do not use in application code.
 	MO__deleted_at_is_null _deleted_at_is_null `gorm:"->:false;<-:false;column:_deleted_at_is_null;index:,composite:owner_id_name,unique"`
 }
