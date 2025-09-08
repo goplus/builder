@@ -61,11 +61,11 @@ interface IframeWindow extends Window {
    * It is set to `true` before reloading and reset to `false` after reloaded.
    */
   __xb_is_stale?: boolean
-  startRecording?: () => void
-  stopRecording?: () => Promise<Blob> // stopRecording 直接返回 Blob
-  takeScreenshot?: () => Promise<Blob>
-  pauseGame?: () => void
-  resumeGame?: () => void
+  startRecording: () => void
+  stopRecording: () => Promise<Blob> // stopRecording 直接返回 Blob
+  takeScreenshot: () => Promise<Blob>
+  pauseGame: () => void
+  resumeGame: () => void
 }
 
 const iframeRef = ref<HTMLIFrameElement>()
@@ -167,44 +167,37 @@ defineExpose({
   async pauseGame() {
     const iframe = iframeRef.value
     if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win?.pauseGame) {
-      return win.pauseGame()
-    }
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    return win.pauseGame?.()
   },
   async resumeGame() {
     const iframe = iframeRef.value
     if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.resumeGame === 'function') {
-      return win.resumeGame()
-    }
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    return win.resumeGame?.()
   },
   async startRecording() {
     const iframe = iframeRef.value
     if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.startRecording === 'function') {
-      return win.startRecording()
-    }
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    return win.startRecording?.()
   },
   async takeScreenshot() {
     const iframe = iframeRef.value
     if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.takeScreenshot === 'function') {
-      const result = await win.takeScreenshot()
-      return result
-    }
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    return await win.takeScreenshot?.()
   },
   async stopRecording() {
     const iframe = iframeRef.value
     if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow
-    if (win && typeof win.stopRecording === 'function') {
-      const result = await win.stopRecording()
-      return result
-    }
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    return await win.stopRecording?.()
   },
   async run(signal?: AbortSignal) {
     loading.value = true
