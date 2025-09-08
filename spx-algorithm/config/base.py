@@ -26,9 +26,16 @@ class BaseConfig:
     MILVUS_COLLECTION_NAME: str = field(default_factory=lambda: os.environ.get('MILVUS_COLLECTION_NAME', 'spx_vector_collection'))
     MILVUS_DIMENSION: int = field(default_factory=lambda: int(os.environ.get('MILVUS_DIMENSION', '512')))
     
-    # 服务功能配置
+    # LTR重排序配置
     ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'false').lower() == 'true')
-    LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', ''))
+    LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', 'models/ltr_model.pkl'))
+    
+    # 用户反馈数据库配置
+    FEEDBACK_DB_PATH: str = field(default_factory=lambda: os.environ.get('FEEDBACK_DB_PATH', 'data/user_feedback.db'))
+    
+    # 模型训练配置
+    LTR_TRAINING_BATCH_SIZE: int = field(default_factory=lambda: int(os.environ.get('LTR_TRAINING_BATCH_SIZE', '1000')))
+    LTR_MODEL_AUTO_RETRAIN: bool = field(default_factory=lambda: os.environ.get('LTR_MODEL_AUTO_RETRAIN', 'false').lower() == 'true')
     
     # Flask配置
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB
@@ -49,6 +56,9 @@ class BaseConfig:
             'MILVUS_DIMENSION': self.MILVUS_DIMENSION,
             'ENABLE_RERANKING': self.ENABLE_RERANKING,
             'LTR_MODEL_PATH': self.LTR_MODEL_PATH,
+            'FEEDBACK_DB_PATH': self.FEEDBACK_DB_PATH,
+            'LTR_TRAINING_BATCH_SIZE': self.LTR_TRAINING_BATCH_SIZE,
+            'LTR_MODEL_AUTO_RETRAIN': self.LTR_MODEL_AUTO_RETRAIN,
             'MAX_CONTENT_LENGTH': self.MAX_CONTENT_LENGTH,
             'JSON_AS_ASCII': self.JSON_AS_ASCII,
             'JSONIFY_PRETTYPRINT_REGULAR': self.JSONIFY_PRETTYPRINT_REGULAR
@@ -67,6 +77,9 @@ class BaseConfig:
             },
             'reranking': {
                 'enabled': self.ENABLE_RERANKING,
-                'model_path': self.LTR_MODEL_PATH if self.LTR_MODEL_PATH else None
+                'model_path': self.LTR_MODEL_PATH,
+                'feedback_db_path': self.FEEDBACK_DB_PATH,
+                'training_batch_size': self.LTR_TRAINING_BATCH_SIZE,
+                'auto_retrain': self.LTR_MODEL_AUTO_RETRAIN
             }
         }

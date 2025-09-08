@@ -73,16 +73,22 @@ class SearchCoordinator:
             self.enable_reranking = False
             return
         
+        # 创建重排序服务，并传递CLIP服务实例用于特征提取
         self.rerank_service = RerankService(
-            ltr_model_path=rerank_config.get('model_path')
+            ltr_model_path=rerank_config.get('model_path'),
+            clip_service=self.image_matching_service.clip_service
         )
         
-        if rerank_config.get('enabled', False):
-            self.rerank_service.enable_reranking()
-            self.enable_reranking = True
-        
-        if self.enable_reranking and not self.rerank_service:
-            logger.warning("启用了重排序但未提供重排序服务，将只使用图文匹配")
+        # 尝试加载已训练的模型
+        model_path = rerank_config.get('model_path')
+        if model_path and self.rerank_service.load_trained_model(model_path):
+            logger.info("LTR模型加载成功")
+            # 如果配置启用重排序，则启用
+            if rerank_config.get('enabled', False):
+                self.rerank_service.enable_reranking()
+                self.enable_reranking = True
+        else:
+            logger.info("未找到训练好的LTR模型，重排序功能暂时不可用")
             self.enable_reranking = False
         
         logger.info(f"重排序服务初始化完成，启用状态: {self.enable_reranking}")
@@ -184,7 +190,7 @@ class SearchCoordinator:
     def _execute_fine_ranking(self, query_text: str, candidates: List[Dict[str, Any]], 
                              **kwargs) -> List[Dict[str, Any]]:
         """
-        执行细排阶段：基于更复杂模型的精准排序
+        执行细排阶段：基于LTR模型的精准排序
         
         Args:
             query_text: 查询文本
@@ -195,20 +201,74 @@ class SearchCoordinator:
             细排后的结果列表
         """
         try:
-            logger.info(f"执行细排阶段（重排序），候选数: {len(candidates)}")
+            logger.info(f"执行细排阶段（LTR重排序），候选数: {len(candidates)}")
+            
+            # 获取用户上下文
+            user_context = kwargs.get('user_context')
+            
+            # 确保候选结果包含向量信息（从粗排结果中获取）
+            candidates_with_vectors = self._ensure_candidates_have_vectors(candidates)
             
             # 使用重排序服务重新排序
-            user_context = kwargs.get('user_context')
             reranked_results = self.rerank_service.rerank_results(
-                query_text, candidates, user_context
+                query_text, candidates_with_vectors, user_context
             )
             
-            logger.info(f"细排完成，返回 {len(reranked_results)} 个结果")
+            logger.info(f"LTR细排完成，返回 {len(reranked_results)} 个结果")
             return reranked_results
             
         except Exception as e:
             logger.error(f"细排阶段异常: {e}")
             # 细排失败时返回原始结果
+            return candidates
+    
+    def _ensure_candidates_have_vectors(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        确保候选结果包含向量信息
+        
+        Args:
+            candidates: 候选结果列表
+            
+        Returns:
+            包含向量信息的候选结果列表
+        """
+        try:
+            # 检查是否已包含向量
+            if candidates and 'vector' in candidates[0]:
+                return candidates
+            
+            # 从向量数据库获取候选结果的向量信息
+            candidates_with_vectors = []
+            
+            for candidate in candidates:
+                candidate_id = candidate.get('id')
+                if candidate_id is None:
+                    logger.warning(f"候选结果缺少ID: {candidate}")
+                    candidates_with_vectors.append(candidate)
+                    continue
+                
+                try:
+                    # 从数据库获取向量数据
+                    vector_data = self.image_matching_service.milvus_ops.get_by_id(candidate_id)
+                    
+                    if vector_data and 'vector' in vector_data:
+                        candidate['vector'] = vector_data['vector']
+                    else:
+                        logger.warning(f"未找到候选结果的向量数据: ID={candidate_id}")
+                        # 使用默认向量或跳过
+                        candidate['vector'] = [0.0] * 512  # 默认512维零向量
+                    
+                    candidates_with_vectors.append(candidate)
+                    
+                except Exception as e:
+                    logger.error(f"获取候选结果向量失败: ID={candidate_id}, 错误: {e}")
+                    candidate['vector'] = [0.0] * 512  # 默认向量
+                    candidates_with_vectors.append(candidate)
+            
+            return candidates_with_vectors
+            
+        except Exception as e:
+            logger.error(f"确保候选向量信息异常: {e}")
             return candidates
     
     def add_image(self, image_id: int, image_url: str, svg_content: Optional[str] = None) -> bool:
@@ -250,12 +310,21 @@ class SearchCoordinator:
         if self.image_matching_service:
             stats['image_matching'] = self.image_matching_service.get_stats()
         
-        if self.rerank_service and self.enable_reranking:
-            stats['reranking'] = {'enabled': True}
+        if self.rerank_service:
+            rerank_stats = self.rerank_service.get_service_status()
+            stats['reranking'] = {
+                'enabled': self.enable_reranking,
+                'service_ready': rerank_stats.get('model_ready', False),
+                'feedback_stats': rerank_stats.get('feedback_stats', {})
+            }
         else:
             stats['reranking'] = {'enabled': False}
         
         return stats
+    
+    def get_rerank_service(self) -> RerankService:
+        """获取重排序服务实例（用于API层调用）"""
+        return self.rerank_service
     
     def health_check(self) -> Dict[str, Any]:
         """健康检查"""
