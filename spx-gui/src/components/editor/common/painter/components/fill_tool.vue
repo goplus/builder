@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, inject, ref } from 'vue'
+import { watch, inject, ref, type Ref } from 'vue'
 import { NModal, NColorPicker, NButton } from 'naive-ui'
 import paper from 'paper'
 
@@ -29,24 +29,21 @@ interface Props {
 const props = defineProps<Props>()
 
 // 注入父组件接口
-// const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
-// const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
+const canvasColor = inject<Ref<string>>('canvasColor', ref('#000'))
 
 // 颜色选择器相关状态
 const showColorPicker = ref(false)
-const selectedColor = ref('#ffffff00') // 默认绿色
-const fillColor = ref('#ffffff00') // 当前填充颜色
+const selectedColor = ref('')
 
 // 颜色选择器处理函数
 const handleColorConfirm = (): void => {
-  fillColor.value = selectedColor.value
+  canvasColor.value = selectedColor.value
   showColorPicker.value = false
 }
 
 const handleColorCancel = (): void => {
   showColorPicker.value = false
-  selectedColor.value = fillColor.value // 恢复之前的颜色
 }
 
 // 区域填充实现 - 使用paper.js的hit test
@@ -71,7 +68,7 @@ const smartFill = (point: paper.Point): void => {
     // console.log('Current fillColor:', targetPath.fillColor)
 
     // 设置填充颜色（无论之前是否有填充色）
-    targetPath.fillColor = new paper.Color(fillColor.value)
+    targetPath.fillColor = new paper.Color(canvasColor.value)
 
     // console.log('Set new fillColor:', targetPath.fillColor)
 
@@ -94,31 +91,28 @@ const handleCanvasClick = (point: paper.Point): void => {
   smartFill(point)
 }
 
+// 初始化颜色选择器的方法
+const initColorPicker = (): void => {
+  selectedColor.value = canvasColor.value
+  showColorPicker.value = true
+}
+
 // 监听工具切换，每次激活时显示颜色选择器
 watch(
   () => props.isActive,
   (newValue) => {
     if (newValue) {
-      // 每次工具被激活时都显示颜色选择器
-      selectedColor.value = fillColor.value
-      showColorPicker.value = true
+      initColorPicker()
     } else {
-      // 工具被取消激活时，关闭弹窗
       showColorPicker.value = false
     }
   }
 )
 
-// 显示颜色选择器的方法
-const showColorPickerDialog = (): void => {
-  selectedColor.value = fillColor.value
-  showColorPicker.value = true
-}
-
 // 暴露方法给父组件
 defineExpose({
   handleCanvasClick,
-  showColorPicker: showColorPickerDialog
+  showColorPicker: initColorPicker
 })
 </script>
 

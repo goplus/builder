@@ -6,7 +6,7 @@
       :y1="startPoint.y"
       :x2="previewPoint.x"
       :y2="previewPoint.y"
-      stroke="#2196f3"
+      :stroke="canvasColor"
       stroke-width="3"
       stroke-dasharray="5,5"
     />
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { type Ref, ref, watch } from 'vue'
 import paper from 'paper'
 
 // Props
@@ -43,6 +43,7 @@ interface Point {
 const isDrawing = ref<boolean>(false)
 const startPoint = ref<Point | null>(null)
 const previewPoint = ref<Point>({ x: 0, y: 0 })
+const canvasColor = inject<Ref<string>>('canvasColor', ref('#000'))
 
 //注入父组件接口
 import { inject } from 'vue'
@@ -56,25 +57,12 @@ const createLine = (start: Point, end: Point): paper.Path => {
   const line = new paper.Path()
   line.add(new paper.Point(start.x, start.y))
   line.add(new paper.Point(end.x, end.y))
-  line.strokeColor = new paper.Color('#2196f3')
+  line.strokeColor = new paper.Color(canvasColor.value)
   line.strokeWidth = 3
 
   // 设置线段连接方式为圆滑
   line.strokeCap = 'round'
   line.strokeJoin = 'round'
-
-  // 添加悬停效果
-  line.onMouseEnter = () => {
-    line.strokeColor = new paper.Color('#1976d2')
-    line.strokeWidth = 4
-    paper.view.update()
-  }
-
-  line.onMouseLeave = () => {
-    line.strokeColor = new paper.Color('#2196f3')
-    line.strokeWidth = 3
-    paper.view.update()
-  }
 
   return line
 }

@@ -7,7 +7,7 @@
       :width="previewRect.width"
       :height="previewRect.height"
       fill="none"
-      stroke="#2196f3"
+      :stroke="canvasColor"
       stroke-width="3"
       stroke-dasharray="5,5"
     />
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, type Ref } from 'vue'
 import paper from 'paper'
 // Props
 interface Props {
@@ -34,6 +34,8 @@ const isDrawing = ref<boolean>(false)
 const startPoint = ref<Point | null>(null)
 const currentPoint = ref<Point>({ x: 0, y: 0 })
 const constrainSquare = ref<boolean>(false)
+const canvasColor = inject<Ref<string>>('canvasColor', ref('#000'))
+
 // 注入父组件接口
 import { inject } from 'vue'
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
@@ -71,23 +73,12 @@ const createRectangle = (rect: { x: number; y: number; width: number; height: nu
     point: new paper.Point(rect.x, rect.y),
     size: new paper.Size(rect.width, rect.height)
   })
-  shape.strokeColor = new paper.Color('#2196f3')
+  shape.strokeColor = new paper.Color(canvasColor.value)
   shape.strokeWidth = 3
   shape.fillColor = null
   // 设置线段连接方式为圆滑
   shape.strokeCap = 'round'
   shape.strokeJoin = 'round'
-  // 添加悬停效果
-  shape.onMouseEnter = () => {
-    shape.strokeColor = new paper.Color('#1976d2')
-    shape.strokeWidth = 4
-    paper.view.update()
-  }
-  shape.onMouseLeave = () => {
-    shape.strokeColor = new paper.Color('#2196f3')
-    shape.strokeWidth = 3
-    paper.view.update()
-  }
   return shape
 }
 // 处理鼠标按下
