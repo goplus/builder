@@ -1,4 +1,5 @@
 import { dispatchKeyToEvent } from "./module_ProjectAPIs";
+import type { Type as IconType } from "../../../spx-gui/src/components/ui/icons/UIIcon.vue";
 import type {
   MobileKeyboardZoneToKeyMapping,
   MobileKeyboardType,
@@ -14,7 +15,7 @@ export declare function useModal<T>(
   component: any
 ): (props?: any) => Promise<T>;
 
-export declare function KeyboardEditorModal(
+export declare function KeyboardEditor(
   props: {
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
   },
@@ -44,13 +45,24 @@ export declare function KeyboardEditorModal(
  * </MobileKeyboardView>
  * ```
  */
-export type MobileKeyboardViewProps = {
-  zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+type SystemKeyType = {
+  textEn: string;
+  textZh: string;
+  icon: IconType;
+  loading: boolean;
+  disabled: boolean;
 };
 
-export declare function MobileKeyboardView({
-  zoneToKeyMapping,
-}: MobileKeyboardViewProps): UI;
+export declare function MobileKeyboardView(
+  props: {
+    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    systemKeyConfig: SystemKeyType[];
+  },
+  emits: {
+    handleSysA: () => void;
+    handleSysB: () => void;
+  }
+): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
@@ -58,19 +70,18 @@ export declare function MobileKeyboardView({
 //     dispatchKeyToEvent(type, code);
 //   };
 
-//   const keyButtons = zones
-//     .map(
-//       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${handleKeyEvent} />`
-//     )
-//     .join("");
-
 //   return `
 //     <div className="phone-layout">
 //       <slot name="gameView">
 //       </slot>
 //       <div className="keyboard-zones">
 //         ${keyButtons}
+//       </div>
+//       <div className="systemA" @click="handleSysA">
+//         ${systemKeyConfig[0]}
+//       </div>
+//       <div className="systemB" @click="handleSysB">
+//         ${systemKeyConfig[1]}
 //       </div>
 //     </div>
 //   `;
