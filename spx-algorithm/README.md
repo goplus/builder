@@ -21,7 +21,7 @@
 - ✅ **配置管理**：支持多环境配置（开发/测试/生产）
 - ✅ **健康检查**：完整的服务健康监控
 - ✅ **内部调试API**：专门用于系统调试和维护的内部接口
-- 🚧 **LTR 重排序**：基于用户反馈的学习排序（规划中）
+- ✅ **LTR 重排序**：基于用户反馈的学习排序（Learning to Rank）
 
 ## 技术栈
 
@@ -64,12 +64,15 @@ pip install -r requirements.txt
 启动底层数据存储服务：
 
 ```bash
-# 使用 docker-compose（推荐）
+# 启动向量数据库服务
 cd resource/vector_db
 docker-compose up -d
 
-# 确保数据存储服务正常运行
-# 服务将在默认端口启动
+# 启动用户反馈数据库服务（MySQL）
+cd resource/feedback_db
+docker-compose up -d
+
+# 确保所有数据存储服务正常运行
 ```
 
 ### 3. 配置环境变量（可选）
@@ -94,6 +97,13 @@ VECTOR_DIMENSION=512
 # 重排序配置
 ENABLE_RERANKING=false
 LTR_MODEL_PATH=
+
+# 用户反馈数据库配置
+FEEDBACK_DB_HOST=localhost
+FEEDBACK_DB_PORT=3306
+FEEDBACK_DB_USER=spx_user
+FEEDBACK_DB_PASSWORD=spx_password
+FEEDBACK_DB_NAME=spx_feedback
 ```
 
 ### 4. 启动服务
@@ -165,6 +175,52 @@ Content-Type: application/json
 }
 ```
 
+### 用户反馈和模型训练
+
+#### 提交用户反馈
+```http
+POST /v1/feedback/submit
+Content-Type: application/json
+
+{
+  "query_id": 123,
+  "query": "dog running in park",
+  "recommended_pics": [1001, 1002, 1003, 1004],
+  "chosen_pic": 1002
+}
+```
+
+#### 获取反馈统计信息
+```http
+GET /v1/feedback/stats
+```
+
+#### 获取最近的反馈数据
+```http
+GET /v1/feedback/recent?limit=10
+```
+
+#### 训练LTR模型
+```http
+POST /v1/feedback/train
+Content-Type: application/json
+
+{
+  "limit": 1000  // 可选，限制使用的反馈数据量
+}
+```
+
+#### 获取模型状态
+```http
+GET /v1/feedback/model/status
+```
+
+#### 启用/禁用重排序功能
+```http
+POST /v1/feedback/model/enable   # 启用重排序
+POST /v1/feedback/model/disable  # 禁用重排序
+```
+
 ### 内部调试和管理接口（仅用于系统维护）
 
 这些接口仅供系统管理员和开发人员调试使用，生产环境建议限制访问权限：
@@ -195,18 +251,25 @@ spx-algorithm/
 │   │   ├── connection.py       # 连接管理
 │   │   ├── operations.py       # 基础CRUD操作
 │   │   └── config.py          # 配置类
+│   ├── user_feedback/          # 用户反馈数据库
+│   │   ├── models.py          # 反馈数据模型
+│   │   └── feedback_storage.py # 反馈数据存储
 │   └── mysql/                  # MySQL数据库（预留）
 ├── services/                   # 服务实现层
 │   ├── image_matching/         # 图文匹配服务
 │   │   ├── clip_service.py     # CLIP模型服务
 │   │   ├── vector_service.py   # 向量化服务
 │   │   └── matching_service.py # 匹配业务逻辑
-│   └── reranking/              # LTR重排序服务（预留）
+│   └── reranking/              # LTR重排序服务
+│       ├── rerank_service.py   # 重排序服务主逻辑
+│       ├── ltr_trainer.py      # LTR模型训练器
+│       └── feature_extractor.py # 特征提取器
 ├── coordinator/                # 融合协调层
 │   └── search_coordinator.py    # 搜索协调器
 ├── api/                        # API层
 │   ├── routes/                 # 路由
 │   │   ├── resource_routes.py  # 资源管理路由（添加、搜索）
+│   │   ├── feedback_routes.py  # 用户反馈路由
 │   │   ├── internal_routes.py  # 内部调试路由
 │   │   └── health_routes.py    # 健康检查路由
 │   ├── schemas/                # 请求/响应模式
@@ -248,6 +311,9 @@ export FLASK_ENV=production
 | `COLLECTION_NAME` | 资源集合名称 | `spx_resources` |
 | `VECTOR_DIMENSION` | 向量维度 | `512` |
 | `ENABLE_RERANKING` | 是否启用重排序 | `false` |
+| `FEEDBACK_DB_HOST` | 反馈数据库地址 | `localhost` |
+| `FEEDBACK_DB_PORT` | 反馈数据库端口 | `3306` |
+| `FEEDBACK_DB_NAME` | 反馈数据库名称 | `spx_feedback` |
 
 ## 开发指南
 
