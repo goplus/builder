@@ -35,13 +35,13 @@ Users can like projects they enjoy. In addition to expressing their admiration f
 
 ### User
 
-On top of the [Go+ Builder](./index.md), the basic information of a user is expanded as follows:
+On top of the [XBuilder](./index.md), the basic information of a user is expanded as follows:
 
 * Description: A description of oneself
 
 ### Project
 
-On top of the [Go+ Builder](./index.md), the information of a project is expanded as follows:
+On top of the [XBuilder](./index.md), the information of a project is expanded as follows:
 
 * Description: A description of the project
 * Instructions: Instructions for playing the game
@@ -106,7 +106,7 @@ Note that when remixing a project, it is always necessary to specify one of its 
 
 ### Edit Project
 
-In addition to the actions mentioned in [Go+ Builder](./index.md), users can also perform the following actions in the editor:
+In addition to the actions mentioned in [XBuilder](./index.md), users can also perform the following actions in the editor:
 
 * Publish / Unpublish a project
 

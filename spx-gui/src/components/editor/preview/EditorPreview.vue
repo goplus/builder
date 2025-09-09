@@ -68,6 +68,13 @@
     <div class="main">
       <div class="stage-viewer-container">
         <StageViewer />
+        <UIButton
+          class="map-editor-button"
+          type="secondary"
+          @click="openStageEditor"
+        >
+          {{ $t({ en: 'Map', zh: '地图' }) }}
+        </UIButton>
         <div v-show="running.mode === 'debug'" class="in-place-runner">
           <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
         </div>
@@ -81,10 +88,11 @@ import { ref, computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
 import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import StageEditorModal from '@/components/editor/stage/StageEditorModal.vue'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
@@ -104,6 +112,15 @@ function handleExit(code: number) {
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
+const invokeStageEditor = useModal(StageEditorModal)
+
+async function openStageEditor() {
+  try {
+  await invokeStageEditor({ project: editorCtx.project })
+  } catch (e) {
+    // cancelled
+  }
+}
 
 async function checkAndNotifyError() {
   const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
@@ -188,6 +205,13 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
     height: 100%;
     border-radius: var(--ui-border-radius-1);
     overflow: hidden;
+  }
+
+  .map-editor-button {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    /* z-index: 10; */
   }
 }
 
