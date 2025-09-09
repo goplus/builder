@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
-import { ref, nextTick, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, nextTick, computed, onMounted, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
 import logo from './logos/xbuilder-logo.svg'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
@@ -17,33 +17,26 @@ const props = defineProps<{
 // Handle user uploaded images
 const uploadedImgUrl = ref<string | null>(null)
 
-// Clean up previous object URL
-const cleanupUploadedImgUrl = () => {
-  if (uploadedImgUrl.value) {
-    URL.revokeObjectURL(uploadedImgUrl.value)
-    uploadedImgUrl.value = null
-  }
-}
-
 // Watch props.img changes and update uploadedImgUrl
 watch(
   () => props.img,
-  (newImg) => {
-    // Clean up previous URL
-    cleanupUploadedImgUrl()
-
+  (newImg, _, onCleanup) => {
     // Create new URL
     if (newImg != null) {
       uploadedImgUrl.value = URL.createObjectURL(newImg)
+
+      // Set up cleanup for the new URL
+      onCleanup(() => {
+        if (uploadedImgUrl.value) {
+          URL.revokeObjectURL(uploadedImgUrl.value)
+        }
+      })
+    } else {
+      uploadedImgUrl.value = null
     }
   },
   { immediate: true }
 )
-
-// Clean up on component unmount
-onUnmounted(() => {
-  cleanupUploadedImgUrl()
-})
 
 // Handle project thumbnail
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
@@ -102,8 +95,8 @@ const truncatedDescription = computed(() => {
 // =============================================
 
 // Get project URL
-const getProjectUrl = () => {
-  const projectPath = getProjectPageRoute(props.projectData.owner, props.projectData.name)
+const getProjectUrl = (owner: string, name: string) => {
+  const projectPath = getProjectPageRoute(owner, name)
   return window.location.origin + projectPath
 }
 
@@ -166,27 +159,28 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
 }
 
 // Generate QR code
-const renderQRCode = async () => {
-  if (projectQrCanvas.value) {
-    const projectUrl = getProjectUrl()
-    await drawQRCodeToCanvas(projectQrCanvas.value, projectUrl)
-  }
+const renderQRCode = async (canvas: HTMLCanvasElement, owner: string, name: string) => {
+  const projectUrl = getProjectUrl(owner, name)
+  await drawQRCodeToCanvas(canvas, projectUrl)
 }
 
 // Watch project info changes and regenerate QR code
 watch(
-  () => [props.projectData.owner, props.projectData.name],
-  () => {
+  () => [projectQrCanvas.value, props.projectData.owner, props.projectData.name] as const,
+  ([canvas, owner, name]) => {
+    if (canvas == null || !owner || !name) return
     nextTick(() => {
-      renderQRCode()
+      renderQRCode(canvas, owner, name)
     })
   }
 )
 
 onMounted(() => {
-  if (projectQrCanvas.value) {
+  const canvas = projectQrCanvas.value
+  const { owner, name } = props.projectData
+  if (canvas && owner && name) {
     nextTick(() => {
-      renderQRCode()
+      renderQRCode(canvas, owner, name)
     })
   }
 })
