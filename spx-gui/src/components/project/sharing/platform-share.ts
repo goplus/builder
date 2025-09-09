@@ -1,3 +1,4 @@
+import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
@@ -46,6 +47,18 @@ export interface PlatformConfig {
  * 平台跳转链接的示例，方便后续接口使用
  */
 const platformUrl = 'https://example.com'
+
+/*
+来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
+*/
+declare global {
+  interface Window {
+    mqq: any
+    wx: any
+    sha1: any
+  }
+}
+
 /**
  * QQ平台实现
  */
@@ -53,7 +66,7 @@ class QQPlatform implements PlatformConfig {
   basicInfo = {
     name: 'qq',
     label: { en: 'QQ', zh: 'QQ' },
-    color: '#FF6B35'
+    color: '#68a5e1'
   }
 
   shareType = {
@@ -82,7 +95,7 @@ class WeChatPlatform implements PlatformConfig {
   basicInfo = {
     name: 'wechat',
     label: { en: 'WeChat', zh: '微信' },
-    color: '#07C160'
+    color: '#28c445'
   }
 
   shareType = {
@@ -93,8 +106,11 @@ class WeChatPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
+      // const projectTitle = extractOwnerAndName(url)
+      // 可以在这里添加微信分享逻辑，使用 projectTitle
       return `url:${url}`
     },
+
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
     }

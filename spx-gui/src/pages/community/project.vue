@@ -40,7 +40,6 @@ import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
-import { getProject } from '@/apis/project'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
 import { createRecording } from '@/apis/recording'
 import { saveFile } from '@/models/common/cloud'
@@ -212,12 +211,28 @@ function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
 }
 
+const { data: projectData } = useQuery(
+  async (ctx) => {
+    return await getProject(props.owner, props.name, ctx.signal)
+  },
+  {
+    en: 'Failed to load project',
+    zh: '加载项目失败'
+  }
+)
+
 const shareProject = useShareProject()
 
-const handleShare = useMessageHandle(() => shareProject(props.owner, props.name), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
-})
+const handleShare = useMessageHandle(
+  () => {
+    if (!projectData.value) return
+    shareProject(projectData.value)
+  },
+  {
+    en: 'Failed to share project',
+    zh: '分享项目失败'
+  }
+)
 
 const createProject = useCreateProject()
 
