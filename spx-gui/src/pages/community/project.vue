@@ -7,7 +7,14 @@ import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/l
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
 import { usePageTitle } from '@/utils/utils'
-import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
+import {
+  ownerAll,
+  recordProjectView,
+  stringifyProjectFullName,
+  stringifyRemixSource,
+  Visibility,
+  getProject
+} from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
@@ -310,16 +317,6 @@ const remixesRet = useQuery(
     return projects
   },
   { en: 'Failed to load projects', zh: '加载失败' }
-)
-
-const { data: projectData } = useQuery(
-  async (ctx) => {
-    return await getProject(props.owner, props.name, ctx.signal)
-  },
-  {
-    en: 'Failed to load project',
-    zh: '加载项目失败'
-  }
 )
 
 const isRecording = ref(false)
