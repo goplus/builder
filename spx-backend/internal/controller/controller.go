@@ -24,6 +24,7 @@ import (
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
 	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -34,17 +35,18 @@ var (
 
 // Controller is the controller for the service.
 type Controller struct {
-	db            *gorm.DB
-	kodo          *kodoClient
-	copilot       *copilot.Copilot
-	workflow      *workflow.Workflow
-	aiInteraction *aiinteraction.AIInteraction
-	aigc          *aigc.AigcClient
-	svggen        *svggen.ServiceManager
+	db                  *gorm.DB
+	kodo                *kodoClient
+	copilot             *copilot.Copilot
+	workflow            *workflow.Workflow
+	aiInteraction       *aiinteraction.AIInteraction
+	aigc                *aigc.AigcClient
+	svggen              *svggen.ServiceManager
+	recommendationCache *RecommendationCacheService
 }
 
 // New creates a new controller.
-func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, error) {
+func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redis.Client) (*Controller, error) {
 	kodoClient := newKodoClient(cfg.Kodo)
 
 	openaiClient := openai.NewClient(
@@ -76,14 +78,21 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 	// Set copilot instance for OpenAI services
 	svggenManager.SetCopilot(cpt)
 
+	// Initialize recommendation cache service
+	var recommendationCache *RecommendationCacheService
+	if redisClient != nil {
+		recommendationCache = NewRecommendationCacheService(redisClient)
+	}
+
 	return &Controller{
-		db:            db,
-		kodo:          kodoClient,
-		copilot:       cpt,
-		workflow:      stdflow,
-		aiInteraction: aiInteraction,
-		aigc:          aigcClient,
-		svggen:        svggenManager,
+		db:                  db,
+		kodo:                kodoClient,
+		copilot:             cpt,
+		workflow:            stdflow,
+		aiInteraction:       aiInteraction,
+		aigc:                aigcClient,
+		svggen:              svggenManager,
+		recommendationCache: recommendationCache,
 	}, nil
 }
 

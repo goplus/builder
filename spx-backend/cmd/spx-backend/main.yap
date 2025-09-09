@@ -16,6 +16,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -45,11 +46,23 @@ if err != nil {
 // Initialize authenticator.
 authenticator := casdoor.New(db, cfg.Casdoor)
 
-// Initialize authorizer.
+// Initialize authorizer and Redis.
 var quotaTracker authz.QuotaTracker
+var redisClient *redis.Client
 if cfg.Redis.Addr != "" {
 	quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
 	logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
+	// Initialize Redis client for controller
+	redisClient = redis.NewClient(&redis.Options{
+		Addr:     cfg.Redis.GetAddr(),
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+		PoolSize: cfg.Redis.GetPoolSize(),
+	})
+	// Test Redis connection
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		logger.Printf("warning: redis ping failed: %v", err)
+	}
 } else {
 	quotaTracker = quota.NewNopQuotaTracker()
 	logger.Println("using no-op quota tracker")
@@ -58,7 +71,7 @@ pdp := embpdp.New(quotaTracker)
 authorizer := authz.New(db, pdp, quotaTracker)
 
 // Initialize controller.
-ctrl, err = controller.New(context.Background(), db, cfg)
+ctrl, err = controller.New(context.Background(), db, cfg, redisClient)
 if err != nil {
 	logger.Fatalln("failed to create a new controller:", err)
 }

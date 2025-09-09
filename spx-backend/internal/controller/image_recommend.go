@@ -214,7 +214,8 @@ type RecommendationCache struct {
 	Timestamp       time.Time
 }
 
-// Global cache for storing recommendation results (in production, consider using Redis)
+// Deprecated: These global variables are kept for backward compatibility
+// but are no longer used. Redis cache is now used instead.
 var (
 	recommendationCache = make(map[string]*RecommendationCache)
 	cacheMutex         = sync.RWMutex{}
@@ -263,7 +264,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
 		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
-		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, needed, len(foundResults))
+		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, params.Theme, needed, len(foundResults))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -272,19 +273,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		}
 	}
 
-	// 
-	/*
-	TODO 要加上调用算法服务的/v1/feedback/submit接口，来传给他用户反馈的数据, 需要的数据如下:
-	POST /v1/feedback/submit
-	Content-Type: application/json
-
-	{
-	"query_id": 123,
-	"query": "dog running in park",
-	"recommended_pics": [1001, 1002, 1003, 1004],
-	"chosen_pic": 1002
-	}
-	*/
 
 
 	// Update ranks to be sequential
@@ -308,7 +296,15 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	}
 
 	// Cache recommendation result for feedback tracking
-	cacheRecommendationResult(queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	if ctrl.recommendationCache != nil {
+		err := ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
+		if err != nil {
+			logger.Printf("Failed to cache recommendation: %v", err)
+		}
+	} else {
+		// Fallback to memory cache if Redis is not available
+		cacheRecommendationResult(queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	}
 
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	return &ImageRecommendResult{
@@ -366,7 +362,7 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 // generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
 // PERFORMANCE OPTIMIZATION: Uses cached optimized prompt instead of calling OptimizePromptWithAnalysis.
 // The finalPrompt parameter should already have all theme and analysis enhancements applied.
-func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt string, provider svggen.Provider, count int, startRank int) ([]RecommendedImageResult, error) {
+func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt string, provider svggen.Provider, theme ThemeType, count int, startRank int) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
 	if count <= 0 {
 		return nil, nil
@@ -385,11 +381,12 @@ func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt
 	// Start concurrent generation
 	for i := range count {
 		go func(index int) {
-			// Create SVG generation parameters - prompt already optimized, so use ThemeNone to avoid double application
+			// Create SVG generation parameters - prompt already optimized, skip redundant processing
 			params := &GenerateSVGParams{
-				Prompt:   finalPrompt,
-				Provider: provider,
-				Theme:    ThemeNone, // Use ThemeNone since prompt already has all enhancements applied
+				Prompt:      finalPrompt,
+				Provider:    provider,
+				Theme:       theme,
+				IsOptimized: true, // Mark as optimized to skip redundant processing in GenerateSVG
 			}
 
 			// Validate parameters
@@ -637,6 +634,7 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 // processAlgorithmResults processes algorithm service results into RecommendedImageResult format
 func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
 	results := make([]RecommendedImageResult, 0, len(algResults))
+	logger := log.GetReqLogger(context.Background())
 	
 	for _, algResult := range algResults {
 		var aiResource struct {
@@ -644,9 +642,8 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 			URL string `json:"url"`
 		}
 		
-		// TODO: Enable database lookup when ready
-		// err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
-		// if err == nil {
+		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		if err == nil {
 			// Found matching resource in database
 			results = append(results, RecommendedImageResult{
 				ID:         aiResource.ID,
@@ -655,9 +652,10 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 				Rank:       algResult.Rank,
 				Source:     source,
 			})
-		// } else {
-		// 	logger.Printf("Image not found in database: %s", algResult.ImagePath)
-		// }
+		} else {
+			// Image not found in database, log and skip
+			logger.Printf("Image not found in database: %s, error: %v", algResult.ImagePath, err)
+		}
 	}
 	
 	return results
@@ -759,10 +757,23 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 	logger.Printf("Submitting image feedback - QueryID: %s, ChosenPic: %d", params.QueryID, params.ChosenPic)
 	
 	// Retrieve cached recommendation result
-	cached, exists := getCachedRecommendation(params.QueryID)
-	if !exists {
-		logger.Printf("Cached recommendation not found for QueryID: %s", params.QueryID)
-		return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
+	var cached *RecommendationCache
+	var err error
+	
+	if ctrl.recommendationCache != nil {
+		cached, err = ctrl.recommendationCache.GetRecommendation(ctx, params.QueryID)
+		if err != nil {
+			logger.Printf("Cached recommendation not found for QueryID: %s - %v", params.QueryID, err)
+			return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
+		}
+	} else {
+		// Fallback to memory cache if Redis is not available
+		var exists bool
+		cached, exists = getCachedRecommendation(params.QueryID)
+		if !exists {
+			logger.Printf("Cached recommendation not found for QueryID: %s", params.QueryID)
+			return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
+		}
 	}
 	
 	// Verify chosen pic is in the recommended list
@@ -787,8 +798,34 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 		ChosenPic:       params.ChosenPic,
 	}
 	
+	// Check idempotency - ensure feedback hasn't already been submitted
+	if ctrl.recommendationCache != nil {
+		// First check if feedback was already submitted
+		submitted, existingChoice, err := ctrl.recommendationCache.GetFeedbackStatus(ctx, params.QueryID)
+		if err != nil {
+			logger.Printf("Failed to check feedback status: %v", err)
+			return fmt.Errorf("failed to check feedback status: %w", err)
+		}
+		if submitted {
+			logger.Printf("Feedback already submitted for QueryID: %s (previous choice: %d)", params.QueryID, existingChoice)
+			return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
+		}
+		
+		// Mark as submitted (atomic operation)
+		success, err := ctrl.recommendationCache.MarkFeedbackSubmitted(ctx, params.QueryID, params.ChosenPic)
+		if err != nil {
+			logger.Printf("Failed to mark feedback as submitted: %v", err)
+			return fmt.Errorf("failed to process feedback: %w", err)
+		}
+		if !success {
+			// Another request submitted feedback between our check and mark
+			logger.Printf("Feedback was submitted by another request for QueryID: %s", params.QueryID)
+			return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
+		}
+	}
+	
 	// Call algorithm service feedback endpoint
-	err := ctrl.callAlgorithmFeedbackService(ctx, &feedbackReq)
+	err = ctrl.callAlgorithmFeedbackService(ctx, &feedbackReq)
 	if err != nil {
 		logger.Printf("Failed to submit feedback to algorithm service: %v", err)
 		return fmt.Errorf("failed to submit feedback: %w", err)
