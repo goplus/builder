@@ -60,7 +60,7 @@ v-radar="{ name: 'Recording owner avatar', desc: 'Click to view profile of recor
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { humanizeCount, humanizeExactCount, humanizeTime, humanizeExactTime, useAsyncComputed } from '@/utils/utils'
 import { getRecordingPageRoute } from '@/router'

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
-import { listRecording, type ListRecordingParams, type RecordingData } from '@/apis/recording'
+import { listRecording, type ListRecordingParams } from '@/apis/recording'
 import { useUser } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -72,30 +72,10 @@ const queryRet = useQuery(() => listRecording(listParams.value), {
   zh: '加载录屏失败'
 })
 
-const handleRecordingUpdated = (updatedRecording: RecordingData) => {
-  // 方法1：重新获取数据（简单但可能影响性能）
+const handleRecordingUpdated = () => {
   queryRet.refetch()
-
-  // 方法2：精确更新本地数据（推荐）
-  // if (queryRet.data.value?.data) {
-  //   const index = queryRet.data.value.data.findIndex(r => r.id === updatedRecording.id)
-  //   if (index !== -1) {
-  //     queryRet.data.value.data[index] = updatedRecording
-  //   }
-  // }
 }
 
-// const router = useRouter()
-// const ensureSignedIn = useEnsureSignedIn()
-// const createProject = useCreateProject()
-// const handleNewProject = useMessageHandle(
-//   async () => {
-//     await ensureSignedIn()
-//     const name = await createProject()
-//     router.push(getOwnProjectEditorRoute(name))
-//   },
-//   { en: 'Failed to create new recording', zh: '新建录屏失败' }
-// ).fn
 </script>
 
 <template>
@@ -142,8 +122,13 @@ const handleRecordingUpdated = (updatedRecording: RecordingData) => {
     <div class="recordings-wrapper">
       <ListResultWrapper v-slot="slotProps" content-type="recording" :query-ret="queryRet" :height="524">
         <ul class="recordings">
-          <RecordingItem v-for="recording in slotProps.data.data" :key="recording.id" context="mine" :recording="recording"
-            @removed="queryRet.refetch()" @updated="handleRecordingUpdated" />
+          <RecordingItem
+            v-for="recording in slotProps.data.data" 
+            :key="recording.id" 
+            context="mine" 
+            :recording="recording"
+            @removed="queryRet.refetch()" 
+            @updated="handleRecordingUpdated" />
         </ul>
       </ListResultWrapper>
       <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
