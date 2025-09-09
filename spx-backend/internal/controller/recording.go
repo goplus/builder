@@ -126,7 +126,7 @@ func (ctrl *Controller) CreateRecording(ctx context.Context, params *CreateRecor
 	}
 
 	if err := ctrl.db.WithContext(ctx).
-		Preload("Owner").
+		Preload("User").
 		Preload("Project.Owner").
 		First(&mRecording, mRecording.ID).Error; err != nil {
 		return nil, fmt.Errorf("failed to load recording: %w", err)
@@ -415,12 +415,12 @@ func (ctrl *Controller) ListRecordings(ctx context.Context, params *ListRecordin
 	query := ctrl.db.WithContext(ctx).Model(&model.Recording{})
 
 	if params.Owner != nil {
-		query = query.Joins("JOIN user ON user.id = recording.owner_id").
+		query = query.Joins("JOIN user ON user.id = recording.user_id").
 			Where("user.username = ?", *params.Owner)
 	} else if mUser != nil && params.Liker == nil {
 		// Default to current user's recordings if no owner specified and user is authenticated
 		// BUT only if we're not filtering by liker
-		query = query.Where("recording.owner_id = ?", mUser.ID)
+		query = query.Where("recording.user_id = ?", mUser.ID)
 	}
 
 	if params.Liker != nil {
@@ -431,7 +431,7 @@ func (ctrl *Controller) ListRecordings(ctx context.Context, params *ListRecordin
 			Where("liker_relationship.liked_at IS NOT NULL")
 
 		if mUser != nil {
-			query = query.Where(ctrl.db.Where("recording.owner_id = ?", mUser.ID))
+			query = query.Where(ctrl.db.Where("recording.user_id = ?", mUser.ID))
 		}
 	}
 
@@ -476,7 +476,7 @@ func (ctrl *Controller) ListRecordings(ctx context.Context, params *ListRecordin
 
 	var mRecordings []model.Recording
 	if err := query.
-		Preload("Owner").
+		Preload("User").
 		Preload("Project.Owner").
 		Offset(params.Pagination.Offset()).
 		Limit(params.Pagination.Size).
