@@ -82,7 +82,7 @@
   import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
   import { useQuery } from '@/utils/query'
   import { usePageTitle } from '@/utils/utils'
-  import { listRecording, type ListRecordingParams, type RecordingData } from '@/apis/recording'
+  import { listRecording, type ListRecordingParams } from '@/apis/recording'
   import { getProject, parseProjectFullName } from '@/apis/project'
   import { getProjectPageRoute, getUserPageRoute } from '@/router'
   import { UISelect, UISelectOption, UIPagination, UIIcon, useResponsive } from '@/components/ui'
@@ -105,7 +105,6 @@
   })
   
   const projectOwner = computed(() => projectInfo.value?.owner ?? '')
-  const projectName = computed(() => projectInfo.value?.project ?? '')
   
   // 获取项目详情
   const projectQuery = useQuery(
@@ -205,7 +204,7 @@
   })
   
   // 事件处理
-  const handleRecordingUpdated = (updatedRecording: RecordingData) => {
+  const handleRecordingUpdated = () => {
     recordingsQueryRet.refetch()
   }
   
