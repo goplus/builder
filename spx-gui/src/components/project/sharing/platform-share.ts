@@ -1,4 +1,4 @@
-import logoSrc from '@/assets/logo.svg'
+// import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
