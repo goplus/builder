@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// expose、defineExpose需要在setup内执行
 import type { ProjectData } from '@/apis/project'
 import html2canvas from 'html2canvas'
 import { ref, nextTick, computed, onMounted, watch } from 'vue'
@@ -15,16 +14,31 @@ const props = defineProps<{
   projectData: ProjectData
 }>()
 
-// 处理用户上传的图片
-const uploadedImgUrl = computed(() => {
-  if (props.img != null) {
-    // consider of 0
-    return URL.createObjectURL(props.img)
-  }
-  return null
-})
+// Handle user uploaded images
+const uploadedImgUrl = ref<string | null>(null)
 
-// 处理项目缩略图
+// Watch props.img changes and update uploadedImgUrl
+watch(
+  () => props.img,
+  (newImg, _, onCleanup) => {
+    // Create new URL
+    if (newImg != null) {
+      uploadedImgUrl.value = URL.createObjectURL(newImg)
+
+      // Set up cleanup for the new URL
+      onCleanup(() => {
+        if (uploadedImgUrl.value) {
+          URL.revokeObjectURL(uploadedImgUrl.value)
+        }
+      })
+    } else {
+      uploadedImgUrl.value = null
+    }
+  },
+  { immediate: true }
+)
+
+// Handle project thumbnail
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   const thumbnail = props.projectData.thumbnail
   if (!thumbnail) return null
@@ -32,7 +46,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   return file.url(onCleanup)
 })
 
-// 最终的图片URL
+// Final image URL
 const imgUrl = computed(() => {
   return uploadedImgUrl.value || thumbnailUrl.value || ''
 })
@@ -41,18 +55,18 @@ const posterElementRef = ref<HTMLElement>()
 
 const projectQrCanvas = ref<HTMLCanvasElement>()
 
-// 处理项目描述文本截断 ===========================
+// Handle project description text truncation ===========================
 const truncatedDescription = computed(() => {
   if (!props.projectData.description) return ''
 
-  const maxLength = 80 // 最大字符数
+  const maxLength = 80 // Maximum character count
   const description = props.projectData.description.trim()
 
   if (description.length <= maxLength) {
     return description
   }
 
-  // 尝试在句号、感叹号、问号处截断
+  // Try to truncate at sentence endings like periods, exclamation marks, question marks
   const sentenceEndings = ['。', '！', '？', '.', '!', '?']
   let lastSentenceEnd = -1
 
@@ -64,51 +78,51 @@ const truncatedDescription = computed(() => {
   }
 
   if (lastSentenceEnd > maxLength * 0.6) {
-    // 如果句号位置在合理范围内
+    // If sentence ending position is within reasonable range
     return description.substring(0, lastSentenceEnd + 1)
   }
 
-  // 否则在空格处截断
+  // Otherwise truncate at space
   const lastSpace = description.lastIndexOf(' ', maxLength)
   if (lastSpace > maxLength * 0.7) {
-    // 如果空格位置在合理范围内
+    // If space position is within reasonable range
     return description.substring(0, lastSpace) + '...'
   }
 
-  // 最后直接截断并添加省略号
+  // Finally, truncate directly and add ellipsis
   return description.substring(0, maxLength) + '...'
 })
 // =============================================
 
-// 获取项目URL
-const getProjectUrl = () => {
-  const projectPath = getProjectPageRoute(props.projectData.owner, props.projectData.name)
+// Get project URL
+const getProjectUrl = (owner: string, name: string) => {
+  const projectPath = getProjectPageRoute(owner, name)
   return window.location.origin + projectPath
 }
 
-// 渲染二维码到canvas
+// Render QR code to canvas
 const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
   try {
-    // 获取CSS中定义的尺寸
+    // Get dimensions defined in CSS
     const computedStyle = window.getComputedStyle(canvas)
     const displayWidth = parseInt(computedStyle.width) || 60
     const displayHeight = parseInt(computedStyle.height) || 60
 
-    // 计算设备像素比，确保高分辨率显示
+    // Calculate device pixel ratio for high-resolution display
     const devicePixelRatio = window.devicePixelRatio || 1
-    const pixelRatio = Math.max(devicePixelRatio, 2) // 至少2倍分辨率
+    const pixelRatio = Math.max(devicePixelRatio, 2) // At least 2x resolution
 
-    // 设置canvas的实际像素尺寸（高分辨率）
+    // Set canvas actual pixel dimensions (high resolution)
     canvas.width = displayWidth * pixelRatio
     canvas.height = displayHeight * pixelRatio
 
     const ctx = canvas.getContext('2d')
     if (ctx) {
-      // 设置高分辨率渲染
+      // Set high-resolution rendering
       ctx.scale(pixelRatio, pixelRatio)
 
       try {
-        // 使用 qrcode 库生成二维码
+        // Use qrcode library to generate QR code
         const qrDataURL = await QRCode.toDataURL(url, {
           color: {
             dark: '#000000',
@@ -120,15 +134,15 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
 
         const img = new window.Image()
         img.onload = () => {
-          // 清除canvas
+          // Clear canvas
           ctx.clearRect(0, 0, displayWidth, displayHeight)
 
-          // 计算居中位置
+          // Calculate center position
           const imgSize = Math.min(displayWidth, displayHeight)
           const x = (displayWidth - imgSize) / 2
           const y = (displayHeight - imgSize) / 2
 
-          // 绘制二维码
+          // Draw QR code
           ctx.drawImage(img, x, y, imgSize, imgSize)
         }
         img.onerror = () => {
@@ -136,36 +150,37 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
         }
         img.src = qrDataURL
       } catch (error) {
-        console.error('生成二维码失败:', error)
+        console.error('Failed to generate QR code:', error)
       }
     }
   } catch (error) {
-    console.error('生成二维码失败:', error)
+    console.error('Failed to generate QR code:', error)
   }
 }
 
-// 生成二维码
-const renderQRCode = async () => {
-  if (projectQrCanvas.value) {
-    const projectUrl = getProjectUrl()
-    await drawQRCodeToCanvas(projectQrCanvas.value, projectUrl)
-  }
+// Generate QR code
+const renderQRCode = async (canvas: HTMLCanvasElement, owner: string, name: string) => {
+  const projectUrl = getProjectUrl(owner, name)
+  await drawQRCodeToCanvas(canvas, projectUrl)
 }
 
-// 监听属性变化，重新生成二维码
+// Watch project info changes and regenerate QR code
 watch(
-  () => [props.projectData.name],
-  () => {
+  () => [projectQrCanvas.value, props.projectData.owner, props.projectData.name] as const,
+  ([canvas, owner, name]) => {
+    if (canvas == null || !owner || !name) return
     nextTick(() => {
-      renderQRCode()
+      renderQRCode(canvas, owner, name)
     })
   }
 )
 
 onMounted(() => {
-  if (projectQrCanvas.value) {
+  const canvas = projectQrCanvas.value
+  const { owner, name } = props.projectData
+  if (canvas && owner && name) {
     nextTick(() => {
-      renderQRCode()
+      renderQRCode(canvas, owner, name)
     })
   }
 })
@@ -175,7 +190,7 @@ const createPoster = async (): Promise<File> => {
     throw new Error('Poster element not ready or project data is undefined')
   }
 
-  await nextTick() // 确保 DOM 已经更新
+  await nextTick() // Ensure DOM has been updated
 
   const canvas = await html2canvas(posterElementRef.value, {
     width: 800,
