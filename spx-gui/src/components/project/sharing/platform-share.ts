@@ -87,7 +87,7 @@ class QQPlatform implements PlatformConfig {
     }
   }
 
-  initShareInfo =  (url: string, title?: string, desc?: string ) => {
+  initShareInfo = (url: string, title?: string, desc?: string) => {
     if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
         share_url: url,
