@@ -47,6 +47,7 @@ import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
+import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
 import { createRecording } from '@/apis/recording'
 import { saveFile } from '@/models/common/cloud'
@@ -446,6 +447,53 @@ const handleRecordingSharing = useMessageHandle(
     }
   }
 )
+
+const screenshotImg = ref<globalThis.File | null>(null)
+
+const shareScreenshot = useModal(ProjectScreenshotSharing)
+
+// Handle screenshot sharing with proper error handling
+const handleScreenshotSharing = useMessageHandle(
+  async (): Promise<void> => {
+    await projectRunnerRef.value?.pauseGame()
+
+    const screenshotBlob = await projectRunnerRef.value?.takeScreenshot()
+    if (!screenshotBlob) {
+      throw new DefaultException({
+        en: 'Failed to take screenshot',
+        zh: '截图失败'
+      })
+    }
+
+    // Convert Blob to File
+    const screenshotFile = new globalThis.File([screenshotBlob], 'screenshot.png', {
+      type: screenshotBlob.type || 'image/png',
+      lastModified: Date.now()
+    })
+
+    screenshotImg.value = screenshotFile
+
+    if (!projectData.value) {
+      throw new DefaultException({
+        en: 'Project data not available',
+        zh: '项目数据不可用'
+      })
+    }
+
+    await shareScreenshot({
+      screenshot: screenshotFile,
+      projectData: projectData.value
+    })
+  },
+  {
+    en: 'Failed to share screenshot',
+    zh: '分享截图失败'
+  },
+  {
+    en: 'Screenshot shared successfully',
+    zh: '截图分享成功'
+  }
+)
 </script>
 
 <template>
@@ -484,6 +532,28 @@ const handleRecordingSharing = useMessageHandle(
           @close="isFullScreenRunning = false"
         />
         <div class="ops">
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+            type="boring"
+            :disabled="handleScreenshotSharing.isLoading.value"
+            @click="handleScreenshotSharing.fn"
+          >
+            <!--&& !isMobile"-->
+            <template #icon>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
+                <path
+                  d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                />
+              </svg>
+            </template>
+            {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
+          </UIButton>
           <UIButton
             v-if="runnerState === 'running'"
             v-radar="{ name: 'Recording button', desc: 'Click to start/stop recording' }"
