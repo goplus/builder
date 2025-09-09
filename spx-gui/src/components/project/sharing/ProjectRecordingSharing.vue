@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { RecordingData } from '@/apis/recording'
 import type { PlatformConfig } from './platform-share'
@@ -113,7 +113,7 @@ async function generateShareQRCode() {
     }
 
     jumpUrl.value = shareUrl
-    
+
     // 使用 qrcode 库生成二维码
     const qrDataURL = await QRCode.toDataURL(shareUrl, {
       color: {
@@ -245,9 +245,7 @@ watch(
         <div class="share-main">
           <div class="video-section">
             <div class="video-preview">
-              <video v-if="videoSrc" :src="videoSrc" controls class="video-player">
-                您的浏览器不支持视频播放
-              </video>
+              <video v-if="videoSrc" :src="videoSrc" controls class="video-player">您的浏览器不支持视频播放</video>
               <div v-else class="video-placeholder">
                 <span>{{ $t({ en: 'No video available', zh: '暂无视频' }) }}</span>
               </div>
@@ -285,9 +283,9 @@ watch(
                 </div>
               </div>
               <div class="action-buttons">
-                <button 
-                  class="download-btn" 
-                  :disabled="!videoSrc" 
+                <button
+                  class="download-btn"
+                  :disabled="!videoSrc"
                   :loading="handleDownloadClick.isLoading.value"
                   @click="handleDownloadClick.fn"
                 >

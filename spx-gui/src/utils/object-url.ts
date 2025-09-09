@@ -10,7 +10,7 @@ import { ref, watch, onUnmounted, type WatchSource } from 'vue'
  */
 export function useObjectUrl(fileSource: WatchSource<File | Blob | null | undefined>) {
   const urlRef = ref<string | null>(null)
-  
+
   watch(
     fileSource,
     (file, _, onCleanup) => {
@@ -18,10 +18,10 @@ export function useObjectUrl(fileSource: WatchSource<File | Blob | null | undefi
         urlRef.value = null
         return
       }
-      
+
       const objectUrl = URL.createObjectURL(file)
       urlRef.value = objectUrl
-      
+
       onCleanup(() => {
         URL.revokeObjectURL(objectUrl)
         urlRef.value = null
@@ -29,7 +29,7 @@ export function useObjectUrl(fileSource: WatchSource<File | Blob | null | undefi
     },
     { immediate: true }
   )
-  
+
   return urlRef
 }
 
@@ -39,29 +39,29 @@ export function useObjectUrl(fileSource: WatchSource<File | Blob | null | undefi
  */
 export function useObjectUrlManager() {
   const createdUrls = new Set<string>()
-  
+
   const createUrl = (file: File | Blob): string => {
     const url = URL.createObjectURL(file)
     createdUrls.add(url)
     return url
   }
-  
+
   const revokeUrl = (url: string): void => {
     if (createdUrls.has(url)) {
       URL.revokeObjectURL(url)
       createdUrls.delete(url)
     }
   }
-  
+
   const revokeAll = (): void => {
-    createdUrls.forEach(url => URL.revokeObjectURL(url))
+    createdUrls.forEach((url) => URL.revokeObjectURL(url))
     createdUrls.clear()
   }
-  
+
   onUnmounted(() => {
     revokeAll()
   })
-  
+
   return {
     createUrl,
     revokeUrl,

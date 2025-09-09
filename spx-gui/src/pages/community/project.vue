@@ -38,7 +38,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
-import { useModal, useMessage } from '@/components/ui'
+import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import { getProject } from '@/apis/project'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
@@ -307,7 +307,6 @@ const { data: projectData } = useQuery(
   }
 )
 
-const toaster = useMessage()
 const isRecording = ref(false)
 const recording = ref<globalThis.File | null>(null)
 const recordData = ref<RecordingData | null>(null)
@@ -379,7 +378,7 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
 }
 
 // 处理录制分享结果
-async function handleShareResult(result: any, recordFile: globalThis.File) {
+async function handleShareResult(result: any) {
   if (result.type === 'shared') {
     // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
     return result.platform
@@ -410,10 +409,7 @@ const handleRecordingSharing = useMessageHandle(
         video: recordFile
       })
 
-      return await handleShareResult(result, recordFile)
-    } catch (e) {
-      // cancelled 逻辑，用户取消分享
-      throw e
+      return await handleShareResult(result)
     } finally {
       await projectRunnerRef.value?.resumeGame()
       isRecording.value = false
