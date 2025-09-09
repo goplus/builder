@@ -3,8 +3,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
@@ -179,9 +178,7 @@ type AlgorithmImageResult struct {
 
 // generateQueryID generates a unique query ID for tracking recommendations
 func generateQueryID() string {
-	bytes := make([]byte, 8)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
+	return uuid.New().String()
 }
 
 // ImageFeedbackParams represents parameters for image recommendation feedback.
