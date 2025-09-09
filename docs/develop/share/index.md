@@ -51,7 +51,7 @@ See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
 
 用来识别 Project 项目中用到了那些键盘按键，提供给 MobileKeyboard 使用
 
-See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboardUsageAnalyzer.ts).
+See API design in [`module_MobileKeyboardUsageAnalyzer.ts`](./module_MobileKeyboardUsageAnalyzer.ts).
 
 ### Recording APIs
 
@@ -100,8 +100,8 @@ graph TB
 
     %% 功能模块层
     subgraph FunctionLayer["功能模块层"]
-        VirtualKeyboard["`**VirtualKeyboard**
-        虚拟键盘模块`"]
+        MobileKeyboard["`**MobileKeyboard**
+        移动端键盘模块`"]
 
         MobilekeyboardUsageAnalyzer["`**MobilekeyboardUsageAnalyzer**
         按键识别功能`"]
@@ -150,7 +150,7 @@ graph TB
     end
 
     %% 主要流程连接
-    BuilderUI --> VirtualKeyboard
+    BuilderUI --> MobileKeyboard
     BuilderUI --> ProjectRunner
     BuilderUI --> Recording
     BuilderUI --> DirectSharing
@@ -158,9 +158,9 @@ graph TB
     BuilderUI --> ProjectRecordingSharing
 
     %% 功能模块间连接
-    VirtualKeyboard --> ProjectRunner
-    VirtualKeyboard --> ProjectAPIs
-    VirtualKeyboard --> MobilekeyboardUsageAnalyzer
+    MobileKeyboard --> ProjectRunner
+    MobileKeyboard --> ProjectAPIs
+    MobileKeyboard --> MobilekeyboardUsageAnalyzer
 
     %% 分享流程连接
     DirectSharing --> PlatformSelector
