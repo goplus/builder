@@ -27,25 +27,25 @@ const emit = defineEmits<{
   resolved: [result: SharingResult]
 }>()
 
-// 组件状态
+// Component state
 const selectedPlatform = ref<PlatformConfig | null>(null)
 const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
 const isGeneratingQR = ref(false)
 
-// 录制数据和视频源
+// Recording data and video source
 const currentRecording = ref<RecordingData | null>(null)
 const videoSrc = ref<string>('')
 
-// 使用 object URL 管理器
+// Use object URL manager
 const { createUrl } = useObjectUrlManager()
 
-// 录制页面URL
+// Recording page URL
 const recordPageUrl = computed(() => {
   return currentRecording.value ? `/record/${currentRecording.value.id}` : ''
 })
 
-// 加载录制数据
+// Load recording data
 async function loadRecordingData() {
   if (currentRecording.value) return
 
@@ -53,38 +53,38 @@ async function loadRecordingData() {
   await updateVideoSrc()
 }
 
-// 更新视频源地址 - 优先使用 props.video
+// Update video source URL - prioritize props.video
 async function updateVideoSrc() {
   if (props.video) {
-    // 优先使用父组件传入的视频文件
+    // Prioritize video file passed from parent component
     const url = createUrl(props.video)
     videoSrc.value = url
   } else if (currentRecording.value?.videoUrl) {
-    // 其次使用录制数据中的视频URL，需要转换 kodo:// URL
+    // Otherwise use video URL from recording data, convert kodo:// URL
     videoSrc.value = await universalUrlToWebUrl(currentRecording.value.videoUrl)
   } else {
     videoSrc.value = ''
   }
 }
 
-// 处理平台选择变化
+// Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  // 二维码生成由 watch 自动处理，无需手动调用
+  // QR code generation is handled automatically by watch, no need to call manually
 }
 
-// 获取当前录制URL
+// Get current recording URL
 function getCurrentRecordUrl() {
   return window.location.origin + recordPageUrl.value
 }
 
-// 生成分享二维码
+// Generate sharing QR code
 async function generateShareQRCode() {
   if (!selectedPlatform.value) {
     return
   }
 
-  // 确保录制数据已加载
+  // Ensure recording data is loaded
   await loadRecordingData()
 
   if (!currentRecording.value) {
@@ -94,27 +94,27 @@ async function generateShareQRCode() {
   isGeneratingQR.value = true
 
   try {
-    // 根据平台类型生成跳转URL
+    // Generate jump URL based on platform type
     const platform = selectedPlatform.value
     const currentUrl = getCurrentRecordUrl()
 
     let shareUrl = ''
 
-    // 检查平台支持的分享类型
+    // Check platform supported sharing types
     if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-      // 支持URL分享，直接分享录制页面链接
+      // Support URL sharing, directly share recording page link
       shareUrl = await platform.shareFunction.shareURL(currentUrl)
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      // 支持视频分享，分享视频文件
+      // Support video sharing, share video file
       shareUrl = await platform.shareFunction.shareVideo(props.video)
     } else {
-      // 默认使用录制页面URL
+      // Default to use recording page URL
       shareUrl = currentUrl
     }
 
     jumpUrl.value = shareUrl
 
-    // 使用 qrcode 库生成二维码
+    // Use qrcode library to generate QR code
     const qrDataURL = await QRCode.toDataURL(shareUrl, {
       color: {
         dark: selectedPlatform.value?.basicInfo.color || '#000000',
@@ -129,12 +129,12 @@ async function generateShareQRCode() {
   }
 }
 
-// 处理重新录制
+// Handle re-recording
 async function handleReRecord(): Promise<void> {
   emit('resolved', { type: 'rerecord' })
 }
 
-// 处理一键下载视频
+// Handle one-click video download
 async function handleDownloadVideo(): Promise<void> {
   let videoFile: globalThis.File | null = null
 
@@ -153,10 +153,10 @@ async function handleDownloadVideo(): Promise<void> {
     })
   }
 
-  // 创建下载链接
+  // Create download link
   const url = createUrl(videoFile)
 
-  // 创建临时下载链接并触发下载
+  // Create temporary download link and trigger download
   const link = document.createElement('a')
   link.href = url
   link.download = videoFile.name
@@ -165,7 +165,7 @@ async function handleDownloadVideo(): Promise<void> {
   document.body.removeChild(link)
 }
 
-// 使用 useMessageHandle 包装的下载处理函数
+// Use useMessageHandle wrapped download handler function
 const handleDownloadClick = useMessageHandle(
   handleDownloadVideo,
   {
@@ -178,40 +178,40 @@ const handleDownloadClick = useMessageHandle(
   }
 )
 
-// 监听弹窗显示状态
+// Listen to modal visibility state
 watch(
   () => props.visible,
   async (newVisible) => {
     if (newVisible) {
-      // 重置状态
+      // Reset state
       jumpUrl.value = ''
       qrCodeData.value = ''
 
       try {
-        // 立即更新视频源（优先使用 props.video）
+        // Update video source immediately (prioritize props.video)
         await updateVideoSrc()
 
-        // 加载录制数据（用于分享参数）
+        // Load recording data (for sharing parameters)
         await loadRecordingData()
       } catch (error) {
-        // 这些是初始化错误，记录但不抛出，避免影响弹窗显示
-        console.error('初始化视频数据失败:', error)
+        // These are initialization errors, log but don't throw to avoid affecting modal display
+        console.error('Failed to initialize video data:', error)
       }
     }
   }
 )
 
-// 监听平台选择变化，自动生成二维码
+// Listen to platform selection changes, automatically generate QR code
 watch(
   selectedPlatform,
   async (newPlatform) => {
     if (newPlatform != null && props.visible) {
       try {
-        // 只有在弹窗显示且有选择平台时才生成二维码
+        // Only generate QR code when modal is visible and platform is selected
         await generateShareQRCode()
       } catch (error) {
-        // 二维码生成失败，记录错误但不影响其他功能
-        console.error('生成分享二维码失败:', error)
+        // QR code generation failed, log error but don't affect other functions
+        console.error('Failed to generate sharing QR code:', error)
         qrCodeData.value = ''
       }
     }
@@ -219,15 +219,15 @@ watch(
   { immediate: true }
 )
 
-// 监听 video prop 变化
+// Listen to video prop changes
 watch(
   () => props.video,
   async () => {
     try {
       await updateVideoSrc()
     } catch (error) {
-      // 视频源更新失败，记录错误但不影响其他功能
-      console.error('更新视频源失败:', error)
+      // Video source update failed, log error but don't affect other functions
+      console.error('Failed to update video source:', error)
       videoSrc.value = ''
     }
   }
@@ -237,7 +237,7 @@ watch(
 <template>
   <div v-if="visible" class="project-recording-sharing">
     <div class="recording-sharing-content">
-      <!-- 分享内容 -->
+      <!-- Share content -->
       <div class="share-content">
         <div class="share-title">
           {{ $t({ en: 'Your recording is amazing, share it with friends!', zh: '你的录制很棒，分享给好友吧!' }) }}

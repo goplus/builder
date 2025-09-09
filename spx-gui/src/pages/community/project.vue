@@ -313,9 +313,9 @@ const recordData = ref<RecordingData | null>(null)
 
 const shareRecording = useModal(ProjectRecordingSharing)
 
-// 开始录制
+// Start recording
 async function startRecording() {
-  // 检查录制功能是否可用
+  // Check if recording feature is available
   if (!projectRunnerRef.value?.startRecording) {
     throw new DefaultException({
       en: 'Recording feature is not available, please make sure the project is running',
@@ -325,12 +325,12 @@ async function startRecording() {
 
   await projectRunnerRef.value.startRecording()
   isRecording.value = true
-  return undefined // 明确返回 undefined 表示开始录制
+  return undefined // Explicitly return undefined to indicate recording start
 }
 
-// 停止录制并获取录制数据
+// Stop recording and get recording data
 async function stopRecording(): Promise<globalThis.File> {
-  await projectRunnerRef.value?.pauseGame() // 先暂停游戏，防止间隙
+  await projectRunnerRef.value?.pauseGame() // Pause the game first to prevent gaps
   const recordBlob = await projectRunnerRef.value?.stopRecording?.()
 
   if (!recordBlob) {
@@ -340,7 +340,7 @@ async function stopRecording(): Promise<globalThis.File> {
     })
   }
 
-  // 将 Blob 转换为 File 对象
+  // Convert Blob to File object
   const fileExtension = recordBlob.type?.includes('webm') ? 'webm' : 'mp4'
   const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, {
     type: recordBlob.type || 'video/webm'
@@ -350,7 +350,7 @@ async function stopRecording(): Promise<globalThis.File> {
   return recordFile
 }
 
-// 保存录制数据到云端并创建录制记录
+// Save recording data to cloud and create recording record
 function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
   return (async (): Promise<RecordingData> => {
     if (!projectData.value) {
@@ -361,7 +361,7 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
     }
 
     const projectFile = createProjectFile(recordFile)
-    const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
+    const RecordingURL = await saveFile(projectFile) // Store to cloud and get video storage URL
 
     const params: CreateRecordingParams = {
       projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
@@ -371,35 +371,35 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
       thumbnailUrl: projectData.value.thumbnail || ''
     }
 
-    const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
+    const created: RecordingData = await createRecording(params) // Call Recording APIs to store to backend
     recordData.value = created
     return created
   })()
 }
 
-// 处理录制分享结果
+// Handle recording sharing results
 async function handleShareResult(result: any) {
   if (result.type === 'shared') {
-    // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
+    // Success message will be handled by useMessageHandle's successMessage parameter
     return result.platform
   } else if (result.type === 'rerecord') {
-    // 先恢复游戏，然后开始新的录制
+    // Resume game first, then start new recording
     await projectRunnerRef.value?.resumeGame()
     isRecording.value = true
     await projectRunnerRef.value?.startRecording?.()
-    return null // 明确返回 null 表示停止录制但没有分享
+    return null // Explicitly return null to indicate stopped recording but no sharing
   }
 }
 
-// 主录制处理函数
+// Main recording handler function
 const handleRecordingSharing = useMessageHandle(
   async () => {
     if (!isRecording.value) {
-      // 开始录制
+      // Start recording
       return await startRecording()
     }
 
-    // 停止录制并获取数据
+    // Stop recording and get data
     const recordFile = await stopRecording()
     const recordingPromise = saveRecording(recordFile)
 
@@ -420,16 +420,16 @@ const handleRecordingSharing = useMessageHandle(
     zh: '录制操作失败'
   },
   (result) => {
-    // 注意：这里的 isRecording.value 状态可能已经在函数执行过程中改变了
-    // 我们需要根据返回值来判断是开始录制还是停止录制
+    // Note: The isRecording.value state may have changed during function execution
+    // We need to determine whether recording started or stopped based on return value
     if (result) {
-      // 有返回值说明是分享成功
+      // Has return value means sharing succeeded
       return { en: `Shared to ${result}`, zh: `已分享到${result}` }
     } else if (result === null) {
-      // 明确返回 null 说明是停止录制但没有分享
+      // Explicitly return null means stopped recording but no sharing
       return { en: 'Recording stopped', zh: '录制已停止' }
     } else {
-      // undefined 说明是开始录制
+      // undefined means started recording
       return { en: 'Recording started, click again to stop', zh: '录制已开始，再次点击停止录制' }
     }
   }
