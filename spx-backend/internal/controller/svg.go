@@ -178,6 +178,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		}
 	}
 
+
 	// Prepare response headers
 	headers := map[string]string{
 		"Content-Type":        "image/svg+xml",
@@ -324,7 +325,7 @@ func (ctrl *Controller) callVectorService(ctx context.Context, id int64, url str
 	}
 	
 	// Make HTTP request to vector service
-	resp, err := http.Post("http://100.100.35.128:5000/api/vector/add", "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post("http://loaclhost:5000/v1/vector/add", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to call vector service: %w", err)
 	}

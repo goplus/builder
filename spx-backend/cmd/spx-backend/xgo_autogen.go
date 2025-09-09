@@ -1962,24 +1962,31 @@ func (this *post_image_svg) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_image_svg.yap:18:1
 		return
 	}
-//line cmd/spx-backend/post_image_svg.yap:21:1
-	result, err := this.ctrl.GenerateSVG(ctx.Context(), params)
 //line cmd/spx-backend/post_image_svg.yap:22:1
-	if err != nil {
+	if params.Theme != controller.ThemeNone {
 //line cmd/spx-backend/post_image_svg.yap:23:1
-		replyWithInnerError(ctx, err)
+		params.Prompt = controller.OptimizePromptWithAnalysis(ctx.Context(), params.Prompt, params.Theme, this.ctrl.GetCopilot())
 //line cmd/spx-backend/post_image_svg.yap:24:1
+		params.Theme = controller.ThemeNone
+	}
+//line cmd/spx-backend/post_image_svg.yap:27:1
+	result, err := this.ctrl.GenerateSVG(ctx.Context(), params)
+//line cmd/spx-backend/post_image_svg.yap:28:1
+	if err != nil {
+//line cmd/spx-backend/post_image_svg.yap:29:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_image_svg.yap:30:1
 		return
 	}
 	for
-//line cmd/spx-backend/post_image_svg.yap:28:1
+//line cmd/spx-backend/post_image_svg.yap:34:1
 	key, value := range result.Headers {
-//line cmd/spx-backend/post_image_svg.yap:29:1
+//line cmd/spx-backend/post_image_svg.yap:35:1
 		ctx.ResponseWriter.Header().Set(key, value)
 	}
-//line cmd/spx-backend/post_image_svg.yap:33:1
+//line cmd/spx-backend/post_image_svg.yap:39:1
 	ctx.ResponseWriter.WriteHeader(200)
-//line cmd/spx-backend/post_image_svg.yap:34:1
+//line cmd/spx-backend/post_image_svg.yap:40:1
 	ctx.ResponseWriter.Write(result.Data)
 }
 func (this *post_image_svg) Classfname() string {
