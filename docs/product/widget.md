@@ -68,7 +68,7 @@ The Advanced Config of a Monitor includes:
 
 ### Stage
 
-On top of [Go+ Builder Product](./index.md), the Stage is extended as follows:
+On top of [XBuilder Product](./index.md), the Stage is extended as follows:
 
 * Widgets: A list of Widgets. A Stage can contain 0 or more Widgets.
 

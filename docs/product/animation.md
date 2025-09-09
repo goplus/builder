@@ -56,7 +56,7 @@ In addition to the basic information of an Animation, a Skeletal Animation also 
 
 ### Sprite
 
-Building upon the [Go+ Builder Product](./index.md), the Sprite is extended as follows:
+Building upon the [XBuilder Product](./index.md), the Sprite is extended as follows:
 
 * Model: Model information, including Skeleton, Mesh, etc. Not every Sprite has Model information. Only Sprites with Model information can have Skeletal Animations added.
 * Animations: A list of Animations. A Sprite can contain zero or multiple Animations. The items in the list can be Costume-group Animations or Skeletal Animations.

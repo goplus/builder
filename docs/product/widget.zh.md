@@ -69,7 +69,7 @@ Monitor 的 Advanced Config 包括：
 
 ### 舞台 Stage
 
-在 [Go+ Builder Product](./index.zh.md) 基础上，对 Stage 进行扩充如下：
+在 [XBuilder Product](./index.zh.md) 基础上，对 Stage 进行扩充如下：
 
 * Widgets: Widget 列表，一个 Stage 可以包含 0 个或多个 Widget
 
