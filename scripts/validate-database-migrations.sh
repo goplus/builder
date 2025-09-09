@@ -10,8 +10,8 @@ MIGRATE_VERSION="${MIGRATE_VERSION:-4}"
 MYSQL_CONTAINER_NAME="xbuilder-database-migration-test-$(date +%s)-$$"
 MYSQL_PORT=$(shuf -i 13306-19999 -n 1)
 MYSQL_HOST="127.0.0.1"
-MYSQL_USER="root"
-MYSQL_PASSWORD="root"
+MYSQL_USER="xbuilder"
+MYSQL_PASSWORD="xbuilder"
 MYSQL_DATABASE="xbuilder"
 MIGRATIONS_TABLE_NAME="schema_migration"
 MIGRATIONS_DIR="spx-backend/internal/migration/migrations"
@@ -75,7 +75,7 @@ docker run \
 	-d \
 	--platform linux/amd64 \
 	--name "${MYSQL_CONTAINER_NAME}" \
-	-e MYSQL_ROOT_PASSWORD="${MYSQL_PASSWORD}" \
+	-e MYSQL_ROOT_PASSWORD=root \
 	-e MYSQL_DATABASE="${MYSQL_DATABASE}" \
 	-p "${MYSQL_PORT}:3306" \
 	mysql:${MYSQL_VERSION} >/dev/null || log_error_and_exit "Failed to start MySQL container"
@@ -88,7 +88,7 @@ MYSQL_DSN="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_POR
 run_mysql_command() {
 	docker run --rm --platform linux/amd64 --network host mysql:${MYSQL_VERSION} \
 		"$@" \
-		-h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}"
+		-h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -uroot -proot
 }
 
 log_info "Waiting for MySQL to be ready..."
@@ -109,6 +109,30 @@ for i in {1..60}; do
 
 	sleep 2
 done
+
+echo
+echo "========================================================================="
+echo
+
+# Set up restricted user for production environment simulation
+log_info "Creating restricted user for production simulation..."
+
+# Create user
+run_mysql_command mysql "${MYSQL_DATABASE}" -e "
+	CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+" 2>/dev/null || log_error_and_exit "Failed to create user"
+
+# Grant privileges matching production environment
+run_mysql_command mysql "${MYSQL_DATABASE}" -e "
+	GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+" 2>/dev/null || log_error_and_exit "Failed to grant privileges"
+
+# Flush privileges
+run_mysql_command mysql "${MYSQL_DATABASE}" -e "
+	FLUSH PRIVILEGES;
+" 2>/dev/null || log_error_and_exit "Failed to flush privileges"
+
+log_ok "User created with restricted privileges"
 
 echo
 echo "========================================================================="
