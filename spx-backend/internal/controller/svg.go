@@ -36,6 +36,7 @@ type GenerateSVGParams struct {
 	Size           string          `json:"size,omitempty"`
 	Substyle       string          `json:"substyle,omitempty"`
 	NumImages      int             `json:"n,omitempty"`
+	IsOptimized    bool            `json:"-"` // Internal flag to indicate if prompt is already optimized
 }
 
 // Validate validates the SVG generation parameters.
@@ -44,8 +45,8 @@ func (p *GenerateSVGParams) Validate() (bool, string) {
 		return false, "prompt must be at least 3 characters"
 	}
 
-	// Auto-select provider based on theme if not specified
-	if p.Provider == "" {
+	// Auto-select provider based on theme if not specified (skip if already optimized)
+	if p.Provider == "" && !p.IsOptimized {
 		if p.Theme != ThemeNone {
 			p.Provider = GetThemeRecommendedProvider(p.Theme)
 		} else {
@@ -105,16 +106,17 @@ type ImageResponse struct {
 // GenerateSVG generates an SVG image and returns the SVG content directly.
 func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGParams) (*SVGResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q, optimized: %v", params.Provider, params.Theme, params.Prompt, params.IsOptimized)
 
-	if params.Theme != ThemeNone {
+	// Skip redundant theme/provider validation if prompt is already optimized
+	if !params.IsOptimized && params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
 			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
 		}
 	}
 
-	// Use prompt as-is, assuming it's already optimized by the caller
+	// Use prompt as-is when already optimized, otherwise could apply additional processing
 	finalPrompt := params.Prompt
 
 	// Convert to svggen request
@@ -212,16 +214,17 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 // GenerateImage generates an image and returns metadata information.
 func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImageParams) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q, optimized: %v", params.Provider, params.Theme, params.Prompt, params.IsOptimized)
 
-	if params.Theme != ThemeNone {
+	// Skip redundant theme/provider validation if prompt is already optimized
+	if !params.IsOptimized && params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
 			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
 		}
 	}
 
-	// Use prompt as-is, assuming it's already optimized by the caller
+	// Use prompt as-is when already optimized, otherwise could apply additional processing
 	finalPrompt := params.Prompt
 
 	// Convert to svggen request
