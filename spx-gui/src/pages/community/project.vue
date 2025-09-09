@@ -229,7 +229,7 @@ const shareProject = useShareProject()
 const handleShare = useMessageHandle(
   () => {
     if (!projectData.value) return
-    shareProject(projectData.value)
+    return shareProject(projectData.value)
   },
   {
     en: 'Failed to share project',
