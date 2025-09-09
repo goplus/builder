@@ -36,7 +36,7 @@
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter
+      <!-- <PanelFooter
         v-if="footerExpanded && selectedSprite != null"
         v-radar="{
           name: `Basic configuration for selected sprite`,
@@ -44,7 +44,7 @@
         }"
       >
         <SpriteBasicConfig :sprite="selectedSprite" :project="editorCtx.project" @collapse="footerExpanded = false" />
-      </PanelFooter>
+      </PanelFooter> -->
       <UITooltip v-if="!footerExpanded && selectedSprite != null">
         <template #trigger>
           <div

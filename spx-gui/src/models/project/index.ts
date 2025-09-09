@@ -367,8 +367,8 @@ export class Project extends Disposable {
         // TODO: we should not hard code the width & height here,
         // instead we should use the runtime size of component `ProjectRunner`,
         // after https://github.com/goplus/builder/issues/584
-        width: stageConfig.map?.width,
-        height: stageConfig.map?.height
+        width: 480,
+        height: 360
       },
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
