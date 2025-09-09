@@ -39,8 +39,7 @@ import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
 import { getProject } from '@/apis/project'
-import { initializeShareConfig } from '@/components/project/sharing/platform-share'
-import { getProjectShareRoute } from '@/router'
+import { initShareInfo } from '@/components/project/sharing/platform-share'
 import { useModal, useMessage } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
@@ -416,10 +415,8 @@ async function handleRecordingSharing() {
     }
   }
 }
-const projectSharingLink = computed(() => {
-  return `${location.origin}${getProjectShareRoute(props.owner, props.name)}`
-})
-initializeShareConfig(projectSharingLink.value)
+//初始化分享信息
+initShareInfo()
 </script>
 
 <template>
