@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle } from '@/utils/exception'
+import { useMessageHandle, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -309,88 +309,114 @@ const { data: projectData } = useQuery(
 
 const toaster = useMessage()
 const isRecording = ref(false)
-const recordingStartTime = ref<number | null>(null)
 const recording = ref<globalThis.File | null>(null)
 const recordData = ref<RecordingData | null>(null)
 
 const shareRecording = useModal(ProjectRecordingSharing)
 
+// 开始录制
+async function startRecording() {
+  // 检查录制功能是否可用
+  if (!projectRunnerRef.value?.startRecording) {
+    throw new DefaultException({
+      en: 'Recording feature is not available, please make sure the project is running',
+      zh: '录制功能不可用，请确保项目正在运行'
+    })
+  }
+
+  await projectRunnerRef.value.startRecording()
+  isRecording.value = true
+  return undefined // 明确返回 undefined 表示开始录制
+}
+
+// 停止录制并获取录制数据
+async function stopRecording(): Promise<globalThis.File> {
+  await projectRunnerRef.value?.pauseGame() // 先暂停游戏，防止间隙
+  const recordBlob = await projectRunnerRef.value?.stopRecording?.()
+
+  if (!recordBlob) {
+    throw new DefaultException({
+      en: 'Recording failed, no recording data obtained',
+      zh: '录制失败，未获得录制数据'
+    })
+  }
+
+  // 将 Blob 转换为 File 对象
+  const fileExtension = recordBlob.type?.includes('webm') ? 'webm' : 'mp4'
+  const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, {
+    type: recordBlob.type || 'video/webm'
+  })
+
+  recording.value = recordFile
+  return recordFile
+}
+
+// 保存录制数据到云端并创建录制记录
+function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
+  return (async (): Promise<RecordingData> => {
+    if (!projectData.value) {
+      throw new DefaultException({
+        en: 'Failed to load project data',
+        zh: '项目数据加载失败'
+      })
+    }
+
+    const projectFile = createProjectFile(recordFile)
+    const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
+
+    const params: CreateRecordingParams = {
+      projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
+      title: projectData.value.name,
+      description: projectData.value.description ?? '',
+      videoUrl: RecordingURL,
+      thumbnailUrl: projectData.value.thumbnail || ''
+    }
+
+    const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
+    recordData.value = created
+    return created
+  })()
+}
+
+// 处理录制分享结果
+async function handleShareResult(result: any, recordFile: globalThis.File) {
+  if (result.type === 'shared') {
+    // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
+    return result.platform
+  } else if (result.type === 'rerecord') {
+    // 先恢复游戏，然后开始新的录制
+    await projectRunnerRef.value?.resumeGame()
+    isRecording.value = true
+    await projectRunnerRef.value?.startRecording?.()
+    return null // 明确返回 null 表示停止录制但没有分享
+  }
+}
+
+// 主录制处理函数
 const handleRecordingSharing = useMessageHandle(
   async () => {
-    if (isRecording.value) {
-      // 当前正在录制，停止录制
-      await projectRunnerRef.value?.pauseGame() // 先暂停游戏，防止间隙
-      const recordBlob = await projectRunnerRef.value?.stopRecording?.()
+    if (!isRecording.value) {
+      // 开始录制
+      return await startRecording()
+    }
 
-      if (!recordBlob) {
-        throw new Error('录制失败，未获得录制数据')
-      }
+    // 停止录制并获取数据
+    const recordFile = await stopRecording()
+    const recordingPromise = saveRecording(recordFile)
 
-      // 将 Blob 转换为 File 对象
-      const fileExtension = recordBlob.type?.includes('webm') ? 'webm' : 'mp4'
-      const recordFile = new globalThis.File([recordBlob], `recording_${Date.now()}.${fileExtension}`, {
-        type: recordBlob.type || 'video/webm'
+    try {
+      const result = await shareRecording({
+        recording: recordingPromise,
+        video: recordFile
       })
 
-      recording.value = recordFile
-
-      // 创建异步处理录制数据的 Promise
-      const recordingPromise = (async (): Promise<RecordingData> => {
-        if (!projectData.value) {
-          throw new Error('项目数据加载失败')
-        }
-
-        const projectFile = createProjectFile(recordFile)
-        const RecordingURL = await saveFile(projectFile) // 存储到云端获得视频存储URL
-
-        const params: CreateRecordingParams = {
-          projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
-          title: projectData.value.name,
-          description: projectData.value.description ?? '',
-          videoUrl: RecordingURL,
-          thumbnailUrl: projectData.value.thumbnail || ''
-        }
-
-        const created: RecordingData = await createRecording(params) // 调用 RecordingAPIs 存储到后端
-        recordData.value = created
-        return created
-      })()
-
-      try {
-        const result = await shareRecording({
-          recording: recordingPromise,
-          video: recordFile
-        })
-
-        if (result.type === 'shared') {
-          // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
-          return result.platform
-        } else if (result.type === 'rerecord') {
-          // 先恢复游戏，然后开始新的录制
-          await projectRunnerRef.value?.resumeGame()
-          isRecording.value = true
-          await projectRunnerRef.value?.startRecording?.()
-          return null // 明确返回 null 表示停止录制但没有分享
-        }
-      } catch (e) {
-        // cancelled 逻辑，用户取消分享
-        throw e
-      } finally {
-        await projectRunnerRef.value?.resumeGame()
-        isRecording.value = false
-      }
-    } else {
-      // 开始录制
-      // 检查录制功能是否可用
-      if (!projectRunnerRef.value?.startRecording) {
-        throw new Error('录制功能不可用，请确保项目正在运行')
-      }
-
-      await projectRunnerRef.value?.startRecording?.()
-      isRecording.value = true
-      recordingStartTime.value = Date.now()
-      // 成功消息会通过 useMessageHandle 的 successMessage 参数处理
-      return undefined // 明确返回 undefined 表示开始录制
+      return await handleShareResult(result, recordFile)
+    } catch (e) {
+      // cancelled 逻辑，用户取消分享
+      throw e
+    } finally {
+      await projectRunnerRef.value?.resumeGame()
+      isRecording.value = false
     }
   },
   {

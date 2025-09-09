@@ -4,6 +4,8 @@ import PlatformSelector from './PlatformSelector.vue'
 import type { RecordingData } from '@/apis/recording'
 import type { PlatformConfig } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { useObjectUrlManager } from '@/utils/object-url'
+import { DefaultException, useMessageHandle } from '@/utils/exception'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -35,18 +37,8 @@ const isGeneratingQR = ref(false)
 const currentRecording = ref<RecordingData | null>(null)
 const videoSrc = ref<string>('')
 
-// 清理 object URLs
-const createdObjectUrls = new Set<string>()
-
-onUnmounted(() => {
-  // 清理所有创建的 object URLs
-  createdObjectUrls.forEach((url) => {
-    if (url.startsWith('blob:')) {
-      URL.revokeObjectURL(url)
-    }
-  })
-  createdObjectUrls.clear()
-})
+// 使用 object URL 管理器
+const { createUrl } = useObjectUrlManager()
 
 // 录制页面URL
 const recordPageUrl = computed(() => {
@@ -57,29 +49,19 @@ const recordPageUrl = computed(() => {
 async function loadRecordingData() {
   if (currentRecording.value) return
 
-  try {
-    currentRecording.value = await props.recording
-    await updateVideoSrc()
-  } catch (error) {
-    console.error('加载录制数据失败:', error)
-  }
+  currentRecording.value = await props.recording
+  await updateVideoSrc()
 }
 
 // 更新视频源地址 - 优先使用 props.video
 async function updateVideoSrc() {
   if (props.video) {
     // 优先使用父组件传入的视频文件
-    const url = URL.createObjectURL(props.video)
-    createdObjectUrls.add(url)
+    const url = createUrl(props.video)
     videoSrc.value = url
   } else if (currentRecording.value?.videoUrl) {
     // 其次使用录制数据中的视频URL，需要转换 kodo:// URL
-    try {
-      videoSrc.value = await universalUrlToWebUrl(currentRecording.value.videoUrl)
-    } catch (error) {
-      console.error('转换视频URL失败:', error)
-      videoSrc.value = ''
-    }
+    videoSrc.value = await universalUrlToWebUrl(currentRecording.value.videoUrl)
   } else {
     videoSrc.value = ''
   }
@@ -88,7 +70,7 @@ async function updateVideoSrc() {
 // 处理平台选择变化
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  generateShareQRCode()
+  // 二维码生成由 watch 自动处理，无需手动调用
 }
 
 // 获取当前录制URL
@@ -109,9 +91,9 @@ async function generateShareQRCode() {
     return
   }
 
-  try {
-    isGeneratingQR.value = true
+  isGeneratingQR.value = true
 
+  try {
     // 根据平台类型生成跳转URL
     const platform = selectedPlatform.value
     const currentUrl = getCurrentRecordUrl()
@@ -131,23 +113,17 @@ async function generateShareQRCode() {
     }
 
     jumpUrl.value = shareUrl
+    
     // 使用 qrcode 库生成二维码
-    try {
-      const qrDataURL = await QRCode.toDataURL(shareUrl, {
-        color: {
-          dark: selectedPlatform.value?.basicInfo.color || '#000000',
-          light: '#FFFFFF'
-        },
-        width: 120,
-        margin: 1
-      })
-      qrCodeData.value = qrDataURL
-    } catch (error) {
-      console.error('生成二维码失败:', error)
-      qrCodeData.value = ''
-    }
-  } catch (error) {
-    console.error('生成分享二维码失败:', error)
+    const qrDataURL = await QRCode.toDataURL(shareUrl, {
+      color: {
+        dark: selectedPlatform.value?.basicInfo.color || '#000000',
+        light: '#FFFFFF'
+      },
+      width: 120,
+      margin: 1
+    })
+    qrCodeData.value = qrDataURL
   } finally {
     isGeneratingQR.value = false
   }
@@ -160,84 +136,102 @@ async function handleReRecord(): Promise<void> {
 
 // 处理一键下载视频
 async function handleDownloadVideo(): Promise<void> {
-  try {
-    let videoFile: globalThis.File | null = null
+  let videoFile: globalThis.File | null = null
 
-    if (props.video) {
-      videoFile = props.video
-    } else if (currentRecording.value?.videoUrl) {
-      try {
-        const resp = await fetch(videoSrc.value)
-        const blob = await resp.blob()
-        videoFile = new globalThis.File([blob], `${currentRecording.value.id}.mp4`, { type: blob.type || 'video/mp4' })
-      } catch {
-        console.error('获取视频文件失败')
-        return
-      }
-    }
-
-    if (!videoFile) {
-      console.error('没有可下载的视频文件')
-      return
-    }
-
-    // 创建下载链接
-    const url = URL.createObjectURL(videoFile)
-    createdObjectUrls.add(url)
-
-    // 创建临时下载链接并触发下载
-    const link = document.createElement('a')
-    link.href = url
-    link.download = videoFile.name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  } catch (error) {
-    console.error('下载视频失败:', error)
+  if (props.video) {
+    videoFile = props.video
+  } else if (currentRecording.value?.videoUrl) {
+    const resp = await fetch(videoSrc.value)
+    const blob = await resp.blob()
+    videoFile = new globalThis.File([blob], `${currentRecording.value.id}.mp4`, { type: blob.type || 'video/mp4' })
   }
+
+  if (!videoFile) {
+    throw new DefaultException({
+      en: 'No video file available for download',
+      zh: '没有可下载的视频文件'
+    })
+  }
+
+  // 创建下载链接
+  const url = createUrl(videoFile)
+
+  // 创建临时下载链接并触发下载
+  const link = document.createElement('a')
+  link.href = url
+  link.download = videoFile.name
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
+
+// 使用 useMessageHandle 包装的下载处理函数
+const handleDownloadClick = useMessageHandle(
+  handleDownloadVideo,
+  {
+    en: 'Failed to download video',
+    zh: '下载视频失败'
+  },
+  {
+    en: 'Video downloaded successfully',
+    zh: '视频下载成功'
+  }
+)
 
 // 监听弹窗显示状态
 watch(
   () => props.visible,
-  (newVisible) => {
+  async (newVisible) => {
     if (newVisible) {
       // 重置状态
       jumpUrl.value = ''
       qrCodeData.value = ''
 
-      // 立即更新视频源（优先使用 props.video）
-      updateVideoSrc()
+      try {
+        // 立即更新视频源（优先使用 props.video）
+        await updateVideoSrc()
 
-      // 加载录制数据（用于分享参数）
-      loadRecordingData()
-
-      // 等待DOM更新后，如果有选择的平台则生成二维码
-      nextTick(() => {
-        if (selectedPlatform.value) {
-          generateShareQRCode()
-        }
-      })
+        // 加载录制数据（用于分享参数）
+        await loadRecordingData()
+      } catch (error) {
+        // 这些是初始化错误，记录但不抛出，避免影响弹窗显示
+        console.error('初始化视频数据失败:', error)
+      }
     }
   }
+)
+
+// 监听平台选择变化，自动生成二维码
+watch(
+  selectedPlatform,
+  async (newPlatform) => {
+    if (newPlatform != null && props.visible) {
+      try {
+        // 只有在弹窗显示且有选择平台时才生成二维码
+        await generateShareQRCode()
+      } catch (error) {
+        // 二维码生成失败，记录错误但不影响其他功能
+        console.error('生成分享二维码失败:', error)
+        qrCodeData.value = ''
+      }
+    }
+  },
+  { immediate: true }
 )
 
 // 监听 video prop 变化
 watch(
   () => props.video,
-  () => {
-    updateVideoSrc()
+  async () => {
+    try {
+      await updateVideoSrc()
+    } catch (error) {
+      // 视频源更新失败，记录错误但不影响其他功能
+      console.error('更新视频源失败:', error)
+      videoSrc.value = ''
+    }
   }
 )
-
-// 处理视频加载开始
-function handleVideoLoadStart(event: Event) {
-  const video = event.target as HTMLVideoElement
-  if (video.src.startsWith('blob:') && props.video) {
-    // 如果是通过 createObjectURL 创建的 URL，添加到清理列表
-    createdObjectUrls.add(video.src)
-  }
-}
 </script>
 
 <template>
@@ -251,7 +245,7 @@ function handleVideoLoadStart(event: Event) {
         <div class="share-main">
           <div class="video-section">
             <div class="video-preview">
-              <video v-if="videoSrc" :src="videoSrc" controls class="video-player" @loadstart="handleVideoLoadStart">
+              <video v-if="videoSrc" :src="videoSrc" controls class="video-player">
                 您的浏览器不支持视频播放
               </video>
               <div v-else class="video-placeholder">
@@ -291,7 +285,12 @@ function handleVideoLoadStart(event: Event) {
                 </div>
               </div>
               <div class="action-buttons">
-                <button class="download-btn" :disabled="!videoSrc" @click="handleDownloadVideo">
+                <button 
+                  class="download-btn" 
+                  :disabled="!videoSrc" 
+                  :loading="handleDownloadClick.isLoading.value"
+                  @click="handleDownloadClick.fn"
+                >
                   {{ $t({ en: 'Download Video', zh: '下载视频' }) }}
                 </button>
               </div>
