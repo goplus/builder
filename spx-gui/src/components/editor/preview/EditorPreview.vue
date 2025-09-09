@@ -68,6 +68,7 @@
     <div class="main">
       <div class="stage-viewer-container">
         <StageViewer />
+        <UIButton class="edit-map-button" @click="handleEditMap">MAP</UIButton>
         <div v-show="running.mode === 'debug'" class="in-place-runner">
           <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
         </div>
@@ -81,10 +82,11 @@ import { ref, computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
 import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
@@ -151,6 +153,11 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
   en: 'Failed to rerun project',
   zh: '重新运行项目失败'
 })
+
+const invokeMapEditor = useModal(MapEditorModal)
+function handleEditMap() {
+  return invokeMapEditor({ project: editorCtx.project })
+}
 </script>
 
 <style scoped lang="scss">
@@ -188,6 +195,13 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
     height: 100%;
     border-radius: var(--ui-border-radius-1);
     overflow: hidden;
+
+    .edit-map-button {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      z-index: 50;
+    }
   }
 }
 
