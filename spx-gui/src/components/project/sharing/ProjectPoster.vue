@@ -21,12 +21,6 @@ const uploadedImgUrl = ref<string | null>(null)
 watch(
   () => props.img,
   (newImg, _, onCleanup) => {
-    // Clean up previous URL
-    if (uploadedImgUrl.value) {
-      URL.revokeObjectURL(uploadedImgUrl.value)
-      uploadedImgUrl.value = null
-    }
-
     // Create new URL
     if (newImg != null) {
       uploadedImgUrl.value = URL.createObjectURL(newImg)
@@ -37,6 +31,8 @@ watch(
           URL.revokeObjectURL(uploadedImgUrl.value)
         }
       })
+    } else {
+      uploadedImgUrl.value = null
     }
   },
   { immediate: true }
