@@ -45,7 +45,6 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
-import { getProject } from '@/apis/project'
 // import { SocialPlatformConfigs } from '@/components/project/sharing/platform-share'
 // import { getProjectShareRoute } from '@/router'
 import { useModal, useMessage } from '@/components/ui'
