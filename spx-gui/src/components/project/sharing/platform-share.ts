@@ -1,4 +1,3 @@
-import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
@@ -42,6 +41,7 @@ export interface PlatformConfig {
   shareType: ShareType
   basicInfo: BasicInfo
   shareFunction: ShareFunction
+  initShareInfo: Function
 }
 /**
  * 平台跳转链接的示例，方便后续接口使用
@@ -86,6 +86,17 @@ class QQPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo =  (url: string, title?: string, desc?: string ) => {
+    if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+      window.mqq.invoke('data', 'setShareInfo', {
+        share_url: url,
+        title: title || 'XBulider',
+        desc: desc || 'XBuilder分享你的创意作品',
+        image_url: 'https://x.qiniu.com//logo.png'
+      })
+    }
+  }
 }
 
 /**
@@ -116,6 +127,10 @@ class WeChatPlatform implements PlatformConfig {
     }
     // 不实现 shareVideo，因为不支持
   }
+
+  initShareInfo = (url: string, title?: string, desc?: string) => {
+    return
+  }
 }
 class DouyinPlatform implements PlatformConfig {
   basicInfo = {
@@ -138,6 +153,10 @@ class DouyinPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo = () => {
+    return
+  }
 }
 
 class XiaohongshuPlatform implements PlatformConfig {
@@ -157,6 +176,10 @@ class XiaohongshuPlatform implements PlatformConfig {
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
     }
+  }
+
+  initShareInfo = () => {
+    return
   }
 }
 
@@ -178,6 +201,10 @@ class BilibiliPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo = () => {
+    return
+  }
 }
 
 // 导出平台配置数组 - 包含完整的平台信息
@@ -188,3 +215,8 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
   new XiaohongshuPlatform(),
   new BilibiliPlatform()
 ]
+
+export const initializeShareConfig = (url: string, title?: string, desc?: string) => {
+  new QQPlatform().initShareInfo(url, title, desc)
+  new WeChatPlatform().initShareInfo(url, title, desc)
+}
