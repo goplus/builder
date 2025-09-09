@@ -16,7 +16,7 @@ const props = defineProps<{
   queryRet: QueryRet<T>
   height?: number
   /** Type of the list content */
-  contentType?: 'project'
+  contentType?: 'project' | 'recording'
 }>()
 
 const isEmpty = computed(() => {
@@ -45,6 +45,9 @@ const slots = useSlots()
     <UIEmpty v-else size="large" :style="extraStyle" :img="contentType === 'project' ? 'game' : undefined">
       <template v-if="contentType === 'project'">
         {{ $t({ en: 'No projects', zh: '没有项目' }) }}
+      </template>
+      <template v-else-if="contentType === 'recording'">
+        {{ $t({ en: 'No recordings', zh: '没有录屏' }) }}
       </template>
       <template v-else>
         {{ $t({ en: 'No data', zh: '没有结果' }) }}
