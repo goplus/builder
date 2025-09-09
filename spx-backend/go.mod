@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/gorm v1.30.3
+	gorm.io/gorm v1.30.4
 )
 
 require (
