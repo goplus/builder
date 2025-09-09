@@ -129,6 +129,8 @@ class WeChatPlatform implements PlatformConfig {
   }
 
   initShareInfo = (url: string, title?: string, desc?: string) => {
+    // TODO微信平台设置分享信息
+    void url, title, desc
     return
   }
 }
@@ -155,6 +157,7 @@ class DouyinPlatform implements PlatformConfig {
   }
 
   initShareInfo = () => {
+    // 抖音平台暂不支持设置分享信息
     return
   }
 }
@@ -179,6 +182,7 @@ class XiaohongshuPlatform implements PlatformConfig {
   }
 
   initShareInfo = () => {
+    // 小红书平台暂不支持设置分享信息
     return
   }
 }
@@ -203,6 +207,7 @@ class BilibiliPlatform implements PlatformConfig {
   }
 
   initShareInfo = () => {
+    // 哔哩哔哩平台暂不支持设置分享信息
     return
   }
 }
