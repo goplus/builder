@@ -3,13 +3,20 @@ import type {
   Visibility,
 } from "../../../spx-gui/src/apis/common/index.ts";
 import { type ProjectRelease } from "../../../spx-gui/src/apis/project-release.ts";
-
+/**
+ * Fields：
+ * - label: The text displayed on the key.
+ * - posX: The horizontal coordinate of the left top corner of the key (pixels).
+ * - posY: The vertical coordinate of the left top corner of the key (pixels).
+ * - btnWidth: The width of the key (pixels).
+ * - btnHeight: The height of the key (pixels).
+ */
 export type KeyBtn = {
-  value: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  label: string;
+  posX: number;
+  posY: number;
+  btnWidth: number;
+  btnHeight: number;
 };
 export type MobileKeyboardZoneToKeyMapping = KeyBtn[];
 /**

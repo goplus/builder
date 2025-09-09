@@ -32,32 +32,44 @@ export declare function KeyboardEditor(
  *
  * ## Props:
  * - `ZoneToKeyMapping`: keyboard zone to key mapping configuration
+ * - `systemKeyConfig`: Optional array to customize system keys.If omitted, no system keys will be rendered.
  *
  * ## Slots:
  * - `gameView`: Should contain ProjectRunner component
  *
  * use:
  * ```vue
- * <MobileKeyboardView :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }">
+ * <MobileKeyboardView
+ * :ZoneToKeyMapping="{ label: 'Q', posX: 0, posY: 0, btnWidth: 50, btnHeight: 50 }"
+ * :systemKeyConfig="[{ textEn: 'Rerun', textZh: '重新运行', action: 'rerun' }]">
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
+/**
+ * Fields:
+ * - textEn: English text label for the key. Required.
+ * - textZh: Chinese text label for the key. Required.
+ * - icon: Optional icon for the key .
+ * - loading: Optional loading state .
+ * - disabled: Optional disabled state (e.g., key is visible but not clickable).
+ * - action: Action identifier triggered when the key is pressed. Required.
+ */
 type SystemKeyType = {
   textEn: string;
   textZh: string;
-  icon: IconType;
-  loading: boolean;
-  disabled: boolean;
+  icon?: IconType;
+  loading?: boolean;
+  disabled?: boolean;
   action: string;
 };
 
 export declare function MobileKeyboardView(
   props: {
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-    systemKeyConfig: SystemKeyType[];
+    systemKeyConfig?: SystemKeyType[];
   },
   emits: {
     handleSysBtn: (action: string) => void;

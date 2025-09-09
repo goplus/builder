@@ -42,9 +42,16 @@ See API design in [`module_ProjectRunner.ts`](./module_ProjectRunner.ts).
 See API design in [`module_Recording.ts`](./module_Recording.ts).
 
 ### MobileKeyboard
+
 移动键盘的组件，负责键盘的展示与编辑逻辑，与 Project 绑定。
 
 See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
+
+### MobilekeyboardUsageAnalyzer
+
+用来识别 Project 项目中用到了那些键盘按键，提供给 MobileKeyboard 使用
+
+See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboardUsageAnalyzer.ts).
 
 ### Recording APIs
 
@@ -95,10 +102,13 @@ graph TB
     subgraph FunctionLayer["功能模块层"]
         VirtualKeyboard["`**VirtualKeyboard**
         虚拟键盘模块`"]
-        
+
+        MobilekeyboardUsageAnalyzer["`**MobilekeyboardUsageAnalyzer**
+        按键识别功能`"]
+
         ProjectRunner["`**ProjectRunner**
         游戏引擎接口模块`"]
-        
+
         Recording["`**Recording**
         录屏展示模块`"]
     end
@@ -107,7 +117,7 @@ graph TB
     subgraph APILayer["API 服务层"]
         RecordingAPIs["`**Recording APIs**
         录屏管理服务`"]
-        
+
         ProjectAPIs["`**Project APIs**
         项目管理服务`"]
     end
@@ -116,10 +126,10 @@ graph TB
     subgraph ShareLayer["分享界面层"]
         DirectSharing["`**DirectSharing**
         直接分享弹窗`"]
-        
+
         ProjectRecordingSharing["`**ProjectRecordingSharing**
         录屏分享弹窗`"]
-        
+
         ScreenShotSharing["`**ScreenShotSharing**
         截屏分享弹窗`"]
     end
@@ -128,7 +138,7 @@ graph TB
     subgraph PlatformLayer["平台集成层"]
         PlatformSelector["`**PlatformSelector**
         平台选择组件`"]
-        
+
         PlatformShare["`**PlatformShare**
         第三方平台集成`"]
     end
@@ -150,6 +160,7 @@ graph TB
     %% 功能模块间连接
     VirtualKeyboard --> ProjectRunner
     VirtualKeyboard --> ProjectAPIs
+    VirtualKeyboard --> MobilekeyboardUsageAnalyzer
 
     %% 分享流程连接
     DirectSharing --> PlatformSelector
