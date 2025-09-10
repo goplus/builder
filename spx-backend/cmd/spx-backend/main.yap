@@ -78,8 +78,8 @@ if err != nil {
 
 // Start server.
 
-port := cfg.Server.GetPort()
-logger.Printf("listening to %s", port)
+addr := cfg.Server.GetServerAddr()
+logger.Printf("listening to %s", addr)
 
 h := handler(
 	authorizer.Middleware(),
@@ -87,7 +87,7 @@ h := handler(
 	NewCORSMiddleware(),
 	NewReqIDMiddleware(),
 )
-server := &http.Server{Addr: port, Handler: h}
+server := &http.Server{Addr: addr, Handler: h}
 
 stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 defer stop()

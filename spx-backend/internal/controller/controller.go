@@ -42,7 +42,7 @@ type Controller struct {
 	aiInteraction       *aiinteraction.AIInteraction
 	aigc                *aigc.AigcClient
 	svggen              *svggen.ServiceManager
-	recommendationCache *RecommendationCacheService
+	recommendationCache Cache
 	algorithmService    *AlgorithmService
 }
 
@@ -80,9 +80,13 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 	svggenManager.SetCopilot(cpt)
 
 	// Initialize recommendation cache service
-	var recommendationCache *RecommendationCacheService
+	var recommendationCache Cache
 	if redisClient != nil {
+		// Redis cache with automatic fallback to memory cache
 		recommendationCache = NewRecommendationCacheService(redisClient)
+	} else {
+		// No Redis configured, use memory cache only
+		recommendationCache = NewMemoryCache()
 	}
 
 	// Initialize algorithm service

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -185,13 +184,6 @@ type RecommendationCache struct {
 	Timestamp       time.Time
 }
 
-// Deprecated: These global variables are kept for backward compatibility
-// but are no longer used. Redis cache is now used instead.
-var (
-	recommendationCache = make(map[string]*RecommendationCache)
-	cacheMutex         = sync.RWMutex{}
-	cacheExpiry        = 24 * time.Hour // Cache expires after 24 hours
-)
 
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
 // PERFORMANCE OPTIMIZATION: This method now performs AI prompt analysis only once per request
@@ -267,14 +259,9 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	}
 
 	// Cache recommendation result for feedback tracking
-	if ctrl.recommendationCache != nil {
-		err := ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
-		if err != nil {
-			logger.Printf("Failed to cache recommendation: %v", err)
-		}
-	} else {
-		// Fallback to memory cache if Redis is not available
-		cacheRecommendationResult(queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	err = ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	if err != nil {
+		logger.Printf("Failed to cache recommendation: %v", err)
 	}
 
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
@@ -405,51 +392,6 @@ func (ctrl *Controller) getAlgorithmServiceURL() string {
 	return ctrl.algorithmService.GetEndpoint()
 }
 
-// cacheRecommendationResult stores recommendation result for feedback tracking
-func cacheRecommendationResult(queryID, query string, recommendedPics []int64) {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-	
-	recommendationCache[queryID] = &RecommendationCache{
-		QueryID:         queryID,
-		Query:           query,
-		RecommendedPics: recommendedPics,
-		Timestamp:       time.Now(),
-	}
-}
-
-// getCachedRecommendation retrieves cached recommendation result by query ID
-func getCachedRecommendation(queryID string) (*RecommendationCache, bool) {
-	cacheMutex.RLock()
-	defer cacheMutex.RUnlock()
-	
-	cached, exists := recommendationCache[queryID]
-	if !exists {
-		return nil, false
-	}
-	
-	// Check if cache has expired
-	if time.Since(cached.Timestamp) > cacheExpiry {
-		// Remove expired entry (cleanup)
-		delete(recommendationCache, queryID)
-		return nil, false
-	}
-	
-	return cached, true
-}
-
-// cleanupExpiredCache removes expired cache entries (should be called periodically)
-func cleanupExpiredCache() {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-	
-	now := time.Now()
-	for queryID, cached := range recommendationCache {
-		if now.Sub(cached.Timestamp) > cacheExpiry {
-			delete(recommendationCache, queryID)
-		}
-	}
-}
 
 
 // dualPathSearchOptimized implements optimized dual-path search using cached prompt analysis.
@@ -688,23 +630,10 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 	logger.Printf("Submitting image feedback - QueryID: %s, ChosenPic: %d", params.QueryID, params.ChosenPic)
 	
 	// Retrieve cached recommendation result
-	var cached *RecommendationCache
-	var err error
-	
-	if ctrl.recommendationCache != nil {
-		cached, err = ctrl.recommendationCache.GetRecommendation(ctx, params.QueryID)
-		if err != nil {
-			logger.Printf("Cached recommendation not found for QueryID: %s - %v", params.QueryID, err)
-			return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
-		}
-	} else {
-		// Fallback to memory cache if Redis is not available
-		var exists bool
-		cached, exists = getCachedRecommendation(params.QueryID)
-		if !exists {
-			logger.Printf("Cached recommendation not found for QueryID: %s", params.QueryID)
-			return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
-		}
+	cached, err := ctrl.recommendationCache.GetRecommendation(ctx, params.QueryID)
+	if err != nil {
+		logger.Printf("Cached recommendation not found for QueryID: %s - %v", params.QueryID, err)
+		return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
 	}
 	
 	// Verify chosen pic is in the recommended list
@@ -730,29 +659,27 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 	}
 	
 	// Check idempotency - ensure feedback hasn't already been submitted
-	if ctrl.recommendationCache != nil {
-		// First check if feedback was already submitted
-		submitted, existingChoice, err := ctrl.recommendationCache.GetFeedbackStatus(ctx, params.QueryID)
-		if err != nil {
-			logger.Printf("Failed to check feedback status: %v", err)
-			return fmt.Errorf("failed to check feedback status: %w", err)
-		}
-		if submitted {
-			logger.Printf("Feedback already submitted for QueryID: %s (previous choice: %d)", params.QueryID, existingChoice)
-			return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
-		}
-		
-		// Mark as submitted (atomic operation)
-		success, err := ctrl.recommendationCache.MarkFeedbackSubmitted(ctx, params.QueryID, params.ChosenPic)
-		if err != nil {
-			logger.Printf("Failed to mark feedback as submitted: %v", err)
-			return fmt.Errorf("failed to process feedback: %w", err)
-		}
-		if !success {
-			// Another request submitted feedback between our check and mark
-			logger.Printf("Feedback was submitted by another request for QueryID: %s", params.QueryID)
-			return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
-		}
+	// First check if feedback was already submitted
+	submitted, existingChoice, err := ctrl.recommendationCache.GetFeedbackStatus(ctx, params.QueryID)
+	if err != nil {
+		logger.Printf("Failed to check feedback status: %v", err)
+		return fmt.Errorf("failed to check feedback status: %w", err)
+	}
+	if submitted {
+		logger.Printf("Feedback already submitted for QueryID: %s (previous choice: %d)", params.QueryID, existingChoice)
+		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
+	}
+	
+	// Mark as submitted (atomic operation)
+	success, err := ctrl.recommendationCache.MarkFeedbackSubmitted(ctx, params.QueryID, params.ChosenPic)
+	if err != nil {
+		logger.Printf("Failed to mark feedback as submitted: %v", err)
+		return fmt.Errorf("failed to process feedback: %w", err)
+	}
+	if !success {
+		// Another request submitted feedback between our check and mark
+		logger.Printf("Feedback was submitted by another request for QueryID: %s", params.QueryID)
+		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
 	}
 	
 	// Call algorithm service feedback endpoint
