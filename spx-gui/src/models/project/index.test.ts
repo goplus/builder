@@ -143,4 +143,158 @@ describe('Project', () => {
     project.moveSound(2, 0)
     expect(project.sounds.map((s) => s.name)).toEqual(['sound3', 'sound2', 'sound1'])
   })
+
+  describe('getUsedKeys', () => {
+    it('should extract keys from stage code', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      onKey KeyA => {
+        say "A pressed"
+      }
+      
+      onKey KeySpace => {
+        jump()
+      }
+      
+      if isKeyPressed(KeyW) {
+        moveUp()
+      }
+    `)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(expect.arrayContaining(['KeyA', 'KeySpace', 'KeyW']))
+      expect(usedKeys).toHaveLength(3)
+    })
+
+    it('should extract keys from sprite code', () => {
+      const project = new Project()
+      const sprite = new Sprite('TestSprite')
+
+      sprite.setCode(`
+      onKey [KeyUp, KeyDown, KeyLeft, KeyRight] => {
+        move(10)
+      }
+    `)
+
+      project.addSprite(sprite)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(expect.arrayContaining(['KeyUp', 'KeyDown', 'KeyLeft', 'KeyRight']))
+      expect(usedKeys).toHaveLength(4)
+    })
+
+    it('should extract keys from both stage and sprite code', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      onKey KeyEnter => {
+        startGame()
+      }
+    `)
+
+      const sprite1 = new Sprite('Player')
+      sprite1.setCode(`
+      onKey KeyA => { turnLeft() }
+      onKey KeyD => { turnRight() }
+    `)
+
+      const sprite2 = new Sprite('Enemy')
+      sprite2.setCode(`
+      if isKeyPressed(KeySpace) {
+        shoot()
+      }
+    `)
+
+      project.addSprite(sprite1)
+      project.addSprite(sprite2)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(expect.arrayContaining(['KeyEnter', 'KeyA', 'KeyD', 'KeySpace']))
+      expect(usedKeys).toHaveLength(4)
+    })
+
+    it('should handle duplicate keys and return unique list', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      onKey KeyA => { action1() }
+    `)
+
+      const sprite = new Sprite('TestSprite')
+      sprite.setCode(`
+      onKey KeyA => { action2() }
+      if isKeyPressed(KeyA) { action3() }
+    `)
+
+      project.addSprite(sprite)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(['KeyA'])
+      expect(usedKeys).toHaveLength(1)
+    })
+
+    it('should return empty array when no keys are used', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      onStart => {
+        say "Hello World"
+      }
+    `)
+
+      const sprite = new Sprite('TestSprite')
+      sprite.setCode(`
+      onClick => {
+        move(10)
+      }
+    `)
+
+      project.addSprite(sprite)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual([])
+      expect(usedKeys).toHaveLength(0)
+    })
+
+    it('should ignore invalid key names', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      onKey KeyA => { validKey() }
+      onKey InvalidKey => { shouldBeIgnored() }
+      onKey KeyZ => { anotherValidKey() }
+    `)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(expect.arrayContaining(['KeyA', 'KeyZ']))
+      expect(usedKeys).not.toContain('InvalidKey')
+      expect(usedKeys).toHaveLength(2)
+    })
+
+    it('should handle complex code patterns', () => {
+      const project = new Project()
+
+      project.stage.setCode(`
+      var moveSpeed = 5
+      
+      onKey [KeyW, KeyA, KeyS, KeyD] => {
+        handleMovement()
+      }
+      
+      func checkInput() {
+        if isKeyPressed(KeyShift) {
+          speed = 10
+        }
+        if isKeyPressed(KeyControl) {
+          speed = 2
+        }
+      }
+    `)
+
+      const usedKeys = project.getUsedKeys()
+      expect(usedKeys).toEqual(expect.arrayContaining(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyShift', 'KeyControl']))
+      expect(usedKeys).toHaveLength(6)
+    })
+  })
 })
