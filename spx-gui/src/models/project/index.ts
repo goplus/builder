@@ -26,6 +26,7 @@ import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
+import { nameKeyMap } from '@/utils/spx'
 
 export type { Action } from './history'
 
@@ -208,6 +209,72 @@ export class Project extends Disposable {
       default:
         throw new Error(`unsupported resource type: ${id.type}`)
     }
+  }
+  /**
+   * Analyze keys used in the project
+   * @returns Array of key names used in the project, e.g. ['KeyA', 'KeySpace', 'KeyW']
+   */
+  getUsedKeys(): string[] {
+    const usedKeys = new Set<string>()
+
+    // 1. Analyze stage code
+    if (this.stage.code) {
+      const stageKeys = this.extractKeysFromCode(this.stage.code)
+      stageKeys.forEach((key) => usedKeys.add(key))
+    }
+
+    // 2. Analyze all sprite code
+    for (const sprite of this.sprites) {
+      if (sprite.code) {
+        const spriteKeys = this.extractKeysFromCode(sprite.code)
+        spriteKeys.forEach((key) => usedKeys.add(key))
+      }
+    }
+
+    return Array.from(usedKeys)
+  }
+
+  /**
+   * Extract keys from a single code file
+   * @param code SPX code content
+   * @returns Array of keys used in the code
+   */
+  private extractKeysFromCode(code: string): string[] {
+    const keys: string[] = []
+
+    // 1. Match onKey KeyA => { ... }
+    const onKeyMatches = code.matchAll(/onKey\s+(Key[A-Za-z0-9]+)/g)
+    for (const match of onKeyMatches) {
+      keys.push(match[1])
+    }
+
+    // 2. Match onKey [KeyA, KeyB] => { ... }
+    const onKeyArrayMatches = code.matchAll(/onKey\s+\[([\s\S]*?)\]/g)
+    for (const match of onKeyArrayMatches) {
+      const keyList = match[1]
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k.startsWith('Key'))
+      keys.push(...keyList)
+    }
+
+    // 3. Match isKeyPressed(KeyA)
+    const keyPressedMatches = code.matchAll(/isKeyPressed\s*\(\s*(Key[A-Za-z0-9]+)\s*\)/g)
+    for (const match of keyPressedMatches) {
+      keys.push(match[1])
+    }
+
+    // 4. Filter and validate
+    return keys.filter((key) => this.isValidKeyName(key))
+  }
+
+  /**
+   * Validate if a key name is valid
+   * @param keyName Key name
+   * @returns Whether it is a valid key
+   */
+  private isValidKeyName(keyName: string): boolean {
+    return nameKeyMap.has(keyName)
   }
 
   setVisibility(visibility: Visibility) {
