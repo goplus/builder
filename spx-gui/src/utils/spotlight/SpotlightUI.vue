@@ -21,6 +21,24 @@ type Position = {
   half: 'lower' | 'upper'
 }
 
+function getPointAlongDirection(x1: number, y1: number, x2: number, y2: number, distance: number): Position {
+  const len = Math.hypot(x2 - x1, y2 - y1)
+  if (len === 0) {
+    return {
+      x: x1,
+      y: y1,
+      half: 'lower'
+    }
+  }
+  const ux = (x2 - x1) / len
+  const uy = (y2 - y1) / len
+  return {
+    x: x2 - ux * distance,
+    y: y2 - uy * distance,
+    half: 'lower'
+  }
+}
+
 function getDefaultPosition(): Position {
   return {
     x: window.innerWidth / 2,
@@ -213,9 +231,19 @@ const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
-    if (!value) {
-      positionRef.value = getDefaultPosition()
-      return
+    if (!value) return
+
+    // After the spotlight is concealed, if it is revealed again,
+    // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
+    if (!spotlightRef.value) {
+      // center position
+      const center = getDefaultPosition()
+      const { x: x1, y: y1 } = center
+      // reveal position
+      const { x: x2, y: y2, width: revealWidth } = value.el.getBoundingClientRect()
+      const len = Math.hypot(x2 - x1, y2 - y1)
+      // If the distance is too short, animate from center to reveal
+      positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
       attachElement(value.el)

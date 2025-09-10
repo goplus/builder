@@ -8,6 +8,7 @@ export type SpotlightItem = {
   el: HTMLElement
   timer: NodeJS.Timeout
   tips: string
+  dispose: () => void
 }
 
 export type RevealEvent = {
@@ -34,17 +35,25 @@ export class Spotlight extends Emitter<{ onReveal: RevealEvent }> {
 
   reveal(el: HTMLElement, tips = '') {
     this.conceal() // Clear any previous spotlight
+
+    const mouseEnterHandler = () => this.conceal()
+    const timer = this.createTimeout()
     this.spotlightItem.value = {
-      timer: this.createTimeout(),
+      timer,
       tips,
-      el
+      el,
+      dispose: () => {
+        clearTimeout(timer)
+        el.removeEventListener('mouseenter', mouseEnterHandler)
+      }
     }
+    el.addEventListener('mouseenter', mouseEnterHandler, { once: true })
   }
 
   conceal() {
     const prevItem = this.spotlightItem.value
     if (prevItem) {
-      clearTimeout(prevItem.timer)
+      prevItem.dispose()
     }
     this.spotlightItem.value = null
   }
