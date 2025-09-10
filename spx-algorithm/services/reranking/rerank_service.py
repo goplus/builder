@@ -340,12 +340,15 @@ class RerankService:
             # 提取所有唯一的图片ID
             pic_ids = set()
             for feedback in feedback_list:
-                # 从反馈数据的candidates中提取所有图片ID
-                if hasattr(feedback, 'candidates') and feedback.candidates:
-                    for candidate in feedback.candidates:
-                        pic_id = candidate.get('id') or candidate.get('pic_id')
-                        if pic_id:
-                            pic_ids.add(pic_id)
+                # 从反馈数据中提取推荐图片ID列表
+                recommended_pics = feedback.get_recommended_pics()  # 返回 [pic_id_1, pic_id_2, pic_id_3, pic_id_4]
+                for pic_id in recommended_pics:
+                    if pic_id:  # 确保pic_id不为空或0
+                        pic_ids.add(pic_id)
+                
+                # 同时也添加用户选择的图片ID（虽然通常已经包含在推荐列表中）
+                if feedback.choose_id:
+                    pic_ids.add(feedback.choose_id)
             
             if not pic_ids:
                 logger.warning("从反馈数据中未能提取到任何图片ID")
