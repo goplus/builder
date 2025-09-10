@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
@@ -8,6 +8,7 @@ import QRCode from 'qrcode'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
 import { useObjectUrlManager } from '@/utils/object-url'
+import { getProjectPageRoute } from '@/router'
 
 const props = defineProps<{
   screenshot: File
@@ -32,6 +33,11 @@ const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
 const isGeneratingQR = ref(false)
 
+// Project page URL
+const projectPageUrl = computed(() => {
+  return getProjectPageRoute(props.projectData.owner, props.projectData.name)
+})
+
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
@@ -40,7 +46,7 @@ function handlePlatformChange(platform: PlatformConfig) {
 
 // Get current project URL
 function getCurrentProjectUrl(): string {
-  return window.location.origin + window.location.pathname
+  return window.location.origin + projectPageUrl.value
 }
 
 // Create poster file
