@@ -14,6 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	insecureAvatarDomains = []string{
+		"http://thirdqq.qlogo.cn",
+	}
+)
+
 // client defines the interface for Casdoor client operations.
 type client interface {
 	ParseJwtToken(token string) (*casdoorsdk.Claims, error)
@@ -130,8 +136,10 @@ func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPla
 
 // fixAvatar fixes the avatar URL by replacing http with https.
 func fixAvatar(avatar string) string {
-	if strings.HasPrefix(avatar, "http://thirdqq.qlogo.cn") {
-		return strings.Replace(avatar, "http://", "https://", 1)
+	for _, domain := range insecureAvatarDomains {
+		if strings.HasPrefix(avatar, domain) {
+			return strings.Replace(avatar, "http://", "https://", 1)
+		}
 	}
 	return avatar
 }
