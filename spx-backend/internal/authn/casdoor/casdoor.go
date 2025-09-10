@@ -53,7 +53,7 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserAttrs{
 		Username:    claims.Name,
 		DisplayName: claims.DisplayName,
-		Avatar:      claims.Avatar,
+		Avatar:      fixAvatar(claims.Avatar),
 		Roles:       nil,
 		Plan:        model.UserPlanFree,
 	})
@@ -126,4 +126,12 @@ func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPla
 		}
 	}
 	return model.UserPlanFree
+}
+
+// fixAvatar fixes the avatar URL by replacing http with https.
+func fixAvatar(avatar string) string {
+	if strings.HasPrefix(avatar, "http://thirdqq.qlogo.cn") {
+		return strings.Replace(avatar, "http://", "https://", 1)
+	}
+	return avatar
 }
