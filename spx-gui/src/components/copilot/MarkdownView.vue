@@ -53,8 +53,8 @@ const components = computed(() => getComponents(copilot))
   flex-direction: column;
   gap: 1em;
 
-  font-size: 12px;
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.7;
   color: inherit;
 
   :deep(h1, h2, h3, h4, h5, h6) {
@@ -128,8 +128,8 @@ const components = computed(() => getComponents(copilot))
   }
   :deep(:not(pre) > code) {
     // TODO: keep consistent with component `UICode`
-    font-size: 0.83em;
-    line-height: 1.6;
+    font-size: 0.92em;
+    line-height: 2;
     padding: 2px 4px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-500);

@@ -35,7 +35,6 @@ import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
-import logoSrc from './logo.png'
 
 const copilot = useCopilot()
 
@@ -179,6 +178,8 @@ const isPanelOutOfBounds = ref(false)
 const triggerState = ref(panelStatePosition.value.state)
 const triggerVisibility = ref(TriggerVisibility.None)
 
+const triggerTooltipDisabled = computed(() => !triggerVisibility.value || panelStatePosition.value.state === State.Move)
+
 function updatePanelClampedPosition() {
   const { panelW, panelH } = getCurrentSizes()
   if (!panelW || !panelH) return
@@ -291,12 +292,17 @@ useDraggable(triggerRef, {
       bottom: (position.bottom -= offset.y)
     }
     const { right } = newPosition
+    let statePosition = newPosition
     if (triggerVisibility.value && (right + panelW < triggerSnapThreshold || windowW - right < triggerSnapThreshold)) {
-      panelStatePosition.value = getTriggerClampedPosition(newPosition)
+      statePosition = getTriggerClampedPosition(newPosition)
     } else {
-      panelStatePosition.value = getDirection(newPosition, panelW)
+      statePosition = getDirection(newPosition, panelW)
       triggerVisibility.value = TriggerVisibility.None
       updatePanelOutOfBoundsStatus(position)
+    }
+    panelStatePosition.value = {
+      ...statePosition,
+      state: State.Move
     }
   },
   onDragEnd
@@ -333,23 +339,35 @@ const handleQuickInputClick = useMessageHandle(
     :style="{ right: `${panelStatePosition.right}px`, bottom: `${panelStatePosition.bottom}px` }"
   >
     <div class="body" :class="[triggerState]">
-      <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
-        <div class="copilot-trigger-content">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
-            <path
-              d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165C9.34402 14.6165 9.34772 14.6165 9.35143 14.6128V14.6202C9.35143 14.6202 9.34772 14.6202 9.34402 14.6202C9.33661 14.635 9.3292 14.6535 9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.20322 25.3615C9.20692 25.3726 9.21433 25.3838 9.21804 25.3949C9.22916 25.4208 9.24398 25.4468 9.25509 25.469L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z"
-              fill="white"
-            />
-            <defs>
-              <linearGradient id="paint0_linear_931_4390" x1="20" y1="0" x2="20" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#9A77FF" />
-                <stop offset="1" stop-color="#735FFA" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-      </div>
+      <UITooltip placement="right" :disabled="triggerTooltipDisabled">
+        <template #trigger>
+          <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
+            <div class="copilot-trigger-content">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
+                <path
+                  d="M27.1326 16.4061C27.6217 17.2175 28.4776 17.7029 29.4224 17.7029C30.6229 17.714 31.7456 16.8507 32.005 15.6613C32.1791 14.9277 32.0383 14.1644 31.6381 13.5346C27.6773 6.67626 17.5584 5.32387 11.9784 10.9817C10.9521 11.9784 10.1369 13.0862 9.51075 14.2867H9.50704L9.43294 14.4386C9.4033 14.4979 9.36995 14.5572 9.34402 14.6165C9.34402 14.6165 9.34772 14.6165 9.35143 14.6128V14.6202C9.35143 14.6202 9.34772 14.6202 9.34402 14.6202C9.33661 14.635 9.3292 14.6535 9.32179 14.6721L9.26991 14.7795C8.6215 16.143 8.21023 17.5436 8.08055 19.1479C7.99162 20.215 8.0472 21.2784 8.23246 22.301C8.43254 23.3607 8.75119 24.3648 9.17358 25.2985L9.20322 25.3615C9.20692 25.3726 9.21433 25.3838 9.21804 25.3949C9.22916 25.4208 9.24398 25.4468 9.25509 25.469L9.32179 25.6098H9.3292C11.8858 30.7526 17.8585 33.6612 23.4867 32.3088C26.6324 31.727 32.3829 27.9589 31.916 24.4019C31.4121 22.038 28.0923 21.6378 26.9511 23.7609C26.173 24.9984 25.1022 25.8914 23.8721 26.5398C22.8939 27.014 21.812 27.2771 20.693 27.2771C20.2743 27.2771 19.8482 27.2364 19.437 27.1623C19.3517 27.1474 19.2628 27.1326 19.1887 27.1326C19.1183 27.1326 19.0664 27.1474 19.0071 27.1808C18.4588 27.492 18.355 27.5476 17.8104 27.8292L17.2138 28.1552C16.5951 28.5221 15.7318 28.9815 15.3538 28.1404V28.1293C15.2983 27.8996 15.3575 27.681 15.3872 27.5735C15.4316 27.4142 15.4761 27.2512 15.5243 27.0696C15.628 26.6806 15.7355 26.273 15.8837 25.8766C15.9541 25.695 15.9689 25.6394 15.7355 25.4208C13.831 23.6275 13.0788 21.397 13.5012 18.8071C13.7569 17.2361 14.4868 15.88 15.6725 14.7721C17.1212 13.4234 18.7885 12.7417 20.6152 12.7417C21.0932 12.7417 21.5934 12.7898 22.0973 12.8862C22.1825 12.901 22.2751 12.9195 22.3603 12.938H22.3826C24.4056 13.3827 26.0025 14.5461 27.1252 16.4024L27.1326 16.4061Z"
+                  fill="white"
+                />
+                <defs>
+                  <linearGradient
+                    id="paint0_linear_931_4390"
+                    x1="20"
+                    y1="0"
+                    x2="20"
+                    y2="40"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop class="stop-start" />
+                    <stop offset="1" class="stop-end" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </div>
+        </template>
+        <div>{{ $t({ en: 'Copilot', zh: '编程助手' }) }}</div>
+      </UITooltip>
       <div class="body-wrapper">
         <div ref="draggerRef" class="dragger">
           <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -380,13 +398,12 @@ const handleQuickInputClick = useMessageHandle(
         </template>
         <template v-else>
           <div class="placeholder">
-            <img class="logo" :src="logoSrc" alt="Copilot" />
             <h4 class="title">{{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}</h4>
             <p class="description">
               {{
                 $t({
-                  en: 'Please sign in to continue',
-                  zh: '请先登录以继续'
+                  en: 'I am your coding assistant. Sign in to let me help you learn coding',
+                  zh: '我是你的编程助手，登录后就能帮你学编程啦'
                 })
               }}
             </p>
@@ -406,12 +423,15 @@ const handleQuickInputClick = useMessageHandle(
 <style lang="scss" scoped>
 $fromColor: #72bbff;
 $toColor: #c390ff;
-$copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%);
+
+@mixin linearGradient($from, $to) {
+  background: linear-gradient(90deg, $from 0%, $to 100%);
+}
 
 .copilot-trigger {
   position: absolute;
   width: fit-content;
-  height: 64px;
+  height: 50px;
   top: 50%;
   padding: 1px;
   cursor: pointer;
@@ -419,9 +439,26 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
   pointer-events: none;
   border-radius: 16px;
   opacity: 0;
+  box-shadow: 0px 3px 18px 1px rgba(0, 0, 0, 0.1);
   transition:
     transform ease 0.4s,
     opacity ease 0.4s;
+
+  .stop-start {
+    stop-color: #9a77ff;
+  }
+  .stop-end {
+    stop-color: #735ffa;
+  }
+
+  &:hover {
+    .stop-start {
+      stop-color: #ae92ff;
+    }
+    .stop-end {
+      stop-color: #9181fb;
+    }
+  }
 
   &.visible {
     pointer-events: all;
@@ -429,8 +466,8 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
   }
 
   &.left {
+    @include linearGradient($toColor, $fromColor);
     padding-left: 0px;
-    background: $toColor;
     right: 1px;
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
@@ -444,8 +481,8 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
     }
   }
   &.right {
+    @include linearGradient($toColor, $fromColor);
     padding-right: 0px;
-    background: $fromColor;
     left: 1px;
     border-top-right-radius: 0px;
     border-bottom-right-radius: 0px;
@@ -492,7 +529,7 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
   border-radius: 16px;
   box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
   padding: 1px;
-  background: $copilot-trigger-background;
+  @include linearGradient($fromColor, $toColor);
 
   &:has(.only-input):has(.visible) {
     &.left,
@@ -521,17 +558,25 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
     justify-content: center;
     align-items: center;
     cursor: move;
-    background: var(--ui-color-grey-100);
+    background-color: var(--ui-color-grey-100);
+    transition: background-color ease-in-out 0.3s;
+    z-index: 1;
+
+    &:hover {
+      background-color: var(--ui-color-grey-300);
+    }
   }
 
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
+    margin-top: 14px;
     overflow-y: auto;
+    scrollbar-width: thin;
   }
 
   .divider {
-    background: $copilot-trigger-background;
+    @include linearGradient($fromColor, $toColor);
     height: 1px;
   }
 
@@ -594,62 +639,40 @@ $copilot-trigger-background: linear-gradient(90deg, $fromColor 0%, $toColor 100%
 }
 
 .placeholder {
-  flex: 1 1 0;
-  padding: 0 30px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  padding: 22px 16px;
   background: var(--ui-color-grey-100);
-  padding: 32px;
   border-radius: 16px;
 
-  .logo {
-    width: 90px;
-  }
-
   .title {
-    margin-top: 8px;
+    margin-top: 12px;
     font-size: 20px;
-    line-height: 1.4;
+    font-weight: 600;
+    line-height: 28px;
     color: var(--ui-color-title);
   }
 
   .description {
-    margin-top: 16px;
+    margin-top: 12px;
     font-size: 13px;
-    line-height: 20px;
-    text-align: center;
+    font-weight: 600;
+    line-height: 22px;
     color: var(--ui-color-grey-800);
   }
 
   .sign-button {
-    position: relative;
     border: none;
-    width: 78px;
-    height: 32px;
+    border-radius: 20px;
+    width: 100%;
+    height: 40px;
+    font-size: 15px;
     font-weight: 600;
-    margin-top: 40px;
-    color: var(--ui-color-purple-main);
-    background-color: transparent;
+    margin-top: 20px;
+    color: var(--ui-color-grey-100);
+    background-color: var(--ui-color-sound-main);
     outline: none;
-
-    &::before {
-      content: '';
-      position: absolute;
-      background: $copilot-trigger-background;
-      border-radius: 8px;
-      padding: 1px;
-      inset: 0;
-      mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      mask-composite: exclude;
-    }
 
     &:hover {
       cursor: pointer;
-      background-color: var(--ui-color-purple-100);
     }
   }
 }

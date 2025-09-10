@@ -66,21 +66,19 @@ const { fn: handleClick } = useMessageHandle(
 
 <style lang="scss" scoped>
 .highlight-link {
-  border-radius: 2px;
-  border: 1px solid var(--ui-color-turquoise-main);
-  background: transparent;
+  border-radius: 4px;
+  border: none;
   width: fit-content;
   display: inline-block;
-  padding: 1px 4px;
-  color: var(--ui-color-turquoise-main);
-  font-size: 12px;
+  padding: 2px 5px;
+  color: var(--ui-color-grey-100);
+  font-size: 13px;
   font-weight: 600;
   outline: none;
+  background-color: var(--ui-color-turquoise-main);
 
   &:hover {
     cursor: pointer;
-    color: #0aa5be;
-    border-color: #0aa5be;
   }
 }
 </style>
