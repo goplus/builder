@@ -12,7 +12,7 @@ export type KeyBtn = {
   /** The vertical coordinate of the left top corner of the key (pixels). */
   posY: number;
 };
-export type MobileKeyboardZoneToKeyMapping = KeyBtn[];
+export type MobileKeyboardBtns = KeyBtn[];
 /**
  * Mobile keyboard type
  * - NoKeyboard: No keyboard
@@ -63,7 +63,7 @@ export type ProjectData = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -81,7 +81,7 @@ export type AddProjectParams = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -97,7 +97,7 @@ export type AddProjectByRemixParams = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -117,7 +117,7 @@ export type UpdateProjectParams = {
   /** Mobile keyboard type */
   mobileKeyboardType?: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**

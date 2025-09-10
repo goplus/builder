@@ -1,12 +1,12 @@
 import { dispatchKeyToEvent } from "./module_ProjectAPIs";
 import type {
-  MobileKeyboardZoneToKeyMapping,
+  MobileKeyboardBtns,
   MobileKeyboardType,
 } from "./module_ProjectAPIs";
 
 export type KeyboardConfig = {
   type: MobileKeyboardType;
-  mapping: MobileKeyboardZoneToKeyMapping;
+  btns: MobileKeyboardBtns;
 };
 export type UI = any;
 
@@ -16,10 +16,10 @@ export declare function useModal<T>(
 
 export declare function KeyboardEditor(
   props: {
-    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    mobileKeyboardBtns: MobileKeyboardBtns;
   },
   emits: {
-    resolved: (result: MobileKeyboardZoneToKeyMapping) => void;
+    resolved: (result: MobileKeyboardBtns) => void;
   }
 ): UI;
 
@@ -31,7 +31,6 @@ export declare function KeyboardEditor(
  *
  * ## Props:
  * - `ZoneToKeyMapping`: keyboard zone to key mapping configuration
- * - `systemKeyConfig`: Optional array to customize system keys.If omitted, no system keys will be rendered.
  *
  * ## Slots:
  * - `gameView`: Should contain ProjectRunner component
@@ -52,34 +51,13 @@ export declare function KeyboardEditor(
 
 export declare function MobileKeyboardView(
   props: {
-    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    mobileKeyboardBtns: MobileKeyboardBtns;
   },
   emits: {
     close: [];
     rerun: [];
   }
 ): UI;
-//  {
-//   const zones = Object.keys(ZoneToKeyMapping);
-//   const zoneToKey = ZoneToKeyMapping;
-//   const handleKeyEvent = (type: string, key: string, code: string) => {
-//     dispatchKeyToEvent(type, code);
-//   };
-
-//   return `
-//     <div className="phone-layout">
-//       <slot name="gameView">
-//       </slot>
-//       <div className="keyboard-zones">
-//         ${keyButtons}
-//       </div>
-//       <div className="systemA" @click="emit('rerun')">
-//       </div>
-//       <div className="systemB" @click="emit('close')">
-//       </div>
-//     </div>
-//   `;
-// }
 
 //  key UI in Keyboard. provide to MobileKeyboardView and MobileKeyboardEidt
 // active is used to indicate whether a button has functionality（onKeyEvent）.
