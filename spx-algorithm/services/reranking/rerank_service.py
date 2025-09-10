@@ -9,6 +9,8 @@ from .feature_extractor import LTRFeatureExtractor
 from ..image_matching.clip_service import CLIPService
 from database.user_feedback.feedback_storage import FeedbackStorage
 from database.user_feedback.models import UserFeedback
+from database.resource_vector.operations import MilvusOperations
+from database.resource_vector.config import MilvusConfig
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,10 @@ class RerankService:
         self.feature_extractor = None
         self.feedback_storage = FeedbackStorage()
         self.enabled = False
+        
+        # 初始化向量数据库操作
+        self.milvus_config = MilvusConfig.from_env()
+        self.milvus_ops = MilvusOperations(self.milvus_config)
         
         # 如果提供了CLIP服务，初始化特征提取器
         if clip_service:
@@ -102,16 +108,36 @@ class RerankService:
             if candidates and 'vector' in candidates[0]:
                 return candidates
             
-            # TODO: 从向量数据库获取缺失的向量信息
-            # 这里需要与数据库层集成，暂时返回原始结果
-            logger.warning("候选结果缺少向量信息，需要从数据库获取")
+            # 从向量数据库获取缺失的向量信息
+            logger.info("从Milvus向量数据库获取候选结果的向量信息")
             
-            # 临时解决方案：为每个候选结果添加空向量
+            candidates_with_vectors = []
             for candidate in candidates:
-                if 'vector' not in candidate:
-                    candidate['vector'] = [0.0] * 512  # 假设向量维度为512
+                if 'vector' in candidate:
+                    # 已有向量，直接添加
+                    candidates_with_vectors.append(candidate)
+                else:
+                    # 缺少向量，从数据库获取
+                    pic_id = candidate.get('id') or candidate.get('pic_id')
+                    if pic_id:
+                        # 查询向量数据库获取向量
+                        vector_data = self._get_vector_from_database(pic_id)
+                        if vector_data:
+                            candidate['vector'] = vector_data['vector']
+                            # 确保URL信息一致
+                            if 'url' not in candidate and 'url' in vector_data:
+                                candidate['url'] = vector_data['url']
+                        else:
+                            # 如果数据库中没有找到，使用零向量占位
+                            logger.warning(f"数据库中未找到ID {pic_id} 的向量数据")
+                            candidate['vector'] = [0.0] * self.milvus_config.dimension
+                    else:
+                        logger.warning(f"候选结果缺少ID信息，无法获取向量: {candidate}")
+                        candidate['vector'] = [0.0] * self.milvus_config.dimension
+                    
+                    candidates_with_vectors.append(candidate)
             
-            return candidates
+            return candidates_with_vectors
             
         except Exception as e:
             logger.error(f"确保候选向量失败: {e}")
@@ -155,10 +181,9 @@ class RerankService:
             
             logger.info(f"开始训练LTR模型，反馈数据量: {len(feedback_list)}")
             
-            # TODO: 获取图片向量数据
-            # 这里需要从向量数据库获取所有相关图片的向量
-            # 暂时使用空字典，实际应该从数据库获取
-            image_vectors = {}  # {pic_id: vector}
+            # 获取图片向量数据
+            logger.info("从Milvus向量数据库获取图片向量数据")
+            image_vectors = self._get_image_vectors_from_feedback(feedback_list)
             
             # 构建训练数据集
             dataset = self.feature_extractor.build_training_dataset(feedback_list, image_vectors)
@@ -267,3 +292,105 @@ class RerankService:
         except Exception as e:
             logger.error(f"获取模型性能失败: {e}")
             return {'error': str(e)}
+    
+    def _get_vector_from_database(self, pic_id: int) -> Optional[Dict[str, Any]]:
+        """
+        从向量数据库获取指定图片的向量数据
+        
+        Args:
+            pic_id: 图片ID
+            
+        Returns:
+            包含向量和URL的字典，如果未找到则返回None
+        """
+        try:
+            # 使用query方法获取特定ID的数据
+            result = self.milvus_ops.collection.query(
+                expr=f"id == {pic_id}",
+                output_fields=["id", "url", "vector"],
+                limit=1
+            )
+            
+            if result and len(result) > 0:
+                data = result[0]
+                return {
+                    'id': data['id'],
+                    'url': data['url'],
+                    'vector': data['vector']
+                }
+            else:
+                logger.warning(f"向量数据库中未找到ID {pic_id} 的数据")
+                return None
+                
+        except Exception as e:
+            logger.error(f"从向量数据库获取数据失败，ID: {pic_id}, 错误: {e}")
+            return None
+    
+    def _get_image_vectors_from_feedback(self, feedback_list: List[UserFeedback]) -> Dict[int, List[float]]:
+        """
+        从反馈数据中提取所有相关图片ID，并从向量数据库获取对应的向量
+        
+        Args:
+            feedback_list: 用户反馈数据列表
+            
+        Returns:
+            图片ID到向量的映射字典
+        """
+        try:
+            # 提取所有唯一的图片ID
+            pic_ids = set()
+            for feedback in feedback_list:
+                # 从反馈数据的candidates中提取所有图片ID
+                if hasattr(feedback, 'candidates') and feedback.candidates:
+                    for candidate in feedback.candidates:
+                        pic_id = candidate.get('id') or candidate.get('pic_id')
+                        if pic_id:
+                            pic_ids.add(pic_id)
+            
+            if not pic_ids:
+                logger.warning("从反馈数据中未能提取到任何图片ID")
+                return {}
+            
+            logger.info(f"需要从向量数据库获取 {len(pic_ids)} 个图片的向量数据")
+            
+            # 批量查询向量数据
+            image_vectors = {}
+            pic_ids_list = list(pic_ids)
+            
+            # 构建批量查询表达式
+            if len(pic_ids_list) == 1:
+                expr = f"id == {pic_ids_list[0]}"
+            else:
+                expr = f"id in {pic_ids_list}"
+            
+            try:
+                result = self.milvus_ops.collection.query(
+                    expr=expr,
+                    output_fields=["id", "vector"],
+                    limit=len(pic_ids_list)
+                )
+                
+                for data in result:
+                    image_vectors[data['id']] = data['vector']
+                
+                logger.info(f"成功从向量数据库获取了 {len(image_vectors)} 个图片的向量数据")
+                
+            except Exception as e:
+                logger.error(f"批量查询向量数据失败: {e}")
+                # 如果批量查询失败，尝试逐个查询
+                logger.info("尝试逐个查询向量数据")
+                for pic_id in pic_ids_list:
+                    vector_data = self._get_vector_from_database(pic_id)
+                    if vector_data:
+                        image_vectors[pic_id] = vector_data['vector']
+            
+            # 对于未找到向量的图片ID，记录警告
+            missing_ids = pic_ids - set(image_vectors.keys())
+            if missing_ids:
+                logger.warning(f"以下图片ID在向量数据库中未找到: {missing_ids}")
+            
+            return image_vectors
+            
+        except Exception as e:
+            logger.error(f"从反馈数据获取图片向量失败: {e}")
+            return {}
