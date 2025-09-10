@@ -76,8 +76,9 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	if mUser.DisplayName != casdoorUser.DisplayName {
 		mUserUpdates["display_name"] = casdoorUser.DisplayName
 	}
-	if mUser.Avatar != casdoorUser.Avatar {
-		mUserUpdates["avatar"] = casdoorUser.Avatar
+	fixedAvatar := fixAvatar(casdoorUser.Avatar)
+	if mUser.Avatar != fixedAvatar {
+		mUserUpdates["avatar"] = fixedAvatar
 	}
 	if roles := a.extractUserRolesFromGroups(casdoorUser.Groups); !slices.Equal(mUser.Roles, roles) {
 		mUserUpdates["roles"] = roles
