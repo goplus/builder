@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/translate"
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
@@ -46,7 +47,7 @@ func (s *CopilotTranslateService) Translate(ctx context.Context, text string) (s
 	params := &copilot.Params{
 		System: copilot.Content{
 			Type: copilot.ContentTypeText,
-			Text: "You are a professional translator specialized in translating Chinese text to English for AI image generation prompts. Provide accurate, natural translations that preserve the original meaning.",
+			Text: translate.SystemPrompt,
 		},
 		Messages: []copilot.Message{
 			{

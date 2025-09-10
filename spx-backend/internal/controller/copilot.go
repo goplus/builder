@@ -6,7 +6,9 @@ import (
 	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/imagegen"
 	"github.com/goplus/builder/spx-backend/internal/copilot/standard"
+	"github.com/goplus/builder/spx-backend/internal/copilot/translate"
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
@@ -42,12 +44,16 @@ const (
 	ScopeCode CopilotScope = "code"
 	// ScopeStandard is the scope for standard copilot features.
 	ScopeStandard CopilotScope = "standard"
+	// ScopeImageGen is the scope for image generation copilot features.
+	ScopeImageGen CopilotScope = "imagegen"
+	// ScopeTranslate is the scope for translation copilot features.
+	ScopeTranslate CopilotScope = "translate"
 )
 
 // IsValid reports whether the copilot scope is valid.
 func (cs CopilotScope) IsValid() bool {
 	switch cs {
-	case ScopeCode, ScopeStandard:
+	case ScopeCode, ScopeStandard, ScopeImageGen, ScopeTranslate:
 		return true
 	}
 	return false
@@ -77,8 +83,15 @@ func (ctrl *Controller) GenerateMessageStream(ctx context.Context, params *Gener
 	}
 
 	systemPrompt := copilot.CodeSystemPrompt
-	if params.Scope != nil && *params.Scope == ScopeStandard {
-		systemPrompt = standard.SystemPrompt
+	if params.Scope != nil {
+		switch *params.Scope {
+		case ScopeStandard:
+			systemPrompt = standard.SystemPrompt
+		case ScopeImageGen:
+			systemPrompt = imagegen.SystemPrompt
+		case ScopeTranslate:
+			systemPrompt = translate.SystemPrompt
+		}
 	}
 
 	// Generate stream message using copilot
@@ -104,8 +117,15 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 	}
 
 	systemPrompt := copilot.CodeSystemPrompt
-	if params.Scope != nil && *params.Scope == ScopeStandard {
-		systemPrompt = standard.SystemPrompt
+	if params.Scope != nil {
+		switch *params.Scope {
+		case ScopeStandard:
+			systemPrompt = standard.SystemPrompt
+		case ScopeImageGen:
+			systemPrompt = imagegen.SystemPrompt
+		case ScopeTranslate:
+			systemPrompt = translate.SystemPrompt
+		}
 	}
 
 	// Generate message using copilot
