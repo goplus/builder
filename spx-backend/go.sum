@@ -172,6 +172,12 @@ github.com/googleapis/enterprise-certificate-proxy v0.3.2 h1:Vie5ybvEvT75RniqhfF
 github.com/googleapis/enterprise-certificate-proxy v0.3.2/go.mod h1:VLSiSSBs/ksPL8kq3OBOQ6WRI2QnaFynd1DCjZ62+V0=
 github.com/googleapis/gax-go/v2 v2.12.5 h1:8gw9KZK8TiVKB6q3zHY3SBzLnrGp6HQjyfYBYGmXdxA=
 github.com/googleapis/gax-go/v2 v2.12.5/go.mod h1:BUDKcWo+RaKq5SC9vVYL0wLADa3VcfswbOMMRmB9H3E=
+github.com/goplus/gogen v1.19.0 h1:eRi3pEDfICO6saw+JZ/jWPfBYTP7CkV6cjTsNjhhC4k=
+github.com/goplus/gogen v1.19.0/go.mod h1:owX2e1EyU5WD+Nm6oH2m/GXjLdlBYcwkLO4wN8HHXZI=
+github.com/goplus/sb2xbp v0.0.0-20250906030214-de2e537ceda6 h1:Wc91DqLwqKj6AUO3NMgDSHB/GnVih4CnfcylsVgvxuQ=
+github.com/goplus/sb2xbp v0.0.0-20250906030214-de2e537ceda6/go.mod h1:1LF2COvqmWLnn4VgEsRNVY3JaHf17IpullGxgnjlihs=
+github.com/goplus/xgo v1.5.0 h1:cOSGtJOUfBkSFa6e9K8HCrJDtiNp0sRos5ZGoCOtEZQ=
+github.com/goplus/xgo v1.5.0/go.mod h1:v9VsPjlFeO3EWafE8Qz8iwMoqNqNwlX9uSZL5+ZGlVg=
 github.com/goplus/yap v0.8.4 h1:nQpie5dZDH6p4T+vaHlfGmthrrzuFpDBWjPgjTatP8c=
 github.com/goplus/yap v0.8.4/go.mod h1:Br4hpgVn7KAln4GM/QWrgAHnn2U+TbQ7TegRYhKXgJw=
 github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
