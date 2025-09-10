@@ -14,8 +14,13 @@ enum State {
   Move = 'move' // The point is moving, it may move to the left or right
 }
 
-const panelBoundBuffer = [20, 10]
-const snapThreshold = 20
+enum TriggerVisibility {
+  Visible = 'visible', // The trigger is visible
+  None = '' // The trigger is not visible
+}
+
+const panelBoundaryBuffer = [20, 10]
+const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
@@ -63,7 +68,7 @@ const { width: windowWidth, height: windowHeight } = useContentSize(documentElem
 const { width: triggerWidth, height: triggerHeight } = useContentSize(triggerRef)
 const { width: panelWidth, height: panelHeight } = useContentSize(panelRef as WatchSource<HTMLElement | null>)
 
-function fixResizeNullable() {
+function getCurrentSizes() {
   return {
     windowW: windowWidth.value ?? 0,
     windowH: windowHeight.value ?? 0,
@@ -75,21 +80,12 @@ function fixResizeNullable() {
 }
 
 // resize the panel to fit the window size
-watch(
-  () => [windowWidth.value, windowHeight.value],
-  async () => {
-    const { panelW } = fixResizeNullable()
-    if (panelPosition.value.state === State.Move || !panelW) {
-      return
-    }
-    panelPosition.value = copilot.active ? panelPositionWithinWindow() : clampClosePanelPosition()
-  }
-)
+watch(() => [windowWidth.value, windowHeight.value], updatePanelClampedPosition)
 watch(
   () => [panelWidth.value, panelHeight.value],
-  ([w, h]) => {
-    if (!w || !h) return // close panel
-    panelPositionWithinWindow()
+  () => {
+    if (panelStatePosition.value.state === State.Move) return // close panel
+    updatePanelClampedPosition()
   }
 )
 watch(
@@ -108,7 +104,7 @@ watch(
 )
 
 function getDirection(position: Position, elWidth: number) {
-  const { windowW } = fixResizeNullable()
+  const { windowW } = getCurrentSizes()
   const centerX = position.right + elWidth / 2
   return {
     ...position,
@@ -116,17 +112,17 @@ function getDirection(position: Position, elWidth: number) {
   }
 }
 
-function samePosition(position1: Position, position2: Position) {
+function isSamePosition(position1: Position, position2: Position) {
   return position1.right === position2.right && position1.bottom === position2.bottom
 }
 
-function clampToWindowBounds(
+function getClampedPosition(
   { right, bottom, state }: StatePosition,
   elWidth: number,
   elHeight: number,
   buffer = [0, 0]
 ) {
-  const { windowW, windowH } = fixResizeNullable()
+  const { windowW, windowH } = getCurrentSizes()
   const [topBottom, leftRight] = buffer
   return {
     right: Math.min(windowW - elWidth - leftRight, Math.max(right, leftRight)),
@@ -145,8 +141,10 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
 
   let begined = false
   return {
-    begin: (can = true) => {
+    begin: async (can = true) => {
       if (!can) return
+      // force reflow to ensure the browser correctly triggers animation events on initialization
+      el.offsetHeight
       el.classList.add(className)
       begined = true
     },
@@ -160,6 +158,7 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
           'transitionend',
           async () => {
             el.classList.remove(className)
+            // Wait for the next frame to ensure proper animation sequence
             await timeout()
             resolve()
           },
@@ -171,15 +170,31 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
 
 const position = { right: 0, bottom: 20 }
 const draggerRef = ref<HTMLElement>()
-const panelPosition = localStorageRef('spx-gui-copilot-panel-position', { right: 10, bottom: 20, state: State.Right })
-const triggerState = ref(panelPosition.value.state)
-const triggerVisible = ref('')
-const isOutOfBounds = ref(false)
+const panelStatePosition = localStorageRef('spx-gui-copilot-panel-position', {
+  right: 10,
+  bottom: 20,
+  state: State.Right
+})
+const isPanelOutOfBounds = ref(false)
+const triggerState = ref(panelStatePosition.value.state)
+const triggerVisibility = ref(TriggerVisibility.None)
 
-function triggerPositionWithinWindow(statePosition: Position = panelPosition.value) {
-  const { panelW, panelH, triggerH, triggerW, windowW, windowH } = fixResizeNullable()
-  const { state, bottom } = getDirection(statePosition, triggerW)
-  const [topBottom] = panelBoundBuffer
+function updatePanelClampedPosition() {
+  const { panelW, panelH } = getCurrentSizes()
+  if (!panelW || !panelH) return
+  panelStatePosition.value = copilot.active ? getOpenedPanelClampedPosition() : getClosedPanelClampedPosition()
+}
+
+function updatePanelOutOfBoundsStatus(position: Position) {
+  const { panelW, windowW } = getCurrentSizes()
+  const swapThreshold = copilot.active ? panelW / 3 : panelW - panelW / 5
+  isPanelOutOfBounds.value = position.right < -swapThreshold || position.right > windowW - panelW + swapThreshold
+}
+
+function getTriggerClampedPosition(position: Position = panelStatePosition.value) {
+  const { panelW, panelH, triggerH, triggerW, windowW, windowH } = getCurrentSizes()
+  const { state, bottom } = getDirection(position, triggerW)
+  const [topBottom] = panelBoundaryBuffer
   return {
     bottom: Math.min(
       windowH - (triggerH + panelH) / 2 - topBottom,
@@ -190,10 +205,10 @@ function triggerPositionWithinWindow(statePosition: Position = panelPosition.val
   }
 }
 
-function clampClosePanelPosition(statePosition: Position = panelPosition.value) {
-  const { panelW, panelH, windowW, windowH } = fixResizeNullable()
-  const { state, bottom } = getDirection(statePosition, panelW)
-  const [topBottom] = panelBoundBuffer
+function getClosedPanelClampedPosition(position: Position = panelStatePosition.value) {
+  const { panelW, panelH, windowW, windowH } = getCurrentSizes()
+  const { state, bottom } = getDirection(position, panelW)
+  const [topBottom] = panelBoundaryBuffer
   return {
     bottom: Math.min(windowH - panelH - topBottom, Math.max(bottom, topBottom)),
     right: state === State.Left ? windowW : -panelW,
@@ -201,31 +216,25 @@ function clampClosePanelPosition(statePosition: Position = panelPosition.value) 
   }
 }
 
-function panelPositionWithinWindow() {
-  const { panelW, panelH } = fixResizeNullable()
-  return clampToWindowBounds(getDirection(panelPosition.value, panelW), panelW, panelH, panelBoundBuffer)
-}
-
-function calcOutOfBounds(position: Position) {
-  const { panelW, windowW } = fixResizeNullable()
-  const swapThreshold = copilot.active ? panelW / 3 : panelW - 20
-  isOutOfBounds.value = position.right < -swapThreshold || position.right > windowW - panelW + swapThreshold
+function getOpenedPanelClampedPosition(position: Position = panelStatePosition.value) {
+  const { panelW, panelH } = getCurrentSizes()
+  return getClampedPosition(getDirection(position, panelW), panelW, panelH, panelBoundaryBuffer)
 }
 
 async function openPanel() {
   // trigger animation
   const triggerAnimation = createCSSAnimation('animated', panelRef.value)
-  triggerAnimation.begin(!!triggerVisible.value)
-  triggerVisible.value = ''
+  await triggerAnimation.begin(!!triggerVisibility.value)
+  triggerVisibility.value = TriggerVisibility.None
   await triggerAnimation.endAndWait()
 
   // panel animation
   const panelAnimation = createCSSAnimation('animated', panelRef.value)
-  const newPosition = panelPositionWithinWindow()
-  panelAnimation.begin(!samePosition(newPosition, panelPosition.value))
-  panelPosition.value = newPosition
+  const newPosition = getOpenedPanelClampedPosition()
+  await panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
+  panelStatePosition.value = newPosition
   triggerState.value = newPosition.state
-  isOutOfBounds.value = false
+  isPanelOutOfBounds.value = false
   await panelAnimation.endAndWait()
 
   copilot.open()
@@ -233,24 +242,25 @@ async function openPanel() {
 
 async function closePanel() {
   const { begin, endAndWait } = createCSSAnimation('animated', panelRef.value)
-  const newPosition = clampClosePanelPosition()
+  const newPosition = getClosedPanelClampedPosition()
   // When the `transition-property` doesn't change, the `transitionend` event can't be triggered.
-  begin(!samePosition(newPosition, panelPosition.value))
-  panelPosition.value = newPosition
+  await begin(!isSamePosition(newPosition, panelStatePosition.value))
+  panelStatePosition.value = newPosition
   triggerState.value = newPosition.state
-  isOutOfBounds.value = true
+  isPanelOutOfBounds.value = true
   await endAndWait()
-  triggerVisible.value = 'visible'
+
+  triggerVisibility.value = TriggerVisibility.Visible
   copilot.close()
 }
 
 const onDragStart = () => {
-  const statePosition = panelPosition.value
+  const statePosition = panelStatePosition.value
   position.right = statePosition.right
   position.bottom = statePosition.bottom
 }
 const onDragMove = (offset: Offset) => {
-  const { panelW } = fixResizeNullable()
+  const { panelW } = getCurrentSizes()
   const newPosition = getDirection(
     {
       right: (position.right -= offset.x),
@@ -258,15 +268,15 @@ const onDragMove = (offset: Offset) => {
     },
     panelW
   )
-  panelPosition.value = {
+  panelStatePosition.value = {
     ...newPosition,
     state: State.Move
   }
   triggerState.value = newPosition.state
-  calcOutOfBounds(position)
+  updatePanelOutOfBoundsStatus(position)
 }
 const onDragEnd = () => {
-  if (!isOutOfBounds.value) {
+  if (!isPanelOutOfBounds.value) {
     openPanel()
   } else {
     closePanel()
@@ -275,21 +285,18 @@ const onDragEnd = () => {
 useDraggable(triggerRef, {
   onDragStart,
   onDragMove: (offset: Offset) => {
-    const { windowW, panelW, triggerW } = fixResizeNullable()
-    const newPosition = getDirection(
-      {
-        right: (position.right -= offset.x),
-        bottom: (position.bottom -= offset.y)
-      },
-      triggerW
-    )
-    let right = newPosition.right
-    if (triggerVisible.value && (right + panelW < snapThreshold || windowW - (right + triggerW) < snapThreshold)) {
-      panelPosition.value = triggerPositionWithinWindow(newPosition)
+    const { windowW, panelW } = getCurrentSizes()
+    const newPosition = {
+      right: (position.right -= offset.x),
+      bottom: (position.bottom -= offset.y)
+    }
+    const { right } = newPosition
+    if (triggerVisibility.value && (right + panelW < triggerSnapThreshold || windowW - right < triggerSnapThreshold)) {
+      panelStatePosition.value = getTriggerClampedPosition(newPosition)
     } else {
-      panelPosition.value = newPosition
-      triggerVisible.value = ''
-      calcOutOfBounds(position)
+      panelStatePosition.value = getDirection(newPosition, panelW)
+      triggerVisibility.value = TriggerVisibility.None
+      updatePanelOutOfBoundsStatus(position)
     }
   },
   onDragEnd
@@ -323,10 +330,10 @@ const handleQuickInputClick = useMessageHandle(
   <div
     ref="panelRef"
     class="copilot-panel"
-    :style="{ right: `${panelPosition.right}px`, bottom: `${panelPosition.bottom}px` }"
+    :style="{ right: `${panelStatePosition.right}px`, bottom: `${panelStatePosition.bottom}px` }"
   >
     <div class="body" :class="[triggerState]">
-      <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisible]" @click="openPanel()">
+      <div ref="triggerRef" :class="['copilot-trigger', triggerState, triggerVisibility]" @click="openPanel()">
         <div class="copilot-trigger-content">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="40" height="40" rx="12" fill="url(#paint0_linear_931_4390)" />
