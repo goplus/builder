@@ -449,7 +449,6 @@ const handleRecordingSharing = useMessageHandle(
   }
 )
 
-
 const screenshotImg = ref<globalThis.File | null>(null)
 
 const shareScreenshot = useModal(ProjectScreenshotSharing)
