@@ -75,20 +75,13 @@ func extractCommandSpec(cmdType reflect.Type) CommandSpec {
 		}
 	}
 
-	// Extract command description from "Desc() string" method if available.
-	cmdDesc := "Command " + spec.Name
-	if method, found := reflect.PointerTo(cmdType).MethodByName("Desc"); found &&
-		method.Type.NumIn() == 1 && method.Type.NumOut() == 1 && method.Type.Out(0).Kind() == reflect.String {
-		var receiverValue reflect.Value
-		if method.Type.In(0).Kind() == reflect.Pointer {
-			receiverValue = reflect.New(cmdType)
-		} else {
-			receiverValue = reflect.Zero(cmdType)
-		}
-		results := method.Func.Call([]reflect.Value{receiverValue})
-		cmdDesc = results[0].String()
+	// Extract command description from "Desc() string" method if available,
+	// otherwise fall back to a default one.
+	if describer, ok := reflect.New(cmdType).Interface().(interface{ Desc() string }); ok {
+		spec.Description = describer.Desc()
+	} else {
+		spec.Description = "Command " + spec.Name
 	}
-	spec.Description = cmdDesc
 
 	return spec
 }
