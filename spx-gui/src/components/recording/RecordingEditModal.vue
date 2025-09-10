@@ -82,7 +82,6 @@ const form = useForm({
 })
 
 function handleCancel() {
-  // 重置表单到初始值
   form.value.title = props.recording.title
   form.value.description = props.recording.description
   emit('cancelled')
@@ -113,10 +112,10 @@ function validateTitle(title: string): FormValidationResult {
     return t({ en: 'Recording title is required', zh: '录屏标题不能为空' })
   }
 
-  if (trimmedTitle.length > 100) {
+  if (trimmedTitle.length > 20) {
     return t({
-      en: 'Title is too long (maximum 100 characters)',
-      zh: '标题过长（最多100个字符）'
+      en: 'Title is too long (maximum 20 characters)',
+      zh: '标题过长（最多20个字符）'
     })
   }
 
@@ -126,10 +125,10 @@ function validateTitle(title: string): FormValidationResult {
 function validateDescription(description: string): FormValidationResult {
   const trimmedDescription = description.trim()
 
-  if (trimmedDescription.length > 1000) {
+  if (trimmedDescription.length > 200) {
     return t({
-      en: 'Description is too long (maximum 1000 characters)',
-      zh: '描述过长（最多1000个字符）'
+      en: 'Description is too long (maximum 200 characters)',
+      zh: '描述过长（最多200个字符）'
     })
   }
 

@@ -134,7 +134,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
 import { usePageTitle } from '@/utils/utils'
 import { useQuery } from '@/utils/query'
 import { humanizeTime, useAsyncComputed } from '@/utils/utils'
@@ -160,10 +159,10 @@ import { useEnsureSignedIn } from '@/utils/user'
 import { parseProjectFullName, getProject, Visibility } from '@/apis/project'
 import { useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useRoute, useRouter } from 'vue-router'
 
-const props = defineProps<{
-  id: string
-}>()
+const route = useRoute()
+const id = computed(() => route.params.id as string)
 
 const router = useRouter()
 const videoRef = ref<HTMLVideoElement>()
@@ -217,7 +216,7 @@ const playButtonStatus = computed(() => {
 const checkLikingStatus = async () => {
   if (!recording.value) return
   try {
-    liking.value = await isLikingRecording(props.id)
+    liking.value = await isLikingRecording(id.value)
   } catch (error) {
     console.warn('Failed to check liking status:', error)
     liking.value = false
@@ -255,7 +254,7 @@ const ensureSignedIn = useEnsureSignedIn()
 const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    await likeRecording(props.id)
+    await likeRecording(id.value)
     liking.value = true
     // 更新本地计数
     if (recording.value) {
@@ -269,7 +268,7 @@ const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
 
-    await unlikeRecording(props.id)
+    await unlikeRecording(id.value)
     liking.value = false
     if (recording.value) {
       recording.value.likeCount = Math.max(0, recording.value.likeCount - 1)
@@ -299,7 +298,7 @@ const {
   refetch
 } = useQuery(
   async (ctx) => {
-    const recordingData = await getRecording(props.id, ctx.signal)
+    const recordingData = await getRecording(id.value, ctx.signal)
     return recordingData
   },
   {
@@ -371,7 +370,7 @@ const handleVideoLoaded = () => {
 const handleVideoPlay = async () => {
   // 记录观看次数
   try {
-    // await recordRecordingView(props.id)
+    // await recordRecordingView(id.value)
   } catch (error) {
     console.warn('Failed to recording view:', error)
   }
@@ -440,7 +439,7 @@ onUnmounted(() => {
 // 记录页面访问
 watchEffect(async () => {
   if (recording.value?.projectFullName && projectQuery.refetch) {
-    await recordRecordingView(props.id)
+    await recordRecordingView(id.value)
     await checkLikingStatus()
 
     projectQuery.refetch()

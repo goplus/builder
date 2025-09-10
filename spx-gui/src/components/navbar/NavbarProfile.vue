@@ -28,7 +28,7 @@
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
         <UIMenuItem @click="handleRecordings">
-          {{ $t({ en: 'Recordings', zh: '记录' }) }}
+          {{ $t({ en: 'Recordings', zh: '录屏记录' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
@@ -40,6 +40,14 @@
         </UIMenuItem>
         <UIMenuItem @click="manageAssets(AssetType.Backdrop)">
           {{ $t({ en: 'Manage backdrops', zh: '管理背景' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup v-if="signedInUser?.capabilities.canManageCourses">
+        <UIMenuItem @click="manageCourses()">
+          {{ $t({ en: 'Manage courses', zh: '管理课程' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="manageCourseSeries()">
+          {{ $t({ en: 'Manage course series', zh: '管理课程系列' }) }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="isDeveloperMode">
@@ -67,6 +75,7 @@ import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
+import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 
@@ -103,6 +112,13 @@ function handleRecordings() {
 
 const manageAssetLibrary = useAssetLibraryManagement()
 const manageAssets = useMessageHandle(manageAssetLibrary).fn
+
+const manageCoursesFn = useCourseManagement()
+const manageCourses = useMessageHandle(manageCoursesFn).fn
+
+const manageCourseSeriesFn = useCourseSeriesManagement()
+const manageCourseSeries = useMessageHandle(manageCourseSeriesFn).fn
+
 const handleUseMcpDebuggerUtils = useMessageHandle(
   async () => {
     const isVisible = controls.mcpDebugger.toggle()

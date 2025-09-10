@@ -117,9 +117,6 @@ const routes: Array<RouteRecordRaw> = [
         path: '/recording/:id',
         name: 'Recording',
         component: () => import('@/pages/community/recording.vue'),
-        props: (route) => ({
-          id: route.params.id as string
-        }),
         meta: {
           requiresSignIn: false
         }
@@ -127,10 +124,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '/project/:projectFullName/recordings',
         name: 'ProjectRecordings',
-        component: () => import('@/pages/community/projectRecordings.vue'),
-        props: (route) => ({
-          projectFullName: route.params.projectFullName as string
-        }),
+        component: () => import('@/pages/community/project-recordings.vue'),
         meta: { requiresSignIn: false }
       }
     ]

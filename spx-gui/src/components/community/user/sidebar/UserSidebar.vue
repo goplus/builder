@@ -57,7 +57,7 @@ const isMobile = useResponsive('mobile')
         <circle cx="8" cy="8" r="2" fill="currentColor" />
         <circle cx="12" cy="6" r="1" fill="currentColor" />
       </svg>
-      {{ $t({ en: 'recordings', zh: '录屏' }) }}
+      {{ $t({ en: 'Recordings', zh: '录屏' }) }}
     </UserSidebarItem>
     <UserSidebarItem
       v-radar="{ name: 'Likes link', desc: 'Click to navigate to user liked projects' }"

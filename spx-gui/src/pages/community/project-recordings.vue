@@ -82,15 +82,15 @@ import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import RecordingItem from '@/components/recording/RecordingItem.vue'
 import RouterUILink from '@/components/common/RouterUILink.vue'
+import { useRoute } from 'vue-router'
 
-const props = defineProps<{
-  projectFullName: string
-}>()
+const route = useRoute()
+const projectFullName = computed(() => route.params.projectFullName as string)
 
 // 解析项目信息
 const projectInfo = computed(() => {
   try {
-    return parseProjectFullName(props.projectFullName)
+    return parseProjectFullName(projectFullName.value)
   } catch {
     return null
   }
@@ -169,7 +169,7 @@ const order = computed(() => orderRef.value ?? Order.RecentlyUpdated)
 // 查询参数
 const listParams = computed<ListRecordingParams>(() => {
   const p: ListRecordingParams = {
-    projectFullName: props.projectFullName,
+    projectFullName: projectFullName.value,
     pageSize: pageSize.value,
     pageIndex: page.value
   }
