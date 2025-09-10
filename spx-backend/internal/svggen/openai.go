@@ -16,14 +16,12 @@ import (
 
 // OpenAIService implements OpenAI compatible API calls.
 type OpenAIService struct {
-	config  *config.OpenAISVGConfig
 	copilot *copilot.Copilot
 }
 
 // NewOpenAIService creates a new OpenAI service instance.
 func NewOpenAIService(cfg *config.Config, copilot *copilot.Copilot, logger *qlog.Logger) *OpenAIService {
 	return &OpenAIService{
-		config:  &cfg.Providers.SVGOpenAI,
 		copilot: copilot,
 	}
 }

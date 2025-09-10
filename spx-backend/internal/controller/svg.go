@@ -1,13 +1,10 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -304,42 +301,9 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 	}, nil
 }
 
-// VectorAddRequest represents the request payload for vector service
-type VectorAddRequest struct {
-	ID         int64  `json:"id"`
-	URL        string `json:"url"`
-	SVGContent string `json:"svg_content"`
-}
-
 // callVectorService calls the vector service API to add SVG data
 func (ctrl *Controller) callVectorService(ctx context.Context, id int64, url string, svgContent []byte) error {
-	logger := log.GetReqLogger(ctx)
-	
-	// Prepare request payload
-	req := VectorAddRequest{
-		ID:         id,
-		URL:        url,
-		SVGContent: string(svgContent),
-	}
-	
-	jsonData, err := json.Marshal(req)
-	if err != nil {
-		return fmt.Errorf("failed to marshal vector request: %w", err)
-	}
-	
-	// Make HTTP request to vector service
-	resp, err := http.Post("http://loaclhost:5000/v1/vector/add", "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to call vector service: %w", err)
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("vector service returned status: %d", resp.StatusCode)
-	}
-	
-	logger.Printf("Successfully called vector service for ID: %d, URL: %s", id, url)
-	return nil
+	return ctrl.algorithmService.AddVector(ctx, id, url, svgContent)
 }
 	
 // getSVGContent retrieves SVG content from URL or data URL.

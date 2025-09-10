@@ -1,18 +1,12 @@
 package svggen
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"os"
 	"strings"
 
-	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
-	qlog "github.com/qiniu/x/log"
 )
 
 // TranslateService defines the contract for translation services.
@@ -20,24 +14,20 @@ type TranslateService interface {
 	Translate(ctx context.Context, text string) (string, error)
 }
 
-// OpenAITranslateService implements translation using OpenAI compatible APIs.
-type OpenAITranslateService struct {
-	config     *config.OpenAISVGConfig
-	httpClient *http.Client
-	logger     *qlog.Logger
+// CopilotTranslateService implements translation using the copilot package.
+type CopilotTranslateService struct {
+	copilot *copilot.Copilot
 }
 
-// NewOpenAITranslateService creates a new OpenAI translation service instance.
-func NewOpenAITranslateService(cfg *config.Config, httpClient *http.Client, logger *qlog.Logger) *OpenAITranslateService {
-	return &OpenAITranslateService{
-		config:     &cfg.Providers.SVGOpenAI,
-		httpClient: httpClient,
-		logger:     logger,
+// NewCopilotTranslateService creates a new copilot translation service instance.
+func NewCopilotTranslateService(copilot *copilot.Copilot) *CopilotTranslateService {
+	return &CopilotTranslateService{
+		copilot: copilot,
 	}
 }
 
 // Translate translates text from Chinese to English for image generation prompts.
-func (s *OpenAITranslateService) Translate(ctx context.Context, text string) (string, error) {
+func (s *CopilotTranslateService) Translate(ctx context.Context, text string) (string, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Check if text contains Chinese characters
@@ -52,66 +42,38 @@ func (s *OpenAITranslateService) Translate(ctx context.Context, text string) (st
 
 %s`, text)
 
-	reqBody := OpenAIGenerateReq{
-		Model: s.config.DefaultModel,
-		Messages: []OpenAIMessage{
+	// Create copilot parameters
+	params := &copilot.Params{
+		System: copilot.Content{
+			Type: copilot.ContentTypeText,
+			Text: "You are a professional translator specialized in translating Chinese text to English for AI image generation prompts. Provide accurate, natural translations that preserve the original meaning.",
+		},
+		Messages: []copilot.Message{
 			{
-				Role:    "user",
-				Content: prompt,
+				Role: copilot.RoleUser,
+				Content: copilot.Content{
+					Type: copilot.ContentTypeText,
+					Text: prompt,
+				},
 			},
 		},
-		MaxTokens:   150,
-		Temperature: 0.3,
 	}
 
-	jsonData, err := json.Marshal(reqBody)
+	logger.Printf("[TRANSLATE] Sending request to copilot service")
+
+	// Call copilot service - using premium=false for translation
+	result, err := s.copilot.Message(ctx, params, false)
 	if err != nil {
-		return "", fmt.Errorf("marshal translate request: %w", err)
+		logger.Printf("[TRANSLATE] Copilot request failed: %v", err)
+		return "", fmt.Errorf("copilot request: %w", err)
 	}
 
-	url := s.config.BaseURL + "chat/completions"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(jsonData))
-	if err != nil {
-		return "", fmt.Errorf("create translate request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.getAPIKey())
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		logger.Printf("[TRANSLATE] HTTP request failed: %v", err)
-		return "", fmt.Errorf("http translate request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 300 {
-		var errResp map[string]any
-		_ = json.NewDecoder(resp.Body).Decode(&errResp)
-		logger.Printf("[TRANSLATE] Error response body: %+v", errResp)
-		return "", fmt.Errorf("translate API error: %s", resp.Status)
-	}
-
-	var translateResp OpenAIGenerateResp
-	if err := json.NewDecoder(resp.Body).Decode(&translateResp); err != nil {
-		return "", fmt.Errorf("decode translate response: %w", err)
-	}
-
-	if len(translateResp.Choices) == 0 {
-		return "", errors.New("no translation choices returned")
-	}
-
-	translated := strings.TrimSpace(translateResp.Choices[0].Message.Content)
+	translated := strings.TrimSpace(result.Message.Content.Text)
 	logger.Printf("[TRANSLATE] Translation result: %q -> %q", text, translated)
 
 	return translated, nil
 }
 
-// getAPIKey gets the API key from the same source as OpenAI service.
-func (s *OpenAITranslateService) getAPIKey() string {
-	// Use the same API key as OpenAI SVG generation
-	return getOpenAIAPIKey()
-}
 
 // containsChinese checks if text contains Chinese characters.
 func containsChinese(text string) bool {
@@ -123,9 +85,3 @@ func containsChinese(text string) bool {
 	return false
 }
 
-// getOpenAIAPIKey is a helper function to get OpenAI API key.
-// This should match the implementation in openai.go
-func getOpenAIAPIKey() string {
-	// Implementation matches openai.go getAPIKey method
-	return os.Getenv("SVG_OPENAI_API_KEY")
-}
