@@ -20,7 +20,11 @@ export function getProjectPageRoute(owner: string, name: string) {
   return `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }
 
-export type UserTab = 'overview' | 'projects' | 'likes' | 'followers' | 'following'
+export function getRecordingPageRoute(id: string) {
+  return `/recording/${encodeURIComponent(id)}`
+}
+
+export type UserTab = 'overview' | 'projects' | 'recordings' | 'likes' | 'followers' | 'following'
 
 export function getUserPageRoute(name: string, tab: UserTab = 'overview') {
   const base = `/user/${encodeURIComponent(name)}`
@@ -83,6 +87,11 @@ const routes: Array<RouteRecordRaw> = [
             props: true
           },
           {
+            path: 'recordings',
+            component: () => import('@/pages/community/user/recordings.vue'),
+            props: true
+          },
+          {
             path: 'likes',
             component: () => import('@/pages/community/user/likes.vue'),
             props: true
@@ -103,6 +112,20 @@ const routes: Array<RouteRecordRaw> = [
         path: '/project/:owner/:name',
         component: () => import('@/pages/community/project.vue'),
         props: true
+      },
+      {
+        path: '/recording/:id',
+        name: 'Recording',
+        component: () => import('@/pages/community/recording.vue'),
+        meta: {
+          requiresSignIn: false
+        }
+      },
+      {
+        path: '/project/:projectFullName/recordings',
+        name: 'ProjectRecordings',
+        component: () => import('@/pages/community/project-recordings.vue'),
+        meta: { requiresSignIn: false }
       }
     ]
   },
@@ -150,6 +173,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/docs/api.vue')
   }
 ]
+
+// 添加路由生成函数
+export function getProjectRecordingsRoute(owner: string, projectName: string): string {
+  return `/project/${encodeURIComponent(owner)}%2F${encodeURIComponent(projectName)}/recordings`
+}
 
 const router = createRouter({
   history: createWebHistory(''),

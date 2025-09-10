@@ -131,8 +131,14 @@ import GuestBanner from '@/components/community/home/banner/GuestBanner.vue'
 
 usePageTitle([])
 
+const isMobile = useResponsive('mobile')
+const isTablet = useResponsive('tablet')
 const isDesktopLarge = useResponsive('desktop-large')
-const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const numInRow = computed(() => {
+  if (isMobile.value) return 2
+  if (isTablet.value) return 3
+  return isDesktopLarge.value ? 5 : 4
+})
 
 const signedInUsername = computed(() => getSignedInUsername())
 

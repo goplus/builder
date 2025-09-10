@@ -27,6 +27,9 @@
         <UIMenuItem @click="handleProjects">
           {{ $t({ en: 'Projects', zh: '项目列表' }) }}
         </UIMenuItem>
+        <UIMenuItem @click="handleRecordings">
+          {{ $t({ en: 'Recordings', zh: '录屏记录' }) }}
+        </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup v-if="signedInUser?.capabilities.canManageAssets">
         <UIMenuItem @click="manageAssets(AssetType.Sprite)">
@@ -101,6 +104,10 @@ function handleUserPage() {
 
 function handleProjects() {
   router.push(getUserPageRoute(signedInUser.value!.username, 'projects'))
+}
+
+function handleRecordings() {
+  router.push(getUserPageRoute(signedInUser.value!.username, 'recordings'))
 }
 
 const manageAssetLibrary = useAssetLibraryManagement()
