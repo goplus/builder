@@ -30,8 +30,12 @@ class BaseConfig:
     ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'false').lower() == 'true')
     LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', 'models/ltr_model.pkl'))
     
-    # 用户反馈数据库配置
-    FEEDBACK_DB_PATH: str = field(default_factory=lambda: os.environ.get('FEEDBACK_DB_PATH', 'data/user_feedback.db'))
+    # 用户反馈数据库配置 (MySQL)
+    MYSQL_HOST: str = field(default_factory=lambda: os.environ.get('MYSQL_HOST', 'localhost'))
+    MYSQL_PORT: int = field(default_factory=lambda: int(os.environ.get('MYSQL_PORT', '3307')))
+    MYSQL_USER: str = field(default_factory=lambda: os.environ.get('MYSQL_USER', 'spx_user'))
+    MYSQL_PASSWORD: str = field(default_factory=lambda: os.environ.get('MYSQL_PASSWORD', 'spx_feedback_2024'))
+    MYSQL_DATABASE: str = field(default_factory=lambda: os.environ.get('MYSQL_DATABASE', 'spx_feedback'))
     
     # 模型训练配置
     LTR_TRAINING_BATCH_SIZE: int = field(default_factory=lambda: int(os.environ.get('LTR_TRAINING_BATCH_SIZE', '1000')))
@@ -60,7 +64,11 @@ class BaseConfig:
             'MILVUS_DIMENSION': self.MILVUS_DIMENSION,
             'ENABLE_RERANKING': self.ENABLE_RERANKING,
             'LTR_MODEL_PATH': self.LTR_MODEL_PATH,
-            'FEEDBACK_DB_PATH': self.FEEDBACK_DB_PATH,
+            'MYSQL_HOST': self.MYSQL_HOST,
+            'MYSQL_PORT': self.MYSQL_PORT,
+            'MYSQL_USER': self.MYSQL_USER,
+            'MYSQL_PASSWORD': self.MYSQL_PASSWORD,
+            'MYSQL_DATABASE': self.MYSQL_DATABASE,
             'LTR_TRAINING_BATCH_SIZE': self.LTR_TRAINING_BATCH_SIZE,
             'LTR_MODEL_AUTO_RETRAIN': self.LTR_MODEL_AUTO_RETRAIN,
             'LTR_COARSE_MULTIPLIER': self.LTR_COARSE_MULTIPLIER,
@@ -84,7 +92,11 @@ class BaseConfig:
             'reranking': {
                 'enabled': self.ENABLE_RERANKING,
                 'model_path': self.LTR_MODEL_PATH,
-                'feedback_db_path': self.FEEDBACK_DB_PATH,
+                'mysql_host': self.MYSQL_HOST,
+                'mysql_port': self.MYSQL_PORT,
+                'mysql_user': self.MYSQL_USER,
+                'mysql_password': self.MYSQL_PASSWORD,
+                'mysql_database': self.MYSQL_DATABASE,
                 'training_batch_size': self.LTR_TRAINING_BATCH_SIZE,
                 'auto_retrain': self.LTR_MODEL_AUTO_RETRAIN,
                 'coarse_multiplier': self.LTR_COARSE_MULTIPLIER,

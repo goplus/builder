@@ -6,7 +6,7 @@ services:
     container_name: spx-feedback-mysql
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: spx_feedback_root_2024
       MYSQL_DATABASE: spx_feedback
