@@ -247,8 +247,8 @@ export const initShareInfo = (shareInfo?: ShareInfo): Disposer => {
   wechat.initShareInfo(defaultShareInfo)
 
   return () => {
-      // Reset to a generic default for the current page to avoid stale project ShareInfo
-      qq.initShareInfo(defaultShareInfo)
-      wechat.initShareInfo(defaultShareInfo)
+    // Reset to a generic default for the current page to avoid stale project ShareInfo
+    qq.initShareInfo(defaultShareInfo)
+    wechat.initShareInfo(defaultShareInfo)
   }
 }
