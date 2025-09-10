@@ -47,12 +47,6 @@ See API design in [`module_Recording.ts`](./module_Recording.ts).
 
 See API design in [`module_MobileKeyboard.ts`](./module_MobileKeyboard.ts).
 
-### MobilekeyboardUsageAnalyzer
-
-用来识别 Project 项目中用到了那些键盘按键，提供给 MobileKeyboard 使用
-
-See API design in [`module_MobileKeyboardUsageAnalyzer.ts`](./module_MobileKeyboardUsageAnalyzer.ts).
-
 ### Recording APIs
 
 spx-backend 提供的用于对 Recording 管理的 APIs
@@ -102,9 +96,6 @@ graph TB
     subgraph FunctionLayer["功能模块层"]
         MobileKeyboard["`**MobileKeyboard**
         移动端键盘模块`"]
-
-        MobilekeyboardUsageAnalyzer["`**MobilekeyboardUsageAnalyzer**
-        按键识别功能`"]
 
         ProjectRunner["`**ProjectRunner**
         游戏引擎接口模块`"]
@@ -160,7 +151,6 @@ graph TB
     %% 功能模块间连接
     MobileKeyboard --> ProjectRunner
     MobileKeyboard --> ProjectAPIs
-    MobileKeyboard --> MobilekeyboardUsageAnalyzer
 
     %% 分享流程连接
     DirectSharing --> PlatformSelector

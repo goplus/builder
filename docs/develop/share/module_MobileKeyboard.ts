@@ -1,5 +1,4 @@
 import { dispatchKeyToEvent } from "./module_ProjectAPIs";
-import type { Type as IconType } from "../../../spx-gui/src/components/ui/icons/UIIcon.vue";
 import type {
   MobileKeyboardZoneToKeyMapping,
   MobileKeyboardType,
@@ -41,38 +40,23 @@ export declare function KeyboardEditor(
  * ```vue
  * <MobileKeyboardView
  * :ZoneToKeyMapping="{ label: 'Q', posX: 0, posY: 0, btnWidth: 50, btnHeight: 50 }"
- * :systemKeyConfig="[{ textEn: 'Rerun', textZh: '重新运行', action: 'rerun' }]">
+ * @close="emit('close')"
+ * @rerun="emit('rerun')"
+ * />
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
-/**
- * Fields:
- * - textEn: English text label for the key. Required.
- * - textZh: Chinese text label for the key. Required.
- * - icon: Optional icon for the key .
- * - loading: Optional loading state .
- * - disabled: Optional disabled state (e.g., key is visible but not clickable).
- * - action: Action identifier triggered when the key is pressed. Required.
- */
-type SystemKeyType = {
-  textEn: string;
-  textZh: string;
-  icon?: IconType;
-  loading?: boolean;
-  disabled?: boolean;
-  action: string;
-};
 
 export declare function MobileKeyboardView(
   props: {
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-    systemKeyConfig?: SystemKeyType[];
   },
   emits: {
-    handleSysBtn: (action: string) => void;
+    close: [];
+    rerun: [];
   }
 ): UI;
 //  {
@@ -89,11 +73,9 @@ export declare function MobileKeyboardView(
 //       <div className="keyboard-zones">
 //         ${keyButtons}
 //       </div>
-//       <div className="systemA" @click="emit('handleSysBtn', systemKeyConfig[0].action)">
-//         ${systemKeyConfig[0]}
+//       <div className="systemA" @click="emit('rerun')">
 //       </div>
-//       <div className="systemB" @click="emit('handleSysBtn', systemKeyConfig[1].action)">
-//         ${systemKeyConfig[1]}
+//       <div className="systemB" @click="emit('close')">
 //       </div>
 //     </div>
 //   `;
