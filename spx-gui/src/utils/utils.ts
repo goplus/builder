@@ -433,7 +433,10 @@ export function assertNever(input: never): never {
  * - And you are not sure if slicing positions (start / end) are at valid code point boundaries, especially when they are fixed numbers
  */
 export function unicodeSafeSlice(input: string, start: number, end: number = input.length) {
-  input = input.slice(0, end * 2) // limit max length to avoid too long array
+  // Safety limit: Some Unicode code points (e.g., emojis) can be represented by up to two UTF-16 code units.
+  // To avoid creating excessively large arrays when slicing, we limit the input length to at most `end * MAX_CODE_UNIT_PER_CODE_POINT`.
+  const MAX_CODE_UNIT_PER_CODE_POINT = 2
+  input = input.slice(0, end * MAX_CODE_UNIT_PER_CODE_POINT)
   const codePoints = Array.from(input)
   return codePoints.slice(start, end).join('')
 }
