@@ -52,6 +52,9 @@ describe('filename', () => {
     expect(filename('foo/.cache/abc.d.ts')).toBe('abc.d.ts')
     expect(filename('/foo/bar/.gitignore')).toBe('.gitignore')
   })
+  it('should work well with special characters', () => {
+    expect(filename('foo/Artificial Axolotl 😡.svg')).toBe('Artificial Axolotl 😡.svg')
+  })
 })
 
 describe('stripExt', () => {
@@ -73,5 +76,8 @@ describe('stripExt', () => {
     expect(stripExt('abc.d.ts')).toBe('abc.d')
     expect(stripExt('foo/.cache/abc.d.ts')).toBe('foo/.cache/abc.d')
     expect(stripExt('/foo/bar/.gitignore')).toBe('/foo/bar/.gitignore')
+  })
+  it('should work well with special characters', () => {
+    expect(stripExt('foo/Artificial Axolotl 😡.svg')).toBe('foo/Artificial Axolotl 😡')
   })
 })

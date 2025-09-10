@@ -1,5 +1,3 @@
-import { toFinite } from 'lodash'
-
 import { Disposable } from '@/utils/disposable'
 
 /** Convert arbitrary-type (supported by current browser) image content to another type. */
@@ -42,13 +40,17 @@ export async function toPng(blob: Blob) {
   return convertImg(blob, 'image/png')
 }
 
-// Chrome and Firefox behave differently when handling SVG without the `viewBox` attribute.
+// Chrome and Firefox behave differently when reading `viewBox.baseVal` of SVG without the `viewBox` attribute.
 // Chrome returns `{ x: 0, y: 0, width: 0, height: 0 }` by default, while Firefox returns null.
 // This method retrieves the `viewBox` attribute, ensuring consistent behavior when it exists, and returns `{ x: 0, y: 0, width: 0, height: 0 }` when it doesn't exist.
-function getSVGViewBoxRect(svgElement: SVGElement) {
-  const viewBox = svgElement.getAttribute('viewBox') ?? ''
-  const [x, y, width, height] = viewBox.split(/\s+/).map(toFinite)
-  return { x, y, width, height }
+function getSVGViewBoxRect(svgElement: SVGSVGElement) {
+  const rect = svgElement.viewBox.baseVal as DOMRect | null // `viewBox.baseVal` may be null in Firefox if not set in SVG
+  return {
+    width: rect?.width ?? 0,
+    height: rect?.height ?? 0,
+    x: rect?.x ?? 0,
+    y: rect?.y ?? 0
+  }
 }
 
 /** Get the size of the SVG image, keeping consistent with spx. */

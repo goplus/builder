@@ -19,6 +19,10 @@ describe('normalizeAssetName', () => {
   it('should work well with non-ascii chars', () => {
     expect(normalizeAssetName('中文-1', 'camel')).toBe('中文-1')
     expect(normalizeAssetName('中文 2', 'pascal')).toBe('中文 2')
+    expect(normalizeAssetName('Artificial Axolotl 😡', 'camel')).toBe('artificial Axolotl 😡')
+    expect(normalizeAssetName('Artificial Axolotl 😡', 'pascal')).toBe('Artificial Axolotl 😡')
+    expect(normalizeAssetName('😡123', 'camel')).toBe('😡123')
+    expect(normalizeAssetName('😡123', 'pascal')).toBe('😡123')
   })
 })
 
