@@ -59,9 +59,16 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserAttrs{
 		Username:    claims.Name,
 		DisplayName: claims.DisplayName,
-		Avatar:      fixAvatar(claims.Avatar),
-		Roles:       nil,
-		Plan:        model.UserPlanFree,
+		/*
+			TODO(wyvern): https://github.com/goplus/builder/issues/2159
+			 The avatar URL for the three-party oauth authorization may be http,
+			 which will cause the browser to not be able to obtain the avatar.
+			 Currently, it is temporarily replaced with https. A better way is to
+			 download it to our kodo and then obtain it from kodo. Kodo defaults to https.
+		*/
+		Avatar: fixAvatar(claims.Avatar),
+		Roles:  nil,
+		Plan:   model.UserPlanFree,
 	})
 	if err != nil {
 		return nil, err
