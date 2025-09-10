@@ -236,7 +236,19 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
   new BilibiliPlatform()
 ]
 
-export const initShareInfo = (shareInfo?: ShareInfo) => {
-  new QQPlatform().initShareInfo(shareInfo)
-  new WeChatPlatform().initShareInfo(shareInfo)
+export type Disposer = () => void
+
+export const initShareInfo = (shareInfo?: ShareInfo): Disposer => {
+  const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
+  const qq = new QQPlatform()
+  const wechat = new WeChatPlatform()
+
+  qq.initShareInfo(defaultShareInfo)
+  wechat.initShareInfo(defaultShareInfo)
+
+  return () => {
+      // Reset to a generic default for the current page to avoid stale project ShareInfo
+      qq.initShareInfo(defaultShareInfo)
+      wechat.initShareInfo(defaultShareInfo)
+  }
 }

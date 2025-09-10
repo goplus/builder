@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
@@ -449,7 +449,10 @@ const handleRecordingSharing = useMessageHandle(
 )
 
 //初始化分享信息
-initShareInfo()
+watchEffect((onCleanup) => {
+  const dispose = initShareInfo()
+  onCleanup(dispose)
+})
 </script>
 
 <template>
