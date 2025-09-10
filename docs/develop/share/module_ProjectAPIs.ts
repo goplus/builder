@@ -11,10 +11,6 @@ export type KeyBtn = {
   posX: number;
   /** The vertical coordinate of the left top corner of the key (pixels). */
   posY: number;
-  /** The width of the key (pixels). */
-  btnWidth: number;
-  /** The height of the key (pixels). */
-  btnHeight: number;
 };
 export type MobileKeyboardZoneToKeyMapping = KeyBtn[];
 /**
