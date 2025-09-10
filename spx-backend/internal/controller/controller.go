@@ -43,6 +43,7 @@ type Controller struct {
 	aigc                *aigc.AigcClient
 	svggen              *svggen.ServiceManager
 	recommendationCache *RecommendationCacheService
+	algorithmService    *AlgorithmService
 }
 
 // New creates a new controller.
@@ -84,6 +85,9 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		recommendationCache = NewRecommendationCacheService(redisClient)
 	}
 
+	// Initialize algorithm service
+	algorithmService := NewAlgorithmService(&cfg.Algorithm)
+
 	return &Controller{
 		db:                  db,
 		kodo:                kodoClient,
@@ -93,6 +97,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		aigc:                aigcClient,
 		svggen:              svggenManager,
 		recommendationCache: recommendationCache,
+		algorithmService:    algorithmService,
 	}, nil
 }
 

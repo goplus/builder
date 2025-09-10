@@ -15,6 +15,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/yap"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"os/signal"
 	"strconv"
@@ -164,6 +165,10 @@ type post_image_svg struct {
 	yap.Handler
 	*AppV2
 }
+type post_images_feedback struct {
+	yap.Handler
+	*AppV2
+}
 type post_images_recommend struct {
 	yap.Handler
 	*AppV2
@@ -216,89 +221,100 @@ type put_user struct {
 	yap.Handler
 	*AppV2
 }
-//line cmd/spx-backend/main.yap:30
+//line cmd/spx-backend/main.yap:31
 func (this *AppV2) MainEntry() {
-//line cmd/spx-backend/main.yap:30:1
+//line cmd/spx-backend/main.yap:31:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/main.yap:33:1
-	cfg, err := config.Load(logger)
 //line cmd/spx-backend/main.yap:34:1
-	if err != nil {
+	cfg, err := config.Load(logger)
 //line cmd/spx-backend/main.yap:35:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:36:1
 		logger.Fatalln("failed to load configuration:", err)
 	}
-//line cmd/spx-backend/main.yap:39:1
-	db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
 //line cmd/spx-backend/main.yap:40:1
-	if err != nil {
+	db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
 //line cmd/spx-backend/main.yap:41:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:42:1
 		logger.Fatalln("failed to open database:", err)
 	}
-//line cmd/spx-backend/main.yap:46:1
+//line cmd/spx-backend/main.yap:47:1
 	authenticator := casdoor.New(db, cfg.Casdoor)
-//line cmd/spx-backend/main.yap:48:1
-	// Initialize authorizer.
+//line cmd/spx-backend/main.yap:49:1
+	// Initialize authorizer and Redis.
 	var quotaTracker authz.QuotaTracker
-//line cmd/spx-backend/main.yap:50:1
-	if cfg.Redis.Addr != "" {
 //line cmd/spx-backend/main.yap:51:1
-		quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
+	var redisClient *redis.Client
 //line cmd/spx-backend/main.yap:52:1
-		logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
-	} else {
+	if cfg.Redis.Addr != "" {
+//line cmd/spx-backend/main.yap:53:1
+		quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
 //line cmd/spx-backend/main.yap:54:1
+		logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
+//line cmd/spx-backend/main.yap:56:1
+		redisClient = redis.NewClient(&redis.Options{Addr: cfg.Redis.GetAddr(), Password: cfg.Redis.Password, DB: cfg.Redis.DB, PoolSize: cfg.Redis.GetPoolSize()})
+//line cmd/spx-backend/main.yap:63:1
+		if
+//line cmd/spx-backend/main.yap:63:1
+		err := redisClient.Ping(context.Background()).Err(); err != nil {
+//line cmd/spx-backend/main.yap:64:1
+			logger.Printf("warning: redis ping failed: %v", err)
+		}
+	} else {
+//line cmd/spx-backend/main.yap:67:1
 		quotaTracker = quota.NewNopQuotaTracker()
-//line cmd/spx-backend/main.yap:55:1
+//line cmd/spx-backend/main.yap:68:1
 		logger.Println("using no-op quota tracker")
 	}
-//line cmd/spx-backend/main.yap:57:1
+//line cmd/spx-backend/main.yap:70:1
 	pdp := embpdp.New(quotaTracker)
-//line cmd/spx-backend/main.yap:58:1
+//line cmd/spx-backend/main.yap:71:1
 	authorizer := authz.New(db, pdp, quotaTracker)
-//line cmd/spx-backend/main.yap:61:1
-	this.ctrl, err = controller.New(context.Background(), db, cfg)
-//line cmd/spx-backend/main.yap:62:1
+//line cmd/spx-backend/main.yap:74:1
+	this.ctrl, err = controller.New(context.Background(), db, cfg, redisClient)
+//line cmd/spx-backend/main.yap:75:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:63:1
+//line cmd/spx-backend/main.yap:76:1
 		logger.Fatalln("failed to create a new controller:", err)
 	}
-//line cmd/spx-backend/main.yap:68:1
-	port := cfg.Server.GetPort()
-//line cmd/spx-backend/main.yap:69:1
-	logger.Printf("listening to %s", port)
-//line cmd/spx-backend/main.yap:71:1
-	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
-//line cmd/spx-backend/main.yap:77:1
-	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:79:1
-	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-//line cmd/spx-backend/main.yap:80:1
-	defer stop()
 //line cmd/spx-backend/main.yap:81:1
-	var serverErr error
+	port := cfg.Server.GetPort()
 //line cmd/spx-backend/main.yap:82:1
-	go func() {
-//line cmd/spx-backend/main.yap:83:1
-		serverErr = server.ListenAndServe()
+	logger.Printf("listening to %s", port)
 //line cmd/spx-backend/main.yap:84:1
+	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
+//line cmd/spx-backend/main.yap:90:1
+	server := &http.Server{Addr: port, Handler: h}
+//line cmd/spx-backend/main.yap:92:1
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+//line cmd/spx-backend/main.yap:93:1
+	defer stop()
+//line cmd/spx-backend/main.yap:94:1
+	var serverErr error
+//line cmd/spx-backend/main.yap:95:1
+	go func() {
+//line cmd/spx-backend/main.yap:96:1
+		serverErr = server.ListenAndServe()
+//line cmd/spx-backend/main.yap:97:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:86:1
+//line cmd/spx-backend/main.yap:99:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:87:1
+//line cmd/spx-backend/main.yap:100:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:88:1
+//line cmd/spx-backend/main.yap:101:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:91:1
+//line cmd/spx-backend/main.yap:104:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:92:1
+//line cmd/spx-backend/main.yap:105:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:93:1
+//line cmd/spx-backend/main.yap:106:1
 	if
-//line cmd/spx-backend/main.yap:93:1
+//line cmd/spx-backend/main.yap:106:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:94:1
+//line cmd/spx-backend/main.yap:107:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }
@@ -336,20 +352,21 @@ func (this *AppV2) Main() {
 	_xgo_obj30 := &post_course{AppV2: this}
 	_xgo_obj31 := &post_image{AppV2: this}
 	_xgo_obj32 := &post_image_svg{AppV2: this}
-	_xgo_obj33 := &post_images_recommend{AppV2: this}
-	_xgo_obj34 := &post_project_release{AppV2: this}
-	_xgo_obj35 := &post_project{AppV2: this}
-	_xgo_obj36 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj37 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj38 := &post_user_username_following{AppV2: this}
-	_xgo_obj39 := &post_util_fileurls{AppV2: this}
-	_xgo_obj40 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj41 := &put_asset_id{AppV2: this}
-	_xgo_obj42 := &put_course_series_id{AppV2: this}
-	_xgo_obj43 := &put_course_id{AppV2: this}
-	_xgo_obj44 := &put_project_owner_name{AppV2: this}
-	_xgo_obj45 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45)
+	_xgo_obj33 := &post_images_feedback{AppV2: this}
+	_xgo_obj34 := &post_images_recommend{AppV2: this}
+	_xgo_obj35 := &post_project_release{AppV2: this}
+	_xgo_obj36 := &post_project{AppV2: this}
+	_xgo_obj37 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj38 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj39 := &post_user_username_following{AppV2: this}
+	_xgo_obj40 := &post_util_fileurls{AppV2: this}
+	_xgo_obj41 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj42 := &put_asset_id{AppV2: this}
+	_xgo_obj43 := &put_course_series_id{AppV2: this}
+	_xgo_obj44 := &put_course_id{AppV2: this}
+	_xgo_obj45 := &put_project_owner_name{AppV2: this}
+	_xgo_obj46 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1993,6 +2010,46 @@ func (this *post_image_svg) Classfname() string {
 	return "post_image_svg"
 }
 func (this *post_image_svg) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_images_feedback.yap:10
+func (this *post_images_feedback) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_images_feedback.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_images_feedback.yap:12:1
+	params := &controller.ImageFeedbackParams{}
+//line cmd/spx-backend/post_images_feedback.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_images_feedback.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_images_feedback.yap:16:1
+	if
+//line cmd/spx-backend/post_images_feedback.yap:16:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_images_feedback.yap:17:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_images_feedback.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_images_feedback.yap:21:1
+	err := this.ctrl.SubmitImageFeedback(ctx.Context(), params)
+//line cmd/spx-backend/post_images_feedback.yap:22:1
+	if err != nil {
+//line cmd/spx-backend/post_images_feedback.yap:23:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_images_feedback.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_images_feedback.yap:27:1
+	this.Json__1(map[string]interface{}{"status": "success", "message": "Feedback submitted successfully"})
+}
+func (this *post_images_feedback) Classfname() string {
+	return "post_images_feedback"
+}
+func (this *post_images_feedback) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

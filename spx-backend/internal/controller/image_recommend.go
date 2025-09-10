@@ -1,11 +1,8 @@
 package controller
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -156,25 +153,6 @@ type RecommendedImageResult struct {
 }
 
 // AlgorithmSearchRequest represents the request to spx-algorithm service.
-type AlgorithmSearchRequest struct {
-	Text      string  `json:"text"`
-	TopK      int     `json:"top_k"`
-	Threshold float64 `json:"threshold"`
-}
-
-// AlgorithmSearchResponse represents the response from spx-algorithm service.
-type AlgorithmSearchResponse struct {
-	Query        string                 `json:"query"`
-	ResultsCount int                    `json:"results_count"`
-	Results      []AlgorithmImageResult `json:"results"`
-}
-
-// AlgorithmImageResult represents a single image result from algorithm service.
-type AlgorithmImageResult struct {
-	ImagePath  string  `json:"image_path"`
-	Similarity float64 `json:"similarity"`
-	Rank       int     `json:"rank"`
-}
 
 // generateQueryID generates a unique query ID for tracking recommendations
 func generateQueryID() string {
@@ -198,13 +176,6 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 	return true, ""
 }
 
-// AlgorithmFeedbackRequest represents the request to spx-algorithm feedback service.
-type AlgorithmFeedbackRequest struct {
-	QueryID          string  `json:"query_id"`
-	Query            string  `json:"query"`
-	RecommendedPics  []int64 `json:"recommended_pics"`
-	ChosenPic        int64   `json:"chosen_pic"`
-}
 
 // RecommendationCache stores recommendation results for feedback tracking
 type RecommendationCache struct {
@@ -317,45 +288,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 // callAlgorithmService calls the spx-algorithm service for semantic search.
 func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
-	algorithmURL := ctrl.getAlgorithmServiceURL() + "/v1/resource/search"
-
-	reqData := AlgorithmSearchRequest{
-		Text:      text,
-		TopK:      topK,
-		Threshold: 0.2,
-	}
-
-	reqBody, err := json.Marshal(reqData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", algorithmURL, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("algorithm service returned status: %d", resp.StatusCode)
-	}
-
-	var algorithmResp AlgorithmSearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&algorithmResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &algorithmResp, nil
+	return ctrl.algorithmService.SearchSimilarImages(ctx, text, topK)
 }
 
 
@@ -469,9 +402,7 @@ func countBySource(results []RecommendedImageResult, source string) int {
 
 // getAlgorithmServiceURL returns the algorithm service URL from configuration.
 func (ctrl *Controller) getAlgorithmServiceURL() string {
-	// TODO: Get from config when available
-	// For now, use localhost default
-	return "http://localhost:5000"
+	return ctrl.algorithmService.GetEndpoint()
 }
 
 // cacheRecommendationResult stores recommendation result for feedback tracking
@@ -837,32 +768,5 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 
 // callAlgorithmFeedbackService calls the spx-algorithm service feedback endpoint
 func (ctrl *Controller) callAlgorithmFeedbackService(ctx context.Context, feedbackReq *AlgorithmFeedbackRequest) error {
-	algorithmURL := ctrl.getAlgorithmServiceURL() + "/v1/feedback/submit"
-	
-	reqBody, err := json.Marshal(feedbackReq)
-	if err != nil {
-		return fmt.Errorf("failed to marshal feedback request: %w", err)
-	}
-	
-	req, err := http.NewRequestWithContext(ctx, "POST", algorithmURL, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return fmt.Errorf("failed to create feedback request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("feedback request failed: %w", err)
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("algorithm feedback service returned status: %d", resp.StatusCode)
-	}
-	
-	return nil
+	return ctrl.algorithmService.SubmitImageFeedback(ctx, feedbackReq)
 }
