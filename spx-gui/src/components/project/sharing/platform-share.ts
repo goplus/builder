@@ -1,3 +1,4 @@
+import { getWechatChatJSSDKConfig } from '@/apis/wechat'
 /**
  * 社交平台配置
  */
@@ -143,6 +144,42 @@ class WeChatPlatform implements PlatformConfig {
   initShareInfo = (shareInfo?: ShareInfo) => {
     // TODO微信平台设置分享信息
     void shareInfo
+    const config = getWechatChatJSSDKConfig({
+      url: typeof location !== 'undefined' ? location.href : ''
+    })
+    //初始化微信分享信息
+    if (typeof window !== 'undefined' && window.wx && window.wx.config) {
+      window.wx.config({
+        debug: false,
+        appid: config.appid,
+        timestamp: config.timestamp,
+        nonceStr: config.nonceStr,
+        signature: config.signature,
+        jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
+      })
+
+      // 配置成功后，设置分享数据
+      window.wx.ready(() => {
+        // 设置分享给朋友的数据
+        window.wx.updateAppMessageShareData({
+          title: shareInfo?.title || 'XBuilder',
+          desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
+          link: typeof location !== 'undefined' ? location.href : '',
+          imgUrl: 'https://x.qiniu.com//logo.png',
+          success: function () {}
+        })
+
+        // 设置分享到朋友圈的数据
+        window.wx.updateTimelineShareData({
+          title: shareInfo?.title || 'XBuilder',
+          desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
+          link: typeof location !== 'undefined' ? location.href : '',
+          imgUrl: 'https://x.qiniu.com//logo.png',
+          success: function () {}
+        })
+      })
+    }
+
     return
   }
 }
