@@ -81,7 +81,12 @@ export type ScreenshotTaker = (
   signal?: AbortSignal
 ) => Promise<File>
 
-const defaultViewportSize = defaultMapSize
+export type ViewportSize = {
+  width: number
+  height: number
+}
+
+const defaultViewportSize: ViewportSize = defaultMapSize
 
 export class Project extends Disposable {
   id?: string
@@ -202,6 +207,8 @@ export class Project extends Disposable {
     this.sounds.splice(from, 1)
     this.sounds.splice(to, 0, sound)
   }
+
+  readonly viewportSize = defaultViewportSize
 
   private cameraFollowSpriteId: string | null
   get cameraFollowSprite(): Sprite | null {
@@ -392,8 +399,8 @@ export class Project extends Disposable {
     const config: RawProjectConfig = {
       ...restStageConfig,
       run: {
-        width: defaultViewportSize.width,
-        height: defaultViewportSize.height
+        width: this.viewportSize.width,
+        height: this.viewportSize.height
       },
       camera: {
         on: this.cameraFollowSprite?.name || ''

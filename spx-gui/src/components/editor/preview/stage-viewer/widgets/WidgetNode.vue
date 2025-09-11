@@ -2,7 +2,7 @@
   <MonitorNode
     v-if="widget instanceof Monitor"
     :monitor="widget"
-    :map-size="mapSize"
+    :viewport-size="viewportSize"
     :node-ready-map="nodeReadyMap"
   ></MonitorNode>
 </template>
@@ -12,11 +12,11 @@ import type { Size } from '@/models/common'
 import type { Widget } from '@/models/widget'
 import MonitorNode from './MonitorNode.vue'
 import { Monitor } from '@/models/widget/monitor'
-import { getNodeId } from '../node'
+import { getNodeId } from '../common'
 
 const props = defineProps<{
   widget: Widget
-  mapSize: Size
+  viewportSize: Size
   nodeReadyMap: Map<string, boolean>
 }>()
 
