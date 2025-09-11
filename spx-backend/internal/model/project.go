@@ -1,6 +1,11 @@
 package model
 
-import "database/sql"
+import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+)
 
 // Project is the model for projects.
 type Project struct {
@@ -56,6 +61,15 @@ type Project struct {
 	// RemixCount is the number of times the project has been remixed.
 	RemixCount int64 `gorm:"column:remix_count;index"`
 
+	// MobileKeyboardType is the type of mobile keyboard adaptation.
+	// 1: No keyboard needed 
+	// 2: Custom keyboard
+	MobileKeyboardType int `gorm:"column:mobile_keyboard_type;not null;default:1"`
+
+	// MobileKeyboardZoneToKey contains the mapping from zone ID to key name.
+	// Only applicable when MobileKeyboardType is 2 (custom keyboard).
+	MobileKeyboardZoneToKey MobileKeyboardZoneToKeyMapping `gorm:"column:mobile_keyboard_zone_to_key;type:json"`
+
 	// Migration only fields. Do not use in application code.
 	MO__deleted_at_is_null _deleted_at_is_null `gorm:"->:false;<-:false;column:_deleted_at_is_null;index:,composite:owner_id_name,unique"`
 }
@@ -63,4 +77,84 @@ type Project struct {
 // TableName implements [gorm.io/gorm/schema.Tabler].
 func (Project) TableName() string {
 	return "project"
+}
+
+// IsNoKeyboard returns true if the mobile keyboard type indicates no keyboard is needed.
+func (p *Project) IsNoKeyboard() bool {
+	return p.MobileKeyboardType == 1
+}
+
+// IsCustomKeyboard returns true if the mobile keyboard type indicates custom keyboard is needed.
+func (p *Project) IsCustomKeyboard() bool {
+	return p.MobileKeyboardType == 2
+}
+
+// MobileKeyboardZoneId represents the zone ID type for virtual keyboard.
+type MobileKeyboardZoneId string
+
+// Zone ID constants for the 10 virtual keyboard zones.
+const (
+	MobileKeyboardZoneIdLT      MobileKeyboardZoneId = "lt"      // Left Top
+	MobileKeyboardZoneIdRT      MobileKeyboardZoneId = "rt"      // Right Top
+	MobileKeyboardZoneIdLBUp    MobileKeyboardZoneId = "lbUp"    // Left Bottom Up
+	MobileKeyboardZoneIdLBLeft  MobileKeyboardZoneId = "lbLeft"  // Left Bottom Left
+	MobileKeyboardZoneIdLBRight MobileKeyboardZoneId = "lbRight" // Left Bottom Right
+	MobileKeyboardZoneIdLBDown  MobileKeyboardZoneId = "lbDown"  // Left Bottom Down
+	MobileKeyboardZoneIdRBA     MobileKeyboardZoneId = "rbA"     // Right Bottom A
+	MobileKeyboardZoneIdRBB     MobileKeyboardZoneId = "rbB"     // Right Bottom B
+	MobileKeyboardZoneIdRBX     MobileKeyboardZoneId = "rbX"     // Right Bottom X
+	MobileKeyboardZoneIdRBY     MobileKeyboardZoneId = "rbY"     // Right Bottom Y
+)
+
+// AllMobileKeyboardZoneIds returns all valid zone IDs.
+func AllMobileKeyboardZoneIds() []MobileKeyboardZoneId {
+	return []MobileKeyboardZoneId{
+		MobileKeyboardZoneIdLT, MobileKeyboardZoneIdRT, MobileKeyboardZoneIdLBUp, MobileKeyboardZoneIdLBLeft, MobileKeyboardZoneIdLBRight,
+		MobileKeyboardZoneIdLBDown, MobileKeyboardZoneIdRBA, MobileKeyboardZoneIdRBB, MobileKeyboardZoneIdRBX, MobileKeyboardZoneIdRBY,
+	}
+}
+
+// IsValid checks if the zone ID is valid.
+func (z MobileKeyboardZoneId) IsValid() bool {
+	for _, validZone := range AllMobileKeyboardZoneIds() {
+		if z == validZone {
+			return true
+		}
+	}
+	return false
+}
+
+// MobileKeyboardZoneToKeyMapping is a map from zone ID to key name.
+// Key name can be null (represented as nil pointer) if the zone is not mapped to any key.
+type MobileKeyboardZoneToKeyMapping map[MobileKeyboardZoneId]*string
+
+// Scan implements [sql.Scanner].
+func (ztkm *MobileKeyboardZoneToKeyMapping) Scan(src any) error {
+	switch src := src.(type) {
+	case string:
+		if src == "" {
+			*ztkm = make(MobileKeyboardZoneToKeyMapping)
+			return nil
+		}
+		return json.Unmarshal([]byte(src), ztkm)
+	case []byte:
+		if len(src) == 0 {
+			*ztkm = make(MobileKeyboardZoneToKeyMapping)
+			return nil
+		}
+		return json.Unmarshal(src, ztkm)
+	case nil:
+		*ztkm = make(MobileKeyboardZoneToKeyMapping)
+		return nil
+	default:
+		return errors.New("incompatible type for MobileKeyboardZoneToKeyMapping")
+	}
+}
+
+// Value implements [driver.Valuer].
+func (ztkm MobileKeyboardZoneToKeyMapping) Value() (driver.Value, error) {
+	if ztkm == nil {
+		return nil, nil
+	}
+	return json.Marshal(ztkm)
 }

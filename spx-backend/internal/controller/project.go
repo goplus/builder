@@ -21,20 +21,22 @@ import (
 type ProjectDTO struct {
 	ModelDTO
 
-	Owner         string               `json:"owner"`
-	RemixedFrom   *RemixSource         `json:"remixedFrom,omitempty"`
-	LatestRelease *ProjectReleaseDTO   `json:"latestRelease,omitempty"`
-	Name          string               `json:"name"`
-	Version       int                  `json:"version"`
-	Files         model.FileCollection `json:"files"`
-	Visibility    model.Visibility     `json:"visibility"`
-	Description   string               `json:"description"`
-	Instructions  string               `json:"instructions"`
-	Thumbnail     string               `json:"thumbnail"`
-	ViewCount     int64                `json:"viewCount"`
-	LikeCount     int64                `json:"likeCount"`
-	ReleaseCount  int64                `json:"releaseCount"`
-	RemixCount    int64                `json:"remixCount"`
+	Owner                   string               `json:"owner"`
+	RemixedFrom             *RemixSource         `json:"remixedFrom,omitempty"`
+	LatestRelease           *ProjectReleaseDTO   `json:"latestRelease,omitempty"`
+	Name                    string               `json:"name"`
+	Version                 int                  `json:"version"`
+	Files                   model.FileCollection `json:"files"`
+	Visibility              model.Visibility     `json:"visibility"`
+	Description             string               `json:"description"`
+	Instructions            string               `json:"instructions"`
+	Thumbnail               string               `json:"thumbnail"`
+	ViewCount               int64                `json:"viewCount"`
+	LikeCount               int64                `json:"likeCount"`
+	ReleaseCount            int64                `json:"releaseCount"`
+	RemixCount              int64                `json:"remixCount"`
+	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
+	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // toProjectDTO converts the model project to its DTO.
@@ -53,22 +55,36 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 		latestRelease = &lr
 	}
 	return ProjectDTO{
-		ModelDTO:      toModelDTO(mProject.Model),
-		Owner:         mProject.Owner.Username,
-		RemixedFrom:   remixedFrom,
-		LatestRelease: latestRelease,
-		Name:          mProject.Name,
-		Version:       mProject.Version,
-		Files:         mProject.Files,
-		Visibility:    mProject.Visibility,
-		Description:   mProject.Description,
-		Instructions:  mProject.Instructions,
-		Thumbnail:     mProject.Thumbnail,
-		ViewCount:     mProject.ViewCount,
-		LikeCount:     mProject.LikeCount,
-		ReleaseCount:  mProject.ReleaseCount,
-		RemixCount:    mProject.RemixCount,
+		ModelDTO:                toModelDTO(mProject.Model),
+		Owner:                   mProject.Owner.Username,
+		RemixedFrom:             remixedFrom,
+		LatestRelease:           latestRelease,
+		Name:                    mProject.Name,
+		Version:                 mProject.Version,
+		Files:                   mProject.Files,
+		Visibility:              mProject.Visibility,
+		Description:             mProject.Description,
+		Instructions:            mProject.Instructions,
+		Thumbnail:               mProject.Thumbnail,
+		ViewCount:               mProject.ViewCount,
+		LikeCount:               mProject.LikeCount,
+		ReleaseCount:            mProject.ReleaseCount,
+		RemixCount:              mProject.RemixCount,
+		MobileKeyboardType:      mProject.MobileKeyboardType,
+		MobileKeyboardZoneToKey: convertZoneToKeyMapping(mProject.MobileKeyboardZoneToKey),
 	}
+}
+
+// Type conversion function that converts model's MobileKeyboardZoneToKeyMapping to DTO's map[string]*string
+func convertZoneToKeyMapping(ztkm model.MobileKeyboardZoneToKeyMapping) map[string]*string {
+	if ztkm == nil {
+		return nil
+	}
+	result := make(map[string]*string)
+	for zone, key := range ztkm {
+		result[string(zone)] = key
+	}
+	return result
 }
 
 // projectNameRE is the regular expression for project name.
@@ -228,13 +244,15 @@ func (ctrl *Controller) ensureProject(ctx context.Context, fullName ProjectFullN
 
 // CreateProjectParams holds parameters for creating project.
 type CreateProjectParams struct {
-	RemixSource  *RemixSource         `json:"remixSource"`
-	Name         string               `json:"name"`
-	Files        model.FileCollection `json:"files"`
-	Visibility   model.Visibility     `json:"visibility"`
-	Description  string               `json:"description"`
-	Instructions string               `json:"instructions"`
-	Thumbnail    string               `json:"thumbnail"`
+	RemixSource             *RemixSource         `json:"remixSource"`
+	Name                    string               `json:"name"`
+	Files                   model.FileCollection `json:"files"`
+	Visibility              model.Visibility     `json:"visibility"`
+	Description             string               `json:"description"`
+	Instructions            string               `json:"instructions"`
+	Thumbnail               string               `json:"thumbnail"`
+	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
+	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // Validate validates the parameters.
@@ -247,6 +265,23 @@ func (p *CreateProjectParams) Validate() (ok bool, msg string) {
 	} else if !projectNameRE.Match([]byte(p.Name)) {
 		return false, "invalid name"
 	}
+	if p.MobileKeyboardType < 1 || p.MobileKeyboardType > 2 {
+		return false, "invalid mobileKeyboardType, must be 1 (no keyboard) or 2 (custom keyboard)"
+	}
+	if p.MobileKeyboardType == 2 && len(p.MobileKeyboardZoneToKey) == 0 {
+		return false, "mobileKeyboardZoneToKey is required when mobileKeyboardType is 2 (custom keyboard)"
+	}
+	if p.MobileKeyboardType == 1 && len(p.MobileKeyboardZoneToKey) > 0 {
+		return false, "mobileKeyboardZoneToKey must be empty when mobileKeyboardType is 1 (no keyboard)"
+	}
+	if p.MobileKeyboardType == 2 && p.MobileKeyboardZoneToKey != nil {
+		for zoneStr := range p.MobileKeyboardZoneToKey {
+			zone := model.MobileKeyboardZoneId(zoneStr)
+			if !zone.IsValid() {
+				return false, fmt.Sprintf("invalid zone ID: %s", zoneStr)
+			}
+		}
+	}
 	return true, ""
 }
 
@@ -258,14 +293,16 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 	}
 
 	mProject := model.Project{
-		OwnerID:      mUser.ID,
-		Name:         params.Name,
-		Version:      1,
-		Files:        params.Files,
-		Visibility:   params.Visibility,
-		Description:  params.Description,
-		Instructions: params.Instructions,
-		Thumbnail:    params.Thumbnail,
+		OwnerID:                 mUser.ID,
+		Name:                    params.Name,
+		Version:                 1,
+		Files:                   params.Files,
+		Visibility:              params.Visibility,
+		Description:             params.Description,
+		Instructions:            params.Instructions,
+		Thumbnail:               params.Thumbnail,
+		MobileKeyboardType:      params.MobileKeyboardType,
+		MobileKeyboardZoneToKey: convertToModelZoneToKeyMapping(params.MobileKeyboardZoneToKey),
 	}
 	if params.RemixSource != nil {
 		var mRemixSourceProject model.Project
@@ -611,15 +648,40 @@ func (ctrl *Controller) GetProject(ctx context.Context, fullName ProjectFullName
 
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
-	Files        model.FileCollection `json:"files"`
-	Visibility   model.Visibility     `json:"visibility"`
-	Description  string               `json:"description"`
-	Instructions string               `json:"instructions"`
-	Thumbnail    string               `json:"thumbnail"`
+	Files                   model.FileCollection `json:"files"`
+	Visibility              model.Visibility     `json:"visibility"`
+	Description             string               `json:"description"`
+	Instructions            string               `json:"instructions"`
+	Thumbnail               string               `json:"thumbnail"`
+	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
+	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // Validate validates the parameters.
 func (p *UpdateProjectParams) Validate() (ok bool, msg string) {
+	// Validate mobile keyboard type
+	if p.MobileKeyboardType < 1 || p.MobileKeyboardType > 2 {
+		return false, "invalid mobileKeyboardType, must be 1 (no keyboard) or 2 (custom keyboard)"
+	}
+
+	// Validate consistency between keyboard type and zone mapping
+	if p.MobileKeyboardType == 2 && len(p.MobileKeyboardZoneToKey) == 0 {
+		return false, "mobileKeyboardZoneToKey is required when mobileKeyboardType is 2 (custom keyboard)"
+	}
+	if p.MobileKeyboardType == 1 && len(p.MobileKeyboardZoneToKey) > 0 {
+		return false, "mobileKeyboardZoneToKey must be empty when mobileKeyboardType is 1 (no keyboard)"
+	}
+
+	// Validate if zone IDs are valid
+	if p.MobileKeyboardType == 2 && p.MobileKeyboardZoneToKey != nil {
+		for zoneStr := range p.MobileKeyboardZoneToKey {
+			zone := model.MobileKeyboardZoneId(zoneStr)
+			if !zone.IsValid() {
+				return false, fmt.Sprintf("invalid zone ID: %s", zoneStr)
+			}
+		}
+	}
+
 	return true, ""
 }
 
@@ -641,7 +703,51 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	if p.Thumbnail != mProject.Thumbnail {
 		updates["thumbnail"] = p.Thumbnail
 	}
+	if p.MobileKeyboardType != mProject.MobileKeyboardType {
+		updates["mobile_keyboard_type"] = p.MobileKeyboardType
+	}
+	if !equalZoneToKeyMapping(p.MobileKeyboardZoneToKey, mProject.MobileKeyboardZoneToKey) {
+		updates["mobile_keyboard_zone_to_key"] = convertToModelZoneToKeyMapping(p.MobileKeyboardZoneToKey)
+	}
 	return updates
+}
+
+// convertToModelZoneToKeyMapping converts DTO's map[string]*string to model's MobileKeyboardZoneToKeyMapping
+func convertToModelZoneToKeyMapping(dtoMapping map[string]*string) model.MobileKeyboardZoneToKeyMapping {
+	if dtoMapping == nil {
+		return make(model.MobileKeyboardZoneToKeyMapping)
+	}
+	result := make(model.MobileKeyboardZoneToKeyMapping)
+	for zoneStr, key := range dtoMapping {
+		zone := model.MobileKeyboardZoneId(zoneStr)
+		result[zone] = key
+	}
+	return result
+}
+
+// equalZoneToKeyMapping compares if two ZoneToKey mappings are equal
+func equalZoneToKeyMapping(dtoMapping map[string]*string, modelMapping model.MobileKeyboardZoneToKeyMapping) bool {
+	if len(dtoMapping) != len(modelMapping) {
+		return false
+	}
+
+	for zoneStr, dtoKey := range dtoMapping {
+		zone := model.MobileKeyboardZoneId(zoneStr)
+		modelKey, exists := modelMapping[zone]
+		if !exists {
+			return false
+		}
+
+		// Compare the values pointed to by the pointers
+		if (dtoKey == nil) != (modelKey == nil) {
+			return false
+		}
+		if dtoKey != nil && modelKey != nil && *dtoKey != *modelKey {
+			return false
+		}
+	}
+
+	return true
 }
 
 // UpdateProject updates a project.
