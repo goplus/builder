@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -26,7 +27,7 @@ type AssetCompletionTrie struct {
 	lastUpdate  time.Time
 	updateMutex sync.RWMutex
 	cacheExpiry time.Duration
-	refreshing  bool // Flag to prevent multiple concurrent refreshes
+	refreshing  atomic.Bool // Atomic flag to prevent multiple concurrent refreshes
 	minDepth    int  // Minimum depth to start storing namesMap (memory optimization)
 }
 
@@ -47,13 +48,11 @@ func NewAssetCompletionTrie(db *gorm.DB) *AssetCompletionTrie {
 
 // RefreshCache loads all asset names from database into memory trie
 func (t *AssetCompletionTrie) RefreshCache() error {
-	// 1. First check if already refreshing (lightweight check)
-	t.updateMutex.RLock()
-	if t.refreshing {
-		t.updateMutex.RUnlock()
-		return nil
+	// 1. Atomic check if already refreshing (no lock needed)
+	if !t.refreshing.CompareAndSwap(false, true) {
+		return nil // Already refreshing
 	}
-	t.updateMutex.RUnlock()
+	defer t.refreshing.Store(false)
 
 	// 2. Load all asset names from database (outside lock - expensive operation)
 	var assets []model.GameAsset
@@ -76,22 +75,16 @@ func (t *AssetCompletionTrie) RefreshCache() error {
 	t.updateMutex.Lock()
 	defer t.updateMutex.Unlock()
 
-	// Double check: another goroutine might have refreshed while we were building
-	if t.refreshing {
-		return nil
-	}
-
-	t.refreshing = true
-	defer func() { t.refreshing = false }()
-
 	// Quick replacement
 	t.root = newRoot
 	t.lastUpdate = time.Now()
 	return nil
 }
 
-// insert adds a name to the trie
+// insert adds a name to the trie (requires lock for shared root)
 func (t *AssetCompletionTrie) insert(key, originalName string) {
+	t.updateMutex.Lock()
+	defer t.updateMutex.Unlock()
 	t.insertToNode(t.root, key, originalName)
 }
 
@@ -157,12 +150,10 @@ func (t *AssetCompletionTrie) search(prefix string) []string {
 	t.updateMutex.RLock()
 	defer t.updateMutex.RUnlock()
 
-	// Check if cache needs refresh
-	if time.Since(t.lastUpdate) > t.cacheExpiry && !t.refreshing {
-		// Release read lock and acquire write lock for refresh
-		t.updateMutex.RUnlock()
-		go t.RefreshCache() // Async refresh
-		t.updateMutex.RLock()
+	// Check if cache needs refresh (atomic check, no lock needed)
+	if time.Since(t.lastUpdate) > t.cacheExpiry && !t.refreshing.Load() {
+		// Async refresh without releasing lock
+		go t.RefreshCache()
 	}
 
 	node := t.root
@@ -224,7 +215,7 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 		"cache_age":     time.Since(t.lastUpdate),
 		"cache_expiry":  t.cacheExpiry,
 		"needs_refresh": time.Since(t.lastUpdate) > t.cacheExpiry,
-		"refreshing":    t.refreshing,
+		"refreshing":    t.refreshing.Load(),
 		"node_count":    nodeCount,
 		"total_names":   totalNames,
 	}
