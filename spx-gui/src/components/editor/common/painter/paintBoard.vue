@@ -172,8 +172,8 @@
       <div class="canvas-wrapper">
         <canvas
           ref="canvasRef"
-          :width="canvasWidth"
-          :height="canvasHeight"
+          resize
+          style="width: 100%; height: 100%"
           @click="handleCanvasClick"
           @mousedown="handleMouseDown"
           @mousemove="handleMouseMove"
@@ -259,8 +259,8 @@ type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle'
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const canvasWidth = ref<number>(800)
-const canvasHeight = ref<number>(600)
+const canvasWidth = ref<number>(0)
+const canvasHeight = ref<number>(0)
 import { getCanvasSize } from './utils/canvasSize'
 const canvasColor = ref<string>('#1f11ff')
 
@@ -876,7 +876,7 @@ canvas:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 20%;
+  /* height: 20%; */
   width: 100%;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
