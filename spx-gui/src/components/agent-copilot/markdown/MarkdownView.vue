@@ -127,11 +127,13 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   }
 
   :deep(a) {
-    color: inherit;
+    color: var(--ui-color-turquoise-500);
     text-decoration: underline;
-    &:hover,
+    &:hover {
+      color: var(--ui-color-turquoise-400);
+    }
     &:active {
-      color: var(--ui-color-primary-main);
+      color: var(--ui-color-turquoise-600);
     }
   }
 

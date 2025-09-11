@@ -49,11 +49,13 @@ const rounds = computed(() => {
   if (session.value == null || session.value.rounds.length === 0) return null
   return session.value.rounds
 })
-
-const lastRound = computed(() => rounds.value?.at(-1))
-const isLastRoundActive = computed(
-  () => lastRound.value && ![RoundState.Loading, RoundState.Initialized].includes(lastRound.value.state)
-)
+const activeRound = computed(() => {
+  const lastRound = rounds.value?.at(-1)
+  if (lastRound == null || [RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) {
+    return null
+  }
+  return lastRound
+})
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
 
@@ -380,9 +382,9 @@ const handleQuickInputClick = useMessageHandle(
           </svg>
         </div>
         <template v-if="isSignedIn()">
-          <template v-if="isLastRoundActive">
+          <template v-if="activeRound != null">
             <div ref="outputRef" class="output">
-              <CopilotRound :round="lastRound!" is-last-round />
+              <CopilotRound :round="activeRound" is-last-round />
               <div v-if="quickInputs.length > 0" class="quick-inputs">
                 <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                   {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
@@ -394,7 +396,12 @@ const handleQuickInputClick = useMessageHandle(
             </div>
             <div class="divider"></div>
           </template>
-          <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': !isLastRoundActive }" :copilot="copilot" />
+          <CopilotInput
+            ref="inputRef"
+            class="input"
+            :class="{ 'only-input': activeRound == null }"
+            :copilot="copilot"
+          />
         </template>
         <template v-else>
           <div class="placeholder">
@@ -402,8 +409,8 @@ const handleQuickInputClick = useMessageHandle(
             <p class="description">
               {{
                 $t({
-                  en: 'I am your coding assistant. Sign in to let me help you learn coding',
-                  zh: '我是你的编程助手，登录后就能帮你学编程啦'
+                  en: 'I can help you with XBuilder, please sign in to continue.',
+                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续。'
                 })
               }}
             </p>
@@ -424,7 +431,7 @@ const handleQuickInputClick = useMessageHandle(
 $fromColor: #72bbff;
 $toColor: #c390ff;
 
-@mixin linearGradient($from, $to) {
+@mixin copilotBaseLinearBackground($from: $fromColor, $to: $toColor) {
   background: linear-gradient(90deg, $from 0%, $to 100%);
 }
 
@@ -466,7 +473,7 @@ $toColor: #c390ff;
   }
 
   &.left {
-    @include linearGradient($toColor, $fromColor);
+    @include copilotBaseLinearBackground($toColor, $fromColor);
     padding-left: 0px;
     right: 1px;
     border-top-left-radius: 0px;
@@ -481,7 +488,7 @@ $toColor: #c390ff;
     }
   }
   &.right {
-    @include linearGradient($toColor, $fromColor);
+    @include copilotBaseLinearBackground($toColor, $fromColor);
     padding-right: 0px;
     left: 1px;
     border-top-right-radius: 0px;
@@ -529,7 +536,7 @@ $toColor: #c390ff;
   border-radius: 16px;
   box-shadow: 0px 16px 32px 0px rgba(36, 41, 47, 0.1);
   padding: 1px;
-  @include linearGradient($fromColor, $toColor);
+  @include copilotBaseLinearBackground();
 
   &:has(.only-input):has(.visible) {
     &.left,
@@ -576,7 +583,7 @@ $toColor: #c390ff;
   }
 
   .divider {
-    @include linearGradient($fromColor, $toColor);
+    @include copilotBaseLinearBackground();
     height: 1px;
   }
 
@@ -598,12 +605,14 @@ $toColor: #c390ff;
   display: flex;
   justify-content: center;
   .footer-wrapper {
+    display: flex;
+    align-items: center;
     height: 36px;
     padding: 6px;
     border-radius: 100px;
     border: 1px solid var(--ui-color-grey-400);
     background: var(--ui-color-grey-100);
-    box-shadow: 0 8px 28px -16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
   }
 }
 
@@ -661,7 +670,7 @@ $toColor: #c390ff;
 
   .sign-button {
     border: none;
-    border-radius: 20px;
+    border-radius: 16px;
     width: 100%;
     height: 40px;
     font-size: 15px;
@@ -670,9 +679,14 @@ $toColor: #c390ff;
     color: var(--ui-color-grey-100);
     background-color: var(--ui-color-sound-main);
     outline: none;
+    cursor: pointer;
 
     &:hover {
-      cursor: pointer;
+      background-color: var(--ui-color-purple-400);
+    }
+
+    &:active {
+      background-color: var(--ui-color-purple-600);
     }
   }
 }

@@ -76,9 +76,13 @@ const { fn: handleClick } = useMessageHandle(
   font-weight: 600;
   outline: none;
   background-color: var(--ui-color-turquoise-main);
+  cursor: pointer;
 
   &:hover {
-    cursor: pointer;
+    background-color: var(--ui-color-turquoise-400);
+  }
+  &:active {
+    background-color: var(--ui-color-turquoise-600);
   }
 }
 </style>
