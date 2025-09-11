@@ -252,7 +252,7 @@ import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
 import { HistoryManager } from './utils/history-manager'
-import SelectColor from './components/select-color.vue'
+import SelectColor from './components/select_color.vue'
 
 // 工具类型
 type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text' | 'selectColor'
@@ -312,20 +312,9 @@ const initImportExportManager = (): void => {
 
 // 选择工具
 const selectTool = (tool: ToolType): void => {
-  const wasAlreadyActive = currentTool.value === tool
-
   currentTool.value = tool
   // 更新委托器的当前工具
   canvasEventDelegator.setCurrentTool(tool)
-
-  // 如果是填充工具且已经激活，重新触发颜色选择器
-  if (tool === 'fill' && wasAlreadyActive && fillToolRef.value) {
-    // 触发填充工具的颜色选择器显示
-    const fillTool = fillToolRef.value as any
-    if (fillTool.showColorPicker) {
-      fillTool.showColorPicker()
-    }
-  }
 }
 
 const handleCanvasClick = (event: MouseEvent): void => {
