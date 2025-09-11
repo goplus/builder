@@ -35,15 +35,18 @@ var (
 
 // Controller is the controller for the service.
 type Controller struct {
-	db                  *gorm.DB
-	kodo                *kodoClient
-	copilot             *copilot.Copilot
-	workflow            *workflow.Workflow
-	aiInteraction       *aiinteraction.AIInteraction
-	aigc                *aigc.AigcClient
-	svggen              *svggen.ServiceManager
+
+	db              *gorm.DB
+	kodo            *kodoClient
+	copilot         *copilot.Copilot
+	workflow        *workflow.Workflow
+	aiInteraction   *aiinteraction.AIInteraction
+	aigc            *aigc.AigcClient
+	svggen          *svggen.ServiceManager
+	assetCompletion *AssetCompletionService
 	recommendationCache Cache
 	algorithmService    *AlgorithmService
+
 }
 
 // New creates a new controller.
@@ -79,6 +82,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 	// Set copilot instance for OpenAI services
 	svggenManager.SetCopilot(cpt)
 
+
 	// Initialize recommendation cache service
 	var recommendationCache Cache
 	if redisClient != nil {
@@ -88,11 +92,13 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		// No Redis configured, use memory cache only
 		recommendationCache = NewMemoryCache()
 	}
-
+	// Initialize asset completion service
+	assetCompletionService := newAssetCompletionService(db)
 	// Initialize algorithm service
 	algorithmService := NewAlgorithmService(&cfg.Algorithm)
 
-	return &Controller{
+	
+	ctrl:=&Controller{
 		db:                  db,
 		kodo:                kodoClient,
 		copilot:             cpt,
@@ -102,7 +108,16 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		svggen:              svggenManager,
 		recommendationCache: recommendationCache,
 		algorithmService:    algorithmService,
-	}, nil
+		assetCompletion: assetCompletionService,
+	}
+	// Initialize sample game assets data
+	if err := ctrl.InitializeGameAssetsData(ctx); err != nil {
+		log.GetLogger().Printf("Warning: Failed to initialize game assets data: %v", err)
+	}
+
+	
+	return ctrl,nil
+
 }
 
 func NewWorkflow(name string, copilot *copilot.Copilot, db *gorm.DB) *workflow.Workflow {

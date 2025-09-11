@@ -542,9 +542,7 @@ func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []Recomm
 	allResults := make([]RecommendedImageResult, 0, len(semanticResults)+len(themeResults))
 	
 	// Add semantic results
-	for _, result := range semanticResults {
-		allResults = append(allResults, result)
-	}
+	allResults = append(allResults, semanticResults...)
 	
 	// Add theme results (with deduplication)
 	for _, result := range themeResults {

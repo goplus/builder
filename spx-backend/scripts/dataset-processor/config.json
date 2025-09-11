@@ -1,0 +1,26 @@
+{
+  "github": {
+    "token": "your_github_token_here",
+    "awesome_datasets_repo": "leomauro/awesome-game-datasets",
+    "rate_limit_delay": 1
+  },
+  "data_filtering": {
+    "spx_keywords": ["2D", "pixel", "cartoon", "sprite", "character", "background", "platform", "UI", "icon", "item", "prop"],
+    "exclude_keywords": ["3D", "VR", "complex", "realistic", "AAA", "enterprise"],
+    "max_name_length": 100,
+    "min_name_length": 5
+  },
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "username": "root",
+    "password": "",
+    "database": "spx_backend",
+    "table": "game_assets"
+  },
+  "output": {
+    "batch_size": 1000,
+    "max_assets": 10000,
+    "formats": ["json", "sql"]
+  }
+}
