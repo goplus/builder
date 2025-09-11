@@ -43,6 +43,10 @@ func setTestEnv(t *testing.T) {
 
 	// AIGC
 	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
+
+	// WeChat
+	t.Setenv("WECHAT_APPID", "wx5f7ad87518d77bf3")
+	t.Setenv("WECHAT_SECRET", "0f62d3a8e4aec9eee4d02365d6ae0dda")
 }
 
 func TestLoad(t *testing.T) {
@@ -101,6 +105,10 @@ func TestLoad(t *testing.T) {
 
 		// AIGC
 		assert.Equal(t, "https://aigc.example.com", config.AIGC.Endpoint)
+
+		// WeChat
+		assert.Equal(t, "wx5f7ad87518d77bf3", config.WeChat.AppID)
+		assert.Equal(t, "0f62d3a8e4aec9eee4d02365d6ae0dda", config.WeChat.Secret)
 	})
 
 	t.Run("RedisCluster", func(t *testing.T) {

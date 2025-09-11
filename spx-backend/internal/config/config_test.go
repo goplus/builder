@@ -211,3 +211,35 @@ func TestOpenAIConfigGetPremiumModelID(t *testing.T) {
 		assert.Equal(t, "gpt-3.5-turbo", cfg.GetPremiumModelID())
 	})
 }
+
+func TestWeChatConfigGetAppID(t *testing.T) {
+	t.Run("WithAppID", func(t *testing.T) {
+		cfg := &WeChatConfig{
+			AppID: "wx123456789",
+		}
+		assert.Equal(t, "wx123456789", cfg.GetAppID())
+	})
+
+	t.Run("EmptyAppID", func(t *testing.T) {
+		cfg := &WeChatConfig{
+			AppID: "",
+		}
+		assert.Equal(t, "", cfg.GetAppID())
+	})
+}
+
+func TestWeChatConfigGetSecret(t *testing.T) {
+	t.Run("WithSecret", func(t *testing.T) {
+		cfg := &WeChatConfig{
+			Secret: "test_secret_123",
+		}
+		assert.Equal(t, "test_secret_123", cfg.GetSecret())
+	})
+
+	t.Run("EmptySecret", func(t *testing.T) {
+		cfg := &WeChatConfig{
+			Secret: "",
+		}
+		assert.Equal(t, "", cfg.GetSecret())
+	})
+}
