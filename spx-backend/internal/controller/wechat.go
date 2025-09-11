@@ -5,7 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"crypto/rand"
 	"net/http"
 	"sort"
 	"strings"
@@ -168,7 +168,15 @@ func (w *WeChatService) getJsapiTicket(ctx context.Context) (string, error) {
 	// Fetch new ticket from WeChat API
 	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=%s&type=jsapi", accessToken)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to request WeChat ticket API: %w", err)
 	}
@@ -200,8 +208,12 @@ func (w *WeChatService) getJsapiTicket(ctx context.Context) (string, error) {
 func generateNonceStr() string {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 16)
-	for i := range b {
-		b[i] = chars[rand.Intn(len(chars))]
+	if _, err := rand.Read(b); err != nil {
+		panic("failed to generate random bytes for nonce: " + err.Error())
+	}
+
+	for i, v := range b {
+		b[i] = chars[v%byte(len(chars))]
 	}
 	return string(b)
 }

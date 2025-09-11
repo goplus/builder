@@ -183,13 +183,3 @@ type WeChatConfig struct {
 	AppID  string
 	Secret string
 }
-
-// GetAppID returns the WeChat AppID.
-func (c *WeChatConfig) GetAppID() string {
-	return c.AppID
-}
-
-// GetSecret returns the WeChat Secret.
-func (c *WeChatConfig) GetSecret() string {
-	return c.Secret
-}
