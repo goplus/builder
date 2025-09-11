@@ -45,40 +45,57 @@ func NewAssetCompletionTrie(db *gorm.DB) *AssetCompletionTrie {
 
 // RefreshCache loads all asset names from database into memory trie
 func (t *AssetCompletionTrie) RefreshCache() error {
-	t.updateMutex.Lock()
-	defer t.updateMutex.Unlock()
-
-	// If already refreshing, skip
+	// 1. First check if already refreshing (lightweight check)
+	t.updateMutex.RLock()
 	if t.refreshing {
+		t.updateMutex.RUnlock()
 		return nil
 	}
-	t.refreshing = true
-	defer func() { t.refreshing = false }()
+	t.updateMutex.RUnlock()
 
-	// Load all asset names from database
+	// 2. Load all asset names from database (outside lock - expensive operation)
 	var assets []model.GameAsset
 	err := t.db.Select("name").Find(&assets).Error
 	if err != nil {
 		return err
 	}
 
-	// Rebuild trie
-	t.root = &TrieNode{
+	// 3. Build new trie in memory (outside lock - expensive operation)
+	newRoot := &TrieNode{
 		children: make(map[rune]*TrieNode),
 		namesMap: make(map[string]struct{}),
 	}
 
 	for _, asset := range assets {
-		t.insert(strings.ToLower(asset.Name), asset.Name)
+		t.insertToNode(newRoot, strings.ToLower(asset.Name), asset.Name)
 	}
 
+	// 4. Quick atomic replacement with lock (fast operation)
+	t.updateMutex.Lock()
+	defer t.updateMutex.Unlock()
+
+	// Double check: another goroutine might have refreshed while we were building
+	if t.refreshing {
+		return nil
+	}
+
+	t.refreshing = true
+	defer func() { t.refreshing = false }()
+
+	// Quick replacement
+	t.root = newRoot
 	t.lastUpdate = time.Now()
 	return nil
 }
 
 // insert adds a name to the trie
 func (t *AssetCompletionTrie) insert(key, originalName string) {
-	node := t.root
+	t.insertToNode(t.root, key, originalName)
+}
+
+// insertToNode adds a name to a specific trie node (used for building new trees)
+func (t *AssetCompletionTrie) insertToNode(root *TrieNode, key, originalName string) {
+	node := root
 
 	for _, char := range key {
 		if node.children[char] == nil {
