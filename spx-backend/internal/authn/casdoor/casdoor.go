@@ -14,6 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	insecureAvatarDomains = []string{
+		"http://thirdqq.qlogo.cn",
+	}
+)
+
 // client defines the interface for Casdoor client operations.
 type client interface {
 	ParseJwtToken(token string) (*casdoorsdk.Claims, error)
@@ -53,9 +59,14 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserAttrs{
 		Username:    claims.Name,
 		DisplayName: claims.DisplayName,
-		Avatar:      claims.Avatar,
-		Roles:       nil,
-		Plan:        model.UserPlanFree,
+		// TODO(wyvern): https://github.com/goplus/builder/issues/2159
+		// The avatar URL for the three-party oauth authorization may be http,
+		// which will cause the browser to not be able to obtain the avatar.
+		// Currently, it is temporarily replaced with https. A better way is to
+		// download it to our kodo and then obtain it from kodo. Kodo defaults to https.
+		Avatar: fixAvatar(claims.Avatar),
+		Roles:  nil,
+		Plan:   model.UserPlanFree,
 	})
 	if err != nil {
 		return nil, err
@@ -70,8 +81,9 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	if mUser.DisplayName != casdoorUser.DisplayName {
 		mUserUpdates["display_name"] = casdoorUser.DisplayName
 	}
-	if mUser.Avatar != casdoorUser.Avatar {
-		mUserUpdates["avatar"] = casdoorUser.Avatar
+	fixedAvatar := fixAvatar(casdoorUser.Avatar)
+	if mUser.Avatar != fixedAvatar {
+		mUserUpdates["avatar"] = fixedAvatar
 	}
 	if roles := a.extractUserRolesFromGroups(casdoorUser.Groups); !slices.Equal(mUser.Roles, roles) {
 		mUserUpdates["roles"] = roles
@@ -126,4 +138,14 @@ func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPla
 		}
 	}
 	return model.UserPlanFree
+}
+
+// fixAvatar fixes the avatar URL by replacing http with https.
+func fixAvatar(avatar string) string {
+	for _, domain := range insecureAvatarDomains {
+		if strings.HasPrefix(avatar, domain) {
+			return strings.Replace(avatar, "http://", "https://", 1)
+		}
+	}
+	return avatar
 }
