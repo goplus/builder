@@ -1,7 +1,6 @@
 package aiinteraction
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +23,7 @@ func TestBuildMessages(t *testing.T) {
 
 		turnMsg := messages[1].OfSystem
 		require.NotNil(t, turnMsg)
-		assert.Equal(t, "This is the initial response.", turnMsg.Content.OfString.Value)
+		assert.Equal(t, "This is the initial turn.", turnMsg.Content.OfString.Value)
 
 		userMsg := messages[2].OfUser
 		require.NotNil(t, userMsg)
@@ -115,7 +114,7 @@ func TestBuildMessages(t *testing.T) {
 	t.Run("RequestWithArchivedHistory", func(t *testing.T) {
 		request := &Request{
 			Content:         "Continue game",
-			ArchivedHistory: "Previous session: Player explored the forest and found a treasure chest.",
+			ArchivedHistory: "Previous interactions: Player explored the forest and found a treasure chest.",
 		}
 
 		messages, err := buildMessages(request)
@@ -124,7 +123,7 @@ func TestBuildMessages(t *testing.T) {
 
 		archiveMsg := messages[1].OfAssistant
 		require.NotNil(t, archiveMsg)
-		assert.Contains(t, archiveMsg.Content.OfString.Value, "Session history summary from earlier interactions:")
+		assert.Contains(t, archiveMsg.Content.OfString.Value, "Archived history summary from earlier interaction sequences:")
 		assert.Contains(t, archiveMsg.Content.OfString.Value, "Player explored the forest")
 	})
 
@@ -188,14 +187,20 @@ func TestBuildMessages(t *testing.T) {
 		require.NotNil(t, assistantMsg)
 		assistantContent := assistantMsg.Content.OfString.Value
 		assert.Contains(t, assistantContent, "I'll attack now")
-		assert.Contains(t, assistantContent, "Function call: Attack with arguments")
-		assert.Contains(t, assistantContent, "target")
-		assert.Contains(t, assistantContent, "goblin")
 
-		resultMsg := messages[3].OfUser
+		// Check tool calls
+		require.Len(t, assistantMsg.ToolCalls, 1)
+		toolCall := assistantMsg.ToolCalls[0].OfFunction
+		require.NotNil(t, toolCall)
+		assert.Equal(t, "Attack", toolCall.Function.Name)
+		assert.Contains(t, toolCall.Function.Arguments, "target")
+		assert.Contains(t, toolCall.Function.Arguments, "goblin")
+
+		// Check tool message for result
+		resultMsg := messages[3].OfTool
 		require.NotNil(t, resultMsg)
 		resultContent := resultMsg.Content.OfString.Value
-		assert.Equal(t, "Function call Attack succeeded.", resultContent)
+		assert.Equal(t, "Success", resultContent)
 	})
 
 	t.Run("HistoryWithFailedCommands", func(t *testing.T) {
@@ -223,13 +228,19 @@ func TestBuildMessages(t *testing.T) {
 		require.NotNil(t, assistantMsg)
 		assistantContent := assistantMsg.Content.OfString.Value
 		assert.Contains(t, assistantContent, "Attempting to open")
-		assert.Contains(t, assistantContent, "Function call: OpenDoor with arguments")
-		assert.Contains(t, assistantContent, "doorId")
 
-		resultMsg := messages[3].OfUser
+		// Check tool calls
+		require.Len(t, assistantMsg.ToolCalls, 1)
+		toolCall := assistantMsg.ToolCalls[0].OfFunction
+		require.NotNil(t, toolCall)
+		assert.Equal(t, "OpenDoor", toolCall.Function.Name)
+		assert.Contains(t, toolCall.Function.Arguments, "doorId")
+
+		// Check tool message for result
+		resultMsg := messages[3].OfTool
 		require.NotNil(t, resultMsg)
 		resultContent := resultMsg.Content.OfString.Value
-		assert.Equal(t, "Function call OpenDoor failed: Door is locked", resultContent)
+		assert.Equal(t, "Error: Door is locked", resultContent)
 	})
 
 	t.Run("HistoryWithBreakCommands", func(t *testing.T) {
@@ -256,12 +267,18 @@ func TestBuildMessages(t *testing.T) {
 		require.NotNil(t, assistantMsg)
 		assistantContent := assistantMsg.Content.OfString.Value
 		assert.Contains(t, assistantContent, "Goodbye!")
-		assert.Contains(t, assistantContent, "Function call: ExitGame")
 
-		resultMsg := messages[3].OfUser
+		// Check tool calls
+		require.Len(t, assistantMsg.ToolCalls, 1)
+		toolCall := assistantMsg.ToolCalls[0].OfFunction
+		require.NotNil(t, toolCall)
+		assert.Equal(t, "ExitGame", toolCall.Function.Name)
+
+		// Check tool message for result
+		resultMsg := messages[3].OfTool
 		require.NotNil(t, resultMsg)
 		resultContent := resultMsg.Content.OfString.Value
-		assert.Equal(t, "Function call ExitGame succeeded. [Interaction terminated]", resultContent)
+		assert.Equal(t, "Success with BREAK signal", resultContent)
 	})
 
 	t.Run("InitialTurn", func(t *testing.T) {
@@ -276,7 +293,7 @@ func TestBuildMessages(t *testing.T) {
 
 		turnMsg := messages[1].OfSystem
 		require.NotNil(t, turnMsg)
-		assert.Equal(t, "This is the initial response.", turnMsg.Content.OfString.Value)
+		assert.Equal(t, "This is the initial turn.", turnMsg.Content.OfString.Value)
 
 		userMsg := messages[2].OfUser
 		require.NotNil(t, userMsg)
@@ -286,40 +303,70 @@ func TestBuildMessages(t *testing.T) {
 	t.Run("ContinuationTurnSuccess", func(t *testing.T) {
 		request := &Request{
 			ContinuationTurn: 1,
-			PreviousCommandResult: &CommandResult{
-				Success: true,
+			History: []Turn{
+				{
+					RequestContent:      "Start game",
+					ResponseText:        "Starting",
+					ResponseCommandName: "Initialize",
+					ExecutedCommandResult: &CommandResult{
+						Success: true,
+					},
+					IsInitial: true,
+				},
 			},
 		}
 
 		messages, err := buildMessages(request)
 		require.NoError(t, err)
-		require.Len(t, messages, 3)
+		require.Len(t, messages, 6) // System, User, Assistant (with tool call), Tool (result), System (continuation), User (continue)
 
-		turnMsg := messages[1].OfSystem
+		// Check continuation turn system message
+		turnMsg := messages[4].OfSystem
 		require.NotNil(t, turnMsg)
-		assert.Equal(t, "This is a continuation turn.", turnMsg.Content.OfString.Value)
+		assert.Contains(t, turnMsg.Content.OfString.Value, "continuation turn")
+		assert.Contains(t, turnMsg.Content.OfString.Value, "command execution results")
 
-		userMsg := messages[2].OfUser
+		// Check continuation user message
+		userMsg := messages[5].OfUser
 		require.NotNil(t, userMsg)
-		assert.Equal(t, "The previous function call succeeded.", userMsg.Content.OfString.Value)
+		assert.Equal(t, "Continue.", userMsg.Content.OfString.Value)
 	})
 
 	t.Run("ContinuationTurnFailure", func(t *testing.T) {
 		request := &Request{
 			ContinuationTurn: 2,
-			PreviousCommandResult: &CommandResult{
-				Success:      false,
-				ErrorMessage: "Invalid move",
+			History: []Turn{
+				{
+					RequestContent:      "Move north",
+					ResponseText:        "Moving",
+					ResponseCommandName: "MovePlayer",
+					ResponseCommandArgs: map[string]any{"direction": "north"},
+					ExecutedCommandResult: &CommandResult{
+						Success:      false,
+						ErrorMessage: "Invalid move",
+					},
+				},
 			},
 		}
 
 		messages, err := buildMessages(request)
 		require.NoError(t, err)
-		require.Len(t, messages, 3)
+		require.Len(t, messages, 6) // System, User, Assistant (with tool call), Tool (result), System (continuation), User (continue)
 
-		userMsg := messages[2].OfUser
+		// Check the tool message in history has the error
+		historyToolMsg := messages[3].OfTool
+		require.NotNil(t, historyToolMsg)
+		assert.Equal(t, "Error: Invalid move", historyToolMsg.Content.OfString.Value)
+		assert.Equal(t, "call_0_MovePlayer", historyToolMsg.ToolCallID)
+
+		// Check continuation messages
+		turnMsg := messages[4].OfSystem
+		require.NotNil(t, turnMsg)
+		assert.Contains(t, turnMsg.Content.OfString.Value, "continuation turn")
+
+		userMsg := messages[5].OfUser
 		require.NotNil(t, userMsg)
-		assert.Equal(t, "The previous function call failed: Invalid move", userMsg.Content.OfString.Value)
+		assert.Equal(t, "Continue.", userMsg.Content.OfString.Value)
 	})
 
 	t.Run("MissingContentInInitialTurn", func(t *testing.T) {
@@ -333,14 +380,14 @@ func TestBuildMessages(t *testing.T) {
 		assert.Nil(t, messages)
 	})
 
-	t.Run("MissingPreviousResultInContinuation", func(t *testing.T) {
+	t.Run("MissingHistoryInContinuation", func(t *testing.T) {
 		request := &Request{
 			ContinuationTurn: 1,
 		}
 
 		messages, err := buildMessages(request)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "missing previous command result in continuation turn")
+		assert.Contains(t, err.Error(), "missing history for continuation turn")
 		assert.Nil(t, messages)
 	})
 
@@ -424,15 +471,22 @@ func TestBuildMessages(t *testing.T) {
 		historyAssistantMsg := messages[6].OfAssistant
 		require.NotNil(t, historyAssistantMsg)
 		assert.Contains(t, historyAssistantMsg.Content.OfString.Value, "I ready my weapon")
-		assert.Contains(t, historyAssistantMsg.Content.OfString.Value, "Function call: PrepareWeapon with arguments")
 
-		historyResultMsg := messages[7].OfUser
+		// Check tool calls in history
+		require.Len(t, historyAssistantMsg.ToolCalls, 1)
+		toolCall := historyAssistantMsg.ToolCalls[0].OfFunction
+		require.NotNil(t, toolCall)
+		assert.Equal(t, "PrepareWeapon", toolCall.Function.Name)
+		assert.Contains(t, toolCall.Function.Arguments, "weapon")
+
+		// Check tool message for result
+		historyResultMsg := messages[7].OfTool
 		require.NotNil(t, historyResultMsg)
-		assert.Equal(t, "Function call PrepareWeapon succeeded.", historyResultMsg.Content.OfString.Value)
+		assert.Equal(t, "Success", historyResultMsg.Content.OfString.Value)
 
 		turnMsg := messages[8].OfSystem
 		require.NotNil(t, turnMsg)
-		assert.Equal(t, "This is the initial response.", turnMsg.Content.OfString.Value)
+		assert.Equal(t, "This is the initial turn.", turnMsg.Content.OfString.Value)
 
 		finalUserMsg := messages[9].OfUser
 		require.NotNil(t, finalUserMsg)
@@ -598,123 +652,4 @@ func TestConvertGoTypeToJSONSchemaType(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
-}
-
-func TestCalculateTurnsToArchive(t *testing.T) {
-	t.Run("NoArchivingNeeded", func(t *testing.T) {
-		request := &Request{
-			History: make([]Turn, 10),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 0, count)
-	})
-
-	t.Run("FirstTimeArchiving", func(t *testing.T) {
-		request := &Request{
-			ArchivedHistory: "",
-			History:         make([]Turn, 30),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 10, count)
-	})
-
-	t.Run("FirstTimeArchivingLargeHistory", func(t *testing.T) {
-		request := &Request{
-			ArchivedHistory: "",
-			History:         make([]Turn, 50),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 30, count)
-	})
-
-	t.Run("SubsequentArchivingNotNeeded", func(t *testing.T) {
-		request := &Request{
-			ArchivedHistory: "existing archive",
-			History:         make([]Turn, 25),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 0, count)
-	})
-
-	t.Run("SubsequentArchiving", func(t *testing.T) {
-		request := &Request{
-			ArchivedHistory: "existing archive",
-			History:         make([]Turn, 35),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 15, count)
-	})
-
-	t.Run("SubsequentArchivingLargeHistory", func(t *testing.T) {
-		request := &Request{
-			ArchivedHistory: "existing archive",
-			History:         make([]Turn, 50),
-		}
-
-		count := calculateTurnsToArchive(request)
-		assert.Equal(t, 15, count)
-	})
-}
-
-func TestApplyArchivedHistory(t *testing.T) {
-	t.Run("ApplyFirstTimeArchiving", func(t *testing.T) {
-		history := make([]Turn, 30)
-		for i := range history {
-			history[i] = Turn{
-				RequestContent: fmt.Sprintf("Request %d", i+1),
-				ResponseText:   fmt.Sprintf("Response %d", i+1),
-			}
-		}
-		request := &Request{
-			Content:         "User content",
-			ArchivedHistory: "",
-			History:         history,
-		}
-		archivedHistory := &ArchivedHistory{
-			Content:   "new archive content",
-			TurnCount: 10,
-		}
-
-		processedRequest := applyArchivedHistory(request, archivedHistory)
-		assert.Equal(t, "new archive content", processedRequest.ArchivedHistory)
-		assert.Len(t, processedRequest.History, 20)
-		assert.Equal(t, "Request 11", processedRequest.History[0].RequestContent)
-		assert.Equal(t, "Response 11", processedRequest.History[0].ResponseText)
-		assert.Equal(t, "Request 30", processedRequest.History[19].RequestContent)
-		assert.Equal(t, "Response 30", processedRequest.History[19].ResponseText)
-		assert.Equal(t, "User content", processedRequest.Content)
-	})
-
-	t.Run("ApplySubsequentArchiving", func(t *testing.T) {
-		history := make([]Turn, 35)
-		for i := range history {
-			history[i] = Turn{
-				RequestContent: fmt.Sprintf("Request %d", i+1),
-				ResponseText:   fmt.Sprintf("Response %d", i+1),
-			}
-		}
-		request := &Request{
-			Content:         "User content",
-			ArchivedHistory: "old archive",
-			History:         history,
-		}
-		archivedHistory := &ArchivedHistory{
-			Content:   "updated archive",
-			TurnCount: 15,
-		}
-
-		processedRequest := applyArchivedHistory(request, archivedHistory)
-		assert.Equal(t, "updated archive", processedRequest.ArchivedHistory)
-		assert.Len(t, processedRequest.History, 20)
-		assert.Equal(t, "Request 16", processedRequest.History[0].RequestContent)
-		assert.Equal(t, "Response 16", processedRequest.History[0].ResponseText)
-		assert.Equal(t, "Request 35", processedRequest.History[19].RequestContent)
-		assert.Equal(t, "Response 35", processedRequest.History[19].ResponseText)
-		assert.Equal(t, "User content", processedRequest.Content)
-	})
 }

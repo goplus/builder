@@ -1103,6 +1103,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
 
+  /ai/interaction/archive:
+    post:
+      tags:
+        - AI
+      summary: Archive AI interaction history
+      description: Archive a batch of interaction turns into a condensed summary for future context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIInteractionArchiveRequest"
+      responses:
+        "200":
+          description: Successfully archived interaction history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIInteractionArchiveResponse"
+
   /course:
     post:
       tags:
@@ -2017,10 +2037,6 @@ components:
           items:
             $ref: "#/components/schemas/AIInteractionCommandSpec"
           description: Commands the AI is allowed to call.
-        previousCommandResult:
-          $ref: "#/components/schemas/AIInteractionCommandResult"
-          nullable: true
-          description: Outcome of the command executed in the previous turn.
         history:
           type: array
           items:
@@ -2037,10 +2053,11 @@ components:
           minimum: 0
           default: 0
           description: |
-            Current turn number in a multi-turn interaction.
+            Current turn number in a multi-turn interaction sequence.
 
             A value of 0 means this is the initial turn from user input. Values > 0 indicate continuation turns where
-            the AI should decide next steps based on previous command results.
+            the AI continues the current interaction sequence based on the outcomes of commands executed within this
+            sequence.
           examples:
             - 0
 
@@ -2065,10 +2082,6 @@ components:
             - Row: 1
               Col: 1
               Result: ""
-        archivedHistory:
-          $ref: "#/components/schemas/AIInteractionArchivedHistory"
-          nullable: true
-          description: Archived history information when history management occurs.
 
     AIInteractionTurn:
       type: object
@@ -2170,21 +2183,31 @@ components:
           examples:
             - false
 
-    AIInteractionArchivedHistory:
+    AIInteractionArchiveRequest:
+      type: object
+      required:
+        - turns
+      properties:
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIInteractionTurn"
+          description: Interaction turns to be archived.
+        existingArchive:
+          type: string
+          nullable: true
+          description: Existing archived content to be merged with new turns.
+          examples:
+            - "Previous conversation summary..."
+
+    AIInteractionArchiveResponse:
       type: object
       properties:
         content:
           type: string
-          description: Archived content of historical interactions.
+          description: The consolidated archive content.
           examples:
-            - Previous conversation summary...
-        turnCount:
-          type: integer
-          format: int32
-          minimum: 0
-          description: Number of turns that were archived.
-          examples:
-            - 5
+            - "Complete conversation summary including new turns..."
 
     UpInfo:
       type: object

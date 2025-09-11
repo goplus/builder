@@ -61,3 +61,60 @@ func TestAIInteractionTurnParamsValidate(t *testing.T) {
 		assert.Equal(t, "missing content", msg)
 	})
 }
+
+func TestAIInteractionArchiveParamsValidate(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		params := &AIInteractionArchiveParams{
+			Turns: []aiinteraction.Turn{
+				{
+					RequestContent: "Test",
+					ResponseText:   "Response",
+				},
+			},
+		}
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("NoTurns", func(t *testing.T) {
+		params := &AIInteractionArchiveParams{
+			Turns: []aiinteraction.Turn{},
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "no turns to archive", msg)
+	})
+
+	t.Run("TooManyTurns", func(t *testing.T) {
+		turns := make([]aiinteraction.Turn, 51)
+		for i := range turns {
+			turns[i] = aiinteraction.Turn{
+				RequestContent: "Test",
+				ResponseText:   "Response",
+			}
+		}
+		params := &AIInteractionArchiveParams{
+			Turns: turns,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Contains(t, msg, "too many turns to archive")
+	})
+
+	t.Run("MaxTurnsAllowed", func(t *testing.T) {
+		turns := make([]aiinteraction.Turn, 50)
+		for i := range turns {
+			turns[i] = aiinteraction.Turn{
+				RequestContent: "Test",
+				ResponseText:   "Response",
+			}
+		}
+		params := &AIInteractionArchiveParams{
+			Turns: turns,
+		}
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+}
