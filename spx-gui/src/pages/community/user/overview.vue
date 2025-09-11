@@ -56,6 +56,8 @@ const projectsRet = useQuery(
 )
 
 const likesRoute = computed(() => {
+  const likesNum = likesRet.data.value?.length ?? 0
+  if (likesNum === 0) return null
   return getUserPageRoute(props.name, 'likes')
 })
 
@@ -74,7 +76,8 @@ const likesRet = useQuery(
   },
   { en: 'Failed to load likes', zh: '加载失败' }
 )
-// 添加录屏相关的路由和查询
+
+// Add recordings related routes and queries
 const recordingsRoute = computed(() => {
   const recordingsNum = recordingsRet.data.value?.length ?? 0
   if (recordingsNum === 0) return null
@@ -95,12 +98,19 @@ const recordingsRet = useQuery(
   { en: 'Failed to load recordings', zh: '加载录屏失败' }
 )
 
+// Add liked recordings related routes and queries
+const likedRecordingsRoute = computed(() => {
+  const likedRecordingsNum = likedRecordingsRet.data.value?.length ?? 0
+  if (likedRecordingsNum === 0) return null
+  return getUserPageRoute(props.name, 'likes')
+})
+
 const likedRecordingsRet = useQuery(
   async () => {
     const { data: likedRecordings } = await listRecording({
-      owner: '*', // 查询所有用户
-      liker: props.name, // 指定点赞者
-      orderBy: 'likedAt', // 按点赞时间排序
+      owner: '*', // Query all users
+      liker: props.name, // Specify the liker
+      orderBy: 'likedAt', // Sort by liked time
       sortOrder: 'desc',
       pageIndex: 1,
       pageSize: numInRow.value
@@ -219,7 +229,7 @@ const likedRecordingsRet = useQuery(
         context="user"
         :num-in-row="numInRow"
         :query-ret="likedRecordingsRet"
-        :link-to="likesRoute"
+        :link-to="likedRecordingsRoute"
         content-type="recording"
       >
         <template #title>
@@ -237,6 +247,9 @@ const likedRecordingsRet = useQuery(
               zh: '查看所有'
             })
           }}
+        </template>
+        <template #empty="emptyProps">
+          <MyRecordingsEmpty :style="emptyProps.style" />
         </template>
         <RecordingItem
           v-for="recording in likedRecordingsRet.data.value"
