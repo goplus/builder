@@ -14,7 +14,9 @@ import (
 type TrieNode struct {
 	children map[rune]*TrieNode
 	isEnd    bool
-	names    []string // Store complete names at this node
+	namesMap map[string]struct{} // Store complete names at this node for O(1) dedup
+	names    []string            // Cached slice for read operations
+	dirty    bool                // Flag to indicate if names slice needs rebuild
 }
 
 // AssetCompletionTrie provides fast auto-completion using prefix tree
@@ -61,7 +63,10 @@ func (t *AssetCompletionTrie) RefreshCache() error {
 	}
 
 	// Rebuild trie
-	t.root = &TrieNode{children: make(map[rune]*TrieNode)}
+	t.root = &TrieNode{
+		children: make(map[rune]*TrieNode),
+		namesMap: make(map[string]struct{}),
+	}
 
 	for _, asset := range assets {
 		t.insert(strings.ToLower(asset.Name), asset.Name)
@@ -77,29 +82,41 @@ func (t *AssetCompletionTrie) insert(key, originalName string) {
 
 	for _, char := range key {
 		if node.children[char] == nil {
-			node.children[char] = &TrieNode{children: make(map[rune]*TrieNode)}
+			node.children[char] = &TrieNode{
+				children: make(map[rune]*TrieNode),
+				namesMap: make(map[string]struct{}),
+			}
 		}
 		node = node.children[char]
 
-		// Add original name to each node along the path
-		if node.names == nil {
-			node.names = make([]string, 0)
-		}
-
-		// Avoid duplicates
-		found := false
-		for _, existing := range node.names {
-			if existing == originalName {
-				found = true
-				break
-			}
-		}
-		if !found {
-			node.names = append(node.names, originalName)
+		// Add original name to each node along the path (O(1) dedup)
+		if _, exists := node.namesMap[originalName]; !exists {
+			node.namesMap[originalName] = struct{}{}
+			node.dirty = true // Mark for slice rebuild
 		}
 	}
 
 	node.isEnd = true
+}
+
+// getNames returns the names slice, rebuilding it from the map if dirty
+func (n *TrieNode) getNames() []string {
+	if n.dirty || n.names == nil {
+		// Rebuild names slice from map with pre-allocated capacity
+		n.names = make([]string, 0, len(n.namesMap))
+		for name := range n.namesMap {
+			n.names = append(n.names, name)
+		}
+		// Sort once during rebuild for better cache performance
+		sort.Strings(n.names)
+		n.dirty = false
+	}
+	return n.names
+}
+
+// getNamesCount returns the number of names without building the slice
+func (n *TrieNode) getNamesCount() int {
+	return len(n.namesMap)
 }
 
 // search finds all names with the given prefix
@@ -127,11 +144,10 @@ func (t *AssetCompletionTrie) search(prefix string) []string {
 	}
 
 	// Return all names at this node (already filtered by prefix)
-	result := make([]string, len(node.names))
-	copy(result, node.names)
-
-	// Sort alphabetically
-	sort.Strings(result)
+	nodeNames := node.getNames()
+	// Names are already sorted in getNames(), so just copy
+	result := make([]string, len(nodeNames))
+	copy(result, nodeNames)
 
 	return result
 }
@@ -157,11 +173,34 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 	t.updateMutex.RLock()
 	defer t.updateMutex.RUnlock()
 
+	// Calculate trie statistics
+	nodeCount, totalNames := t.calculateTrieStats(t.root)
+
 	return map[string]interface{}{
 		"last_update":   t.lastUpdate,
 		"cache_age":     time.Since(t.lastUpdate),
 		"cache_expiry":  t.cacheExpiry,
 		"needs_refresh": time.Since(t.lastUpdate) > t.cacheExpiry,
 		"refreshing":    t.refreshing,
+		"node_count":    nodeCount,
+		"total_names":   totalNames,
 	}
+}
+
+// calculateTrieStats recursively calculates trie statistics
+func (t *AssetCompletionTrie) calculateTrieStats(node *TrieNode) (nodeCount, totalNames int) {
+	if node == nil {
+		return 0, 0
+	}
+	
+	nodeCount = 1
+	totalNames = node.getNamesCount()
+	
+	for _, child := range node.children {
+		childNodes, childNames := t.calculateTrieStats(child)
+		nodeCount += childNodes
+		totalNames += childNames
+	}
+	
+	return nodeCount, totalNames
 }
