@@ -32,22 +32,25 @@ def check_config():
         print("❌ config.json 文件不存在，请先配置！")
         return False
     
-    import json
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-    
-    # 检查GitHub token
-    if config['github']['token'] == "your_github_token_here":
-        print("⚠️  警告: GitHub token 未配置，将使用有限的API访问")
-    
-    # 检查数据库配置
-    db_config = config['database']
-    if not db_config['host'] or not db_config['database']:
-        print("❌ 数据库配置不完整，请检查config.json")
+    try:
+        from config_loader import load_config
+        config_loader = load_config()
+        
+        # 显示配置状态
+        config_loader.print_config_status()
+        
+        # 验证配置
+        is_valid, message = config_loader.validate_config()
+        print(f"\n{message}")
+        
+        return is_valid
+        
+    except ImportError:
+        print("❌ 无法导入配置加载器，请确保config_loader.py存在")
         return False
-    
-    print("✅ 配置文件检查通过")
-    return True
+    except Exception as e:
+        print(f"❌ 配置检查失败: {e}")
+        return False
 
 def main():
     """主函数"""

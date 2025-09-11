@@ -13,21 +13,24 @@ from typing import List, Dict, Any
 from github import Github
 from tqdm import tqdm
 import pandas as pd
+from config_loader import load_config
 
 class DatasetFetcher:
-    def __init__(self, config_path: str = "config.json"):
-        with open(config_path, 'r', encoding='utf-8') as f:
-            self.config = json.load(f)
+    def __init__(self, config_path: str = "config.json", env_path: str = ".env"):
+        self.config_loader = load_config(config_path, env_path)
+        self.config = self.config_loader.get_config()
         
-        self.github_token = self.config['github']['token']
-        self.repo_name = self.config['github']['awesome_datasets_repo']
-        self.rate_limit_delay = self.config['github']['rate_limit_delay']
+        github_config = self.config_loader.get_github_config()
+        self.github_token = github_config.get('token')
+        self.repo_name = github_config.get('awesome_datasets_repo')
+        self.rate_limit_delay = github_config.get('rate_limit_delay', 1)
         
         self.data_dir = Path("data/raw")
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
-        if self.github_token and self.github_token != "your_github_token_here":
+        if self.github_token:
             self.github = Github(self.github_token)
+            print(f"🔑 Using GitHub token: {self.github_token[:8]}...")
         else:
             self.github = Github()  # 无token模式，有API限制
             print("⚠️  Warning: No GitHub token provided, API rate limits apply")

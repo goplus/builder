@@ -1,6 +1,5 @@
 {
   "github": {
-    "token": "your_github_token_here",
     "awesome_datasets_repo": "leomauro/awesome-game-datasets",
     "rate_limit_delay": 1
   },
@@ -14,7 +13,6 @@
     "host": "localhost",
     "port": 3306,
     "username": "root",
-    "password": "",
     "database": "spx_backend",
     "table": "game_assets"
   },
