@@ -198,10 +198,9 @@ const calculateLocalHandles = (
 
     // 使用归一化后的切线向量来设置控制柄。
     // 乘以一个负数的长度可以巧妙地将向量翻转，用于设置 handleIn。
-    // 系数选择0.3，不要为我为什么这么选。这是handle=Pi​±α(Pi+1​−Pi−1​)中的系数，是一个经验值，通常是采取0.2-0.4之间，所以这里我选了0.3
-    currentSeg.handleIn = tangentVector.normalize(-lengthToPrev * 0.2)
-    currentSeg.handleOut = tangentVector.normalize(lengthToNext * 0.2)
-
+    // 系数选择0.3，不要问我为什么这么选。这是handle=Pi±α(Pi+1−Pi−1)中的系数，是一个经验值，通常是采取0.2-0.4之间，所以这里我选了0.3
+    currentSeg.handleIn = tangentVector.normalize(-lengthToPrev * 0.3)
+    currentSeg.handleOut = tangentVector.normalize(lengthToNext * 0.3)
   } else if (nextSeg) {
     // 端点逻辑 (路径的起点)
     const vector = nextSeg.point.subtract(currentSeg.point)
@@ -216,10 +215,10 @@ const calculateLocalHandles = (
 
 // 在路径上添加新的控制点
 const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): ExtendedItem | null => {
-  const location = path.getNearestLocation(clickPoint);
+  const location = path.getNearestLocation(clickPoint)
   if (location) {
     // 在指定位置分割曲线，并自动计算新控制柄以保持形状
-    const newSegment = path.divideAt(location);
+    const newSegment = path.divideAt(location)
 
     // divideAt 成功后会返回新创建的 Segment
     if (newSegment) {
@@ -227,20 +226,18 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
       // 因为 divideAt 已经为我们保证了曲线的平滑。
       // 我们的平滑函数应该在用户真正开始拖动这个新点时才介入。
 
-
-      showControlPoints(path);
+      showControlPoints(path)
 
       // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
-      const createdControlPoint = controlPoints.value.find(
-        (p: ExtendedItem) => p.segmentIndex === newSegment.index
-      ) || null;
-      
-      paper.view.update();
-      return createdControlPoint;
+      const createdControlPoint =
+        controlPoints.value.find((p: ExtendedItem) => p.segmentIndex === newSegment.index) || null
+
+      paper.view.update()
+      return createdControlPoint
     }
   }
-  return null;
-};
+  return null
+}
 
 // 处理鼠标按下
 const handleMouseDown = (point: paper.Point): void => {
