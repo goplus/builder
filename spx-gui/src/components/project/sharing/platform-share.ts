@@ -142,8 +142,7 @@ class WeChatPlatform implements PlatformConfig {
   }
 
   initShareInfo = (shareInfo?: ShareInfo) => {
-    // TODO微信平台设置分享信息
-    void shareInfo
+    // 微信平台设置分享信息
     const config = getWechatChatJSSDKConfig({
       url: typeof location !== 'undefined' ? location.href : ''
     })
@@ -179,8 +178,6 @@ class WeChatPlatform implements PlatformConfig {
         })
       })
     }
-
-    return
   }
 }
 class DouyinPlatform implements PlatformConfig {
