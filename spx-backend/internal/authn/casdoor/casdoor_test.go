@@ -485,3 +485,54 @@ func TestAuthenticatorExtractUserPlanFromGroups(t *testing.T) {
 		})
 	}
 }
+
+func TestFixAvatar(t *testing.T) {
+	tests := []struct {
+		name   string
+		avatar string
+		want   string
+	}{
+		{
+			name:   "HTTP QQ Avatar Domain",
+			avatar: "http://thirdqq.qlogo.cn/avatar.jpg",
+			want:   "https://thirdqq.qlogo.cn/avatar.jpg",
+		},
+		{
+			name:   "HTTP QQ Avatar Domain with Path",
+			avatar: "http://thirdqq.qlogo.cn/g?b=qq&nk=123456&s=100",
+			want:   "https://thirdqq.qlogo.cn/g?b=qq&nk=123456&s=100",
+		},
+		{
+			name:   "HTTPS QQ Avatar Domain - No Change",
+			avatar: "https://thirdqq.qlogo.cn/avatar.jpg",
+			want:   "https://thirdqq.qlogo.cn/avatar.jpg",
+		},
+		{
+			name:   "Other HTTP Domain - No Change",
+			avatar: "http://example.com/avatar.jpg",
+			want:   "http://example.com/avatar.jpg",
+		},
+		{
+			name:   "HTTPS Domain - No Change",
+			avatar: "https://example.com/avatar.jpg",
+			want:   "https://example.com/avatar.jpg",
+		},
+		{
+			name:   "Empty Avatar",
+			avatar: "",
+			want:   "",
+		},
+		{
+			name:   "Relative Path - No Change",
+			avatar: "/path/to/avatar.jpg",
+			want:   "/path/to/avatar.jpg",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := fixAvatar(tt.avatar)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
