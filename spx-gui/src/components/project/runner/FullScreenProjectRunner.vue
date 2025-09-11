@@ -3,10 +3,11 @@ import { ref, shallowRef, watch, type CSSProperties } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { Project } from '@/models/project'
-import { UIButton, UIModalClose } from '@/components/ui'
+import { UIButton, UIModalClose, useResponsive } from '@/components/ui'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { useLastClickEvent } from '@/utils/dom'
-
+import MobileKeyboardView from '../sharing/MobileKeyboard/MobileKeyboardView.vue'
+import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 const props = defineProps<{
   project: Project
   visible: boolean
@@ -57,6 +58,11 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   en: 'Failed to rerun project',
   zh: '重新运行项目失败'
 })
+// console.log("FullScreenProjectRunner", props.project)
+const isMobile = useResponsive('mobile')
+async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
+  await projectRunnerRef.value?.dispatchKeyboardEvent(type, key)
+}
 </script>
 
 <template>
@@ -98,13 +104,32 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
         </div>
       </div>
       <div class="main">
-        <ProjectRunner ref="projectRunnerRef" class="runner" :project="project" @exit="(code) => emit('exit', code)" />
+        <MobileKeyboardView
+          v-if="isMobile && project.mobileKeyboardType === 2"
+          :zone-to-key-mapping="project.mobileKeyboardZoneToKey || {}"
+          @on-key-event="handleOnKeyEvent"
+          @rerun="handleRerun.fn"
+          @close="emit('close')"
+        >
+          <template #gameView>
+            <ProjectRunner ref="projectRunnerRef" class="runner" :project="project" />
+          </template>
+        </MobileKeyboardView>
+        <ProjectRunner
+          v-else
+          ref="projectRunnerRef"
+          class="runner"
+          :project="project"
+          @exit="(code) => emit('exit', code)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .full-screen-project-runner {
   position: fixed;
   z-index: 100;
@@ -135,6 +160,13 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+
+  @include responsive(mobile) {
+    width: 100vh;
+    height: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100%);
+  }
 }
 
 .header {
@@ -145,6 +177,10 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   border-bottom: 1px solid var(--ui-color-grey-400);
   height: 56px;
   color: var(--ui-color-title);
+
+  @include responsive(mobile) {
+    display: none;
+  }
 }
 
 .header-left {

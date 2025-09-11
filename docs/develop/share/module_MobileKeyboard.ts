@@ -37,20 +37,26 @@ export declare function KeyboardEditorModal(
  *
  * use:
  * ```vue
- * <MobileKeyboardView :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }">
+ * <MobileKeyboardView
+ * :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }"
+ * @close="emit('close')"
+ * @rerun="emit('rerun')">
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
-export type MobileKeyboardViewProps = {
-  zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-};
 
-export declare function MobileKeyboardView({
-  zoneToKeyMapping,
-}: MobileKeyboardViewProps): UI;
+export declare function MobileKeyboardView(
+  props: {
+    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+  },
+  emits: {
+    close: [];
+    rerun: [];
+  }
+): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
