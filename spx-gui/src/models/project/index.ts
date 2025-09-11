@@ -21,7 +21,7 @@ import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-nam
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
-import { Stage, type RawStageConfig } from '../stage'
+import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -46,16 +46,22 @@ const projectConfigFilePath = join('assets', projectConfigFileName)
 
 const aiPlayerPattern = /\sai\.Player/
 
-export type RunConfig = {
+type RawRunConfig = {
   width?: number
   height?: number
+}
+
+type RawCameraConfig = {
+  /** Name of sprite to follow. Empty string means no following. */
+  on: string
 }
 
 type ZorderItem = string | RawWidgetConfig
 
 type RawProjectConfig = RawStageConfig & {
   zorder?: ZorderItem[]
-  run?: RunConfig
+  run?: RawRunConfig
+  camera?: RawCameraConfig
   /**
    * Sprite order info, used by Builder to determine the order of sprites.
    * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
@@ -66,7 +72,6 @@ type RawProjectConfig = RawStageConfig & {
    * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
    */
   builder_soundOrder?: string[]
-  // TODO: camera
 }
 
 export type ScreenshotTaker = (
@@ -75,6 +80,8 @@ export type ScreenshotTaker = (
   /** Signal for aborting the operation */
   signal?: AbortSignal
 ) => Promise<File>
+
+const defaultViewportSize = defaultMapSize
 
 export class Project extends Disposable {
   id?: string
@@ -110,6 +117,7 @@ export class Project extends Disposable {
     if (idx < 0) throw new Error(`sprite ${id} not found`)
     const [sprite] = this.sprites.splice(idx, 1)
     this.zorder = this.zorder.filter((v) => v !== sprite.id)
+    if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
   }
   /**
@@ -193,6 +201,15 @@ export class Project extends Disposable {
     const sound = this.sounds[from]
     this.sounds.splice(from, 1)
     this.sounds.splice(to, 0, sound)
+  }
+
+  private cameraFollowSpriteId: string | null
+  get cameraFollowSprite(): Sprite | null {
+    if (this.cameraFollowSpriteId == null) return null
+    return this.sprites.find((s) => s.id === this.cameraFollowSpriteId) ?? null
+  }
+  setCameraFollowSprite(spriteId: string | null) {
+    this.cameraFollowSpriteId = spriteId
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -281,6 +298,7 @@ export class Project extends Disposable {
       this.zorder = []
       this.stage.dispose()
     })
+    this.cameraFollowSpriteId = null
     this.aiDescription = null
     this.aiDescriptionHash = null
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
@@ -316,6 +334,10 @@ export class Project extends Disposable {
     }
     const {
       zorder: rawZorder,
+      // For now runConfig will be ignored, as the fixed viewport / run size is used in builder
+      // TODO: support customized viewport / run size
+      run: runConfig,
+      camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
       ...rawStageConfig
@@ -350,6 +372,12 @@ export class Project extends Disposable {
     this.sounds.splice(0).forEach((s) => s.dispose())
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
+
+    // Set camera-follow-sprite
+    let cameraFollowSprite: Sprite | null = null
+    const cameraOn = cameraConfig?.on || null
+    if (cameraOn != null) cameraFollowSprite = this.sprites.find((s) => s.name === cameraOn) ?? null
+    this.cameraFollowSpriteId = cameraFollowSprite?.id || null
   }
 
   private exportGameFilesWithoutMemo(): Files {
@@ -364,11 +392,11 @@ export class Project extends Disposable {
     const config: RawProjectConfig = {
       ...restStageConfig,
       run: {
-        // TODO: we should not hard code the width & height here,
-        // instead we should use the runtime size of component `ProjectRunner`,
-        // after https://github.com/goplus/builder/issues/584
-        width: stageConfig.map?.width,
-        height: stageConfig.map?.height
+        width: defaultViewportSize.width,
+        height: defaultViewportSize.height
+      },
+      camera: {
+        on: this.cameraFollowSprite?.name || ''
       },
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
