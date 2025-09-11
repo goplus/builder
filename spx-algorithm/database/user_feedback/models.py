@@ -70,36 +70,64 @@ class PairwiseTrainingSample:
         better_vec = np.array(self.pic_vector_better)
         worse_vec = np.array(self.pic_vector_worse)
         
-        # 余弦相似度特征
-        query_better_sim = np.dot(query_vec, better_vec)
-        query_worse_sim = np.dot(query_vec, worse_vec)
-        better_worse_sim = np.dot(better_vec, worse_vec)
+        return compute_pairwise_features(query_vec, better_vec, worse_vec)
+
+
+def compute_pairwise_features(query_vec, better_vec, worse_vec) -> List[float]:
+    """
+    统一的pair-wise特征计算函数，供训练和预测阶段共用
+    
+    设计说明：
+    - 该函数计算query、better、worse三个向量之间的pair-wise特征
+    - 训练时：better是用户选择的图片，worse是未选择的图片
+    - 预测时：better是当前候选图片，worse是动态参考向量（候选集合的平均向量）
+    
+    特征设计理由：
+    1. 相似度特征：衡量query与两个图片的语义匹配程度
+    2. 距离特征：衡量向量空间中的几何距离关系
+    3. 差异特征：直接比较better vs worse的相对优劣
+    4. 长度特征：向量的模长反映了特征的激活强度
+    
+    Args:
+        query_vec: 查询向量 (numpy array)
+        better_vec: 更好的图片向量 (numpy array) 
+        worse_vec: 更差的图片向量 (numpy array)
         
-        # 相似度差异特征
-        sim_diff = query_better_sim - query_worse_sim
-        
-        # 欧氏距离特征
-        query_better_dist = np.linalg.norm(query_vec - better_vec)
-        query_worse_dist = np.linalg.norm(query_vec - worse_vec)
-        dist_diff = query_worse_dist - query_better_dist  # 距离越小越好
-        
-        # 向量长度特征
-        query_norm = np.linalg.norm(query_vec)
-        better_norm = np.linalg.norm(better_vec)
-        worse_norm = np.linalg.norm(worse_vec)
-        
-        return [
-            query_better_sim,      # query与better图片相似度
-            query_worse_sim,       # query与worse图片相似度
-            better_worse_sim,      # better与worse图片相似度
-            sim_diff,              # 相似度差异
-            query_better_dist,     # query与better图片距离
-            query_worse_dist,      # query与worse图片距离
-            dist_diff,             # 距离差异
-            query_norm,            # query向量长度
-            better_norm,           # better图片向量长度
-            worse_norm,            # worse图片向量长度
-        ]
+    Returns:
+        10维特征向量列表
+    """
+    import numpy as np
+    
+    # 余弦相似度特征（假设向量已归一化）
+    query_better_sim = np.dot(query_vec, better_vec)
+    query_worse_sim = np.dot(query_vec, worse_vec)
+    better_worse_sim = np.dot(better_vec, worse_vec)
+    
+    # 相似度差异特征 - 衡量better相对于worse的优势
+    sim_diff = query_better_sim - query_worse_sim
+    
+    # 欧氏距离特征
+    query_better_dist = np.linalg.norm(query_vec - better_vec)
+    query_worse_dist = np.linalg.norm(query_vec - worse_vec)
+    dist_diff = query_worse_dist - query_better_dist  # 距离越小越好，所以worse-better
+    
+    # 向量长度特征 - 反映特征激活强度
+    query_norm = np.linalg.norm(query_vec)
+    better_norm = np.linalg.norm(better_vec)
+    worse_norm = np.linalg.norm(worse_vec)
+    
+    return [
+        query_better_sim,      # query与better图片相似度
+        query_worse_sim,       # query与worse图片相似度
+        better_worse_sim,      # better与worse图片相似度
+        sim_diff,              # 相似度差异（better - worse）
+        query_better_dist,     # query与better图片距离
+        query_worse_dist,      # query与worse图片距离
+        dist_diff,             # 距离差异（worse - better）
+        query_norm,            # query向量长度
+        better_norm,           # better图片向量长度
+        worse_norm,            # worse图片向量长度
+    ]
 
 
 @dataclass

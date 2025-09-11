@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from ..image_matching.clip_service import CLIPService
-from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset
+from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset, compute_pairwise_features
 
 logger = logging.getLogger(__name__)
 
@@ -148,18 +148,29 @@ class LTRFeatureExtractor:
             logger.error(f"查询向量提取失败: {query_text}, 错误: {e}")
             return None
     
-    def extract_prediction_features(self, query_text: str, 
-                                  candidate_pairs: List[Tuple[Dict[str, Any], Dict[str, Any]]]) -> List[List[float]]:
+    
+    def extract_ranking_features(self, query_text: str, 
+                               candidates: List[Dict[str, Any]]) -> List[List[float]]:
         """
-        为预测阶段提取特征
+        为排序预测提取pair-wise特征，使用动态参考向量方案
+        
+        设计思路：
+        1. 训练阶段使用pair-wise特征（用户选择的图片 vs 未选择的图片）
+        2. 预测阶段通过动态参考向量将point-wise转换为pair-wise特征
+        3. 确保训练和预测使用相同的特征空间，保证模型的有效性
+        
+        动态参考向量选择理由：
+        - 使用候选集合的平均向量作为"worse"参考对象
+        - 每个候选图片作为"better"与参考向量比较
+        - 好的候选图片会明显优于平均水平，差的候选图片会劣于平均水平
+        - 这样的相对比较能够正确反映排序关系，符合LTR的目标
         
         Args:
             query_text: 查询文本
-            candidate_pairs: 候选图片对列表 [(pic_a, pic_b), ...]
-                           每个元素是包含id和vector字段的字典对
+            candidates: 候选结果列表，每个包含id, vector等字段
             
         Returns:
-            特征向量列表
+            每个候选结果的pair-wise特征向量列表（10维）
         """
         try:
             query_vector = self._get_query_vector(query_text)
@@ -167,87 +178,56 @@ class LTRFeatureExtractor:
                 logger.error(f"查询向量提取失败: {query_text}")
                 return []
             
-            features_list = []
-            
-            for pic_a, pic_b in candidate_pairs:
-                # 构造临时的pair-wise样本来复用特征提取逻辑
-                temp_sample = PairwiseTrainingSample(
-                    query=query_text,
-                    query_vector=query_vector.tolist(),
-                    pic_id_better=pic_a['id'],
-                    pic_vector_better=pic_a['vector'],
-                    pic_id_worse=pic_b['id'],
-                    pic_vector_worse=pic_b['vector'],
-                    label=1,  # 占位符
-                    feedback_id=-1  # 占位符
-                )
-                
-                features = temp_sample.get_feature_vector()
-                features_list.append(features)
-            
-            return features_list
-            
-        except Exception as e:
-            logger.error(f"预测特征提取失败: {e}")
-            return []
-    
-    def extract_ranking_features(self, query_text: str, 
-                               candidates: List[Dict[str, Any]]) -> List[List[float]]:
-        """
-        为排序预测提取特征
-        
-        Args:
-            query_text: 查询文本
-            candidates: 候选结果列表，每个包含id, vector等字段
-            
-        Returns:
-            每个候选结果的特征向量列表
-        """
-        try:
-            query_vector = self._get_query_vector(query_text)
-            if query_vector is None:
+            if not candidates:
+                logger.warning("候选列表为空")
                 return []
             
-            features_list = []
-            query_vec = np.array(query_vector)
+            # 提取所有候选图片的向量
+            candidate_vectors = []
+            valid_candidates = []
             
             for candidate in candidates:
-                pic_vector = np.array(candidate.get('vector', []))
+                pic_vector = candidate.get('vector', [])
                 if len(pic_vector) == 0:
                     logger.warning(f"候选结果缺少向量: {candidate.get('id')}")
-                    features_list.append([0.0] * 10)  # 填充零向量
+                    # 对于缺少向量的候选，返回零特征向量
+                    continue
+                else:
+                    candidate_vectors.append(np.array(pic_vector))
+                    valid_candidates.append(candidate)
+            
+            if not candidate_vectors:
+                logger.error("所有候选结果都缺少向量数据")
+                return [[0.0] * 10] * len(candidates)
+            
+            # 计算动态参考向量：候选集合的平均向量
+            # 这个平均向量代表当前候选集合的"平均质量水平"
+            reference_vector = np.mean(candidate_vectors, axis=0)
+            
+            query_vec = np.array(query_vector)
+            features_list = []
+            
+            # 为每个候选图片计算pair-wise特征
+            for i, candidate in enumerate(candidates):
+                pic_vector = candidate.get('vector', [])
+                if len(pic_vector) == 0:
+                    # 对于缺少向量的候选，填充零特征向量
+                    features_list.append([0.0] * 10)
                     continue
                 
-                # 计算单个候选结果的特征
-                similarity = np.dot(query_vec, pic_vector)
-                distance = np.linalg.norm(query_vec - pic_vector)
-                query_norm = np.linalg.norm(query_vec)
-                pic_norm = np.linalg.norm(pic_vector)
+                pic_vec = np.array(pic_vector)
                 
-                # 原始相似度分数（来自粗排）
-                original_score = candidate.get('similarity', 0.0)
-                
-                features = [
-                    similarity,           # query-pic相似度
-                    distance,            # query-pic欧氏距离
-                    query_norm,          # query向量长度
-                    pic_norm,            # pic向量长度
-                    original_score,      # 原始相似度分数
-                    len(query_text),     # 查询长度
-                    len(query_text.split()),  # 查询词数
-                    candidate.get('rank', 0),  # 原始排序位置
-                    # 预留更多特征位
-                    0.0,
-                    0.0
-                ]
-                
+                # 使用统一的pair-wise特征计算函数
+                # candidate作为"better"，reference_vector作为"worse"
+                features = compute_pairwise_features(query_vec, pic_vec, reference_vector)
                 features_list.append(features)
             
+            logger.debug(f"成功提取{len(features_list)}个候选结果的pair-wise特征")
             return features_list
             
         except Exception as e:
             logger.error(f"排序特征提取失败: {e}")
-            return []
+            return [[0.0] * 10] * len(candidates)
     
     def get_feature_names(self) -> List[str]:
         """获取特征名称列表"""
@@ -265,18 +245,18 @@ class LTRFeatureExtractor:
         ]
     
     def get_ranking_feature_names(self) -> List[str]:
-        """获取排序特征名称列表"""
+        """获取排序特征名称列表（与训练时保持一致的pair-wise特征）"""
         return [
-            'query_pic_similarity',
-            'query_pic_distance',
-            'query_norm',
-            'pic_norm',
-            'original_score',
-            'query_length',
-            'query_word_count',
-            'original_rank',
-            'reserved_1',
-            'reserved_2'
+            'query_better_similarity',  # query与候选图片相似度
+            'query_worse_similarity',   # query与参考向量相似度
+            'better_worse_similarity',  # 候选图片与参考向量相似度
+            'similarity_difference',    # 相似度差异（候选-参考）
+            'query_better_distance',    # query与候选图片距离
+            'query_worse_distance',     # query与参考向量距离
+            'distance_difference',      # 距离差异（参考-候选）
+            'query_norm',              # query向量长度
+            'better_norm',             # 候选图片向量长度
+            'worse_norm'               # 参考向量长度
         ]
     
     def clear_cache(self):
