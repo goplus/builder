@@ -4,6 +4,7 @@ import { UIButton } from '@/components/ui'
 import UIKeyBtn from './UIKeyBtn.vue'
 import type { Type as IconType } from '@/components/ui/icons/UIIcon.vue'
 import { reactive, onMounted } from 'vue'
+import { KeyboardEventType, KeyCode } from './mobile-keyboard'
 defineOptions({ name: 'MobileKeyboardView' })
 const props = defineProps<{
   zoneToKeyMapping: MobileKeyboardZoneToKeyMapping
@@ -11,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   rerun: []
+  onKeyEvent: [type: KeyboardEventType, key: KeyCode]
 }>()
 
 type SystemKeyType = {
@@ -67,39 +69,89 @@ onMounted(() => {
 
       <!-- 左上角-->
       <div class="zone lt">
-        <UIKeyBtn v-if="zoneToKey.lt" :value="zoneToKey.lt!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.lt"
+          :value="zoneToKey.lt!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <!-- 右上角 -->
       <div class="zone rt">
-        <UIKeyBtn v-if="zoneToKey.rt" :value="zoneToKey.rt!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.rt"
+          :value="zoneToKey.rt!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
 
       <!-- 左下角 4 -->
       <div class="zone lb-up">
-        <UIKeyBtn v-if="zoneToKey.lbUp" :value="zoneToKey.lbUp!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.lbUp"
+          :value="zoneToKey.lbUp!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone lb-left">
-        <UIKeyBtn v-if="zoneToKey.lbLeft" :value="zoneToKey.lbLeft!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.lbLeft"
+          :value="zoneToKey.lbLeft!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone lb-right">
-        <UIKeyBtn v-if="zoneToKey.lbRight" :value="zoneToKey.lbRight!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.lbRight"
+          :value="zoneToKey.lbRight!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone lb-down">
-        <UIKeyBtn v-if="zoneToKey.lbDown" :value="zoneToKey.lbDown!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.lbDown"
+          :value="zoneToKey.lbDown!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
 
       <!-- 右下角 4 -->
       <div class="zone rb-a">
-        <UIKeyBtn v-if="zoneToKey.rbA" :value="zoneToKey.rbA!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.rbA"
+          :value="zoneToKey.rbA!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone rb-b">
-        <UIKeyBtn v-if="zoneToKey.rbB" :value="zoneToKey.rbB!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.rbB"
+          :value="zoneToKey.rbB!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone rb-x">
-        <UIKeyBtn v-if="zoneToKey.rbX" :value="zoneToKey.rbX!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.rbX"
+          :value="zoneToKey.rbX!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
       <div class="zone rb-y">
-        <UIKeyBtn v-if="zoneToKey.rbY" :value="zoneToKey.rbY!" :active="true" />
+        <UIKeyBtn
+          v-if="zoneToKey.rbY"
+          :value="zoneToKey.rbY!"
+          :active="true"
+          :on-key-event="(type, key) => emit('onKeyEvent', type, key)"
+        />
       </div>
     </div>
   </div>
