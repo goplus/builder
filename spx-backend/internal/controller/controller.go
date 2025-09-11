@@ -108,7 +108,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		svggen:              svggenManager,
 		recommendationCache: recommendationCache,
 		algorithmService:    algorithmService,
-		assetCompletion: assetCompletionService,
+		assetCompletion: 	 assetCompletionService,
 	}
 	// Initialize sample game assets data
 	if err := ctrl.InitializeGameAssetsData(ctx); err != nil {
