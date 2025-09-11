@@ -190,6 +190,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 				RequestContent: request.Content,
 				RequestContext: request.Context,
 				ResponseText:   resp.Text,
+				IsInitial:      i == 0,
 			}
 			p.mu.Lock()
 			p.history = append(p.history, noCmdTurn)
@@ -234,6 +235,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			ResponseCommandName:   resp.CommandName,
 			ResponseCommandArgs:   resp.CommandArgs,
 			ExecutedCommandResult: executedResult,
+			IsInitial:             i == 0,
 		}
 		p.mu.Lock()
 		p.history = append(p.history, currentTurn)

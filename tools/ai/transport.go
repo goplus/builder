@@ -97,6 +97,10 @@ type Turn struct {
 	// this turn's response. Nil if execution hasn't happened/failed before result
 	// recording.
 	ExecutedCommandResult *CommandResult `json:"executedCommandResult,omitempty"`
+
+	// IsInitial indicates whether this turn is the initial turn of an
+	// interaction sequence (i.e., ContinuationTurn == 0).
+	IsInitial bool `json:"isInitial,omitempty"`
 }
 
 // ErrTransportNotSet indicates that the AI transport has not been configured via [SetGlobalTransport].
