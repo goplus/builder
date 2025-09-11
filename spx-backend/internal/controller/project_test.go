@@ -593,10 +593,12 @@ func TestCreateProjectParams(t *testing.T) {
 			Files: model.FileCollection{
 				"main.go": "http://example.com/main.go",
 			},
-			Visibility:   model.VisibilityPublic,
-			Description:  "Test project description",
-			Instructions: "How to use this project",
-			Thumbnail:    "http://example.com/thumbnail.jpg",
+			Visibility:              model.VisibilityPublic,
+			Description:             "Test project description",
+			Instructions:            "How to use this project",
+			Thumbnail:               "http://example.com/thumbnail.jpg",
+			MobileKeyboardType:      1, // No keyboard needed
+			MobileKeyboardZoneToKey: nil,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -605,12 +607,14 @@ func TestCreateProjectParams(t *testing.T) {
 
 	t.Run("ValidWithoutRemixSource", func(t *testing.T) {
 		params := &CreateProjectParams{
-			Name:         "testproject",
-			Files:        model.FileCollection{},
-			Visibility:   model.VisibilityPrivate,
-			Description:  "Test project description",
-			Instructions: "How to use this project",
-			Thumbnail:    "http://example.com/thumbnail.jpg",
+			Name:                    "testproject",
+			Files:                   model.FileCollection{},
+			Visibility:              model.VisibilityPrivate,
+			Description:             "Test project description",
+			Instructions:            "How to use this project",
+			Thumbnail:               "http://example.com/thumbnail.jpg",
+			MobileKeyboardType:      1, // No keyboard needed
+			MobileKeyboardZoneToKey: nil,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -674,22 +678,26 @@ func TestControllerCreateProject(t *testing.T) {
 		require.True(t, ok)
 
 		params := &CreateProjectParams{
-			Name:        "testproject",
-			Files:       model.FileCollection{"main.go": "http://example.com/main.go"},
-			Visibility:  model.VisibilityPublic,
-			Description: "Test project description",
+			Name:                    "testproject",
+			Files:                   model.FileCollection{"main.go": "http://example.com/main.go"},
+			Visibility:              model.VisibilityPublic,
+			Description:             "Test project description",
+			MobileKeyboardType:      1, // No keyboard needed
+			MobileKeyboardZoneToKey: nil,
 		}
 
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.Project{
-				OwnerID:     mUser.ID,
-				Name:        params.Name,
-				Version:     1,
-				Files:       params.Files,
-				Visibility:  params.Visibility,
-				Description: params.Description,
+				OwnerID:                 mUser.ID,
+				Name:                    params.Name,
+				Version:                 1,
+				Files:                   params.Files,
+				Visibility:              params.Visibility,
+				Description:             params.Description,
+				MobileKeyboardType:      params.MobileKeyboardType,
+				MobileKeyboardZoneToKey: convertToModelZoneToKeyMapping(params.MobileKeyboardZoneToKey),
 			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -720,12 +728,14 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(model.Project{
-				Model:       model.Model{ID: 1},
-				OwnerID:     mUser.ID,
-				Name:        params.Name,
-				Files:       params.Files,
-				Visibility:  params.Visibility,
-				Description: params.Description,
+				Model:                   model.Model{ID: 1},
+				OwnerID:                 mUser.ID,
+				Name:                    params.Name,
+				Files:                   params.Files,
+				Visibility:              params.Visibility,
+				Description:             params.Description,
+				MobileKeyboardType:      1,
+				MobileKeyboardZoneToKey: model.MobileKeyboardZoneToKeyMapping{},
 			})...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -742,6 +752,7 @@ func TestControllerCreateProject(t *testing.T) {
 		assert.Equal(t, params.Name, projectDTO.Name)
 		assert.Equal(t, params.Visibility, projectDTO.Visibility)
 		assert.Equal(t, params.Description, projectDTO.Description)
+		assert.Equal(t, params.MobileKeyboardType, projectDTO.MobileKeyboardType)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -757,12 +768,14 @@ func TestControllerCreateProject(t *testing.T) {
 		mSourceProjectOwnerUsername := "otheruser"
 
 		mSourceProject := model.Project{
-			Model:        model.Model{ID: 2},
-			OwnerID:      mUser.ID + 1,
-			Name:         "sourceproject",
-			Visibility:   model.VisibilityPublic,
-			Description:  "Source project description",
-			Instructions: "Source project instructions",
+			Model:                   model.Model{ID: 2},
+			OwnerID:                 mUser.ID + 1,
+			Name:                    "sourceproject",
+			Visibility:              model.VisibilityPublic,
+			Description:             "Source project description",
+			Instructions:            "Source project instructions",
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: model.MobileKeyboardZoneToKeyMapping{},
 		}
 
 		mSourceProjectRelease := model.ProjectRelease{
@@ -774,9 +787,11 @@ func TestControllerCreateProject(t *testing.T) {
 		}
 
 		params := &CreateProjectParams{
-			RemixSource: &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name},
-			Name:        "remixproject",
-			Visibility:  model.VisibilityPublic,
+			RemixSource:             &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name},
+			Name:                    "remixproject",
+			Visibility:              model.VisibilityPublic,
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: nil,
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -804,15 +819,17 @@ func TestControllerCreateProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.Project{
-				OwnerID:              mUser.ID,
-				RemixedFromReleaseID: sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
-				Name:                 params.Name,
-				Version:              1,
-				Files:                mSourceProjectRelease.Files,
-				Visibility:           params.Visibility,
-				Description:          mSourceProject.Description,
-				Instructions:         mSourceProject.Instructions,
-				Thumbnail:            mSourceProjectRelease.Thumbnail,
+				OwnerID:                 mUser.ID,
+				RemixedFromReleaseID:    sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
+				Name:                    params.Name,
+				Version:                 1,
+				Files:                   mSourceProjectRelease.Files,
+				Visibility:              params.Visibility,
+				Description:             mSourceProject.Description,
+				Instructions:            mSourceProject.Instructions,
+				Thumbnail:               mSourceProjectRelease.Thumbnail,
+				MobileKeyboardType:      params.MobileKeyboardType,
+				MobileKeyboardZoneToKey: convertToModelZoneToKeyMapping(params.MobileKeyboardZoneToKey),
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -865,15 +882,17 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(model.Project{
-				Model:                model.Model{ID: 3},
-				OwnerID:              mUser.ID,
-				Name:                 params.Name,
-				Files:                mSourceProjectRelease.Files,
-				Visibility:           params.Visibility,
-				Description:          mSourceProject.Description,
-				Instructions:         mSourceProject.Instructions,
-				Thumbnail:            mSourceProjectRelease.Thumbnail,
-				RemixedFromReleaseID: sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
+				Model:                   model.Model{ID: 3},
+				OwnerID:                 mUser.ID,
+				Name:                    params.Name,
+				Files:                   mSourceProjectRelease.Files,
+				Visibility:              params.Visibility,
+				Description:             mSourceProject.Description,
+				Instructions:            mSourceProject.Instructions,
+				Thumbnail:               mSourceProjectRelease.Thumbnail,
+				RemixedFromReleaseID:    sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
+				MobileKeyboardType:      1,
+				MobileKeyboardZoneToKey: model.MobileKeyboardZoneToKeyMapping{},
 			})...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -924,6 +943,7 @@ func TestControllerCreateProject(t *testing.T) {
 		assert.Equal(t, mSourceProjectRelease.Thumbnail, projectDTO.Thumbnail)
 		assert.Equal(t, mSourceProjectRelease.Files, projectDTO.Files)
 		assert.Equal(t, &RemixSource{Owner: mSourceProjectOwnerUsername, Project: mSourceProject.Name, Release: &mSourceProjectRelease.Name}, projectDTO.RemixedFrom)
+		assert.Equal(t, params.MobileKeyboardType, projectDTO.MobileKeyboardType)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -933,8 +953,10 @@ func TestControllerCreateProject(t *testing.T) {
 		defer closeDB()
 
 		params := &CreateProjectParams{
-			Name:       "testproject",
-			Visibility: model.VisibilityPublic,
+			Name:                    "testproject",
+			Visibility:              model.VisibilityPublic,
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: nil,
 		}
 
 		_, err := ctrl.CreateProject(context.Background(), params)
@@ -951,18 +973,22 @@ func TestControllerCreateProject(t *testing.T) {
 		require.True(t, ok)
 
 		params := &CreateProjectParams{
-			Name:       "testproject",
-			Visibility: model.VisibilityPublic,
+			Name:                    "testproject",
+			Visibility:              model.VisibilityPublic,
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: nil,
 		}
 
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.Project{
-				OwnerID:    mUser.ID,
-				Name:       params.Name,
-				Version:    1,
-				Visibility: params.Visibility,
+				OwnerID:                 mUser.ID,
+				Name:                    params.Name,
+				Version:                 1,
+				Visibility:              params.Visibility,
+				MobileKeyboardType:      params.MobileKeyboardType,
+				MobileKeyboardZoneToKey: convertToModelZoneToKeyMapping(params.MobileKeyboardZoneToKey),
 			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -1711,11 +1737,13 @@ func TestControllerGetProject(t *testing.T) {
 func TestUpdateProjectParams(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		params := &UpdateProjectParams{
-			Files:        model.FileCollection{"main.go": "http://example.com/main.go"},
-			Visibility:   model.VisibilityPublic,
-			Description:  "Updated project description",
-			Instructions: "Updated instructions",
-			Thumbnail:    "http://example.com/updated-thumbnail.jpg",
+			Files:                   model.FileCollection{"main.go": "http://example.com/main.go"},
+			Visibility:              model.VisibilityPublic,
+			Description:             "Updated project description",
+			Instructions:            "Updated instructions",
+			Thumbnail:               "http://example.com/updated-thumbnail.jpg",
+			MobileKeyboardType:      1, // No keyboard needed
+			MobileKeyboardZoneToKey: nil,
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -2928,4 +2956,64 @@ func TestControllerUnlikeProject(t *testing.T) {
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
+}
+
+func TestCreateProjectParamsMobileKeyboard(t *testing.T) {
+	t.Run("ValidNoKeyboard", func(t *testing.T) {
+		params := &CreateProjectParams{
+			Name:                    "testproject",
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: nil,
+		}
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("ValidCustomKeyboard", func(t *testing.T) {
+		params := &CreateProjectParams{
+			Name:                    "testproject",
+			MobileKeyboardType:      2,
+			MobileKeyboardZoneToKey: map[string]*string{"lt": stringPtr("space")},
+		}
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("InvalidKeyboardType", func(t *testing.T) {
+		params := &CreateProjectParams{
+			Name:               "testproject",
+			MobileKeyboardType: 3,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Contains(t, msg, "invalid mobileKeyboardType")
+	})
+
+	t.Run("CustomKeyboardWithoutMapping", func(t *testing.T) {
+		params := &CreateProjectParams{
+			Name:                    "testproject",
+			MobileKeyboardType:      2,
+			MobileKeyboardZoneToKey: nil,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Contains(t, msg, "mobileKeyboardZoneToKey is required")
+	})
+
+	t.Run("NoKeyboardWithMapping", func(t *testing.T) {
+		params := &CreateProjectParams{
+			Name:                    "testproject",
+			MobileKeyboardType:      1,
+			MobileKeyboardZoneToKey: map[string]*string{"lt": stringPtr("space")},
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Contains(t, msg, "must be empty when mobileKeyboardType is 1")
+	})
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
