@@ -55,19 +55,17 @@ export declare function MobileKeyboardView(
   emits: {
     close: [];
     rerun: [];
+    onKeyEvent: [type: string, key: string];
   }
 ): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
-//   const handleKeyEvent = (type: string, key: string, code: string) => {
-//     dispatchKeyToEvent(type, code);
-//   };
 
 //   const keyButtons = zones
 //     .map(
 //       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${handleKeyEvent} />`
+//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${onKeyEvent} />`
 //     )
 //     .join("");
 
