@@ -185,33 +185,31 @@ const calculateLocalHandles = (
   nextSeg: paper.Segment | null,
   prevSeg: paper.Segment | null
 ): void => {
-  currentSeg.clearHandles()
+  currentSeg.clearHandles() // 清除旧的控制柄
 
   if (nextSeg && prevSeg) {
-    const vector1 = currentSeg.point.subtract(prevSeg.point)
-    const vector2 = nextSeg.point.subtract(currentSeg.point)
+    // 使用连接两个相邻节点的向量获取切线
+    // 这个方法与路径的绘制方向无关。
+    const tangentVector = nextSeg.point.subtract(prevSeg.point)
 
-    const angle1 = vector1.angle
-    const angle2 = vector2.angle
-    const avgAngle = (angle1 + angle2) / 2
+    // 根据当前点到相邻节点的距离来计算控制柄的长度。
+    const lengthToPrev = currentSeg.point.subtract(prevSeg.point).length
+    const lengthToNext = nextSeg.point.subtract(currentSeg.point).length
 
-    const length1 = vector1.length * 0.3
-    const length2 = vector2.length * 0.3
-
-    currentSeg.handleIn = new paper.Point({
-      angle: avgAngle + 180,
-      length: length1
-    })
-    currentSeg.handleOut = new paper.Point({
-      angle: avgAngle,
-      length: length2
-    })
+    // 使用归一化后的切线向量来设置控制柄。
+    // 乘以一个负数的长度可以巧妙地将向量翻转，用于设置 handleIn。
+    // 系数选择0.3，不要问我为什么这么选。这是handle=Pi±α(Pi+1−Pi−1)中的系数，是一个经验值，通常是采取0.2-0.4之间，所以这里我选了0.3
+    currentSeg.handleIn = tangentVector.normalize(-lengthToPrev * 0.3)
+    currentSeg.handleOut = tangentVector.normalize(lengthToNext * 0.3)
   } else if (nextSeg) {
+    // 端点逻辑 (路径的起点)
     const vector = nextSeg.point.subtract(currentSeg.point)
     currentSeg.handleOut = vector.multiply(0.3)
   } else if (prevSeg) {
+    // 端点逻辑 (路径的终点)
     const vector = currentSeg.point.subtract(prevSeg.point)
-    currentSeg.handleIn = vector.multiply(0.3)
+    // 注意：这里应该是 handleIn
+    currentSeg.handleIn = vector.multiply(-0.3) // 乘以负数使其指向路径内部
   }
 }
 
@@ -219,17 +217,24 @@ const calculateLocalHandles = (
 const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): ExtendedItem | null => {
   const location = path.getNearestLocation(clickPoint)
   if (location) {
-    const insertIndex = location.index + 1
-    path.insert(insertIndex, location.point)
+    // 在指定位置分割曲线，并自动计算新控制柄以保持形状
+    const newSegment = path.divideAt(location)
 
-    smoothLocalSegments(path, insertIndex)
+    // divideAt 成功后会返回新创建的 Segment
+    if (newSegment) {
+      // 在分割之后，我们暂时不需要立即调用我们自己的平滑函数，
+      // 因为 divideAt 已经为我们保证了曲线的平滑。
+      // 我们的平滑函数应该在用户真正开始拖动这个新点时才介入。
 
-    showControlPoints(path)
+      showControlPoints(path)
 
-    const created =
-      controlPoints.value.find((p: ExtendedItem) => p.parentPath === path && p.segmentIndex === insertIndex) || null
-    paper.view.update()
-    return created
+      // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
+      const createdControlPoint =
+        controlPoints.value.find((p: ExtendedItem) => p.segmentIndex === newSegment.index) || null
+
+      paper.view.update()
+      return createdControlPoint
+    }
   }
   return null
 }
