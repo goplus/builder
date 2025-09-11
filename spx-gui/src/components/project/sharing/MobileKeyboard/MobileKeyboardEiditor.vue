@@ -12,136 +12,72 @@
             <div class="stage-vTZqo" :class="{ dragging: !!drag }">
               <!-- 系统键 2 个 -->
               <div class="zone sysA">
-                <UIButton
-                  v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
-                  icon="rotate"
-                >
+                <UIButton v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
+                  icon="rotate">
                   {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
                 </UIButton>
               </div>
               <div class="zone sysB">
-                <UIButton
-                  v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
-                  icon="close"
-                >
+                <UIButton v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+                  icon="close">
                   {{ $t({ en: 'Close', zh: '关闭' }) }}
                 </UIButton>
               </div>
               <!-- 左上角 1 个 -->
-              <div
-                :ref="(el) => (zoneRefs.lt.value = el as HTMLElement)"
-                :class="{ over: hoverZone === 'lt' }"
-                class="zone lt"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.lt"
-                  :value="zoneToKey.lt!"
-                  @pointerdown.stop="startDrag('lt', zoneToKey.lt!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.lt.value = el as HTMLElement)" :class="{ over: hoverZone === 'lt' }"
+                class="zone lt">
+                <UIKeyBtn v-if="zoneToKey.lt" :value="zoneToKey.lt!"
+                  @pointerdown.stop="startDrag('lt', zoneToKey.lt!, $event as PointerEvent)" />
               </div>
               <!-- 右上角 1 个 -->
-              <div
-                :ref="(el) => (zoneRefs.rt.value = el as HTMLElement)"
-                class="zone rt"
-                :class="{ over: hoverZone === 'rt' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.rt"
-                  :value="zoneToKey.rt!"
-                  @pointerdown.stop="startDrag('rt', zoneToKey.rt!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.rt.value = el as HTMLElement)" class="zone rt"
+                :class="{ over: hoverZone === 'rt' }">
+                <UIKeyBtn v-if="zoneToKey.rt" :value="zoneToKey.rt!"
+                  @pointerdown.stop="startDrag('rt', zoneToKey.rt!, $event as PointerEvent)" />
               </div>
 
               <!-- 左下角 4 个：每个独立 zone -->
-              <div
-                :ref="(el) => (zoneRefs.lbUp.value = el as HTMLElement)"
-                class="zone lb-up"
-                :class="{ over: hoverZone === 'lbUp' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.lbUp"
-                  :value="zoneToKey.lbUp!"
-                  @pointerdown.stop="startDrag('lbUp', zoneToKey.lbUp!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.lbUp.value = el as HTMLElement)" class="zone lb-up"
+                :class="{ over: hoverZone === 'lbUp' }">
+                <UIKeyBtn v-if="zoneToKey.lbUp" :value="zoneToKey.lbUp!"
+                  @pointerdown.stop="startDrag('lbUp', zoneToKey.lbUp!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.lbLeft.value = el as HTMLElement)"
-                class="zone lb-left"
-                :class="{ over: hoverZone === 'lbLeft' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.lbLeft"
-                  :value="zoneToKey.lbLeft!"
-                  @pointerdown.stop="startDrag('lbLeft', zoneToKey.lbLeft!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.lbLeft.value = el as HTMLElement)" class="zone lb-left"
+                :class="{ over: hoverZone === 'lbLeft' }">
+                <UIKeyBtn v-if="zoneToKey.lbLeft" :value="zoneToKey.lbLeft!"
+                  @pointerdown.stop="startDrag('lbLeft', zoneToKey.lbLeft!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.lbRight.value = el as HTMLElement)"
-                class="zone lb-right"
-                :class="{ over: hoverZone === 'lbRight' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.lbRight"
-                  :value="zoneToKey.lbRight!"
-                  @pointerdown.stop="startDrag('lbRight', zoneToKey.lbRight!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.lbRight.value = el as HTMLElement)" class="zone lb-right"
+                :class="{ over: hoverZone === 'lbRight' }">
+                <UIKeyBtn v-if="zoneToKey.lbRight" :value="zoneToKey.lbRight!"
+                  @pointerdown.stop="startDrag('lbRight', zoneToKey.lbRight!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.lbDown.value = el as HTMLElement)"
-                class="zone lb-down"
-                :class="{ over: hoverZone === 'lbDown' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.lbDown"
-                  :value="zoneToKey.lbDown!"
-                  @pointerdown.stop="startDrag('lbDown', zoneToKey.lbDown!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.lbDown.value = el as HTMLElement)" class="zone lb-down"
+                :class="{ over: hoverZone === 'lbDown' }">
+                <UIKeyBtn v-if="zoneToKey.lbDown" :value="zoneToKey.lbDown!"
+                  @pointerdown.stop="startDrag('lbDown', zoneToKey.lbDown!, $event as PointerEvent)" />
               </div>
 
               <!-- 右下角 4 个：每个独立 zone -->
-              <div
-                :ref="(el) => (zoneRefs.rbA.value = el as HTMLElement)"
-                class="zone rb-a"
-                :class="{ over: hoverZone === 'rbA' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.rbA"
-                  :value="zoneToKey.rbA!"
-                  @pointerdown.stop="startDrag('rbA', zoneToKey.rbA!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.rbA.value = el as HTMLElement)" class="zone rb-a"
+                :class="{ over: hoverZone === 'rbA' }">
+                <UIKeyBtn v-if="zoneToKey.rbA" :value="zoneToKey.rbA!"
+                  @pointerdown.stop="startDrag('rbA', zoneToKey.rbA!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.rbB.value = el as HTMLElement)"
-                class="zone rb-b"
-                :class="{ over: hoverZone === 'rbB' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.rbB"
-                  :value="zoneToKey.rbB!"
-                  @pointerdown.stop="startDrag('rbB', zoneToKey.rbB!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.rbB.value = el as HTMLElement)" class="zone rb-b"
+                :class="{ over: hoverZone === 'rbB' }">
+                <UIKeyBtn v-if="zoneToKey.rbB" :value="zoneToKey.rbB!"
+                  @pointerdown.stop="startDrag('rbB', zoneToKey.rbB!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.rbX.value = el as HTMLElement)"
-                class="zone rb-x"
-                :class="{ over: hoverZone === 'rbX' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.rbX"
-                  :value="zoneToKey.rbX!"
-                  @pointerdown.stop="startDrag('rbX', zoneToKey.rbX!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.rbX.value = el as HTMLElement)" class="zone rb-x"
+                :class="{ over: hoverZone === 'rbX' }">
+                <UIKeyBtn v-if="zoneToKey.rbX" :value="zoneToKey.rbX!"
+                  @pointerdown.stop="startDrag('rbX', zoneToKey.rbX!, $event as PointerEvent)" />
               </div>
-              <div
-                :ref="(el) => (zoneRefs.rbY.value = el as HTMLElement)"
-                class="zone rb-y"
-                :class="{ over: hoverZone === 'rbY' }"
-              >
-                <UIKeyBtn
-                  v-if="zoneToKey.rbY"
-                  :value="zoneToKey.rbY!"
-                  @pointerdown.stop="startDrag('rbY', zoneToKey.rbY!, $event as PointerEvent)"
-                />
+              <div :ref="(el) => (zoneRefs.rbY.value = el as HTMLElement)" class="zone rb-y"
+                :class="{ over: hoverZone === 'rbY' }">
+                <UIKeyBtn v-if="zoneToKey.rbY" :value="zoneToKey.rbY!"
+                  @pointerdown.stop="startDrag('rbY', zoneToKey.rbY!, $event as PointerEvent)" />
               </div>
 
               <!-- 拖拽中的浮层（跟随指针） -->
@@ -154,12 +90,8 @@
 
         <div class="palette-container">
           <div ref="paletteRef" class="palette">
-            <div
-              v-for="k in pool"
-              :key="`P-${k}`"
-              class="palette-item"
-              @pointerdown="startDrag('pool', k, $event as PointerEvent)"
-            >
+            <div v-for="k in pool" :key="`P-${k}`" class="palette-item"
+              @pointerdown="startDrag('pool', k, $event as PointerEvent)">
               <UIKeyBtn :value="k" />
             </div>
           </div>
@@ -178,6 +110,7 @@ import type { MobileKeyboardZoneToKeyMapping } from '@/apis/project'
 import type { ModalComponentEmits, ModalComponentProps } from '@/components/ui/modal/UIModalProvider.vue'
 import { UIFullScreenModal, UIButton } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { onUnmounted } from 'vue'
 defineOptions({ name: 'MobileKeyboardEdit' })
 const props = defineProps<
   ModalComponentProps & {
@@ -302,6 +235,10 @@ function hit(el: HTMLElement | null, x: number, y: number) {
 function confirm() {
   emit('resolved', zoneToKey)
 }
+onUnmounted(() => {
+  window.removeEventListener('pointermove', onMove)
+  window.removeEventListener('pointerup', onUp)
+})
 </script>
 
 <style scoped lang="scss">
