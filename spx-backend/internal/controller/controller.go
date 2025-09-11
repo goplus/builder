@@ -35,18 +35,16 @@ var (
 
 // Controller is the controller for the service.
 type Controller struct {
-
-	db              *gorm.DB
-	kodo            *kodoClient
-	copilot         *copilot.Copilot
-	workflow        *workflow.Workflow
-	aiInteraction   *aiinteraction.AIInteraction
-	aigc            *aigc.AigcClient
-	svggen          *svggen.ServiceManager
-	assetCompletion *AssetCompletionService
-	recommendationCache Cache
-	algorithmService    *AlgorithmService
-
+	db              		*gorm.DB
+	kodo            		*kodoClient
+	copilot         		*copilot.Copilot
+	workflow        		*workflow.Workflow
+	aiInteraction   		*aiinteraction.AIInteraction
+	aigc          			*aigc.AigcClient
+	svggen          		*svggen.ServiceManager
+	assetCompletion 		*AssetCompletionService
+	recommendationCache 	 Cache
+	algorithmService    	*AlgorithmService
 }
 
 // New creates a new controller.
