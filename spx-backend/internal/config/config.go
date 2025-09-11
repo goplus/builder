@@ -6,16 +6,15 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	Server      ServerConfig
-	Database    DatabaseConfig
-	Redis       RedisConfig
-	Kodo        KodoConfig
-	Casdoor     CasdoorConfig
-	OpenAI      OpenAIConfig
-	AIGC        AIGCConfig
-	Algorithm   AlgorithmConfig
-	Providers   ProvidersConfig
-	Translation TranslationConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Redis     RedisConfig
+	Kodo      KodoConfig
+	Casdoor   CasdoorConfig
+	OpenAI    OpenAIConfig
+	AIGC      AIGCConfig
+	Algorithm AlgorithmConfig
+	Providers ProvidersConfig
 }
 
 // ServerConfig holds server configuration.
@@ -147,9 +146,8 @@ type AlgorithmConfig struct {
 
 // ProvidersConfig holds provider configurations for SVG generation.
 type ProvidersConfig struct {
-	SVGIO     SVGIOConfig
-	Recraft   RecraftConfig
-	SVGOpenAI OpenAISVGConfig
+	SVGIO   SVGIOConfig
+	Recraft RecraftConfig
 }
 
 // SVGIOConfig holds SVG.IO provider configuration.
@@ -183,25 +181,7 @@ type RecraftEndpoints struct {
 	Vectorize string
 }
 
-// OpenAISVGConfig holds OpenAI provider configuration for SVG generation (supports all OpenAI compatible models).
-type OpenAISVGConfig struct {
-	BaseURL      string
-	Timeout      time.Duration
-	MaxRetries   int
-	Enabled      bool
-	DefaultModel string
-	MaxTokens    int
-	Temperature  float64
-}
 
-// TranslationConfig holds translation service configuration.
-type TranslationConfig struct {
-	Enabled      bool
-	ServiceURL   string
-	DefaultModel string
-	Timeout      time.Duration
-	MaxRetries   int
-}
 
 // IsProviderEnabled checks if a provider is enabled.
 func (c *Config) IsProviderEnabled(provider string) bool {
@@ -211,7 +191,8 @@ func (c *Config) IsProviderEnabled(provider string) bool {
 	case "recraft":
 		return c.Providers.Recraft.Enabled
 	case "openai":
-		return c.Providers.SVGOpenAI.Enabled
+		// OpenAI provider is enabled if copilot is configured
+		return c.OpenAI.APIKey != ""
 	default:
 		return false
 	}

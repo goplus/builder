@@ -108,35 +108,3 @@ type RecraftVectorizeResp struct {
 	Image RecraftImageData `json:"image"`
 }
 
-// OpenAI API related types (supports all OpenAI compatible models)
-type OpenAIMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type OpenAIGenerateReq struct {
-	Model       string          `json:"model"`
-	Messages    []OpenAIMessage `json:"messages"`
-	MaxTokens   int             `json:"max_tokens"`
-	Temperature float64         `json:"temperature,omitempty"`
-	Stream      bool            `json:"stream,omitempty"`
-}
-
-type OpenAIGenerateResp struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Model   string `json:"model"`
-	Choices []struct {
-		Index   int `json:"index"`
-		Message struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		} `json:"message"`
-		FinishReason string `json:"finish_reason"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-		TotalTokens      int `json:"total_tokens"`
-	} `json:"usage"`
-}

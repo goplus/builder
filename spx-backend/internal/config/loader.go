@@ -59,7 +59,10 @@ func Load(logger *log.Logger) (*Config, error) {
 		AIGC: AIGCConfig{
 			Endpoint: mustGetEnv(logger, "AIGC_ENDPOINT"),
 		},
-
+		Algorithm: AlgorithmConfig{
+			Endpoint: getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
+			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "30s"),
+		},
 		
 		Providers: ProvidersConfig{
 			SVGIO: SVGIOConfig{
@@ -83,22 +86,6 @@ func Load(logger *log.Logger) (*Config, error) {
 					Vectorize: getEnvAsString("RECRAFT_VECTORIZE_ENDPOINT", "/v1/images/vectorize"),
 				},
 			},
-			SVGOpenAI: OpenAISVGConfig{
-				BaseURL:      getEnvAsString("SVG_OPENAI_BASE_URL", "https://api.qnaigc.com/v1/"),
-				Timeout:      getEnvAsDuration("SVG_OPENAI_TIMEOUT", "60s"),
-				MaxRetries:   getEnvAsInt("SVG_OPENAI_MAX_RETRIES", 3),
-				Enabled:      getEnvAsBool("SVG_OPENAI_ENABLED", true),
-				DefaultModel: getEnvAsString("SVG_OPENAI_DEFAULT_MODEL", "claude-4.0-sonnet"),
-				MaxTokens:    getEnvAsInt("SVG_OPENAI_MAX_TOKENS", 4000),
-				Temperature:  getEnvAsFloat("SVG_OPENAI_TEMPERATURE", 0.7),
-			},
-		},
-		Translation: TranslationConfig{
-			Enabled:      getEnvAsBool("TRANSLATION_ENABLED", true),
-			ServiceURL:   getEnvAsString("TRANSLATION_SERVICE_URL", "https://api.qnaigc.com/v1/chat/completions"),
-			DefaultModel: getEnvAsString("TRANSLATION_DEFAULT_MODEL", "claude-4.0-sonnet"),
-			Timeout:      getEnvAsDuration("TRANSLATION_TIMEOUT", "45s"),
-			MaxRetries:   getEnvAsInt("TRANSLATION_MAX_RETRIES", 2),
 		},
 	}
 	return config, nil

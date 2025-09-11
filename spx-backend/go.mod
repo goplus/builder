@@ -20,6 +20,8 @@ require (
 	gorm.io/gorm v1.30.1
 )
 
+require github.com/google/uuid v1.6.0
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect

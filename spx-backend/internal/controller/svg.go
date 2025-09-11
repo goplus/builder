@@ -1,13 +1,10 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +33,7 @@ type GenerateSVGParams struct {
 	Size           string          `json:"size,omitempty"`
 	Substyle       string          `json:"substyle,omitempty"`
 	NumImages      int             `json:"n,omitempty"`
+	IsOptimized    bool            `json:"-"` // Internal flag to indicate if prompt is already optimized
 }
 
 // Validate validates the SVG generation parameters.
@@ -44,8 +42,8 @@ func (p *GenerateSVGParams) Validate() (bool, string) {
 		return false, "prompt must be at least 3 characters"
 	}
 
-	// Auto-select provider based on theme if not specified
-	if p.Provider == "" {
+	// Auto-select provider based on theme if not specified (skip if already optimized)
+	if p.Provider == "" && !p.IsOptimized {
 		if p.Theme != ThemeNone {
 			p.Provider = GetThemeRecommendedProvider(p.Theme)
 		} else {
@@ -105,16 +103,17 @@ type ImageResponse struct {
 // GenerateSVG generates an SVG image and returns the SVG content directly.
 func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGParams) (*SVGResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	logger.Printf("GenerateSVG request - provider: %s, theme: %s, prompt: %q, optimized: %v", params.Provider, params.Theme, params.Prompt, params.IsOptimized)
 
-	if params.Theme != ThemeNone {
+	// Skip redundant theme/provider validation if prompt is already optimized
+	if !params.IsOptimized && params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
 			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
 		}
 	}
 
-	// Use prompt as-is, assuming it's already optimized by the caller
+	// Use prompt as-is when already optimized, otherwise could apply additional processing
 	finalPrompt := params.Prompt
 
 	// Convert to svggen request
@@ -178,6 +177,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		}
 	}
 
+
 	// Prepare response headers
 	headers := map[string]string{
 		"Content-Type":        "image/svg+xml",
@@ -211,16 +211,17 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 // GenerateImage generates an image and returns metadata information.
 func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImageParams) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q", params.Provider, params.Theme, params.Prompt)
+	logger.Printf("GenerateImage request - provider: %s, theme: %s, prompt: %q, optimized: %v", params.Provider, params.Theme, params.Prompt, params.IsOptimized)
 
-	if params.Theme != ThemeNone {
+	// Skip redundant theme/provider validation if prompt is already optimized
+	if !params.IsOptimized && params.Theme != ThemeNone {
 		recommendedProvider := GetThemeRecommendedProvider(params.Theme)
 		if params.Provider == recommendedProvider {
 			logger.Printf("Using theme-recommended provider: %s for theme: %s", params.Provider, params.Theme)
 		}
 	}
 
-	// Use prompt as-is, assuming it's already optimized by the caller
+	// Use prompt as-is when already optimized, otherwise could apply additional processing
 	finalPrompt := params.Prompt
 
 	// Convert to svggen request
@@ -300,42 +301,9 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 	}, nil
 }
 
-// VectorAddRequest represents the request payload for vector service
-type VectorAddRequest struct {
-	ID         int64  `json:"id"`
-	URL        string `json:"url"`
-	SVGContent string `json:"svg_content"`
-}
-
 // callVectorService calls the vector service API to add SVG data
 func (ctrl *Controller) callVectorService(ctx context.Context, id int64, url string, svgContent []byte) error {
-	logger := log.GetReqLogger(ctx)
-	
-	// Prepare request payload
-	req := VectorAddRequest{
-		ID:         id,
-		URL:        url,
-		SVGContent: string(svgContent),
-	}
-	
-	jsonData, err := json.Marshal(req)
-	if err != nil {
-		return fmt.Errorf("failed to marshal vector request: %w", err)
-	}
-	
-	// Make HTTP request to vector service
-	resp, err := http.Post("http://100.100.35.128:5000/api/vector/add", "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to call vector service: %w", err)
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("vector service returned status: %d", resp.StatusCode)
-	}
-	
-	logger.Printf("Successfully called vector service for ID: %d, URL: %s", id, url)
-	return nil
+	return ctrl.algorithmService.AddVector(ctx, id, url, svgContent)
 }
 	
 // getSVGContent retrieves SVG content from URL or data URL.

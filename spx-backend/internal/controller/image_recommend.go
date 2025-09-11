@@ -1,14 +1,12 @@
 package controller
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
@@ -138,6 +136,7 @@ func buildSemanticPrompt(userPrompt string, theme ThemeType) string {
 
 // ImageRecommendResult represents the result of image recommendation.
 type ImageRecommendResult struct {
+	QueryID      string                   `json:"query_id"`
 	Query        string                   `json:"query"`
 	ResultsCount int                      `json:"results_count"`
 	Results      []RecommendedImageResult `json:"results"`
@@ -153,25 +152,38 @@ type RecommendedImageResult struct {
 }
 
 // AlgorithmSearchRequest represents the request to spx-algorithm service.
-type AlgorithmSearchRequest struct {
-	Text      string  `json:"text"`
-	TopK      int     `json:"top_k"`
-	Threshold float64 `json:"threshold"`
+
+// generateQueryID generates a unique query ID for tracking recommendations
+func generateQueryID() string {
+	return uuid.New().String()
 }
 
-// AlgorithmSearchResponse represents the response from spx-algorithm service.
-type AlgorithmSearchResponse struct {
-	Query        string                 `json:"query"`
-	ResultsCount int                    `json:"results_count"`
-	Results      []AlgorithmImageResult `json:"results"`
+// ImageFeedbackParams represents parameters for image recommendation feedback.
+type ImageFeedbackParams struct {
+	QueryID    string `json:"query_id"`
+	ChosenPic  int64  `json:"chosen_pic"`
 }
 
-// AlgorithmImageResult represents a single image result from algorithm service.
-type AlgorithmImageResult struct {
-	ImagePath  string  `json:"image_path"`
-	Similarity float64 `json:"similarity"`
-	Rank       int     `json:"rank"`
+// Validate validates the image feedback parameters.
+func (p *ImageFeedbackParams) Validate() (bool, string) {
+	if p.QueryID == "" {
+		return false, "query_id is required"
+	}
+	if p.ChosenPic <= 0 {
+		return false, "chosen_pic must be greater than 0"
+	}
+	return true, ""
 }
+
+
+// RecommendationCache stores recommendation results for feedback tracking
+type RecommendationCache struct {
+	QueryID         string
+	Query           string
+	RecommendedPics []int64
+	Timestamp       time.Time
+}
+
 
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
 // PERFORMANCE OPTIMIZATION: This method now performs AI prompt analysis only once per request
@@ -215,7 +227,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
 		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
-		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, needed, len(foundResults))
+		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, params.Theme, needed, len(foundResults))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -223,6 +235,8 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 			foundResults = append(foundResults, generatedResults...)
 		}
 	}
+
+
 
 	// Update ranks to be sequential
 	for i := range foundResults {
@@ -234,8 +248,25 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
+	// Generate unique query ID for tracking
+	queryID := generateQueryID()
+	logger.Printf("Generated query ID: %s for query: %q", queryID, promptCtx.OptimizedPrompt)
+
+	// Extract recommended pic IDs for feedback tracking
+	recommendedPics := make([]int64, len(foundResults))
+	for i, result := range foundResults {
+		recommendedPics[i] = result.ID
+	}
+
+	// Cache recommendation result for feedback tracking
+	err = ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	if err != nil {
+		logger.Printf("Failed to cache recommendation: %v", err)
+	}
+
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	return &ImageRecommendResult{
+		QueryID:      queryID,
 		Query:        promptCtx.OptimizedPrompt,
 		ResultsCount: len(foundResults),
 		Results:      foundResults,
@@ -244,52 +275,14 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 // callAlgorithmService calls the spx-algorithm service for semantic search.
 func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
-	algorithmURL := ctrl.getAlgorithmServiceURL() + "/api/search/resource"
-
-	reqData := AlgorithmSearchRequest{
-		Text:      text,
-		TopK:      topK,
-		Threshold: 0.2,
-	}
-
-	reqBody, err := json.Marshal(reqData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", algorithmURL, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("algorithm service returned status: %d", resp.StatusCode)
-	}
-
-	var algorithmResp AlgorithmSearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&algorithmResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &algorithmResp, nil
+	return ctrl.algorithmService.SearchSimilarImages(ctx, text, topK)
 }
 
 
 // generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
 // PERFORMANCE OPTIMIZATION: Uses cached optimized prompt instead of calling OptimizePromptWithAnalysis.
 // The finalPrompt parameter should already have all theme and analysis enhancements applied.
-func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt string, provider svggen.Provider, count int, startRank int) ([]RecommendedImageResult, error) {
+func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt string, provider svggen.Provider, theme ThemeType, count int, startRank int) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
 	if count <= 0 {
 		return nil, nil
@@ -308,11 +301,12 @@ func (ctrl *Controller) generateAISVGsOptimized(ctx context.Context, finalPrompt
 	// Start concurrent generation
 	for i := range count {
 		go func(index int) {
-			// Create SVG generation parameters - prompt already optimized, so use ThemeNone to avoid double application
+			// Create SVG generation parameters - prompt already optimized, skip redundant processing
 			params := &GenerateSVGParams{
-				Prompt:   finalPrompt,
-				Provider: provider,
-				Theme:    ThemeNone, // Use ThemeNone since prompt already has all enhancements applied
+				Prompt:      finalPrompt,
+				Provider:    provider,
+				Theme:       theme,
+				IsOptimized: true, // Mark as optimized to skip redundant processing in GenerateSVG
 			}
 
 			// Validate parameters
@@ -395,10 +389,9 @@ func countBySource(results []RecommendedImageResult, source string) int {
 
 // getAlgorithmServiceURL returns the algorithm service URL from configuration.
 func (ctrl *Controller) getAlgorithmServiceURL() string {
-	// TODO: Get from config when available
-	// For now, use localhost default
-	return "http://100.100.35.128:5000"
+	return ctrl.algorithmService.GetEndpoint()
 }
+
 
 
 // dualPathSearchOptimized implements optimized dual-path search using cached prompt analysis.
@@ -514,6 +507,7 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 // processAlgorithmResults processes algorithm service results into RecommendedImageResult format
 func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
 	results := make([]RecommendedImageResult, 0, len(algResults))
+	logger := log.GetReqLogger(context.Background())
 	
 	for _, algResult := range algResults {
 		var aiResource struct {
@@ -521,9 +515,8 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 			URL string `json:"url"`
 		}
 		
-		// TODO: Enable database lookup when ready
-		// err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
-		// if err == nil {
+		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		if err == nil {
 			// Found matching resource in database
 			results = append(results, RecommendedImageResult{
 				ID:         aiResource.ID,
@@ -532,9 +525,10 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 				Rank:       algResult.Rank,
 				Source:     source,
 			})
-		// } else {
-		// 	logger.Printf("Image not found in database: %s", algResult.ImagePath)
-		// }
+		} else {
+			// Image not found in database, log and skip
+			logger.Printf("Image not found in database: %s, error: %v", algResult.ImagePath, err)
+		}
 	}
 	
 	return results
@@ -628,4 +622,78 @@ func (ctrl *Controller) calculateThemeRelevance(imagePath string, theme ThemeTyp
 	default:
 		return 0.8 // Default theme relevance
 	}
+}
+
+// SubmitImageFeedback submits user feedback for image recommendations to algorithm service
+func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFeedbackParams) error {
+	logger := log.GetReqLogger(ctx)
+	logger.Printf("Submitting image feedback - QueryID: %s, ChosenPic: %d", params.QueryID, params.ChosenPic)
+	
+	// Retrieve cached recommendation result
+	cached, err := ctrl.recommendationCache.GetRecommendation(ctx, params.QueryID)
+	if err != nil {
+		logger.Printf("Cached recommendation not found for QueryID: %s - %v", params.QueryID, err)
+		return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
+	}
+	
+	// Verify chosen pic is in the recommended list
+	chosenPicFound := false
+	for _, picID := range cached.RecommendedPics {
+		if picID == params.ChosenPic {
+			chosenPicFound = true
+			break
+		}
+	}
+	
+	if !chosenPicFound {
+		logger.Printf("Chosen pic %d not found in recommended pics %v", params.ChosenPic, cached.RecommendedPics)
+		return fmt.Errorf("chosen_pic %d is not in the recommended pictures list", params.ChosenPic)
+	}
+	
+	// Prepare feedback request for algorithm service
+	feedbackReq := AlgorithmFeedbackRequest{
+		QueryID:         params.QueryID,
+		Query:           cached.Query,
+		RecommendedPics: cached.RecommendedPics,
+		ChosenPic:       params.ChosenPic,
+	}
+	
+	// Check idempotency - ensure feedback hasn't already been submitted
+	// First check if feedback was already submitted
+	submitted, existingChoice, err := ctrl.recommendationCache.GetFeedbackStatus(ctx, params.QueryID)
+	if err != nil {
+		logger.Printf("Failed to check feedback status: %v", err)
+		return fmt.Errorf("failed to check feedback status: %w", err)
+	}
+	if submitted {
+		logger.Printf("Feedback already submitted for QueryID: %s (previous choice: %d)", params.QueryID, existingChoice)
+		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
+	}
+	
+	// Mark as submitted (atomic operation)
+	success, err := ctrl.recommendationCache.MarkFeedbackSubmitted(ctx, params.QueryID, params.ChosenPic)
+	if err != nil {
+		logger.Printf("Failed to mark feedback as submitted: %v", err)
+		return fmt.Errorf("failed to process feedback: %w", err)
+	}
+	if !success {
+		// Another request submitted feedback between our check and mark
+		logger.Printf("Feedback was submitted by another request for QueryID: %s", params.QueryID)
+		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
+	}
+	
+	// Call algorithm service feedback endpoint
+	err = ctrl.callAlgorithmFeedbackService(ctx, &feedbackReq)
+	if err != nil {
+		logger.Printf("Failed to submit feedback to algorithm service: %v", err)
+		return fmt.Errorf("failed to submit feedback: %w", err)
+	}
+	
+	logger.Printf("Successfully submitted feedback for QueryID: %s", params.QueryID)
+	return nil
+}
+
+// callAlgorithmFeedbackService calls the spx-algorithm service feedback endpoint
+func (ctrl *Controller) callAlgorithmFeedbackService(ctx context.Context, feedbackReq *AlgorithmFeedbackRequest) error {
+	return ctrl.algorithmService.SubmitImageFeedback(ctx, feedbackReq)
 }
