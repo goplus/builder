@@ -24,6 +24,7 @@ type AssetCompletionTrie struct {
 	lastUpdate  time.Time
 	updateMutex sync.RWMutex
 	cacheExpiry time.Duration
+	refreshing  bool // Flag to prevent multiple concurrent refreshes
 }
 
 // NewAssetCompletionTrie creates a new trie-based completion service
@@ -44,6 +45,13 @@ func NewAssetCompletionTrie(db *gorm.DB) *AssetCompletionTrie {
 func (t *AssetCompletionTrie) RefreshCache() error {
 	t.updateMutex.Lock()
 	defer t.updateMutex.Unlock()
+
+	// If already refreshing, skip
+	if t.refreshing {
+		return nil
+	}
+	t.refreshing = true
+	defer func() { t.refreshing = false }()
 
 	// Load all asset names from database
 	var assets []model.GameAsset
@@ -100,7 +108,7 @@ func (t *AssetCompletionTrie) search(prefix string) []string {
 	defer t.updateMutex.RUnlock()
 
 	// Check if cache needs refresh
-	if time.Since(t.lastUpdate) > t.cacheExpiry {
+	if time.Since(t.lastUpdate) > t.cacheExpiry && !t.refreshing {
 		// Release read lock and acquire write lock for refresh
 		t.updateMutex.RUnlock()
 		go t.RefreshCache() // Async refresh
@@ -154,5 +162,6 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 		"cache_age":     time.Since(t.lastUpdate),
 		"cache_expiry":  t.cacheExpiry,
 		"needs_refresh": time.Since(t.lastUpdate) > t.cacheExpiry,
+		"refreshing":    t.refreshing,
 	}
 }
