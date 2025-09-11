@@ -1,4 +1,3 @@
-// import logoSrc from '@/assets/logo.svg'
 /**
  * 社交平台配置
  */
@@ -24,6 +23,18 @@ export type ShareType = {
 }
 
 /**
+ * 分享信息接口
+ */
+export interface ShareInfo {
+  /** 分享标题 */
+  title?: string
+  /** 分享描述 */
+  desc?: string
+  /** 其他扩展字段 */
+  [key: string]: any
+}
+
+/**
  * 分享方法接口 - 定义三种分享方式，所有方法都是可选的
  */
 export interface ShareFunction {
@@ -42,6 +53,7 @@ export interface PlatformConfig {
   shareType: ShareType
   basicInfo: BasicInfo
   shareFunction: ShareFunction
+  initShareInfo: (shareInfo?: ShareInfo) => void
 }
 /**
  * 平台跳转链接的示例，方便后续接口使用
@@ -86,6 +98,17 @@ class QQPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo = (shareInfo?: ShareInfo) => {
+    if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+      window.mqq.invoke('data', 'setShareInfo', {
+        share_url: typeof location !== 'undefined' ? location.href : '',
+        title: shareInfo?.title || 'XBulider',
+        desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
+        image_url: 'https://x.qiniu.com//logo.png'
+      })
+    }
+  }
 }
 
 /**
@@ -116,6 +139,12 @@ class WeChatPlatform implements PlatformConfig {
     }
     // 不实现 shareVideo，因为不支持
   }
+
+  initShareInfo = (shareInfo?: ShareInfo) => {
+    // TODO微信平台设置分享信息
+    void shareInfo
+    return
+  }
 }
 class DouyinPlatform implements PlatformConfig {
   basicInfo = {
@@ -138,6 +167,12 @@ class DouyinPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo = (shareInfo?: ShareInfo) => {
+    // 抖音平台暂不支持设置分享信息
+    void shareInfo
+    return
+  }
 }
 
 class XiaohongshuPlatform implements PlatformConfig {
@@ -157,6 +192,12 @@ class XiaohongshuPlatform implements PlatformConfig {
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
     }
+  }
+
+  initShareInfo = (shareInfo?: ShareInfo) => {
+    // 小红书平台暂不支持设置分享信息
+    void shareInfo
+    return
   }
 }
 
@@ -178,6 +219,12 @@ class BilibiliPlatform implements PlatformConfig {
       return `platformUrl:${platformUrl},video:${video}`
     }
   }
+
+  initShareInfo = (shareInfo?: ShareInfo) => {
+    // 哔哩哔哩平台暂不支持设置分享信息
+    void shareInfo
+    return
+  }
 }
 
 // 导出平台配置数组 - 包含完整的平台信息
@@ -188,3 +235,20 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
   new XiaohongshuPlatform(),
   new BilibiliPlatform()
 ]
+
+export type Disposer = () => void
+
+export const initShareInfo = (shareInfo?: ShareInfo): Disposer => {
+  const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
+  const qq = new QQPlatform()
+  const wechat = new WeChatPlatform()
+
+  qq.initShareInfo(defaultShareInfo)
+  wechat.initShareInfo(defaultShareInfo)
+
+  return () => {
+    // Reset to a generic default for the current page to avoid stale project ShareInfo
+    qq.initShareInfo(defaultShareInfo)
+    wechat.initShareInfo(defaultShareInfo)
+  }
+}

@@ -10,6 +10,7 @@ export type BasicInfo = {
     color: string
 }
 
+
 /**
  * 支持分享方式接口
  */
@@ -33,7 +34,17 @@ export interface ShareFunction {
     /** 分享视频方法 */
     shareVideo?: (video: File) => Promise<string>
 }
-
+/**
+ * 分享信息接口
+ */
+export interface ShareInfo {
+    /** 分享标题 */
+    title?: string
+    /** 分享描述 */
+    desc?: string
+    /** 其他扩展字段 */
+    [key: string]: any
+}
 /**
  * 平台配置接口 - 包含平台的基本信息和分享功能
  */
@@ -41,6 +52,7 @@ export interface PlatformConfig {
     shareType: ShareType
     basicInfo: BasicInfo
     shareFunction: ShareFunction
+    initShareInfo: (shareInfo?: ShareInfo) => void
 }
 /**
  * 平台跳转链接的示例，方便后续接口使用
@@ -73,6 +85,11 @@ class QQPlatform implements PlatformConfig {
             return `platformUrl:${platformUrl},video:${video}`
         }
     }
+    initShareInfo = (shareInfo?: ShareInfo) => {
+        // TODO微信平台设置分享信息
+        void shareInfo
+        return
+    }
 }
 
 /**
@@ -100,6 +117,11 @@ class WeChatPlatform implements PlatformConfig {
         }
         // 不实现 shareVideo，因为不支持
     }
+    initShareInfo = (shareInfo?: ShareInfo) => {
+        // TODO微信平台设置分享信息
+        void shareInfo
+        return
+    }
 }
 
 // 导出平台配置数组 - 包含完整的平台信息
@@ -107,3 +129,20 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
     new QQPlatform(),
     new WeChatPlatform(),
 ]
+//导出初始化分享信息方法
+export type Disposer = () => void
+
+export const initShareInfo = (shareInfo?: ShareInfo): Disposer => {
+  const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
+  const qq = new QQPlatform()
+  const wechat = new WeChatPlatform()
+
+  qq.initShareInfo(defaultShareInfo)
+  wechat.initShareInfo(defaultShareInfo)
+
+  return () => {
+    // Reset to a generic default for the current page to avoid stale project ShareInfo
+    qq.initShareInfo(defaultShareInfo)
+    wechat.initShareInfo(defaultShareInfo)
+  }
+}

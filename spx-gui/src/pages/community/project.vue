@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle, DefaultException } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
@@ -45,6 +45,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import { initShareInfo } from '@/components/project/sharing/platform-share'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
@@ -234,7 +235,7 @@ const shareProject = useShareProject()
 const handleShare = useMessageHandle(
   () => {
     if (!projectData.value) return
-    shareProject(projectData.value)
+    return shareProject(projectData.value)
   },
   {
     en: 'Failed to share project',
@@ -494,6 +495,11 @@ const handleScreenshotSharing = useMessageHandle(
     zh: '截图分享成功'
   }
 )
+//初始化分享信息
+watchEffect((onCleanup) => {
+  const dispose = initShareInfo()
+  onCleanup(dispose)
+})
 </script>
 
 <template>
