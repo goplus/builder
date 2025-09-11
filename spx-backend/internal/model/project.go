@@ -61,9 +61,9 @@ type Project struct {
 	// RemixCount is the number of times the project has been remixed.
 	RemixCount int64 `gorm:"column:remix_count;index"`
 
-	// MobileKeyboardType is the type of mobile keyboard adaptation.
-	// 1: No keyboard needed 
-	// 2: Custom keyboard
+	// MobileKeyboardType defines the mobile keyboard adaptation strategy.
+	// 1: No keyboard required (MobileKeyboardTypeNone)
+	// 2: Custom virtual keyboard (MobileKeyboardTypeCustom)
 	MobileKeyboardType int `gorm:"column:mobile_keyboard_type;not null;default:1"`
 
 	// MobileKeyboardZoneToKey contains the mapping from zone ID to key name.
@@ -74,6 +74,12 @@ type Project struct {
 	MO__deleted_at_is_null _deleted_at_is_null `gorm:"->:false;<-:false;column:_deleted_at_is_null;index:,composite:owner_id_name,unique"`
 }
 
+// Mobile keyboard type constants
+const (
+	MobileKeyboardTypeNone   = 1 // No keyboard required
+	MobileKeyboardTypeCustom = 2 // Custom virtual keyboard
+)
+
 // TableName implements [gorm.io/gorm/schema.Tabler].
 func (Project) TableName() string {
 	return "project"
@@ -81,12 +87,12 @@ func (Project) TableName() string {
 
 // IsNoKeyboard returns true if the mobile keyboard type indicates no keyboard is needed.
 func (p *Project) IsNoKeyboard() bool {
-	return p.MobileKeyboardType == 1
+	return p.MobileKeyboardType == MobileKeyboardTypeNone
 }
 
 // IsCustomKeyboard returns true if the mobile keyboard type indicates custom keyboard is needed.
 func (p *Project) IsCustomKeyboard() bool {
-	return p.MobileKeyboardType == 2
+	return p.MobileKeyboardType == MobileKeyboardTypeCustom
 }
 
 // MobileKeyboardZoneId represents the zone ID type for virtual keyboard.
