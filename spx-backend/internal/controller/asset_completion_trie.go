@@ -27,6 +27,7 @@ type AssetCompletionTrie struct {
 	updateMutex sync.RWMutex
 	cacheExpiry time.Duration
 	refreshing  bool // Flag to prevent multiple concurrent refreshes
+	minDepth    int  // Minimum depth to start storing namesMap (memory optimization)
 }
 
 // NewAssetCompletionTrie creates a new trie-based completion service
@@ -35,6 +36,7 @@ func NewAssetCompletionTrie(db *gorm.DB) *AssetCompletionTrie {
 		root:        &TrieNode{children: make(map[rune]*TrieNode)},
 		db:          db,
 		cacheExpiry: 30 * time.Minute, // Cache expires every 30 minutes
+		minDepth:    2, // Only store namesMap from depth 2 onwards (configurable)
 	}
 
 	// Initial load
@@ -96,20 +98,29 @@ func (t *AssetCompletionTrie) insert(key, originalName string) {
 // insertToNode adds a name to a specific trie node (used for building new trees)
 func (t *AssetCompletionTrie) insertToNode(root *TrieNode, key, originalName string) {
 	node := root
+	depth := 0
 
 	for _, char := range key {
 		if node.children[char] == nil {
+			// Only initialize namesMap if depth >= minDepth (memory optimization)
+			var namesMap map[string]struct{}
+			if depth >= t.minDepth {
+				namesMap = make(map[string]struct{})
+			}
 			node.children[char] = &TrieNode{
 				children: make(map[rune]*TrieNode),
-				namesMap: make(map[string]struct{}),
+				namesMap: namesMap,
 			}
 		}
 		node = node.children[char]
+		depth++
 
-		// Add original name to each node along the path (O(1) dedup)
-		if _, exists := node.namesMap[originalName]; !exists {
-			node.namesMap[originalName] = struct{}{}
-			node.dirty = true // Mark for slice rebuild
+		// Only store names if depth >= minDepth and namesMap exists
+		if depth >= t.minDepth && node.namesMap != nil {
+			if _, exists := node.namesMap[originalName]; !exists {
+				node.namesMap[originalName] = struct{}{}
+				node.dirty = true // Mark for slice rebuild
+			}
 		}
 	}
 
@@ -118,6 +129,11 @@ func (t *AssetCompletionTrie) insertToNode(root *TrieNode, key, originalName str
 
 // getNames returns the names slice, rebuilding it from the map if dirty
 func (n *TrieNode) getNames() []string {
+	// Return nil if no namesMap (shallow nodes)
+	if n.namesMap == nil {
+		return nil
+	}
+
 	if n.dirty || n.names == nil {
 		// Rebuild names slice from map with pre-allocated capacity
 		n.names = make([]string, 0, len(n.namesMap))
@@ -160,8 +176,18 @@ func (t *AssetCompletionTrie) search(prefix string) []string {
 		node = node.children[char]
 	}
 
-	// Return all names at this node (already filtered by prefix)
+	// If prefix is too short (< minDepth), collect from all descendant nodes
+	if len(lowerPrefix) < t.minDepth {
+		return t.collectFromDescendants(node, lowerPrefix)
+	}
+
+	// Return names stored at this node (prefix >= minDepth)
 	nodeNames := node.getNames()
+	if nodeNames == nil {
+		// If no namesMap at this node, collect from descendants
+		return t.collectFromDescendants(node, lowerPrefix)
+	}
+
 	// Names are already sorted in getNames(), so just copy
 	result := make([]string, len(nodeNames))
 	copy(result, nodeNames)
@@ -220,4 +246,38 @@ func (t *AssetCompletionTrie) calculateTrieStats(node *TrieNode) (nodeCount, tot
 	}
 	
 	return nodeCount, totalNames
+}
+
+// collectFromDescendants collects names from all descendant nodes (for short prefixes)
+func (t *AssetCompletionTrie) collectFromDescendants(node *TrieNode, prefix string) []string {
+	var results []string
+	visited := make(map[string]struct{})
+	
+	t.dfsCollect(node, prefix, visited, &results)
+	
+	// Sort results
+	sort.Strings(results)
+	return results
+}
+
+// dfsCollect performs depth-first search to collect names from nodes with namesMap
+func (t *AssetCompletionTrie) dfsCollect(node *TrieNode, prefix string, visited map[string]struct{}, results *[]string) {
+	if node == nil {
+		return
+	}
+	
+	// If this node has namesMap, collect names from it
+	if node.namesMap != nil {
+		for name := range node.namesMap {
+			if _, exists := visited[name]; !exists {
+				visited[name] = struct{}{}
+				*results = append(*results, name)
+			}
+		}
+	}
+	
+	// Recursively collect from children
+	for _, child := range node.children {
+		t.dfsCollect(child, prefix, visited, results)
+	}
 }
