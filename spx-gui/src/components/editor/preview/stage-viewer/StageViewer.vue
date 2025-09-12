@@ -1,6 +1,6 @@
 <template>
   <div
-    ref="conatiner"
+    ref="container"
     v-radar="{
       name: 'Stage viewer',
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
@@ -13,17 +13,18 @@
       :config="stageConfig"
       @mousedown="handleStageMousedown"
       @contextmenu="handleContextMenu"
+      @wheel="handleWheel"
     >
-      <v-layer>
+      <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
-      </v-layer>
-      <v-layer>
         <SpriteNode
           v-for="sprite in visibleSprites"
           :key="sprite.id"
           :sprite="sprite"
           :map-size="mapSize!"
           :node-ready-map="nodeReadyMap"
+          @drag-move="handleSpriteDragMove"
+          @drag-end="handleSpriteDragEnd"
         />
       </v-layer>
       <v-layer>
@@ -31,7 +32,7 @@
           v-for="widget in visibleWidgets"
           :key="widget.id"
           :widget="widget"
-          :map-size="mapSize!"
+          :viewport-size="viewportSize"
           :node-ready-map="nodeReadyMap"
         />
       </v-layer>
@@ -68,10 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Stage } from 'konva/lib/Stage'
+import type { Stage, StageConfig } from 'konva/lib/Stage'
+import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
@@ -82,45 +84,142 @@ import { MapMode } from '@/models/stage'
 import type { Widget } from '@/models/widget'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import NodeTransformer from './NodeTransformer.vue'
-import SpriteNode from './SpriteNode.vue'
+import SpriteNode, { type CameraScrollNotifyFn } from './SpriteNode.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import { getNodeId } from './node'
+import { getNodeId } from './common'
 
 const editorCtx = useEditorCtx()
-const conatiner = ref<HTMLElement | null>(null)
-const containerSize = useContentSize(conatiner)
+const container = ref<HTMLDivElement | null>(null)
+const containerSize = useContentSize(container)
 
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
+const mapRef = ref<{
+  getNode(): Konva.Layer
+}>()
+const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 
 const nodeReadyMap = reactive(new Map<string, boolean>())
 
-/** containerSize / mapSize */
-const scale = computed(() => {
+/** containerSize / viewportSize */
+const stageScale = computed(() => {
   if (containerSize.width.value == null || containerSize.height.value == null) return null
-  if (mapSize.value == null) return null
-  const widthScale = containerSize.width.value / mapSize.value.width
-  const heightScale = containerSize.height.value / mapSize.value.height
+  const widthScale = containerSize.width.value / viewportSize.value.width
+  const heightScale = containerSize.height.value / viewportSize.value.height
   return Math.min(widthScale, heightScale)
 })
 
 const stageConfig = computed(() => {
-  if (scale.value == null) return null
-  if (mapSize.value == null) return null
-  const width = mapSize.value.width * scale.value
-  const height = mapSize.value.height * scale.value
+  if (stageScale.value == null || viewportSize.value == null || container.value == null) return null
+  const width = viewportSize.value.width * stageScale.value
+  const height = viewportSize.value.height * stageScale.value
   return {
+    container: container.value,
     width,
     height,
     scale: {
-      x: scale.value,
-      y: scale.value
+      x: stageScale.value,
+      y: stageScale.value
     }
+  } satisfies StageConfig
+})
+
+type Pos = { x: number; y: number }
+
+const mapPosLimit = computed(() => {
+  if (mapSize.value == null) return null
+  return {
+    minX: viewportSize.value.width - mapSize.value.width,
+    maxX: 0,
+    minY: viewportSize.value.height - mapSize.value.height,
+    maxY: 0
   }
 })
+
+/** The position to be applied on the map node to achieve camera effect */
+const mapPos = ref<Pos>({ x: 0, y: 0 })
+
+function getValidMapPos(pos: Pos) {
+  if (mapPosLimit.value == null) return pos
+  return {
+    x: Math.min(Math.max(pos.x, mapPosLimit.value.minX), mapPosLimit.value.maxX),
+    y: Math.min(Math.max(pos.y, mapPosLimit.value.minY), mapPosLimit.value.maxY)
+  }
+}
+
+function setMapPos(pos: Pos) {
+  mapPos.value = getValidMapPos(pos)
+  return mapPos.value
+}
+
+function setMapPosWithTransition(pos: Pos, durationInMs: number) {
+  if (mapRef.value == null) {
+    setMapPos(pos)
+    return
+  }
+  const newMapPos = getValidMapPos(pos)
+  new Konva.Tween({
+    node: mapRef.value.getNode(),
+    duration: durationInMs / 1000,
+    x: newMapPos.x,
+    y: newMapPos.y,
+    onFinish: () => {
+      setMapPos(newMapPos)
+    }
+  }).play()
+}
+
+/** Check if given position (in game) is in viewport */
+function inViewport({ x, y }: Pos) {
+  const xInViewport = x + mapSize.value.width / 2 + mapPos.value.x
+  const yInViewport = -y + mapSize.value.height / 2 + mapPos.value.y
+  return (
+    xInViewport >= 0 &&
+    xInViewport <= viewportSize.value.width &&
+    yInViewport >= 0 &&
+    yInViewport <= viewportSize.value.height
+  )
+}
+
+watch(
+  () => editorCtx.state.selectedSprite,
+  (selectedSprite) => {
+    editorCtx.project.setCameraFollowSprite(selectedSprite?.id ?? null)
+    if (selectedSprite != null && !inViewport(selectedSprite)) {
+      const mapPosForSprite = {
+        x: -(mapSize.value!.width / 2 + selectedSprite.x - viewportSize.value.width / 2),
+        y: -(mapSize.value!.height / 2 - selectedSprite.y - viewportSize.value.height / 2)
+      }
+      setMapPosWithTransition(mapPosForSprite, 300)
+    }
+  },
+  { immediate: true }
+)
+
+const mapConfig = computed(() => {
+  if (mapSize.value == null) return null
+  return {
+    ...mapPos.value,
+    width: mapSize.value.width,
+    height: mapSize.value.height,
+    draggable: true
+  } satisfies LayerConfig
+})
+
+function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
+  const map = e.target
+  const { x, y } = getValidMapPos({ x: map.x(), y: map.y() })
+  map.x(x)
+  map.y(y)
+}
+
+function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
+  const map = e.target
+  setMapPos({ x: map.x(), y: map.y() })
+}
 
 const backdropImg = ref<HTMLImageElement | null>(null)
 const [backdropSrc, backdropSrcLoading] = useFileUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
@@ -199,6 +298,57 @@ const visibleWidgets = computed(() => {
   return widgetsZorder.map((id) => widgets.find((w) => w.id === id)).filter(Boolean) as Widget[]
 })
 
+let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
+
+function clearCameraEdgeScrollCheckTimer() {
+  if (cameraEdgeScrollCheckTimer == null) return
+  clearInterval(cameraEdgeScrollCheckTimer)
+  cameraEdgeScrollCheckTimer = null
+}
+
+const cameraEdgeScrollConfig = {
+  edgeThreshold: 50, // px
+  scrollSpeed: 20, // px per interval
+  interval: 50
+}
+
+function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
+  if (cameraEdgeScrollCheckTimer != null) return
+  if (stageRef.value == null) return
+  const stage = stageRef.value.getStage()
+  const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
+
+  cameraEdgeScrollCheckTimer = setInterval(() => {
+    const pointerPos = stage.getPointerPosition()
+    if (pointerPos == null) {
+      clearCameraEdgeScrollCheckTimer()
+      return
+    }
+
+    const oldMapPos = mapPos.value
+    const targetMapPos = { ...oldMapPos }
+    if (pointerPos.x < edgeThreshold) {
+      targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
+    } else if (pointerPos.x > stage.width() - edgeThreshold) {
+      targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
+    }
+    if (pointerPos.y < edgeThreshold) {
+      targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
+    } else if (pointerPos.y > stage.height() - edgeThreshold) {
+      targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
+    }
+    const newMapPos = setMapPos(targetMapPos)
+    notifyCameraScroll({
+      x: newMapPos.x - oldMapPos.x,
+      y: newMapPos.y - oldMapPos.y
+    })
+  }, interval)
+}
+
+function handleSpriteDragEnd() {
+  clearCameraEdgeScrollCheckTimer()
+}
+
 const menuVisible = ref(false)
 const menuPos = ref({ x: 0, y: 0 })
 
@@ -261,6 +411,15 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
     }
   })
   menuVisible.value = false
+}
+
+function handleWheel(e: KonvaEventObject<WheelEvent>) {
+  const mpos = mapPos.value
+  e.evt.preventDefault()
+  setMapPos({
+    x: mpos.x - e.evt.deltaX,
+    y: mpos.y - e.evt.deltaY
+  })
 }
 
 // TODO: implement a standalone screenshot taker which does not depend on StageViewer

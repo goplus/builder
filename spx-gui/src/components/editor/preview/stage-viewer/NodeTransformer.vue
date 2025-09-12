@@ -7,7 +7,7 @@ import { computed, effect, nextTick, ref } from 'vue'
 import type { Node } from 'konva/lib/Node'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
-import { getNodeId } from './node'
+import { getNodeId } from './common'
 
 const props = defineProps<{
   nodeReadyMap: Map<string, boolean>
@@ -47,6 +47,9 @@ effect(async () => {
 })
 
 defineExpose({
+  getNode() {
+    return transformer.value?.getNode()
+  },
   withHidden<T>(callback: () => T): T {
     transformer.value?.getNode().hide()
     const ret = callback()

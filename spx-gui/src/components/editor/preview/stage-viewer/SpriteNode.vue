@@ -2,9 +2,10 @@
   <v-image
     ref="nodeRef"
     :config="config"
+    @dragmove="handleDragMove"
     @dragend="handleDragEnd"
     @transformend="handleTransformed"
-    @mousedown="handleMousedown"
+    @click="handleClick"
   />
 </template>
 <script lang="ts" setup>
@@ -17,12 +18,19 @@ import type { Size } from '@/models/common'
 import { nomalizeDegree, round, useAsyncComputed } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { getNodeId } from './node'
+import { cancelBubble, getNodeId } from './common'
 
 const props = defineProps<{
   sprite: Sprite
   mapSize: Size
   nodeReadyMap: Map<string, boolean>
+}>()
+
+export type CameraScrollNotifyFn = (delta: { x: number; y: number }) => void
+
+const emit = defineEmits<{
+  dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
+  dragEnd: []
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -52,11 +60,22 @@ onMounted(() => {
   }
 })
 
+function handleDragMove(e: KonvaEventObject<unknown>) {
+  cancelBubble(e)
+  emit('dragMove', (delta) => {
+    // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
+    e.target.x(e.target.x() - delta.x)
+    e.target.y(e.target.y() - delta.y)
+  })
+}
+
 function handleDragEnd(e: KonvaEventObject<unknown>) {
+  cancelBubble(e)
   const sname = props.sprite.name
   handleChange(e, {
     name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
   })
+  emit('dragEnd')
 }
 
 function handleTransformed(e: KonvaEventObject<unknown>) {
@@ -69,12 +88,13 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
 const config = computed<ImageConfig>(() => {
   const { visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
   const scale = size / bitmapResolution.value
+  const isSelected = editorCtx.state.selectedSprite?.id === props.sprite.id
   const config = {
     nodeId: nodeId.value,
     image: image.value ?? undefined,
     width: rawSize.value?.width ?? 0,
     height: rawSize.value?.height ?? 0,
-    draggable: true,
+    draggable: isSelected,
     offsetX: 0,
     offsetY: 0,
     visible: visible,
@@ -117,7 +137,7 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   })
 }
 
-function handleMousedown() {
+function handleClick() {
   editorCtx.state.selectSprite(props.sprite.id)
 }
 </script>
