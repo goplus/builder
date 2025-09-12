@@ -55,28 +55,38 @@ const slots = useSlots()
 </script>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
+section {
+  font-size: 16px;
+
+  @include responsive(mobile) {
+    font-size: 12px;
+  }
+}
+
 .header {
-  height: 52px;
+  height: 3.25em;
   display: flex;
   justify-content: space-between;
   align-items: center;
 
   .title {
-    line-height: 28px;
-    font-size: 20px;
+    line-height: 1.75em;
+    font-size: 1.25em;
     color: var(--ui-color-title);
   }
 
   .link {
     display: flex;
     align-items: center;
-    font-size: 15px;
+    font-size: 0.94em;
   }
 
   .link-icon {
-    margin-left: 8px;
-    width: 20px;
-    height: 20px;
+    margin-left: 0.5em;
+    width: 1.25em;
+    height: 1.25em;
   }
 }
 
@@ -93,7 +103,7 @@ const slots = useSlots()
 .projects {
   display: grid;
   grid-template-columns: repeat(var(--project-num-in-row), 1fr);
-  gap: 20px;
+  gap: 1.25em;
 }
 
 .context-user {
@@ -101,13 +111,16 @@ const slots = useSlots()
     height: 60px;
     padding: 20px 0 8px;
   }
+
   .title {
     font-size: 16px;
     line-height: 26px;
   }
+
   .projects-wrapper {
     margin: 8px 0 16px;
   }
+
   .projects {
     gap: 16px;
   }
