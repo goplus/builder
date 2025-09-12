@@ -21,7 +21,7 @@
     </div>
 
     <!-- 模板模式：填空式输入 -->
-    <div v-else class="prompt-template" >
+    <div v-else class="prompt-template">
       <template v-for="(part, index) in templateParts" :key="index">
         <span v-if="part.type === 'text'" class="template-text">{{ part.content }}</span>
         <n-input
@@ -33,7 +33,7 @@
         />
       </template>
     </div>
-    <div v-if="previewText && activeTemplate !== 'smart'" class="preview-section" >
+    <div v-if="previewText && activeTemplate !== 'smart'" class="preview-section">
       <div class="preview-label">{{ $t({ en: 'Preview', zh: '预览' }) }}:</div>
       <div class="preview-content">{{ previewText }}</div>
     </div>
