@@ -133,7 +133,7 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
         })
 
         const img = new window.Image()
-        
+
         // 使用 Promise 来等待图片加载完成
         await new Promise<void>((resolve, reject) => {
           img.onload = () => {
@@ -197,16 +197,16 @@ const createPoster = async (): Promise<File> => {
   }
 
   await nextTick() // Ensure DOM has been updated
-  
+
   // 确保二维码渲染完成
   const canvas = projectQrCanvas.value
   const { owner, name } = props.projectData
   if (canvas && owner && name) {
     await renderQRCode(canvas, owner, name)
   }
-  
+
   // 给一点额外时间让DOM完全更新
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
   const posterCanvas = await html2canvas(posterElementRef.value, {
     width: 800,
@@ -218,7 +218,9 @@ const createPoster = async (): Promise<File> => {
     logging: false
   })
 
-  const blob = await new Promise<Blob | null>((resolve) => posterCanvas.toBlob((b: Blob | null) => resolve(b), 'image/png'))
+  const blob = await new Promise<Blob | null>((resolve) =>
+    posterCanvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
+  )
 
   if (!blob) throw new Error('Failed to generate poster')
 
