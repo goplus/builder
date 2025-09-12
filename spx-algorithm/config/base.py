@@ -27,7 +27,7 @@ class BaseConfig:
     MILVUS_DIMENSION: int = field(default_factory=lambda: int(os.environ.get('MILVUS_DIMENSION', '512')))
     
     # LTR重排序配置
-    ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'false').lower() == 'true')
+    ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'true').lower() == 'true')
     LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', 'models/ltr_model.pkl'))
     
     # 用户反馈数据库配置 (MySQL)
