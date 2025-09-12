@@ -30,14 +30,14 @@ var Break = errors.New("break interaction")
 //
 // A zero-value Player is ready to use.
 type Player struct {
-	mu                    sync.RWMutex
-	role                  string
-	roleContext           map[string]any
-	commands              sync.Map // map[string]commandInfo
-	errorHandler          func(error)
-	history               []Turn
-	archivedHistory       string
-	previousCommandResult *CommandResult
+	mu                sync.RWMutex
+	role              string
+	roleContext       map[string]any
+	commands          sync.Map // map[string]commandInfo
+	errorHandler      func(error)
+	history           []Turn
+	archivedHistory   string
+	archiveInProgress bool
 }
 
 // knowledgeBase returns the knowledge base used for AI interactions.
@@ -135,20 +135,18 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			return true
 		})
 		currentKnowledgeBase := p.knowledgeBase()
-		currentPrevCmdResult := p.previousCommandResult
 		p.mu.RUnlock()
 
 		request := Request{
-			Content:               currentMsg,
-			Context:               currentContext,
-			Role:                  currentRole,
-			RoleContext:           currentRoleContext,
-			History:               currentHistory,
-			ArchivedHistory:       currentArchivedHistory,
-			CommandSpecs:          currentCommandSpecs,
-			KnowledgeBase:         currentKnowledgeBase,
-			PreviousCommandResult: currentPrevCmdResult,
-			ContinuationTurn:      i,
+			Content:          currentMsg,
+			Context:          currentContext,
+			Role:             currentRole,
+			RoleContext:      currentRoleContext,
+			History:          currentHistory,
+			ArchivedHistory:  currentArchivedHistory,
+			CommandSpecs:     currentCommandSpecs,
+			KnowledgeBase:    currentKnowledgeBase,
+			ContinuationTurn: i,
 		}
 
 		// Call AI transport with retries.
@@ -192,9 +190,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 				ResponseText:   resp.Text,
 				IsInitial:      i == 0,
 			}
-			p.mu.Lock()
-			p.history = append(p.history, noCmdTurn)
-			p.mu.Unlock()
+			p.appendHistory(noCmdTurn)
 
 			if !hasExecutedAtLeastOneCommandInThisCall {
 				p.handleError(owner, errors.New("ai did not provide an initial command or any command during the interaction"))
@@ -237,21 +233,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			ExecutedCommandResult: executedResult,
 			IsInitial:             i == 0,
 		}
-		p.mu.Lock()
-		p.history = append(p.history, currentTurn)
-
-		// Handle archived history if present in response.
-		if resp.ArchivedHistory != nil {
-			p.archivedHistory = resp.ArchivedHistory.Content
-
-			// Remove the archived turns from the beginning of history.
-			if resp.ArchivedHistory.TurnCount > 0 && len(p.history) >= resp.ArchivedHistory.TurnCount {
-				p.history = p.history[resp.ArchivedHistory.TurnCount:]
-			}
-		}
-
-		p.previousCommandResult = executedResult
-		p.mu.Unlock()
+		p.appendHistory(currentTurn)
 
 		// Check for [Break].
 		if executedResult.IsBreak {
@@ -259,10 +241,13 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		}
 
 		// Prepare for the next iteration of the loop. The AI will decide the next step
-		// based on the p.previousCommandResult.
+		// based on the outcomes of commands executed within this loop.
 		currentMsg = ""
 		currentContext = nil
 	}
+
+	// Manage history asynchronously.
+	go p.manageHistory()
 }
 
 // OnErr registers a handler that is called when an AI interaction fails. If no
@@ -293,5 +278,129 @@ func (p *Player) handleError(owner any, err error) {
 	}
 
 	// Default error handling if no handler is set.
-	log.Printf("AI error: %v", err)
+	log.Printf("ai error: %v", err)
+}
+
+// appendHistory appends a new turn to the interaction history.
+func (p *Player) appendHistory(turn Turn) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.history = append(p.history, turn)
+}
+
+// manageHistory checks if archiving is needed and performs it if necessary.
+func (p *Player) manageHistory() {
+	const (
+		archiveTimeout = 120 * time.Second      // Timeout for archive operation.
+		maxRetries     = 3                      // Maximum retry attempts.
+		backoffBase    = 500 * time.Millisecond // Base time for exponential backoff.
+		backoffCap     = 5 * time.Second        // Maximum backoff time cap.
+	)
+
+	// Prepare archive if needed.
+	turnsToArchive, existingArchive := p.prepareArchive()
+	if len(turnsToArchive) == 0 {
+		return
+	}
+
+	// Perform archive with retries.
+	transport := p.transport()
+	var (
+		archived ArchivedHistory
+		lastErr  error
+	)
+ArchiveRetryLoop:
+	for attempt := range maxRetries {
+		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
+
+		if attempt > 0 {
+			select {
+			case <-time.After(backoffSleep(backoffBase, backoffCap, attempt)):
+			case <-ctx.Done():
+				lastErr = ctx.Err()
+				cancel()
+				break ArchiveRetryLoop
+			}
+		}
+
+		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
+		cancel()
+		if lastErr == nil {
+			break
+		}
+	}
+	if lastErr != nil {
+		log.Printf("failed to archive history after %d retries: %v", maxRetries, lastErr)
+		p.cancelArchive()
+		return
+	}
+
+	// Apply the archive result.
+	p.applyArchive(archived.Content, len(turnsToArchive))
+}
+
+// prepareArchive checks if archiving is needed and prepares the data for
+// archiving. It returns nil if archiving is not needed or already in progress.
+func (p *Player) prepareArchive() (turnsToArchive []Turn, existingArchive string) {
+	const (
+		threshold   = 30 // Trigger archive when history reaches this many turns.
+		minRetained = 15 // Keep at least this many most recent turns after archiving.
+	)
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if len(p.history) < threshold || p.archiveInProgress {
+		return nil, ""
+	}
+
+	// Ensure we keep at least minRetained turns.
+	if len(p.history) <= minRetained {
+		return nil, ""
+	}
+
+	// Find the archive boundary to preserve complete interaction sequences.
+	// We look for the last IsInitial=true before the retention boundary to
+	// ensure we don't split an interaction sequence.
+	maxArchivable := len(p.history) - minRetained
+	boundary := 0
+
+	// Start from the most recent archivable position and go backwards.
+	for i := maxArchivable - 1; i >= 0; i-- {
+		if p.history[i].IsInitial {
+			// Found a sequence start, archive everything before this sequence.
+			boundary = i
+			break
+		}
+	}
+
+	// If no IsInitial found in the archivable range, it likely means:
+	//   - The current interaction sequence started before the archivable range
+	//   - Or the history doesn't start with a sequence beginning (e.g., after restore)
+	//
+	// In this case, we choose not to archive to avoid splitting a sequence.
+	if boundary == 0 {
+		return nil, ""
+	}
+
+	// Mark as in progress and prepare data.
+	p.archiveInProgress = true
+	return slices.Clone(p.history[:boundary]), p.archivedHistory
+}
+
+// applyArchive updates the archived history and removes the archived turns.
+func (p *Player) applyArchive(archived string, turnCount int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.archivedHistory = archived
+	p.history = p.history[turnCount:]
+	p.archiveInProgress = false
+}
+
+// cancelArchive resets the archive in progress flag.
+func (p *Player) cancelArchive() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.archiveInProgress = false
 }

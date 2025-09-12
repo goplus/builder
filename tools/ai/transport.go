@@ -10,6 +10,10 @@ import (
 type Transport interface {
 	// Interact sends a request to the AI and returns its response.
 	Interact(ctx context.Context, req Request) (Response, error)
+
+	// Archive sends interaction turns to be archived and returns the
+	// condensed summary.
+	Archive(ctx context.Context, turns []Turn, existingArchive string) (ArchivedHistory, error)
 }
 
 // Request encapsulates all information sent to the AI via the [Transport].
@@ -32,11 +36,6 @@ type Request struct {
 	// CommandSpecs lists the commands the AI is allowed to call.
 	CommandSpecs []CommandSpec `json:"commandSpecs,omitempty"`
 
-	// PreviousCommandResult holds the outcome of the command executed in
-	// the previous turn, if any. A nil value indicates no command was
-	// executed previously or the previous turn didn't involve a command.
-	PreviousCommandResult *CommandResult `json:"previousCommandResult,omitempty"`
-
 	// History contains the record of previous interactions in this session.
 	History []Turn `json:"history,omitempty"`
 
@@ -44,11 +43,12 @@ type Request struct {
 	ArchivedHistory string `json:"archivedHistory,omitempty"`
 
 	// ContinuationTurn indicates the current turn number in a multi-turn
-	// interaction.
+	// interaction sequence.
 	//
 	// A value of 0 means this is the initial turn from user input. Values
-	// > 0 indicate continuation turns where the AI should decide next
-	// steps based on previous command results.
+	// > 0 indicate continuation turns where the AI continues the current
+	// interaction sequence based on the outcomes of commands executed
+	// within this sequence.
 	ContinuationTurn int `json:"continuationTurn,omitempty"`
 }
 
@@ -62,18 +62,6 @@ type Response struct {
 
 	// CommandArgs holds the arguments for the command to be executed.
 	CommandArgs map[string]any `json:"commandArgs,omitempty"`
-
-	// ArchivedHistory contains archived history information when history management occurs.
-	ArchivedHistory *ArchivedHistory `json:"archivedHistory,omitempty"`
-}
-
-// ArchivedHistory contains information about archived historical interactions.
-type ArchivedHistory struct {
-	// Content is the archived content of historical interactions.
-	Content string `json:"content"`
-
-	// TurnCount indicates how many turns were archived.
-	TurnCount int `json:"turnCount"`
 }
 
 // Turn represents a single turn in the conversation history.
@@ -103,6 +91,12 @@ type Turn struct {
 	IsInitial bool `json:"isInitial,omitempty"`
 }
 
+// ArchivedHistory contains information about archived historical interactions.
+type ArchivedHistory struct {
+	// Content is the archived content of historical interactions.
+	Content string `json:"content"`
+}
+
 // ErrTransportNotSet indicates that the AI transport has not been configured via [SetGlobalTransport].
 var ErrTransportNotSet = errors.New("transport not set")
 
@@ -112,6 +106,11 @@ type notSetTransport struct{}
 // Interact implements [Transport].
 func (t *notSetTransport) Interact(_ context.Context, _ Request) (Response, error) {
 	return Response{}, ErrTransportNotSet
+}
+
+// Archive implements [Transport].
+func (t *notSetTransport) Archive(_ context.Context, _ []Turn, _ string) (ArchivedHistory, error) {
+	return ArchivedHistory{}, ErrTransportNotSet
 }
 
 var (

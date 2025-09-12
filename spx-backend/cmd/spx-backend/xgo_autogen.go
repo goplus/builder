@@ -126,6 +126,10 @@ type post_ai_description struct {
 	yap.Handler
 	*AppV2
 }
+type post_ai_interaction_archive struct {
+	yap.Handler
+	*AppV2
+}
 type post_ai_interaction_turn struct {
 	yap.Handler
 	*AppV2
@@ -333,26 +337,27 @@ func (this *AppV2) Main() {
 	_xgo_obj20 := &get_users_list{AppV2: this}
 	_xgo_obj21 := &get_util_upinfo{AppV2: this}
 	_xgo_obj22 := &post_ai_description{AppV2: this}
-	_xgo_obj23 := &post_ai_interaction_turn{AppV2: this}
-	_xgo_obj24 := &post_aigc_matting{AppV2: this}
-	_xgo_obj25 := &post_asset{AppV2: this}
-	_xgo_obj26 := &post_copilot_message{AppV2: this}
-	_xgo_obj27 := &post_copilot_stream_message{AppV2: this}
-	_xgo_obj28 := &post_course_series{AppV2: this}
-	_xgo_obj29 := &post_course{AppV2: this}
-	_xgo_obj30 := &post_project_release{AppV2: this}
-	_xgo_obj31 := &post_project{AppV2: this}
-	_xgo_obj32 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj33 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj34 := &post_user_username_following{AppV2: this}
-	_xgo_obj35 := &post_util_fileurls{AppV2: this}
-	_xgo_obj36 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj37 := &put_asset_id{AppV2: this}
-	_xgo_obj38 := &put_course_series_id{AppV2: this}
-	_xgo_obj39 := &put_course_id{AppV2: this}
-	_xgo_obj40 := &put_project_owner_name{AppV2: this}
-	_xgo_obj41 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41)
+	_xgo_obj23 := &post_ai_interaction_archive{AppV2: this}
+	_xgo_obj24 := &post_ai_interaction_turn{AppV2: this}
+	_xgo_obj25 := &post_aigc_matting{AppV2: this}
+	_xgo_obj26 := &post_asset{AppV2: this}
+	_xgo_obj27 := &post_copilot_message{AppV2: this}
+	_xgo_obj28 := &post_copilot_stream_message{AppV2: this}
+	_xgo_obj29 := &post_course_series{AppV2: this}
+	_xgo_obj30 := &post_course{AppV2: this}
+	_xgo_obj31 := &post_project_release{AppV2: this}
+	_xgo_obj32 := &post_project{AppV2: this}
+	_xgo_obj33 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj34 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj35 := &post_user_username_following{AppV2: this}
+	_xgo_obj36 := &post_util_fileurls{AppV2: this}
+	_xgo_obj37 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj38 := &put_asset_id{AppV2: this}
+	_xgo_obj39 := &put_course_series_id{AppV2: this}
+	_xgo_obj40 := &put_course_id{AppV2: this}
+	_xgo_obj41 := &put_project_owner_name{AppV2: this}
+	_xgo_obj42 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1497,6 +1502,46 @@ func (this *post_ai_description) Classfname() string {
 	return "post_ai_description"
 }
 func (this *post_ai_description) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:10
+func (this *post_ai_interaction_archive) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_ai_interaction_archive.yap:18:1
+	params := &controller.AIInteractionArchiveParams{}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:19:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_ai_interaction_archive.yap:20:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:22:1
+	if
+//line cmd/spx-backend/post_ai_interaction_archive.yap:22:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_ai_interaction_archive.yap:23:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:27:1
+	result, err := this.ctrl.PerformAIInteractionArchive(ctx.Context(), params)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:28:1
+	if err != nil {
+//line cmd/spx-backend/post_ai_interaction_archive.yap:29:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:30:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:32:1
+	this.Json__1(result)
+}
+func (this *post_ai_interaction_archive) Classfname() string {
+	return "post_ai_interaction_archive"
+}
+func (this *post_ai_interaction_archive) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

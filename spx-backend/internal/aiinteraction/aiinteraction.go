@@ -10,15 +10,6 @@ import (
 )
 
 const (
-	// maxHistoryTurns defines the maximum number of detailed history turns to keep.
-	maxHistoryTurns = 20
-
-	// archiveThreshold defines when to start archiving history.
-	archiveThreshold = 30
-
-	// archiveBatchSize defines how many turns to archive at once.
-	archiveBatchSize = 15
-
 	// maxTokens defines the maximum number of tokens for the AI response.
 	maxTokens = 2048
 
@@ -73,11 +64,6 @@ func (ai *AIInteraction) callOpenAI(ctx context.Context, messages []openai.ChatC
 
 // Interact processes an AI interaction request and returns a response.
 func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Response, error) {
-	archivedHistory, request, err := ai.manageHistory(ctx, request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to manage history: %w", err)
-	}
-
 	messages, err := buildMessages(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build conversation messages: %w", err)
@@ -91,8 +77,7 @@ func (ai *AIInteraction) Interact(ctx context.Context, request *Request) (*Respo
 	}
 
 	resp := &Response{
-		Text:            choice.Message.Content,
-		ArchivedHistory: archivedHistory,
+		Text: choice.Message.Content,
 	}
 	if len(choice.Message.ToolCalls) > 0 {
 		// NOTE: We only process the first tool call to maintain the
@@ -144,7 +129,7 @@ func buildMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, 
 
 	// Add archived history as assistant message if present.
 	if request.ArchivedHistory != "" {
-		archivedHistoryMsg := fmt.Sprintf("Session history summary from earlier interactions:\n\n%s", request.ArchivedHistory)
+		archivedHistoryMsg := fmt.Sprintf("Archived history summary from earlier interaction sequences:\n\n%s", request.ArchivedHistory)
 		msgs = append(msgs, openai.AssistantMessage(archivedHistoryMsg))
 	}
 
@@ -162,6 +147,11 @@ func buildMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, 
 
 	// Build conversation history from previous turns.
 	for i, turn := range request.History {
+		// Mark sequence boundaries for better context understanding.
+		if turn.IsInitial && i > 0 {
+			msgs = append(msgs, openai.SystemMessage("--- New interaction sequence ---"))
+		}
+
 		// Add user request message.
 		if turn.RequestContent != "" {
 			userMsg := turn.RequestContent
@@ -180,48 +170,71 @@ func buildMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, 
 
 		// Add AI response message with function call information.
 		if turn.ResponseText != "" || turn.ResponseCommandName != "" {
-			assistantMsg := turn.ResponseText
 			if turn.ResponseCommandName != "" {
-				if assistantMsg != "" {
-					assistantMsg += "\n\n"
-				}
-				assistantMsg += fmt.Sprintf("Function call: %s", turn.ResponseCommandName)
+				// Generate a unique tool call ID for this historical turn.
+				toolCallID := fmt.Sprintf("call_%d_%s", i, turn.ResponseCommandName)
+
+				// Marshal arguments if present.
+				args := "{}"
 				if len(turn.ResponseCommandArgs) > 0 {
 					argsJSON, err := json.Marshal(turn.ResponseCommandArgs)
 					if err != nil {
 						return nil, fmt.Errorf("failed to marshal response command args for turn: %w", err)
 					}
-					assistantMsg += " with arguments " + string(argsJSON)
+					args = string(argsJSON)
 				}
-			}
-			msgs = append(msgs, openai.AssistantMessage(assistantMsg))
-		}
 
-		// Add command execution result as a separate user message if present.
-		if turn.ResponseCommandName != "" && turn.ExecutedCommandResult != nil {
-			resultMsg := fmt.Sprintf("Function call %s", turn.ResponseCommandName)
-			if turn.ExecutedCommandResult.Success {
-				resultMsg += " succeeded."
+				// Create assistant message with function call.
+				assistantMsg := openai.ChatCompletionMessageParamUnion{
+					OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+						Content: openai.ChatCompletionAssistantMessageParamContentUnion{
+							OfString: openai.Opt(turn.ResponseText),
+						},
+						ToolCalls: []openai.ChatCompletionMessageToolCallUnionParam{
+							{
+								OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
+									ID: toolCallID,
+									Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
+										Name:      turn.ResponseCommandName,
+										Arguments: args,
+									},
+								},
+							},
+						},
+					},
+				}
+				msgs = append(msgs, assistantMsg)
+
+				// Add command execution result as a tool message if present.
+				if turn.ExecutedCommandResult != nil {
+					// Format the result content.
+					var resultContent string
+					if turn.ExecutedCommandResult.Success {
+						resultContent = "Success"
+						if turn.ExecutedCommandResult.IsBreak {
+							resultContent += " with BREAK signal"
+						}
+					} else {
+						resultContent = fmt.Sprintf("Error: %s", turn.ExecutedCommandResult.ErrorMessage)
+					}
+					msgs = append(msgs, openai.ToolMessage(resultContent, toolCallID))
+				}
 			} else {
-				resultMsg += " failed: " + turn.ExecutedCommandResult.ErrorMessage
+				msgs = append(msgs, openai.AssistantMessage(turn.ResponseText))
 			}
-			if turn.ExecutedCommandResult.IsBreak {
-				resultMsg += " [Interaction terminated]"
-			}
-			msgs = append(msgs, openai.UserMessage(resultMsg))
 		}
 	}
 
 	// Handle current turn based on interaction phase.
 	if request.ContinuationTurn == 0 {
-		// Initial turn: AI must execute exactly one command.
-		msgs = append(msgs, openai.SystemMessage("This is the initial response."))
-
-		// Add user content for initial turn.
-		userMessage := request.Content
-		if userMessage == "" {
+		// Validate that we have user content.
+		if request.Content == "" {
 			return nil, errors.New("missing user content in request")
 		}
+
+		msgs = append(msgs, openai.SystemMessage("This is the initial turn."))
+
+		userMessage := request.Content
 		if len(request.Context) > 0 {
 			contextJSON, err := json.Marshal(request.Context)
 			if err != nil {
@@ -231,20 +244,15 @@ func buildMessages(request *Request) ([]openai.ChatCompletionMessageParamUnion, 
 		}
 		msgs = append(msgs, openai.UserMessage(userMessage))
 	} else {
-		// Continuation turn: flexible command execution.
-		msgs = append(msgs, openai.SystemMessage("This is a continuation turn."))
-
-		// Add previous command result as user message.
-		if request.PreviousCommandResult == nil {
-			return nil, fmt.Errorf("missing previous command result in continuation turn %d", request.ContinuationTurn)
+		// Validate that we have history to continue from.
+		if len(request.History) == 0 {
+			return nil, errors.New("missing history for continuation turn")
 		}
-		var resultMsg string
-		if request.PreviousCommandResult.Success {
-			resultMsg = "The previous function call succeeded."
-		} else {
-			resultMsg = fmt.Sprintf("The previous function call failed: %s", request.PreviousCommandResult.ErrorMessage)
-		}
-		msgs = append(msgs, openai.UserMessage(resultMsg))
+		msgs = append(
+			msgs,
+			openai.SystemMessage("This is a continuation turn. Review the command execution results in the conversation history, particularly the most recent one, to determine the next action."),
+			openai.UserMessage("Continue."),
+		)
 	}
 
 	return msgs, nil
@@ -302,13 +310,11 @@ func convertGoTypeToJSONSchemaType(goType string) string {
 	}
 }
 
-// manageHistory checks if history needs archiving and performs it if necessary.
-func (ai *AIInteraction) manageHistory(ctx context.Context, request *Request) (*ArchivedHistory, *Request, error) {
-	archiveCount := calculateTurnsToArchive(request)
-	if archiveCount == 0 {
-		return nil, request, nil
+// Archive processes interaction turns and creates or updates an archive.
+func (ai *AIInteraction) Archive(ctx context.Context, turnsToArchive []Turn, existingArchive string) (*ArchivedHistory, error) {
+	if len(turnsToArchive) == 0 {
+		return nil, errors.New("no turns to archive")
 	}
-	turnsToArchive := request.History[:archiveCount]
 
 	var msgs []openai.ChatCompletionMessageParamUnion
 
@@ -316,53 +322,26 @@ func (ai *AIInteraction) manageHistory(ctx context.Context, request *Request) (*
 	msgs = append(msgs, openai.SystemMessage(archiveSystemPrompt))
 
 	// Add existing archive as assistant message if present.
-	if request.ArchivedHistory != "" {
-		archivedHistoryMsg := fmt.Sprintf("Here is the current archive:\n\n%s", request.ArchivedHistory)
+	if existingArchive != "" {
+		archivedHistoryMsg := fmt.Sprintf("Here is the current archive:\n\n%s", existingArchive)
 		msgs = append(msgs, openai.AssistantMessage(archivedHistoryMsg))
 	}
 
 	// Add turns to archive as user message.
 	turnsToArchiveJSON, err := json.Marshal(turnsToArchive)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal turns to archive: %w", err)
+		return nil, fmt.Errorf("failed to marshal turns to archive: %w", err)
 	}
 	turnsToArchiveMsg := fmt.Sprintf("New interaction turns to archive:\n\n%s", string(turnsToArchiveJSON))
 	msgs = append(msgs, openai.UserMessage(turnsToArchiveMsg))
 
 	choice, err := ai.callOpenAI(ctx, msgs, nil, false)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to archive history: %w", err)
+		return nil, fmt.Errorf("failed to archive history: %w", err)
 	}
 
 	archivedHistory := &ArchivedHistory{
-		Content:   choice.Message.Content,
-		TurnCount: archiveCount,
+		Content: choice.Message.Content,
 	}
-	processedRequest := applyArchivedHistory(request, archivedHistory)
-	return archivedHistory, processedRequest, nil
-}
-
-// calculateTurnsToArchive calculates how many turns need to be archived. It
-// returns 0 if no archiving is needed.
-func calculateTurnsToArchive(request *Request) int {
-	totalTurns := len(request.History)
-
-	if request.ArchivedHistory == "" && totalTurns >= archiveThreshold {
-		// First-time archiving: archive turns to reach target history size.
-		return totalTurns - maxHistoryTurns
-	} else if request.ArchivedHistory != "" && totalTurns >= maxHistoryTurns+archiveBatchSize {
-		// Subsequent archiving: archive a fixed batch size.
-		return archiveBatchSize
-	}
-
-	// No archiving needed.
-	return 0
-}
-
-// applyArchivedHistory creates a new request with updated history after archiving.
-func applyArchivedHistory(request *Request, archivedHistory *ArchivedHistory) *Request {
-	processedRequest := *request
-	processedRequest.History = request.History[archivedHistory.TurnCount:]
-	processedRequest.ArchivedHistory = archivedHistory.Content
-	return &processedRequest
+	return archivedHistory, nil
 }

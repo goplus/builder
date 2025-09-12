@@ -20,9 +20,6 @@ type Request struct {
 	// CommandSpecs defines the commands the AI is allowed to call.
 	CommandSpecs []CommandSpec `json:"commandSpecs,omitempty"`
 
-	// PreviousCommandResult contains the outcome of the command executed in the previous turn.
-	PreviousCommandResult *CommandResult `json:"previousCommandResult,omitempty"`
-
 	// History contains the record of previous interactions in this session.
 	History []Turn `json:"history,omitempty"`
 
@@ -48,18 +45,6 @@ type Response struct {
 
 	// CommandArgs contains the arguments for the command to be executed.
 	CommandArgs map[string]any `json:"commandArgs,omitempty"`
-
-	// ArchivedHistory contains archived history information when history management occurs.
-	ArchivedHistory *ArchivedHistory `json:"archivedHistory,omitempty"`
-}
-
-// ArchivedHistory contains information about archived historical interactions.
-type ArchivedHistory struct {
-	// Content is the archived content of historical interactions.
-	Content string `json:"content"`
-
-	// TurnCount indicates how many turns were archived.
-	TurnCount int `json:"turnCount"`
 }
 
 // Turn represents a single turn in the AI interaction.
@@ -121,4 +106,10 @@ type CommandResult struct {
 
 	// IsBreak indicates if the interaction should be terminated.
 	IsBreak bool `json:"isBreak,omitempty"`
+}
+
+// ArchivedHistory contains information about archived historical interactions.
+type ArchivedHistory struct {
+	// Content is the archived content of historical interactions.
+	Content string `json:"content"`
 }
