@@ -23,6 +23,17 @@ declare module 'vue' {
   export function toValue<T>(source: WatchSource<T> | T): T
 }
 
+declare module 'textarea-caret' {
+  export function getCaretCoordinates(
+    element: HTMLTextAreaElement,
+    position: number
+  ): {
+    top: number
+    left: number
+    height: number
+  }
+}
+
 // This empty `export {}` is required for `declare` to work, because there's no other exports for this module.
 // See details in https://www.typescriptlang.org/docs/handbook/declaration-files/templates/global-modifying-module-d-ts.html
 export {}

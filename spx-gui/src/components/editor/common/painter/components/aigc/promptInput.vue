@@ -15,7 +15,13 @@
       </button>
     </div>
 
-    <div class="prompt-template">
+    <!-- Smart模式：直接textarea输入 -->
+    <div v-if="activeTemplate === 'smart'" class="prompt-editor">
+      <prompt-editor v-model="smartInput" @update:model-value="updateSmartPrompt" />
+    </div>
+
+    <!-- 模板模式：填空式输入 -->
+    <div v-else class="prompt-template" >
       <template v-for="(part, index) in templateParts" :key="index">
         <span v-if="part.type === 'text'" class="template-text">{{ part.content }}</span>
         <n-input
@@ -27,12 +33,16 @@
         />
       </template>
     </div>
-    <div class="preview-section">
+    <div v-if="previewText && activeTemplate !== 'smart'" class="preview-section" >
       <div class="preview-label">{{ $t({ en: 'Preview', zh: '预览' }) }}:</div>
       <div class="preview-content">{{ previewText }}</div>
     </div>
     <div class="input-hint">
-      {{ $t({ en: 'Tip: Fill in the blanks to complete your prompt', zh: '提示：填写空白处以完成您的提示词' }) }}
+      {{
+        activeTemplate === 'smart'
+          ? $t({ en: 'Tip: Enter your complete prompt description', zh: '提示：输入您的完整提示词描述' })
+          : $t({ en: 'Tip: Fill in the blanks to complete your prompt', zh: '提示：填写空白处以完成您的提示词' })
+      }}
     </div>
   </div>
 </template>
@@ -40,6 +50,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { NInput } from 'naive-ui'
+import PromptEditor from './promptEditor.vue'
 
 // Props
 interface Props {
@@ -55,12 +66,15 @@ const emit = defineEmits<{
 
 const fullFilled = ref(false)
 
+// Smart模式的输入内容
+const smartInput = ref('')
+
 // 定义不同类型的模板
 const templates = {
   sprite: '一个（可爱）的（猫咪），颜色是（橘色）',
   prop: '一个（金币），颜色是（金色）',
   decoration: '一个（中世纪）风格的（帽子），颜色是（灰色）',
-  advance: '（）'
+  smart: ''
 }
 
 // 模板类型定义
@@ -68,14 +82,14 @@ const templateTypes = [
   { key: 'sprite' as const, label: '精灵' },
   { key: 'prop' as const, label: '道具' },
   { key: 'decoration' as const, label: '装饰' },
-  { key: 'advance' as const, label: '高级' }
+  { key: 'smart' as const, label: '智能' }
 ] as const
 
 // 当前激活的模板类型
 const activeTemplate = ref<keyof typeof templates>('sprite')
 
 // 当前模板内容
-const template = computed(() => templates[activeTemplate.value])
+const template = computed(() => (templates[activeTemplate.value] !== 'smart' ? templates[activeTemplate.value] : ''))
 
 // 解析模板的接口
 interface TemplatePart {
@@ -146,6 +160,7 @@ watch(
 // 切换模板
 const switchTemplate = (templateKey: keyof typeof templates) => {
   activeTemplate.value = templateKey
+  smartInput.value = ''
 }
 
 // 预览文本
@@ -168,6 +183,12 @@ const updatePrompt = () => {
   emit('update:modelValue', prompt)
   const filled = inputs.value.every((input) => input.trim() !== '')
   fullFilled.value = filled
+}
+
+// Smart模式更新提示词
+const updateSmartPrompt = () => {
+  emit('update:modelValue', smartInput.value)
+  fullFilled.value = smartInput.value.trim() !== ''
 }
 
 defineExpose({
@@ -238,6 +259,12 @@ defineExpose({
 .template-input {
   width: 5em;
   min-width: 5em;
+}
+
+.textarea-input {
+  width: 100%;
+  height: 100px;
+  min-width: 100%;
 }
 
 .preview-section {

@@ -66,6 +66,7 @@
     "scss": "^0.2.4",
     "shiki": "^3.2.2",
     "sortablejs": "^1.15.6",
+    "textarea-caret": "^3.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.3.3",
     "vicons": "^0.0.1",
