@@ -19,7 +19,7 @@ enum TriggerVisibility {
   None = '' // The trigger is not visible
 }
 
-const panelBoundaryBuffer = [20, 10]
+const panelBoundaryBuffer = [20, 20]
 const triggerSnapThreshold = 20
 </script>
 
@@ -92,7 +92,8 @@ watch(
 watch(
   () => copilot.active,
   async (active) => {
-    await until(() => !!panelWidth.value)
+    await until(() => panelWidth.value != null)
+
     if (active) {
       openPanel()
     } else {
@@ -368,9 +369,9 @@ const handleQuickInputClick = useMessageHandle(
             </div>
           </div>
         </template>
-        <div>{{ $t({ en: 'Copilot', zh: '编程助手' }) }}</div>
+        <div>{{ $t({ en: 'Copilot', zh: 'Copilot' }) }}</div>
       </UITooltip>
-      <div class="body-wrapper">
+      <div class="body-wrapper" :class="{ 'out-of-bounds': isPanelOutOfBounds }">
         <div ref="draggerRef" class="dragger">
           <svg width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="1.5" cy="1" r="1" fill="#A7B1BB" />
@@ -557,6 +558,16 @@ $toColor: #c390ff;
   border-radius: 16px;
   z-index: 2;
 
+  &.out-of-bounds::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    backdrop-filter: blur(1px);
+  }
+
   .dragger {
     position: absolute;
     height: 14px;
@@ -648,12 +659,11 @@ $toColor: #c390ff;
 }
 
 .placeholder {
-  padding: 22px 16px;
+  padding: 26px 24px;
   background: var(--ui-color-grey-100);
   border-radius: 16px;
 
   .title {
-    margin-top: 12px;
     font-size: 20px;
     font-weight: 600;
     line-height: 28px;
@@ -661,8 +671,7 @@ $toColor: #c390ff;
   }
 
   .description {
-    margin-top: 12px;
-    font-size: 13px;
+    margin-top: 10px;
     font-weight: 600;
     line-height: 22px;
     color: var(--ui-color-grey-800);
@@ -670,12 +679,12 @@ $toColor: #c390ff;
 
   .sign-button {
     border: none;
-    border-radius: 16px;
+    border-radius: 12px;
     width: 100%;
     height: 40px;
     font-size: 15px;
     font-weight: 600;
-    margin-top: 20px;
+    margin-top: 28px;
     color: var(--ui-color-grey-100);
     background-color: var(--ui-color-sound-main);
     outline: none;
