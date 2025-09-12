@@ -1,12 +1,12 @@
 import { dispatchKeyToEvent } from "./module_ProjectAPIs";
 import type {
-  MobileKeyboardZoneToKeyMapping,
+  MobileKeyboardBtns,
   MobileKeyboardType,
 } from "./module_ProjectAPIs";
 
 export type KeyboardConfig = {
   type: MobileKeyboardType;
-  mapping: MobileKeyboardZoneToKeyMapping;
+  btns: MobileKeyboardBtns;
 };
 export type UI = any;
 
@@ -14,12 +14,12 @@ export declare function useModal<T>(
   component: any
 ): (props?: any) => Promise<T>;
 
-export declare function KeyboardEditorModal(
+export declare function KeyboardEditor(
   props: {
-    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    mobileKeyboardBtns: MobileKeyboardBtns;
   },
   emits: {
-    resolved: (result: MobileKeyboardZoneToKeyMapping) => void;
+    resolved: (result: MobileKeyboardBtns) => void;
   }
 ): UI;
 
@@ -37,44 +37,27 @@ export declare function KeyboardEditorModal(
  *
  * use:
  * ```vue
- * <MobileKeyboardView :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }">
+ * <MobileKeyboardView
+ * :ZoneToKeyMapping="{ label: 'Q', posX: 0, posY: 0, btnWidth: 50, btnHeight: 50 }"
+ * @close="emit('close')"
+ * @rerun="emit('rerun')"
+ * />
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
-export type MobileKeyboardViewProps = {
-  zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-};
 
-export declare function MobileKeyboardView({
-  zoneToKeyMapping,
-}: MobileKeyboardViewProps): UI;
-//  {
-//   const zones = Object.keys(ZoneToKeyMapping);
-//   const zoneToKey = ZoneToKeyMapping;
-//   const handleKeyEvent = (type: string, key: string, code: string) => {
-//     dispatchKeyToEvent(type, code);
-//   };
-
-//   const keyButtons = zones
-//     .map(
-//       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${handleKeyEvent} />`
-//     )
-//     .join("");
-
-//   return `
-//     <div className="phone-layout">
-//       <slot name="gameView">
-//       </slot>
-//       <div className="keyboard-zones">
-//         ${keyButtons}
-//       </div>
-//     </div>
-//   `;
-// }
+export declare function MobileKeyboardView(
+  props: {
+    mobileKeyboardBtns: MobileKeyboardBtns;
+  },
+  emits: {
+    close: [];
+    rerun: [];
+  }
+): UI;
 
 //  key UI in Keyboard. provide to MobileKeyboardView and MobileKeyboardEidt
 // active is used to indicate whether a button has functionality（onKeyEvent）.

@@ -4,29 +4,15 @@ import type {
 } from "../../../spx-gui/src/apis/common/index.ts";
 import { type ProjectRelease } from "../../../spx-gui/src/apis/project-release.ts";
 
-/**
- * Valid mobile keyboard zones
- */
-export const MOBILE_KEYBOARD_ZONES = [
-  "lt",
-  "rt",
-  "lbUp",
-  "lbLeft",
-  "lbRight",
-  "lbDown",
-  "rbA",
-  "rbB",
-  "rbX",
-  "rbY",
-] as const;
-
-export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number];
-/**
- * Zone to key mapping for mobile keyboard
- */
-export type MobileKeyboardZoneToKeyMapping = {
-  [zone in MobileKeyboardZone]: string | null;
+export type KeyBtn = {
+  /** The text displayed on the key. */
+  label: string;
+  /** The horizontal coordinate of the left top corner of the key (pixels). */
+  posX: number;
+  /** The vertical coordinate of the left top corner of the key (pixels). */
+  posY: number;
 };
+export type MobileKeyboardBtns = KeyBtn[];
 /**
  * Mobile keyboard type
  * - NoKeyboard: No keyboard
@@ -77,7 +63,7 @@ export type ProjectData = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -95,7 +81,7 @@ export type AddProjectParams = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -111,7 +97,7 @@ export type AddProjectByRemixParams = {
   /** Mobile keyboard type */
   mobileKeyboardType: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
@@ -131,7 +117,7 @@ export type UpdateProjectParams = {
   /** Mobile keyboard type */
   mobileKeyboardType?: MobileKeyboardType;
   /** Zone to key mapping for mobile keyboard */
-  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping;
+  mobileKeyboardBtns?: MobileKeyboardBtns;
 };
 
 /**
