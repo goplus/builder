@@ -1,70 +1,191 @@
-<!--
-MapViewer
-* displays the map & sprites of the project
-* no viewport control
-* no widgets
-* sprite selection / unselection supported
-* basic sprite operations (dragging, resizing, rotating, etc.) supported
--->
-
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
+import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
+import { untilNotNull } from '@/utils/utils'
+import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
-import NodeTransformer from './NodeTransformer.vue'
-import SpriteNode from './SpriteNode.vue'
-import { getNodeId } from './common'
-import type { Project } from '@/models/project'
+import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
+import { getNodeId } from '@/components/editor/common/viewer/common'
+import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
 
 const props = defineProps<{
   project: Project
   selectedSprite: Sprite | null
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:selectedSprite': [sprite: Sprite | null]
 }>()
 
 const container = ref<HTMLElement | null>(null)
-const containerSize = useContentSize(container)
+const rawContainerSize = useContentSize(container)
+// TODO: Update type of returned value of `useContentSize` to simplify usage.
+const containerSize = computed(() => {
+  if (rawContainerSize.width.value == null || rawContainerSize.height.value == null) return null
+  return {
+    width: rawContainerSize.width.value,
+    height: rawContainerSize.height.value
+  }
+})
 
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
+const stageConfig = computed(() => containerSize.value)
+const mapRef = ref<{
+  getNode(): Konva.Layer
+}>()
 const mapSize = computed(() => props.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
-
 const nodeReadyMap = reactive(new Map<string, boolean>())
 
-/** containerSize / mapSize */
-const scale = computed(() => {
-  if (containerSize.width.value == null || containerSize.height.value == null) return null
-  if (mapSize.value == null) return null
-  const widthScale = containerSize.width.value / mapSize.value.width
-  const heightScale = containerSize.height.value / mapSize.value.height
+function handleSpriteSelected(sprite: Sprite) {
+  emit('update:selectedSprite', sprite)
+}
+
+type Pos = { x: number; y: number }
+
+const mapScale = ref(1)
+
+/** Scale value to fit the map in the stage */
+const fittingMapScale = computed(() => {
+  if (containerSize.value == null) return null
+  const widthScale = containerSize.value.width / mapSize.value.width
+  const heightScale = containerSize.value.height / mapSize.value.height
   return Math.min(widthScale, heightScale)
 })
 
-const stageConfig = computed(() => {
-  if (scale.value == null) return null
-  if (mapSize.value == null) return null
-  const width = mapSize.value.width * scale.value
-  const height = mapSize.value.height * scale.value
+const minMapScale = computed(() => {
+  return fittingMapScale.value == null ? null : fittingMapScale.value * 0.8
+})
+
+const maxMapScale = computed(() => {
+  if (fittingMapScale.value == null) return null
+  return Math.max(fittingMapScale.value * 2, 2)
+})
+
+function setMapScale(scale: number) {
+  if (minMapScale.value != null && scale < minMapScale.value) scale = minMapScale.value
+  if (maxMapScale.value != null && scale > maxMapScale.value) scale = maxMapScale.value
+  mapScale.value = scale
+  return scale
+}
+
+const viewportSize = containerSize
+
+const mapPos = ref<Pos>({ x: 0, y: 0 })
+
+const mapPosLimit = computed(() => {
+  const vSize = viewportSize.value
+  if (vSize == null) return null
+  const scale = mapScale.value
+  // We ensure that at least one pixel (of map) is in the (0.6x) center of the stage
   return {
-    width,
-    height,
-    scale: {
-      x: scale.value,
-      y: scale.value
-    }
+    minX: vSize.width * 0.2 - mapSize.value.width * scale,
+    maxX: vSize.width * 0.8,
+    minY: vSize.height * 0.2 - mapSize.value.height * scale,
+    maxY: vSize.height * 0.8
   }
 })
+
+function getValidMapPos({ x, y }: Pos) {
+  const limit = mapPosLimit.value
+  if (limit == null) return { x, y }
+  const { minX, maxX, minY, maxY } = limit
+  if (x < minX) x = minX
+  if (x > maxX) x = maxX
+  if (y < minY) y = minY
+  if (y > maxY) y = maxY
+  return { x, y }
+}
+
+function setMapPos(pos: Pos) {
+  mapPos.value = getValidMapPos(pos)
+  return mapPos.value
+}
+
+function setMapPosWithTransition(pos: Pos, durationInMs: number) {
+  if (mapRef.value == null) {
+    setMapPos(pos)
+    return
+  }
+  const newMapPos = getValidMapPos(pos)
+  new Konva.Tween({
+    node: mapRef.value.getNode(),
+    duration: durationInMs / 1000,
+    x: newMapPos.x,
+    y: newMapPos.y,
+    onFinish: () => {
+      setMapPos(newMapPos)
+    }
+  }).play()
+}
+
+onMounted(async () => {
+  // Initially fit the map in the stage
+  const scale = setMapScale(await untilNotNull(fittingMapScale))
+  // And center the map
+  setMapPos({
+    x: (viewportSize.value!.width - mapSize.value.width * scale) / 2,
+    y: (viewportSize.value!.height - mapSize.value.height * scale) / 2
+  })
+})
+
+/** Check if given position (in game) is in viewport */
+function inViewport({ x, y }: Pos) {
+  if (viewportSize.value == null) return true
+  const xInViewport = (x + mapSize.value.width / 2) * mapScale.value + mapPos.value.x
+  const yInViewport = (-y + mapSize.value.height / 2) * mapScale.value + mapPos.value.y
+  return (
+    xInViewport >= 0 &&
+    xInViewport <= viewportSize.value.width &&
+    yInViewport >= 0 &&
+    yInViewport <= viewportSize.value.height
+  )
+}
+
+watch(
+  () => props.selectedSprite,
+  (selectedSprite) => {
+    if (selectedSprite != null && viewportSize.value != null && !inViewport(selectedSprite)) {
+      const mapPosForSprite = {
+        x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
+        y: viewportSize.value.height / 2 - (mapSize.value.height / 2 - selectedSprite.y) * mapScale.value
+      }
+      setMapPosWithTransition(mapPosForSprite, 300)
+    }
+  },
+  { immediate: true }
+)
+
+const mapConfig = computed(() => {
+  return {
+    ...mapPos.value,
+    width: mapSize.value.width,
+    height: mapSize.value.height,
+    draggable: true,
+    scale: { x: mapScale.value, y: mapScale.value }
+  } satisfies LayerConfig
+})
+
+function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
+  const map = e.target
+  const { x, y } = getValidMapPos({ x: map.x(), y: map.y() })
+  map.x(x)
+  map.y(y)
+}
+
+function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
+  const map = e.target
+  setMapPos({ x: map.x(), y: map.y() })
+}
 
 const backdropImg = ref<HTMLImageElement | null>(null)
 const [backdropSrc, backdropSrcLoading] = useFileUrl(() => props.project.stage.defaultBackdrop?.img)
@@ -129,7 +250,6 @@ const konvaBackdropConfig = computed(() => {
 const loading = computed(() => {
   if (backdropSrcLoading.value || !backdropImg.value) return true
   if (props.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
-  if (props.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false
 })
 
@@ -137,6 +257,57 @@ const visibleSprites = computed(() => {
   const { zorder, sprites } = props.project
   return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
 })
+
+let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
+
+function clearCameraEdgeScrollCheckTimer() {
+  if (cameraEdgeScrollCheckTimer == null) return
+  clearInterval(cameraEdgeScrollCheckTimer)
+  cameraEdgeScrollCheckTimer = null
+}
+
+const cameraEdgeScrollConfig = {
+  edgeThreshold: 50, // px
+  scrollSpeed: 20, // px per interval
+  interval: 50 // ms
+}
+
+function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
+  if (cameraEdgeScrollCheckTimer != null) return
+  if (stageRef.value == null) return
+  const stage = stageRef.value.getStage()
+  const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
+
+  cameraEdgeScrollCheckTimer = setInterval(() => {
+    const pointerPos = stage.getPointerPosition()
+    if (pointerPos == null) {
+      clearCameraEdgeScrollCheckTimer()
+      return
+    }
+
+    const oldMapPos = mapPos.value
+    const targetMapPos = { ...oldMapPos }
+    if (pointerPos.x < edgeThreshold) {
+      targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
+    } else if (pointerPos.x > stage.width() - edgeThreshold) {
+      targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
+    }
+    if (pointerPos.y < edgeThreshold) {
+      targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
+    } else if (pointerPos.y > stage.height() - edgeThreshold) {
+      targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
+    }
+    const newMapPos = setMapPos(targetMapPos)
+    notifyCameraScroll({
+      x: (newMapPos.x - oldMapPos.x) / mapScale.value,
+      y: (newMapPos.y - oldMapPos.y) / mapScale.value
+    })
+  }, interval)
+}
+
+function handleSpriteDragEnd() {
+  clearCameraEdgeScrollCheckTimer()
+}
 
 const menuVisible = ref(false)
 const menuPos = ref({ x: 0, y: 0 })
@@ -190,6 +361,30 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   })
   menuVisible.value = false
 }
+
+function handleBackdropClick() {
+  emit('update:selectedSprite', null)
+}
+
+const scaleBy = 1.02
+
+const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+  e.evt.preventDefault()
+  const map = e.target
+  const oldScale = mapScale.value
+  const pointer = map.getStage()?.getPointerPosition()
+  if (pointer == null) return
+
+  const mousePointTo = {
+    x: (pointer.x - mapPos.value.x) / oldScale,
+    y: (pointer.y - mapPos.value.y) / oldScale
+  }
+  const newScale = setMapScale(e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy)
+  setMapPos({
+    x: pointer.x - mousePointTo.x * newScale,
+    y: pointer.y - mousePointTo.y * newScale
+  })
+}
 </script>
 
 <template>
@@ -207,21 +402,25 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
       :config="stageConfig"
       @mousedown="handleStageMousedown"
       @contextmenu="handleContextMenu"
+      @wheel="handleWheel"
     >
-      <v-layer>
-        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
-      </v-layer>
-      <v-layer>
+      <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig" @click="handleBackdropClick"></v-rect>
         <SpriteNode
           v-for="sprite in visibleSprites"
           :key="sprite.id"
           :sprite="sprite"
+          :selected="selectedSprite?.id === sprite.id"
+          :project="props.project"
           :map-size="mapSize!"
           :node-ready-map="nodeReadyMap"
+          @drag-move="handleSpriteDragMove"
+          @drag-end="handleSpriteDragEnd"
+          @selected="handleSpriteSelected(sprite)"
         />
       </v-layer>
       <v-layer>
-        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" />
+        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -260,6 +459,8 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   align-items: center;
   justify-content: center;
 
+  border-radius: var(--ui-border-radius-1);
+  overflow: hidden;
   background-image: url(@/assets/images/stage-bg.svg);
   background-position: center;
   background-repeat: repeat;

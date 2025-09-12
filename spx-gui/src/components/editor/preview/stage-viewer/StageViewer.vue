@@ -21,10 +21,13 @@
           v-for="sprite in visibleSprites"
           :key="sprite.id"
           :sprite="sprite"
-          :map-size="mapSize!"
+          :selected="editorCtx.state.selectedSprite?.id === sprite.id"
+          :project="editorCtx.project"
+          :map-size="mapSize"
           :node-ready-map="nodeReadyMap"
           @drag-move="handleSpriteDragMove"
           @drag-end="handleSpriteDragEnd"
+          @selected="handleSpriteSelected(sprite)"
         />
       </v-layer>
       <v-layer>
@@ -37,7 +40,11 @@
         />
       </v-layer>
       <v-layer>
-        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" />
+        <NodeTransformer
+          ref="nodeTransformerRef"
+          :node-ready-map="nodeReadyMap"
+          :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
+        />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -82,11 +89,11 @@ import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
 import type { Widget } from '@/models/widget'
-import { useEditorCtx } from '../../EditorContextProvider.vue'
-import NodeTransformer from './NodeTransformer.vue'
-import SpriteNode, { type CameraScrollNotifyFn } from './SpriteNode.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
+import { getNodeId } from '@/components/editor/common/viewer/common'
+import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import { getNodeId } from './common'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -130,7 +137,6 @@ const stageConfig = computed(() => {
 type Pos = { x: number; y: number }
 
 const mapPosLimit = computed(() => {
-  if (mapSize.value == null) return null
   return {
     minX: viewportSize.value.width - mapSize.value.width,
     maxX: 0,
@@ -143,7 +149,6 @@ const mapPosLimit = computed(() => {
 const mapPos = ref<Pos>({ x: 0, y: 0 })
 
 function getValidMapPos(pos: Pos) {
-  if (mapPosLimit.value == null) return pos
   return {
     x: Math.min(Math.max(pos.x, mapPosLimit.value.minX), mapPosLimit.value.maxX),
     y: Math.min(Math.max(pos.y, mapPosLimit.value.minY), mapPosLimit.value.maxY)
@@ -190,8 +195,8 @@ watch(
     editorCtx.project.setCameraFollowSprite(selectedSprite?.id ?? null)
     if (selectedSprite != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
-        x: -(mapSize.value!.width / 2 + selectedSprite.x - viewportSize.value.width / 2),
-        y: -(mapSize.value!.height / 2 - selectedSprite.y - viewportSize.value.height / 2)
+        x: -(mapSize.value.width / 2 + selectedSprite.x - viewportSize.value.width / 2),
+        y: -(mapSize.value.height / 2 - selectedSprite.y - viewportSize.value.height / 2)
       }
       setMapPosWithTransition(mapPosForSprite, 300)
     }
@@ -200,7 +205,6 @@ watch(
 )
 
 const mapConfig = computed(() => {
-  if (mapSize.value == null) return null
   return {
     ...mapPos.value,
     width: mapSize.value.width,
@@ -309,7 +313,7 @@ function clearCameraEdgeScrollCheckTimer() {
 const cameraEdgeScrollConfig = {
   edgeThreshold: 50, // px
   scrollSpeed: 20, // px per interval
-  interval: 50
+  interval: 50 // ms
 }
 
 function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
@@ -347,6 +351,10 @@ function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
+}
+
+function handleSpriteSelected(sprite: Sprite) {
+  editorCtx.state.selectSprite(sprite.id)
 }
 
 const menuVisible = ref(false)
