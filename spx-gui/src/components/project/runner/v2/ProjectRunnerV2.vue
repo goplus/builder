@@ -63,7 +63,7 @@ interface IframeWindow extends Window {
   __xb_is_stale?: boolean
   startRecording: () => void
   stopRecording: () => Promise<Blob> // stopRecording 直接返回 Blob
-  takeScreenshot: () => Promise<Blob>
+  getScreenshot: () => Promise<Blob>
   pauseGame: () => void
   resumeGame: () => void
 }
@@ -190,7 +190,7 @@ defineExpose({
     if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow | null
     if (win == null) return
-    return await win.takeScreenshot?.()
+    return await win.getScreenshot?.()
   },
   async stopRecording() {
     const iframe = iframeRef.value
