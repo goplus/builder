@@ -72,12 +72,21 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
           files: fileCollection,
           description: metadata.description,
           instructions: metadata.instructions,
-          thumbnail: thumbnailUniversalUrl
+          thumbnail: thumbnailUniversalUrl,
+          mobileKeyboardType: metadata.mobileKeyboardType,
+          mobileKeyboardZoneToKey: metadata.mobileKeyboardZoneToKey
         },
         signal
       )
     : addProject(
-        { name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection, mobileKeyboardType: 1 },
+        {
+          name,
+          visibility,
+          thumbnail: thumbnailUniversalUrl,
+          files: fileCollection,
+          mobileKeyboardType: metadata.mobileKeyboardType ?? 1,
+          mobileKeyboardZoneToKey: metadata.mobileKeyboardZoneToKey ?? undefined
+        },
         signal
       ))
   signal?.throwIfAborted()
