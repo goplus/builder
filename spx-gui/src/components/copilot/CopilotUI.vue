@@ -24,8 +24,8 @@ const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
-import { computed, ref, watch, type WatchSource } from 'vue'
-import { useBottomSticky, useContentSize } from '@/utils/dom'
+import { computed, onBeforeUnmount, ref, watch, type WatchSource } from 'vue'
+import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, until } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
@@ -35,8 +35,10 @@ import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
+import { useSpotlight } from '@/utils/spotlight'
 
 const copilot = useCopilot()
+const spotlight = useSpotlight()
 
 const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
@@ -331,6 +333,35 @@ const handleQuickInputClick = useMessageHandle(
   },
   { en: 'Failed to send message', zh: '发送消息失败' }
 ).fn
+
+onBeforeUnmount(
+  spotlight.on('revealed', async ({ rect }) => {
+    const panelEl = panelRef.value
+    if (copilot.active && panelEl) {
+      const isIntersecting = isRectIntersecting(rect, panelEl.getBoundingClientRect())
+      if (isIntersecting) {
+        const { innerWidth } = window
+        const { left, right } = rect
+        const { panelW } = getCurrentSizes()
+        const { bottom, state } = panelStatePosition.value
+
+        let newRight = panelStatePosition.value.right
+        if (state === State.Left) {
+          newRight = left > panelW ? innerWidth : 0
+        } else if (state === State.Right) {
+          newRight = innerWidth - right > panelW ? 0 : innerWidth
+        }
+
+        // panel animation
+        const panelAnimation = createCSSAnimation('animated', panelRef.value)
+        const newPosition = getOpenedPanelClampedPosition({ right: newRight, bottom })
+        await panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
+        panelStatePosition.value = newPosition
+        await panelAnimation.endAndWait()
+      }
+    }
+  })
+)
 
 // TODO: prevent click in copilot panel from closing other dropdowns
 </script>

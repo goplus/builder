@@ -1,6 +1,6 @@
 import type { App, InjectionKey } from 'vue'
 import { inject, ref } from 'vue'
-import { Disposable } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 
 export { default as SpotlightUI } from './SpotlightUI.vue'
 
@@ -8,11 +8,17 @@ export type SpotlightItem = {
   el: HTMLElement
   timer: NodeJS.Timeout
   tips: string
+  dispose: () => void
+}
+
+export type RevealEvent = {
+  rect: DOMRect
 }
 
 export const spotlightKey: InjectionKey<Spotlight> = Symbol('spotlight')
 
-const spotlightAutoConcealTimeout = 5000
+const autoConcealDelay = 5000
+const mouseEnterConcealDelay = 600
 
 export function useSpotlight() {
   const spotlight = inject(spotlightKey)
@@ -20,26 +26,36 @@ export function useSpotlight() {
   return spotlight
 }
 
-export class Spotlight extends Disposable {
+export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
   spotlightItem = ref<SpotlightItem | null>(null)
 
-  protected createTimeout() {
-    return setTimeout(() => this.conceal(), spotlightAutoConcealTimeout)
+  protected createTimeoutConceal(timeout = autoConcealDelay) {
+    return setTimeout(() => this.conceal(), timeout)
   }
 
   reveal(el: HTMLElement, tips = '') {
     this.conceal() // Clear any previous spotlight
+
+    const autoConcealTimer = this.createTimeoutConceal()
+    let mouseEnterConcealTimer: NodeJS.Timeout
+    const handleMouseEnter = () => (mouseEnterConcealTimer = this.createTimeoutConceal(mouseEnterConcealDelay))
     this.spotlightItem.value = {
-      timer: this.createTimeout(),
+      timer: autoConcealTimer,
       tips,
-      el
+      el,
+      dispose: () => {
+        clearTimeout(autoConcealTimer)
+        clearTimeout(mouseEnterConcealTimer)
+        el.removeEventListener('mouseenter', handleMouseEnter)
+      }
     }
+    el.addEventListener('mouseenter', handleMouseEnter, { once: true })
   }
 
   conceal() {
     const prevItem = this.spotlightItem.value
     if (prevItem) {
-      clearTimeout(prevItem.timer)
+      prevItem.dispose()
     }
     this.spotlightItem.value = null
   }
