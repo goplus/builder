@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
-import type { RecordingData } from '@/apis/recording'
+import { type RecordingData } from '@/apis/recording'
 import type { PlatformConfig } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'

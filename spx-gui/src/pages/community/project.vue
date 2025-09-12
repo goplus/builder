@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle, DefaultException } from '@/utils/exception'
+import { useMessageHandle, DefaultException, capture } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -50,7 +50,7 @@ import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
-import { createRecording } from '@/apis/recording'
+import { createRecording, deleteRecording } from '@/apis/recording'
 import { saveFile } from '@/models/common/cloud'
 import { File } from '@/models/common/file'
 
@@ -392,11 +392,19 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
 }
 
 // Handle recording sharing results
-async function handleShareResult(result: any) {
+async function handleShareResult(result: any, recordingToDelete: RecordingData | null) {
   if (result.type === 'shared') {
-    // Success message will be handled by useMessageHandle's successMessage parameter
     return result.platform
   } else if (result.type === 'rerecord') {
+    if (recordingToDelete) {
+      deleteRecording(recordingToDelete.id).catch((error) => {
+        capture(error, {
+          en: 'Failed to delete previous recording',
+          zh: '删除旧录屏失败'
+        })
+      })
+    }
+
     // Resume game first, then start new recording
     await projectRunnerRef.value?.resumeGame()
     isRecording.value = true
@@ -423,7 +431,8 @@ const handleRecordingSharing = useMessageHandle(
         video: recordFile
       })
 
-      return await handleShareResult(result)
+      const recordingData = await recordingPromise.catch(() => null)
+      return await handleShareResult(result, recordingData)
     } finally {
       await projectRunnerRef.value?.resumeGame()
       isRecording.value = false
