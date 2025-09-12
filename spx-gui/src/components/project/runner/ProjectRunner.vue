@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { Project } from '@/models/project'
 import ProjectRunnerV2 from './v2/ProjectRunnerV2.vue'
-
+import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 const props = defineProps<{ project: Project }>()
 
 const emit = defineEmits<{
@@ -41,6 +41,9 @@ defineExpose({
   },
   async stopRecording() {
     return projectRunnerRef.value?.stopRecording()
+  },
+  async dispatchKeyboardEvent(type: KeyboardEventType, key: KeyCode) {
+    return projectRunnerRef.value?.dispatchKeyboardEvent(type, key)
   },
   async takeScreenshot() {
     return projectRunnerRef.value?.takeScreenshot()

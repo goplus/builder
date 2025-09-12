@@ -14,7 +14,7 @@ import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
-
+import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
 
@@ -199,6 +199,14 @@ defineExpose({
     if (win == null) return
     return await win.stopRecording?.()
   },
+  dispatchKeyboardEvent(type: KeyboardEventType, key: KeyCode) {
+    const iframe = iframeRef.value
+    if (iframe == null || iframe == undefined) return
+    const win = iframe.contentWindow as IframeWindow | null
+    if (win == null) return
+    const keyboardEvent = new KeyboardEvent(type, { key, bubbles: true })
+    return win.dispatchEvent?.(keyboardEvent)
+  },
   async run(signal?: AbortSignal) {
     loading.value = true
     failed.value = false
@@ -352,10 +360,12 @@ defineExpose({
   justify-content: center;
   align-items: center;
 }
+
 .iframe {
   width: 100%;
   height: 100%;
 }
+
 .thumbnail {
   position: absolute;
   left: 0;
@@ -363,6 +373,7 @@ defineExpose({
   top: 0;
   bottom: 0;
 }
+
 .error-wrapper {
   position: absolute;
   left: 0;

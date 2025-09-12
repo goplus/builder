@@ -3,7 +3,10 @@ import type {
   MobileKeyboardZoneToKeyMapping,
   MobileKeyboardType,
 } from "./module_ProjectAPIs";
-
+import {
+  KeyboardEventType,
+  KeyCode,
+} from "../../../spx-gui/src/components/project/sharing/MobileKeyboard/mobile-keyboard";
 export type KeyboardConfig = {
   type: MobileKeyboardType;
   mapping: MobileKeyboardZoneToKeyMapping;
@@ -37,31 +40,38 @@ export declare function KeyboardEditorModal(
  *
  * use:
  * ```vue
- * <MobileKeyboardView :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }">
+ * <MobileKeyboardView
+ * :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }"
+ * @close="emit('close')"
+ * @rerun="emit('rerun')"
+ * @key="handleOnKeyEvent">
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
  * </MobileKeyboardView>
  * ```
  */
-export type MobileKeyboardViewProps = {
-  zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
-};
 
-export declare function MobileKeyboardView({
-  zoneToKeyMapping,
-}: MobileKeyboardViewProps): UI;
+export declare function MobileKeyboardView(
+  props: {
+    zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+  },
+  emits: {
+    close: [];
+    rerun: [];
+    key: [type: KeyboardEventType, key: KeyCode];
+  }
+): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
-//   const handleKeyEvent = (type: string, key: string, code: string) => {
-//     dispatchKeyToEvent(type, code);
-//   };
-
+//   const handleOnKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
+//     emit('key', type, key);
+//   }
 //   const keyButtons = zones
 //     .map(
 //       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${handleKeyEvent} />`
+//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} key=${handleOnKeyEvent} />`
 //     )
 //     .join("");
 
@@ -78,11 +88,15 @@ export declare function MobileKeyboardView({
 
 //  key UI in Keyboard. provide to MobileKeyboardView and MobileKeyboardEidt
 // active is used to indicate whether a button has functionality（onKeyEvent）.
-export declare function UIKeyBtn(props: {
-  value: string;
-  active?: boolean;
-  onKeyEvent?: (type: "keydown" | "keyup", key: string, code: string) => void;
-}): UI;
+export declare function UIKeyBtn(
+  props: {
+    value: string;
+    active?: boolean;
+  },
+  emits: {
+    key: [type: KeyboardEventType, key: KeyCode];
+  }
+): UI;
 // {
 //   function toKeyAndCode(v: string) {
 //     // preprocessing
