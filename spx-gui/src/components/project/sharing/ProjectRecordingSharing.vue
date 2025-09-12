@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
-import { deleteRecording, type RecordingData } from '@/apis/recording'
+import { type RecordingData } from '@/apis/recording'
 import type { PlatformConfig } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
@@ -21,6 +21,7 @@ type SharingResult =
     }
   | {
       type: 'rerecord'
+      recording: RecordingData | null
     }
 const emit = defineEmits<{
   cancelled: []
@@ -131,15 +132,7 @@ async function generateShareQRCode() {
 
 // Handle re-recording
 async function handleReRecord(): Promise<void> {
-  if (currentRecording.value) {
-    try {
-      await deleteRecording(currentRecording.value.id)
-    } catch (error) {
-      // It's better to handle potential errors, but for now we'll just log it.
-      console.error('Failed to delete recording:', error)
-    }
-  }
-  emit('resolved', { type: 'rerecord' })
+  emit('resolved', { type: 'rerecord', recording: currentRecording.value })
 }
 
 // Handle one-click video download
