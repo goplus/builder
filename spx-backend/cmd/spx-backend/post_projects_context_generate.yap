@@ -1,7 +1,7 @@
 // Generate or update project context keywords.
 //
 // Request:
-//   POST /project/context/generate
+//   POST /projects/context/generate
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
