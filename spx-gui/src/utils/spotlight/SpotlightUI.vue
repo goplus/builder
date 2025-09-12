@@ -46,26 +46,6 @@ function getDefaultPosition(): Position {
     half: 'lower'
   }
 }
-
-function calcRevealDOMRect(spotlightEl: HTMLElement, placement: Placement) {
-  const rect = spotlightEl.getBoundingClientRect()
-  let { width, height, left, top } = rect
-
-  switch (placement) {
-    case Placement.TOP_RIGHT:
-      top -= height
-      break
-    case Placement.TOP_LEFT:
-      left -= width
-      top -= height
-      break
-    case Placement.BOTTOM_LEFT:
-      left -= width
-      break
-  }
-
-  return new DOMRect(left, top, width, height)
-}
 </script>
 
 <script lang="ts" setup>
@@ -81,6 +61,7 @@ const conflictBuffer = 20
 const spotlightRef = ref<HTMLElement | null>(null)
 const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
 const positionRef = ref<Position>(getDefaultPosition())
+const spotlightAnimated = ref(false)
 
 const spotlight = useSpotlight()
 
@@ -160,8 +141,8 @@ function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
   return conflictRight > 0 ? Placement.TOP_RIGHT : Placement.TOP_LEFT
 }
 
-function getAttachPosition(attachRect: Rect, spotlightRect: Rect): Position {
-  const { left, top, bottom, width, height } = attachRect
+function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
+  const { left, top, bottom, width, height } = revealRect
   const [anchorOffsetLeft, anchorOffsetTop] = anchorOffset
   const spotlightHeight = spotlightRect.height
 
@@ -177,12 +158,12 @@ function getAttachPosition(attachRect: Rect, spotlightRect: Rect): Position {
   }
 }
 
-function providerAttachEl() {
-  const attachEl = spotlightItem.value?.el
-  if (!attachEl) {
+function providerRevealEl() {
+  const revealEl = spotlightItem.value?.el
+  if (!revealEl) {
     throw new Error('SpotlightUI must have an associated element')
   }
-  return attachEl
+  return revealEl
 }
 
 function providerSpotlightEl() {
@@ -194,39 +175,52 @@ function providerSpotlightEl() {
 }
 
 function syncPlacementAndPosition() {
-  const attachEl = providerAttachEl()
+  const revealEl = providerRevealEl()
   const spotlightEl = providerSpotlightEl()
-  const attachRect = getRect(attachEl)
+  const revealRect = getRect(revealEl)
   let spotlightRect = getRect(spotlightEl)
 
-  const position = (positionRef.value = getAttachPosition(attachRect, spotlightRect))
+  const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
 }
 
-function attachElement(attachEl: HTMLElement) {
-  attachEl.scrollIntoView({ block: 'nearest' })
-  attachEl.classList.add('spotlight-attach-element-highlight')
-  spotlightRef.value?.classList.add('animated')
+function revealElement(revealEl: HTMLElement) {
+  revealEl.scrollIntoView({ block: 'nearest' })
+  revealEl.classList.add('spotlight-attach-element-highlight')
+  spotlightAnimated.value = true
   syncPlacementAndPosition()
 }
 
-function detachElement(attachEl: HTMLElement) {
-  attachEl.classList.remove('spotlight-attach-element-highlight')
+function concealElement(revealEl: HTMLElement) {
+  revealEl.classList.remove('spotlight-attach-element-highlight')
 }
 
-function handleScroll() {
+const throttledHandleScroll = throttle(() => {
   syncPlacementAndPosition()
-  spotlightRef.value?.classList.remove('animated')
-}
+  // Prevent frequent triggering of animation
+  spotlightAnimated.value = false
+}, 20)
 
 function handleScrollEnd() {
-  spotlightRef.value?.classList.add('animated')
+  spotlightAnimated.value = true
 }
 
-const throttledHandleRefresh = throttle(handleScroll, 20)
-
+let lastBodyWidth = 0
+let lastBodyHeight = 0
+const throttledHandleRefresh = throttle((entries) => {
+  for (let entry of entries) {
+    const { width, height } = entry.contentRect
+    // ResizeObserver triggers too frequently — avoid triggering in non-resize
+    if (width === lastBodyWidth && height === lastBodyHeight) {
+      continue
+    }
+    lastBodyWidth = width
+    lastBodyHeight = height
+    syncPlacementAndPosition()
+  }
+}, 20)
 const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
@@ -246,19 +240,18 @@ watch(
       positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
     }
     requestAnimationFrame(() => {
-      attachElement(value.el)
-      const spotlightEl = providerSpotlightEl()
-      spotlight.emit('onReveal', { target: spotlightEl, rect: calcRevealDOMRect(spotlightEl, placementRef.value) })
+      revealElement(value.el)
+      spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
     })
 
     resizeObserver.observe(document.body)
-    document.body.addEventListener('scroll', throttledHandleRefresh, { capture: true, passive: true })
+    document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
     document.body.addEventListener('scrollend', handleScrollEnd, { capture: true })
     onCleanUp(() => {
       resizeObserver.disconnect()
-      document.body.removeEventListener('scroll', throttledHandleRefresh, { capture: true })
+      document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
       document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
-      detachElement(value.el)
+      concealElement(value.el)
     })
   },
   { immediate: true }
@@ -271,7 +264,7 @@ watch(
       <div
         v-if="spotlightItem"
         ref="spotlightRef"
-        :class="['spotlight-item', placementRef]"
+        :class="['spotlight-item', placementRef, { animated: spotlightAnimated }]"
         :style="{ transform: `translate(${positionRef.x}px, ${positionRef.y}px)` }"
       >
         <!-- eslint-disable-next-line vue/no-v-html -->

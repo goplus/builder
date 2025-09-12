@@ -12,13 +12,13 @@ export type SpotlightItem = {
 }
 
 export type RevealEvent = {
-  target: HTMLElement
   rect: DOMRect
 }
 
 export const spotlightKey: InjectionKey<Spotlight> = Symbol('spotlight')
 
-const spotlightAutoConcealTimeout = 5000
+const autoConcealDelay = 5000
+const mouseEnterConcealDelay = 600
 
 export function useSpotlight() {
   const spotlight = inject(spotlightKey)
@@ -26,28 +26,30 @@ export function useSpotlight() {
   return spotlight
 }
 
-export class Spotlight extends Emitter<{ onReveal: RevealEvent }> {
+export class Spotlight extends Emitter<{ revealed: RevealEvent }> {
   spotlightItem = ref<SpotlightItem | null>(null)
 
-  protected createTimeout() {
-    return setTimeout(() => this.conceal(), spotlightAutoConcealTimeout)
+  protected createTimeoutConceal(timeout = autoConcealDelay) {
+    return setTimeout(() => this.conceal(), timeout)
   }
 
   reveal(el: HTMLElement, tips = '') {
     this.conceal() // Clear any previous spotlight
 
-    const mouseEnterHandler = () => this.conceal()
-    const timer = this.createTimeout()
+    const autoConcealTimer = this.createTimeoutConceal()
+    let mouseEnterConcealTimer: NodeJS.Timeout
+    const handleMouseEnter = () => (mouseEnterConcealTimer = this.createTimeoutConceal(mouseEnterConcealDelay))
     this.spotlightItem.value = {
-      timer,
+      timer: autoConcealTimer,
       tips,
       el,
       dispose: () => {
-        clearTimeout(timer)
-        el.removeEventListener('mouseenter', mouseEnterHandler)
+        clearTimeout(autoConcealTimer)
+        clearTimeout(mouseEnterConcealTimer)
+        el.removeEventListener('mouseenter', handleMouseEnter)
       }
     }
-    el.addEventListener('mouseenter', mouseEnterHandler, { once: true })
+    el.addEventListener('mouseenter', handleMouseEnter, { once: true })
   }
 
   conceal() {

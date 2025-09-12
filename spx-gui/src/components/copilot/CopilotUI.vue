@@ -335,19 +335,29 @@ const handleQuickInputClick = useMessageHandle(
 ).fn
 
 onBeforeUnmount(
-  spotlight.on('onReveal', ({ rect }) => {
+  spotlight.on('revealed', async ({ rect }) => {
     const panelEl = panelRef.value
     if (copilot.active && panelEl) {
       const isIntersecting = isRectIntersecting(rect, panelEl.getBoundingClientRect())
       if (isIntersecting) {
+        const { innerWidth } = window
+        const { left, right } = rect
         const { panelW } = getCurrentSizes()
-        const { right, bottom } = panelStatePosition.value
+        const { bottom, state } = panelStatePosition.value
 
-        let offset = panelW + rect.width
-        getClosedPanelClampedPosition({
-          right: right + (right - panelW > 0 ? -offset : offset),
-          bottom
-        })
+        let newRight = panelStatePosition.value.right
+        if (state === State.Left) {
+          newRight = left > panelW ? innerWidth : 0
+        } else if (state === State.Right) {
+          newRight = innerWidth - right > panelW ? 0 : innerWidth
+        }
+
+        // panel animation
+        const panelAnimation = createCSSAnimation('animated', panelRef.value)
+        const newPosition = getOpenedPanelClampedPosition({ right: newRight, bottom })
+        await panelAnimation.begin(!isSamePosition(newPosition, panelStatePosition.value))
+        panelStatePosition.value = newPosition
+        await panelAnimation.endAndWait()
       }
     }
   })
