@@ -48,7 +48,6 @@ import TextView from '@/components/community/TextView.vue'
 import { initShareInfo } from '@/components/project/sharing/platform-share'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
-import type { SharingResult } from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
 import { createRecording, deleteRecording } from '@/apis/recording'
@@ -393,13 +392,12 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
 }
 
 // Handle recording sharing results
-async function handleShareResult(result: SharingResult) {
+async function handleShareResult(result: any, recordingToDelete: RecordingData | null) {
   if (result.type === 'shared') {
-    // Success message will be handled by useMessageHandle's successMessage parameter
     return result.platform
   } else if (result.type === 'rerecord') {
-    if (result.recording) {
-      void deleteRecording(result.recording.id).catch((error) => {
+    if (recordingToDelete) {
+      deleteRecording(recordingToDelete.id).catch((error) => {
         capture(error, {
           en: 'Failed to delete previous recording',
           zh: '删除旧录屏失败'
@@ -433,7 +431,8 @@ const handleRecordingSharing = useMessageHandle(
         video: recordFile
       })
 
-      return await handleShareResult(result)
+      const recordingData = await recordingPromise.catch(() => null)
+      return await handleShareResult(result, recordingData)
     } finally {
       await projectRunnerRef.value?.resumeGame()
       isRecording.value = false

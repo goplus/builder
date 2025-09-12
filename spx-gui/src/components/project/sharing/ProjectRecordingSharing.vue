@@ -14,14 +14,13 @@ const props = defineProps<{
   visible: boolean
 }>()
 
-export type SharingResult =
+type SharingResult =
   | {
       type: 'shared'
       platform: string
     }
   | {
       type: 'rerecord'
-      recording: RecordingData | null
     }
 const emit = defineEmits<{
   cancelled: []
@@ -132,7 +131,7 @@ async function generateShareQRCode() {
 
 // Handle re-recording
 async function handleReRecord(): Promise<void> {
-  emit('resolved', { type: 'rerecord', recording: currentRecording.value })
+  emit('resolved', { type: 'rerecord' })
 }
 
 // Handle one-click video download
