@@ -20,9 +20,9 @@ def init_all_coordinators(config: dict):
     init_internal_coordinator(config)
     
     # 从协调器获取重排序服务并初始化反馈路由
-    from .resource_routes import search_coordinator
-    if search_coordinator and search_coordinator.rerank_service:
-        init_feedback_routes(search_coordinator.rerank_service)
+    from .resource_routes import coordinator
+    if coordinator and coordinator.rerank_service:
+        init_feedback_routes(coordinator.rerank_service)
     else:
         import logging
         logging.getLogger(__name__).warning("重排序服务未找到，反馈API将不可用")
