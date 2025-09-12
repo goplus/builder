@@ -22,6 +22,8 @@ func setTestEnv(t *testing.T) {
 	t.Setenv("KODO_BASE_URL", "https://kodo.example.com")
 
 	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
+	t.Setenv("WECHAT_APPID", "wx5f7ad87518d77bf3")
+	t.Setenv("WECHAT_SECRET", "0f62d3a8e4aec9eee4d02365d6ae0dda")
 }
 
 func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, closeDB func() error) {
@@ -41,15 +43,21 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 		AIGC: config.AIGCConfig{
 			Endpoint: "https://aigc.example.com",
 		},
+		WeChat: config.WeChatConfig{
+			AppID:  "wx_test_123456",
+			Secret: "test_wechat_secret",
+		},
 	}
 
 	kodoClient := newKodoClient(cfg.Kodo)
 	aigcClient := aigc.NewAigcClientWithHTTPClient(cfg.AIGC.Endpoint, &http.Client{})
+	wechatService := NewWeChatService(cfg.WeChat.AppID, cfg.WeChat.Secret)
 
 	return &Controller{
 		db:   db,
 		kodo: kodoClient,
 		aigc: aigcClient,
+		wechat: wechatService,
 	}, dbMock, closeDB
 }
 
