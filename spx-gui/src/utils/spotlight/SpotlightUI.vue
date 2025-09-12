@@ -20,6 +20,32 @@ type Position = {
   y: number
   half: 'lower' | 'upper'
 }
+
+function getPointAlongDirection(x1: number, y1: number, x2: number, y2: number, distance: number): Position {
+  const len = Math.hypot(x2 - x1, y2 - y1)
+  if (len === 0) {
+    return {
+      x: x1,
+      y: y1,
+      half: 'lower'
+    }
+  }
+  const ux = (x2 - x1) / len
+  const uy = (y2 - y1) / len
+  return {
+    x: x2 - ux * distance,
+    y: y2 - uy * distance,
+    half: 'lower'
+  }
+}
+
+function getDefaultPosition(): Position {
+  return {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+    half: 'lower'
+  }
+}
 </script>
 
 <script lang="ts" setup>
@@ -28,12 +54,14 @@ import { useSpotlight } from '@/utils/spotlight/index'
 import anchor from './anchor.svg?raw'
 import { throttle } from 'lodash'
 
-const anchorSize = 28
+const anchorSize = 26
 const anchorOffset = [0, 0]
 const conflictBuffer = 20
 
 const spotlightRef = ref<HTMLElement | null>(null)
 const placementRef = ref<Placement>(Placement.BOTTOM_RIGHT)
+const positionRef = ref<Position>(getDefaultPosition())
+const spotlightAnimated = ref(false)
 
 const spotlight = useSpotlight()
 
@@ -113,8 +141,8 @@ function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
   return conflictRight > 0 ? Placement.TOP_RIGHT : Placement.TOP_LEFT
 }
 
-function getAttachPosition(attachRect: Rect, spotlightRect: Rect): Position {
-  const { left, top, bottom, width, height } = attachRect
+function getRevealPosition(revealRect: Rect, spotlightRect: Rect): Position {
+  const { left, top, bottom, width, height } = revealRect
   const [anchorOffsetLeft, anchorOffsetTop] = anchorOffset
   const spotlightHeight = spotlightRect.height
 
@@ -130,54 +158,100 @@ function getAttachPosition(attachRect: Rect, spotlightRect: Rect): Position {
   }
 }
 
-function providerAttachEl() {
-  const attachEl = spotlightItem.value?.el
-  if (!attachEl) {
+function providerRevealEl() {
+  const revealEl = spotlightItem.value?.el
+  if (!revealEl) {
     throw new Error('SpotlightUI must have an associated element')
   }
-  return attachEl
+  return revealEl
 }
 
-function syncPlacementAndPosition() {
-  const attachEl = providerAttachEl()
+function providerSpotlightEl() {
   const spotlightEl = spotlightRef.value
   if (!spotlightEl) {
     throw new Error('SpotlightUI element is not mounted yet')
   }
-  const attachRect = getRect(attachEl)
+  return spotlightEl
+}
+
+function syncPlacementAndPosition() {
+  const revealEl = providerRevealEl()
+  const spotlightEl = providerSpotlightEl()
+  const revealRect = getRect(revealEl)
   let spotlightRect = getRect(spotlightEl)
 
-  const position = getAttachPosition(attachRect, spotlightRect)
+  const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
 
   spotlightEl.style.transform = `translateX(${position.x}px) translateY(${position.y}px)`
 }
 
-function attachElement(attachEl: HTMLElement) {
-  attachEl.scrollIntoView({ block: 'nearest' })
-  attachEl.classList.add('spotlight-attach-element-highlight')
+function revealElement(revealEl: HTMLElement) {
+  revealEl.scrollIntoView({ block: 'nearest' })
+  revealEl.classList.add('spotlight-attach-element-highlight')
+  spotlightAnimated.value = true
   syncPlacementAndPosition()
 }
 
-function detachElement(attachEl: HTMLElement) {
-  attachEl.classList.remove('spotlight-attach-element-highlight')
+function concealElement(revealEl: HTMLElement) {
+  revealEl.classList.remove('spotlight-attach-element-highlight')
 }
 
-const throttledHandleRefresh = throttle(syncPlacementAndPosition, 20)
+const throttledHandleScroll = throttle(() => {
+  syncPlacementAndPosition()
+  // Prevent frequent triggering of animation
+  spotlightAnimated.value = false
+}, 20)
 
+function handleScrollEnd() {
+  spotlightAnimated.value = true
+}
+
+let lastBodyWidth = 0
+let lastBodyHeight = 0
+const throttledHandleRefresh = throttle((entries) => {
+  for (let entry of entries) {
+    const { width, height } = entry.contentRect
+    // ResizeObserver triggers too frequently — avoid triggering in non-resize
+    if (width === lastBodyWidth && height === lastBodyHeight) {
+      continue
+    }
+    lastBodyWidth = width
+    lastBodyHeight = height
+    syncPlacementAndPosition()
+  }
+}, 20)
 const resizeObserver = new ResizeObserver(throttledHandleRefresh)
 watch(
   () => spotlightItem.value,
   (value, _, onCleanUp) => {
     if (!value) return
-    requestAnimationFrame(() => attachElement(value.el))
+
+    // After the spotlight is concealed, if it is revealed again,
+    // the positions of `center` and `reveal` will be recalculated — this position represents a portion of the distance between them.
+    if (!spotlightRef.value) {
+      // center position
+      const center = getDefaultPosition()
+      const { x: x1, y: y1 } = center
+      // reveal position
+      const { x: x2, y: y2, width: revealWidth } = value.el.getBoundingClientRect()
+      const len = Math.hypot(x2 - x1, y2 - y1)
+      // If the distance is too short, animate from center to reveal
+      positionRef.value = len > revealWidth ? getPointAlongDirection(x1, y1, x2, y2, len / 3) : center
+    }
+    requestAnimationFrame(() => {
+      revealElement(value.el)
+      spotlight.emit('revealed', { rect: value.el.getBoundingClientRect() })
+    })
 
     resizeObserver.observe(document.body)
-    document.body.addEventListener('scroll', throttledHandleRefresh, { capture: true, passive: true })
+    document.body.addEventListener('scroll', throttledHandleScroll, { capture: true, passive: true })
+    document.body.addEventListener('scrollend', handleScrollEnd, { capture: true })
     onCleanUp(() => {
       resizeObserver.disconnect()
-      document.body.removeEventListener('scroll', throttledHandleRefresh, { capture: true })
-      detachElement(value.el)
+      document.body.removeEventListener('scroll', throttledHandleScroll, { capture: true })
+      document.body.removeEventListener('scrollend', handleScrollEnd, { capture: true })
+      concealElement(value.el)
     })
   },
   { immediate: true }
@@ -186,20 +260,47 @@ watch(
 
 <template>
   <div class="spotlight-ui">
-    <div v-if="spotlightItem" ref="spotlightRef" :class="['spotlight-item', placementRef]">
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="anchor" v-html="anchor"></div>
-      <div ref="tipsEl" class="tips">{{ spotlightItem.tips }}</div>
-    </div>
+    <Transition>
+      <div
+        v-if="spotlightItem"
+        ref="spotlightRef"
+        :class="['spotlight-item', placementRef, { animated: spotlightAnimated }]"
+        :style="{ transform: `translate(${positionRef.x}px, ${positionRef.y}px)` }"
+      >
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="anchor" v-html="anchor"></div>
+        <div ref="tipsEl" class="tips">
+          <div class="content">{{ spotlightItem.tips }}</div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
-$anchor-size: 28px;
+$anchor-size: 26px;
+$anchor-offset-x: 6px;
+$anchor-offset-y: 4px;
+$transform-transition-property: transform 0.4s cubic-bezier(0.8, -0.3, 0.265, 1.2);
 $z-index: 10000; // TODO: Adjust as needed
 
 :global(.spotlight-attach-element-highlight) {
   box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.17);
+}
+
+.v-enter-active {
+  transition:
+    opacity 0.4s ease-in,
+    $transform-transition-property;
+}
+.v-leave-active {
+  transition:
+    opacity 0.4s ease-out,
+    $transform-transition-property;
+}
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
 }
 
 .spotlight-ui {
@@ -212,12 +313,20 @@ $z-index: 10000; // TODO: Adjust as needed
   .spotlight-item {
     position: absolute;
 
+    &.animated {
+      transition: $transform-transition-property;
+    }
+
     &.bottom-right {
       .anchor {
         transform: rotate(0deg);
       }
       .tips {
-        transform: translate($anchor-size);
+        transform: translate(calc($anchor-size - $anchor-offset-x), -$anchor-offset-y);
+        border-top-left-radius: 2px;
+        .content {
+          border-top-left-radius: 2px;
+        }
       }
     }
     &.bottom-left {
@@ -225,7 +334,11 @@ $z-index: 10000; // TODO: Adjust as needed
         transform: rotate(90deg);
       }
       .tips {
-        transform: translate(calc(-100% - $anchor-size));
+        transform: translate(calc(-100% - $anchor-size + $anchor-offset-x), -$anchor-offset-y);
+        border-top-right-radius: 2px;
+        .content {
+          border-top-right-radius: 2px;
+        }
       }
     }
     &.top-right {
@@ -233,7 +346,14 @@ $z-index: 10000; // TODO: Adjust as needed
         transform: rotate(270deg);
       }
       .tips {
-        transform: translate($anchor-size, calc(-100% - 2 * $anchor-size));
+        transform: translate(
+          calc($anchor-size - $anchor-offset-x / 2),
+          calc(-100% - 2 * $anchor-size + $anchor-offset-y / 2)
+        );
+        border-bottom-left-radius: 2px;
+        .content {
+          border-bottom-left-radius: 2px;
+        }
       }
     }
     &.top-left {
@@ -241,7 +361,14 @@ $z-index: 10000; // TODO: Adjust as needed
         transform: rotate(180deg);
       }
       .tips {
-        transform: translate(calc(-100% - $anchor-size), calc(-100% - 2 * $anchor-size));
+        transform: translate(
+          calc(-100% - $anchor-size + $anchor-offset-x / 2),
+          calc(-100% - 2 * $anchor-size + $anchor-offset-y / 2)
+        );
+        border-bottom-right-radius: 2px;
+        .content {
+          border-bottom-right-radius: 2px;
+        }
       }
     }
 
@@ -252,25 +379,20 @@ $z-index: 10000; // TODO: Adjust as needed
     }
 
     .tips {
-      border-radius: 4px;
-      padding: 5px 8px;
+      border-radius: 14px;
+      padding: 2px;
       font-size: 12px;
       font-weight: 600;
-      background: #fff;
+      background: var(--ui-color-grey-100);
       word-wrap: break-word;
       max-width: 300px;
+      box-shadow: 0px 4px 16px 0px rgba(0, 0, 0, 0.17);
 
-      &::before {
-        content: '';
-        position: absolute;
-        background: linear-gradient(to right, #c390ff 0%, #72bbff 100%);
-        border-radius: 4px;
-        padding: 2px;
-        inset: 0;
-        mask:
-          linear-gradient(#000 0 0) content-box,
-          linear-gradient(#000 0 0);
-        mask-composite: exclude;
+      .content {
+        border-radius: 12px;
+        padding: 5px 8px;
+        background: #7e66fc;
+        color: var(--ui-color-grey-100);
       }
     }
   }

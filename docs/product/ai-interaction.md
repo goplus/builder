@@ -1,6 +1,6 @@
 # AI Interaction
 
-AI Interaction is a feature in Go+ Builder that allows games to communicate with AI during runtime. This functionality enables users to create rich interactive scenarios in games such as intelligent opponents (like AI opponents in board games), smart conversations, dynamic content generation, and adaptive gaming experiences.
+AI Interaction is a feature in XBuilder that allows games to communicate with AI during runtime. This functionality enables users to create rich interactive scenarios in games such as intelligent opponents (like AI opponents in board games), smart conversations, dynamic content generation, and adaptive gaming experiences.
 
 The AI Interaction feature is designed for children around 10 years old who are learning programming. It provides minimal APIs that allow them to easily integrate AI capabilities into their games without needing to understand complex network requests, error handling, or AI model details.
 

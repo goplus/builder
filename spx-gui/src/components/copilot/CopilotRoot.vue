@@ -14,7 +14,7 @@ import {
 import { useRouter, type Router } from 'vue-router'
 import { useRadar, type Radar, type RadarNodeInfo } from '@/utils/radar'
 import { useI18n, type I18n } from '@/utils/i18n'
-import { escapeHTML, until } from '@/utils/utils'
+import { escapeHTML, unicodeSafeSlice, until } from '@/utils/utils'
 import { useIsRouteLoaded } from '@/utils/route-loading'
 import * as projectApis from '@/apis/project'
 import type { Sprite } from '@/models/sprite'
@@ -242,7 +242,7 @@ class GetUINodeTextContentTool implements ToolDefinition {
     const nodeInfo = this.radar.getNodeById(targetId)
     if (!nodeInfo) throw new Error(`Radar node with ID ${targetId} not found.`)
     const textContent = nodeInfo.getElement()?.textContent ?? ''
-    return textContent.length > 500 ? textContent.slice(0, 500) + '...' : textContent
+    return textContent.length > 500 ? unicodeSafeSlice(textContent, 0, 500) + '...' : textContent
   }
 }
 

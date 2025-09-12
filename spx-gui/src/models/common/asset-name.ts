@@ -1,4 +1,4 @@
-import { lowFirst, upFirst } from '@/utils/utils'
+import { lowFirst, unicodeSafeSlice, upFirst } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { getXGoIdentifierNameTip, normalizeXGoIdentifierAssetName, validateXGoIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
@@ -122,7 +122,7 @@ export function validateWidgetName(name: string, stage: Stage | null) {
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
-  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
+  return unicodeSafeSlice(result, 0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 
 function getValidName(base: string, isValid: (name: string) => boolean) {

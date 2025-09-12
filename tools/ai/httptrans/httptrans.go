@@ -76,36 +76,83 @@ func (t *httpTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 		return ai.Response{}, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", t.endpoint+"/turn", bytes.NewReader(reqBody))
+	httpReq, err := t.buildRequest(ctx, "POST", "/turn", reqBody)
 	if err != nil {
-		return ai.Response{}, fmt.Errorf("failed to create http request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	if t.tokenProvider != nil {
-		if token := t.tokenProvider(); token != "" {
-			httpReq.Header.Set("Authorization", "Bearer "+token)
-		}
+		return ai.Response{}, err
 	}
 
 	httpResp, err := t.client.Do(httpReq)
 	if err != nil {
 		return ai.Response{}, fmt.Errorf("failed to execute http request: %w", err)
 	}
-	defer httpResp.Body.Close()
-
-	respBody, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return ai.Response{}, fmt.Errorf("failed to read http response body: %w", err)
-	}
-
-	if httpResp.StatusCode != http.StatusOK {
-		return ai.Response{}, fmt.Errorf("failed to fetch with status: %s: %s", httpResp.Status, respBody)
-	}
 
 	var resp ai.Response
-	if err := json.Unmarshal(respBody, &resp); err != nil {
-		return ai.Response{}, fmt.Errorf("failed to unmarshal response json: %w", err)
+	if err := handleResponse(httpResp, &resp); err != nil {
+		return ai.Response{}, err
 	}
 	return resp, nil
+}
+
+// Archive implements [ai.Transport].
+func (t *httpTransport) Archive(ctx context.Context, turns []ai.Turn, existingArchive string) (ai.ArchivedHistory, error) {
+	reqBody, err := json.Marshal(map[string]any{
+		"turns":           turns,
+		"existingArchive": existingArchive,
+	})
+	if err != nil {
+		return ai.ArchivedHistory{}, fmt.Errorf("failed to marshal archive request: %w", err)
+	}
+
+	httpReq, err := t.buildRequest(ctx, "POST", "/archive", reqBody)
+	if err != nil {
+		return ai.ArchivedHistory{}, err
+	}
+
+	httpResp, err := t.client.Do(httpReq)
+	if err != nil {
+		return ai.ArchivedHistory{}, fmt.Errorf("failed to execute http request: %w", err)
+	}
+
+	var resp ai.ArchivedHistory
+	if err := handleResponse(httpResp, &resp); err != nil {
+		return ai.ArchivedHistory{}, err
+	}
+	return resp, nil
+}
+
+// buildRequest creates an HTTP request with proper headers and authentication.
+func (t *httpTransport) buildRequest(ctx context.Context, method, path string, body []byte) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, t.endpoint+path, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if t.tokenProvider != nil {
+		if token := t.tokenProvider(); token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+	}
+
+	return req, nil
+}
+
+// handleResponse processes an HTTP response and unmarshals it into the target.
+func handleResponse(resp *http.Response, target any) error {
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read http response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body)
+	}
+
+	if err := json.Unmarshal(body, target); err != nil {
+		return fmt.Errorf("failed to unmarshal response json: %w", err)
+	}
+
+	return nil
 }

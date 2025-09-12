@@ -56,7 +56,7 @@ Animation 的基本信息包括：
 
 ### 精灵 Sprite
 
-在 [Go+ Builder Product](./index.zh.md) 基础上，对 Sprite 进行扩充如下：
+在 [XBuilder Product](./index.zh.md) 基础上，对 Sprite 进行扩充如下：
 
 * Model: 模型信息，包括 Skeleton、Mesh 等；不是每个 Sprite 都拥有 Model 信息，只有拥有 Model 信息的 Sprite 才可以被添加 Skeletal Animation
 * Animations: Animation 列表，一个 Sprite 可以包含 0 个或多个 Animation；列表中的项可能是 Costume-group Animation，也可能是 Skeletal Animation

@@ -142,6 +142,7 @@ function stringifyElCnt(el: ElementContent): string {
 <style lang="scss" scoped>
 .code-view {
   font-family: var(--ui-font-family-code);
+  font-size: 1em;
 
   :deep(.param-inlay-hint) {
     color: var(--ui-color-hint-2) !important;

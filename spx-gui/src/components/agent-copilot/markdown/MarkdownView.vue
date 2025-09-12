@@ -80,8 +80,8 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   flex-direction: column;
   gap: 1em;
 
-  font-size: 12px;
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.7;
   color: inherit;
 
   :deep(h1, h2, h3, h4, h5, h6) {
@@ -127,11 +127,13 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   }
 
   :deep(a) {
-    color: inherit;
+    color: var(--ui-color-turquoise-500);
     text-decoration: underline;
-    &:hover,
+    &:hover {
+      color: var(--ui-color-turquoise-400);
+    }
     &:active {
-      color: var(--ui-color-primary-main);
+      color: var(--ui-color-turquoise-600);
     }
   }
 
@@ -155,8 +157,8 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   }
   :deep(:not(pre) > code) {
     // TODO: keep consistent with component `UICode`
-    font-size: 0.83em;
-    line-height: 1.6;
+    font-size: 0.92em;
+    line-height: 2;
     padding: 2px 4px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-500);

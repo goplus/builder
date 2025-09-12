@@ -9,6 +9,7 @@ import (
 
 type mockTransport struct {
 	InteractFunc func(ctx context.Context, req Request) (Response, error)
+	ArchiveFunc  func(ctx context.Context, turns []Turn, existingArchive string) (ArchivedHistory, error)
 }
 
 func (m *mockTransport) Interact(ctx context.Context, req Request) (Response, error) {
@@ -16,6 +17,13 @@ func (m *mockTransport) Interact(ctx context.Context, req Request) (Response, er
 		return m.InteractFunc(ctx, req)
 	}
 	return Response{Text: "mock response"}, nil
+}
+
+func (m *mockTransport) Archive(ctx context.Context, turns []Turn, existingArchive string) (ArchivedHistory, error) {
+	if m.ArchiveFunc != nil {
+		return m.ArchiveFunc(ctx, turns, existingArchive)
+	}
+	return ArchivedHistory{Content: "archived"}, nil
 }
 
 func TestDefaultTransport(t *testing.T) {
@@ -51,6 +59,20 @@ func TestNotSetTransportInteract(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 	if got, want := resp, (Response{}); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %#v, want %#v", got, want)
+	}
+}
+
+func TestNotSetTransportArchive(t *testing.T) {
+	transport := &notSetTransport{}
+	turns := []Turn{{RequestContent: "test"}}
+	ctx := context.Background()
+
+	archived, err := transport.Archive(ctx, turns, "")
+	if got, want := err, ErrTransportNotSet; !errors.Is(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if got, want := archived, (ArchivedHistory{}); !reflect.DeepEqual(got, want) {
 		t.Errorf("got %#v, want %#v", got, want)
 	}
 }
