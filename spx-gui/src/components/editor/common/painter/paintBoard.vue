@@ -29,6 +29,7 @@
           </svg>
           <span>{{ $t({ en: 'AI Generate', zh: 'AI生成' }) }}</span>
         </button>
+        <AiSearch @confirm="handleAiImageConfirm" />
       </div>
 
       <div class="tool-section">
@@ -248,6 +249,7 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
+import AiSearch from './components/ai_search.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
@@ -436,6 +438,22 @@ const handleAiConfirm = async (data: {
 const handleAiCancel = (): void => {
   // console.log('AI生成取消')
   aiDialogVisible.value = false
+}
+
+// 处理AI图片搜索确认
+const handleAiImageConfirm = async (image: {
+  id: string
+  title: string
+  thumbnail: string
+  url: string
+  description?: string
+}): Promise<void> => {
+  try {
+    // 加载选中的图片到画布
+    await loadFileToCanvas(image.url)
+  } catch (error) {
+    console.error('加载搜索图片失败:', error)
+  }
 }
 
 // 导入PNG图片到画布
