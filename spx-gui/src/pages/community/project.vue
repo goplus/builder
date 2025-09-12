@@ -467,33 +467,38 @@ const handleScreenshotSharing = useMessageHandle(
   async (): Promise<void> => {
     await projectRunnerRef.value?.pauseGame()
 
-    const screenshotBlob = await projectRunnerRef.value?.takeScreenshot()
-    if (!screenshotBlob) {
-      throw new DefaultException({
-        en: 'Failed to take screenshot',
-        zh: '截图失败'
+    try {
+      const screenshotBlob = await projectRunnerRef.value?.takeScreenshot()
+      if (!screenshotBlob) {
+        throw new DefaultException({
+          en: 'Failed to take screenshot',
+          zh: '截图失败'
+        })
+      }
+
+      // Convert Blob to File
+      const screenshotFile = new globalThis.File([screenshotBlob], 'screenshot.png', {
+        type: screenshotBlob.type || 'image/png',
+        lastModified: Date.now()
       })
-    }
 
-    // Convert Blob to File
-    const screenshotFile = new globalThis.File([screenshotBlob], 'screenshot.png', {
-      type: screenshotBlob.type || 'image/png',
-      lastModified: Date.now()
-    })
+      screenshotImg.value = screenshotFile
 
-    screenshotImg.value = screenshotFile
+      if (!projectData.value) {
+        throw new DefaultException({
+          en: 'Project data not available',
+          zh: '项目数据不可用'
+        })
+      }
 
-    if (!projectData.value) {
-      throw new DefaultException({
-        en: 'Project data not available',
-        zh: '项目数据不可用'
+      await shareScreenshot({
+        screenshot: screenshotFile,
+        projectData: projectData.value
       })
+    } finally {
+      // no matter success or reject , finnally must resume the game
+      await projectRunnerRef.value?.resumeGame()
     }
-
-    await shareScreenshot({
-      screenshot: screenshotFile,
-      projectData: projectData.value
-    })
   },
   {
     en: 'Failed to share screenshot',

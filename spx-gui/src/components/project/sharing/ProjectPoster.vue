@@ -133,22 +133,28 @@ const drawQRCodeToCanvas = async (canvas: HTMLCanvasElement, url: string) => {
         })
 
         const img = new window.Image()
-        img.onload = () => {
-          // Clear canvas
-          ctx.clearRect(0, 0, displayWidth, displayHeight)
 
-          // Calculate center position
-          const imgSize = Math.min(displayWidth, displayHeight)
-          const x = (displayWidth - imgSize) / 2
-          const y = (displayHeight - imgSize) / 2
+        // 使用 Promise 来等待图片加载完成
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            // Clear canvas
+            ctx.clearRect(0, 0, displayWidth, displayHeight)
 
-          // Draw QR code
-          ctx.drawImage(img, x, y, imgSize, imgSize)
-        }
-        img.onerror = () => {
-          console.error('Failed to load QR code image')
-        }
-        img.src = qrDataURL
+            // Calculate center position
+            const imgSize = Math.min(displayWidth, displayHeight)
+            const x = (displayWidth - imgSize) / 2
+            const y = (displayHeight - imgSize) / 2
+
+            // Draw QR code
+            ctx.drawImage(img, x, y, imgSize, imgSize)
+            resolve()
+          }
+          img.onerror = () => {
+            console.error('Failed to load QR code image')
+            reject(new Error('Failed to load QR code image'))
+          }
+          img.src = qrDataURL
+        })
       } catch (error) {
         console.error('Failed to generate QR code:', error)
       }
@@ -192,12 +198,29 @@ const createPoster = async (): Promise<File> => {
 
   await nextTick() // Ensure DOM has been updated
 
-  const canvas = await html2canvas(posterElementRef.value, {
+  // 确保二维码渲染完成
+  const canvas = projectQrCanvas.value
+  const { owner, name } = props.projectData
+  if (canvas && owner && name) {
+    await renderQRCode(canvas, owner, name)
+  }
+
+  // 给一点额外时间让DOM完全更新
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const posterCanvas = await html2canvas(posterElementRef.value, {
     width: 800,
-    height: 1000
+    height: 1000,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ffffff',
+    scale: 1,
+    logging: false
   })
 
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b: Blob | null) => resolve(b), 'image/png'))
+  const blob = await new Promise<Blob | null>((resolve) =>
+    posterCanvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
+  )
 
   if (!blob) throw new Error('Failed to generate poster')
 
