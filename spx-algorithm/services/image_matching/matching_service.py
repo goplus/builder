@@ -224,8 +224,9 @@ class ImageMatchingService:
             
             # 应用阈值过滤
             if threshold > 0:
+                before_count = len(search_results)
                 search_results = [r for r in search_results if r['similarity'] >= threshold]
-                logger.info(f"阈值过滤后保留 {len(search_results)} 个结果（阈值: {threshold}）")
+                logger.info(f"阈值过滤: {before_count} -> {len(search_results)} 个结果（阈值: {threshold}）")
             
             logger.info(f"文本搜索完成: 找到 {len(search_results)} 个结果")
             return search_results

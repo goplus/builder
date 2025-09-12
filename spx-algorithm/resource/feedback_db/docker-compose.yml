@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: spx-feedback-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: spx_feedback_root_2024
+      MYSQL_DATABASE: spx_feedback
+      MYSQL_USER: spx_user
+      MYSQL_PASSWORD: spx_feedback_2024
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "spx_user", "--password=spx_feedback_2024"]
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+      interval: 10s
+    networks:
+      - spx-network
+
+  # 可选：MySQL管理界面
+  adminer:
+    image: adminer:4.8.1
+    container_name: spx-feedback-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+      ADMINER_DESIGN: pepa-linha
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - spx-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  spx-network:
+    driver: bridge

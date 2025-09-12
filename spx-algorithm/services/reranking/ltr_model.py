@@ -1,9 +1,11 @@
 """
-LTR重排序模型（暂未实现，预留接口）
+LTR重排序模型：基于LightGBM的pair-wise学习排序
 """
 
 import logging
 from typing import List, Dict, Any, Optional
+from .ltr_trainer import LTRTrainer
+from .feature_extractor import LTRFeatureExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -18,79 +20,122 @@ class LTRModel:
         Args:
             model_path: 模型文件路径
         """
-        self.model_path = model_path
-        self.model = None
+        self.model_path = model_path or "models/ltr_model.pkl"
+        self.trainer = LTRTrainer(self.model_path)
+        self.feature_extractor = None  # 需要在初始化时注入
         self.is_trained = False
         
-        logger.info("LTR模型初始化（暂未实现具体功能）")
+        logger.info(f"LTR模型初始化完成，模型路径: {self.model_path}")
     
-    def load_model(self, model_path: str) -> bool:
+    def set_feature_extractor(self, feature_extractor: LTRFeatureExtractor):
+        """设置特征提取器"""
+        self.feature_extractor = feature_extractor
+        
+    def load_model(self, model_path: Optional[str] = None) -> bool:
         """
         加载训练好的模型
         
         Args:
-            model_path: 模型文件路径
+            model_path: 模型文件路径，为None则使用默认路径
             
         Returns:
             是否加载成功
         """
-        logger.warning("LTR模型加载功能暂未实现")
-        return False
+        try:
+            success = self.trainer.load_model(model_path)
+            if success:
+                self.is_trained = True
+                logger.info("LTR模型加载成功")
+            else:
+                logger.error("LTR模型加载失败")
+            return success
+        except Exception as e:
+            logger.error(f"LTR模型加载异常: {e}")
+            return False
     
-    def train(self, training_data: List[Dict[str, Any]]) -> bool:
+    def predict_ranking_scores(self, query_text: str, 
+                             candidates: List[Dict[str, Any]]) -> List[float]:
         """
-        训练模型
+        预测候选结果的排序分数
         
         Args:
-            training_data: 训练数据
+            query_text: 查询文本
+            candidates: 候选结果列表，每个包含id, vector等字段
             
         Returns:
-            是否训练成功
+            排序分数列表（分数越高排序越靠前）
         """
-        logger.warning("LTR模型训练功能暂未实现")
-        return False
-    
-    def predict(self, features: List[Dict[str, Any]]) -> List[float]:
-        """
-        预测排序分数
-        
-        Args:
-            features: 特征列表
+        try:
+            if not self.is_trained:
+                logger.warning("模型未训练，返回默认分数")
+                return [candidate.get('similarity', 0.0) for candidate in candidates]
             
-        Returns:
-            排序分数列表
-        """
-        logger.warning("LTR模型预测功能暂未实现")
-        # 返回默认分数（与输入长度一致）
-        return [0.0] * len(features)
+            if self.feature_extractor is None:
+                logger.error("特征提取器未设置")
+                return [0.0] * len(candidates)
+            
+            # 提取排序特征
+            features = self.feature_extractor.extract_ranking_features(query_text, candidates)
+            
+            if not features:
+                logger.warning("特征提取失败，返回默认分数")
+                return [candidate.get('similarity', 0.0) for candidate in candidates]
+            
+            # 预测排序分数
+            scores = self.trainer.predict_ranking_scores(features)
+            
+            if not scores:
+                logger.warning("排序分数预测失败，返回默认分数")
+                return [candidate.get('similarity', 0.0) for candidate in candidates]
+            
+            return scores
+            
+        except Exception as e:
+            logger.error(f"排序分数预测异常: {e}")
+            return [0.0] * len(candidates)
     
-    def rerank(self, candidates: List[Dict[str, Any]], 
-              query_features: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def rerank(self, query_text: str, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         重新排序候选结果
         
         Args:
+            query_text: 查询文本  
             candidates: 候选结果列表
-            query_features: 查询特征
             
         Returns:
             重新排序后的结果列表
         """
-        logger.warning("LTR重排序功能暂未实现，返回原始排序")
-        return candidates
-    
-    def save_model(self, model_path: str) -> bool:
-        """
-        保存训练好的模型
-        
-        Args:
-            model_path: 保存路径
+        try:
+            if not candidates:
+                return candidates
             
-        Returns:
-            是否保存成功
-        """
-        logger.warning("LTR模型保存功能暂未实现")
-        return False
+            # 预测排序分数
+            ranking_scores = self.predict_ranking_scores(query_text, candidates)
+            
+            # 将分数添加到候选结果中
+            for i, candidate in enumerate(candidates):
+                if i < len(ranking_scores):
+                    candidate['ltr_score'] = ranking_scores[i]
+                else:
+                    candidate['ltr_score'] = candidate.get('similarity', 0.0)
+            
+            # 按LTR分数重新排序（降序）
+            reranked_candidates = sorted(
+                candidates, 
+                key=lambda x: x.get('ltr_score', 0.0), 
+                reverse=True
+            )
+            
+            # 更新排序位置
+            for i, candidate in enumerate(reranked_candidates):
+                candidate['rank'] = i + 1
+            
+            logger.info(f"LTR重排序完成，候选数: {len(reranked_candidates)}")
+            return reranked_candidates
+            
+        except Exception as e:
+            logger.error(f"LTR重排序异常: {e}")
+            return candidates
     
     def get_feature_importance(self) -> Dict[str, float]:
         """
@@ -99,5 +144,43 @@ class LTRModel:
         Returns:
             特征重要性字典
         """
-        logger.warning("特征重要性分析功能暂未实现")
-        return {}
+        try:
+            if not self.is_trained:
+                logger.warning("模型未训练，无法获取特征重要性")
+                return {}
+            
+            return self.trainer.get_feature_importance()
+            
+        except Exception as e:
+            logger.error(f"获取特征重要性异常: {e}")
+            return {}
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        """
+        获取模型信息
+        
+        Returns:
+            模型信息字典
+        """
+        try:
+            trainer_info = self.trainer.get_model_info()
+            
+            return {
+                **trainer_info,
+                'model_path': self.model_path,
+                'has_feature_extractor': self.feature_extractor is not None,
+                'is_ready': self.is_trained and self.feature_extractor is not None
+            }
+            
+        except Exception as e:
+            logger.error(f"获取模型信息异常: {e}")
+            return {'error': str(e)}
+    
+    def is_ready(self) -> bool:
+        """
+        检查模型是否准备就绪
+        
+        Returns:
+            是否可以进行预测
+        """
+        return self.is_trained and self.feature_extractor is not None

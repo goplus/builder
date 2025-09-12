@@ -17,11 +17,19 @@ CairoSVG==2.8.2
 # 向量数据库
 pymilvus==2.6.1
 
+# 数据库连接
+PyMySQL==1.1.1
+
 # 配置管理和环境变量
 python-dotenv==1.1.1
 
 # 生产部署
 gunicorn==23.0.0
+
+# LTR排序模型
+lightgbm==4.5.0
+scikit-learn==1.5.2
+joblib==1.4.2
 
 # 开发和测试（可选）
 # pytest>=7.4.0

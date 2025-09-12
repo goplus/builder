@@ -7,7 +7,7 @@ import logging
 from flask import Flask
 
 from config import get_flask_config, get_coordinator_config
-from api.routes import resource_bp, internal_bp, health_bp, init_all_coordinators
+from api.routes import resource_bp, internal_bp, health_bp, feedback_bp, init_all_coordinators
 from api.middlewares.logging_middleware import setup_logging_middleware
 
 # 配置日志
@@ -46,6 +46,7 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(resource_bp) 
     app.register_blueprint(internal_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(feedback_bp)
     
     # 添加根路由
     @app.route('/')
@@ -60,6 +61,8 @@ def create_app(config_name: str = None) -> Flask:
                 "add_resource": "/v1/resource/add (POST)",
                 "batch_add_resources": "/v1/resource/batch (POST)",
                 "search_resources": "/v1/resource/search (POST)",
+                "submit_feedback": "/v1/feedback/submit (POST)",
+                "train_ltr_model": "/v1/feedback/train (POST)",
                 "internal_debug": "/v1/internal/* (仅用于调试和管理)"
             }
         }
