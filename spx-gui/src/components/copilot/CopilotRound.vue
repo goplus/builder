@@ -73,7 +73,7 @@ const resultContent = computed<string | null>(() => {
 }
 
 .answer {
-  padding: 20px 16px;
+  padding: 6px 16px 20px 16px;
   align-self: stretch;
 }
 
@@ -86,7 +86,7 @@ const resultContent = computed<string | null>(() => {
   font-size: 12px;
 
   &:not(:empty) {
-    padding: 16px 20px;
+    padding: 5px 20px 16px 20px;
   }
 }
 
