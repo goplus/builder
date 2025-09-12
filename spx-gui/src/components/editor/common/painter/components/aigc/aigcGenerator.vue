@@ -116,6 +116,7 @@ import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
 import PromptInput from './promptInput.vue'
+import { submitImageFeedback } from '@/apis/aifeedback'
 
 // Props
 interface Props {
@@ -149,9 +150,10 @@ const previewUrls = ref<string[]>([])
 const selectedImageIndex = ref<number>(-1)
 const isGenerating = ref(false)
 const imageSize = ref('')
+const queryId = ref('')
 
 // 存储SVG原始代码
-const svgRawContents = ref<string[]>([])
+const svgRawContents = ref<{ blob: string; svgContent: string; id: number }[]>([])
 
 // 错误处理相关状态
 const showErrorModal = ref(false)
@@ -191,14 +193,18 @@ const handleConfirm = () => {
 
   const selectedModelInfo = getSelectedModel()
   const selectedUrl = previewUrls.value[selectedImageIndex.value]
-  const selectedSvgContent = svgRawContents.value[selectedImageIndex.value]
+  const selectedSvgItem = svgRawContents.value[selectedImageIndex.value]
 
   const confirmData: any = {
     model: selectedModelInfo,
     prompt: prompt.value,
     url: selectedUrl,
-    svgContent: selectedSvgContent
+    svgContent: selectedSvgItem.svgContent
   }
+  submitImageFeedback({
+    query_id: queryId.value,
+    chosen_pic: selectedSvgItem.id
+  })
 
   emit('confirm', confirmData)
 
@@ -213,6 +219,7 @@ const handleCancel = () => {
   setTimeout(() => {
     prompt.value = ''
     previewUrls.value = []
+    queryId.value = ''
     selectedImageIndex.value = -1
     isGenerating.value = false
   }, 300)
@@ -268,9 +275,9 @@ const handleRealGenerate = async () => {
     if (svgResult.svgContents && svgResult.svgContents.length > 0) {
       // 直接使用返回的blob URLs
       previewUrls.value = svgResult.svgContents.map((item) => item.blob)
-      // 为每个图片创建对应的SVG内容占位符（实际上这里是blob URL）
-      svgRawContents.value = svgResult.svgContents.map((item) => item.svgContent)
-
+      // 保存完整的SVG对象（包含id）
+      svgRawContents.value = svgResult.svgContents
+      queryId.value = svgResult.query_id
       imageSize.value = `${svgResult.width}x${svgResult.height}`
     } else {
       showError('server')
@@ -311,6 +318,7 @@ watch(
       setTimeout(() => {
         prompt.value = ''
         previewUrls.value = []
+        queryId.value = ''
         selectedImageIndex.value = -1
         isGenerating.value = false
       }, 300)
