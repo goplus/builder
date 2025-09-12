@@ -20,6 +20,8 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .dropdown {
   // TODO: common style with NavbarLang
   height: 100%;
@@ -35,9 +37,16 @@ defineProps<{
     width: 24px;
     height: 24px;
   }
+
   .icon-arrow {
     width: 16px;
     height: 16px;
+  }
+}
+
+@include responsive(mobile) {
+  .dropdown {
+    display: none;
   }
 }
 </style>

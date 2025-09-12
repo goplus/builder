@@ -4,13 +4,28 @@
     <template #options>
       <UITagRadioGroup v-model:value="order">
         <UITagRadio :value="Order.MostLikes">
-          {{ $t(titles[Order.MostLikes]) }}
+          <template v-if="!isMobile">
+            {{ $t(titles[Order.MostLikes]) }}
+          </template>
+          <template v-else>
+            <UIIcon type="heart" />
+          </template>
         </UITagRadio>
         <UITagRadio :value="Order.MostRemixes">
-          {{ $t(titles[Order.MostRemixes]) }}
+          <template v-if="!isMobile">
+            {{ $t(titles[Order.MostRemixes]) }}
+          </template>
+          <template v-else>
+            <UIIcon type="remix" />
+          </template>
         </UITagRadio>
         <UITagRadio :value="Order.FollowingCreated">
-          {{ $t(titles[Order.FollowingCreated]) }}
+          <template v-if="!isMobile">
+            {{ $t(titles[Order.FollowingCreated]) }}
+          </template>
+          <template v-else>
+            <UIIcon type="eye" />
+          </template>
         </UITagRadio>
       </UITagRadioGroup>
     </template>
@@ -29,15 +44,15 @@ import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { usePageTitle } from '@/utils/utils'
 import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
-import { UITagRadioGroup, UITagRadio } from '@/components/ui'
+import { UITagRadioGroup, UITagRadio, UIIcon } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import { useEnsureSignedIn } from '@/utils/user'
-
+import { useResponsive } from '@/components/ui/responsive'
 const order = useRouteQueryParamStrEnum('o', Order, Order.MostLikes)
-
+const isMobile = useResponsive('mobile')
 const titles = {
   [Order.MostLikes]: { en: 'Most recent likes', zh: '最近最受喜欢' },
   [Order.MostRemixes]: { en: 'Most recent remixes', zh: '最近最多改编' },
@@ -66,18 +81,35 @@ const queryRet = useQuery(
 </script>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .main {
+  font-size: 16px;
   flex: 1 1 0;
-  padding: 20px 0;
+  padding: 1.25em 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25em;
+
+  @include responsive(mobile) {
+    font-size: 14px;
+    padding: 1em 0;
+    gap: 1em;
+  }
 }
 
 .projects {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 20px;
+  gap: 1.25em;
+
+  @include responsive(mobile) {
+    gap: 0.75em;
+
+    :deep(.project-item) {
+      width: calc(50% - 0.375em);
+    }
+  }
 }
 </style>

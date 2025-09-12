@@ -234,6 +234,11 @@ const shareProject = useShareProject()
 
 const handleShare = useMessageHandle(
   () => {
+    // 在移动端显示分享提示蒙版
+    if (isMobile.value) {
+      showMobileShareHint.value = true
+      return
+    }
     if (!projectData.value) return
     return shareProject(projectData.value)
   },
@@ -242,6 +247,13 @@ const handleShare = useMessageHandle(
     zh: '分享项目失败'
   }
 )
+// 移动端分享提示状态
+const showMobileShareHint = ref(false)
+
+// 关闭移动端分享提示
+function closeMobileShareHint() {
+  showMobileShareHint.value = false
+}
 
 const createProject = useCreateProject()
 
@@ -303,6 +315,7 @@ const handleRemove = useMessageHandle(
 )
 
 const isDesktopLarge = useResponsive('desktop-large')
+const isMobile = useResponsive('mobile')
 const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 
 const remixesRet = useQuery(
@@ -530,7 +543,7 @@ watchEffect((onCleanup) => {
         <div class="project-wrapper">
           <template v-if="project != null">
             <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
-            <div v-show="runnerState === 'initial'" class="runner-mask">
+            <div v-show="runnerState === 'initial' && !isMobile" class="runner-mask">
               <UIButton
                 v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
                 class="run-button"
@@ -669,7 +682,7 @@ watchEffect((onCleanup) => {
             </p>
           </div>
           <div class="ops">
-            <template v-if="isOwner">
+            <template v-if="isOwner && !isMobile">
               <UIButton
                 v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
                 type="primary"
@@ -677,7 +690,12 @@ watchEffect((onCleanup) => {
                 icon="edit2"
                 :loading="handleEdit.isLoading.value"
                 @click="handleEdit.fn"
-                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
+                >{{
+                  $t({
+                    en: 'Edit',
+                    zh: '编辑'
+                  })
+                }}</UIButton
               >
               <UIButton
                 v-if="project.visibility === Visibility.Public"
@@ -696,7 +714,12 @@ watchEffect((onCleanup) => {
                 icon="share"
                 :loading="handlePublish.isLoading.value"
                 @click="handlePublish.fn"
-                >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
+                >{{
+                  $t({
+                    en: 'Publish',
+                    zh: '发布'
+                  })
+                }}</UIButton
               >
               <UIDropdown placement="bottom-end" trigger="click">
                 <template #trigger>
@@ -713,7 +736,12 @@ watchEffect((onCleanup) => {
                     v-if="project.visibility === Visibility.Public"
                     v-radar="{ name: 'Unpublish option', desc: 'Click to unpublish the project' }"
                     @click="handleUnpublish.fn"
-                    >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
+                    >{{
+                      $t({
+                        en: 'Unpublish',
+                        zh: '取消发布'
+                      })
+                    }}</UIMenuItem
                   >
                   <UIMenuItem
                     v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
@@ -725,14 +753,15 @@ watchEffect((onCleanup) => {
             </template>
             <template v-else>
               <UIButton
-                v-if="hasRelease"
+                v-if="hasRelease && !isMobile"
                 v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }"
                 type="primary"
                 size="large"
                 icon="remix"
                 :loading="handleRemix.isLoading.value"
                 @click="handleRemix.fn"
-                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
+              >
+                {{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
               >
               <UIButton
                 v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
@@ -799,9 +828,27 @@ watchEffect((onCleanup) => {
       <ProjectItem v-for="remix in remixesRet.data.value" :key="remix.id" :project="remix" />
     </ProjectsSection>
   </CenteredWrapper>
+  <!-- 移动端分享提示蒙版 -->
+  <div v-if="showMobileShareHint" class="mobile-share-hint-overlay" @click="closeMobileShareHint">
+    <div class="mobile-share-hint-content">
+      <div class="hint-arrow">
+        <UIIcon class="icon" type="arrowShare" />
+      </div>
+      <div class="hint-text">
+        {{
+          $t({
+            en: 'please click the upper right button to send it to the designated friend',
+            zh: '请点击右上角将它发送给指定朋友'
+          })
+        }}
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
+@import '@/components/ui/responsive.scss';
+
 .error {
   position: absolute;
   width: 100%;
@@ -818,10 +865,20 @@ watchEffect((onCleanup) => {
   display: flex;
   gap: 40px;
   background: var(--ui-color-grey-100);
+
+  @include responsive(mobile) {
+    flex-direction: column;
+    gap: 20px;
+  }
 }
 
 .left {
   flex: 1 1 744px;
+
+  @include responsive(mobile) {
+    flex: 1 1 0;
+  }
+
   .project-wrapper {
     position: relative;
     width: 100%;
@@ -916,6 +973,7 @@ watchEffect((onCleanup) => {
       &.more {
         flex: 0 0 auto;
         width: 40px;
+
         :deep(.content) {
           padding: 0;
         }
@@ -940,5 +998,43 @@ watchEffect((onCleanup) => {
 
 .remixes {
   margin-top: 20px;
+}
+
+/* 移动端分享提示蒙版样式 */
+.mobile-share-hint-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: right;
+  color: #fff;
+
+  @include responsive(mobile) {
+    .mobile-share-hint-content {
+      padding: 0 24px;
+      text-align: center;
+      max-width: 280px;
+
+      .hint-arrow {
+        margin: 25px 0;
+        display: flex;
+        justify-content: right;
+
+        .icon {
+          transform: scale(4);
+        }
+      }
+
+      .hint-text {
+        font-size: 16px;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+    }
+  }
 }
 </style>

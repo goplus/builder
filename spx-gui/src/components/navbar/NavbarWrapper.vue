@@ -5,7 +5,7 @@
         <NavbarLogo />
         <slot name="left"></slot>
         <NavbarLang />
-        <NavbarTutorials v-if="showTutorialsEntry" />
+        <NavbarTutorials v-if="showTutorialsEntry" class="mobile-hide" />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -65,6 +65,7 @@ withDefaults(
 
   &.centered {
     width: 1220px;
+
     @include responsive(desktop-large) {
       width: 1480px;
     }
@@ -88,5 +89,11 @@ withDefaults(
 .right {
   gap: 8px;
   justify-content: flex-end;
+}
+
+.mobile-hide {
+  @include responsive(mobile) {
+    display: none;
+  }
 }
 </style>
