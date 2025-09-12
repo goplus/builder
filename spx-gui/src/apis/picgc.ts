@@ -62,8 +62,8 @@ export async function generateSvgDirect(
     top_k?: number
   }
 ): Promise<{
-  svgContents: { blob: string; svgContent: string }[]
-  id: string
+  svgContents: { blob: string; svgContent: string; id: number }[]
+  query_id: string
   width: number
   height: number
 }> {
@@ -151,20 +151,21 @@ export async function generateSvgDirect(
   }
 
   // 这个数组的每个元素都是由上面的 kodo 链接转换得到的 blob 链接
-  const svgContents: { blob: string; svgContent: string }[] = []
+  const svgContents: { blob: string; svgContent: string; id: number }[] = []
   for (let index = 0; index < imageUrls.length; index++) {
     const s = imageUrls[index]
     // 假设 s 是 kodo 链接
     const result = await convertKodoUrlToBlobUrl(s)
     svgContents.push({
       blob: result.blob,
-      svgContent: result.svgContent
+      svgContent: result.svgContent,
+      id: backendResponse.results[index].id
     })
   }
 
   return {
     svgContents: svgContents,
-    id: '',
+    query_id: backendResponse.query_id,
     width: 512,
     height: 512
   }
