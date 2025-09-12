@@ -218,11 +218,12 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 
 	if err != nil {
 		logger.Printf("Project context not found for project %d, using original prompt", params.ProjectID)
-		// Fallback to original recommendation without context
+		// Fallback to original recommendation without context (SearchOnly mode)
 		imageParams := &ImageRecommendParams{
-			Text:  params.UserPrompt,
-			TopK:  params.TopK,
-			Theme: params.Theme,
+			Text:       params.UserPrompt,
+			TopK:       params.TopK,
+			Theme:      params.Theme,
+			SearchOnly: true, // Instant recommend should only search, not generate
 		}
 		return ctrl.RecommendImages(ctx, imageParams)
 	}
@@ -231,11 +232,12 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 	enhancedPrompt := ctrl.enhancePromptWithContext(params.UserPrompt, projectContext.RelatedWords.ToSlice())
 	logger.Printf("Enhanced prompt: %q", enhancedPrompt)
 
-	// Call original recommendation with enhanced prompt
+	// Call original recommendation with enhanced prompt (SearchOnly mode)
 	imageParams := &ImageRecommendParams{
-		Text:  enhancedPrompt,
-		TopK:  params.TopK,
-		Theme: params.Theme,
+		Text:       enhancedPrompt,
+		TopK:       params.TopK,
+		Theme:      params.Theme,
+		SearchOnly: true, // Instant recommend should only search, not generate
 	}
 
 	result, err := ctrl.RecommendImages(ctx, imageParams)

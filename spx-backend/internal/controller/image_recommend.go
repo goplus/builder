@@ -14,9 +14,10 @@ import (
 
 // ImageRecommendParams represents parameters for image recommendation.
 type ImageRecommendParams struct {
-	Text  string    `json:"prompt"`
-	TopK  int       `json:"top_k,omitempty"`
-	Theme ThemeType `json:"theme,omitempty"`
+	Text       string    `json:"prompt"`
+	TopK       int       `json:"top_k,omitempty"`
+	Theme      ThemeType `json:"theme,omitempty"`
+	SearchOnly bool      `json:"search_only,omitempty"` // If true, only search existing images, skip AI generation
 }
 
 // PromptAnalysisContext holds cached prompt analysis and optimized prompts for a request.
@@ -221,8 +222,8 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	logger.Printf("Found %d matching images from search", len(foundResults))
 
-	// Generate AI SVGs if we don't have enough results
-	if len(foundResults) < params.TopK {
+	// Generate AI SVGs if we don't have enough results and SearchOnly is false
+	if !params.SearchOnly && len(foundResults) < params.TopK {
 		needed := params.TopK - len(foundResults)
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
@@ -234,6 +235,8 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		} else {
 			foundResults = append(foundResults, generatedResults...)
 		}
+	} else if params.SearchOnly && len(foundResults) < params.TopK {
+		logger.Printf("SearchOnly mode enabled: found %d results, requested %d (no AI generation)", len(foundResults), params.TopK)
 	}
 
 
