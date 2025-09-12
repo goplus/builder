@@ -63,7 +63,7 @@ interface IframeWindow extends Window {
   __xb_is_stale?: boolean
   startRecording: () => void
   stopRecording: () => Promise<Blob> // stopRecording 直接返回 Blob
-  getScreenshot: () => Promise<Blob>
+  takeScreenshot: () => Promise<Blob>
   pauseGame: () => void
   resumeGame: () => void
 }
@@ -190,7 +190,7 @@ defineExpose({
     if (iframe == null || iframe == undefined) return
     const win = iframe.contentWindow as IframeWindow | null
     if (win == null) return
-    return await win.getScreenshot?.()
+    return await win.takeScreenshot?.()
   },
   async stopRecording() {
     const iframe = iframeRef.value
@@ -200,12 +200,18 @@ defineExpose({
     return await win.stopRecording?.()
   },
   dispatchKeyboardEvent(type: KeyboardEventType, key: KeyCode) {
-    const iframe = iframeRef.value
-    if (iframe == null || iframe == undefined) return
-    const win = iframe.contentWindow as IframeWindow | null
+    const win = iframeRef.value?.contentWindow as IframeWindow | null
     if (win == null) return
+    const doc = win.document
+    const canvas = doc.querySelector('#game-canvas') as HTMLCanvasElement | null
     const keyboardEvent = new KeyboardEvent(type, { key, bubbles: true })
-    return win.dispatchEvent?.(keyboardEvent)
+    if (canvas) {
+      canvas.focus()
+      return canvas.dispatchEvent(keyboardEvent)
+    } else {
+      win.focus()
+      return doc.dispatchEvent(keyboardEvent)
+    }
   },
   async run(signal?: AbortSignal) {
     loading.value = true
@@ -353,12 +359,20 @@ defineExpose({
 </template>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .iframe-container {
   position: relative;
   aspect-ratio: 4 / 3;
   display: flex;
   justify-content: center;
   align-items: center;
+
+  @include responsive(mobile) {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .iframe {
