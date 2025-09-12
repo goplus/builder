@@ -43,7 +43,8 @@ export declare function KeyboardEditorModal(
  * <MobileKeyboardView
  * :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }"
  * @close="emit('close')"
- * @rerun="emit('rerun')">
+ * @rerun="emit('rerun')"
+ * @key="handleOnKeyEvent">
  *   <template>
  *     <ProjectRunner :project="project" />
  *   </template>
@@ -64,13 +65,13 @@ export declare function MobileKeyboardView(
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
-//   const dispatchKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
+//   const handleOnKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
 //     emit('key', type, key);
 //   }
 //   const keyButtons = zones
 //     .map(
 //       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} key=${dispatchKeyEvent} />`
+//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} key=${handleOnKeyEvent} />`
 //     )
 //     .join("");
 

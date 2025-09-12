@@ -106,7 +106,7 @@ async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
         <MobileKeyboardView
           v-if="isMobile && project.mobileKeyboardType === 2"
           :zone-to-key-mapping="project.mobileKeyboardZoneToKey || {}"
-          @on-key-event="handleOnKeyEvent"
+          @key="handleOnKeyEvent"
           @rerun="handleRerun.fn"
           @close="emit('close')"
         >
