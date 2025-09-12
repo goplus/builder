@@ -3,7 +3,10 @@ import type {
   MobileKeyboardZoneToKeyMapping,
   MobileKeyboardType,
 } from "./module_ProjectAPIs";
-
+import {
+  KeyboardEventType,
+  KeyCode,
+} from "../../../spx-gui/src/components/project/sharing/MobileKeyboard/mobile-keyboard";
 export type KeyboardConfig = {
   type: MobileKeyboardType;
   mapping: MobileKeyboardZoneToKeyMapping;
@@ -55,17 +58,19 @@ export declare function MobileKeyboardView(
   emits: {
     close: [];
     rerun: [];
-    onKeyEvent: [type: string, key: string];
+    key: [type: KeyboardEventType, key: KeyCode];
   }
 ): UI;
 //  {
 //   const zones = Object.keys(ZoneToKeyMapping);
 //   const zoneToKey = ZoneToKeyMapping;
-
+//   const dispatchKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
+//     emit('key', type, key);
+//   }
 //   const keyButtons = zones
 //     .map(
 //       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} onKeyEvent=${onKeyEvent} />`
+//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} key=${dispatchKeyEvent} />`
 //     )
 //     .join("");
 
@@ -82,11 +87,15 @@ export declare function MobileKeyboardView(
 
 //  key UI in Keyboard. provide to MobileKeyboardView and MobileKeyboardEidt
 // active is used to indicate whether a button has functionality（onKeyEvent）.
-export declare function UIKeyBtn(props: {
-  value: string;
-  active?: boolean;
-  onKeyEvent?: (type: "keydown" | "keyup", key: string, code: string) => void;
-}): UI;
+export declare function UIKeyBtn(
+  props: {
+    value: string;
+    active?: boolean;
+  },
+  emits: {
+    key: [type: KeyboardEventType, key: KeyCode];
+  }
+): UI;
 // {
 //   function toKeyAndCode(v: string) {
 //     // preprocessing

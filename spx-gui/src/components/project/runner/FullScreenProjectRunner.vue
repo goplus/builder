@@ -58,7 +58,6 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   en: 'Failed to rerun project',
   zh: '重新运行项目失败'
 })
-// console.log("FullScreenProjectRunner", props.project)
 const isMobile = useResponsive('mobile')
 async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
   await projectRunnerRef.value?.dispatchKeyboardEvent(type, key)

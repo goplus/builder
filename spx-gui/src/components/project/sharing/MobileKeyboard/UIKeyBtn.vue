@@ -5,13 +5,14 @@ const props = withDefaults(
   defineProps<{
     value: string
     active?: boolean
-    onKeyEvent?: (type: KeyboardEventType, key: KeyCode) => void
   }>(),
   {
-    active: false,
-    onKeyEvent: undefined
+    active: false
   }
 )
+const emit = defineEmits<{
+  key: [type: KeyboardEventType, key: KeyCode]
+}>()
 let isPressed = false
 function press(down: boolean) {
   function toKeyAndCode(v: string): KeyCode {
@@ -32,7 +33,7 @@ function press(down: boolean) {
   }
   function dispatchKey(type: KeyboardEventType, v: string) {
     const keyCode = toKeyAndCode(v)
-    props.onKeyEvent?.(type, keyCode)
+    emit('key', type, keyCode)
   }
   if (down && !isPressed) {
     isPressed = true
