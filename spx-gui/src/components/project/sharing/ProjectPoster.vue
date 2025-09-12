@@ -205,9 +205,6 @@ const createPoster = async (): Promise<File> => {
     await renderQRCode(canvas, owner, name)
   }
 
-  // 给一点额外时间让DOM完全更新
-  await new Promise((resolve) => setTimeout(resolve, 100))
-
   const posterCanvas = await html2canvas(posterElementRef.value, {
     width: 800,
     height: 1000,
