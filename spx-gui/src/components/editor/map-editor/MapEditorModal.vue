@@ -64,7 +64,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--ui-color-grey-100);
+  background: #e9fcff;
 }
 .header {
   flex: 0 0 auto;
@@ -75,7 +75,9 @@ function handleSpriteSelect(sprite: Sprite | null) {
 }
 .body {
   flex: 1 1 0;
+  padding: 16px;
   display: flex;
+  gap: var(--ui-gap-middle);
   flex-direction: row;
 }
 .main {
@@ -84,19 +86,17 @@ function handleSpriteSelect(sprite: Sprite | null) {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1em;
 }
 .sider {
   width: 328px;
   display: flex;
+  gap: var(--ui-gap-middle);
   flex-direction: column;
-  border-left: 1px solid var(--ui-color-grey-900);
 }
 .sprite-list {
   flex: 1 1 0;
 }
 .footer {
   flex: 0 0 auto;
-  border-top: 1px solid var(--ui-color-grey-900);
 }
 </style>
