@@ -14,7 +14,7 @@ const props = defineProps<{
   visible: boolean
 }>()
 
-type SharingResult =
+export type SharingResult =
   | {
       type: 'shared'
       platform: string

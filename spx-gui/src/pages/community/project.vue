@@ -48,6 +48,7 @@ import TextView from '@/components/community/TextView.vue'
 import { initShareInfo } from '@/components/project/sharing/platform-share'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
+import type { SharingResult } from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
 import { createRecording, deleteRecording } from '@/apis/recording'
@@ -390,16 +391,6 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
     return created
   })()
 }
-
-type SharingResult =
-  | {
-      type: 'shared'
-      platform: string
-    }
-  | {
-      type: 'rerecord'
-      recording: RecordingData | null
-    }
 
 // Handle recording sharing results
 async function handleShareResult(result: SharingResult) {
