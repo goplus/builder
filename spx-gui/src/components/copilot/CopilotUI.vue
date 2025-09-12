@@ -31,6 +31,9 @@ import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
 import logoSrc from './logo.png'
+import { useResponsive } from '@/components/ui/responsive'
+
+const isMobile = useResponsive('mobile')
 
 const copilot = useCopilot()
 
@@ -298,7 +301,7 @@ const handleQuickInputClick = useMessageHandle(
 </script>
 
 <template>
-  <div class="copilot-ui">
+  <div v-if="!isMobile" class="copilot-ui">
     <div
       v-show="!copilot.active"
       ref="triggerRef"
@@ -394,9 +397,11 @@ const handleQuickInputClick = useMessageHandle(
   &.animated {
     transition: right ease 0.4s;
   }
+
   &.left {
     border-radius: 0px 16px 16px 0px;
   }
+
   &.move {
     border-radius: 16px;
   }
@@ -414,6 +419,7 @@ const handleQuickInputClick = useMessageHandle(
     padding: 4px 4px 4px 9px;
     margin: 1px 1px 1px 0px;
   }
+
   &.move {
     border-radius: 15px;
     padding: 4px;
@@ -511,9 +517,11 @@ const handleQuickInputClick = useMessageHandle(
 
   &:not(:disabled) {
     cursor: pointer;
+
     &:hover {
       background-color: var(--ui-color-grey-400);
     }
+
     &:active {
       background-color: var(--ui-color-grey-500);
     }

@@ -132,6 +132,7 @@ const isMobile = useResponsive('mobile')
   position: relative;
 
   width: 212px;
+
   @include responsive(desktop-large) {
     width: 216px;
   }

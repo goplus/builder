@@ -203,6 +203,7 @@ const handleRemove = useMessageHandle(
 
 <style lang="scss" scoped>
 @import '@/utils/utils';
+@import '@/components/ui/responsive.scss';
 
 .project-item {
   width: 232px;
@@ -212,6 +213,12 @@ const handleRemove = useMessageHandle(
   border: 1px solid var(--ui-color-grey-400);
   background-color: var(--ui-color-grey-100);
   transition: 0.1s;
+
+  @include responsive(mobile) {
+    width: 100%;
+    aspect-ratio: 230/252;
+    font-size: 14px;
+  }
 }
 
 .link {
@@ -223,7 +230,8 @@ const handleRemove = useMessageHandle(
 .thumbnail-wrapper {
   position: relative;
   width: 100%;
-  height: 172px;
+  // height: 172px;
+  aspect-ratio: 230/171;
   background-position: center;
   background-size: contain;
   background-image: url(@/assets/images/stage-bg.svg);
@@ -250,6 +258,14 @@ const handleRemove = useMessageHandle(
     cursor: pointer;
     transition: 0.1s;
 
+    // 移动端调整操作按钮大小
+    @include responsive(mobile) {
+      width: 28px;
+      height: 28px;
+      top: 6px;
+      right: 6px;
+    }
+
     &:hover {
       color: var(--ui-color-grey-100);
       background-color: var(--ui-color-primary-main);
@@ -258,6 +274,12 @@ const handleRemove = useMessageHandle(
     .icon {
       width: 21px;
       height: 21px;
+
+      // 移动端调整图标大小
+      @include responsive(mobile) {
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 
@@ -285,6 +307,7 @@ const handleRemove = useMessageHandle(
 
 .project-item:hover {
   box-shadow: 0px 4px 12px 0px rgba(36, 41, 47, 0.08);
+
   .options {
     visibility: visible;
     opacity: 1;
@@ -293,6 +316,10 @@ const handleRemove = useMessageHandle(
 
 .info {
   padding: var(--ui-gap-middle);
+
+  @include responsive(mobile) {
+    padding: 0.5em;
+  }
 
   .header {
     display: flex;
@@ -305,6 +332,11 @@ const handleRemove = useMessageHandle(
       line-height: 24px;
       color: var(--ui-color-title);
       @include text-ellipsis;
+
+      @include responsive(mobile) {
+        font-size: 1.07em;
+        line-height: 1.71em;
+      }
     }
 
     .icon {
@@ -322,15 +354,32 @@ const handleRemove = useMessageHandle(
     line-height: 20px;
     color: var(--ui-color-grey-700);
 
+    @include responsive(mobile) {
+      height: 1.29em;
+      gap: 0.57em;
+      font-size: 0.86em;
+      line-height: 1.29em;
+    }
+
     .part {
       flex: 0 0 auto;
       display: flex;
       align-items: center;
       gap: 4px;
 
+      @include responsive(mobile) {
+        gap: 0.21em;
+      }
+
       .icon {
         width: 14px;
         height: 14px;
+
+        // 移动端调整图标大小
+        @include responsive(mobile) {
+          width: 12px;
+          height: 12px;
+        }
       }
 
       &.liking {
