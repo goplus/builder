@@ -527,7 +527,7 @@ watchEffect((onCleanup) => {
         {{ $t(error.userMessage) }}
       </UIError>
       <div class="left">
-        <div class="project-wrapper">
+        <div class="project-wrapper" :class="{ recording: isRecording }">
           <template v-if="project != null">
             <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
             <div v-show="runnerState === 'initial'" class="runner-mask">
@@ -677,7 +677,12 @@ watchEffect((onCleanup) => {
                 icon="edit2"
                 :loading="handleEdit.isLoading.value"
                 @click="handleEdit.fn"
-                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
+                >{{
+                  $t({
+                    en: 'Edit',
+                    zh: '编辑'
+                  })
+                }}</UIButton
               >
               <UIButton
                 v-if="project.visibility === Visibility.Public"
@@ -696,7 +701,12 @@ watchEffect((onCleanup) => {
                 icon="share"
                 :loading="handlePublish.isLoading.value"
                 @click="handlePublish.fn"
-                >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
+                >{{
+                  $t({
+                    en: 'Publish',
+                    zh: '发布'
+                  })
+                }}</UIButton
               >
               <UIDropdown placement="bottom-end" trigger="click">
                 <template #trigger>
@@ -713,7 +723,12 @@ watchEffect((onCleanup) => {
                     v-if="project.visibility === Visibility.Public"
                     v-radar="{ name: 'Unpublish option', desc: 'Click to unpublish the project' }"
                     @click="handleUnpublish.fn"
-                    >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
+                    >{{
+                      $t({
+                        en: 'Unpublish',
+                        zh: '取消发布'
+                      })
+                    }}</UIMenuItem
                   >
                   <UIMenuItem
                     v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
@@ -732,7 +747,8 @@ watchEffect((onCleanup) => {
                 icon="remix"
                 :loading="handleRemix.isLoading.value"
                 @click="handleRemix.fn"
-                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
+              >
+                {{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
               >
               <UIButton
                 v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
@@ -822,12 +838,21 @@ watchEffect((onCleanup) => {
 
 .left {
   flex: 1 1 744px;
+
   .project-wrapper {
     position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
     border-radius: var(--ui-border-radius-1);
     overflow: hidden;
+    transition: box-shadow 0.3s ease-in-out;
+
+    // Green border when recording
+    &.recording {
+      box-shadow:
+        0 0 0 4px #00ff00,
+        0 0 20px rgba(0, 255, 0, 0.3);
+    }
 
     .runner-mask {
       position: absolute;
@@ -916,6 +941,7 @@ watchEffect((onCleanup) => {
       &.more {
         flex: 0 0 auto;
         width: 40px;
+
         :deep(.content) {
           padding: 0;
         }
