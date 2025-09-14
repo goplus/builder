@@ -1,4 +1,4 @@
-import { getWechatChatJSSDKConfig } from '@/apis/wechat'
+import { getWeChatJSSDKConfig } from '@/apis/wechat'
 /**
  * 社交平台配置
  */
@@ -54,7 +54,7 @@ export interface PlatformConfig {
   shareType: ShareType
   basicInfo: BasicInfo
   shareFunction: ShareFunction
-  initShareInfo: (shareInfo?: ShareInfo) => void
+  initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
 }
 /**
  * 平台跳转链接的示例，方便后续接口使用
@@ -100,10 +100,10 @@ class QQPlatform implements PlatformConfig {
     }
   }
 
-  initShareInfo = (shareInfo?: ShareInfo) => {
-    if (typeof window !== 'undefined' && window.mqq && window.mqq.invoke) {
+  initShareInfo = async (shareInfo?: ShareInfo) => {
+    if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: typeof location !== 'undefined' ? location.href : '',
+        share_url: location.href,
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: 'https://x.qiniu.com//logo.png'
@@ -141,16 +141,16 @@ class WeChatPlatform implements PlatformConfig {
     // 不实现 shareVideo，因为不支持
   }
 
-  initShareInfo = (shareInfo?: ShareInfo) => {
+  initShareInfo = async (shareInfo?: ShareInfo) => {
     // 微信平台设置分享信息
-    const config = getWechatChatJSSDKConfig({
-      url: typeof location !== 'undefined' ? location.href : ''
+    const config = await getWeChatJSSDKConfig({
+      url: location.href
     })
     //初始化微信分享信息
-    if (typeof window !== 'undefined' && window.wx && window.wx.config) {
+    if (window.wx && window.wx.config) {
       window.wx.config({
         debug: false,
-        appid: config.appid,
+        appId: config.appId,
         timestamp: config.timestamp,
         nonceStr: config.nonceStr,
         signature: config.signature,
@@ -163,7 +163,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateAppMessageShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: typeof location !== 'undefined' ? location.href : '',
+          link: location.href,
           imgUrl: 'https://x.qiniu.com//logo.png',
           success: function () {}
         })
@@ -172,7 +172,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateTimelineShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: typeof location !== 'undefined' ? location.href : '',
+          link: location.href,
           imgUrl: 'https://x.qiniu.com//logo.png',
           success: function () {}
         })
@@ -202,7 +202,7 @@ class DouyinPlatform implements PlatformConfig {
     }
   }
 
-  initShareInfo = (shareInfo?: ShareInfo) => {
+  initShareInfo = async (shareInfo?: ShareInfo) => {
     // 抖音平台暂不支持设置分享信息
     void shareInfo
     return
@@ -228,7 +228,7 @@ class XiaohongshuPlatform implements PlatformConfig {
     }
   }
 
-  initShareInfo = (shareInfo?: ShareInfo) => {
+  initShareInfo = async (shareInfo?: ShareInfo) => {
     // 小红书平台暂不支持设置分享信息
     void shareInfo
     return
@@ -254,7 +254,7 @@ class BilibiliPlatform implements PlatformConfig {
     }
   }
 
-  initShareInfo = (shareInfo?: ShareInfo) => {
+  initShareInfo = async (shareInfo?: ShareInfo) => {
     // 哔哩哔哩平台暂不支持设置分享信息
     void shareInfo
     return
@@ -272,13 +272,13 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
 
 export type Disposer = () => void
 
-export const initShareInfo = (shareInfo?: ShareInfo): Disposer => {
+export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> => {
   const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
   const qq = new QQPlatform()
   const wechat = new WeChatPlatform()
 
-  qq.initShareInfo(defaultShareInfo)
-  wechat.initShareInfo(defaultShareInfo)
+  await qq.initShareInfo(defaultShareInfo)
+  await wechat.initShareInfo(defaultShareInfo)
 
   return () => {
     // Reset to a generic default for the current page to avoid stale project ShareInfo
