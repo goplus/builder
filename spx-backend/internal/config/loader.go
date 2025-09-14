@@ -67,6 +67,10 @@ func Load(logger *log.Logger) (*Config, error) {
 		AIGC: AIGCConfig{
 			Endpoint: mustGetEnv(logger, "AIGC_ENDPOINT"),
 		},
+		WeChat: WeChatConfig{
+			AppID:  mustGetEnv(logger, "WECHAT_APPID"),
+			Secret: mustGetEnv(logger, "WECHAT_SECRET"),
+		},
 	}
 	return config, nil
 }

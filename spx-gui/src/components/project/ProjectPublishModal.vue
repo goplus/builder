@@ -9,7 +9,11 @@ import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { stringifyProjectFullName } from '@/apis/project'
-
+import { ref } from 'vue'
+import { useModal } from '@/components/ui'
+import MobileKeyboardEdit from './sharing/MobileKeyboard/MobileKeyboardEditor.vue'
+import type { MobileKeyboardZoneToKeyMapping } from '@/apis/project'
+import { MobileKeyboardType } from '@/apis/project'
 const props = defineProps<{
   project: Project
   visible: boolean
@@ -67,6 +71,8 @@ const handleSubmit = useMessageHandle(
     project.setVisibility(Visibility.Public)
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
+    project.mobileKeyboardType = keyboardMode.value
+    project.mobileKeyboardZoneToKey = keyboardMode.value === 2 ? mobileKeyboardZoneToKey.value || {} : {}
     if (project.isUsingAIInteraction()) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
@@ -80,6 +86,16 @@ const handleSubmit = useMessageHandle(
   },
   { en: 'Failed to publish project', zh: '项目发布失败' }
 )
+// mobile
+const keyboardMode = ref<MobileKeyboardType>(props.project.mobileKeyboardType ?? MobileKeyboardType.NoKeyboard)
+const mobileKeyboardZoneToKey = ref<MobileKeyboardZoneToKeyMapping | null>(
+  props.project.mobileKeyboardZoneToKey ?? null
+)
+const openKeyboardEditor = useModal(MobileKeyboardEdit)
+async function handleEidtKeyboard() {
+  const result = await openKeyboardEditor({ zoneToKeyMapping: mobileKeyboardZoneToKey.value })
+  mobileKeyboardZoneToKey.value = result as MobileKeyboardZoneToKeyMapping
+}
 </script>
 
 <template>
@@ -109,6 +125,31 @@ const handleSubmit = useMessageHandle(
           type="textarea"
           :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
         />
+      </UIFormItem>
+      <!-- mobile -->
+      <UIFormItem :label="$t({ en: 'Mobile keyboard', zh: '移动端键盘' })">
+        <div class="kb-cards">
+          <div class="kb-card" :class="{ active: keyboardMode === 1 }" @click="keyboardMode = 1">
+            <div class="kb-card-title">{{ $t({ en: 'Disabled', zh: '不启动' }) }}</div>
+            <div class="kb-card-desc">
+              {{ $t({ en: 'Do not show on-screen keyboard on mobile.', zh: '在移动端不显示屏幕按键' }) }}
+            </div>
+          </div>
+          <div class="kb-card" :class="{ active: keyboardMode === 2 }" @click="keyboardMode = 2">
+            <div class="kb-card-title">{{ $t({ en: 'Curstom keyboard', zh: '自定义键盘' }) }}</div>
+            <div class="kb-card-desc">
+              {{ $t({ en: 'Design your own on-screen buttons for mobile.', zh: '为移动端自定义屏幕按键布局' }) }}
+            </div>
+            <div v-if="keyboardMode === 2" class="kb-actions">
+              <UIButton size="small" type="primary" @click="handleEidtKeyboard">
+                {{ $t({ en: 'Edit keyboard', zh: '编辑键盘' }) }}
+              </UIButton>
+              <span v-if="mobileKeyboardZoneToKey && Object.keys(mobileKeyboardZoneToKey).length > 0" class="kb-hint">
+                {{ $t({ en: 'Configured', zh: '已配置' }) }}
+              </span>
+            </div>
+          </div>
+        </div>
       </UIFormItem>
       <UIFormItem :label="$t({ en: 'Project description', zh: '项目描述' })" path="projectDescription">
         <UITextInput
@@ -162,6 +203,7 @@ const handleSubmit = useMessageHandle(
 .tip {
   margin-bottom: 24px;
 }
+
 .thumbnail-wrapper {
   margin-bottom: 24px;
   width: 100%;
@@ -175,10 +217,51 @@ const handleSubmit = useMessageHandle(
     height: 100%;
   }
 }
+
 .footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 20px;
+}
+
+// mobile
+.kb-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kb-card {
+  border: 1px solid var(--ui-color-dividing-line-2);
+  border-radius: var(--ui-border-radius-1);
+  padding: 12px;
+  cursor: pointer;
+  background: var(--ui-color-grey-100);
+}
+
+.kb-card.active {
+  border-color: var(--ui-color-primary-main);
+  box-shadow: 0 0 0 2px rgba(11, 192, 207, 0.15);
+}
+
+.kb-card-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.kb-card-desc {
+  color: var(--ui-color-grey-800);
+}
+
+.kb-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-hint {
+  color: var(--ui-color-grey-800);
 }
 </style>

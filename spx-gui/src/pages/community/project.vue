@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle, DefaultException } from '@/utils/exception'
+import { useMessageHandle, DefaultException, capture } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
@@ -50,7 +50,7 @@ import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
 import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
-import { createRecording } from '@/apis/recording'
+import { createRecording, deleteRecording } from '@/apis/recording'
 import { saveFile } from '@/models/common/cloud'
 import { File } from '@/models/common/file'
 
@@ -392,11 +392,19 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
 }
 
 // Handle recording sharing results
-async function handleShareResult(result: any) {
+async function handleShareResult(result: any, recordingToDelete: RecordingData | null) {
   if (result.type === 'shared') {
-    // Success message will be handled by useMessageHandle's successMessage parameter
     return result.platform
   } else if (result.type === 'rerecord') {
+    if (recordingToDelete) {
+      deleteRecording(recordingToDelete.id).catch((error) => {
+        capture(error, {
+          en: 'Failed to delete previous recording',
+          zh: '删除旧录屏失败'
+        })
+      })
+    }
+
     // Resume game first, then start new recording
     await projectRunnerRef.value?.resumeGame()
     isRecording.value = true
@@ -423,7 +431,8 @@ const handleRecordingSharing = useMessageHandle(
         video: recordFile
       })
 
-      return await handleShareResult(result)
+      const recordingData = await recordingPromise.catch(() => null)
+      return await handleShareResult(result, recordingData)
     } finally {
       await projectRunnerRef.value?.resumeGame()
       isRecording.value = false
@@ -458,33 +467,38 @@ const handleScreenshotSharing = useMessageHandle(
   async (): Promise<void> => {
     await projectRunnerRef.value?.pauseGame()
 
-    const screenshotBlob = await projectRunnerRef.value?.takeScreenshot()
-    if (!screenshotBlob) {
-      throw new DefaultException({
-        en: 'Failed to take screenshot',
-        zh: '截图失败'
+    try {
+      const screenshotBlob = await projectRunnerRef.value?.takeScreenshot()
+      if (!screenshotBlob) {
+        throw new DefaultException({
+          en: 'Failed to take screenshot',
+          zh: '截图失败'
+        })
+      }
+
+      // Convert Blob to File
+      const screenshotFile = new globalThis.File([screenshotBlob], 'screenshot.png', {
+        type: screenshotBlob.type || 'image/png',
+        lastModified: Date.now()
       })
-    }
 
-    // Convert Blob to File
-    const screenshotFile = new globalThis.File([screenshotBlob], 'screenshot.png', {
-      type: screenshotBlob.type || 'image/png',
-      lastModified: Date.now()
-    })
+      screenshotImg.value = screenshotFile
 
-    screenshotImg.value = screenshotFile
+      if (!projectData.value) {
+        throw new DefaultException({
+          en: 'Project data not available',
+          zh: '项目数据不可用'
+        })
+      }
 
-    if (!projectData.value) {
-      throw new DefaultException({
-        en: 'Project data not available',
-        zh: '项目数据不可用'
+      await shareScreenshot({
+        screenshot: screenshotFile,
+        projectData: projectData.value
       })
+    } finally {
+      // no matter success or reject , finnally must resume the game
+      await projectRunnerRef.value?.resumeGame()
     }
-
-    await shareScreenshot({
-      screenshot: screenshotFile,
-      projectData: projectData.value
-    })
   },
   {
     en: 'Failed to share screenshot',

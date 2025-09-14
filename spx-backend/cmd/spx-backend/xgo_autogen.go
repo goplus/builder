@@ -190,6 +190,10 @@ type post_project_owner_name_view struct {
 	yap.Handler
 	*AppV2
 }
+type post_recording struct {
+	yap.Handler
+	*AppV2
+}
 type post_recording_id_liking struct {
 	yap.Handler
 	*AppV2
@@ -198,15 +202,15 @@ type post_recording_id_view struct {
 	yap.Handler
 	*AppV2
 }
-type post_recordings struct {
-	yap.Handler
-	*AppV2
-}
 type post_user_username_following struct {
 	yap.Handler
 	*AppV2
 }
 type post_util_fileurls struct {
+	yap.Handler
+	*AppV2
+}
+type post_wechat_jssdk_config struct {
 	yap.Handler
 	*AppV2
 }
@@ -385,19 +389,20 @@ func (this *AppV2) Main() {
 	_xgo_obj36 := &post_project{AppV2: this}
 	_xgo_obj37 := &post_project_owner_name_liking{AppV2: this}
 	_xgo_obj38 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj39 := &post_recording_id_liking{AppV2: this}
-	_xgo_obj40 := &post_recording_id_view{AppV2: this}
-	_xgo_obj41 := &post_recordings{AppV2: this}
+	_xgo_obj39 := &post_recording{AppV2: this}
+	_xgo_obj40 := &post_recording_id_liking{AppV2: this}
+	_xgo_obj41 := &post_recording_id_view{AppV2: this}
 	_xgo_obj42 := &post_user_username_following{AppV2: this}
 	_xgo_obj43 := &post_util_fileurls{AppV2: this}
-	_xgo_obj44 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj45 := &put_asset_id{AppV2: this}
-	_xgo_obj46 := &put_course_series_id{AppV2: this}
-	_xgo_obj47 := &put_course_id{AppV2: this}
-	_xgo_obj48 := &put_project_owner_name{AppV2: this}
-	_xgo_obj49 := &put_recording_id{AppV2: this}
-	_xgo_obj50 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50)
+	_xgo_obj44 := &post_wechat_jssdk_config{AppV2: this}
+	_xgo_obj45 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj46 := &put_asset_id{AppV2: this}
+	_xgo_obj47 := &put_course_series_id{AppV2: this}
+	_xgo_obj48 := &put_course_id{AppV2: this}
+	_xgo_obj49 := &put_project_owner_name{AppV2: this}
+	_xgo_obj50 := &put_recording_id{AppV2: this}
+	_xgo_obj51 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1406,23 +1411,30 @@ func (this *get_recording_id_liking) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/get_recording_#id_liking.yap:6:1
 	ctx := &this.Context
+//line cmd/spx-backend/get_recording_#id_liking.yap:7:1
+	if
+//line cmd/spx-backend/get_recording_#id_liking.yap:7:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/get_recording_#id_liking.yap:8:1
-	isLiking, err := this.ctrl.HasLikedRecording(ctx.Context(), this.Gop_Env("id"))
-//line cmd/spx-backend/get_recording_#id_liking.yap:9:1
-	if err != nil {
-//line cmd/spx-backend/get_recording_#id_liking.yap:10:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_recording_#id_liking.yap:11:1
 		return
 	}
+//line cmd/spx-backend/get_recording_#id_liking.yap:11:1
+	isLiking, err := this.ctrl.HasLikedRecording(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_recording_#id_liking.yap:12:1
+	if err != nil {
+//line cmd/spx-backend/get_recording_#id_liking.yap:13:1
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/get_recording_#id_liking.yap:14:1
+		return
+	}
+//line cmd/spx-backend/get_recording_#id_liking.yap:17:1
 	if isLiking {
-//line cmd/spx-backend/get_recording_#id_liking.yap:15:1
+//line cmd/spx-backend/get_recording_#id_liking.yap:18:1
 		ctx.Text__0(204, "", "")
-//line cmd/spx-backend/get_recording_#id_liking.yap:16:1
+//line cmd/spx-backend/get_recording_#id_liking.yap:19:1
 		return
 	} else {
-//line cmd/spx-backend/get_recording_#id_liking.yap:18:1
+//line cmd/spx-backend/get_recording_#id_liking.yap:21:1
 		replyWithCode(ctx, errorNotFound)
 	}
 }
@@ -1440,97 +1452,97 @@ func (this *get_recordings_list) Main(_xgo_arg0 *yap.Context) {
 	ctx := &this.Context
 //line cmd/spx-backend/get_recordings_list.yap:12:1
 	params := controller.NewListRecordingsParams()
-//line cmd/spx-backend/get_recordings_list.yap:15:1
+//line cmd/spx-backend/get_recordings_list.yap:14:1
 	switch
-//line cmd/spx-backend/get_recordings_list.yap:15:1
+//line cmd/spx-backend/get_recordings_list.yap:14:1
 	owner := this.Gop_Env("owner"); owner {
-//line cmd/spx-backend/get_recordings_list.yap:16:1
+//line cmd/spx-backend/get_recordings_list.yap:15:1
 	case "":
-//line cmd/spx-backend/get_recordings_list.yap:17:1
+//line cmd/spx-backend/get_recordings_list.yap:16:1
 		mUser, ok := ensureAuthenticatedUser(ctx)
-//line cmd/spx-backend/get_recordings_list.yap:18:1
+//line cmd/spx-backend/get_recordings_list.yap:17:1
 		if !ok {
-//line cmd/spx-backend/get_recordings_list.yap:19:1
+//line cmd/spx-backend/get_recordings_list.yap:18:1
 			return
 		}
-//line cmd/spx-backend/get_recordings_list.yap:21:1
+//line cmd/spx-backend/get_recordings_list.yap:20:1
 		params.Owner = &mUser.Username
-//line cmd/spx-backend/get_recordings_list.yap:22:1
+//line cmd/spx-backend/get_recordings_list.yap:21:1
 	case "*":
-//line cmd/spx-backend/get_recordings_list.yap:23:1
+//line cmd/spx-backend/get_recordings_list.yap:22:1
 		params.Owner = nil
-//line cmd/spx-backend/get_recordings_list.yap:24:1
+//line cmd/spx-backend/get_recordings_list.yap:23:1
 	default:
-//line cmd/spx-backend/get_recordings_list.yap:25:1
+//line cmd/spx-backend/get_recordings_list.yap:24:1
 		params.Owner = &owner
 	}
-//line cmd/spx-backend/get_recordings_list.yap:29:1
+//line cmd/spx-backend/get_recordings_list.yap:27:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:29:1
+//line cmd/spx-backend/get_recordings_list.yap:27:1
 	projectFullName := this.Gop_Env("projectFullName"); projectFullName != "" {
-//line cmd/spx-backend/get_recordings_list.yap:30:1
+//line cmd/spx-backend/get_recordings_list.yap:28:1
 		pfn, err := controller.ParseProjectFullName(projectFullName)
-//line cmd/spx-backend/get_recordings_list.yap:31:1
+//line cmd/spx-backend/get_recordings_list.yap:29:1
 		if err != nil {
-//line cmd/spx-backend/get_recordings_list.yap:32:1
+//line cmd/spx-backend/get_recordings_list.yap:30:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, "invalid projectFullName")
-//line cmd/spx-backend/get_recordings_list.yap:33:1
+//line cmd/spx-backend/get_recordings_list.yap:31:1
 			return
 		}
-//line cmd/spx-backend/get_recordings_list.yap:35:1
+//line cmd/spx-backend/get_recordings_list.yap:33:1
 		params.ProjectFullName = &pfn
 	}
-//line cmd/spx-backend/get_recordings_list.yap:39:1
+//line cmd/spx-backend/get_recordings_list.yap:36:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:39:1
+//line cmd/spx-backend/get_recordings_list.yap:36:1
 	keyword := this.Gop_Env("keyword"); keyword != "" {
-//line cmd/spx-backend/get_recordings_list.yap:40:1
+//line cmd/spx-backend/get_recordings_list.yap:37:1
 		params.Keyword = &keyword
 	}
-//line cmd/spx-backend/get_recordings_list.yap:44:1
+//line cmd/spx-backend/get_recordings_list.yap:40:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:44:1
+//line cmd/spx-backend/get_recordings_list.yap:40:1
 	liker := this.Gop_Env("liker"); liker != "" {
-//line cmd/spx-backend/get_recordings_list.yap:45:1
+//line cmd/spx-backend/get_recordings_list.yap:41:1
 		params.Liker = &liker
 	}
-//line cmd/spx-backend/get_recordings_list.yap:49:1
+//line cmd/spx-backend/get_recordings_list.yap:44:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:49:1
+//line cmd/spx-backend/get_recordings_list.yap:44:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_recordings_list.yap:50:1
+//line cmd/spx-backend/get_recordings_list.yap:45:1
 		params.OrderBy = controller.ListRecordingsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_recordings_list.yap:54:1
+//line cmd/spx-backend/get_recordings_list.yap:48:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:54:1
+//line cmd/spx-backend/get_recordings_list.yap:48:1
 	sortOrder := this.Gop_Env("sortOrder"); sortOrder != "" {
-//line cmd/spx-backend/get_recordings_list.yap:55:1
+//line cmd/spx-backend/get_recordings_list.yap:49:1
 		params.SortOrder = controller.SortOrder(sortOrder)
 	}
-//line cmd/spx-backend/get_recordings_list.yap:59:1
+//line cmd/spx-backend/get_recordings_list.yap:52:1
 	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_recordings_list.yap:60:1
+//line cmd/spx-backend/get_recordings_list.yap:53:1
 	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_recordings_list.yap:63:1
+//line cmd/spx-backend/get_recordings_list.yap:55:1
 	if
-//line cmd/spx-backend/get_recordings_list.yap:63:1
+//line cmd/spx-backend/get_recordings_list.yap:55:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_recordings_list.yap:64:1
+//line cmd/spx-backend/get_recordings_list.yap:56:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/get_recordings_list.yap:65:1
+//line cmd/spx-backend/get_recordings_list.yap:57:1
 		return
 	}
-//line cmd/spx-backend/get_recordings_list.yap:69:1
+//line cmd/spx-backend/get_recordings_list.yap:60:1
 	recordings, err := this.ctrl.ListRecordings(ctx.Context(), params)
-//line cmd/spx-backend/get_recordings_list.yap:70:1
+//line cmd/spx-backend/get_recordings_list.yap:61:1
 	if err != nil {
-//line cmd/spx-backend/get_recordings_list.yap:71:1
+//line cmd/spx-backend/get_recordings_list.yap:62:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_recordings_list.yap:72:1
+//line cmd/spx-backend/get_recordings_list.yap:63:1
 		return
 	}
-//line cmd/spx-backend/get_recordings_list.yap:76:1
+//line cmd/spx-backend/get_recordings_list.yap:65:1
 	this.Json__1(recordings)
 }
 func (this *get_recordings_list) Classfname() string {
@@ -2326,6 +2338,53 @@ func (this *post_project_owner_name_view) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
+//line cmd/spx-backend/post_recording.yap:10
+func (this *post_recording) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_recording.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_recording.yap:11:1
+	if
+//line cmd/spx-backend/post_recording.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_recording.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_recording.yap:15:1
+	params := &controller.CreateRecordingParams{}
+//line cmd/spx-backend/post_recording.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_recording.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_recording.yap:19:1
+	if
+//line cmd/spx-backend/post_recording.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_recording.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_recording.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_recording.yap:24:1
+	recording, err := this.ctrl.CreateRecording(ctx.Context(), params)
+//line cmd/spx-backend/post_recording.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_recording.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_recording.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_recording.yap:29:1
+	this.Json__0(201, recording)
+}
+func (this *post_recording) Classfname() string {
+	return "post_recording"
+}
+func (this *post_recording) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
 //line cmd/spx-backend/post_recording_#id_liking.yap:6
 func (this *post_recording_id_liking) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2385,53 +2444,6 @@ func (this *post_recording_id_view) Classfname() string {
 	return "post_recording_#id_view"
 }
 func (this *post_recording_id_view) Classclone() yap.HandlerProto {
-	_xgo_ret := *this
-	return &_xgo_ret
-}
-//line cmd/spx-backend/post_recordings.yap:10
-func (this *post_recordings) Main(_xgo_arg0 *yap.Context) {
-	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_recordings.yap:10:1
-	ctx := &this.Context
-//line cmd/spx-backend/post_recordings.yap:11:1
-	if
-//line cmd/spx-backend/post_recordings.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
-//line cmd/spx-backend/post_recordings.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_recordings.yap:15:1
-	params := &controller.CreateRecordingParams{}
-//line cmd/spx-backend/post_recordings.yap:16:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_recordings.yap:17:1
-		return
-	}
-//line cmd/spx-backend/post_recordings.yap:19:1
-	if
-//line cmd/spx-backend/post_recordings.yap:19:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_recordings.yap:20:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_recordings.yap:21:1
-		return
-	}
-//line cmd/spx-backend/post_recordings.yap:24:1
-	recording, err := this.ctrl.CreateRecording(ctx.Context(), params)
-//line cmd/spx-backend/post_recordings.yap:25:1
-	if err != nil {
-//line cmd/spx-backend/post_recordings.yap:26:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_recordings.yap:27:1
-		return
-	}
-//line cmd/spx-backend/post_recordings.yap:29:1
-	this.Json__0(201, recording)
-}
-func (this *post_recordings) Classfname() string {
-	return "post_recordings"
-}
-func (this *post_recordings) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
@@ -2503,6 +2515,46 @@ func (this *post_util_fileurls) Classfname() string {
 	return "post_util_fileurls"
 }
 func (this *post_util_fileurls) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:10
+func (this *post_wechat_jssdk_config) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:12:1
+	params := &controller.WeChatJSSDKConfigParams{}
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:17:1
+	if
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:17:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:18:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:22:1
+	result, err := this.ctrl.GetWeChatJSSDKConfig(ctx.Context(), params)
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_wechat_jssdk-config.yap:28:1
+	this.Json__1(result)
+}
+func (this *post_wechat_jssdk_config) Classfname() string {
+	return "post_wechat_jssdk-config"
+}
+func (this *post_wechat_jssdk_config) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

@@ -1,20 +1,27 @@
-export const getWechatChatJSSDKConfig = ({ url }: { url: string | undefined }) => {
-  if (!url) {
-    return {
-      appid: '',
-      timestamp: '',
-      nonceStr: '',
-      signature: ''
-    }
-  }
+import { client } from './common'
 
-  const timestamp = Date.now()
-  const nonceStr = Math.random().toString(36).substring(2, 15)
+/**
+ * WeChat JS-SDK configuration data returned by the API
+ */
+export type WeChatJSSDKConfigData = {
+  /** WeChat AppID */
+  appId: string
+  /** Random nonce string */
+  nonceStr: string
+  /** Timestamp */
+  timestamp: number
+  /** Signature for verification */
+  signature: string
+}
 
-  return {
-    appid: '',
-    timestamp: timestamp,
-    nonceStr: nonceStr,
-    signature: ''
-  }
+export type GetWeChatJSSDKConfigParams = {
+  /** Current page URL (without hash fragment) */
+  url: string
+}
+
+export async function getWeChatJSSDKConfig(
+  params: GetWeChatJSSDKConfigParams,
+  signal?: AbortSignal
+): Promise<WeChatJSSDKConfigData> {
+  return client.post('/wechat/jssdk-config', params, { signal }) as Promise<WeChatJSSDKConfigData>
 }

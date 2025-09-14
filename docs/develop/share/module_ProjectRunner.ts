@@ -1,7 +1,7 @@
 interface IframeWindow extends Window {
   startRecording?: () => void;
   stopRecording?: () => Promise<Blob>; // stopRecording 直接返回 Blob
-  takeScreenshot?: () => Blob | Promise<Blob>;
+  getScreenshot?: () => Blob | Promise<Blob>; // 更新为正确的函数名
   pauseGame?: () => void;
   resumeGame?: () => void;
   dispatchKeyToEvent?: (type: string, code: string) => void;

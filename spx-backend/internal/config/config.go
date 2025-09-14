@@ -16,6 +16,7 @@ type Config struct {
 	Casdoor  CasdoorConfig
 	OpenAI   OpenAIConfig
 	AIGC     AIGCConfig
+	WeChat   WeChatConfig
 }
 
 // ServerConfig holds server configuration.
@@ -175,4 +176,10 @@ func (c *OpenAIConfig) GetPremiumModelID() string {
 // AIGCConfig holds AIGC service configuration.
 type AIGCConfig struct {
 	Endpoint string
+}
+
+// WeChatConfig holds WeChat API configuration.
+type WeChatConfig struct {
+	AppID  string
+	Secret string
 }
