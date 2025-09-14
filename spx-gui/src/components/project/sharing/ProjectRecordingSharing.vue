@@ -70,8 +70,36 @@ async function updateVideoSrc() {
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
+  
+  // 检查是否需要显示下载提示
+  if (platform.shareType.supportVideo && !isVideoSharingSupported(platform)) {
+    showDownloadPrompt.fn(platform)
+    return
+  }
+  
   // QR code generation is handled automatically by watch, no need to call manually
 }
+
+// 检查平台是否真正支持视频分享（目前只有占位符实现）
+function isVideoSharingSupported(platform: PlatformConfig): boolean {
+  // 目前只有QQ和微信真正支持，其他平台都是占位符
+  return platform.basicInfo.name === 'qq' || platform.basicInfo.name === 'wechat'
+}
+
+// 显示下载提示
+const showDownloadPrompt = useMessageHandle(
+  (platform: PlatformConfig) => {
+    const platformName = platform.basicInfo.label.zh
+    throw new DefaultException({
+      en: `Please download the video to local and share it on ${platformName}`,
+      zh: `请下载视频到本地，然后去${platformName}分享`
+    })
+  },
+  {
+    en: 'Video sharing not supported',
+    zh: '视频分享暂不支持'
+  }
+)
 
 // Get current recording URL
 function getCurrentRecordUrl() {
