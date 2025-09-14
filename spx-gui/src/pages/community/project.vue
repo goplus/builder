@@ -45,7 +45,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
-import { initShareInfo } from '@/components/project/sharing/platform-share'
+import { initShareInfo, type Disposer } from '@/components/project/sharing/platform-share'
 import { useModal } from '@/components/ui'
 import ProjectRecordingSharing from '@/components/project/sharing/ProjectRecordingSharing.vue'
 import ProjectScreenshotSharing from '@/components/project/sharing/ProjectScreenshotSharing.vue'
@@ -511,8 +511,17 @@ const handleScreenshotSharing = useMessageHandle(
 )
 //初始化分享信息
 watchEffect((onCleanup) => {
-  const dispose = initShareInfo()
-  onCleanup(dispose)
+  let dispose: Disposer | null = null
+
+  initShareInfo().then((disposer) => {
+    dispose = disposer
+  })
+
+  onCleanup(() => {
+    if (dispose) {
+      dispose()
+    }
+  })
 })
 </script>
 
