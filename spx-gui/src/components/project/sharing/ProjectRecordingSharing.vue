@@ -41,8 +41,8 @@ const videoSrc = ref<string>('')
 const { createUrl } = useObjectUrlManager()
 
 // Recording page URL
-const recordPageUrl = computed(() => {
-  return currentRecording.value ? `/record/${currentRecording.value.id}` : ''
+const recordingPageUrl = computed(() => {
+  return currentRecording.value ? `/recording/${currentRecording.value.id}` : ''
 })
 
 // Load recording data
@@ -102,8 +102,8 @@ const showDownloadPrompt = useMessageHandle(
 )
 
 // Get current recording URL
-function getCurrentRecordUrl() {
-  return window.location.origin + recordPageUrl.value
+function getCurrentRecordingUrl() {
+  return window.location.origin + recordingPageUrl.value
 }
 
 // Generate sharing QR code
@@ -124,7 +124,7 @@ async function generateShareQRCode() {
   try {
     // Generate jump URL based on platform type
     const platform = selectedPlatform.value
-    const currentUrl = getCurrentRecordUrl()
+    const currentUrl = getCurrentRecordingUrl()
 
     let shareUrl = ''
 

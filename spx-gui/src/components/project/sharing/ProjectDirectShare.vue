@@ -34,7 +34,7 @@
     <div v-if="!selectedPlatform?.shareType.supportURL" class="share-content-row">
       <Poster ref="posterCompRef" :project-data="props.projectData" />
       <div class="qrcode side">
-        <img v-if="qrcodeURL" :src="qrcodeURL" alt="QR Code" />
+        <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
         <div v-else class="unsupported-container">
           <div class="unsupport-icon">❌</div>
           <span class="unsupported-text">{{ $t({ en: 'Unsupported', zh: '暂不支持' }) }}</span>
@@ -45,7 +45,7 @@
       </div>
     </div>
     <div v-else class="qrcode">
-      <img v-if="qrcodeURL" :src="qrcodeURL" alt="QR Code" />
+      <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
     </div>
   </UIFormModal>
 </template>
@@ -54,12 +54,13 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
-import { computed, ref, onUnmounted } from 'vue'
+import { computed, ref, onUnmounted, onMounted, watch, nextTick } from 'vue'
 import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
 import QRCode from 'qrcode'
+import { DefaultException } from '@/utils/exception'
 // import unsupport from '@/assets/unsupport.svg'
 
 const props = defineProps<{
@@ -73,7 +74,11 @@ const emit = defineEmits<{
 }>()
 
 // 组件引用
+const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 const posterCompRef = ref<InstanceType<typeof Poster>>()
+const posterFile = ref<File | null>(null)
+const qrCodeData = ref<string | null>(null)
+const isGeneratingQR = ref(false)
 
 // 清理 object URLs
 const createdObjectUrls = new Set<string>()
@@ -88,71 +93,86 @@ const handleCopy = useMessageHandle(
   { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
 )
 
-const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
-
-const qrcodeURL = ref<string | null>(null)
-
-/**
- * 生成二维码的可复用方法
- * @param url 需要转换为二维码的URL
- * @param options 二维码生成选项
- * @returns Promise<string> 二维码的dataURL
- */
-const generateQRCode = async (
-  url: string,
-  options?: {
-    color?: {
-      dark: string
-      light: string
-    }
-    width?: number
-    margin?: number
-  }
-): Promise<string> => {
-  const defaultOptions = {
-    color: {
-      dark: '#000000',
-      light: '#FFFFFF'
-    },
-    width: 200,
-    margin: 1
-  }
-
-  const qrOptions = { ...defaultOptions, ...options }
-
-  return await QRCode.toDataURL(url, qrOptions)
-}
-
-const handlePlatformChange = async (platform: PlatformConfig) => {
+// Handle platform selection change
+function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  if (platform.shareType.supportURL) {
-    // 生成带平台颜色的二维码
-    const url = await generateQRCode(projectSharingLink.value, {
-      color: {
-        dark: platform.basicInfo.color,
-        light: '#FFFFFF'
-      },
-      width: 200,
-      margin: 1
+  handleGenerateShareQRCode.fn()
+}
+
+// Create poster file
+async function createPosterFile(): Promise<File> {
+  // 等待海报组件准备就绪
+  if (!posterCompRef.value) {
+    throw new DefaultException({
+      en: 'Poster component not ready',
+      zh: '海报组件未准备好'
     })
-    qrcodeURL.value = url
-  } else if (platform.shareType.supportImage) {
-    // TODO: 如果平台不支持URL分享，可以考虑其他分享方式
-    // qrcodeURL.value = platform.shareFunction.shareImage(projectSharingLink.value)
-    // 生成带平台颜色的二维码
-    const url = await generateQRCode(projectSharingLink.value, {
-      color: {
-        dark: platform.basicInfo.color,
-        light: '#FFFFFF'
-      },
-      width: 200,
-      margin: 1
+  }
+  // 等待海报组件内部元素完全渲染
+  await nextTick()
+
+  const posterFile = await posterCompRef.value.createPoster()
+  if (!posterFile) {
+    throw new DefaultException({
+      en: 'Failed to generate poster',
+      zh: '生成海报失败'
     })
-    qrcodeURL.value = url
+  }
+
+  return posterFile
+}
+
+// Generate share URL for platform
+async function generateShareUrl(platform: PlatformConfig): Promise<string | null> {
+  if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
+    return await platform.shareFunction.shareURL(projectSharingLink.value)
+  } else if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
+    // 优先使用预加载的海报，如果没有则重新生成
+    const currentPosterFile = posterFile.value || (await createPosterFile())
+    return await platform.shareFunction.shareImage(currentPosterFile)
   } else {
-    qrcodeURL.value = null
+    return null
   }
 }
+
+// Generate QR code data URL
+async function generateQRCodeDataUrl(shareUrl: string | null, color: string): Promise<string | null> {
+  try {
+    return await QRCode.toDataURL(shareUrl || '', {
+      color: {
+        dark: color || '#000000',
+        light: '#FFFFFF'
+      },
+      width: 120,
+      margin: 1
+    })
+  } catch (error) {
+    throw new DefaultException({
+      en: 'Failed to generate QR code',
+      zh: '生成二维码失败'
+    })
+  }
+}
+
+// Generate share QR code with error handling
+const handleGenerateShareQRCode = useMessageHandle(
+  async (): Promise<void> => {
+    if (!selectedPlatform.value) return
+
+    isGeneratingQR.value = true
+    try {
+      const platform = selectedPlatform.value
+      const shareUrl = await generateShareUrl(platform)
+      qrCodeData.value = await generateQRCodeDataUrl(shareUrl, platform.basicInfo.color)
+    } finally {
+      isGeneratingQR.value = false
+    }
+  },
+  {
+    en: 'Failed to generate share QR code',
+    zh: '生成分享二维码失败'
+  }
+)
 
 const handleDownloadPoster = async () => {
   if (posterCompRef.value == null) return
@@ -165,6 +185,19 @@ const handleDownloadPoster = async () => {
   link.download = 'poster.png'
   link.click()
 }
+// 组件挂载时预加载海报
+onMounted(async () => {
+  try {
+    posterFile.value = await createPosterFile()
+
+    // 海报加载完成后，如果当前平台需要海报分享，重新生成二维码
+    if (selectedPlatform.value?.shareType.supportImage && !selectedPlatform.value?.shareType.supportURL) {
+      await handleGenerateShareQRCode.fn()
+    }
+  } catch (error) {
+    console.warn('Failed to preload poster:', error)
+  }
+})
 
 onUnmounted(() => {
   // 清理所有创建的 object URLs
@@ -173,6 +206,34 @@ onUnmounted(() => {
   })
   createdObjectUrls.clear()
 })
+
+watch(
+  () => props.visible,
+  (newVisible) => {
+    if (newVisible) {
+      qrCodeData.value = null
+      nextTick(() => {
+        if (selectedPlatform.value) {
+          handleGenerateShareQRCode.fn()
+        }
+      })
+    }
+  }
+)
+
+// 监听海报文件变化，当海报加载完成时重新生成二维码
+watch(
+  () => posterFile.value,
+  async (newPosterFile) => {
+    if (
+      newPosterFile &&
+      selectedPlatform.value?.shareType.supportImage &&
+      !selectedPlatform.value?.shareType.supportURL
+    ) {
+      await handleGenerateShareQRCode.fn()
+    }
+  }
+)
 </script>
 
 <style scoped lang="scss">
