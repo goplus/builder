@@ -70,13 +70,13 @@ async function updateVideoSrc() {
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  
+
   // 检查是否需要显示下载提示
   if (platform.shareType.supportVideo && !isVideoSharingSupported(platform)) {
     showDownloadPrompt.fn(platform)
     return
   }
-  
+
   // QR code generation is handled automatically by watch, no need to call manually
 }
 
