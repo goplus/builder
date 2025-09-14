@@ -198,14 +198,6 @@ const createPoster = async (): Promise<File> => {
 
   await nextTick() // Ensure DOM has been updated
 
-  // 确保二维码已经渲染完成（不需要重新生成，因为onMounted和watch已经处理了）
-  const canvas = projectQrCanvas.value
-  const { owner, name } = props.projectData
-  if (canvas && owner && name) {
-    // 只等待一小段时间确保二维码渲染完成，而不是重新生成
-    await new Promise((resolve) => setTimeout(resolve, 50))
-  }
-
   const posterCanvas = await html2canvas(posterElementRef.value, {
     width: 800,
     height: 1000,
