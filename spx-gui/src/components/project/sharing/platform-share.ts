@@ -90,7 +90,7 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
-      return `url:${url}`
+      return `${url}`
     },
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
@@ -132,7 +132,7 @@ class WeChatPlatform implements PlatformConfig {
     shareURL: async (url: string) => {
       // const projectTitle = extractOwnerAndName(url)
       // 可以在这里添加微信分享逻辑，使用 projectTitle
-      return `url:${url}`
+      return `${url}`
     },
 
     shareImage: async (image: File) => {
