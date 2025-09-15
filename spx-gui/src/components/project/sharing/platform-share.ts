@@ -173,7 +173,7 @@ class WeChatPlatform implements PlatformConfig {
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
           link: location.href,
-          imgUrl: 'https://x.qiniu.com//logo.png',
+          imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
       })
