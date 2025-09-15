@@ -21,8 +21,8 @@ function handleExit(code: number) {
 }
 
 defineExpose({
-  async run(signal?: AbortSignal) {
-    return projectRunnerRef.value?.run(signal)
+  async run() {
+    return projectRunnerRef.value?.run()
   },
   async stop() {
     return projectRunnerRef.value?.stop()
