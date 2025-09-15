@@ -90,7 +90,7 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
-      return `${url}`
+      return url
     },
     shareImage: async (image: File) => {
       return `platformUrl:${platformUrl},image:${image}`
@@ -132,7 +132,7 @@ class WeChatPlatform implements PlatformConfig {
     shareURL: async (url: string) => {
       // const projectTitle = extractOwnerAndName(url)
       // 可以在这里添加微信分享逻辑，使用 projectTitle
-      return `${url}`
+      return url
     },
 
     shareImage: async (image: File) => {
@@ -277,8 +277,7 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
   const qq = new QQPlatform()
   const wechat = new WeChatPlatform()
 
-  await qq.initShareInfo(defaultShareInfo)
-  await wechat.initShareInfo(defaultShareInfo)
+  await Promise.all([qq.initShareInfo(defaultShareInfo), wechat.initShareInfo(defaultShareInfo)])
 
   return () => {
     // Reset to a generic default for the current page to avoid stale project ShareInfo

@@ -11,11 +11,11 @@ import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
 import { getCoverImgUrl } from './cover'
-
+import { useResponsive } from '@/components/ui/responsive'
 const props = defineProps<{
   user: User
 }>()
-
+const isMobile = useResponsive('mobile')
 const isSignedInUser = computed(() => props.user.username === getSignedInUsername())
 const avatarUrl = useExternalUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
@@ -38,23 +38,25 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
           {{ user.displayName }}
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
         </h2>
-        <TextView style="max-height: 66px" :text="user.description" />
+        <TextView v-if="!isMobile" style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
         <UIButton
-          v-if="isSignedInUser"
+          v-if="isSignedInUser && !isMobile"
           v-radar="{ name: 'Edit profile button', desc: 'Click to edit user profile' }"
           @click="handleEditProfile"
         >
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
-        <FollowButton v-else :name="user.username" />
+        <FollowButton v-if="!isSignedInUser" :name="user.username" />
       </div>
     </div>
   </CommunityCard>
 </template>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .user-header {
   position: relative;
 }
@@ -66,6 +68,11 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+
+  @include responsive(mobile) {
+    height: 15vh;
+    max-height: 120px;
+  }
 }
 
 .avatar {
@@ -77,6 +84,13 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
   border: 2px solid var(--ui-color-grey-100);
   border-radius: 50%;
   background-color: var(--ui-color-grey-100);
+
+  @include responsive(mobile) {
+    left: 16px;
+    bottom: 16px;
+    width: 80px;
+    height: 80px;
+  }
 }
 
 .content {
@@ -84,6 +98,13 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
   display: flex;
   align-items: end;
   gap: 100px;
+
+  @include responsive(mobile) {
+    padding: 16px 16px 16px 112px;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+  }
 }
 
 .info {
@@ -99,6 +120,14 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
     font-size: 20px;
     line-height: 28px;
     color: var(--ui-color-title);
+
+    @include responsive(mobile) {
+      font-size: 16px;
+      line-height: 22px;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+    }
   }
 
   .joined-at {
@@ -116,5 +145,9 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
   flex: 0 0 110px;
   display: flex;
   justify-content: flex-end;
+
+  @include responsive(mobile) {
+    flex: 0 0 auto;
+  }
 }
 </style>

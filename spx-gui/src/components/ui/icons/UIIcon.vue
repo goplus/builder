@@ -55,6 +55,7 @@ import fullScreen from './full-screen.svg?raw'
 import end from './end.svg?raw'
 import eyedrop from './eyedrop.svg?raw'
 import tutorial from './tutorial.svg?raw'
+import arrowShare from './arrow-share.svg?raw'
 
 const typeIconMap = {
   file,
@@ -106,7 +107,8 @@ const typeIconMap = {
   fullScreen,
   end,
   eyedrop,
-  tutorial
+  tutorial,
+  arrowShare
 }
 
 export type Type = keyof typeof typeIconMap
@@ -130,11 +132,13 @@ defineProps<{
 
 .spinning {
   animation: ui-icon-spinning 1s linear infinite;
+
   @keyframes ui-icon-spinning {
     from {
       transform-origin: 50% 50%;
       transform: rotate(0);
     }
+
     to {
       transform-origin: 50% 50%;
       transform: rotate(360deg);

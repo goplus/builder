@@ -31,8 +31,16 @@ function handleJoin() {
 </template>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive.scss';
+
 .guest-banner {
   padding: 12px;
+  font-size: 24px;
+
+  @include responsive(mobile) {
+    padding: 8px;
+    font-size: 18px;
+  }
 }
 
 .main {
@@ -45,15 +53,21 @@ function handleJoin() {
   background-image: url('./bg.svg');
   background-repeat: no-repeat;
   background-position: center right 54px;
+
+  @include responsive(mobile) {
+    padding: 32px 24px 36px;
+    background-position: center right 20px;
+    background-size: auto 80%;
+  }
 }
 
 .title {
-  font-size: 24px;
+  font-size: 1em;
   line-height: 1.5;
 }
 
 .sub-title {
-  font-size: 13px;
+  font-size: 0.5em;
   line-height: 20px;
   margin-top: 8px;
 }
