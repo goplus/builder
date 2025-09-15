@@ -252,14 +252,13 @@ GET /v1/internal/resources/stats                # 详细资源统计
 ```
 spx-algorithm/
 ├── database/                    # 数据库层
-│   ├── milvus/                 # Milvus向量数据库
+│   ├── resource_vector/        # Milvus向量数据库
 │   │   ├── connection.py       # 连接管理
 │   │   ├── operations.py       # 基础CRUD操作
 │   │   └── config.py          # 配置类
 │   ├── user_feedback/          # 用户反馈数据库
 │   │   ├── models.py          # 反馈数据模型
-│   │   └── feedback_storage.py # 反馈数据存储
-│   └── mysql/                  # MySQL数据库（预留）
+│   └── └── feedback_storage.py # 反馈数据存储
 ├── services/                   # 服务实现层
 │   ├── image_matching/         # 图文匹配服务
 │   │   ├── clip_service.py     # CLIP模型服务
@@ -277,16 +276,13 @@ spx-algorithm/
 │   │   ├── feedback_routes.py  # 用户反馈路由
 │   │   ├── internal_routes.py  # 内部调试路由
 │   │   └── health_routes.py    # 健康检查路由
-│   ├── schemas/                # 请求/响应模式
 │   └── middlewares/            # 中间件
 ├── config/                     # 配置管理
 │   ├── base.py                # 基础配置
 │   ├── development.py         # 开发环境配置
 │   ├── production.py          # 生产环境配置
 │   └── testing.py             # 测试环境配置
-├── common/                     # 公共组件
-├── tests/                      # 测试
-├── docs/                       # 文档
+├── test/                      # 测试
 ├── app.py                      # 主应用入口
 └── requirements.txt            # 依赖文件
 ```
