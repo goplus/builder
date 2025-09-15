@@ -89,10 +89,8 @@ export async function addProject(params: AddProjectParams | AddProjectByRemixPar
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
-export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
-  Partial<
-    Pick<ProjectData, 'description' | 'instructions' | 'thumbnail' | 'mobileKeyboardType' | 'mobileKeyboardZoneToKey'>
-  >
+export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility' | 'mobileKeyboardType'> &
+  Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail' | 'mobileKeyboardZoneToKey'>>
 export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
