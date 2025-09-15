@@ -85,7 +85,7 @@ class QQPlatform implements PlatformConfig {
   shareType = {
     supportURL: true,
     supportImage: true,
-    supportVideo: true
+    supportVideo: false
   }
 
   shareFunction = {
@@ -190,7 +190,7 @@ class DouyinPlatform implements PlatformConfig {
   shareType = {
     supportURL: false,
     supportImage: true,
-    supportVideo: true
+    supportVideo: false
   }
 
   shareFunction = {
@@ -245,7 +245,7 @@ class BilibiliPlatform implements PlatformConfig {
   shareType = {
     supportURL: false,
     supportImage: false,
-    supportVideo: true
+    supportVideo: false
   }
 
   shareFunction = {

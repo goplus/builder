@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import type { PlatformConfig } from './platform-share'
+import { type PlatformConfig } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -70,8 +70,23 @@ async function updateVideoSrc() {
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
+
+  // 检查是否需要显示下载提示
+  if (!platform.shareType.supportVideo && !platform.shareType.supportURL) {
+    throw new DefaultException({
+      en: `Please download the video to local and share it on ${platform.basicInfo.label.en}`,
+      zh: `请下载视频到本地，然后去${platform.basicInfo.label.zh}分享`
+    })
+  }
+
   // QR code generation is handled automatically by watch, no need to call manually
 }
+
+// Use useMessageHandle wrapped platform change handler
+const handlePlatformChangeWithMessage = useMessageHandle(handlePlatformChange, {
+  en: 'Video sharing not supported',
+  zh: '视频分享暂不支持'
+})
 
 // Get current recording URL
 function getCurrentRecordingUrl() {
@@ -296,7 +311,7 @@ watch(
           </div>
         </div>
         <div class="platform-selector-container">
-          <PlatformSelector @update:model-value="handlePlatformChange" />
+          <PlatformSelector @update:model-value="handlePlatformChangeWithMessage.fn" />
         </div>
       </div>
       <div class="actions">
