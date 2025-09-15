@@ -249,7 +249,17 @@ def train_ltr_model():
         # 训练模型
         training_result = rerank_service.train_model_with_feedback(limit=limit)
         
-        if training_result.get('success', True):
+        # 检查训练结果：如果包含success=False，说明训练失败；否则检查是否有正常的训练记录
+        if training_result.get('success') is False:
+            # 明确的训练失败
+            logger.error(f"LTR模型训练失败: {training_result.get('error')}")
+            return jsonify({
+                'success': False,
+                'error': training_result.get('error', '训练失败'),
+                'details': training_result
+            }), 500
+        elif 'timestamp' in training_result and 'val_metrics' in training_result:
+            # 成功的训练记录（包含训练时间戳和验证指标）
             logger.info("LTR模型训练成功")
             return jsonify({
                 'success': True,
@@ -257,10 +267,11 @@ def train_ltr_model():
                 'training_result': training_result
             })
         else:
-            logger.error(f"LTR模型训练失败: {training_result.get('error')}")
+            # 异常的返回结构，可能是未知错误
+            logger.error(f"LTR模型训练返回异常结构: {training_result}")
             return jsonify({
                 'success': False,
-                'error': training_result.get('error', '训练失败'),
+                'error': '训练结果格式异常，可能存在未知错误',
                 'details': training_result
             }), 500
             
