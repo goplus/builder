@@ -28,8 +28,10 @@ const attachTo = useModalContainer()
 </script>
 <style lang="scss" scoped>
 .container {
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background-color: white;
+  background-color: var(--ui-color-grey-100);
 }
 </style>
