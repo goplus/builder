@@ -2331,6 +2331,194 @@ export const spriteOnBackdrop1: DefinitionDocumentationItem = {
   }
 }
 
+export const spritePhysicsMode: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.physicsMode'
+  },
+  insertSnippet: 'physicsMode',
+  overview: 'physicsMode',
+  detail: makeBasicMarkdownString({
+    en: 'The physics mode for the sprite',
+    zh: '精灵的物理模式'
+  })
+}
+
+export const spriteSetPhysicsMode: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setPhysicsMode'
+  },
+  insertSnippet: 'setPhysicsMode ${1:NoPhysics}',
+  insertSnippetParameterHints: ['mode'],
+  overview: 'setPhysicsMode mode',
+  detail: makeBasicMarkdownString({
+    en: 'Set the physics mode for the sprite',
+    zh: '设置精灵的物理模式'
+  })
+}
+
+export const spriteVelocity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.velocity'
+  },
+  insertSnippet: 'velocity',
+  overview: 'velocity',
+  detail: makeBasicMarkdownString({
+    en: 'The velocity for the sprite. It is a 2D vector represented as (vx, vy), where vx is the distance to move in x axis per second, and vy is the distance to move in y axis per second',
+    zh: '精灵的速度。它是一个二维向量，表示为 (vx, vy)，其中 vx 是每秒在 x 轴上移动的距离，vy 是每秒在 y 轴上移动的距离'
+  })
+}
+
+export const spriteSetVelocity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setVelocity'
+  },
+  insertSnippet: 'setVelocity ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['vx', 'vy'],
+  overview: 'setVelocity vx, vy',
+  detail: makeBasicMarkdownString({
+    en: 'Set the velocity for the sprite',
+    zh: '设置精灵的速度'
+  })
+}
+
+export const spriteGravity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.gravity'
+  },
+  insertSnippet: 'gravity',
+  overview: 'gravity',
+  detail: makeBasicMarkdownString({
+    en: 'The gravity for the sprite. The value is relative to the global gravity. For example, 2 means double the global gravity, 0 means no gravity',
+    zh: '精灵受到的重力。该值相对于全局重力。例如，2 表示是全局重力的两倍，0 表示没有重力'
+  })
+}
+
+export const spriteSetGravity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setGravity'
+  },
+  insertSnippet: 'setGravity ${1:0}',
+  insertSnippetParameterHints: ['g'],
+  overview: 'setGravity g',
+  detail: makeBasicMarkdownString({
+    en: 'Set the gravity for the sprite',
+    zh: '设置精灵的重力'
+  })
+}
+
+export const spriteAddImpulse: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.addImpulse'
+  },
+  insertSnippet: 'addImpulse ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['ix', 'iy'],
+  overview: 'addImpulse ix, iy',
+  detail: makeBasicMarkdownString({
+    en: 'Add impulse to the sprite. The impulse is an instant velocity change, i.e., the velocity will be changed by (ix, iy) instantly',
+    zh: '给精灵一个冲量。冲量是瞬时的速度变化，即速度会立即改变 (ix, iy)'
+  })
+}
+
+export const spriteIsOnFloor: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.isOnFloor'
+  },
+  insertSnippet: 'isOnFloor',
+  overview: 'isOnFloor',
+  detail: makeBasicMarkdownString({
+    en: 'If the sprite is currently on the floor',
+    zh: '精灵当前是否在地面上'
+  })
+}
+
+export const spriteSetColliderRect: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setColliderRect'
+  },
+  insertSnippet: 'setColliderRect ${1:100}, ${2:100}',
+  insertSnippetParameterHints: ['width', 'height'],
+  overview: 'setColliderRect width, height',
+  detail: makeBasicMarkdownString({
+    en: 'Set the collider to be a rectangle with given width & height',
+    zh: '将碰撞体设置为指定宽度和高度的矩形'
+  })
+}
+
+export const spriteSetColliderCircle: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setColliderCircle'
+  },
+  insertSnippet: 'setColliderCircle ${1:50}',
+  insertSnippetParameterHints: ['radius'],
+  overview: 'setColliderCircle radius',
+  detail: makeBasicMarkdownString({
+    en: 'Set the collider to be a circle with given radius',
+    zh: '将碰撞体设置为指定半径的圆形'
+  })
+}
+
+export const spriteSetColliderCapsule: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setColliderCapsule'
+  },
+  insertSnippet: 'setColliderCapsule ${1:50}, ${2:100}',
+  insertSnippetParameterHints: ['radius', 'height'],
+  overview: 'setColliderCapsule radius, height',
+  detail: makeBasicMarkdownString({
+    en: 'Set the collider to be a capsule with given radius & height',
+    zh: '将碰撞体设置为指定半径和高度的胶囊体'
+  })
+}
+
+export const spriteSetColliderPivot: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setColliderPivot'
+  },
+  insertSnippet: 'setColliderPivot ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['offsetX', 'offsetY'],
+  overview: 'setColliderPivot offsetX, offsetY',
+  detail: makeBasicMarkdownString({
+    en: 'Set the collider pivot',
+    zh: '设置碰撞体的中心'
+  })
+}
+
 export const rand0: DefinitionDocumentationItem = {
   categories: [categories.game.others],
   kind: DefinitionKind.Read,
@@ -2792,6 +2980,132 @@ export const monitorChangeSize: DefinitionDocumentationItem = {
   }
 }
 
+export const camera: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'Game.Camera'
+  },
+  insertSnippet: 'Camera',
+  overview: 'Camera',
+  detail: makeBasicMarkdownString({
+    en: 'Camera, which controls the visible area of the stage',
+    zh: '摄像机，控制舞台的显示区域'
+  })
+}
+
+export const cameraZoom: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.zoom'
+  },
+  insertSnippet: 'Camera.zoom',
+  overview: 'Camera.zoom',
+  detail: makeBasicMarkdownString({
+    en: 'Zoom factor of the camera. Value 1 means no zoom, greater than 1 means zoom in, and between 0 and 1 means zoom out',
+    zh: '摄像机缩放比例。值为 1 表示不缩放，大于 1 表示放大，小于 1 且大于 0 表示缩小'
+  })
+}
+
+export const cameraSetZoom: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.setZoom'
+  },
+  insertSnippet: 'Camera.setZoom ${1:1}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'Camera.setZoom zoom',
+  detail: makeBasicMarkdownString({
+    en: 'Set zoom factor of the camera',
+    zh: '设置摄像机缩放比例'
+  })
+}
+
+export const cameraXpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.xpos'
+  },
+  insertSnippet: 'Camera.xpos',
+  overview: 'Camera.xpos',
+  detail: makeBasicMarkdownString({
+    en: 'The X position of the camera center',
+    zh: '摄像机中心的 X 坐标位置'
+  })
+}
+
+export const cameraYpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.ypos'
+  },
+  insertSnippet: 'Camera.ypos',
+  overview: 'Camera.ypos',
+  detail: makeBasicMarkdownString({
+    en: 'The Y position of the camera center',
+    zh: '摄像机中心的 Y 坐标位置'
+  })
+}
+
+export const cameraSetXYpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.setXYpos'
+  },
+  insertSnippet: 'Camera.setXYpos ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['x', 'y'],
+  overview: 'Camera.setXYpos x, y',
+  detail: makeBasicMarkdownString({
+    en: 'Set the X and Y position of the camera center',
+    zh: '设置摄像机中心的 X 和 Y 坐标位置'
+  })
+}
+
+export const cameraFollow0: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.follow',
+    overloadId: '0'
+  },
+  insertSnippet: 'Camera.follow ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'Camera.follow sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Make the camera follow the given sprite',
+    zh: '让摄像机跟随指定的精灵'
+  })
+}
+
+export const cameraFollow1: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.follow',
+    overloadId: '1'
+  },
+  insertSnippet: 'Camera.follow ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
+  insertSnippetParameterHints: ['spriteName'],
+  overview: 'Camera.follow spriteName',
+  detail: makeBasicMarkdownString({
+    en: 'Make the camera follow the given sprite by name',
+    zh: '让摄像机跟随指定名字的精灵'
+  })
+}
+
 export const movingInfoOldX: DefinitionDocumentationItem = {
   categories: [],
   kind: DefinitionKind.Variable,
@@ -2976,4 +3290,21 @@ export const edgeRight = defineConst('EdgeRight', [categories.sensing.distance],
 export const edgeBottom = defineConst('EdgeBottom', [categories.sensing.distance], {
   en: 'Bottom edge of the stage',
   zh: '舞台下边缘'
+})
+
+export const noPhysics = defineConst('NoPhysics', [categories.motion.physics], {
+  en: 'No physics effect',
+  zh: '无物理效果'
+})
+export const kinematicPhysics = defineConst('KinematicPhysics', [categories.motion.physics], {
+  en: 'Kinematic physics effect',
+  zh: '运动学物理效果'
+})
+export const dynamicPhysics = defineConst('DynamicPhysics', [categories.motion.physics], {
+  en: 'Dynamic physics effect',
+  zh: '动力学物理效果'
+})
+export const staticPhysics = defineConst('StaticPhysics', [categories.motion.physics], {
+  en: 'Static physics effect',
+  zh: '静态物理效果'
 })
