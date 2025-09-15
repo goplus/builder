@@ -81,29 +81,34 @@ docker-compose up -d
 
 ```env
 # Flask 配置
-FLASK_ENV=development
 SECRET_KEY=your-secret-key
 
 # CLIP 模型配置
 CLIP_MODEL_NAME=ViT-B-32
 CLIP_PRETRAINED=laion2b_s34b_b79k
 
-# 数据存储配置
-STORAGE_HOST=localhost
-STORAGE_PORT=19530
-COLLECTION_NAME=spx_resources
-VECTOR_DIMENSION=512
+# Milvus 向量数据库配置
+MILVUS_HOST=localhost
+MILVUS_PORT=19530
+MILVUS_COLLECTION_NAME=spx_vector_collection
+MILVUS_DIMENSION=512
 
 # 重排序配置
-ENABLE_RERANKING=false
-LTR_MODEL_PATH=
+ENABLE_RERANKING=true
+LTR_MODEL_PATH=models/ltr_model.pkl
 
 # 用户反馈数据库配置
-FEEDBACK_DB_HOST=localhost
-FEEDBACK_DB_PORT=3306
-FEEDBACK_DB_USER=spx_user
-FEEDBACK_DB_PASSWORD=spx_password
-FEEDBACK_DB_NAME=spx_feedback
+MYSQL_HOST=localhost
+MYSQL_PORT=3307
+MYSQL_USER=spx_user
+MYSQL_PASSWORD=spx_feedback_2024
+MYSQL_DATABASE=spx_feedback
+
+# LTR 模型训练配置
+LTR_TRAINING_BATCH_SIZE=1000
+LTR_MODEL_AUTO_RETRAIN=false
+LTR_COARSE_MULTIPLIER=3
+LTR_MAX_CANDIDATES=100
 ```
 
 ### 4. 启动服务
@@ -304,16 +309,24 @@ export FLASK_ENV=production
 
 | 配置项 | 描述 | 默认值 |
 |-------|------|--------|
+| `SECRET_KEY` | Flask 密钥 | `spx-algorithm-secret-key` |
 | `CLIP_MODEL_NAME` | CLIP 模型名称 | `ViT-B-32` |
 | `CLIP_PRETRAINED` | 预训练权重 | `laion2b_s34b_b79k` |
-| `STORAGE_HOST` | 存储服务器地址 | `localhost` |
-| `STORAGE_PORT` | 存储服务器端口 | `19530` |
-| `COLLECTION_NAME` | 资源集合名称 | `spx_resources` |
-| `VECTOR_DIMENSION` | 向量维度 | `512` |
-| `ENABLE_RERANKING` | 是否启用重排序 | `false` |
-| `FEEDBACK_DB_HOST` | 反馈数据库地址 | `localhost` |
-| `FEEDBACK_DB_PORT` | 反馈数据库端口 | `3306` |
-| `FEEDBACK_DB_NAME` | 反馈数据库名称 | `spx_feedback` |
+| `MILVUS_HOST` | Milvus 服务器地址 | `localhost` |
+| `MILVUS_PORT` | Milvus 服务器端口 | `19530` |
+| `MILVUS_COLLECTION_NAME` | 向量集合名称 | `spx_vector_collection` |
+| `MILVUS_DIMENSION` | 向量维度 | `512` |
+| `ENABLE_RERANKING` | 是否启用重排序 | `true` |
+| `LTR_MODEL_PATH` | LTR模型路径 | `models/ltr_model.pkl` |
+| `MYSQL_HOST` | MySQL 数据库地址 | `localhost` |
+| `MYSQL_PORT` | MySQL 数据库端口 | `3307` |
+| `MYSQL_USER` | MySQL 数据库用户 | `spx_user` |
+| `MYSQL_PASSWORD` | MySQL 数据库密码 | `spx_feedback_2024` |
+| `MYSQL_DATABASE` | MySQL 数据库名称 | `spx_feedback` |
+| `LTR_TRAINING_BATCH_SIZE` | LTR训练批次大小 | `1000` |
+| `LTR_MODEL_AUTO_RETRAIN` | 是否自动重训练 | `false` |
+| `LTR_COARSE_MULTIPLIER` | 粗排数量倍数 | `3` |
+| `LTR_MAX_CANDIDATES` | 粗排最大候选数 | `100` |
 
 ## 开发指南
 
