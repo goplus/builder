@@ -5,21 +5,22 @@
 <script setup lang="ts">
 import { computed, effect, nextTick, ref } from 'vue'
 import type { Node } from 'konva/lib/Node'
-import { useEditorCtx } from '../../EditorContextProvider.vue'
+import { Sprite } from '@/models/sprite'
+import type { Widget } from '@/models/widget'
 import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 import { getNodeId } from './common'
 
 const props = defineProps<{
+  target: Sprite | Widget | null
   nodeReadyMap: Map<string, boolean>
 }>()
 
 const transformer = ref<KonvaNodeInstance<CustomTransformer>>()
-const editorCtx = useEditorCtx()
 
 const config = computed<CustomTransformerConfig>(() => {
-  if (editorCtx.state.selectedSprite != null) {
+  if (props.target instanceof Sprite) {
     return {
-      rotationStyle: editorCtx.state.selectedSprite.rotationStyle,
+      rotationStyle: props.target.rotationStyle,
       centeredScaling: true
     }
   }
@@ -33,9 +34,8 @@ effect(async () => {
   if (transformer.value == null) return
   const transformerNode = transformer.value.getNode()
   transformerNode.nodes([])
-  const selected = editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget
-  if (selected == null) return
-  const nodeId = getNodeId(selected)
+  if (props.target == null) return
+  const nodeId = getNodeId(props.target)
   // Wait for node ready, so that Konva can get correct node size
   if (!props.nodeReadyMap.get(nodeId)) return
   const stage = transformerNode.getStage()

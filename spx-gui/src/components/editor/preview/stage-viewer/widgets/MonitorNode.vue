@@ -18,7 +18,7 @@ import { round } from '@/utils/utils'
 import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { getNodeId } from '../common'
+import { getNodeId } from '@/components/editor/common/viewer/common'
 
 const props = defineProps<{
   monitor: Monitor
