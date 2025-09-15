@@ -15,6 +15,8 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
+// WeChat API documentation references: https://developers.weixin.qq.com/doc/service/guide/h5/jssdk.html
+
 // WeChatTokenCache holds cached WeChat tokens
 type WeChatTokenCache struct {
 	AccessToken    string
@@ -50,6 +52,7 @@ type WeChatService struct {
 	appID  string
 	secret string
 	cache  *WeChatTokenCache
+	client *http.Client // Reused HTTP client for better performance
 }
 
 // NewWeChatService creates a new WeChat service
@@ -58,6 +61,7 @@ func NewWeChatService(appID, secret string) *WeChatService {
 		appID:  appID,
 		secret: secret,
 		cache:  &WeChatTokenCache{},
+		client: &http.Client{Timeout: 10 * time.Second}, // Initialize once for reuse
 	}
 }
 
@@ -112,8 +116,7 @@ func (w *WeChatService) getAccessToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := w.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to request WeChat API: %w", err)
 	}
@@ -173,10 +176,7 @@ func (w *WeChatService) getJsapiTicket(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	resp, err := client.Do(req)
+	resp, err := w.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to request WeChat ticket API: %w", err)
 	}

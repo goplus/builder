@@ -5,7 +5,7 @@ import { humanizeFileSize } from '@/utils/utils'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
+import { MobileKeyboardType, Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
@@ -73,7 +73,7 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
           description: metadata.description,
           instructions: metadata.instructions,
           thumbnail: thumbnailUniversalUrl,
-          mobileKeyboardType: metadata.mobileKeyboardType,
+          mobileKeyboardType: metadata.mobileKeyboardType ?? MobileKeyboardType.NoKeyboard,
           mobileKeyboardZoneToKey: metadata.mobileKeyboardZoneToKey
         },
         signal
@@ -84,8 +84,8 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
           visibility,
           thumbnail: thumbnailUniversalUrl,
           files: fileCollection,
-          mobileKeyboardType: metadata.mobileKeyboardType ?? 1,
-          mobileKeyboardZoneToKey: metadata.mobileKeyboardZoneToKey ?? undefined
+          mobileKeyboardType: metadata.mobileKeyboardType ?? MobileKeyboardType.NoKeyboard,
+          mobileKeyboardZoneToKey: metadata.mobileKeyboardZoneToKey
         },
         signal
       ))

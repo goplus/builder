@@ -859,8 +859,8 @@ watchEffect((onCleanup) => {
     // Green border when recording
     &.recording {
       box-shadow:
-        0 0 0 4px #00ff00,
-        0 0 20px rgba(0, 255, 0, 0.3);
+        0 0 0 4px var(--ui-color-success-main),
+        0 0 20px var(--ui-color-success-glow);
     }
 
     .runner-mask {
