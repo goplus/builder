@@ -107,10 +107,9 @@ async function getPlatformShareURL(platform: PlatformConfig) {
     return platform.shareFunction.shareURL(projectSharingLink.value)
   } else if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     // 生成海报文件并传递给shareImage方法
-    if (!posterCompRef.value) {
+    if (posterCompRef.value == null) {
       throw new Error('Poster component not ready')
     }
-    await nextTick()
     const posterFile = await posterCompRef.value.createPoster()
     return await platform.shareFunction.shareImage(posterFile)
   } else {
