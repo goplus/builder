@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig, isVideoSharingSupported } from './platform-share'
+import { type PlatformConfig} from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -72,7 +72,7 @@ function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
 
   // 检查是否需要显示下载提示
-  if (platform.shareType.supportVideo && !isVideoSharingSupported(platform)) {
+  if (platform.shareType.supportVideo && !platform.shareType.supportURL) {
     throw new DefaultException({
       en: `Please download the video to local and share it on ${platform.basicInfo.label.en}`,
       zh: `请下载视频到本地，然后去${platform.basicInfo.label.zh}分享`
