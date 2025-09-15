@@ -72,7 +72,7 @@ function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
 
   // 检查是否需要显示下载提示
-  if (platform.shareType.supportVideo && !platform.shareType.supportURL) {
+  if (!platform.shareType.supportVideo && !platform.shareType.supportURL) {
     throw new DefaultException({
       en: `Please download the video to local and share it on ${platform.basicInfo.label.en}`,
       zh: `请下载视频到本地，然后去${platform.basicInfo.label.zh}分享`
