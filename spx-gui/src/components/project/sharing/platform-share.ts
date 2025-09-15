@@ -286,3 +286,9 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
     wechat.initShareInfo(defaultShareInfo)
   }
 }
+
+// 检查平台是否真正支持视频分享（目前只有占位符实现）
+export function isVideoSharingSupported(platform: PlatformConfig): boolean {
+  // 目前只有QQ和微信真正支持，其他平台都是占位符
+  return platform.basicInfo.name === 'qq' || platform.basicInfo.name === 'wechat'
+}

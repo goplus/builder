@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig, isVideoSharingSupported} from './platform-share'
+import { type PlatformConfig, isVideoSharingSupported } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -83,13 +83,10 @@ function handlePlatformChange(platform: PlatformConfig) {
 }
 
 // Use useMessageHandle wrapped platform change handler
-const handlePlatformChangeWithMessage = useMessageHandle(
-  handlePlatformChange,
-  {
-    en: 'Video sharing not supported',
-    zh: '视频分享暂不支持'
-  }
-)
+const handlePlatformChangeWithMessage = useMessageHandle(handlePlatformChange, {
+  en: 'Video sharing not supported',
+  zh: '视频分享暂不支持'
+})
 
 // Get current recording URL
 function getCurrentRecordingUrl() {
