@@ -253,6 +253,7 @@ class SearchCoordinator:
     def _ensure_candidates_have_vectors(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         确保候选结果包含向量信息
+        委托给重排序服务处理，避免重复代码
         
         Args:
             candidates: 候选结果列表
@@ -261,39 +262,13 @@ class SearchCoordinator:
             包含向量信息的候选结果列表
         """
         try:
-            # 检查是否已包含向量
-            if candidates and 'vector' in candidates[0]:
-                return candidates
+            # 如果有重排序服务，委托给它处理
+            if self.rerank_service:
+                return self.rerank_service._ensure_candidate_vectors(candidates)
             
-            # 从向量数据库获取候选结果的向量信息
-            candidates_with_vectors = []
-            
-            for candidate in candidates:
-                candidate_id = candidate.get('id')
-                if candidate_id is None:
-                    logger.warning(f"候选结果缺少ID: {candidate}")
-                    candidates_with_vectors.append(candidate)
-                    continue
-                
-                try:
-                    # 从数据库获取向量数据
-                    vector_data = self.image_matching_service.milvus_ops.get_by_id(candidate_id)
-                    
-                    if vector_data and 'vector' in vector_data:
-                        candidate['vector'] = vector_data['vector']
-                    else:
-                        logger.warning(f"未找到候选结果的向量数据: ID={candidate_id}")
-                        # 使用默认向量或跳过
-                        candidate['vector'] = [0.0] * 512  # 默认512维零向量
-                    
-                    candidates_with_vectors.append(candidate)
-                    
-                except Exception as e:
-                    logger.error(f"获取候选结果向量失败: ID={candidate_id}, 错误: {e}")
-                    candidate['vector'] = [0.0] * 512  # 默认向量
-                    candidates_with_vectors.append(candidate)
-            
-            return candidates_with_vectors
+            # 如果没有重排序服务，直接返回原结果
+            logger.warning("重排序服务不可用，无法补充向量信息")
+            return candidates
             
         except Exception as e:
             logger.error(f"确保候选向量信息异常: {e}")
