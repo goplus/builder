@@ -459,7 +459,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   align-items: center;
   justify-content: center;
 
-  border-radius: var(--ui-border-radius-1);
+  border-radius: var(--ui-border-radius-3);
   overflow: hidden;
   background-image: url(@/assets/images/stage-bg.svg);
   background-position: center;
