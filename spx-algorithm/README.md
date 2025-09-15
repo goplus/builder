@@ -252,7 +252,7 @@ GET /v1/internal/resources/stats                # 详细资源统计
 ```
 spx-algorithm/
 ├── database/                    # 数据库层
-│   ├── resource_vector/        # Milvus向量数据库
+│   ├── resource_vector/        # 图片资源向量数据库
 │   │   ├── connection.py       # 连接管理
 │   │   ├── operations.py       # 基础CRUD操作
 │   │   └── config.py          # 配置类
@@ -264,9 +264,9 @@ spx-algorithm/
 │   │   ├── clip_service.py     # CLIP模型服务
 │   │   ├── vector_service.py   # 向量化服务
 │   │   └── matching_service.py # 匹配业务逻辑
-│   └── reranking/              # LTR重排序服务
+│   └── reranking/              # 重排序服务
 │       ├── rerank_service.py   # 重排序服务主逻辑
-│       ├── ltr_trainer.py      # LTR模型训练器
+│       ├── ltr_trainer.py      # 模型训练器
 │       └── feature_extractor.py # 特征提取器
 ├── coordinator/                # 融合协调层
 │   └── search_coordinator.py    # 搜索协调器
