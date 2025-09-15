@@ -28,6 +28,7 @@ withDefaults(
 
   &.size-medium {
     width: 988px;
+
     @include responsive(desktop-large) {
       width: 1240px;
     }
@@ -35,8 +36,16 @@ withDefaults(
 
   &.size-large {
     width: 1240px;
+
     @include responsive(desktop-large) {
       width: 1492px;
+    }
+  }
+
+  &.size-medium,
+  &.size-large {
+    @include responsive(mobile) {
+      width: 95%;
     }
   }
 }
