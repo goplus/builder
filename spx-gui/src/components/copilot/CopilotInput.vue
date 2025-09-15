@@ -69,10 +69,10 @@ defineExpose({ focus })
         </svg>
       </button>
       <button class="cancel-btn" @click="handleAbort">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M14 27.4375C6.59 27.4375 0.5625 21.41 0.5625 14C0.5625 6.59 6.59 0.5625 14 0.5625C21.41 0.5625 27.4375 6.59 27.4375 14C27.4375 21.41 21.41 27.4375 14 27.4375ZM14 2.4375C7.62375 2.4375 2.4375 7.62375 2.4375 14C2.4375 20.3762 7.62375 25.5625 14 25.5625C20.3762 25.5625 25.5625 20.3762 25.5625 14C25.5625 7.62375 20.3762 2.4375 14 2.4375ZM16.735 19.3125H11.2662C9.65248 19.3125 8.68872 18.3487 8.68872 16.735V11.2662C8.68872 9.65124 9.65248 8.68872 11.2662 8.68872H16.735C18.3487 8.68872 19.3125 9.65248 19.3125 11.2662V16.735C19.3125 18.3487 18.3487 19.3125 16.735 19.3125Z"
-            fill="#24292F"
+            fill="#6E7781"
           />
         </svg>
       </button>
@@ -86,6 +86,7 @@ defineExpose({ focus })
   padding: 12px 14px;
   align-items: center;
   gap: 10px;
+  height: 100%;
   background: var(--ui-color-grey-100);
 }
 
@@ -95,7 +96,7 @@ defineExpose({ focus })
   min-width: 0;
   min-height: 20px;
 
-  font-size: 12px;
+  font-size: 13px;
   line-height: 20px;
 
   // auto resize based on content height
@@ -103,7 +104,7 @@ defineExpose({ focus })
     display: block;
     content: attr(data-value) ' ';
     pointer-events: none;
-    max-height: 60px; // 3 rows
+    max-height: 40px; // 2 rows
     overflow: hidden;
     visibility: hidden;
     position: static;
@@ -137,6 +138,7 @@ defineExpose({ focus })
 
 .submit-btn,
 .cancel-btn {
+  outline: none;
   width: 32px;
   height: 32px;
   flex: 0 0 auto;

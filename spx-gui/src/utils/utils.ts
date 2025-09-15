@@ -351,11 +351,13 @@ export function useDebouncedModel<T>(source: WatchSource<T>, onChange: (value: T
 }
 
 export function upFirst(str: string) {
-  return str[0].toUpperCase() + str.slice(1)
+  const firstChar = unicodeSafeSlice(str, 0, 1)
+  return firstChar.toUpperCase() + str.slice(firstChar.length)
 }
 
 export function lowFirst(str: string) {
-  return str[0].toLowerCase() + str.slice(1)
+  const firstChar = unicodeSafeSlice(str, 0, 1)
+  return firstChar.toLowerCase() + str.slice(firstChar.length)
 }
 
 export function isCrossOriginUrl(url: string, origin = window.location.origin) {
@@ -421,4 +423,20 @@ export function createResettableObject<T extends object>(getter: () => T): [T, (
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function assertNever(input: never): never {
   throw new Error(`Unreachable code reached with input: ${input}`)
+}
+
+/**
+ * Safely slice a string by Unicode code points.
+ * This prevents breaking surrogate pairs and combining characters.
+ * Use this instead of `str.slice(start, end)` when these conditions are met:
+ * - The string may include non-BMP characters (e.g., emojis), especially when it is provided by the user
+ * - And you are not sure if slicing positions (start / end) are at valid code point boundaries, especially when they are fixed numbers
+ */
+export function unicodeSafeSlice(input: string, start: number, end: number = input.length) {
+  // Safety limit: Some Unicode code points (e.g., emojis) can be represented by up to two UTF-16 code units.
+  // To avoid creating excessively large arrays when slicing, we limit the input length to at most `end * MAX_CODE_UNIT_PER_CODE_POINT`.
+  const MAX_CODE_UNIT_PER_CODE_POINT = 2
+  input = input.slice(0, end * MAX_CODE_UNIT_PER_CODE_POINT)
+  const codePoints = Array.from(input)
+  return codePoints.slice(start, end).join('')
 }

@@ -19,7 +19,7 @@ import { NTooltip } from 'naive-ui'
 
 import { usePopupContainer } from './utils'
 
-export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right'
+export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right' | 'left'
 
 // Use defineOptions to add the __popover__ flag to the component instance.
 // In the Naive UI source code (see: https://github.com/tusen-ai/naive-ui/blob/e5323d1dae0ca75b7100296df9695bf78cd81303/src/popover/src/Popover.tsx#L509),

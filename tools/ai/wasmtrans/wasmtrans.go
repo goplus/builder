@@ -64,6 +64,32 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 		return ai.Response{}, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
+	var resp ai.Response
+	if err := t.fetchAndParse(ctx, "/turn", reqBody, &resp); err != nil {
+		return ai.Response{}, err
+	}
+	return resp, nil
+}
+
+// Archive implements [ai.Transport].
+func (t *wasmTransport) Archive(ctx context.Context, turns []ai.Turn, existingArchive string) (ai.ArchivedHistory, error) {
+	reqBody, err := json.Marshal(map[string]any{
+		"turns":           turns,
+		"existingArchive": existingArchive,
+	})
+	if err != nil {
+		return ai.ArchivedHistory{}, fmt.Errorf("failed to marshal archive request: %w", err)
+	}
+
+	var resp ai.ArchivedHistory
+	if err := t.fetchAndParse(ctx, "/archive", reqBody, &resp); err != nil {
+		return ai.ArchivedHistory{}, err
+	}
+	return resp, nil
+}
+
+// buildHeaders creates request headers with proper authentication.
+func (t *wasmTransport) buildHeaders() map[string]any {
 	headers := map[string]any{
 		"Content-Type": "application/json",
 	}
@@ -72,6 +98,12 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 			headers["Authorization"] = "Bearer " + token
 		}
 	}
+	return headers
+}
+
+// fetchAndParse performs a fetch request and parses the JSON response into the target.
+func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []byte, result any) error {
+	headers := t.buildHeaders()
 
 	jsAbortController := js.Global().Get("AbortController").New()
 	defer context.AfterFunc(ctx, func() {
@@ -79,14 +111,14 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 	})()
 	jsAbortSignal := jsAbortController.Get("signal")
 
-	jsResp, err := awaitPromise(ctx, js.Global().Call("fetch", t.endpoint+"/turn", map[string]any{
+	jsResp, err := awaitPromise(ctx, js.Global().Call("fetch", t.endpoint+path, map[string]any{
 		"method":  "POST",
 		"headers": headers,
-		"body":    string(reqBody),
+		"body":    string(body),
 		"signal":  jsAbortSignal,
 	}))
 	if err != nil {
-		return ai.Response{}, fmt.Errorf("failed to fetch: %w", err)
+		return fmt.Errorf("failed to fetch: %w", err)
 	}
 
 	if !jsResp.Get("ok").Bool() {
@@ -96,21 +128,21 @@ func (t *wasmTransport) Interact(ctx context.Context, req ai.Request) (ai.Respon
 		bodyPromise := jsResp.Call("text")
 		bodyTextVal, bodyErr := awaitPromise(ctx, bodyPromise)
 		if bodyErr != nil {
-			return ai.Response{}, fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
+			return fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
 		}
 
 		bodyText := bodyTextVal.String()
-		return ai.Response{}, fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
+		return fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
 	}
+
 	jsJSON, err := awaitPromise(ctx, jsResp.Call("json"))
 	if err != nil {
-		return ai.Response{}, fmt.Errorf("failed to process json response: %w", err)
+		return fmt.Errorf("failed to process json response: %w", err)
 	}
 	jsonString := js.Global().Get("JSON").Call("stringify", jsJSON).String()
 
-	var resp ai.Response
-	if err := json.Unmarshal([]byte(jsonString), &resp); err != nil {
-		return ai.Response{}, fmt.Errorf("failed to unmarshal response json: %w", err)
+	if err := json.Unmarshal([]byte(jsonString), result); err != nil {
+		return fmt.Errorf("failed to unmarshal response json: %w", err)
 	}
-	return resp, nil
+	return nil
 }

@@ -59,6 +59,7 @@ const codeHtml = computed(() => {
 <style lang="scss" scoped>
 .code-view {
   font-family: var(--ui-font-family-code);
+  font-size: 1em;
 }
 
 .block :deep(pre) {
