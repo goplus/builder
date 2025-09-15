@@ -48,7 +48,7 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
         >
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
-        <FollowButton :name="user.username" />
+        <FollowButton v-if="!isSignedInUser" :name="user.username" />
       </div>
     </div>
   </CommunityCard>

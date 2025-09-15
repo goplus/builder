@@ -38,10 +38,16 @@
             v-model:value="searchInput"
             v-radar="{ name: 'Mobile search input', desc: 'Mobile search input' }"
             :placeholder="$t({ en: 'Search project', zh: '搜索项目' })"
+            :autofocus="true"
             @blur="collapseSearch"
           >
             <template #prefix>
-              <UIIcon class="search-icon" type="search" @click="handleSearch" />
+              <UIIcon
+                class="search-icon"
+                type="search"
+                @mousedown.prevent="handleSearch"
+                @touchstart.prevent="handleSearch"
+              />
             </template>
           </UITextInput>
         </div>
@@ -123,9 +129,6 @@ watch(
   width: 50px;
   height: auto;
   cursor: pointer;
-  // border-radius: 50%;
-  // background-color: rgba(255, 255, 255, 0.1);
-  // transition: background-color 0.2s;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.2);
