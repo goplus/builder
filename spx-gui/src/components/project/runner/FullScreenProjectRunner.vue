@@ -70,13 +70,9 @@ async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
     Although naive-ui modal supports `display-directive: show`, it does not initialize the component until it is shown for the first time.
     TODO: Update `UIModal` to support this requirement.
   -->
-  <div
-    ref="wrapperRef"
+  <div ref="wrapperRef"
     v-radar="{ name: 'Full screen project runner', desc: 'Full screen modal for running project', visible }"
-    class="full-screen-project-runner"
-    :class="{ visible }"
-    :style="modalTransformStyle"
-  >
+    class="full-screen-project-runner" :class="{ visible }" :style="modalTransformStyle">
     <div class="container">
       <div class="header">
         <div class="header-left"></div>
@@ -84,43 +80,24 @@ async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
           {{ project.name }}
         </div>
         <div class="header-right">
-          <UIButton
-            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
-            class="button"
-            icon="rotate"
-            :disabled="initialLoading"
-            :loading="handleRerun.isLoading.value"
-            @click="handleRerun.fn"
-          >
+          <UIButton v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }" class="button"
+            icon="rotate" :disabled="initialLoading" :loading="handleRerun.isLoading.value" @click="handleRerun.fn">
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
           </UIButton>
           <!-- TODO: support "stop", which preserves the last frame -->
-          <UIModalClose
-            v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
-            class="close"
-            @click="emit('close')"
-          />
+          <UIModalClose v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+            class="close" @click="emit('close')" />
         </div>
       </div>
       <div class="main">
-        <MobileKeyboardView
-          v-if="isMobile"
-          :zone-to-key-mapping="project.mobileKeyboardZoneToKey || {}"
-          @key="handleOnKeyEvent"
-          @rerun="handleRerun.fn"
-          @close="emit('close')"
-        >
+        <MobileKeyboardView v-if="isMobile" :zone-to-key-mapping="project.mobileKeyboardZoneToKey || {}"
+          @key="handleOnKeyEvent" @rerun="handleRerun.fn" @close="emit('close')">
           <template #gameView>
             <ProjectRunner ref="projectRunnerRef" class="runner" :project="project" />
           </template>
         </MobileKeyboardView>
-        <ProjectRunner
-          v-else
-          ref="projectRunnerRef"
-          class="runner"
-          :project="project"
-          @exit="(code) => emit('exit', code)"
-        />
+        <ProjectRunner v-else ref="projectRunnerRef" class="runner" :project="project"
+          @exit="(code) => emit('exit', code)" />
       </div>
     </div>
   </div>
