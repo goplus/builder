@@ -10,7 +10,7 @@ import (
 
 const (
 	// maxTokens defines the maximum number of tokens for the AI response.
-	maxTokens = 8192
+	maxTokens = 2048
 
 	// temperature defines the sampling temperature for the AI response.
 	temperature = 0.7
