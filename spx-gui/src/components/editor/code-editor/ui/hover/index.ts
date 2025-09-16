@@ -241,7 +241,19 @@ export class HoverController extends Emitter<{
           handleMouseEnter({ type: 'other' })
           return
         }
-        const position = fromMonacoPosition(e.target.position)
+        // Here we use start position of `e.target.range` instead of `e.target.position`, as hovering happens on one character instead of between two characters.
+        // And `e.target.position` stands for the gap between two characters while `e.target.range` represents the hovered character.
+        // For example with text `ab`:
+        // * When the mouse is over the second half of `a`:
+        //   - `e.target.position` will be `{ column: 2 }`
+        //   - `e.target.range` will be `{ startColumn: 1, endColumn: 2 }`
+        // * When the mouse is over the first half of `b`:
+        //   - `e.target.position` will be `{ column: 2 }`
+        //   - `e.target.range` will be `{ startColumn: 2, endColumn: 3 }`
+        const position = fromMonacoPosition({
+          lineNumber: e.target.range.startLineNumber,
+          column: e.target.range.startColumn
+        })
         handleMouseEnter({ type: 'text', position })
       })
     )
