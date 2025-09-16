@@ -896,7 +896,7 @@ watchEffect((onCleanup) => {
     &.recording {
       box-shadow:
         0 0 0 4px var(--ui-color-success-main),
-        0 0 20px var(--ui-color-success-glow);
+        0 0 20px var(--ui-color-success-300);
     }
 
     .runner-mask {
