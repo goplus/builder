@@ -27,6 +27,13 @@ export enum RotationStyle {
   leftRight = 'left-right'
 }
 
+export enum PhysicsMode {
+  KinematicPhysic = 'kinematic',
+  DynamicPhysic = 'dynamic',
+  StaticPhysic = 'static',
+  NoPhysic = 'no'
+}
+
 export enum State {
   default = 'default',
   die = 'die',
@@ -50,6 +57,7 @@ export type SpriteInits = {
   rotationStyle?: string
   costumeIndex?: number
   visible?: boolean
+  physicsMode?: PhysicsMode
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
   pivot?: Pivot
@@ -244,6 +252,11 @@ export class Sprite extends Disposable {
     this.rotationStyle = rotationStyle
   }
 
+  physicsMode?: PhysicsMode
+  setPhysicsMode(physicsMode: PhysicsMode) {
+    this.physicsMode = physicsMode
+  }
+
   visible: boolean
   setVisible(visible: boolean) {
     this.visible = visible
@@ -290,6 +303,7 @@ export class Sprite extends Disposable {
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
     this.rotationStyle = getRotationStyle(inits?.rotationStyle)
+    this.physicsMode = inits?.physicsMode
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
@@ -418,6 +432,7 @@ export class Sprite extends Disposable {
       visible,
       heading,
       rotationStyle,
+      physicsMode,
       costumeIndex,
       isDraggable,
       pivot,
@@ -461,6 +476,7 @@ export class Sprite extends Disposable {
       visible,
       heading,
       rotationStyle,
+      physicsMode,
       isDraggable,
       pivot,
       id: includeId ? id : undefined,
@@ -520,6 +536,7 @@ export class Sprite extends Disposable {
       rotationStyle: this.rotationStyle,
       isDraggable: this.isDraggable,
       pivot: this.pivot,
+      physicsMode: this.physicsMode,
       costumeIndex: this.costumeIndex,
       animationBindings: {
         [State.default]: animationNameToId(animBindings[State.default]),
@@ -583,6 +600,7 @@ export class Sprite extends Disposable {
       y: this.y,
       size: this.size,
       rotationStyle: this.rotationStyle,
+      physicsMode: this.physicsMode,
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
