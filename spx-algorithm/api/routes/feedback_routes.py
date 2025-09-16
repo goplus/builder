@@ -71,12 +71,12 @@ def submit_feedback():
                 'error': f'缺少必需字段: {missing_fields}'
             }), 400
         
-        # 验证推荐图片数量
+        # 验证推荐图片不为空
         recommended_pics = data.get('recommended_pics', [])
-        if len(recommended_pics) != 4:
+        if not recommended_pics:
             return jsonify({
                 'success': False,
-                'error': '推荐图片必须包含4张图片'
+                'error': '推荐图片列表不能为空'
             }), 400
         
         # 验证选择的图片在推荐列表中
@@ -216,7 +216,7 @@ def get_recent_feedback():
 @feedback_bp.route('/train', methods=['POST'])
 def train_ltr_model():
     """
-    使用反馈数据训练LTR模型
+    使用反馈数据训练rerank模型
     
     POST /v1/feedback/train
     Content-Type: application/json
