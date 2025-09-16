@@ -19,15 +19,21 @@ class RerankService:
     """重排序服务类"""
     
     def __init__(self, ltr_model_path: Optional[str] = None, 
-                 clip_service: Optional[CLIPService] = None):
+                 clip_service: Optional[CLIPService] = None,
+                 rerank_config: Optional[Dict[str, Any]] = None):
         """
         初始化重排序服务
         
         Args:
-            ltr_model_path: LTR模型路径
+            ltr_model_path: LTR模型路径（为保持向后兼容性保留）
             clip_service: CLIP服务实例（用于特征提取）
+            rerank_config: 重排序配置字典
         """
-        self.ltr_model = LTRModel(ltr_model_path)
+        # 优先使用rerank_config中的配置，fallback到ltr_model_path参数
+        config = rerank_config or {}
+        model_path = config.get('model_path') or ltr_model_path
+        
+        self.ltr_model = LTRModel(model_path)
         self.feature_extractor = None
         self.feedback_storage = FeedbackStorage()
         self.enabled = False
@@ -42,7 +48,26 @@ class RerankService:
             self.ltr_model.set_feature_extractor(self.feature_extractor)
             logger.info("特征提取器初始化完成")
         
+        # 内部处理模型初始化和启用逻辑
+        self._initialize_model(config)
+        
         logger.info("重排序服务初始化完成")
+    
+    def _initialize_model(self, config: Dict[str, Any]):
+        """
+        内部模型初始化方法
+        
+        Args:
+            config: 重排序配置字典
+        """
+        model_path = config.get('model_path')
+        if model_path and self.load_trained_model(model_path):
+            logger.info("LTR模型加载成功")
+            # 如果配置启用重排序，则启用
+            if config.get('enabled', False):
+                self.enable_reranking()
+        else:
+            logger.info("未配置模型路径或模型加载失败，重排序功能暂时不可用")
     
     def set_clip_service(self, clip_service: CLIPService):
         """设置CLIP服务（延迟初始化）"""

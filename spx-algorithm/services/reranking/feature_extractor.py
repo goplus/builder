@@ -153,18 +153,7 @@ class LTRFeatureExtractor:
                                candidates: List[Dict[str, Any]]) -> List[List[float]]:
         """
         为排序预测提取pair-wise特征，使用动态参考向量方案
-        
-        设计思路：
-        1. 训练阶段使用pair-wise特征（用户选择的图片 vs 未选择的图片）
-        2. 预测阶段通过动态参考向量将point-wise转换为pair-wise特征
-        3. 确保训练和预测使用相同的特征空间，保证模型的有效性
-        
-        动态参考向量选择理由：
-        - 使用候选集合的平均向量作为"worse"参考对象
-        - 每个候选图片作为"better"与参考向量比较
-        - 好的候选图片会明显优于平均水平，差的候选图片会劣于平均水平
-        - 这样的相对比较能够正确反映排序关系，符合LTR的目标
-        
+                
         Args:
             query_text: 查询文本
             candidates: 候选结果列表，每个包含id, vector等字段

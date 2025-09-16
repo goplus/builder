@@ -73,23 +73,14 @@ class SearchCoordinator:
             self.enable_reranking = False
             return
         
-        # 创建重排序服务，并传递CLIP服务实例用于特征提取
+        # 创建重排序服务，传递完整配置让其内部处理模型加载和启用逻辑
         self.rerank_service = RerankService(
-            ltr_model_path=rerank_config.get('model_path'),
-            clip_service=self.image_matching_service.clip_service
+            clip_service=self.image_matching_service.clip_service,
+            rerank_config=rerank_config
         )
         
-        # 尝试加载已训练的模型
-        model_path = rerank_config.get('model_path')
-        if model_path and self.rerank_service.load_trained_model(model_path):
-            logger.info("LTR模型加载成功")
-            # 如果配置启用重排序，则启用
-            if rerank_config.get('enabled', False):
-                self.rerank_service.enable_reranking()
-                self.enable_reranking = True
-        else:
-            logger.info("未找到训练好的LTR模型，重排序功能暂时不可用")
-            self.enable_reranking = False
+        # 检查重排序服务是否成功启用
+        self.enable_reranking = self.rerank_service.is_enabled()
         
         logger.info(f"重排序服务初始化完成，启用状态: {self.enable_reranking}")
     
