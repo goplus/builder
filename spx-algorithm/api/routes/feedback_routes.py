@@ -222,7 +222,8 @@ def train_ltr_model():
     Content-Type: application/json
     
     {
-        "limit": 1000  // 可选，限制使用的反馈数据量
+        "limit": 1000,        // 可选，限制使用的反馈数据量
+        "incremental": false  // 可选，是否使用增量训练，默认为false（全量训练）
     }
     """
     try:
@@ -235,6 +236,7 @@ def train_ltr_model():
         # 获取请求参数
         data = request.get_json() or {}
         limit = data.get('limit', None)
+        incremental = data.get('incremental', False)
         
         if limit is not None:
             limit = int(limit)
@@ -244,10 +246,13 @@ def train_ltr_model():
                     'error': '数据量限制必须大于0'
                 }), 400
         
-        logger.info(f"开始训练LTR模型，数据量限制: {limit}")
-        
-        # 训练模型
-        training_result = rerank_service.train_model_with_feedback(limit=limit)
+        # 根据incremental参数选择训练方式
+        if incremental:
+            logger.info(f"开始增量训练LTR模型，数据量限制: {limit}")
+            training_result = rerank_service.retrain_model_with_feedback(limit=limit)
+        else:
+            logger.info(f"开始全量训练LTR模型，数据量限制: {limit}")
+            training_result = rerank_service.train_model_with_feedback(limit=limit)
         
         # 检查训练结果：如果包含success=False，说明训练失败；否则检查是否有正常的训练记录
         if training_result.get('success') is False:

@@ -297,6 +297,33 @@ class LTRTrainer:
         
         return info
     
+    def get_last_training_date(self):
+        """
+        获取最后一次训练的日期
+        
+        Returns:
+            最后训练日期，如果没有训练记录则返回None
+        """
+        try:
+            if not self.training_history:
+                return None
+            
+            # 获取最近一次训练记录的时间戳
+            latest_training = self.training_history[-1]
+            timestamp_str = latest_training.get('timestamp')
+            
+            if timestamp_str:
+                # 解析ISO格式的时间戳，提取日期部分
+                from datetime import datetime
+                timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                return timestamp.date()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"获取最后训练日期失败: {e}")
+            return None
+    
     def retrain_with_new_data(self, new_dataset: TrainingDataset,
                             existing_model_path: Optional[str] = None) -> Dict[str, Any]:
         """

@@ -211,7 +211,8 @@ POST /v1/feedback/train
 Content-Type: application/json
 
 {
-  "limit": 1000  // 可选，限制使用的反馈数据量
+  "limit": 1000,        // 可选，限制使用的反馈数据量
+  "incremental": false  // 可选，是否使用增量训练，默认为false（全量训练）
 }
 ```
 

@@ -233,6 +233,85 @@ class RerankService:
                 'feedback_count': len(feedback_list) if 'feedback_list' in locals() else 0
             }
     
+    def retrain_model_with_feedback(self, limit: Optional[int] = None) -> Dict[str, Any]:
+        """
+        使用用户反馈数据进行增量训练LTR模型
+        
+        Args:
+            limit: 限制使用的反馈数据量
+            
+        Returns:
+            训练结果
+        """
+        try:
+            if self.feature_extractor is None:
+                raise ValueError("特征提取器未初始化")
+            
+            # 获取最后训练日期，用于增量数据获取
+            last_training_date = self.ltr_model.trainer.get_last_training_date()
+            
+            if last_training_date:
+                # 使用现有接口的start_date参数获取增量数据
+                logger.info(f"获取自 {last_training_date} 之后的增量反馈数据")
+                feedback_list = self.feedback_storage.get_all_feedback(
+                    limit=limit, 
+                    start_date=last_training_date
+                )
+                
+                if not feedback_list:
+                    logger.info("没有新的反馈数据，无需增量训练")
+                    return {
+                        'success': True,
+                        'message': '没有新的反馈数据，无需增量训练',
+                        'last_training_date': last_training_date.isoformat(),
+                        'feedback_count': 0,
+                        'incremental': True
+                    }
+            else:
+                # 没有训练历史，使用全量数据进行首次训练
+                logger.warning("没有训练历史记录，使用全量数据进行首次训练")
+                feedback_list = self.feedback_storage.get_all_feedback(limit=limit)
+            
+            if not feedback_list:
+                raise ValueError("没有可用的用户反馈数据")
+            
+            logger.info(f"开始增量训练LTR模型，增量反馈数据量: {len(feedback_list)}")
+            
+            # 获取图片向量数据
+            logger.info("从Milvus向量数据库获取图片向量数据")
+            image_vectors = self._get_image_vectors_from_feedback(feedback_list)
+            
+            # 构建训练数据集
+            dataset = self.feature_extractor.build_training_dataset(feedback_list, image_vectors)
+            
+            if len(dataset) == 0:
+                raise ValueError("无法构建有效的训练数据集")
+            
+            # 使用增量训练
+            training_result = self.ltr_model.trainer.retrain_with_new_data(
+                dataset, 
+                existing_model_path=self.ltr_model.model_path
+            )
+            
+            # 更新模型状态
+            self.ltr_model.is_trained = True
+            
+            # 添加增量训练标识信息
+            training_result['incremental'] = True
+            training_result['last_training_date'] = last_training_date.isoformat() if last_training_date else None
+            
+            logger.info("LTR模型增量训练完成")
+            return training_result
+            
+        except Exception as e:
+            logger.error(f"LTR模型增量训练失败: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'feedback_count': len(feedback_list) if 'feedback_list' in locals() else 0,
+                'incremental': True
+            }
+    
     def load_trained_model(self, model_path: Optional[str] = None) -> bool:
         """
         加载训练好的LTR模型
