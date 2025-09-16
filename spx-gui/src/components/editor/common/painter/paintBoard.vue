@@ -228,11 +228,11 @@
         />
 
         <!-- 插入文本工具组件 -->
-        <TextTool 
+        <TextTool
           ref="textToolRef"
-          :is-active="currentTool === 'text'" 
-          :canvas-width="canvasWidth" 
-          :canvas-height="canvasHeight" 
+          :is-active="currentTool === 'text'"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
         />
       </div>
     </div>
