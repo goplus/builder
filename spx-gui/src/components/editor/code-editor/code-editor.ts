@@ -247,7 +247,23 @@ const apiReferenceItems = [
 
   `xgo:${packageSpx}?Sprite.changeGraphicEffect`,
   `xgo:${packageSpx}?Sprite.setGraphicEffect`,
-  `xgo:${packageSpx}?Sprite.clearGraphicEffects`
+  `xgo:${packageSpx}?Sprite.clearGraphicEffects`,
+
+  `xgo:${packageSpx}?Sprite.physicsMode`,
+  `xgo:${packageSpx}?Sprite.velocity`,
+  `xgo:${packageSpx}?Sprite.gravity`,
+  `xgo:${packageSpx}?Sprite.isOnFloor`,
+  `xgo:${packageSpx}?Sprite.setPhysicsMode`,
+  `xgo:${packageSpx}?Sprite.setVelocity`,
+  `xgo:${packageSpx}?Sprite.setGravity`,
+  `xgo:${packageSpx}?Sprite.addImpulse`,
+
+  `xgo:${packageSpx}?Camera.zoom`,
+  `xgo:${packageSpx}?Camera.setZoom`,
+  `xgo:${packageSpx}?Camera.xpos`,
+  `xgo:${packageSpx}?Camera.ypos`,
+  `xgo:${packageSpx}?Camera.setXYpos`,
+  `xgo:${packageSpx}?Camera.follow#1`
 ]
 
 class APIReferenceProvider implements IAPIReferenceProvider {
@@ -265,7 +281,7 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     return allItems.filter((item) => {
       if (item.definition.package !== packageSpx) return true
       const [receiver] = this.parseName(item.definition.name)
-      return receiver == null || receiver === 'Game'
+      return receiver !== 'Sprite'
     })
   })
 
@@ -280,9 +296,8 @@ class APIReferenceProvider implements IAPIReferenceProvider {
     return allItems.filter((item) => {
       if (item.definition.package !== packageSpx) return true
       const [receiver, method] = this.parseName(item.definition.name)
-      if (receiver == null || receiver === 'Sprite') return true
-      if (receiver === 'Game' && !spriteMethods.has(method)) return true // Skip Game methods overridden by Sprite
-      return false
+      if (receiver === 'Game' && spriteMethods.has(method)) return false // Skip Game methods overridden by Sprite
+      return true
     })
   })
 
@@ -607,11 +622,16 @@ class CompletionProvider implements ICompletionProvider {
         if (definition != null) {
           result.kind = definition.kind
           result.documentation = definition.detail
-          if (isLineEnd) {
-            // Typically the insertSnippet in definition stands for whole call expression of the API,
-            // the insertText from LS stands for identifier of the API.
-            // If the inputting happens at the end of the line, we assume the user prefers the call expression.
-            // TODO: More reliable mechanism to determine the preference.
+          // Typically:
+          // * The insertSnippet in definition stands for whole expression of the API
+          // * The insertText from LS stands for identifier of the API
+          // We use the insertSnippet to replace the insertText if the two conditions are both met:
+          // 1. The inputting happens at the end of the line.
+          //   If in the middle of the line, snippet may mess up the code
+          // 2. The insertSnippet starts with the insertText.
+          //   If not, that may be senarios like `Camera.zoom` (insertSnippet) vs `zoom` (insertText)
+          // TODO: More reliable mechanism to determine the preference.
+          if (isLineEnd && definition.insertSnippet.startsWith(result.insertText)) {
             result.insertText = definition.insertSnippet
             result.insertTextFormat = InsertTextFormat.Snippet
           }

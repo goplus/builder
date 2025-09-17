@@ -57,6 +57,7 @@ const categoriesViewInfo = [
       { id: subCategories.motion.heading, label: { en: 'Heading', zh: '方向' } },
       { id: subCategories.motion.size, label: { en: 'Size', zh: '大小' } },
       { id: subCategories.motion.rotationStyle, label: { en: 'Rotation', zh: '旋转' } },
+      { id: subCategories.motion.physics, label: { en: 'Physics', zh: '物理' } },
       { id: subCategories.motion.others, label: { en: 'Others', zh: '其他' } }
     ]
   },
@@ -101,6 +102,7 @@ const categoriesViewInfo = [
     subCategories: [
       { id: subCategories.game.startStop, label: { en: 'Start / Stop', zh: '开始/停止' } },
       { id: subCategories.game.sprite, label: { en: 'Sprite', zh: '精灵' } },
+      { id: subCategories.game.camera, label: { en: 'Camera', zh: '摄像机' } },
       { id: subCategories.game.others, label: { en: 'Others', zh: '其他' } }
     ]
   }
