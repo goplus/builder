@@ -38,8 +38,8 @@
         <XiaohongshuShareGuide
           v-if="selectedPlatform?.basicInfo.name === 'xiaohongshu'"
           type="poster"
-          :is-loading="false"
-          @download="handleDownloadPoster"
+          :is-loading="handleDownloadPoster.isLoading.value"
+          @download="handleDownloadPoster.fn"
         />
 
         <div v-else class="qrcode-section">
@@ -52,7 +52,7 @@
             <div class="unsupport-icon">❌</div>
             <span class="unsupported-text">{{ $t({ en: 'Unsupported', zh: '暂不支持' }) }}</span>
           </div>
-          <button class="download-btn" @click="handleDownloadPoster">
+          <button class="download-btn" @click="handleDownloadPoster.fn">
             {{ $t({ en: 'Download Poster', zh: '下载海报' }) }}
           </button>
         </div>
@@ -139,21 +139,24 @@ function generateQRCodeDataUrl(url: string, color: string) {
   })
 }
 
-const handleDownloadPoster = async () => {
-  if (!posterCompRef.value) return
-
-  try {
+const handleDownloadPoster = useMessageHandle(
+  async () => {
+    if (!posterCompRef.value) {
+      throw new Error('Poster component is not available.')
+    }
     const posterFile = await posterCompRef.value.createPoster()
     const url = URL.createObjectURL(posterFile)
     const link = document.createElement('a')
     link.href = url
     link.download = `${props.projectData.name}-poster.png`
+    document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Failed to download poster:', error)
-  }
-}
+  },
+  { en: 'Failed to download poster', zh: '下载海报失败' },
+  { en: 'Poster downloaded successfully', zh: '海报下载成功' }
+)
 </script>
 
 <style scoped lang="scss">

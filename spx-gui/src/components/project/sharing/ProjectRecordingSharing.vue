@@ -455,7 +455,6 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  // margin-bottom: 16px;
 }
 
 .rerecord-hint {
@@ -490,7 +489,6 @@ watch(
   width: 100%;
   display: flex;
   justify-content: center;
-  // margin-top: 24px;
   padding: 0 20px;
 }
 
@@ -502,7 +500,6 @@ watch(
   align-items: stretch;
   min-width: 220px;
   min-height: 0;
-  // padding: 16px;
 }
 
 .qr-section-inner {
@@ -594,7 +591,6 @@ watch(
 .actions {
   display: flex;
   gap: 10px;
-  // margin-top: 20px;
   justify-content: center;
 }
 
