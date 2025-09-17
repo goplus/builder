@@ -28,10 +28,10 @@ export enum RotationStyle {
 }
 
 export enum PhysicsMode {
-  KinematicPhysic = 'kinematic',
-  DynamicPhysic = 'dynamic',
-  StaticPhysic = 'static',
-  NoPhysic = 'no'
+  KinematicPhysics = 'kinematic',
+  DynamicPhysics = 'dynamic',
+  StaticPhysics = 'static',
+  NoPhysics = 'no'
 }
 
 export enum State {
@@ -252,7 +252,7 @@ export class Sprite extends Disposable {
     this.rotationStyle = rotationStyle
   }
 
-  physicsMode?: PhysicsMode
+  physicsMode: PhysicsMode
   setPhysicsMode(physicsMode: PhysicsMode) {
     this.physicsMode = physicsMode
   }
@@ -303,7 +303,7 @@ export class Sprite extends Disposable {
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
     this.rotationStyle = getRotationStyle(inits?.rotationStyle)
-    this.physicsMode = inits?.physicsMode
+    this.physicsMode = inits?.physicsMode ?? PhysicsMode.NoPhysics
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false

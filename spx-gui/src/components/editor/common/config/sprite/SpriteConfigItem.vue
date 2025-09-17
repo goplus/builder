@@ -16,6 +16,7 @@ export function wrapUpdateHandler<Args extends any[]>(
   return withDebounce ? debounce(wrapped, 300) : wrapped
 }
 
+// TODO: fix `"default" is not exported by xxx` error
 export default {}
 </script>
 

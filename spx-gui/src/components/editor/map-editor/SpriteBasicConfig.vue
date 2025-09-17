@@ -27,7 +27,7 @@ defineProps<{
     <SpritePositionSize :sprite="sprite" :project="project" />
     <SpriteDirection :sprite="sprite" :project="project" />
     <SpriteVisible :sprite="sprite" :project="project" />
-    <SpritePhysics :sprite="sprite" :project="project" />
+    <SpritePhysics v-if="project.stage.physics.enabled" :sprite="sprite" :project="project" />
   </div>
 </template>
 
