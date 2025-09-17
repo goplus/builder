@@ -61,7 +61,7 @@ func (p *ImageRecommendParams) GetProviderForTheme() svggen.Provider {
 
 // NewPromptAnalysisContext creates a new prompt analysis context with cached optimization results.
 // This performs AI analysis only once and caches all optimized prompt variations.
-func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme ThemeType, copilotClient *copilot.Copilot) *PromptAnalysisContext {
+func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme ThemeType, copilotClient *copilot.Copilot, searchOnly bool) *PromptAnalysisContext {
 	logger := log.GetReqLogger(ctx)
 	
 	analysisCtx := &PromptAnalysisContext{
@@ -69,17 +69,20 @@ func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme 
 		Theme:          theme,
 	}
 	
-	// If no theme, use original prompt for all variations
-	if theme == ThemeNone {
+	// If no theme or SearchOnly mode, use original prompt for all variations and skip AI analysis
+	if theme == ThemeNone || searchOnly {
 		analysisCtx.OptimizedPrompt = originalPrompt
 		analysisCtx.SemanticPrompt = originalPrompt
 		analysisCtx.ThemePrompt = originalPrompt
-		// Analysis is not needed for ThemeNone, but initialize with defaults
+		// Analysis is not needed for ThemeNone or SearchOnly, but initialize with defaults
 		analysisCtx.Analysis = PromptAnalysis{
 			Type:       "default",
 			Emotion:    "neutral", 
 			Complexity: "simple",
 			Keywords:   extractKeywords(originalPrompt),
+		}
+		if searchOnly {
+			logger.Printf("SearchOnly mode: skipping AI analysis for theme %s", theme)
 		}
 		return analysisCtx
 	}
@@ -191,6 +194,10 @@ type RecommendationCache struct {
 // and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
+	start := time.Now()
+	defer func() {
+		logger.Printf("[PERF] RecommendImages total took %v", time.Since(start))
+	}()
 	
 	// Get provider based on theme
 	provider := params.GetProviderForTheme()
@@ -202,11 +209,14 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// OPTIMIZATION: Create prompt analysis context once at the beginning
 	// This performs AI analysis only once and caches all optimized prompt variations
-	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot)
+	promptStart := time.Now()
+	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, params.SearchOnly)
+	logger.Printf("[PERF] Prompt analysis context creation took %v", time.Since(promptStart))
 
 	var foundResults []RecommendedImageResult
 	var err error
 
+	searchStart := time.Now()
 	if params.Theme != ThemeNone {
 		// Use dual-path search strategy for theme-based requests
 		foundResults, err = ctrl.dualPathSearchOptimized(ctx, params, promptCtx)
@@ -214,6 +224,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		// Use single semantic search for non-themed requests
 		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, params, promptCtx)
 	}
+	logger.Printf("[PERF] Search execution took %v", time.Since(searchStart))
 
 	if err != nil {
 		logger.Printf("Search failed: %v", err)
@@ -228,7 +239,9 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
 		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
+		genStart := time.Now()
 		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, params.Theme, needed, len(foundResults))
+		logger.Printf("[PERF] AI SVG generation took %v", time.Since(genStart))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -511,14 +524,22 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
 	results := make([]RecommendedImageResult, 0, len(algResults))
 	logger := log.GetReqLogger(context.Background())
+	start := time.Now()
+	defer func() {
+		logger.Printf("[PERF] processAlgorithmResults (%d items) took %v", len(algResults), time.Since(start))
+	}()
 	
-	for _, algResult := range algResults {
+	for i, algResult := range algResults {
 		var aiResource struct {
 			ID  int64  `json:"id"`
 			URL string `json:"url"`
 		}
 		
+		dbStart := time.Now()
 		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		if i < 5 { // Only log first 5 DB queries to avoid spam
+			logger.Printf("[PERF] DB query %d took %v", i+1, time.Since(dbStart))
+		}
 		if err == nil {
 			// Found matching resource in database
 			results = append(results, RecommendedImageResult{
