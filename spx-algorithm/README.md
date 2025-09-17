@@ -21,7 +21,7 @@
 - ✅ **配置管理**：支持多环境配置（开发/测试/生产）
 - ✅ **健康检查**：完整的服务健康监控
 - ✅ **内部调试API**：专门用于系统调试和维护的内部接口
-- 🚧 **LTR 重排序**：基于用户反馈的学习排序（规划中）
+- ✅ **LTR 重排序**：基于用户反馈的学习排序
 
 ## 技术栈
 
@@ -64,12 +64,15 @@ pip install -r requirements.txt
 启动底层数据存储服务：
 
 ```bash
-# 使用 docker-compose（推荐）
+# 启动向量数据库服务
 cd resource/vector_db
 docker-compose up -d
 
-# 确保数据存储服务正常运行
-# 服务将在默认端口启动
+# 启动用户反馈数据库服务（MySQL）
+cd resource/feedback_db
+docker-compose up -d
+
+# 确保所有数据存储服务正常运行
 ```
 
 ### 3. 配置环境变量（可选）
@@ -78,22 +81,34 @@ docker-compose up -d
 
 ```env
 # Flask 配置
-FLASK_ENV=development
 SECRET_KEY=your-secret-key
 
 # CLIP 模型配置
 CLIP_MODEL_NAME=ViT-B-32
 CLIP_PRETRAINED=laion2b_s34b_b79k
 
-# 数据存储配置
-STORAGE_HOST=localhost
-STORAGE_PORT=19530
-COLLECTION_NAME=spx_resources
-VECTOR_DIMENSION=512
+# Milvus 向量数据库配置
+MILVUS_HOST=localhost
+MILVUS_PORT=19530
+MILVUS_COLLECTION_NAME=spx_vector_collection
+MILVUS_DIMENSION=512
 
 # 重排序配置
-ENABLE_RERANKING=false
-LTR_MODEL_PATH=
+ENABLE_RERANKING=true
+LTR_MODEL_PATH=models/ltr_model.pkl
+
+# 用户反馈数据库配置
+MYSQL_HOST=localhost
+MYSQL_PORT=3307
+MYSQL_USER=spx_user
+MYSQL_PASSWORD=spx_feedback_2024
+MYSQL_DATABASE=spx_feedback
+
+# LTR 模型训练配置
+LTR_TRAINING_BATCH_SIZE=1000
+LTR_MODEL_AUTO_RETRAIN=false
+LTR_COARSE_MULTIPLIER=3
+LTR_MAX_CANDIDATES=100
 ```
 
 ### 4. 启动服务
@@ -165,6 +180,53 @@ Content-Type: application/json
 }
 ```
 
+### 用户反馈和模型训练
+
+#### 提交用户反馈
+```http
+POST /v1/feedback/submit
+Content-Type: application/json
+
+{
+  "query_id": 123,
+  "query": "dog running in park",
+  "recommended_pics": [1001, 1002, 1003, 1004],
+  "chosen_pic": 1002
+}
+```
+
+#### 获取反馈统计信息
+```http
+GET /v1/feedback/stats
+```
+
+#### 获取最近的反馈数据
+```http
+GET /v1/feedback/recent?limit=10
+```
+
+#### 训练LTR模型
+```http
+POST /v1/feedback/train
+Content-Type: application/json
+
+{
+  "limit": 1000,        // 可选，限制使用的反馈数据量
+  "incremental": false  // 可选，是否使用增量训练，默认为false（全量训练）
+}
+```
+
+#### 获取模型状态
+```http
+GET /v1/feedback/model/status
+```
+
+#### 启用/禁用重排序功能
+```http
+POST /v1/feedback/model/enable   # 启用重排序
+POST /v1/feedback/model/disable  # 禁用重排序
+```
+
 ### 内部调试和管理接口（仅用于系统维护）
 
 这些接口仅供系统管理员和开发人员调试使用，生产环境建议限制访问权限：
@@ -191,34 +253,37 @@ GET /v1/internal/resources/stats                # 详细资源统计
 ```
 spx-algorithm/
 ├── database/                    # 数据库层
-│   ├── milvus/                 # Milvus向量数据库
+│   ├── resource_vector/        # 图片资源向量数据库
 │   │   ├── connection.py       # 连接管理
 │   │   ├── operations.py       # 基础CRUD操作
 │   │   └── config.py          # 配置类
-│   └── mysql/                  # MySQL数据库（预留）
+│   ├── user_feedback/          # 用户反馈数据库
+│   │   ├── models.py          # 反馈数据模型
+│   └── └── feedback_storage.py # 反馈数据存储
 ├── services/                   # 服务实现层
 │   ├── image_matching/         # 图文匹配服务
 │   │   ├── clip_service.py     # CLIP模型服务
 │   │   ├── vector_service.py   # 向量化服务
 │   │   └── matching_service.py # 匹配业务逻辑
-│   └── reranking/              # LTR重排序服务（预留）
+│   └── reranking/              # 重排序服务
+│       ├── rerank_service.py   # 重排序服务主逻辑
+│       ├── ltr_trainer.py      # 模型训练器
+│       └── feature_extractor.py # 特征提取器
 ├── coordinator/                # 融合协调层
 │   └── search_coordinator.py    # 搜索协调器
 ├── api/                        # API层
 │   ├── routes/                 # 路由
 │   │   ├── resource_routes.py  # 资源管理路由（添加、搜索）
+│   │   ├── feedback_routes.py  # 用户反馈路由
 │   │   ├── internal_routes.py  # 内部调试路由
 │   │   └── health_routes.py    # 健康检查路由
-│   ├── schemas/                # 请求/响应模式
 │   └── middlewares/            # 中间件
 ├── config/                     # 配置管理
 │   ├── base.py                # 基础配置
 │   ├── development.py         # 开发环境配置
 │   ├── production.py          # 生产环境配置
 │   └── testing.py             # 测试环境配置
-├── common/                     # 公共组件
-├── tests/                      # 测试
-├── docs/                       # 文档
+├── test/                      # 测试
 ├── app.py                      # 主应用入口
 └── requirements.txt            # 依赖文件
 ```
@@ -241,13 +306,24 @@ export FLASK_ENV=production
 
 | 配置项 | 描述 | 默认值 |
 |-------|------|--------|
+| `SECRET_KEY` | Flask 密钥 | `spx-algorithm-secret-key` |
 | `CLIP_MODEL_NAME` | CLIP 模型名称 | `ViT-B-32` |
 | `CLIP_PRETRAINED` | 预训练权重 | `laion2b_s34b_b79k` |
-| `STORAGE_HOST` | 存储服务器地址 | `localhost` |
-| `STORAGE_PORT` | 存储服务器端口 | `19530` |
-| `COLLECTION_NAME` | 资源集合名称 | `spx_resources` |
-| `VECTOR_DIMENSION` | 向量维度 | `512` |
-| `ENABLE_RERANKING` | 是否启用重排序 | `false` |
+| `MILVUS_HOST` | Milvus 服务器地址 | `localhost` |
+| `MILVUS_PORT` | Milvus 服务器端口 | `19530` |
+| `MILVUS_COLLECTION_NAME` | 向量集合名称 | `spx_vector_collection` |
+| `MILVUS_DIMENSION` | 向量维度 | `512` |
+| `ENABLE_RERANKING` | 是否启用重排序 | `true` |
+| `LTR_MODEL_PATH` | LTR模型路径 | `models/ltr_model.pkl` |
+| `MYSQL_HOST` | MySQL 数据库地址 | `localhost` |
+| `MYSQL_PORT` | MySQL 数据库端口 | `3307` |
+| `MYSQL_USER` | MySQL 数据库用户 | `spx_user` |
+| `MYSQL_PASSWORD` | MySQL 数据库密码 | `spx_feedback_2024` |
+| `MYSQL_DATABASE` | MySQL 数据库名称 | `spx_feedback` |
+| `LTR_TRAINING_BATCH_SIZE` | LTR训练批次大小 | `1000` |
+| `LTR_MODEL_AUTO_RETRAIN` | 是否自动重训练 | `false` |
+| `LTR_COARSE_MULTIPLIER` | 粗排数量倍数 | `3` |
+| `LTR_MAX_CANDIDATES` | 粗排最大候选数 | `100` |
 
 ## 开发指南
 
@@ -325,10 +401,16 @@ gunicorn -w 4 -b 0.0.0.0:5000 \
 - **资源管理**：列表查询、删除、统计等管理功能
 - **数据库维护**：底层数据库状态和配置信息
 
+### 用户反馈和学习接口（`/v1/feedback/`）
+- **反馈收集**：基于用户行为的模型训练数据收集
+- **模型训练**：使用用户反馈数据自动优化搜索结果排序
+- **智能重排序**：基于训练好的模型对搜索结果进行个性化重排序
+
 ### 设计原则
 - **统一性**：所有资源相关操作都在 `/v1/resource/` 下，避免接口分散
 - **简洁性**：对外只暴露核心的添加和搜索功能，隐藏复杂的管理操作
 - **职责分离**：业务功能与调试维护功能严格分离
+- **用户驱动**：通过用户反馈持续优化搜索体验
 
 ## 故障排除
 
