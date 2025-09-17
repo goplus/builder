@@ -22,17 +22,19 @@ logger = logging.getLogger(__name__)
 class LTRTrainer:
     """LTR模型训练器"""
     
-    def __init__(self, model_save_path: str = "models/ltr_model.pkl"):
+    def __init__(self, model_save_path: str = "models/ltr_model.pkl", max_history_size: int = 100):
         """
         初始化训练器
         
         Args:
             model_save_path: 模型保存路径
+            max_history_size: 训练历史记录最大保存数量
         """
         self.model_save_path = model_save_path
         self.model = None
         self.feature_names = []
         self.training_history = []
+        self.max_history_size = max_history_size
         
         # 确保模型目录存在
         Path(self.model_save_path).parent.mkdir(parents=True, exist_ok=True)
@@ -125,6 +127,9 @@ class LTRTrainer:
             
             self.training_history.append(training_record)
             
+            # 清理过多的训练历史记录
+            self._cleanup_training_history()
+            
             logger.info("LTR模型训练完成")
             logger.info(f"训练集性能: {train_metrics}")
             logger.info(f"验证集性能: {val_metrics}")
@@ -202,6 +207,9 @@ class LTRTrainer:
             self.model = model_data['model']
             self.feature_names = model_data.get('feature_names', [])
             self.training_history = model_data.get('training_history', [])
+            
+            # 加载后清理过多的历史记录
+            self._cleanup_training_history()
             
             logger.info(f"模型加载成功: {path}")
             return True
@@ -296,6 +304,18 @@ class LTRTrainer:
             })
         
         return info
+    
+    def _cleanup_training_history(self):
+        """清理训练历史记录，保留最近的记录"""
+        # 设置缓冲区，避免频繁清理
+        cleanup_threshold = self.max_history_size + 10  # 允许超过10条再清理
+        
+        if len(self.training_history) > cleanup_threshold:
+            # 保留最近的记录，删除旧的记录
+            old_count = len(self.training_history)
+            self.training_history = self.training_history[-self.max_history_size:]
+            removed_count = old_count - len(self.training_history)
+            logger.info(f"清理训练历史记录：删除了 {removed_count} 条旧记录，保留最近 {len(self.training_history)} 条")
     
     def get_last_training_date(self):
         """
