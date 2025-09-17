@@ -39,6 +39,7 @@ type Controller struct {
 	aiInteraction *aiinteraction.AIInteraction
 	aigc          *aigc.AigcClient
 	wechat        *WeChatService
+	douyin        *DouyinService
 }
 
 // New creates a new controller.
@@ -88,6 +89,8 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 
 	wechatService := NewWeChatService(cfg.WeChat.AppID, cfg.WeChat.Secret)
 
+	douyinService := NewDouyinService(cfg.Douyin.ClientKey, cfg.Douyin.ClientSecret)
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoClient,
@@ -97,6 +100,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config) (*Controller, err
 		aiInteraction: aiInteraction,
 		aigc:          aigcClient,
 		wechat:        wechatService,
+		douyin:		douyinService,
 	}, nil
 }
 
