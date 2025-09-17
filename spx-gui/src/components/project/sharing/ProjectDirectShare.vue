@@ -35,48 +35,12 @@
       <Poster ref="posterCompRef" :project-data="props.projectData" />
 
       <div class="side-content">
-        <div v-if="selectedPlatform?.basicInfo.name === 'xiaohongshu'" class="xiaohongshu-guide">
-          <h3>📱 {{ $t({ en: 'How to share to Xiaohongshu?', zh: '如何分享到小红书？' }) }}</h3>
-
-          <div class="guide-steps">
-            <div class="step">
-              <span class="step-number">1️⃣</span>
-              <div class="step-content">
-                <strong>{{ $t({ en: 'Download Poster', zh: '下载海报' }) }}</strong>
-                <p>{{ $t({ en: 'Click the button below to save poster', zh: '点击下方按钮保存海报到设备' }) }}</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <span class="step-number">2️⃣</span>
-              <div class="step-content">
-                <strong>{{ $t({ en: 'Open Xiaohongshu App', zh: '打开小红书APP' }) }}</strong>
-                <p>{{ $t({ en: 'Tap "+" to create new post', zh: '点击"+"号发布新笔记' }) }}</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <span class="step-number">3️⃣</span>
-              <div class="step-content">
-                <strong>{{ $t({ en: 'Upload & Share', zh: '上传分享' }) }}</strong>
-                <p>{{ $t({ en: 'Select the downloaded poster to share', zh: '选择刚下载的海报进行分享' }) }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="api-notice">
-            <span class="notice-icon">💡</span>
-            <p>
-              {{
-                $t({ en: 'Manual upload required due to API limitations', zh: '由于API限制，需要手动上传，感谢理解' })
-              }}
-            </p>
-          </div>
-
-          <button class="download-btn primary" :disabled="!posterCompRef" @click="handleDownloadPoster">
-            {{ $t({ en: 'Download Poster', zh: '下载海报' }) }}
-          </button>
-        </div>
+        <XiaohongshuShareGuide
+          v-if="selectedPlatform?.basicInfo.name === 'xiaohongshu'"
+          type="poster"
+          :is-loading="false"
+          @download="handleDownloadPoster"
+        />
 
         <div v-else class="qrcode-section">
           <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
@@ -110,6 +74,7 @@ import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
+import XiaohongshuShareGuide from './XiaohongshuShareGuide.vue'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -286,86 +251,6 @@ const handleDownloadPoster = async () => {
   min-width: 300px;
 }
 
-.xiaohongshu-guide {
-  width: 100%;
-  max-width: 320px;
-  padding: 10px;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffeef0 100%);
-  border-radius: 12px;
-  border: 2px solid #ffb3ba;
-  box-shadow: 0 4px 12px rgba(255, 0, 53, 0.1);
-
-  h3 {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #ff0035;
-    text-align: center;
-  }
-}
-
-.guide-steps {
-  margin-bottom: 16px;
-
-  .step {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 12px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .step-number {
-    font-size: 16px;
-    margin-right: 10px;
-    flex-shrink: 0;
-    line-height: 1.2;
-  }
-
-  .step-content {
-    flex: 1;
-
-    strong {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 2px;
-    }
-
-    p {
-      font-size: 12px;
-      color: #666;
-      margin: 0;
-      line-height: 1.3;
-    }
-  }
-}
-
-.api-notice {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-
-  .notice-icon {
-    font-size: 14px;
-    margin-right: 6px;
-    flex-shrink: 0;
-  }
-
-  p {
-    margin: 0;
-    font-size: 11px;
-    color: #888;
-    line-height: 1.4;
-  }
-}
-
 .download-btn {
   width: 100%;
   margin-top: 8px;
@@ -385,30 +270,6 @@ const handleDownloadPoster = async () => {
   &:disabled {
     background: var(--ui-color-hint-2);
     border-color: var(--ui-color-hint-2);
-    cursor: not-allowed;
-  }
-}
-
-.download-btn.primary {
-  width: 100%;
-  background: linear-gradient(135deg, #ff0035 0%, #ff4d6d 100%);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #e6002f 0%, #ff3366 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 0, 53, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
     cursor: not-allowed;
   }
 }
