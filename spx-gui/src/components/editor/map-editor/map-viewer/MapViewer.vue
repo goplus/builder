@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { throttle } from 'lodash'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -14,6 +15,7 @@ import { MapMode } from '@/models/stage'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 
 const props = defineProps<{
   project: Project
@@ -35,6 +37,8 @@ const containerSize = computed(() => {
   }
 })
 
+type Pos = { x: number; y: number }
+
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
@@ -45,12 +49,20 @@ const mapRef = ref<{
 const mapSize = computed(() => props.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const nodeReadyMap = reactive(new Map<string, boolean>())
+const mousePos = ref<Pos | null>(null)
+
+const updateMousePos = throttle(() => {
+  const pointerPos = mapRef.value?.getNode().getRelativePointerPosition()
+  if (pointerPos == null) return
+  mousePos.value = {
+    x: Math.round(pointerPos.x - mapSize.value.width / 2),
+    y: Math.round(mapSize.value.height / 2 - pointerPos.y)
+  }
+}, 50)
 
 function handleSpriteSelected(sprite: Sprite) {
   emit('update:selectedSprite', sprite)
 }
-
-type Pos = { x: number; y: number }
 
 const mapScale = ref(1)
 
@@ -174,6 +186,8 @@ const mapConfig = computed(() => {
     scale: { x: mapScale.value, y: mapScale.value }
   } satisfies LayerConfig
 })
+
+watch(mapConfig, updateMousePos)
 
 function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
   const map = e.target
@@ -395,6 +409,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       desc: 'View and manipulate the map and sprites on the map. Click on sprite to select it.'
     }"
     class="map-viewer"
+    @mousemove="updateMousePos"
   >
     <v-stage
       v-if="stageConfig != null"
@@ -447,6 +462,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
         >
       </UIMenu>
     </UIDropdown>
+    <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
 </template>

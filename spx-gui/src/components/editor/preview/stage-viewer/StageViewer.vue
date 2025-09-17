@@ -6,6 +6,7 @@
       desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
     }"
     class="stage-viewer"
+    @mousemove="updateMousePos"
   >
     <v-stage
       v-if="stageConfig != null"
@@ -71,11 +72,13 @@
         >
       </UIMenu>
     </UIDropdown>
+    <PositionIndicator :position="mousePos" />
     <UILoading :visible="loading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
+import { throttle } from 'lodash'
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -93,11 +96,14 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
 const containerSize = useContentSize(container)
+
+type Pos = { x: number; y: number }
 
 const stageRef = ref<{
   getStage(): Konva.Stage
@@ -108,8 +114,17 @@ const mapRef = ref<{
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
-
 const nodeReadyMap = reactive(new Map<string, boolean>())
+const mousePos = ref<Pos | null>(null)
+
+const updateMousePos = throttle(() => {
+  const pointerPos = mapRef.value?.getNode().getRelativePointerPosition()
+  if (pointerPos == null) return
+  mousePos.value = {
+    x: Math.round(pointerPos.x - mapSize.value.width / 2),
+    y: Math.round(mapSize.value.height / 2 - pointerPos.y)
+  }
+}, 50)
 
 /** containerSize / viewportSize */
 const stageScale = computed(() => {
@@ -133,8 +148,6 @@ const stageConfig = computed(() => {
     }
   } satisfies StageConfig
 })
-
-type Pos = { x: number; y: number }
 
 const mapPosLimit = computed(() => {
   return {
@@ -212,6 +225,8 @@ const mapConfig = computed(() => {
     draggable: true
   } satisfies LayerConfig
 })
+
+watch(mapConfig, updateMousePos)
 
 function handleMapDragMove(e: KonvaEventObject<MouseEvent>) {
   const map = e.target
