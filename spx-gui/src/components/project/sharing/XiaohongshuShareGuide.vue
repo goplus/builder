@@ -1,77 +1,94 @@
 <template>
   <div class="xiaohongshu-guide">
-    <h3>📱 {{ $t({ en: 'How to share to Xiaohongshu?', zh: '如何分享到小红书？' }) }}</h3>
+    <h3>{{ guideTitle }}</h3>
 
     <div class="guide-steps">
       <div class="step">
-        <span class="step-number">1️⃣</span>
+        <span class="step-number" aria-label="Step 1">1</span>
         <div class="step-content">
-          <strong>{{
-            type === 'video'
-              ? $t({ en: 'Download Video', zh: '下载视频' })
-              : $t({ en: 'Download Poster', zh: '下载海报' })
-          }}</strong>
-          <p>
-            {{
-              type === 'video'
-                ? $t({ en: 'Click the button below to save video', zh: '点击下方按钮保存视频到设备' })
-                : $t({ en: 'Click the button below to save poster', zh: '点击下方按钮保存海报到设备' })
-            }}
-          </p>
+          <strong>{{ step1Title }}</strong>
+          <p>{{ step1Description }}</p>
         </div>
       </div>
 
       <div class="step">
-        <span class="step-number">2️⃣</span>
+        <span class="step-number" aria-label="Step 2">2</span>
         <div class="step-content">
-          <strong>{{ $t({ en: 'Open Xiaohongshu App', zh: '打开小红书APP' }) }}</strong>
-          <p>{{ $t({ en: 'Tap "+" to create new post', zh: '点击"+"号发布新笔记' }) }}</p>
+          <strong>{{ step2Title }}</strong>
+          <p>{{ step2Description }}</p>
         </div>
       </div>
 
       <div class="step">
-        <span class="step-number">3️⃣</span>
+        <span class="step-number" aria-label="Step 3">3</span>
         <div class="step-content">
-          <strong>{{ $t({ en: 'Upload & Share', zh: '上传分享' }) }}</strong>
-          <p>
-            {{
-              type === 'video'
-                ? $t({ en: 'Select the downloaded video to share', zh: '选择刚下载的视频进行分享' })
-                : $t({ en: 'Select the downloaded poster to share', zh: '选择刚下载的海报进行分享' })
-            }}
-          </p>
+          <strong>{{ step3Title }}</strong>
+          <p>{{ step3Description }}</p>
         </div>
       </div>
     </div>
 
     <div class="api-notice">
-      <span class="notice-icon">💡</span>
-      <p>
-        {{ $t({ en: 'Manual upload required due to API limitations', zh: '由于API限制，需要手动上传，感谢理解' }) }}
-      </p>
+      <p>{{ apiNoticeText }}</p>
     </div>
 
     <button class="download-btn primary" :disabled="isLoading" @click="$emit('download')">
-      {{
-        isLoading
-          ? $t({ en: 'Downloading...', zh: '下载中...' })
-          : type === 'video'
-            ? $t({ en: 'Download Video', zh: '下载视频' })
-            : $t({ en: 'Download Poster', zh: '下载海报' })
-      }}
+      {{ downloadButtonText }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  type: 'poster' | 'video' // 下载类型：海报或视频
-  isLoading?: boolean // 是否正在下载
+import { computed } from 'vue'
+import { useI18n } from '@/utils/i18n'
+
+const { t } = useI18n()
+
+const props = defineProps<{
+  type: 'poster' | 'video'
+  isLoading?: boolean
 }>()
 
 defineEmits<{
   download: []
 }>()
+
+const guideTitle = computed(() => t({ en: 'How to share to Xiaohongshu?', zh: '如何分享到小红书？' }))
+
+const step1Title = computed(() =>
+  props.type === 'video' ? t({ en: 'Download Video', zh: '下载视频' }) : t({ en: 'Download Poster', zh: '下载海报' })
+)
+
+const step1Description = computed(() =>
+  props.type === 'video'
+    ? t({ en: 'Click the button below to save video', zh: '点击下方按钮保存视频到设备' })
+    : t({ en: 'Click the button below to save poster', zh: '点击下方按钮保存海报到设备' })
+)
+
+const step2Title = computed(() => t({ en: 'Open Xiaohongshu App', zh: '打开小红书APP' }))
+
+const step2Description = computed(() => t({ en: 'Tap "+" to create new post', zh: '点击"+"号发布新笔记' }))
+
+const step3Title = computed(() => t({ en: 'Upload & Share', zh: '上传分享' }))
+
+const step3Description = computed(() =>
+  props.type === 'video'
+    ? t({ en: 'Select the downloaded video to share', zh: '选择刚下载的视频进行分享' })
+    : t({ en: 'Select the downloaded poster to share', zh: '选择刚下载的海报进行分享' })
+)
+
+const apiNoticeText = computed(() =>
+  t({ en: 'Manual upload required due to API limitations', zh: '由于API限制，需要手动上传，感谢理解' })
+)
+
+const downloadButtonText = computed(() => {
+  if (props.isLoading) {
+    return t({ en: 'Downloading...', zh: '下载中...' })
+  }
+  return props.type === 'video'
+    ? t({ en: 'Download Video', zh: '下载视频' })
+    : t({ en: 'Download Poster', zh: '下载海报' })
+})
 </script>
 
 <style lang="scss" scoped>
@@ -79,16 +96,16 @@ defineEmits<{
   width: 100%;
   max-width: 350px;
   padding: 16px;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffeef0 100%);
+  background: linear-gradient(135deg, var(--ui-color-grey-100) 0%, var(--ui-color-grey-200) 100%);
   border-radius: 10px;
-  border: 1px solid #ffb3ba;
-  box-shadow: 0 3px 12px rgba(255, 0, 53, 0.12);
+  border: 1px solid var(--ui-color-border);
+  box-shadow: var(--ui-box-shadow-small);
 
   h3 {
     margin: 0 0 14px 0;
     font-size: 15px;
     font-weight: 600;
-    color: #ff0035;
+    color: var(--ui-color-red-main);
     text-align: center;
     line-height: 1.2;
   }
@@ -123,14 +140,14 @@ defineEmits<{
       display: block;
       font-size: 13px;
       font-weight: 600;
-      color: #333;
+      color: var(--ui-color-title);
       margin-bottom: 3px;
       line-height: 1.3;
     }
 
     p {
       font-size: 12px;
-      color: #666;
+      color: var(--ui-color-text);
       margin: 0;
       line-height: 1.4;
       word-wrap: break-word;
@@ -143,19 +160,13 @@ defineEmits<{
   align-items: flex-start;
   margin-bottom: 14px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--ui-color-grey-300);
   border-radius: 6px;
-
-  .notice-icon {
-    font-size: 12px;
-    margin-right: 6px;
-    flex-shrink: 0;
-  }
 
   p {
     margin: 0;
     font-size: 11px;
-    color: #888;
+    color: var(--ui-color-hint-2);
     line-height: 1.4;
     word-wrap: break-word;
   }
@@ -163,8 +174,8 @@ defineEmits<{
 
 .download-btn.primary {
   width: 100%;
-  background: linear-gradient(135deg, #ff0035 0%, #ff4d6d 100%);
-  color: white;
+  background: var(--ui-color-red-main);
+  color: var(--ui-color-grey-100);
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
@@ -172,12 +183,12 @@ defineEmits<{
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 3px 8px rgba(255, 0, 53, 0.25);
+  box-shadow: var(--ui-box-shadow-small);
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #e6002f 0%, #ff3366 100%);
+    background: var(--ui-color-red-600);
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(255, 0, 53, 0.35);
+    box-shadow: var(--ui-box-shadow-big);
   }
 
   &:disabled {
