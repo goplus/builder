@@ -884,6 +884,10 @@ watchEffect((onCleanup) => {
 .left {
   flex: 1 1 744px;
 
+  @include responsive(mobile) {
+    flex: 1 1 0;
+  }
+
   .project-wrapper {
     position: relative;
     width: 100%;
