@@ -80,7 +80,7 @@ const {
 } = useQuery(
   async (ctx) => {
     const p = new Project()
-      ; (window as any).project = p // for debug purpose, TODO: remove me
+    ;(window as any).project = p // for debug purpose, TODO: remove me
     const loaded = await p.loadFromCloud(props.owner, props.name, true, ctx.signal)
     return loaded
   },
@@ -540,8 +540,10 @@ watchEffect((onCleanup) => {
 
 <template>
   <CenteredWrapper size="large">
-    <CommunityCard v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
-      class="main">
+    <CommunityCard
+      v-radar="{ name: 'Project content', desc: 'Main content area for project details and runner' }"
+      class="main"
+    >
       <UILoading v-if="isLoading" cover mask="solid" />
       <UIError v-else-if="error != null" class="error" :retry="reloadProject">
         {{ $t(error.userMessage) }}
@@ -551,36 +553,65 @@ watchEffect((onCleanup) => {
           <template v-if="project != null">
             <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
             <div v-show="runnerState === 'initial' && !isMobile" class="runner-mask">
-              <UIButton v-radar="{ name: 'Run button', desc: 'Click to run the project' }" class="run-button"
-                type="primary" size="large" icon="playHollow" :disabled="projectRunnerRef == null"
-                :loading="handleRun.isLoading.value" @click="handleRun.fn">{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton>
+              <UIButton
+                v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
+                class="run-button"
+                type="primary"
+                size="large"
+                icon="playHollow"
+                :disabled="projectRunnerRef == null"
+                :loading="handleRun.isLoading.value"
+                @click="handleRun.fn"
+                >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
+              >
             </div>
           </template>
         </div>
-        <FullScreenProjectRunner v-if="project != null" :project="project" :visible="isFullScreenRunning"
-          @close="isFullScreenRunning = false" />
+        <FullScreenProjectRunner
+          v-if="project != null"
+          :project="project"
+          :visible="isFullScreenRunning"
+          @close="isFullScreenRunning = false"
+        />
         <div class="ops">
-          <UIButton v-if="runnerState === 'running'"
-            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }" type="boring"
-            :disabled="handleScreenshotSharing.isLoading.value" @click="handleScreenshotSharing.fn">
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Screenshot button', desc: 'Click to take a screenshot' }"
+            type="boring"
+            :disabled="handleScreenshotSharing.isLoading.value"
+            @click="handleScreenshotSharing.fn"
+          >
             <!--&& !isMobile"-->
             <template #icon>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5" fill="none" />
                 <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5" fill="none" />
-                <path d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4" stroke="currentColor" stroke-width="1.5"
-                  fill="none" />
+                <path
+                  d="M6 4L6.5 2.5A1 1 0 0 1 7.5 2h1A1 1 0 0 1 9.5 2.5L10 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                />
               </svg>
             </template>
             {{ $t({ en: 'Screenshot', zh: '截屏' }) }}
           </UIButton>
-          <UIButton v-if="runnerState === 'running'"
+          <UIButton
+            v-if="runnerState === 'running'"
             v-radar="{ name: 'Recording button', desc: 'Click to start/stop recording' }"
-            :type="isRecording ? 'danger' : 'boring'" :loading="handleRecordingSharing.isLoading.value"
-            @click="handleRecordingSharing.fn">
+            :type="isRecording ? 'danger' : 'boring'"
+            :loading="handleRecordingSharing.isLoading.value"
+            @click="handleRecordingSharing.fn"
+          >
             <template #icon>
-              <svg v-if="!isRecording" width="16" height="16" viewBox="0 0 16 16" fill="none"
-                xmlns="http://www.w3.org/2000/svg">
+              <svg
+                v-if="!isRecording"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none" />
                 <circle cx="8" cy="8" r="2" fill="currentColor" />
               </svg>
@@ -592,25 +623,43 @@ watchEffect((onCleanup) => {
               isRecording ? $t({ en: 'Stop Recording', zh: '停止录制' }) : $t({ en: 'Start Recording', zh: '开始录制' })
             }}
           </UIButton>
-          <UIButton v-if="runnerState === 'initial'"
-            v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }" type="primary"
-            icon="fullScreen" @click="isFullScreenRunning = true">
+          <UIButton
+            v-if="runnerState === 'initial'"
+            v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
+            type="primary"
+            icon="fullScreen"
+            @click="isFullScreenRunning = true"
+          >
             {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
           </UIButton>
-          <UIButton v-if="runnerState === 'running'"
-            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }" type="primary" icon="rotate"
-            :disabled="projectRunnerRef == null" :loading="handleRerun.isLoading.value" @click="handleRerun.fn">
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+            type="primary"
+            icon="rotate"
+            :disabled="projectRunnerRef == null"
+            :loading="handleRerun.isLoading.value"
+            @click="handleRerun.fn"
+          >
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
           </UIButton>
-          <UIButton v-if="runnerState === 'running'"
-            v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }" type="boring" icon="end"
-            @click="handleStop.fn">
+          <UIButton
+            v-if="runnerState === 'running'"
+            v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+            type="boring"
+            icon="end"
+            @click="handleStop.fn"
+          >
             {{ $t({ en: 'Stop', zh: '停止' }) }}
           </UIButton>
           <UITooltip>
             <template #trigger>
-              <UIButton v-radar="{ name: 'Share button', desc: 'Click to share the project' }" type="boring"
-                icon="share" @click="handleShare.fn"></UIButton>
+              <UIButton
+                v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
+                type="boring"
+                icon="share"
+                @click="handleShare.fn"
+              ></UIButton>
             </template>
             {{ $t({ en: 'Share', zh: '分享' }) }}
           </UITooltip>
@@ -643,67 +692,125 @@ watchEffect((onCleanup) => {
           </div>
           <div class="ops">
             <template v-if="isOwner && !isMobile">
-              <UIButton v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }" type="primary" size="large"
-                icon="edit2" :loading="handleEdit.isLoading.value" @click="handleEdit.fn">{{
+              <UIButton
+                v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
+                type="primary"
+                size="large"
+                icon="edit2"
+                :loading="handleEdit.isLoading.value"
+                @click="handleEdit.fn"
+                >{{
                   $t({
                     en: 'Edit',
                     zh: '编辑'
                   })
-                }}</UIButton>
-              <UIButton v-if="project.visibility === Visibility.Public"
-                v-radar="{ name: 'Share button', desc: 'Click to share the project' }" type="boring" size="large"
-                icon="share" @click="handleShare.fn">{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton>
-              <UIButton v-else v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }" type="boring"
-                size="large" icon="share" :loading="handlePublish.isLoading.value" @click="handlePublish.fn">{{
+                }}</UIButton
+              >
+              <UIButton
+                v-if="project.visibility === Visibility.Public"
+                v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
+                type="boring"
+                size="large"
+                icon="share"
+                @click="handleShare.fn"
+                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
+              >
+              <UIButton
+                v-else
+                v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+                type="boring"
+                size="large"
+                icon="share"
+                :loading="handlePublish.isLoading.value"
+                @click="handlePublish.fn"
+                >{{
                   $t({
                     en: 'Publish',
                     zh: '发布'
                   })
-                }}</UIButton>
+                }}</UIButton
+              >
               <UIDropdown placement="bottom-end" trigger="click">
                 <template #trigger>
-                  <UIButton v-radar="{ name: 'More options button', desc: 'Click to see more project options' }"
-                    class="more" type="boring" size="large" icon="more"></UIButton>
+                  <UIButton
+                    v-radar="{ name: 'More options button', desc: 'Click to see more project options' }"
+                    class="more"
+                    type="boring"
+                    size="large"
+                    icon="more"
+                  ></UIButton>
                 </template>
                 <UIMenu>
-                  <UIMenuItem v-if="project.visibility === Visibility.Public"
+                  <UIMenuItem
+                    v-if="project.visibility === Visibility.Public"
                     v-radar="{ name: 'Unpublish option', desc: 'Click to unpublish the project' }"
-                    @click="handleUnpublish.fn">{{
+                    @click="handleUnpublish.fn"
+                    >{{
                       $t({
                         en: 'Unpublish',
                         zh: '取消发布'
                       })
-                    }}</UIMenuItem>
-                  <UIMenuItem v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
-                    @click="handleRemove.fn">{{
-                      $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
+                    }}</UIMenuItem
+                  >
+                  <UIMenuItem
+                    v-radar="{ name: 'Remove option', desc: 'Click to remove the project' }"
+                    @click="handleRemove.fn"
+                    >{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem
+                  >
                 </UIMenu>
               </UIDropdown>
             </template>
             <template v-else>
-              <UIButton v-if="hasRelease && !isMobile"
-                v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }" type="primary" size="large"
-                icon="remix" :loading="handleRemix.isLoading.value" @click="handleRemix.fn">
-                {{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton>
-              <UIButton v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
-                :class="{ liking }" type="boring" size="large" :title="$t(likeCount!.title)"
-                :icon="liking ? 'heart' : 'heartHollow'" :loading="isTogglingLike" @click="handleToggleLike">
+              <UIButton
+                v-if="hasRelease && !isMobile"
+                v-radar="{ name: 'Remix button', desc: 'Click to remix this project' }"
+                type="primary"
+                size="large"
+                icon="remix"
+                :loading="handleRemix.isLoading.value"
+                @click="handleRemix.fn"
+              >
+                {{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
+              >
+              <UIButton
+                v-radar="{ name: 'Like button', desc: 'Click to like or unlike the project' }"
+                :class="{ liking }"
+                type="boring"
+                size="large"
+                :title="$t(likeCount!.title)"
+                :icon="liking ? 'heart' : 'heartHollow'"
+                :loading="isTogglingLike"
+                @click="handleToggleLike"
+              >
                 {{ $t(likeCount!.text) }}
               </UIButton>
-              <UIButton v-radar="{ name: 'Share button', desc: 'Click to share the project' }" type="boring"
-                size="large" icon="share" @click="handleShare.fn">{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton>
+              <UIButton
+                v-radar="{ name: 'Share button', desc: 'Click to share the project' }"
+                type="boring"
+                size="large"
+                icon="share"
+                @click="handleShare.fn"
+                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
+              >
             </template>
           </div>
           <UIDivider class="divider" />
-          <UICollapse v-radar="{
-            name: 'Project details',
-            desc: 'Collapsible sections showing project description, instructions and release history'
-          }" class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
+          <UICollapse
+            v-radar="{
+              name: 'Project details',
+              desc: 'Collapsible sections showing project description, instructions and release history'
+            }"
+            class="collapse"
+            :default-expanded-names="['description', 'instructions', 'releases']"
+          >
             <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
               <TextView :text="project.description" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
             </UICollapseItem>
             <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
-              <TextView :text="project.instructions" :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })" />
+              <TextView
+                :text="project.instructions"
+                :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })"
+              />
             </UICollapseItem>
             <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
               <ReleaseHistory :query-ret="releasesRet" />
@@ -714,7 +821,11 @@ watchEffect((onCleanup) => {
     </CommunityCard>
     <ProjectsSection
       v-radar="{ name: 'Popular remixes section', desc: 'Section showing popular remixes of this project' }"
-      class="remixes" context="project" :num-in-row="remixNumInRow" :query-ret="remixesRet">
+      class="remixes"
+      context="project"
+      :num-in-row="remixNumInRow"
+      :query-ret="remixesRet"
+    >
       <template #title>
         {{
           $t({
@@ -873,7 +984,7 @@ watchEffect((onCleanup) => {
     display: flex;
     gap: 12px;
 
-    &>* {
+    & > * {
       flex: 1 1 0;
 
       &.more {
