@@ -38,10 +38,11 @@ func TestAssetCompletionService_Basic(t *testing.T) {
 		WillReturnRows(rows)
 
 	// 创建服务
-	service := newAssetCompletionService(gormDB)
-	
+	service := newAssetCompletionService(gormDB, nil)
+
 	// 测试补全功能
-	results, err := service.CompleteAssetName("ca", 5)
+	ctx := context.Background()
+	results, err := service.CompleteAssetName(ctx, "ca", 5)
 	require.NoError(t, err)
 	
 	expected := []string{"camera", "candy", "car", "card", "cat"}
@@ -127,7 +128,7 @@ func TestController_Integration(t *testing.T) {
 
 	// 创建控制器
 	controller := &Controller{
-		assetCompletion: newAssetCompletionService(gormDB),
+		assetCompletion: newAssetCompletionService(gormDB, nil),
 	}
 
 	// 测试控制器方法
@@ -156,7 +157,7 @@ func TestAssetCompletionService_EdgeCases(t *testing.T) {
 	}), &gorm.Config{})
 	require.NoError(t, err)
 
-	service := newAssetCompletionService(gormDB)
+	service := newAssetCompletionService(gormDB, nil)
 
 	tests := []struct {
 		name         string
@@ -203,7 +204,8 @@ func TestAssetCompletionService_EdgeCases(t *testing.T) {
 				WithArgs(tt.prefix + "%", expectedLimit).
 				WillReturnRows(tt.mockRows)
 
-			results, err := service.CompleteAssetName(tt.prefix, tt.limit)
+			ctx := context.Background()
+			results, err := service.CompleteAssetName(ctx, tt.prefix, tt.limit)
 			
 			if tt.expectError {
 				assert.Error(t, err)

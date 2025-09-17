@@ -86,7 +86,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		recommendationCache = cache.NewMemoryCache()
 	}
 	// Initialize asset completion service
-	assetCompletionService := newAssetCompletionService(db)
+	assetCompletionService := newAssetCompletionService(db, cpt)
 	// Initialize algorithm service
 	algorithmService := NewAlgorithmService(&cfg.Algorithm)
 
