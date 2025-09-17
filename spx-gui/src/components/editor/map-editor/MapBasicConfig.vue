@@ -7,8 +7,8 @@ MapBasicConfig provide editing form for basic map config, including
 <script setup lang="ts">
 import type { Project } from '@/models/project'
 
-import MapSize from '@/components/editor/common/config/stage/MapSize.vue'
-import MapPhysics from '@/components/editor/common/config/stage/MapPhysics.vue'
+import MapSizeInput from './MapSizeInput.vue'
+import MapPhysicsInput from './MapPhysicsInput.vue'
 
 defineProps<{
   project: Project
@@ -17,8 +17,8 @@ defineProps<{
 
 <template>
   <div class="map-basic-config">
-    <MapSize :project="project" />
-    <MapPhysics :project="project" />
+    <MapSizeInput :project="project" />
+    <MapPhysicsInput :project="project" />
   </div>
 </template>
 

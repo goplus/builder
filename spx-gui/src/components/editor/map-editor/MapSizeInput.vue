@@ -4,24 +4,25 @@ import { debounce } from 'lodash'
 import type { Project } from '@/models/project'
 
 import { UINumberInput } from '@/components/ui'
-import ConfigItemWrapper from '@/components/editor/common/config/ConfigItemWrapper.vue'
+import MapConfigItemWrapper from './MapConfigItemWrapper.vue'
+import { defaultMapSize } from '@/models/stage'
 
 const props = defineProps<{
   project: Project
 }>()
 
-const handleWidthChange = debounce((v) => {
-  const action = { name: { en: `Configure Map Width`, zh: `修改地图 宽度` } }
-  props.project.history.doAction(action, () => props.project.stage.setMapWidth(v))
+const handleWidthChange = debounce((v: number | null) => {
+  const action = { name: { en: `Configure map width`, zh: `修改地图宽度` } }
+  props.project.history.doAction(action, () => props.project.stage.setMapWidth(v != null ? v : defaultMapSize.width))
 }, 300)
-const handleHeightChange = debounce((v) => {
-  const action = { name: { en: `Configure Map Height`, zh: `修改地图 高度` } }
-  props.project.history.doAction(action, () => props.project.stage.setMapHeight(v))
+const handleHeightChange = debounce((v: number | null) => {
+  const action = { name: { en: `Configure map height`, zh: `修改地图高度` } }
+  props.project.history.doAction(action, () => props.project.stage.setMapHeight(v != null ? v : defaultMapSize.height))
 }, 300)
 </script>
 
 <template>
-  <ConfigItemWrapper :title="$t({ en: 'Size', zh: '尺寸' })">
+  <MapConfigItemWrapper :title="$t({ en: 'Size', zh: '尺寸' })">
     <div class="inputs">
       <UINumberInput
         v-radar="{ name: 'width input', desc: 'Input to set map width' }"
@@ -38,7 +39,7 @@ const handleHeightChange = debounce((v) => {
         <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}:</template>
       </UINumberInput>
     </div>
-  </ConfigItemWrapper>
+  </MapConfigItemWrapper>
 </template>
 
 <style lang="scss" scoped>
