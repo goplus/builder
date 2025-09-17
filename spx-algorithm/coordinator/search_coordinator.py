@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 from services.image_matching.matching_service import ImageMatchingService
 from services.reranking.rerank_service import RerankService
@@ -119,24 +119,15 @@ class SearchCoordinator:
                     'matching_results_count': 0
                 }
             
-            # 第二阶段：重排序（细排，如果启用）
-            final_results = matching_results
-            if threshold > 0:
-                pipeline_stages = ['coarse_ranking', 'threshold_filtering']
-            else:
-                pipeline_stages = ['coarse_ranking']
+            # 第二阶段：重排序（细排）
+            final_results, did_rerank = self._execute_fine_ranking(query_text, matching_results, top_k, **kwargs)
             
-            if self.enable_reranking and self.rerank_service:
-                if matching_results:  # 只有在有符合条件的候选时才进行LTR重排序
-                    logger.info("执行细排阶段")
-                    # 细排阶段需要传入top_k参数，确保最终返回正确数量的结果
-                    final_results = self._execute_fine_ranking(query_text, matching_results, top_k, **kwargs)
-                    pipeline_stages.append('fine_ranking')
-                else:
-                    logger.info("无符合阈值的候选结果，跳过细排阶段")
-            else:
-                # 未启用重排序时，确保只返回top_k个结果
-                final_results = matching_results[:top_k]
+            # 构建流程阶段信息
+            pipeline_stages = ['coarse_ranking']
+            if threshold > 0:
+                pipeline_stages.append('threshold_filtering')
+            if did_rerank:
+                pipeline_stages.append('fine_ranking')
             
             logger.info(f"搜索流程完成，返回 {len(final_results)} 个结果")
             
@@ -203,26 +194,36 @@ class SearchCoordinator:
             return []
     
     def _execute_fine_ranking(self, query_text: str, candidates: List[Dict[str, Any]], 
-                             top_k: int, **kwargs) -> List[Dict[str, Any]]:
+                             top_k: int, **kwargs) -> Tuple[List[Dict[str, Any]], bool]:
         """
-        执行细排阶段：基于LTR模型的精准排序，并返回前top_k个结果
+        执行细排阶段：根据配置决定是否进行重排序，并返回前top_k个结果
         
         Args:
             query_text: 查询文本
-            candidates: 候选结果列表（已通过threshold过滤）
+            candidates: 候选结果列表
             top_k: 最终需要返回的结果数量
             **kwargs: 其他参数
             
         Returns:
-            细排后的前top_k个结果列表
+            Tuple[细排后的前top_k个结果列表, 是否实际执行了重排序]
         """
         try:
-            logger.info(f"执行细排阶段（LTR重排序），已过滤候选数: {len(candidates)}, 目标返回数: {top_k}")
+            # 如果没有候选结果，直接返回空列表
+            if not candidates:
+                logger.info("无候选结果，跳过细排阶段")
+                return [], False
+            
+            # 如果未启用重排序或重排序服务不可用，直接返回粗排结果
+            if not self.enable_reranking or not self.rerank_service:
+                logger.info("重排序未启用，返回粗排结果")
+                return candidates[:top_k], False
+            
+            logger.info(f"执行细排阶段（LTR重排序），候选数: {len(candidates)}, 目标返回数: {top_k}")
             
             # 获取用户上下文
             user_context = kwargs.get('user_context')
             
-            # 确保候选结果包含向量信息（从粗排结果中获取）
+            # 确保候选结果包含向量信息
             candidates_with_vectors = self._ensure_candidates_have_vectors(candidates)
             
             # 使用重排序服务重新排序
@@ -230,16 +231,16 @@ class SearchCoordinator:
                 query_text, candidates_with_vectors, user_context
             )
             
-            # 取前top_k个结果（如果候选数少于top_k，返回全部）
+            # 取前top_k个结果
             final_results = reranked_results[:top_k]
             
             logger.info(f"LTR细排完成，从 {len(reranked_results)} 个重排序结果中返回前 {len(final_results)} 个")
-            return final_results
+            return final_results, True
             
         except Exception as e:
             logger.error(f"细排阶段异常: {e}")
             # 细排失败时返回原始结果的前top_k个
-            return candidates[:top_k]
+            return candidates[:top_k], False
     
     def _ensure_candidates_have_vectors(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
