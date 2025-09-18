@@ -399,16 +399,18 @@ const initPaper = (): void => {
 
 //painter提供allPath接口给直线组件
 const getAllPathsValue = (): paper.Path[] => {
-  return allPaths.value
+  return allPaths.value.map(p => p.clone({insert:false}))
 }
 const setAllPathsValue = (paths: paper.Path[]): void => {
   //历史记录保存
   if (!historyManager.value || !importExportManager) return
 
+  //这里保存的是修改后的值
   const svgContent = importExportManager.exportSvg()
   if (svgContent) {
     historyManager.value.addState(svgContent)
   }
+
   allPaths.value = paths
 }
 
@@ -480,11 +482,6 @@ const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => 
 const clearCanvas = (): void => {
   if (!historyManager.value || !importExportManager) return
 
-  // 先保存清空前的状态（用于撤销）
-  const svgContentBeforeClear = importExportManager.exportSvg()
-  if (svgContentBeforeClear) {
-    historyManager.value.addState(svgContentBeforeClear, 'Before Clear')
-  }
 
   clearCanvasFunction({
     canvasWidth,
@@ -508,7 +505,7 @@ const clearCanvas = (): void => {
     drawBrushRef.value.resetDrawing()
   }
 
-  // 保存清空后的状态（用于重做）
+  // 保存清空后的状态
   const svgContentAfterClear = importExportManager.exportSvg()
   if (svgContentAfterClear) {
     historyManager.value.addState(svgContentAfterClear, 'Clear')
