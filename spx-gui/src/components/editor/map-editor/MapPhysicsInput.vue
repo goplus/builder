@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { debounce } from 'lodash'
-
 import type { Project } from '@/models/project'
 import type { Physics } from '@/models/stage'
 
@@ -16,12 +14,12 @@ function applyPhysicsProps(physics: Partial<Physics>) {
   props.project.stage.setPhysics({ ...oldPhysics, ...physics })
 }
 
-const handlePhysicsEnabledChange = debounce((v: boolean) => {
+const handlePhysicsEnabledChange = (v: boolean) => {
   props.project.history.doAction(
     { name: { en: `Configure map physics ${v ? 'enable' : 'disable'}`, zh: `修改地图物理特性${v ? '启用' : '禁用'}` } },
     () => applyPhysicsProps({ enabled: v })
   )
-}, 300)
+}
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-import { ref, toValue, watch, watchEffect, type WatchSource } from 'vue'
+import { ref, toValue, watch, type WatchSource } from 'vue'
 import { throttle } from 'lodash'
 import { getCleanupSignal } from './disposable'
 import { createResettableObject } from '@/utils/utils'
@@ -114,22 +114,6 @@ export function useBottomSticky(elSource: WatchSource<HTMLElement | null>) {
     },
     { immediate: true }
   )
-}
-
-/** Returns the last click event in the page. */
-export function useLastClickEvent() {
-  const lastClickEvent = ref<MouseEvent | null>(null)
-
-  function onClick(e: MouseEvent) {
-    lastClickEvent.value = e
-  }
-
-  watchEffect((onCleanup) => {
-    const signal = getCleanupSignal(onCleanup)
-    document.body.addEventListener('click', onClick, { capture: true, passive: true, signal })
-  })
-
-  return lastClickEvent
 }
 
 export function useDraggableAngleForElement(

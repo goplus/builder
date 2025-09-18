@@ -98,7 +98,7 @@ const emit = defineEmits<{
 
 const editorCtx = useEditorCtx()
 
-const footerExpanded = ref(true)
+const footerExpanded = ref(false)
 
 const sprites = computed(() => editorCtx.project.sprites)
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()

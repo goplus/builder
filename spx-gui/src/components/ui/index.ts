@@ -41,7 +41,8 @@ export {
   provideRootContainer,
   providePopupContainer,
   provideModalContainer,
-  useRootContainer
+  useRootContainer,
+  useLastClickEvent
 } from './utils'
 export { default as UISpriteItem } from './block-items/UISpriteItem.vue'
 export { default as UIEditorSpriteItem } from './block-items/UIEditorSpriteItem.vue'

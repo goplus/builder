@@ -15,6 +15,7 @@ import { inject, type InjectionKey } from 'vue'
 import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
 import { getCssVars } from './tokens/utils'
+import { useProvideLastClickEvent } from './utils'
 import { providePopupContainer, provideModalContainer, provideRootContainer } from '.'
 
 const uiVariablesKey: InjectionKey<typeof uiVariables> = Symbol('theme-variables')
@@ -153,6 +154,8 @@ const nConfigProviderEl = computed(() => nConfigProvider.value?.$el)
 provideRootContainer(nConfigProviderEl)
 providePopupContainer(nConfigProviderEl)
 provideModalContainer(nConfigProviderEl)
+
+useProvideLastClickEvent()
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>

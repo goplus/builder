@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
@@ -8,7 +8,6 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilNotNull } from '@/utils/utils'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
@@ -36,6 +35,7 @@ const containerSize = computed(() => {
     height: rawContainerSize.height.value
   }
 })
+const viewportSize = containerSize
 
 type Pos = { x: number; y: number }
 
@@ -68,9 +68,9 @@ const mapScale = ref(1)
 
 /** Scale value to fit the map in the stage */
 const fittingMapScale = computed(() => {
-  if (containerSize.value == null) return null
-  const widthScale = containerSize.value.width / mapSize.value.width
-  const heightScale = containerSize.value.height / mapSize.value.height
+  if (viewportSize.value == null) return null
+  const widthScale = viewportSize.value.width / mapSize.value.width
+  const heightScale = viewportSize.value.height / mapSize.value.height
   return Math.min(widthScale, heightScale)
 })
 
@@ -89,8 +89,6 @@ function setMapScale(scale: number) {
   mapScale.value = scale
   return scale
 }
-
-const viewportSize = containerSize
 
 const mapPos = ref<Pos>({ x: 0, y: 0 })
 
@@ -140,15 +138,19 @@ function setMapPosWithTransition(pos: Pos, durationInMs: number) {
   }).play()
 }
 
-onMounted(async () => {
-  // Initially fit the map in the stage
-  const scale = setMapScale(await untilNotNull(fittingMapScale))
-  // And center the map
-  setMapPos({
-    x: (viewportSize.value!.width - mapSize.value.width * scale) / 2,
-    y: (viewportSize.value!.height - mapSize.value.height * scale) / 2
-  })
-})
+// When viewport size or map size changes, fit the map in the viewport and center it.
+watch(
+  [viewportSize, mapSize, fittingMapScale],
+  async ([vSize, mSize, targetScale]) => {
+    if (vSize == null || targetScale == null) return
+    const scale = setMapScale(targetScale)
+    setMapPos({
+      x: (vSize.width - mSize.width * scale) / 2,
+      y: (vSize.height - mSize.height * scale) / 2
+    })
+  },
+  { immediate: true }
+)
 
 /** Check if given position (in game) is in viewport */
 function inViewport({ x, y }: Pos) {
@@ -180,8 +182,6 @@ watch(
 const mapConfig = computed(() => {
   return {
     ...mapPos.value,
-    width: mapSize.value.width,
-    height: mapSize.value.height,
     draggable: true,
     scale: { x: mapScale.value, y: mapScale.value }
   } satisfies LayerConfig
