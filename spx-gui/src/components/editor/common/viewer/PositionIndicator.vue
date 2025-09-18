@@ -18,7 +18,7 @@ watch(
     // auto hide if no position change
     const timer = setTimeout(() => {
       visible.value = false
-    }, 500)
+    }, 2500)
     onCleanup(() => clearTimeout(timer))
   },
   { immediate: true }
