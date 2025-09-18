@@ -143,4 +143,37 @@ describe('Project', () => {
     project.moveSound(2, 0)
     expect(project.sounds.map((s) => s.name)).toEqual(['sound3', 'sound2', 'sound1'])
   })
+
+  it('should audio attenuation be enabled when map size exceeds viewport size', async () => {
+    const project = new Project()
+    const stage = project.stage
+    const viewport = project.viewportSize
+
+    // initial map size equals to viewport size, so audio attenuation is disabled
+    expect(stage.getMapSize()).toEqual(viewport)
+    expect(stage.audioAttenuation.falloffExponent).toBe(0)
+
+    // increase map width, audio attenuation should be enabled
+    stage.setMapWidth(viewport.width + 100)
+    stage.setMapHeight(viewport.height)
+    project.updateAudioAttenuation()
+    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+
+    // increase map height, audio attenuation should still be enabled
+    stage.setMapWidth(viewport.width + 100)
+    stage.setMapHeight(viewport.height + 200)
+    project.updateAudioAttenuation()
+    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+
+    // reset map size to equal to viewport size, audio attenuation should be disabled
+    stage.setMapWidth(viewport.width)
+    stage.setMapHeight(viewport.height)
+    project.updateAudioAttenuation()
+    expect(stage.audioAttenuation.falloffExponent).toBe(0)
+
+    // increase map height, audio attenuation should be enabled
+    stage.setMapHeight(viewport.height + 200)
+    project.updateAudioAttenuation()
+    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+  })
 })

@@ -21,7 +21,13 @@ import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-nam
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
-import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
+import {
+  defaultMapSize,
+  defaultMaxAudioAttenuationDistance,
+  disabledAudioAttenuationFlag,
+  Stage,
+  type RawStageConfig
+} from '../stage'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -598,6 +604,18 @@ export class Project extends Disposable {
     }
 
     return false
+  }
+
+  // Ensure audio attenuation is set correctly according to map & viewport size
+  updateAudioAttenuation() {
+    const viewport = this.viewportSize
+    const mapSize = this.stage.getMapSize()
+    // Enable audio attenuation only when the map is larger than viewport
+    const enabled = mapSize.width > viewport.width || mapSize.height > viewport.height
+    this.stage.setAudioAttenuation({
+      falloffExponent: enabled ? 1 : disabledAudioAttenuationFlag,
+      maxAttenuationDistance: defaultMaxAudioAttenuationDistance
+    })
   }
 }
 
