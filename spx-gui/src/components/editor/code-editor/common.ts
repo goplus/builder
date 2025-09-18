@@ -301,6 +301,7 @@ export const subCategories = {
     heading: 'heading',
     size: 'size',
     rotationStyle: 'rotation-style',
+    physics: 'physics',
     others: 'others'
   },
   look: {
@@ -329,6 +330,7 @@ export const subCategories = {
   game: {
     startStop: 'start-stop',
     sprite: 'sprite',
+    camera: 'camera',
     others: 'others'
   }
 }

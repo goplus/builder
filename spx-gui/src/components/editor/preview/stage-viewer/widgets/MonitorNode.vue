@@ -1,10 +1,5 @@
 <template>
-  <v-group
-    :config="groupConfig"
-    @dragend="handleDragEnd"
-    @transformend="handleTransformed"
-    @mousedown="handleMousedown"
-  >
+  <v-group :config="groupConfig" @dragend="handleDragEnd" @transformend="handleTransformed" @click="handleClick">
     <v-rect :config="rectConfig" />
     <v-text ref="labelTextRef" :config="labelTextConfig" />
     <v-rect :config="valueRectConfig" />
@@ -23,11 +18,11 @@ import { round } from '@/utils/utils'
 import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { getNodeId } from '../node'
+import { getNodeId } from '@/components/editor/common/viewer/common'
 
 const props = defineProps<{
   monitor: Monitor
-  mapSize: Size
+  viewportSize: Size
   nodeReadyMap: Map<string, boolean>
 }>()
 
@@ -103,8 +98,8 @@ const groupConfig = computed<GroupConfig>(() => {
     nodeId: nodeId.value,
     visible,
     draggable: true,
-    x: props.mapSize.width / 2 + x,
-    y: props.mapSize.height / 2 - y,
+    x: props.viewportSize.width / 2 + x,
+    y: props.viewportSize.height / 2 - y,
     scaleX: size,
     scaleY: size
   }
@@ -157,7 +152,7 @@ const valueTextConfig = computed<TextConfig>(() => {
 
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { monitor, mapSize } = props
+  const { monitor, viewportSize: mapSize } = props
   const x = round(e.target.x() - mapSize.width / 2)
   const y = round(mapSize.height / 2 - e.target.y())
   const size = round(e.target.scaleX(), 2)
@@ -168,7 +163,7 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   })
 }
 
-function handleMousedown() {
+function handleClick() {
   editorCtx.state.selectWidget(props.monitor.id)
 }
 </script>

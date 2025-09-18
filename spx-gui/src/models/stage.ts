@@ -17,17 +17,29 @@ export type StageInits = {
   mapWidth?: number
   mapHeight?: number
   mapMode?: MapMode
+  physics?: Physics
   /** Additional config not recognized by builder */
   extraConfig?: object
 }
 
-export type RawMapConfig = {
+type RawMapConfig = {
   width?: number
   height?: number
   mode?: string
 }
 
-export type RawStageConfig = {
+type RawPhysicsConfig = {
+  /** If physics engine enabled */
+  physics?: boolean
+  /** Global gravity scaling factor, default 1 */
+  globalGravity?: number
+  /** Global friction scaling factor, default 1 */
+  globalFriction?: number
+  /** Global air drag scaling factor, default 1 */
+  globalAirDrag?: number
+}
+
+export type RawStageConfig = RawPhysicsConfig & {
   backdrops?: RawBackdropConfig[]
   backdropIndex?: number
   widgets?: RawWidgetConfig[]
@@ -42,6 +54,13 @@ export type RawStageConfig = {
 export type MapSize = {
   width: number
   height: number
+}
+
+export type Physics = {
+  enabled: boolean
+  gravity?: number
+  friction?: number
+  airDrag?: number
 }
 
 export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.gmx']
@@ -192,6 +211,11 @@ export class Stage extends Disposable {
     return { width: this.mapWidth, height: this.mapHeight }
   }
 
+  physics: Physics
+  setPhysics(physics: Physics) {
+    this.physics = physics
+  }
+
   extraConfig: object
   setExtraConfig(extraConfig: object) {
     this.extraConfig = extraConfig
@@ -211,6 +235,7 @@ export class Stage extends Disposable {
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
+    this.physics = inits?.physics ?? { enabled: false }
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
@@ -225,6 +250,10 @@ export class Stage extends Disposable {
       costumes: costumeConfigs,
       currentCostumeIndex,
       map,
+      physics: physicsEnabled,
+      globalGravity,
+      globalFriction,
+      globalAirDrag,
       ...extraConfig
     }: RawStageConfig,
     files: Files
@@ -247,6 +276,12 @@ export class Stage extends Disposable {
     for (const widget of widgets) {
       stage.addWidget(widget)
     }
+    stage.setPhysics({
+      enabled: physicsEnabled === true,
+      gravity: globalGravity,
+      friction: globalFriction,
+      airDrag: globalAirDrag
+    })
     return stage
   }
 
@@ -270,6 +305,10 @@ export class Stage extends Disposable {
       backdropIndex: backdropIndex,
       widgets: widgetsConfig,
       map: { width: mapWidth, height: mapHeight, mode: mapMode },
+      physics: this.physics.enabled,
+      globalGravity: this.physics.gravity,
+      globalFriction: this.physics.friction,
+      globalAirDrag: this.physics.airDrag,
       ...this.extraConfig
     }
     return [config, files]

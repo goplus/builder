@@ -68,6 +68,39 @@
     <div class="main">
       <div class="stage-viewer-container">
         <StageViewer />
+        <UITooltip>
+          <template #trigger>
+            <button
+              v-radar="{ name: 'Full map button', desc: 'Click to view & edit the full map' }"
+              class="edit-map-button"
+              @click="handleEditMap"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M4.99988 2.34961H2.54998C2.43952 2.34961 2.34998 2.43915 2.34998 2.54961V4.99951"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M9.00012 2.34961H11.45C11.5605 2.34961 11.65 2.43915 11.65 2.54961V4.99951"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M4.99988 11.6504H2.54998C2.43952 11.6504 2.34998 11.5608 2.34998 11.4504V9.00049"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                />
+                <path
+                  d="M9.00012 11.6504H11.45C11.5605 11.6504 11.65 11.5608 11.65 11.4504V9.00049"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                />
+              </svg>
+            </button>
+          </template>
+          {{ $t({ en: 'View full map', zh: '查看完整地图' }) }}
+        </UITooltip>
         <div v-show="running.mode === 'debug'" class="in-place-runner">
           <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
         </div>
@@ -81,10 +114,11 @@ import { ref, computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
 import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
+import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
@@ -151,6 +185,9 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
   en: 'Failed to rerun project',
   zh: '重新运行项目失败'
 })
+
+const invokeMapEditor = useModal(MapEditorModal)
+const handleEditMap = useMessageHandle(() => invokeMapEditor({ project: editorCtx.project })).fn
 </script>
 
 <style scoped lang="scss">
@@ -188,6 +225,30 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
     height: 100%;
     border-radius: var(--ui-border-radius-1);
     overflow: hidden;
+
+    .edit-map-button {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      z-index: 5;
+      border: none;
+      border-radius: 12px;
+      color: var(--ui-color-hint-1);
+      background-color: var(--ui-color-grey-100);
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        color: var(--ui-color-text);
+        box-shadow: var(--ui-box-shadow-small);
+      }
+    }
   }
 }
 

@@ -1,118 +1,52 @@
-<template>
-  <div
-    ref="container"
-    v-radar="{
-      name: 'Stage viewer',
-      desc: 'View and manipulate the stage and objects (sprites, widgets, etc.) on the stage. Click on object to select it.'
-    }"
-    class="stage-viewer"
-    @mousemove="updateMousePos"
-  >
-    <v-stage
-      v-if="stageConfig != null"
-      ref="stageRef"
-      :config="stageConfig"
-      @mousedown="handleStageMousedown"
-      @contextmenu="handleContextMenu"
-      @wheel="handleWheel"
-    >
-      <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
-        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
-        <SpriteNode
-          v-for="sprite in visibleSprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selected="editorCtx.state.selectedSprite?.id === sprite.id"
-          :project="editorCtx.project"
-          :map-size="mapSize"
-          :node-ready-map="nodeReadyMap"
-          @drag-move="handleSpriteDragMove"
-          @drag-end="handleSpriteDragEnd"
-          @selected="handleSpriteSelected(sprite)"
-        />
-      </v-layer>
-      <v-layer>
-        <WidgetNode
-          v-for="widget in visibleWidgets"
-          :key="widget.id"
-          :widget="widget"
-          :viewport-size="viewportSize"
-          :node-ready-map="nodeReadyMap"
-        />
-      </v-layer>
-      <v-layer>
-        <NodeTransformer
-          ref="nodeTransformerRef"
-          :node-ready-map="nodeReadyMap"
-          :target="editorCtx.state.selectedSprite ?? editorCtx.state.selectedWidget"
-        />
-      </v-layer>
-    </v-stage>
-    <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
-      <UIMenu>
-        <UIMenuItem
-          v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
-          @click="moveZorder('up')"
-          >{{ $t(moveActionNames.up) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
-          @click="moveZorder('top')"
-          >{{ $t(moveActionNames.top) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
-          @click="moveZorder('down')"
-          >{{ $t(moveActionNames.down) }}</UIMenuItem
-        >
-        <UIMenuItem
-          v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
-          @click="moveZorder('bottom')"
-          >{{ $t(moveActionNames.bottom) }}</UIMenuItem
-        >
-      </UIMenu>
-    </UIDropdown>
-    <PositionIndicator :position="mousePos" />
-    <UILoading :visible="loading" cover />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Stage, StageConfig } from 'konva/lib/Stage'
+import type { Stage } from 'konva/lib/Stage'
 import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { until, untilNotNull } from '@/utils/utils'
-import { fromBlob } from '@/models/common/file'
+import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
-import type { Widget } from '@/models/widget'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
-import WidgetNode from './widgets/WidgetNode.vue'
 
-const editorCtx = useEditorCtx()
-const container = ref<HTMLDivElement | null>(null)
-const containerSize = useContentSize(container)
+const props = defineProps<{
+  project: Project
+  selectedSprite: Sprite | null
+}>()
+
+const emit = defineEmits<{
+  'update:selectedSprite': [sprite: Sprite | null]
+}>()
+
+const container = ref<HTMLElement | null>(null)
+const rawContainerSize = useContentSize(container)
+// TODO: Update type of returned value of `useContentSize` to simplify usage.
+const containerSize = computed(() => {
+  if (rawContainerSize.width.value == null || rawContainerSize.height.value == null) return null
+  return {
+    width: rawContainerSize.width.value,
+    height: rawContainerSize.height.value
+  }
+})
+const viewportSize = containerSize
 
 type Pos = { x: number; y: number }
 
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
+const stageConfig = computed(() => containerSize.value)
 const mapRef = ref<{
   getNode(): Konva.Layer
 }>()
-const viewportSize = computed(() => editorCtx.project.viewportSize)
-const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+const mapSize = computed(() => props.project.stage.getMapSize())
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
@@ -126,46 +60,60 @@ const updateMousePos = throttle(() => {
   }
 }, 50)
 
-/** containerSize / viewportSize */
-const stageScale = computed(() => {
-  if (containerSize.width.value == null || containerSize.height.value == null) return null
-  const widthScale = containerSize.width.value / viewportSize.value.width
-  const heightScale = containerSize.height.value / viewportSize.value.height
+function handleSpriteSelected(sprite: Sprite) {
+  emit('update:selectedSprite', sprite)
+}
+
+const mapScale = ref(1)
+
+/** Scale value to fit the map in the stage */
+const fittingMapScale = computed(() => {
+  if (viewportSize.value == null) return null
+  const widthScale = viewportSize.value.width / mapSize.value.width
+  const heightScale = viewportSize.value.height / mapSize.value.height
   return Math.min(widthScale, heightScale)
 })
 
-const stageConfig = computed(() => {
-  if (stageScale.value == null || viewportSize.value == null || container.value == null) return null
-  const width = viewportSize.value.width * stageScale.value
-  const height = viewportSize.value.height * stageScale.value
-  return {
-    container: container.value,
-    width,
-    height,
-    scale: {
-      x: stageScale.value,
-      y: stageScale.value
-    }
-  } satisfies StageConfig
+const minMapScale = computed(() => {
+  return fittingMapScale.value == null ? null : fittingMapScale.value * 0.8
 })
 
-const mapPosLimit = computed(() => {
-  return {
-    minX: viewportSize.value.width - mapSize.value.width,
-    maxX: 0,
-    minY: viewportSize.value.height - mapSize.value.height,
-    maxY: 0
-  }
+const maxMapScale = computed(() => {
+  if (fittingMapScale.value == null) return null
+  return Math.max(fittingMapScale.value * 2, 2)
 })
 
-/** The position to be applied on the map node to achieve camera effect */
+function setMapScale(scale: number) {
+  if (minMapScale.value != null && scale < minMapScale.value) scale = minMapScale.value
+  if (maxMapScale.value != null && scale > maxMapScale.value) scale = maxMapScale.value
+  mapScale.value = scale
+  return scale
+}
+
 const mapPos = ref<Pos>({ x: 0, y: 0 })
 
-function getValidMapPos(pos: Pos) {
+const mapPosLimit = computed(() => {
+  const vSize = viewportSize.value
+  if (vSize == null) return null
+  const scale = mapScale.value
+  // We ensure that at least one pixel (of map) is in the (0.6x) center of the stage
   return {
-    x: Math.min(Math.max(pos.x, mapPosLimit.value.minX), mapPosLimit.value.maxX),
-    y: Math.min(Math.max(pos.y, mapPosLimit.value.minY), mapPosLimit.value.maxY)
+    minX: vSize.width * 0.2 - mapSize.value.width * scale,
+    maxX: vSize.width * 0.8,
+    minY: vSize.height * 0.2 - mapSize.value.height * scale,
+    maxY: vSize.height * 0.8
   }
+})
+
+function getValidMapPos({ x, y }: Pos) {
+  const limit = mapPosLimit.value
+  if (limit == null) return { x, y }
+  const { minX, maxX, minY, maxY } = limit
+  if (x < minX) x = minX
+  if (x > maxX) x = maxX
+  if (y < minY) y = minY
+  if (y > maxY) y = maxY
+  return { x, y }
 }
 
 function setMapPos(pos: Pos) {
@@ -190,10 +138,25 @@ function setMapPosWithTransition(pos: Pos, durationInMs: number) {
   }).play()
 }
 
+// When viewport size or map size changes, fit the map in the viewport and center it.
+watch(
+  [viewportSize, mapSize, fittingMapScale],
+  async ([vSize, mSize, targetScale]) => {
+    if (vSize == null || targetScale == null) return
+    const scale = setMapScale(targetScale)
+    setMapPos({
+      x: (vSize.width - mSize.width * scale) / 2,
+      y: (vSize.height - mSize.height * scale) / 2
+    })
+  },
+  { immediate: true }
+)
+
 /** Check if given position (in game) is in viewport */
 function inViewport({ x, y }: Pos) {
-  const xInViewport = x + mapSize.value.width / 2 + mapPos.value.x
-  const yInViewport = -y + mapSize.value.height / 2 + mapPos.value.y
+  if (viewportSize.value == null) return true
+  const xInViewport = (x + mapSize.value.width / 2) * mapScale.value + mapPos.value.x
+  const yInViewport = (-y + mapSize.value.height / 2) * mapScale.value + mapPos.value.y
   return (
     xInViewport >= 0 &&
     xInViewport <= viewportSize.value.width &&
@@ -203,13 +166,12 @@ function inViewport({ x, y }: Pos) {
 }
 
 watch(
-  () => editorCtx.state.selectedSprite,
+  () => props.selectedSprite,
   (selectedSprite) => {
-    editorCtx.project.setCameraFollowSprite(selectedSprite?.id ?? null)
-    if (selectedSprite != null && !inViewport(selectedSprite)) {
+    if (selectedSprite != null && viewportSize.value != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
-        x: -(mapSize.value.width / 2 + selectedSprite.x - viewportSize.value.width / 2),
-        y: -(mapSize.value.height / 2 - selectedSprite.y - viewportSize.value.height / 2)
+        x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
+        y: viewportSize.value.height / 2 - (mapSize.value.height / 2 - selectedSprite.y) * mapScale.value
       }
       setMapPosWithTransition(mapPosForSprite, 300)
     }
@@ -220,9 +182,8 @@ watch(
 const mapConfig = computed(() => {
   return {
     ...mapPos.value,
-    width: mapSize.value.width,
-    height: mapSize.value.height,
-    draggable: true
+    draggable: true,
+    scale: { x: mapScale.value, y: mapScale.value }
   } satisfies LayerConfig
 })
 
@@ -241,7 +202,7 @@ function handleMapDragEnd(e: KonvaEventObject<MouseEvent>) {
 }
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(() => props.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()
@@ -261,7 +222,7 @@ const konvaBackdropConfig = computed(() => {
   const imageWidth = backdropImg.value.width
   const imageHeight = backdropImg.value.height
 
-  if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
+  if (props.project.stage.mapMode === MapMode.fillRatio) {
     const scaleX = stageWidth / imageWidth
     const scaleY = stageHeight / imageHeight
     const scale = Math.max(scaleX, scaleY) // Use max to cover the entire stage
@@ -281,7 +242,7 @@ const konvaBackdropConfig = computed(() => {
       fillPatternScaleX: scale,
       fillPatternScaleY: scale
     }
-  } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
+  } else if (props.project.stage.mapMode === MapMode.repeat) {
     const offsetX = (stageWidth - imageWidth) / 2
     const offsetY = (stageHeight - imageHeight) / 2
 
@@ -296,25 +257,19 @@ const konvaBackdropConfig = computed(() => {
       fillPatternScaleY: 1
     }
   }
-  console.warn('Unsupported map mode:', editorCtx.project.stage.mapMode)
+  console.warn('Unsupported map mode:', props.project.stage.mapMode)
   return null
 })
 
 const loading = computed(() => {
   if (backdropSrcLoading.value || !backdropImg.value) return true
-  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
-  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
+  if (props.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
   return false
 })
 
 const visibleSprites = computed(() => {
-  const { zorder, sprites } = editorCtx.project
+  const { zorder, sprites } = props.project
   return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
-})
-
-const visibleWidgets = computed(() => {
-  const { widgetsZorder, widgets } = editorCtx.project.stage
-  return widgetsZorder.map((id) => widgets.find((w) => w.id === id)).filter(Boolean) as Widget[]
 })
 
 let cameraEdgeScrollCheckTimer: ReturnType<typeof setInterval> | null = null
@@ -358,18 +313,14 @@ function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
     }
     const newMapPos = setMapPos(targetMapPos)
     notifyCameraScroll({
-      x: newMapPos.x - oldMapPos.x,
-      y: newMapPos.y - oldMapPos.y
+      x: (newMapPos.x - oldMapPos.x) / mapScale.value,
+      y: (newMapPos.y - oldMapPos.y) / mapScale.value
     })
   }, interval)
 }
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
-}
-
-function handleSpriteSelected(sprite: Sprite) {
-  editorCtx.state.selectSprite(sprite.id)
 }
 
 const menuVisible = ref(false)
@@ -408,8 +359,7 @@ const moveActionNames = {
 }
 
 async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const { state, project } = editorCtx
-  const { selectedSprite, selectedWidget } = state
+  const { project, selectedSprite } = props
   await project.history.doAction({ name: moveActionNames[direction] }, () => {
     if (selectedSprite != null) {
       if (direction === 'up') {
@@ -421,59 +371,112 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
       } else if (direction === 'bottom') {
         project.bottomSpriteZorder(selectedSprite.id)
       }
-    } else if (selectedWidget != null) {
-      if (direction === 'up') {
-        project.stage.upWidgetZorder(selectedWidget.id)
-      } else if (direction === 'down') {
-        project.stage.downWidgetZorder(selectedWidget.id)
-      } else if (direction === 'top') {
-        project.stage.topWidgetZorder(selectedWidget.id)
-      } else if (direction === 'bottom') {
-        project.stage.bottomWidgetZorder(selectedWidget.id)
-      }
     }
   })
   menuVisible.value = false
 }
 
-function handleWheel(e: KonvaEventObject<WheelEvent>) {
-  const mpos = mapPos.value
+function handleBackdropClick() {
+  emit('update:selectedSprite', null)
+}
+
+const scaleBy = 1.02
+
+const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
   e.evt.preventDefault()
+  const map = e.target
+  const oldScale = mapScale.value
+  const pointer = map.getStage()?.getPointerPosition()
+  if (pointer == null) return
+
+  const mousePointTo = {
+    x: (pointer.x - mapPos.value.x) / oldScale,
+    y: (pointer.y - mapPos.value.y) / oldScale
+  }
+  const newScale = setMapScale(e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy)
   setMapPos({
-    x: mpos.x - e.evt.deltaX,
-    y: mpos.y - e.evt.deltaY
+    x: pointer.x - mousePointTo.x * newScale,
+    y: pointer.y - mousePointTo.y * newScale
   })
 }
-
-// TODO: implement a standalone screenshot taker which does not depend on StageViewer
-// See details in https://github.com/goplus/builder/issues/1807 .
-async function takeScreenshot(name: string, signal?: AbortSignal) {
-  const stage = await untilNotNull(stageRef, signal)
-  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
-  await until(() => !loading.value, signal)
-  // Omit transform control when taking screenshot
-  const blob = await nodeTransformer.withHidden(
-    () =>
-      stage.getStage().toBlob({
-        mimeType: 'image/jpeg'
-      }) as Promise<Blob>
-  )
-  return fromBlob(`${name}.jpg`, blob)
-}
-
-watchEffect((onCleanup) => {
-  const unbind = editorCtx.project.bindScreenshotTaker(takeScreenshot)
-  onCleanup(unbind)
-})
 </script>
+
+<template>
+  <div
+    ref="container"
+    v-radar="{
+      name: 'Map viewer',
+      desc: 'View and manipulate the map and sprites on the map. Click on sprite to select it.'
+    }"
+    class="map-viewer"
+    @mousemove="updateMousePos"
+  >
+    <v-stage
+      v-if="stageConfig != null"
+      ref="stageRef"
+      :config="stageConfig"
+      @mousedown="handleStageMousedown"
+      @contextmenu="handleContextMenu"
+      @wheel="handleWheel"
+    >
+      <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig" @click="handleBackdropClick"></v-rect>
+        <SpriteNode
+          v-for="sprite in visibleSprites"
+          :key="sprite.id"
+          :sprite="sprite"
+          :selected="selectedSprite?.id === sprite.id"
+          :project="props.project"
+          :map-size="mapSize!"
+          :node-ready-map="nodeReadyMap"
+          @drag-move="handleSpriteDragMove"
+          @drag-end="handleSpriteDragEnd"
+          @selected="handleSpriteSelected(sprite)"
+        />
+      </v-layer>
+      <v-layer>
+        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
+      </v-layer>
+    </v-stage>
+    <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
+      <UIMenu>
+        <UIMenuItem
+          v-radar="{ name: 'Move up', desc: 'Click to move sprite up in z-order' }"
+          @click="moveZorder('up')"
+          >{{ $t(moveActionNames.up) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move to top', desc: 'Click to move sprite to top in z-order' }"
+          @click="moveZorder('top')"
+          >{{ $t(moveActionNames.top) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move down', desc: 'Click to move sprite down in z-order' }"
+          @click="moveZorder('down')"
+          >{{ $t(moveActionNames.down) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Move to bottom', desc: 'Click to move sprite to bottom in z-order' }"
+          @click="moveZorder('bottom')"
+          >{{ $t(moveActionNames.bottom) }}</UIMenuItem
+        >
+      </UIMenu>
+    </UIDropdown>
+    <PositionIndicator :position="mousePos" />
+    <UILoading :visible="loading" cover />
+  </div>
+</template>
+
 <style scoped>
-.stage-viewer {
+.map-viewer {
   height: 100%;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 
+  border-radius: var(--ui-border-radius-3);
+  overflow: hidden;
   background-image: url(@/assets/images/stage-bg.svg);
   background-position: center;
   background-repeat: repeat;
