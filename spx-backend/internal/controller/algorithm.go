@@ -60,8 +60,6 @@ type VectorAddResponse struct {
 func (s *AlgorithmService) AddVector(ctx context.Context, id int64, url string, svgContent []byte) error {
 	logger := log.GetReqLogger(ctx)
 
-	logger.Printf("🔗 Adding vector to algorithm service - ID: %d, URL: %s, Content size: %d bytes", id, url, len(svgContent))
-
 	// Prepare request payload
 	req := VectorAddRequest{
 		ID:         id,

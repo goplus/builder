@@ -551,7 +551,7 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 		}
 		
 		dbStart := time.Now()
-		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.URL).First(&aiResource).Error
 		if i < 5 { // Only log first 5 DB queries to avoid spam
 			logger.Printf("[PERF] DB query %d took %v", i+1, time.Since(dbStart))
 		}
