@@ -196,15 +196,17 @@ const createPoster = async (): Promise<File> => {
     throw new Error('Poster element not ready or project data is undefined')
   }
 
-  await nextTick() // Ensure DOM has been updated
+  await nextTick()
+
+  const rect = posterElementRef.value.getBoundingClientRect()
 
   const posterCanvas = await html2canvas(posterElementRef.value, {
-    width: 800,
-    height: 1000,
+    width: rect.width,
+    height: rect.height,
     useCORS: true,
     allowTaint: true,
-    backgroundColor: '#ffffff',
-    scale: 1,
+    backgroundColor: 'transparent',
+    scale: 2,
     logging: false
   })
 
@@ -257,7 +259,7 @@ defineExpose({
           </div>
         </div>
       </div>
-      <div style="display: flex; align-items: flex-start; gap: 16px">
+      <div class="branding-container">
         <div class="branding">
           <img :src="logo" alt="logo" class="branding-logo" style="height: 40px; vertical-align: middle" />
         </div>
@@ -272,18 +274,18 @@ defineExpose({
 <style scoped lang="scss">
 .poster-background {
   width: 300px;
-  height: 100%;
+  height: auto;
   background-image: url('./posterBackground.jpg');
   background-size: cover;
   background-position: center;
-  padding: 32px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  /* box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); */
   transition: all 0.3s ease;
-  max-height: 500px;
+  min-height: 400px;
+  margin-top: 10px;
 }
 
 .screenshot-area {
@@ -448,12 +450,18 @@ defineExpose({
   }
 }
 
+.branding-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
 .branding {
   display: flex;
   align-items: center;
   height: 60px;
   background: rgba(0, 0, 0, 0.1);
-  padding: 12px 20px;
+  padding: 12px 6px;
   border-radius: 24px;
   backdrop-filter: blur(4px);
   box-sizing: border-box;
