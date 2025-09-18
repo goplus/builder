@@ -1,4 +1,5 @@
 import { getWeChatJSSDKConfig } from '@/apis/wechat'
+import { analyzePlatformShare } from '@/apis/analyze'
 /**
  * 社交平台配置
  */
@@ -72,6 +73,11 @@ declare global {
   }
 }
 
+// 初始化分享URL，拼接对应平台，以便后端进行回流分析
+function initShareURL(platform: string) {
+  return location.href + '#/share-to-platform=' + platform
+}
+
 /**
  * QQ平台实现
  */
@@ -103,7 +109,7 @@ class QQPlatform implements PlatformConfig {
   initShareInfo = async (shareInfo?: ShareInfo) => {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: location.href,
+        share_url: initShareURL('qq'),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
@@ -144,7 +150,7 @@ class WeChatPlatform implements PlatformConfig {
   initShareInfo = async (shareInfo?: ShareInfo) => {
     // 微信平台设置分享信息
     const config = await getWeChatJSSDKConfig({
-      url: location.href
+      url: initShareURL('wechat')
     })
     //初始化微信分享信息
     if (window.wx && window.wx.config) {
@@ -163,7 +169,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateAppMessageShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: location.href,
+          link: initShareURL('wechat'),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -172,7 +178,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateTimelineShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: location.href,
+          link: initShareURL('wechat'),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -273,6 +279,12 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
 export type Disposer = () => void
 
 export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> => {
+  // 判断是否从某一平台分享的回流
+  const platform = analyzeProjectShareUrl()
+  if (platform) {
+    await analyzePlatformShare(platform)
+  }
+
   const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
   const qq = new QQPlatform()
   const wechat = new WeChatPlatform()
@@ -284,4 +296,12 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
     qq.initShareInfo(defaultShareInfo)
     wechat.initShareInfo(defaultShareInfo)
   }
+}
+
+export function analyzeProjectShareUrl(): string | null {
+  const currentUrl = location.href
+  if (currentUrl.includes('#/share-to-platform=')) {
+    return currentUrl.split('#/share-to-platform=')[1]
+  }
+  return null
 }
