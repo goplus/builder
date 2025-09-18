@@ -87,7 +87,7 @@ export async function generateSvgDirect(
   }
 
   // 获取后端返回的原始数据
-  const backendResponse = await client.post('/images/recommend', payload)
+  const backendResponse = await client.post('/images/recommend', payload, { timeout: 3 * 60 * 1000 })
 
   // 将后端response整理成所需的数组格式
   const imageUrls = backendResponse.results.map((result: any) => result.image_path)
