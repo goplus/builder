@@ -1,0 +1,14 @@
+knowledge_base:
+  - "COPILOT.md"
+  - "README.md"
+  - "docs/develop/index.md"
+
+conversation_starters:
+  - "How do I set up the XBuilder development environment?"
+  - "Help me understand the XGo language extensions used in this project"
+  - "What's the architecture of the spx game engine integration?"
+  - "How does the AI copilot system work in XBuilder?"
+  - "Guide me through adding a new feature to the game builder interface"
+  - "How do I modify the tutorial system?"
+  - "What are the key components I need to understand for backend development?"
+  - "How does project serialization work for AI context?"
