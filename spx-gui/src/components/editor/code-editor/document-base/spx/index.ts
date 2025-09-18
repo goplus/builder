@@ -3308,3 +3308,252 @@ export const staticPhysics = defineConst('StaticPhysics', [categories.motion.phy
   en: 'Static physics effect',
   zh: '静态物理效果'
 })
+
+export const value: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'Value'
+  },
+  insertSnippet: 'Value',
+  overview: 'Value',
+  detail: makeBasicMarkdownString({
+    en: 'Value type for dynamic data',
+    zh: '用于动态数据的值类型'
+  })
+}
+
+export const valueEqual: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.equal'
+  },
+  insertSnippet: 'myValue.equal ${1:otherValue}',
+  insertSnippetParameterHints: ['otherValue'],
+  overview: 'equal otherValue',
+  detail: makeBasicMarkdownString({
+    en: 'Check if two values are equal',
+    zh: '检查两个值是否相等'
+  })
+}
+
+export const valueFloat: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.float'
+  },
+  insertSnippet: 'myValue.float',
+  overview: 'float',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to a floating-point number',
+    zh: '将值转换为浮点数'
+  })
+}
+
+export const valueInt: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.int'
+  },
+  insertSnippet: 'myValue.int',
+  overview: 'int',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to an integer',
+    zh: '将值转换为整数'
+  })
+}
+
+export const valueString: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.string'
+  },
+  insertSnippet: 'myValue.string',
+  overview: 'string',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to a string',
+    zh: '将值转换为字符串'
+  })
+}
+
+export const list: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'List'
+  },
+  insertSnippet: 'List',
+  overview: 'List',
+  detail: makeBasicMarkdownString({
+    en: 'List data structure for storing multiple values',
+    zh: '用于存储多个值的列表数据结构'
+  })
+}
+
+export const listAppend: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.append'
+  },
+  insertSnippet: 'myList.append ${1:"value"}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'append value',
+  detail: makeBasicMarkdownString({
+    en: 'Add a value to the end of the list',
+    zh: '将值添加到列表末尾'
+  })
+}
+
+export const listAt: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.at'
+  },
+  insertSnippet: 'myList.at ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'at index',
+  detail: makeBasicMarkdownString({
+    en: 'Get the value at a specific index',
+    zh: '获取指定索引处的值'
+  })
+}
+
+export const listContains: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.contains'
+  },
+  insertSnippet: 'myList.contains ${1:"value"}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'contains value',
+  detail: makeBasicMarkdownString({
+    en: 'Check if the list contains a specific value',
+    zh: '检查列表是否包含特定值'
+  })
+}
+
+export const listDelete: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.delete'
+  },
+  insertSnippet: 'myList.delete ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'delete index',
+  detail: makeBasicMarkdownString({
+    en: 'Remove the item at a specific index',
+    zh: '删除指定索引处的项'
+  })
+}
+
+export const listInit: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.init'
+  },
+  insertSnippet: 'myList.init ${1:"a"}, ${2:"b"}, ${3:"c"}',
+  insertSnippetParameterHints: ['value1', 'value2', 'value3'],
+  overview: 'init values...',
+  detail: makeBasicMarkdownString({
+    en: 'Initialize the list with given values',
+    zh: '使用给定的值初始化列表'
+  })
+}
+
+export const listInitFrom: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.initFrom'
+  },
+  insertSnippet: 'myList.initFrom ${1:otherList}',
+  insertSnippetParameterHints: ['sourceList'],
+  overview: 'initFrom sourceList',
+  detail: makeBasicMarkdownString({
+    en: 'Initialize the list by copying from another list',
+    zh: '通过复制另一个列表来初始化列表'
+  })
+}
+
+export const listInsert: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.insert'
+  },
+  insertSnippet: 'myList.insert ${1:0}, ${2:"value"}',
+  insertSnippetParameterHints: ['index', 'value'],
+  overview: 'insert index, value',
+  detail: makeBasicMarkdownString({
+    en: 'Insert a value at a specific index',
+    zh: '在指定索引处插入值'
+  })
+}
+
+export const listLen: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.len'
+  },
+  insertSnippet: 'myList.len',
+  overview: 'len',
+  detail: makeBasicMarkdownString({
+    en: 'Get the length of the list',
+    zh: '获取列表的长度'
+  })
+}
+
+export const listSet: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.set'
+  },
+  insertSnippet: 'myList.set ${1:0}, ${2:"newValue"}',
+  insertSnippetParameterHints: ['index', 'value'],
+  overview: 'set index, value',
+  detail: makeBasicMarkdownString({
+    en: 'Set the value at a specific index',
+    zh: '设置指定索引处的值'
+  })
+}
+
+export const listString: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.string'
+  },
+  insertSnippet: 'myList.string',
+  overview: 'string',
+  detail: makeBasicMarkdownString({
+    en: 'Get the string representation of the list',
+    zh: '获取列表的字符串表示'
+  })
+}

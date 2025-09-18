@@ -180,6 +180,17 @@ forever,forever => {},Repeat forever
 KinematicPhysics,,Kinematic physics effect
 Left,,"Left direction, i.e., -90 degree"
 LeftRight,,Left-Right
+List,,List data structure for storing multiple values
+List.append,"myList.append ""value""",Add a value to the end of the list
+List.at,myList.at 0,Get the value at a specific index
+List.contains,"myList.contains ""value""",Check if the list contains a specific value
+List.delete,myList.delete 0,Remove the item at a specific index
+List.init,"myList.init ""a"", ""b"", ""c""",Initialize the list with given values
+List.initFrom,myList.initFrom otherList,Initialize the list by copying from another list
+List.insert,"myList.insert 0, ""value""",Insert a value at a specific index
+List.len,myList.len,Get the length of the list
+List.set,"myList.set 0, ""newValue""",Set the value at a specific index
+List.string,myList.string,Get the string representation of the list
 Monitor,,Monitor widget
 Monitor.changeSize,changeSize 0.1,Change size of the widget
 Monitor.changeXYpos,"changeXYpos 10, 10",Change the widget's position
@@ -218,6 +229,11 @@ TurningInfo.dir,dir,The degree changed by turning
 TurningInfo.NewDir,NewDir,The heading direction after turning
 TurningInfo.OldDir,OldDir,The heading direction before turning
 Up,,"Up direction, i.e., 0 degree"
+Value,,Value type for dynamic data
+Value.equal,myValue.equal otherValue,Check if two values are equal
+Value.float,myValue.float,Convert the value to a floating-point number
+Value.int,myValue.int,Convert the value to an integer
+Value.string,myValue.string,Convert the value to a string
 waitUntil,waitUntil true,Wait until given condition is met
 Widget.changeSize,changeSize 0.1,Change size of the widget
 Widget.changeXYpos,"changeXYpos 10, 10",Change the widget's position
