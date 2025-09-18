@@ -93,6 +93,10 @@ func (sm *ServiceManager) GetProvider(providerType Provider) ProviderService {
 // GenerateImage generates an image using the specified provider.
 func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
+	start := time.Now()
+	defer func() {
+		logger.Printf("[PERF] SVG GenerateImage (%s) took %v", req.Provider, time.Since(start))
+	}()
 
 	provider := sm.GetProvider(req.Provider)
 	if provider == nil {
@@ -120,7 +124,9 @@ func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest
 	}
 
 	logger.Printf("generating image with provider: %s", string(req.Provider))
+	providerStart := time.Now()
 	resp, err := provider.GenerateImage(ctx, req)
+	logger.Printf("[PERF] Provider %s generation took %v", req.Provider, time.Since(providerStart))
 	if err != nil {
 		return nil, err
 	}

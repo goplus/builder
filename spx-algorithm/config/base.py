@@ -26,9 +26,24 @@ class BaseConfig:
     MILVUS_COLLECTION_NAME: str = field(default_factory=lambda: os.environ.get('MILVUS_COLLECTION_NAME', 'spx_vector_collection'))
     MILVUS_DIMENSION: int = field(default_factory=lambda: int(os.environ.get('MILVUS_DIMENSION', '512')))
     
-    # 服务功能配置
-    ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'false').lower() == 'true')
-    LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', ''))
+    # LTR重排序配置
+    ENABLE_RERANKING: bool = field(default_factory=lambda: os.environ.get('ENABLE_RERANKING', 'true').lower() == 'true')
+    LTR_MODEL_PATH: str = field(default_factory=lambda: os.environ.get('LTR_MODEL_PATH', 'models/ltr_model.pkl'))
+    
+    # 用户反馈数据库配置 (MySQL)
+    MYSQL_HOST: str = field(default_factory=lambda: os.environ.get('MYSQL_HOST', 'localhost'))
+    MYSQL_PORT: int = field(default_factory=lambda: int(os.environ.get('MYSQL_PORT', '3307')))
+    MYSQL_USER: str = field(default_factory=lambda: os.environ.get('MYSQL_USER', 'spx_user'))
+    MYSQL_PASSWORD: str = field(default_factory=lambda: os.environ.get('MYSQL_PASSWORD', 'spx_feedback_2024'))
+    MYSQL_DATABASE: str = field(default_factory=lambda: os.environ.get('MYSQL_DATABASE', 'spx_feedback'))
+    
+    # 模型训练配置
+    LTR_TRAINING_BATCH_SIZE: int = field(default_factory=lambda: int(os.environ.get('LTR_TRAINING_BATCH_SIZE', '1000')))
+    LTR_MODEL_AUTO_RETRAIN: bool = field(default_factory=lambda: os.environ.get('LTR_MODEL_AUTO_RETRAIN', 'false').lower() == 'true')
+    
+    # 重排序候选数量配置
+    LTR_COARSE_MULTIPLIER: int = field(default_factory=lambda: int(os.environ.get('LTR_COARSE_MULTIPLIER', '3')))  # 粗排数量倍数
+    LTR_MAX_CANDIDATES: int = field(default_factory=lambda: int(os.environ.get('LTR_MAX_CANDIDATES', '100')))  # 粗排最大数量
     
     # Flask配置
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB
@@ -49,6 +64,15 @@ class BaseConfig:
             'MILVUS_DIMENSION': self.MILVUS_DIMENSION,
             'ENABLE_RERANKING': self.ENABLE_RERANKING,
             'LTR_MODEL_PATH': self.LTR_MODEL_PATH,
+            'MYSQL_HOST': self.MYSQL_HOST,
+            'MYSQL_PORT': self.MYSQL_PORT,
+            'MYSQL_USER': self.MYSQL_USER,
+            'MYSQL_PASSWORD': self.MYSQL_PASSWORD,
+            'MYSQL_DATABASE': self.MYSQL_DATABASE,
+            'LTR_TRAINING_BATCH_SIZE': self.LTR_TRAINING_BATCH_SIZE,
+            'LTR_MODEL_AUTO_RETRAIN': self.LTR_MODEL_AUTO_RETRAIN,
+            'LTR_COARSE_MULTIPLIER': self.LTR_COARSE_MULTIPLIER,
+            'LTR_MAX_CANDIDATES': self.LTR_MAX_CANDIDATES,
             'MAX_CONTENT_LENGTH': self.MAX_CONTENT_LENGTH,
             'JSON_AS_ASCII': self.JSON_AS_ASCII,
             'JSONIFY_PRETTYPRINT_REGULAR': self.JSONIFY_PRETTYPRINT_REGULAR
@@ -67,6 +91,15 @@ class BaseConfig:
             },
             'reranking': {
                 'enabled': self.ENABLE_RERANKING,
-                'model_path': self.LTR_MODEL_PATH if self.LTR_MODEL_PATH else None
+                'model_path': self.LTR_MODEL_PATH,
+                'mysql_host': self.MYSQL_HOST,
+                'mysql_port': self.MYSQL_PORT,
+                'mysql_user': self.MYSQL_USER,
+                'mysql_password': self.MYSQL_PASSWORD,
+                'mysql_database': self.MYSQL_DATABASE,
+                'training_batch_size': self.LTR_TRAINING_BATCH_SIZE,
+                'auto_retrain': self.LTR_MODEL_AUTO_RETRAIN,
+                'coarse_multiplier': self.LTR_COARSE_MULTIPLIER,
+                'max_candidates': self.LTR_MAX_CANDIDATES
             }
         }
