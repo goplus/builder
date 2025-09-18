@@ -87,7 +87,12 @@ h := handler(
 	NewCORSMiddleware(),
 	NewReqIDMiddleware(),
 )
-server := &http.Server{Addr: addr, Handler: h}
+server := &http.Server{
+	Addr:         addr,
+	Handler:      h,
+	ReadTimeout:  cfg.Server.ReadTimeout,
+	WriteTimeout: cfg.Server.WriteTimeout,
+}
 
 stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 defer stop()

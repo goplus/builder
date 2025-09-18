@@ -8,9 +8,7 @@ import (
 )
 
 ctx := &Context
-if _, ok := ensureAuthenticatedUser(ctx); !ok {
-	return
-}
+
 
 params := &controller.ImageRecommendParams{}
 if !parseJSON(ctx, params) {
