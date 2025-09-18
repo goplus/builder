@@ -1,4 +1,5 @@
-import { type InjectionKey, provide, type Ref, inject } from 'vue'
+import { type InjectionKey, provide, type Ref, inject, ref, watchEffect } from 'vue'
+import { getCleanupSignal } from '@/utils/disposable'
 
 const rootContainerInjectionKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('root-container')
 
@@ -50,4 +51,24 @@ export function isInPopup(target: HTMLElement | null) {
     el = el.parentElement
   }
   return false
+}
+
+const lastClickEventKey: InjectionKey<Ref<MouseEvent | null>> = Symbol('last-click-event')
+
+export function useProvideLastClickEvent() {
+  const lastClickEvent = ref<MouseEvent | null>(null)
+  provide(lastClickEventKey, lastClickEvent)
+
+  watchEffect((onCleanup) => {
+    const signal = getCleanupSignal(onCleanup)
+    document.body.addEventListener('click', (e) => (lastClickEvent.value = e), { capture: true, passive: true, signal })
+  })
+}
+
+/** Returns the last click event in the page. */
+export function useLastClickEvent() {
+  const lastClickEvent = inject(lastClickEventKey)
+  if (lastClickEvent == null)
+    throw new Error('useLastClickEvent() is called without corresponding useProvideLastClickEvent()')
+  return lastClickEvent
 }

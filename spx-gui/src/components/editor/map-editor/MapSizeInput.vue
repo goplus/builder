@@ -22,7 +22,7 @@ const handleHeightChange = debounce((v: number | null) => {
 </script>
 
 <template>
-  <MapConfigItemWrapper :title="$t({ en: 'Size', zh: '尺寸' })">
+  <MapConfigItemWrapper :title="$t({ en: 'Map size', zh: '地图尺寸' })">
     <div class="inputs">
       <UINumberInput
         v-radar="{ name: 'width input', desc: 'Input to set map width' }"
