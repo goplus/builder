@@ -62,6 +62,11 @@ export interface PlatformConfig {
  */
 const platformUrl = 'https://example.com'
 
+/**
+ * 平台跳转链接的前缀
+ */
+const hashPrefix = '#/share-to-platform='
+
 /*
 来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
 */
@@ -75,7 +80,8 @@ declare global {
 
 // 初始化分享URL，拼接对应平台，以便后端进行回流分析
 function initShareURL(platform: string) {
-  return location.href + '#/share-to-platform=' + platform
+  const [baseUrl] = location.href.split('#')
+  return `${baseUrl}${hashPrefix}${platform}`
 }
 
 /**
@@ -109,7 +115,7 @@ class QQPlatform implements PlatformConfig {
   initShareInfo = async (shareInfo?: ShareInfo) => {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: initShareURL('qq'),
+        share_url: initShareURL(this.basicInfo.name),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
@@ -150,7 +156,7 @@ class WeChatPlatform implements PlatformConfig {
   initShareInfo = async (shareInfo?: ShareInfo) => {
     // 微信平台设置分享信息
     const config = await getWeChatJSSDKConfig({
-      url: initShareURL('wechat')
+      url: initShareURL(this.basicInfo.name)
     })
     //初始化微信分享信息
     if (window.wx && window.wx.config) {
@@ -169,7 +175,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateAppMessageShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: initShareURL('wechat'),
+          link: initShareURL(this.basicInfo.name),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -178,7 +184,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateTimelineShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: initShareURL('wechat'),
+          link: initShareURL(this.basicInfo.name),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -298,10 +304,15 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
   }
 }
 
-export function analyzeProjectShareUrl(): string | null {
-  const currentUrl = location.href
-  if (currentUrl.includes('#/share-to-platform=')) {
-    return currentUrl.split('#/share-to-platform=')[1]
+/**
+ * 分析项目分享URL，获取分享平台
+ * @returns 分享平台
+ */
+function analyzeProjectShareUrl(): string | null {
+  const hash = location.hash
+  const prefix = hashPrefix
+  if (hash.startsWith(prefix)) {
+    return hash.substring(prefix.length)
   }
   return null
 }
