@@ -31,7 +31,7 @@ type UpInfo struct {
 // GetUpInfo gets the information for uploading files.
 func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
 	putPolicy := qiniuStorage.PutPolicy{
-		Scope:        ctrl.kodo.bucket,
+		Scope:        ctrl.kodo.GetBucket(),
 		Expires:      1800, // 30 minutes in seconds
 		ForceSaveKey: true,
 		SaveKey:      "files/$(etag)-$(fsize)",
@@ -41,13 +41,13 @@ func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
 		// the future.
 		FsizeLimit: 25 << 20, // 25 MiB
 	}
-	upToken := putPolicy.UploadToken(ctrl.kodo.cred)
+	upToken := putPolicy.UploadToken(ctrl.kodo.GetCredentials())
 	return &UpInfo{
 		Token:   upToken,
 		Expires: putPolicy.Expires,
 		MaxSize: putPolicy.FsizeLimit,
-		Bucket:  ctrl.kodo.bucket,
-		Region:  ctrl.kodo.bucketRegion,
+		Bucket:  ctrl.kodo.GetBucket(),
+		Region:  ctrl.kodo.GetBucketRegion(),
 	}, nil
 }
 
@@ -81,15 +81,15 @@ func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsPa
 			logger.Printf("invalid object: %s: %v", object, err)
 			return nil, err
 		}
-		if u.Scheme != "kodo" || u.Host != ctrl.kodo.bucket {
+		if u.Scheme != "kodo" || u.Host != ctrl.kodo.GetBucket() {
 			err := fmt.Errorf("unrecognized object: %s", object)
 			logger.Printf("%v", err)
 			return nil, err
 		}
 
-		objectURL, err := url.JoinPath(ctrl.kodo.baseUrl, u.Path)
+		objectURL, err := url.JoinPath(ctrl.kodo.GetBaseURL(), u.Path)
 		if err != nil {
-			logger.Printf("url.JoinPath failed: [%q, %q]: %v", ctrl.kodo.baseUrl, object, err)
+			logger.Printf("url.JoinPath failed: [%q, %q]: %v", ctrl.kodo.GetBaseURL(), object, err)
 			return nil, err
 		}
 
@@ -98,7 +98,7 @@ func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsPa
 		e := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Unix() + expires
 
 		objectURL += fmt.Sprintf("?e=%d", e)
-		objectURL += "&token=" + ctrl.kodo.cred.Sign([]byte(objectURL))
+		objectURL += "&token=" + ctrl.kodo.GetCredentials().Sign([]byte(objectURL))
 		fileURLs.ObjectURLs[object] = objectURL
 	}
 	return fileURLs, nil

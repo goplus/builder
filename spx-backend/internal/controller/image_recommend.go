@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
@@ -177,13 +176,6 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 }
 
 
-// RecommendationCache stores recommendation results for feedback tracking
-type RecommendationCache struct {
-	QueryID         string
-	Query           string
-	RecommendedPics []int64
-	Timestamp       time.Time
-}
 
 
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
