@@ -2,10 +2,9 @@
  * @desc Picture Generation APIs for AI image generation
  */
 
-import { apiBaseUrl } from '@/utils/env'
 import { toText } from '@/models/common/file'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
-
+import { client } from './common'
 /** Image generation model types */
 export type ImageModel = 'png' | 'svg'
 
@@ -80,28 +79,15 @@ export async function generateSvgDirect(
     top_k: options?.top_k
   }
 
-  let url = ''
-  url = apiBaseUrl + '/images/recommend'
   payload.provider = 'openai'
   if (options?.top_k) {
     payload.top_k = options.top_k
   } else {
     payload.top_k = 4
   }
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Request failed: ${response.status} ${response.statusText} - ${errorText}`)
-  }
   // 获取后端返回的原始数据
-  const backendResponse = await response.json()
+  const backendResponse = await client.post('/images/recommend', payload)
 
   // 将后端response整理成所需的数组格式
   const imageUrls = backendResponse.results.map((result: any) => result.image_path)

@@ -1,17 +1,13 @@
-import { apiBaseUrl } from '@/utils/env'
+import { client } from './common'
 
 export const getPrompt = async (prefix: string, limit: number) => {
-  const response = await fetch(`${apiBaseUrl}/game/assets/complete`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ prefix, limit })
+  const response = await client.post('/game/assets/complete', {
+    prefix,
+    limit
   })
-  if (!response.ok) {
+  if (!response.success) {
     throw new Error('Failed to fetch prompt')
   }
-  const data = await response.json()
-
-  return data.data.suggestions
+  const data = await response.data
+  return data.suggestions
 }
