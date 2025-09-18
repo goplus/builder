@@ -399,7 +399,7 @@ const initPaper = (): void => {
 
 //painter提供allPath接口给直线组件
 const getAllPathsValue = (): paper.Path[] => {
-  return allPaths.value.map(p => p.clone({insert:false}))
+  return allPaths.value.map((p) => p.clone({ insert: false }))
 }
 const setAllPathsValue = (paths: paper.Path[]): void => {
   //历史记录保存
@@ -481,7 +481,6 @@ const importSvgFromPicgcToCanvas = async (svgContent: string): Promise<void> => 
 // 清空画布
 const clearCanvas = (): void => {
   if (!historyManager.value || !importExportManager) return
-
 
   clearCanvasFunction({
     canvasWidth,
