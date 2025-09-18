@@ -158,6 +158,10 @@ type post_aigc_matting struct {
 	yap.Handler
 	*AppV2
 }
+type post_analytics_traffic_source struct {
+	yap.Handler
+	*AppV2
+}
 type post_asset struct {
 	yap.Handler
 	*AppV2
@@ -1895,6 +1899,48 @@ func (this *post_aigc_matting) Classfname() string {
 	return "post_aigc_matting"
 }
 func (this *post_aigc_matting) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:10
+func (this *post_analytics_traffic_source) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_analytics_traffic-source.yap:12:1
+	params := &controller.TrafficSourceParams{}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
+	if
+//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:18:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:23:1
+	ipAddress := getClientIP(ctx.Request)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:25:1
+	err := this.ctrl.RecordTrafficSource(ctx.Context(), params, ipAddress)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:26:1
+	if err != nil {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:27:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:28:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:31:1
+	this.Text__1(201, "recorded")
+}
+func (this *post_analytics_traffic_source) Classfname() string {
+	return "post_analytics_traffic-source"
+}
+func (this *post_analytics_traffic_source) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
