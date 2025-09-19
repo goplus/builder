@@ -58,19 +58,24 @@ func (k *Client) UploadFile(ctx context.Context, data []byte, filename string) (
 	// Configure upload settings
 	cfg := qiniuStorage.Config{}
 	// Use specified region if available
+	// Map region names to Qiniu regions (this might need adjustment based on actual region names)
+	// regionMap maps region names to Qiniu storage zones
+	var regionMap = map[string]*qiniuStorage.Region{
+		"z0":              &qiniuStorage.ZoneHuadong,
+		"cn-east-1":       &qiniuStorage.ZoneHuadong,
+		"z1":              &qiniuStorage.ZoneHuabei,
+		"cn-north-1":      &qiniuStorage.ZoneHuabei,
+		"z2":              &qiniuStorage.ZoneHuanan,
+		"cn-south-1":      &qiniuStorage.ZoneHuanan,
+		"na0":             &qiniuStorage.ZoneBeimei,
+		"us-north-1":      &qiniuStorage.ZoneBeimei,
+		"as0":             &qiniuStorage.ZoneXinjiapo,
+		"ap-southeast-1":  &qiniuStorage.ZoneXinjiapo,
+	}
+	// Use specified region if available
 	if k.bucketRegion != "" {
-		// Map region names to Qiniu regions (this might need adjustment based on actual region names)
-		switch k.bucketRegion {
-		case "z0", "cn-east-1":
-			cfg.Zone = &qiniuStorage.ZoneHuadong
-		case "z1", "cn-north-1":
-			cfg.Zone = &qiniuStorage.ZoneHuabei
-		case "z2", "cn-south-1":
-			cfg.Zone = &qiniuStorage.ZoneHuanan
-		case "na0", "us-north-1":
-			cfg.Zone = &qiniuStorage.ZoneBeimei
-		case "as0", "ap-southeast-1":
-			cfg.Zone = &qiniuStorage.ZoneXinjiapo
+		if zone, exists := regionMap[k.bucketRegion]; exists {
+			cfg.Zone = zone
 		}
 	}
 	cfg.UseHTTPS = true
