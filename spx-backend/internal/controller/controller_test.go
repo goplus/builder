@@ -6,6 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/kodo"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,7 @@ func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, 
 		},
 	}
 
-	kodoClient := newKodoClient(cfg.Kodo)
+	kodoClient := kodo.NewClient(cfg.Kodo)
 	aigcClient := aigc.NewAigcClient(cfg.AIGC.Endpoint)
 
 	return &Controller{

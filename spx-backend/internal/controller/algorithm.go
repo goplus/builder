@@ -133,10 +133,7 @@ type AlgorithmImageResult struct {
 // SearchSimilarImages calls the algorithm service for semantic search
 func (s *AlgorithmService) SearchSimilarImages(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	start := time.Now()
-	defer func() {
-		logger.Printf("[PERF] SearchSimilarImages took %v", time.Since(start))
-	}()
+	
 	
 	// Prepare request payload
 	req := AlgorithmSearchRequest{
@@ -164,9 +161,7 @@ func (s *AlgorithmService) SearchSimilarImages(ctx context.Context, text string,
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	
-	httpStart := time.Now()
 	resp, err := s.client.Do(httpReq)
-	logger.Printf("[PERF] Algorithm service HTTP call took %v", time.Since(httpStart))
 	if err != nil {
 		return nil, fmt.Errorf("failed to call search service: %w", err)
 	}

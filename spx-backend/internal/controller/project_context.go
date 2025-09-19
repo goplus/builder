@@ -94,10 +94,7 @@ func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *Proj
 // generateRelatedWordsWithLLM uses LLM to generate related words for the project
 func (ctrl *Controller) generateRelatedWordsWithLLM(ctx context.Context, projectName, projectDescription string) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
-	start := time.Now()
-	defer func() {
-		logger.Printf("[PERF] generateRelatedWordsWithLLM took %v", time.Since(start))
-	}()
+	
 
 	// Build the prompt for word generation
 	systemPrompt := `你是一个专业的游戏项目分析师，请为项目生成15-20个相关的关键词，这些关键词将用于图片推荐。
@@ -137,9 +134,7 @@ func (ctrl *Controller) generateRelatedWordsWithLLM(ctx context.Context, project
 		},
 	}
 
-	llmStart := time.Now()
 	result, err := ctrl.copilot.Message(ctx, params, false)
-	logger.Printf("[PERF] LLM call took %v", time.Since(llmStart))
 	if err != nil {
 		return nil, fmt.Errorf("LLM call failed: %w", err)
 	}
@@ -215,18 +210,13 @@ func (ctrl *Controller) cleanWords(words []string) []string {
 // RecommendImagesWithContext performs instant recommendation with project context
 func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *InstantRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
-	start := time.Now()
-	defer func() {
-		logger.Printf("[PERF] RecommendImagesWithContext total took %v", time.Since(start))
-	}()
+	
 	logger.Printf("InstantRecommend request - project_id: %d, prompt: %q, top_k: %d",
 		params.ProjectID, params.UserPrompt, params.TopK)
 
 	// Get project context
-	dbStart := time.Now()
 	var projectContext model.ProjectContext
 	err := ctrl.db.Where("project_id = ?", params.ProjectID).First(&projectContext).Error
-	logger.Printf("[PERF] Project context DB query took %v", time.Since(dbStart))
 
 	if err != nil {
 		logger.Printf("Project context not found for project %d, using original prompt", params.ProjectID)
@@ -241,9 +231,7 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 	}
 
 	// Enhance user prompt with project context
-	enhanceStart := time.Now()
 	enhancedPrompt := ctrl.enhancePromptWithContext(params.UserPrompt, projectContext.RelatedWords.ToSlice())
-	logger.Printf("[PERF] Prompt enhancement took %v", time.Since(enhanceStart))
 	logger.Printf("Enhanced prompt: %q", enhancedPrompt)
 
 	// Call original recommendation with enhanced prompt (SearchOnly mode)
@@ -254,9 +242,7 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 		SearchOnly: true, // Instant recommend should only search, not generate
 	}
 
-	recommendStart := time.Now()
 	result, err := ctrl.RecommendImages(ctx, imageParams)
-	logger.Printf("[PERF] RecommendImages call took %v", time.Since(recommendStart))
 	if err != nil {
 		return nil, err
 	}

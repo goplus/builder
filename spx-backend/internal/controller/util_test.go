@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/kodo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,8 +21,8 @@ func TestControllerGetUpInfo(t *testing.T) {
 		assert.NotEmpty(t, upInfo.Token)
 		assert.NotZero(t, upInfo.Expires)
 		assert.NotZero(t, upInfo.MaxSize)
-		assert.Equal(t, ctrl.kodo.bucket, upInfo.Bucket)
-		assert.Equal(t, ctrl.kodo.bucketRegion, upInfo.Region)
+		assert.Equal(t, ctrl.kodo.GetBucket(), upInfo.Bucket)
+		assert.Equal(t, ctrl.kodo.GetBucketRegion(), upInfo.Region)
 	})
 }
 
@@ -83,7 +85,11 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	t.Run("URLJoinPathError", func(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		closeDB()
-		ctrl.kodo.baseUrl = "://invalid"
+		// The test for URLJoinPathError can be restored by creating a kodo client with invalid config.
+		ctrl.kodo = kodo.NewClient(config.KodoConfig{
+			Bucket:  "builder", // Match the bucket in the test object
+			BaseURL: "://invalid",
+		})
 
 		_, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"kodo://builder/foo/bar"},

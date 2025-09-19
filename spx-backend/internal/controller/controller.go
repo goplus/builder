@@ -1,29 +1,24 @@
 package controller
 
 import (
-	"bytes"
 	"context"
-	"crypto/md5"
 	"errors"
-	"fmt"
-	_ "image/png"
 	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/aiinteraction"
+	"github.com/goplus/builder/spx-backend/internal/cache"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/kodo"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
 	"github.com/goplus/builder/spx-backend/internal/workflow"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	_ "github.com/qiniu/go-cdk-driver/kodoblob"
-	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
-	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -36,20 +31,20 @@ var (
 // Controller is the controller for the service.
 type Controller struct {
 	db              		*gorm.DB
-	kodo            		*kodoClient
+	kodo            		*kodo.Client
 	copilot         		*copilot.Copilot
 	workflow        		*workflow.Workflow
 	aiInteraction   		*aiinteraction.AIInteraction
 	aigc          			*aigc.AigcClient
 	svggen          		*svggen.ServiceManager
 	assetCompletion 		*AssetCompletionService
-	recommendationCache 	 Cache
+	recommendationCache 	 cache.Cache
 	algorithmService    	*AlgorithmService
 }
 
 // New creates a new controller.
 func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redis.Client) (*Controller, error) {
-	kodoClient := newKodoClient(cfg.Kodo)
+	kodoClient := kodo.NewClient(cfg.Kodo)
 
 	openaiClient := openai.NewClient(
 		option.WithAPIKey(cfg.OpenAI.APIKey),
@@ -82,13 +77,13 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 
 
 	// Initialize recommendation cache service
-	var recommendationCache Cache
+	var recommendationCache cache.Cache
 	if redisClient != nil {
 		// Redis cache with automatic fallback to memory cache
-		recommendationCache = NewRecommendationCacheService(redisClient)
+		recommendationCache = cache.NewRecommendationCacheService(redisClient)
 	} else {
 		// No Redis configured, use memory cache only
-		recommendationCache = NewMemoryCache()
+		recommendationCache = cache.NewMemoryCache()
 	}
 	// Initialize asset completion service
 	assetCompletionService := newAssetCompletionService(db)
@@ -226,90 +221,6 @@ func (ctrl *Controller) GetCopilot() *copilot.Copilot {
 	return ctrl.copilot
 }
 
-// kodoClient is the client for Kodo.
-type kodoClient struct {
-	cred         *qiniuAuth.Credentials
-	bucket       string
-	bucketRegion string
-	baseUrl      string
-}
-
-// newKodoClient creates a new [kodoClient].
-func newKodoClient(cfg config.KodoConfig) *kodoClient {
-	return &kodoClient{
-		cred: qiniuAuth.New(
-			cfg.AccessKey,
-			cfg.SecretKey,
-		),
-		bucket:       cfg.Bucket,
-		bucketRegion: cfg.BucketRegion,
-		baseUrl:      cfg.BaseURL,
-	}
-}
-
-// UploadFileResult represents the result of a file upload to Kodo.
-type UploadFileResult struct {
-	Key      string `json:"key"`      // File key in the bucket
-	Hash     string `json:"hash"`     // File hash
-	Size     int64  `json:"size"`     // File size in bytes
-	KodoURL  string `json:"kodo_url"` // Internal kodo:// URL
-}
-
-// UploadFile uploads file content to Kodo storage.
-func (k *kodoClient) UploadFile(ctx context.Context, data []byte, filename string) (*UploadFileResult, error) {
-	// Generate file key with prefix
-	hash := fmt.Sprintf("%x", md5.Sum(data))
-	key := fmt.Sprintf("ai-generated/%s-%s", hash[:8], filename)
-	
-	// Create upload policy
-	putPolicy := qiniuStorage.PutPolicy{
-		Scope: k.bucket,
-	}
-	
-	// Generate upload token
-	upToken := putPolicy.UploadToken(k.cred)
-	
-	// Configure upload settings
-	cfg := qiniuStorage.Config{}
-	// Use specified region if available
-	if k.bucketRegion != "" {
-		// Map region names to Qiniu regions (this might need adjustment based on actual region names)
-		switch k.bucketRegion {
-		case "z0", "cn-east-1":
-			cfg.Zone = &qiniuStorage.ZoneHuadong
-		case "z1", "cn-north-1":
-			cfg.Zone = &qiniuStorage.ZoneHuabei
-		case "z2", "cn-south-1":
-			cfg.Zone = &qiniuStorage.ZoneHuanan
-		case "na0", "us-north-1":
-			cfg.Zone = &qiniuStorage.ZoneBeimei
-		case "as0", "ap-southeast-1":
-			cfg.Zone = &qiniuStorage.ZoneXinjiapo
-		}
-	}
-	cfg.UseHTTPS = true
-	cfg.UseCdnDomains = false
-	
-	// Create form uploader
-	formUploader := qiniuStorage.NewFormUploader(&cfg)
-	
-	// Upload file
-	ret := qiniuStorage.PutRet{}
-	err := formUploader.Put(ctx, &ret, upToken, key, bytes.NewReader(data), int64(len(data)), nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload file to Kodo: %w", err)
-	}
-	
-	// Generate kodo:// URL
-	kodoURL := fmt.Sprintf("kodo://%s/%s", k.bucket, ret.Key)
-	
-	return &UploadFileResult{
-		Key:     ret.Key,
-		Hash:    ret.Hash,
-		Size:    int64(len(data)),
-		KodoURL: kodoURL,
-	}, nil
-}
 
 // ModelDTO is the data transfer object for models.
 type ModelDTO struct {

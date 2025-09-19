@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
@@ -179,23 +178,14 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 	return true, ""
 }
 
-// RecommendationCache stores recommendation results for feedback tracking
-type RecommendationCache struct {
-	QueryID         string
-	Query           string
-	RecommendedPics []int64
-	Timestamp       time.Time
-}
+
 
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
 // PERFORMANCE OPTIMIZATION: This method now performs AI prompt analysis only once per request
 // and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
-	start := time.Now()
-	defer func() {
-		logger.Printf("[PERF] RecommendImages total took %v", time.Since(start))
-	}()
+	
 	
 	// Get provider based on theme
 	provider := params.GetProviderForTheme()
@@ -207,14 +197,11 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// OPTIMIZATION: Create prompt analysis context once at the beginning
 	// This performs AI analysis only once and caches all optimized prompt variations
-	promptStart := time.Now()
 	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, params.SearchOnly)
-	logger.Printf("[PERF] Prompt analysis context creation took %v", time.Since(promptStart))
 
 	var foundResults []RecommendedImageResult
 	var err error
 
-	searchStart := time.Now()
 	if params.Theme != ThemeNone {
 		// Use dual-path search strategy for theme-based requests
 		foundResults, err = ctrl.dualPathSearchOptimized(ctx, params, promptCtx)
@@ -222,7 +209,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		// Use single semantic search for non-themed requests
 		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, params, promptCtx)
 	}
-	logger.Printf("[PERF] Search execution took %v", time.Since(searchStart))
 
 	if err != nil {
 		logger.Printf("Search failed: %v", err)
@@ -237,9 +223,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Need to generate %d AI SVG images", needed)
 
 		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
-		genStart := time.Now()
 		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, params.Theme, needed, len(foundResults))
-		logger.Printf("[PERF] AI SVG generation took %v", time.Since(genStart))
 		if err != nil {
 			logger.Printf("Failed to generate AI SVGs: %v", err)
 			// Don't fail the entire request, just return what we found
@@ -539,10 +523,7 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
 	results := make([]RecommendedImageResult, 0, len(algResults))
 	logger := log.GetReqLogger(context.Background())
-	start := time.Now()
-	defer func() {
-		logger.Printf("[PERF] processAlgorithmResults (%d items) took %v", len(algResults), time.Since(start))
-	}()
+	
 	
 	for i, algResult := range algResults {
 		var aiResource struct {
@@ -550,11 +531,8 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 			URL string `json:"url"`
 		}
 		
-		dbStart := time.Now()
 		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.URL).First(&aiResource).Error
-		if i < 5 { // Only log first 5 DB queries to avoid spam
-			logger.Printf("[PERF] DB query %d took %v", i+1, time.Since(dbStart))
-		}
+		
 		if err == nil {
 			// Found matching resource in database
 			logger.Printf("  ✅ Result %d found in database: ID=%d, URL=%s, Similarity=%.2f", i+1, aiResource.ID, aiResource.URL, algResult.Similarity)
