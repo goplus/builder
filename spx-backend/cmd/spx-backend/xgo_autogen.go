@@ -86,6 +86,10 @@ type get_courses_list struct {
 	yap.Handler
 	*AppV2
 }
+type get_douyin_h5_config struct {
+	yap.Handler
+	*AppV2
+}
 type get_project_release_owner_project_release struct {
 	yap.Handler
 	*AppV2
@@ -364,45 +368,46 @@ func (this *AppV2) Main() {
 	_xgo_obj11 := &get_course_serieses_list{AppV2: this}
 	_xgo_obj12 := &get_course_id{AppV2: this}
 	_xgo_obj13 := &get_courses_list{AppV2: this}
-	_xgo_obj14 := &get_project_release_owner_project_release{AppV2: this}
-	_xgo_obj15 := &get_project_releases_list{AppV2: this}
-	_xgo_obj16 := &get_project_owner_name{AppV2: this}
-	_xgo_obj17 := &get_project_owner_name_liking{AppV2: this}
-	_xgo_obj18 := &get_projects_list{AppV2: this}
-	_xgo_obj19 := &get_recording_id{AppV2: this}
-	_xgo_obj20 := &get_recording_id_liking{AppV2: this}
-	_xgo_obj21 := &get_recordings_list{AppV2: this}
-	_xgo_obj22 := &get_user{AppV2: this}
-	_xgo_obj23 := &get_user_username{AppV2: this}
-	_xgo_obj24 := &get_user_username_following{AppV2: this}
-	_xgo_obj25 := &get_users_list{AppV2: this}
-	_xgo_obj26 := &get_util_upinfo{AppV2: this}
-	_xgo_obj27 := &post_ai_description{AppV2: this}
-	_xgo_obj28 := &post_ai_interaction_turn{AppV2: this}
-	_xgo_obj29 := &post_aigc_matting{AppV2: this}
-	_xgo_obj30 := &post_asset{AppV2: this}
-	_xgo_obj31 := &post_copilot_message{AppV2: this}
-	_xgo_obj32 := &post_copilot_stream_message{AppV2: this}
-	_xgo_obj33 := &post_course_series{AppV2: this}
-	_xgo_obj34 := &post_course{AppV2: this}
-	_xgo_obj35 := &post_project_release{AppV2: this}
-	_xgo_obj36 := &post_project{AppV2: this}
-	_xgo_obj37 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj38 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj39 := &post_recording{AppV2: this}
-	_xgo_obj40 := &post_recording_id_liking{AppV2: this}
-	_xgo_obj41 := &post_recording_id_view{AppV2: this}
-	_xgo_obj42 := &post_user_username_following{AppV2: this}
-	_xgo_obj43 := &post_util_fileurls{AppV2: this}
-	_xgo_obj44 := &post_wechat_jssdk_config{AppV2: this}
-	_xgo_obj45 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj46 := &put_asset_id{AppV2: this}
-	_xgo_obj47 := &put_course_series_id{AppV2: this}
-	_xgo_obj48 := &put_course_id{AppV2: this}
-	_xgo_obj49 := &put_project_owner_name{AppV2: this}
-	_xgo_obj50 := &put_recording_id{AppV2: this}
-	_xgo_obj51 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51)
+	_xgo_obj14 := &get_douyin_h5_config{AppV2: this}
+	_xgo_obj15 := &get_project_release_owner_project_release{AppV2: this}
+	_xgo_obj16 := &get_project_releases_list{AppV2: this}
+	_xgo_obj17 := &get_project_owner_name{AppV2: this}
+	_xgo_obj18 := &get_project_owner_name_liking{AppV2: this}
+	_xgo_obj19 := &get_projects_list{AppV2: this}
+	_xgo_obj20 := &get_recording_id{AppV2: this}
+	_xgo_obj21 := &get_recording_id_liking{AppV2: this}
+	_xgo_obj22 := &get_recordings_list{AppV2: this}
+	_xgo_obj23 := &get_user{AppV2: this}
+	_xgo_obj24 := &get_user_username{AppV2: this}
+	_xgo_obj25 := &get_user_username_following{AppV2: this}
+	_xgo_obj26 := &get_users_list{AppV2: this}
+	_xgo_obj27 := &get_util_upinfo{AppV2: this}
+	_xgo_obj28 := &post_ai_description{AppV2: this}
+	_xgo_obj29 := &post_ai_interaction_turn{AppV2: this}
+	_xgo_obj30 := &post_aigc_matting{AppV2: this}
+	_xgo_obj31 := &post_asset{AppV2: this}
+	_xgo_obj32 := &post_copilot_message{AppV2: this}
+	_xgo_obj33 := &post_copilot_stream_message{AppV2: this}
+	_xgo_obj34 := &post_course_series{AppV2: this}
+	_xgo_obj35 := &post_course{AppV2: this}
+	_xgo_obj36 := &post_project_release{AppV2: this}
+	_xgo_obj37 := &post_project{AppV2: this}
+	_xgo_obj38 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj39 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj40 := &post_recording{AppV2: this}
+	_xgo_obj41 := &post_recording_id_liking{AppV2: this}
+	_xgo_obj42 := &post_recording_id_view{AppV2: this}
+	_xgo_obj43 := &post_user_username_following{AppV2: this}
+	_xgo_obj44 := &post_util_fileurls{AppV2: this}
+	_xgo_obj45 := &post_wechat_jssdk_config{AppV2: this}
+	_xgo_obj46 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj47 := &put_asset_id{AppV2: this}
+	_xgo_obj48 := &put_course_series_id{AppV2: this}
+	_xgo_obj49 := &put_course_id{AppV2: this}
+	_xgo_obj50 := &put_project_owner_name{AppV2: this}
+	_xgo_obj51 := &put_recording_id{AppV2: this}
+	_xgo_obj52 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51, _xgo_obj52)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1030,6 +1035,30 @@ func (this *get_courses_list) Classfname() string {
 	return "get_courses_list"
 }
 func (this *get_courses_list) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/get_douyin_h5-config.yap:6
+func (this *get_douyin_h5_config) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/get_douyin_h5-config.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_douyin_h5-config.yap:8:1
+	result, err := this.ctrl.GetDouyinH5Config(ctx.Context())
+//line cmd/spx-backend/get_douyin_h5-config.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_douyin_h5-config.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_douyin_h5-config.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_douyin_h5-config.yap:13:1
+	this.Json__1(result)
+}
+func (this *get_douyin_h5_config) Classfname() string {
+	return "get_douyin_h5-config"
+}
+func (this *get_douyin_h5_config) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

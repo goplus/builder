@@ -15,5 +15,5 @@ export type DouyinH5ConfigData = {
 }
 
 export async function getDouyinH5Config(signal?: AbortSignal): Promise<DouyinH5ConfigData> {
-  return client.post('/douyin/h5-config', {}, { signal }) as Promise<DouyinH5ConfigData>
+  return client.get('/douyin/h5-config', { signal })
 }

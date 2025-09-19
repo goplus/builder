@@ -28,12 +28,6 @@ type DouyinTokenCache struct {
 	mu             sync.RWMutex
 }
 
-// DouyinH5ConfigParams holds parameters for H5 share config
-type DouyinH5ConfigParams struct {
-	// No specific parameters needed for Douyin H5 sharing for now
-	// Can be added later if required
-}
-
 // DouyinH5ConfigResult holds H5 share config result
 type DouyinH5ConfigResult struct {
 	ClientKey string `json:"clientKey"`
@@ -61,7 +55,7 @@ func NewDouyinService(clientKey, clientSecret string) *DouyinService {
 }
 
 // GetH5Config gets H5 share configuration
-func (ctrl *Controller) GetDouyinH5Config(ctx context.Context, params *DouyinH5ConfigParams) (*DouyinH5ConfigResult, error) {
+func (ctrl *Controller) GetDouyinH5Config(ctx context.Context) (*DouyinH5ConfigResult, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Get ticket
@@ -164,21 +158,18 @@ func (d *DouyinService) getTicket(ctx context.Context) (string, error) {
 	}
 	d.cache.mu.RUnlock()
 
-	d.cache.mu.Lock()
-	defer d.cache.mu.Unlock()
-
-	// Double-check after acquiring write lock
-	if d.cache.Ticket != "" && time.Now().Before(d.cache.TicketExp) {
-		return d.cache.Ticket, nil
-	}
-
-	// Get access token first
 	accessToken, err := d.getAccessToken(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get access token: %w", err)
 	}
 
-	// Get ticket from Douyin API
+	d.cache.mu.Lock()
+	defer d.cache.mu.Unlock()
+
+	if d.cache.Ticket != "" && time.Now().Before(d.cache.TicketExp) {
+		return d.cache.Ticket, nil
+	}
+
 	url := "https://open.douyin.com/open/getticket/"
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
