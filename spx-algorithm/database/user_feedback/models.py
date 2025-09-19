@@ -56,13 +56,13 @@ class PairwiseTrainingSample:
     feedback_id: int  # 原始反馈记录ID
     
     def get_feature_vector(self) -> List[float]:
-        """提取特征向量用于训练
+        """提取神经网络特征向量用于训练
         
         特征包括：
-        - query向量与better图片向量的余弦相似度
-        - query向量与worse图片向量的余弦相似度  
-        - better图片向量与worse图片向量的余弦相似度
-        - 向量间的点积、欧氏距离等交互特征
+        - 原始向量特征: query_vec, better_vec, worse_vec
+        - 交互特征: element-wise乘积和差值
+        - 对比特征: better vs worse直接对比
+        - 统计特征: 余弦相似度和欧氏距离
         """
         import numpy as np
         
@@ -70,31 +70,82 @@ class PairwiseTrainingSample:
         better_vec = np.array(self.pic_vector_better)
         worse_vec = np.array(self.pic_vector_worse)
         
-        return compute_pairwise_features(query_vec, better_vec, worse_vec)
+        return compute_neural_network_features(query_vec, better_vec, worse_vec)
 
 
-def compute_pairwise_features(query_vec, better_vec, worse_vec) -> List[float]:
+def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[float]:
     """
-    统一的pair-wise特征计算函数，供训练和预测阶段共用
+    统一的神经网络特征计算函数，供训练和预测阶段共用
     
     设计说明：
-    - 该函数计算query、better、worse三个向量之间的pair-wise特征
+    - 该函数计算query、better、worse三个向量之间的神经网络特征
     - 训练时：better是用户选择的图片，worse是未选择的图片
     - 预测时：better是当前候选图片，worse是动态参考向量（候选集合的平均向量）
     
     特征设计理由：
-    1. 相似度特征：衡量query与两个图片的语义匹配程度
-    2. 距离特征：衡量向量空间中的几何距离关系
-    3. 差异特征：直接比较better vs worse的相对优劣
-    4. 长度特征：向量的模长反映了特征的激活强度
+    1. 原始向量特征：保留完整信息，让神经网络自动学习
+    2. 交互特征：捕捉query与候选图片间的特征对应关系
+    3. 对比特征：直接比较better vs worse的相对优劣
+    4. 统计特征：传统手工特征作为补充
     
     Args:
-        query_vec: 查询向量 (numpy array)
-        better_vec: 更好的图片向量 (numpy array) 
-        worse_vec: 更差的图片向量 (numpy array)
+        query_vec: 查询向量 (numpy array, 长度d)
+        better_vec: 更好的图片向量 (numpy array, 长度d) 
+        worse_vec: 更差的图片向量 (numpy array, 长度d)
         
     Returns:
-        10维特征向量列表
+        (6d+6)维特征向量列表
+    """
+    import numpy as np
+    
+    features = []
+    
+    # 1. 原始向量特征 (3d维)
+    features.extend(query_vec.tolist())   # d维
+    features.extend(better_vec.tolist())  # d维
+    features.extend(worse_vec.tolist())   # d维
+    
+    # 2. 交互特征 (2d维)
+    # element-wise乘积 - 捕捉特征对应关系
+    element_wise_product = query_vec * better_vec
+    features.extend(element_wise_product.tolist())  # d维
+    
+    # element-wise差值 - 体现语义gap
+    element_wise_diff = query_vec - better_vec
+    features.extend(element_wise_diff.tolist())     # d维
+    
+    # 3. 对比特征 (d维)
+    # better vs worse直接对比
+    better_worse_diff = better_vec - worse_vec
+    features.extend(better_worse_diff.tolist())     # d维
+    
+    # 4. 统计特征 (6维) - 传统手工特征作为补充
+    # 余弦相似度
+    cosine_sim_query_better = np.dot(query_vec, better_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(better_vec) + 1e-8)
+    cosine_sim_query_worse = np.dot(query_vec, worse_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(worse_vec) + 1e-8)
+    cosine_sim_better_worse = np.dot(better_vec, worse_vec) / (np.linalg.norm(better_vec) * np.linalg.norm(worse_vec) + 1e-8)
+    
+    # 欧氏距离
+    l2_dist_query_better = np.linalg.norm(query_vec - better_vec)
+    l2_dist_query_worse = np.linalg.norm(query_vec - worse_vec)
+    l2_dist_better_worse = np.linalg.norm(better_vec - worse_vec)
+    
+    features.extend([
+        cosine_sim_query_better,
+        cosine_sim_query_worse,
+        cosine_sim_better_worse,
+        l2_dist_query_better,
+        l2_dist_query_worse,
+        l2_dist_better_worse
+    ])
+    
+    return features
+
+
+# 保留原始函数以保持向后兼容（可选）
+def compute_pairwise_features(query_vec, better_vec, worse_vec) -> List[float]:
+    """
+    旧版本pair-wise特征计算函数（保留以保持向后兼容）
     """
     import numpy as np
     

@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from ..image_matching.clip_service import CLIPService
-from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset, compute_pairwise_features
+from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset, compute_neural_network_features
 
 logger = logging.getLogger(__name__)
 
@@ -152,14 +152,14 @@ class LTRFeatureExtractor:
     def extract_ranking_features(self, query_text: str, 
                                candidates: List[Dict[str, Any]]) -> List[List[float]]:
         """
-        为排序预测提取pair-wise特征，使用动态参考向量方案
+        为排序预测提取神经网络特征，使用动态参考向量方案
                 
         Args:
             query_text: 查询文本
             candidates: 候选结果列表，每个包含id, vector等字段
             
         Returns:
-            每个候选结果的pair-wise特征向量列表（10维）
+            每个候选结果的神经网络特征向量列表（6d+6维）
         """
         try:
             query_vector = self._get_query_vector(query_text)
@@ -187,7 +187,9 @@ class LTRFeatureExtractor:
             
             if not candidate_vectors:
                 logger.error("所有候选结果都缺少向量数据")
-                return [[0.0] * 10] * len(candidates)
+                # 假设向量维度为512，神经网络特征维度为6*512+6=3078
+                feature_dim = 6 * len(query_vector) + 6 if query_vector is not None else 3078
+                return [[0.0] * feature_dim] * len(candidates)
             
             # 计算动态参考向量：候选集合的平均向量
             # 这个平均向量代表当前候选集合的"平均质量水平"
@@ -196,57 +198,73 @@ class LTRFeatureExtractor:
             query_vec = np.array(query_vector)
             features_list = []
             
-            # 为每个候选图片计算pair-wise特征
+            # 为每个候选图片计算神经网络特征
             for i, candidate in enumerate(candidates):
                 pic_vector = candidate.get('vector', [])
                 if len(pic_vector) == 0:
                     # 对于缺少向量的候选，填充零特征向量
-                    features_list.append([0.0] * 10)
+                    feature_dim = 6 * len(query_vector) + 6
+                    features_list.append([0.0] * feature_dim)
                     continue
                 
                 pic_vec = np.array(pic_vector)
                 
-                # 使用统一的pair-wise特征计算函数
+                # 使用统一的神经网络特征计算函数
                 # candidate作为"better"，reference_vector作为"worse"
-                features = compute_pairwise_features(query_vec, pic_vec, reference_vector)
+                features = compute_neural_network_features(query_vec, pic_vec, reference_vector)
                 features_list.append(features)
             
-            logger.debug(f"成功提取{len(features_list)}个候选结果的pair-wise特征")
+            logger.debug(f"成功提取{len(features_list)}个候选结果的神经网络特征")
             return features_list
             
         except Exception as e:
             logger.error(f"排序特征提取失败: {e}")
-            return [[0.0] * 10] * len(candidates)
+            # 如果出错，返回合适维度的零向量
+            try:
+                feature_dim = 6 * len(query_vector) + 6 if query_vector is not None else 3078
+                return [[0.0] * feature_dim] * len(candidates)
+            except:
+                return [[0.0] * 3078] * len(candidates)
     
     def get_feature_names(self) -> List[str]:
-        """获取特征名称列表"""
-        return [
-            'query_better_similarity',
-            'query_worse_similarity', 
-            'better_worse_similarity',
-            'similarity_difference',
-            'query_better_distance',
-            'query_worse_distance',
-            'distance_difference',
-            'query_norm',
-            'better_norm',
-            'worse_norm'
-        ]
+        """获取神经网络特征名称列表"""
+        # 假设向量维度为512（从CLIP模型配置获取）
+        d = 512
+        feature_names = []
+        
+        # 原始向量特征 (3d维)
+        for i in range(d):
+            feature_names.append(f'query_vec_{i}')
+        for i in range(d):
+            feature_names.append(f'better_vec_{i}')
+        for i in range(d):
+            feature_names.append(f'worse_vec_{i}')
+        
+        # 交互特征 (2d维)
+        for i in range(d):
+            feature_names.append(f'element_wise_product_{i}')
+        for i in range(d):
+            feature_names.append(f'element_wise_diff_{i}')
+        
+        # 对比特征 (d+6维)
+        for i in range(d):
+            feature_names.append(f'better_worse_diff_{i}')
+        
+        # 统计特征 (6维)
+        feature_names.extend([
+            'cosine_sim_query_better',
+            'cosine_sim_query_worse', 
+            'cosine_sim_better_worse',
+            'l2_dist_query_better',
+            'l2_dist_query_worse',
+            'l2_dist_better_worse'
+        ])
+        
+        return feature_names
     
     def get_ranking_feature_names(self) -> List[str]:
-        """获取排序特征名称列表（与训练时保持一致的pair-wise特征）"""
-        return [
-            'query_better_similarity',  # query与候选图片相似度
-            'query_worse_similarity',   # query与参考向量相似度
-            'better_worse_similarity',  # 候选图片与参考向量相似度
-            'similarity_difference',    # 相似度差异（候选-参考）
-            'query_better_distance',    # query与候选图片距离
-            'query_worse_distance',     # query与参考向量距离
-            'distance_difference',      # 距离差异（参考-候选）
-            'query_norm',              # query向量长度
-            'better_norm',             # 候选图片向量长度
-            'worse_norm'               # 参考向量长度
-        ]
+        """获取排序特征名称列表（与训练时保持一致的神经网络特征）"""
+        return self.get_feature_names()
     
     def clear_cache(self):
         """清空向量缓存"""

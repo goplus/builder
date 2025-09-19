@@ -32,8 +32,9 @@ class RerankService:
         # 优先使用rerank_config中的配置，fallback到ltr_model_path参数
         config = rerank_config or {}
         model_path = config.get('model_path') or ltr_model_path
+        model_type = config.get('model_type', 'neural_network')  # 默认使用神经网络
         
-        self.ltr_model = LTRModel(model_path)
+        self.ltr_model = LTRModel(model_path, model_type)
         self.feature_extractor = None
         self.feedback_storage = FeedbackStorage()
         self.enabled = False
@@ -51,7 +52,7 @@ class RerankService:
         # 内部处理模型初始化和启用逻辑
         self._initialize_model(config)
         
-        logger.info("重排序服务初始化完成")
+        logger.info(f"重排序服务初始化完成，模型类型: {model_type}")
     
     def _initialize_model(self, config: Dict[str, Any]):
         """
@@ -235,7 +236,7 @@ class RerankService:
             if not feedback_list:
                 raise ValueError("没有可用的用户反馈数据")
             
-            logger.info(f"开始训练LTR模型，反馈数据量: {len(feedback_list)}")
+            logger.info(f"开始训练LTR模型（{self.ltr_model.model_type}），反馈数据量: {len(feedback_list)}")
             
             # 获取图片向量数据
             logger.info("从Milvus向量数据库获取图片向量数据")
@@ -253,7 +254,7 @@ class RerankService:
             # 加载训练好的模型
             self.ltr_model.is_trained = True
             
-            logger.info("LTR模型训练完成")
+            logger.info(f"LTR模型（{self.ltr_model.model_type}）训练完成")
             return training_result
             
         except Exception as e:
@@ -306,7 +307,7 @@ class RerankService:
             if not feedback_list:
                 raise ValueError("没有可用的用户反馈数据")
             
-            logger.info(f"开始增量训练LTR模型，增量反馈数据量: {len(feedback_list)}")
+            logger.info(f"开始增量训练LTR模型（{self.ltr_model.model_type}），增量反馈数据量: {len(feedback_list)}")
             
             # 获取图片向量数据
             logger.info("从Milvus向量数据库获取图片向量数据")
@@ -331,7 +332,7 @@ class RerankService:
             training_result['incremental'] = True
             training_result['last_training_date'] = last_training_date.isoformat() if last_training_date else None
             
-            logger.info("LTR模型增量训练完成")
+            logger.info(f"LTR模型（{self.ltr_model.model_type}）增量训练完成")
             return training_result
             
         except Exception as e:
