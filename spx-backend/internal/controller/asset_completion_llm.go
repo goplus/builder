@@ -306,5 +306,7 @@ func (l *AssetCompletionLLM) GetCacheStats() map[string]interface{} {
 		"cache_age":     time.Since(l.lastUpdate),
 		"cache_expiry":  l.cacheExpiry,
 		"needs_refresh": time.Since(l.lastUpdate) > l.cacheExpiry,
+		"trie_enabled":  false,
+		"llm_enabled":   true,
 	}
 }

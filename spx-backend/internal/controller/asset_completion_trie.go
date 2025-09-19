@@ -211,6 +211,7 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 	nodeCount, totalNames := t.calculateTrieStats(t.root)
 
 	return map[string]interface{}{
+		"mode":          "trie",
 		"last_update":   t.lastUpdate,
 		"cache_age":     time.Since(t.lastUpdate),
 		"cache_expiry":  t.cacheExpiry,
@@ -218,6 +219,8 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 		"refreshing":    t.refreshing.Load(),
 		"node_count":    nodeCount,
 		"total_names":   totalNames,
+		"trie_enabled":  true,
+		"llm_enabled":   false,
 	}
 }
 
