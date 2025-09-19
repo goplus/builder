@@ -12,7 +12,7 @@ type AIDescriptionParams struct {
 
 // Validate validates the parameters.
 func (p *AIDescriptionParams) Validate() (ok bool, msg string) {
-	const maxContentLength = 100000 // Allow larger content from frontend
+	const maxContentLength = 150_000 // Allow larger content from frontend
 	if p.Content == "" {
 		return false, "content is required"
 	}

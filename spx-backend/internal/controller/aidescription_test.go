@@ -28,16 +28,16 @@ func TestAIDescriptionParamsValidate(t *testing.T) {
 
 	t.Run("ContentTooLong", func(t *testing.T) {
 		params := &AIDescriptionParams{
-			Content: strings.Repeat("a", 100001),
+			Content: strings.Repeat("a", 150001),
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
-		assert.Equal(t, "content length exceeds 100000 characters", msg)
+		assert.Equal(t, "content length exceeds 150000 characters", msg)
 	})
 
 	t.Run("MaxLengthContent", func(t *testing.T) {
 		params := &AIDescriptionParams{
-			Content: strings.Repeat("a", 100000),
+			Content: strings.Repeat("a", 150000),
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)

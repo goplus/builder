@@ -44,6 +44,13 @@ export type CloudProject = Project & CloudMetadata
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
 
+const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
+const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
+const mainFileMaxLength = 60_000
+const spriteFileMaxLength = 20_000
+const projectConfigMaxLength = 15_000
+const spriteConfigMaxLength = 5_000
+
 const aiPlayerPattern = /\sai\.Player/
 
 type RawRunConfig = {
@@ -529,58 +536,123 @@ export class Project extends Disposable {
   /** Serialize for AI use */
   private async serializeForAI() {
     const files = this.exportGameFiles()
-    const parts: string[] = []
+    let remaining = aiDescriptionMaxContentLength
+    let result = ''
+    const skippedSections: string[] = []
 
-    // Header with project metadata
+    const append = (value: string) => {
+      if (value.length === 0 || remaining <= 0) return remaining > 0
+      const toWrite = Math.min(value.length, remaining)
+      result += value.slice(0, toWrite)
+      remaining -= toWrite
+      return toWrite === value.length
+    }
+    const appendLine = (line: string) => append(`${line}\n`)
+    const appendBlankLine = () => append('\n')
+
+    const appendBody = (body: string) => {
+      if (body.length === 0) return true
+      if (body.length <= remaining) {
+        return append(body)
+      }
+      if (remaining < aiDescriptionTruncationNotice.length) {
+        return false
+      }
+      const allowedLength = remaining - aiDescriptionTruncationNotice.length
+      if (allowedLength > 0) {
+        append(body.slice(0, allowedLength))
+      }
+      append(aiDescriptionTruncationNotice)
+      return false
+    }
+
+    const appendSection = async (title: string, file: File, maxBodyLength?: number) => {
+      if (remaining <= 0) {
+        skippedSections.push(title)
+        return
+      }
+
+      const header = `=== ${title} ===`
+      const headerLength = header.length + 1
+      if (remaining <= headerLength) {
+        skippedSections.push(title)
+        return
+      }
+
+      const body = await toText(file)
+      let sectionBudget = remaining - headerLength
+      if (maxBodyLength != null) sectionBudget = Math.min(sectionBudget, maxBodyLength)
+      if (sectionBudget <= 0) {
+        skippedSections.push(title)
+        return
+      }
+      let bodyToAppend = body
+      if (body.length > sectionBudget) {
+        const sliceLength = sectionBudget - aiDescriptionTruncationNotice.length
+        if (sliceLength <= 0) {
+          skippedSections.push(title)
+          return
+        }
+        bodyToAppend = body.slice(0, sliceLength) + aiDescriptionTruncationNotice
+      }
+
+      appendLine(header)
+      append(bodyToAppend)
+      if (remaining > 0) appendBlankLine()
+    }
+
+    const metadataLines: string[] = []
     if (this.name != null && this.name !== '') {
-      parts.push(`Game: ${this.name}`)
+      metadataLines.push(`Game: ${this.name}`)
     }
     if (this.description != null && this.description !== '') {
-      parts.push(`Description: ${this.description}`)
+      metadataLines.push(`Description: ${this.description}`)
     }
     if (this.instructions != null && this.instructions !== '') {
-      parts.push(`Instructions: ${this.instructions}`)
+      metadataLines.push(`Instructions: ${this.instructions}`)
     }
-    parts.push('')
+    if (metadataLines.length > 0) {
+      appendBody(`${metadataLines.join('\n')}\n`)
+      if (remaining > 0) appendBlankLine()
+    }
 
-    // Main stage file
     const mainSpxFile = files['main.spx']
     if (mainSpxFile != null) {
-      parts.push('=== File: main.spx ===')
-      parts.push(await toText(mainSpxFile))
-      parts.push('')
+      await appendSection('File: main.spx', mainSpxFile, mainFileMaxLength)
     }
 
-    // Sprite code files
     for (const sprite of this.sprites) {
       const spriteFile = files[`${sprite.name}.spx`]
       if (spriteFile != null) {
-        parts.push(`=== File: ${sprite.name}.spx ===`)
-        parts.push(await toText(spriteFile))
-        parts.push('')
+        await appendSection(`File: ${sprite.name}.spx`, spriteFile, spriteFileMaxLength)
       }
     }
 
-    // Project configuration
     const projectConfig = files[projectConfigFilePath]
     if (projectConfig != null) {
-      parts.push('=== Project Config (assets/index.json) ===')
-      parts.push(await toText(projectConfig))
-      parts.push('')
+      await appendSection('Project Config (assets/index.json)', projectConfig, projectConfigMaxLength)
     }
 
-    // Sprite configuration files
     for (const sprite of this.sprites) {
       const spriteConfigPath = join('assets', 'sprites', sprite.name, 'index.json')
       const spriteConfig = files[spriteConfigPath]
       if (spriteConfig != null) {
-        parts.push(`=== Sprite Config: assets/sprites/${sprite.name}/index.json ===`)
-        parts.push(await toText(spriteConfig))
-        parts.push('')
+        await appendSection(`Sprite Config: ${spriteConfigPath}`, spriteConfig, spriteConfigMaxLength)
       }
     }
 
-    return parts.join('\n')
+    if (skippedSections.length > 0 && remaining > 0) {
+      const header = '=== Skipped Sections ==='
+      if (remaining > header.length + 1) {
+        appendLine(header)
+        for (const name of skippedSections) {
+          if (remaining <= 0) break
+          appendLine(name)
+        }
+      }
+    }
+
+    return result
   }
 
   /** Check if project is using AI Interaction features */
