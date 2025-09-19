@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -528,22 +529,9 @@ func (ctrl *Controller) isPNGFormat(data []byte) bool {
 	pngSignature := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
 
 	// Check if the first 8 bytes match PNG signature
-	for i := 0; i < 8; i++ {
-		if data[i] != pngSignature[i] {
-			return false
-		}
-	}
-
-	return true
+	return bytes.Equal(data[:8], pngSignature)
 }
 
-// min returns the minimum of two integers.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
 
 // GetThemes returns all available themes with their information.
 func (ctrl *Controller) GetThemes(ctx context.Context) ([]ThemeInfo, error) {
