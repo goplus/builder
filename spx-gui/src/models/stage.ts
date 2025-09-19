@@ -18,6 +18,7 @@ export type StageInits = {
   mapHeight?: number
   mapMode?: MapMode
   physics?: Physics
+  layerSortMode?: LayerSortMode
   /** Additional config not recognized by builder */
   extraConfig?: object
 }
@@ -49,6 +50,7 @@ export type RawStageConfig = RawPhysicsConfig & {
   sceneIndex?: number
   costumes?: RawBackdropConfig[]
   currentCostumeIndex?: number
+  layerSortMode?: LayerSortMode
 }
 
 export type MapSize = {
@@ -61,6 +63,11 @@ export type Physics = {
   gravity?: number
   friction?: number
   airDrag?: number
+}
+
+export enum LayerSortMode {
+  Normal = '',
+  Vertical = 'vertical'
 }
 
 export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.gmx']
@@ -216,6 +223,11 @@ export class Stage extends Disposable {
     this.physics = physics
   }
 
+  layerSortMode: LayerSortMode
+  setLayerSortMode(layerSortMode: LayerSortMode) {
+    this.layerSortMode = layerSortMode
+  }
+
   extraConfig: object
   setExtraConfig(extraConfig: object) {
     this.extraConfig = extraConfig
@@ -236,6 +248,7 @@ export class Stage extends Disposable {
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
     this.physics = inits?.physics ?? { enabled: false }
+    this.layerSortMode = inits?.layerSortMode ?? LayerSortMode.Normal
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
@@ -254,6 +267,7 @@ export class Stage extends Disposable {
       globalGravity,
       globalFriction,
       globalAirDrag,
+      layerSortMode,
       ...extraConfig
     }: RawStageConfig,
     files: Files
@@ -266,6 +280,7 @@ export class Stage extends Disposable {
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode),
+      layerSortMode,
       extraConfig
     })
     const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
@@ -309,6 +324,7 @@ export class Stage extends Disposable {
       globalGravity: this.physics.gravity,
       globalFriction: this.physics.friction,
       globalAirDrag: this.physics.airDrag,
+      layerSortMode: this.layerSortMode,
       ...this.extraConfig
     }
     return [config, files]
