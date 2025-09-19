@@ -22,12 +22,12 @@ type ImageRecommendParams struct {
 // PromptAnalysisContext holds cached prompt analysis and optimized prompts for a request.
 // This prevents multiple AI calls for the same prompt analysis within a single request.
 type PromptAnalysisContext struct {
-	OriginalPrompt    string          // Original user prompt
-	Theme             ThemeType       // Theme being applied
-	Analysis          PromptAnalysis  // Cached AI analysis result (only computed once)
-	OptimizedPrompt   string          // Fully optimized prompt for AI generation
-	SemanticPrompt    string          // Optimized prompt for semantic search
-	ThemePrompt       string          // Optimized prompt for theme search
+	OriginalPrompt  string         // Original user prompt
+	Theme           ThemeType      // Theme being applied
+	Analysis        PromptAnalysis // Cached AI analysis result (only computed once)
+	OptimizedPrompt string         // Fully optimized prompt for AI generation
+	SemanticPrompt  string         // Optimized prompt for semantic search
+	ThemePrompt     string         // Optimized prompt for theme search
 }
 
 // Validate validates the image recommendation parameters.
@@ -41,12 +41,12 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 	if p.TopK < 1 || p.TopK > 50 {
 		return false, "top_k must be between 1 and 50"
 	}
-	
+
 	// Validate theme
 	if !IsValidTheme(p.Theme) {
 		return false, "invalid theme type"
 	}
-	
+
 	return true, ""
 }
 
@@ -60,43 +60,46 @@ func (p *ImageRecommendParams) GetProviderForTheme() svggen.Provider {
 
 // NewPromptAnalysisContext creates a new prompt analysis context with cached optimization results.
 // This performs AI analysis only once and caches all optimized prompt variations.
-func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme ThemeType, copilotClient *copilot.Copilot) *PromptAnalysisContext {
+func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme ThemeType, copilotClient *copilot.Copilot, searchOnly bool) *PromptAnalysisContext {
 	logger := log.GetReqLogger(ctx)
-	
+
 	analysisCtx := &PromptAnalysisContext{
 		OriginalPrompt: originalPrompt,
 		Theme:          theme,
 	}
 	
-	// If no theme, use original prompt for all variations
-	if theme == ThemeNone {
+	// If no theme or SearchOnly mode, use original prompt for all variations and skip AI analysis
+	if theme == ThemeNone || searchOnly {
 		analysisCtx.OptimizedPrompt = originalPrompt
 		analysisCtx.SemanticPrompt = originalPrompt
 		analysisCtx.ThemePrompt = originalPrompt
-		// Analysis is not needed for ThemeNone, but initialize with defaults
+		// Analysis is not needed for ThemeNone or SearchOnly, but initialize with defaults
 		analysisCtx.Analysis = PromptAnalysis{
 			Type:       "default",
-			Emotion:    "neutral", 
+			Emotion:    "neutral",
 			Complexity: "simple",
 			Keywords:   extractKeywords(originalPrompt),
 		}
+		if searchOnly {
+			logger.Printf("SearchOnly mode: skipping AI analysis for theme %s", theme)
+		}
 		return analysisCtx
 	}
-	
+
 	// Step 1: Perform AI analysis only once (this is the expensive operation)
 	logger.Printf("Performing prompt analysis for: %q", originalPrompt)
 	analysisCtx.Analysis = AnalyzePromptType(ctx, originalPrompt, copilotClient)
-	logger.Printf("Analysis completed - Type: %s, Emotion: %s, Complexity: %s", 
+	logger.Printf("Analysis completed - Type: %s, Emotion: %s, Complexity: %s",
 		analysisCtx.Analysis.Type, analysisCtx.Analysis.Emotion, analysisCtx.Analysis.Complexity)
-	
+
 	// Step 2: Build all prompt variations using cached analysis (no additional AI calls)
 	analysisCtx.OptimizedPrompt = buildOptimizedPromptFromAnalysis(originalPrompt, theme, analysisCtx.Analysis)
 	analysisCtx.SemanticPrompt = buildSemanticPrompt(originalPrompt, theme)
 	analysisCtx.ThemePrompt = analysisCtx.OptimizedPrompt // Use fully optimized for theme search
-	
-	logger.Printf("Prompt optimization completed - Original: %q, Optimized: %q", 
+
+	logger.Printf("Prompt optimization completed - Original: %q, Optimized: %q",
 		originalPrompt, analysisCtx.OptimizedPrompt)
-	
+
 	return analysisCtx
 }
 
@@ -106,19 +109,19 @@ func buildOptimizedPromptFromAnalysis(userPrompt string, theme ThemeType, analys
 	if theme == ThemeNone {
 		return userPrompt
 	}
-	
+
 	// Get theme enhancement
 	themePrompt := GetThemePromptEnhancement(theme)
-	
+
 	// Get quality enhancement based on cached complexity
 	qualityPrompt := QualityPrompts[analysis.Complexity]
-	
+
 	// Get style enhancement based on cached type
 	stylePrompt := StylePrompts[analysis.Type]
-	
+
 	// Get technical requirements
 	technicalPrompt := TechnicalPrompts[theme]
-	
+
 	// Combine all prompts using the same logic as original
 	return buildNaturalPrompt(userPrompt, themePrompt, qualityPrompt, stylePrompt, technicalPrompt)
 }
@@ -160,8 +163,8 @@ func generateQueryID() string {
 
 // ImageFeedbackParams represents parameters for image recommendation feedback.
 type ImageFeedbackParams struct {
-	QueryID    string `json:"query_id"`
-	ChosenPic  int64  `json:"chosen_pic"`
+	QueryID   string `json:"query_id"`
+	ChosenPic int64  `json:"chosen_pic"`
 }
 
 // Validate validates the image feedback parameters.
@@ -177,12 +180,12 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 
 
 
-
 // RecommendImages recommends similar images based on text prompt using dual-path search strategy.
 // PERFORMANCE OPTIMIZATION: This method now performs AI prompt analysis only once per request
 // and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
+	
 	
 	// Get provider based on theme
 	provider := params.GetProviderForTheme()
@@ -194,7 +197,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// OPTIMIZATION: Create prompt analysis context once at the beginning
 	// This performs AI analysis only once and caches all optimized prompt variations
-	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot)
+	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, params.SearchOnly)
 
 	var foundResults []RecommendedImageResult
 	var err error
@@ -230,8 +233,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	} else if params.SearchOnly && len(foundResults) < params.TopK {
 		logger.Printf("SearchOnly mode enabled: found %d results, requested %d (no AI generation)", len(foundResults), params.TopK)
 	}
-
-
 
 	// Update ranks to be sequential
 	for i := range foundResults {
@@ -272,7 +273,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
 	return ctrl.algorithmService.SearchSimilarImages(ctx, text, topK)
 }
-
 
 // generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
 // PERFORMANCE OPTIMIZATION: Uses cached optimized prompt instead of calling OptimizePromptWithAnalysis.
@@ -382,24 +382,32 @@ func countBySource(results []RecommendedImageResult, source string) int {
 	return count
 }
 
+// countSearchErrors counts the number of errors for a specific search source.
+func countSearchErrors(source string, errors []error) int {
+	// Since we only track the error objects, not their sources,
+	// this is a simplified implementation that assumes each error corresponds to one source
+	if source == "semantic" || source == "theme" {
+		return len(errors)
+	}
+	return 0
+}
+
 // getAlgorithmServiceURL returns the algorithm service URL from configuration.
 func (ctrl *Controller) getAlgorithmServiceURL() string {
 	return ctrl.algorithmService.GetEndpoint()
 }
 
-
-
 // dualPathSearchOptimized implements optimized dual-path search using cached prompt analysis.
 // PERFORMANCE OPTIMIZATION: Uses pre-computed prompts from PromptAnalysisContext instead of making AI calls.
 func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *ImageRecommendParams, promptCtx *PromptAnalysisContext) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	// Calculate split for dual search (70% semantic, 30% theme-optimized)
 	semanticCount := params.TopK * 7 / 10
 	themeCount := params.TopK - semanticCount
-	
+
 	logger.Printf("Dual-path search: %d semantic + %d theme-optimized = %d total", semanticCount, themeCount, params.TopK)
-	
+
 	// Channel to collect search results
 	type searchResult struct {
 		results []RecommendedImageResult
@@ -407,94 +415,106 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		err     error
 	}
 	resultChan := make(chan searchResult, 2)
-	
+
 	// Start semantic search concurrently using cached prompt
 	go func() {
 		semanticPrompt := promptCtx.SemanticPrompt
 		logger.Printf("Semantic search prompt: %q", semanticPrompt)
-		
+
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "semantic"}
 			return
 		}
-		
+
 		results := ctrl.processAlgorithmResults(algorithmResp.Results, "semantic_search")
 		resultChan <- searchResult{results: results, source: "semantic"}
 	}()
-	
+
 	// Start theme search concurrently using cached prompt
 	go func() {
 		themePrompt := promptCtx.ThemePrompt
 		logger.Printf("Theme search prompt: %q", themePrompt)
-		
+
 		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "theme"}
 			return
 		}
-		
+
 		results := ctrl.processAlgorithmResults(algorithmResp.Results, "theme_search")
 		resultChan <- searchResult{results: results, source: "theme"}
 	}()
-	
+
 	// Collect results from both searches
 	var semanticResults, themeResults []RecommendedImageResult
 	var searchErrors []error
-	
+
 	for i := 0; i < 2; i++ {
 		select {
 		case result := <-resultChan:
 			if result.err != nil {
-				logger.Printf("%s search failed: %v", result.source, result.err)
+				logger.Printf("❌ %s search failed: %v", result.source, result.err)
 				searchErrors = append(searchErrors, result.err)
 			} else {
 				if result.source == "semantic" {
 					semanticResults = result.results
-					logger.Printf("Semantic search completed: %d results", len(semanticResults))
+					logger.Printf("✅ Semantic search completed: %d results (expected: %d)", len(semanticResults), semanticCount)
+					for i, res := range semanticResults {
+						logger.Printf("  [%d] Semantic result: ID=%d, Path=%s, Similarity=%.3f", i+1, res.ID, res.ImagePath, res.Similarity)
+					}
 				} else {
 					themeResults = result.results
-					logger.Printf("Theme search completed: %d results", len(themeResults))
+					logger.Printf("✅ Theme search completed: %d results (expected: %d)", len(themeResults), themeCount)
+					for i, res := range themeResults {
+						logger.Printf("  [%d] Theme result: ID=%d, Path=%s, Similarity=%.3f", i+1, res.ID, res.ImagePath, res.Similarity)
+					}
 				}
 			}
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
 	}
-	
+
+	// Log search summary
+	logger.Printf("🔍 Dual-path search summary:")
+	logger.Printf("  - Semantic path: %d/%d results, errors: %d", len(semanticResults), semanticCount, countSearchErrors("semantic", searchErrors))
+	logger.Printf("  - Theme path: %d/%d results, errors: %d", len(themeResults), themeCount, countSearchErrors("theme", searchErrors))
+	logger.Printf("  - Total found: %d, Total errors: %d", len(semanticResults)+len(themeResults), len(searchErrors))
+
 	// If both searches failed, return error
 	if len(searchErrors) == 2 {
+		logger.Printf("💥 Both searches failed completely - returning error")
 		return nil, fmt.Errorf("both searches failed: semantic=%v, theme=%v", searchErrors[0], searchErrors[1])
 	}
-	
+
 	// Fuse and score results
 	fusedResults := ctrl.fuseSearchResults(semanticResults, themeResults, params.Theme)
-	
+
 	// Limit to requested top_k
 	if len(fusedResults) > params.TopK {
 		fusedResults = fusedResults[:params.TopK]
 	}
-	
+
 	return fusedResults, nil
 }
-
 
 // singleSemanticSearchOptimized implements optimized single semantic search using cached prompt analysis.
 // PERFORMANCE OPTIMIZATION: Uses pre-computed prompt from PromptAnalysisContext.
 func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, params *ImageRecommendParams, promptCtx *PromptAnalysisContext) ([]RecommendedImageResult, error) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	// Use the cached semantic prompt (for ThemeNone, this will be the original prompt)
 	searchPrompt := promptCtx.SemanticPrompt
 	logger.Printf("Single semantic search for prompt: %q", searchPrompt)
-	
+
 	algorithmResp, err := ctrl.callAlgorithmService(ctx, searchPrompt, params.TopK)
 	if err != nil {
 		return nil, fmt.Errorf("algorithm service call failed: %w", err)
 	}
-	
+
 	results := ctrl.processAlgorithmResults(algorithmResp.Results, "search")
-	
+
 	logger.Printf("Semantic search completed: %d results", len(results))
 	return results, nil
 }
@@ -504,41 +524,45 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 	results := make([]RecommendedImageResult, 0, len(algResults))
 	logger := log.GetReqLogger(context.Background())
 	
-	for _, algResult := range algResults {
+	
+	for i, algResult := range algResults {
 		var aiResource struct {
 			ID  int64  `json:"id"`
 			URL string `json:"url"`
 		}
 		
-		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.ImagePath).First(&aiResource).Error
+		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.URL).First(&aiResource).Error
+		
 		if err == nil {
 			// Found matching resource in database
+			logger.Printf("  ✅ Result %d found in database: ID=%d, URL=%s", i+1, aiResource.ID, aiResource.URL)
 			results = append(results, RecommendedImageResult{
 				ID:         aiResource.ID,
-				ImagePath:  algResult.ImagePath,
+				ImagePath:  algResult.URL,
 				Similarity: algResult.Similarity,
 				Rank:       algResult.Rank,
 				Source:     source,
 			})
 		} else {
 			// Image not found in database, log and skip
-			logger.Printf("Image not found in database: %s, error: %v", algResult.ImagePath, err)
+			logger.Printf("  ❌ Result %d not found in database: URL='%s', error: %v", i+1, algResult.URL, err)
 		}
 	}
-	
+
+	logger.Printf("📊 Processed algorithm results: %d input → %d valid results", len(algResults), len(results))
 	return results
 }
 
 // fuseSearchResults fuses and re-scores results from semantic and theme searches
 func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []RecommendedImageResult, theme ThemeType) []RecommendedImageResult {
 	logger := log.GetReqLogger(context.Background())
-	
+
 	// Combine all results
 	allResults := make([]RecommendedImageResult, 0, len(semanticResults)+len(themeResults))
-	
+
 	// Add semantic results
 	allResults = append(allResults, semanticResults...)
-	
+
 	// Add theme results (with deduplication)
 	for _, result := range themeResults {
 		if !ctrl.isDuplicateResult(result, allResults) {
@@ -547,21 +571,22 @@ func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []Recomm
 			logger.Printf("Deduplicated theme result: %s", result.ImagePath)
 		}
 	}
-	
+
 	// Re-score all results with theme relevance
 	for i := range allResults {
 		semanticScore := allResults[i].Similarity
-		
+		logger.Printf("Original semantic score for %s: %.3f", allResults[i].ImagePath, semanticScore)
+
 		// Calculate theme relevance score (simplified - in production this could use ML)
 		themeScore := ctrl.calculateThemeRelevance(allResults[i].ImagePath, theme)
-		
+
 		// Weight combination: 70% semantic + 30% theme
 		allResults[i].Similarity = semanticScore*0.7 + themeScore*0.3
-		
-		logger.Printf("Result %s: semantic=%.3f, theme=%.3f, final=%.3f", 
+
+		logger.Printf("Result %s: semantic=%.3f, theme=%.3f, final=%.3f",
 			allResults[i].ImagePath, semanticScore, themeScore, allResults[i].Similarity)
 	}
-	
+
 	// Sort by final similarity score
 	for i := 0; i < len(allResults)-1; i++ {
 		for j := i + 1; j < len(allResults); j++ {
@@ -570,10 +595,10 @@ func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []Recomm
 			}
 		}
 	}
-	
-	logger.Printf("Fused %d semantic + %d theme results into %d total results", 
+
+	logger.Printf("Fused %d semantic + %d theme results into %d total results",
 		len(semanticResults), len(themeResults), len(allResults))
-	
+
 	return allResults
 }
 
@@ -587,13 +612,12 @@ func (ctrl *Controller) isDuplicateResult(result RecommendedImageResult, existin
 	return false
 }
 
-
 // TODO 这里计划使用CLIP模型来实现
 // calculateThemeRelevance calculates theme relevance score for an image
 func (ctrl *Controller) calculateThemeRelevance(imagePath string, theme ThemeType) float64 {
 	// Simplified theme relevance calculation
 	// In production, this could use ML models or metadata analysis
-	
+
 	// For now, assign scores based on theme source
 	switch theme {
 	case ThemeCartoon:
@@ -621,14 +645,14 @@ func (ctrl *Controller) calculateThemeRelevance(imagePath string, theme ThemeTyp
 func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFeedbackParams) error {
 	logger := log.GetReqLogger(ctx)
 	logger.Printf("Submitting image feedback - QueryID: %s, ChosenPic: %d", params.QueryID, params.ChosenPic)
-	
+
 	// Retrieve cached recommendation result
 	cached, err := ctrl.recommendationCache.GetRecommendation(ctx, params.QueryID)
 	if err != nil {
 		logger.Printf("Cached recommendation not found for QueryID: %s - %v", params.QueryID, err)
 		return fmt.Errorf("recommendation not found for query_id: %s", params.QueryID)
 	}
-	
+
 	// Verify chosen pic is in the recommended list
 	chosenPicFound := false
 	for _, picID := range cached.RecommendedPics {
@@ -637,12 +661,12 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 			break
 		}
 	}
-	
+
 	if !chosenPicFound {
 		logger.Printf("Chosen pic %d not found in recommended pics %v", params.ChosenPic, cached.RecommendedPics)
 		return fmt.Errorf("chosen_pic %d is not in the recommended pictures list", params.ChosenPic)
 	}
-	
+
 	// Prepare feedback request for algorithm service
 	feedbackReq := AlgorithmFeedbackRequest{
 		QueryID:         params.QueryID,
@@ -650,7 +674,7 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 		RecommendedPics: cached.RecommendedPics,
 		ChosenPic:       params.ChosenPic,
 	}
-	
+
 	// Check idempotency - ensure feedback hasn't already been submitted
 	// First check if feedback was already submitted
 	submitted, existingChoice, err := ctrl.recommendationCache.GetFeedbackStatus(ctx, params.QueryID)
@@ -662,7 +686,7 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 		logger.Printf("Feedback already submitted for QueryID: %s (previous choice: %d)", params.QueryID, existingChoice)
 		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
 	}
-	
+
 	// Mark as submitted (atomic operation)
 	success, err := ctrl.recommendationCache.MarkFeedbackSubmitted(ctx, params.QueryID, params.ChosenPic)
 	if err != nil {
@@ -674,19 +698,20 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 		logger.Printf("Feedback was submitted by another request for QueryID: %s", params.QueryID)
 		return fmt.Errorf("feedback already submitted for query_id: %s", params.QueryID)
 	}
-	
+
 	// Call algorithm service feedback endpoint
 	err = ctrl.callAlgorithmFeedbackService(ctx, &feedbackReq)
 	if err != nil {
 		logger.Printf("Failed to submit feedback to algorithm service: %v", err)
 		return fmt.Errorf("failed to submit feedback: %w", err)
 	}
-	
+
 	logger.Printf("Successfully submitted feedback for QueryID: %s", params.QueryID)
 	return nil
 }
 
 // callAlgorithmFeedbackService calls the spx-algorithm service feedback endpoint
 func (ctrl *Controller) callAlgorithmFeedbackService(ctx context.Context, feedbackReq *AlgorithmFeedbackRequest) error {
-	return ctrl.algorithmService.SubmitImageFeedback(ctx, feedbackReq)
+	//return ctrl.algorithmService.SubmitImageFeedback(ctx, feedbackReq) // 这个功能还没实现
+	return nil
 }

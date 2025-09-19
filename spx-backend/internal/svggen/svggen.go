@@ -93,6 +93,7 @@ func (sm *ServiceManager) GetProvider(providerType Provider) ProviderService {
 // GenerateImage generates an image using the specified provider.
 func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest) (*ImageResponse, error) {
 	logger := log.GetReqLogger(ctx)
+	
 
 	provider := sm.GetProvider(req.Provider)
 	if provider == nil {

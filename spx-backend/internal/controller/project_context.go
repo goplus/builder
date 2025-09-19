@@ -94,6 +94,7 @@ func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *Proj
 // generateRelatedWordsWithLLM uses LLM to generate related words for the project
 func (ctrl *Controller) generateRelatedWordsWithLLM(ctx context.Context, projectName, projectDescription string) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
+	
 
 	// Build the prompt for word generation
 	systemPrompt := `你是一个专业的游戏项目分析师，请为项目生成15-20个相关的关键词，这些关键词将用于图片推荐。
@@ -209,6 +210,7 @@ func (ctrl *Controller) cleanWords(words []string) []string {
 // RecommendImagesWithContext performs instant recommendation with project context
 func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *InstantRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
+	
 	logger.Printf("InstantRecommend request - project_id: %d, prompt: %q, top_k: %d",
 		params.ProjectID, params.UserPrompt, params.TopK)
 

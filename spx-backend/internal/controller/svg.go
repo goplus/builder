@@ -151,7 +151,9 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 	var kodoURL string
 	var aiResourceID int64
 	filename := fmt.Sprintf("%s.svg", result.ID)
+	uploadStart := time.Now()
 	uploadResult, err := ctrl.kodo.UploadFile(ctx, svgBytes, filename)
+	logger.Printf("[PERF] Kodo upload took %v", time.Since(uploadStart))
 	if err != nil {
 		logger.Printf("Failed to upload SVG to Kodo: %v", err)
 		// Continue without Kodo storage, don't fail the request
@@ -170,9 +172,12 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 			logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
 			
 			// Call vector service to add SVG data
+			vectorStart := time.Now()
 			if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoURL, svgBytes); vectorErr != nil {
 				logger.Printf("Failed to call vector service: %v", vectorErr)
 				// Don't fail the request, just log the error
+			} else {
+				logger.Printf("[PERF] Vector service call took %v", time.Since(vectorStart))
 			}
 		}
 	}

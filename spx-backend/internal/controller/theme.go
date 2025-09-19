@@ -240,6 +240,8 @@ var TechnicalPrompts = map[ThemeType]string{
 	ThemeNone:      "SVG format, clean vector graphics, well-structured elements, easy to edit and customize, game development optimized",
 }
 
+
+
 // AnalyzePromptType analyzes the user prompt using AI to determine its type, emotion, and complexity
 func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilot.Copilot) PromptAnalysis {
 	// Fallback analysis in case AI analysis fails
