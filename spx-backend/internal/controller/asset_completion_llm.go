@@ -12,14 +12,30 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	// DefaultCacheExpiry is the default cache expiration time
+	DefaultCacheExpiry = 10 * time.Minute
+	// MaxExistingAssetsForContext limits how many existing assets to include in AI context
+	MaxExistingAssetsForContext = 100
+	// MaxSampleAssetsInPrompt limits assets shown in system prompt
+	MaxSampleAssetsInPrompt = 20
+	// MinSuggestions is the minimum number of suggestions before adding related ones
+	MinSuggestions = 3
+)
+
+// cacheEntry represents a cached completion result with its timestamp
+type cacheEntry struct {
+	results  []string
+	cachedAt time.Time
+}
+
 // AssetCompletionLLM provides AI-powered asset name completion
 type AssetCompletionLLM struct {
 	copilot     *copilot.Copilot
 	db          *gorm.DB
-	cache       map[string][]string
+	cache       map[string]cacheEntry
 	cacheMutex  sync.RWMutex
 	cacheExpiry time.Duration
-	lastUpdate  time.Time
 }
 
 // NewAssetCompletionLLM creates a new LLM-based completion service
@@ -27,8 +43,8 @@ func NewAssetCompletionLLM(copilot *copilot.Copilot, db *gorm.DB) *AssetCompleti
 	return &AssetCompletionLLM{
 		copilot:     copilot,
 		db:          db,
-		cache:       make(map[string][]string),
-		cacheExpiry: 10 * time.Minute, // Cache LLM responses for 10 minutes
+		cache:       make(map[string]cacheEntry),
+		cacheExpiry: DefaultCacheExpiry,
 	}
 }
 
@@ -118,7 +134,7 @@ func (l *AssetCompletionLLM) buildSystemPrompt(existingAssets []string) string {
 	if len(existingAssets) > 0 {
 		builder.WriteString("Here are some existing asset names for reference:\n")
 		// Show a sample of existing assets (limit to avoid token overflow)
-		sampleSize := 20
+		sampleSize := MaxSampleAssetsInPrompt
 		if len(existingAssets) < sampleSize {
 			sampleSize = len(existingAssets)
 		}
@@ -146,91 +162,77 @@ func (l *AssetCompletionLLM) buildUserPrompt(prefix string, limit int) string {
 		limit, prefix)
 }
 
+// cleanAndFormatSuggestion cleans and formats a single suggestion line
+func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return ""
+	}
+
+	// Remove common prefixes like "1.", "-", "*", etc.
+	line = strings.TrimLeft(line, "0123456789.-* \t")
+	line = strings.TrimSpace(line)
+
+	if line == "" {
+		return ""
+	}
+
+	// Convert to lowercase and replace spaces with underscores
+	suggestion := strings.ToLower(line)
+	suggestion = strings.ReplaceAll(suggestion, " ", "_")
+	suggestion = strings.ReplaceAll(suggestion, "-", "_")
+
+	// Remove any non-alphanumeric characters except underscores
+	var cleaned strings.Builder
+	for _, r := range suggestion {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			cleaned.WriteRune(r)
+		}
+	}
+	return cleaned.String()
+}
+
 // parseAISuggestions extracts suggestions from AI response
 func (l *AssetCompletionLLM) parseAISuggestions(response, prefix string) []string {
 	lines := strings.Split(response, "\n")
-	var suggestions []string
+	var exactMatches []string
+	var relatedMatches []string
+	seenSuggestions := make(map[string]struct{})
 
 	prefixLower := strings.ToLower(prefix)
 
+	// Process all lines in a single pass
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		// Remove common prefixes like "1.", "-", "*", etc.
-		line = strings.TrimLeft(line, "0123456789.-* \t")
-		line = strings.TrimSpace(line)
-
-		if line == "" {
-			continue
-		}
-
-		// Convert to lowercase and replace spaces with underscores
-		suggestion := strings.ToLower(line)
-		suggestion = strings.ReplaceAll(suggestion, " ", "_")
-		suggestion = strings.ReplaceAll(suggestion, "-", "_")
-
-		// Remove any non-alphanumeric characters except underscores
-		var cleaned strings.Builder
-		for _, r := range suggestion {
-			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
-				cleaned.WriteRune(r)
-			}
-		}
-		suggestion = cleaned.String()
-
-		// Skip if empty after cleaning
+		suggestion := l.cleanAndFormatSuggestion(line)
 		if suggestion == "" {
 			continue
 		}
 
-		// Prefer suggestions that start with the prefix
+		// Skip duplicates
+		if _, exists := seenSuggestions[suggestion]; exists {
+			continue
+		}
+		seenSuggestions[suggestion] = struct{}{}
+
+		// Categorize suggestions
 		if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
-			suggestions = append(suggestions, suggestion)
+			exactMatches = append(exactMatches, suggestion)
+		} else if strings.Contains(suggestion, prefixLower) {
+			relatedMatches = append(relatedMatches, suggestion)
 		}
 	}
 
-	// If we don't have enough suggestions that start with prefix, add related ones
-	if len(suggestions) < 3 {
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-
-			line = strings.TrimLeft(line, "0123456789.-* \t")
-			line = strings.TrimSpace(line)
-
-			if line == "" {
-				continue
-			}
-
-			suggestion := strings.ToLower(line)
-			suggestion = strings.ReplaceAll(suggestion, " ", "_")
-			suggestion = strings.ReplaceAll(suggestion, "-", "_")
-
-			var cleaned strings.Builder
-			for _, r := range suggestion {
-				if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
-					cleaned.WriteRune(r)
-				}
-			}
-			suggestion = cleaned.String()
-
-			if suggestion == "" {
-				continue
-			}
-
-			// Add if not already included and contains the prefix somewhere
-			if !l.containsString(suggestions, suggestion) && strings.Contains(suggestion, prefixLower) {
-				suggestions = append(suggestions, suggestion)
-			}
+	// Return exact matches first, add related ones if needed
+	result := exactMatches
+	if len(result) < MinSuggestions {
+		needed := MinSuggestions - len(result)
+		if needed > len(relatedMatches) {
+			needed = len(relatedMatches)
 		}
+		result = append(result, relatedMatches[:needed]...)
 	}
 
-	return suggestions
+	return result
 }
 
 // containsString checks if a slice contains a string
@@ -249,7 +251,7 @@ func (l *AssetCompletionLLM) getExistingAssets() ([]string, error) {
 	err := l.db.Model(&model.GameAsset{}).
 		Select("name").
 		Order("name ASC").
-		Limit(100). // Limit to avoid memory issues
+		Limit(MaxExistingAssetsForContext).
 		Pluck("name", &names).Error
 
 	if err != nil {
@@ -264,13 +266,14 @@ func (l *AssetCompletionLLM) getCachedResults(prefix string) []string {
 	l.cacheMutex.RLock()
 	defer l.cacheMutex.RUnlock()
 
-	// Check if cache is expired
-	if time.Since(l.lastUpdate) > l.cacheExpiry {
-		return nil
-	}
-
-	if results, exists := l.cache[strings.ToLower(prefix)]; exists {
-		return results
+	if entry, exists := l.cache[strings.ToLower(prefix)]; exists {
+		// Check if this specific entry is expired
+		if time.Since(entry.cachedAt) <= l.cacheExpiry {
+			// Return a copy to prevent external modification
+			resultCopy := make([]string, len(entry.results))
+			copy(resultCopy, entry.results)
+			return resultCopy
+		}
 	}
 
 	return nil
@@ -281,8 +284,10 @@ func (l *AssetCompletionLLM) cacheResults(prefix string, results []string) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
-	l.cache[strings.ToLower(prefix)] = results
-	l.lastUpdate = time.Now()
+	l.cache[strings.ToLower(prefix)] = cacheEntry{
+		results:  results,
+		cachedAt: time.Now(),
+	}
 }
 
 // ClearCache clears the LLM completion cache
@@ -290,8 +295,7 @@ func (l *AssetCompletionLLM) ClearCache() {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
-	l.cache = make(map[string][]string)
-	l.lastUpdate = time.Time{}
+	l.cache = make(map[string]cacheEntry)
 }
 
 // GetCacheStats returns cache statistics
@@ -299,13 +303,30 @@ func (l *AssetCompletionLLM) GetCacheStats() map[string]interface{} {
 	l.cacheMutex.RLock()
 	defer l.cacheMutex.RUnlock()
 
+	// Calculate average cache age and expired entries
+	var totalAge time.Duration
+	expiredCount := 0
+	now := time.Now()
+
+	for _, entry := range l.cache {
+		age := now.Sub(entry.cachedAt)
+		totalAge += age
+		if age > l.cacheExpiry {
+			expiredCount++
+		}
+	}
+
+	var avgAge time.Duration
+	if len(l.cache) > 0 {
+		avgAge = totalAge / time.Duration(len(l.cache))
+	}
+
 	return map[string]interface{}{
 		"mode":          "llm",
 		"cache_size":    len(l.cache),
-		"last_update":   l.lastUpdate,
-		"cache_age":     time.Since(l.lastUpdate),
+		"expired_count": expiredCount,
+		"avg_cache_age": avgAge,
 		"cache_expiry":  l.cacheExpiry,
-		"needs_refresh": time.Since(l.lastUpdate) > l.cacheExpiry,
 		"trie_enabled":  false,
 		"llm_enabled":   true,
 	}
