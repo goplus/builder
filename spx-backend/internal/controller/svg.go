@@ -430,17 +430,10 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	}
 	logger.Printf("Validated SVG format")
 
-	// Convert to png
-	pngData, err := svggen.ConvertSVGToPNG(imageData)
-	if err != nil {
-		logger.Printf("Failed to convert SVG to PNG: %v", err)
-		return nil, fmt.Errorf("failed to convert SVG to PNG: %w", err)
-	}
-	logger.Printf("Converted SVG to PNG, size: %d bytes", len(pngData))
 
 	// Convert to svggen request
 	req := svggen.BeautifyImageRequest{
-		ImageData:      pngData,  // Use PNG data for Recraft API
+		ImageData:      imageData,  // Use PNG data for Recraft API
 		Prompt:         params.Prompt,
 		Strength:       params.Strength,
 		Style:          params.Style,
