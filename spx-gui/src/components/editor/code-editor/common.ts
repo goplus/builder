@@ -284,7 +284,8 @@ export const mainCategories = {
   sensing: 'sensing',
   sound: 'sound',
   control: 'control',
-  game: 'game'
+  game: 'game',
+  other: 'other'
 }
 
 export const subCategories = {
@@ -332,6 +333,10 @@ export const subCategories = {
     sprite: 'sprite',
     camera: 'camera',
     others: 'others'
+  },
+  other: {
+    value: 'value',
+    list: 'list'
   }
 }
 
