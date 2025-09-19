@@ -66,11 +66,6 @@ export interface PlatformConfig {
 }
 
 /**
- * 平台跳转链接的前缀
- */
-const hashPrefix = '#/share-to-platform='
-
-/**
  * 常用跳转链接（按需使用）
  */
 const JUMP_LINKS = {
