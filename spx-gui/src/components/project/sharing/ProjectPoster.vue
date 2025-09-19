@@ -38,12 +38,21 @@ watch(
   { immediate: true }
 )
 
-// Handle project thumbnail
+// Handle project thumbnail (tolerate cancellation during effect re-runs)
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   const thumbnail = props.projectData.thumbnail
   if (!thumbnail) return null
-  const file = createFileWithUniversalUrl(thumbnail)
-  return file.url(onCleanup)
+  try {
+    const file = createFileWithUniversalUrl(thumbnail)
+    return await file.url(onCleanup)
+  } catch (err: unknown) {
+    const msg = String(err)
+    if ((err as any)?.name === 'AbortError' || msg.includes('Cancelled')) {
+      return null
+    }
+    console.error('[Poster] thumbnail fetch error:', err)
+    return null
+  }
 })
 
 // Final image URL
@@ -52,7 +61,6 @@ const imgUrl = computed(() => {
 })
 
 const posterElementRef = ref<HTMLElement>()
-
 const projectQrCanvas = ref<HTMLCanvasElement>()
 
 // Handle project description text truncation ===========================
@@ -206,7 +214,7 @@ const createPoster = async (): Promise<File> => {
     useCORS: true,
     allowTaint: true,
     backgroundColor: 'transparent',
-    scale: 2,
+    scale: 1,
     logging: false
   })
 
