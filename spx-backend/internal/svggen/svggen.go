@@ -15,6 +15,7 @@ import (
 // Provider interface defines the contract for image generation providers.
 type ProviderService interface {
 	GenerateImage(ctx context.Context, req GenerateRequest) (*ImageResponse, error)
+	BeautifyImage(ctx context.Context, req BeautifyImageRequest) (*BeautifyImageResponse, error)
 }
 
 // ServiceManager manages multiple upstream services.
@@ -136,6 +137,36 @@ func (sm *ServiceManager) GenerateImage(ctx context.Context, req GenerateRequest
 	return resp, nil
 }
 
+// BeautifyImage beautifies an image using the specified provider.
+func (sm *ServiceManager) BeautifyImage(ctx context.Context, req BeautifyImageRequest) (*BeautifyImageResponse, error) {
+	logger := log.GetReqLogger(ctx)
+	start := time.Now()
+	defer func() {
+		logger.Printf("[PERF] SVG BeautifyImage (%s) took %v", req.Provider, time.Since(start))
+	}()
+
+	// Default to Recraft provider if not specified (since it's the only one that supports beautification)
+	if req.Provider == "" {
+		req.Provider = ProviderRecraft
+	}
+
+	provider := sm.GetProvider(req.Provider)
+	if provider == nil {
+		logger.Printf("provider not configured: %s", string(req.Provider))
+		return nil, errors.New("provider not configured: " + string(req.Provider))
+	}
+
+	logger.Printf("beautifying image with provider: %s", string(req.Provider))
+	providerStart := time.Now()
+	resp, err := provider.BeautifyImage(ctx, req)
+	logger.Printf("[PERF] Provider %s beautification took %v", req.Provider, time.Since(providerStart))
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // IsProviderEnabled checks if a provider is enabled.
 func (sm *ServiceManager) IsProviderEnabled(provider Provider) bool {
 	switch provider {
@@ -149,3 +180,5 @@ func (sm *ServiceManager) IsProviderEnabled(provider Provider) bool {
 		return false
 	}
 }
+
+

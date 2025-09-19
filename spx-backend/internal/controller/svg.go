@@ -76,6 +76,39 @@ type GenerateImageParams struct {
 	GenerateSVGParams
 }
 
+// BeautifyImageParams represents parameters for SVG image beautification.
+type BeautifyImageParams struct {
+	Prompt         string          `json:"prompt"`                       // Description of desired changes
+	Strength       float64         `json:"strength"`                     // Strength of transformation (0-1)
+	Style          string          `json:"style,omitempty"`              // Image style
+	SubStyle       string          `json:"sub_style,omitempty"`          // Sub-style
+	NegativePrompt string          `json:"negative_prompt,omitempty"`    // What to avoid
+	Provider       svggen.Provider `json:"provider,omitempty"`           // Provider to use (defaults to Recraft)
+}
+
+// Validate validates the image beautification parameters.
+func (p *BeautifyImageParams) Validate() (bool, string) {
+	if len(p.Prompt) < 3 {
+		return false, "prompt must be at least 3 characters"
+	}
+
+	if p.Strength < 0 || p.Strength > 1 {
+		return false, "strength must be between 0 and 1"
+	}
+
+	// Default to Recraft provider if not specified
+	if p.Provider == "" {
+		p.Provider = svggen.ProviderRecraft
+	}
+
+	// Validate provider (only Recraft supports SVG beautification currently)
+	if p.Provider != svggen.ProviderRecraft {
+		return false, "only recraft provider supports SVG beautification"
+	}
+
+	return true, ""
+}
+
 // SVGResponse represents the response for direct SVG requests.
 type SVGResponse struct {
 	Data          []byte            `json:"-"`                    // SVG content
@@ -98,6 +131,23 @@ type ImageResponse struct {
 	TranslatedPrompt string            `json:"translated_prompt,omitempty"`
 	WasTranslated    bool              `json:"was_translated"`
 	CreatedAt        time.Time         `json:"created_at"`
+}
+
+// BeautifyImageResponse represents the response for image beautification requests.
+type BeautifyImageResponse struct {
+	ID             string          `json:"id"`               // Unique ID for the beautified image
+	URL            string          `json:"url"`              // URL of the beautified image
+	KodoURL        string          `json:"kodo_url,omitempty"`           // Kodo storage URL if stored
+	AIResourceID   int64           `json:"ai_resource_id,omitempty"`     // Database record ID if stored
+	OriginalPrompt string          `json:"original_prompt"`  // Original prompt used
+	Prompt         string          `json:"prompt"`           // Final prompt used
+	NegativePrompt string          `json:"negative_prompt,omitempty"`    // Negative prompt used
+	Style          string          `json:"style"`            // Style applied
+	Strength       float64         `json:"strength"`         // Strength of transformation
+	Width          int             `json:"width"`            // Image width
+	Height         int             `json:"height"`           // Image height
+	Provider       svggen.Provider `json:"provider"`         // Provider used
+	CreatedAt      time.Time       `json:"created_at"`       // Creation timestamp
 }
 
 // GenerateSVG generates an SVG image and returns the SVG content directly.
@@ -356,6 +406,131 @@ func (ctrl *Controller) parseDataURL(dataURL string) ([]byte, error) {
 
 	// Not base64 encoded, return string bytes directly
 	return []byte(data), nil
+}
+
+// BeautifyImage beautifies an uploaded image and returns the beautified image metadata.
+func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImageParams, imageData []byte) (*BeautifyImageResponse, error) {
+	logger := log.GetReqLogger(ctx)
+	logger.Printf("BeautifyImage request - provider: %s, prompt: %q, strength: %.2f", params.Provider, params.Prompt, params.Strength)
+
+	// Validate image data
+	if len(imageData) == 0 {
+		return nil, fmt.Errorf("image data is required")
+	}
+
+	// Check image size (5MB limit according to API docs)
+	const maxImageSize = 5 * 1024 * 1024 // 5MB
+	if len(imageData) > maxImageSize {
+		return nil, fmt.Errorf("image size exceeds 5MB limit")
+	}
+
+	// Validate SVG format
+	if !ctrl.isSVGFormat(imageData) {
+		return nil, fmt.Errorf("only SVG format is supported for image beautification")
+	}
+	logger.Printf("Validated SVG format")
+
+	// Convert to png
+	pngData, err := svggen.ConvertSVGToPNG(imageData)
+	if err != nil {
+		logger.Printf("Failed to convert SVG to PNG: %v", err)
+		return nil, fmt.Errorf("failed to convert SVG to PNG: %w", err)
+	}
+	logger.Printf("Converted SVG to PNG, size: %d bytes", len(pngData))
+
+	// Convert to svggen request
+	req := svggen.BeautifyImageRequest{
+		ImageData:      pngData,  // Use PNG data for Recraft API
+		Prompt:         params.Prompt,
+		Strength:       params.Strength,
+		Style:          params.Style,
+		SubStyle:       params.SubStyle,
+		NegativePrompt: params.NegativePrompt,
+		Provider:       params.Provider,
+	}
+
+	// Beautify image
+	result, err := ctrl.svggen.BeautifyImage(ctx, req)
+	if err != nil {
+		logger.Printf("Image beautification failed: %v", err)
+		return nil, fmt.Errorf("failed to beautify image: %w", err)
+	}
+
+	logger.Printf("Image beautification successful - ID: %s, URL: %s", result.ID, result.URL)
+
+	// Download beautified image for storage
+	var kodoURL string
+	var aiResourceID int64
+
+	if result.URL != "" {
+		beautifiedBytes, err := svggen.DownloadFile(ctx, result.URL)
+		if err != nil {
+			logger.Printf("Failed to download beautified image: %v", err)
+		} else {
+			// Use SVG extension for beautified output
+			filename := fmt.Sprintf("%s_beautified.svg", result.ID)
+
+			uploadStart := time.Now()
+			uploadResult, err := ctrl.kodo.UploadFile(ctx, beautifiedBytes, filename)
+			logger.Printf("[PERF] Kodo upload took %v", time.Since(uploadStart))
+			if err != nil {
+				logger.Printf("Failed to upload beautified image to Kodo: %v", err)
+				// Continue without Kodo storage, don't fail the request
+			} else {
+				kodoURL = uploadResult.KodoURL
+				logger.Printf("Beautified image uploaded to Kodo: %s", kodoURL)
+
+				// Save to database if Kodo upload successful
+				aiResource := &model.AIResource{
+					URL: kodoURL,
+				}
+				if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
+					logger.Printf("Failed to save AI resource to database: %v", dbErr)
+				} else {
+					aiResourceID = aiResource.ID
+					logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+				}
+			}
+		}
+	}
+
+	return &BeautifyImageResponse{
+		ID:             result.ID,
+		URL:            result.URL,
+		KodoURL:        kodoURL,
+		AIResourceID:   aiResourceID,
+		OriginalPrompt: result.OriginalPrompt,
+		Prompt:         result.Prompt,
+		NegativePrompt: result.NegativePrompt,
+		Style:          result.Style,
+		Strength:       result.Strength,
+		Width:          result.Width,
+		Height:         result.Height,
+		Provider:       result.Provider,
+		CreatedAt:      result.CreatedAt,
+	}, nil
+}
+
+// isSVGFormat checks if the uploaded data is a valid SVG file.
+func (ctrl *Controller) isSVGFormat(data []byte) bool {
+	if len(data) == 0 {
+		return false
+	}
+
+	// Convert to lowercase string for case-insensitive checking
+	dataStr := strings.ToLower(string(data[:min(len(data), 1024)]))
+
+	// Check for SVG XML declaration and root element
+	return strings.Contains(dataStr, "<svg") &&
+		   (strings.Contains(dataStr, "xmlns") || strings.Contains(dataStr, "xml"))
+}
+
+// min returns the minimum of two integers.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // GetThemes returns all available themes with their information.

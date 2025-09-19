@@ -137,6 +137,11 @@ func (s *SVGIOService) GenerateImage(ctx context.Context, req GenerateRequest) (
 	}, nil
 }
 
+// BeautifyImage is not supported by SVGIO provider.
+func (s *SVGIOService) BeautifyImage(ctx context.Context, req BeautifyImageRequest) (*BeautifyImageResponse, error) {
+	return nil, errors.New("BeautifyImage is not supported by SVGIO provider")
+}
+
 // getAPIKey gets the API key from environment or configuration.
 func (s *SVGIOService) getAPIKey() string {
 	// Get API key from environment variable

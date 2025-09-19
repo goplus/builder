@@ -60,19 +60,6 @@ var ThemeNames = map[ThemeType]string{
 	ThemeBusiness:  "商务风格",
 }
 
-// ThemePreviewPrompts maps each theme to its preview generation prompt
-var ThemePreviewPrompts = map[ThemeType]string{
-	ThemeNone:      "Create a simple, clean design preview showing basic shapes and neutral colors",
-	ThemeCartoon:   "Create a colorful cartoon-style preview with bright colors, simple geometric shapes, cute characters or objects, playful and fun atmosphere",
-	ThemeRealistic: "Create a realistic, detailed preview with photographic quality, fine details, natural lighting, professional high-quality rendering",
-	ThemeMinimal:   "Create a minimalist preview with clean lines, geometric shapes, lots of white space, limited color palette (black, white, or single accent color)",
-	ThemeFantasy:   "Create a fantasy-themed preview with magical elements, mystical creatures, enchanted atmosphere, dreamy colors and supernatural effects",
-	ThemeRetro:     "Create a retro/vintage preview with classic design elements, nostalgic color schemes, old-fashioned aesthetics, vintage typography or patterns",
-	ThemeScifi:     "Create a sci-fi preview with futuristic elements, neon colors, metallic surfaces, technological devices, space or cyberpunk atmosphere",
-	ThemeNature:    "Create a nature-themed preview with organic elements, plants, natural textures, earth tones and green colors, outdoor scenery",
-	ThemeBusiness:  "Create a professional business preview with modern corporate design, clean professional aesthetics, business icons or charts",
-}
-
 // ThemeDescriptions maps each theme to its description
 var ThemeDescriptions = map[ThemeType]string{
 	ThemeNone:      "不应用任何特定主题风格",
@@ -88,14 +75,14 @@ var ThemeDescriptions = map[ThemeType]string{
 
 // ThemeProviders maps each theme to its recommended provider
 var ThemeProviders = map[ThemeType]svggen.Provider{
-	ThemeNone:      svggen.ProviderOpenAI,   // Default provider
+	ThemeNone:      svggen.ProviderOpenAI,  // Default provider
 	ThemeCartoon:   svggen.ProviderRecraft, // Recraft excels at cartoon styles
 	ThemeRealistic: svggen.ProviderRecraft, // Recraft is good for realistic styles
 	ThemeMinimal:   svggen.ProviderSVGIO,   // SVGIO works well for minimal styles
-	ThemeFantasy:   svggen.ProviderOpenAI, // Recraft handles fantasy well
+	ThemeFantasy:   svggen.ProviderOpenAI,  // Recraft handles fantasy well
 	ThemeRetro:     svggen.ProviderRecraft, // Recraft for retro styles
 	ThemeScifi:     svggen.ProviderRecraft, // Recraft for sci-fi
-	ThemeNature:    svggen.ProviderOpenAI, // Recraft for nature themes
+	ThemeNature:    svggen.ProviderOpenAI,  // Recraft for nature themes
 	ThemeBusiness:  svggen.ProviderRecraft, // Recraft for business styles
 }
 
@@ -240,8 +227,6 @@ var TechnicalPrompts = map[ThemeType]string{
 	ThemeNone:      "SVG矢量格式，图形清晰，结构合理，易于编辑定制",
 }
 
-
-
 // AnalyzePromptType analyzes the user prompt using AI to determine its type, emotion, and complexity
 func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilot.Copilot) PromptAnalysis {
 	// Fallback analysis in case AI analysis fails
@@ -251,7 +236,7 @@ func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilo
 		Complexity: "simple",
 		Keywords:   extractKeywords(prompt),
 	}
-	
+
 	// Build AI analysis prompt
 	systemPrompt := `你是一个专业的提示词分析助手。请分析用户输入的提示词并返回JSON格式的分析结果。
 
@@ -292,9 +277,9 @@ func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilo
   "complexity": "选择的复杂度", 
   "keywords": ["关键词1", "关键词2", ...]
 }`
-	
+
 	userPrompt := fmt.Sprintf("用户输入的提示词是：%s", prompt)
-	
+
 	params := &copilot.Params{
 		System: copilot.Content{
 			Type: copilot.ContentTypeText,
@@ -310,21 +295,21 @@ func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilo
 			},
 		},
 	}
-	
+
 	// Call AI for analysis
 	result, err := copilotClient.Message(ctx, params, false)
 	if err != nil {
 		// If AI analysis fails, return fallback analysis
 		return fallbackAnalysis
 	}
-	
+
 	// Parse AI response
 	var analysis PromptAnalysis
 	if err := json.Unmarshal([]byte(result.Message.Content.Text), &analysis); err != nil {
 		// If parsing fails, return fallback analysis
 		return fallbackAnalysis
 	}
-	
+
 	// Validate and sanitize the analysis
 	if analysis.Type == "" {
 		analysis.Type = "default"
@@ -338,7 +323,7 @@ func AnalyzePromptType(ctx context.Context, prompt string, copilotClient *copilo
 	if len(analysis.Keywords) == 0 {
 		analysis.Keywords = extractKeywords(prompt)
 	}
-	
+
 	return analysis
 }
 
@@ -347,7 +332,7 @@ func extractKeywords(prompt string) []string {
 	words := strings.FieldsFunc(prompt, func(c rune) bool {
 		return c == ' ' || c == '，' || c == '、' || c == '。' || c == '！' || c == '？'
 	})
-	
+
 	keywords := make([]string, 0)
 	for _, word := range words {
 		word = strings.TrimSpace(word)
@@ -358,28 +343,27 @@ func extractKeywords(prompt string) []string {
 	return keywords
 }
 
-
 // OptimizePromptWithAnalysis performs multi-layer prompt optimization based on analysis
 func OptimizePromptWithAnalysis(ctx context.Context, userPrompt string, theme ThemeType, copilotClient *copilot.Copilot) string {
 	if theme == ThemeNone {
 		return userPrompt
 	}
-	
+
 	// Step 1: Analyze prompt
 	analysis := AnalyzePromptType(ctx, userPrompt, copilotClient)
-	
+
 	// Step 2: Get theme enhancement
 	themePrompt := GetThemePromptEnhancement(theme)
-	
+
 	// Step 3: Get quality enhancement based on complexity
 	qualityPrompt := QualityPrompts[analysis.Complexity]
-	
+
 	// Step 4: Get style enhancement based on type
 	stylePrompt := StylePrompts[analysis.Type]
-	
+
 	// Step 5: Get technical requirements
 	technicalPrompt := TechnicalPrompts[theme]
-	
+
 	// Step 6: Combine all prompts intelligently with natural flow
 	return buildNaturalPrompt(userPrompt, themePrompt, qualityPrompt, stylePrompt, technicalPrompt)
 }
@@ -424,13 +408,11 @@ func buildNaturalPrompt(userPrompt, themePrompt, qualityPrompt, stylePrompt, tec
 	return result.String()
 }
 
-
 // containsConnector checks if the text already has connecting punctuation
 func containsConnector(text string) bool {
-	return strings.Contains(text, ",") || strings.Contains(text, ";") || 
-		   strings.Contains(text, "。") || strings.Contains(text, ":")
+	return strings.Contains(text, ",") || strings.Contains(text, ";") ||
+		strings.Contains(text, "。") || strings.Contains(text, ":")
 }
-
 
 // GetOptimizedPromptForSearch returns an optimized prompt specifically for search
 func GetOptimizedPromptForSearch(ctx context.Context, userPrompt string, theme ThemeType, searchType string, copilotClient *copilot.Copilot) string {
@@ -446,6 +428,6 @@ func GetOptimizedPromptForSearch(ctx context.Context, userPrompt string, theme T
 		// For theme search, use full optimization to ensure style consistency
 		return OptimizePromptWithAnalysis(ctx, userPrompt, theme, copilotClient)
 	}
-	
+
 	return userPrompt
 }

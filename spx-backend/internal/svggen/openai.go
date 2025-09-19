@@ -3,6 +3,7 @@ package svggen
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -171,6 +172,11 @@ func (s *OpenAIService) createSVGDataURL(svgCode string) string {
 	// In actual production environment, you might want to save to file service and return real URL
 	return fmt.Sprintf("data:image/svg+xml;base64,%s",
 		s.encodeSVGToBase64(svgCode))
+}
+
+// BeautifyImage is not supported by OpenAI provider.
+func (s *OpenAIService) BeautifyImage(ctx context.Context, req BeautifyImageRequest) (*BeautifyImageResponse, error) {
+	return nil, errors.New("BeautifyImage is not supported by OpenAI provider")
 }
 
 // encodeSVGToBase64 encodes SVG to Base64.
