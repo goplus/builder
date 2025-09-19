@@ -14,8 +14,10 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/svggen"
 	"github.com/goplus/yap"
 	"github.com/redis/go-redis/v9"
+	"io"
 	"net/http"
 	"os/signal"
 	"strconv"
@@ -162,6 +164,10 @@ type post_game_assets_complete struct {
 	*AppV2
 }
 type post_image struct {
+	yap.Handler
+	*AppV2
+}
+type post_image_beautify struct {
 	yap.Handler
 	*AppV2
 }
@@ -364,24 +370,25 @@ func (this *AppV2) Main() {
 	_xgo_obj30 := &post_course{AppV2: this}
 	_xgo_obj31 := &post_game_assets_complete{AppV2: this}
 	_xgo_obj32 := &post_image{AppV2: this}
-	_xgo_obj33 := &post_image_svg{AppV2: this}
-	_xgo_obj34 := &post_images_feedback{AppV2: this}
-	_xgo_obj35 := &post_images_instant_recommend{AppV2: this}
-	_xgo_obj36 := &post_images_recommend{AppV2: this}
-	_xgo_obj37 := &post_project_release{AppV2: this}
-	_xgo_obj38 := &post_project{AppV2: this}
-	_xgo_obj39 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj40 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj41 := &post_projects_context_generate{AppV2: this}
-	_xgo_obj42 := &post_user_username_following{AppV2: this}
-	_xgo_obj43 := &post_util_fileurls{AppV2: this}
-	_xgo_obj44 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj45 := &put_asset_id{AppV2: this}
-	_xgo_obj46 := &put_course_series_id{AppV2: this}
-	_xgo_obj47 := &put_course_id{AppV2: this}
-	_xgo_obj48 := &put_project_owner_name{AppV2: this}
-	_xgo_obj49 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49)
+	_xgo_obj33 := &post_image_beautify{AppV2: this}
+	_xgo_obj34 := &post_image_svg{AppV2: this}
+	_xgo_obj35 := &post_images_feedback{AppV2: this}
+	_xgo_obj36 := &post_images_instant_recommend{AppV2: this}
+	_xgo_obj37 := &post_images_recommend{AppV2: this}
+	_xgo_obj38 := &post_project_release{AppV2: this}
+	_xgo_obj39 := &post_project{AppV2: this}
+	_xgo_obj40 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj41 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj42 := &post_projects_context_generate{AppV2: this}
+	_xgo_obj43 := &post_user_username_following{AppV2: this}
+	_xgo_obj44 := &post_util_fileurls{AppV2: this}
+	_xgo_obj45 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj46 := &put_asset_id{AppV2: this}
+	_xgo_obj47 := &put_course_series_id{AppV2: this}
+	_xgo_obj48 := &put_course_id{AppV2: this}
+	_xgo_obj49 := &put_project_owner_name{AppV2: this}
+	_xgo_obj50 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -2021,6 +2028,96 @@ func (this *post_image) Classfname() string {
 	return "post_image"
 }
 func (this *post_image) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_image_beautify.yap:13
+func (this *post_image_beautify) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_image_beautify.yap:13:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_image_beautify.yap:14:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:14:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_image_beautify.yap:15:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:19:1
+	err := ctx.Request.ParseMultipartForm(10 << 20)
+//line cmd/spx-backend/post_image_beautify.yap:20:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:21:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to parse multipart form")
+//line cmd/spx-backend/post_image_beautify.yap:22:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:26:1
+	file, _, err := ctx.Request.FormFile("image")
+//line cmd/spx-backend/post_image_beautify.yap:27:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:28:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "SVG file is required")
+//line cmd/spx-backend/post_image_beautify.yap:29:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:31:1
+	defer file.Close()
+//line cmd/spx-backend/post_image_beautify.yap:34:1
+	imageData, err := io.ReadAll(file)
+//line cmd/spx-backend/post_image_beautify.yap:35:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:36:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read SVG data")
+//line cmd/spx-backend/post_image_beautify.yap:37:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:41:1
+	params := &controller.BeautifyImageParams{Prompt: ctx.Request.FormValue("prompt"), Strength: 0.5, Style: ctx.Request.FormValue("style"), SubStyle: ctx.Request.FormValue("sub_style"), NegativePrompt: ctx.Request.FormValue("negative_prompt"), Provider: svggen.ProviderRecraft}
+//line cmd/spx-backend/post_image_beautify.yap:51:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:51:1
+	strengthStr := ctx.Request.FormValue("strength"); strengthStr != "" {
+//line cmd/spx-backend/post_image_beautify.yap:52:1
+		if
+//line cmd/spx-backend/post_image_beautify.yap:52:1
+		strength, err := strconv.ParseFloat(strengthStr, 64); err == nil {
+//line cmd/spx-backend/post_image_beautify.yap:53:1
+			params.Strength = strength
+		}
+	}
+//line cmd/spx-backend/post_image_beautify.yap:58:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:58:1
+	providerStr := ctx.Request.FormValue("provider"); providerStr != "" {
+//line cmd/spx-backend/post_image_beautify.yap:59:1
+		params.Provider = svggen.Provider(providerStr)
+	}
+//line cmd/spx-backend/post_image_beautify.yap:63:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:63:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_image_beautify.yap:64:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_image_beautify.yap:65:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:69:1
+	result, err := this.ctrl.BeautifyImage(ctx.Context(), params, imageData)
+//line cmd/spx-backend/post_image_beautify.yap:70:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:71:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_image_beautify.yap:72:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:75:1
+	this.Json__1(result)
+}
+func (this *post_image_beautify) Classfname() string {
+	return "post_image_beautify"
+}
+func (this *post_image_beautify) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }

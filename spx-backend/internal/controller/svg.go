@@ -76,7 +76,7 @@ type GenerateImageParams struct {
 	GenerateSVGParams
 }
 
-// BeautifyImageParams represents parameters for SVG image beautification.
+// BeautifyImageParams represents parameters for PNG image beautification.
 type BeautifyImageParams struct {
 	Prompt         string          `json:"prompt"`                       // Description of desired changes
 	Strength       float64         `json:"strength"`                     // Strength of transformation (0-1)
@@ -101,9 +101,9 @@ func (p *BeautifyImageParams) Validate() (bool, string) {
 		p.Provider = svggen.ProviderRecraft
 	}
 
-	// Validate provider (only Recraft supports SVG beautification currently)
+	// Validate provider (only Recraft supports PNG beautification currently)
 	if p.Provider != svggen.ProviderRecraft {
-		return false, "only recraft provider supports SVG beautification"
+		return false, "only recraft provider supports PNG beautification"
 	}
 
 	return true, ""
@@ -424,11 +424,11 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 		return nil, fmt.Errorf("image size exceeds 5MB limit")
 	}
 
-	// Validate SVG format
-	if !ctrl.isSVGFormat(imageData) {
-		return nil, fmt.Errorf("only SVG format is supported for image beautification")
+	// Validate PNG format
+	if !ctrl.isPNGFormat(imageData) {
+		return nil, fmt.Errorf("only PNG format is supported for image beautification")
 	}
-	logger.Printf("Validated SVG format")
+	logger.Printf("Validated PNG format")
 
 
 	// Convert to svggen request
@@ -516,6 +516,25 @@ func (ctrl *Controller) isSVGFormat(data []byte) bool {
 	// Check for SVG XML declaration and root element
 	return strings.Contains(dataStr, "<svg") &&
 		   (strings.Contains(dataStr, "xmlns") || strings.Contains(dataStr, "xml"))
+}
+
+// isPNGFormat checks if the uploaded data is a valid PNG file.
+func (ctrl *Controller) isPNGFormat(data []byte) bool {
+	if len(data) < 8 {
+		return false
+	}
+
+	// PNG file signature: 89 50 4E 47 0D 0A 1A 0A
+	pngSignature := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+
+	// Check if the first 8 bytes match PNG signature
+	for i := 0; i < 8; i++ {
+		if data[i] != pngSignature[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // min returns the minimum of two integers.
