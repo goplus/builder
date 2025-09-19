@@ -95,7 +95,7 @@ func NewPromptAnalysisContext(ctx context.Context, originalPrompt string, theme 
 
 	// Step 2: Build all prompt variations using cached analysis (no additional AI calls)
 	analysisCtx.OptimizedPrompt = buildOptimizedPromptFromAnalysis(originalPrompt, theme, analysisCtx.Analysis)
-	analysisCtx.SemanticPrompt = buildSemanticPrompt(originalPrompt, theme)
+	analysisCtx.SemanticPrompt = originalPrompt // Keep original prompt for semantic search to preserve semantic meaning
 	analysisCtx.ThemePrompt = analysisCtx.OptimizedPrompt // Use fully optimized for theme search
 
 	logger.Printf("Prompt optimization completed - Original: %q, Optimized: %q",
@@ -557,7 +557,7 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 		}
 		if err == nil {
 			// Found matching resource in database
-			logger.Printf("  ✅ Result %d found in database: ID=%d, URL=%s", i+1, aiResource.ID, aiResource.URL)
+			logger.Printf("  ✅ Result %d found in database: ID=%d, URL=%s, Similarity=%.2f", i+1, aiResource.ID, aiResource.URL, algResult.Similarity)
 			results = append(results, RecommendedImageResult{
 				ID:         aiResource.ID,
 				ImagePath:  algResult.URL,

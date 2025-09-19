@@ -38,10 +38,10 @@ func TestGetThemePromptEnhancement(t *testing.T) {
 		expected string
 	}{
 		{ThemeNone, ""},
-		{ThemeCartoon, "必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节"},
-		{ThemeRealistic, "必须使用写实风格，严格要求高度细节化，强制逼真效果，必须专业高质量渲染，禁止卡通化或简化元素"},
-		{ThemeMinimal, "必须使用极简风格，严格限制元素数量，强制使用干净线条和几何形状，严格使用黑白或单色调，禁止复杂装饰"},
-		{ThemeFantasy, "必须使用奇幻魔法风格，强制添加神秘魔法元素，严格使用梦幻色彩，必须包含超自然效果，禁止现实主义元素"},
+		{ThemeCartoon, "采用卡通风格，色彩鲜艳丰富，造型可爱有趣，使用简单几何形状和明亮饱和的色彩"},
+		{ThemeRealistic, "采用写实风格，注重细节刻画，追求逼真效果，展现专业高质量的渲染效果"},
+		{ThemeMinimal, "采用极简风格，元素精简，线条干净，使用几何形状，色调简洁统一"},
+		{ThemeFantasy, "采用奇幻魔法风格，融入神秘元素，使用梦幻色彩，营造超自然的氛围"},
 	}
 
 	for _, test := range tests {
@@ -59,9 +59,9 @@ func TestApplyThemeToPrompt(t *testing.T) {
 		expected string
 	}{
 		{"一只猫", ThemeNone, "一只猫"},
-		{"一只猫", ThemeCartoon, "一只猫，必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节"},
-		{"一座房子", ThemeMinimal, "一座房子，必须使用极简风格，严格限制元素数量，强制使用干净线条和几何形状，严格使用黑白或单色调，禁止复杂装饰"},
-		{"", ThemeCartoon, "，必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节"},
+		{"一只猫", ThemeCartoon, "一只猫，采用卡通风格，色彩鲜艳丰富，造型可爱有趣，使用简单几何形状和明亮饱和的色彩"},
+		{"一座房子", ThemeMinimal, "一座房子，采用极简风格，元素精简，线条干净，使用几何形状，色调简洁统一"},
+		{"", ThemeCartoon, "，采用卡通风格，色彩鲜艳丰富，造型可爱有趣，使用简单几何形状和明亮饱和的色彩"},
 	}
 
 	for _, test := range tests {
@@ -144,7 +144,7 @@ func TestGetThemeInfo(t *testing.T) {
 		ID:                  ThemeCartoon,
 		Name:                "卡通风格",
 		Description:         "色彩鲜艳的卡通风格，适合可爱有趣的内容",
-		Prompt:              "必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节",
+		Prompt:              "采用卡通风格，色彩鲜艳丰富，造型可爱有趣，使用简单几何形状和明亮饱和的色彩",
 		RecommendedProvider: "recraft",
 	}
 

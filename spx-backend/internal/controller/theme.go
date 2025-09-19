@@ -37,14 +37,14 @@ type ThemeInfo struct {
 
 // ThemePrompts maps each theme to its corresponding prompt enhancement
 var ThemePrompts = map[ThemeType]string{
-	ThemeCartoon:   "必须使用卡通风格，必须色彩鲜艳丰富，必须可爱有趣，严格使用简单几何形状，强制使用明亮饱和的色彩，禁止写实细节",
-	ThemeRealistic: "必须使用写实风格，严格要求高度细节化，强制逼真效果，必须专业高质量渲染，禁止卡通化或简化元素",
-	ThemeMinimal:   "必须使用极简风格，严格限制元素数量，强制使用干净线条和几何形状，严格使用黑白或单色调，禁止复杂装饰",
-	ThemeFantasy:   "必须使用奇幻魔法风格，强制添加神秘魔法元素，严格使用梦幻色彩，必须包含超自然效果，禁止现实主义元素",
-	ThemeRetro:     "必须使用复古怀旧风格，严格遵循经典老式美学，强制使用怀旧色调和设计元素，禁止现代化元素",
-	ThemeScifi:     "必须使用科幻未来风格，强制添加科技元素，严格使用霓虹和金属色彩，必须包含未来感设计，禁止传统元素",
-	ThemeNature:    "必须使用自然有机风格，严格使用自然元素和植物，强制使用大地色调和绿色系，禁止人工几何元素",
-	ThemeBusiness:  "必须使用商务专业风格，严格保持企业形象，强制使用现代简洁设计，必须专业精致，禁止卡通或娱乐元素",
+	ThemeCartoon:   "采用卡通风格，色彩鲜艳丰富，造型可爱有趣，使用简单几何形状和明亮饱和的色彩",
+	ThemeRealistic: "采用写实风格，注重细节刻画，追求逼真效果，展现专业高质量的渲染效果",
+	ThemeMinimal:   "采用极简风格，元素精简，线条干净，使用几何形状，色调简洁统一",
+	ThemeFantasy:   "采用奇幻魔法风格，融入神秘元素，使用梦幻色彩，营造超自然的氛围",
+	ThemeRetro:     "采用复古怀旧风格，体现经典美学，使用怀旧色调，展现老式设计元素",
+	ThemeScifi:     "采用科幻未来风格，融入科技元素，使用霓虹和金属色彩，体现未来感设计",
+	ThemeNature:    "采用自然有机风格，融入自然元素，使用大地色调和绿色系，展现有机形态",
+	ThemeBusiness:  "采用商务专业风格，保持企业形象，使用现代简洁设计，体现专业精致感",
 }
 
 // ThemeNames maps each theme to its Chinese name
@@ -208,36 +208,36 @@ type PromptAnalysis struct {
 
 // QualityPrompts defines quality enhancement prompts for different complexity levels
 var QualityPrompts = map[string]string{
-	"simple":  "high quality vector art, clean lines, vibrant colors",
-	"medium":  "high quality vector art, detailed illustration, professional design, rich colors",
-	"complex": "high quality vector art, intricate details, professional illustration, sophisticated design, rich color palette",
+	"simple":  "高质量矢量图，线条清晰，色彩丰富",
+	"medium":  "高质量矢量图，细节丰富，专业设计",
+	"complex": "高质量矢量图，精致细节，专业插画，复杂设计",
 }
 
 // StylePrompts defines style enhancement prompts for different types
 var StylePrompts = map[string]string{
-	"animal":    "cute and friendly style, appealing character design",
-	"object":    "modern and functional style, clear visual representation",
-	"scene":     "atmospheric and immersive style, detailed environment",
-	"character": "expressive and memorable style, distinctive personality",
-	"nature":    "organic and natural style, harmonious composition",
-	"building":  "architectural and structured style, clear geometric forms",
-	"food":      "appetizing and colorful style, fresh appearance",
-	"vehicle":   "sleek and dynamic style, modern design",
-	"abstract":  "artistic and creative style, imaginative composition",
-	"default":   "appealing and well-designed style, visual clarity",
+	"animal":    "造型可爱友好，角色设计吸引人",
+	"object":    "现代实用风格，视觉表现清晰",
+	"scene":     "氛围感强，环境细节丰富",
+	"character": "表情生动，个性鲜明",
+	"nature":    "自然有机风格，构图和谐",
+	"building":  "建筑结构清晰，几何形态明确",
+	"food":      "色彩诱人，外观新鲜",
+	"vehicle":   "造型流畅动感，设计现代",
+	"abstract":  "艺术创意风格，构图富有想象力",
+	"default":   "设计精美，视觉效果清晰",
 }
 
 // TechnicalPrompts defines technical requirements for SVG generation
 var TechnicalPrompts = map[ThemeType]string{
-	ThemeCartoon:   "SVG format, simple geometric shapes, clearly separated elements, bright solid colors, easy to edit and modify, game-ready assets",
-	ThemeRealistic: "SVG format, clean vector paths, structured layers, editable details, suitable for game assets with clear outlines",
-	ThemeMinimal:   "SVG format, simple geometric forms, minimal paths, solid colors, highly editable structure, perfect for game UI elements",
-	ThemeFantasy:   "SVG format, well-organized magical elements, clear shape boundaries, editable effects, game asset compatible",
-	ThemeRetro:     "SVG format, pixel-art inspired vectors, simple shapes, retro color palette, easy to customize for retro games",
-	ThemeScifi:     "SVG format, clean tech elements, structured geometric forms, editable components, suitable for sci-fi game assets",
-	ThemeNature:    "SVG format, organic but editable shapes, clear element separation, nature-themed game assets with simple forms",
-	ThemeBusiness:  "SVG format, professional clean vectors, editable icons, structured elements, suitable for business simulation games",
-	ThemeNone:      "SVG format, clean vector graphics, well-structured elements, easy to edit and customize, game development optimized",
+	ThemeCartoon:   "SVG矢量格式，几何形状简单，元素分离清晰，适合游戏资源",
+	ThemeRealistic: "SVG矢量格式，路径清晰，层次结构合理，适合游戏资源",
+	ThemeMinimal:   "SVG矢量格式，几何形态简单，路径精简，适合UI元素",
+	ThemeFantasy:   "SVG矢量格式，魔法元素有序，形状边界清晰，适合游戏资源",
+	ThemeRetro:     "SVG矢量格式，像素艺术风格，形状简单，适合复古游戏",
+	ThemeScifi:     "SVG矢量格式，科技元素清晰，几何形态结构化，适合科幻游戏资源",
+	ThemeNature:    "SVG矢量格式，有机形状可编辑，元素分离清晰，适合自然主题游戏",
+	ThemeBusiness:  "SVG矢量格式，专业清洁矢量，图标可编辑，适合商务游戏",
+	ThemeNone:      "SVG矢量格式，图形清晰，结构合理，易于编辑定制",
 }
 
 
@@ -387,47 +387,40 @@ func OptimizePromptWithAnalysis(ctx context.Context, userPrompt string, theme Th
 // buildNaturalPrompt combines different prompt components with natural language flow
 func buildNaturalPrompt(userPrompt, themePrompt, qualityPrompt, stylePrompt, technicalPrompt string) string {
 	var result strings.Builder
-	
+
 	// Start with user's core request
 	result.WriteString(userPrompt)
-	
-	// Add theme requirements naturally
+
+	// Collect all enhancement parts
+	var enhancements []string
+
 	if themePrompt != "" {
-		if containsConnector(result.String()) {
-			result.WriteString(";")
-		} else {
-			result.WriteString(",")
-		}
-		// Add theme prompt directly
-		result.WriteString(themePrompt)
+		enhancements = append(enhancements, themePrompt)
 	}
-	
-	// Add quality and style requirements
-	var additionalRequirements []string
-	
-	if qualityPrompt != "" {
-		additionalRequirements = append(additionalRequirements, qualityPrompt)
-	}
-	
+
 	if stylePrompt != "" {
-		additionalRequirements = append(additionalRequirements, stylePrompt)
+		enhancements = append(enhancements, stylePrompt)
 	}
-	
+
+	if qualityPrompt != "" {
+		enhancements = append(enhancements, qualityPrompt)
+	}
+
 	if technicalPrompt != "" {
-		additionalRequirements = append(additionalRequirements, technicalPrompt)
+		enhancements = append(enhancements, technicalPrompt)
 	}
-	
-	// Combine additional requirements naturally
-	if len(additionalRequirements) > 0 {
-		result.WriteString("; Requirements: ")
-		for i, req := range additionalRequirements {
+
+	// Add enhancements naturally
+	if len(enhancements) > 0 {
+		result.WriteString("，")
+		for i, enhancement := range enhancements {
 			if i > 0 {
-				result.WriteString(" and ")
+				result.WriteString("，")
 			}
-			result.WriteString(req)
+			result.WriteString(enhancement)
 		}
 	}
-	
+
 	return result.String()
 }
 

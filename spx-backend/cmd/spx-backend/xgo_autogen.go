@@ -297,36 +297,36 @@ func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:84:1
 	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware())
 //line cmd/spx-backend/main.yap:90:1
-	server := &http.Server{Addr: addr, Handler: h}
-//line cmd/spx-backend/main.yap:92:1
-	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-//line cmd/spx-backend/main.yap:93:1
-	defer stop()
-//line cmd/spx-backend/main.yap:94:1
-	var serverErr error
-//line cmd/spx-backend/main.yap:95:1
-	go func() {
-//line cmd/spx-backend/main.yap:96:1
-		serverErr = server.ListenAndServe()
+	server := &http.Server{Addr: addr, Handler: h, ReadTimeout: cfg.Server.ReadTimeout, WriteTimeout: cfg.Server.WriteTimeout}
 //line cmd/spx-backend/main.yap:97:1
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+//line cmd/spx-backend/main.yap:98:1
+	defer stop()
+//line cmd/spx-backend/main.yap:99:1
+	var serverErr error
+//line cmd/spx-backend/main.yap:100:1
+	go func() {
+//line cmd/spx-backend/main.yap:101:1
+		serverErr = server.ListenAndServe()
+//line cmd/spx-backend/main.yap:102:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:99:1
+//line cmd/spx-backend/main.yap:104:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:100:1
+//line cmd/spx-backend/main.yap:105:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:101:1
+//line cmd/spx-backend/main.yap:106:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:104:1
+//line cmd/spx-backend/main.yap:109:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:105:1
+//line cmd/spx-backend/main.yap:110:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:106:1
+//line cmd/spx-backend/main.yap:111:1
 	if
-//line cmd/spx-backend/main.yap:106:1
+//line cmd/spx-backend/main.yap:111:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:107:1
+//line cmd/spx-backend/main.yap:112:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }
@@ -2164,39 +2164,32 @@ func (this *post_images_recommend) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_images_recommend.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_images_recommend.yap:11:1
-	if
-//line cmd/spx-backend/post_images_recommend.yap:11:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
-//line cmd/spx-backend/post_images_recommend.yap:12:1
-		return
-	}
-//line cmd/spx-backend/post_images_recommend.yap:15:1
+//line cmd/spx-backend/post_images_recommend.yap:13:1
 	params := &controller.ImageRecommendParams{}
-//line cmd/spx-backend/post_images_recommend.yap:16:1
+//line cmd/spx-backend/post_images_recommend.yap:14:1
 	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_images_recommend.yap:15:1
+		return
+	}
 //line cmd/spx-backend/post_images_recommend.yap:17:1
-		return
-	}
-//line cmd/spx-backend/post_images_recommend.yap:19:1
 	if
-//line cmd/spx-backend/post_images_recommend.yap:19:1
+//line cmd/spx-backend/post_images_recommend.yap:17:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_images_recommend.yap:20:1
+//line cmd/spx-backend/post_images_recommend.yap:18:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_images_recommend.yap:21:1
+//line cmd/spx-backend/post_images_recommend.yap:19:1
 		return
 	}
-//line cmd/spx-backend/post_images_recommend.yap:24:1
+//line cmd/spx-backend/post_images_recommend.yap:22:1
 	result, err := this.ctrl.RecommendImages(ctx.Context(), params)
-//line cmd/spx-backend/post_images_recommend.yap:25:1
+//line cmd/spx-backend/post_images_recommend.yap:23:1
 	if err != nil {
-//line cmd/spx-backend/post_images_recommend.yap:26:1
+//line cmd/spx-backend/post_images_recommend.yap:24:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_images_recommend.yap:27:1
+//line cmd/spx-backend/post_images_recommend.yap:25:1
 		return
 	}
-//line cmd/spx-backend/post_images_recommend.yap:30:1
+//line cmd/spx-backend/post_images_recommend.yap:28:1
 	this.Json__1(result)
 }
 func (this *post_images_recommend) Classfname() string {

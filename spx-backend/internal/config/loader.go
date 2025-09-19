@@ -22,7 +22,9 @@ func Load(logger *log.Logger) (*Config, error) {
 
 	config := &Config{
 		Server: ServerConfig{
-			Port: os.Getenv("PORT"),
+			Port:         os.Getenv("PORT"),
+			ReadTimeout:  getEnvAsDuration("SERVER_READ_TIMEOUT", "120"),
+			WriteTimeout: getEnvAsDuration("SERVER_WRITE_TIMEOUT", "120"),
 		},
 		Database: DatabaseConfig{
 			DSN: mustGetEnv(logger, "GOP_SPX_DSN"),
@@ -63,7 +65,7 @@ func Load(logger *log.Logger) (*Config, error) {
 			Endpoint: getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
 			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "30s"),
 		},
-		
+
 		Providers: ProvidersConfig{
 			SVGIO: SVGIOConfig{
 				BaseURL:    getEnvAsString("SVGIO_BASE_URL", "https://api.svg.io"),
