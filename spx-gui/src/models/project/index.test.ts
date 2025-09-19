@@ -3,11 +3,11 @@ import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
 import { Costume } from '../costume'
-import { fromText, type Files } from '../common/file'
+import { fromText, toConfig, type Files } from '../common/file'
 import * as hashHelper from '../common/hash'
 import { Backdrop } from '../backdrop'
 import { Monitor } from '../widget/monitor'
-import { Project } from '.'
+import { Project, projectConfigFilePath, type RawProjectConfig } from '.'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -149,31 +149,37 @@ describe('Project', () => {
     const stage = project.stage
     const viewport = project.viewportSize
 
+    async function reloadProjectConfig() {
+      const exports = project.exportGameFiles()
+      return toConfig(exports[projectConfigFilePath]!) as RawProjectConfig
+    }
+
     // initial map size equals to viewport size, so audio attenuation is disabled
     expect(stage.getMapSize()).toEqual(viewport)
-    expect(stage.audioAttenuation.falloffExponent).toBe(0)
+    let projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(0)
 
     // increase map width, audio attenuation should be enabled
     stage.setMapWidth(viewport.width + 100)
     stage.setMapHeight(viewport.height)
-    project.updateAudioAttenuation()
-    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
 
     // increase map height, audio attenuation should still be enabled
     stage.setMapWidth(viewport.width + 100)
     stage.setMapHeight(viewport.height + 200)
-    project.updateAudioAttenuation()
-    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
 
     // reset map size to equal to viewport size, audio attenuation should be disabled
     stage.setMapWidth(viewport.width)
     stage.setMapHeight(viewport.height)
-    project.updateAudioAttenuation()
-    expect(stage.audioAttenuation.falloffExponent).toBe(0)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(0)
 
     // increase map height, audio attenuation should be enabled
     stage.setMapHeight(viewport.height + 200)
-    project.updateAudioAttenuation()
-    expect(stage.audioAttenuation.falloffExponent).toBe(1)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
   })
 })

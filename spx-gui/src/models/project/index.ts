@@ -23,7 +23,7 @@ import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import {
   defaultMapSize,
-  defaultMaxAudioAttenuationDistance,
+  maxAudioAttenuationViewportScale,
   disabledAudioAttenuationFlag,
   Stage,
   type RawStageConfig
@@ -48,7 +48,7 @@ export type Metadata = Partial<CloudMetadata> & {
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
-const projectConfigFilePath = join('assets', projectConfigFileName)
+export const projectConfigFilePath = join('assets', projectConfigFileName)
 
 const aiPlayerPattern = /\sai\.Player/
 
@@ -64,7 +64,7 @@ type RawCameraConfig = {
 
 type ZorderItem = string | RawWidgetConfig
 
-type RawProjectConfig = RawStageConfig & {
+export type RawProjectConfig = RawStageConfig & {
   zorder?: ZorderItem[]
   run?: RawRunConfig
   camera?: RawCameraConfig
@@ -223,6 +223,12 @@ export class Project extends Disposable {
   }
   setCameraFollowSprite(spriteId: string | null) {
     this.cameraFollowSpriteId = spriteId
+  }
+
+  get isMapLargerThanViewport() {
+    const mapSize = this.stage.getMapSize()
+    const viewport = this.viewportSize
+    return mapSize.width > viewport.width || mapSize.height > viewport.height
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -402,8 +408,11 @@ export class Project extends Disposable {
       if (sprite == null) throw new Error(`sprite ${id} not found`)
       return sprite.name
     })
+    const { width, height } = this.viewportSize
     const config: RawProjectConfig = {
       ...restStageConfig,
+      audioAttenuation: this.isMapLargerThanViewport ? 1 : disabledAudioAttenuationFlag, // Enable audio attenuation only when the map is larger than viewport
+      audioMaxDistance: Math.max(width, height) * maxAudioAttenuationViewportScale, // Always export audioMaxDistance config for backward-compatibility
       run: {
         width: this.viewportSize.width,
         height: this.viewportSize.height
@@ -604,18 +613,6 @@ export class Project extends Disposable {
     }
 
     return false
-  }
-
-  // Ensure audio attenuation is set correctly according to map & viewport size
-  updateAudioAttenuation() {
-    const viewport = this.viewportSize
-    const mapSize = this.stage.getMapSize()
-    // Enable audio attenuation only when the map is larger than viewport
-    const enabled = mapSize.width > viewport.width || mapSize.height > viewport.height
-    this.stage.setAudioAttenuation({
-      falloffExponent: enabled ? 1 : disabledAudioAttenuationFlag,
-      maxAttenuationDistance: defaultMaxAudioAttenuationDistance
-    })
   }
 }
 

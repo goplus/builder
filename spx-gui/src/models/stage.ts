@@ -18,7 +18,6 @@ export type StageInits = {
   mapHeight?: number
   mapMode?: MapMode
   physics?: Physics
-  audioAttenuation?: AudioAttenuation
   /** Additional config not recognized by builder */
   extraConfig?: object
 }
@@ -70,17 +69,12 @@ export type Physics = {
   airDrag?: number
 }
 
-export type AudioAttenuation = {
-  maxAttenuationDistance: number
-  falloffExponent: number
-}
-
 export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.gmx']
 const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
 export const defaultMapSize: MapSize = { width: 480, height: 360 }
-export const defaultMaxAudioAttenuationDistance = 700
+export const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
 export const disabledAudioAttenuationFlag = 0
 
 export class Stage extends Disposable {
@@ -230,20 +224,6 @@ export class Stage extends Disposable {
     this.physics = physics
   }
 
-  audioAttenuation: AudioAttenuation = {
-    maxAttenuationDistance: defaultMaxAudioAttenuationDistance,
-    falloffExponent: disabledAudioAttenuationFlag
-  }
-  setAudioAttenuation(attenuation: Partial<AudioAttenuation>) {
-    const { maxAttenuationDistance, falloffExponent } = attenuation
-    if (maxAttenuationDistance != null) {
-      this.audioAttenuation.maxAttenuationDistance = maxAttenuationDistance
-    }
-    if (falloffExponent != null) {
-      this.audioAttenuation.falloffExponent = falloffExponent
-    }
-  }
-
   extraConfig: object
   setExtraConfig(extraConfig: object) {
     this.extraConfig = extraConfig
@@ -265,7 +245,6 @@ export class Stage extends Disposable {
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
     this.physics = inits?.physics ?? { enabled: false }
     this.extraConfig = inits?.extraConfig ?? {}
-    this.setAudioAttenuation(inits?.audioAttenuation ?? {})
     return reactive(this) as this
   }
 
@@ -283,8 +262,6 @@ export class Stage extends Disposable {
       globalGravity,
       globalFriction,
       globalAirDrag,
-      audioMaxDistance,
-      audioAttenuation,
       ...extraConfig
     }: RawStageConfig,
     files: Files
@@ -307,10 +284,6 @@ export class Stage extends Disposable {
     for (const widget of widgets) {
       stage.addWidget(widget)
     }
-    stage.setAudioAttenuation({
-      maxAttenuationDistance: audioMaxDistance,
-      falloffExponent: audioAttenuation
-    })
     stage.setPhysics({
       enabled: physicsEnabled === true,
       gravity: globalGravity,
@@ -344,8 +317,6 @@ export class Stage extends Disposable {
       globalGravity: this.physics.gravity,
       globalFriction: this.physics.friction,
       globalAirDrag: this.physics.airDrag,
-      audioMaxDistance: this.audioAttenuation.maxAttenuationDistance,
-      audioAttenuation: this.audioAttenuation.falloffExponent,
       ...this.extraConfig
     }
     return [config, files]

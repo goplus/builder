@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { debounce, throttle } from 'lodash'
+import { throttle } from 'lodash'
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
@@ -214,12 +214,6 @@ watch(
       setMapPosWithTransition(mapPosForSprite, 300)
     }
   },
-  { immediate: true }
-)
-
-watch(
-  mapSize,
-  debounce(() => editorCtx.project.updateAudioAttenuation(), 300),
   { immediate: true }
 )
 
