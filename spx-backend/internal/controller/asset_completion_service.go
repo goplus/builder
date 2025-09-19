@@ -33,12 +33,12 @@ func newAssetCompletionService(db *gorm.DB, copilot *copilot.Copilot) *AssetComp
 	service := &AssetCompletionService{db: db}
 
 	// Determine completion mode from environment
-	mode := os.Getenv("ASSET_COMPLETION_MODE")
+	mode := os.Getenv(EnvAssetCompletionMode)
 	switch mode {
 	case "llm":
 		service.mode = CompletionModeLLM
 		if copilot != nil {
-			service.llm = NewAssetCompletionLLM(copilot, db)
+			service.llm = newAssetCompletionLLMWithConfig(copilot, db)
 		} else {
 			// Fallback to trie if copilot is not available
 			service.mode = CompletionModeTrie
@@ -50,8 +50,8 @@ func newAssetCompletionService(db *gorm.DB, copilot *copilot.Copilot) *AssetComp
 	}
 
 	// Initialize trie-based completion if enabled or as fallback
-	if service.mode == CompletionModeTrie || os.Getenv("ENABLE_ASSET_COMPLETION_TRIE") == "true" {
-		service.trie = NewAssetCompletionTrie(db)
+	if service.mode == CompletionModeTrie || os.Getenv(EnvEnableTrieCompletion) == "true" {
+		service.trie = newAssetCompletionTrieWithConfig(db)
 		if service.mode == CompletionModeDatabase {
 			service.mode = CompletionModeTrie
 		}

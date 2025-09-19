@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +25,14 @@ const (
 	MinSuggestions = 3
 )
 
+// Configuration environment variable names
+const (
+	EnvAssetCompletionMode     = "ASSET_COMPLETION_MODE"
+	EnvEnableTrieCompletion    = "ENABLE_ASSET_COMPLETION_TRIE"
+	EnvLLMCacheExpiry         = "LLM_CACHE_EXPIRY_MINUTES"
+	EnvTrieCacheExpiry        = "TRIE_CACHE_EXPIRY_MINUTES"
+)
+
 // cacheEntry represents a cached completion result with its timestamp
 type cacheEntry struct {
 	results  []string
@@ -40,11 +50,25 @@ type AssetCompletionLLM struct {
 
 // NewAssetCompletionLLM creates a new LLM-based completion service
 func NewAssetCompletionLLM(copilot *copilot.Copilot, db *gorm.DB) *AssetCompletionLLM {
+	return newAssetCompletionLLMWithConfig(copilot, db)
+}
+
+// newAssetCompletionLLMWithConfig creates a new LLM-based completion service with environment configuration
+func newAssetCompletionLLMWithConfig(copilot *copilot.Copilot, db *gorm.DB) *AssetCompletionLLM {
+	cacheExpiry := DefaultCacheExpiry
+
+	// Check for custom cache expiry from environment
+	if envExpiry := os.Getenv(EnvLLMCacheExpiry); envExpiry != "" {
+		if minutes, err := strconv.Atoi(envExpiry); err == nil && minutes > 0 {
+			cacheExpiry = time.Duration(minutes) * time.Minute
+		}
+	}
+
 	return &AssetCompletionLLM{
 		copilot:     copilot,
 		db:          db,
 		cache:       make(map[string]cacheEntry),
-		cacheExpiry: DefaultCacheExpiry,
+		cacheExpiry: cacheExpiry,
 	}
 }
 
