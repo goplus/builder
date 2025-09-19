@@ -20,6 +20,15 @@
         value="animations"
         >{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab
       >
+      <UITab
+        v-if="canConfigurePhysics"
+        v-radar="{
+          name: 'Physics tab',
+          desc: 'Click to switch to physics settings, which includes collider, pivot editing, etc.'
+        }"
+        value="physics"
+        >{{ $t({ en: 'Physics', zh: '物理' }) }}</UITab
+      >
     </UITabs>
     <template #extra>
       <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
@@ -38,10 +47,11 @@
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
   <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
+  <SpritePhysicsEditor v-if="state.selected.type === 'physics'" :sprite="sprite" />
 </template>
 
 <script lang="ts">
-export type SelectedType = 'code' | 'costumes' | 'animations'
+export type SelectedType = 'code' | 'costumes' | 'animations' | 'physics'
 
 export type Selected =
   | {
@@ -54,6 +64,9 @@ export type Selected =
   | {
       type: 'animations'
       animation: Animation | null
+    }
+  | {
+      type: 'physics'
     }
 
 export class SpriteEditorState extends Disposable {
@@ -77,6 +90,8 @@ export class SpriteEditorState extends Disposable {
         return { type: 'costumes', costume: this.costumesState.selected }
       case 'animations':
         return { type: 'animations', animation: this.animationsState.selected }
+      case 'physics':
+        return { type: 'physics' }
       default:
         throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
     }
@@ -123,6 +138,9 @@ export class SpriteEditorState extends Disposable {
         this.select('animations')
         this.animationsState.selectByRoute(extra)
         break
+      case 'physics':
+        this.select('physics')
+        break
       default:
         throw new Error(`Unknown type: ${type}`)
     }
@@ -136,27 +154,37 @@ export class SpriteEditorState extends Disposable {
         return ['costumes', ...this.costumesState.getRoute()]
       case 'animations':
         return ['animations', ...this.animationsState.getRoute()]
+      case 'physics':
+        return ['physics']
     }
   }
 }
 </script>
 
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Costume } from '@/models/costume'
 import type { Animation } from '@/models/animation'
-import type { Sprite } from '@/models/sprite'
+import { PhysicsMode, type Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 import CodeEditorUI from '../code-editor/ui/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
+import SpritePhysicsEditor from './SpritePhysicsEditor.vue'
 
-defineProps<{
+const props = defineProps<{
   sprite: Sprite
   state: SpriteEditorState
 }>()
+
+const editorCtx = useEditorCtx()
+
+const canConfigurePhysics = computed(() => {
+  return editorCtx.project.stage.physics.enabled && props.sprite.physicsMode !== PhysicsMode.NoPhysics
+})
 </script>

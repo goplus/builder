@@ -22,9 +22,9 @@ import { nanoid } from 'nanoid'
 import type { Sound } from './sound'
 
 export enum RotationStyle {
-  none = 'none',
-  normal = 'normal',
-  leftRight = 'left-right'
+  None = 'none',
+  Normal = 'normal',
+  LeftRight = 'left-right'
 }
 
 export enum PhysicsMode {
@@ -35,12 +35,12 @@ export enum PhysicsMode {
 }
 
 export enum State {
-  default = 'default',
-  die = 'die',
-  step = 'step',
+  Default = 'default',
+  Die = 'die',
+  Step = 'step',
   // not supported by builder:
-  turn = 'turn',
-  glide = 'glide'
+  Turn = 'turn',
+  Glide = 'glide'
 }
 
 export type Pivot = {
@@ -48,19 +48,49 @@ export type Pivot = {
   y: number
 }
 
+/** The offset for collider pivot point from geometric center */
+export type ColliderPivot = {
+  /** The x offset. Positive values move the collider right, negative values move it left. */
+  x: number
+  /** The y offset. Positive values move the collider down, negative values move it up. */
+  y: number
+}
+
+export enum ColliderShapeType {
+  None = 'none',
+  Auto = 'auto',
+  Circle = 'circle',
+  Rect = 'rect',
+  Capsule = 'capsule',
+  Polygon = 'polygon'
+}
+
+/**
+ * ColliderShapeParams specify numeric parameters for each ColliderShapeType:
+ * - Rect: [width, height]
+ * - Circle: [radius]
+ * - Capsule: [radius, height]
+ * - Polygon: [x1, y1, x2, y2, ...] — vertex coordinates in (x, y) pairs
+ * - None / Auto: []
+ */
+export type ColliderShapeParams = number[]
+
 export type SpriteInits = {
   id?: string
   heading?: number
   x?: number
   y?: number
   size?: number
-  rotationStyle?: string
+  rotationStyle?: RotationStyle
   costumeIndex?: number
   visible?: boolean
   physicsMode?: PhysicsMode
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
   pivot?: Pivot
+  colliderPivot?: ColliderPivot
+  colliderShapeType?: ColliderShapeType
+  colliderShapeParams?: ColliderShapeParams
   assetMetadata?: AssetMetadata
   /** Additional config not recognized by builder */
   extraConfig?: object
@@ -224,7 +254,7 @@ export class Sprite extends Disposable {
     })
   }
   getDefaultAnimation() {
-    return this.animations.find((a) => a.id === this.animationBindings[State.default]) ?? null
+    return this.animations.find((a) => a.id === this.animationBindings[State.Default]) ?? null
   }
 
   heading: number
@@ -255,6 +285,11 @@ export class Sprite extends Disposable {
   physicsMode: PhysicsMode
   setPhysicsMode(physicsMode: PhysicsMode) {
     this.physicsMode = physicsMode
+    if (physicsMode !== PhysicsMode.NoPhysics && this.colliderShapeType === ColliderShapeType.None) {
+      this.setColliderShapeAuto()
+    } else if (physicsMode === PhysicsMode.NoPhysics && this.colliderShapeType !== ColliderShapeType.None) {
+      this.setColliderShapeNone()
+    }
   }
 
   visible: boolean
@@ -270,6 +305,36 @@ export class Sprite extends Disposable {
   pivot: Pivot
   setPivot(pivot: Pivot) {
     this.pivot = pivot
+  }
+
+  colliderPivot: ColliderPivot
+  setColliderPivot(colliderPivot: ColliderPivot) {
+    this.colliderPivot = colliderPivot
+  }
+
+  colliderShapeType: ColliderShapeType
+  colliderShapeParams: ColliderShapeParams
+  private setColliderShape(type: ColliderShapeType, params: ColliderShapeParams) {
+    this.colliderShapeType = type
+    this.colliderShapeParams = params
+  }
+  setColliderShapeNone() {
+    this.setColliderShape(ColliderShapeType.None, [])
+  }
+  setColliderShapeAuto() {
+    this.setColliderShape(ColliderShapeType.Auto, [])
+  }
+  setColliderShapeCircle(radius: number) {
+    this.setColliderShape(ColliderShapeType.Circle, [radius])
+  }
+  setColliderShapeRect(width: number, height: number) {
+    this.setColliderShape(ColliderShapeType.Rect, [width, height])
+  }
+  setColliderShapeCapsule(radius: number, height: number) {
+    this.setColliderShape(ColliderShapeType.Capsule, [radius, height])
+  }
+  setColliderShapePolygon(points: number[]) {
+    this.setColliderShape(ColliderShapeType.Polygon, points)
   }
 
   assetMetadata: AssetMetadata | null
@@ -292,22 +357,25 @@ export class Sprite extends Disposable {
       this.animations.splice(0).forEach((a) => a.dispose())
     })
     this.animationBindings = inits?.animationBindings ?? {
-      [State.default]: undefined,
-      [State.die]: undefined,
-      [State.step]: undefined,
-      [State.turn]: undefined,
-      [State.glide]: undefined
+      [State.Default]: undefined,
+      [State.Die]: undefined,
+      [State.Step]: undefined,
+      [State.Turn]: undefined,
+      [State.Glide]: undefined
     }
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
-    this.rotationStyle = getRotationStyle(inits?.rotationStyle)
+    this.rotationStyle = inits?.rotationStyle ?? RotationStyle.Normal
     this.physicsMode = inits?.physicsMode ?? PhysicsMode.NoPhysics
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
     this.pivot = inits?.pivot ?? { x: 0, y: 0 }
+    this.colliderPivot = inits?.colliderPivot ?? { x: 0, y: 0 }
+    this.colliderShapeType = inits?.colliderShapeType ?? ColliderShapeType.None
+    this.colliderShapeParams = inits?.colliderShapeParams ?? []
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
     this.extraConfig = inits?.extraConfig ?? {}
@@ -436,6 +504,9 @@ export class Sprite extends Disposable {
       costumeIndex,
       isDraggable,
       pivot,
+      colliderPivot,
+      colliderShapeType,
+      colliderShapeParams,
       ...extraConfig
     } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
@@ -479,14 +550,17 @@ export class Sprite extends Disposable {
       physicsMode,
       isDraggable,
       pivot,
+      colliderPivot,
+      colliderShapeType,
+      colliderShapeParams,
       id: includeId ? id : undefined,
       costumeIndex: costumeIndex ?? currentCostumeIndex,
       animationBindings: {
-        [State.default]: animationNameToId(defaultAnimation),
-        [State.die]: animationNameToId(animBindings?.[State.die]),
-        [State.step]: animationNameToId(animBindings?.[State.step]),
-        [State.turn]: animationNameToId(animBindings?.[State.turn]),
-        [State.glide]: animationNameToId(animBindings?.[State.glide])
+        [State.Default]: animationNameToId(defaultAnimation),
+        [State.Die]: animationNameToId(animBindings?.[State.Die]),
+        [State.Step]: animationNameToId(animBindings?.[State.Step]),
+        [State.Turn]: animationNameToId(animBindings?.[State.Turn]),
+        [State.Glide]: animationNameToId(animBindings?.[State.Glide])
       },
       assetMetadata: includeMetadata ? metadata : undefined,
       extraConfig
@@ -534,16 +608,19 @@ export class Sprite extends Disposable {
       visible: this.visible,
       heading: this.heading,
       rotationStyle: this.rotationStyle,
+      physicsMode: this.physicsMode,
       isDraggable: this.isDraggable,
       pivot: this.pivot,
-      physicsMode: this.physicsMode,
+      colliderPivot: this.colliderPivot,
+      colliderShapeType: this.colliderShapeType,
+      colliderShapeParams: this.colliderShapeParams,
       costumeIndex: this.costumeIndex,
       animationBindings: {
-        [State.default]: animationNameToId(animBindings[State.default]),
-        [State.die]: animationNameToId(animBindings[State.die]),
-        [State.step]: animationNameToId(animBindings[State.step]),
-        [State.turn]: animationNameToId(animBindings[State.turn]),
-        [State.glide]: animationNameToId(animBindings[State.glide])
+        [State.Default]: animationNameToId(animBindings[State.Default]),
+        [State.Die]: animationNameToId(animBindings[State.Die]),
+        [State.Step]: animationNameToId(animBindings[State.Step]),
+        [State.Turn]: animationNameToId(animBindings[State.Turn]),
+        [State.Glide]: animationNameToId(animBindings[State.Glide])
       },
       assetMetadata: this.assetMetadata ?? undefined,
       extraConfig: { ...this.extraConfig }
@@ -579,7 +656,7 @@ export class Sprite extends Disposable {
       costumeConfigs.push(...animationCostumesConfigs)
       Object.assign(files, animationFiles)
     }
-    const { [State.default]: defaultAnimationId, ...animBindings } = this.animationBindings
+    const { [State.Default]: defaultAnimationId, ...animBindings } = this.animationBindings
     const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
     if (defaultAnimationId && defaultAnimationName == null)
       console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
@@ -605,6 +682,9 @@ export class Sprite extends Disposable {
       visible: this.visible,
       isDraggable: this.isDraggable,
       pivot: this.pivot,
+      colliderPivot: this.colliderPivot,
+      colliderShapeType: this.colliderShapeType,
+      colliderShapeParams: this.colliderShapeParams,
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
       defaultAnimation: defaultAnimationName,
@@ -620,12 +700,6 @@ export class Sprite extends Disposable {
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
-}
-
-function getRotationStyle(rotationStyle?: string) {
-  if (rotationStyle === 'left-right') return RotationStyle.leftRight
-  if (rotationStyle === 'none') return RotationStyle.none
-  return RotationStyle.normal
 }
 
 export enum LeftRight {

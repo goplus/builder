@@ -15,6 +15,7 @@ import type { Size } from '.'
 export type Metadata = {
   universalUrl?: string
   hash?: string
+  imgSize?: Size
 }
 
 export type Options = {
@@ -153,12 +154,17 @@ async function getBitmapImageSize(bitmapImgFile: File) {
   })
 }
 
-export async function getImageSize(file: File) {
+export async function getImageSize(file: File): Promise<Size> {
+  if (file.meta.imgSize != null) return file.meta.imgSize
+  let size: Size
   if (file.type === 'image/svg+xml') {
     const svgText = await toText(file)
-    return getSVGSize(svgText)
+    size = await getSVGSize(svgText)
+  } else {
+    size = await getBitmapImageSize(file)
   }
-  return getBitmapImageSize(file)
+  file.meta.imgSize = size
+  return size
 }
 
 export function listDirs(

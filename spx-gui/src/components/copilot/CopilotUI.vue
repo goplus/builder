@@ -26,7 +26,7 @@ const triggerSnapThreshold = 20
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type WatchSource } from 'vue'
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
-import { assertNever, localStorageRef, timeout, until } from '@/utils/utils'
+import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
@@ -67,34 +67,31 @@ providePopupContainer(panelRef)
 
 // resize the panel when the window size changes
 const documentElementRef = ref(document.documentElement)
-const { width: windowWidth, height: windowHeight } = useContentSize(documentElementRef)
-const { width: triggerWidth, height: triggerHeight } = useContentSize(triggerRef)
-const { width: panelWidth, height: panelHeight } = useContentSize(panelRef as WatchSource<HTMLElement | null>)
+const windowSize = useContentSize(documentElementRef)
+const triggerSize = useContentSize(triggerRef)
+const panelSize = useContentSize(panelRef as WatchSource<HTMLElement | null>)
 
 function getCurrentSizes() {
   return {
-    windowW: windowWidth.value ?? 0,
-    windowH: windowHeight.value ?? 0,
-    triggerW: triggerWidth.value ?? 0,
-    triggerH: triggerHeight.value ?? 0,
-    panelW: panelWidth.value ?? 0,
-    panelH: panelHeight.value ?? 0
+    windowW: windowSize.value?.width ?? 0,
+    windowH: windowSize.value?.height ?? 0,
+    triggerW: triggerSize.value?.width ?? 0,
+    triggerH: triggerSize.value?.height ?? 0,
+    panelW: panelSize.value?.width ?? 0,
+    panelH: panelSize.value?.height ?? 0
   }
 }
 
 // resize the panel to fit the window size
-watch(() => [windowWidth.value, windowHeight.value], updatePanelClampedPosition)
-watch(
-  () => [panelWidth.value, panelHeight.value],
-  () => {
-    if (panelStatePosition.value.state === State.Move) return // close panel
-    updatePanelClampedPosition()
-  }
-)
+watch(windowSize, updatePanelClampedPosition)
+watch(panelSize, () => {
+  if (panelStatePosition.value.state === State.Move) return // close panel
+  updatePanelClampedPosition()
+})
 watch(
   () => copilot.active,
   async (active) => {
-    await until(() => panelWidth.value != null)
+    await untilNotNull(panelSize)
 
     if (active) {
       openPanel()

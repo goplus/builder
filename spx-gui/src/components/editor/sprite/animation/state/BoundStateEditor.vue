@@ -12,32 +12,32 @@
       <UIBlockItem
         v-radar="{ name: 'State default', desc: 'Click to select state \u0022default\u0022' }"
         class="state-item"
-        :active="isBound(State.default)"
-        @click="handleStateItemClick(State.default)"
+        :active="isBound(State.Default)"
+        @click="handleStateItemClick(State.Default)"
       >
         <div class="icon" v-html="iconStateDefault"></div>
         <p class="name">{{ $t({ en: 'Default', zh: '默认' }) }}</p>
-        <UICornerIcon v-show="isBound(State.default)" type="check" />
+        <UICornerIcon v-show="isBound(State.Default)" type="check" />
       </UIBlockItem>
       <UIBlockItem
         v-radar="{ name: 'State step', desc: 'Click to select state \u0022step\u0022' }"
         class="state-item"
-        :active="isBound(State.step)"
-        @click="handleStateItemClick(State.step)"
+        :active="isBound(State.Step)"
+        @click="handleStateItemClick(State.Step)"
       >
         <div class="icon" v-html="iconStateStep"></div>
         <p class="name">{{ $t({ en: 'Step', zh: '行走' }) }}</p>
-        <UICornerIcon v-show="isBound(State.step)" type="check" />
+        <UICornerIcon v-show="isBound(State.Step)" type="check" />
       </UIBlockItem>
       <UIBlockItem
         v-radar="{ name: 'State die', desc: 'Click to select state \u0022die\u0022' }"
         class="state-item"
-        :active="isBound(State.die)"
-        @click="handleStateItemClick(State.die)"
+        :active="isBound(State.Die)"
+        @click="handleStateItemClick(State.Die)"
       >
         <div class="icon" v-html="iconStateDie"></div>
         <p class="name">{{ $t({ en: 'Die', zh: '死亡' }) }}</p>
-        <UICornerIcon v-show="isBound(State.die)" type="check" />
+        <UICornerIcon v-show="isBound(State.Die)" type="check" />
       </UIBlockItem>
     </ul>
   </UIDropdownModal>

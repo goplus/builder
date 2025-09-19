@@ -147,7 +147,7 @@ export default defineComponent<Props, Events>(
     // We need to update the position of popover when its size changes.
     const [popoverWrapperClass, popoverWrapperRef] = usePopoverWrapper(visibleComputed)
     const popoverWrapperSize = useContentSize(popoverWrapperRef)
-    watch([popoverWrapperSize.width, popoverWrapperSize.height], () => {
+    watch(popoverWrapperSize, () => {
       nPopoverRef.value?.syncPosition()
     })
 

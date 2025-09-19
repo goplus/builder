@@ -30,10 +30,10 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const [imgRef] = useFileImg(() => props.file)
 
 const wrapperSize = useContentSize(wrapperRef)
-const maxWidthRef = computed(() => wrapperSize.width.value)
+const maxWidthRef = computed(() => wrapperSize.value?.width)
 const maxHeightRef = computed(() => {
   if (props.multiple) return 230 // px
-  return wrapperSize.height.value
+  return wrapperSize.value?.height
 })
 
 effect(() => {

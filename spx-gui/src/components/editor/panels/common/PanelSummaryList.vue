@@ -13,9 +13,9 @@ import { useContentSize } from '@/utils/dom'
 import { size as itemSize } from './PanelSummaryItem.vue'
 
 export function useSummaryList<T>(list: Ref<T[]>, listWrapperSource: WatchSource<HTMLElement | null>) {
-  const { height } = useContentSize(listWrapperSource)
+  const size = useContentSize(listWrapperSource)
   return computed(() => {
-    const maxVisibleItemNum = Math.floor((height.value ?? 0) / itemSize.height)
+    const maxVisibleItemNum = Math.floor((size.value?.height ?? 0) / itemSize.height)
     if (list.value.length <= maxVisibleItemNum) {
       return {
         list: list.value,

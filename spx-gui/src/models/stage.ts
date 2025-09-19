@@ -45,6 +45,8 @@ export type RawStageConfig = RawPhysicsConfig & {
   backdropIndex?: number
   widgets?: RawWidgetConfig[]
   map?: RawMapConfig
+  /** whether to auto set collision layer, default true */
+  autoSetCollisionLayer?: boolean
   // For compatibility
   scenes?: RawBackdropConfig[]
   sceneIndex?: number
@@ -268,6 +270,7 @@ export class Stage extends Disposable {
       globalFriction,
       globalAirDrag,
       layerSortMode,
+      autoSetCollisionLayer,
       ...extraConfig
     }: RawStageConfig,
     files: Files
@@ -325,6 +328,7 @@ export class Stage extends Disposable {
       globalFriction: this.physics.friction,
       globalAirDrag: this.physics.airDrag,
       layerSortMode: this.layerSortMode,
+      autoSetCollisionLayer: !this.physics.enabled,
       ...this.extraConfig
     }
     return [config, files]

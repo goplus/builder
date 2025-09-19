@@ -128,9 +128,9 @@ const updateMousePos = throttle(() => {
 
 /** containerSize / viewportSize */
 const stageScale = computed(() => {
-  if (containerSize.width.value == null || containerSize.height.value == null) return null
-  const widthScale = containerSize.width.value / viewportSize.value.width
-  const heightScale = containerSize.height.value / viewportSize.value.height
+  if (containerSize.value == null) return null
+  const widthScale = containerSize.value.width / viewportSize.value.width
+  const heightScale = containerSize.value.height / viewportSize.value.height
   return Math.min(widthScale, heightScale)
 })
 
@@ -227,8 +227,6 @@ watch(
 const mapConfig = computed(() => {
   return {
     ...mapPos.value,
-    width: mapSize.value.width,
-    height: mapSize.value.height,
     draggable: true,
     imageSmoothingEnabled: false
   } satisfies LayerConfig
