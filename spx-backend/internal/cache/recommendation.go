@@ -89,6 +89,7 @@ func (s *RecommendationCacheService) SetRecommendation(ctx context.Context, quer
 	if err != nil {
 		// Redis failed, fallback to memory cache
 		logger.Printf("Redis failed for queryID %s, using memory cache: %v", queryID, err)
+		// Don't return the Redis error, try memory cache and return its result
 		return s.memoryCache.SetRecommendation(ctx, queryID, query, recommendedPics)
 	}
 
@@ -227,20 +228,27 @@ func (m *MemoryCache) SetRecommendation(ctx context.Context, queryID, query stri
 // GetRecommendation retrieves recommendation from memory cache
 func (m *MemoryCache) GetRecommendation(ctx context.Context, queryID string) (*RecommendationCache, error) {
 	m.mutex.RLock()
-	defer m.mutex.RUnlock()
 
 	cached, exists := m.recommendations[queryID]
 	if !exists {
+		m.mutex.RUnlock()
 		return nil, fmt.Errorf("recommendation not found")
 	}
 
-	// Check if cache has expired
+	// Check if cache has expired (this should be done under read lock for safety)
 	if time.Since(cached.Timestamp) > m.ttl {
-		// Clean up expired entry
-		delete(m.recommendations, queryID)
+		// Upgrade to write lock for cleanup
+		m.mutex.RUnlock()
+		m.mutex.Lock()
+		// Double-check after acquiring write lock (another goroutine might have cleaned up)
+		if cached, exists := m.recommendations[queryID]; exists && time.Since(cached.Timestamp) > m.ttl {
+			delete(m.recommendations, queryID)
+		}
+		m.mutex.Unlock()
 		return nil, fmt.Errorf("recommendation not found")
 	}
 
+	m.mutex.RUnlock()
 	return cached, nil
 }
 

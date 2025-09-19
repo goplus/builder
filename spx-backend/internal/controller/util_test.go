@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/kodo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -83,8 +85,11 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	t.Run("URLJoinPathError", func(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		closeDB()
-		// Can't modify baseUrl directly with new kodo client, skip this test
-		t.Skip("Cannot modify baseUrl with new kodo client structure")
+		// The test for URLJoinPathError can be restored by creating a kodo client with invalid config.
+		ctrl.kodo = kodo.NewClient(config.KodoConfig{
+			Bucket:  "builder", // Match the bucket in the test object
+			BaseURL: "://invalid",
+		})
 
 		_, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"kodo://builder/foo/bar"},

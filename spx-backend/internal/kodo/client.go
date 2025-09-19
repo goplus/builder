@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/config"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
@@ -43,13 +44,22 @@ type UploadFileResult struct {
 
 // UploadFile uploads file content to Kodo storage.
 func (k *Client) UploadFile(ctx context.Context, data []byte, filename string) (*UploadFileResult, error) {
+	// Validate inputs
+	if len(data) == 0 {
+		return nil, fmt.Errorf("data cannot be empty")
+	}
+	if strings.TrimSpace(filename) == "" {
+		return nil, fmt.Errorf("filename cannot be empty")
+	}
+
 	// Generate file key with prefix
 	hash := fmt.Sprintf("%x", md5.Sum(data))
 	key := fmt.Sprintf("ai-generated/%s-%s", hash[:8], filename)
 
 	// Create upload policy
 	putPolicy := qiniuStorage.PutPolicy{
-		Scope: k.bucket,
+		Scope:      k.bucket,
+		ReturnBody: "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"fsize\":$(fsize)}",
 	}
 
 	// Generate upload token
@@ -85,7 +95,12 @@ func (k *Client) UploadFile(ctx context.Context, data []byte, filename string) (
 	formUploader := qiniuStorage.NewFormUploader(&cfg)
 
 	// Upload file
-	ret := qiniuStorage.PutRet{}
+	// Use a custom struct to capture fsize from ReturnBody
+	ret := struct {
+		Key   string `json:"key"`
+		Hash  string `json:"hash"`
+		Fsize int64  `json:"fsize"`
+	}{}
 	err := formUploader.Put(ctx, &ret, upToken, key, bytes.NewReader(data), int64(len(data)), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload file to Kodo: %w", err)
@@ -97,7 +112,7 @@ func (k *Client) UploadFile(ctx context.Context, data []byte, filename string) (
 	return &UploadFileResult{
 		Key:     ret.Key,
 		Hash:    ret.Hash,
-		Size:    int64(len(data)),
+		Size:    ret.Fsize,
 		KodoURL: kodoURL,
 	}, nil
 }
