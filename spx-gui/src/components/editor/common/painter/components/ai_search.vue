@@ -505,8 +505,9 @@ defineExpose({
 .image-item img {
   width: 100%;
   height: 120px;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background-color: transparent;
 }
 
 .image-overlay {
