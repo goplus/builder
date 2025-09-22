@@ -56,13 +56,12 @@ class PairwiseTrainingSample:
     feedback_id: int  # 原始反馈记录ID
     
     def get_feature_vector(self) -> List[float]:
-        """提取神经网络特征向量用于训练
+        """提取简化的神经网络特征向量用于训练
         
         特征包括：
-        - 原始向量特征: query_vec, better_vec, worse_vec
-        - 交互特征: element-wise乘积和差值
-        - 对比特征: better vs worse直接对比
-        - 统计特征: 余弦相似度和欧氏距离
+        - 原始向量特征: query_vec, better_vec, worse_vec (3d维)
+        - 统计特征: 余弦相似度和欧氏距离 (6维)
+        总计: 3d+6维 = 1542维 (d=512)
         """
         import numpy as np
         
@@ -75,18 +74,17 @@ class PairwiseTrainingSample:
 
 def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[float]:
     """
-    统一的神经网络特征计算函数，供训练和预测阶段共用
+    简化的神经网络特征计算函数：3d+6维
     
     设计说明：
     - 该函数计算query、better、worse三个向量之间的神经网络特征
     - 训练时：better是用户选择的图片，worse是未选择的图片
     - 预测时：better是当前候选图片，worse是动态参考向量（候选集合的平均向量）
     
-    特征设计理由：
-    1. 原始向量特征：保留完整信息，让神经网络自动学习
-    2. 交互特征：捕捉query与候选图片间的特征对应关系
-    3. 对比特征：直接比较better vs worse的相对优劣
-    4. 统计特征：传统手工特征作为补充
+    简化特征设计理由：
+    1. 原始向量特征：保留完整信息，让神经网络自动学习向量间的复杂交互关系
+    2. 统计特征：经典相似度度量作为有价值的补充特征
+    3. 移除冗余特征：去掉交互特征和对比特征，减少过拟合风险，提升训练效率
     
     Args:
         query_vec: 查询向量 (numpy array, 长度d)
@@ -94,32 +92,18 @@ def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[fl
         worse_vec: 更差的图片向量 (numpy array, 长度d)
         
     Returns:
-        (6d+6)维特征向量列表
+        (3d+6)维特征向量列表，总计1542维 (d=512)
     """
     import numpy as np
     
     features = []
     
-    # 1. 原始向量特征 (3d维)
+    # 1. 原始向量特征 (3d维) - 保留完整信息让神经网络自主学习
     features.extend(query_vec.tolist())   # d维
     features.extend(better_vec.tolist())  # d维
     features.extend(worse_vec.tolist())   # d维
     
-    # 2. 交互特征 (2d维)
-    # element-wise乘积 - 捕捉特征对应关系
-    element_wise_product = query_vec * better_vec
-    features.extend(element_wise_product.tolist())  # d维
-    
-    # element-wise差值 - 体现语义gap
-    element_wise_diff = query_vec - better_vec
-    features.extend(element_wise_diff.tolist())     # d维
-    
-    # 3. 对比特征 (d维)
-    # better vs worse直接对比
-    better_worse_diff = better_vec - worse_vec
-    features.extend(better_worse_diff.tolist())     # d维
-    
-    # 4. 统计特征 (6维) - 传统手工特征作为补充
+    # 2. 统计特征 (6维) - 经典相似度度量作为补充
     # 余弦相似度
     cosine_sim_query_better = np.dot(query_vec, better_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(better_vec) + 1e-8)
     cosine_sim_query_worse = np.dot(query_vec, worse_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(worse_vec) + 1e-8)
@@ -139,46 +123,9 @@ def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[fl
         l2_dist_better_worse
     ])
     
-    return features
+    return features  # 总计: 3*512 + 6 = 1542维
 
 
-# 保留原始函数以保持向后兼容（可选）
-def compute_pairwise_features(query_vec, better_vec, worse_vec) -> List[float]:
-    """
-    旧版本pair-wise特征计算函数（保留以保持向后兼容）
-    """
-    import numpy as np
-    
-    # 余弦相似度特征（假设向量已归一化）
-    query_better_sim = np.dot(query_vec, better_vec)
-    query_worse_sim = np.dot(query_vec, worse_vec)
-    better_worse_sim = np.dot(better_vec, worse_vec)
-    
-    # 相似度差异特征 - 衡量better相对于worse的优势
-    sim_diff = query_better_sim - query_worse_sim
-    
-    # 欧氏距离特征
-    query_better_dist = np.linalg.norm(query_vec - better_vec)
-    query_worse_dist = np.linalg.norm(query_vec - worse_vec)
-    dist_diff = query_worse_dist - query_better_dist  # 距离越小越好，所以worse-better
-    
-    # 向量长度特征 - 反映特征激活强度
-    query_norm = np.linalg.norm(query_vec)
-    better_norm = np.linalg.norm(better_vec)
-    worse_norm = np.linalg.norm(worse_vec)
-    
-    return [
-        query_better_sim,      # query与better图片相似度
-        query_worse_sim,       # query与worse图片相似度
-        better_worse_sim,      # better与worse图片相似度
-        sim_diff,              # 相似度差异（better - worse）
-        query_better_dist,     # query与better图片距离
-        query_worse_dist,      # query与worse图片距离
-        dist_diff,             # 距离差异（worse - better）
-        query_norm,            # query向量长度
-        better_norm,           # better图片向量长度
-        worse_norm,            # worse图片向量长度
-    ]
 
 
 @dataclass

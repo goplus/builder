@@ -159,7 +159,7 @@ class LTRFeatureExtractor:
             candidates: 候选结果列表，每个包含id, vector等字段
             
         Returns:
-            每个候选结果的神经网络特征向量列表（6d+6维）
+            每个候选结果的神经网络特征向量列表（3d+6维，总计1542维）
         """
         try:
             query_vector = self._get_query_vector(query_text)
@@ -187,8 +187,8 @@ class LTRFeatureExtractor:
             
             if not candidate_vectors:
                 logger.error("所有候选结果都缺少向量数据")
-                # 假设向量维度为512，神经网络特征维度为6*512+6=3078
-                feature_dim = 6 * len(query_vector) + 6 if query_vector is not None else 3078
+                # 假设向量维度为512，神经网络特征维度为3*512+6=1542
+                feature_dim = 3 * len(query_vector) + 6 if query_vector is not None else 1542
                 return [[0.0] * feature_dim] * len(candidates)
             
             # 计算动态参考向量：候选集合的平均向量
@@ -203,7 +203,7 @@ class LTRFeatureExtractor:
                 pic_vector = candidate.get('vector', [])
                 if len(pic_vector) == 0:
                     # 对于缺少向量的候选，填充零特征向量
-                    feature_dim = 6 * len(query_vector) + 6
+                    feature_dim = 3 * len(query_vector) + 6
                     features_list.append([0.0] * feature_dim)
                     continue
                 
@@ -221,13 +221,13 @@ class LTRFeatureExtractor:
             logger.error(f"排序特征提取失败: {e}")
             # 如果出错，返回合适维度的零向量
             try:
-                feature_dim = 6 * len(query_vector) + 6 if query_vector is not None else 3078
+                feature_dim = 3 * len(query_vector) + 6 if query_vector is not None else 1542
                 return [[0.0] * feature_dim] * len(candidates)
             except:
-                return [[0.0] * 3078] * len(candidates)
+                return [[0.0] * 1542] * len(candidates)
     
     def get_feature_names(self) -> List[str]:
-        """获取神经网络特征名称列表"""
+        """获取简化的神经网络特征名称列表"""
         # 假设向量维度为512（从CLIP模型配置获取）
         d = 512
         feature_names = []
@@ -239,16 +239,6 @@ class LTRFeatureExtractor:
             feature_names.append(f'better_vec_{i}')
         for i in range(d):
             feature_names.append(f'worse_vec_{i}')
-        
-        # 交互特征 (2d维)
-        for i in range(d):
-            feature_names.append(f'element_wise_product_{i}')
-        for i in range(d):
-            feature_names.append(f'element_wise_diff_{i}')
-        
-        # 对比特征 (d+6维)
-        for i in range(d):
-            feature_names.append(f'better_worse_diff_{i}')
         
         # 统计特征 (6维)
         feature_names.extend([

@@ -23,7 +23,8 @@ class RerankingNeuralNetwork(nn.Module):
     重排序神经网络模型
     
     架构：
-    输入层: (6d + 6)维 -> 隐藏层1: 512维 -> 隐藏层2: 256维 -> 隐藏层3: 128维 -> 输出层: 1维
+    输入层: (3d + 6)维 -> 隐藏层1: 512维 -> 隐藏层2: 256维 -> 隐藏层3: 128维 -> 输出层: 1维
+    默认输入维度: 3*512 + 6 = 1542维
     """
     
     def __init__(self, input_dim: int, hidden_dims: List[int] = None, dropout_rates: List[float] = None):
