@@ -147,6 +147,7 @@ type BeautifyImageResponse struct {
 	Style          string    `json:"style"`
 	Strength       float64   `json:"strength"`
 	URL            string    `json:"url"`
+	Data           []byte    `json:"-"`         // Downloaded image data
 	Width          int       `json:"width"`
 	Height         int       `json:"height"`
 	CreatedAt      time.Time `json:"created_at"`

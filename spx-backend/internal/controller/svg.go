@@ -453,42 +453,38 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 
 	logger.Printf("Image beautification successful - ID: %s, URL: %s", result.ID, result.URL)
 
-	// Download beautified image for storage
+	// Store beautified image data if available
 	var kodoURL string
 	var aiResourceID int64
-	var beautifiedBytes []byte
+	var beautifiedBytes []byte = result.Data
 
-	if result.URL != "" {
-		var err error
-		beautifiedBytes, err = svggen.DownloadFile(ctx, result.URL)
+	if len(beautifiedBytes) > 0 {
+		// Use SVG extension for beautified output
+		filename := fmt.Sprintf("%s_beautified.svg", result.ID)
+
+		uploadStart := time.Now()
+		uploadResult, err := ctrl.kodo.UploadFile(ctx, beautifiedBytes, filename)
+		logger.Printf("[PERF] Kodo upload took %v", time.Since(uploadStart))
 		if err != nil {
-			logger.Printf("Failed to download beautified image: %v", err)
+			logger.Printf("Failed to upload beautified image to Kodo: %v", err)
+			// Continue without Kodo storage, don't fail the request
 		} else {
-			// Use SVG extension for beautified output
-			filename := fmt.Sprintf("%s_beautified.svg", result.ID)
+			kodoURL = uploadResult.KodoURL
+			logger.Printf("Beautified image uploaded to Kodo: %s", kodoURL)
 
-			uploadStart := time.Now()
-			uploadResult, err := ctrl.kodo.UploadFile(ctx, beautifiedBytes, filename)
-			logger.Printf("[PERF] Kodo upload took %v", time.Since(uploadStart))
-			if err != nil {
-				logger.Printf("Failed to upload beautified image to Kodo: %v", err)
-				// Continue without Kodo storage, don't fail the request
+			// Save to database if Kodo upload successful
+			aiResource := &model.AIResource{
+				URL: kodoURL,
+			}
+			if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
+				logger.Printf("Failed to save AI resource to database: %v", dbErr)
 			} else {
-				kodoURL = uploadResult.KodoURL
-				logger.Printf("Beautified image uploaded to Kodo: %s", kodoURL)
-
-				// Save to database if Kodo upload successful
-				aiResource := &model.AIResource{
-					URL: kodoURL,
-				}
-				if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
-					logger.Printf("Failed to save AI resource to database: %v", dbErr)
-				} else {
-					aiResourceID = aiResource.ID
-					logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
-				}
+				aiResourceID = aiResource.ID
+				logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
 			}
 		}
+	} else {
+		logger.Printf("No beautified image data available from svggen")
 	}
 
 	return &BeautifyImageResponse{

@@ -164,6 +164,20 @@ func (sm *ServiceManager) BeautifyImage(ctx context.Context, req BeautifyImageRe
 		return nil, err
 	}
 
+	// Download the beautified image data if URL is available
+	if resp.URL != "" {
+		downloadStart := time.Now()
+		data, err := DownloadFile(ctx, resp.URL)
+		logger.Printf("[PERF] File download took %v", time.Since(downloadStart))
+		if err != nil {
+			logger.Printf("Failed to download beautified image: %v", err)
+			// Don't fail the request, just log the error
+		} else {
+			resp.Data = data
+			logger.Printf("Successfully downloaded beautified image data (%d bytes)", len(data))
+		}
+	}
+
 	return resp, nil
 }
 
