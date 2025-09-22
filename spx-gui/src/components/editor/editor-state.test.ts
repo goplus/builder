@@ -1,5 +1,5 @@
 vi.mock('paper', () => ({}))
-vi.mock('paperjs-offset',()=>({}))
+vi.mock('paperjs-offset', () => ({}))
 import { ref, type WatchSource } from 'vue'
 import { afterEach, beforeEach, describe, expect, vi, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
