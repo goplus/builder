@@ -1,5 +1,5 @@
 import { getWeChatJSSDKConfig } from '@/apis/wechat'
-import { analyzePlatformShare } from '@/apis/analyze'
+import { createTrafficSource, recordTrafficAccess } from '@/apis/analyze'
 import { h, type Component, ref, onMounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -77,7 +77,7 @@ const JUMP_LINKS = {
 /**
  * 平台跳转链接的前缀
  */
-const hashPrefix = '#/share-to-platform='
+const hashPrefix = '#/traffic-source-id='
 
 /*
 来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
@@ -91,9 +91,10 @@ declare global {
 }
 
 // 初始化分享URL，拼接对应平台，以便后端进行回流分析
-function initShareURL(platform: string) {
+async function initShareURL(platform: string) {
+  const trafficSource = await createTrafficSource(platform)
   const [baseUrl] = location.href.split('#')
-  return `${baseUrl}${hashPrefix}${platform}`
+  return `${baseUrl}${hashPrefix}${trafficSource.id}`
 }
 
 /**
@@ -163,7 +164,7 @@ class QQPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: initShareURL(this.basicInfo.name),
+        share_url: await initShareURL(this.basicInfo.name),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
@@ -242,7 +243,7 @@ class WeChatPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     // 微信平台设置分享信息
     const config = await getWeChatJSSDKConfig({
-      url: initShareURL(this.basicInfo.name)
+      url: await initShareURL(this.basicInfo.name)
     })
     //初始化微信分享信息
     if (window.wx && window.wx.config) {
@@ -463,9 +464,9 @@ export type Disposer = () => void
 
 export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> => {
   // 判断是否从某一平台分享的回流
-  const platform = analyzeProjectShareUrl()
-  if (platform) {
-    await analyzePlatformShare(platform)
+  const trafficSourceId = analyzeProjectShareUrl()
+  if (trafficSourceId) {
+    await recordTrafficAccess(trafficSourceId)
   }
 
   const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }

@@ -49,7 +49,6 @@ const recordingPageUrl = computed(() => {
 // Load recording data
 async function loadRecordingData() {
   if (currentRecording.value) return
-
   currentRecording.value = await props.recording
   await updateVideoSrc()
 }
@@ -104,16 +103,12 @@ async function generateShareQRCode() {
   // Ensure recording data is loaded
   await loadRecordingData()
 
-  if (!currentRecording.value) {
-    return
-  }
-
   isGeneratingQR.value = true
 
   try {
     // Generate jump URL based on platform type
     const platform = selectedPlatform.value
-    const currentUrl = getCurrentRecordingUrl()
+    const currentUrl = getCurrentRecordingUrl() || window.location.href
 
     let shareUrl = ''
 
