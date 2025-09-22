@@ -40,6 +40,12 @@ type cacheEntry struct {
 	cachedAt time.Time
 }
 
+// singleflightResult represents the result of a singleflight operation
+type singleflightResult struct {
+	results []string
+	err     error
+}
+
 // AssetCompletionLLM provides AI-powered asset name completion
 type AssetCompletionLLM struct {
 	copilot     *copilot.Copilot
@@ -47,6 +53,9 @@ type AssetCompletionLLM struct {
 	cache       map[string]cacheEntry
 	cacheMutex  sync.RWMutex
 	cacheExpiry time.Duration
+	// singleflight to prevent concurrent requests for same prefix
+	inflight    map[string]chan singleflightResult
+	inflightMu  sync.Mutex
 }
 
 // NewAssetCompletionLLM creates a new LLM-based completion service
@@ -70,6 +79,7 @@ func newAssetCompletionLLMWithConfig(copilot *copilot.Copilot, db *gorm.DB) *Ass
 		db:          db,
 		cache:       make(map[string]cacheEntry),
 		cacheExpiry: cacheExpiry,
+		inflight:    make(map[string]chan singleflightResult),
 	}
 }
 
@@ -87,22 +97,35 @@ func (l *AssetCompletionLLM) CompleteAssetName(ctx context.Context, prefix strin
 		return cached, nil
 	}
 
-	// Get existing asset names for context
-	existingAssets, err := l.getExistingAssets()
+	// Use singleflight pattern to prevent concurrent requests for same prefix
+	cacheKey := strings.ToLower(prefix)
+	results, err := l.singleflight(ctx, cacheKey, func() ([]string, error) {
+		// Get existing asset names for context
+		existingAssets, err := l.getExistingAssets()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get existing assets: %w", err)
+		}
+
+		// Generate AI-powered suggestions
+		suggestions, err := l.generateSuggestions(ctx, prefix, existingAssets, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate AI suggestions: %w", err)
+		}
+
+		// Cache results
+		l.cacheResults(prefix, suggestions)
+
+		return suggestions, nil
+	})
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to get existing assets: %w", err)
+		return nil, err
 	}
 
-	// Generate AI-powered suggestions
-	suggestions, err := l.generateSuggestions(ctx, prefix, existingAssets, limit)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate AI suggestions: %w", err)
+	if len(results) > limit {
+		return results[:limit], nil
 	}
-
-	// Cache results
-	l.cacheResults(prefix, suggestions)
-
-	return suggestions, nil
+	return results, nil
 }
 
 // generateSuggestions uses AI to generate creative asset name suggestions
@@ -284,6 +307,41 @@ func (l *AssetCompletionLLM) getExistingAssets() ([]string, error) {
 	}
 
 	return names, nil
+}
+
+// singleflight ensures only one goroutine fetches data for the same key
+func (l *AssetCompletionLLM) singleflight(ctx context.Context, key string, fn func() ([]string, error)) ([]string, error) {
+	l.inflightMu.Lock()
+
+	// Check if there's already a request in flight for this key
+	if ch, exists := l.inflight[key]; exists {
+		l.inflightMu.Unlock()
+		// Wait for the in-flight request to complete
+		select {
+		case result := <-ch:
+			return result.results, result.err
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Create a channel for this request
+	ch := make(chan singleflightResult, 1)
+	l.inflight[key] = ch
+	l.inflightMu.Unlock()
+
+	// Execute the function and broadcast result
+	results, err := fn()
+	result := singleflightResult{results: results, err: err}
+
+	// Send result and clean up
+	l.inflightMu.Lock()
+	ch <- result
+	close(ch)
+	delete(l.inflight, key)
+	l.inflightMu.Unlock()
+
+	return results, err
 }
 
 // getCachedResults retrieves cached results for a prefix

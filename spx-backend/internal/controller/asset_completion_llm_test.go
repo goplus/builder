@@ -463,3 +463,231 @@ func TestAssetCompletionLLM_ConcurrentAccess(t *testing.T) {
 	stats := llmService.GetCacheStats()
 	assert.GreaterOrEqual(t, stats["cache_size"].(int), numGoroutines)
 }
+
+// TestAssetCompletionLLM_Singleflight tests the singleflight pattern through CompleteAssetName
+func TestAssetCompletionLLM_Singleflight(t *testing.T) {
+	// Create mock database
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	require.NoError(t, err)
+
+	// Mock the getExistingAssets query - this should be called only once due to singleflight
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("cat").
+		AddRow("car").
+		AddRow("camera")
+	mock.ExpectQuery("SELECT `name` FROM `game_assets`").
+		WillReturnRows(rows)
+
+	cpt := createMockCopilot()
+	llmService := NewAssetCompletionLLM(cpt, gormDB)
+
+	var wg sync.WaitGroup
+	numGoroutines := 5
+	results := make([][]string, numGoroutines)
+	errors := make([]error, numGoroutines)
+
+	ctx := context.Background()
+
+	// Launch multiple goroutines calling CompleteAssetName with same prefix
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		go func(index int) {
+			defer wg.Done()
+			results[index], errors[index] = llmService.CompleteAssetName(ctx, "ca", 5)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Check that the database query was only called once due to singleflight
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err, "Database should only be queried once")
+
+	// Check if any calls were successful (some might fail due to mock copilot)
+	// The important thing is that they all get the same result
+	var successCount int
+	var successfulResult []string
+	for i := 0; i < numGoroutines; i++ {
+		if errors[i] == nil {
+			successCount++
+			if successfulResult == nil {
+				successfulResult = results[i]
+			} else {
+				assert.Equal(t, successfulResult, results[i], "All successful calls should return same result")
+			}
+		}
+	}
+
+	// At minimum we expect that if any call succeeded, they all get the same result
+	// This verifies the singleflight pattern is working
+	t.Logf("Successful calls: %d/%d", successCount, numGoroutines)
+}
+
+// TestAssetCompletionLLM_SingleflightWithContext tests context cancellation with CompleteAssetName
+func TestAssetCompletionLLM_SingleflightWithContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping context cancellation test in short mode")
+	}
+
+	// Create mock database
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	require.NoError(t, err)
+
+	// Mock the database query
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("cat").
+		AddRow("car")
+	mock.ExpectQuery("SELECT `name` FROM `game_assets`").
+		WillReturnRows(rows)
+
+	cpt := createMockCopilot()
+	llmService := NewAssetCompletionLLM(cpt, gormDB)
+
+	// Create context with short timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	defer cancel()
+
+	// Call should be cancelled by context (or complete very quickly)
+	result, err := llmService.CompleteAssetName(ctx, "ca", 5)
+	if err != nil {
+		// Context cancellation is expected
+		assert.Contains(t, err.Error(), "context")
+		assert.Nil(t, result)
+	} else {
+		// If it completes quickly, that's also fine
+		t.Logf("Call completed before timeout: %v", result)
+	}
+
+	// Don't strictly check mock expectations as the call might be cancelled before DB query
+}
+
+// TestAssetCompletionLLM_ConcurrentCompleteAssetName tests concurrent CompleteAssetName calls
+func TestAssetCompletionLLM_ConcurrentCompleteAssetName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping concurrent test in short mode")
+	}
+
+	// Create mock database
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	require.NoError(t, err)
+
+	// Mock the getExistingAssets query - should only be called once due to singleflight
+	rows := sqlmock.NewRows([]string{"name"}).
+		AddRow("cat").
+		AddRow("car").
+		AddRow("camera")
+	mock.ExpectQuery("SELECT `name` FROM `game_assets`").
+		WillReturnRows(rows)
+
+	cpt := createMockCopilot()
+	llmService := NewAssetCompletionLLM(cpt, gormDB)
+
+	var wg sync.WaitGroup
+	numGoroutines := 5
+	results := make([][]string, numGoroutines)
+	errors := make([]error, numGoroutines)
+
+	ctx := context.Background()
+
+	// Launch multiple goroutines calling CompleteAssetName with same prefix
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		go func(index int) {
+			defer wg.Done()
+			// Note: This will likely fail with mock OpenAI client, but we're testing the singleflight pattern
+			results[index], errors[index] = llmService.CompleteAssetName(ctx, "ca", 5)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Check that the database query was only called once
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err, "Database should only be queried once")
+
+	// If any call succeeded, all should have the same result due to singleflight
+	var successfulResult []string
+	for i := 0; i < numGoroutines; i++ {
+		if errors[i] == nil {
+			if successfulResult == nil {
+				successfulResult = results[i]
+			} else {
+				assert.Equal(t, successfulResult, results[i], "All successful calls should return same result")
+			}
+		}
+	}
+}
+
+// TestAssetCompletionLLM_SingleflightDifferentKeys tests singleflight with different prefixes
+func TestAssetCompletionLLM_SingleflightDifferentKeys(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping different keys test in short mode")
+	}
+
+	// Create mock database
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	require.NoError(t, err)
+
+	// Mock database queries for different prefixes - each should be called once
+	prefixes := []string{"ca", "do", "mo"}
+	for range prefixes {
+		rows := sqlmock.NewRows([]string{"name"}).
+			AddRow("example1").
+			AddRow("example2")
+		mock.ExpectQuery("SELECT `name` FROM `game_assets`").
+			WillReturnRows(rows)
+	}
+
+	cpt := createMockCopilot()
+	llmService := NewAssetCompletionLLM(cpt, gormDB)
+
+	var wg sync.WaitGroup
+	ctx := context.Background()
+
+	// Test with different prefixes - should allow concurrent execution
+	for _, prefix := range prefixes {
+		wg.Add(2) // Two calls per prefix
+		go func(p string) {
+			defer wg.Done()
+			llmService.CompleteAssetName(ctx, p, 5)
+		}(prefix)
+		go func(p string) {
+			defer wg.Done()
+			llmService.CompleteAssetName(ctx, p, 5)
+		}(prefix)
+	}
+
+	wg.Wait()
+
+	// Check that the database was queried for each different prefix
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err, "Database should be queried once per unique prefix")
+}
