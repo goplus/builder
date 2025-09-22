@@ -175,3 +175,31 @@ export function listDirs(
   }
   return dirs
 }
+
+export function listFiles(
+  files: { [path: string]: unknown },
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const fileList: string[] = []
+  const prefix = dirname + '/'
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const segments = filePath.slice(prefix.length).split('/')
+    if (segments.length === 1) fileList.push(segments[0])
+  }
+  return fileList
+}
+
+export function listAllFiles(files: Files, dirname: string, filter: (filePath: string) => boolean = () => true) {
+  const prefix = dirname.endsWith('/') ? dirname : dirname + '/'
+  const fileList: Files = {}
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const relative = filePath.slice(prefix.length)
+    if (relative && !relative.endsWith('/') && filter(filePath)) {
+      fileList[relative] = files[filePath]
+    }
+  }
+  return fileList
+}

@@ -22,6 +22,7 @@ import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
+import { Tile } from '../tile'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -75,6 +76,7 @@ export type RawProjectConfig = RawStageConfig &
     zorder?: ZorderItem[]
     run?: RawRunConfig
     camera?: RawCameraConfig
+    tilemapPath?: string
     /**
      * Sprite order info, used by Builder to determine the order of sprites.
      * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
@@ -125,6 +127,7 @@ export class Project extends Disposable {
   remixCount?: number
 
   stage: Stage
+  tile?: Tile | null
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
@@ -368,6 +371,7 @@ export class Project extends Disposable {
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
+      tilemapPath,
       ...rawStageConfig
     } = config
 
@@ -400,6 +404,10 @@ export class Project extends Disposable {
     this.sounds.splice(0).forEach((s) => s.dispose())
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
+
+    if (tilemapPath) {
+      this.tile = await Tile.load(tilemapPath, files, sprites)
+    }
 
     // Set camera-follow-sprite
     let cameraFollowSprite: Sprite | null = null
