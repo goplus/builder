@@ -66,7 +66,7 @@ export type Physics = {
 }
 
 export enum LayerSortMode {
-  Normal = '',
+  Default = '',
   Vertical = 'vertical'
 }
 
@@ -248,7 +248,7 @@ export class Stage extends Disposable {
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
     this.physics = inits?.physics ?? { enabled: false }
-    this.layerSortMode = inits?.layerSortMode ?? LayerSortMode.Normal
+    this.layerSortMode = inits?.layerSortMode ?? LayerSortMode.Default
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
