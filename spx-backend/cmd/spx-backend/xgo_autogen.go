@@ -158,6 +158,10 @@ type post_aigc_matting struct {
 	yap.Handler
 	*AppV2
 }
+type post_analytics_traffic_access struct {
+	yap.Handler
+	*AppV2
+}
 type post_analytics_traffic_source struct {
 	yap.Handler
 	*AppV2
@@ -1902,40 +1906,74 @@ func (this *post_aigc_matting) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/post_analytics_traffic-source.yap:10
+//line cmd/spx-backend/post_analytics_traffic-access.yap:6
+func (this *post_analytics_traffic_access) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_analytics_traffic-access.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_analytics_traffic-access.yap:8:1
+	var trafficSourceID string
+//line cmd/spx-backend/post_analytics_traffic-access.yap:9:1
+	if !parseJSON(ctx, &trafficSourceID) {
+//line cmd/spx-backend/post_analytics_traffic-access.yap:10:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-access.yap:13:1
+	if trafficSourceID == "" {
+//line cmd/spx-backend/post_analytics_traffic-access.yap:14:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "trafficSourceId is required")
+//line cmd/spx-backend/post_analytics_traffic-access.yap:15:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-access.yap:18:1
+	err := this.ctrl.RecordTrafficAccess(ctx.Context(), trafficSourceID)
+//line cmd/spx-backend/post_analytics_traffic-access.yap:19:1
+	if err != nil {
+//line cmd/spx-backend/post_analytics_traffic-access.yap:20:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_analytics_traffic-access.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-access.yap:24:1
+	this.Text__0(204, "", "")
+}
+func (this *post_analytics_traffic_access) Classfname() string {
+	return "post_analytics_traffic-access"
+}
+func (this *post_analytics_traffic_access) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:6
 func (this *post_analytics_traffic_source) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_analytics_traffic-source.yap:10:1
+//line cmd/spx-backend/post_analytics_traffic-source.yap:6:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_analytics_traffic-source.yap:12:1
-	params := &controller.TrafficSourceParams{}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:8:1
+	var platform string
+//line cmd/spx-backend/post_analytics_traffic-source.yap:9:1
+	if !parseJSON(ctx, &platform) {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:10:1
+		return
+	}
 //line cmd/spx-backend/post_analytics_traffic-source.yap:13:1
-	if !parseJSON(ctx, params) {
+	if platform == "" {
 //line cmd/spx-backend/post_analytics_traffic-source.yap:14:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "platform must be 1-50 characters")
+//line cmd/spx-backend/post_analytics_traffic-source.yap:15:1
 		return
 	}
-//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
-	if
-//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_analytics_traffic-source.yap:18:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+	response, err := this.ctrl.CreateTrafficSource(ctx.Context(), platform)
 //line cmd/spx-backend/post_analytics_traffic-source.yap:19:1
-		return
-	}
-//line cmd/spx-backend/post_analytics_traffic-source.yap:23:1
-	ipAddress := getClientIP(ctx.Request)
-//line cmd/spx-backend/post_analytics_traffic-source.yap:25:1
-	err := this.ctrl.RecordTrafficSource(ctx.Context(), params, ipAddress)
-//line cmd/spx-backend/post_analytics_traffic-source.yap:26:1
 	if err != nil {
-//line cmd/spx-backend/post_analytics_traffic-source.yap:27:1
+//line cmd/spx-backend/post_analytics_traffic-source.yap:20:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_analytics_traffic-source.yap:28:1
+//line cmd/spx-backend/post_analytics_traffic-source.yap:21:1
 		return
 	}
-//line cmd/spx-backend/post_analytics_traffic-source.yap:31:1
-	this.Text__1(201, "recorded")
+//line cmd/spx-backend/post_analytics_traffic-source.yap:24:1
+	this.Json__0(201, response)
 }
 func (this *post_analytics_traffic_source) Classfname() string {
 	return "post_analytics_traffic-source"

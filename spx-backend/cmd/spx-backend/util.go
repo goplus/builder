@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"net"
-	"net/http"
-	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -110,27 +107,4 @@ var errorMsgs = map[errorCode]string{
 	errorNotFound:        "Not found",
 	errorTooManyRequests: "Too many requests",
 	errorUnknown:         "Internal error",
-}
-
-// getClientIP gets the real client IP address from HTTP request.
-func getClientIP(req *http.Request) string {
-	// Check X-Real-IP header first (set by nginx, etc.)
-	if ip := req.Header.Get("X-Real-IP"); ip != "" {
-		return ip
-	}
-	
-	// Check X-Forwarded-For header (may contain multiple IPs)
-	if ip := req.Header.Get("X-Forwarded-For"); ip != "" {
-		// X-Forwarded-For may contain multiple IPs, take the first one
-		if idx := strings.Index(ip, ","); idx != -1 {
-			return strings.TrimSpace(ip[:idx])
-		}
-		return ip
-	}
-	
-	// Fall back to RemoteAddr
-	if ip, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
-		return ip
-	}
-	return req.RemoteAddr
 }

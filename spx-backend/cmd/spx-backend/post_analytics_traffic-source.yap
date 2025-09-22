@@ -1,31 +1,24 @@
-// Record traffic source.
+// Create traffic source record for sharing.
 //
 // Request:
 //   POST /analytics/traffic-source
 
-import (
-	"github.com/goplus/builder/spx-backend/internal/controller"
-)
-
 ctx := &Context
 
-params := &controller.TrafficSourceParams{}
-if !parseJSON(ctx, params) {
+var platform string
+if !parseJSON(ctx, &platform) {
 	return
 }
 
-if ok, msg := params.Validate(); !ok {
-	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+if platform == "" {
+	replyWithCodeMsg(ctx, errorInvalidArgs, "platform must be 1-50 characters")
 	return
 }
 
-// Get client IP address
-ipAddress := getClientIP(ctx.Request)
-
-err := ctrl.RecordTrafficSource(ctx.Context(), params, ipAddress)
+response, err := ctrl.CreateTrafficSource(ctx.Context(), platform)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
 
-text 201, "recorded"
+json 201, response

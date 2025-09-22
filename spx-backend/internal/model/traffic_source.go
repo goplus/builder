@@ -4,15 +4,11 @@ package model
 type TrafficSource struct {
 	Model
 
-	// Platform is the source platform (wechat, qq, douyin, xiaohongshu, bilibili).
-	Platform string `gorm:"column:platform;size:20;index"`
+	// Platform is the source platform.
+	Platform string `gorm:"column:platform;size:50;index"`
 
-	// UserID is the ID of the user (nullable for anonymous users).
-	UserID *int64 `gorm:"column:user_id;index"`
-	User   *User  `gorm:"foreignKey:UserID"`
-
-	// IPAddress is the IP address of the visitor.
-	IPAddress string `gorm:"column:ip_address;size:45;index"`
+	// AccessCount is the number of times this traffic source has been accessed.
+	AccessCount int64 `gorm:"column:access_count;default:0;index"`
 }
 
 // TableName implements [gorm.io/gorm/schema.Tabler].

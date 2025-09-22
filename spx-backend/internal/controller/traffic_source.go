@@ -2,66 +2,71 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
+	"strconv"
 
-	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
 )
 
-// TrafficSourceParams contains parameters for recording traffic source.
-type TrafficSourceParams struct {
-	Platform string `json:"platform"`
+// TrafficSourceDTO is the DTO for traffic sources.
+type TrafficSourceDTO struct {
+	ModelDTO
+
+	Platform    string `json:"platform"`
+	AccessCount int64  `json:"accessCount"`
 }
 
-// Validate validates the traffic source parameters.
-func (p *TrafficSourceParams) Validate() (ok bool, msg string) {
-	switch p.Platform {
-	case "wechat", "qq", "douyin", "xiaohongshu", "bilibili":
-		return true, ""
-	default:
-		return false, "invalid platform, must be one of: wechat, qq, douyin, xiaohongshu, bilibili"
+// toTrafficSourceDTO converts the model traffic source to its DTO.
+func toTrafficSourceDTO(mTrafficSource model.TrafficSource) TrafficSourceDTO {
+	return TrafficSourceDTO{
+		ModelDTO:    toModelDTO(mTrafficSource.Model),
+		Platform:    mTrafficSource.Platform,
+		AccessCount: mTrafficSource.AccessCount,
 	}
 }
 
-// RecordTrafficSource records a traffic source entry with deduplication.
-func (ctrl *Controller) RecordTrafficSource(ctx context.Context, params *TrafficSourceParams, ipAddress string) error {
-	// Check if there's a record from the same IP within the last minute
-	oneMinuteAgo := time.Now().UTC().Add(-1 * time.Minute)
-	
-	var existingRecord model.TrafficSource
-	err := ctrl.db.WithContext(ctx).
-		Where("ip_address = ?", ipAddress).
-		Where("platform = ?", params.Platform).
-		Where("created_at > ?", oneMinuteAgo).
-		Where("deleted_at IS NULL").
-		First(&existingRecord).Error
-	
-	// If record exists, skip creating new one
-	if err == nil {
-		return nil // Already recorded within the last minute
-	}
-	
-	// If error is not "record not found", return the error
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("failed to check existing traffic source record: %w", err)
+// CreateTrafficSource creates a new traffic source record.
+func (ctrl *Controller) CreateTrafficSource(ctx context.Context, platform string) (*TrafficSourceDTO, error) {
+	if platform == "" {
+		return nil, fmt.Errorf("platform is required")
 	}
 
-	// Create new record
+	// Create new traffic source record
 	record := &model.TrafficSource{
-		Platform:  params.Platform,
-		IPAddress: ipAddress,
-	}
-
-	// Set user ID if user is authenticated
-	if user, ok := authn.UserFromContext(ctx); ok {
-		record.UserID = &user.ID
+		Platform:    platform,
+		AccessCount: 0,
 	}
 
 	if err := ctrl.db.WithContext(ctx).Create(record).Error; err != nil {
-		return fmt.Errorf("failed to create traffic source record: %w", err)
+		return nil, fmt.Errorf("failed to create traffic source record: %w", err)
+	}
+
+	// Convert to DTO and return
+	dto := toTrafficSourceDTO(*record)
+	return &dto, nil
+}
+
+// RecordTrafficAccess records an access to existing traffic source.
+func (ctrl *Controller) RecordTrafficAccess(ctx context.Context, trafficSourceID string) error {
+	// Parse traffic source ID
+	id, err := strconv.ParseInt(trafficSourceID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid traffic source ID: %w", err)
+	}
+
+	// Check if traffic source exists and increment access count
+	result := ctrl.db.WithContext(ctx).
+		Model(&model.TrafficSource{}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		UpdateColumn("access_count", gorm.Expr("access_count + ?", 1))
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update access count: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("traffic source not found")
 	}
 
 	return nil
