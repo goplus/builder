@@ -108,3 +108,49 @@ type RecraftVectorizeResp struct {
 	Image RecraftImageData `json:"image"`
 }
 
+// RecraftImageToImageReq represents a request to beautify an image using Recraft's image-to-image API.
+type RecraftImageToImageReq struct {
+	Prompt         string  `json:"prompt"`
+	Strength       float64 `json:"strength"`
+	N              int     `json:"n,omitempty"`
+	StyleID        string  `json:"style_id,omitempty"`
+	Style          string  `json:"style,omitempty"`
+	SubStyle       string  `json:"sub_style,omitempty"`
+	Model          string  `json:"model,omitempty"`
+	ResponseFormat string  `json:"response_format,omitempty"`
+	NegativePrompt string  `json:"negative_prompt,omitempty"`
+}
+
+// RecraftImageToImageResp represents the response from Recraft's image-to-image API.
+type RecraftImageToImageResp struct {
+	Created int                `json:"created"`
+	Data    []RecraftImageData `json:"data"`
+}
+
+// BeautifyImageRequest represents a request to beautify an image.
+type BeautifyImageRequest struct {
+	ImageData      []byte   `json:"-"`           // The image data to beautify
+	Prompt         string   `json:"prompt"`      // Description of desired changes
+	Strength       float64  `json:"strength"`    // Strength of transformation (0-1)
+	Style          string   `json:"style,omitempty"`
+	SubStyle       string   `json:"sub_style,omitempty"`
+	NegativePrompt string   `json:"negative_prompt,omitempty"`
+	Provider       Provider `json:"provider,omitempty"`
+}
+
+// BeautifyImageResponse represents the response from image beautification.
+type BeautifyImageResponse struct {
+	ID             string    `json:"id"`
+	OriginalPrompt string    `json:"original_prompt"`
+	Prompt         string    `json:"prompt"`
+	NegativePrompt string    `json:"negative_prompt"`
+	Style          string    `json:"style"`
+	Strength       float64   `json:"strength"`
+	URL            string    `json:"url"`
+	Data           []byte    `json:"-"`         // Downloaded image data
+	Width          int       `json:"width"`
+	Height         int       `json:"height"`
+	CreatedAt      time.Time `json:"created_at"`
+	Provider       Provider  `json:"provider"`
+}
+

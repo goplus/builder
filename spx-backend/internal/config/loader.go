@@ -84,8 +84,9 @@ func Load(logger *log.Logger) (*Config, error) {
 				DefaultModel:    getEnvAsString("RECRAFT_DEFAULT_MODEL", "recraftv3"),
 				SupportedModels: getEnvAsStringSlice("RECRAFT_SUPPORTED_MODELS", "recraftv3,recraftv2"),
 				Endpoints: RecraftEndpoints{
-					Generate:  getEnvAsString("RECRAFT_GENERATE_ENDPOINT", "/v1/images/generations"),
-					Vectorize: getEnvAsString("RECRAFT_VECTORIZE_ENDPOINT", "/v1/images/vectorize"),
+					Generate:     getEnvAsString("RECRAFT_GENERATE_ENDPOINT", "/v1/images/generations"),
+					Vectorize:    getEnvAsString("RECRAFT_VECTORIZE_ENDPOINT", "/v1/images/vectorize"),
+					ImageToImage: getEnvAsString("RECRAFT_IMAGE_TO_IMAGE_ENDPOINT", "/v1/images/imageToImage"),
 				},
 			},
 		},

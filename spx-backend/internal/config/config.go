@@ -177,8 +177,9 @@ type RecraftConfig struct {
 
 // RecraftEndpoints holds Recraft API endpoint configuration.
 type RecraftEndpoints struct {
-	Generate  string
-	Vectorize string
+	Generate     string
+	Vectorize    string
+	ImageToImage string
 }
 
 
