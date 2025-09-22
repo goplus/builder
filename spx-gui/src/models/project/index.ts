@@ -42,7 +42,7 @@ export type Metadata = Partial<CloudMetadata> & {
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
-const projectConfigFilePath = join('assets', projectConfigFileName)
+export const projectConfigFilePath = join('assets', projectConfigFileName)
 
 const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
 const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
@@ -58,6 +58,11 @@ type RawRunConfig = {
   height?: number
 }
 
+type RawAudioAttenuationConfig = {
+  audioAttenuation?: number
+  audioMaxDistance?: number
+}
+
 type RawCameraConfig = {
   /** Name of sprite to follow. Empty string means no following. */
   on: string
@@ -65,21 +70,22 @@ type RawCameraConfig = {
 
 type ZorderItem = string | RawWidgetConfig
 
-type RawProjectConfig = RawStageConfig & {
-  zorder?: ZorderItem[]
-  run?: RawRunConfig
-  camera?: RawCameraConfig
-  /**
-   * Sprite order info, used by Builder to determine the order of sprites.
-   * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_spriteOrder?: string[]
-  /**
-   * Sound order info, used by Builder to determine the order of sounds.
-   * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_soundOrder?: string[]
-}
+export type RawProjectConfig = RawStageConfig &
+  RawAudioAttenuationConfig & {
+    zorder?: ZorderItem[]
+    run?: RawRunConfig
+    camera?: RawCameraConfig
+    /**
+     * Sprite order info, used by Builder to determine the order of sprites.
+     * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_spriteOrder?: string[]
+    /**
+     * Sound order info, used by Builder to determine the order of sounds.
+     * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_soundOrder?: string[]
+  }
 
 export type ScreenshotTaker = (
   /** File name without extention */
@@ -94,6 +100,8 @@ export type ViewportSize = {
 }
 
 const defaultViewportSize: ViewportSize = defaultMapSize
+const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
+const disabledAudioAttenuationFlag = 0
 
 export class Project extends Disposable {
   id?: string
@@ -224,6 +232,12 @@ export class Project extends Disposable {
   }
   setCameraFollowSprite(spriteId: string | null) {
     this.cameraFollowSpriteId = spriteId
+  }
+
+  get isMapLargerThanViewport() {
+    const mapSize = this.stage.getMapSize()
+    const viewport = this.viewportSize
+    return mapSize.width > viewport.width || mapSize.height > viewport.height
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -403,8 +417,11 @@ export class Project extends Disposable {
       if (sprite == null) throw new Error(`sprite ${id} not found`)
       return sprite.name
     })
+    const { width, height } = this.viewportSize
     const config: RawProjectConfig = {
       ...restStageConfig,
+      audioAttenuation: this.isMapLargerThanViewport ? 1 : disabledAudioAttenuationFlag, // Enable audio attenuation only when the map is larger than viewport
+      audioMaxDistance: Math.max(width, height) * maxAudioAttenuationViewportScale, // Always export audioMaxDistance config for backward-compatibility
       run: {
         width: this.viewportSize.width,
         height: this.viewportSize.height
