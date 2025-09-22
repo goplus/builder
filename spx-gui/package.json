@@ -59,6 +59,7 @@
     "nanoid": "^5.0.5",
     "npm": "^10.3.0",
     "paper": "^0.12.18",
+    "paperjs-offset": "^1.0.8",
     "prettier": "^3.2.2",
     "property-information": "^6.5.0",
     "qiniu-js": "^3.4.2",
