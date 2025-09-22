@@ -46,7 +46,11 @@ func setTestEnv(t *testing.T) {
 
 	// WeChat
 	t.Setenv("WECHAT_APPID", "wx5f7ad87518d77bf3")
-	t.Setenv("WECHAT_SECRET", "0f62d3a8e4aec9eee4d02365d6ae0dda")
+	t.Setenv("WECHAT_SECRET", "test-wechat-secret")
+
+	// Douyin
+	t.Setenv("DOUYIN_CLIENT_KEY", "awo2b5ecr842xvcr")
+	t.Setenv("DOUYIN_CLIENT_SECRET", "test-douyin-secret")
 }
 
 func TestLoad(t *testing.T) {
@@ -108,7 +112,11 @@ func TestLoad(t *testing.T) {
 
 		// WeChat
 		assert.Equal(t, "wx5f7ad87518d77bf3", config.WeChat.AppID)
-		assert.Equal(t, "0f62d3a8e4aec9eee4d02365d6ae0dda", config.WeChat.Secret)
+		assert.Equal(t, "test-wechat-secret", config.WeChat.Secret)
+
+		// Douyin
+		assert.Equal(t, "awo2b5ecr842xvcr", config.Douyin.ClientKey)
+		assert.Equal(t, "test-douyin-secret", config.Douyin.ClientSecret)
 	})
 
 	t.Run("RedisCluster", func(t *testing.T) {

@@ -71,6 +71,10 @@ func Load(logger *log.Logger) (*Config, error) {
 			AppID:  mustGetEnv(logger, "WECHAT_APPID"),
 			Secret: mustGetEnv(logger, "WECHAT_SECRET"),
 		},
+		Douyin: DouyinConfig{
+			ClientKey:    mustGetEnv(logger, "DOUYIN_CLIENT_KEY"),
+			ClientSecret: mustGetEnv(logger, "DOUYIN_CLIENT_SECRET"),
+		},
 	}
 	return config, nil
 }
