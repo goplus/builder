@@ -89,17 +89,14 @@ func (l *AssetCompletionLLM) CompleteAssetName(ctx context.Context, prefix strin
 		limit = 5
 	}
 
-	// Check cache first
-	if cached := l.getCachedResults(prefix); cached != nil && len(cached) > 0 {
-		if len(cached) > limit {
-			return cached[:limit], nil
-		}
-		return cached, nil
-	}
-
 	// Use singleflight pattern to prevent concurrent requests for same prefix
 	cacheKey := strings.ToLower(prefix)
 	results, err := l.singleflight(ctx, cacheKey, func() ([]string, error) {
+		// Double-check cache inside singleflight to ensure thread safety
+		if cached := l.getCachedResults(prefix); cached != nil && len(cached) > 0 {
+			return cached, nil
+		}
+
 		// Get existing asset names for context
 		existingAssets, err := l.getExistingAssets()
 		if err != nil {
