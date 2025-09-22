@@ -90,7 +90,7 @@ class RerankService:
         """
         if not self.enabled:
             logger.debug("重排序功能未启用，返回原始结果")
-            return candidates
+            return self._remove_vector_data(candidates)
         
         if not candidates:
             logger.debug("候选结果为空，直接返回")
@@ -102,7 +102,7 @@ class RerankService:
             # 检查模型是否准备就绪
             if not self.ltr_model.is_ready():
                 logger.warning("LTR模型未准备就绪，返回原始结果")
-                return candidates
+                return self._remove_vector_data(candidates)
             
             # 确保候选结果包含向量信息（如果没有，需要从数据库获取）
             candidates_with_vectors = self._ensure_candidate_vectors(candidates)
@@ -110,13 +110,16 @@ class RerankService:
             # 使用LTR模型重排序
             reranked_candidates = self.ltr_model.rerank(query, candidates_with_vectors)
             
-            logger.info(f"LTR重排序完成，结果数: {len(reranked_candidates)}")
-            return reranked_candidates
+            # 移除向量数据（对客户端无用且数据量大）
+            cleaned_candidates = self._remove_vector_data(reranked_candidates)
+            
+            logger.info(f"LTR重排序完成，结果数: {len(cleaned_candidates)}")
+            return cleaned_candidates
             
         except Exception as e:
             logger.error(f"重排序失败: {e}")
             # 出错时返回原始结果
-            return candidates
+            return self._remove_vector_data(candidates)
     
     def _ensure_candidate_vectors(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -166,6 +169,34 @@ class RerankService:
             
         except Exception as e:
             logger.error(f"确保候选向量失败: {e}")
+            return candidates
+    
+    def _remove_vector_data(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        从候选结果中移除向量数据（减少返回数据量）
+        
+        Args:
+            candidates: 候选结果列表
+            
+        Returns:
+            移除向量数据后的候选结果列表
+        """
+        try:
+            cleaned_candidates = []
+            for candidate in candidates:
+                # 创建候选结果的副本
+                cleaned_candidate = candidate.copy()
+                # 移除向量数据
+                if 'vector' in cleaned_candidate:
+                    del cleaned_candidate['vector']
+                cleaned_candidates.append(cleaned_candidate)
+            
+            logger.debug(f"已从 {len(candidates)} 个候选结果中移除向量数据")
+            return cleaned_candidates
+            
+        except Exception as e:
+            logger.error(f"移除向量数据失败: {e}")
+            # 出错时返回原始结果
             return candidates
     
     def save_user_feedback(self, feedback: UserFeedback) -> bool:

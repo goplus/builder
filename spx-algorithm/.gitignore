@@ -346,6 +346,7 @@ debug/
 # Milvus data (if running locally)
 volumes/
 milvus_data/
+api.md
 
 # Model downloads and cache
 models/
