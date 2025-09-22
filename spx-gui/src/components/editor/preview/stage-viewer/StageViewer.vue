@@ -222,7 +222,8 @@ const mapConfig = computed(() => {
     ...mapPos.value,
     width: mapSize.value.width,
     height: mapSize.value.height,
-    draggable: true
+    draggable: true,
+    imageSmoothingEnabled: false
   } satisfies LayerConfig
 })
 
@@ -455,7 +456,9 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
   const blob = await nodeTransformer.withHidden(
     () =>
       stage.getStage().toBlob({
-        mimeType: 'image/jpeg'
+        mimeType: 'image/jpeg',
+        // @ts-ignore: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+        imageSmoothingEnabled: false
       }) as Promise<Blob>
   )
   return fromBlob(`${name}.jpg`, blob)

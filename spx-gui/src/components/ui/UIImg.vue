@@ -38,5 +38,8 @@ const imgStyle = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
+  // Disable image smoothing to keep pixelated look, so it looks good for pixel art assets
+  // See details in https://github.com/goplus/builder/issues/2214
+  image-rendering: pixelated;
 }
 </style>

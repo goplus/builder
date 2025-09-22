@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { getImgDrawingCtx } from '@/utils/canvas'
 import { File } from '@/models/common/file'
 import type { Costume } from '@/models/costume'
 import { UIImg } from '../ui'
@@ -56,7 +57,7 @@ function adjustDrawingOptions(canvas: HTMLCanvasElement, firstFrame: Frame) {
 }
 
 function drawFrame(canvas: HTMLCanvasElement, frame: Frame) {
-  const ctx = canvas.getContext('2d')!
+  const ctx = getImgDrawingCtx(canvas)
   const { scale, offsetX, offsetY } = drawingOptionsRef.value
   const x = offsetX - frame.x * scale
   const y = offsetY - frame.y * scale

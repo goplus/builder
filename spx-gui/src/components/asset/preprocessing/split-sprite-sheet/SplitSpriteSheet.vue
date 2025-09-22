@@ -20,6 +20,7 @@ import { untilNotNull, memoizeAsync } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { sleep } from '@/utils/test'
 import { stripExt } from '@/utils/path'
+import { getImgDrawingCtx } from '@/utils/canvas'
 import { fromBlob, type File } from '@/models/common/file'
 import { UILoading, UINumberInput, useUIVariables } from '@/components/ui'
 import ProcessDetail from '../common/ProcessDetail.vue'
@@ -73,7 +74,7 @@ function drawGrid() {
   const [imgPreview, img] = [imgPreviewRef.value, imgRef.value]
   const canvas = imgPreview.getCanvas()
   if (canvas == null) return
-  const ctx = canvas.getContext('2d')!
+  const ctx = getImgDrawingCtx(canvas)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.drawImage(img, 0, 0)
   ctx.strokeStyle = uiVariables.color.grey[800]
