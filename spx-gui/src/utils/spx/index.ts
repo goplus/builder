@@ -20,6 +20,7 @@ import {
   type BuilderHSB,
   type BuilderHSBA
 } from '../color'
+import { map } from 'lodash'
 
 export const packageSpx = 'github.com/goplus/spx/v2'
 
@@ -283,13 +284,17 @@ const specialKeys: KeyDefinition[] = [
 ]
 
 export const keys = [...alphabetKeys, ...numberKeys, ...functionKeys, ...arrowKeys, ...specialKeys]
-
+export const webKeys = keys.map((key) => key.webKeyValue)
 /** Map from name (in spx) to key definition */
 export const nameKeyMap = keys.reduce((map, key) => {
   map.set(key.name, key)
   return map
 }, new Map<string, KeyDefinition>())
 
+export const webKeyMap = keys.reduce((map, key) => {
+  map.set(key.webKeyValue, key.text.en)
+  return map
+}, new Map<string, string>())
 export const playActions = [
   { name: 'PlayRewind', text: { en: 'Play from start', zh: '从头播放' } },
   { name: 'PlayContinue', text: { en: 'Continue', zh: '继续' } },

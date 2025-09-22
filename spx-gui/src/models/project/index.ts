@@ -233,6 +233,11 @@ export class Project extends Disposable {
 
     return Array.from(usedKeys)
   }
+  getUsedWebKeys(): string[] {
+    return this.getUsedKeys()
+      .map((name) => nameKeyMap.get(name)?.webKeyValue)
+      .filter((v): v is string => !!v)
+  }
 
   /**
    * Extract keys from a single code file
