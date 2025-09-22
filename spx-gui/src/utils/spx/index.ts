@@ -20,7 +20,6 @@ import {
   type BuilderHSB,
   type BuilderHSBA
 } from '../color'
-import { map } from 'lodash'
 
 export const packageSpx = 'github.com/goplus/spx/v2'
 

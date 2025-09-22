@@ -10,8 +10,12 @@
           <div class="key-pool-side">
             <div class="pool-header">{{ t({ en: 'Recognized Keys', zh: '识别的按键' }) }}</div>
             <div ref="paletteRef" class="palette">
-              <div v-for="k in autoPool" :key="`P-${k}`" class="palette-item"
-                @pointerdown="startDrag('autoPool', k, $event as PointerEvent)">
+              <div
+                v-for="k in autoPool"
+                :key="`P-${k}`"
+                class="palette-item"
+                @pointerdown="startDrag('autoPool', k, $event as PointerEvent)"
+              >
                 <UIKeyBtn :value="k" />
               </div>
             </div>
@@ -22,77 +26,144 @@
               <div class="stage-vTZqo" :class="{ dragging: !!drag }">
                 <!-- 系统键 2 个 -->
                 <div class="zone sysA">
-                  <UIButton v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
-                    icon="rotate">
+                  <UIButton
+                    v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
+                    icon="rotate"
+                  >
                     {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
                   </UIButton>
                 </div>
                 <div class="zone sysB">
-                  <UIButton v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
-                    icon="close">
+                  <UIButton
+                    v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+                    icon="close"
+                  >
                     {{ $t({ en: 'Close', zh: '关闭' }) }}
                   </UIButton>
                 </div>
                 <!-- 左上角 1 个 -->
-                <div :ref="(el) => (zoneRefs.lt.value = el as HTMLElement)" :class="{ over: hoverZone === 'lt' }"
-                  class="zone lt">
-                  <UIKeyBtn v-if="zoneToKey.lt" :value="zoneToKey.lt!"
-                    @pointerdown.stop="startDrag('lt', zoneToKey.lt!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.lt.value = el as HTMLElement)"
+                  :class="{ over: hoverZone === 'lt' }"
+                  class="zone lt"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.lt"
+                    :value="zoneToKey.lt!"
+                    @pointerdown.stop="startDrag('lt', zoneToKey.lt!, $event as PointerEvent)"
+                  />
                 </div>
                 <!-- 右上角 1 个 -->
-                <div :ref="(el) => (zoneRefs.rt.value = el as HTMLElement)" class="zone rt"
-                  :class="{ over: hoverZone === 'rt' }">
-                  <UIKeyBtn v-if="zoneToKey.rt" :value="zoneToKey.rt!"
-                    @pointerdown.stop="startDrag('rt', zoneToKey.rt!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.rt.value = el as HTMLElement)"
+                  class="zone rt"
+                  :class="{ over: hoverZone === 'rt' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.rt"
+                    :value="zoneToKey.rt!"
+                    @pointerdown.stop="startDrag('rt', zoneToKey.rt!, $event as PointerEvent)"
+                  />
                 </div>
 
                 <!-- 左下角 4 个：每个独立 zone -->
-                <div :ref="(el) => (zoneRefs.lbUp.value = el as HTMLElement)" class="zone lb-up"
-                  :class="{ over: hoverZone === 'lbUp' }">
-                  <UIKeyBtn v-if="zoneToKey.lbUp" :value="zoneToKey.lbUp!"
-                    @pointerdown.stop="startDrag('lbUp', zoneToKey.lbUp!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.lbUp.value = el as HTMLElement)"
+                  class="zone lb-up"
+                  :class="{ over: hoverZone === 'lbUp' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.lbUp"
+                    :value="zoneToKey.lbUp!"
+                    @pointerdown.stop="startDrag('lbUp', zoneToKey.lbUp!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.lbLeft.value = el as HTMLElement)" class="zone lb-left"
-                  :class="{ over: hoverZone === 'lbLeft' }">
-                  <UIKeyBtn v-if="zoneToKey.lbLeft" :value="zoneToKey.lbLeft!"
-                    @pointerdown.stop="startDrag('lbLeft', zoneToKey.lbLeft!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.lbLeft.value = el as HTMLElement)"
+                  class="zone lb-left"
+                  :class="{ over: hoverZone === 'lbLeft' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.lbLeft"
+                    :value="zoneToKey.lbLeft!"
+                    @pointerdown.stop="startDrag('lbLeft', zoneToKey.lbLeft!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.lbRight.value = el as HTMLElement)" class="zone lb-right"
-                  :class="{ over: hoverZone === 'lbRight' }">
-                  <UIKeyBtn v-if="zoneToKey.lbRight" :value="zoneToKey.lbRight!"
-                    @pointerdown.stop="startDrag('lbRight', zoneToKey.lbRight!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.lbRight.value = el as HTMLElement)"
+                  class="zone lb-right"
+                  :class="{ over: hoverZone === 'lbRight' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.lbRight"
+                    :value="zoneToKey.lbRight!"
+                    @pointerdown.stop="startDrag('lbRight', zoneToKey.lbRight!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.lbDown.value = el as HTMLElement)" class="zone lb-down"
-                  :class="{ over: hoverZone === 'lbDown' }">
-                  <UIKeyBtn v-if="zoneToKey.lbDown" :value="zoneToKey.lbDown!"
-                    @pointerdown.stop="startDrag('lbDown', zoneToKey.lbDown!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.lbDown.value = el as HTMLElement)"
+                  class="zone lb-down"
+                  :class="{ over: hoverZone === 'lbDown' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.lbDown"
+                    :value="zoneToKey.lbDown!"
+                    @pointerdown.stop="startDrag('lbDown', zoneToKey.lbDown!, $event as PointerEvent)"
+                  />
                 </div>
 
                 <!-- 右下角 4 个：每个独立 zone -->
-                <div :ref="(el) => (zoneRefs.rbA.value = el as HTMLElement)" class="zone rb-a"
-                  :class="{ over: hoverZone === 'rbA' }">
-                  <UIKeyBtn v-if="zoneToKey.rbA" :value="zoneToKey.rbA!"
-                    @pointerdown.stop="startDrag('rbA', zoneToKey.rbA!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.rbA.value = el as HTMLElement)"
+                  class="zone rb-a"
+                  :class="{ over: hoverZone === 'rbA' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.rbA"
+                    :value="zoneToKey.rbA!"
+                    @pointerdown.stop="startDrag('rbA', zoneToKey.rbA!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.rbB.value = el as HTMLElement)" class="zone rb-b"
-                  :class="{ over: hoverZone === 'rbB' }">
-                  <UIKeyBtn v-if="zoneToKey.rbB" :value="zoneToKey.rbB!"
-                    @pointerdown.stop="startDrag('rbB', zoneToKey.rbB!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.rbB.value = el as HTMLElement)"
+                  class="zone rb-b"
+                  :class="{ over: hoverZone === 'rbB' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.rbB"
+                    :value="zoneToKey.rbB!"
+                    @pointerdown.stop="startDrag('rbB', zoneToKey.rbB!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.rbX.value = el as HTMLElement)" class="zone rb-x"
-                  :class="{ over: hoverZone === 'rbX' }">
-                  <UIKeyBtn v-if="zoneToKey.rbX" :value="zoneToKey.rbX!"
-                    @pointerdown.stop="startDrag('rbX', zoneToKey.rbX!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.rbX.value = el as HTMLElement)"
+                  class="zone rb-x"
+                  :class="{ over: hoverZone === 'rbX' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.rbX"
+                    :value="zoneToKey.rbX!"
+                    @pointerdown.stop="startDrag('rbX', zoneToKey.rbX!, $event as PointerEvent)"
+                  />
                 </div>
-                <div :ref="(el) => (zoneRefs.rbY.value = el as HTMLElement)" class="zone rb-y"
-                  :class="{ over: hoverZone === 'rbY' }">
-                  <UIKeyBtn v-if="zoneToKey.rbY" :value="zoneToKey.rbY!"
-                    @pointerdown.stop="startDrag('rbY', zoneToKey.rbY!, $event as PointerEvent)" />
+                <div
+                  :ref="(el) => (zoneRefs.rbY.value = el as HTMLElement)"
+                  class="zone rb-y"
+                  :class="{ over: hoverZone === 'rbY' }"
+                >
+                  <UIKeyBtn
+                    v-if="zoneToKey.rbY"
+                    :value="zoneToKey.rbY!"
+                    @pointerdown.stop="startDrag('rbY', zoneToKey.rbY!, $event as PointerEvent)"
+                  />
                 </div>
 
                 <!-- 拖拽中的浮层（跟随指针） -->
-                <div v-if="drag" class="floating"
-                  :style="{ transform: `translate(${drag.x - 25}px, ${drag.y - 25}px)` }">
+                <div
+                  v-if="drag"
+                  class="floating"
+                  :style="{ transform: `translate(${drag.x - 25}px, ${drag.y - 25}px)` }"
+                >
                   <UIKeyBtn :value="drag.value" />
                 </div>
               </div>
@@ -113,15 +184,18 @@
             <n-collapse-transition :show="show">
               <div class="pool-header"></div>
               <div ref="paletteRef" class="palette">
-                <div v-for="k in allPool" :key="`P-${k}`" class="palette-item"
-                  @pointerdown="startDrag('allPool', k, $event as PointerEvent)">
+                <div
+                  v-for="k in allPool"
+                  :key="`P-${k}`"
+                  class="palette-item"
+                  @pointerdown="startDrag('allPool', k, $event as PointerEvent)"
+                >
                   <UIKeyBtn :value="k" />
                 </div>
               </div>
             </n-collapse-transition>
           </n-space>
         </div>
-
       </div>
 
       <div class="footer">
@@ -154,13 +228,9 @@ import phone from './mobile.png'
 import { reactive, ref } from 'vue'
 import { webKeys } from '@/utils/spx'
 
-const assignedKeys = new Set(
-  Object.values(props.zoneToKeyMapping ?? {}).filter((v): v is string => v != null)
-)
+const assignedKeys = new Set(Object.values(props.zoneToKeyMapping ?? {}).filter((v): v is string => v != null))
 
-const allPool = ref<string[]>(
-  webKeys.filter((k) => !(props.projectKeys?.includes(k)) && !assignedKeys.has(k))
-)
+const allPool = ref<string[]>(webKeys.filter((k) => !props.projectKeys?.includes(k) && !assignedKeys.has(k)))
 const autoPool = ref<string[]>(props.projectKeys ? props.projectKeys.filter((k) => !assignedKeys.has(k)) : [])
 const zones = ['lt', 'rt', 'lbUp', 'lbLeft', 'lbRight', 'lbDown', 'rbA', 'rbB', 'rbX', 'rbY']
 type MobileKeyboardZone = (typeof zones)[number]
@@ -168,7 +238,6 @@ type MobileKeyboardZone = (typeof zones)[number]
 const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>(props.zoneToKeyMapping ?? {})
 
 const zoneOriginPool = reactive<Record<MobileKeyboardZone, 'autoPool' | 'allPool' | undefined>>({})
-
 
 for (const id of zones as MobileKeyboardZone[]) {
   const k = zoneToKey[id]
@@ -191,7 +260,6 @@ const drag = ref<{
 } | null>(null)
 const hoverZone = ref<MobileKeyboardZone | null>(null)
 function startDrag(source: 'autoPool' | 'allPool' | MobileKeyboardZone, value: string, e: PointerEvent) {
-
   let originPool: 'autoPool' | 'allPool' | undefined
   if (source === 'autoPool' || source === 'allPool') originPool = source
   else originPool = zoneOriginPool[source]
@@ -466,7 +534,6 @@ onUnmounted(() => {
   flex-shrink: 0;
   width: 100%;
   max-width: 1200px;
-
 }
 
 .pool-header {

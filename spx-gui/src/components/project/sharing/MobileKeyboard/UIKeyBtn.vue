@@ -20,18 +20,18 @@ const emit = defineEmits<{
 // 按键显示映射 - 将长按键名映射为短字符显示
 const keyDisplayMap: Record<string, string> = {
   // 箭头键
-  'Up': '↑',
-  'Down': '↓',
-  'Left': '←',
-  'Right': '→',
+  Up: '↑',
+  Down: '↓',
+  Left: '←',
+  Right: '→',
 
-  'Enter': '↵',
-  'Backspace': '⌫',
-  'Tab': 'Tab',
-  'Shift': '⇧',
-  'Control': 'Ctrl',
-  'Alt': 'Alt',
-  'Escape': 'Esc'
+  Enter: '↵',
+  Backspace: '⌫',
+  Tab: 'Tab',
+  Shift: '⇧',
+  Control: 'Ctrl',
+  Alt: 'Alt',
+  Escape: 'Esc'
 }
 
 // 获取按键的显示文本
@@ -42,7 +42,6 @@ function getKeyDisplayText(keyValue: string): string {
 
 let isPressed = false
 function press(down: boolean) {
-
   function dispatchKey(type: KeyboardEventType, v: string) {
     emit('key', type, v)
   }
@@ -58,8 +57,14 @@ function press(down: boolean) {
 
 <template>
   <div v-if="!props.active" class="ui-key-btn">{{ getKeyDisplayText(props.value) }}</div>
-  <div v-else class="ui-key-btn" @pointerdown.prevent.stop="press(true)" @pointerup.prevent.stop="press(false)"
-    @pointercancel.prevent.stop="press(false)" @pointerleave.prevent.stop="press(false)">
+  <div
+    v-else
+    class="ui-key-btn"
+    @pointerdown.prevent.stop="press(true)"
+    @pointerup.prevent.stop="press(false)"
+    @pointercancel.prevent.stop="press(false)"
+    @pointerleave.prevent.stop="press(false)"
+  >
     {{ getKeyDisplayText(props.value) }}
   </div>
 </template>
