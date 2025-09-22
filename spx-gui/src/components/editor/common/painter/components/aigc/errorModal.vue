@@ -16,7 +16,7 @@
           <h4 class="suggestions-title">{{ $t({ en: 'Suggestions:', zh: '建议：' }) }}</h4>
           <ul class="suggestions-list">
             <li v-if="errorType === 'timeout'">
-              {{ $t({ en: 'Try simplifying your description', zh: '尝试简化您的描述' }) }}
+              {{ $t({ en: 'Please try again later', zh: '请稍后再试' }) }}
             </li>
             <li v-if="errorType === 'network'">
               {{ $t({ en: 'Check your network connection', zh: '检查网络连接状态' }) }}

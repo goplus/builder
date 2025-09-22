@@ -2,13 +2,13 @@
  * @desc Asking for style list
  */
 
-import { apiBaseUrl } from '@/utils/env'
+import { client } from './common'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 export async function getStyleList() {
   try {
-    const response = await fetch(`${apiBaseUrl}/themes`)
-    const data = await response.json()
+    const response = await client.get('/themes')
+    const data = await response
 
     for (const item of data) {
       const file = createFileWithUniversalUrl(item.preview_url)
