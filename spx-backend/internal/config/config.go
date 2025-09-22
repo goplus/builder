@@ -17,6 +17,7 @@ type Config struct {
 	OpenAI   OpenAIConfig
 	AIGC     AIGCConfig
 	WeChat   WeChatConfig
+	Douyin   DouyinConfig
 }
 
 // ServerConfig holds server configuration.
@@ -182,4 +183,10 @@ type AIGCConfig struct {
 type WeChatConfig struct {
 	AppID  string
 	Secret string
+}
+
+// DouyinConfig holds Douyin API configuration.
+type DouyinConfig struct {
+	ClientKey    string
+	ClientSecret string
 }

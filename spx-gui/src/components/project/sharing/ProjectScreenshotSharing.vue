@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, type Component } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
@@ -7,7 +7,6 @@ import type { PlatformConfig } from './platform-share'
 import QRCode from 'qrcode'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
-import { useObjectUrlManager } from '@/utils/object-url'
 
 const props = defineProps<{
   screenshot: File
@@ -21,8 +20,6 @@ const emit = defineEmits<{
   resolved: [platform: string]
 }>()
 
-// Initialize object URL manager
-const objectUrlManager = useObjectUrlManager()
 // Component references
 const posterCompRef = ref<InstanceType<typeof Poster>>()
 
@@ -30,11 +27,13 @@ const posterCompRef = ref<InstanceType<typeof Poster>>()
 const selectedPlatform = ref<PlatformConfig | null>(null)
 const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
+const guideComponent = ref<Component | null>(null)
 const isGeneratingQR = ref(false)
 
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
+  guideComponent.value = null
   handleGenerateShareQRCode()
 }
 
@@ -67,9 +66,12 @@ async function createPosterFile(): Promise<File> {
 async function generateShareUrl(platform: PlatformConfig): Promise<string> {
   const currentUrl = getCurrentProjectUrl()
 
+  // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     const posterFile = await createPosterFile()
-    return await platform.shareFunction.shareImage(posterFile)
+    guideComponent.value = platform.shareFunction.shareImage(posterFile)
+    // When manual guide is shown, QR is not needed; return current URL as placeholder
+    return currentUrl
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
     return await platform.shareFunction.shareURL(currentUrl)
   } else {
@@ -130,32 +132,6 @@ async function handleGenerateShareQRCode(): Promise<void> {
   }
 }
 
-// Handle poster download with proper error handling
-const handleDownloadPoster = useMessageHandle(
-  async (): Promise<void> => {
-    const posterFile = await createPosterFile()
-
-    // Create download link using object URL manager
-    const url = objectUrlManager.createUrl(posterFile)
-
-    // Create temporary download link and trigger download
-    const link = document.createElement('a')
-    link.href = url
-    link.download = posterFile.name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  },
-  {
-    en: 'Failed to download poster',
-    zh: '下载海报失败'
-  },
-  {
-    en: 'Poster downloaded successfully',
-    zh: '海报下载成功'
-  }
-)
-
 // Watch modal visibility state
 watch(
   () => props.visible,
@@ -190,7 +166,8 @@ watch(
           </div>
           <div class="qr-section">
             <div class="qr-section-inner">
-              <div class="qr-content">
+              <component :is="guideComponent" v-if="guideComponent" />
+              <div v-else class="qr-content">
                 <div class="qr-code">
                   <img
                     v-if="qrCodeData"
@@ -212,17 +189,6 @@ watch(
                   }}
                 </div>
               </div>
-              <button
-                class="download-btn"
-                :disabled="handleDownloadPoster.isLoading.value"
-                @click="handleDownloadPoster.fn"
-              >
-                {{
-                  handleDownloadPoster.isLoading.value
-                    ? $t({ en: 'Downloading...', zh: '下载中...' })
-                    : $t({ en: 'Download Poster', zh: '下载海报' })
-                }}
-              </button>
             </div>
           </div>
         </div>

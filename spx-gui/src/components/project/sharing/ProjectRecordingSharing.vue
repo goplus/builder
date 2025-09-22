@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, type Component } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
 import { type PlatformConfig } from './platform-share'
@@ -31,6 +31,7 @@ const emit = defineEmits<{
 const selectedPlatform = ref<PlatformConfig | null>(null)
 const jumpUrl = ref<string>('')
 const qrCodeData = ref<string>('')
+const guideComponent = ref<Component | null>(null)
 const isGeneratingQR = ref(false)
 
 // Recording data and video source
@@ -70,6 +71,7 @@ async function updateVideoSrc() {
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
+  guideComponent.value = null
 
   // 检查是否需要显示下载提示
   if (!platform.shareType.supportVideo && !platform.shareType.supportURL) {
@@ -115,13 +117,16 @@ async function generateShareQRCode() {
 
     let shareUrl = ''
 
-    // Check platform supported sharing types
-    if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
+    // Prefer direct video sharing if available; if it returns a Component (manual guide), render it
+    if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
+      const res = platform.shareFunction.shareVideo(props.video)
+      // shareVideo returns Component (manual guide) in our platform config
+      guideComponent.value = res
+      // When manual guide is shown, QR is not needed; use currentUrl as placeholder
+      shareUrl = currentUrl
+    } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
       // Support URL sharing, directly share recording page link
       shareUrl = await platform.shareFunction.shareURL(currentUrl)
-    } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      // Support video sharing, share video file
-      shareUrl = await platform.shareFunction.shareVideo(props.video)
     } else {
       // Default to use recording page URL
       shareUrl = currentUrl
@@ -148,50 +153,6 @@ async function generateShareQRCode() {
 async function handleReRecord(): Promise<void> {
   emit('resolved', { type: 'rerecord' })
 }
-
-// Handle one-click video download
-async function handleDownloadVideo(): Promise<void> {
-  let videoFile: globalThis.File | null = null
-
-  if (props.video) {
-    videoFile = props.video
-  } else if (currentRecording.value?.videoUrl) {
-    const resp = await fetch(videoSrc.value)
-    const blob = await resp.blob()
-    videoFile = new globalThis.File([blob], `${currentRecording.value.id}.mp4`, { type: blob.type || 'video/mp4' })
-  }
-
-  if (!videoFile) {
-    throw new DefaultException({
-      en: 'No video file available for download',
-      zh: '没有可下载的视频文件'
-    })
-  }
-
-  // Create download link
-  const url = createUrl(videoFile)
-
-  // Create temporary download link and trigger download
-  const link = document.createElement('a')
-  link.href = url
-  link.download = videoFile.name
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
-// Use useMessageHandle wrapped download handler function
-const handleDownloadClick = useMessageHandle(
-  handleDownloadVideo,
-  {
-    en: 'Failed to download video',
-    zh: '下载视频失败'
-  },
-  {
-    en: 'Video downloaded successfully',
-    zh: '视频下载成功'
-  }
-)
 
 // Listen to modal visibility state
 watch(
@@ -297,16 +258,7 @@ watch(
                   }}
                 </div>
               </div>
-              <div class="action-buttons">
-                <button
-                  class="download-btn"
-                  :disabled="!videoSrc"
-                  :loading="handleDownloadClick.isLoading.value"
-                  @click="handleDownloadClick.fn"
-                >
-                  {{ $t({ en: 'Download Video', zh: '下载视频' }) }}
-                </button>
-              </div>
+              <div class="action-buttons"></div>
             </div>
           </div>
         </div>
