@@ -32,20 +32,15 @@
     </div>
     <PlatformSelector v-model="selectedPlatform" @update:model-value="handlePlatformChange" />
     <div v-if="!selectedPlatform?.shareType.supportURL" class="share-content-row">
-      <Poster ref="posterCompRef" :project-data="props.projectData" />
+      <div class="poster-col">
+        <Poster ref="posterCompRef" :project-data="props.projectData" />
+      </div>
       <div class="qrcode side">
-        <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
+        <component :is="imageShareComponent" v-if="imageShareComponent" />
         <div v-else-if="selectedPlatform?.shareType.supportImage" class="loading-container">
           <div class="loading-icon">⏳</div>
-          <span class="loading-text">{{ $t({ en: 'Generating QR code...', zh: '正在生成二维码...' }) }}</span>
+          <span class="loading-text">{{ $t({ en: 'Preparing guide...', zh: '正在准备引导...' }) }}</span>
         </div>
-        <div v-else class="unsupported-container">
-          <div class="unsupport-icon">❌</div>
-          <span class="unsupported-text">{{ $t({ en: 'Unsupported', zh: '暂不支持' }) }}</span>
-        </div>
-        <button class="download-btn" @click="handleDownloadPoster">
-          {{ $t({ en: 'Download Poster', zh: '下载海报' }) }}
-        </button>
       </div>
     </div>
     <div v-else class="qrcode">
@@ -58,7 +53,7 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
-import { computed, ref } from 'vue'
+import { computed, ref, type Component, shallowRef, markRaw } from 'vue'
 import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
@@ -79,6 +74,7 @@ const emit = defineEmits<{
 const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 const posterCompRef = ref<InstanceType<typeof Poster>>()
 const qrCodeData = ref<string | null>(null)
+const imageShareComponent = shallowRef<Component | null>(null)
 
 const projectSharingLink = computed(() => {
   return `${location.origin}${getProjectShareRoute(props.projectData.owner, props.projectData.name)}`
@@ -93,27 +89,31 @@ const handleCopy = useMessageHandle(
 async function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
 
-  const shareURL = await getPlatformShareURL(platform)
-  if (shareURL) {
-    const qrData = await generateQRCodeDataUrl(shareURL, platform.basicInfo.color)
-    qrCodeData.value = qrData
-  } else {
-    qrCodeData.value = null
-  }
+  await setupPlatformShareContent(platform)
 }
 
-async function getPlatformShareURL(platform: PlatformConfig) {
+async function setupPlatformShareContent(platform: PlatformConfig) {
+  imageShareComponent.value = null
+  qrCodeData.value = null
+
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    return platform.shareFunction.shareURL(projectSharingLink.value)
-  } else if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    // 生成海报文件并传递给shareImage方法
-    if (posterCompRef.value == null) {
-      throw new Error('Poster component not ready')
+    const shareURL = await platform.shareFunction.shareURL(projectSharingLink.value)
+    if (shareURL) {
+      const qrData = await generateQRCodeDataUrl(shareURL, platform.basicInfo.color)
+      qrCodeData.value = qrData
     }
-    const posterFile = await posterCompRef.value.createPoster()
-    return await platform.shareFunction.shareImage(posterFile)
-  } else {
-    return null
+    return
+  }
+
+  if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
+    const poster = posterCompRef.value
+    if (!poster) {
+      throw new Error('Poster component not ready after wait')
+    }
+    const posterFile = await poster.createPoster()
+    const comp = platform.shareFunction.shareImage(posterFile)
+    imageShareComponent.value = comp ? markRaw(comp) : comp
+    return
   }
 }
 
@@ -126,23 +126,6 @@ function generateQRCodeDataUrl(url: string, color: string) {
     width: 120,
     margin: 1
   })
-}
-
-const handleDownloadPoster = async () => {
-  if (!posterCompRef.value) return
-
-  try {
-    const posterFile = await posterCompRef.value.createPoster()
-    const url = URL.createObjectURL(posterFile)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${props.projectData.name}-poster.png`
-    link.click()
-    // 清理URL对象
-    URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Failed to download poster:', error)
-  }
 }
 </script>
 
@@ -180,12 +163,19 @@ const handleDownloadPoster = async () => {
   gap: 48px;
 }
 
+.poster-col {
+  flex: 0 0 auto;
+  width: 300px; /* match poster width */
+}
+
 .qrcode.side {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  max-width: 360px;
+  width: 360px;
 }
 
 .unsupported-container {
