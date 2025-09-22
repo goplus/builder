@@ -159,13 +159,13 @@ describe('Project', () => {
     let projectConfig = await reloadProjectConfig()
     expect(projectConfig.audioAttenuation).toBe(0)
 
-    // increase map width, audio attenuation should be enabled
+    // increase map width and height, audio attenuation should be enabled
     stage.setMapWidth(viewport.width + 100)
     stage.setMapHeight(viewport.height)
     projectConfig = await reloadProjectConfig()
     expect(projectConfig.audioAttenuation).toBe(1)
 
-    // increase map height, audio attenuation should still be enabled
+    // increase map width and height, audio attenuation should still be enabled
     stage.setMapWidth(viewport.width + 100)
     stage.setMapHeight(viewport.height + 200)
     projectConfig = await reloadProjectConfig()

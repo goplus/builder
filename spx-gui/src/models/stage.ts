@@ -39,23 +39,17 @@ type RawPhysicsConfig = {
   globalAirDrag?: number
 }
 
-type RawAudioAttenuationConfig = {
-  audioAttenuation?: number
-  audioMaxDistance?: number
+export type RawStageConfig = RawPhysicsConfig & {
+  backdrops?: RawBackdropConfig[]
+  backdropIndex?: number
+  widgets?: RawWidgetConfig[]
+  map?: RawMapConfig
+  // For compatibility
+  scenes?: RawBackdropConfig[]
+  sceneIndex?: number
+  costumes?: RawBackdropConfig[]
+  currentCostumeIndex?: number
 }
-
-export type RawStageConfig = RawPhysicsConfig &
-  RawAudioAttenuationConfig & {
-    backdrops?: RawBackdropConfig[]
-    backdropIndex?: number
-    widgets?: RawWidgetConfig[]
-    map?: RawMapConfig
-    // For compatibility
-    scenes?: RawBackdropConfig[]
-    sceneIndex?: number
-    costumes?: RawBackdropConfig[]
-    currentCostumeIndex?: number
-  }
 
 export type MapSize = {
   width: number
@@ -74,8 +68,6 @@ const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
 export const defaultMapSize: MapSize = { width: 480, height: 360 }
-export const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
-export const disabledAudioAttenuationFlag = 0
 
 export class Stage extends Disposable {
   code: string

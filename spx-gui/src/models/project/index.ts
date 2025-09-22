@@ -21,13 +21,7 @@ import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-nam
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
-import {
-  defaultMapSize,
-  maxAudioAttenuationViewportScale,
-  disabledAudioAttenuationFlag,
-  Stage,
-  type RawStageConfig
-} from '../stage'
+import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -57,6 +51,11 @@ type RawRunConfig = {
   height?: number
 }
 
+type RawAudioAttenuationConfig = {
+  audioAttenuation?: number
+  audioMaxDistance?: number
+}
+
 type RawCameraConfig = {
   /** Name of sprite to follow. Empty string means no following. */
   on: string
@@ -64,21 +63,22 @@ type RawCameraConfig = {
 
 type ZorderItem = string | RawWidgetConfig
 
-export type RawProjectConfig = RawStageConfig & {
-  zorder?: ZorderItem[]
-  run?: RawRunConfig
-  camera?: RawCameraConfig
-  /**
-   * Sprite order info, used by Builder to determine the order of sprites.
-   * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_spriteOrder?: string[]
-  /**
-   * Sound order info, used by Builder to determine the order of sounds.
-   * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_soundOrder?: string[]
-}
+export type RawProjectConfig = RawStageConfig &
+  RawAudioAttenuationConfig & {
+    zorder?: ZorderItem[]
+    run?: RawRunConfig
+    camera?: RawCameraConfig
+    /**
+     * Sprite order info, used by Builder to determine the order of sprites.
+     * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_spriteOrder?: string[]
+    /**
+     * Sound order info, used by Builder to determine the order of sounds.
+     * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_soundOrder?: string[]
+  }
 
 export type ScreenshotTaker = (
   /** File name without extention */
@@ -93,6 +93,8 @@ export type ViewportSize = {
 }
 
 const defaultViewportSize: ViewportSize = defaultMapSize
+const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
+const disabledAudioAttenuationFlag = 0
 
 export class Project extends Disposable {
   id?: string
