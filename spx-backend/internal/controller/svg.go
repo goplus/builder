@@ -140,6 +140,7 @@ type BeautifyImageResponse struct {
 	URL            string          `json:"url"`              // URL of the beautified image
 	KodoURL        string          `json:"kodo_url,omitempty"`           // Kodo storage URL if stored
 	AIResourceID   int64           `json:"ai_resource_id,omitempty"`     // Database record ID if stored
+	SVGData        []byte          `json:"svg_data,omitempty"`           // Generated SVG byte array
 	OriginalPrompt string          `json:"original_prompt"`  // Original prompt used
 	Prompt         string          `json:"prompt"`           // Final prompt used
 	NegativePrompt string          `json:"negative_prompt,omitempty"`    // Negative prompt used
@@ -455,9 +456,11 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	// Download beautified image for storage
 	var kodoURL string
 	var aiResourceID int64
+	var beautifiedBytes []byte
 
 	if result.URL != "" {
-		beautifiedBytes, err := svggen.DownloadFile(ctx, result.URL)
+		var err error
+		beautifiedBytes, err = svggen.DownloadFile(ctx, result.URL)
 		if err != nil {
 			logger.Printf("Failed to download beautified image: %v", err)
 		} else {
@@ -493,6 +496,7 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 		URL:            result.URL,
 		KodoURL:        kodoURL,
 		AIResourceID:   aiResourceID,
+		SVGData:        beautifiedBytes,
 		OriginalPrompt: result.OriginalPrompt,
 		Prompt:         result.Prompt,
 		NegativePrompt: result.NegativePrompt,
@@ -505,19 +509,6 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	}, nil
 }
 
-// isSVGFormat checks if the uploaded data is a valid SVG file.
-func (ctrl *Controller) isSVGFormat(data []byte) bool {
-	if len(data) == 0 {
-		return false
-	}
-
-	// Convert to lowercase string for case-insensitive checking
-	dataStr := strings.ToLower(string(data[:min(len(data), 1024)]))
-
-	// Check for SVG XML declaration and root element
-	return strings.Contains(dataStr, "<svg") &&
-		   (strings.Contains(dataStr, "xmlns") || strings.Contains(dataStr, "xml"))
-}
 
 // isPNGFormat checks if the uploaded data is a valid PNG file.
 func (ctrl *Controller) isPNGFormat(data []byte) bool {
