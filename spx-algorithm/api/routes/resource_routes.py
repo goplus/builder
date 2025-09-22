@@ -240,3 +240,70 @@ def search_resources(data: dict):
             'details': str(e)
         }), 500
 
+
+@resource_bp.route('/match', methods=['POST'])
+@validate_json_request(['svg_content'], {
+    'svg_content': lambda x: isinstance(x, str) and len(x.strip()) > 0,
+    'top_k': lambda x: isinstance(x, int) and x > 0,
+    'threshold': lambda x: isinstance(x, (int, float)) and x >= 0  # 距离阈值无上限
+})
+@ensure_coordinator_initialized
+def match_resources(data: dict):
+    """
+    图片匹配图片（基于向量距离）
+    
+    接受JSON数据：
+    {
+        "svg_content": "<svg>...</svg>",  // 输入的SVG图片内容
+        "top_k": 10,  // 可选，返回结果数量，默认10
+        "threshold": 0.0  // 可选，最大距离阈值，默认0.0（距离越小越相似）
+    }
+    
+    注意：与文本搜索不同，此接口使用L2距离度量图片相似度
+    - threshold表示最大允许距离（0表示不过滤）
+    - 返回结果按距离排序，距离越小表示越相似
+    """
+    try:
+        svg_content = data['svg_content'].strip()
+        top_k = data.get('top_k', 10)
+        threshold = data.get('threshold', 0.0)
+        
+        logger.info(f"收到图片匹配请求: top_k={top_k}, threshold={threshold}, svg_length={len(svg_content)}")
+        
+        # 执行图片匹配
+        result = coordinator.match_by_image(
+            svg_content=svg_content,
+            top_k=top_k,
+            threshold=threshold
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'top_k': top_k,
+                'threshold': threshold,
+                'results_count': result['results_count'],
+                'results': result['results']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', '图片匹配失败'),
+                'code': 'MATCH_FAILED'
+            }), 500
+    
+    except ValueError as e:
+        logger.error(f"图片匹配参数异常: {e}")
+        return jsonify({
+            'error': str(e),
+            'code': 'INVALID_PARAMETER'
+        }), 400
+    
+    except Exception as e:
+        logger.error(f"图片匹配系统异常: {e}")
+        return jsonify({
+            'error': '内部服务器错误',
+            'code': 'INTERNAL_ERROR',
+            'details': str(e)
+        }), 500
+
