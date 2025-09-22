@@ -2031,87 +2031,87 @@ func (this *post_image) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/post_image_beautify.yap:13
+//line cmd/spx-backend/post_image_beautify.yap:14
 func (this *post_image_beautify) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_image_beautify.yap:13:1
+//line cmd/spx-backend/post_image_beautify.yap:14:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_image_beautify.yap:14:1
-	if
-//line cmd/spx-backend/post_image_beautify.yap:14:1
-	_, ok := ensureAuthenticatedUser(ctx); !ok {
 //line cmd/spx-backend/post_image_beautify.yap:15:1
-		return
-	}
-//line cmd/spx-backend/post_image_beautify.yap:19:1
-	err := ctx.Request.ParseMultipartForm(10 << 20)
-//line cmd/spx-backend/post_image_beautify.yap:20:1
-	if err != nil {
-//line cmd/spx-backend/post_image_beautify.yap:21:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to parse multipart form")
-//line cmd/spx-backend/post_image_beautify.yap:22:1
-		return
-	}
-//line cmd/spx-backend/post_image_beautify.yap:26:1
-	file, _, err := ctx.Request.FormFile("image")
-//line cmd/spx-backend/post_image_beautify.yap:27:1
-	if err != nil {
-//line cmd/spx-backend/post_image_beautify.yap:28:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "SVG file is required")
-//line cmd/spx-backend/post_image_beautify.yap:29:1
-		return
-	}
-//line cmd/spx-backend/post_image_beautify.yap:31:1
-	defer file.Close()
-//line cmd/spx-backend/post_image_beautify.yap:34:1
-	imageData, err := io.ReadAll(file)
-//line cmd/spx-backend/post_image_beautify.yap:35:1
-	if err != nil {
-//line cmd/spx-backend/post_image_beautify.yap:36:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read SVG data")
-//line cmd/spx-backend/post_image_beautify.yap:37:1
-		return
-	}
-//line cmd/spx-backend/post_image_beautify.yap:41:1
-	params := &controller.BeautifyImageParams{Prompt: ctx.Request.FormValue("prompt"), Strength: 0.5, Style: ctx.Request.FormValue("style"), SubStyle: ctx.Request.FormValue("sub_style"), NegativePrompt: ctx.Request.FormValue("negative_prompt"), Provider: svggen.ProviderRecraft}
-//line cmd/spx-backend/post_image_beautify.yap:51:1
 	if
-//line cmd/spx-backend/post_image_beautify.yap:51:1
+//line cmd/spx-backend/post_image_beautify.yap:15:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_image_beautify.yap:16:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:20:1
+	err := ctx.Request.ParseMultipartForm(10 << 20)
+//line cmd/spx-backend/post_image_beautify.yap:21:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:22:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to parse multipart form")
+//line cmd/spx-backend/post_image_beautify.yap:23:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:27:1
+	file, _, err := ctx.Request.FormFile("image")
+//line cmd/spx-backend/post_image_beautify.yap:28:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:29:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "SVG file is required")
+//line cmd/spx-backend/post_image_beautify.yap:30:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:32:1
+	defer file.Close()
+//line cmd/spx-backend/post_image_beautify.yap:35:1
+	imageData, err := io.ReadAll(file)
+//line cmd/spx-backend/post_image_beautify.yap:36:1
+	if err != nil {
+//line cmd/spx-backend/post_image_beautify.yap:37:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read SVG data")
+//line cmd/spx-backend/post_image_beautify.yap:38:1
+		return
+	}
+//line cmd/spx-backend/post_image_beautify.yap:42:1
+	params := &controller.BeautifyImageParams{Prompt: ctx.Request.FormValue("prompt"), Strength: 0.5, Style: ctx.Request.FormValue("style"), SubStyle: ctx.Request.FormValue("sub_style"), NegativePrompt: ctx.Request.FormValue("negative_prompt"), Provider: svggen.ProviderRecraft}
+//line cmd/spx-backend/post_image_beautify.yap:52:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:52:1
 	strengthStr := ctx.Request.FormValue("strength"); strengthStr != "" {
-//line cmd/spx-backend/post_image_beautify.yap:52:1
-		if
-//line cmd/spx-backend/post_image_beautify.yap:52:1
-		strength, err := strconv.ParseFloat(strengthStr, 64); err == nil {
 //line cmd/spx-backend/post_image_beautify.yap:53:1
+		if
+//line cmd/spx-backend/post_image_beautify.yap:53:1
+		strength, err := strconv.ParseFloat(strengthStr, 64); err == nil {
+//line cmd/spx-backend/post_image_beautify.yap:54:1
 			params.Strength = strength
 		}
 	}
-//line cmd/spx-backend/post_image_beautify.yap:58:1
-	if
-//line cmd/spx-backend/post_image_beautify.yap:58:1
-	providerStr := ctx.Request.FormValue("provider"); providerStr != "" {
 //line cmd/spx-backend/post_image_beautify.yap:59:1
+	if
+//line cmd/spx-backend/post_image_beautify.yap:59:1
+	providerStr := ctx.Request.FormValue("provider"); providerStr != "" {
+//line cmd/spx-backend/post_image_beautify.yap:60:1
 		params.Provider = svggen.Provider(providerStr)
 	}
-//line cmd/spx-backend/post_image_beautify.yap:63:1
-	if
-//line cmd/spx-backend/post_image_beautify.yap:63:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_image_beautify.yap:64:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+	if
+//line cmd/spx-backend/post_image_beautify.yap:64:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_image_beautify.yap:65:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_image_beautify.yap:66:1
 		return
 	}
-//line cmd/spx-backend/post_image_beautify.yap:69:1
-	result, err := this.ctrl.BeautifyImage(ctx.Context(), params, imageData)
 //line cmd/spx-backend/post_image_beautify.yap:70:1
-	if err != nil {
+	result, err := this.ctrl.BeautifyImage(ctx.Context(), params, imageData)
 //line cmd/spx-backend/post_image_beautify.yap:71:1
-		replyWithInnerError(ctx, err)
+	if err != nil {
 //line cmd/spx-backend/post_image_beautify.yap:72:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_image_beautify.yap:73:1
 		return
 	}
-//line cmd/spx-backend/post_image_beautify.yap:75:1
+//line cmd/spx-backend/post_image_beautify.yap:76:1
 	this.Json__1(result)
 }
 func (this *post_image_beautify) Classfname() string {

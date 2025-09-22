@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
@@ -488,8 +487,8 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		return nil, fmt.Errorf("both searches failed: semantic=%v, theme=%v", searchErrors[0], searchErrors[1])
 	}
 
-	// Fuse and score results
-	fusedResults := ctrl.fuseSearchResults(semanticResults, themeResults, params.Theme)
+	// Combine and deduplicate results
+	fusedResults := ctrl.combineSearchResults(semanticResults, themeResults)
 
 	// Limit to requested top_k
 	if len(fusedResults) > params.TopK {
@@ -553,41 +552,29 @@ func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResul
 	return results
 }
 
-// fuseSearchResults fuses and re-scores results from semantic and theme searches
-func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []RecommendedImageResult, theme ThemeType) []RecommendedImageResult {
-	logger := log.GetReqLogger(context.Background())
-
-	// Combine all results
+// combineSearchResults combines and deduplicates results from semantic and theme searches
+func (ctrl *Controller) combineSearchResults(semanticResults, themeResults []RecommendedImageResult) []RecommendedImageResult {
+	// Combine all results with efficient deduplication using map
 	allResults := make([]RecommendedImageResult, 0, len(semanticResults)+len(themeResults))
+	seen := make(map[string]bool, len(semanticResults)+len(themeResults))
 
 	// Add semantic results
-	allResults = append(allResults, semanticResults...)
-
-	// Add theme results (with deduplication)
-	for _, result := range themeResults {
-		if !ctrl.isDuplicateResult(result, allResults) {
+	for _, result := range semanticResults {
+		if !seen[result.ImagePath] {
 			allResults = append(allResults, result)
-		} else {
-			logger.Printf("Deduplicated theme result: %s", result.ImagePath)
+			seen[result.ImagePath] = true
 		}
 	}
 
-	// Re-score all results with theme relevance
-	for i := range allResults {
-		semanticScore := allResults[i].Similarity
-		logger.Printf("Original semantic score for %s: %.3f", allResults[i].ImagePath, semanticScore)
-
-		// Calculate theme relevance score (simplified - in production this could use ML)
-		themeScore := ctrl.calculateThemeRelevance(allResults[i].ImagePath, theme)
-
-		// Weight combination: 70% semantic + 30% theme
-		allResults[i].Similarity = semanticScore*0.7 + themeScore*0.3
-
-		logger.Printf("Result %s: semantic=%.3f, theme=%.3f, final=%.3f",
-			allResults[i].ImagePath, semanticScore, themeScore, allResults[i].Similarity)
+	// Add theme results (skip duplicates)
+	for _, result := range themeResults {
+		if !seen[result.ImagePath] {
+			allResults = append(allResults, result)
+			seen[result.ImagePath] = true
+		}
 	}
 
-	// Sort by final similarity score
+	// Sort by similarity score (descending)
 	for i := 0; i < len(allResults)-1; i++ {
 		for j := i + 1; j < len(allResults); j++ {
 			if allResults[i].Similarity < allResults[j].Similarity {
@@ -596,50 +583,10 @@ func (ctrl *Controller) fuseSearchResults(semanticResults, themeResults []Recomm
 		}
 	}
 
-	logger.Printf("Fused %d semantic + %d theme results into %d total results",
-		len(semanticResults), len(themeResults), len(allResults))
-
 	return allResults
 }
 
-// isDuplicateResult checks if a result is already in the collection
-func (ctrl *Controller) isDuplicateResult(result RecommendedImageResult, existing []RecommendedImageResult) bool {
-	for _, existingResult := range existing {
-		if result.ImagePath == existingResult.ImagePath {
-			return true
-		}
-	}
-	return false
-}
 
-// TODO 这里计划使用CLIP模型来实现
-// calculateThemeRelevance calculates theme relevance score for an image
-func (ctrl *Controller) calculateThemeRelevance(imagePath string, theme ThemeType) float64 {
-	// Simplified theme relevance calculation
-	// In production, this could use ML models or metadata analysis
-
-	// For now, assign scores based on theme source
-	switch theme {
-	case ThemeCartoon:
-		// Higher scores for images likely to be cartoon-style
-		if strings.Contains(imagePath, "cartoon") || strings.Contains(imagePath, "cute") {
-			return 0.9
-		}
-		return 0.7
-	case ThemeRealistic:
-		if strings.Contains(imagePath, "realistic") || strings.Contains(imagePath, "photo") {
-			return 0.9
-		}
-		return 0.6
-	case ThemeMinimal:
-		if strings.Contains(imagePath, "minimal") || strings.Contains(imagePath, "simple") {
-			return 0.9
-		}
-		return 0.7
-	default:
-		return 0.8 // Default theme relevance
-	}
-}
 
 // SubmitImageFeedback submits user feedback for image recommendations to algorithm service
 func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFeedbackParams) error {

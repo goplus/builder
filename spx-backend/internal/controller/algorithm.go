@@ -139,7 +139,7 @@ func (s *AlgorithmService) SearchSimilarImages(ctx context.Context, text string,
 	req := AlgorithmSearchRequest{
 		Text:      text,
 		TopK:      topK,
-		Threshold: 0.27,
+		Threshold: 0.2,
 	}
 
 	jsonData, err := json.Marshal(req)
