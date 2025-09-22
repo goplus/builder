@@ -124,7 +124,8 @@ class NeuralNetworkTrainer:
                    epochs: int = 100,
                    batch_size: int = 64,
                    learning_rate: float = 0.001,
-                   early_stopping_patience: int = 10) -> Dict[str, Any]:
+                   early_stopping_patience: int = 10,
+                   continue_training: bool = False) -> Dict[str, Any]:
         """
         训练神经网络模型
         
@@ -136,6 +137,7 @@ class NeuralNetworkTrainer:
             batch_size: 批次大小
             learning_rate: 学习率
             early_stopping_patience: 早停耐心值
+            continue_training: 是否继续训练现有模型（True）还是从头开始（False）
             
         Returns:
             训练结果统计
@@ -168,9 +170,19 @@ class NeuralNetworkTrainer:
             train_dataset = torch.utils.data.TensorDataset(X_train_tensor, y_train_tensor)
             train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             
-            # 初始化模型
+            # 初始化或继续训练模型
             input_dim = X.shape[1]
-            self.model = RerankingNeuralNetwork(input_dim).to(self.device)
+            if continue_training and self.model is not None:
+                # 验证现有模型的输入维度是否匹配
+                if self.model.input_dim != input_dim:
+                    logger.warning(f"现有模型输入维度({self.model.input_dim})与新数据维度({input_dim})不匹配，将重新初始化模型")
+                    self.model = RerankingNeuralNetwork(input_dim).to(self.device)
+                else:
+                    logger.info(f"继续训练现有模型，输入维度: {input_dim}")
+            else:
+                # 重新初始化模型
+                logger.info(f"初始化新模型，输入维度: {input_dim}")
+                self.model = RerankingNeuralNetwork(input_dim).to(self.device)
             
             # 定义损失函数和优化器
             criterion = nn.BCELoss()
@@ -493,12 +505,14 @@ class NeuralNetworkTrainer:
     def retrain_with_new_data(self, features: List[List[float]], labels: List[int],
                             existing_model_path: Optional[str] = None) -> Dict[str, Any]:
         """
-        使用新数据增量训练模型（目前实现为全量重训练）
+        使用新数据增量训练模型
+        
+        此方法会加载现有模型（如果存在）并在其基础上继续训练，而不是从头开始重新训练。
         
         Args:
             features: 新的训练特征
             labels: 新的训练标签
-            existing_model_path: 现有模型路径
+            existing_model_path: 现有模型路径，如果为None则使用默认路径
             
         Returns:
             训练结果
@@ -511,8 +525,8 @@ class NeuralNetworkTrainer:
                 self.load_model(existing_model_path)
                 logger.info("已加载现有模型进行增量训练")
             
-            # 使用新数据训练（目前实现为全量重训练）
-            result = self.train_model(features, labels)
+            # 使用新数据进行增量训练
+            result = self.train_model(features, labels, continue_training=True)
             
             logger.info("增量训练完成")
             return result
@@ -520,3 +534,4 @@ class NeuralNetworkTrainer:
         except Exception as e:
             logger.error(f"增量训练失败: {e}")
             raise
+        
