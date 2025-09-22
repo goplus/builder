@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,10 +35,24 @@ type AssetCompletionTrie struct {
 
 // NewAssetCompletionTrie creates a new trie-based completion service
 func NewAssetCompletionTrie(db *gorm.DB) *AssetCompletionTrie {
+	return newAssetCompletionTrieWithConfig(db)
+}
+
+// newAssetCompletionTrieWithConfig creates a new trie-based completion service with environment configuration
+func newAssetCompletionTrieWithConfig(db *gorm.DB) *AssetCompletionTrie {
+	cacheExpiry := 30 * time.Minute // Default cache expiry
+
+	// Check for custom cache expiry from environment
+	if envExpiry := os.Getenv(EnvTrieCacheExpiry); envExpiry != "" {
+		if minutes, err := strconv.Atoi(envExpiry); err == nil && minutes > 0 {
+			cacheExpiry = time.Duration(minutes) * time.Minute
+		}
+	}
+
 	service := &AssetCompletionTrie{
 		root:        &TrieNode{children: make(map[rune]*TrieNode)},
 		db:          db,
-		cacheExpiry: 30 * time.Minute, // Cache expires every 30 minutes
+		cacheExpiry: cacheExpiry,
 		minDepth:    2, // Only store namesMap from depth 2 onwards (configurable)
 	}
 
@@ -211,6 +227,7 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 	nodeCount, totalNames := t.calculateTrieStats(t.root)
 
 	return map[string]interface{}{
+		"mode":          "trie",
 		"last_update":   t.lastUpdate,
 		"cache_age":     time.Since(t.lastUpdate),
 		"cache_expiry":  t.cacheExpiry,
@@ -218,6 +235,8 @@ func (t *AssetCompletionTrie) GetCacheStats() map[string]interface{} {
 		"refreshing":    t.refreshing.Load(),
 		"node_count":    nodeCount,
 		"total_names":   totalNames,
+		"trie_enabled":  true,
+		"llm_enabled":   false,
 	}
 }
 
