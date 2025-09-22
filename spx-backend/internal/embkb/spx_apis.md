@@ -117,10 +117,6 @@ play,"play ""s1"", true",Play sound with given name in a loop
 play,"play ""s1""",Play sound with given name
 playAndWait,"playAndWait ""s1""",Play sound with waiting
 resumePlaying,"resumePlaying ""s1""",Resume sound with given name
-setColliderCapsule,"setColliderCapsule 50, 100",Set the collider to be a capsule with given radius & height
-setColliderCircle,setColliderCircle 50,Set the collider to be a circle with given radius
-setColliderPivot,"setColliderPivot 0, 0",Set the collider pivot
-setColliderRect,"setColliderRect 100, 100",Set the collider to be a rectangle with given width & height
 setGraphicEffect,"setGraphicEffect ColorEffect, 100",Set graphic effect of the sprite
 setGravity,setGravity 0,Set the gravity for the sprite
 setPhysicsMode,setPhysicsMode NoPhysics,Set the physics mode for the sprite
