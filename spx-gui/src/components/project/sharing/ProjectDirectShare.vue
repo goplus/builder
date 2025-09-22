@@ -44,7 +44,11 @@
       </div>
     </div>
     <div v-else class="qrcode">
-      <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
+      <component :is="urlShareComponent" v-if="urlShareComponent" />
+      <div v-else-if="selectedPlatform?.shareType.supportURL" class="loading-container">
+        <div class="loading-icon">⏳</div>
+        <span class="loading-text">{{ $t({ en: 'Preparing QR code...', zh: '正在准备二维码...' }) }}</span>
+      </div>
     </div>
   </UIFormModal>
 </template>
@@ -58,7 +62,6 @@ import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
-import QRCode from 'qrcode'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -73,7 +76,7 @@ const emit = defineEmits<{
 // 组件引用
 const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 const posterCompRef = ref<InstanceType<typeof Poster>>()
-const qrCodeData = ref<string | null>(null)
+const urlShareComponent = shallowRef<Component | null>(null)
 const imageShareComponent = shallowRef<Component | null>(null)
 
 const projectSharingLink = computed(() => {
@@ -94,13 +97,12 @@ async function handlePlatformChange(platform: PlatformConfig) {
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
   imageShareComponent.value = null
-  qrCodeData.value = null
+  urlShareComponent.value = null
 
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    const shareURL = await platform.shareFunction.shareURL(projectSharingLink.value)
-    if (shareURL) {
-      const qrData = await generateQRCodeDataUrl(shareURL, platform.basicInfo.color)
-      qrCodeData.value = qrData
+    const shareComponent = await platform.shareFunction.shareURL(projectSharingLink.value)
+    if (shareComponent) {
+      urlShareComponent.value = markRaw(shareComponent)
     }
     return
   }
@@ -115,17 +117,6 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
     imageShareComponent.value = comp ? markRaw(comp) : comp
     return
   }
-}
-
-function generateQRCodeDataUrl(url: string, color: string) {
-  return QRCode.toDataURL(url, {
-    color: {
-      dark: color,
-      light: '#FFFFFF'
-    },
-    width: 120,
-    margin: 1
-  })
 }
 </script>
 

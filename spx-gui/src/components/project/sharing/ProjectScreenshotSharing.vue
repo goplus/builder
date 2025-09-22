@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, type Component } from 'vue'
+import { ref, watch, nextTick, type Component, shallowRef, markRaw } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import type { PlatformConfig } from './platform-share'
-import QRCode from 'qrcode'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
 
@@ -25,8 +24,7 @@ const posterCompRef = ref<InstanceType<typeof Poster>>()
 
 // Platform related state
 const selectedPlatform = ref<PlatformConfig | null>(null)
-const jumpUrl = ref<string>('')
-const qrCodeData = ref<string>('')
+const urlShareComponent = shallowRef<Component | null>(null)
 const guideComponent = ref<Component | null>(null)
 const isGeneratingQR = ref(false)
 
@@ -34,7 +32,8 @@ const isGeneratingQR = ref(false)
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
   guideComponent.value = null
-  handleGenerateShareQRCode()
+  urlShareComponent.value = null
+  handleGenerateShareContent()
 }
 
 // Get current project URL
@@ -62,70 +61,47 @@ async function createPosterFile(): Promise<File> {
   return posterFile
 }
 
-// Generate share URL for platform
-async function generateShareUrl(platform: PlatformConfig): Promise<string> {
+// Generate share content for platform
+async function generateShareContent(platform: PlatformConfig): Promise<void> {
   const currentUrl = getCurrentProjectUrl()
 
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     const posterFile = await createPosterFile()
     guideComponent.value = platform.shareFunction.shareImage(posterFile)
-    // When manual guide is shown, QR is not needed; return current URL as placeholder
-    return currentUrl
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    return await platform.shareFunction.shareURL(currentUrl)
-  } else {
-    return currentUrl
+    // Get the QR code component from platform
+    const shareComponent = await platform.shareFunction.shareURL(currentUrl)
+    if (shareComponent) {
+      urlShareComponent.value = markRaw(shareComponent)
+    }
   }
 }
 
-// Generate QR code data URL
-async function generateQRCodeDataUrl(shareUrl: string, color: string): Promise<string> {
-  try {
-    return await QRCode.toDataURL(shareUrl, {
-      color: {
-        dark: color || '#000000',
-        light: '#FFFFFF'
-      },
-      width: 120,
-      margin: 1
-    })
-  } catch (error) {
-    throw new DefaultException({
-      en: 'Failed to generate QR code',
-      zh: '生成二维码失败'
-    })
-  }
-}
-
-// Generate share QR code with error handling
-const generateShareQRCode = useMessageHandle(
+// Generate share content with error handling
+const generateShareContentWithMessage = useMessageHandle(
   async (): Promise<void> => {
     if (!selectedPlatform.value) return
 
     const platform = selectedPlatform.value
-    const shareUrl = await generateShareUrl(platform)
-    const qrDataURL = await generateQRCodeDataUrl(shareUrl, platform.basicInfo.color)
-
-    jumpUrl.value = shareUrl
-    qrCodeData.value = qrDataURL
+    await generateShareContent(platform)
   },
   {
-    en: 'Failed to generate share QR code',
-    zh: '生成分享二维码失败'
+    en: 'Failed to generate share content',
+    zh: '生成分享内容失败'
   }
 )
 
 // Wrapper function for internal use that handles loading state
-async function handleGenerateShareQRCode(): Promise<void> {
+async function handleGenerateShareContent(): Promise<void> {
   if (!selectedPlatform.value) return
 
   isGeneratingQR.value = true
   try {
-    await generateShareQRCode.fn()
+    await generateShareContentWithMessage.fn()
   } catch (error) {
-    // Reset QR code data on error
-    qrCodeData.value = ''
+    // Reset share components on error
+    urlShareComponent.value = null
     throw error
   } finally {
     isGeneratingQR.value = false
@@ -138,13 +114,12 @@ watch(
   (newVisible) => {
     if (newVisible) {
       // Reset state
-      jumpUrl.value = ''
-      qrCodeData.value = ''
+      urlShareComponent.value = null
 
-      // Wait for DOM update then generate QR code
+      // Wait for DOM update then generate share content
       nextTick(() => {
         if (selectedPlatform.value) {
-          handleGenerateShareQRCode()
+          handleGenerateShareContent()
         }
       })
     }
@@ -167,20 +142,27 @@ watch(
           <div class="qr-section">
             <div class="qr-section-inner">
               <component :is="guideComponent" v-if="guideComponent" />
-              <div v-else class="qr-content">
+              <component :is="urlShareComponent" v-else-if="urlShareComponent" />
+              <div v-else-if="selectedPlatform?.shareType.supportURL" class="qr-content">
                 <div class="qr-code">
-                  <img
-                    v-if="qrCodeData"
-                    :src="qrCodeData"
-                    :alt="$t({ en: 'Share QR Code', zh: '分享二维码' })"
-                    class="qr-image"
-                  />
-                  <div v-else class="qr-placeholder">
+                  <div class="qr-placeholder">
                     <span>{{
                       isGeneratingQR
                         ? $t({ en: 'Generating...', zh: '生成中...' })
                         : $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' })
                     }}</span>
+                  </div>
+                </div>
+                <div class="qr-hint">
+                  {{
+                    $t({ en: 'Scan the code with the corresponding platform to share', zh: '用对应平台进行扫码分享' })
+                  }}
+                </div>
+              </div>
+              <div v-else class="qr-content">
+                <div class="qr-code">
+                  <div class="qr-placeholder">
+                    <span>{{ $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' }) }}</span>
                   </div>
                 </div>
                 <div class="qr-hint">
