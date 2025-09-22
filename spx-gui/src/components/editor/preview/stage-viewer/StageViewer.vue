@@ -202,10 +202,17 @@ function inViewport({ x, y }: Pos) {
   )
 }
 
+// If camera enabled, update camera behavior when selected sprite changes
 watch(
   () => editorCtx.state.selectedSprite,
   (selectedSprite) => {
-    editorCtx.project.setCameraFollowSprite(selectedSprite?.id ?? null)
+    const project = editorCtx.project
+    if (!project.isCameraEnabled) return
+    // Set camera follow sprite
+    project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
+      project.setCameraFollowSprite(selectedSprite?.id ?? null)
+    )
+    // Center map to selected sprite if it's out of viewport
     if (selectedSprite != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
         x: -(mapSize.value.width / 2 + selectedSprite.x - viewportSize.value.width / 2),

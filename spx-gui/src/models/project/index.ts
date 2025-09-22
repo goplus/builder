@@ -234,7 +234,12 @@ export class Project extends Disposable {
     this.cameraFollowSpriteId = spriteId
   }
 
-  get isMapLargerThanViewport() {
+  /**
+   * Camera is considered enabled if the map size is larger than viewport size.
+   * To keep backward-compatibility, we optionally enables other camera-related features
+   * (e.g. audio attenuation, camera following) by checking this flag.
+   */
+  get isCameraEnabled() {
     const mapSize = this.stage.getMapSize()
     const viewport = this.viewportSize
     return mapSize.width > viewport.width || mapSize.height > viewport.height
@@ -420,12 +425,9 @@ export class Project extends Disposable {
     const { width, height } = this.viewportSize
     const config: RawProjectConfig = {
       ...restStageConfig,
-      audioAttenuation: this.isMapLargerThanViewport ? 1 : disabledAudioAttenuationFlag, // Enable audio attenuation only when the map is larger than viewport
+      audioAttenuation: this.isCameraEnabled ? 1 : disabledAudioAttenuationFlag, // Enable audio attenuation only when the map is larger than viewport
       audioMaxDistance: Math.max(width, height) * maxAudioAttenuationViewportScale, // Always export audioMaxDistance config for backward-compatibility
-      run: {
-        width: this.viewportSize.width,
-        height: this.viewportSize.height
-      },
+      run: { width, height },
       camera: {
         on: this.cameraFollowSprite?.name || ''
       },
