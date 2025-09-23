@@ -4,6 +4,7 @@ import { UICard, UICardHeader } from '@/components/ui'
 
 import MapSizeInput from './MapSizeInput.vue'
 import MapPhysicsInput from './MapPhysicsInput.vue'
+import MapLayerSortInput from './MapLayerSortInput.vue'
 
 defineProps<{
   project: Project
@@ -23,6 +24,7 @@ defineProps<{
     <div class="main">
       <MapSizeInput :project="project" />
       <MapPhysicsInput :project="project" />
+      <MapLayerSortInput :project="project" />
     </div>
   </UICard>
 </template>
