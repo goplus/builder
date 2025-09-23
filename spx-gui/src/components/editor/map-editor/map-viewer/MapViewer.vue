@@ -183,7 +183,8 @@ const mapConfig = computed(() => {
   return {
     ...mapPos.value,
     draggable: true,
-    scale: { x: mapScale.value, y: mapScale.value }
+    scale: { x: mapScale.value, y: mapScale.value },
+    imageSmoothingEnabled: false
   } satisfies LayerConfig
 })
 

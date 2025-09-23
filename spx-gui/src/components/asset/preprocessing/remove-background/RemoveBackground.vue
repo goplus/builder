@@ -14,6 +14,7 @@ import { extname, stripExt } from '@/utils/path'
 import { memoizeAsync } from '@/utils/utils'
 import { getMimeFromExt } from '@/utils/file'
 import { toJpeg } from '@/utils/img'
+import { getImgDrawingCtx } from '@/utils/canvas'
 import { matting } from '@/apis/aigc'
 import { fromBlob, toNativeFile, File } from '@/models/common/file'
 import { createFileWithWebUrl, saveFileForWebUrl } from '@/models/common/cloud'
@@ -92,8 +93,7 @@ function drawTransitionFrame(
   progress: number,
   reverse: boolean
 ) {
-  const ctx = canvas.getContext('2d')
-  if (ctx == null) return
+  const ctx = getImgDrawingCtx(canvas)
   if (reverse) {
     ctx.clearRect(canvas.width * (1 - progress), 0, canvas.width * progress, canvas.height)
     ctx.drawImage(

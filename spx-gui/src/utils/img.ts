@@ -1,4 +1,5 @@
 import { Disposable } from '@/utils/disposable'
+import { getImgDrawingCtx } from './canvas'
 
 /** Convert arbitrary-type (supported by current browser) image content to another type. */
 export function convertImg(
@@ -17,7 +18,7 @@ export function convertImg(
         size = await getSVGSize(svgText)
       }
       const canvas = new OffscreenCanvas(size.width, size.height)
-      const ctx = canvas.getContext('2d')!
+      const ctx = getImgDrawingCtx(canvas)
       ctx.drawImage(img, 0, 0, size.width, size.height)
       resolve(canvas.convertToBlob({ type }))
     }
