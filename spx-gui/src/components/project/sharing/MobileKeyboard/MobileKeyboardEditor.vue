@@ -385,8 +385,6 @@ onUnmounted(() => {
     display: block;
     width: 750px;
     height: auto;
-    -webkit-user-drag: none;
-    user-drag: none;
   }
 }
 
