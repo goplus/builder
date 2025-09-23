@@ -23,8 +23,8 @@ func Load(logger *log.Logger) (*Config, error) {
 	config := &Config{
 		Server: ServerConfig{
 			Port:         os.Getenv("PORT"),
-			ReadTimeout:  getEnvAsDuration("SERVER_READ_TIMEOUT", "120"),
-			WriteTimeout: getEnvAsDuration("SERVER_WRITE_TIMEOUT", "120"),
+			ReadTimeout:  getEnvAsDuration("SERVER_READ_TIMEOUT", "360s"),
+			WriteTimeout: getEnvAsDuration("SERVER_WRITE_TIMEOUT", "360s"),
 		},
 		Database: DatabaseConfig{
 			DSN: mustGetEnv(logger, "GOP_SPX_DSN"),
@@ -63,13 +63,13 @@ func Load(logger *log.Logger) (*Config, error) {
 		},
 		Algorithm: AlgorithmConfig{
 			Endpoint: getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
-			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "30s"),
+			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "60s"),
 		},
 
 		Providers: ProvidersConfig{
 			SVGIO: SVGIOConfig{
 				BaseURL:    getEnvAsString("SVGIO_BASE_URL", "https://api.svg.io"),
-				Timeout:    getEnvAsDuration("SVGIO_TIMEOUT", "60s"),
+				Timeout:    getEnvAsDuration("SVGIO_TIMEOUT", "120s"),
 				MaxRetries: getEnvAsInt("SVGIO_MAX_RETRIES", 3),
 				Enabled:    getEnvAsBool("SVGIO_ENABLED", true),
 				Endpoints: SVGIOEndpoints{
@@ -78,7 +78,7 @@ func Load(logger *log.Logger) (*Config, error) {
 			},
 			Recraft: RecraftConfig{
 				BaseURL:         getEnvAsString("RECRAFT_BASE_URL", "https://external.api.recraft.ai"),
-				Timeout:         getEnvAsDuration("RECRAFT_TIMEOUT", "60s"),
+				Timeout:         getEnvAsDuration("RECRAFT_TIMEOUT", "120s"),
 				MaxRetries:      getEnvAsInt("RECRAFT_MAX_RETRIES", 3),
 				Enabled:         getEnvAsBool("RECRAFT_ENABLED", true),
 				DefaultModel:    getEnvAsString("RECRAFT_DEFAULT_MODEL", "recraftv3"),

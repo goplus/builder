@@ -222,7 +222,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		} else {
 			aiResourceID = aiResource.ID
 			logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
-			
+
 			// Call vector service to add SVG data
 			vectorStart := time.Now()
 			if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoURL, svgBytes); vectorErr != nil {

@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
@@ -254,12 +255,16 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	}
 
 	// Cache recommendation result for feedback tracking
+	logger.Printf("Caching recommendation for queryID: %s", queryID)
 	err = ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
 	if err != nil {
 		logger.Printf("Failed to cache recommendation: %v", err)
+	} else {
+		logger.Printf("Successfully cached recommendation for queryID: %s", queryID)
 	}
 
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
+	logger.Printf("Returning recommendation result with %d results", len(foundResults))
 	return &ImageRecommendResult{
 		QueryID:      queryID,
 		Query:        promptCtx.OptimizedPrompt,
@@ -426,7 +431,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 			return
 		}
 
-		results := ctrl.processAlgorithmResults(algorithmResp.Results, "semantic_search")
+		results := ctrl.processAlgorithmResults(algorithmResp.Results, "search")
 		resultChan <- searchResult{results: results, source: "semantic"}
 	}()
 
@@ -441,7 +446,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 			return
 		}
 
-		results := ctrl.processAlgorithmResults(algorithmResp.Results, "theme_search")
+		results := ctrl.processAlgorithmResults(algorithmResp.Results, "search")
 		resultChan <- searchResult{results: results, source: "theme"}
 	}()
 
@@ -519,36 +524,24 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 }
 
 // processAlgorithmResults processes algorithm service results into RecommendedImageResult format
+// OPTIMIZATION: Use algorithm service data directly instead of MySQL validation to avoid data inconsistency
 func (ctrl *Controller) processAlgorithmResults(algResults []AlgorithmImageResult, source string) []RecommendedImageResult {
 	results := make([]RecommendedImageResult, 0, len(algResults))
 	logger := log.GetReqLogger(context.Background())
-	
-	
+
 	for i, algResult := range algResults {
-		var aiResource struct {
-			ID  int64  `json:"id"`
-			URL string `json:"url"`
-		}
-		
-		err := ctrl.db.Table("aiResource").Select("id, url").Where("url = ? AND deleted_at IS NULL", algResult.URL).First(&aiResource).Error
-		
-		if err == nil {
-			// Found matching resource in database
-			logger.Printf("  ✅ Result %d found in database: ID=%d, URL=%s, Similarity=%.2f", i+1, aiResource.ID, aiResource.URL, algResult.Similarity)
-			results = append(results, RecommendedImageResult{
-				ID:         aiResource.ID,
-				ImagePath:  algResult.URL,
-				Similarity: algResult.Similarity,
-				Rank:       algResult.Rank,
-				Source:     source,
-			})
-		} else {
-			// Image not found in database, log and skip
-			logger.Printf("  ❌ Result %d not found in database: URL='%s', error: %v", i+1, algResult.URL, err)
-		}
+		// Use algorithm service data directly - it's the source of truth for search results
+		logger.Printf("  ✅ Algorithm result %d: ID=%d, URL=%s, Similarity=%.2f", i+1, algResult.ID, algResult.URL, algResult.Similarity)
+		results = append(results, RecommendedImageResult{
+			ID:         algResult.ID,
+			ImagePath:  algResult.URL,
+			Similarity: algResult.Similarity,
+			Rank:       algResult.Rank,
+			Source:     source,
+		})
 	}
 
-	logger.Printf("📊 Processed algorithm results: %d input → %d valid results", len(algResults), len(results))
+	logger.Printf("📊 Processed algorithm results: %d input → %d output (no filtering)", len(algResults), len(results))
 	return results
 }
 
@@ -574,14 +567,10 @@ func (ctrl *Controller) combineSearchResults(semanticResults, themeResults []Rec
 		}
 	}
 
-	// Sort by similarity score (descending)
-	for i := 0; i < len(allResults)-1; i++ {
-		for j := i + 1; j < len(allResults); j++ {
-			if allResults[i].Similarity < allResults[j].Similarity {
-				allResults[i], allResults[j] = allResults[j], allResults[i]
-			}
-		}
-	}
+	// Sort by similarity score (descending) - optimized with Go's built-in sort
+	sort.Slice(allResults, func(i, j int) bool {
+		return allResults[i].Similarity > allResults[j].Similarity
+	})
 
 	return allResults
 }

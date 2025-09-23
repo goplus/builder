@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -2287,7 +2288,13 @@ func (this *post_images_recommend) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_images_recommend.yap:28:1
+	fmt.Println("YAP: About to send JSON response with", result.ResultsCount, "results")
+//line cmd/spx-backend/post_images_recommend.yap:29:1
+	fmt.Println("YAP: Query ID:", result.QueryID)
+//line cmd/spx-backend/post_images_recommend.yap:30:1
 	this.Json__1(result)
+//line cmd/spx-backend/post_images_recommend.yap:31:1
+	fmt.Println("YAP: JSON response sent successfully for query:", result.QueryID)
 }
 func (this *post_images_recommend) Classfname() string {
 	return "post_images_recommend"
