@@ -8,6 +8,9 @@ import (
 )
 
 ctx := &Context
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
+	return
+}
 
 result, err := ctrl.GetThemes(ctx.Context())
 if err != nil {

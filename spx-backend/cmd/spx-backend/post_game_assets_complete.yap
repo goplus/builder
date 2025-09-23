@@ -3,6 +3,9 @@
 // POST /game-assets/complete
 
 ctx := &Context
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
+	return
+}
 
 // 解析JSON请求体
 var req struct {

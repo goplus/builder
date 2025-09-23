@@ -8,6 +8,9 @@ import (
 )
 
 ctx := &Context
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
+	return
+}
 
 params := &controller.ProjectContextParams{}
 if !parseJSON(ctx, params) {
