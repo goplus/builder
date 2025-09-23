@@ -71,57 +71,57 @@ const ModelList: ModelInfo[] = [
     id: '',
     name: '无主题',
     description: '不应用任何特定主题风格',
-    preview_url: previewImage,
+    preview_url: previewImage
   },
   {
     id: 'business',
     name: '商务风格',
     description: '专业商务风格，现代企业形象',
-    preview_url: businessImage,
+    preview_url: businessImage
   },
   {
     id: 'cartoon',
     name: '卡通风格',
     description: '色彩鲜艳的卡通风格，适合可爱有趣的内容',
-    preview_url: cartoonImage,
+    preview_url: cartoonImage
   },
   {
     id: 'scifi',
     name: '科技风格',
     description: '未来科技风格，充满科幻元素',
-    preview_url: cyberImage,
+    preview_url: cyberImage
   },
   {
     id: 'fantasy',
     name: '魔法风格',
     description: '充满魔法和超自然元素的奇幻风格',
-    preview_url: magicImage,
+    preview_url: magicImage
   },
   {
     id: 'minimal',
     name: '极简风格',
     description: '极简主义风格，简洁干净的设计',
-    preview_url: minimalImage,
+    preview_url: minimalImage
   },
   {
     id: 'nature',
     name: '自然风格',
     description: '"自然有机风格，使用自然元素和大地色调',
-    preview_url: natrueImage,
+    preview_url: natrueImage
   },
   {
     id: 'realistic',
     name: '写实风格',
     description: '高度写实的风格，细节丰富逼真',
-    preview_url: realisticImage,
+    preview_url: realisticImage
   },
   {
     id: 'retro',
     name: '复古风格',
     description: '怀旧复古风格，经典老式美学',
-    preview_url: retroImage,
+    preview_url: retroImage
   }
-] 
+]
 
 const models = ref<ModelInfo[]>(ModelList)
 
@@ -132,7 +132,6 @@ const selectedModelInfo = computed(() => {
   const found = models.value.find((m) => m.id === selectedModel.value?.id)
   return found || models.value[0]
 })
-
 
 const openModal = () => {
   showModal.value = true
@@ -381,7 +380,6 @@ defineExpose({
   background: #3367d6;
   border-color: #3367d6;
 }
-
 
 @keyframes fadeIn {
   from {
