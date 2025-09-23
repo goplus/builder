@@ -62,6 +62,7 @@ import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
+import { DefaultException } from '@/utils/exception'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -89,10 +90,29 @@ const handleCopy = useMessageHandle(
   { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
 )
 
-async function handlePlatformChange(platform: PlatformConfig) {
+function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
 
-  await setupPlatformShareContent(platform)
+  setupPlatformShareContent(platform)
+}
+
+async function createPosterFile(): Promise<File> {
+  if (!posterCompRef.value) {
+    throw new DefaultException({
+      en: 'Poster component not ready',
+      zh: '海报组件未准备好'
+    })
+  }
+
+  const posterFile = await posterCompRef.value.createPoster()
+  if (!posterFile) {
+    throw new DefaultException({
+      en: 'Failed to generate poster',
+      zh: '生成海报失败'
+    })
+  }
+
+  return posterFile
 }
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
@@ -108,11 +128,10 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   }
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const poster = posterCompRef.value
-    if (!poster) {
+    const posterFile = await createPosterFile()
+    if (!posterFile) {
       throw new Error('Poster component not ready after wait')
     }
-    const posterFile = await poster.createPoster()
     const comp = platform.shareFunction.shareImage(posterFile)
     imageShareComponent.value = comp ? markRaw(comp) : comp
     return
