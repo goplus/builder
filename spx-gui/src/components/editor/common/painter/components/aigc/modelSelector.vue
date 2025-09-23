@@ -15,14 +15,6 @@
         <div class="modal-header">
           <h3>请选择适合您的主题！</h3>
           <div class="header-actions">
-            <button
-              v-if="loadingState.hasError"
-              class="retry-btn"
-              :disabled="loadingState.isLoading"
-              @click="retryLoadModels"
-            >
-              {{ loadingState.isLoading ? '加载中...' : '重试' }}
-            </button>
             <button class="close-btn" @click="closeModal">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -31,22 +23,8 @@
           </div>
         </div>
         <div class="models-grid">
-          <!-- 加载状态 -->
-          <div v-if="loadingState.isLoading" class="loading-container">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">正在加载模型列表...</div>
-          </div>
-
-          <!-- 错误状态 -->
-          <div v-else-if="loadingState.hasError" class="error-container">
-            <div class="error-icon">⚠️</div>
-            <div class="error-message">{{ loadingState.errorMessage }}</div>
-          </div>
-
-          <!-- 模型列表 -->
           <div
             v-for="model in models"
-            v-else
             :key="model.id"
             class="model-item"
             :class="{ active: prevSelectedModel?.id === model.id }"
@@ -69,94 +47,95 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
-import { getStyleList } from '@/apis/style-list'
+import { ref, computed } from 'vue'
 
 export interface ModelInfo {
   id: string
   name: string
   description: string
   preview_url: string
-  recommended_provider: string
 }
 
 import previewImage from './images/preview.jpg'
+import businessImage from './images/business.jpg'
+import cartoonImage from './images/cartoon.jpg'
+import cyberImage from './images/cyber.jpg'
+import magicImage from './images/magic.jpg'
+import minimalImage from './images/minimal.jpg'
+import natrueImage from './images/natrue.jpg'
+import realisticImage from './images/realistic.jpg'
+import retroImage from './images/retro.jpg'
 
-// 默认模型数据，防止网络问题导致空数据
-const defaultModel: ModelInfo = {
-  id: '',
-  name: '无主题',
-  description: '不应用任何特定主题风格',
-  preview_url: previewImage,
-  recommended_provider: 'svgio'
-}
-
-// 加载状态管理
-const loadingState = reactive({
-  isLoading: false,
-  hasError: false,
-  errorMessage: '',
-  retryCount: 0
-})
-
-const models = ref<ModelInfo[]>([defaultModel])
-const getStyleListData = async () => {
-  if (loadingState.isLoading) return
-
-  loadingState.isLoading = true
-  loadingState.hasError = false
-  loadingState.errorMessage = ''
-
-  try {
-    const res = await getStyleList()
-    if (res && res.length > 0) {
-      models.value = res
-      // 如果当前选中的是默认模型，切换到第一个实际模型
-      if (selectedModel.value === undefined) {
-        selectedModel.value = res[0]
-      }
-    } else {
-      throw new Error('获取到空的模型列表')
-    }
-    loadingState.retryCount = 0
-  } catch (error) {
-    loadingState.hasError = true
-    loadingState.errorMessage = error instanceof Error ? error.message : '未知错误'
-    console.error('Error fetching style list:', error)
-  } finally {
-    loadingState.isLoading = false
+const ModelList: ModelInfo[] = [
+  {
+    id: '',
+    name: '无主题',
+    description: '不应用任何特定主题风格',
+    preview_url: previewImage,
+  },
+  {
+    id: 'business',
+    name: '商务风格',
+    description: '专业商务风格，现代企业形象',
+    preview_url: businessImage,
+  },
+  {
+    id: 'cartoon',
+    name: '卡通风格',
+    description: '色彩鲜艳的卡通风格，适合可爱有趣的内容',
+    preview_url: cartoonImage,
+  },
+  {
+    id: 'scifi',
+    name: '科技风格',
+    description: '未来科技风格，充满科幻元素',
+    preview_url: cyberImage,
+  },
+  {
+    id: 'fantasy',
+    name: '魔法风格',
+    description: '充满魔法和超自然元素的奇幻风格',
+    preview_url: magicImage,
+  },
+  {
+    id: 'minimal',
+    name: '极简风格',
+    description: '极简主义风格，简洁干净的设计',
+    preview_url: minimalImage,
+  },
+  {
+    id: 'nature',
+    name: '自然风格',
+    description: '"自然有机风格，使用自然元素和大地色调',
+    preview_url: natrueImage,
+  },
+  {
+    id: 'realistic',
+    name: '写实风格',
+    description: '高度写实的风格，细节丰富逼真',
+    preview_url: realisticImage,
+  },
+  {
+    id: 'retro',
+    name: '复古风格',
+    description: '怀旧复古风格，经典老式美学',
+    preview_url: retroImage,
   }
-}
+] 
+
+const models = ref<ModelInfo[]>(ModelList)
 
 const selectedModel = ref<ModelInfo>()
 const showModal = ref(false)
 
 const selectedModelInfo = computed(() => {
-  // 确保 models 有值且不为空
-  if (!models.value || models.value.length === 0) {
-    return defaultModel
-  }
-
   const found = models.value.find((m) => m.id === selectedModel.value?.id)
-  return found || models.value[0] || defaultModel
+  return found || models.value[0]
 })
 
-// 重试函数
-const retryLoadModels = async () => {
-  if (loadingState.retryCount >= 3) {
-    console.warn('已达到最大重试次数')
-    return
-  }
-  loadingState.retryCount++
-  await getStyleListData()
-}
 
 const openModal = () => {
   showModal.value = true
-  // 只有在没有加载过数据且没有正在加载时才调用API
-  if (models.value.length === 1 && models.value[0].id === '' && !loadingState.isLoading) {
-    getStyleListData()
-  }
 }
 
 const closeModal = () => {
@@ -403,92 +382,6 @@ defineExpose({
   border-color: #3367d6;
 }
 
-.retry-btn {
-  padding: 6px 12px;
-  border: 1px solid #4285f4;
-  border-radius: 4px;
-  background: white;
-  color: #4285f4;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.retry-btn:hover:not(:disabled) {
-  background: #4285f4;
-  color: white;
-}
-
-.retry-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.loading-container,
-.error-container {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e1e5e9;
-  border-top: 3px solid #4285f4;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-.loading-text {
-  color: #666;
-  font-size: 14px;
-}
-
-.error-container {
-  color: #d93025;
-}
-
-.error-icon {
-  font-size: 32px;
-  margin-bottom: 16px;
-}
-
-.error-message {
-  font-size: 14px;
-  margin-bottom: 16px;
-  color: #666;
-}
-
-.error-retry-btn {
-  padding: 8px 16px;
-  border: 1px solid #d93025;
-  border-radius: 4px;
-  background: white;
-  color: #d93025;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.error-retry-btn:hover {
-  background: #d93025;
-  color: white;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
 
 @keyframes fadeIn {
   from {
