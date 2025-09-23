@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
@@ -128,8 +129,8 @@ func (l *AssetCompletionLLM) CompleteAssetName(ctx context.Context, prefix strin
 // generateSuggestions uses AI to generate creative asset name suggestions
 func (l *AssetCompletionLLM) generateSuggestions(ctx context.Context, prefix string, existingAssets []string, limit int) ([]string, error) {
 	// Build context for AI
-	systemPrompt := l.buildSystemPrompt(existingAssets)
-	userPrompt := l.buildUserPrompt(prefix, limit)
+	systemPrompt := asscompletion.BuildSystemPrompt(existingAssets, MaxSampleAssetsInPrompt)
+	userPrompt := asscompletion.BuildUserPrompt(prefix, limit)
 
 	// Prepare copilot parameters
 	params := &copilot.Params{
@@ -165,59 +166,6 @@ func (l *AssetCompletionLLM) generateSuggestions(ctx context.Context, prefix str
 	return suggestions, nil
 }
 
-// buildSystemPrompt creates the system prompt for AI completion
-func (l *AssetCompletionLLM) buildSystemPrompt(existingAssets []string) string {
-	var builder strings.Builder
-
-	builder.WriteString("You are an AI assistant that helps generate creative and relevant asset names for a game development platform. ")
-	builder.WriteString("Your task is to suggest asset names that are:\n")
-	builder.WriteString("1. Creative and descriptive\n")
-	builder.WriteString("2. Relevant to game development (sprites, sounds, images, etc.)\n")
-	builder.WriteString("3. Follow common naming conventions (lowercase, underscore-separated)\n")
-	builder.WriteString("4. Avoid duplication with existing assets\n\n")
-
-	if len(existingAssets) > 0 {
-		builder.WriteString("Here are some existing asset names for reference:\n")
-		// Show a sample of existing assets (limit to avoid token overflow)
-		sampleSize := MaxSampleAssetsInPrompt
-		if len(existingAssets) < sampleSize {
-			sampleSize = len(existingAssets)
-		}
-		for i := 0; i < sampleSize; i++ {
-			builder.WriteString("- ")
-			builder.WriteString(existingAssets[i])
-			builder.WriteString("\n")
-		}
-		if len(existingAssets) > sampleSize {
-			builder.WriteString(fmt.Sprintf("... and %d more assets\n", len(existingAssets)-sampleSize))
-		}
-		builder.WriteString("\n")
-	}
-
-	builder.WriteString("Please provide suggestions in a simple list format, one per line, without numbers or bullets.")
-
-	return builder.String()
-}
-
-// buildUserPrompt creates the user prompt for AI completion
-func (l *AssetCompletionLLM) buildUserPrompt(prefix string, limit int) string {
-	// Handle Chinese input with bilingual prompt
-	if containsChinese(prefix) {
-		return fmt.Sprintf("请根据关键词'%s'生成%d个游戏素材名称建议。要求：\n"+
-			"1. 所有建议必须包含或以'%s'开头\n"+
-			"2. 适合游戏开发的素材名称\n"+
-			"3. 涵盖不同类型：精灵动画、音效、UI界面、背景图、道具等\n"+
-			"4. 名称要具体描述功能，如：%s_跳跃动画、%s_攻击音效、%s_头像图标\n"+
-			"5. 使用下划线连接词语\n"+
-			"请直接列出建议，每行一个，不要编号：",
-			prefix, limit, prefix, prefix, prefix, prefix)
-	}
-	// English prompt for English input
-	return fmt.Sprintf("Generate %d creative asset name suggestions that start with or are related to '%s'. "+
-		"Consider different categories like sprites, backgrounds, sounds, animations, etc. "+
-		"Make the names descriptive and suitable for game development.",
-		limit, prefix)
-}
 
 // cleanAndFormatSuggestion cleans and formats a single suggestion line
 func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
@@ -282,17 +230,17 @@ func (l *AssetCompletionLLM) parseAISuggestions(response, prefix string) []strin
 		}
 		seenSuggestions[suggestion] = struct{}{}
 
-		// For Chinese input, be more lenient with matching
-		if containsChinese(prefix) {
-			// For Chinese, just accept all valid suggestions since AI understands the context
+		// Unified matching logic for all languages
+		// Check for exact prefix match first
+		if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
 			exactMatches = append(exactMatches, suggestion)
-		} else {
-			// Categorize suggestions for English input
-			if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
-				exactMatches = append(exactMatches, suggestion)
-			} else if strings.Contains(suggestion, prefixLower) {
-				relatedMatches = append(relatedMatches, suggestion)
-			}
+		} else if strings.Contains(suggestion, prefixLower) {
+			// Include related matches that contain the prefix
+			relatedMatches = append(relatedMatches, suggestion)
+		} else if asscompletion.ContainsChinese(prefix) || asscompletion.ContainsChinese(suggestion) {
+			// For mixed language scenarios, be more lenient and include all valid suggestions
+			// since AI understands context across languages
+			exactMatches = append(exactMatches, suggestion)
 		}
 	}
 
@@ -319,15 +267,6 @@ func (l *AssetCompletionLLM) containsString(slice []string, str string) bool {
 	return false
 }
 
-// containsChinese checks if a string contains Chinese characters
-func containsChinese(s string) bool {
-	for _, r := range s {
-		if r >= 0x4e00 && r <= 0x9fff { // CJK Unified Ideographs range
-			return true
-		}
-	}
-	return false
-}
 
 // isValidAssetNameChar checks if a character is valid for asset names
 func isValidAssetNameChar(r rune) bool {

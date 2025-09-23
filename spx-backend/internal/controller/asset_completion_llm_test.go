@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/stretchr/testify/assert"
@@ -251,19 +252,19 @@ func TestAssetCompletionLLM_ContextBuilding(t *testing.T) {
 	require.NoError(t, err)
 
 	cpt := createMockCopilot()
-	llmService := NewAssetCompletionLLM(cpt, gormDB)
+	_ = NewAssetCompletionLLM(cpt, gormDB)
 
 	// Test system prompt building
 	existingAssets := []string{"cat", "car", "camera", "dog", "dragon"}
-	systemPrompt := llmService.buildSystemPrompt(existingAssets)
+	systemPrompt := asscompletion.BuildSystemPrompt(existingAssets, MaxSampleAssetsInPrompt)
 
-	assert.Contains(t, systemPrompt, "AI assistant", "Should contain AI assistant description")
-	assert.Contains(t, systemPrompt, "creative", "Should mention creativity")
+	assert.Contains(t, systemPrompt, "游戏素材名称补全助手", "Should contain asset completion assistant description")
+	assert.Contains(t, systemPrompt, "创意", "Should mention creativity")
 	assert.Contains(t, systemPrompt, "cat", "Should include sample existing assets")
-	assert.Contains(t, systemPrompt, "lowercase", "Should mention formatting requirements")
+	assert.Contains(t, systemPrompt, "小写字母", "Should mention formatting requirements")
 
 	// Test user prompt building
-	userPrompt := llmService.buildUserPrompt("ca", 5)
+	userPrompt := asscompletion.BuildUserPrompt("ca", 5)
 	assert.Contains(t, userPrompt, "ca", "Should include the prefix")
 	assert.Contains(t, userPrompt, "5", "Should include the limit")
 	assert.Contains(t, userPrompt, "creative", "Should ask for creative suggestions")
