@@ -201,6 +201,18 @@ func (l *AssetCompletionLLM) buildSystemPrompt(existingAssets []string) string {
 
 // buildUserPrompt creates the user prompt for AI completion
 func (l *AssetCompletionLLM) buildUserPrompt(prefix string, limit int) string {
+	// Handle Chinese input with bilingual prompt
+	if containsChinese(prefix) {
+		return fmt.Sprintf("请根据关键词'%s'生成%d个游戏素材名称建议。要求：\n"+
+			"1. 所有建议必须包含或以'%s'开头\n"+
+			"2. 适合游戏开发的素材名称\n"+
+			"3. 涵盖不同类型：精灵动画、音效、UI界面、背景图、道具等\n"+
+			"4. 名称要具体描述功能，如：%s_跳跃动画、%s_攻击音效、%s_头像图标\n"+
+			"5. 使用下划线连接词语\n"+
+			"请直接列出建议，每行一个，不要编号：",
+			prefix, limit, prefix, prefix, prefix, prefix)
+	}
+	// English prompt for English input
 	return fmt.Sprintf("Generate %d creative asset name suggestions that start with or are related to '%s'. "+
 		"Consider different categories like sprites, backgrounds, sounds, animations, etc. "+
 		"Make the names descriptive and suitable for game development.",
@@ -222,15 +234,26 @@ func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
 		return ""
 	}
 
-	// Convert to lowercase and replace spaces with underscores
-	suggestion := strings.ToLower(line)
+	// Replace spaces and hyphens with underscores, but keep original case for Chinese
+	suggestion := line
 	suggestion = strings.ReplaceAll(suggestion, " ", "_")
 	suggestion = strings.ReplaceAll(suggestion, "-", "_")
 
-	// Remove any non-alphanumeric characters except underscores
+	// Only convert ASCII letters to lowercase, preserve Chinese characters
+	var normalized strings.Builder
+	for _, r := range suggestion {
+		if r >= 'A' && r <= 'Z' {
+			normalized.WriteRune(r + 32) // Convert to lowercase
+		} else {
+			normalized.WriteRune(r)
+		}
+	}
+	suggestion = normalized.String()
+
+	// Remove any invalid characters but keep Chinese characters, ASCII letters, numbers, and underscores
 	var cleaned strings.Builder
 	for _, r := range suggestion {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+		if isValidAssetNameChar(r) {
 			cleaned.WriteRune(r)
 		}
 	}
@@ -259,11 +282,17 @@ func (l *AssetCompletionLLM) parseAISuggestions(response, prefix string) []strin
 		}
 		seenSuggestions[suggestion] = struct{}{}
 
-		// Categorize suggestions
-		if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
+		// For Chinese input, be more lenient with matching
+		if containsChinese(prefix) {
+			// For Chinese, just accept all valid suggestions since AI understands the context
 			exactMatches = append(exactMatches, suggestion)
-		} else if strings.Contains(suggestion, prefixLower) {
-			relatedMatches = append(relatedMatches, suggestion)
+		} else {
+			// Categorize suggestions for English input
+			if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
+				exactMatches = append(exactMatches, suggestion)
+			} else if strings.Contains(suggestion, prefixLower) {
+				relatedMatches = append(relatedMatches, suggestion)
+			}
 		}
 	}
 
@@ -286,6 +315,41 @@ func (l *AssetCompletionLLM) containsString(slice []string, str string) bool {
 		if s == str {
 			return true
 		}
+	}
+	return false
+}
+
+// containsChinese checks if a string contains Chinese characters
+func containsChinese(s string) bool {
+	for _, r := range s {
+		if r >= 0x4e00 && r <= 0x9fff { // CJK Unified Ideographs range
+			return true
+		}
+	}
+	return false
+}
+
+// isValidAssetNameChar checks if a character is valid for asset names
+func isValidAssetNameChar(r rune) bool {
+	// ASCII letters and numbers
+	if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+		return true
+	}
+	// Underscore
+	if r == '_' {
+		return true
+	}
+	// Chinese characters (CJK Unified Ideographs)
+	if r >= 0x4e00 && r <= 0x9fff {
+		return true
+	}
+	// Additional Chinese characters ranges
+	if (r >= 0x3400 && r <= 0x4dbf) || // CJK Extension A
+		(r >= 0x20000 && r <= 0x2a6df) || // CJK Extension B
+		(r >= 0x2a700 && r <= 0x2b73f) || // CJK Extension C
+		(r >= 0x2b740 && r <= 0x2b81f) || // CJK Extension D
+		(r >= 0x2b820 && r <= 0x2ceaf) { // CJK Extension E
+		return true
 	}
 	return false
 }
