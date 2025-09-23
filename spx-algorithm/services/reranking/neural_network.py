@@ -12,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from pathlib import Path
 from datetime import datetime
+import glob
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -96,24 +98,26 @@ class RerankingNeuralNetwork(nn.Module):
 class NeuralNetworkTrainer:
     """神经网络训练器"""
     
-    def __init__(self, model_save_path: str = "models/neural_rerank_model.pth", max_history_size: int = 100):
+    def __init__(self, model_save_path: str = "models/neural_rerank_model.pth", max_history_size: int = 100, max_checkpoints: int = 3):
         """
         初始化训练器
         
         Args:
             model_save_path: 模型保存路径
             max_history_size: 训练历史记录最大保存数量
+            max_checkpoints: 最大检查点文件保留数量
         """
         self.model_save_path = model_save_path
         self.model = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.training_history = []
         self.max_history_size = max_history_size
+        self.max_checkpoints = max_checkpoints
         
         # 确保模型目录存在
         Path(self.model_save_path).parent.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"神经网络训练器初始化完成，设备: {self.device}, 模型保存路径: {model_save_path}")
+        logger.info(f"神经网络训练器初始化完成，设备: {self.device}, 模型保存路径: {model_save_path}, 最大检查点保留数: {max_checkpoints}")
     
     def train_model(self, 
                    features: List[List[float]], 
@@ -245,6 +249,9 @@ class NeuralNetworkTrainer:
             # 加载最佳模型
             self._load_checkpoint()
             
+            # 训练完成后清理检查点文件
+            self._cleanup_checkpoints()
+            
             # 评估模型
             train_metrics = self._evaluate_model(X_train, y_train, "训练集")
             val_metrics = self._evaluate_model(X_val, y_val, "验证集")
@@ -318,15 +325,21 @@ class NeuralNetworkTrainer:
     def _save_checkpoint(self):
         """保存检查点"""
         if self.model is not None:
-            checkpoint_path = self.model_save_path.replace('.pth', '_checkpoint.pth')
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            checkpoint_path = self.model_save_path.replace('.pth', f'_checkpoint_{timestamp}.pth')
             torch.save(self.model.state_dict(), checkpoint_path)
+            
+            # 清理旧的检查点文件
+            self._cleanup_checkpoints()
     
     def _load_checkpoint(self):
-        """加载检查点"""
+        """加载最新的检查点"""
         if self.model is not None:
-            checkpoint_path = self.model_save_path.replace('.pth', '_checkpoint.pth')
-            if Path(checkpoint_path).exists():
-                self.model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+            # 查找最新的检查点文件
+            latest_checkpoint = self._find_latest_checkpoint()
+            if latest_checkpoint and Path(latest_checkpoint).exists():
+                self.model.load_state_dict(torch.load(latest_checkpoint, map_location=self.device))
+                logger.debug(f"已加载检查点: {latest_checkpoint}")
     
     def _save_model(self):
         """保存模型"""
@@ -383,6 +396,9 @@ class NeuralNetworkTrainer:
             # 加载训练历史
             self.training_history = model_data.get('training_history', [])
             self._cleanup_training_history()
+            
+            # 加载模型后清理旧的检查点文件
+            self._cleanup_checkpoints()
             
             logger.info(f"模型加载成功: {path}")
             return True
@@ -531,4 +547,115 @@ class NeuralNetworkTrainer:
         except Exception as e:
             logger.error(f"增量训练失败: {e}")
             raise
+    
+    def _find_latest_checkpoint(self) -> Optional[str]:
+        """
+        查找最新的检查点文件
+        
+        Returns:
+            最新检查点文件的路径，如果没有则返回None
+        """
+        try:
+            model_dir = Path(self.model_save_path).parent
+            model_name = Path(self.model_save_path).stem
+            
+            # 查找所有检查点文件
+            checkpoint_pattern = str(model_dir / f"{model_name}_checkpoint_*.pth")
+            checkpoint_files = glob.glob(checkpoint_pattern)
+            
+            if not checkpoint_files:
+                return None
+            
+            # 按时间戳排序，返回最新的
+            checkpoint_files.sort()
+            return checkpoint_files[-1]
+            
+        except Exception as e:
+            logger.error(f"查找最新检查点失败: {e}")
+            return None
+    
+    def _cleanup_checkpoints(self):
+        """
+        清理旧的检查点文件，只保留最近的N个检查点
+        """
+        try:
+            model_dir = Path(self.model_save_path).parent
+            model_name = Path(self.model_save_path).stem
+            
+            # 查找所有检查点文件
+            checkpoint_pattern = str(model_dir / f"{model_name}_checkpoint_*.pth")
+            checkpoint_files = glob.glob(checkpoint_pattern)
+            
+            if len(checkpoint_files) <= self.max_checkpoints:
+                return
+            
+            # 按修改时间排序
+            checkpoint_files.sort(key=lambda x: os.path.getmtime(x))
+            
+            # 删除多余的旧检查点文件
+            files_to_delete = checkpoint_files[:-self.max_checkpoints]
+            deleted_count = 0
+            
+            for file_path in files_to_delete:
+                try:
+                    os.remove(file_path)
+                    deleted_count += 1
+                    logger.debug(f"删除旧检查点文件: {file_path}")
+                except Exception as e:
+                    logger.warning(f"删除检查点文件失败: {file_path}, 错误: {e}")
+            
+            if deleted_count > 0:
+                logger.info(f"检查点清理完成：删除了 {deleted_count} 个旧文件，保留最近 {len(checkpoint_files) - deleted_count} 个检查点")
+            
+        except Exception as e:
+            logger.error(f"检查点清理失败: {e}")
+    
+    def get_checkpoint_info(self) -> Dict[str, Any]:
+        """
+        获取检查点文件信息
+        
+        Returns:
+            检查点信息字典
+        """
+        try:
+            model_dir = Path(self.model_save_path).parent
+            model_name = Path(self.model_save_path).stem
+            
+            # 查找所有检查点文件
+            checkpoint_pattern = str(model_dir / f"{model_name}_checkpoint_*.pth")
+            checkpoint_files = glob.glob(checkpoint_pattern)
+            
+            checkpoint_info = []
+            total_size = 0
+            
+            for file_path in checkpoint_files:
+                file_stats = os.stat(file_path)
+                checkpoint_info.append({
+                    'path': file_path,
+                    'size_mb': file_stats.st_size / (1024 * 1024),
+                    'modified_time': datetime.fromtimestamp(file_stats.st_mtime).isoformat()
+                })
+                total_size += file_stats.st_size
+            
+            # 按修改时间排序
+            checkpoint_info.sort(key=lambda x: x['modified_time'])
+            
+            return {
+                'checkpoint_count': len(checkpoint_files),
+                'max_checkpoints': self.max_checkpoints,
+                'total_size_mb': total_size / (1024 * 1024),
+                'checkpoints': checkpoint_info,
+                'latest_checkpoint': checkpoint_info[-1]['path'] if checkpoint_info else None
+            }
+            
+        except Exception as e:
+            logger.error(f"获取检查点信息失败: {e}")
+            return {
+                'checkpoint_count': 0,
+                'max_checkpoints': self.max_checkpoints,
+                'total_size_mb': 0,
+                'checkpoints': [],
+                'latest_checkpoint': None,
+                'error': str(e)
+            }
         
