@@ -1,10 +1,20 @@
 <script setup lang="ts">
-defineProps<{ title?: string }>()
+import { UIIcon, UITooltip } from '@/components/ui'
+
+defineProps<{ title?: string; question?: string }>()
 </script>
 
 <template>
   <div class="config-item-wrapper">
-    <div v-if="title" class="label">{{ title }}:</div>
+    <div v-if="title" class="label">
+      {{ title
+      }}<UITooltip v-if="question">
+        <template #trigger>
+          <UIIcon class="question" type="question" />
+        </template>
+        <pre>{{ question }}</pre></UITooltip
+      >:
+    </div>
     <div class="content">
       <slot></slot>
     </div>
@@ -19,6 +29,12 @@ defineProps<{ title?: string }>()
 
   .label {
     word-break: keep-all;
+
+    &:has(.question) {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
   }
 
   .content {
