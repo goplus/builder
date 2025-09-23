@@ -22,7 +22,7 @@ import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
-import { Tile } from '../tile'
+import { Tilemap, type RawTilemapConfig } from '../tilemap'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -43,7 +43,8 @@ export type Metadata = Partial<CloudMetadata> & {
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
-export const projectConfigFilePath = join('assets', projectConfigFileName)
+const assetsDir = 'assets'
+export const projectConfigFilePath = join(assetsDir, projectConfigFileName)
 
 const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
 const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
@@ -70,6 +71,11 @@ type RawCameraConfig = {
 }
 
 type ZorderItem = string | RawWidgetConfig
+
+export enum BackdropMode {
+  Image = 0,
+  Tilemap = 1
+}
 
 export type RawProjectConfig = RawStageConfig &
   RawAudioAttenuationConfig & {
@@ -127,7 +133,7 @@ export class Project extends Disposable {
   remixCount?: number
 
   stage: Stage
-  tile?: Tile | null
+  tilemap?: Tilemap | null
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
@@ -241,6 +247,15 @@ export class Project extends Disposable {
     const mapSize = this.stage.getMapSize()
     const viewport = this.viewportSize
     return mapSize.width > viewport.width || mapSize.height > viewport.height
+  }
+
+  /**
+   * Determines the current backdrop mode:
+   * If tilemap is not null, Tilemap mode is enabled;
+   * otherwise, Image mode is used.
+   */
+  get backdropMode() {
+    return this.tilemap != null ? BackdropMode.Tilemap : BackdropMode.Image
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -371,7 +386,7 @@ export class Project extends Disposable {
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
-      tilemapPath,
+      tilemapPath: rawTilemapPath,
       ...rawStageConfig
     } = config
 
@@ -405,8 +420,14 @@ export class Project extends Disposable {
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
 
-    if (tilemapPath) {
-      this.tile = await Tile.load(tilemapPath, files, sprites)
+    if (rawTilemapPath) {
+      const tilemapPath = join(assetsDir, rawTilemapPath)
+      const tilemapFile = files[tilemapPath]
+      if (tilemapFile != null) {
+        const config: RawTilemapConfig = {}
+        Object.assign(config, await toConfig(tilemapFile))
+        this.tilemap = Tilemap.load(config, rawTilemapPath, assetsDir, files)
+      }
     }
 
     // Set camera-follow-sprite
@@ -420,6 +441,15 @@ export class Project extends Disposable {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
+
+    const tilemap = this.tilemap
+    if (tilemap != null) {
+      const [rawTilemapConfig, tileFiles] = tilemap.export()
+      const tilemapPath = join(assetsDir, tilemap.tilemapPath)
+      files[tilemapPath] = fromConfig(tilemapPath, rawTilemapConfig)
+      Object.assign(files, tileFiles)
+    }
+
     const zorderNames = this.zorder.map((id) => {
       const sprite = this.sprites.find((s) => s.id === id)
       if (sprite == null) throw new Error(`sprite ${id} not found`)
@@ -437,6 +467,7 @@ export class Project extends Disposable {
       camera: {
         on: this.cameraFollowSprite?.name || ''
       },
+      tilemapPath: tilemap?.tilemapPath,
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id)

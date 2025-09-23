@@ -98,6 +98,7 @@ import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
+import { BackdropMode } from '@/models/project'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
@@ -113,6 +114,7 @@ const mapRef = ref<{
 }>()
 const viewportSize = computed(() => editorCtx.project.viewportSize)
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+const isImageMode = computed(() => editorCtx.project.backdropMode === BackdropMode.Image)
 const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
@@ -301,7 +303,15 @@ const konvaBackdropConfig = computed(() => {
 })
 
 const loading = computed(() => {
-  if (backdropSrcLoading.value || !backdropImg.value) return true
+  /**
+   * TODO
+   * If the `backdropImg` is null/undefined and not handled here,
+   * the process will hang indefinitely. The `takeScreenshot` function
+   * depends on the `backdropSrcLoading` state. If `backdropSrcLoading` remains true forever,
+   * all subsequent tasks will wait for `takeScreenshot` to complete,
+   * resulting in a deadlock.
+   */
+  if (isImageMode.value && (backdropSrcLoading.value || !backdropImg.value)) return true
   if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
   if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false

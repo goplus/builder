@@ -198,7 +198,7 @@ export function listAllFiles(files: Files, dirname: string, filter: (filePath: s
     if (!filePath.startsWith(prefix)) continue
     const relative = filePath.slice(prefix.length)
     if (relative && !relative.endsWith('/') && filter(filePath)) {
-      fileList[relative] = files[filePath]
+      fileList[filePath] = files[filePath]
     }
   }
   return fileList
