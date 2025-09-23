@@ -10,8 +10,6 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-import pickle
-import joblib
 from pathlib import Path
 from datetime import datetime
 
@@ -492,7 +490,6 @@ class NeuralNetworkTrainer:
             timestamp_str = latest_training.get('timestamp')
             
             if timestamp_str:
-                from datetime import datetime
                 timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
                 return timestamp.date()
             

@@ -5,6 +5,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 from datetime import datetime
+import numpy as np
 
 
 @dataclass
@@ -63,8 +64,6 @@ class PairwiseTrainingSample:
         - 统计特征: 余弦相似度和欧氏距离 (6维)
         总计: 3d+6维 = 1542维 (d=512)
         """
-        import numpy as np
-        
         query_vec = np.array(self.query_vector)
         better_vec = np.array(self.pic_vector_better)
         worse_vec = np.array(self.pic_vector_worse)
@@ -94,8 +93,6 @@ def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[fl
     Returns:
         (3d+6)维特征向量列表，总计1542维 (d=512)
     """
-    import numpy as np
-    
     features = []
     
     # 1. 原始向量特征 (3d维) - 保留完整信息让神经网络自主学习
