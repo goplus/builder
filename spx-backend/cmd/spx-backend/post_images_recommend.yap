@@ -25,7 +25,4 @@ if err != nil {
 	return
 }
 
-println("YAP: About to send JSON response with", result.ResultsCount, "results")
-println("YAP: Query ID:", result.QueryID)
 json result
-println("YAP: JSON response sent successfully for query:", result.QueryID)
