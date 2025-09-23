@@ -8,11 +8,13 @@ import type { GroupConfig } from 'konva/lib/Group'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { Rect, RectConfig } from 'konva/lib/shapes/Rect'
 import type { CircleConfig } from 'konva/lib/shapes/Circle'
-import { untilNotNull, useAsyncComputedFixed } from '@/utils/utils'
+import { useAsyncComputedFixed } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
+import { getContentBoundingRect } from '@/utils/img'
+import { toNativeFile } from '@/models/common/file'
 import { ColliderShapeType, type Sprite } from '@/models/sprite'
 import type { Pivot as CostumePivot } from '@/models/costume'
 import { UIButton } from '@/components/ui'
@@ -59,8 +61,13 @@ async function resetValues() {
   switch (sprite.colliderShapeType) {
     case ColliderShapeType.None:
     case ColliderShapeType.Auto: {
-      // TODO: We should use size of non-transparent pixels instead of the whole costume image
-      colliderSize.value = await untilNotNull(costumeSize)
+      const { img, bitmapResolution } = defaultCostume.value
+      const rect = await getContentBoundingRect(await toNativeFile(img))
+      colliderSize.value = { width: rect.width / bitmapResolution, height: rect.height / bitmapResolution }
+      colliderPos.value = {
+        x: rect.x / bitmapResolution,
+        y: rect.y / bitmapResolution
+      }
       break
     }
     case ColliderShapeType.Rect:
@@ -68,13 +75,13 @@ async function resetValues() {
         width: sprite.colliderShapeParams[0] ?? 0,
         height: sprite.colliderShapeParams[1] ?? 0
       }
+      colliderPos.value = {
+        x: sprite.colliderPivot.x + pivotPos.value.x - colliderSize.value.width / 2,
+        y: -sprite.colliderPivot.y + pivotPos.value.y - colliderSize.value.height / 2
+      }
       break
     default:
       console.warn('Unsupported collider shape type:', sprite.colliderShapeType)
-  }
-  colliderPos.value = {
-    x: sprite.colliderPivot.x + pivotPos.value.x - colliderSize.value.width / 2,
-    y: -sprite.colliderPivot.y + pivotPos.value.y - colliderSize.value.height / 2
   }
   dirty.value = false
 }
