@@ -199,4 +199,5 @@ func TestYapFileAuthFlow(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, errorUnauthorized, errorResp.Code)
 	})
+	
 }
