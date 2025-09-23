@@ -21,7 +21,7 @@
         >{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab
       >
       <UITab
-        v-if="canConfigurePhysics"
+        v-if="canConfigurePhysics(sprite)"
         v-radar="{
           name: 'Physics tab',
           desc: 'Click to switch to physics settings, which includes collider, pivot editing, etc.'
@@ -74,6 +74,15 @@ export class SpriteEditorState extends Disposable {
     super()
     this.costumesState = new CostumesEditorState(getSprite)
     this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite)))
+
+    if (initialSelected != null) {
+      const sprite = getSprite()
+      // Selection for previous sprite may be used as initial selection.
+      // If the initial selection is 'physics' but the sprite cannot configure physics, fallback to 'code'.
+      if (initialSelected.type === 'physics' && sprite != null && !canConfigurePhysics(sprite)) {
+        initialSelected = { type: 'code' }
+      }
+    }
     this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
   }
 
@@ -159,17 +168,22 @@ export class SpriteEditorState extends Disposable {
     }
   }
 }
+
+function canConfigurePhysics(sprite: Sprite) {
+  if (sprite.physicsMode === PhysicsMode.NoPhysics) return false
+  if (sprite.project != null && !sprite.project.stage.physics.enabled) return false
+  return true
+}
 </script>
 
 <script setup lang="ts">
-import { computed, ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Costume } from '@/models/costume'
 import type { Animation } from '@/models/animation'
 import { PhysicsMode, type Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import { useEditorCtx } from '../EditorContextProvider.vue'
 import CodeEditorUI from '../code-editor/ui/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
@@ -177,14 +191,8 @@ import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
 import SpritePhysicsEditor from './SpritePhysicsEditor.vue'
 
-const props = defineProps<{
+defineProps<{
   sprite: Sprite
   state: SpriteEditorState
 }>()
-
-const editorCtx = useEditorCtx()
-
-const canConfigurePhysics = computed(() => {
-  return editorCtx.project.stage.physics.enabled && props.sprite.physicsMode !== PhysicsMode.NoPhysics
-})
 </script>

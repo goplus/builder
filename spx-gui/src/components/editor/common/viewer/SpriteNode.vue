@@ -80,16 +80,17 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
 }
 
 const config = computed<ImageConfig>(() => {
-  const { visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
+  const { visible, x, y, rotationStyle, heading, size } = props.sprite
   const scale = size / bitmapResolution.value
+  const costumePivot = costume.value?.pivot ?? { x: 0, y: 0 }
   const config = {
     nodeId: nodeId.value,
     image: image.value ?? undefined,
     width: rawSize.value?.width ?? 0,
     height: rawSize.value?.height ?? 0,
     draggable: props.selected,
-    offsetX: 0,
-    offsetY: 0,
+    offsetX: costumePivot.x * bitmapResolution.value,
+    offsetY: costumePivot.y * bitmapResolution.value,
     visible: visible,
     x: props.mapSize.width / 2 + x,
     y: props.mapSize.height / 2 - y,
@@ -97,11 +98,6 @@ const config = computed<ImageConfig>(() => {
     scaleX: scale,
     scaleY: scale
   } satisfies ImageConfig
-  const c = costume.value
-  if (c != null) {
-    config.offsetX = c.x + pivot.x * c.bitmapResolution
-    config.offsetY = c.y - pivot.y * c.bitmapResolution
-  }
   if (rotationStyle === RotationStyle.LeftRight && headingToLeftRight(heading) === LeftRight.left) {
     config.rotation = leftRightToHeading(LeftRight.left) - 90 // -180
     // the image is already rotated with `rotation: -180`, so we adjust `scaleY` to flip it vertically

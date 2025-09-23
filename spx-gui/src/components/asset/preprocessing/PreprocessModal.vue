@@ -236,7 +236,13 @@ const selectedCostumes = shallowReactive<Costume[]>([])
 
 /** Update costumes based on current process output */
 async function updateCostumes(files: File[]) {
-  const newCostumes = await Promise.all(files.map((file) => Costume.create(stripExt(file.name), file)))
+  const newCostumes = await Promise.all(
+    files.map(async (file) => {
+      const costume = await Costume.create(stripExt(file.name), file)
+      await costume.autoFit()
+      return costume
+    })
+  )
   costumes.value = newCostumes
   selectedCostumes.splice(0, selectedCostumes.length, ...newCostumes)
 }

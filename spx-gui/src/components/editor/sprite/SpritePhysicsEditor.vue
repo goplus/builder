@@ -13,7 +13,8 @@ import { useI18n } from '@/utils/i18n'
 import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
-import { ColliderShapeType, type ColliderPivot, type Sprite } from '@/models/sprite'
+import { ColliderShapeType, type Sprite } from '@/models/sprite'
+import type { Pivot as CostumePivot } from '@/models/costume'
 import { UIButton } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
@@ -28,9 +29,13 @@ const editorCtx = useEditorCtx()
 const wrapper = ref<HTMLDivElement | null>(null)
 const wrapperSize = useContentSize(wrapper)
 
-const costume = computed(() => props.sprite.defaultCostume)
-const [image] = useFileImg(() => costume.value?.img)
-const costumeSize = useAsyncComputedFixed(async () => (await costume.value?.getSize()) ?? null)
+const defaultCostume = computed(() => {
+  const c = props.sprite.defaultCostume
+  if (c == null) throw new Error('Sprite has no default costume')
+  return c
+})
+const [image] = useFileImg(() => defaultCostume.value.img)
+const costumeSize = useAsyncComputedFixed(() => defaultCostume.value.getSize())
 const canvasSize = computed(() => {
   if (costumeSize.value == null) return null
   return {
@@ -39,15 +44,18 @@ const canvasSize = computed(() => {
   }
 })
 
+/** Whether the values have been modified */
 const dirty = ref(false)
-const pivotPos = ref({ x: 0, y: 0 })
+/** Position of the pivot in the layer */
+const pivotPos = ref<CostumePivot>({ x: 0, y: 0 })
+/** Size of the collider bounding box in the layer */
 const colliderSize = ref({ width: 0, height: 0 })
-const colliderPivot = ref<ColliderPivot>({ x: 0, y: 0 })
+/** Position of collider bounding box in the layer */
+const colliderPos = ref({ x: 0, y: 0 })
 
 async function resetValues() {
   const sprite = props.sprite
-  pivotPos.value = sprite.pivot
-  colliderPivot.value = sprite.colliderPivot
+  pivotPos.value = defaultCostume.value.pivot
   switch (sprite.colliderShapeType) {
     case ColliderShapeType.None:
     case ColliderShapeType.Auto: {
@@ -64,11 +72,15 @@ async function resetValues() {
     default:
       console.warn('Unsupported collider shape type:', sprite.colliderShapeType)
   }
+  colliderPos.value = {
+    x: sprite.colliderPivot.x + pivotPos.value.x - colliderSize.value.width / 2,
+    y: -sprite.colliderPivot.y + pivotPos.value.y - colliderSize.value.height / 2
+  }
   dirty.value = false
 }
 
 watch(
-  [pivotPos, colliderSize, colliderPivot],
+  [pivotPos, colliderSize, colliderPos],
   () => {
     dirty.value = true
   },
@@ -82,9 +94,16 @@ const handleCancel = useMessageHandle(resetValues).fn
 const handleSave = useMessageHandle(
   async () => {
     await editorCtx.project.history.doAction({ name: { en: 'Update sprite settings', zh: '更新精灵设置' } }, () => {
-      props.sprite.setPivot(pivotPos.value)
-      props.sprite.setColliderPivot(colliderPivot.value)
-      props.sprite.setColliderShapeRect(colliderSize.value.width, colliderSize.value.height)
+      const sprite = props.sprite
+      sprite.applyCostumesPivotChange({
+        x: pivotPos.value.x - defaultCostume.value.pivot.x,
+        y: pivotPos.value.y - defaultCostume.value.pivot.y
+      })
+      sprite.setColliderPivot({
+        x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
+        y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
+      })
+      sprite.setColliderShapeRect(colliderSize.value.width, colliderSize.value.height)
     })
     dirty.value = false
   },
@@ -141,7 +160,7 @@ const pivotGroupConfig = computed(() => {
   const scale = 1 / stageScale.value
   return {
     x: pivotPos.value.x,
-    y: -pivotPos.value.y,
+    y: pivotPos.value.y,
     draggable: true,
     scale: {
       x: scale,
@@ -151,11 +170,7 @@ const pivotGroupConfig = computed(() => {
 })
 
 function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
-  const node = e.target
-  pivotPos.value = {
-    x: node.x(),
-    y: -node.y()
-  }
+  pivotPos.value = { x: e.target.x(), y: e.target.y() }
 }
 
 const pivotCircleConfig = computed(
@@ -186,21 +201,13 @@ const pivotTitleConfig = computed(
 
 const colliderRect = ref<KonvaNodeInstance<Rect>>()
 
-const colliderRectPos = computed(() => {
-  const cSize = costumeSize.value ?? { width: 0, height: 0 }
-  return {
-    x: colliderPivot.value.x + cSize.width / 2 - colliderSize.value.width / 2,
-    y: colliderPivot.value.y + cSize.height / 2 - colliderSize.value.height / 2
-  }
-})
-
 const colliderRectConfig = computed(
   () =>
     ({
       width: colliderSize.value.width,
       height: colliderSize.value.height,
-      x: colliderRectPos.value.x,
-      y: colliderRectPos.value.y,
+      x: colliderPos.value.x,
+      y: colliderPos.value.y,
       fill: 'rgba(0, 128, 255, 0.1)'
     }) satisfies RectConfig
 )
@@ -214,8 +221,8 @@ const colliderTitleConfig = computed(() => {
     text: i18n.t({ en: 'Collider', zh: '碰撞体' }),
     fontSize: 12,
     fill: '#333',
-    x: colliderRectPos.value.x,
-    y: colliderRectPos.value.y,
+    x: colliderPos.value.x,
+    y: colliderPos.value.y,
     offsetY: 24,
     scale: {
       x: scale,
@@ -248,23 +255,15 @@ function syncColliderTitlePos(e: KonvaEventObject<unknown>) {
 }
 
 function handleColliderRectDragEnd(e: KonvaEventObject<unknown>) {
-  const node = e.target
-  const cSize = costumeSize.value ?? { width: 0, height: 0 }
-  const x = node.x() + node.width() / 2 - cSize.width / 2
-  const y = node.y() + node.height() / 2 - cSize.height / 2
-  colliderPivot.value = { x, y }
+  colliderPos.value = { x: e.target.x(), y: e.target.y() }
 }
 
 function handleColliderRectTransformEnd(e: KonvaEventObject<unknown>) {
   const node = e.target
   const width = node.width() * node.scaleX()
   const height = node.height() * node.scaleY()
-  const cSize = costumeSize.value ?? { width: 0, height: 0 }
   colliderSize.value = { width, height }
-  colliderPivot.value = {
-    x: node.x() + width / 2 - cSize.width / 2,
-    y: node.y() + height / 2 - cSize.height / 2
-  }
+  colliderPos.value = { x: node.x(), y: node.y() }
   node.scaleX(1)
   node.scaleY(1)
 }

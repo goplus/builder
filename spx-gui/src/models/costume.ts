@@ -8,15 +8,39 @@ import { getCostumeName, validateCostumeName } from './common/asset-name'
 import type { Sprite } from './sprite'
 import type { Animation } from './animation'
 
+/** Offset of the costume’s pivot from the top-left corner of the image. */
+export type Pivot = {
+  /** The x offset. Positive value means right direction, negative means left direction. */
+  x: number
+  /** The y offset. Positive value means down direction, negative means up direction. */
+  y: number
+}
+
 export type CostumeInits = {
   id?: string
-  x?: number
-  y?: number
+  /**
+   * Offset of the costume’s pivot from the top-left corner of the image.
+   * Note: This value is relative to the costume's final size and is already divided by bitmapResolution;
+   * for example, if the image is 200x200 and bitmapResolution is 2, then a pivot of (50, 50) represents the image center.
+   */
+  pivot?: Pivot
   faceRight?: number
   bitmapResolution?: number
 }
 
-export type RawCostumeConfig = Omit<CostumeInits, 'id'> & {
+export type RawCostumeConfig = Omit<CostumeInits, 'id' | 'pivot'> & {
+  /**
+   * Offset on x-axis of the costume pivot from left-top corner of the image.
+   * Positive value means right direction, negative means left direction.
+   * Note: This value is relative to the costume's raw size and is not divided by bitmapResolution;
+   */
+  x?: number
+  /**
+   * Offset on y-axis of the costume pivot from left-top corner of the image.
+   * Positive value means down direction, negative means up direction.
+   * Note: This value is relative to the costume's raw size and is not divided by bitmapResolution;
+   */
+  y?: number
   builder_id?: string
   name?: string
   path?: string
@@ -49,14 +73,14 @@ export class Costume {
     this.img = img
   }
 
-  x: number
-  setX(x: number) {
-    this.x = x
-  }
-
-  y: number
-  setY(y: number) {
-    this.y = y
+  /**
+   * Offset of the costume’s pivot from the top-left corner of the image.
+   * Note: This value is relative to the costume's final size and is already divided by bitmapResolution;
+   * for example, if the image is 200x200 and bitmapResolution is 2, then a pivot of (50, 50) represents the image center.
+   */
+  pivot: Pivot
+  setPivot(pivot: Pivot) {
+    this.pivot = pivot
   }
 
   faceRight: number
@@ -84,8 +108,7 @@ export class Costume {
   constructor(name: string, file: File, inits?: CostumeInits) {
     this.name = name
     this.img = file
-    this.x = inits?.x ?? 0
-    this.y = inits?.y ?? 0
+    this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     this.faceRight = inits?.faceRight ?? 0
     this.bitmapResolution = inits?.bitmapResolution ?? 1
     this.id = inits?.id ?? nanoid()
@@ -95,24 +118,22 @@ export class Costume {
   clone(preserveId = false) {
     return new Costume(this.name, this.img, {
       id: preserveId ? this.id : undefined,
-      x: this.x,
-      y: this.y,
+      pivot: this.pivot,
       faceRight: this.faceRight,
       bitmapResolution: this.bitmapResolution
     })
   }
 
   /**
-   * Adjust position to fit current sprite
-   * TODO: review the relation between `autoFit` & `Costume.create` / `Sprite addCostume`
+   * Set pivot (x, y) automatically based on the image size.
+   * TODO: review the relation between `autoFit` & `Costume.create`
    */
   async autoFit() {
-    if (this.parent == null) throw new Error(`parent required to autoFit costume ${this.name}`)
-    const reference = this.parent.costumes[0]
-    if (reference == null || reference === this) return
-    const [referenceSize, size] = await Promise.all([reference.getSize(), this.getSize()])
-    this.setX((reference.x + (size.width - referenceSize.width) / 2) * this.bitmapResolution)
-    this.setY((reference.y + (size.height - referenceSize.height) / 2) * this.bitmapResolution)
+    const size = await this.getSize()
+    this.setPivot({
+      x: size.width / 2,
+      y: size.height / 2
+    })
   }
 
   /**
@@ -128,7 +149,7 @@ export class Costume {
   }
 
   static load(
-    { builder_id: id, name, path, ...inits }: RawCostumeConfig,
+    { builder_id: id, name, path, x = 0, y = 0, bitmapResolution = 1, ...inits }: RawCostumeConfig,
     files: Files,
     { basePath, includeId }: CostumeExportLoadOptions
   ) {
@@ -138,6 +159,11 @@ export class Costume {
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
     return new Costume(name, file, {
       ...inits,
+      bitmapResolution,
+      pivot: {
+        x: x / bitmapResolution,
+        y: y / bitmapResolution
+      },
       id: includeId ? id : undefined
     })
   }
@@ -146,8 +172,8 @@ export class Costume {
     const name = namePrefix + this.name
     const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {
-      x: this.x,
-      y: this.y,
+      x: this.pivot.x * this.bitmapResolution,
+      y: this.pivot.y * this.bitmapResolution,
       faceRight: this.faceRight,
       bitmapResolution: this.bitmapResolution,
       name,

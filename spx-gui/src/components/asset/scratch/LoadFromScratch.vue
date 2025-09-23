@@ -117,8 +117,10 @@ const importSprite = async (asset: ExportedScratchSprite) => {
     asset.costumes.map((costume) =>
       Costume.create(costume.name, scratchToSpxFile(costume), {
         bitmapResolution: costume.bitmapResolution,
-        x: costume.rotationCenterX,
-        y: costume.rotationCenterY
+        pivot: {
+          x: costume.rotationCenterX / costume.bitmapResolution,
+          y: costume.rotationCenterY / costume.bitmapResolution
+        }
       })
     )
   )

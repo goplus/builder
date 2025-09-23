@@ -15,7 +15,7 @@ import {
   validateSpriteName
 } from './common/asset-name'
 import type { AssetMetadata } from './common/asset'
-import { type RawCostumeConfig, Costume } from './costume'
+import { type RawCostumeConfig, Costume, type Pivot as CostumePivot } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
 import { nanoid } from 'nanoid'
@@ -44,20 +44,23 @@ export enum State {
 }
 
 export type Pivot = {
+  /** The x offset. Positive value means right direction, negative means left direction. */
   x: number
+  /** The y offset. Positive value means up direction, negative means down direction. */
   y: number
 }
 
-/** The offset for collider pivot point from geometric center */
 export type ColliderPivot = {
-  /** The x offset. Positive values move the collider right, negative values move it left. */
+  /** The x offset. Positive value means right direction, negative means left direction. */
   x: number
-  /** The y offset. Positive values move the collider down, negative values move it up. */
+  /** The y offset. Positive value means up direction, negative means down direction. */
   y: number
 }
 
 export enum ColliderShapeType {
+  /** No collider */
   None = 'none',
+  /** Automatically sized collider. Bounding box of non-transparent pixels in the sprite's default costume will be used. */
   Auto = 'auto',
   Circle = 'circle',
   Rect = 'rect',
@@ -78,7 +81,15 @@ export type ColliderShapeParams = number[]
 export type SpriteInits = {
   id?: string
   heading?: number
+  /**
+   * The x offset of the sprite's origin position from center of the map.
+   * Positive value means right direction, negative means left direction.
+   */
   x?: number
+  /**
+   * The y offset of the sprite's origin position from center of the map.
+   * Positive value means up direction, negative means down direction.
+   */
   y?: number
   size?: number
   rotationStyle?: RotationStyle
@@ -87,7 +98,7 @@ export type SpriteInits = {
   physicsMode?: PhysicsMode
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
-  pivot?: Pivot
+  /** Offset of the sprite’s collider center from the sprite's origin position. */
   colliderPivot?: ColliderPivot
   colliderShapeType?: ColliderShapeType
   colliderShapeParams?: ColliderShapeParams
@@ -105,6 +116,11 @@ export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings' | 'as
   fAnimations?: Record<string, RawAnimationConfig | undefined>
   defaultAnimation?: string
   animBindings?: Record<string, string | undefined>
+  /**
+   * Offset of the sprite’s pivot from the top-left corner.
+   * @deprecated Use the costume pivot (`Costume.x`, `Costume.y`) instead.
+   */
+  pivot?: Pivot
   // Not supported by builder:
   costumeSet?: unknown
   costumeMPSet?: unknown
@@ -134,7 +150,7 @@ export type SpriteExportLoadOptions = {
 export class Sprite extends Disposable {
   id: string
 
-  private project: Project | null = null
+  project: Project | null = null
   setProject(project: Project | null) {
     this.project = project
   }
@@ -302,11 +318,6 @@ export class Sprite extends Disposable {
     this.isDraggable = isDraggable
   }
 
-  pivot: Pivot
-  setPivot(pivot: Pivot) {
-    this.pivot = pivot
-  }
-
   colliderPivot: ColliderPivot
   setColliderPivot(colliderPivot: ColliderPivot) {
     this.colliderPivot = colliderPivot
@@ -335,6 +346,22 @@ export class Sprite extends Disposable {
   }
   setColliderShapePolygon(points: number[]) {
     this.setColliderShape(ColliderShapeType.Polygon, points)
+  }
+
+  /**
+   * Apply pivot change to all costumes to keep their relative positions unchanged
+   * TODO: We should allow users to configure pivot for each costume separately in the future.
+   */
+  applyCostumesPivotChange(dCostumePivot: CostumePivot) {
+    for (const c of this.costumes) {
+      c.setPivot({
+        x: c.pivot.x + dCostumePivot.x,
+        y: c.pivot.y + dCostumePivot.y
+      })
+    }
+    for (const a of this.animations) {
+      a.applyCostumesPivotChange(dCostumePivot)
+    }
   }
 
   assetMetadata: AssetMetadata | null
@@ -372,7 +399,6 @@ export class Sprite extends Disposable {
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
-    this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     this.colliderPivot = inits?.colliderPivot ?? { x: 0, y: 0 }
     this.colliderShapeType = inits?.colliderShapeType ?? ColliderShapeType.None
     this.colliderShapeParams = inits?.colliderShapeParams ?? []
@@ -380,53 +406,6 @@ export class Sprite extends Disposable {
     this.assetMetadata = inits?.assetMetadata ?? null
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
-  }
-
-  randomizePosition() {
-    const { project } = this
-    if (project == null) throw new Error('`randomizePosition` should be called after added to a project')
-    const mapSize = project.stage.getMapSize()
-    this.setX(Math.floor(Math.random() * mapSize.width - mapSize.width / 2))
-    this.setY(Math.floor(Math.random() * mapSize.height - mapSize.height / 2))
-  }
-
-  async clampToMap() {
-    const { project, defaultCostume, size, x, y, pivot } = this
-    if (project == null) throw new Error('`clampToMap` should be called after added to a project')
-    if (defaultCostume != null) {
-      const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
-      if (mapSize == null) return
-      const halfCostumeWidth = (costumeSize.width * size) / 2
-      const halfCostumeHeight = (costumeSize.height * size) / 2
-      const visualCenter = {
-        x: costumeSize.width / 2,
-        y: -costumeSize.height / 2
-      }
-      /**
-       * Meaning of offsetX / offsetY:
-       * ------------------------------------
-       * When calculating the position of the sprite, the coordinates (x, y)
-       * are normally based on the "pivot" (anchor point).
-       * But visually we want the sprite to be aligned relative to its
-       * "visualCenter" instead.
-       *
-       * offset is the difference between the visual center
-       * and (pivot + costume’s own offset), multiplied by scale (size).
-       *
-       * In short:
-       * - offsetX/offsetY adjust the coordinates so that the visual center
-       *   is aligned with the map, not the pivot.
-       * - Without this correction, the sprite may appear shifted
-       *   because the pivot might not be at the visual center.
-       */
-      const offsetX = (visualCenter.x - pivot.x - defaultCostume.x) * size
-      const offsetY = (visualCenter.y - pivot.y + defaultCostume.y) * size
-
-      const maxX = Math.max(mapSize.width / 2 - halfCostumeWidth, 0)
-      const maxY = Math.max(mapSize.height / 2 - halfCostumeHeight, 0)
-      this.setX(Math.floor(Math.max(-maxX, Math.min(x, maxX)) - offsetX))
-      this.setY(Math.floor(Math.max(-maxY, Math.min(y, maxY)) - offsetY))
-    }
   }
 
   /**
@@ -445,16 +424,9 @@ export class Sprite extends Disposable {
         this.setSize(size)
       }
       // ensure the sprite placed in the center of stage
-      // TODO: it may be better to keep updating the pivot whenever defaultCostume's size changed.
-      // while it introduces extra complexity. In the future we gonna see if it deserves so.
-      this.setPivot({ x: costumeSize.width / 2, y: -costumeSize.height / 2 })
       this.setX(0)
       this.setY(0)
     }
-  }
-
-  async autoFitCostumes(costumes = this.costumes) {
-    await Promise.all(costumes.map((c) => c.autoFit()))
   }
 
   /** Create sprite within builder (by user actions) */
@@ -503,7 +475,7 @@ export class Sprite extends Disposable {
       physicsMode,
       costumeIndex,
       isDraggable,
-      pivot,
+      pivot: legacyPivot,
       colliderPivot,
       colliderShapeType,
       colliderShapeParams,
@@ -518,7 +490,15 @@ export class Sprite extends Disposable {
     const costumes: Costume[] = []
     if (costumeConfigs != null) {
       for (const config of costumeConfigs) {
-        costumes.push(Costume.load(config, files, { basePath: pathPrefix, includeId }))
+        const costume = Costume.load(config, files, { basePath: pathPrefix, includeId })
+        if (legacyPivot != null) {
+          // Apply legacy sprite-level pivot offset to each costume for backward compatibility
+          costume.setPivot({
+            x: costume.pivot.x + legacyPivot.x,
+            y: costume.pivot.y - legacyPivot.y
+          })
+        }
+        costumes.push(costume)
       }
     } else {
       if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
@@ -549,7 +529,6 @@ export class Sprite extends Disposable {
       rotationStyle,
       physicsMode,
       isDraggable,
-      pivot,
       colliderPivot,
       colliderShapeType,
       colliderShapeParams,
@@ -610,7 +589,6 @@ export class Sprite extends Disposable {
       rotationStyle: this.rotationStyle,
       physicsMode: this.physicsMode,
       isDraggable: this.isDraggable,
-      pivot: this.pivot,
       colliderPivot: this.colliderPivot,
       colliderShapeType: this.colliderShapeType,
       colliderShapeParams: this.colliderShapeParams,
@@ -681,7 +659,6 @@ export class Sprite extends Disposable {
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
-      pivot: this.pivot,
       colliderPivot: this.colliderPivot,
       colliderShapeType: this.colliderShapeType,
       colliderShapeParams: this.colliderShapeParams,

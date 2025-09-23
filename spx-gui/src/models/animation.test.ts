@@ -142,8 +142,7 @@ describe('Animation', () => {
       expect(clonedAnimation.costumes[i].id).not.toBe(animation.costumes[i].id)
       expect(clonedAnimation.costumes[i].name).toBe(animation.costumes[i].name)
       expect(clonedAnimation.costumes[i].img).toBe(animation.costumes[i].img)
-      expect(clonedAnimation.costumes[i].x).toBe(animation.costumes[i].x)
-      expect(clonedAnimation.costumes[i].y).toBe(animation.costumes[i].y)
+      expect(clonedAnimation.costumes[i].pivot).toEqual(animation.costumes[i].pivot)
       expect(clonedAnimation.costumes[i].faceRight).toBe(animation.costumes[i].faceRight)
       expect(clonedAnimation.costumes[i].bitmapResolution).toBe(animation.costumes[i].bitmapResolution)
     }
