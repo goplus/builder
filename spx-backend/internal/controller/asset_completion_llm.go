@@ -237,10 +237,10 @@ func (l *AssetCompletionLLM) parseAISuggestions(response, prefix string) []strin
 		} else if strings.Contains(suggestion, prefixLower) {
 			// Include related matches that contain the prefix
 			relatedMatches = append(relatedMatches, suggestion)
-		} else if asscompletion.ContainsChinese(prefix) || asscompletion.ContainsChinese(suggestion) {
-			// For mixed language scenarios, be more lenient and include all valid suggestions
-			// since AI understands context across languages
-			exactMatches = append(exactMatches, suggestion)
+		} else {
+			// For AI-generated suggestions, include them as related matches
+			// since AI understands semantic context even if exact string matching fails
+			relatedMatches = append(relatedMatches, suggestion)
 		}
 	}
 

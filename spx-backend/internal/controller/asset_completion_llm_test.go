@@ -221,6 +221,16 @@ background_forest`,
 			prefix:   "ca",
 			expected: []string{"cat_sprite", "car_model", "camera_icon"},
 		},
+		{
+			name: "English semantic suggestions",
+			response: `hero_sprite
+warrior_animation
+character_jump
+player_idle
+fighter_attack`,
+			prefix:   "ca",
+			expected: []string{"hero_sprite", "warrior_animation", "character_jump", "player_idle", "fighter_attack"},
+		},
 	}
 
 	for _, tt := range tests {
