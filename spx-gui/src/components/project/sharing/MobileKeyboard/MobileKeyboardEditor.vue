@@ -311,19 +311,10 @@ function onUp(e: PointerEvent) {
       return
     }
   }
-  // 未命中任何区域或命中已占用，回到来源池子（若来自 zone 则回到其 originPool）
-  if (d.source === 'autoPool') {
-    if (!autoPool.value.includes(d.value)) autoPool.value.push(d.value)
-  } else if (d.source === 'allPool') {
-    if (!allPool.value.includes(d.value)) allPool.value.push(d.value)
-  } else {
-    const back = d.originPool ?? 'autoPool'
-    if (back === 'allPool') {
-      if (!allPool.value.includes(d.value)) allPool.value.push(d.value)
-    } else {
-      if (!autoPool.value.includes(d.value)) autoPool.value.push(d.value)
-    }
-  }
+  // // 未命中任何区域或命中已占用，回到来源池子（若来自 zone 则回到其 originPool）
+  const targetPoolName = d.source === 'autoPool' || d.source === 'allPool' ? d.source : d.originPool ?? 'autoPool'
+  const targetPool = targetPoolName === 'autoPool' ? autoPool : allPool
+  if (!targetPool.value.includes(d.value)) targetPool.value.push(d.value)
   hoverZone.value = null
 }
 function hit(el: HTMLElement | null, x: number, y: number) {
@@ -348,6 +339,8 @@ onUnmounted(() => {
   height: 100%;
   padding: 24px;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .header {
@@ -392,6 +385,8 @@ onUnmounted(() => {
     display: block;
     width: 750px;
     height: auto;
+    -webkit-user-drag: none;
+    user-drag: none;
   }
 }
 
