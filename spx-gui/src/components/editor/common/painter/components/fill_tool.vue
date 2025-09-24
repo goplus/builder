@@ -138,57 +138,82 @@ const smartFill = (point: paper.Point): void => {
     })
 
   // --- 步骤 2: 优先尝试直接路径填充 ---
-  for (const pathInfo of pathsWithPriority) {
-    const { path, hasStroke, isCanvasSize } = pathInfo
+  const tempPaths: paper.Path[] = []
 
-    if (isCanvasSize) continue // 跳过画布大小的路径
+  try {
+    for (const pathInfo of pathsWithPriority) {
+      const { path, hasStroke, isCanvasSize } = pathInfo
 
-    // 创建临时填充版本进行包含测试
-    const tempPath = path.clone({ insert: false })
-    if (!tempPath.fillColor) {
-      tempPath.fillColor = new paper.Color('#000000')
-    }
+      if (isCanvasSize) continue // 跳过画布大小的路径
 
-    if (tempPath.contains(point)) {
-      tempPath.remove()
+      // 创建临时填充版本进行包含测试
+      const tempPath = path.clone({ insert: false })
+      tempPaths.push(tempPath)
 
-      // 检查是否有边框且点击在边框上
-      if (hasStroke) {
-        // 使用更精确的边框检测
-        const strokeWidth = path.strokeWidth || 1
-        const hitResult = path.hitTest(point, {
-          stroke: true,
-          tolerance: strokeWidth + 2
-        })
+      if (!tempPath.fillColor) {
+        tempPath.fillColor = new paper.Color('#000000')
+      }
 
-        // 如果点击在边框上，优先填充边框颜色
-        if (hitResult && hitResult.type === 'stroke') {
-          const currentStrokeColor = path.strokeColor?.toCSS(true)
-          const newColor = canvasColor.value
+      if (tempPath.contains(point)) {
+        // 检查是否有边框且点击在边框上
+        if (hasStroke) {
+          // 使用更精确的边框检测
+          const strokeWidth = path.strokeWidth || 1
+          const hitResult = path.hitTest(point, {
+            stroke: true,
+            tolerance: strokeWidth + 2
+          })
 
-          if (currentStrokeColor === newColor) {
+          // 如果点击在边框上，优先填充边框颜色
+          if (hitResult && hitResult.type === 'stroke') {
+            const currentStrokeColor = path.strokeColor?.toCSS(true)
+            const newColor = canvasColor.value
+
+            if (currentStrokeColor === newColor) {
+              // 清理临时路径后返回
+              for (const tp of tempPaths) tp.remove()
+              return
+            }
+
+            path.strokeColor = new paper.Color(newColor)
+            updatePathsWithHistory()
+            // 清理临时路径后返回
+            for (const tp of tempPaths) tp.remove()
             return
           }
+        }
 
-          path.strokeColor = new paper.Color(newColor)
-          updatePathsWithHistory()
+        // 否则填充路径内部
+        const currentFillColor = path.fillColor?.toCSS(true)
+        const newColor = canvasColor.value
+
+        if (currentFillColor === newColor) {
+          // 清理临时路径后返回
+          for (const tp of tempPaths) tp.remove()
           return
         }
-      }
 
-      // 否则填充路径内部
-      const currentFillColor = path.fillColor?.toCSS(true)
-      const newColor = canvasColor.value
-
-      if (currentFillColor === newColor) {
+        path.fillColor = new paper.Color(newColor)
+        updatePathsWithHistory()
+        // 清理临时路径后返回
+        for (const tp of tempPaths) tp.remove()
         return
       }
+    }
 
-      path.fillColor = new paper.Color(newColor)
-      updatePathsWithHistory()
-      return
-    } else {
+    // 清理所有临时路径
+    for (const tempPath of tempPaths) {
       tempPath.remove()
+    }
+  } catch (error) {
+    console.error('直接路径填充出错:', error)
+    // 紧急清理临时路径
+    for (const tempPath of tempPaths) {
+      try {
+        tempPath.remove()
+      } catch (cleanupError) {
+        console.warn('清理临时路径时出错:', cleanupError)
+      }
     }
   }
 
@@ -226,14 +251,17 @@ const smartFill = (point: paper.Point): void => {
 }
 
 /**
- * 寻找最优填充区域的高效算法
+ * 寻找最优填充区域的高效算法（内存安全版本）
  */
 const findOptimalFillRegion = (point: paper.Point, boundaryPaths: paper.Path[]): paper.PathItem | null => {
+  const createdPaths: paper.PathItem[] = []
+
   // 创建画布边界
   const canvasBoundary = new paper.Path.Rectangle({
     point: [0, 0],
     size: [props.canvasWidth, props.canvasHeight]
   })
+  createdPaths.push(canvasBoundary)
 
   try {
     // 分批处理边界路径以提高性能
@@ -245,30 +273,61 @@ const findOptimalFillRegion = (point: paper.Point, boundaryPaths: paper.Path[]):
 
       // 合并当前批次的路径
       let batchUnion: paper.PathItem | null = null
-      for (const path of batch) {
-        if (!batchUnion) {
-          batchUnion = path.clone({ insert: false })
-        } else {
-          const unionResult = batchUnion.unite(path, { insert: false }) as paper.PathItem | null
-          if (unionResult) {
-            batchUnion.remove()
-            batchUnion = unionResult
+      try {
+        for (const path of batch) {
+          if (!batchUnion) {
+            batchUnion = path.clone({ insert: false })
+            createdPaths.push(batchUnion)
+          } else {
+            const unionResult = batchUnion.unite(path, { insert: false }) as paper.PathItem | null
+            if (unionResult) {
+              // 从跟踪列表中移除旧的batchUnion
+              const oldIndex = createdPaths.indexOf(batchUnion)
+              if (oldIndex >= 0) createdPaths.splice(oldIndex, 1)
+
+              batchUnion.remove()
+              batchUnion = unionResult
+              createdPaths.push(batchUnion)
+            }
           }
         }
-      }
 
-      // 从当前区域减去批次联合
-      if (batchUnion) {
-        const subtractResult = currentRegion.subtract(batchUnion, { insert: false })
-        if (subtractResult) {
-          currentRegion.remove()
-          currentRegion = subtractResult
+        // 从当前区域减去批次联合
+        if (batchUnion) {
+          const subtractResult = currentRegion.subtract(batchUnion, { insert: false })
+          if (subtractResult) {
+            // 如果currentRegion不是原始canvasBoundary，才移除
+            if (currentRegion !== canvasBoundary) {
+              const oldIndex = createdPaths.indexOf(currentRegion)
+              if (oldIndex >= 0) createdPaths.splice(oldIndex, 1)
+              currentRegion.remove()
+            }
+
+            currentRegion = subtractResult
+            createdPaths.push(currentRegion)
+          }
+
+          // 清理batchUnion
+          const batchIndex = createdPaths.indexOf(batchUnion)
+          if (batchIndex >= 0) createdPaths.splice(batchIndex, 1)
+          batchUnion.remove()
+          batchUnion = null
         }
-        batchUnion.remove()
+      } catch (batchError) {
+        console.error('批处理出错:', batchError)
+        // 清理当前批次的临时对象
+        if (batchUnion) {
+          const batchIndex = createdPaths.indexOf(batchUnion)
+          if (batchIndex >= 0) createdPaths.splice(batchIndex, 1)
+          batchUnion.remove()
+        }
+        continue
       }
     }
 
     // 在结果中寻找包含点击点的最小区域
+    let result: paper.PathItem | null = null
+
     if (currentRegion instanceof paper.CompoundPath) {
       let bestRegion: paper.PathItem | null = null
       let smallestArea = Infinity
@@ -288,24 +347,44 @@ const findOptimalFillRegion = (point: paper.Point, boundaryPaths: paper.Path[]):
       }
 
       if (bestRegion) {
-        const result = bestRegion.clone({ insert: false })
-        currentRegion.remove()
-        return result
+        result = bestRegion.clone({ insert: false })
       }
     } else if (currentRegion.contains(point)) {
       const area = currentRegion.bounds.width * currentRegion.bounds.height
       const canvasArea = props.canvasWidth * props.canvasHeight
 
       if (area < canvasArea * 0.6) {
-        return currentRegion
+        // 如果currentRegion是我们要返回的结果，从跟踪列表中移除避免被清理
+        const resultIndex = createdPaths.indexOf(currentRegion)
+        if (resultIndex >= 0) {
+          createdPaths.splice(resultIndex, 1)
+          result = currentRegion
+        }
       }
     }
 
-    currentRegion.remove()
-    return null
+    // 清理所有创建的临时路径
+    for (const path of createdPaths) {
+      try {
+        path.remove()
+      } catch (cleanupError) {
+        console.warn('清理路径时出错:', cleanupError)
+      }
+    }
+
+    return result
   } catch (error) {
     console.error('区域填充算法出错:', error)
-    canvasBoundary.remove()
+
+    // 紧急清理：确保所有创建的路径都被清理
+    for (const path of createdPaths) {
+      try {
+        path.remove()
+      } catch (cleanupError) {
+        console.warn('紧急清理路径时出错:', cleanupError)
+      }
+    }
+
     return null
   }
 }
