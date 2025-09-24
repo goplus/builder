@@ -160,6 +160,7 @@ import { parseProjectFullName, getProject, Visibility } from '@/apis/project'
 import { useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { initShareInfo, type Disposer } from '@/components/project/sharing/platform-share'
 
 const route = useRoute()
 const id = computed(() => route.params.id as string)
@@ -444,6 +445,21 @@ watchEffect(async () => {
 
     projectQuery.refetch()
   }
+})
+
+//初始化分享信息
+watchEffect((onCleanup) => {
+  let dispose: Disposer | null = null
+
+  initShareInfo().then((disposer) => {
+    dispose = disposer
+  })
+
+  onCleanup(() => {
+    if (dispose) {
+      dispose()
+    }
+  })
 })
 </script>
 

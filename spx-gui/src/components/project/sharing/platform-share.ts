@@ -1,5 +1,5 @@
 import { getWeChatJSSDKConfig } from '@/apis/wechat'
-import { createTrafficSource, recordTrafficAccess } from '@/apis/analyze'
+import { createTrafficSource, recordTrafficAccess } from '@/apis/traffic-source'
 import { h, type Component, ref, onMounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -75,9 +75,9 @@ const JUMP_LINKS = {
 }
 
 /**
- * 平台跳转链接的前缀
+ * 分享回流来源参数名（使用 query 参数）
  */
-const hashPrefix = '#/traffic-source-id='
+const TRAFFIC_SOURCE_QUERY_KEY = 'traffic-source-id'
 
 /*
 来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
@@ -90,11 +90,12 @@ declare global {
   }
 }
 
-// 初始化分享URL，拼接对应平台，以便后端进行回流分析
+// 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
 async function initShareURL(platform: string) {
   const trafficSource = await createTrafficSource(platform)
-  const [baseUrl] = location.href.split('#')
-  return `${baseUrl}${hashPrefix}${trafficSource.id}`
+  const url = new URL(location.href)
+  url.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
+  return url.toString()
 }
 
 /**
@@ -487,12 +488,8 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
  * @returns 分享平台
  */
 function analyzeProjectShareUrl(): string | null {
-  const hash = location.hash
-  const prefix = hashPrefix
-  if (hash.startsWith(prefix)) {
-    return hash.substring(prefix.length)
-  }
-  return null
+  const url = new URL(location.href)
+  return url.searchParams.get(TRAFFIC_SOURCE_QUERY_KEY)
 }
 /**
  * 内部复用：构建“手动下载 + 步骤引导”的通用组件
