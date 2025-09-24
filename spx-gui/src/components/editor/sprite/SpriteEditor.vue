@@ -24,7 +24,7 @@
         v-if="canConfigurePhysics(sprite)"
         v-radar="{
           name: 'Physics tab',
-          desc: 'Click to switch to physics settings, which includes collider, pivot editing, etc.'
+          desc: 'Click to switch to physics settings, which includes collision, pivot editing, etc.'
         }"
         value="physics"
         >{{ $t({ en: 'Physics', zh: '物理' }) }}</UITab

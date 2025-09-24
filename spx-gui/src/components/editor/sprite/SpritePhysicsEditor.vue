@@ -15,7 +15,7 @@ import { useContentSize } from '@/utils/dom'
 import { useMessageHandle } from '@/utils/exception'
 import { getContentBoundingRect } from '@/utils/img'
 import { toNativeFile } from '@/models/common/file'
-import { ColliderShapeType, type Sprite } from '@/models/sprite'
+import { CollisionShapeType, type Sprite } from '@/models/sprite'
 import type { Pivot as CostumePivot } from '@/models/costume'
 import { UIButton } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -58,9 +58,9 @@ const colliderPos = ref({ x: 0, y: 0 })
 async function resetValues() {
   const sprite = props.sprite
   pivotPos.value = defaultCostume.value.pivot
-  switch (sprite.colliderShapeType) {
-    case ColliderShapeType.None:
-    case ColliderShapeType.Auto: {
+  switch (sprite.collisionShapeType) {
+    case CollisionShapeType.None:
+    case CollisionShapeType.Auto: {
       const { img, bitmapResolution } = defaultCostume.value
       const rect = await getContentBoundingRect(await toNativeFile(img))
       colliderSize.value = { width: rect.width / bitmapResolution, height: rect.height / bitmapResolution }
@@ -70,18 +70,18 @@ async function resetValues() {
       }
       break
     }
-    case ColliderShapeType.Rect:
+    case CollisionShapeType.Rect:
       colliderSize.value = {
-        width: sprite.colliderShapeParams[0] ?? 0,
-        height: sprite.colliderShapeParams[1] ?? 0
+        width: sprite.collisionShapeParams[0] ?? 0,
+        height: sprite.collisionShapeParams[1] ?? 0
       }
       colliderPos.value = {
-        x: sprite.colliderPivot.x + pivotPos.value.x - colliderSize.value.width / 2,
-        y: -sprite.colliderPivot.y + pivotPos.value.y - colliderSize.value.height / 2
+        x: sprite.collisionPivot.x + pivotPos.value.x - colliderSize.value.width / 2,
+        y: -sprite.collisionPivot.y + pivotPos.value.y - colliderSize.value.height / 2
       }
       break
     default:
-      console.warn('Unsupported collider shape type:', sprite.colliderShapeType)
+      console.warn('Unsupported collider shape type:', sprite.collisionShapeType)
   }
   dirty.value = false
 }
@@ -106,11 +106,11 @@ const handleSave = useMessageHandle(
         x: pivotPos.value.x - defaultCostume.value.pivot.x,
         y: pivotPos.value.y - defaultCostume.value.pivot.y
       })
-      sprite.setColliderPivot({
+      sprite.setCollisionPivot({
         x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
         y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
       })
-      sprite.setColliderShapeRect(colliderSize.value.width, colliderSize.value.height)
+      sprite.setCollisionShapeRect(colliderSize.value.width, colliderSize.value.height)
     })
     dirty.value = false
   },
