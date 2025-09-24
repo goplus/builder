@@ -1,7 +1,7 @@
-import { join } from '@/utils/path'
+import { resolve } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 
-import { File, listAllFiles, type Files } from './common/file'
+import { File, fromConfig, listAllFiles, toConfig, type Files } from './common/file'
 import type { Size } from './common'
 
 export type Coord = { x: number; y: number }
@@ -37,7 +37,7 @@ export type RawTilemapConfig = {
     layers: RawLayerConfig[]
   }
   decorators?: RawDecoratorConfig[]
-  sprites?: any
+  sprites?: unknown[]
 }
 
 type RawDecoratorConfig = {
@@ -69,8 +69,8 @@ type RawTileSetConfig = {
   sources: RawTileSourceConfig[]
 }
 
-const tileAssetPath = 'tilemaps'
-const textureAssetPath = 'textures'
+const tilemapsAssetsPathName = 'tilemaps'
+const textureAssetPathName = 'textures'
 
 class Texture {
   constructor(
@@ -87,20 +87,18 @@ class TileTextures {
   }
 
   static load(files: Files, dir: string) {
-    const allTextureFiles = listAllFiles(
-      files,
-      join(dir, textureAssetPath),
-      (filePath) => !filePath.endsWith('.import') // TODO
-    )
+    const allFiles = listAllFiles(files, resolve(dir, textureAssetPathName))
 
     const textures: Record<string, Texture> = {}
     const dirWithSlash = dir + '/'
-    for (const fullPath of Object.keys(allTextureFiles)) {
-      const texture = allTextureFiles[fullPath]
-      if (texture) {
-        textures[fullPath] = new Texture(texture, fullPath.slice(dirWithSlash.length)) // like textures/xx/xx.png
-      }
-    }
+    allFiles
+      .filter((filePath) => !filePath.endsWith('.import')) // TODO filter the extra `.import` files.
+      .forEach((filePath) => {
+        const texture = files[filePath]
+        if (texture) {
+          textures[filePath] = new Texture(texture, filePath.slice(dirWithSlash.length)) // like textures/xx/xx.png
+        }
+      })
 
     return new TileTextures(textures)
   }
@@ -129,7 +127,7 @@ class TileSource {
   ) {
     if (texture_path == null || id == null) return null
 
-    const texture = tileTextures.texture(join(dir, texture_path))
+    const texture = tileTextures.texture(resolve(dir, texture_path))
     if (texture == null) return null
 
     const tiles = rawTiles.flatMap(({ atlas_coords, physics = {} }) =>
@@ -147,16 +145,10 @@ class TileSource {
     return {
       id: this.id,
       texture_path: this.texture.relativePath,
-      tiles: this.tiles.map(({ atlasCoords, physics: { collisionPoints } }) => {
-        const physics = {}
-        if (collisionPoints) {
-          Object.assign(physics, { collision_points: collisionPoints })
-        }
-        return {
-          atlas_coords: atlasCoords,
-          physics
-        }
-      })
+      tiles: this.tiles.map(({ atlasCoords, physics: { collisionPoints } }) => ({
+        atlas_coords: atlasCoords,
+        physics: { collision_points: collisionPoints }
+      }))
     }
   }
 }
@@ -192,22 +184,20 @@ class Decorator {
   ) {
     if (texture_path == null || name == null || position == null) return null
 
-    const texture = tileTextures.texture(join(dir, texture_path))
+    const texture = tileTextures.texture(resolve(dir, texture_path))
     if (texture == null) return null
 
     return new Decorator(name, position, texture, z_index, parent)
   }
 
   export(): RawDecoratorConfig {
-    return Object.assign(
-      {
-        name: this.name,
-        position: this.position,
-        texture_path: this.texture.relativePath,
-        parent: this.parent
-      },
-      this.zIndex == null ? {} : { z_index: this.zIndex }
-    ) // omitemptys
+    return {
+      name: this.name,
+      position: this.position,
+      texture_path: this.texture.relativePath,
+      z_index: this.zIndex,
+      parent: this.parent
+    }
   }
 }
 
@@ -234,13 +224,14 @@ export class Tilemap extends Disposable {
     this.tileSet = tileSet
   }
 
-  static load(
-    { tilemap, decorators: rawDecorators = [], sprites = [] }: RawTilemapConfig,
-    rawTilemapPath: string,
-    parentDir: string,
-    files: Files
-  ): Tilemap | null {
-    const currentDir = join(parentDir, tileAssetPath)
+  static async load(rawTilemapPath: string, parentDir: string, files: Files): Promise<Tilemap | null> {
+    const tilemapPath = resolve(parentDir, rawTilemapPath)
+    const tilemapFile = files[tilemapPath]
+    if (tilemapFile == null) {
+      throw new Error(`tilemap file not found: ${tilemapPath}`)
+    }
+    const config: RawTilemapConfig = {}
+    const { tilemap, decorators: rawDecorators = [], sprites = [] } = Object.assign(config, await toConfig(tilemapFile))
 
     if (tilemap == null) {
       console.error('"tilemap" is required')
@@ -253,6 +244,7 @@ export class Tilemap extends Disposable {
       return null
     }
 
+    const currentDir = resolve(parentDir, tilemapsAssetsPathName)
     const tileTextures = TileTextures.load(files, currentDir)
     const tileSet = TileSet.load({ sources: tileset?.sources ?? [] }, currentDir, tileTextures)
     const decorators = rawDecorators.flatMap((d) => Decorator.load(d, currentDir, tileTextures) ?? [])
@@ -271,24 +263,25 @@ export class Tilemap extends Disposable {
     })
   }
 
-  export(): [RawTilemapConfig, Files] {
+  export(parentDir: string): Files {
+    const tilemapPath = resolve(parentDir, this.tilemapPath)
     const { format, tileSize, tileSet, layers, decorators, tileTextures, extraConfig } = this
     const textures = tileTextures.export()
     const rawTileSet = tileSet.export()
-    return [
-      {
-        tilemap: {
-          format,
-          tile_size: tileSize,
-          tileset: rawTileSet,
-          layers: layers.map(({ id, name, tileData }) => ({ id, name, tile_data: tileData }))
-        },
-        decorators: decorators.map((decorator) => decorator.export()),
-        ...extraConfig
+    const rawTilemapConfig: RawTilemapConfig = {
+      tilemap: {
+        format,
+        tile_size: tileSize,
+        tileset: rawTileSet,
+        layers: layers.map(({ id, name, tileData }) => ({ id, name, tile_data: tileData }))
       },
-      {
-        ...textures
-      }
-    ]
+      decorators: decorators.map((decorator) => decorator.export()),
+      ...extraConfig
+    }
+
+    return {
+      [tilemapPath]: fromConfig(tilemapPath, rawTilemapConfig),
+      ...textures
+    }
   }
 }

@@ -191,14 +191,18 @@ export function listFiles(
   return fileList
 }
 
-export function listAllFiles(files: Files, dirname: string, filter: (filePath: string) => boolean = () => true) {
-  const prefix = dirname.endsWith('/') ? dirname : dirname + '/'
-  const fileList: Files = {}
+export function listAllFiles(
+  files: Files,
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const prefix = dirname + '/'
+  const fileList: string[] = []
   for (const filePath of Object.keys(files)) {
     if (!filePath.startsWith(prefix)) continue
     const relative = filePath.slice(prefix.length)
-    if (relative && !relative.endsWith('/') && filter(filePath)) {
-      fileList[filePath] = files[filePath]
+    if (relative && !relative.endsWith('/')) {
+      fileList.push(filePath)
     }
   }
   return fileList

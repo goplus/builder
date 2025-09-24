@@ -22,7 +22,7 @@ import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
-import { Tilemap, type RawTilemapConfig } from '../tilemap'
+import { Tilemap } from '../tilemap'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -71,11 +71,6 @@ type RawCameraConfig = {
 }
 
 type ZorderItem = string | RawWidgetConfig
-
-export enum BackdropMode {
-  Image = 0,
-  Tilemap = 1
-}
 
 export type RawProjectConfig = RawStageConfig &
   RawAudioAttenuationConfig & {
@@ -249,15 +244,6 @@ export class Project extends Disposable {
     return mapSize.width > viewport.width || mapSize.height > viewport.height
   }
 
-  /**
-   * Determines the current backdrop mode:
-   * If tilemap is not null, Tilemap mode is enabled;
-   * otherwise, Image mode is used.
-   */
-  get backdropMode() {
-    return this.tilemap != null ? BackdropMode.Tilemap : BackdropMode.Image
-  }
-
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
     switch (id.type) {
       case 'stage':
@@ -386,7 +372,7 @@ export class Project extends Disposable {
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
-      tilemapPath: rawTilemapPath,
+      tilemapPath,
       ...rawStageConfig
     } = config
 
@@ -420,14 +406,8 @@ export class Project extends Disposable {
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
 
-    if (rawTilemapPath) {
-      const tilemapPath = join(assetsDir, rawTilemapPath)
-      const tilemapFile = files[tilemapPath]
-      if (tilemapFile != null) {
-        const config: RawTilemapConfig = {}
-        Object.assign(config, await toConfig(tilemapFile))
-        this.tilemap = Tilemap.load(config, rawTilemapPath, assetsDir, files)
-      }
+    if (tilemapPath != null) {
+      this.tilemap = await Tilemap.load(tilemapPath, assetsDir, files)
     }
 
     // Set camera-follow-sprite
@@ -444,9 +424,7 @@ export class Project extends Disposable {
 
     const tilemap = this.tilemap
     if (tilemap != null) {
-      const [rawTilemapConfig, tileFiles] = tilemap.export()
-      const tilemapPath = join(assetsDir, tilemap.tilemapPath)
-      files[tilemapPath] = fromConfig(tilemapPath, rawTilemapConfig)
+      const tileFiles = tilemap.export(assetsDir)
       Object.assign(files, tileFiles)
     }
 
