@@ -3,22 +3,26 @@
 // Request:
 //   POST /analytics/traffic-source
 
+import (
+	"github.com/goplus/builder/spx-backend/internal/controller"
+)
+
 ctx := &Context
 
-var platform string
-if !parseJSON(ctx, &platform) {
+params := &controller.CreateTrafficSourceParams{}
+if !parseJSON(ctx, params) {
 	return
 }
 
-if platform == "" {
-	replyWithCodeMsg(ctx, errorInvalidArgs, "platform must be 1-50 characters")
+if ok, msg := params.Validate(); !ok {
+	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 	return
 }
 
-response, err := ctrl.CreateTrafficSource(ctx.Context(), platform)
+response, err := ctrl.CreateTrafficSource(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
 
-json 201, response
+json response

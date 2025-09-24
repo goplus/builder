@@ -14,15 +14,15 @@ export type TrafficSourceData = {
 }
 
 /**
- * Create a new traffic source recording for sharing analytics
+ * Create a new traffic source record for sharing analytics
  */
 export async function createTrafficSource(platform: string): Promise<TrafficSourceData> {
-  return client.post(`/analytics/traffic-source`, platform)
+  return client.post(`/analytics/traffic-source`, { platform })
 }
 
 /**
  * Record an access to existing traffic source
  */
 export async function recordTrafficAccess(trafficSourceId: string): Promise<void> {
-  return client.post(`/analytics/traffic-access`, trafficSourceId) as Promise<void>
+  return client.post(`/analytics/traffic-source/${trafficSourceId}/access`) as Promise<void>
 }

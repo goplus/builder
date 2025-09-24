@@ -17,6 +17,22 @@ type TrafficSourceDTO struct {
 	AccessCount int64  `json:"accessCount"`
 }
 
+// CreateTrafficSourceParams contains parameters for creating traffic source.
+type CreateTrafficSourceParams struct {
+	Platform string `json:"platform"`
+}
+
+// Validate validates the create traffic source parameters.
+func (p *CreateTrafficSourceParams) Validate() (ok bool, msg string) {
+	if p.Platform == "" {
+		return false, "platform is required"
+	}
+	if len(p.Platform) > 50 {
+		return false, "platform exceeds maximum length of 50 characters"
+	}
+	return true, ""
+}
+
 // toTrafficSourceDTO converts the model traffic source to its DTO.
 func toTrafficSourceDTO(mTrafficSource model.TrafficSource) TrafficSourceDTO {
 	return TrafficSourceDTO{
@@ -27,14 +43,10 @@ func toTrafficSourceDTO(mTrafficSource model.TrafficSource) TrafficSourceDTO {
 }
 
 // CreateTrafficSource creates a new traffic source record.
-func (ctrl *Controller) CreateTrafficSource(ctx context.Context, platform string) (*TrafficSourceDTO, error) {
-	if platform == "" {
-		return nil, fmt.Errorf("platform is required")
-	}
-
+func (ctrl *Controller) CreateTrafficSource(ctx context.Context, params *CreateTrafficSourceParams) (*TrafficSourceDTO, error) {
 	// Create new traffic source record
 	record := &model.TrafficSource{
-		Platform:    platform,
+		Platform:    params.Platform,
 		AccessCount: 0,
 	}
 
@@ -66,7 +78,7 @@ func (ctrl *Controller) RecordTrafficAccess(ctx context.Context, trafficSourceID
 	}
 
 	if result.RowsAffected == 0 {
-		return fmt.Errorf("traffic source not found")
+		return ErrNotExist
 	}
 
 	return nil
