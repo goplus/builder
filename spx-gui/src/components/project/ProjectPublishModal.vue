@@ -93,7 +93,10 @@ const mobileKeyboardZoneToKey = ref<MobileKeyboardZoneToKeyMapping | null>(
 )
 const openKeyboardEditor = useModal(MobileKeyboardEdit)
 async function handleEidtKeyboard() {
-  const result = await openKeyboardEditor({ zoneToKeyMapping: mobileKeyboardZoneToKey.value })
+  const result = await openKeyboardEditor({
+    zoneToKeyMapping: mobileKeyboardZoneToKey.value,
+    projectKeys: props.project.getUsedWebKeys()
+  })
   mobileKeyboardZoneToKey.value = result as MobileKeyboardZoneToKeyMapping
 }
 </script>

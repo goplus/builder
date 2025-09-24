@@ -20,6 +20,7 @@ export declare function useModal<T>(
 export declare function KeyboardEditorModal(
   props: {
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping;
+    projectKeys: KeyCode[];
   },
   emits: {
     resolved: (result: MobileKeyboardZoneToKeyMapping) => void;
@@ -98,16 +99,10 @@ export declare function UIKeyBtn(
   }
 ): UI;
 // {
-//   function toKeyAndCode(v: string) {
-//     // preprocessing
-//     return { key: v, code: v };
-//   }
 
 //   function dispatchKey(type: "keydown" | "keyup", v: string) {
-//     const { key, code } = toKeyAndCode(v);
-//     props.onKeyEvent?.(type, key, code);
+//   emit('key', type, v)
 //   }
-
 //   let isPressed = false;
 //   function press(down: boolean) {
 //     if (down && !isPressed) {

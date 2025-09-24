@@ -158,6 +158,14 @@ type post_aigc_matting struct {
 	yap.Handler
 	*AppV2
 }
+type post_analytics_traffic_source struct {
+	yap.Handler
+	*AppV2
+}
+type post_analytics_traffic_source_id_access_yap struct {
+	yap.Handler
+	*AppV2
+}
 type post_asset struct {
 	yap.Handler
 	*AppV2
@@ -385,29 +393,31 @@ func (this *AppV2) Main() {
 	_xgo_obj28 := &post_ai_description{AppV2: this}
 	_xgo_obj29 := &post_ai_interaction_turn{AppV2: this}
 	_xgo_obj30 := &post_aigc_matting{AppV2: this}
-	_xgo_obj31 := &post_asset{AppV2: this}
-	_xgo_obj32 := &post_copilot_message{AppV2: this}
-	_xgo_obj33 := &post_copilot_stream_message{AppV2: this}
-	_xgo_obj34 := &post_course_series{AppV2: this}
-	_xgo_obj35 := &post_course{AppV2: this}
-	_xgo_obj36 := &post_project_release{AppV2: this}
-	_xgo_obj37 := &post_project{AppV2: this}
-	_xgo_obj38 := &post_project_owner_name_liking{AppV2: this}
-	_xgo_obj39 := &post_project_owner_name_view{AppV2: this}
-	_xgo_obj40 := &post_recording{AppV2: this}
-	_xgo_obj41 := &post_recording_id_liking{AppV2: this}
-	_xgo_obj42 := &post_recording_id_view{AppV2: this}
-	_xgo_obj43 := &post_user_username_following{AppV2: this}
-	_xgo_obj44 := &post_util_fileurls{AppV2: this}
-	_xgo_obj45 := &post_wechat_jssdk_config{AppV2: this}
-	_xgo_obj46 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj47 := &put_asset_id{AppV2: this}
-	_xgo_obj48 := &put_course_series_id{AppV2: this}
-	_xgo_obj49 := &put_course_id{AppV2: this}
-	_xgo_obj50 := &put_project_owner_name{AppV2: this}
-	_xgo_obj51 := &put_recording_id{AppV2: this}
-	_xgo_obj52 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51, _xgo_obj52)
+	_xgo_obj31 := &post_analytics_traffic_source{AppV2: this}
+	_xgo_obj32 := &post_analytics_traffic_source_id_access_yap{AppV2: this}
+	_xgo_obj33 := &post_asset{AppV2: this}
+	_xgo_obj34 := &post_copilot_message{AppV2: this}
+	_xgo_obj35 := &post_copilot_stream_message{AppV2: this}
+	_xgo_obj36 := &post_course_series{AppV2: this}
+	_xgo_obj37 := &post_course{AppV2: this}
+	_xgo_obj38 := &post_project_release{AppV2: this}
+	_xgo_obj39 := &post_project{AppV2: this}
+	_xgo_obj40 := &post_project_owner_name_liking{AppV2: this}
+	_xgo_obj41 := &post_project_owner_name_view{AppV2: this}
+	_xgo_obj42 := &post_recording{AppV2: this}
+	_xgo_obj43 := &post_recording_id_liking{AppV2: this}
+	_xgo_obj44 := &post_recording_id_view{AppV2: this}
+	_xgo_obj45 := &post_user_username_following{AppV2: this}
+	_xgo_obj46 := &post_util_fileurls{AppV2: this}
+	_xgo_obj47 := &post_wechat_jssdk_config{AppV2: this}
+	_xgo_obj48 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj49 := &put_asset_id{AppV2: this}
+	_xgo_obj50 := &put_course_series_id{AppV2: this}
+	_xgo_obj51 := &put_course_id{AppV2: this}
+	_xgo_obj52 := &put_project_owner_name{AppV2: this}
+	_xgo_obj53 := &put_recording_id{AppV2: this}
+	_xgo_obj54 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51, _xgo_obj52, _xgo_obj53, _xgo_obj54)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -1895,6 +1905,70 @@ func (this *post_aigc_matting) Classfname() string {
 	return "post_aigc_matting"
 }
 func (this *post_aigc_matting) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:10
+func (this *post_analytics_traffic_source) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_analytics_traffic-source.yap:12:1
+	params := &controller.CreateTrafficSourceParams{}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
+	if
+//line cmd/spx-backend/post_analytics_traffic-source.yap:17:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:18:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:22:1
+	response, err := this.ctrl.CreateTrafficSource(ctx.Context(), params)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_analytics_traffic-source.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_analytics_traffic-source.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source.yap:28:1
+	this.Json__1(response)
+}
+func (this *post_analytics_traffic_source) Classfname() string {
+	return "post_analytics_traffic-source"
+}
+func (this *post_analytics_traffic_source) Classclone() yap.HandlerProto {
+	_xgo_ret := *this
+	return &_xgo_ret
+}
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:6
+func (this *post_analytics_traffic_source_id_access_yap) Main(_xgo_arg0 *yap.Context) {
+	this.Handler.Main(_xgo_arg0)
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:8:1
+	if
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:8:1
+	err := this.ctrl.RecordTrafficAccess(ctx.Context(), this.Gop_Env("id")); err != nil {
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:9:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:10:1
+		return
+	}
+//line cmd/spx-backend/post_analytics_traffic-source_#id_access.yap.yap:12:1
+	this.Text__0(204, "", "")
+}
+func (this *post_analytics_traffic_source_id_access_yap) Classfname() string {
+	return "post_analytics_traffic-source_#id_access.yap"
+}
+func (this *post_analytics_traffic_source_id_access_yap) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
