@@ -50,15 +50,15 @@ export type Pivot = {
   y: number
 }
 
-export type ColliderPivot = {
+export type CollisionPivot = {
   /** The x offset. Positive value means right direction, negative means left direction. */
   x: number
   /** The y offset. Positive value means up direction, negative means down direction. */
   y: number
 }
 
-export enum ColliderShapeType {
-  /** No collider */
+export enum CollisionShapeType {
+  /** No collision */
   None = 'none',
   /** Automatically sized collider. Bounding box of non-transparent pixels in the sprite's default costume will be used. */
   Auto = 'auto',
@@ -69,14 +69,14 @@ export enum ColliderShapeType {
 }
 
 /**
- * ColliderShapeParams specify numeric parameters for each ColliderShapeType:
+ * CollisionShapeParams specify numeric parameters for each CollisionShapeType:
  * - Rect: [width, height]
  * - Circle: [radius]
  * - Capsule: [radius, height]
  * - Polygon: [x1, y1, x2, y2, ...] — vertex coordinates in (x, y) pairs
  * - None / Auto: []
  */
-export type ColliderShapeParams = number[]
+export type CollisionShapeParams = number[]
 
 export type SpriteInits = {
   id?: string
@@ -99,9 +99,9 @@ export type SpriteInits = {
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
   /** Offset of the sprite’s collider center from the sprite's origin position. */
-  colliderPivot?: ColliderPivot
-  colliderShapeType?: ColliderShapeType
-  colliderShapeParams?: ColliderShapeParams
+  collisionPivot?: CollisionPivot
+  collisionShapeType?: CollisionShapeType
+  collisionShapeParams?: CollisionShapeParams
   assetMetadata?: AssetMetadata
   /** Additional config not recognized by builder */
   extraConfig?: object
@@ -301,10 +301,10 @@ export class Sprite extends Disposable {
   physicsMode: PhysicsMode
   setPhysicsMode(physicsMode: PhysicsMode) {
     this.physicsMode = physicsMode
-    if (physicsMode !== PhysicsMode.NoPhysics && this.colliderShapeType === ColliderShapeType.None) {
-      this.setColliderShapeAuto()
-    } else if (physicsMode === PhysicsMode.NoPhysics && this.colliderShapeType !== ColliderShapeType.None) {
-      this.setColliderShapeNone()
+    if (physicsMode !== PhysicsMode.NoPhysics && this.collisionShapeType === CollisionShapeType.None) {
+      this.setCollisionShapeAuto()
+    } else if (physicsMode === PhysicsMode.NoPhysics && this.collisionShapeType !== CollisionShapeType.None) {
+      this.setCollisionShapeNone()
     }
   }
 
@@ -318,34 +318,34 @@ export class Sprite extends Disposable {
     this.isDraggable = isDraggable
   }
 
-  colliderPivot: ColliderPivot
-  setColliderPivot(colliderPivot: ColliderPivot) {
-    this.colliderPivot = colliderPivot
+  collisionPivot: CollisionPivot
+  setCollisionPivot(p: CollisionPivot) {
+    this.collisionPivot = p
   }
 
-  colliderShapeType: ColliderShapeType
-  colliderShapeParams: ColliderShapeParams
-  private setColliderShape(type: ColliderShapeType, params: ColliderShapeParams) {
-    this.colliderShapeType = type
-    this.colliderShapeParams = params
+  collisionShapeType: CollisionShapeType
+  collisionShapeParams: CollisionShapeParams
+  private setCollisionShape(type: CollisionShapeType, params: CollisionShapeParams) {
+    this.collisionShapeType = type
+    this.collisionShapeParams = params
   }
-  setColliderShapeNone() {
-    this.setColliderShape(ColliderShapeType.None, [])
+  setCollisionShapeNone() {
+    this.setCollisionShape(CollisionShapeType.None, [])
   }
-  setColliderShapeAuto() {
-    this.setColliderShape(ColliderShapeType.Auto, [])
+  setCollisionShapeAuto() {
+    this.setCollisionShape(CollisionShapeType.Auto, [])
   }
-  setColliderShapeCircle(radius: number) {
-    this.setColliderShape(ColliderShapeType.Circle, [radius])
+  setCollisionShapeCircle(radius: number) {
+    this.setCollisionShape(CollisionShapeType.Circle, [radius])
   }
-  setColliderShapeRect(width: number, height: number) {
-    this.setColliderShape(ColliderShapeType.Rect, [width, height])
+  setCollisionShapeRect(width: number, height: number) {
+    this.setCollisionShape(CollisionShapeType.Rect, [width, height])
   }
-  setColliderShapeCapsule(radius: number, height: number) {
-    this.setColliderShape(ColliderShapeType.Capsule, [radius, height])
+  setCollisionShapeCapsule(radius: number, height: number) {
+    this.setCollisionShape(CollisionShapeType.Capsule, [radius, height])
   }
-  setColliderShapePolygon(points: number[]) {
-    this.setColliderShape(ColliderShapeType.Polygon, points)
+  setCollisionShapePolygon(points: number[]) {
+    this.setCollisionShape(CollisionShapeType.Polygon, points)
   }
 
   /**
@@ -399,9 +399,9 @@ export class Sprite extends Disposable {
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
-    this.colliderPivot = inits?.colliderPivot ?? { x: 0, y: 0 }
-    this.colliderShapeType = inits?.colliderShapeType ?? ColliderShapeType.None
-    this.colliderShapeParams = inits?.colliderShapeParams ?? []
+    this.collisionPivot = inits?.collisionPivot ?? { x: 0, y: 0 }
+    this.collisionShapeType = inits?.collisionShapeType ?? CollisionShapeType.None
+    this.collisionShapeParams = inits?.collisionShapeParams ?? []
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
     this.extraConfig = inits?.extraConfig ?? {}
@@ -476,9 +476,9 @@ export class Sprite extends Disposable {
       costumeIndex,
       isDraggable,
       pivot: legacyPivot,
-      colliderPivot,
-      colliderShapeType,
-      colliderShapeParams,
+      collisionPivot,
+      collisionShapeType,
+      collisionShapeParams,
       ...extraConfig
     } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
@@ -529,9 +529,9 @@ export class Sprite extends Disposable {
       rotationStyle,
       physicsMode,
       isDraggable,
-      colliderPivot,
-      colliderShapeType,
-      colliderShapeParams,
+      collisionPivot,
+      collisionShapeType,
+      collisionShapeParams,
       id: includeId ? id : undefined,
       costumeIndex: costumeIndex ?? currentCostumeIndex,
       animationBindings: {
@@ -589,9 +589,9 @@ export class Sprite extends Disposable {
       rotationStyle: this.rotationStyle,
       physicsMode: this.physicsMode,
       isDraggable: this.isDraggable,
-      colliderPivot: this.colliderPivot,
-      colliderShapeType: this.colliderShapeType,
-      colliderShapeParams: this.colliderShapeParams,
+      collisionPivot: this.collisionPivot,
+      collisionShapeType: this.collisionShapeType,
+      collisionShapeParams: this.collisionShapeParams,
       costumeIndex: this.costumeIndex,
       animationBindings: {
         [State.Default]: animationNameToId(animBindings[State.Default]),
@@ -659,9 +659,9 @@ export class Sprite extends Disposable {
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
-      colliderPivot: this.colliderPivot,
-      colliderShapeType: this.colliderShapeType,
-      colliderShapeParams: this.colliderShapeParams,
+      collisionPivot: this.collisionPivot,
+      collisionShapeType: this.collisionShapeType,
+      collisionShapeParams: this.collisionShapeParams,
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
       defaultAnimation: defaultAnimationName,
