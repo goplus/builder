@@ -142,35 +142,7 @@ watch(
           <div class="qr-section">
             <div class="qr-section-inner">
               <component :is="guideComponent" v-if="guideComponent" />
-              <component :is="urlShareComponent" v-else-if="urlShareComponent" />
-              <div v-else-if="selectedPlatform?.shareType.supportURL" class="qr-content">
-                <div class="qr-code">
-                  <div class="qr-placeholder">
-                    <span>{{
-                      isGeneratingQR
-                        ? $t({ en: 'Generating...', zh: '生成中...' })
-                        : $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' })
-                    }}</span>
-                  </div>
-                </div>
-                <div class="qr-hint">
-                  {{
-                    $t({ en: 'Scan the code with the corresponding platform to share', zh: '用对应平台进行扫码分享' })
-                  }}
-                </div>
-              </div>
-              <div v-else class="qr-content">
-                <div class="qr-code">
-                  <div class="qr-placeholder">
-                    <span>{{ $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' }) }}</span>
-                  </div>
-                </div>
-                <div class="qr-hint">
-                  {{
-                    $t({ en: 'Scan the code with the corresponding platform to share', zh: '用对应平台进行扫码分享' })
-                  }}
-                </div>
-              </div>
+              <component :is="urlShareComponent" v-else />
             </div>
           </div>
         </div>
