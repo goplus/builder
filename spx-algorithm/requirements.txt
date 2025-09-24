@@ -26,8 +26,7 @@ python-dotenv==1.1.1
 # 生产部署
 gunicorn==23.0.0
 
-# LTR排序模型
-lightgbm==4.5.0
+# LTR排序模型（神经网络）
 scikit-learn==1.5.2
 joblib==1.4.2
 

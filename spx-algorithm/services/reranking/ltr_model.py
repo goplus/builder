@@ -1,5 +1,5 @@
 """
-LTR重排序模型：基于LightGBM的pair-wise学习排序
+LTR重排序模型：基于神经网络的学习排序模型
 """
 
 import logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class LTRModel:
-    """Learning to Rank 模型类"""
+    """Learning to Rank 模型类：基于神经网络的学习排序"""
     
     def __init__(self, model_path: Optional[str] = None):
         """
@@ -20,12 +20,12 @@ class LTRModel:
         Args:
             model_path: 模型文件路径
         """
-        self.model_path = model_path or "models/ltr_model.pkl"
+        self.model_path = model_path or "models/ltr_model.pth"
         self.trainer = LTRTrainer(self.model_path)
         self.feature_extractor = None  # 需要在初始化时注入
         self.is_trained = False
         
-        logger.info(f"LTR模型初始化完成，模型路径: {self.model_path}")
+        logger.info(f"LTR神经网络模型初始化完成，模型路径: {self.model_path}")
     
     def set_feature_extractor(self, feature_extractor: LTRFeatureExtractor):
         """设置特征提取器"""
@@ -74,14 +74,14 @@ class LTRModel:
                 logger.error("特征提取器未设置")
                 return [0.0] * len(candidates)
             
-            # 提取排序特征
+            # 提取排序特征（神经网络或传统特征）
             features = self.feature_extractor.extract_ranking_features(query_text, candidates)
             
             if not features:
                 logger.warning("特征提取失败，返回默认分数")
                 return [candidate.get('similarity', 0.0) for candidate in candidates]
             
-            # 预测排序分数
+            # 预测排序分数（自动适配模型类型）
             scores = self.trainer.predict_ranking_scores(features)
             
             if not scores:
@@ -168,6 +168,7 @@ class LTRModel:
             return {
                 **trainer_info,
                 'model_path': self.model_path,
+                'model_type': 'neural_network',
                 'has_feature_extractor': self.feature_extractor is not None,
                 'is_ready': self.is_trained and self.feature_extractor is not None
             }
