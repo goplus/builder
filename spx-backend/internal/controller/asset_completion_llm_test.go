@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/goplus/builder/spx-backend/internal/copilot"
-	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 )
 
 // MockOpenAIClient creates a mock OpenAI client for testing
