@@ -1,7 +1,7 @@
 <template>
   <div class="unsupported-tips">
     <div class="guide-title">{{ guideTitle }}</div>
-    
+
     <div class="steps">
       <div class="step">
         <div class="step-number">1</div>
@@ -10,7 +10,7 @@
           <div class="step-description">{{ step1Description }}</div>
         </div>
       </div>
-      
+
       <div class="step">
         <div class="step-number">2</div>
         <div class="step-content">
@@ -18,7 +18,7 @@
           <div class="step-description">{{ step2Description }}</div>
         </div>
       </div>
-      
+
       <div class="step">
         <div class="step-number">3</div>
         <div class="step-content">
@@ -27,18 +27,13 @@
         </div>
       </div>
     </div>
-    
+
     <div class="api-notice">
       <div class="notice-icon">ℹ️</div>
       <div class="notice-text">{{ apiNoticeText }}</div>
     </div>
-    
-    <UIButton
-      v-if="showDownloadButton"
-      class="download-button"
-      :loading="isLoading"
-      @click="handleDownload"
-    >
+
+    <UIButton v-if="showDownloadButton" class="download-button" :loading="isLoading" @click="handleDownload">
       {{ downloadButtonText }}
     </UIButton>
   </div>
@@ -48,10 +43,10 @@
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { UIButton } from '@/components/ui'
-import type { LocalizedLabel } from './platform-share'
+import type { LocalMessage } from './platform-share'
 
 interface Props {
-  platform: LocalizedLabel
+  platform: LocalMessage
   shareType: { en: string; zh: string }
   isLoading?: boolean
   showDownloadButton?: boolean
@@ -68,35 +63,27 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const guideTitle = computed(() => 
+const guideTitle = computed(() =>
   t({ en: `How to share to ${props.platform.en}?`, zh: `如何分享到${props.platform.zh}？` })
 )
 
-const step1Title = computed(() => 
-  t({ en: `Download ${props.shareType.en}`, zh: `下载${props.shareType.zh}` })
-)
+const step1Title = computed(() => t({ en: `Download ${props.shareType.en}`, zh: `下载${props.shareType.zh}` }))
 
-const step1Description = computed(() => 
+const step1Description = computed(() =>
   t({ en: `Click the button below to save ${props.shareType.en}`, zh: `点击下方按钮保存${props.shareType.zh}到设备` })
 )
 
-const step2Title = computed(() => 
-  t({ en: `Open ${props.platform.en} App`, zh: `打开${props.platform.zh}APP` })
-)
+const step2Title = computed(() => t({ en: `Open ${props.platform.en} App`, zh: `打开${props.platform.zh}APP` }))
 
-const step2Description = computed(() => 
-  t({ en: `Tap "+" to create new post`, zh: `点击"+"号发布新笔记` })
-)
+const step2Description = computed(() => t({ en: `Tap "+" to create new post`, zh: `点击"+"号发布新笔记` }))
 
-const step3Title = computed(() => 
-  t({ en: 'Upload & Share', zh: '上传分享' })
-)
+const step3Title = computed(() => t({ en: 'Upload & Share', zh: '上传分享' }))
 
-const step3Description = computed(() => 
+const step3Description = computed(() =>
   t({ en: `Select the downloaded ${props.shareType.en} to share`, zh: `选择刚下载的${props.shareType.zh}进行分享` })
 )
 
-const apiNoticeText = computed(() => 
+const apiNoticeText = computed(() =>
   t({ en: `Manual upload required due to API limitations`, zh: `由于API限制，需要手动上传，感谢理解` })
 )
 
