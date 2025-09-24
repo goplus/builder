@@ -209,7 +209,7 @@ camera_icon`,
 * car sound
 • camera effect`,
 			prefix:   "ca",
-			expected: []string{"cat_animation", "car_sound", "camera_effect"},
+			expected: []string{"cat animation", "car sound", "camera effect"},
 		},
 		{
 			name: "Mixed formatting",
@@ -219,7 +219,7 @@ camera_icon`,
 camera-icon
 background_forest`,
 			prefix:   "ca",
-			expected: []string{"cat_sprite", "car_model", "camera_icon"},
+			expected: []string{"cat sprite", "car model", "camera-icon"},
 		},
 		{
 			name: "English semantic suggestions",
