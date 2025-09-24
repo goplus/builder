@@ -182,10 +182,8 @@ func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
 		return ""
 	}
 
-	// Replace spaces and hyphens with underscores, but keep original case for Chinese
+	// Keep original formatting for better readability
 	suggestion := line
-	suggestion = strings.ReplaceAll(suggestion, " ", "_")
-	suggestion = strings.ReplaceAll(suggestion, "-", "_")
 
 	// Only convert ASCII letters to lowercase, preserve Chinese characters
 	var normalized strings.Builder
@@ -274,8 +272,8 @@ func isValidAssetNameChar(r rune) bool {
 	if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
 		return true
 	}
-	// Underscore
-	if r == '_' {
+	// Common punctuation and spaces for better readability
+	if r == '_' || r == '-' || r == ' ' {
 		return true
 	}
 	// Chinese characters (CJK Unified Ideographs)

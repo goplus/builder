@@ -240,9 +240,9 @@ fighter_attack`,
 			// Check that we got some results
 			assert.Greater(t, len(results), 0, "Should get at least one suggestion")
 
-			// Check that all results are properly formatted (lowercase, underscores)
+			// Check that all results are properly formatted (allow spaces, hyphens for readability)
 			for _, result := range results {
-				assert.Regexp(t, `^[a-z0-9_]+$`, result, "Result should be lowercase with underscores only")
+				assert.Regexp(t, `^[a-zA-Z0-9_\- ]+$`, result, "Result should contain only valid characters")
 			}
 		})
 	}
