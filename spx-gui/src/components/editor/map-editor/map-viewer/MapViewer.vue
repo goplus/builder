@@ -255,7 +255,8 @@ const konvaBackdropConfig = computed(() => {
 })
 
 const loading = computed(() => {
-  if (backdropSrcLoading.value || !backdropImg.value) return true
+  const backdropExists = props.project.stage.defaultBackdrop != null
+  if (backdropExists && (backdropSrcLoading.value || !backdropImg.value)) return true
   if (props.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
   return false
 })

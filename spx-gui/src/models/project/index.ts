@@ -22,6 +22,7 @@ import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
+import { Tilemap } from '../tilemap'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -42,7 +43,8 @@ export type Metadata = Partial<CloudMetadata> & {
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
-export const projectConfigFilePath = join('assets', projectConfigFileName)
+const assetsDir = 'assets'
+export const projectConfigFilePath = join(assetsDir, projectConfigFileName)
 
 const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
 const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
@@ -75,6 +77,7 @@ export type RawProjectConfig = RawStageConfig &
     zorder?: ZorderItem[]
     run?: RawRunConfig
     camera?: RawCameraConfig
+    tilemapPath?: string
     /**
      * Sprite order info, used by Builder to determine the order of sprites.
      * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
@@ -125,6 +128,7 @@ export class Project extends Disposable {
   remixCount?: number
 
   stage: Stage
+  tilemap?: Tilemap | null
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
@@ -373,6 +377,7 @@ export class Project extends Disposable {
       camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
+      tilemapPath,
       ...rawStageConfig
     } = config
 
@@ -406,6 +411,10 @@ export class Project extends Disposable {
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
 
+    if (tilemapPath != null) {
+      this.tilemap = await Tilemap.load(tilemapPath, assetsDir, files)
+    }
+
     // Set camera-follow-sprite
     let cameraFollowSprite: Sprite | null = null
     const cameraOn = cameraConfig?.on || null
@@ -417,6 +426,13 @@ export class Project extends Disposable {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
+
+    const tilemap = this.tilemap
+    if (tilemap != null) {
+      const tileFiles = tilemap.export(assetsDir)
+      Object.assign(files, tileFiles)
+    }
+
     const zorderNames = this.zorder.map((id) => {
       const sprite = this.sprites.find((s) => s.id === id)
       if (sprite == null) throw new Error(`sprite ${id} not found`)
@@ -431,6 +447,7 @@ export class Project extends Disposable {
       camera: {
         on: this.cameraFollowSprite?.name || ''
       },
+      tilemapPath: tilemap?.tilemapPath,
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id)

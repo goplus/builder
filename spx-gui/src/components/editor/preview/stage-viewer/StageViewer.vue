@@ -307,7 +307,8 @@ const konvaBackdropConfig = computed(() => {
 })
 
 const loading = computed(() => {
-  if (backdropSrcLoading.value || !backdropImg.value) return true
+  const backdropExists = editorCtx.project.stage.defaultBackdrop != null
+  if (backdropExists && (backdropSrcLoading.value || !backdropImg.value)) return true
   if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
   if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false
