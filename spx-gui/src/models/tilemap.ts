@@ -2,9 +2,9 @@ import { join } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 
 import { File, listAllFiles, type Files } from './common/file'
+import type { Size } from './common'
 
 export type Coord = { x: number; y: number }
-export type Size = { width: number; height: number }
 
 type TileInfo = {
   atlasCoords: Coord
