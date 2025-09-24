@@ -13,7 +13,7 @@ export type ToolType =
   | 'selectColor'
 
 // 事件类型定义
-export type EventType = 'click' | 'mousedown' | 'mousemove' | 'mouseup' | 'drag'
+export type EventType = 'click' | 'mousedown' | 'mousemove' | 'mouseup' | 'drag' | 'mouseenter' | 'mouseleave'
 
 // 点位置接口
 export interface Point {
@@ -26,9 +26,12 @@ export interface ToolHandler {
   handleCanvasClick?: (point: Point | paper.Point) => void
   handleClick?: (point: Point | paper.Point) => void
   handleMouseDown?: (point: Point | paper.Point) => void
-  handleMouseMove?: (point: Point | paper.Point) => void
+  handleMouseMove?: (point: Point | paper.Point, event?: MouseEvent) => void
   handleMouseDrag?: (point: Point | paper.Point) => void
   handleMouseUp?: (point: Point | paper.Point) => void
+  handleMouseEnter?: (point: Point | paper.Point, event?: MouseEvent) => void
+  handleMouseLeave?: (point: Point | paper.Point, event?: MouseEvent) => void
+  eraserSize?: number
 }
 
 // 工具引用映射
@@ -154,6 +157,8 @@ export class CanvasEventDelegator {
       handler.handleMouseMove(point)
     } else if (this.currentTool === 'rectangle' && handler.handleMouseMove) {
       handler.handleMouseMove(point)
+    } else if (this.currentTool === 'eraser' && handler.handleMouseMove) {
+      handler.handleMouseMove(point, event)
     }
   }
 
@@ -178,6 +183,46 @@ export class CanvasEventDelegator {
   }
 
   /**
+   * 委托鼠标进入事件
+   */
+  delegateMouseEnter(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
+    if (!this.currentTool) return
+
+    const point = this.getCanvasPoint(event, canvasRef)
+    if (!point) return
+
+    const handler = this.toolRefs[this.currentTool]
+    if (!handler?.handleMouseEnter) return
+
+    // 为橡皮擦工具传递原始事件，其他工具保持原有行为
+    if (this.currentTool === 'eraser') {
+      handler.handleMouseEnter(point, event)
+    } else {
+      handler.handleMouseEnter(point)
+    }
+  }
+
+  /**
+   * 委托鼠标离开事件
+   */
+  delegateMouseLeave(event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
+    if (!this.currentTool) return
+
+    const point = this.getCanvasPoint(event, canvasRef)
+    if (!point) return
+
+    const handler = this.toolRefs[this.currentTool]
+    if (!handler?.handleMouseLeave) return
+
+    // 为橡皮擦工具传递原始事件，其他工具保持原有行为
+    if (this.currentTool === 'eraser') {
+      handler.handleMouseLeave(point, event)
+    } else {
+      handler.handleMouseLeave(point)
+    }
+  }
+
+  /**
    * 委托全局鼠标释放事件（不需要坐标）
    */
   delegateGlobalMouseUp(): void {
@@ -195,22 +240,28 @@ export class CanvasEventDelegator {
   /**
    * 通用事件委托方法
    * @param eventType 事件类型
-   * @param event 鼠标事件
+   * @param event 鼠标事件（可选，对于 mouseleave 事件不需要）
    * @param canvasRef 画布引用
    */
-  delegate(eventType: EventType, event: MouseEvent, canvasRef: HTMLCanvasElement | null): void {
+  delegate(eventType: EventType, event?: MouseEvent, canvasRef?: HTMLCanvasElement | null): void {
     switch (eventType) {
       case 'click':
-        this.delegateClick(event, canvasRef)
+        if (event) this.delegateClick(event, canvasRef || null)
         break
       case 'mousedown':
-        this.delegateMouseDown(event, canvasRef)
+        if (event) this.delegateMouseDown(event, canvasRef || null)
         break
       case 'mousemove':
-        this.delegateMouseMove(event, canvasRef)
+        if (event) this.delegateMouseMove(event, canvasRef || null)
         break
       case 'mouseup':
-        this.delegateMouseUp(event, canvasRef)
+        if (event) this.delegateMouseUp(event, canvasRef || null)
+        break
+      case 'mouseenter':
+        if (event) this.delegateMouseEnter(event, canvasRef || null)
+        break
+      case 'mouseleave':
+        if (event) this.delegateMouseLeave(event, canvasRef || null)
         break
       default:
         console.warn(`未支持的事件类型: ${eventType}`)
@@ -233,6 +284,10 @@ export class CanvasEventDelegator {
         return !!(handler.handleMouseMove || handler.handleMouseDrag)
       case 'mouseup':
         return !!handler.handleMouseUp
+      case 'mouseenter':
+        return !!handler.handleMouseEnter
+      case 'mouseleave':
+        return !!handler.handleMouseLeave
       default:
         return false
     }
