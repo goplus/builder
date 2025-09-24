@@ -2,6 +2,7 @@ import { getWeChatJSSDKConfig } from '@/apis/wechat'
 import { h, type Component, ref, onMounted } from 'vue'
 import QRCode from 'qrcode'
 import ManualShareGuide from './ManualShareGuide.vue'
+import type { LocaleMessage } from '@/utils/i18n/index'
 /**
  * 社交平台配置
  */
@@ -9,13 +10,10 @@ export type BasicInfo = {
   /** 平台标识符名称 */
   name: string
   /** 本地化显示标签 */
-  label: { en: string; zh: string }
+  label: LocaleMessage
   /** 平台品牌颜色 */
   color: string
 }
-
-/** 本地化标签类型 */
-export type LocalMessage = BasicInfo['label']
 
 /**
  * 支持分享方式接口
@@ -104,7 +102,7 @@ class QQPlatform implements PlatformConfig {
     },
     shareImage: (image: File) =>
       createImageManualShareGuide({
-        platform: { en: 'QQ', zh: 'QQ' },
+        platform: this.basicInfo.label,
         image,
         filename: 'xbuilder-poster.png',
         title: { en: 'How to share to QQ', zh: '如何分享到QQ' },
@@ -125,7 +123,7 @@ class QQPlatform implements PlatformConfig {
       }),
     shareVideo: (video: File) =>
       createVideoManualShareGuide({
-        platform: { en: 'QQ', zh: 'QQ' },
+        platform: this.basicInfo.label,
         video,
         filename: 'xbuilder-video.mp4',
         title: { en: 'How to share video to QQ', zh: '如何将视频分享到QQ' },
@@ -183,7 +181,7 @@ class WeChatPlatform implements PlatformConfig {
 
     shareImage: (image: File) =>
       createImageManualShareGuide({
-        platform: { en: 'WeChat', zh: '微信' },
+        platform: this.basicInfo.label,
         image,
         filename: 'xbuilder-poster.png',
         title: { en: 'How to share to WeChat', zh: '如何分享到微信' },
@@ -204,7 +202,7 @@ class WeChatPlatform implements PlatformConfig {
       }),
     shareVideo: (video: File) =>
       createVideoManualShareGuide({
-        platform: { en: 'WeChat', zh: '微信' },
+        platform: this.basicInfo.label,
         video,
         filename: 'xbuilder-video.mp4',
         title: { en: 'How to share video to WeChat', zh: '如何将视频分享到微信' },
@@ -281,7 +279,7 @@ class DouyinPlatform implements PlatformConfig {
   shareFunction = {
     shareImage: (image: File) =>
       createImageManualShareGuide({
-        platform: { en: 'Douyin', zh: '抖音' },
+        platform: this.basicInfo.label,
         image,
         filename: 'xbuilder-poster.png',
         title: { en: 'How to share to Douyin', zh: '如何分享到抖音' },
@@ -329,7 +327,7 @@ class XiaohongshuPlatform implements PlatformConfig {
   shareFunction = {
     shareImage: (image: File) =>
       createImageManualShareGuide({
-        platform: { en: 'Xiaohongshu', zh: '小红书' },
+        platform: this.basicInfo.label,
         image,
         filename: 'xbuilder-poster.png',
         title: { en: 'How to share to Xiaohongshu', zh: '如何分享到小红书' },
@@ -350,7 +348,7 @@ class XiaohongshuPlatform implements PlatformConfig {
       }),
     shareVideo: (video: File) =>
       createVideoManualShareGuide({
-        platform: { en: 'Xiaohongshu', zh: '小红书' },
+        platform: this.basicInfo.label,
         video,
         filename: 'xbuilder-video.mp4',
         title: { en: 'How to share to Xiaohongshu', zh: '如何分享到小红书' },
@@ -400,7 +398,7 @@ class BilibiliPlatform implements PlatformConfig {
     // B站的海报以手动上传为主
     shareImage: (image: File) =>
       createImageManualShareGuide({
-        platform: { en: 'Bilibili', zh: 'Bilibili' },
+        platform: this.basicInfo.label,
         image,
         filename: 'xbuilder-poster.png',
         title: { en: 'How to share to Bilibili', zh: '如何分享到B站' },
@@ -422,9 +420,9 @@ class BilibiliPlatform implements PlatformConfig {
     // shareVideo 返回一个"打开B站投稿页"的组件
     shareVideo: (video: File) => {
       // 这个是 vue 的 functional component 写法，详见 https://vuejs.org/guide/extras/render-function#functional-components
-      return function MyVideoShareComp() {
-        return h(ManualShareGuide, {
-          platform: { en: 'Bilibili', zh: 'Bilibili' },
+      return () =>
+        h(ManualShareGuide, {
+          platform: this.basicInfo.label,
           title: { en: 'Open Bilibili upload page', zh: '打开B站投稿页面' },
           steps: [
             {
@@ -443,7 +441,6 @@ class BilibiliPlatform implements PlatformConfig {
           defaultButtonLabel: { en: 'Download video', zh: '下载视频' },
           onDownload: createBlobDownloadHandler(video, 'xbuilder-video.mp4')
         })
-      }
     }
   }
 
@@ -503,7 +500,7 @@ function createBlobDownloadHandler(blob: Blob, filename: string): () => void {
  * 平台自定义：创建"下载图片并手动上传"的引导组件
  */
 function createImageManualShareGuide(options: {
-  platform: LocalMessage
+  platform: LocaleMessage
   image: File
   filename?: string | undefined
   title: { en: string; zh: string }
@@ -527,7 +524,7 @@ function createImageManualShareGuide(options: {
  * 平台自定义：创建"下载视频并手动上传"的引导组件（不依赖 SupportedTips）
  */
 function createVideoManualShareGuide(options: {
-  platform: LocalMessage
+  platform: LocaleMessage
   video: File
   filename?: string | undefined
   title: { en: string; zh: string }

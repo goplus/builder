@@ -62,7 +62,7 @@ import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
-import { DefaultException } from '@/utils/exception'
+import { untilNotNull } from '@/utils/utils'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -97,21 +97,8 @@ function handlePlatformChange(platform: PlatformConfig) {
 }
 
 async function createPosterFile(): Promise<File> {
-  if (!posterCompRef.value) {
-    throw new DefaultException({
-      en: 'Poster component not ready',
-      zh: '海报组件未准备好'
-    })
-  }
-
-  const posterFile = await posterCompRef.value.createPoster()
-  if (!posterFile) {
-    throw new DefaultException({
-      en: 'Failed to generate poster',
-      zh: '生成海报失败'
-    })
-  }
-
+  const posterComp = await untilNotNull(posterCompRef)
+  const posterFile = await posterComp.createPoster()
   return posterFile
 }
 

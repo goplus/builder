@@ -23,24 +23,22 @@
 
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
-import type { LocalMessage } from './platform-share'
+import type { LocaleMessage } from '@/utils/i18n/index'
 
-const props = defineProps<{
-  platform: LocalMessage
-  title: { en: string; zh: string }
-  steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
-  buttonText?: { en: string; zh: string }
-  defaultButtonLabel: { en: string; zh: string }
-  onDownload: () => void
+defineProps<{
+  platform: LocaleMessage
+  title: LocaleMessage
+  steps: Array<{ title: LocaleMessage; desc: LocaleMessage }>
+  buttonText?: LocaleMessage
+  defaultButtonLabel: LocaleMessage
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   download: []
 }>()
 
 const handleDownload = () => {
-  // 调用父组件传入的下载处理函数
-  props.onDownload()
+  emit('download')
 }
 </script>
 
