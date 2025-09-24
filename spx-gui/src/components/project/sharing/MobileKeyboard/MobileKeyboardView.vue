@@ -4,7 +4,7 @@ import { UIButton } from '@/components/ui'
 import UIKeyBtn from './UIKeyBtn.vue'
 import type { Type as IconType } from '@/components/ui/icons/UIIcon.vue'
 import { reactive, onMounted } from 'vue'
-import { KeyboardEventType, KeyCode } from './mobile-keyboard'
+import type { KeyboardEventType, KeyCode } from './mobile-keyboard'
 defineOptions({ name: 'MobileKeyboardView' })
 const props = defineProps<{
   zoneToKeyMapping: MobileKeyboardZoneToKeyMapping
