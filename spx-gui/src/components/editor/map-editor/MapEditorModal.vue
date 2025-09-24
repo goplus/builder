@@ -11,6 +11,7 @@ import type { Sprite } from '@/models/sprite'
 const props = defineProps<{
   visible: boolean
   project: Project
+  selectedSpriteId: string | null
 }>()
 
 const emit = defineEmits<{
@@ -18,7 +19,7 @@ const emit = defineEmits<{
   cancelled: []
 }>()
 
-const selectedSpriteId = ref<string | null>(null)
+const selectedSpriteId = ref(props.selectedSpriteId)
 const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === selectedSpriteId.value) ?? null)
 
 function handleSpriteSelect(sprite: Sprite | null) {

@@ -187,7 +187,12 @@ const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), 
 })
 
 const invokeMapEditor = useModal(MapEditorModal)
-const handleEditMap = useMessageHandle(() => invokeMapEditor({ project: editorCtx.project })).fn
+const handleEditMap = useMessageHandle(() =>
+  invokeMapEditor({
+    project: editorCtx.project,
+    selectedSpriteId: editorCtx.state.selectedSprite?.id ?? null
+  })
+).fn
 </script>
 
 <style scoped lang="scss">
