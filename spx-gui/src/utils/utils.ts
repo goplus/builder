@@ -42,6 +42,24 @@ export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>
   return r
 }
 
+/**
+ * Like `useAsyncComputed`, but reset value to `null` when re-evaluating.
+ * TODO: Migrate usages of `useAsyncComputed` to this if possible.
+ */
+export function useAsyncComputedFixed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+  const r = shallowRef<T | null>(null)
+  watchEffect(async (onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    r.value = null
+    const result = await getter(onCleanup)
+    if (!cancelled) r.value = result
+  })
+  return r
+}
+
 /** Do math round with given decimal places */
 export function round(num: number, decimalPlaceNum = 0) {
   const factor = 10 ** decimalPlaceNum

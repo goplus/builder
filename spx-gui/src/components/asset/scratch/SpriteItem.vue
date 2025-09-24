@@ -45,11 +45,14 @@ const wrapperRef = ref<InstanceType<typeof UISpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
 
 function adaptCostume(c: ExportedScratchCostume) {
+  // TODO: deduplicate with `importSprite` in `LoadFromScratch.vue`
   const file = fromBlob(c.name, c.blob)
   return new Costume(c.name, file, {
     bitmapResolution: c.bitmapResolution,
-    x: c.rotationCenterX,
-    y: c.rotationCenterY
+    pivot: {
+      x: c.rotationCenterX / c.bitmapResolution,
+      y: c.rotationCenterY / c.bitmapResolution
+    }
   })
 }
 

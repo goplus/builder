@@ -4,13 +4,11 @@ import { getCleanupSignal } from './disposable'
 import { createResettableObject } from '@/utils/utils'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
-  const width = ref<number | null>(null)
-  const height = ref<number | null>(null)
+  const size = ref<{ width: number; height: number } | null>(null)
 
   function onElementResize(entries: ResizeObserverEntry[]) {
     const { width: elementWidth, height: elementHeight } = entries[0].contentRect
-    width.value = elementWidth
-    height.value = elementHeight
+    size.value = { width: elementWidth, height: elementHeight }
   }
 
   watch(
@@ -25,10 +23,7 @@ export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
     { immediate: true }
   )
 
-  return {
-    width,
-    height
-  }
+  return size
 }
 
 export function loadImg(src: string, timeout?: number) {

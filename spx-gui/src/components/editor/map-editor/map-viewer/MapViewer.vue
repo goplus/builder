@@ -26,15 +26,7 @@ const emit = defineEmits<{
 }>()
 
 const container = ref<HTMLElement | null>(null)
-const rawContainerSize = useContentSize(container)
-// TODO: Update type of returned value of `useContentSize` to simplify usage.
-const containerSize = computed(() => {
-  if (rawContainerSize.width.value == null || rawContainerSize.height.value == null) return null
-  return {
-    width: rawContainerSize.width.value,
-    height: rawContainerSize.height.value
-  }
-})
+const containerSize = useContentSize(container)
 const viewportSize = containerSize
 
 type Pos = { x: number; y: number }

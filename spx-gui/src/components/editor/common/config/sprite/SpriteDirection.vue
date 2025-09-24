@@ -41,8 +41,8 @@ const rotationStyleTips = {
 const handleRotationStyleUpdate = wrapUpdateHandler(
   (style: RotationStyle) => {
     props.sprite.setRotationStyle(style)
-    if (style === RotationStyle.none) props.sprite.setHeading(90)
-    if (style === RotationStyle.leftRight) {
+    if (style === RotationStyle.None) props.sprite.setHeading(90)
+    if (style === RotationStyle.LeftRight) {
       // normalize heading to 90 / -90
       const normalizedHeading = leftRightToHeading(headingToLeftRight(props.sprite.heading))
       props.sprite.setHeading(normalizedHeading)
@@ -67,7 +67,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
         <UITooltip>
           {{ $t(rotationStyleTips.normal) }}
           <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.normal">
+            <UIButtonGroupItem :value="RotationStyle.Normal">
               <i class="rotation-icon" v-html="rotateIcon"></i>
             </UIButtonGroupItem>
           </template>
@@ -75,7 +75,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
         <UITooltip>
           {{ $t(rotationStyleTips.leftRight) }}
           <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.leftRight">
+            <UIButtonGroupItem :value="RotationStyle.LeftRight">
               <i class="rotation-icon" v-html="leftRightIcon"></i>
             </UIButtonGroupItem>
           </template>
@@ -83,7 +83,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
         <UITooltip>
           {{ $t(rotationStyleTips.none) }}
           <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.none">
+            <UIButtonGroupItem :value="RotationStyle.None">
               <i class="rotation-icon" v-html="noRotateIcon"></i>
             </UIButtonGroupItem>
           </template>
@@ -91,17 +91,17 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
       </UIButtonGroup>
     </p>
     <UIDropdown
-      v-if="sprite.rotationStyle !== RotationStyle.leftRight"
+      v-if="sprite.rotationStyle !== RotationStyle.LeftRight"
       trigger="manual"
       placement="top"
       :visible="rotateDropdownVisible"
-      :disabled="sprite.rotationStyle === RotationStyle.none"
+      :disabled="sprite.rotationStyle === RotationStyle.None"
       @click-outside="rotateDropdownVisible = false"
     >
       <template #trigger>
         <UINumberInput
           v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
-          :disabled="sprite.rotationStyle === RotationStyle.none"
+          :disabled="sprite.rotationStyle === RotationStyle.None"
           :min="-180"
           :max="180"
           :value="sprite.heading"
@@ -124,7 +124,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
       </div>
     </UIDropdown>
     <UIButtonGroup
-      v-show="sprite.rotationStyle === RotationStyle.leftRight"
+      v-show="sprite.rotationStyle === RotationStyle.LeftRight"
       v-radar="{ name: 'Direction control', desc: 'Control to set sprite left or right direction' }"
       type="text"
       :value="headingToLeftRight(sprite.heading)"

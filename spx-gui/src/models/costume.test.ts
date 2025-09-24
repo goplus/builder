@@ -34,8 +34,7 @@ describe('Costume', () => {
     expect(clone.id).not.toEqual(costume.id)
     expect(clone.name).toEqual(costume.name)
     expect(clone.img).toEqual(costume.img)
-    expect(clone.x).toEqual(costume.x)
-    expect(clone.y).toEqual(costume.y)
+    expect(clone.pivot).toEqual(costume.pivot)
     expect(clone.faceRight).toEqual(costume.faceRight)
     expect(clone.bitmapResolution).toEqual(costume.bitmapResolution)
 

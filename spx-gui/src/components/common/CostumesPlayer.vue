@@ -10,11 +10,18 @@ const props = defineProps<{
 }>()
 
 type Frame = {
+  /** The image to draw */
   img: HTMLImageElement
-  width: number
-  height: number
-  x: number
-  y: number
+  /** The size to draw the image */
+  size: {
+    width: number
+    height: number
+  }
+  /** The offset of the pivot point from the image top-left corner */
+  pivot: {
+    x: number
+    y: number
+  }
 }
 
 const canvasRef = ref<HTMLCanvasElement>()
@@ -32,9 +39,8 @@ async function loadImg(file: File, signal: AbortSignal) {
 
 async function loadFrame(costume: Costume, signal: AbortSignal): Promise<Frame> {
   const [img, size] = await Promise.all([loadImg(costume.img, signal), costume.getSize()])
-  const x = costume.x / costume.bitmapResolution
-  const y = costume.y / costume.bitmapResolution
-  return { img, x, y, ...size }
+  const pivot = costume.pivot
+  return { img, pivot, size }
 }
 
 async function loadFrames(costumes: Costume[], signal: AbortSignal) {
@@ -42,27 +48,31 @@ async function loadFrames(costumes: Costume[], signal: AbortSignal) {
 }
 
 const drawingOptionsRef = ref({
+  /** The scale factor for drawing */
   scale: 1,
+  /** The x offset of the pivot point from the canvas left-top corner */
   offsetX: 0,
+  /** The y offset of the pivot point from the canvas left-top corner */
   offsetY: 0
 })
 
 function adjustDrawingOptions(canvas: HTMLCanvasElement, firstFrame: Frame) {
-  const scale = Math.min(canvas.width / firstFrame.width, canvas.height / firstFrame.height)
+  const fSize = firstFrame.size
+  const scale = Math.min(canvas.width / fSize.width, canvas.height / fSize.height)
   drawingOptionsRef.value = {
     scale,
-    offsetX: (canvas.width - firstFrame.width * scale) / 2 + firstFrame.x * scale,
-    offsetY: (canvas.height - firstFrame.height * scale) / 2 + firstFrame.y * scale
+    offsetX: (canvas.width - fSize.width * scale) / 2 + firstFrame.pivot.x * scale,
+    offsetY: (canvas.height - fSize.height * scale) / 2 + firstFrame.pivot.y * scale
   }
 }
 
 function drawFrame(canvas: HTMLCanvasElement, frame: Frame) {
   const ctx = getImgDrawingCtx(canvas)
   const { scale, offsetX, offsetY } = drawingOptionsRef.value
-  const x = offsetX - frame.x * scale
-  const y = offsetY - frame.y * scale
-  const width = frame.width * scale
-  const height = frame.height * scale
+  const x = offsetX - frame.pivot.x * scale
+  const y = offsetY - frame.pivot.y * scale
+  const width = frame.size.width * scale
+  const height = frame.size.height * scale
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.drawImage(frame.img, x, y, width, height)
 }

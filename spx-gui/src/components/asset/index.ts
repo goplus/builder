@@ -77,7 +77,6 @@ export function useAddSpriteFromLocalFile() {
     }
     await project.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
-      await sprite.autoFitCostumes()
       await sprite.autoFit()
     })
     return sprite
@@ -97,7 +96,6 @@ export function useAddCostumeFromLocalFile() {
     })
     await project.history.doAction({ name: actionMessage }, async () => {
       for (const costume of costumes) sprite.addCostume(costume)
-      await sprite.autoFitCostumes(costumes)
     })
     return costumes
   }
