@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from ..image_matching.clip_service import CLIPService
-from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset, compute_neural_network_features
+from database.user_feedback.models import UserFeedback, PairwiseTrainingSample, TrainingDataset, compute_features
 
 logger = logging.getLogger(__name__)
 
@@ -211,7 +211,7 @@ class LTRFeatureExtractor:
                 
                 # 使用统一的神经网络特征计算函数
                 # candidate作为"better"，reference_vector作为"worse"
-                features = compute_neural_network_features(query_vec, pic_vec, reference_vector)
+                features = compute_features(query_vec, pic_vec, reference_vector)
                 features_list.append(features)
             
             logger.debug(f"成功提取{len(features_list)}个候选结果的神经网络特征")

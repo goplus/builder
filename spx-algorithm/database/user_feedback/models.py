@@ -68,10 +68,10 @@ class PairwiseTrainingSample:
         better_vec = np.array(self.pic_vector_better)
         worse_vec = np.array(self.pic_vector_worse)
         
-        return compute_neural_network_features(query_vec, better_vec, worse_vec)
+        return compute_features(query_vec, better_vec, worse_vec)
 
 
-def compute_neural_network_features(query_vec, better_vec, worse_vec) -> List[float]:
+def compute_features(query_vec, better_vec, worse_vec) -> List[float]:
     """
     简化的神经网络特征计算函数：3d+6维
     
