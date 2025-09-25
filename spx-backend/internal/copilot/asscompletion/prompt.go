@@ -13,7 +13,6 @@ var systemPromptTpl string
 // It is initialized during package initialization.
 var SystemPrompt string
 
-
 func init() {
 	// The system prompt for asset completion is static and doesn't need template processing
 	SystemPrompt = systemPromptTpl
@@ -68,19 +67,4 @@ func BuildUserPrompt(prefix string, limit int) string {
 		"5. Use underscores to connect words / 使用下划线连接词语\n\n"+
 		"Please list suggestions directly, one per line, without numbers or bullets. / 请直接列出建议，每行一个，不要编号。",
 		limit, prefix, prefix, limit, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
-}
-
-// ContainsChinese checks if a string contains Chinese characters
-func ContainsChinese(s string) bool {
-	for _, r := range s {
-		if r >= 0x4e00 && r <= 0x9fff { // CJK Unified Ideographs range
-			return true
-		}
-	}
-	return false
-}
-
-// containsChinese is a private alias for backward compatibility
-func containsChinese(s string) bool {
-	return ContainsChinese(s)
 }
