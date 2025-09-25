@@ -13,7 +13,8 @@
 
 ## 主要特性
 
-- ✅ **智能图像搜索**：基于语义理解的图像检索
+- ✅ **智能图像搜索**：基于语义理解的文本搜索图片
+- ✅ **图像相似度匹配**：基于视觉特征的图片匹配图片
 - ✅ **资源管理**：统一的资源添加、查询、删除接口
 - ✅ **SVG 图片支持**：专门优化的 SVG 图片处理流程
 - ✅ **批量操作**：支持批量添加和处理资源
@@ -168,7 +169,7 @@ Content-Type: application/json
 }
 ```
 
-#### 搜索资源
+#### 搜索资源（文本搜索图片）
 ```http
 POST /v1/resource/search
 Content-Type: application/json
@@ -177,6 +178,18 @@ Content-Type: application/json
   "text": "dog running in park",
   "top_k": 10,
   "threshold": 0.3
+}
+```
+
+#### 匹配资源（图片匹配图片）
+```http
+POST /v1/resource/match
+Content-Type: application/json
+
+{
+  "svg_content": "<svg><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"red\" /></svg>",
+  "top_k": 10,
+  "threshold": 0.8
 }
 ```
 
@@ -394,7 +407,8 @@ gunicorn -w 4 -b 0.0.0.0:5000 \
 ### 对外接口（`/v1/resource/`）
 - **添加资源**：`POST /v1/resource/add` - 添加单个资源
 - **批量添加**：`POST /v1/resource/batch` - 批量添加资源
-- **搜索资源**：`POST /v1/resource/search` - 基于语义的资源搜索
+- **搜索资源**：`POST /v1/resource/search` - 基于语义的文本搜索图片
+- **匹配资源**：`POST /v1/resource/match` - 基于视觉相似度的图片匹配图片
 
 ### 内部接口（`/v1/internal/`）
 - **系统调试**：向量数据查看、详细搜索调试
@@ -408,8 +422,9 @@ gunicorn -w 4 -b 0.0.0.0:5000 \
 
 ### 设计原则
 - **统一性**：所有资源相关操作都在 `/v1/resource/` 下，避免接口分散
-- **简洁性**：对外只暴露核心的添加和搜索功能，隐藏复杂的管理操作
+- **简洁性**：对外只暴露核心的添加、搜索和匹配功能，隐藏复杂的管理操作
 - **职责分离**：业务功能与调试维护功能严格分离
+- **算法多样性**：支持文本搜索（语义匹配）和图片匹配（视觉相似度）两种不同的检索模式
 - **用户驱动**：通过用户反馈持续优化搜索体验
 
 ## 故障排除

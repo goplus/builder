@@ -5,6 +5,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 from datetime import datetime
+import numpy as np
 
 
 @dataclass
@@ -56,78 +57,72 @@ class PairwiseTrainingSample:
     feedback_id: int  # 原始反馈记录ID
     
     def get_feature_vector(self) -> List[float]:
-        """提取特征向量用于训练
+        """提取简化的神经网络特征向量用于训练
         
         特征包括：
-        - query向量与better图片向量的余弦相似度
-        - query向量与worse图片向量的余弦相似度  
-        - better图片向量与worse图片向量的余弦相似度
-        - 向量间的点积、欧氏距离等交互特征
+        - 原始向量特征: query_vec, better_vec, worse_vec (3d维)
+        - 统计特征: 余弦相似度和欧氏距离 (6维)
+        总计: 3d+6维 = 1542维 (d=512)
         """
-        import numpy as np
-        
         query_vec = np.array(self.query_vector)
         better_vec = np.array(self.pic_vector_better)
         worse_vec = np.array(self.pic_vector_worse)
         
-        return compute_pairwise_features(query_vec, better_vec, worse_vec)
+        return compute_features(query_vec, better_vec, worse_vec)
 
 
-def compute_pairwise_features(query_vec, better_vec, worse_vec) -> List[float]:
+def compute_features(query_vec, better_vec, worse_vec) -> List[float]:
     """
-    统一的pair-wise特征计算函数，供训练和预测阶段共用
+    简化的神经网络特征计算函数：3d+6维
     
     设计说明：
-    - 该函数计算query、better、worse三个向量之间的pair-wise特征
+    - 该函数计算query、better、worse三个向量之间的神经网络特征
     - 训练时：better是用户选择的图片，worse是未选择的图片
     - 预测时：better是当前候选图片，worse是动态参考向量（候选集合的平均向量）
     
-    特征设计理由：
-    1. 相似度特征：衡量query与两个图片的语义匹配程度
-    2. 距离特征：衡量向量空间中的几何距离关系
-    3. 差异特征：直接比较better vs worse的相对优劣
-    4. 长度特征：向量的模长反映了特征的激活强度
+    简化特征设计理由：
+    1. 原始向量特征：保留完整信息，让神经网络自动学习向量间的复杂交互关系
+    2. 统计特征：经典相似度度量作为有价值的补充特征
+    3. 移除冗余特征：去掉交互特征和对比特征，减少过拟合风险，提升训练效率
     
     Args:
-        query_vec: 查询向量 (numpy array)
-        better_vec: 更好的图片向量 (numpy array) 
-        worse_vec: 更差的图片向量 (numpy array)
+        query_vec: 查询向量 (numpy array, 长度d)
+        better_vec: 更好的图片向量 (numpy array, 长度d) 
+        worse_vec: 更差的图片向量 (numpy array, 长度d)
         
     Returns:
-        10维特征向量列表
+        (3d+6)维特征向量列表，总计1542维 (d=512)
     """
-    import numpy as np
+    features = []
     
-    # 余弦相似度特征（假设向量已归一化）
-    query_better_sim = np.dot(query_vec, better_vec)
-    query_worse_sim = np.dot(query_vec, worse_vec)
-    better_worse_sim = np.dot(better_vec, worse_vec)
+    # 1. 原始向量特征 (3d维) - 保留完整信息让神经网络自主学习
+    features.extend(query_vec.tolist())   # d维
+    features.extend(better_vec.tolist())  # d维
+    features.extend(worse_vec.tolist())   # d维
     
-    # 相似度差异特征 - 衡量better相对于worse的优势
-    sim_diff = query_better_sim - query_worse_sim
+    # 2. 统计特征 (6维) - 经典相似度度量作为补充
+    # 余弦相似度
+    cosine_sim_query_better = np.dot(query_vec, better_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(better_vec) + 1e-8)
+    cosine_sim_query_worse = np.dot(query_vec, worse_vec) / (np.linalg.norm(query_vec) * np.linalg.norm(worse_vec) + 1e-8)
+    cosine_sim_better_worse = np.dot(better_vec, worse_vec) / (np.linalg.norm(better_vec) * np.linalg.norm(worse_vec) + 1e-8)
     
-    # 欧氏距离特征
-    query_better_dist = np.linalg.norm(query_vec - better_vec)
-    query_worse_dist = np.linalg.norm(query_vec - worse_vec)
-    dist_diff = query_worse_dist - query_better_dist  # 距离越小越好，所以worse-better
+    # 欧氏距离
+    l2_dist_query_better = np.linalg.norm(query_vec - better_vec)
+    l2_dist_query_worse = np.linalg.norm(query_vec - worse_vec)
+    l2_dist_better_worse = np.linalg.norm(better_vec - worse_vec)
     
-    # 向量长度特征 - 反映特征激活强度
-    query_norm = np.linalg.norm(query_vec)
-    better_norm = np.linalg.norm(better_vec)
-    worse_norm = np.linalg.norm(worse_vec)
+    features.extend([
+        cosine_sim_query_better,
+        cosine_sim_query_worse,
+        cosine_sim_better_worse,
+        l2_dist_query_better,
+        l2_dist_query_worse,
+        l2_dist_better_worse
+    ])
     
-    return [
-        query_better_sim,      # query与better图片相似度
-        query_worse_sim,       # query与worse图片相似度
-        better_worse_sim,      # better与worse图片相似度
-        sim_diff,              # 相似度差异（better - worse）
-        query_better_dist,     # query与better图片距离
-        query_worse_dist,      # query与worse图片距离
-        dist_diff,             # 距离差异（worse - better）
-        query_norm,            # query向量长度
-        better_norm,           # better图片向量长度
-        worse_norm,            # worse图片向量长度
-    ]
+    return features  # 总计: 3*512 + 6 = 1542维
+
+
 
 
 @dataclass

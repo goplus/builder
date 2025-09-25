@@ -324,11 +324,13 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	logger.Printf("Returning recommendation result with %d results", len(foundResults))
 
+
 	// Log filter metrics if available
 	if filterMetrics != nil {
 		logger.Printf("Filter metrics: %d total candidates, %d filtered (%.1f%%), degradation level: %d",
 			filterMetrics.TotalCandidates, filterMetrics.FilteredCount, filterMetrics.FilterRatio*100, filterMetrics.DegradationLevel)
 	}
+
 
 	return &ImageRecommendResult{
 		QueryID:      queryID,

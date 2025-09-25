@@ -179,6 +179,8 @@
           @mousedown="handleMouseDown"
           @mousemove="handleMouseMove"
           @mouseup="handleCanvasMouseUp"
+          @mouseenter="handleCanvasMouseEnter"
+          @mouseleave="handleCanvasMouseLeave"
         ></canvas>
 
         <!-- 直线绘制组件 -->
@@ -201,7 +203,12 @@
         <Reshape ref="reshapeRef" :is-active="currentTool === 'reshape'" :all-paths="allPaths" />
 
         <!-- 橡皮工具组件 -->
-        <EraserTool :is-active="currentTool === 'eraser'" :canvas-width="canvasWidth" :canvas-height="canvasHeight" />
+        <EraserTool
+          ref="eraserToolRef"
+          :is-active="currentTool === 'eraser'"
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+        />
 
         <!-- 矩形工具组件 -->
         <RectangleTool
@@ -276,6 +283,7 @@ const currentTool = ref<ToolType | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
+const eraserToolRef = ref<InstanceType<typeof EraserTool> | null>(null)
 const circleToolRef = ref<InstanceType<typeof CircleTool> | null>(null)
 const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
 const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
@@ -291,6 +299,7 @@ const initEventDelegator = (): void => {
     line: drawLineRef.value as ToolHandler,
     brush: drawBrushRef.value as ToolHandler,
     reshape: reshapeRef.value as ToolHandler,
+    eraser: eraserToolRef.value as ToolHandler,
     circle: circleToolRef.value as ToolHandler,
     rectangle: rectangleToolRef.value as ToolHandler,
     fill: fillToolRef.value as ToolHandler,
@@ -337,6 +346,14 @@ const handleMouseMove = (event: MouseEvent): void => {
 
 const handleCanvasMouseUp = (event: MouseEvent): void => {
   canvasEventDelegator.delegateMouseUp(event, canvasRef.value)
+}
+
+const handleCanvasMouseEnter = (event: MouseEvent): void => {
+  canvasEventDelegator.delegateMouseEnter(event, canvasRef.value)
+}
+
+const handleCanvasMouseLeave = (event: MouseEvent): void => {
+  canvasEventDelegator.delegateMouseLeave(event, canvasRef.value)
 }
 
 const handleMouseUp = (): void => {
@@ -401,10 +418,36 @@ const initPaper = (): void => {
 
   paper.view.update()
 }
+/**
+ * 递归地从一个项目或图层中获取所有可绘制的矢量路径。
+ * @param item - 开始搜索的项目
+ * @returns 一个包含所有 Path, CompoundPath 和 Shape 的数组
+ */
+function getAllDrawablePaths(item: paper.Item): (paper.Path | paper.CompoundPath | paper.Shape)[] {
+  let paths: (paper.Path | paper.CompoundPath | paper.Shape)[] = []
 
+  // 检查当前项目是否是我们需要的目标类型
+  if (item instanceof paper.Path || item instanceof paper.CompoundPath || item instanceof paper.Shape) {
+    // 确保它不是背景或其他特殊用途的路径
+    if (!item.data.isBackground) {
+      paths.push(item)
+    }
+  }
+  // 如果当前项目是一个容器（例如 Group 或 Layer），则递归遍历其子项
+  else if (item.children) {
+    for (const child of item.children) {
+      paths = paths.concat(getAllDrawablePaths(child))
+    }
+  }
+
+  return paths
+}
 //painter提供allPath接口给直线组件
-const getAllPathsValue = (): paper.Path[] => {
-  return allPaths.value.map((p) => p.clone({ insert: false }))
+const getAllPathsValue = (): (paper.Path | paper.CompoundPath | paper.Shape)[] => {
+  if (paper.project && paper.project.activeLayer) {
+    return getAllDrawablePaths(paper.project.activeLayer)
+  }
+  return []
 }
 const setAllPathsValue = (paths: paper.Path[]): void => {
   //历史记录保存
@@ -588,7 +631,17 @@ watch(currentTool, (newTool) => {
 
 // 监听工具引用变化，更新委托器
 watch(
-  [drawLineRef, drawBrushRef, reshapeRef, circleToolRef, rectangleToolRef, fillToolRef, textToolRef, selectColorRef],
+  [
+    drawLineRef,
+    drawBrushRef,
+    reshapeRef,
+    eraserToolRef,
+    circleToolRef,
+    rectangleToolRef,
+    fillToolRef,
+    textToolRef,
+    selectColorRef
+  ],
   () => {
     initEventDelegator()
   },

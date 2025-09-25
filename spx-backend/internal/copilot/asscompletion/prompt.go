@@ -69,17 +69,3 @@ func BuildUserPrompt(prefix string, limit int) string {
 		limit, prefix, prefix, limit, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
 }
 
-// ContainsChinese checks if a string contains Chinese characters
-func ContainsChinese(s string) bool {
-	for _, r := range s {
-		if r >= 0x4e00 && r <= 0x9fff { // CJK Unified Ideographs range
-			return true
-		}
-	}
-	return false
-}
-
-// containsChinese is a private alias for backward compatibility
-func containsChinese(s string) bool {
-	return ContainsChinese(s)
-}

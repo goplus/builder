@@ -51,7 +51,7 @@ class RerankService:
         # 内部处理模型初始化和启用逻辑
         self._initialize_model(config)
         
-        logger.info("重排序服务初始化完成")
+        logger.info("重排序服务初始化完成，使用神经网络模型")
     
     def _initialize_model(self, config: Dict[str, Any]):
         """
@@ -235,7 +235,7 @@ class RerankService:
             if not feedback_list:
                 raise ValueError("没有可用的用户反馈数据")
             
-            logger.info(f"开始训练LTR模型，反馈数据量: {len(feedback_list)}")
+            logger.info(f"开始训练LTR神经网络模型，反馈数据量: {len(feedback_list)}")
             
             # 获取图片向量数据
             logger.info("从Milvus向量数据库获取图片向量数据")
@@ -253,7 +253,7 @@ class RerankService:
             # 加载训练好的模型
             self.ltr_model.is_trained = True
             
-            logger.info("LTR模型训练完成")
+            logger.info("LTR神经网络模型训练完成")
             return training_result
             
         except Exception as e:
@@ -306,7 +306,7 @@ class RerankService:
             if not feedback_list:
                 raise ValueError("没有可用的用户反馈数据")
             
-            logger.info(f"开始增量训练LTR模型，增量反馈数据量: {len(feedback_list)}")
+            logger.info(f"开始增量训练LTR神经网络模型，增量反馈数据量: {len(feedback_list)}")
             
             # 获取图片向量数据
             logger.info("从Milvus向量数据库获取图片向量数据")
@@ -331,7 +331,7 @@ class RerankService:
             training_result['incremental'] = True
             training_result['last_training_date'] = last_training_date.isoformat() if last_training_date else None
             
-            logger.info("LTR模型增量训练完成")
+            logger.info("LTR神经网络模型增量训练完成")
             return training_result
             
         except Exception as e:
