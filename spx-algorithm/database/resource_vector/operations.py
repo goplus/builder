@@ -252,6 +252,57 @@ class MilvusOperations:
             logger.error(f"向量搜索失败: {e}")
             return []
     
+    def search_by_vector_distance(self, query_vector: List[float], limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        通过向量距离搜索相似数据（用于图片匹配图片）
+        
+        Args:
+            query_vector: 查询向量
+            limit: 返回结果数量
+            
+        Returns:
+            搜索结果列表，按距离排序（距离越小越相似）
+        """
+        try:
+            # 使用L2距离进行图片相似度计算
+            search_params = {
+                "metric_type": "L2",  # 使用欧氏距离而不是余弦相似度
+                "params": {"nprobe": 10}  # 可以根据需要调整
+            }
+            
+            search_result = self.collection.search(
+                data=[query_vector],
+                anns_field="vector",
+                param=search_params,
+                limit=limit,
+                output_fields=["id", "url", "added_at", "updated_at"]
+            )
+            
+            results = []
+            for i, hit in enumerate(search_result[0]):
+                result = {
+                    'rank': i + 1,
+                    'distance': float(hit.score),  # L2距离，越小越相似
+                    'similarity': 1.0 / (1.0 + float(hit.score)),  # 转换为相似度分数
+                    'id': hit.entity.get('id'),
+                    'url': hit.entity.get('url'),
+                    'added_at': hit.entity.get('added_at')
+                }
+                
+                # 添加更新时间（如果存在且不同于添加时间）
+                updated_at = hit.entity.get('updated_at')
+                if updated_at and updated_at != result['added_at']:
+                    result['updated_at'] = updated_at
+                
+                results.append(result)
+            
+            logger.info(f"向量距离搜索完成，返回 {len(results)} 个结果")
+            return results
+            
+        except Exception as e:
+            logger.error(f"向量距离搜索失败: {e}")
+            return []
+    
     def get_all_data(self, include_vectors: bool = False, limit: Optional[int] = None, 
                     offset: int = 0) -> List[Dict[str, Any]]:
         """

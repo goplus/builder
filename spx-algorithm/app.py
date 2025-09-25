@@ -61,6 +61,7 @@ def create_app(config_name: str = None) -> Flask:
                 "add_resource": "/v1/resource/add (POST)",
                 "batch_add_resources": "/v1/resource/batch (POST)",
                 "search_resources": "/v1/resource/search (POST)",
+                "match_resources": "/v1/resource/match (POST)",
                 "submit_feedback": "/v1/feedback/submit (POST)",
                 "train_ltr_model": "/v1/feedback/train (POST)",
                 "internal_debug": "/v1/internal/* (仅用于调试和管理)"

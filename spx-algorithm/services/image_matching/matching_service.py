@@ -235,6 +235,52 @@ class ImageMatchingService:
             logger.error(f"文本搜索异常: {e}")
             return []
     
+    def search_by_image(self, svg_content: str, top_k: int = 10, 
+                       threshold: float = 0.0) -> List[Dict[str, Any]]:
+        """
+        基于图片内容搜索相似图片
+        
+        Args:
+            svg_content: SVG图片内容
+            top_k: 返回结果数量
+            threshold: 相似度阈值
+            
+        Returns:
+            搜索结果列表
+        """
+        try:
+            if not svg_content.strip():
+                logger.error("SVG内容不能为空")
+                return []
+            
+            logger.info(f"开始图片搜索: top_k={top_k}, threshold={threshold}, svg_length={len(svg_content)}")
+            
+            # 向量化SVG图片内容
+            query_vector = self.vector_service.vectorize_image_from_svg_content(svg_content)
+            if query_vector is None:
+                logger.error("SVG图片向量化失败")
+                return []
+            
+            # 在向量数据库中搜索（使用距离度量）
+            search_results = self.milvus_ops.search_by_vector_distance(
+                query_vector.tolist(), 
+                limit=top_k
+            )
+            
+            # 应用相似度阈值过滤（统一使用similarity进行过滤，消除与search路由的歧义）
+            if threshold > 0:
+                before_count = len(search_results)
+                # 统一使用相似度阈值过滤：similarity越大越相似，所以是大于等于阈值
+                search_results = [r for r in search_results if r['similarity'] >= threshold]
+                logger.info(f"相似度阈值过滤: {before_count} -> {len(search_results)} 个结果（最小相似度: {threshold}）")
+            
+            logger.info(f"图片搜索完成: 找到 {len(search_results)} 个结果")
+            return search_results
+            
+        except Exception as e:
+            logger.error(f"图片搜索异常: {e}")
+            return []
+    
     def delete_image(self, id: int) -> bool:
         """
         删除图片

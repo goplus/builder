@@ -321,6 +321,63 @@ class SearchCoordinator:
         """获取重排序服务实例（用于API层调用）"""
         return self.rerank_service
     
+    def match_by_image(self, svg_content: str, 
+                       top_k: int = 10, 
+                       threshold: float = 0.0,
+                       **kwargs) -> Dict[str, Any]:
+        """
+        执行图片匹配图片：使用SVG内容匹配相似图片（基于L2距离）
+        
+        Args:
+            svg_content: 输入的SVG图片内容
+            top_k: 返回结果数量
+            threshold: 最大距离阈值（距离越小越相似，0表示不过滤）
+            **kwargs: 其他参数
+            
+        Returns:
+            匹配结果（包含distance和similarity字段）
+        """
+        try:
+            logger.info(f"开始图片匹配流程: top_k={top_k}, threshold={threshold}")
+            
+            # 通过图文匹配服务执行图片匹配（跳过重排序）
+            matching_results = self.image_matching_service.search_by_image(
+                svg_content, top_k, threshold
+            )
+            
+            if not matching_results:
+                logger.info("图片匹配没有返回结果")
+                return {
+                    'success': True,
+                    'top_k': top_k,
+                    'threshold': threshold,
+                    'results_count': 0,
+                    'results': [],
+                    'pipeline_stages': ['image_matching']
+                }
+            
+            logger.info(f"图片匹配完成，返回 {len(matching_results)} 个结果")
+            
+            return {
+                'success': True,
+                'top_k': top_k,
+                'threshold': threshold,
+                'results_count': len(matching_results),
+                'results': matching_results,
+                'pipeline_stages': ['image_matching']
+            }
+            
+        except Exception as e:
+            logger.error(f"图片匹配流程异常: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'top_k': top_k,
+                'threshold': threshold,
+                'results_count': 0,
+                'results': []
+            }
+
     def health_check(self) -> Dict[str, Any]:
         """健康检查"""
         if not self.image_matching_service:
