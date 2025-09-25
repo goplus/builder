@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/google/uuid"
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
@@ -217,6 +218,52 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	logger.Printf("Found %d matching images from search", len(foundResults))
 
+	// Apply image filtering with degradation strategies if user is authenticated
+	var filterMetrics *FilterMetrics
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		// Expand search results before filtering to compensate for filtering loss
+		expansionRatio := ctrl.imageFilterService.config.GetSearchExpansionRatio()
+		expandedTopK := int(float64(params.TopK) * expansionRatio)
+
+		// If we need to expand, perform additional search
+		if len(foundResults) < expandedTopK {
+			additionalNeeded := expandedTopK - len(foundResults)
+			logger.Printf("Expanding search for filtering: requesting %d additional results", additionalNeeded)
+
+			// Perform additional search with higher topK
+			var additionalResults []RecommendedImageResult
+			if params.Theme != ThemeNone {
+				// Create temporary params with higher topK
+				tempParams := *params
+				tempParams.TopK = expandedTopK
+				additionalResults, err = ctrl.dualPathSearchOptimized(ctx, &tempParams, promptCtx)
+			} else {
+				tempParams := *params
+				tempParams.TopK = expandedTopK
+				additionalResults, err = ctrl.singleSemanticSearchOptimized(ctx, &tempParams, promptCtx)
+			}
+
+			if err == nil && len(additionalResults) > len(foundResults) {
+				foundResults = additionalResults
+				logger.Printf("Expanded search results: %d total candidates for filtering", len(foundResults))
+			}
+		}
+
+		// Apply filtering
+		filteredResults, metrics, err := ctrl.imageFilterService.FilterResults(
+			ctx, mUser.ID, generateQueryID(), promptCtx.OptimizedPrompt, foundResults, params.TopK)
+		if err != nil {
+			logger.Printf("Filtering failed, using unfiltered results: %v", err)
+		} else {
+			foundResults = filteredResults
+			filterMetrics = metrics
+			logger.Printf("Filtering applied: %d candidates -> %d results (%.1f%% filtered)",
+				metrics.TotalCandidates, len(foundResults), metrics.FilterRatio*100)
+		}
+	} else {
+		logger.Printf("No authenticated user, skipping image filtering")
+	}
+
 	// Generate AI SVGs if we don't have enough results and SearchOnly is false
 	if !params.SearchOnly && len(foundResults) < params.TopK {
 		needed := params.TopK - len(foundResults)
@@ -248,6 +295,17 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	queryID := generateQueryID()
 	logger.Printf("Generated query ID: %s for query: %q", queryID, promptCtx.OptimizedPrompt)
 
+	// Record recommendation history for authenticated users
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		go func() {
+			// Record history asynchronously to avoid blocking the response
+			if err := ctrl.imageFilterService.RecordRecommendationHistory(
+				context.Background(), mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults); err != nil {
+				logger.Printf("Failed to record recommendation history: %v", err)
+			}
+		}()
+	}
+
 	// Extract recommended pic IDs for feedback tracking
 	recommendedPics := make([]int64, len(foundResults))
 	for i, result := range foundResults {
@@ -265,6 +323,13 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	logger.Printf("Returning recommendation result with %d results", len(foundResults))
+
+	// Log filter metrics if available
+	if filterMetrics != nil {
+		logger.Printf("Filter metrics: %d total candidates, %d filtered (%.1f%%), degradation level: %d",
+			filterMetrics.TotalCandidates, filterMetrics.FilteredCount, filterMetrics.FilterRatio*100, filterMetrics.DegradationLevel)
+	}
+
 	return &ImageRecommendResult{
 		QueryID:      queryID,
 		Query:        promptCtx.OptimizedPrompt,
@@ -640,6 +705,17 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 	if err != nil {
 		logger.Printf("Failed to submit feedback to algorithm service: %v", err)
 		return fmt.Errorf("failed to submit feedback: %w", err)
+	}
+
+	// Mark image as selected in filter service for authenticated users
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		go func() {
+			// Mark selection asynchronously to avoid blocking the response
+			if err := ctrl.imageFilterService.MarkImageSelected(
+				context.Background(), mUser.ID, params.QueryID, params.ChosenPic); err != nil {
+				logger.Printf("Failed to mark image as selected: %v", err)
+			}
+		}()
 	}
 
 	logger.Printf("Successfully submitted feedback for QueryID: %s", params.QueryID)

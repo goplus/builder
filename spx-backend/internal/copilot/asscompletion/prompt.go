@@ -13,7 +13,6 @@ var systemPromptTpl string
 // It is initialized during package initialization.
 var SystemPrompt string
 
-
 func init() {
 	// The system prompt for asset completion is static and doesn't need template processing
 	SystemPrompt = systemPromptTpl
