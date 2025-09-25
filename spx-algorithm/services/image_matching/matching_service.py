@@ -267,12 +267,12 @@ class ImageMatchingService:
                 limit=top_k
             )
             
-            # 应用距离阈值过滤（注意：距离越小越相似，所以是小于等于阈值）
+            # 应用相似度阈值过滤（统一使用similarity进行过滤，消除与search路由的歧义）
             if threshold > 0:
                 before_count = len(search_results)
-                # 对于距离度量，threshold表示最大允许距离
-                search_results = [r for r in search_results if r['distance'] <= threshold]
-                logger.info(f"距离阈值过滤: {before_count} -> {len(search_results)} 个结果（最大距离: {threshold}）")
+                # 统一使用相似度阈值过滤：similarity越大越相似，所以是大于等于阈值
+                search_results = [r for r in search_results if r['similarity'] >= threshold]
+                logger.info(f"相似度阈值过滤: {before_count} -> {len(search_results)} 个结果（最小相似度: {threshold}）")
             
             logger.info(f"图片搜索完成: 找到 {len(search_results)} 个结果")
             return search_results

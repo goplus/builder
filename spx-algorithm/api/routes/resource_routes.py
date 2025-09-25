@@ -245,23 +245,24 @@ def search_resources(data: dict):
 @validate_json_request(['svg_content'], {
     'svg_content': lambda x: isinstance(x, str) and len(x.strip()) > 0,
     'top_k': lambda x: isinstance(x, int) and x > 0,
-    'threshold': lambda x: isinstance(x, (int, float)) and x >= 0  # 距离阈值无上限
+    'threshold': lambda x: isinstance(x, (int, float)) and 0 <= x <= 1  # 相似度阈值在0-1之间
 })
 @ensure_coordinator_initialized
 def match_resources(data: dict):
     """
-    图片匹配图片（基于向量距离）
+    图片匹配图片（基于图像相似度）
     
     接受JSON数据：
     {
         "svg_content": "<svg>...</svg>",  // 输入的SVG图片内容
         "top_k": 10,  // 可选，返回结果数量，默认10
-        "threshold": 0.0  // 可选，最大距离阈值，默认0.0（距离越小越相似）
+        "threshold": 0.0  // 可选，最小相似度阈值，0-1之间，默认0.0（相似度越高越相似）
     }
     
-    注意：与文本搜索不同，此接口使用L2距离度量图片相似度
-    - threshold表示最大允许距离（0表示不过滤）
-    - 返回结果按距离排序，距离越小表示越相似
+    注意：此接口与文本搜索统一使用相似度阈值
+    - threshold表示最小相似度要求（0表示不过滤）
+    - 返回结果按相似度排序，相似度越高表示越相似
+    - 底层使用L2距离计算，但统一转换为相似度供用户理解和过滤
     """
     try:
         svg_content = data['svg_content'].strip()

@@ -189,7 +189,7 @@ Content-Type: application/json
 {
   "svg_content": "<svg><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"red\" /></svg>",
   "top_k": 10,
-  "threshold": 1.0
+  "threshold": 0.8
 }
 ```
 
