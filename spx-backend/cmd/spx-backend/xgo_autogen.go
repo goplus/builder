@@ -1983,7 +1983,7 @@ func (this *post_game_assets_complete) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_game_assets_complete.yap:34:1
-	ctx.Json__1(map[string]interface{}{"success": true, "data": map[string]interface{}{"suggestions": names, "prefix": prefix, "total": len(names)}})
+	this.Json__1(map[string]interface{}{"success": true, "data": map[string]interface{}{"suggestions": names, "prefix": prefix, "total": len(names)}})
 }
 func (this *post_game_assets_complete) Classfname() string {
 	return "post_game_assets_complete"

@@ -31,7 +31,7 @@ if err != nil {
 	return
 }
 
-ctx.Json map[string]any{
+json map[string]any{
 	"success": true,
 	"data": map[string]any{
 		"suggestions": names,

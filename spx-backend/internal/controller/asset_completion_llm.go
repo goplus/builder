@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
@@ -128,8 +129,8 @@ func (l *AssetCompletionLLM) CompleteAssetName(ctx context.Context, prefix strin
 // generateSuggestions uses AI to generate creative asset name suggestions
 func (l *AssetCompletionLLM) generateSuggestions(ctx context.Context, prefix string, existingAssets []string, limit int) ([]string, error) {
 	// Build context for AI
-	systemPrompt := l.buildSystemPrompt(existingAssets)
-	userPrompt := l.buildUserPrompt(prefix, limit)
+	systemPrompt := asscompletion.BuildSystemPrompt(existingAssets, MaxSampleAssetsInPrompt)
+	userPrompt := asscompletion.BuildUserPrompt(prefix, limit)
 
 	// Prepare copilot parameters
 	params := &copilot.Params{
@@ -165,47 +166,6 @@ func (l *AssetCompletionLLM) generateSuggestions(ctx context.Context, prefix str
 	return suggestions, nil
 }
 
-// buildSystemPrompt creates the system prompt for AI completion
-func (l *AssetCompletionLLM) buildSystemPrompt(existingAssets []string) string {
-	var builder strings.Builder
-
-	builder.WriteString("You are an AI assistant that helps generate creative and relevant asset names for a game development platform. ")
-	builder.WriteString("Your task is to suggest asset names that are:\n")
-	builder.WriteString("1. Creative and descriptive\n")
-	builder.WriteString("2. Relevant to game development (sprites, sounds, images, etc.)\n")
-	builder.WriteString("3. Follow common naming conventions (lowercase, underscore-separated)\n")
-	builder.WriteString("4. Avoid duplication with existing assets\n\n")
-
-	if len(existingAssets) > 0 {
-		builder.WriteString("Here are some existing asset names for reference:\n")
-		// Show a sample of existing assets (limit to avoid token overflow)
-		sampleSize := MaxSampleAssetsInPrompt
-		if len(existingAssets) < sampleSize {
-			sampleSize = len(existingAssets)
-		}
-		for i := 0; i < sampleSize; i++ {
-			builder.WriteString("- ")
-			builder.WriteString(existingAssets[i])
-			builder.WriteString("\n")
-		}
-		if len(existingAssets) > sampleSize {
-			builder.WriteString(fmt.Sprintf("... and %d more assets\n", len(existingAssets)-sampleSize))
-		}
-		builder.WriteString("\n")
-	}
-
-	builder.WriteString("Please provide suggestions in a simple list format, one per line, without numbers or bullets.")
-
-	return builder.String()
-}
-
-// buildUserPrompt creates the user prompt for AI completion
-func (l *AssetCompletionLLM) buildUserPrompt(prefix string, limit int) string {
-	return fmt.Sprintf("Generate %d creative asset name suggestions that start with or are related to '%s'. "+
-		"Consider different categories like sprites, backgrounds, sounds, animations, etc. "+
-		"Make the names descriptive and suitable for game development.",
-		limit, prefix)
-}
 
 // cleanAndFormatSuggestion cleans and formats a single suggestion line
 func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
@@ -222,15 +182,24 @@ func (l *AssetCompletionLLM) cleanAndFormatSuggestion(line string) string {
 		return ""
 	}
 
-	// Convert to lowercase and replace spaces with underscores
-	suggestion := strings.ToLower(line)
-	suggestion = strings.ReplaceAll(suggestion, " ", "_")
-	suggestion = strings.ReplaceAll(suggestion, "-", "_")
+	// Keep original formatting for better readability
+	suggestion := line
 
-	// Remove any non-alphanumeric characters except underscores
+	// Only convert ASCII letters to lowercase, preserve Chinese characters
+	var normalized strings.Builder
+	for _, r := range suggestion {
+		if r >= 'A' && r <= 'Z' {
+			normalized.WriteRune(r + 32) // Convert to lowercase
+		} else {
+			normalized.WriteRune(r)
+		}
+	}
+	suggestion = normalized.String()
+
+	// Remove any invalid characters but keep Chinese characters, ASCII letters, numbers, and underscores
 	var cleaned strings.Builder
 	for _, r := range suggestion {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+		if isValidAssetNameChar(r) {
 			cleaned.WriteRune(r)
 		}
 	}
@@ -259,10 +228,16 @@ func (l *AssetCompletionLLM) parseAISuggestions(response, prefix string) []strin
 		}
 		seenSuggestions[suggestion] = struct{}{}
 
-		// Categorize suggestions
+		// Unified matching logic for all languages
+		// Check for exact prefix match first
 		if strings.HasPrefix(suggestion, prefixLower) || prefixLower == "" {
 			exactMatches = append(exactMatches, suggestion)
 		} else if strings.Contains(suggestion, prefixLower) {
+			// Include related matches that contain the prefix
+			relatedMatches = append(relatedMatches, suggestion)
+		} else {
+			// For AI-generated suggestions, include them as related matches
+			// since AI understands semantic context even if exact string matching fails
 			relatedMatches = append(relatedMatches, suggestion)
 		}
 	}
@@ -286,6 +261,32 @@ func (l *AssetCompletionLLM) containsString(slice []string, str string) bool {
 		if s == str {
 			return true
 		}
+	}
+	return false
+}
+
+
+// isValidAssetNameChar checks if a character is valid for asset names
+func isValidAssetNameChar(r rune) bool {
+	// ASCII letters and numbers
+	if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+		return true
+	}
+	// Common punctuation and spaces for better readability
+	if r == '_' || r == '-' || r == ' ' {
+		return true
+	}
+	// Chinese characters (CJK Unified Ideographs)
+	if r >= 0x4e00 && r <= 0x9fff {
+		return true
+	}
+	// Additional Chinese characters ranges
+	if (r >= 0x3400 && r <= 0x4dbf) || // CJK Extension A
+		(r >= 0x20000 && r <= 0x2a6df) || // CJK Extension B
+		(r >= 0x2a700 && r <= 0x2b73f) || // CJK Extension C
+		(r >= 0x2b740 && r <= 0x2b81f) || // CJK Extension D
+		(r >= 0x2b820 && r <= 0x2ceaf) { // CJK Extension E
+		return true
 	}
 	return false
 }

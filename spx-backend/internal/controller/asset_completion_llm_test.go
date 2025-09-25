@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/asscompletion"
 )
 
 // MockOpenAIClient creates a mock OpenAI client for testing
@@ -208,7 +210,7 @@ camera_icon`,
 * car sound
 • camera effect`,
 			prefix:   "ca",
-			expected: []string{"cat_animation", "car_sound", "camera_effect"},
+			expected: []string{"cat animation", "car sound", "camera effect"},
 		},
 		{
 			name: "Mixed formatting",
@@ -218,7 +220,17 @@ camera_icon`,
 camera-icon
 background_forest`,
 			prefix:   "ca",
-			expected: []string{"cat_sprite", "car_model", "camera_icon"},
+			expected: []string{"cat sprite", "car model", "camera-icon"},
+		},
+		{
+			name: "English semantic suggestions",
+			response: `hero_sprite
+warrior_animation
+character_jump
+player_idle
+fighter_attack`,
+			prefix:   "ca",
+			expected: []string{"hero_sprite", "warrior_animation", "character_jump", "player_idle", "fighter_attack"},
 		},
 	}
 
@@ -229,9 +241,9 @@ background_forest`,
 			// Check that we got some results
 			assert.Greater(t, len(results), 0, "Should get at least one suggestion")
 
-			// Check that all results are properly formatted (lowercase, underscores)
+			// Check that all results are properly formatted (allow spaces, hyphens for readability)
 			for _, result := range results {
-				assert.Regexp(t, `^[a-z0-9_]+$`, result, "Result should be lowercase with underscores only")
+				assert.Regexp(t, `^[a-zA-Z0-9_\- ]+$`, result, "Result should contain only valid characters")
 			}
 		})
 	}
@@ -251,19 +263,19 @@ func TestAssetCompletionLLM_ContextBuilding(t *testing.T) {
 	require.NoError(t, err)
 
 	cpt := createMockCopilot()
-	llmService := NewAssetCompletionLLM(cpt, gormDB)
+	_ = NewAssetCompletionLLM(cpt, gormDB)
 
 	// Test system prompt building
 	existingAssets := []string{"cat", "car", "camera", "dog", "dragon"}
-	systemPrompt := llmService.buildSystemPrompt(existingAssets)
+	systemPrompt := asscompletion.BuildSystemPrompt(existingAssets, MaxSampleAssetsInPrompt)
 
-	assert.Contains(t, systemPrompt, "AI assistant", "Should contain AI assistant description")
-	assert.Contains(t, systemPrompt, "creative", "Should mention creativity")
+	assert.Contains(t, systemPrompt, "游戏素材名称补全助手", "Should contain asset completion assistant description")
+	assert.Contains(t, systemPrompt, "创意", "Should mention creativity")
 	assert.Contains(t, systemPrompt, "cat", "Should include sample existing assets")
-	assert.Contains(t, systemPrompt, "lowercase", "Should mention formatting requirements")
+	assert.Contains(t, systemPrompt, "小写字母", "Should mention formatting requirements")
 
 	// Test user prompt building
-	userPrompt := llmService.buildUserPrompt("ca", 5)
+	userPrompt := asscompletion.BuildUserPrompt("ca", 5)
 	assert.Contains(t, userPrompt, "ca", "Should include the prefix")
 	assert.Contains(t, userPrompt, "5", "Should include the limit")
 	assert.Contains(t, userPrompt, "creative", "Should ask for creative suggestions")
