@@ -146,7 +146,8 @@ const layerConfig = computed<LayerConfig | null>(() => {
   if (canvasSize.value == null || costumeSize.value == null) return null
   return {
     x: (canvasSize.value.width - costumeSize.value.width) / 2,
-    y: (canvasSize.value.height - costumeSize.value.height) / 2
+    y: (canvasSize.value.height - costumeSize.value.height) / 2,
+    imageSmoothingEnabled: false
   }
 })
 
