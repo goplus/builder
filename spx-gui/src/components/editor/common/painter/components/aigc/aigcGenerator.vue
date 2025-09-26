@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch,provide } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
@@ -188,6 +188,22 @@ const handleGenerate = async () => {
   }
 }
 
+const setImmediateGenerateResult = async (svgContents: { blob: string; svgContent: string;}[]) => {
+
+  previewUrls.value = []
+  selectedImageIndex.value = -1
+
+  try {
+    previewUrls.value = svgContents.map((item) => item.blob)
+      // 保存完整的SVG对象（包含id）
+    svgRawContents.value = svgContents.map((item) => ({ ...item, id: NaN }))
+    queryId.value = ''
+  } catch (error) {
+    console.error('failed to generate image2:', error)
+  }
+}
+provide('setImmediateGenerateResult', setImmediateGenerateResult)
+
 const handleConfirm = () => {
   if (selectedImageIndex.value < 0 || selectedImageIndex.value >= previewUrls.value.length) return
 
@@ -201,10 +217,13 @@ const handleConfirm = () => {
     url: selectedUrl,
     svgContent: selectedSvgItem.svgContent
   }
+  if (!Number.isNaN(selectedSvgItem.id)) {
   submitImageFeedback({
-    query_id: queryId.value,
-    chosen_pic: selectedSvgItem.id
-  })
+      query_id: queryId.value,
+      chosen_pic: selectedSvgItem.id
+    })
+  }
+  
 
   emit('confirm', confirmData)
 
@@ -229,9 +248,10 @@ const handleImageLoad = () => {
   //   console.log('图片加载成功')
 }
 
-const handleImageError = () => {
-  console.error('failed to load image')
-  // 图片加载错误时的处理逻辑
+const handleImageError = (e: any) => {
+  console.error('failed to load image', e)
+  console.error('Image src:', e.target?.src) // 添加这行查看具体的URL
+  console.error('Error details:', e.target?.error) // 添加错误详情
 }
 
 // 错误处理方法
