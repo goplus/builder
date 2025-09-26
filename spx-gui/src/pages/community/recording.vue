@@ -56,6 +56,10 @@
                 <UIIcon type="play" />
                 {{ playButtonStatus ? $t(playButtonStatus) : $t({ en: 'Play Game', zh: '一键开玩' }) }}
               </UIButton>
+              <UIButton v-if="videoUrl" type="secondary" size="large" @click="handleDownloadVideo">
+                <UIIcon type="arrowDown" />
+                {{ $t({ en: 'Download Video', zh: '下载视频' }) }}
+              </UIButton>
               <div class="button-row">
                 <UIButton
                   type="secondary"
@@ -212,6 +216,44 @@ const playButtonStatus = computed(() => {
   // 其他情况都准备就绪，返回 null 显示正常的"Play Game"
   return null
 })
+
+const handleDownloadVideo = () => {
+  if (!videoUrl.value) {
+    message.warning(
+      t({
+        en: 'Video file not available',
+        zh: '视频文件不可用'
+      })
+    )
+    return
+  }
+
+  try {
+    const fileName = `${recording.value?.title || 'recording'}.mp4`
+
+    const link = document.createElement('a')
+    link.href = videoUrl.value
+    link.download = fileName
+    link.style.display = 'none'
+
+    link.click()
+
+    message.success(
+      t({
+        en: 'Video download started',
+        zh: '视频下载已开始'
+      })
+    )
+  } catch (error) {
+    console.error('Download failed:', error)
+    message.error(
+      t({
+        en: 'Failed to download video',
+        zh: '视频下载失败'
+      })
+    )
+  }
+}
 
 // 查询点赞状态
 const checkLikingStatus = async () => {
