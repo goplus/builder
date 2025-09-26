@@ -1,6 +1,13 @@
 <template>
   <div class="ui-form-item">
-    <NFormItem :show-label="!!label" :label="label" :path="path" v-bind="nFormItemProps">
+    <NFormItem
+      :show-label="!!label"
+      :label="label"
+      :path="path"
+      v-bind="nFormItemProps"
+      @compositionstart="handleCompositionStart"
+      @compositionend="handleCompositionEnd"
+    >
       <UIFormItemInternal :handle-content-blur="handleContentBlur" :handle-content-input="handleContentInput">
         <slot></slot>
       </UIFormItemInternal>
@@ -31,6 +38,24 @@ const nFormItemProps = computed(() => {
   return form.hasSuccessFeedback ? { validationStatus: 'success' as const } : undefined
 })
 
+/**
+ * See: https://github.com/goplus/builder/issues/2089
+ *
+ * When using IME (Input Method Editor), input characters may be lost due to component updates during composition.
+ *
+ * Introduce the `isComposing` flag to track IME composition status.
+ * Prevent `handleContentInput` from triggering validation while composing.
+ * Debounce is used to reduce validation frequency in normal scenarios.
+ * Effectively avoids unexpected updates and character loss during rapid IME input.
+ */
+let isComposing = false
+function handleCompositionStart() {
+  isComposing = true
+}
+function handleCompositionEnd() {
+  isComposing = false
+}
+
 function handleContentBlur() {
   const path = props.path
   if (path == null) return
@@ -41,7 +66,7 @@ function handleContentBlur() {
 
 const handleContentInput = debounce(() => {
   const path = props.path
-  if (path == null) return
+  if (path == null || isComposing) return
   form.form.validateWithPath(path)
 }, 300)
 </script>
