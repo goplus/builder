@@ -142,6 +142,24 @@ type AIGCConfig struct {
 type AlgorithmConfig struct {
 	Endpoint string
 	Timeout  time.Duration
+	SearchThreshold    float64 // Threshold for search operations (lower for more results)
+	RecommendThreshold float64 // Threshold for recommendation operations (higher for quality)
+}
+
+// GetSearchThreshold returns the search threshold, defaulting to 0.1 if not set.
+func (c *AlgorithmConfig) GetSearchThreshold() float64 {
+	if c.SearchThreshold > 0 {
+		return c.SearchThreshold
+	}
+	return 0.1 // Lower threshold for broader search results
+}
+
+// GetRecommendThreshold returns the recommendation threshold, defaulting to 0.2 if not set.
+func (c *AlgorithmConfig) GetRecommendThreshold() float64 {
+	if c.RecommendThreshold > 0 {
+		return c.RecommendThreshold
+	}
+	return 0.2 // Higher threshold for quality recommendations
 }
 
 // ProvidersConfig holds provider configurations for SVG generation.
