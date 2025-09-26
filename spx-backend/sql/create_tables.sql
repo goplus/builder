@@ -33,7 +33,28 @@ CREATE TABLE `user_image_filter_config` (
     UNIQUE KEY `uk_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户图片过滤配置表';
 
--- 4. 图片过滤指标表 (image_filter_metrics)
+-- 4. 用户图片推荐历史表 (user_image_recommendation_history)
+CREATE TABLE `user_image_recommendation_history` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `image_id` bigint NOT NULL COMMENT '图片ID',
+    `query_id` varchar(36) NOT NULL COMMENT '查询ID',
+    `query` text COMMENT '用户原始查询',
+    `source` varchar(20) NOT NULL COMMENT '图片来源（search/generated）',
+    `similarity` decimal(5,3) COMMENT '相似度分数',
+    `rank` int NOT NULL COMMENT '推荐结果中的排名',
+    `selected` boolean DEFAULT false COMMENT '是否被用户选择',
+    `selected_at` timestamp NULL COMMENT '选择时间',
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` timestamp NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_image` (`user_id`, `image_id`),
+    KEY `idx_query_id` (`query_id`),
+    KEY `idx_selected` (`selected`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户图片推荐历史表';
+
+-- 5. 图片过滤指标表 (image_filter_metrics)
 CREATE TABLE `image_filter_metrics` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `user_id` bigint NOT NULL COMMENT '用户ID',
