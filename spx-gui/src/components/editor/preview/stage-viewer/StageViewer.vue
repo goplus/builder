@@ -118,6 +118,10 @@ const nodeReadyMap = reactive(new Map<string, boolean>())
 const mousePos = ref<Pos | null>(null)
 
 const updateMousePos = throttle(() => {
+  // Event `mousemove` may be triggered when mouse is out of stage with negative mouse position, we ignore such case.
+  const pointerPosOnStage = stageRef.value?.getStage().getPointerPosition()
+  if (pointerPosOnStage == null || pointerPosOnStage.x < 0 || pointerPosOnStage.y < 0) return
+
   const pointerPos = mapRef.value?.getNode().getRelativePointerPosition()
   if (pointerPos == null) return
   mousePos.value = {
