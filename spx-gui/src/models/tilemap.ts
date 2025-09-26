@@ -251,7 +251,7 @@ export class Tilemap extends Disposable {
     const tileSet = TileSet.load({ sources: tileset?.sources ?? [] }, currentDir, tileTextures)
     const decorators = rawDecorators.flatMap((d) => Decorator.load(d, currentDir, tileTextures) ?? [])
     const layers = rawLayers.flatMap(({ id, name = '', tile_data = [], z_index }) =>
-      id != null ? { id, name, tileData: tile_data, zIndex: z_index ?? 1 } : []
+      id != null ? { id, name, tileData: tile_data, zIndex: z_index ?? 0 } : []
     )
 
     return new Tilemap(rawTilemapPath, {

@@ -403,6 +403,7 @@ export class Project extends Disposable {
       }
     })
 
+    this.stage.dispose()
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
 
@@ -413,10 +414,8 @@ export class Project extends Disposable {
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
 
-    this.tilemap = null
-    if (tilemapPath != null) {
-      this.tilemap = await Tilemap.load(tilemapPath, assetsDir, files)
-    }
+    this.tilemap?.dispose()
+    this.tilemap = tilemapPath != null ? await Tilemap.load(tilemapPath, assetsDir, files) : null
 
     // Set camera-follow-sprite
     let cameraFollowSprite: Sprite | null = null
