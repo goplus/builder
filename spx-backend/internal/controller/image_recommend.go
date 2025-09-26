@@ -186,8 +186,11 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 // and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
-	
-	
+
+	// Generate unique query ID at the beginning for consistent tracking
+	queryID := generateQueryID()
+	logger.Printf("Generated query ID: %s for recommendation request", queryID)
+
 	// Get provider based on theme
 	provider := params.GetProviderForTheme()
 	logger.Printf("RecommendImages request - text: %q, theme: %s, provider: %s, top_k: %d", params.Text, params.Theme, provider, params.TopK)
@@ -249,9 +252,9 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 			}
 		}
 
-		// Apply filtering
+		// Apply filtering using the same queryID for consistent tracking
 		filteredResults, metrics, err := ctrl.imageFilterService.FilterResults(
-			ctx, mUser.ID, generateQueryID(), promptCtx.OptimizedPrompt, foundResults, params.TopK)
+			ctx, mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults, params.TopK)
 		if err != nil {
 			logger.Printf("Filtering failed, using unfiltered results: %v", err)
 		} else {
@@ -290,10 +293,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		len(foundResults),
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
-
-	// Generate unique query ID for tracking
-	queryID := generateQueryID()
-	logger.Printf("Generated query ID: %s for query: %q", queryID, promptCtx.OptimizedPrompt)
 
 	// Record recommendation history for authenticated users
 	if mUser, ok := authn.UserFromContext(ctx); ok {
