@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick,inject } from 'vue'
+import { ref, watch, nextTick, inject } from 'vue'
 import { instantImageRecommend } from '@/apis/image-recommend'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 const editorCtx = useEditorCtx()
@@ -66,9 +66,9 @@ const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const status = ref({ key: 'idle', text: '准备就绪' })
 const completionSuggestions = ref<string[]>([])
 const showSuggestions = ref(false)
-const setImmediateGenerateResult = inject('setImmediateGenerateResult') as (svgContents: { blob: string; svgContent: string;}[]) => void
-
-
+const setImmediateGenerateResult = inject('setImmediateGenerateResult') as (
+  svgContents: { blob: string; svgContent: string }[]
+) => void
 
 // 新增：用于访问 DOM 元素和动态样式
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -119,7 +119,6 @@ const submitContent = async () => {
       top_k: 4,
       theme: '' // 可以根据需要设置主题
     })
-    
 
     setImmediateGenerateResult(previewPics.svgContents)
     // console.log('[API Success] 内容补全成功!', response)
@@ -149,20 +148,20 @@ const updateDropdownPosition = () => {
 
   try {
     const textarea = textareaRef.value
-    
+
     // 确保 textarea 已经完全渲染并且可以访问其属性
     if (!textarea.offsetParent) return
 
     // 获取光标在 textarea 中的像素坐标
     const caret = getCaretCoordinates(textarea, textarea.selectionEnd)
-    
+
     // 关键修正：将 textarea 内部的滚动位置考虑进去
     // caret.top 是相对于 textarea 可视区域的顶部
     // textarea.offsetTop 是 textarea 元素相对于其 offsetParent 的距离
     // textarea.scrollTop 是 textarea 内容垂直滚动的距离
     const top = textarea.offsetTop + caret.top + caret.height - textarea.scrollTop + 5
     const left = textarea.offsetLeft + caret.left - textarea.scrollLeft
-    
+
     // 更新样式
     dropdownStyle.value = {
       top: `${top}px`,

@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch,provide } from 'vue'
+import { ref, watch, provide } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
@@ -188,14 +188,13 @@ const handleGenerate = async () => {
   }
 }
 
-const setImmediateGenerateResult = async (svgContents: { blob: string; svgContent: string;}[]) => {
-
+const setImmediateGenerateResult = async (svgContents: { blob: string; svgContent: string }[]) => {
   previewUrls.value = []
   selectedImageIndex.value = -1
 
   try {
     previewUrls.value = svgContents.map((item) => item.blob)
-      // 保存完整的SVG对象（包含id）
+    // 保存完整的SVG对象（包含id）
     svgRawContents.value = svgContents.map((item) => ({ ...item, id: NaN }))
     queryId.value = ''
   } catch (error) {
@@ -218,12 +217,11 @@ const handleConfirm = () => {
     svgContent: selectedSvgItem.svgContent
   }
   if (!Number.isNaN(selectedSvgItem.id)) {
-  submitImageFeedback({
+    submitImageFeedback({
       query_id: queryId.value,
       chosen_pic: selectedSvgItem.id
     })
   }
-  
 
   emit('confirm', confirmData)
 
