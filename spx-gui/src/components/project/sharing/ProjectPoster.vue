@@ -8,6 +8,8 @@ import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useAsyncComputed } from '@/utils/utils'
 import { getProjectPageRoute } from '@/router'
 import QRCode from 'qrcode'
+import { saveFileForWebUrl } from '@/models/common/cloud'
+import { fromBlob } from '@/models/common/file'
 
 const props = defineProps<{
   img?: File
@@ -199,7 +201,7 @@ onMounted(() => {
   }
 })
 
-const createPoster = async (): Promise<File> => {
+const createPoster = async (): Promise<string> => {
   if (!posterElementRef.value || !props.projectData) {
     throw new Error('Poster element not ready or project data is undefined')
   }
@@ -224,7 +226,11 @@ const createPoster = async (): Promise<File> => {
 
   if (!blob) throw new Error('Failed to generate poster')
 
-  return new File([blob], `${props.projectData.name}-poster.png`, { type: 'image/png' })
+  const projectFile = fromBlob(`${props.projectData.name}-poster.png`, blob)
+
+  const webUrl = await saveFileForWebUrl(projectFile)
+  
+  return webUrl
 }
 
 defineExpose({
