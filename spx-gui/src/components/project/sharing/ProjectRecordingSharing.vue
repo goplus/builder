@@ -121,7 +121,7 @@ async function generateShareContent() {
         urlShareComponent.value = markRaw(shareComponent)
       }
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      const res = platform.shareFunction.shareVideo(props.video)
+      const res = platform.shareFunction.shareVideo(videoSrc.value)
       guideComponent.value = res
     }
   } finally {
@@ -223,21 +223,6 @@ watch(
             <div class="qr-section-inner">
               <component :is="guideComponent" v-if="guideComponent" />
               <component :is="urlShareComponent" v-else-if="urlShareComponent" />
-              <div v-else-if="selectedPlatform?.shareType.supportURL" class="qr-content">
-                <div class="qr-code">
-                  <div class="qr-placeholder">
-                    <span v-if="isGeneratingQR">{{ $t({ en: 'Generating...', zh: '生成中...' }) }}</span>
-                    <span v-else>{{
-                      $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' })
-                    }}</span>
-                  </div>
-                </div>
-                <div class="qr-hint">
-                  {{
-                    $t({ en: 'Scan the code with the corresponding platform to share', zh: '用对应平台进行扫码分享' })
-                  }}
-                </div>
-              </div>
               <div v-else class="qr-content">
                 <div class="qr-code">
                   <div class="qr-placeholder">

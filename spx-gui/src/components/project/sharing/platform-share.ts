@@ -3,6 +3,7 @@ import { h, type Component, ref, onMounted } from 'vue'
 import QRCode from 'qrcode'
 import ManualShareGuide from './ManualShareGuide.vue'
 import type { LocaleMessage } from '@/utils/i18n/index'
+import { getDouyinH5Config } from '@/apis/douyin'
 /**
  * 社交平台配置
  */
@@ -46,9 +47,9 @@ export interface ShareFunction {
   /** 分享项目页面方法 - 返回二维码组件 */
   shareURL?: (url: string) => Promise<Component>
   /** 分享海报方法 */
-  shareImage?: (image: File) => Component
+  shareImage?: (image: string) => Component
   /** 分享视频方法 */
-  shareVideo?: (video: File) => Component
+  shareVideo?: (video: string) => Component
 }
 
 /**
@@ -59,14 +60,6 @@ export interface PlatformConfig {
   basicInfo: BasicInfo
   shareFunction: ShareFunction
   initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
-}
-
-/**
- * 常用跳转链接（按需使用）
- */
-const JUMP_LINKS = {
-  bilibiliVideoPC: 'https://member.bilibili.com/platform/upload/video/frame',
-  douyinMobile: 'https://www.douyin.com/'
 }
 
 /*
@@ -100,7 +93,7 @@ class QQPlatform implements PlatformConfig {
     shareURL: async (url: string) => {
       return createQRCodeComponent(url, this.basicInfo.color)
     },
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -121,7 +114,7 @@ class QQPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -179,7 +172,7 @@ class WeChatPlatform implements PlatformConfig {
       return createQRCodeComponent(url, this.basicInfo.color)
     },
 
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -200,7 +193,7 @@ class WeChatPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -277,37 +270,109 @@ class DouyinPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareImage: (image: File) =>
-      createImageManualShareGuide({
-        platform: this.basicInfo.label,
-        image,
-        filename: 'xbuilder-poster.png',
-        title: { en: 'How to share to Douyin', zh: '如何分享到抖音' },
-        steps: [
-          {
-            title: { en: 'Download poster', zh: '下载海报' },
-            desc: { en: 'Save the poster to your phone', zh: '将海报保存到手机相册' }
-          },
-          { title: { en: 'Open Douyin', zh: '打开抖音' }, desc: { en: 'Tap "+" to create', zh: '点击"+"创建' } },
-          {
-            title: { en: 'Upload & publish', zh: '上传发布' },
-            desc: { en: 'Select downloaded poster', zh: '选择刚下载的海报并发布' }
-          }
-        ]
-      }),
-    shareVideo: (video: File) =>
-      createJumpLinkComponent({
-        title: { en: 'Open Douyin to share video', zh: '打开抖音进行视频分享' },
-        url: JUMP_LINKS.douyinMobile,
-        openInNewTab: false,
-        video: video
+    shareImage: async (image: string) => {
+      const config = await getDouyinH5Config()
+      const schema = this.buildDouyinImageSchema({
+        clientKey: config.clientKey,
+        nonceStr: config.nonceStr,
+        timestamp: config.timestamp,
+        signature: config.signature,
+        imagePath: image,
+        title: '看看我在XBuilder录制的游戏演示'
       })
+
+      return createJumpLinkComponent({
+        title: { en: 'Open Douyin to share', zh: '打开抖音进行分享' },
+        url: schema,
+        openInNewTab: false
+      })
+    },
+
+    shareVideo: async (video: string) => {
+      const config = await getDouyinH5Config()
+      const schema = this.buildDouyinVideoSchema({
+        clientKey: config.clientKey,
+        nonceStr: config.nonceStr,
+        timestamp: config.timestamp,
+        signature: config.signature,
+        videoPath: video,
+        title: '看看我在XBuilder录制的游戏演示'
+      })
+
+      return createJumpLinkComponent({
+        title: { en: 'Open Douyin to share', zh: '打开抖音进行分享' },
+        url: schema,
+        openInNewTab: false
+      })
+    }
   }
 
   async initShareInfo(shareInfo?: ShareInfo) {
     // 抖音平台暂不支持设置分享信息
     void shareInfo
     return
+  }
+
+  private buildDouyinImageSchema(params: {
+    clientKey: string
+    nonceStr: string
+    timestamp: string
+    signature: string
+    imagePath: string
+    title?: string
+  }): string {
+    const queryParams = new URLSearchParams({
+      share_type: 'h5',
+      client_key: params.clientKey,
+      nonce_str: params.nonceStr,
+      timestamp: params.timestamp,
+      signature: params.signature,
+      image_path: params.imagePath,
+      state: '608',
+      share_to_publish: '1', // 直接跳转到发布页
+      share_to_type: '0'
+    })
+
+    if (params.title) {
+      queryParams.append('title', params.title)
+    }
+
+    // 添加推荐话题
+    const hashtags = JSON.stringify(['XBuilder', '游戏制作', '编程'])
+    queryParams.append('hashtag_list', hashtags)
+
+    return `snssdk1128://openplatform/share?${queryParams.toString()}`
+  }
+
+  private buildDouyinVideoSchema(params: {
+    clientKey: string
+    nonceStr: string
+    timestamp: string
+    signature: string
+    videoPath: string
+    title?: string
+  }): string {
+    const queryParams = new URLSearchParams({
+      share_type: 'h5',
+      client_key: params.clientKey,
+      nonce_str: params.nonceStr,
+      timestamp: params.timestamp,
+      signature: params.signature,
+      video_path: params.videoPath,
+      state: '608',
+      share_to_publish: '1', // 直接跳转到发布页
+      share_to_type: '0'
+    })
+
+    if (params.title) {
+      queryParams.append('title', params.title)
+    }
+
+    // 添加推荐话题
+    const hashtags = JSON.stringify(['XBuilder', '游戏制作', '编程'])
+    queryParams.append('hashtag_list', hashtags)
+
+    return `snssdk1128://openplatform/share?${queryParams.toString()}`
   }
 }
 
@@ -325,7 +390,7 @@ class XiaohongshuPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -346,7 +411,7 @@ class XiaohongshuPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -396,7 +461,7 @@ class BilibiliPlatform implements PlatformConfig {
       return createQRCodeComponent(url, this.basicInfo.color)
     },
     // B站的海报以手动上传为主
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -418,7 +483,7 @@ class BilibiliPlatform implements PlatformConfig {
         ]
       }),
     // shareVideo 返回一个"打开B站投稿页"的组件
-    shareVideo: (video: File) => {
+    shareVideo: (video: string) => {
       // 这个是 vue 的 functional component 写法，详见 https://vuejs.org/guide/extras/render-function#functional-components
       return () =>
         h(ManualShareGuide, {
@@ -439,7 +504,7 @@ class BilibiliPlatform implements PlatformConfig {
             }
           ],
           defaultButtonLabel: { en: 'Download video', zh: '下载视频' },
-          onDownload: createBlobDownloadHandler(video, 'xbuilder-video.mp4')
+          onDownload: createBlobDownloadHandler(new Blob([video]), 'xbuilder-video.mp4')
         })
     }
   }
@@ -501,7 +566,7 @@ function createBlobDownloadHandler(blob: Blob, filename: string): () => void {
  */
 function createImageManualShareGuide(options: {
   platform: LocaleMessage
-  image: File
+  image: string
   filename?: string | undefined
   title: { en: string; zh: string }
   steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
@@ -515,7 +580,7 @@ function createImageManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载图片', en: 'Download image' },
-      onDownload: createBlobDownloadHandler(image, filename || 'xbuilder-poster.png')
+      onDownload: createBlobDownloadHandler(new Blob([image]), filename || 'xbuilder-poster.png')
     })
   }
 }
@@ -525,7 +590,7 @@ function createImageManualShareGuide(options: {
  */
 function createVideoManualShareGuide(options: {
   platform: LocaleMessage
-  video: File
+  video: string
   filename?: string | undefined
   title: { en: string; zh: string }
   steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
@@ -539,7 +604,7 @@ function createVideoManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载视频', en: 'Download video' },
-      onDownload: createBlobDownloadHandler(video, filename || 'xbuilder-video.mp4')
+      onDownload: createBlobDownloadHandler(new Blob([video]), filename || 'xbuilder-video.mp4')
     })
   }
 }
@@ -578,15 +643,11 @@ function createJumpLinkComponent(options: {
   title: { en: string; zh: string }
   url: string
   openInNewTab?: boolean
-  video: File
 }): Component {
-  const { title, url, openInNewTab, video } = options
+  const { title, url, openInNewTab } = options
   return {
     name: 'JumpLinkGuide',
     setup() {
-      // Touch video to avoid unused variable warning until full implementation lands
-      const videoName = video.name
-      void videoName
       const qrData = ref<string | null>(null)
 
       onMounted(async () => {

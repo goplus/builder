@@ -45,10 +45,6 @@
     </div>
     <div v-else class="qrcode">
       <component :is="urlShareComponent" v-if="urlShareComponent" />
-      <div v-else-if="selectedPlatform?.shareType.supportURL" class="loading-container">
-        <div class="loading-icon">⏳</div>
-        <span class="loading-text">{{ $t({ en: 'Preparing QR code...', zh: '正在准备二维码...' }) }}</span>
-      </div>
     </div>
   </UIFormModal>
 </template>
@@ -63,6 +59,7 @@ import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
 import { untilNotNull } from '@/utils/utils'
+import { useObjectUrlManager } from '@/utils/object-url'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -102,6 +99,19 @@ async function createPosterFile(): Promise<File> {
   return posterFile
 }
 
+// Use object URL manager
+const { createUrl } = useObjectUrlManager()
+
+async function createPosterURL() {
+  const posterFile = await createPosterFile()
+  if (posterFile) {
+    // Prioritize video file passed from parent component
+    const url = createUrl(posterFile)
+    return url
+  }
+  return ''
+}
+
 async function setupPlatformShareContent(platform: PlatformConfig) {
   imageShareComponent.value = null
   urlShareComponent.value = null
@@ -115,11 +125,11 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   }
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const posterFile = await createPosterFile()
-    if (!posterFile) {
+    const posterURL = await createPosterURL()
+    if (!posterURL) {
       throw new Error('Poster component not ready after wait')
     }
-    const comp = platform.shareFunction.shareImage(posterFile)
+    const comp = platform.shareFunction.shareImage(posterURL)
     imageShareComponent.value = comp ? markRaw(comp) : comp
     return
   }

@@ -6,6 +6,7 @@ import type { ProjectData } from '@/apis/project'
 import type { PlatformConfig } from './platform-share'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
+import { useObjectUrlManager } from '@/utils/object-url'
 
 const props = defineProps<{
   screenshot: File
@@ -61,14 +62,27 @@ async function createPosterFile(): Promise<File> {
   return posterFile
 }
 
+// Use object URL manager
+const { createUrl } = useObjectUrlManager()
+
+async function createPosterURL() {
+  const posterFile = await createPosterFile()
+  if (posterFile) {
+    // Prioritize video file passed from parent component
+    const url = createUrl(posterFile)
+    return url
+  }
+  return ''
+}
+
 // Generate share content for platform
 async function generateShareContent(platform: PlatformConfig): Promise<void> {
   const currentUrl = getCurrentProjectUrl()
 
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const posterFile = await createPosterFile()
-    guideComponent.value = platform.shareFunction.shareImage(posterFile)
+    const posterURL = await createPosterURL()
+    guideComponent.value = platform.shareFunction.shareImage(posterURL)
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
     // Get the QR code component from platform
     const shareComponent = await platform.shareFunction.shareURL(currentUrl)
