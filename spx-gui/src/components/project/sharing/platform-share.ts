@@ -91,11 +91,19 @@ declare global {
 }
 
 // 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
-async function initShareURL(platform: string) {
+export async function initShareURL(platform: string, url?: string) {
+  const shareURL = new URL(url || location.href)
+  // 已包含回流参数则直接返回，避免重复拼接
+  if (shareURL.searchParams.has(TRAFFIC_SOURCE_QUERY_KEY)) {
+    return shareURL.toString()
+  }
   const trafficSource = await createTrafficSource(platform)
-  const url = new URL(location.href)
-  url.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
-  return url.toString()
+  // 如果传入了 url，额外标记当前为“分享初始化”而非“分享完成”，避免被解析为回流
+  if (url) {
+    shareURL.searchParams.set('share-state', 'init')
+  }
+  shareURL.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
+  return shareURL.toString()
 }
 
 /**
@@ -489,6 +497,10 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
  */
 function analyzeProjectShareUrl(): string | null {
   const url = new URL(location.href)
+  // 若存在“初始化”状态标记，则不认为是回流数据
+  if (url.searchParams.get('share-state') === 'init') {
+    return null
+  }
   return url.searchParams.get(TRAFFIC_SOURCE_QUERY_KEY)
 }
 /**

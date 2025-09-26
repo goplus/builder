@@ -6,6 +6,7 @@ import { type PlatformConfig } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
+import { initShareURL } from './platform-share'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -113,15 +114,16 @@ async function generateShareQRCode() {
     let shareUrl = ''
 
     // Prefer direct video sharing if available; if it returns a Component (manual guide), render it
-    if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
+    if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
+      // Support URL sharing, directly share recording page link
+      shareUrl = await initShareURL(platform.basicInfo.name, currentUrl)
+      shareUrl = await platform.shareFunction.shareURL(shareUrl)
+    } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
       const res = platform.shareFunction.shareVideo(props.video)
       // shareVideo returns Component (manual guide) in our platform config
       guideComponent.value = res
       // When manual guide is shown, QR is not needed; use currentUrl as placeholder
       shareUrl = currentUrl
-    } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-      // Support URL sharing, directly share recording page link
-      shareUrl = await platform.shareFunction.shareURL(currentUrl)
     } else {
       // Default to use recording page URL
       shareUrl = currentUrl
