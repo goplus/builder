@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, provide } from 'vue'
+import { ref, watch, provide, onUnmounted } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
@@ -171,6 +171,7 @@ const selectImage = (index: number) => {
 
 // 方法
 const handleGenerate = async () => {
+  cleanupBlobUrls()
   if (!prompt.value.trim()) return
 
   isGenerating.value = true
@@ -189,6 +190,7 @@ const handleGenerate = async () => {
 }
 
 const setImmediateGenerateResult = async (svgContents: { blob: string; svgContent: string }[]) => {
+  cleanupBlobUrls()
   previewUrls.value = []
   selectedImageIndex.value = -1
 
@@ -229,6 +231,7 @@ const handleConfirm = () => {
 }
 
 const handleCancel = () => {
+  cleanupBlobUrls()
   emit('update:visible', false)
   emit('cancel')
 
@@ -334,6 +337,7 @@ watch(
     if (!newVal) {
       // 弹窗关闭时重置状态
       setTimeout(() => {
+        cleanupBlobUrls()
         prompt.value = ''
         previewUrls.value = []
         queryId.value = ''
@@ -343,6 +347,18 @@ watch(
     }
   }
 )
+
+//blob清理
+const cleanupBlobUrls = () => {
+  previewUrls.value.forEach((url) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
+  })
+}
+onUnmounted(() => {
+  cleanupBlobUrls()
+})
 </script>
 
 <style scoped>
