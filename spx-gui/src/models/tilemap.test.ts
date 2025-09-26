@@ -29,10 +29,11 @@ function markSprite(name: string, position: Coord, path: string, parent = '.') {
   }
 }
 
-function markLayer(id: number, name: string, tile_data = []) {
+function markLayer(id: number, name: string, z_index: number, tile_data = []) {
   return {
     id,
     name,
+    z_index,
     tile_data
   }
 }
@@ -50,7 +51,7 @@ function markTilemap(sources: RawTileSourceConfig[]) {
         height: 16
       },
       tileset: { sources },
-      layers: [markLayer(0, '1', []), markLayer(1, '2', [])]
+      layers: [markLayer(0, '1', 0, []), markLayer(1, '2', 1, [])]
     },
     decorators: [],
     sprites: [
@@ -123,6 +124,15 @@ describe('Tile', () => {
       tilemapConfig.tilemap.tileset.sources[0].tiles?.[0]?.physics?.collision_points
     )
     expect(tile?.tileSet.sources[0]?.texture.relativePath).toBe(tilemapConfig.tilemap.tileset.sources[0].texture_path)
+
+    expect(tile?.layers[0].id).toBe(tilemapConfig.tilemap.layers[0].id)
+    expect(tile?.layers[0].name).toBe(tilemapConfig.tilemap.layers[0].name)
+    expect(tile?.layers[0].zIndex).toBe(tilemapConfig.tilemap.layers[0].z_index)
+    expect(tile?.layers[0].tileData).toEqual(tilemapConfig.tilemap.layers[0].tile_data)
+    expect(tile?.layers[1].id).toBe(tilemapConfig.tilemap.layers[1].id)
+    expect(tile?.layers[1].name).toBe(tilemapConfig.tilemap.layers[1].name)
+    expect(tile?.layers[1].zIndex).toBe(tilemapConfig.tilemap.layers[1].z_index)
+    expect(tile?.layers[1].tileData).toEqual(tilemapConfig.tilemap.layers[1].tile_data)
 
     expect(tile?.tileSet.sources[1]?.id).toBe(tilemapConfig.tilemap.tileset.sources[1].id)
     expect(tile?.tileSet.sources[1]?.tiles[0].atlasCoords).toEqual(
