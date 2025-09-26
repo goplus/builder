@@ -51,14 +51,7 @@ const form = useForm({
       return null
     }
   ],
-  order: [
-    1,
-    (v: number) => {
-      if (!Number.isInteger(v) || v < 1)
-        return i18n.t({ en: 'Order must be a positive integer', zh: '排序必须是正整数' })
-      return null
-    }
-  ],
+  order: [1],
   courseIDs: [
     [] as string[],
     (v: string[]) => {
@@ -167,7 +160,6 @@ const handleSubmit = useMessageHandle(
         <UIFormItem path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
           <UINumberInput
             v-model:value="form.value.order"
-            :min="1"
             :placeholder="
               $t({
                 en: 'Enter sort order (1, 2, 3...)',
