@@ -14,6 +14,7 @@ type TileInfo = {
 type Layer = {
   id: number
   name: string
+  zIndex: number
   tileData: number[]
 }
 
@@ -62,6 +63,7 @@ export type RawTileSourceConfig = {
 type RawLayerConfig = {
   id?: number
   name?: string
+  z_index?: number
   tile_data?: number[]
 }
 
@@ -248,8 +250,8 @@ export class Tilemap extends Disposable {
     const tileTextures = TileTextures.load(files, currentDir)
     const tileSet = TileSet.load({ sources: tileset?.sources ?? [] }, currentDir, tileTextures)
     const decorators = rawDecorators.flatMap((d) => Decorator.load(d, currentDir, tileTextures) ?? [])
-    const layers = rawLayers.flatMap(({ id, name = '', tile_data = [] }) =>
-      id != null ? { id, name, tileData: tile_data } : []
+    const layers = rawLayers.flatMap(({ id, name = '', tile_data = [], z_index }) =>
+      id != null ? { id, name, tileData: tile_data, zIndex: z_index ?? 1 } : []
     )
 
     return new Tilemap(rawTilemapPath, {
@@ -273,7 +275,7 @@ export class Tilemap extends Disposable {
         format,
         tile_size: tileSize,
         tileset: rawTileSet,
-        layers: layers.map(({ id, name, tileData }) => ({ id, name, tile_data: tileData }))
+        layers: layers.map(({ id, name, tileData, zIndex }) => ({ id, name, tile_data: tileData, z_index: zIndex }))
       },
       decorators: decorators.map((decorator) => decorator.export()),
       ...extraConfig

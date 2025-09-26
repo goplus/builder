@@ -334,6 +334,8 @@ export class Project extends Disposable {
       this.sounds.splice(0).forEach((s) => s.dispose())
       this.zorder = []
       this.stage.dispose()
+      this.tilemap?.dispose()
+      this.tilemap = null
     })
     this.cameraFollowSpriteId = null
     this.aiDescription = null
@@ -411,6 +413,7 @@ export class Project extends Disposable {
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
 
+    this.tilemap = null
     if (tilemapPath != null) {
       this.tilemap = await Tilemap.load(tilemapPath, assetsDir, files)
     }
