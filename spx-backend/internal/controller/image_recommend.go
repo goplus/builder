@@ -203,15 +203,32 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	// This performs AI analysis only once and caches all optimized prompt variations
 	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, params.SearchOnly)
 
+	// Determine optimal search count upfront to avoid multiple search calls
+	searchTopK := params.TopK
+	var filterMetrics *FilterMetrics
+
+	// If user is authenticated, expand search proactively for filtering
+	if _, ok := authn.UserFromContext(ctx); ok {
+		expansionRatio := ctrl.imageFilterService.config.GetSearchExpansionRatio()
+		expandedTopK := int(float64(params.TopK) * expansionRatio)
+		searchTopK = expandedTopK
+		logger.Printf("User authenticated: expanding search from %d to %d for filtering compensation",
+			params.TopK, searchTopK)
+	}
+
+	// Create search params with optimal TopK
+	searchParams := *params
+	searchParams.TopK = searchTopK
+
 	var foundResults []RecommendedImageResult
 	var err error
 
 	if params.Theme != ThemeNone {
 		// Use dual-path search strategy for theme-based requests
-		foundResults, err = ctrl.dualPathSearchOptimized(ctx, params, promptCtx)
+		foundResults, err = ctrl.dualPathSearchOptimized(ctx, &searchParams, promptCtx)
 	} else {
 		// Use single semantic search for non-themed requests
-		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, params, promptCtx)
+		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, &searchParams, promptCtx)
 	}
 
 	if err != nil {
@@ -219,39 +236,10 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		return nil, fmt.Errorf("search failed: %w", err)
 	}
 
-	logger.Printf("Found %d matching images from search", len(foundResults))
+	logger.Printf("Found %d matching images from optimized search (requested: %d)", len(foundResults), searchTopK)
 
 	// Apply image filtering with degradation strategies if user is authenticated
-	var filterMetrics *FilterMetrics
 	if mUser, ok := authn.UserFromContext(ctx); ok {
-		// Expand search results before filtering to compensate for filtering loss
-		expansionRatio := ctrl.imageFilterService.config.GetSearchExpansionRatio()
-		expandedTopK := int(float64(params.TopK) * expansionRatio)
-
-		// If we need to expand, perform additional search
-		if len(foundResults) < expandedTopK {
-			additionalNeeded := expandedTopK - len(foundResults)
-			logger.Printf("Expanding search for filtering: requesting %d additional results", additionalNeeded)
-
-			// Perform additional search with higher topK
-			var additionalResults []RecommendedImageResult
-			if params.Theme != ThemeNone {
-				// Create temporary params with higher topK
-				tempParams := *params
-				tempParams.TopK = expandedTopK
-				additionalResults, err = ctrl.dualPathSearchOptimized(ctx, &tempParams, promptCtx)
-			} else {
-				tempParams := *params
-				tempParams.TopK = expandedTopK
-				additionalResults, err = ctrl.singleSemanticSearchOptimized(ctx, &tempParams, promptCtx)
-			}
-
-			if err == nil && len(additionalResults) > len(foundResults) {
-				foundResults = additionalResults
-				logger.Printf("Expanded search results: %d total candidates for filtering", len(foundResults))
-			}
-		}
-
 		// Apply filtering using the same queryID for consistent tracking
 		filteredResults, metrics, err := ctrl.imageFilterService.FilterResults(
 			ctx, mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults, params.TopK)
