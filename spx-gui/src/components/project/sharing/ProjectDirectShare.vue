@@ -44,7 +44,7 @@
       </div>
     </div>
     <div v-else class="qrcode">
-      <img v-if="qrCodeData" :src="qrCodeData" alt="QR Code" />
+      <component :is="urlShareComponent" v-if="urlShareComponent" />
     </div>
   </UIFormModal>
 </template>
@@ -58,7 +58,8 @@ import type { PlatformConfig } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
-import QRCode from 'qrcode'
+import { untilNotNull } from '@/utils/utils'
+import { useObjectUrlManager } from '@/utils/object-url'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -73,7 +74,7 @@ const emit = defineEmits<{
 // 组件引用
 const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 const posterCompRef = ref<InstanceType<typeof Poster>>()
-const qrCodeData = ref<string | null>(null)
+const urlShareComponent = shallowRef<Component | null>(null)
 const imageShareComponent = shallowRef<Component | null>(null)
 
 const projectSharingLink = computed(() => {
@@ -86,46 +87,52 @@ const handleCopy = useMessageHandle(
   { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
 )
 
-async function handlePlatformChange(platform: PlatformConfig) {
+function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
 
-  await setupPlatformShareContent(platform)
+  setupPlatformShareContent(platform)
+}
+
+async function createPosterFile(): Promise<File> {
+  const posterComp = await untilNotNull(posterCompRef)
+  const posterFile = await posterComp.createPoster()
+  return posterFile
+}
+
+// Use object URL manager
+const { createUrl } = useObjectUrlManager()
+
+async function createPosterURL() {
+  const posterFile = await createPosterFile()
+  if (posterFile) {
+    // Prioritize video file passed from parent component
+    const url = createUrl(posterFile)
+    return url
+  }
+  return ''
 }
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
   imageShareComponent.value = null
-  qrCodeData.value = null
+  urlShareComponent.value = null
 
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    const shareURL = await platform.shareFunction.shareURL(projectSharingLink.value)
-    if (shareURL) {
-      const qrData = await generateQRCodeDataUrl(shareURL, platform.basicInfo.color)
-      qrCodeData.value = qrData
+    const shareComponent = await platform.shareFunction.shareURL(projectSharingLink.value)
+    if (shareComponent) {
+      urlShareComponent.value = markRaw(shareComponent)
     }
     return
   }
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const poster = posterCompRef.value
-    if (!poster) {
+    const posterURL = await createPosterURL()
+    if (!posterURL) {
       throw new Error('Poster component not ready after wait')
     }
-    const posterFile = await poster.createPoster()
-    const comp = platform.shareFunction.shareImage(posterFile)
+    const comp = platform.shareFunction.shareImage(posterURL)
     imageShareComponent.value = comp ? markRaw(comp) : comp
     return
   }
-}
-
-function generateQRCodeDataUrl(url: string, color: string) {
-  return QRCode.toDataURL(url, {
-    color: {
-      dark: color,
-      light: '#FFFFFF'
-    },
-    width: 120,
-    margin: 1
-  })
 }
 </script>
 
