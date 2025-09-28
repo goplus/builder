@@ -437,7 +437,7 @@ async function convertWebmToMp4(webmVideo: globalThis.File): Promise<globalThis.
       input,
       output,
       video: () => ({
-        codec: 'avc'
+        codec: 'av1'
       }),
       audio: () => ({
         codec: 'aac'
