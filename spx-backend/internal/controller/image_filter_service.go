@@ -275,7 +275,7 @@ func (s *ImageFilterService) applySimilarityThresholdStrategy(ctx context.Contex
 	// Get unfiltered high-similarity candidates
 	var unfiltered []RecommendedImageResult
 	for _, candidate := range candidates {
-		if !filteredIDs[candidate.ID] && candidate.Similarity > 0.7 { // High similarity threshold
+		if !filteredIDs[candidate.ID] && candidate.Similarity > 0.23 { // High similarity threshold
 			unfiltered = append(unfiltered, candidate)
 		}
 	}

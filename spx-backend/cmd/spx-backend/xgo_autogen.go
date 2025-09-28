@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authn/casdoor"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -2222,32 +2221,39 @@ func (this *post_images_instant_recommend) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_images_instant_recommend.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_images_instant_recommend.yap:12:1
-	params := &controller.InstantRecommendParams{}
-//line cmd/spx-backend/post_images_instant_recommend.yap:13:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_images_instant_recommend.yap:14:1
-		return
-	}
-//line cmd/spx-backend/post_images_instant_recommend.yap:16:1
+//line cmd/spx-backend/post_images_instant_recommend.yap:11:1
 	if
+//line cmd/spx-backend/post_images_instant_recommend.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_images_instant_recommend.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_images_instant_recommend.yap:15:1
+	params := &controller.InstantRecommendParams{}
 //line cmd/spx-backend/post_images_instant_recommend.yap:16:1
-	ok, msg := params.Validate(); !ok {
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_images_instant_recommend.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_images_instant_recommend.yap:19:1
+	if
+//line cmd/spx-backend/post_images_instant_recommend.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_images_instant_recommend.yap:20:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_images_instant_recommend.yap:18:1
-		return
-	}
 //line cmd/spx-backend/post_images_instant_recommend.yap:21:1
-	result, err := this.ctrl.RecommendImagesWithContext(ctx.Context(), params)
-//line cmd/spx-backend/post_images_instant_recommend.yap:22:1
-	if err != nil {
-//line cmd/spx-backend/post_images_instant_recommend.yap:23:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_images_instant_recommend.yap:24:1
 		return
 	}
+//line cmd/spx-backend/post_images_instant_recommend.yap:24:1
+	result, err := this.ctrl.RecommendImagesWithContext(ctx.Context(), params)
+//line cmd/spx-backend/post_images_instant_recommend.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_images_instant_recommend.yap:26:1
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_images_instant_recommend.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_images_instant_recommend.yap:30:1
 	this.Json__1(result)
 }
 func (this *post_images_instant_recommend) Classfname() string {
@@ -2262,39 +2268,40 @@ func (this *post_images_recommend) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_images_recommend.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_images_recommend.yap:13:1
-	params := &controller.ImageRecommendParams{}
-//line cmd/spx-backend/post_images_recommend.yap:14:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_images_recommend.yap:15:1
-		return
-	}
-//line cmd/spx-backend/post_images_recommend.yap:17:1
+//line cmd/spx-backend/post_images_recommend.yap:11:1
 	if
+//line cmd/spx-backend/post_images_recommend.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_images_recommend.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_images_recommend.yap:16:1
+	params := &controller.ImageRecommendParams{}
 //line cmd/spx-backend/post_images_recommend.yap:17:1
-	ok, msg := params.Validate(); !ok {
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_images_recommend.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_images_recommend.yap:20:1
+	if
+//line cmd/spx-backend/post_images_recommend.yap:20:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_images_recommend.yap:21:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_images_recommend.yap:19:1
-		return
-	}
 //line cmd/spx-backend/post_images_recommend.yap:22:1
-	result, err := this.ctrl.RecommendImages(ctx.Context(), params)
-//line cmd/spx-backend/post_images_recommend.yap:23:1
-	if err != nil {
-//line cmd/spx-backend/post_images_recommend.yap:24:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_images_recommend.yap:25:1
 		return
 	}
+//line cmd/spx-backend/post_images_recommend.yap:25:1
+	result, err := this.ctrl.RecommendImages(ctx.Context(), params)
+//line cmd/spx-backend/post_images_recommend.yap:26:1
+	if err != nil {
+//line cmd/spx-backend/post_images_recommend.yap:27:1
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_images_recommend.yap:28:1
-	fmt.Println("YAP: About to send JSON response with", result.ResultsCount, "results")
-//line cmd/spx-backend/post_images_recommend.yap:29:1
-	fmt.Println("YAP: Query ID:", result.QueryID)
-//line cmd/spx-backend/post_images_recommend.yap:30:1
-	this.Json__1(result)
+		return
+	}
 //line cmd/spx-backend/post_images_recommend.yap:31:1
-	fmt.Println("YAP: JSON response sent successfully for query:", result.QueryID)
+	this.Json__1(result)
 }
 func (this *post_images_recommend) Classfname() string {
 	return "post_images_recommend"
