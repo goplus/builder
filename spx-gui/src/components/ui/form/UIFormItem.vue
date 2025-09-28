@@ -54,7 +54,6 @@ function handleCompositionStart() {
 }
 function handleCompositionEnd() {
   isComposing = false
-  handleContentInput()
 }
 
 function handleContentBlur() {
