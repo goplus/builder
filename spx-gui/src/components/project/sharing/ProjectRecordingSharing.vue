@@ -121,7 +121,7 @@ async function generateShareContent() {
         urlShareComponent.value = markRaw(shareComponent)
       }
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      const res = platform.shareFunction.shareVideo(videoSrc.value)
+      const res = await platform.shareFunction.shareVideo(videoSrc.value)
       guideComponent.value = res
     }
   } finally {
@@ -451,8 +451,8 @@ watch(
 }
 
 .qr-code {
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 200px;
   margin: 0 auto;
   display: flex;
   align-items: center;

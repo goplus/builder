@@ -280,12 +280,9 @@ class DouyinPlatform implements PlatformConfig {
         imagePath: image,
         title: '看看我在XBuilder录制的游戏演示'
       })
+      console.log('schema', schema)
 
-      return createJumpLinkComponent({
-        title: { en: 'Open Douyin to share', zh: '打开抖音进行分享' },
-        url: schema,
-        openInNewTab: false
-      })
+      return createQRCodeComponent(schema, this.basicInfo.color)
     },
 
     shareVideo: async (video: string) => {
@@ -298,12 +295,8 @@ class DouyinPlatform implements PlatformConfig {
         videoPath: video,
         title: '看看我在XBuilder录制的游戏演示'
       })
-
-      return createJumpLinkComponent({
-        title: { en: 'Open Douyin to share', zh: '打开抖音进行分享' },
-        url: schema,
-        openInNewTab: false
-      })
+      console.log('schema', schema)
+      return createQRCodeComponent(schema, this.basicInfo.color)
     }
   }
 
@@ -621,8 +614,8 @@ function createQRCodeComponent(url: string, platformColor: string): Component {
       onMounted(async () => {
         qrData.value = await QRCode.toDataURL(url, {
           color: { dark: platformColor, light: '#FFFFFF' },
-          width: 120,
-          margin: 1
+          width: 200,
+          margin: 2
         })
       })
 
@@ -630,7 +623,7 @@ function createQRCodeComponent(url: string, platformColor: string): Component {
 
       return () =>
         h('div', { style: container }, [
-          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 120, height: 120 }) : h('div', '...')
+          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 200, height: 200 }) : h('div', '...')
         ])
     }
   } as unknown as Component
@@ -674,7 +667,7 @@ function createJumpLinkComponent(options: {
       return () =>
         h('div', { style: container }, [
           h('div', { style: titleStyle }, `${title.zh} / ${title.en}`),
-          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 120, height: 120 }) : h('div', '...'),
+          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 200, height: 200 }) : h('div', '...'),
           h('button', { style: btnStyle, onClick: handleOpen }, '打开 / Open')
         ])
     }
