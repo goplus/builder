@@ -41,4 +41,17 @@ describe('Costume', () => {
     sprite.addCostume(clone)
     expect(clone.parent).toEqual(sprite)
   })
+
+  it('should add costume after correctly', () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const costume1 = sprite.costumes[0]
+    const costume2 = new Costume('costume2', mockFile())
+    const costume3 = new Costume('costume3', mockFile())
+    const costume4 = new Costume('costume4', mockFile())
+    sprite.addCostumeAfter(costume4, costume1.id)
+    sprite.addCostumeAfter(costume3, costume4.id)
+    sprite.addCostumeAfter(costume2, costume3.id)
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume4', 'costume3', 'costume2'])
+  })
 })

@@ -147,4 +147,19 @@ describe('Animation', () => {
       expect(clonedAnimation.costumes[i].bitmapResolution).toBe(animation.costumes[i].bitmapResolution)
     }
   })
+
+  it('should add animation after correctly', () => {
+    const sprite = new Sprite('MySprite')
+    const animation1 = new Animation('animation1')
+    const animation2 = new Animation('animation2')
+    const animation3 = new Animation('animation3')
+    sprite.addAnimation(animation1)
+    sprite.addAnimation(animation2)
+    sprite.addAnimation(animation3)
+
+    const animation4 = new Animation('animation4')
+    sprite.addAnimationAfter(animation4, animation2.id)
+
+    expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation4', 'animation3'])
+  })
 })

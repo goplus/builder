@@ -52,7 +52,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     await editorCtx.project.history.doAction(action, () => {
       const stage = stageRef.value
       const newBackdrop = backdrop.clone()
-      stage.addBackdrop(newBackdrop)
+      stage.addBackdropAfter(newBackdrop, backdrop.id)
       editorCtx.state.selectBackdrop(newBackdrop.id)
     })
   },

@@ -46,4 +46,17 @@ describe('Sound', () => {
     const animation = sprite.animations[0]
     expect(animation.sound).not.toBe(clone.id)
   })
+
+  it('should add sound after correctly', () => {
+    const project = makeProject()
+    const sound1 = project.sounds[0]
+
+    const sound2 = new Sound('sound2', mockFile())
+    project.addSoundAfter(sound2, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound2.id])
+
+    const sound3 = new Sound('sound3', mockFile())
+    project.addSoundAfter(sound3, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound3.id, sound2.id])
+  })
 })

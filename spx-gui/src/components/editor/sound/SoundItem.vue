@@ -46,7 +46,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     const action = { name: { en: `Duplicate sound ${sound.name}`, zh: `复制声音 ${sound.name}` } }
     await editorCtx.project.history.doAction(action, () => {
       const newSound = sound.clone()
-      editorCtx.project.addSound(newSound)
+      editorCtx.project.addSoundAfter(newSound, sound.id)
       editorCtx.state.selectSound(newSound.id)
     })
   },

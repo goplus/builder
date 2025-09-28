@@ -3,6 +3,7 @@ import { Sprite, State } from './sprite'
 import { Animation } from './animation'
 import { Costume } from './costume'
 import { File } from './common/file'
+import { Project } from './project'
 
 function makeCostume(name: string) {
   return new Costume(name, new File(`${name}.png`, async () => new ArrayBuffer(0)))
@@ -187,5 +188,19 @@ describe('Sprite', () => {
     expect(clone.getDefaultAnimation()?.name).toEqual(animation1.name)
     expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.Default, State.Step])
     expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.Die])
+  })
+
+  it('should add sprite after correctly', () => {
+    const project = new Project()
+    const sprite1 = new Sprite('sprite1')
+    project.addSprite(sprite1)
+
+    const sprite2 = new Sprite('sprite2')
+    project.addSpriteAfter(sprite2, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite2.id])
+
+    const sprite3 = new Sprite('sprite3')
+    project.addSpriteAfter(sprite3, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite3.id, sprite2.id])
   })
 })

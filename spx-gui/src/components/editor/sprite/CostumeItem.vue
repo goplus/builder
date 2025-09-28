@@ -55,7 +55,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     const action = { name: { en: `Duplicate costume ${costume.name}`, zh: `复制造型 ${costume.name}` } }
     await editorCtx.project.history.doAction(action, async () => {
       const newCostume = costume.clone()
-      parent.addCostume(newCostume)
+      parent.addCostumeAfter(newCostume, costume.id)
       editorCtx.state.selectCostume(parent.id, newCostume.id)
     })
   },
