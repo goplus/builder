@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, type Component } from 'vue'
+import { ref, computed, watch, type Component, shallowRef, markRaw } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
 import { type PlatformConfig, initShareURL, addShareStateURL  } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import QRCode from 'qrcode'
 
 const props = defineProps<{
   recording: Promise<RecordingData>
@@ -29,8 +28,7 @@ const emit = defineEmits<{
 
 // Component state
 const selectedPlatform = ref<PlatformConfig | null>(null)
-const jumpUrl = ref<string>('')
-const qrCodeData = ref<string>('')
+const urlShareComponent = shallowRef<Component | null>(null)
 const guideComponent = ref<Component | null>(null)
 const isGeneratingQR = ref(false)
 
@@ -71,6 +69,7 @@ async function updateVideoSrc() {
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
   guideComponent.value = null
+  urlShareComponent.value = null
 
   // 检查是否需要显示下载提示
   if (!platform.shareType.supportVideo && !platform.shareType.supportURL) {
@@ -94,8 +93,8 @@ function getCurrentRecordingUrl() {
   return window.location.origin + recordingPageUrl.value
 }
 
-// Generate sharing QR code
-async function generateShareQRCode() {
+// Generate sharing content
+async function generateShareContent() {
   if (!selectedPlatform.value) {
     return
   }
@@ -106,41 +105,31 @@ async function generateShareQRCode() {
   isGeneratingQR.value = true
 
   try {
-    // Generate jump URL based on platform type
+    // Generate content based on platform type
     const platform = selectedPlatform.value
     const currentUrl = getCurrentRecordingUrl() || window.location.href
 
-    let shareUrl = ''
+    let shareURL = ''
 
     // Prefer direct video sharing if available; if it returns a Component (manual guide), render it
     if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
       // Support URL sharing, directly share recording page link
-      shareUrl = await initShareURL(platform.basicInfo.name, currentUrl)
-      shareUrl = await addShareStateURL(shareUrl)
-      shareUrl = await platform.shareFunction.shareURL(shareUrl)
+      shareURL = await initShareURL(platform.basicInfo.name, currentUrl)
+      shareURL = await addShareStateURL(shareURL)
+      const shareComponent = await platform.shareFunction.shareURL(shareURL)
+      if (shareComponent) {
+        urlShareComponent.value = markRaw(shareComponent)
+      }
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      const res = platform.shareFunction.shareVideo(props.video)
+      const res = platform.shareFunction.shareVideo(videoSrc.value)
       // shareVideo returns Component (manual guide) in our platform config
       guideComponent.value = res
       // When manual guide is shown, QR is not needed; use currentUrl as placeholder
-      shareUrl = currentUrl
+      shareURL = currentUrl
     } else {
       // Default to use recording page URL
-      shareUrl = currentUrl
+      shareURL = currentUrl
     }
-
-    jumpUrl.value = shareUrl
-
-    // Use qrcode library to generate QR code
-    const qrDataURL = await QRCode.toDataURL(shareUrl, {
-      color: {
-        dark: selectedPlatform.value?.basicInfo.color || '#000000',
-        light: '#FFFFFF'
-      },
-      width: 120,
-      margin: 1
-    })
-    qrCodeData.value = qrDataURL
   } finally {
     isGeneratingQR.value = false
   }
@@ -157,8 +146,7 @@ watch(
   async (newVisible) => {
     if (newVisible) {
       // Reset state
-      jumpUrl.value = ''
-      qrCodeData.value = ''
+      urlShareComponent.value = null
 
       try {
         // Update video source immediately (prioritize props.video)
@@ -166,6 +154,11 @@ watch(
 
         // Load recording data (for sharing parameters)
         await loadRecordingData()
+
+        // If a platform is already selected (e.g., default QQ), immediately generate share content
+        if (selectedPlatform.value != null) {
+          await generateShareContent()
+        }
       } catch (error) {
         // These are initialization errors, log but don't throw to avoid affecting modal display
         console.error('Failed to initialize video data:', error)
@@ -174,18 +167,18 @@ watch(
   }
 )
 
-// Listen to platform selection changes, automatically generate QR code
+// Listen to platform selection changes, automatically generate share content
 watch(
   selectedPlatform,
   async (newPlatform) => {
     if (newPlatform != null && props.visible) {
       try {
-        // Only generate QR code when modal is visible and platform is selected
-        await generateShareQRCode()
+        // Only generate share content when modal is visible and platform is selected
+        await generateShareContent()
       } catch (error) {
-        // QR code generation failed, log error but don't affect other functions
-        console.error('Failed to generate sharing QR code:', error)
-        qrCodeData.value = ''
+        // Share content generation failed, log error but don't affect other functions
+        console.error('Failed to generate sharing content:', error)
+        urlShareComponent.value = null
       }
     }
   },
@@ -234,19 +227,12 @@ watch(
           </div>
           <div class="qr-section">
             <div class="qr-section-inner">
-              <div class="qr-content">
+              <component :is="guideComponent" v-if="guideComponent" />
+              <component :is="urlShareComponent" v-else-if="urlShareComponent" />
+              <div v-else class="qr-content">
                 <div class="qr-code">
-                  <img
-                    v-if="qrCodeData"
-                    :src="qrCodeData"
-                    :alt="$t({ en: 'Share QR Code', zh: '分享二维码' })"
-                    class="qr-image"
-                  />
-                  <div v-else class="qr-placeholder">
-                    <span v-if="isGeneratingQR">{{ $t({ en: 'Generating...', zh: '生成中...' }) }}</span>
-                    <span v-else>{{
-                      $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' })
-                    }}</span>
+                  <div class="qr-placeholder">
+                    <span>{{ $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' }) }}</span>
                   </div>
                 </div>
                 <div class="qr-hint">
@@ -471,8 +457,8 @@ watch(
 }
 
 .qr-code {
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 200px;
   margin: 0 auto;
   display: flex;
   align-items: center;

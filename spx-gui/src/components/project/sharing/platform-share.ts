@@ -1,10 +1,10 @@
 import { getWeChatJSSDKConfig } from '@/apis/wechat'
 import { createTrafficSource, recordTrafficAccess } from '@/apis/traffic-source'
 import { h, type Component, ref, onMounted } from 'vue'
-import { useI18n } from '@/utils/i18n'
-import UIButton from '@/components/ui/UIButton.vue'
 import QRCode from 'qrcode'
-// import { useI18n } from '@/utils/i18n'
+import ManualShareGuide from './ManualShareGuide.vue'
+import type { LocaleMessage } from '@/utils/i18n/index'
+import { getDouyinH5Config } from '@/apis/douyin'
 /**
  * 社交平台配置
  */
@@ -12,13 +12,10 @@ export type BasicInfo = {
   /** 平台标识符名称 */
   name: string
   /** 本地化显示标签 */
-  label: { en: string; zh: string }
+  label: LocaleMessage
   /** 平台品牌颜色 */
   color: string
 }
-
-/** 本地化标签类型 */
-export type LocalizedLabel = BasicInfo['label']
 
 /**
  * 支持分享方式接口
@@ -48,12 +45,12 @@ export interface ShareInfo {
  * 分享方法接口 - 定义三种分享方式，所有方法都是可选的
  */
 export interface ShareFunction {
-  /** 分享项目页面方法 */
-  shareURL?: (url: string) => Promise<string>
+  /** 分享项目页面方法 - 返回二维码组件 */
+  shareURL?: (url: string) => Promise<Component>
   /** 分享海报方法 */
-  shareImage?: (image: File) => Component
+  shareImage?: (image: string) => Component
   /** 分享视频方法 */
-  shareVideo?: (video: File) => Component
+  shareVideo?: (video: string) => Component
 }
 
 /**
@@ -66,13 +63,6 @@ export interface PlatformConfig {
   initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
 }
 
-/**
- * 常用跳转链接（按需使用）
- */
-const JUMP_LINKS = {
-  bilibiliVideoPC: 'https://member.bilibili.com/platform/upload/video/frame',
-  douyinMobile: 'https://www.douyin.com/'
-}
 
 /**
  * 分享回流来源参数名（使用 query 参数）
@@ -135,9 +125,9 @@ class QQPlatform implements PlatformConfig {
 
   shareFunction = {
     shareURL: async (url: string) => {
-      return url
+      return createQRCodeComponent(url, this.basicInfo.color)
     },
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -158,7 +148,7 @@ class QQPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -213,10 +203,10 @@ class WeChatPlatform implements PlatformConfig {
     shareURL: async (url: string) => {
       // const projectTitle = extractOwnerAndName(url)
       // 可以在这里添加微信分享逻辑，使用 projectTitle
-      return url
+      return createQRCodeComponent(url, this.basicInfo.color)
     },
 
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -237,7 +227,7 @@ class WeChatPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -314,37 +304,99 @@ class DouyinPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareImage: (image: File) =>
-      createImageManualShareGuide({
-        platform: this.basicInfo.label,
-        image,
-        filename: 'xbuilder-poster.png',
-        title: { en: 'How to share to Douyin', zh: '如何分享到抖音' },
-        steps: [
-          {
-            title: { en: 'Download poster', zh: '下载海报' },
-            desc: { en: 'Save the poster to your phone', zh: '将海报保存到手机相册' }
-          },
-          { title: { en: 'Open Douyin', zh: '打开抖音' }, desc: { en: 'Tap "+" to create', zh: '点击“+”创建' } },
-          {
-            title: { en: 'Upload & publish', zh: '上传发布' },
-            desc: { en: 'Select downloaded poster', zh: '选择刚下载的海报并发布' }
-          }
-        ]
-      }),
-    shareVideo: (video: File) =>
-      createJumpLinkComponent({
-        title: { en: 'Open Douyin to share video', zh: '打开抖音进行视频分享' },
-        url: JUMP_LINKS.douyinMobile,
-        openInNewTab: false,
-        video: video
+    shareImage: async (image: string) => {
+      const config = await getDouyinH5Config()
+      const schema = this.buildDouyinImageSchema({
+        clientKey: config.clientKey,
+        nonceStr: config.nonceStr,
+        timestamp: config.timestamp,
+        signature: config.signature,
+        imagePath: image,
+        title: '看看我在XBuilder录制的游戏演示'
       })
+      return createQRCodeComponent(schema, this.basicInfo.color)
+    },
+
+    shareVideo: async (video: string) => {
+      const config = await getDouyinH5Config()
+      const schema = this.buildDouyinVideoSchema({
+        clientKey: config.clientKey,
+        nonceStr: config.nonceStr,
+        timestamp: config.timestamp,
+        signature: config.signature,
+        videoPath: video,
+        title: '看看我在XBuilder录制的游戏演示'
+      })
+      return createQRCodeComponent(schema, this.basicInfo.color)
+    }
   }
 
   async initShareInfo(shareInfo?: ShareInfo) {
     // 抖音平台暂不支持设置分享信息
     void shareInfo
     return
+  }
+
+  private buildDouyinImageSchema(params: {
+    clientKey: string
+    nonceStr: string
+    timestamp: string
+    signature: string
+    imagePath: string
+    title?: string
+  }): string {
+    const queryParams = new URLSearchParams({
+      share_type: 'h5',
+      client_key: params.clientKey,
+      nonce_str: params.nonceStr,
+      timestamp: params.timestamp,
+      signature: params.signature,
+      image_path: params.imagePath,
+      state: '608',
+      share_to_publish: '1', // 直接跳转到发布页
+      share_to_type: '0'
+    })
+
+    if (params.title) {
+      queryParams.append('title', params.title)
+    }
+
+    // 添加推荐话题
+    const hashtags = JSON.stringify(['XBuilder', '游戏制作', '编程'])
+    queryParams.append('hashtag_list', hashtags)
+
+    return `snssdk1128://openplatform/share?${queryParams.toString()}`
+  }
+
+  private buildDouyinVideoSchema(params: {
+    clientKey: string
+    nonceStr: string
+    timestamp: string
+    signature: string
+    videoPath: string
+    title?: string
+  }): string {
+    const queryParams = new URLSearchParams({
+      share_type: 'h5',
+      client_key: params.clientKey,
+      nonce_str: params.nonceStr,
+      timestamp: params.timestamp,
+      signature: params.signature,
+      video_path: params.videoPath,
+      state: '608',
+      share_to_publish: '1', // 直接跳转到发布页
+      share_to_type: '0'
+    })
+
+    if (params.title) {
+      queryParams.append('title', params.title)
+    }
+
+    // 添加推荐话题
+    const hashtags = JSON.stringify(['XBuilder', '游戏制作', '编程'])
+    queryParams.append('hashtag_list', hashtags)
+
+    return `snssdk1128://openplatform/share?${queryParams.toString()}`
   }
 }
 
@@ -362,7 +414,7 @@ class XiaohongshuPlatform implements PlatformConfig {
   }
 
   shareFunction = {
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -375,7 +427,7 @@ class XiaohongshuPlatform implements PlatformConfig {
           },
           {
             title: { en: 'Open Xiaohongshu', zh: '打开小红书' },
-            desc: { en: 'Tap "+" to create a note', zh: '点击“+”新建笔记' }
+            desc: { en: 'Tap "+" to create a note', zh: '点击"+"新建笔记' }
           },
           {
             title: { en: 'Upload & publish', zh: '上传发布' },
@@ -383,7 +435,7 @@ class XiaohongshuPlatform implements PlatformConfig {
           }
         ]
       }),
-    shareVideo: (video: File) =>
+    shareVideo: (video: string) =>
       createVideoManualShareGuide({
         platform: this.basicInfo.label,
         video,
@@ -396,7 +448,7 @@ class XiaohongshuPlatform implements PlatformConfig {
           },
           {
             title: { en: 'Open Xiaohongshu', zh: '打开小红书' },
-            desc: { en: 'Tap "+" to create a note', zh: '点击“+”新建笔记' }
+            desc: { en: 'Tap "+" to create a note', zh: '点击"+"新建笔记' }
           },
           {
             title: { en: 'Upload & publish', zh: '上传发布' },
@@ -430,10 +482,10 @@ class BilibiliPlatform implements PlatformConfig {
   shareFunction = {
     // shareURL 用于生成二维码时跳转到B站投稿页（PC端）
     shareURL: async (url: string) => {
-      return url
+      return createQRCodeComponent(url, this.basicInfo.color)
     },
     // B站的海报以手动上传为主
-    shareImage: (image: File) =>
+    shareImage: (image: string) =>
       createImageManualShareGuide({
         platform: this.basicInfo.label,
         image,
@@ -454,14 +506,31 @@ class BilibiliPlatform implements PlatformConfig {
           }
         ]
       }),
-    // shareVideo 返回一个“打开B站投稿页”的组件
-    shareVideo: (video: File) =>
-      createJumpLinkComponent({
-        title: { en: 'Open Bilibili upload page', zh: '打开B站投稿页面' },
-        url: JUMP_LINKS.bilibiliVideoPC,
-        openInNewTab: true,
-        video: video
-      })
+    // shareVideo 返回一个"打开B站投稿页"的组件
+    shareVideo: (video: string) => {
+      // 这个是 vue 的 functional component 写法，详见 https://vuejs.org/guide/extras/render-function#functional-components
+      return () =>
+        h(ManualShareGuide, {
+          platform: this.basicInfo.label,
+          title: { en: 'Open Bilibili upload page', zh: '打开B站投稿页面' },
+          steps: [
+            {
+              title: { en: 'Download video', zh: '下载视频' },
+              desc: { en: 'Save the video to your PC', zh: '将视频保存到电脑' }
+            },
+            {
+              title: { en: 'Open Bilibili', zh: '打开B站' },
+              desc: { en: 'Go to the upload page', zh: '进入投稿页面' }
+            },
+            {
+              title: { en: 'Upload & publish', zh: '上传发布' },
+              desc: { en: 'Select the downloaded video and publish', zh: '选择刚下载的视频进行发布' }
+            }
+          ],
+          defaultButtonLabel: { en: 'Download video', zh: '下载视频' },
+          onDownload: createDataDownloadHandler(video, 'xbuilder-video.mp4')
+        })
+    }
   }
 
   async initShareInfo(shareInfo?: ShareInfo) {
@@ -517,132 +586,107 @@ function analyzeProjectShareUrl(): string | null {
 /**
  * 内部复用：构建“手动下载 + 步骤引导”的通用组件
  */
-function createManualShareGuideUI(options: {
-  platform: LocalizedLabel
-  title: { en: string; zh: string }
-  steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
-  buttonText?: { en: string; zh: string }
-  defaultButtonLabel: { en: string; zh: string }
-  onDownload: () => void
-}): Component {
-  const { platform, title, steps, buttonText, defaultButtonLabel, onDownload } = options
-  return {
-    name: 'ManualShareGuideCore',
-    setup() {
-      const i18n = useI18n()
-      const containerStyle =
-        'display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--ui-color-border);border-radius:8px;align-items:stretch;background:var(--ui-color-background);box-sizing:border-box;max-width:360px;width:100%'
-      const titleStyle = 'font-size:14px;font-weight:600;text-align:left;color:var(--ui-color-text-primary)'
-      const stepRowStyle = 'display:flex;gap:10px;align-items:flex-start'
-      const stepContentStyle = 'display:flex;flex-direction:column;gap:4px;flex:1'
-      const stepTitleStyle = 'font-size:13px;font-weight:500;color:var(--ui-color-text-primary)'
-      const stepDescStyle = 'font-size:12px;color:var(--ui-color-text-secondary);line-height:1.4'
-
-      return () =>
-        h('div', { style: containerStyle }, [
-          h(
-            'div',
-            { style: titleStyle },
-            i18n.t({ zh: `${title.zh}（${platform.zh}）`, en: `${title.en} (${platform.en})` })
-          ),
-          ...steps.map((s, i) =>
-            h('div', { style: stepRowStyle }, [
-              h('div', { style: stepContentStyle }, [
-                h('div', { style: stepTitleStyle }, `${i + 1}. ${i18n.t(s.title)}`),
-                h('div', { style: stepDescStyle }, i18n.t(s.desc))
-              ])
-            ])
-          ),
-          h(
-            UIButton,
-            { type: 'primary', size: 'medium', onClick: onDownload },
-            { default: () => i18n.t(buttonText ?? defaultButtonLabel) }
-          )
-        ])
-    }
-  } as unknown as Component
-}
-
-/**
- * 内部复用：通用文件下载逻辑（File/Blob 均可）
- */
-function createBlobDownloadHandler(blob: Blob, filename: string): () => void {
+function createDataDownloadHandler(url: string, filename: string): () => void {
   return () => {
     try {
-      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('Failed to download blob', err)
+      console.error('Failed to download file', err)
     }
   }
 }
 
 /**
- * 平台自定义：创建“下载图片并手动上传”的引导组件
+ * 平台自定义：创建"下载图片并手动上传"的引导组件
  */
 function createImageManualShareGuide(options: {
-  platform: LocalizedLabel
-  image: File
+  platform: LocaleMessage
+  image: string
   filename?: string | undefined
   title: { en: string; zh: string }
   steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
   buttonText?: { en: string; zh: string }
 }): Component {
   const { platform, image, filename, title, steps, buttonText } = options
-  return createManualShareGuideUI({
-    platform,
-    title,
-    steps,
-    buttonText,
-    defaultButtonLabel: { zh: '下载图片', en: 'Download image' },
-    onDownload: createBlobDownloadHandler(image, filename || 'xbuilder-poster.png')
-  })
+  return function ImageManualShareGuide() {
+    return h(ManualShareGuide, {
+      platform,
+      title,
+      steps,
+      buttonText,
+      defaultButtonLabel: { zh: '下载图片', en: 'Download image' },
+      onDownload: createDataDownloadHandler(image, filename || 'xbuilder-poster.png')
+    })
+  }
 }
 
 /**
- * 平台自定义：创建“下载视频并手动上传”的引导组件（不依赖 SupportedTips）
+ * 平台自定义：创建"下载视频并手动上传"的引导组件（不依赖 SupportedTips）
  */
 function createVideoManualShareGuide(options: {
-  platform: LocalizedLabel
-  video: File
+  platform: LocaleMessage
+  video: string
   filename?: string | undefined
   title: { en: string; zh: string }
   steps: Array<{ title: { en: string; zh: string }; desc: { en: string; zh: string } }>
   buttonText?: { en: string; zh: string }
 }): Component {
   const { platform, video, filename, title, steps, buttonText } = options
-  return createManualShareGuideUI({
-    platform,
-    title,
-    steps,
-    buttonText,
-    defaultButtonLabel: { zh: '下载视频', en: 'Download video' },
-    onDownload: createBlobDownloadHandler(video, filename || 'xbuilder-video.mp4')
-  })
+  return function VideoManualShareGuide() {
+    return h(ManualShareGuide, {
+      platform,
+      title,
+      steps,
+      buttonText,
+      defaultButtonLabel: { zh: '下载视频', en: 'Download video' },
+      onDownload: createDataDownloadHandler(video, filename || 'xbuilder-video.mp4')
+    })
+  }
 }
 
 /**
- * 创建“跳转到平台”的引导组件（用于需要直接打开URL的情况）
+ * 创建二维码分享组件
  */
+function createQRCodeComponent(url: string, platformColor: string): Component {
+  return {
+    name: 'QRCodeShare',
+    setup() {
+      const qrData = ref<string | null>(null)
+
+      onMounted(async () => {
+        qrData.value = await QRCode.toDataURL(url, {
+          color: { dark: platformColor, light: '#FFFFFF' },
+          width: 200,
+          margin: 2
+        })
+      })
+
+      const container = 'display:flex;flex-direction:column;gap:8px;align-items:center'
+
+      return () =>
+        h('div', { style: container }, [
+          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 200, height: 200 }) : h('div', '...')
+        ])
+    }
+  } as unknown as Component
+}
+
+/**
+ * 创建"跳转到平台"的引导组件（用于需要直接打开URL的情况）
 function createJumpLinkComponent(options: {
   title: { en: string; zh: string }
   url: string
   openInNewTab?: boolean
-  video: File
 }): Component {
-  const { title, url, openInNewTab, video } = options
+  const { title, url, openInNewTab } = options
   return {
     name: 'JumpLinkGuide',
     setup() {
-      // Touch video to avoid unused variable warning until full implementation lands
-      const videoName = video.name
-      void videoName
       const qrData = ref<string | null>(null)
 
       onMounted(async () => {
@@ -669,9 +713,10 @@ function createJumpLinkComponent(options: {
       return () =>
         h('div', { style: container }, [
           h('div', { style: titleStyle }, `${title.zh} / ${title.en}`),
-          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 120, height: 120 }) : h('div', '...'),
+          qrData.value ? h('img', { src: qrData.value, alt: 'QR Code', width: 200, height: 200 }) : h('div', '...'),
           h('button', { style: btnStyle, onClick: handleOpen }, '打开 / Open')
         ])
     }
   } as unknown as Component
 }
+*/
