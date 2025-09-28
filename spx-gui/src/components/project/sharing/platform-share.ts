@@ -90,19 +90,29 @@ declare global {
   }
 }
 
-// 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
-export async function initShareURL(platform: string, url?: string) {
-  const shareURL = new URL(url || location.href)
+export async function delShareStateURL(url: string) {
+  const shareURL = new URL(url)
   if (shareURL.searchParams.get('share-state') === 'init') {
     shareURL.searchParams.delete('share-state')
   }
+  return shareURL.toString()
+}
+
+export async function addShareStateURL(url: string) {
+  const shareURL = new URL(url)
+  shareURL.searchParams.set('share-state', 'init')
+  return shareURL.toString()
+}
+
+// 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
+export async function initShareURL(platform: string, url?: string) {
+  const shareURL = new URL(url || location.href)
   // 已包含回流参数则直接返回，避免重复拼接
   if (shareURL.searchParams.has(TRAFFIC_SOURCE_QUERY_KEY)) {
     return shareURL.toString()
   }
   const trafficSource = await createTrafficSource(platform)
 
-  shareURL.searchParams.set('share-state', 'init')
   shareURL.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
   return shareURL.toString()
 }
@@ -174,7 +184,7 @@ class QQPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: initShareURL(this.basicInfo.name),
+        share_url: delShareStateURL(location.href),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
@@ -253,7 +263,7 @@ class WeChatPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     // 微信平台设置分享信息
     const config = await getWeChatJSSDKConfig({
-      url: await initShareURL(this.basicInfo.name)
+      url: await delShareStateURL(location.href)
     })
     //初始化微信分享信息
     if (window.wx && window.wx.config) {
@@ -272,7 +282,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateAppMessageShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: initShareURL(this.basicInfo.name),
+          link: delShareStateURL(location.href),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -281,7 +291,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateTimelineShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: initShareURL(this.basicInfo.name),
+          link: delShareStateURL(location.href),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })

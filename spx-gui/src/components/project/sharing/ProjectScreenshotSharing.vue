@@ -3,7 +3,7 @@ import { ref, watch, nextTick, type Component } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
-import { type PlatformConfig, initShareURL } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import QRCode from 'qrcode'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
@@ -64,18 +64,20 @@ async function createPosterFile(): Promise<File> {
 
 // Generate share URL for platform
 async function generateShareUrl(platform: PlatformConfig): Promise<string> {
-  const shareUrl = getCurrentProjectUrl()
-  const currentShareURL = await initShareURL(platform.basicInfo.name, shareUrl)
+  let shareURL = ''
+  shareURL = getCurrentProjectUrl()
+  shareURL = await initShareURL(platform.basicInfo.name, shareURL)
+  shareURL = await addShareStateURL(shareURL)
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     const posterFile = await createPosterFile()
     guideComponent.value = platform.shareFunction.shareImage(posterFile)
     // When manual guide is shown, QR is not needed; return current URL as placeholder
-    return currentShareURL
+    return shareURL
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    return await platform.shareFunction.shareURL(currentShareURL)
+    return await platform.shareFunction.shareURL(shareURL)
   } else {
-    return currentShareURL
+    return shareURL
   }
 }
 

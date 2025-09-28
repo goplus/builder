@@ -2,11 +2,10 @@
 import { ref, computed, watch, type Component } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL  } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
-import { initShareURL } from './platform-share'
 import QRCode from 'qrcode'
 
 const props = defineProps<{
@@ -117,6 +116,7 @@ async function generateShareQRCode() {
     if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
       // Support URL sharing, directly share recording page link
       shareUrl = await initShareURL(platform.basicInfo.name, currentUrl)
+      shareUrl = await addShareStateURL(shareUrl)
       shareUrl = await platform.shareFunction.shareURL(shareUrl)
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
       const res = platform.shareFunction.shareVideo(props.video)
