@@ -54,7 +54,7 @@ import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
 import { computed, ref, type Component, shallowRef, markRaw } from 'vue'
-import type { PlatformConfig } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
@@ -116,10 +116,16 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   imageShareComponent.value = null
   urlShareComponent.value = null
 
+  let shareURL = ''
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    const shareComponent = await platform.shareFunction.shareURL(projectSharingLink.value)
-    if (shareComponent) {
-      urlShareComponent.value = markRaw(shareComponent)
+    shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
+    shareURL = await addShareStateURL(shareURL)
+
+    if (shareURL) {
+      const shareComponent = await platform.shareFunction.shareURL(shareURL)
+      if (shareComponent) {
+        urlShareComponent.value = markRaw(shareComponent)
+      }
     }
     return
   }

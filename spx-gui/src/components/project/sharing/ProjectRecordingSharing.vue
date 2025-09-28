@@ -2,7 +2,7 @@
 import { ref, computed, watch, type Component, shallowRef, markRaw } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -47,7 +47,6 @@ const recordingPageUrl = computed(() => {
 // Load recording data
 async function loadRecordingData() {
   if (currentRecording.value) return
-
   currentRecording.value = await props.recording
   await updateVideoSrc()
 }
@@ -103,26 +102,33 @@ async function generateShareContent() {
   // Ensure recording data is loaded
   await loadRecordingData()
 
-  if (!currentRecording.value) {
-    return
-  }
-
   isGeneratingQR.value = true
 
   try {
     // Generate content based on platform type
     const platform = selectedPlatform.value
-    const currentUrl = getCurrentRecordingUrl()
+    const currentUrl = getCurrentRecordingUrl() || window.location.href
 
-    // Prefer URL sharing when supported; fallback to video guide when provided
+    let shareURL = ''
+
+    // Prefer direct video sharing if available; if it returns a Component (manual guide), render it
     if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-      const shareComponent = await platform.shareFunction.shareURL(currentUrl)
+      // Support URL sharing, directly share recording page link
+      shareURL = await initShareURL(platform.basicInfo.name, currentUrl)
+      shareURL = await addShareStateURL(shareURL)
+      const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {
         urlShareComponent.value = markRaw(shareComponent)
       }
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
-      const res = await platform.shareFunction.shareVideo(videoSrc.value)
+      const res = platform.shareFunction.shareVideo(videoSrc.value)
+      // shareVideo returns Component (manual guide) in our platform config
       guideComponent.value = res
+      // When manual guide is shown, QR is not needed; use currentUrl as placeholder
+      shareURL = currentUrl
+    } else {
+      // Default to use recording page URL
+      shareURL = currentUrl
     }
   } finally {
     isGeneratingQR.value = false

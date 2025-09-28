@@ -1,4 +1,5 @@
 import { getWeChatJSSDKConfig } from '@/apis/wechat'
+import { createTrafficSource, recordTrafficAccess } from '@/apis/traffic-source'
 import { h, type Component, ref, onMounted } from 'vue'
 import QRCode from 'qrcode'
 import ManualShareGuide from './ManualShareGuide.vue'
@@ -62,6 +63,11 @@ export interface PlatformConfig {
   initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
 }
 
+/**
+ * 分享回流来源参数名（使用 query 参数）
+ */
+const TRAFFIC_SOURCE_QUERY_KEY = 'traffic-source-id'
+
 /*
 来自于qqapi.js的声明，为了保证qqapi.js的正常运行，需要声明window对象
 */
@@ -71,6 +77,33 @@ declare global {
     wx: any
     sha1: any
   }
+}
+
+export async function delShareStateURL(url: string) {
+  const shareURL = new URL(url)
+  if (shareURL.searchParams.get('share-state') === 'init') {
+    shareURL.searchParams.delete('share-state')
+  }
+  return shareURL.toString()
+}
+
+export async function addShareStateURL(url: string) {
+  const shareURL = new URL(url)
+  shareURL.searchParams.set('share-state', 'init')
+  return shareURL.toString()
+}
+
+// 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
+export async function initShareURL(platform: string, url?: string) {
+  const shareURL = new URL(url || location.href)
+  // 已包含回流参数则直接返回，避免重复拼接
+  if (shareURL.searchParams.has(TRAFFIC_SOURCE_QUERY_KEY)) {
+    return shareURL.toString()
+  }
+  const trafficSource = await createTrafficSource(platform)
+
+  shareURL.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
+  return shareURL.toString()
 }
 
 /**
@@ -140,7 +173,7 @@ class QQPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: location.href,
+        share_url: delShareStateURL(location.href),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
@@ -219,7 +252,7 @@ class WeChatPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     // 微信平台设置分享信息
     const config = await getWeChatJSSDKConfig({
-      url: location.href
+      url: await delShareStateURL(location.href)
     })
     //初始化微信分享信息
     if (window.wx && window.wx.config) {
@@ -238,7 +271,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateAppMessageShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: location.href,
+          link: delShareStateURL(location.href),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -247,7 +280,7 @@ class WeChatPlatform implements PlatformConfig {
         window.wx.updateTimelineShareData({
           title: shareInfo?.title || 'XBuilder',
           desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
-          link: location.href,
+          link: delShareStateURL(location.href),
           imgUrl: location.origin + '/logo.png',
           success: function () {}
         })
@@ -518,6 +551,12 @@ export const SocialPlatformConfigs: PlatformConfig[] = [
 export type Disposer = () => void
 
 export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> => {
+  // 判断是否从某一平台分享的回流
+  const trafficSourceId = analyzeProjectShareUrl()
+  if (trafficSourceId) {
+    await recordTrafficAccess(trafficSourceId)
+  }
+
   const defaultShareInfo = shareInfo || { title: 'XBulider', desc: 'XBuilder分享你的创意作品' }
   const qq = new QQPlatform()
   const wechat = new WeChatPlatform()
@@ -532,7 +571,19 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
 }
 
 /**
- * 内部复用：URL 文件下载逻辑
+ * 分析项目分享URL，获取分享平台
+ * @returns 分享平台
+ */
+function analyzeProjectShareUrl(): string | null {
+  const url = new URL(location.href)
+  // 若存在“初始化”状态标记，则不认为是回流数据
+  if (url.searchParams.get('share-state') === 'init') {
+    return null
+  }
+  return url.searchParams.get(TRAFFIC_SOURCE_QUERY_KEY)
+}
+/**
+ * 内部复用：构建“手动下载 + 步骤引导”的通用组件
  */
 function createDataDownloadHandler(url: string, filename: string): () => void {
   return () => {

@@ -3,7 +3,7 @@ import { ref, watch, nextTick, type Component, shallowRef, markRaw } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
-import type { PlatformConfig } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
 import { useObjectUrlManager } from '@/utils/object-url'
@@ -74,18 +74,19 @@ async function createPosterURL() {
   }
   return ''
 }
-
-// Generate share content for platform
+// Generate share URL for platform
 async function generateShareContent(platform: PlatformConfig): Promise<void> {
-  const currentUrl = getCurrentProjectUrl()
+  let shareURL = ''
 
+  shareURL = getCurrentProjectUrl()
+  shareURL = await initShareURL(platform.basicInfo.name, shareURL)
+  shareURL = await addShareStateURL(shareURL)
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     const posterURL = await createPosterURL()
     guideComponent.value = platform.shareFunction.shareImage(posterURL)
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    // Get the QR code component from platform
-    const shareComponent = await platform.shareFunction.shareURL(currentUrl)
+    const shareComponent = await platform.shareFunction.shareURL(shareURL)
     if (shareComponent) {
       urlShareComponent.value = markRaw(shareComponent)
     }
