@@ -54,7 +54,7 @@ import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
 import { computed, ref, type Component, shallowRef, markRaw } from 'vue'
-import type { PlatformConfig } from './platform-share'
+import { type PlatformConfig, initShareURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
@@ -97,9 +97,10 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   qrCodeData.value = null
 
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    const shareURL = await platform.shareFunction.shareURL(projectSharingLink.value)
-    if (shareURL) {
-      const qrData = await generateQRCodeDataUrl(shareURL, platform.basicInfo.color)
+    const shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
+    const currentShareURL = await platform.shareFunction.shareURL(shareURL)
+    if (currentShareURL) {
+      const qrData = await generateQRCodeDataUrl(currentShareURL, platform.basicInfo.color)
       qrCodeData.value = qrData
     }
     return

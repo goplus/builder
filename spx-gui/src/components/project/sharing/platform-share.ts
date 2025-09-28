@@ -93,15 +93,16 @@ declare global {
 // 初始化分享URL，拼接对应平台，以便后端进行回流分析（使用 query 参数）
 export async function initShareURL(platform: string, url?: string) {
   const shareURL = new URL(url || location.href)
+  if (shareURL.searchParams.get('share-state') === 'init') {
+    shareURL.searchParams.delete('share-state')
+  }
   // 已包含回流参数则直接返回，避免重复拼接
   if (shareURL.searchParams.has(TRAFFIC_SOURCE_QUERY_KEY)) {
     return shareURL.toString()
   }
   const trafficSource = await createTrafficSource(platform)
-  // 如果传入了 url，额外标记当前为“分享初始化”而非“分享完成”，避免被解析为回流
-  if (url) {
-    shareURL.searchParams.set('share-state', 'init')
-  }
+
+  shareURL.searchParams.set('share-state', 'init')
   shareURL.searchParams.set(TRAFFIC_SOURCE_QUERY_KEY, String(trafficSource.id))
   return shareURL.toString()
 }
@@ -173,7 +174,7 @@ class QQPlatform implements PlatformConfig {
   async initShareInfo(shareInfo?: ShareInfo) {
     if (window.mqq && window.mqq.invoke) {
       window.mqq.invoke('data', 'setShareInfo', {
-        share_url: await initShareURL(this.basicInfo.name),
+        share_url: initShareURL(this.basicInfo.name),
         title: shareInfo?.title || 'XBulider',
         desc: shareInfo?.desc || 'XBuilder分享你的创意作品',
         image_url: location.origin + '/logo.png'
