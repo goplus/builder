@@ -494,7 +494,7 @@ class BilibiliPlatform implements PlatformConfig {
             }
           ],
           defaultButtonLabel: { en: 'Download video', zh: '下载视频' },
-          onDownload: createBlobDownloadHandler(new Blob([video]), 'xbuilder-video.mp4')
+          onDownload: createDataDownloadHandler(video, 'xbuilder-video.mp4')
         })
     }
   }
@@ -532,21 +532,19 @@ export const initShareInfo = async (shareInfo?: ShareInfo): Promise<Disposer> =>
 }
 
 /**
- * 内部复用：通用文件下载逻辑（File/Blob 均可）
+ * 内部复用：URL 文件下载逻辑
  */
-function createBlobDownloadHandler(blob: Blob, filename: string): () => void {
+function createDataDownloadHandler(url: string, filename: string): () => void {
   return () => {
     try {
-      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('Failed to download blob', err)
+      console.error('Failed to download file', err)
     }
   }
 }
@@ -570,7 +568,7 @@ function createImageManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载图片', en: 'Download image' },
-      onDownload: createBlobDownloadHandler(new Blob([image]), filename || 'xbuilder-poster.png')
+      onDownload: createDataDownloadHandler(image, filename || 'xbuilder-poster.png')
     })
   }
 }
@@ -594,7 +592,7 @@ function createVideoManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载视频', en: 'Download video' },
-      onDownload: createBlobDownloadHandler(new Blob([video]), filename || 'xbuilder-video.mp4')
+      onDownload: createDataDownloadHandler(video, filename || 'xbuilder-video.mp4')
     })
   }
 }
