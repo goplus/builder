@@ -3,6 +3,8 @@
     <!-- 顶部工具栏 -->
     <div class="toolbar-top">
       <div class="tool-section">
+        <!-- 当前颜色显示（选择颜色） -->
+        <SelectColor ref="selectColorRef" :is-active="currentTool === 'selectColor'" />
         <button
           class="tool-btn ai-btn"
           :title="$t({ en: 'AI Generate Image', zh: 'AI生成图片' })"
@@ -162,9 +164,6 @@
               </svg>
               <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
             </button>
-
-            <!-- 当前颜色显示（选择颜色） -->
-            <SelectColor ref="selectColorRef" :is-active="currentTool === 'selectColor'" />
           </div>
         </div>
       </div>
@@ -673,9 +672,13 @@ onMounted(() => {
     if (importExportManager) {
       await importExportManager.importSvg(svgContent, {
         clearCanvas: false,
-        triggerExport: false
+        triggerExport: false,
+        updatePaths: false // 禁用自动路径收集，手动处理
       })
     }
+
+    // 手动更新路径数组，确保与画布状态同步
+    allPaths.value = getAllPathsValue() as paper.Path[]
 
     paper.view.update()
   })

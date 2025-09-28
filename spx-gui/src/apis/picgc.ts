@@ -16,8 +16,6 @@ export interface GenerateImageRequest {
   negative_prompt?: string
   /** Image theme (e.g., cartoon, realistic, etc.) */
   theme?: string
-  /** AI provider (e.g., svgio, claude, recraft) */
-  provider?: string
   /** Output format (svg, png, etc.) */
   format?: string
   /** Whether to skip translation */
@@ -48,7 +46,6 @@ export interface GenerateImageResponse {
  * 直接生成并返回SVG内容
  */
 export async function generateSvgDirect(
-  provider: string, //通过这个参数选择供应商:claude,recraft
   prompt: string,
   options?: {
     negative_prompt?: string
@@ -70,7 +67,6 @@ export async function generateSvgDirect(
     prompt,
     negative_prompt: options?.negative_prompt || 'text, watermark',
     theme: options?.theme,
-    provider: provider,
     format: options?.format,
     skip_translate: options?.skip_translate,
     size: options?.size,
@@ -79,7 +75,6 @@ export async function generateSvgDirect(
     top_k: options?.top_k
   }
 
-  payload.provider = 'openai'
   if (options?.top_k) {
     payload.top_k = options.top_k
   } else {

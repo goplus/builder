@@ -62,8 +62,10 @@ func Load(logger *log.Logger) (*Config, error) {
 			Endpoint: mustGetEnv(logger, "AIGC_ENDPOINT"),
 		},
 		Algorithm: AlgorithmConfig{
-			Endpoint: getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
-			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "60s"),
+			Endpoint:           getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
+			Timeout:            getEnvAsDuration("ALGORITHM_TIMEOUT", "60s"),
+			SearchThreshold:    getEnvAsFloat("ALGORITHM_SEARCH_THRESHOLD", 0.1),
+			RecommendThreshold: getEnvAsFloat("ALGORITHM_RECOMMEND_THRESHOLD", 0.2),
 		},
 
 		Providers: ProvidersConfig{

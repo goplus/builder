@@ -10,7 +10,7 @@
       @keydown.esc="handleEscape"
     ></textarea>
     <div
-      v-show="completionSuggestions.length > 0 && showSuggestions"
+      v-show="completionSuggestions !== null && completionSuggestions.length > 0 && showSuggestions"
       class="completion-dropdown"
       :style="dropdownStyle"
     >

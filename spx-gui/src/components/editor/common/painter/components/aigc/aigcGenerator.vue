@@ -264,11 +264,11 @@ const handleRealGenerate = async () => {
     // 调用后端API生成四张图片
     let svgResult
     if (selectedModelInfo !== null) {
-      svgResult = await generateSvgDirect(selectedModelInfo.recommended_provider, prompt.value, {
+      svgResult = await generateSvgDirect(prompt.value, {
         theme: selectedModelInfo.id
       })
     } else {
-      svgResult = await generateSvgDirect('svgio', prompt.value, {})
+      svgResult = await generateSvgDirect(prompt.value, {})
     }
 
     // 处理返回的四张图片

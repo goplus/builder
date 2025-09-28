@@ -159,6 +159,8 @@ export class CanvasEventDelegator {
       handler.handleMouseMove(point)
     } else if (this.currentTool === 'eraser' && handler.handleMouseMove) {
       handler.handleMouseMove(point, event)
+    } else if (this.currentTool === 'fill' && handler.handleMouseMove) {
+      handler.handleMouseMove(point)
     }
   }
 
@@ -194,8 +196,8 @@ export class CanvasEventDelegator {
     const handler = this.toolRefs[this.currentTool]
     if (!handler?.handleMouseEnter) return
 
-    // 为橡皮擦工具传递原始事件，其他工具保持原有行为
-    if (this.currentTool === 'eraser') {
+    // 为橡皮擦和填充工具传递原始事件，其他工具保持原有行为
+    if (this.currentTool === 'eraser' || this.currentTool === 'fill') {
       handler.handleMouseEnter(point, event)
     } else {
       handler.handleMouseEnter(point)
@@ -214,8 +216,8 @@ export class CanvasEventDelegator {
     const handler = this.toolRefs[this.currentTool]
     if (!handler?.handleMouseLeave) return
 
-    // 为橡皮擦工具传递原始事件，其他工具保持原有行为
-    if (this.currentTool === 'eraser') {
+    // 为橡皮擦和填充工具传递原始事件，其他工具保持原有行为
+    if (this.currentTool === 'eraser' || this.currentTool === 'fill') {
       handler.handleMouseLeave(point, event)
     } else {
       handler.handleMouseLeave(point)

@@ -130,16 +130,28 @@ type AlgorithmImageResult struct {
 	AddedAt    string  `json:"added_at"`
 }
 
-// SearchSimilarImages calls the algorithm service for semantic search
+// SearchSimilarImages calls the algorithm service for semantic search with default recommendation threshold
 func (s *AlgorithmService) SearchSimilarImages(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
+	threshold := s.config.GetRecommendThreshold()
+	return s.SearchSimilarImagesWithThreshold(ctx, text, topK, threshold)
+}
+
+// SearchSimilarImagesForSearch calls the algorithm service for semantic search with search threshold
+func (s *AlgorithmService) SearchSimilarImagesForSearch(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
+	threshold := s.config.GetSearchThreshold()
+	return s.SearchSimilarImagesWithThreshold(ctx, text, topK, threshold)
+}
+
+// SearchSimilarImagesWithThreshold calls the algorithm service for semantic search with custom threshold
+func (s *AlgorithmService) SearchSimilarImagesWithThreshold(ctx context.Context, text string, topK int, threshold float64) (*AlgorithmSearchResponse, error) {
 	logger := log.GetReqLogger(ctx)
-	
-	
+
+
 	// Prepare request payload
 	req := AlgorithmSearchRequest{
 		Text:      text,
 		TopK:      topK,
-		Threshold: 0.2,
+		Threshold: threshold,
 	}
 
 	jsonData, err := json.Marshal(req)

@@ -20,11 +20,7 @@ require (
 	gorm.io/gorm v1.30.1
 )
 
-require (
-	github.com/google/uuid v1.6.0
-	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
-	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef
-)
+require github.com/google/uuid v1.6.0
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
@@ -53,7 +49,6 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect

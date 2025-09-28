@@ -6,8 +6,8 @@
       type="button"
       @click="handleColorSelect"
     >
+      {{ $t({ en: 'Color', zh: '填充颜色' }) }}
       <span class="color-icon" :style="{ backgroundColor: canvasColor }"></span>
-      <span>{{ $t({ en: 'Color', zh: '颜色' }) }}</span>
     </button>
 
     <!-- 颜色选择器弹窗 -->
@@ -87,7 +87,7 @@ defineExpose({
 
 .tool-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -100,7 +100,8 @@ defineExpose({
   font-size: 12px;
   transition: all 0.2s ease;
   text-align: center;
-  min-height: 48px;
+  min-height: 36px;
+  font-size: 12px;
 }
 
 .tool-btn:hover {

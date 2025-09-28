@@ -332,6 +332,11 @@ func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, t
 	return ctrl.algorithmService.SearchSimilarImages(ctx, text, topK)
 }
 
+// callAlgorithmServiceForSearch calls the spx-algorithm service for semantic search with search threshold.
+func (ctrl *Controller) callAlgorithmServiceForSearch(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
+	return ctrl.algorithmService.SearchSimilarImagesForSearch(ctx, text, topK)
+}
+
 // generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
 // PERFORMANCE OPTIMIZATION: Uses cached optimized prompt instead of calling OptimizePromptWithAnalysis.
 // The finalPrompt parameter should already have all theme and analysis enhancements applied.
@@ -479,7 +484,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		semanticPrompt := promptCtx.SemanticPrompt
 		logger.Printf("Semantic search prompt: %q", semanticPrompt)
 
-		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
+		algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, semanticPrompt, semanticCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "semantic"}
 			return
@@ -494,7 +499,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		themePrompt := promptCtx.ThemePrompt
 		logger.Printf("Theme search prompt: %q", themePrompt)
 
-		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
+		algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, themePrompt, themeCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "theme"}
 			return
@@ -566,7 +571,7 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 	searchPrompt := promptCtx.SemanticPrompt
 	logger.Printf("Single semantic search for prompt: %q", searchPrompt)
 
-	algorithmResp, err := ctrl.callAlgorithmService(ctx, searchPrompt, params.TopK)
+	algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, searchPrompt, params.TopK)
 	if err != nil {
 		return nil, fmt.Errorf("algorithm service call failed: %w", err)
 	}
