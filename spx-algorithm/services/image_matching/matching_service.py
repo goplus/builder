@@ -271,7 +271,9 @@ class ImageMatchingService:
             # IP到L2距离转换：对于归一化向量，L2 = sqrt(2 * (1 - IP))
             # 添加L2距离信息
             for result in search_results:
-                result['distance'] = math.sqrt(2 * (1 - result['similarity']))
+                # 限制相似度在[-1, 1]范围内，避免浮点数精度问题
+                similarity = max(-1.0, min(1.0, result['similarity']))
+                result['distance'] = math.sqrt(max(0.0, 2 * (1 - similarity)))
             
             # 应用相似度阈值过滤
             if threshold > 0:
