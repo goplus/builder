@@ -63,7 +63,6 @@ export interface PlatformConfig {
   initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
 }
 
-
 /**
  * 分享回流来源参数名（使用 query 参数）
  */

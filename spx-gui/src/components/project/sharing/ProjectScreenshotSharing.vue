@@ -4,7 +4,6 @@ import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
-import QRCode from 'qrcode'
 import { useMessageHandle } from '@/utils/exception'
 import { DefaultException } from '@/utils/exception'
 import { useObjectUrlManager } from '@/utils/object-url'
@@ -91,7 +90,7 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
     if (shareComponent) {
       urlShareComponent.value = markRaw(shareComponent)
     }
-  } 
+  }
 }
 
 // Generate share content with error handling

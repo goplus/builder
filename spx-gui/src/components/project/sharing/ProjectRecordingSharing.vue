@@ -2,7 +2,7 @@
 import { ref, computed, watch, type Component, shallowRef, markRaw } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig, initShareURL, addShareStateURL  } from './platform-share'
+import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
