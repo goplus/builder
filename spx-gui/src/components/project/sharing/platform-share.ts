@@ -280,8 +280,6 @@ class DouyinPlatform implements PlatformConfig {
         imagePath: image,
         title: '看看我在XBuilder录制的游戏演示'
       })
-      console.log('schema', schema)
-
       return createQRCodeComponent(schema, this.basicInfo.color)
     },
 
@@ -295,7 +293,6 @@ class DouyinPlatform implements PlatformConfig {
         videoPath: video,
         title: '看看我在XBuilder录制的游戏演示'
       })
-      console.log('schema', schema)
       return createQRCodeComponent(schema, this.basicInfo.color)
     }
   }
@@ -631,7 +628,6 @@ function createQRCodeComponent(url: string, platformColor: string): Component {
 
 /**
  * 创建"跳转到平台"的引导组件（用于需要直接打开URL的情况）
- */
 function createJumpLinkComponent(options: {
   title: { en: string; zh: string }
   url: string
@@ -673,3 +669,4 @@ function createJumpLinkComponent(options: {
     }
   } as unknown as Component
 }
+*/
