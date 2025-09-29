@@ -2,10 +2,10 @@
   <div class="model-selector">
     <div class="selector-display" @click="openModal">
       <div class="preview-section">
-        <img :src="selectedModelInfo.preview_url" :alt="selectedModelInfo.name" class="preview-image" />
+        <img :src="selectedModelInfo.preview_url" :alt="t(selectedModelInfo.name)" class="preview-image" />
         <div class="model-info">
-          <div class="model-name">{{ selectedModelInfo.name }}</div>
-          <div class="model-description">{{ selectedModelInfo.description }}</div>
+          <div class="model-name">{{ t(selectedModelInfo.name) }}</div>
+          <div class="model-description">{{ t(selectedModelInfo.description) }}</div>
         </div>
       </div>
     </div>
@@ -13,7 +13,7 @@
     <div v-if="showModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>请选择适合您的主题！</h3>
+          <h3>{{ t({ en: 'Please choose a theme that suits you!', zh: '请选择适合您的主题！' }) }}</h3>
           <div class="header-actions">
             <button class="close-btn" @click="closeModal">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -30,16 +30,16 @@
             :class="{ active: prevSelectedModel?.id === model.id }"
             @click="selectModel(model)"
           >
-            <img :src="model.preview_url" :alt="model.name" class="model-preview" />
+            <img :src="model.preview_url" :alt="t(model.name)" class="model-preview" />
             <div class="model-details">
-              <div class="model-title">{{ model.name }}</div>
-              <div class="model-desc">{{ model.description }}</div>
+              <div class="model-title">{{ t(model.name) }}</div>
+              <div class="model-desc">{{ t(model.description) }}</div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" @click="closeModal">取消</button>
-          <button class="confirm-btn" @click="confirmSelection">确定</button>
+          <button class="cancel-btn" @click="closeModal">{{ t({ en: 'Cancel', zh: '取消' }) }}</button>
+          <button class="confirm-btn" @click="confirmSelection">{{ t({ en: 'Confirm', zh: '确定' }) }}</button>
         </div>
       </div>
     </div>
@@ -48,11 +48,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from '@/utils/i18n'
+
+const { t } = useI18n()
+
+import type { LocaleMessage } from '@/utils/i18n'
 
 export interface ModelInfo {
   id: string
-  name: string
-  description: string
+  name: LocaleMessage
+  description: LocaleMessage
   preview_url: string
 }
 
@@ -69,56 +74,65 @@ import retroImage from './images/retro.jpg'
 const ModelList: ModelInfo[] = [
   {
     id: '',
-    name: '无主题',
-    description: '不应用任何特定主题风格',
+    name: { en: 'No Theme', zh: '无主题' },
+    description: { en: 'No specific theme style applied', zh: '不应用任何特定主题风格' },
     preview_url: previewImage
   },
   {
     id: 'business',
-    name: '商务风格',
-    description: '专业商务风格，现代企业形象',
+    name: { en: 'Business Style', zh: '商务风格' },
+    description: { en: 'Professional business style with modern corporate image', zh: '专业商务风格，现代企业形象' },
     preview_url: businessImage
   },
   {
     id: 'cartoon',
-    name: '卡通风格',
-    description: '色彩鲜艳的卡通风格，适合可爱有趣的内容',
+    name: { en: 'Cartoon Style', zh: '卡通风格' },
+    description: {
+      en: 'Vibrant cartoon style, perfect for cute and fun content',
+      zh: '色彩鲜艳的卡通风格，适合可爱有趣的内容'
+    },
     preview_url: cartoonImage
   },
   {
     id: 'scifi',
-    name: '科技风格',
-    description: '未来科技风格，充满科幻元素',
+    name: { en: 'Sci-Fi Style', zh: '科技风格' },
+    description: { en: 'Futuristic sci-fi style with technological elements', zh: '未来科技风格，充满科幻元素' },
     preview_url: cyberImage
   },
   {
     id: 'fantasy',
-    name: '魔法风格',
-    description: '充满魔法和超自然元素的奇幻风格',
+    name: { en: 'Fantasy Style', zh: '魔法风格' },
+    description: {
+      en: 'Fantasy style filled with magical and supernatural elements',
+      zh: '充满魔法和超自然元素的奇幻风格'
+    },
     preview_url: magicImage
   },
   {
     id: 'minimal',
-    name: '极简风格',
-    description: '极简主义风格，简洁干净的设计',
+    name: { en: 'Minimal Style', zh: '极简风格' },
+    description: { en: 'Minimalist style with clean and simple design', zh: '极简主义风格，简洁干净的设计' },
     preview_url: minimalImage
   },
   {
     id: 'nature',
-    name: '自然风格',
-    description: '"自然有机风格，使用自然元素和大地色调',
+    name: { en: 'Nature Style', zh: '自然风格' },
+    description: {
+      en: 'Natural organic style using natural elements and earth tones',
+      zh: '自然有机风格，使用自然元素和大地色调'
+    },
     preview_url: natrueImage
   },
   {
     id: 'realistic',
-    name: '写实风格',
-    description: '高度写实的风格，细节丰富逼真',
+    name: { en: 'Realistic Style', zh: '写实风格' },
+    description: { en: 'Highly realistic style with rich and lifelike details', zh: '高度写实的风格，细节丰富逼真' },
     preview_url: realisticImage
   },
   {
     id: 'retro',
-    name: '复古风格',
-    description: '怀旧复古风格，经典老式美学',
+    name: { en: 'Retro Style', zh: '复古风格' },
+    description: { en: 'Nostalgic retro style with classic vintage aesthetics', zh: '怀旧复古风格，经典老式美学' },
     preview_url: retroImage
   }
 ]
