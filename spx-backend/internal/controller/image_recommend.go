@@ -205,7 +205,6 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// Determine optimal search count upfront to avoid multiple search calls
 	searchTopK := params.TopK
-	var filterMetrics *FilterMetrics
 
 	// If user is authenticated, expand search proactively for filtering
 	if _, ok := authn.UserFromContext(ctx); ok {
@@ -238,18 +237,17 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	logger.Printf("Found %d matching images from optimized search (requested: %d)", len(foundResults), searchTopK)
 
-	// Apply image filtering with degradation strategies if user is authenticated
+	// Apply image filtering for authenticated users - use simple filtering, no degradation
 	if mUser, ok := authn.UserFromContext(ctx); ok {
-		// Apply filtering using the same queryID for consistent tracking
-		filteredResults, metrics, err := ctrl.imageFilterService.FilterResults(
-			ctx, mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults, params.TopK)
+		// Apply basic filtering without degradation strategies
+		filteredResults, err := ctrl.applyBasicFilteringForRecommendation(ctx, mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults)
 		if err != nil {
 			logger.Printf("Filtering failed, using unfiltered results: %v", err)
 		} else {
+			originalCount := len(foundResults)
 			foundResults = filteredResults
-			filterMetrics = metrics
-			logger.Printf("Filtering applied: %d candidates -> %d results (%.1f%% filtered)",
-				metrics.TotalCandidates, len(foundResults), metrics.FilterRatio*100)
+			logger.Printf("Basic filtering applied: %d candidates -> %d results (filtered %d)",
+				originalCount, len(foundResults), originalCount-len(foundResults))
 		}
 	} else {
 		logger.Printf("No authenticated user, skipping image filtering")
@@ -258,7 +256,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	// Generate AI SVGs if we don't have enough results and SearchOnly is false
 	if !params.SearchOnly && len(foundResults) < params.TopK {
 		needed := params.TopK - len(foundResults)
-		logger.Printf("Need to generate %d AI SVG images", needed)
+		logger.Printf("Need to generate %d AI SVG images to supplement filtered results", needed)
 
 		// OPTIMIZATION: Use cached optimized prompt instead of calling OptimizePromptWithAnalysis again
 		generatedResults, err := ctrl.generateAISVGsOptimized(ctx, promptCtx.OptimizedPrompt, provider, params.Theme, needed, len(foundResults))
@@ -267,6 +265,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 			// Don't fail the entire request, just return what we found
 		} else {
 			foundResults = append(foundResults, generatedResults...)
+			logger.Printf("AI generation completed: added %d generated images to supplement filtered results", len(generatedResults))
 		}
 	} else if params.SearchOnly && len(foundResults) < params.TopK {
 		logger.Printf("SearchOnly mode enabled: found %d results, requested %d (no AI generation)", len(foundResults), params.TopK)
@@ -282,16 +281,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
-	// Record recommendation history for authenticated users
-	if mUser, ok := authn.UserFromContext(ctx); ok {
-		go func() {
-			// Record history asynchronously to avoid blocking the response
-			if err := ctrl.imageFilterService.RecordRecommendationHistory(
-				context.Background(), mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults); err != nil {
-				logger.Printf("Failed to record recommendation history: %v", err)
-			}
-		}()
-	}
+	// Note: History recording is now handled in applyBasicFilteringForRecommendation
 
 	// Extract recommended pic IDs for feedback tracking
 	recommendedPics := make([]int64, len(foundResults))
@@ -308,15 +298,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		logger.Printf("Successfully cached recommendation for queryID: %s", queryID)
 	}
 
-	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	logger.Printf("Returning recommendation result with %d results", len(foundResults))
-
-
-	// Log filter metrics if available
-	if filterMetrics != nil {
-		logger.Printf("Filter metrics: %d total candidates, %d filtered (%.1f%%), degradation level: %d",
-			filterMetrics.TotalCandidates, filterMetrics.FilteredCount, filterMetrics.FilterRatio*100, filterMetrics.DegradationLevel)
-	}
 
 
 	return &ImageRecommendResult{
@@ -720,4 +702,210 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 func (ctrl *Controller) callAlgorithmFeedbackService(ctx context.Context, feedbackReq *AlgorithmFeedbackRequest) error {
 	//return ctrl.algorithmService.SubmitImageFeedback(ctx, feedbackReq) // 这个功能还没实现
 	return nil
+}
+
+// RecommendImagesInstant performs instant image search with filtering but no AI generation
+// This is specifically for instant search functionality
+func (ctrl *Controller) RecommendImagesInstant(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
+	logger := log.GetReqLogger(ctx)
+
+	// Generate unique query ID at the beginning for consistent tracking
+	queryID := generateQueryID()
+	logger.Printf("Generated query ID: %s for instant search request", queryID)
+
+	// Get provider based on theme
+	provider := params.GetProviderForTheme()
+	logger.Printf("RecommendImagesInstant request - text: %q, theme: %s, provider: %s, top_k: %d", params.Text, params.Theme, provider, params.TopK)
+
+	// Create prompt analysis context once at the beginning
+	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, true) // SearchOnly=true
+
+	// Determine optimal search count upfront to avoid multiple search calls
+	searchTopK := params.TopK
+
+	// If user is authenticated, expand search proactively for filtering
+	if _, ok := authn.UserFromContext(ctx); ok {
+		expansionRatio := ctrl.imageFilterService.config.GetSearchExpansionRatio()
+		expandedTopK := int(float64(params.TopK) * expansionRatio)
+		searchTopK = expandedTopK
+		logger.Printf("User authenticated: expanding search from %d to %d for filtering compensation",
+			params.TopK, searchTopK)
+	}
+
+	// Create search params with optimal TopK
+	searchParams := *params
+	searchParams.TopK = searchTopK
+
+	var foundResults []RecommendedImageResult
+	var err error
+
+	if params.Theme != ThemeNone {
+		// Use dual-path search strategy for theme-based requests
+		foundResults, err = ctrl.dualPathSearchOptimized(ctx, &searchParams, promptCtx)
+	} else {
+		// Use single semantic search for non-themed requests
+		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, &searchParams, promptCtx)
+	}
+
+	if err != nil {
+		logger.Printf("Search failed: %v", err)
+		return nil, fmt.Errorf("search failed: %w", err)
+	}
+
+	logger.Printf("Found %d matching images from optimized search (requested: %d)", len(foundResults), searchTopK)
+
+	// Apply image filtering for authenticated users - same as recommend, but without degradation
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		// For instant search, we use basic filtering without degradation strategies
+		filteredResults, err := ctrl.applyInstantSearchFiltering(ctx, mUser.ID, foundResults)
+		if err != nil {
+			logger.Printf("Filtering failed, using unfiltered results: %v", err)
+		} else {
+			foundResults = filteredResults
+			logger.Printf("Instant search filtering applied: %d candidates -> %d results",
+				len(filteredResults)+len(foundResults)-len(filteredResults), len(foundResults))
+		}
+
+		// Record history asynchronously for instant search too
+		go func() {
+			if err := ctrl.imageFilterService.RecordRecommendationHistory(
+				context.Background(), mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults); err != nil {
+				logger.Printf("Failed to record instant search history: %v", err)
+			}
+		}()
+	} else {
+		logger.Printf("No authenticated user, skipping image filtering for instant search")
+	}
+
+	// For instant search, we don't generate AI images, just return what we found
+	// Limit to requested TopK
+	if len(foundResults) > params.TopK {
+		foundResults = foundResults[:params.TopK]
+	}
+
+	// Update ranks to be sequential
+	for i := range foundResults {
+		foundResults[i].Rank = i + 1
+	}
+
+	logger.Printf("Instant search completed - total %d results", len(foundResults))
+
+	// Extract recommended pic IDs for feedback tracking
+	recommendedPics := make([]int64, len(foundResults))
+	for i, result := range foundResults {
+		recommendedPics[i] = result.ID
+	}
+
+	// Cache recommendation result for feedback tracking
+	logger.Printf("Caching instant search for queryID: %s", queryID)
+	err = ctrl.recommendationCache.SetRecommendation(ctx, queryID, promptCtx.OptimizedPrompt, recommendedPics)
+	if err != nil {
+		logger.Printf("Failed to cache instant search: %v", err)
+	}
+
+	return &ImageRecommendResult{
+		QueryID:      queryID,
+		Query:        promptCtx.OptimizedPrompt,
+		ResultsCount: len(foundResults),
+		Results:      foundResults,
+	}, nil
+}
+
+// applyInstantSearchFiltering applies basic filtering for instant search without degradation
+func (ctrl *Controller) applyInstantSearchFiltering(ctx context.Context, userID int64, candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
+	logger := log.GetReqLogger(ctx)
+
+	// Get user filter configuration
+	config, err := ctrl.imageFilterService.getUserFilterConfig(ctx, userID)
+	if err != nil {
+		logger.Printf("Failed to get user filter config, using default: %v", err)
+		config = ctrl.imageFilterService.DefaultFilterConfig()
+	}
+
+	// If filtering is disabled globally, return original results
+	if !ctrl.imageFilterService.config.Enabled || !config.Enabled {
+		return candidates, nil
+	}
+
+	// Get user's recommendation history within the filter window
+	historyImageIDs, err := ctrl.imageFilterService.getUserRecommendationHistory(ctx, userID, config.FilterWindowDays)
+	if err != nil {
+		return candidates, fmt.Errorf("failed to get user history: %w", err)
+	}
+
+	// Create a map for fast lookup
+	seenImages := make(map[int64]bool, len(historyImageIDs))
+	for _, imageID := range historyImageIDs {
+		seenImages[imageID] = true
+	}
+
+	// Filter out already recommended images
+	var filtered []RecommendedImageResult
+	for _, candidate := range candidates {
+		if !seenImages[candidate.ID] {
+			filtered = append(filtered, candidate)
+		}
+	}
+
+	logger.Printf("Instant search filtering: %d candidates -> %d results (filtered %d)",
+		len(candidates), len(filtered), len(candidates)-len(filtered))
+
+	return filtered, nil
+}
+
+// applyBasicFilteringForRecommendation applies basic filtering for recommendation with history recording
+func (ctrl *Controller) applyBasicFilteringForRecommendation(ctx context.Context, userID int64, queryID string, query string, candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
+	logger := log.GetReqLogger(ctx)
+
+	// Get user filter configuration
+	config, err := ctrl.imageFilterService.getUserFilterConfig(ctx, userID)
+	if err != nil {
+		logger.Printf("Failed to get user filter config, using default: %v", err)
+		config = ctrl.imageFilterService.DefaultFilterConfig()
+	}
+
+	// If filtering is disabled globally, return original results
+	if !ctrl.imageFilterService.config.Enabled || !config.Enabled {
+		// Still record recommendation history even if filtering is disabled
+		go func() {
+			if err := ctrl.imageFilterService.RecordRecommendationHistory(
+				context.Background(), userID, queryID, query, candidates); err != nil {
+				logger.Printf("Failed to record recommendation history: %v", err)
+			}
+		}()
+		return candidates, nil
+	}
+
+	// Get user's recommendation history within the filter window
+	historyImageIDs, err := ctrl.imageFilterService.getUserRecommendationHistory(ctx, userID, config.FilterWindowDays)
+	if err != nil {
+		return candidates, fmt.Errorf("failed to get user history: %w", err)
+	}
+
+	// Create a map for fast lookup
+	seenImages := make(map[int64]bool, len(historyImageIDs))
+	for _, imageID := range historyImageIDs {
+		seenImages[imageID] = true
+	}
+
+	// Filter out already recommended images
+	var filtered []RecommendedImageResult
+	for _, candidate := range candidates {
+		if !seenImages[candidate.ID] {
+			filtered = append(filtered, candidate)
+		}
+	}
+
+	logger.Printf("Recommendation filtering: %d candidates -> %d results (filtered %d)",
+		len(candidates), len(filtered), len(candidates)-len(filtered))
+
+	// Record filtered results for future filtering (async)
+	go func() {
+		if err := ctrl.imageFilterService.RecordRecommendationHistory(
+			context.Background(), userID, queryID, query, filtered); err != nil {
+			logger.Printf("Failed to record recommendation history: %v", err)
+		}
+	}()
+
+	return filtered, nil
 }

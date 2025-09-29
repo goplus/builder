@@ -238,7 +238,7 @@ func (ctrl *Controller) cleanWords(words []string) []string {
 // RecommendImagesWithContext performs instant recommendation with project context
 func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *InstantRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
-	
+
 	logger.Printf("InstantRecommend request - project_id: %d, prompt: %q, top_k: %d",
 		params.ProjectID, params.UserPrompt, params.TopK)
 
@@ -253,14 +253,14 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 			Theme:      params.Theme,
 			SearchOnly: true, // Instant recommend should only search, not generate
 		}
-		return ctrl.RecommendImages(ctx, imageParams)
+		return ctrl.RecommendImagesInstant(ctx, imageParams)
 	}
 
 	// Enhance user prompt with project context
 	enhancedPrompt := ctrl.enhancePromptWithContext(params.UserPrompt, projectContext.RelatedWords.ToSlice())
 	logger.Printf("Enhanced prompt: %q", enhancedPrompt)
 
-	// Call original recommendation with enhanced prompt (SearchOnly mode)
+	// Call instant recommendation with enhanced prompt (SearchOnly mode)
 	imageParams := &ImageRecommendParams{
 		Text:       enhancedPrompt,
 		TopK:       params.TopK,
@@ -268,7 +268,7 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 		SearchOnly: true, // Instant recommend should only search, not generate
 	}
 
-	result, err := ctrl.RecommendImages(ctx, imageParams)
+	result, err := ctrl.RecommendImagesInstant(ctx, imageParams)
 	if err != nil {
 		return nil, err
 	}
