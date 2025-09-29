@@ -65,11 +65,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
-import { useExternalUrl } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
@@ -81,7 +81,7 @@ const router = useRouter()
 const { controls } = useAgentCopilotCtx()
 
 const { data: signedInUser } = useSignedInUser()
-const avatarUrl = useExternalUrl(() => signedInUser.value?.avatar)
+const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 
 const handleAskCopilotAgent = useMessageHandle(
   async () => {

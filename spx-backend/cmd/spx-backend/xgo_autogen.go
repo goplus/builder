@@ -11,6 +11,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/authz/embpdp"
 	"github.com/goplus/builder/spx-backend/internal/authz/quota"
+	"github.com/goplus/builder/spx-backend/internal/avatar"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -206,110 +207,122 @@ type put_user struct {
 	yap.Handler
 	*AppV2
 }
-//line cmd/spx-backend/main.yap:33
+//line cmd/spx-backend/main.yap:34
 func (this *AppV2) MainEntry() {
-//line cmd/spx-backend/main.yap:33:1
+//line cmd/spx-backend/main.yap:34:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/main.yap:36:1
-	cfg, err := config.Load(logger)
 //line cmd/spx-backend/main.yap:37:1
-	if err != nil {
+	cfg, err := config.Load(logger)
 //line cmd/spx-backend/main.yap:38:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:39:1
 		logger.Fatalln("failed to load configuration:", err)
 	}
-//line cmd/spx-backend/main.yap:42:1
+//line cmd/spx-backend/main.yap:43:1
 	err = sentry.Init(sentry.ClientOptions{Dsn: cfg.Sentry.DSN, EnableTracing: true, TracesSampleRate: cfg.Sentry.SampleRate})
-//line cmd/spx-backend/main.yap:47:1
-	if err != nil {
 //line cmd/spx-backend/main.yap:48:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:49:1
 		logger.Fatalln("failed to initialize sentry:", err)
 	}
-//line cmd/spx-backend/main.yap:50:1
+//line cmd/spx-backend/main.yap:51:1
 	defer sentry.Flush(10 * time.Second)
-//line cmd/spx-backend/main.yap:53:1
-	if cfg.Database.AutoMigrate {
 //line cmd/spx-backend/main.yap:54:1
+	if cfg.Database.AutoMigrate {
+//line cmd/spx-backend/main.yap:55:1
 		migrator := migration.New(cfg.Database.DSN, cfg.Database.GetMigrationTimeout())
-//line cmd/spx-backend/main.yap:55:1
-		if
-//line cmd/spx-backend/main.yap:55:1
-		err := migrator.Migrate(); err != nil {
 //line cmd/spx-backend/main.yap:56:1
+		if
+//line cmd/spx-backend/main.yap:56:1
+		err := migrator.Migrate(); err != nil {
+//line cmd/spx-backend/main.yap:57:1
 			logger.Fatalln("failed to migrate database:", err)
 		}
 	}
-//line cmd/spx-backend/main.yap:61:1
-	db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
 //line cmd/spx-backend/main.yap:62:1
-	if err != nil {
+	db, err := model.OpenDB(context.Background(), cfg.Database.DSN, 0, 0)
 //line cmd/spx-backend/main.yap:63:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:64:1
 		logger.Fatalln("failed to open database:", err)
 	}
-//line cmd/spx-backend/main.yap:68:1
-	authenticator := casdoor.New(db, cfg.Casdoor)
+//line cmd/spx-backend/main.yap:69:1
+	avatarManager, err := avatar.NewKodoManager(cfg.Kodo)
 //line cmd/spx-backend/main.yap:70:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:71:1
+		logger.Fatalln("failed to create avatar manager:", err)
+	}
+//line cmd/spx-backend/main.yap:75:1
+	authenticator, err := casdoor.New(db, cfg.Casdoor, avatarManager)
+//line cmd/spx-backend/main.yap:76:1
+	if err != nil {
+//line cmd/spx-backend/main.yap:77:1
+		logger.Fatalln("failed to create authenticator:", err)
+	}
+//line cmd/spx-backend/main.yap:80:1
 	// Initialize authorizer.
 	var quotaTracker authz.QuotaTracker
-//line cmd/spx-backend/main.yap:72:1
+//line cmd/spx-backend/main.yap:82:1
 	if cfg.Redis.Addr != "" {
-//line cmd/spx-backend/main.yap:73:1
+//line cmd/spx-backend/main.yap:83:1
 		quotaTracker = quota.NewRedisQuotaTracker(cfg.Redis)
-//line cmd/spx-backend/main.yap:74:1
+//line cmd/spx-backend/main.yap:84:1
 		logger.Printf("using redis quota tracker at %s", cfg.Redis.GetAddr())
 	} else {
-//line cmd/spx-backend/main.yap:76:1
+//line cmd/spx-backend/main.yap:86:1
 		quotaTracker = quota.NewNopQuotaTracker()
-//line cmd/spx-backend/main.yap:77:1
+//line cmd/spx-backend/main.yap:87:1
 		logger.Println("using no-op quota tracker")
 	}
-//line cmd/spx-backend/main.yap:79:1
+//line cmd/spx-backend/main.yap:89:1
 	pdp := embpdp.New(quotaTracker)
-//line cmd/spx-backend/main.yap:80:1
+//line cmd/spx-backend/main.yap:90:1
 	authorizer := authz.New(db, pdp, quotaTracker)
-//line cmd/spx-backend/main.yap:83:1
+//line cmd/spx-backend/main.yap:93:1
 	this.ctrl, err = controller.New(context.Background(), db, cfg)
-//line cmd/spx-backend/main.yap:84:1
+//line cmd/spx-backend/main.yap:94:1
 	if err != nil {
-//line cmd/spx-backend/main.yap:85:1
+//line cmd/spx-backend/main.yap:95:1
 		logger.Fatalln("failed to create a new controller:", err)
 	}
-//line cmd/spx-backend/main.yap:90:1
-	port := cfg.Server.GetPort()
-//line cmd/spx-backend/main.yap:91:1
-	logger.Printf("listening to %s", port)
-//line cmd/spx-backend/main.yap:93:1
-	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware(), NewSentryMiddleware())
 //line cmd/spx-backend/main.yap:100:1
-	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:102:1
-	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	port := cfg.Server.GetPort()
+//line cmd/spx-backend/main.yap:101:1
+	logger.Printf("listening to %s", port)
 //line cmd/spx-backend/main.yap:103:1
+	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware(), NewSentryMiddleware())
+//line cmd/spx-backend/main.yap:110:1
+	server := &http.Server{Addr: port, Handler: h}
+//line cmd/spx-backend/main.yap:112:1
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+//line cmd/spx-backend/main.yap:113:1
 	defer stop()
-//line cmd/spx-backend/main.yap:104:1
+//line cmd/spx-backend/main.yap:114:1
 	var serverErr error
-//line cmd/spx-backend/main.yap:105:1
+//line cmd/spx-backend/main.yap:115:1
 	go func() {
-//line cmd/spx-backend/main.yap:106:1
+//line cmd/spx-backend/main.yap:116:1
 		serverErr = server.ListenAndServe()
-//line cmd/spx-backend/main.yap:107:1
+//line cmd/spx-backend/main.yap:117:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:109:1
+//line cmd/spx-backend/main.yap:119:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:110:1
+//line cmd/spx-backend/main.yap:120:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:111:1
+//line cmd/spx-backend/main.yap:121:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:114:1
+//line cmd/spx-backend/main.yap:124:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:115:1
+//line cmd/spx-backend/main.yap:125:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:116:1
+//line cmd/spx-backend/main.yap:126:1
 	if
-//line cmd/spx-backend/main.yap:116:1
+//line cmd/spx-backend/main.yap:126:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:117:1
+//line cmd/spx-backend/main.yap:127:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }

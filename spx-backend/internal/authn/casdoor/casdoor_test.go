@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/avatar"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
@@ -27,24 +29,38 @@ func (mc *mockClient) ParseJwtToken(token string) (*casdoorsdk.Claims, error) {
 	if mc.parseJwtTokenFunc != nil {
 		return mc.parseJwtTokenFunc(token)
 	}
-	return &casdoorsdk.Claims{
-		User: casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "Test User",
-			Avatar:      "https://example.com/avatar.png",
-		},
-	}, nil
+	casdoorUser := newTestCasdoorUser()
+	return &casdoorsdk.Claims{User: *casdoorUser}, nil
 }
 
 func (mc *mockClient) GetUser(name string) (*casdoorsdk.User, error) {
 	if mc.getUserFunc != nil {
 		return mc.getUserFunc(name)
 	}
-	return &casdoorsdk.User{
-		Name:        name,
-		DisplayName: "Test User",
-		Avatar:      "https://example.com/avatar.png",
-	}, nil
+	casdoorUser := newTestCasdoorUser()
+	if name != casdoorUser.Name {
+		return nil, errors.New("user not found")
+	}
+	return casdoorUser, nil
+}
+
+type mockAvatarManager struct {
+	uploadFromURLFunc func(context.Context, string) (string, error)
+	uploadDefaultFunc func(context.Context, []byte) (string, error)
+}
+
+func (m mockAvatarManager) UploadFromURL(ctx context.Context, sourceURL string) (string, error) {
+	if m.uploadFromURLFunc != nil {
+		return m.uploadFromURLFunc(ctx, sourceURL)
+	}
+	return sourceURL, nil
+}
+
+func (m mockAvatarManager) UploadDefault(ctx context.Context, seed []byte) (string, error) {
+	if m.uploadDefaultFunc != nil {
+		return m.uploadDefaultFunc(ctx, seed)
+	}
+	return fmt.Sprintf("default-%x", seed), nil
 }
 
 func newTestConfig() config.CasdoorConfig {
@@ -58,22 +74,21 @@ func newTestConfig() config.CasdoorConfig {
 	}
 }
 
-func newTestClaims() *casdoorsdk.Claims {
-	return &casdoorsdk.Claims{
-		User: casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "Test User",
-			Avatar:      "https://example.com/avatar.png",
-		},
-	}
-}
-
 func newTestUser() *model.User {
 	return &model.User{
 		Model:       model.Model{ID: 1},
 		Username:    "test-user",
 		DisplayName: "Test User",
-		Avatar:      "https://example.com/avatar.png",
+		Avatar:      "kodo://test-bucket/avatar-key",
+	}
+}
+
+func newTestCasdoorUser() *casdoorsdk.User {
+	user := newTestUser()
+	return &casdoorsdk.User{
+		Name:        user.Username,
+		DisplayName: user.DisplayName,
+		Avatar:      user.Avatar,
 	}
 }
 
@@ -82,24 +97,30 @@ func setupTestAuthenticator(
 	db *gorm.DB,
 	parseTokenFunc func(token string) (*casdoorsdk.Claims, error),
 	getUserFunc func(name string) (*casdoorsdk.User, error),
-) authn.Authenticator {
+	avatarMmanager avatar.Manager,
+) *authenticator {
 	client := &mockClient{
 		parseJwtTokenFunc: parseTokenFunc,
 		getUserFunc:       getUserFunc,
 	}
-	auth := New(db, newTestConfig()).(*authenticator)
+	if avatarMmanager == nil {
+		avatarMmanager = mockAvatarManager{}
+	}
+	authn, err := New(db, newTestConfig(), avatarMmanager)
+	require.NoError(t, err)
+	auth := authn.(*authenticator)
 	auth.client = client
 	return auth
 }
 
-func setupMockDBForUser(t *testing.T, db *gorm.DB, dbMock sqlmock.Sqlmock, claims *casdoorsdk.Claims, user *model.User) {
+func setupMockDBForUser(t *testing.T, db *gorm.DB, dbMock sqlmock.Sqlmock, user *model.User) {
 	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
 	require.NoError(t, err)
 	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
 	require.NoError(t, err)
 
 	dbMock.ExpectQuery("SELECT \\* FROM `user` WHERE username = \\? AND `user`\\.`deleted_at` IS NULL ORDER BY `user`\\.`id` LIMIT \\?").
-		WithArgs(claims.Name, 1).
+		WithArgs(user.Username, 1).
 		WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*user)...))
 }
 
@@ -126,7 +147,8 @@ func TestNew(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		auth := New(db, newTestConfig())
+		auth, err := New(db, newTestConfig(), mockAvatarManager{})
+		require.NoError(t, err)
 
 		assert.NotNil(t, auth)
 		assert.IsType(t, &authenticator{}, auth)
@@ -139,113 +161,64 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		wantClaims := newTestClaims()
-		wantUser := newTestUser()
-		wantCasdoorUser := &casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "Test User",
-			Avatar:      "https://example.com/avatar.png",
-			Groups:      []string{"test-org/role:assetAdmin", "test-org/plan:plus"},
-		}
+		user := newTestUser()
+		casdoorUser := newTestCasdoorUser()
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
+				return &casdoorsdk.Claims{User: *casdoorUser}, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return wantCasdoorUser, nil
-			})
+				return casdoorUser, nil
+			},
+			nil)
 
-		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
-		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
+		setupMockDBForUser(t, db, dbMock, user)
+
+		gotUser, err := auth.Authenticate(context.Background(), "valid-token")
+		require.NoError(t, err)
+		require.NotNil(t, gotUser)
+		assert.Equal(t, user.Username, gotUser.Username)
+		assert.Equal(t, user.DisplayName, gotUser.DisplayName)
+		assert.Equal(t, user.Avatar, gotUser.Avatar)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("RolesAndPlanSync", func(t *testing.T) {
+		db, dbMock, closeDB, err := modeltest.NewMockDB()
+		require.NoError(t, err)
+		defer closeDB()
+
+		user := newTestUser()
+		casdoorUser := newTestCasdoorUser()
+		casdoorUser.DisplayName = "New Display Name"              // Will be ignored for existing users
+		casdoorUser.Avatar = "https://example.com/new-avatar.png" // Will be ignored for existing users
+		casdoorUser.Groups = []string{"test-org/role:assetAdmin", "test-org/plan:plus"}
+
+		auth := setupTestAuthenticator(t, db,
+			func(token string) (*casdoorsdk.Claims, error) {
+				return &casdoorsdk.Claims{User: *casdoorUser}, nil
+			},
+			func(name string) (*casdoorsdk.User, error) {
+				return casdoorUser, nil
+			},
+			nil)
+
+		setupMockDBForUser(t, db, dbMock, user)
+		setupMockDBForUserUpdate(t, db, dbMock, user, map[string]any{
 			"roles": "assetAdmin",
 			"plan":  "plus",
 		})
 
-		user, err := auth.Authenticate(context.Background(), "valid-token")
+		gotUser, err := auth.Authenticate(context.Background(), "valid-token")
 		require.NoError(t, err)
-		require.NotNil(t, user)
-		assert.Equal(t, wantClaims.Name, user.Username)
-		assert.Equal(t, wantClaims.DisplayName, user.DisplayName)
-		assert.Equal(t, wantClaims.Avatar, user.Avatar)
-
-		require.NoError(t, dbMock.ExpectationsWereMet())
-	})
-
-	t.Run("UserInfoSync", func(t *testing.T) {
-		db, dbMock, closeDB, err := modeltest.NewMockDB()
-		require.NoError(t, err)
-		defer closeDB()
-
-		wantClaims := newTestClaims()
-		wantUser := &model.User{
-			Model:       model.Model{ID: 1},
-			Username:    "test-user",
-			DisplayName: "Old Display Name",
-			Avatar:      "https://example.com/old-avatar.png",
-		}
-		wantCasdoorUser := &casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "New Display Name",
-			Avatar:      "https://example.com/new-avatar.png",
-		}
-
-		auth := setupTestAuthenticator(t, db,
-			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
-			},
-			func(name string) (*casdoorsdk.User, error) {
-				return wantCasdoorUser, nil
-			})
-
-		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
-		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
-			"display_name": "New Display Name",
-			"avatar":       "https://example.com/new-avatar.png",
-		})
-
-		user, err := auth.Authenticate(context.Background(), "valid-token")
-		require.NoError(t, err)
-		require.NotNil(t, user)
-		assert.Equal(t, wantClaims.Name, user.Username)
-
-		require.NoError(t, dbMock.ExpectationsWereMet())
-	})
-
-	t.Run("PartialUserInfoSync", func(t *testing.T) {
-		db, dbMock, closeDB, err := modeltest.NewMockDB()
-		require.NoError(t, err)
-		defer closeDB()
-
-		wantClaims := newTestClaims()
-		wantUser := &model.User{
-			Model:       model.Model{ID: 1},
-			Username:    "test-user",
-			DisplayName: "Old Display Name",
-			Avatar:      "https://example.com/avatar.png",
-		}
-		wantCasdoorUser := &casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "New Display Name",
-			Avatar:      "https://example.com/avatar.png",
-		}
-
-		auth := setupTestAuthenticator(t, db,
-			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
-			},
-			func(name string) (*casdoorsdk.User, error) {
-				return wantCasdoorUser, nil
-			})
-
-		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
-		setupMockDBForUserUpdate(t, db, dbMock, wantUser, map[string]any{
-			"display_name": "New Display Name",
-		})
-
-		user, err := auth.Authenticate(context.Background(), "valid-token")
-		require.NoError(t, err)
-		require.NotNil(t, user)
+		require.NotNil(t, gotUser)
+		assert.Equal(t, user.Username, gotUser.Username)
+		assert.Equal(t, user.DisplayName, gotUser.DisplayName)
+		assert.Equal(t, user.Avatar, gotUser.Avatar)
+		assert.Equal(t, model.UserRoles{"assetAdmin"}, gotUser.Roles)
+		assert.Equal(t, model.UserPlanPlus, gotUser.Plan)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -259,7 +232,9 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
 				return nil, wantErr
-			}, nil)
+			},
+			nil,
+			nil)
 
 		user, err := auth.Authenticate(context.Background(), "invalid-token")
 		require.Error(t, err)
@@ -274,14 +249,17 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		wantClaims := newTestClaims()
+		casdoorUser := newTestCasdoorUser()
+
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
-			}, nil)
+				return &casdoorsdk.Claims{User: *casdoorUser}, nil
+			},
+			nil,
+			nil)
 
 		dbMockStmt := db.Session(&gorm.Session{DryRun: true}).
-			Where("username = ?", wantClaims.Name).
+			Where("username = ?", casdoorUser.Name).
 			First(&model.User{}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -293,39 +271,35 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
 		assert.Nil(t, user)
-		assert.Contains(t, err.Error(), wantClaims.Name)
+		assert.Contains(t, err.Error(), casdoorUser.Name)
 		assert.Contains(t, err.Error(), wantDBErr.Error())
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
 	t.Run("GetUserFailure", func(t *testing.T) {
-		db, dbMock, closeDB, err := modeltest.NewMockDB()
+		db, _, closeDB, err := modeltest.NewMockDB()
 		require.NoError(t, err)
 		defer closeDB()
 
-		wantClaims := newTestClaims()
-		wantUser := newTestUser()
-		wantGetUserErr := errors.New("failed to get user from casdoor")
+		casdoorUser := newTestCasdoorUser()
+		errGetUser := errors.New("failed to get user from casdoor")
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
+				return &casdoorsdk.Claims{User: *casdoorUser}, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return nil, wantGetUserErr
-			})
-
-		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
+				return nil, errGetUser
+			},
+			nil)
 
 		user, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
 		assert.Nil(t, user)
 		assert.Contains(t, err.Error(), "failed to get user")
-		assert.Contains(t, err.Error(), wantClaims.Name)
-		assert.Contains(t, err.Error(), wantGetUserErr.Error())
-
-		require.NoError(t, dbMock.ExpectationsWereMet())
+		assert.Contains(t, err.Error(), casdoorUser.Name)
+		assert.Contains(t, err.Error(), errGetUser.Error())
 	})
 
 	t.Run("UserUpdateFailure", func(t *testing.T) {
@@ -333,42 +307,35 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		require.NoError(t, err)
 		defer closeDB()
 
-		wantClaims := newTestClaims()
-		wantUser := &model.User{
-			Model:       model.Model{ID: 1},
-			Username:    "test-user",
-			DisplayName: "Old Display Name",
-			Avatar:      "https://example.com/avatar.png",
-		}
-		wantCasdoorUser := &casdoorsdk.User{
-			Name:        "test-user",
-			DisplayName: "New Display Name",
-			Avatar:      "https://example.com/avatar.png",
-		}
-		wantUpdateErr := errors.New("database update failed")
+		user := newTestUser()
+		casdoorUser := newTestCasdoorUser()
+		casdoorUser.Groups = []string{"test-org/role:assetAdmin", "test-org/plan:plus"}
+		errUpdate := errors.New("database update failed")
 
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
-				return wantClaims, nil
+				return &casdoorsdk.Claims{User: *casdoorUser}, nil
 			},
 			func(name string) (*casdoorsdk.User, error) {
-				return wantCasdoorUser, nil
-			})
+				return casdoorUser, nil
+			},
+			nil)
 
-		setupMockDBForUser(t, db, dbMock, wantClaims, wantUser)
+		setupMockDBForUser(t, db, dbMock, user)
+
 		dbMock.ExpectBegin()
-		args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), wantUser.ID}
+		args := []driver.Value{sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), user.ID}
 		dbMock.ExpectExec("UPDATE `user` SET .+ WHERE `user`\\.`deleted_at` IS NULL AND `id` = \\?").
 			WithArgs(args...).
-			WillReturnError(wantUpdateErr)
+			WillReturnError(errUpdate)
 		dbMock.ExpectRollback()
 
-		user, err := auth.Authenticate(context.Background(), "valid-token")
+		gotUser, err := auth.Authenticate(context.Background(), "valid-token")
 		require.Error(t, err)
-		assert.Nil(t, user)
+		assert.Nil(t, gotUser)
 		assert.Contains(t, err.Error(), "failed to update user")
-		assert.Contains(t, err.Error(), wantUser.Username)
-		assert.Contains(t, err.Error(), wantUpdateErr.Error())
+		assert.Contains(t, err.Error(), user.Username)
+		assert.Contains(t, err.Error(), errUpdate.Error())
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -381,13 +348,108 @@ func TestAuthenticatorAuthenticate(t *testing.T) {
 		auth := setupTestAuthenticator(t, db,
 			func(token string) (*casdoorsdk.Claims, error) {
 				return nil, errors.New("empty token")
-			}, nil)
+			},
+			nil,
+			nil)
 
 		user, err := auth.Authenticate(context.Background(), "")
 		require.Error(t, err)
 		assert.Nil(t, user)
 		assert.ErrorIs(t, err, authn.ErrUnauthorized)
 		assert.Contains(t, err.Error(), "failed to parse token")
+	})
+}
+
+func TestAuthenticatorCreateUser(t *testing.T) {
+	t.Run("UploadFailure", func(t *testing.T) {
+		db, dbMock, closeDB, err := modeltest.NewMockDB()
+		require.NoError(t, err)
+		defer closeDB()
+
+		auth := setupTestAuthenticator(t, db, nil, nil, mockAvatarManager{
+			uploadFromURLFunc: func(context.Context, string) (string, error) {
+				return "", errors.New("upload failed")
+			},
+		})
+
+		casdoorUser := newTestCasdoorUser()
+		casdoorUser.Avatar = "https://example.com/avatar.png"
+		user, err := auth.createUser(context.Background(), casdoorUser)
+		require.Error(t, err)
+		assert.Nil(t, user)
+		assert.Contains(t, err.Error(), "prepare avatar")
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+}
+
+func TestAuthenticatorSyncUser(t *testing.T) {
+	t.Run("UploadsAvatar", func(t *testing.T) {
+		db, dbMock, closeDB, err := modeltest.NewMockDB()
+		require.NoError(t, err)
+		defer closeDB()
+
+		const newAvatar = "kodo://test-bucket/new-avatar"
+		var fetchedSource string
+		auth := setupTestAuthenticator(t, db, nil, nil, mockAvatarManager{
+			uploadFromURLFunc: func(_ context.Context, source string) (string, error) {
+				fetchedSource = source
+				return newAvatar, nil
+			},
+		})
+
+		user := &model.User{
+			Model:    model.Model{ID: 1},
+			Username: "test-user",
+			Avatar:   "https://example.com/old-avatar.png",
+		}
+		casdoorUser := &casdoorsdk.User{
+			Name:        user.Username,
+			DisplayName: user.DisplayName,
+			Avatar:      "https://example.com/source-avatar.png",
+		}
+
+		setupMockDBForUserUpdate(t, db, dbMock, user, map[string]any{
+			"avatar": newAvatar,
+		})
+
+		gotUser, err := auth.syncUser(context.Background(), user, casdoorUser)
+		require.NoError(t, err)
+		require.NotNil(t, gotUser)
+		assert.Equal(t, newAvatar, gotUser.Avatar)
+		assert.Equal(t, "https://example.com/source-avatar.png", fetchedSource)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("UploadFailureFallsBack", func(t *testing.T) {
+		db, dbMock, closeDB, err := modeltest.NewMockDB()
+		require.NoError(t, err)
+		defer closeDB()
+
+		auth := setupTestAuthenticator(t, db, nil, nil, mockAvatarManager{
+			uploadFromURLFunc: func(context.Context, string) (string, error) {
+				return "", errors.New("upload failed")
+			},
+		})
+
+		user := &model.User{
+			Model:    model.Model{ID: 1},
+			Username: "test-user",
+			Avatar:   "https://example.com/old-avatar.png",
+		}
+		casdoorUser := &casdoorsdk.User{
+			Name:        user.Username,
+			DisplayName: user.DisplayName,
+			Avatar:      "https://example.com/source-avatar.png",
+		}
+
+		gotUser, err := auth.syncUser(context.Background(), user, casdoorUser)
+		require.NoError(t, err)
+		require.NotNil(t, gotUser)
+		assert.Equal(t, "https://example.com/old-avatar.png", gotUser.Avatar)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 }
 
@@ -481,57 +543,6 @@ func TestAuthenticatorExtractUserPlanFromGroups(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &authenticator{orgName: "test-org"}
 			got := a.extractUserPlanFromGroups(tt.groups)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestFixAvatar(t *testing.T) {
-	tests := []struct {
-		name   string
-		avatar string
-		want   string
-	}{
-		{
-			name:   "HTTP QQ Avatar Domain",
-			avatar: "http://thirdqq.qlogo.cn/avatar.jpg",
-			want:   "https://thirdqq.qlogo.cn/avatar.jpg",
-		},
-		{
-			name:   "HTTP QQ Avatar Domain with Path",
-			avatar: "http://thirdqq.qlogo.cn/g?b=qq&nk=123456&s=100",
-			want:   "https://thirdqq.qlogo.cn/g?b=qq&nk=123456&s=100",
-		},
-		{
-			name:   "HTTPS QQ Avatar Domain - No Change",
-			avatar: "https://thirdqq.qlogo.cn/avatar.jpg",
-			want:   "https://thirdqq.qlogo.cn/avatar.jpg",
-		},
-		{
-			name:   "Other HTTP Domain - No Change",
-			avatar: "http://example.com/avatar.jpg",
-			want:   "http://example.com/avatar.jpg",
-		},
-		{
-			name:   "HTTPS Domain - No Change",
-			avatar: "https://example.com/avatar.jpg",
-			want:   "https://example.com/avatar.jpg",
-		},
-		{
-			name:   "Empty Avatar",
-			avatar: "",
-			want:   "",
-		},
-		{
-			name:   "Relative Path - No Change",
-			avatar: "/path/to/avatar.jpg",
-			want:   "/path/to/avatar.jpg",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := fixAvatar(tt.avatar)
 			assert.Equal(t, tt.want, got)
 		})
 	}
