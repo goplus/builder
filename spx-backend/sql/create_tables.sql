@@ -21,58 +21,54 @@ CREATE TABLE `aiResource` (
     INDEX `idx_aiResource_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 生成资源表';
 
--- -- 2. 标签表 (label)
--- CREATE TABLE `label` (
---     `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键，标签唯一标识',
---     `labelName` VARCHAR(50) NOT NULL UNIQUE COMMENT '标签名称，唯一约束',
---     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
---     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
---     `deleted_at` TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间戳',
---     INDEX `idx_label_deleted_at` (`deleted_at`)
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标签表';
+-- 3. 用户图片过滤配置表 (user_image_filter_config)
+CREATE TABLE `user_image_filter_config` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `filter_window_days` int DEFAULT 30 COMMENT '过滤窗口期（天）',
+    `max_filter_ratio` decimal(3,2) DEFAULT 0.80 COMMENT '最大过滤比例（0-1）',
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户图片过滤配置表';
 
--- -- 3. 资源标签关联表 (resource_label)
--- CREATE TABLE `resource_label` (
---     `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键，关联记录唯一标识',
---     `aiResourceId` BIGINT NOT NULL COMMENT '外键，引用 aiResource 表的 id',
---     `labelId` BIGINT NOT NULL COMMENT '外键，引用 label 表的 id',
---     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
---     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
---     `deleted_at` TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间戳',
---     INDEX `idx_resource_label_aiResourceId` (`aiResourceId`),
---     INDEX `idx_resource_label_labelId` (`labelId`),
---     INDEX `idx_resource_label_deleted_at` (`deleted_at`),
---     CONSTRAINT `fk_resource_label_aiResourceId` FOREIGN KEY (`aiResourceId`) REFERENCES `aiResource` (`id`) ON DELETE CASCADE,
---     CONSTRAINT `fk_resource_label_labelId` FOREIGN KEY (`labelId`) REFERENCES `label` (`id`) ON DELETE CASCADE
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 资源与标签关联表';
+-- 4. 用户图片推荐历史表 (user_image_recommendation_history)
+CREATE TABLE `user_image_recommendation_history` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `image_id` bigint NOT NULL COMMENT '图片ID',
+    `query_id` varchar(36) NOT NULL COMMENT '查询ID',
+    `query` text COMMENT '用户原始查询',
+    `source` varchar(20) NOT NULL COMMENT '图片来源（search/generated）',
+    `similarity` decimal(5,3) COMMENT '相似度分数',
+    `rank` int NOT NULL COMMENT '推荐结果中的排名',
+    `selected` boolean DEFAULT false COMMENT '是否被用户选择',
+    `selected_at` timestamp NULL COMMENT '选择时间',
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` timestamp NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_image` (`user_id`, `image_id`),
+    KEY `idx_query_id` (`query_id`),
+    KEY `idx_selected` (`selected`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户图片推荐历史表';
 
--- -- 4. 资源使用统计表 (resource_usage_stats)
--- CREATE TABLE `resource_usage_stats` (
---     `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
---     `ai_resource_id` BIGINT NOT NULL UNIQUE COMMENT 'AI资源ID',
---     `view_count` BIGINT DEFAULT 0 COMMENT '查看次数',
---     `selection_count` BIGINT DEFAULT 0 COMMENT '选择次数',
---     `last_used_at` TIMESTAMP NULL COMMENT '最后使用时间',
---     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
---     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
---     INDEX `idx_resource_usage_stats_ai_resource_id` (`ai_resource_id`),
---     CONSTRAINT `fk_resource_usage_stats_ai_resource_id` FOREIGN KEY (`ai_resource_id`) REFERENCES `aiResource` (`id`) ON DELETE CASCADE
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源使用统计表';
-
--- 插入测试数据示例
--- INSERT INTO `aiResource` (`url`) VALUES 
---   ('https://example.com/images/cat1.svg'),
---   ('https://example.com/images/dog1.svg'),
---   ('https://example.com/images/bird1.svg');
-
--- INSERT INTO `label` (`labelName`) VALUES 
---   ('cat'),
---   ('dog'), 
---   ('animal'),
---   ('cute'),
---   ('cartoon');
-
--- INSERT INTO `resource_label` (`aiResourceId`, `labelId`) VALUES
---   (1, 1), (1, 3), (1, 4),  -- cat1.svg: cat, animal, cute
---   (2, 2), (2, 3), (2, 5),  -- dog1.svg: dog, animal, cartoon  
---   (3, 3), (3, 5);          -- bird1.svg: animal, cartoon
+-- 5. 图片过滤指标表 (image_filter_metrics)
+CREATE TABLE `image_filter_metrics` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `query_id` varchar(36) NOT NULL COMMENT '查询ID',
+    `total_candidates` int NOT NULL COMMENT '总候选数量',
+    `filtered_count` int NOT NULL COMMENT '过滤数量',
+    `filter_ratio` decimal(5,3) COMMENT '过滤比例',
+    `degradation_level` int DEFAULT 0 COMMENT '降级等级',
+    `degradation_strategy` varchar(100) COMMENT '降级策略',
+    `final_result_count` int NOT NULL COMMENT '最终结果数量',
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` timestamp NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_query_id` (`query_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图片过滤指标表';

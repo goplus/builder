@@ -68,3 +68,4 @@ func BuildUserPrompt(prefix string, limit int) string {
 		"Please list suggestions directly, one per line, without numbers or bullets. / 请直接列出建议，每行一个，不要编号。",
 		limit, prefix, prefix, limit, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
 }
+
