@@ -4,8 +4,9 @@ import { debounce } from 'lodash'
 import type { Project } from '@/models/project'
 
 import { UINumberInput } from '@/components/ui'
-import MapConfigItemWrapper from './MapConfigItemWrapper.vue'
 import { defaultMapSize } from '@/models/stage'
+
+import MapConfigItem from '../common/config/MapConfigItem.vue'
 
 const props = defineProps<{
   project: Project
@@ -22,7 +23,7 @@ const handleHeightChange = debounce((v: number | null) => {
 </script>
 
 <template>
-  <MapConfigItemWrapper :title="$t({ en: 'Map size', zh: '地图尺寸' })">
+  <MapConfigItem :title="$t({ en: 'Map size', zh: '地图尺寸' })">
     <div class="inputs">
       <UINumberInput
         v-radar="{ name: 'width input', desc: 'Input to set map width' }"
@@ -39,7 +40,7 @@ const handleHeightChange = debounce((v: number | null) => {
         <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}:</template>
       </UINumberInput>
     </div>
-  </MapConfigItemWrapper>
+  </MapConfigItem>
 </template>
 
 <style lang="scss" scoped>

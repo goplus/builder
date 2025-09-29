@@ -7,6 +7,7 @@ import SpritePositionSize from '@/components/editor/common/config/sprite/SpriteP
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
+import MapConfig from '../common/config/MapConfig.vue'
 
 defineProps<{
   sprite: Sprite
@@ -19,12 +20,12 @@ defineProps<{
     <UICardHeader>
       {{ sprite.name }}
     </UICardHeader>
-    <div class="main">
+    <MapConfig>
       <SpritePositionSize :sprite="sprite" :project="project" />
       <SpriteDirection :sprite="sprite" :project="project" />
       <SpriteVisible :sprite="sprite" :project="project" />
       <SpritePhysics v-if="project.stage.physics.enabled" :sprite="sprite" :project="project" />
-    </div>
+    </MapConfig>
   </UICard>
 </template>
 

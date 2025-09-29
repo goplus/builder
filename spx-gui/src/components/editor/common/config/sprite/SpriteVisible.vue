@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { type Project } from '@/models/project'
 import { type Sprite } from '@/models/sprite'
+import { wrapUpdateHandler } from '../utils'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
 import { UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
+import MapConfigItem from '../MapConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -23,23 +24,20 @@ const handleVisibleUpdate = wrapUpdateHandler(
 </script>
 
 <template>
-  <SpriteConfigItem>
-    <p class="with-label">
-      {{ $t({ en: 'Show', zh: '显示' }) }}:
-      <UIButtonGroup
-        v-radar="{ name: 'Visibility control', desc: 'Control to toggle sprite visibility' }"
-        :value="sprite.visible ? 'visible' : 'hidden'"
-        @update:value="(v) => handleVisibleUpdate(v === 'visible')"
-      >
-        <UIButtonGroupItem value="visible">
-          <UIIcon type="eye" />
-        </UIButtonGroupItem>
-        <UIButtonGroupItem value="hidden">
-          <UIIcon type="eyeSlash" />
-        </UIButtonGroupItem>
-      </UIButtonGroup>
-    </p>
-  </SpriteConfigItem>
+  <MapConfigItem :title="$t({ en: 'Show', zh: '显示' })">
+    <UIButtonGroup
+      v-radar="{ name: 'Visibility control', desc: 'Control to toggle sprite visibility' }"
+      :value="sprite.visible ? 'visible' : 'hidden'"
+      @update:value="(v) => handleVisibleUpdate(v === 'visible')"
+    >
+      <UIButtonGroupItem value="visible">
+        <UIIcon type="eye" />
+      </UIButtonGroupItem>
+      <UIButtonGroupItem value="hidden">
+        <UIIcon type="eyeSlash" />
+      </UIButtonGroupItem>
+    </UIButtonGroup>
+  </MapConfigItem>
 </template>
 
 <style lang="scss">

@@ -3,7 +3,7 @@ import type { Project } from '@/models/project'
 import type { Physics } from '@/models/stage'
 
 import { UISwitch } from '@/components/ui'
-import MapConfigItemWrapper from './MapConfigItemWrapper.vue'
+import MapConfigItem from '../common/config/MapConfigItem.vue'
 
 const props = defineProps<{
   project: Project
@@ -23,13 +23,13 @@ const handlePhysicsEnabledChange = (v: boolean) => {
 </script>
 
 <template>
-  <MapConfigItemWrapper :title="$t({ en: 'Physics', zh: '物理特性' })">
+  <MapConfigItem :title="$t({ en: 'Physics', zh: '物理特性' })">
     <UISwitch
       v-radar="{ name: 'physics input', desc: 'Input to set map physics' }"
       :value="project.stage.physics?.enabled"
       @update:value="handlePhysicsEnabledChange"
     />
-  </MapConfigItemWrapper>
+  </MapConfigItem>
 </template>
 
 <style lang="scss" scoped></style>

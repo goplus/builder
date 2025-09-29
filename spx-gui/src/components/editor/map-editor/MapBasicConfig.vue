@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '@/models/project'
-import { UICard, UICardHeader } from '@/components/ui'
 
+import MapConfig from '../common/config/MapConfig.vue'
 import MapSizeInput from './MapSizeInput.vue'
 import MapPhysicsInput from './MapPhysicsInput.vue'
 import MapLayerSortInput from './MapLayerSortInput.vue'
@@ -12,28 +12,15 @@ defineProps<{
 </script>
 
 <template>
-  <UICard>
-    <UICardHeader>
-      {{
-        $t({
-          en: 'Global Configuration',
-          zh: '全局配置'
-        })
-      }}
-    </UICardHeader>
-    <div class="main">
-      <MapSizeInput :project="project" />
-      <MapPhysicsInput :project="project" />
-      <MapLayerSortInput :project="project" />
-    </div>
-  </UICard>
+  <MapConfig class="map-basic-config">
+    <MapSizeInput :project="project" />
+    <MapPhysicsInput :project="project" />
+    <MapLayerSortInput v-if="project.stage.physics.enabled" :project="project" />
+  </MapConfig>
 </template>
 
 <style lang="scss" scoped>
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-  padding: 16px;
+.map-basic-config {
+  width: 100%;
 }
 </style>

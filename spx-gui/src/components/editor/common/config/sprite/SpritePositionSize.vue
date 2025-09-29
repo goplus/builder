@@ -3,11 +3,12 @@ import { computed } from 'vue'
 
 import { type Project } from '@/models/project'
 import { type Sprite } from '@/models/sprite'
+import { wrapUpdateHandler } from '../utils'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
 import { round } from '@/utils/utils'
 
 import { UINumberInput } from '@/components/ui'
+import MapConfigItem from '../MapConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -32,31 +33,39 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 </script>
 
 <template>
-  <SpriteConfigItem>
-    <UINumberInput
-      v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
-      :value="sprite.x"
-      @update:value="handleXUpdate"
-    >
-      <template #prefix>X:</template>
-    </UINumberInput>
-    <UINumberInput
-      v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
-      :value="sprite.y"
-      @update:value="handleYUpdate"
-    >
-      <template #prefix>Y:</template>
-    </UINumberInput>
-    <UINumberInput
-      v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
-      :min="0"
-      :value="sizePercent"
-      @update:value="handleSizePercentUpdate"
-    >
-      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
-      <template #suffix>%</template>
-    </UINumberInput>
-  </SpriteConfigItem>
+  <MapConfigItem>
+    <div class="content">
+      <UINumberInput
+        v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
+        :value="sprite.x"
+        @update:value="handleXUpdate"
+      >
+        <template #prefix>X:</template>
+      </UINumberInput>
+      <UINumberInput
+        v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
+        :value="sprite.y"
+        @update:value="handleYUpdate"
+      >
+        <template #prefix>Y:</template>
+      </UINumberInput>
+      <UINumberInput
+        v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
+        :min="0"
+        :value="sizePercent"
+        @update:value="handleSizePercentUpdate"
+      >
+        <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
+        <template #suffix>%</template>
+      </UINumberInput>
+    </div>
+  </MapConfigItem>
 </template>
 
-<style lang="scss"></style>
+<style lang="scss">
+.content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+</style>

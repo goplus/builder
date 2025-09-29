@@ -5,10 +5,11 @@ import { type Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
 import { useRenameSprite } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
-import SpriteConfigItem from '@/components/editor/common/config/sprite/SpriteConfigItem.vue'
+// import SpriteConfigItem from '@/components/editor/common/config/sprite/SpriteConfigItem.vue'
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
+import MapConfig from '@/components/editor/common/config/MapConfig.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -27,7 +28,7 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
 </script>
 
 <template>
-  <SpriteConfigItem class="name">
+  <div class="header">
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
       v-radar="{ name: 'Rename button', desc: 'Button to rename the sprite' }"
@@ -53,16 +54,20 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
         })
       }}
     </UITooltip>
-  </SpriteConfigItem>
-  <SpritePositionSize :sprite="sprite" :project="project" />
-  <SpriteDirection :sprite="sprite" :project="project" />
-  <SpriteVisible :sprite="sprite" :project="project" />
+  </div>
+  <MapConfig class="config">
+    <SpritePositionSize :sprite="sprite" :project="project" />
+    <SpriteDirection :sprite="sprite" :project="project" />
+    <SpriteVisible :sprite="sprite" :project="project" />
+  </MapConfig>
 </template>
 
 <style scoped lang="scss">
-.name {
+.header {
   height: 28px;
   color: var(--ui-color-title);
+  display: flex;
+  align-items: center;
 }
 
 .icon {
@@ -78,5 +83,9 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
 
 .spacer {
   flex: 1;
+}
+
+.config {
+  padding: 0;
 }
 </style>

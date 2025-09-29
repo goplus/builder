@@ -3,7 +3,7 @@ import type { Project } from '@/models/project'
 import { LayerSortMode } from '@/models/stage'
 
 import { UIRadio, UIRadioGroup } from '@/components/ui'
-import MapConfigItemWrapper from './MapConfigItemWrapper.vue'
+import MapConfigItem from '../common/config/MapConfigItem.vue'
 
 const props = defineProps<{
   project: Project
@@ -23,7 +23,7 @@ const handleLayerSortModeChange = (v: string | null) => {
 </script>
 
 <template>
-  <MapConfigItemWrapper
+  <MapConfigItem
     :title="$t({ en: 'Layer Sorting', zh: '层级排序' })"
     :question="
       $t({
@@ -42,7 +42,7 @@ const handleLayerSortModeChange = (v: string | null) => {
         {{ $t({ en: 'Vertical', zh: '垂直' }) }}
       </UIRadio>
     </UIRadioGroup>
-  </MapConfigItemWrapper>
+  </MapConfigItem>
 </template>
 
 <style lang="scss" scoped></style>

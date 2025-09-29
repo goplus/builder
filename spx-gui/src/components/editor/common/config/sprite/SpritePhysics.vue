@@ -11,10 +11,11 @@ import { computed, ref, watch } from 'vue'
 
 import { type Project } from '@/models/project'
 import { PhysicsMode, type Sprite } from '@/models/sprite'
+import { wrapUpdateHandler } from '../utils'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
 import { UICheckbox, UICheckboxGroup } from '@/components/ui'
 import { isEmpty, xor } from 'lodash'
+import MapConfigItem from '../MapConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -87,8 +88,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
 </script>
 
 <template>
-  <SpriteConfigItem class="physics-config">
-    <div class="title">{{ $t({ en: 'Physics', zh: '物理特性' }) }}:</div>
+  <MapConfigItem class="physics-config" :title="$t({ en: 'Physics', zh: '物理特性' })">
     <UICheckboxGroup class="check-group" :value="checkedPhysicsFlags" @update:value="handlePhysicsFlagsChange">
       <UICheckbox
         v-radar="{ name: 'collision check', desc: 'Check to set sprite physics collision' }"
@@ -112,7 +112,7 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
         <div>{{ $t({ en: 'Immovable', zh: '固定位置' }) }}</div>
       </UICheckbox>
     </UICheckboxGroup>
-  </SpriteConfigItem>
+  </MapConfigItem>
 </template>
 
 <style lang="scss">
