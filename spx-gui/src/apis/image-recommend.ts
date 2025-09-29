@@ -2,9 +2,9 @@
  * @desc Image Recommendation APIs for AI-powered image search
  */
 
-import { apiBaseUrl } from '@/utils/env'
 import { toText } from '@/models/common/file'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
+import { client } from './common'
 
 /** 即时图片推荐请求参数 */
 export interface InstantRecommendRequest {
@@ -51,24 +51,8 @@ export async function instantImageRecommend(
     theme: options?.theme || ''
   }
 
-  let url = ''
-  url = apiBaseUrl + '/images/instant/recommend'
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Request failed: ${response.status} ${response.statusText} - ${errorText}`)
-  }
-
   // 获取后端返回的原始数据
-  const backendResponse = await response.json()
+  const backendResponse = await client.post('/images/instant/recommend', payload, { timeout: 3 * 60 * 1000 })
 
   // 将后端response整理成所需的数组格式
   const imageUrls = backendResponse.results.map((result: any) => result.image_path)

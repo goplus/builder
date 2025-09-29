@@ -4,7 +4,12 @@
       ref="textareaRef"
       v-model="content"
       class="textarea"
-      placeholder="请在此输入内容... 输入停止后会补全请求"
+      :placeholder="
+        t({
+          en: 'Please enter content here... After input stops, it will be completed',
+          zh: '请在此输入内容... 输入停止后会补全请求'
+        })
+      "
       rows="8"
       @input="handleInput"
       @keydown.esc="handleEscape"
@@ -37,6 +42,8 @@ import { ref, watch, nextTick } from 'vue'
 // @ts-ignore
 import getCaretCoordinates from 'textarea-caret'
 import { getPrompt } from '@/apis/prompt'
+import { useI18n } from '@/utils/i18n'
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -61,7 +68,7 @@ const props = defineProps({
 // --- 响应式状态 ---
 const content = ref(props.modelValue || props.initialValue)
 const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const status = ref({ key: 'idle', text: '准备就绪' })
+const status = ref({ key: 'idle', text: t({ en: 'Ready', zh: '准备就绪' }) })
 const completionSuggestions = ref<string[]>([])
 const showSuggestions = ref(false)
 
@@ -72,7 +79,7 @@ const dropdownStyle = ref({ top: '0px', left: '0px' })
 // --- 核心方法 ---
 
 const handleInput = () => {
-  status.value = { key: 'typing', text: '正在输入...' }
+  status.value = { key: 'typing', text: t({ en: 'Typing...', zh: '正在输入...' }) }
   showSuggestions.value = false
 
   if (debounceTimer.value !== null) {
@@ -91,7 +98,7 @@ const submitContent = async () => {
   if (content.value.trim() === '') {
     return
   }
-  status.value = { key: 'saving', text: '正在补全...' }
+  status.value = { key: 'saving', text: t({ en: 'Completing...', zh: '正在补全...' }) }
   // console.log(`[API Call] 准备发送内容: "${content.value}"`)
 
   try {
@@ -106,7 +113,7 @@ const submitContent = async () => {
     // })
     const response = await getPrompt(content.value, 3)
 
-    status.value = { key: 'saved', text: '已补全！' }
+    status.value = { key: 'saved', text: t({ en: 'Completed!', zh: '已补全！' }) }
     completionSuggestions.value = response
 
     // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
@@ -117,8 +124,8 @@ const submitContent = async () => {
 
     // console.log('[API Success] 内容补全成功!', response)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '未知错误'
-    status.value = { key: 'error', text: `请求失败: ${errorMessage}` }
+    const errorMessage = error instanceof Error ? error.message : t({ en: 'Unknown error', zh: '未知错误' })
+    status.value = { key: 'error', text: `${t({ en: 'Request failed', zh: '请求失败' })}: ${errorMessage}` }
     console.error(`[API Error]`, error)
   }
 }
