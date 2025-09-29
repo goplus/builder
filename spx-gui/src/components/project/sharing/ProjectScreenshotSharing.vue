@@ -4,9 +4,7 @@ import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
 import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
-import { useMessageHandle } from '@/utils/exception'
-import { DefaultException } from '@/utils/exception'
-import { useObjectUrlManager } from '@/utils/object-url'
+import { useMessageHandle, DefaultException } from '@/utils/exception'
 
 const props = defineProps<{
   screenshot: File
@@ -42,8 +40,8 @@ function getCurrentProjectUrl(): string {
   return window.location.origin + window.location.pathname
 }
 
-// Create poster file
-async function createPosterFile(): Promise<File> {
+// Create poster URL directly from poster component
+async function createPosterURL(): Promise<string> {
   if (!posterCompRef.value) {
     throw new DefaultException({
       en: 'Poster component not ready',
@@ -51,29 +49,17 @@ async function createPosterFile(): Promise<File> {
     })
   }
 
-  const posterFile = await posterCompRef.value.createPoster()
-  if (!posterFile) {
+  const posterURL = await posterCompRef.value.createPoster()
+  if (!posterURL) {
     throw new DefaultException({
-      en: 'Failed to generate poster',
-      zh: '生成海报失败'
+      en: 'Failed to generate poster URL',
+      zh: '生成海报URL失败'
     })
   }
 
-  return posterFile
+  return posterURL
 }
 
-// Use object URL manager
-const { createUrl } = useObjectUrlManager()
-
-async function createPosterURL() {
-  const posterFile = await createPosterFile()
-  if (posterFile) {
-    // Prioritize video file passed from parent component
-    const url = createUrl(posterFile)
-    return url
-  }
-  return ''
-}
 // Generate share URL for platform
 async function generateShareContent(platform: PlatformConfig): Promise<void> {
   let shareURL = ''
@@ -81,14 +67,34 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
   shareURL = getCurrentProjectUrl()
   shareURL = await initShareURL(platform.basicInfo.name, shareURL)
   shareURL = await addShareStateURL(shareURL)
+
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const posterURL = await createPosterURL()
-    guideComponent.value = platform.shareFunction.shareImage(posterURL)
+    try {
+      const posterURL = await createPosterURL()
+
+      // if shareResult is from an async function, await it
+      const shareResult = platform.shareFunction.shareImage(posterURL)
+
+      if (shareResult instanceof Promise) {
+        const comp = await shareResult
+        guideComponent.value = comp ? markRaw(comp) : null
+      } else {
+        guideComponent.value = shareResult ? markRaw(shareResult) : null
+      }
+    } catch (error) {
+      console.error('Failed to generate poster URL:', error)
+      guideComponent.value = null
+    }
   } else if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    const shareComponent = await platform.shareFunction.shareURL(shareURL)
-    if (shareComponent) {
-      urlShareComponent.value = markRaw(shareComponent)
+    try {
+      const shareComponent = await platform.shareFunction.shareURL(shareURL)
+      if (shareComponent) {
+        urlShareComponent.value = markRaw(shareComponent)
+      }
+    } catch (error) {
+      console.error('Failed to generate URL share component:', error)
+      urlShareComponent.value = null
     }
   }
 }
@@ -117,6 +123,7 @@ async function handleGenerateShareContent(): Promise<void> {
   } catch (error) {
     // Reset share components on error
     urlShareComponent.value = null
+    guideComponent.value = null
     throw error
   } finally {
     isGeneratingQR.value = false
@@ -130,6 +137,7 @@ watch(
     if (newVisible) {
       // Reset state
       urlShareComponent.value = null
+      guideComponent.value = null
 
       // Wait for DOM update then generate share content
       nextTick(() => {
@@ -157,7 +165,7 @@ watch(
           <div class="qr-section">
             <div class="qr-section-inner">
               <component :is="guideComponent" v-if="guideComponent" />
-              <component :is="urlShareComponent" v-else />
+              <component :is="urlShareComponent" v-else-if="urlShareComponent" />
             </div>
           </div>
         </div>
@@ -334,21 +342,6 @@ watch(
   margin-top: 20px;
   justify-content: center;
 }
-
-/*
-.actions button {
-    padding: 8px 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #f0f0f0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #e0e0e0;
-    }
-}
-*/
 
 .cancel-btn {
   padding: 8px 16px;
