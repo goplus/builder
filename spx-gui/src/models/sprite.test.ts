@@ -188,4 +188,57 @@ describe('Sprite', () => {
     expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.Default, State.Step])
     expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.Die])
   })
+
+  it('should add costume after correctly', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    sprite.addCostume(costume1)
+    sprite.addCostumeAfter(costume4, costume1.id)
+    sprite.addCostumeAfter(costume3, costume4.id)
+    sprite.addCostumeAfter(costume2, costume3.id)
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume4', 'costume3', 'costume2'])
+  })
+  it('should set default costume to be correctly after call addCostumeAfter', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    // ['default']
+    sprite.addCostume(costume1)
+    // default is costume1
+    sprite.setDefaultCostume(costume1.id)
+    expect(sprite.defaultCostume).toBe(costume1)
+
+    // ['default', 'costume4']
+    sprite.addCostumeAfter(costume4, costume1.id)
+    // default is costume4
+    sprite.setDefaultCostume(costume4.id)
+
+    // ['default', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume3, costume1.id)
+    // ['default', 'costume2', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume2, costume1.id)
+
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume2', 'costume3', 'costume4'])
+    expect(sprite.defaultCostume).toBe(costume4)
+  })
+
+  it('should add animation after correctly', () => {
+    const sprite = new Sprite('MySprite')
+    const animation1 = new Animation('animation1')
+    const animation2 = new Animation('animation2')
+    const animation3 = new Animation('animation3')
+    sprite.addAnimation(animation1)
+    sprite.addAnimation(animation2)
+    sprite.addAnimation(animation3)
+
+    const animation4 = new Animation('animation4')
+    sprite.addAnimationAfter(animation4, animation2.id)
+
+    expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation4', 'animation3'])
+  })
 })

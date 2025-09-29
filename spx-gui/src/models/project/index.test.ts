@@ -182,4 +182,31 @@ describe('Project', () => {
     projectConfig = await reloadProjectConfig()
     expect(projectConfig.audioAttenuation).toBe(1)
   })
+
+  it('should add sprite after correctly', () => {
+    const project = new Project()
+    const sprite1 = new Sprite('sprite1')
+    project.addSprite(sprite1)
+
+    const sprite2 = new Sprite('sprite2')
+    project.addSpriteAfter(sprite2, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite2.id])
+
+    const sprite3 = new Sprite('sprite3')
+    project.addSpriteAfter(sprite3, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite3.id, sprite2.id])
+  })
+
+  it('should add sound after correctly', () => {
+    const project = makeProject()
+    const sound1 = project.sounds[0]
+
+    const sound2 = new Sound('sound2', mockFile())
+    project.addSoundAfter(sound2, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound2.id])
+
+    const sound3 = new Sound('sound3', mockFile())
+    project.addSoundAfter(sound3, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound3.id, sound2.id])
+  })
 })

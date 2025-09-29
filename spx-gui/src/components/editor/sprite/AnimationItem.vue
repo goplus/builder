@@ -50,7 +50,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     const action = { name: { en: `Duplicate animation ${animation.name}`, zh: `复制动画 ${animation.name}` } }
     await editorCtx.project.history.doAction(action, () => {
       const newAnimation = animation.clone()
-      sprite.addAnimation(newAnimation)
+      sprite.addAnimationAfter(newAnimation, animation.id)
       editorCtx.state.selectAnimation(sprite.id, newAnimation.id)
     })
   },
