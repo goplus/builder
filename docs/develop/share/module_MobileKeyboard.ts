@@ -34,15 +34,15 @@ export declare function KeyboardEditorModal(
  * Now uses the globally exposed dispatchKeyToEvent method instead of requiring a ref.
  *
  * ## Props:
- * - `ZoneToKeyMapping`: keyboard zone to key mapping configuration
- *
+ * - `ZoneToKeyMapping`: Represents the mapping from each keyboard zone (lt, rt, lb, rb) to an array of KeyBtn objects contained in that zone.
+ * - `projectKeys`: project keys configuration
  * ## Slots:
  * - `gameView`: Should contain ProjectRunner component
  *
  * use:
  * ```vue
  * <MobileKeyboardView
- * :ZoneToKeyMapping="{ lt: 'Q', rt: 'E' }"
+ * :ZoneToKeyMapping="{ lt: [{label: 'Q', posx: 10, posy: 10}], rt: [{label: 'E', posx: 10, posy: 10}] }"
  * @close="emit('close')"
  * @rerun="emit('rerun')"
  * @key="handleOnKeyEvent">
@@ -64,18 +64,25 @@ export declare function MobileKeyboardView(
   }
 ): UI;
 //  {
-//   const zones = Object.keys(ZoneToKeyMapping);
-//   const zoneToKey = ZoneToKeyMapping;
+//   const zones = Object.keys(zoneToKeyMapping);
 //   const handleOnKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
 //     emit('key', type, key);
 //   }
 //   const keyButtons = zones
 //     .map(
 //       (zone) =>
-//         `<UIKeyBtn key="${zone}" value="${zoneToKey[zone]}" active={true} key=${handleOnKeyEvent} />`
-//     )
-//     .join("");
-
+//         `<div class="zone ${zone}">
+//            ${zoneToKeyMapping[zone]
+//            .map(
+//              (btn) => `<div class="key-wrapper" style="left: ${btn.posx}px; top: ${btn.posy}px;">
+//               <UIKeyBtn
+//                 key="${btn.label}"
+//                 value="${btn.label}"
+//                 active={true}
+//                 onKey=${handleOnKeyEvent}
+//               />
+//            </div>`
+// )
 //   return `
 //     <div className="phone-layout">
 //       <slot name="gameView">
