@@ -22,7 +22,7 @@ export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number];
  * Zone to key mapping for mobile keyboard
  */
 export type MobileKeyboardZoneToKeyMapping = {
-  [zone in MobileKeyboardZone]: KeyBtn[];
+  [zone in MobileKeyboardZone]: KeyBtn[] | null;
 };
 /**
  * Mobile keyboard type

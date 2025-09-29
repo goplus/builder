@@ -9,13 +9,9 @@
         <div class="editor-row">
           <div class="key-pool-side">
             <div class="pool-header">{{ t({ en: 'Recognized Keys', zh: '识别的按键' }) }}</div>
-            <div ref="paletteRef" class="palette">
-              <div
-                v-for="k in autoPool"
-                :key="`P-${k}`"
-                class="palette-item"
-                @pointerdown="startDrag('autoPool', k, $event as PointerEvent)"
-              >
+            <div ref="paletteAutoRef" class="palette">
+              <div v-for="k in autoPool" :key="`P-${k}`" class="palette-item"
+                @pointerdown="startDragPool('autoPool', k, $event as PointerEvent)">
                 <UIKeyBtn :value="k" />
               </div>
             </div>
@@ -23,148 +19,35 @@
           <div class="phone-container">
             <div class="phone-1YZxt">
               <img :src="phone" alt="phone" style="transform: rotate(180deg)" />
-              <div class="stage-vTZqo" :class="{ dragging: !!drag }">
-                <!-- 系统键 2 个 -->
-                <div class="zone sysA">
-                  <UIButton
-                    v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
-                    icon="rotate"
-                  >
-                    {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-                  </UIButton>
-                </div>
-                <div class="zone sysB">
-                  <UIButton
-                    v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
-                    icon="close"
-                  >
-                    {{ $t({ en: 'Close', zh: '关闭' }) }}
-                  </UIButton>
-                </div>
-                <!-- 左上角 1 个 -->
-                <div
-                  :ref="(el) => (zoneRefs.lt.value = el as HTMLElement)"
-                  :class="{ over: hoverZone === 'lt' }"
-                  class="zone lt"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.lt"
-                    :value="zoneToKey.lt!"
-                    @pointerdown.stop="startDrag('lt', zoneToKey.lt!, $event as PointerEvent)"
-                  />
-                </div>
-                <!-- 右上角 1 个 -->
-                <div
-                  :ref="(el) => (zoneRefs.rt.value = el as HTMLElement)"
-                  class="zone rt"
-                  :class="{ over: hoverZone === 'rt' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.rt"
-                    :value="zoneToKey.rt!"
-                    @pointerdown.stop="startDrag('rt', zoneToKey.rt!, $event as PointerEvent)"
-                  />
-                </div>
-
-                <!-- 左下角 4 个：每个独立 zone -->
-                <div
-                  :ref="(el) => (zoneRefs.lbUp.value = el as HTMLElement)"
-                  class="zone lb-up"
-                  :class="{ over: hoverZone === 'lbUp' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.lbUp"
-                    :value="zoneToKey.lbUp!"
-                    @pointerdown.stop="startDrag('lbUp', zoneToKey.lbUp!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.lbLeft.value = el as HTMLElement)"
-                  class="zone lb-left"
-                  :class="{ over: hoverZone === 'lbLeft' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.lbLeft"
-                    :value="zoneToKey.lbLeft!"
-                    @pointerdown.stop="startDrag('lbLeft', zoneToKey.lbLeft!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.lbRight.value = el as HTMLElement)"
-                  class="zone lb-right"
-                  :class="{ over: hoverZone === 'lbRight' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.lbRight"
-                    :value="zoneToKey.lbRight!"
-                    @pointerdown.stop="startDrag('lbRight', zoneToKey.lbRight!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.lbDown.value = el as HTMLElement)"
-                  class="zone lb-down"
-                  :class="{ over: hoverZone === 'lbDown' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.lbDown"
-                    :value="zoneToKey.lbDown!"
-                    @pointerdown.stop="startDrag('lbDown', zoneToKey.lbDown!, $event as PointerEvent)"
-                  />
-                </div>
-
-                <!-- 右下角 4 个：每个独立 zone -->
-                <div
-                  :ref="(el) => (zoneRefs.rbA.value = el as HTMLElement)"
-                  class="zone rb-a"
-                  :class="{ over: hoverZone === 'rbA' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.rbA"
-                    :value="zoneToKey.rbA!"
-                    @pointerdown.stop="startDrag('rbA', zoneToKey.rbA!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.rbB.value = el as HTMLElement)"
-                  class="zone rb-b"
-                  :class="{ over: hoverZone === 'rbB' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.rbB"
-                    :value="zoneToKey.rbB!"
-                    @pointerdown.stop="startDrag('rbB', zoneToKey.rbB!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.rbX.value = el as HTMLElement)"
-                  class="zone rb-x"
-                  :class="{ over: hoverZone === 'rbX' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.rbX"
-                    :value="zoneToKey.rbX!"
-                    @pointerdown.stop="startDrag('rbX', zoneToKey.rbX!, $event as PointerEvent)"
-                  />
-                </div>
-                <div
-                  :ref="(el) => (zoneRefs.rbY.value = el as HTMLElement)"
-                  class="zone rb-y"
-                  :class="{ over: hoverZone === 'rbY' }"
-                >
-                  <UIKeyBtn
-                    v-if="zoneToKey.rbY"
-                    :value="zoneToKey.rbY!"
-                    @pointerdown.stop="startDrag('rbY', zoneToKey.rbY!, $event as PointerEvent)"
-                  />
+              <div class="stage" :class="{ dragging: !!drag }">
+                <div v-for="z in zones" :key="z" class="zone" :class="z"
+                  :ref="(el) => (zoneRefs[z].value = el as HTMLElement)">
+                  <!-- 系统键：在 lt 区域显示重新运行按钮 -->
+                  <div v-if="z === 'lt'" class="system-key" style="left: 10px; top: 10px;">
+                    <UIButton v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
+                      icon="rotate" size="small">
+                      {{ t({ en: 'Rerun', zh: '重新运行' }) }}
+                    </UIButton>
+                  </div>
+                  <!-- 系统键：在 rt 区域显示关闭按钮 -->
+                  <div v-if="z === 'rt'" class="system-key" style="right: 10px; top: 10px;">
+                    <UIButton v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+                      icon="close" size="small">
+                      {{ t({ en: 'Close', zh: '关闭' }) }}
+                    </UIButton>
+                  </div>
+                  <!-- 用户自定义键 -->
+                  <div v-for="(k, i) in zoneTokeys[z]" :key="k.keyValue + '-' + i" class="key"
+                    :class="{ dragging: drag?.kind === 'key' && drag.zone === z && drag.index === i }"
+                    :style="getKeyStyle(z, k.posx, k.posy)" @pointerdown.stop="startDragKey(z, i, $event)">
+                    <UIKeyBtn :value="k.keyValue" :active="false" />
+                  </div>
                 </div>
 
                 <!-- 拖拽中的浮层（跟随指针） -->
-                <div
-                  v-if="drag"
-                  class="floating"
-                  :style="{ transform: `translate(${drag.x - 25}px, ${drag.y - 25}px)` }"
-                >
-                  <UIKeyBtn :value="drag.value" />
+                <div v-if="drag" class="floating"
+                  :style="{ transform: `translate(${drag.x - 25}px, ${drag.y - 25}px)` }">
+                  <UIKeyBtn :value="drag.keyValue" :active="false" />
                 </div>
               </div>
             </div>
@@ -183,13 +66,9 @@
             </n-switch>
             <n-collapse-transition :show="show">
               <div class="pool-header"></div>
-              <div ref="paletteRef" class="palette">
-                <div
-                  v-for="k in allPool"
-                  :key="`P-${k}`"
-                  class="palette-item"
-                  @pointerdown="startDrag('allPool', k, $event as PointerEvent)"
-                >
+              <div ref="paletteAllRef" class="palette">
+                <div v-for="k in allPool" :key="`P-${k}`" class="palette-item"
+                  @pointerdown="startDragPool('allPool', k, $event as PointerEvent)">
                   <UIKeyBtn :value="k" />
                 </div>
               </div>
@@ -228,46 +107,118 @@ import phone from './mobile.png'
 import { reactive, ref } from 'vue'
 import { webKeys } from '@/utils/spx'
 
-const assignedKeys = new Set(Object.values(props.zoneToKeyMapping ?? {}).filter((v): v is string => v != null))
+const assignedKeys = new Set(
+  Object.values(props.zoneToKeyMapping ?? {})
+    .flatMap((arr) => arr ?? [])
+    .map((btn) => btn.label)
+)
 
 const allPool = ref<string[]>(webKeys.filter((k) => !props.projectKeys?.includes(k) && !assignedKeys.has(k)))
 const autoPool = ref<string[]>(props.projectKeys ? props.projectKeys.filter((k) => !assignedKeys.has(k)) : [])
-const zones = ['lt', 'rt', 'lbUp', 'lbLeft', 'lbRight', 'lbDown', 'rbA', 'rbB', 'rbX', 'rbY']
-type MobileKeyboardZone = (typeof zones)[number]
+const zones = ['lt', 'rt', 'lb', 'rb'] as const
+type ZoneId = (typeof zones)[number]
+type KeyPos = { keyValue: string, posx: number, posy: number, origin?: 'autoPool' | 'allPool' }
 
-const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>(props.zoneToKeyMapping ?? {})
+// 直接使用 props 数据，只需转换 label 到 keyValue
+const initZoneTokeys = () => {
+  const result: Record<ZoneId, KeyPos[]> = { lt: [], rt: [], lb: [], rb: [] }
+  const mapping = props.zoneToKeyMapping ?? { lt: [], rt: [], lb: [], rb: [] }
+  for (const id of zones) {
+    const arr = mapping[id] ?? []
+    result[id] = arr.map((btn) => ({ keyValue: btn.label, posx: btn.posx, posy: btn.posy }))
+  }
+  return result
+}
 
-const zoneOriginPool = reactive<Record<MobileKeyboardZone, 'autoPool' | 'allPool' | undefined>>({})
+const zoneTokeys = reactive<Record<ZoneId, KeyPos[]>>(initZoneTokeys())
 
-for (const id of zones as MobileKeyboardZone[]) {
+
+const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>(props.zoneToKeyMapping ?? { lt: [], rt: [], lb: [], rb: [] })
+
+const zoneOriginPool = reactive<Record<ZoneId, 'autoPool' | 'allPool' | undefined>>({ lt: undefined, rt: undefined, lb: undefined, rb: undefined })
+
+for (const id of zones) {
   const k = zoneToKey[id]
   if (k) {
-    zoneOriginPool[id] = props.projectKeys?.includes(k) ? 'autoPool' : 'allPool'
+    const hasProjectKey = (k ?? []).some(btn => (props.projectKeys?.includes(btn.label) ?? false))
+    zoneOriginPool[id] = hasProjectKey ? 'autoPool' : 'allPool'
   }
 }
 
 const zoneRefs = Object.fromEntries(zones.map((id) => [id, ref<HTMLElement | null>(null)])) as Record<
-  MobileKeyboardZone,
+  ZoneId,
   ReturnType<typeof ref<HTMLElement | null>>
 >
-const paletteRef = ref<HTMLElement | null>(null)
-const drag = ref<{
-  value: string
-  x: number
-  y: number
-  source: 'autoPool' | 'allPool' | MobileKeyboardZone
-  originPool?: 'autoPool' | 'allPool'
-} | null>(null)
-const hoverZone = ref<MobileKeyboardZone | null>(null)
-function startDrag(source: 'autoPool' | 'allPool' | MobileKeyboardZone, value: string, e: PointerEvent) {
-  let originPool: 'autoPool' | 'allPool' | undefined
-  if (source === 'autoPool' || source === 'allPool') originPool = source
-  else originPool = zoneOriginPool[source]
-  // 如果从区域开始拖拽，先清空该区域，等待投放
-  if (source !== 'autoPool' && source !== 'allPool') {
-    zoneToKey[source] = null
+const paletteAutoRef = ref<HTMLElement | null>(null)
+const paletteAllRef = ref<HTMLElement | null>(null)
+type DragState =
+  | { kind: 'pool'; from: 'autoPool' | 'allPool'; keyValue: string; x: number; y: number }
+  | {
+    kind: 'key'
+    zone: ZoneId
+    index: number
+    keyValue: string
+    x: number
+    y: number
+    originFrom: 'autoPool' | 'allPool'
+    // 记录拖拽开始时鼠标相对于按键的偏移
+    offsetX: number
+    offsetY: number
   }
-  drag.value = { value, x: e.clientX, y: e.clientY, source, originPool }
+const drag = ref<DragState | null>(null)
+const hoverZone = ref<ZoneId | null>(null)
+
+function startDragPool(from: 'autoPool' | 'allPool', keyValue: string, e: PointerEvent) {
+  drag.value = { kind: 'pool', from, keyValue, x: e.clientX, y: e.clientY }
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp, { once: true })
+}
+
+function startDragKey(zone: ZoneId, index: number, e: PointerEvent) {
+  const k = zoneTokeys[zone][index]
+  if (!k) return
+
+  // 计算鼠标相对于按键当前位置的偏移
+  const zoneEl = zoneRefs[zone]?.value
+  if (!zoneEl) return
+
+  const zoneRect = zoneEl.getBoundingClientRect()
+  let keyX: number, keyY: number
+
+  // 根据不同角落计算按键的绝对位置
+  switch (zone) {
+    case 'lt':
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.top + k.posy
+      break
+    case 'rt':
+      keyX = zoneRect.right - k.posx
+      keyY = zoneRect.top + k.posy
+      break
+    case 'lb':
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.bottom - k.posy
+      break
+    case 'rb':
+      keyX = zoneRect.right - k.posx
+      keyY = zoneRect.bottom - k.posy
+      break
+    default:
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.top + k.posy
+  }
+
+  drag.value = {
+    kind: 'key',
+    zone,
+    index,
+    keyValue: k.keyValue,
+    x: e.clientX,
+    y: e.clientY,
+    originFrom: k.origin ?? (props.projectKeys?.includes(k.keyValue) ? 'autoPool' : 'allPool'),
+    offsetX: e.clientX - keyX,
+    offsetY: e.clientY - keyY
+  }
   window.addEventListener('pointermove', onMove)
   window.addEventListener('pointerup', onUp, { once: true })
 }
@@ -282,6 +233,7 @@ function onMove(e: PointerEvent) {
       break
     }
   }
+  // 拖拽过程中不实时更新按键位置，只在松开时更新
 }
 function onUp(e: PointerEvent) {
   window.removeEventListener('pointermove', onMove)
@@ -291,30 +243,50 @@ function onUp(e: PointerEvent) {
     hoverZone.value = null
     return
   }
-  // 投放到空区域，若来自池则从池移除；并记录 zone 的来源池子
-  for (const id of zones) {
-    if (hit(zoneRefs[id]?.value ?? null, e.clientX, e.clientY)) {
-      if (zoneToKey[id] == null) {
-        zoneToKey[id] = d.value
-        if (d.source === 'autoPool') {
-          autoPool.value = autoPool.value.filter((v) => v !== d.value)
-          zoneOriginPool[id] = 'autoPool'
-        } else if (d.source === 'allPool') {
-          allPool.value = allPool.value.filter((v) => v !== d.value)
-          zoneOriginPool[id] = 'allPool'
-        } else {
-          // from another zone: transfer origin
-          zoneOriginPool[id] = d.originPool ?? 'autoPool'
-        }
+  const targetZone = zones.find((id) => hit(zoneRefs[id]?.value ?? null, e.clientX, e.clientY)) ?? null
+
+  if (d.kind === 'pool') {
+    if (targetZone) {
+      const [px, py] = getPixelInZone(targetZone, e.clientX, e.clientY)
+      zoneTokeys[targetZone].push({ keyValue: d.keyValue, posx: px, posy: py, origin: d.from })
+      if (d.from === 'autoPool') autoPool.value = autoPool.value.filter((v) => v !== d.keyValue)
+      else allPool.value = allPool.value.filter((v) => v !== d.keyValue)
+    }
+    hoverZone.value = null
+    return
+  }
+
+  // d.kind === 'key'
+  const fromZone = d.zone
+  if (targetZone && targetZone !== fromZone) {
+    // 跨区域移动时也使用偏移量
+    const adjustedX = e.clientX - (d.kind === 'key' ? d.offsetX : 0)
+    const adjustedY = e.clientY - (d.kind === 'key' ? d.offsetY : 0)
+    const [px, py] = getPixelInZone(targetZone, adjustedX, adjustedY)
+    const item = zoneTokeys[fromZone].splice(d.index, 1)[0]
+    if (item) zoneTokeys[targetZone].push({ keyValue: item.keyValue, posx: px, posy: py, origin: item.origin ?? d.originFrom })
+  } else if (targetZone === fromZone) {
+    // 使用偏移量计算正确的位置
+    const adjustedX = e.clientX - (d.kind === 'key' ? d.offsetX : 0)
+    const adjustedY = e.clientY - (d.kind === 'key' ? d.offsetY : 0)
+    const [px, py] = getPixelInZone(fromZone, adjustedX, adjustedY)
+    const kp = zoneTokeys[fromZone][d.index]
+    if (kp) {
+      console.log('更新位置:', { zone: fromZone, oldPos: { x: kp.posx, y: kp.posy }, newPos: { x: px, y: py }, offset: d.kind === 'key' ? { x: d.offsetX, y: d.offsetY } : null })
+      kp.posx = px; kp.posy = py
+    }
+  } else {
+    // 未命中区域：无论是否命中面板，都回到原始池子
+    const item = zoneTokeys[fromZone].splice(d.index, 1)[0]
+    if (item) {
+      const origin = item.origin ?? d.originFrom
+      if (origin === 'autoPool') {
+        if (!autoPool.value.includes(item.keyValue)) autoPool.value.push(item.keyValue)
+      } else {
+        if (!allPool.value.includes(item.keyValue)) allPool.value.push(item.keyValue)
       }
-      hoverZone.value = null
-      return
     }
   }
-  // // 未命中任何区域或命中已占用，回到来源池子（若来自 zone 则回到其 originPool）
-  const targetPoolName = d.source === 'autoPool' || d.source === 'allPool' ? d.source : d.originPool ?? 'autoPool'
-  const targetPool = targetPoolName === 'autoPool' ? autoPool : allPool
-  if (!targetPool.value.includes(d.value)) targetPool.value.push(d.value)
   hoverZone.value = null
 }
 function hit(el: HTMLElement | null, x: number, y: number) {
@@ -323,13 +295,72 @@ function hit(el: HTMLElement | null, x: number, y: number) {
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
 }
 
+function getKeyStyle(zone: ZoneId, posx: number, posy: number) {
+  // 根据不同角落计算CSS定位
+  switch (zone) {
+    case 'lt': // 左上角
+      return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+    case 'rt': // 右上角
+      return { right: posx + 'px', top: posy + 'px', touchAction: 'none' }
+    case 'lb': // 左下角
+      return { left: posx + 'px', bottom: posy + 'px', touchAction: 'none' }
+    case 'rb': // 右下角
+      return { right: posx + 'px', bottom: posy + 'px', touchAction: 'none' }
+    default:
+      return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+  }
+}
+
+function getPixelInZone(zone: ZoneId, clientX: number, clientY: number): [number, number] {
+  const el = zoneRefs[zone]?.value
+  if (!el) return [0, 0]
+  const r = el.getBoundingClientRect()
+
+  // 根据不同角落计算相对坐标
+  // 由于按键使用了 transform: translate(-50%, -50%)，我们需要计算按键中心点的位置
+  let px: number, py: number
+  switch (zone) {
+    case 'lt': // 左上角 - 坐标就是相对左上角的距离
+      px = clientX - r.left
+      py = clientY - r.top
+      break
+    case 'rt': // 右上角 - 坐标是相对右上角的距离
+      px = r.right - clientX
+      py = clientY - r.top
+      break
+    case 'lb': // 左下角 - 坐标是相对左下角的距离
+      px = clientX - r.left
+      py = r.bottom - clientY
+      break
+    case 'rb': // 右下角 - 坐标是相对右下角的距离
+      px = r.right - clientX
+      py = r.bottom - clientY
+      break
+    default:
+      px = clientX - r.left
+      py = clientY - r.top
+  }
+
+  return [px, py]
+}
+
 function confirm() {
-  emit('resolved', zoneToKey)
+  // 转换 zoneTokeys 数据格式为 MobileKeyboardZoneToKeyMapping
+  const result: MobileKeyboardZoneToKeyMapping = {
+    lt: zoneTokeys.lt.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
+    rt: zoneTokeys.rt.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
+    lb: zoneTokeys.lb.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
+    rb: zoneTokeys.rb.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy }))
+  }
+
+  console.log('提交的数据:', result)
+  emit('resolved', result)
 }
 onUnmounted(() => {
   window.removeEventListener('pointermove', onMove)
   window.removeEventListener('pointerup', onUp)
 })
+
 </script>
 
 <style scoped lang="scss">
@@ -394,29 +425,55 @@ onUnmounted(() => {
   height: auto;
 }
 
-.stage-vTZqo {
+.stage {
   position: absolute;
   inset: 0;
   z-index: 2;
 
   .zone {
     position: absolute;
-    display: grid;
-    place-items: center;
+    width: 30%;
+    height: 42%;
     border: 2px dashed #fff;
     transition:
       box-shadow 0.15s,
       border-color 0.15s;
   }
 
-  .sysA {
-    left: 5%;
-    top: 5%;
+  .zone.lt {
+    left: 20px;
+    top: 20px;
   }
 
-  .sysB {
-    right: 5%;
-    top: 5%;
+  .zone.rt {
+    right: 20px;
+    top: 20px;
+  }
+
+  .zone.lb {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .zone.rb {
+    right: 20px;
+    bottom: 20px;
+  }
+
+  .key {
+    position: absolute;
+    transform: translate(-50%, -50%);
+
+    &.dragging {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .system-key {
+    position: absolute;
+    z-index: 3;
+    pointer-events: auto;
   }
 
   &.dragging .zone {
@@ -425,78 +482,6 @@ onUnmounted(() => {
 
   .zone.over {
     box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.3) inset;
-  }
-
-  .lt {
-    left: 6%;
-    top: 20%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .rt {
-    right: 6%;
-    top: 20%;
-    width: 10%;
-    height: 14%;
-  }
-
-  /* 左下四个：独立小区域（放在原 lb 范围内：left:6%; bottom:20%; width:28%; height:28%）*/
-  .lb-up {
-    left: 20%;
-    bottom: 40%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .lb-left {
-    left: 10%;
-    bottom: 24%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .lb-right {
-    left: 30%;
-    bottom: 24%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .lb-down {
-    left: 20%;
-    bottom: 8%;
-    width: 10%;
-    height: 14%;
-  }
-
-  /* 右下四个：独立小区域（放在原 rb 范围内：right:6%; bottom:20%; width:20%; height:20%）*/
-  .rb-a {
-    right: 20%;
-    bottom: 30%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .rb-b {
-    right: 5%;
-    bottom: 30%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .rb-x {
-    right: 20%;
-    bottom: 10%;
-    width: 10%;
-    height: 14%;
-  }
-
-  .rb-y {
-    right: 5%;
-    bottom: 10%;
-    width: 10%;
-    height: 14%;
   }
 
   .floating {

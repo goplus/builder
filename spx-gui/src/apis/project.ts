@@ -56,34 +56,29 @@ export enum MobileKeyboardType {
   CustomKeyboard = 2
 }
 
-export const MOBILE_KEYBOARD_ZONES = [
-  'lt',
-  'rt',
-  'lbUp',
-  'lbLeft',
-  'lbRight',
-  'lbDown',
-  'rbA',
-  'rbB',
-  'rbX',
-  'rbY'
-] as const
+export const MOBILE_KEYBOARD_ZONES = ['lt', 'rt', 'lb', 'rb'] as const
 
 export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number]
+export type KeyBtn = {
+  label: string
 
-export type MobileKeyboardZoneToKeyMapping = { [zone: string]: string | null }
+  posx: number
+
+  posy: number
+}
+export type MobileKeyboardZoneToKeyMapping = { [zone in MobileKeyboardZone]: KeyBtn[] | null }
 
 export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility' | 'mobileKeyboardType'> & {
   /** Full name of the project or project release to remix from. */
   remixSource: string
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: { [zone in MobileKeyboardZone]: KeyBtn[] | null }
 }
 
 export type AddProjectParams = Pick<
   ProjectData,
   'name' | 'files' | 'visibility' | 'thumbnail' | 'mobileKeyboardType'
 > & {
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: { [zone in MobileKeyboardZone]: KeyBtn[] | null }
 }
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>

@@ -36,22 +36,50 @@ const systemKeys: SystemKeyType[] = [
   }
 ]
 const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>({
-  lt: null,
-  rt: null,
-  lbUp: null,
-  lbLeft: null,
-  lbRight: null,
-  lbDown: null,
-  rbA: null,
-  rbB: null,
-  rbX: null,
-  rbY: null
+  lt: [],
+  rt: [],
+  lb: [],
+  rb: []
 })
+
 onMounted(() => {
-  Object.assign(zoneToKey, props.zoneToKeyMapping)
+
+  const testMapping: MobileKeyboardZoneToKeyMapping = {
+    lt: [
+      { label: '跳跃', posx: 30, posy: 50 },
+    ],
+    rt: [
+      { label: '攻击', posx: 50, posy: 50 },
+    ],
+    lb: [
+      { label: '技能', posx: 60, posy: 50 },
+    ],
+    rb: [
+      { label: '冲刺', posx: 60, posy: 80 },
+    ]
+  }
+
+  Object.assign(zoneToKey, testMapping)
+  console.log('使用测试键盘数据:', zoneToKey)
 })
 function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
   emit('key', type, key)
+}
+
+function getKeyStyle(zone: 'lt' | 'rt' | 'lb' | 'rb', posx: number, posy: number) {
+  // 根据不同角落计算CSS定位，与 Editor 保持一致
+  switch (zone) {
+    case 'lt': // 左上角
+      return { position: 'absolute', left: posx + 'px', top: posy + 'px' }
+    case 'rt': // 右上角
+      return { position: 'absolute', right: posx + 'px', top: posy + 'px' }
+    case 'lb': // 左下角
+      return { position: 'absolute', left: posx + 'px', bottom: posy + 'px' }
+    case 'rb': // 右下角
+      return { position: 'absolute', right: posx + 'px', bottom: posy + 'px' }
+    default:
+      return { position: 'absolute', left: posx + 'px', top: posy + 'px' }
+  }
 }
 </script>
 
@@ -70,41 +98,28 @@ function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
         </UIButton>
       </div>
 
-      <!-- 左上角-->
+      <!-- 左上角 -->
       <div class="zone lt">
-        <UIKeyBtn v-if="zoneToKey.lt" :value="zoneToKey.lt!" :active="true" @key="dispatchKeyEvent" />
+        <UIKeyBtn v-for="btn in (zoneToKey.lt || [])" :key="btn.label" :value="btn.label" :active="true"
+          :style="getKeyStyle('lt', btn.posx, btn.posy)" @key="dispatchKeyEvent" />
       </div>
+
       <!-- 右上角 -->
       <div class="zone rt">
-        <UIKeyBtn v-if="zoneToKey.rt" :value="zoneToKey.rt!" :active="true" @key="dispatchKeyEvent" />
+        <UIKeyBtn v-for="btn in (zoneToKey.rt || [])" :key="btn.label" :value="btn.label" :active="true"
+          :style="getKeyStyle('rt', btn.posx, btn.posy)" @key="dispatchKeyEvent" />
       </div>
 
-      <!-- 左下角 4 -->
-      <div class="zone lb-up">
-        <UIKeyBtn v-if="zoneToKey.lbUp" :value="zoneToKey.lbUp!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-left">
-        <UIKeyBtn v-if="zoneToKey.lbLeft" :value="zoneToKey.lbLeft!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-right">
-        <UIKeyBtn v-if="zoneToKey.lbRight" :value="zoneToKey.lbRight!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-down">
-        <UIKeyBtn v-if="zoneToKey.lbDown" :value="zoneToKey.lbDown!" :active="true" @key="dispatchKeyEvent" />
+      <!-- 左下角 -->
+      <div class="zone lb">
+        <UIKeyBtn v-for="btn in (zoneToKey.lb || [])" :key="btn.label" :value="btn.label" :active="true"
+          :style="getKeyStyle('lb', btn.posx, btn.posy)" @key="dispatchKeyEvent" />
       </div>
 
-      <!-- 右下角 4 -->
-      <div class="zone rb-a">
-        <UIKeyBtn v-if="zoneToKey.rbA" :value="zoneToKey.rbA!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-b">
-        <UIKeyBtn v-if="zoneToKey.rbB" :value="zoneToKey.rbB!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-x">
-        <UIKeyBtn v-if="zoneToKey.rbX" :value="zoneToKey.rbX!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-y">
-        <UIKeyBtn v-if="zoneToKey.rbY" :value="zoneToKey.rbY!" :active="true" @key="dispatchKeyEvent" />
+      <!-- 右下角 -->
+      <div class="zone rb">
+        <UIKeyBtn v-for="btn in (zoneToKey.rb || [])" :key="btn.label" :value="btn.label" :active="true"
+          :style="getKeyStyle('rb', btn.posx, btn.posy)" @key="dispatchKeyEvent" />
       </div>
     </div>
   </div>
@@ -144,60 +159,29 @@ function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
 
   .zone {
     position: absolute;
-    display: grid;
-    place-items: center;
-    height: 23%;
-    padding: 1%;
+    width: 30%;
+    height: 42%;
+    /* 移除 display: grid，让按键自由定位 */
   }
 
   .lt {
-    left: 6%;
-    top: 8%;
+    left: 20px;
+    top: 20px;
   }
 
   .rt {
-    right: 6%;
-    top: 8%;
+    right: 20px;
+    top: 20px;
   }
 
-  .lb-up {
-    left: 10%;
-    bottom: 40%;
+  .lb {
+    left: 20px;
+    bottom: 20px;
   }
 
-  .lb-left {
-    left: 4%;
-    bottom: 24%;
-  }
-
-  .lb-right {
-    left: 16%;
-    bottom: 24%;
-  }
-
-  .lb-down {
-    left: 10%;
-    bottom: 8%;
-  }
-
-  .rb-a {
-    right: 15%;
-    bottom: 35%;
-  }
-
-  .rb-b {
-    right: 5%;
-    bottom: 35%;
-  }
-
-  .rb-x {
-    right: 15%;
-    bottom: 10%;
-  }
-
-  .rb-y {
-    right: 5%;
-    bottom: 10%;
+  .rb {
+    right: 20px;
+    bottom: 20px;
   }
 }
 </style>
