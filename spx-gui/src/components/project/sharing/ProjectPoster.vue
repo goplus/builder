@@ -206,7 +206,7 @@ const createPoster = async (): Promise<string> => {
     throw new Error('Poster element not ready or project data is undefined')
   }
 
-  await nextTick()
+  await ensureImagesReady()
 
   const rect = posterElementRef.value.getBoundingClientRect()
 
@@ -220,17 +220,50 @@ const createPoster = async (): Promise<string> => {
     logging: false
   })
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    posterCanvas.toBlob((b: Blob | null) => resolve(b), 'image/png')
-  )
+  const blob = await new Promise<Blob | null>((resolve) => posterCanvas.toBlob(resolve, 'image/png'))
 
   if (!blob) throw new Error('Failed to generate poster')
 
   const projectFile = fromBlob(`${props.projectData.name}-poster.png`, blob)
-
   const webUrl = await saveFileForWebUrl(projectFile)
-  
+
   return webUrl
+}
+
+// unified image waiting function
+const ensureImagesReady = async () => {
+  // wait for imgUrl to be set if not already
+  if (!imgUrl.value) {
+    await new Promise<void>((resolve) => {
+      const unwatch = watch(
+        () => imgUrl.value,
+        (newValue) => {
+          if (newValue) {
+            unwatch()
+            resolve()
+          }
+        }
+      )
+    })
+  }
+
+  await nextTick()
+
+  // wait for all images to load
+  const images = posterElementRef.value!.querySelectorAll('img')
+  await Promise.all(
+    Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => {
+          console.warn('Image failed to load:', img.src)
+          resolve()
+        }
+        setTimeout(() => resolve(), 2000)
+      })
+    })
+  )
 }
 
 defineExpose({

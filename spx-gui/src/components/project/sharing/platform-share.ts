@@ -311,7 +311,7 @@ class DouyinPlatform implements PlatformConfig {
         timestamp: config.timestamp,
         signature: config.signature,
         imagePath: image,
-        title: '看看我在XBuilder录制的游戏演示'
+        title: '看看我在XBuilder做的作品，扫码体验一下吧！'
       })
       return createQRCodeComponent(schema, this.basicInfo.color)
     },
@@ -350,10 +350,8 @@ class DouyinPlatform implements PlatformConfig {
       nonce_str: params.nonceStr,
       timestamp: params.timestamp,
       signature: params.signature,
-      image_path: params.imagePath,
-      state: '608',
-      share_to_publish: '1', // 直接跳转到发布页
-      share_to_type: '0'
+      image_path: params.imagePath
+      // share_to_publish: '1' // jump directly to publish page
     })
 
     if (params.title) {
@@ -383,7 +381,7 @@ class DouyinPlatform implements PlatformConfig {
       signature: params.signature,
       video_path: params.videoPath,
       state: '608',
-      share_to_publish: '1', // 直接跳转到发布页
+      share_to_publish: '1', // jump directly to publish page
       share_to_type: '0'
     })
 

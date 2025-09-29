@@ -59,7 +59,6 @@ import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
 import { untilNotNull } from '@/utils/utils'
-import { useObjectUrlManager } from '@/utils/object-url'
 
 const props = defineProps<{
   projectData: ProjectData
@@ -89,27 +88,13 @@ const handleCopy = useMessageHandle(
 
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-
   setupPlatformShareContent(platform)
 }
 
-async function createPosterFile(): Promise<File> {
+// Create poster and return cloud URL
+async function createPosterURL(): Promise<string> {
   const posterComp = await untilNotNull(posterCompRef)
-  const posterFile = await posterComp.createPoster()
-  return posterFile
-}
-
-// Use object URL manager
-const { createUrl } = useObjectUrlManager()
-
-async function createPosterURL() {
-  const posterFile = await createPosterFile()
-  if (posterFile) {
-    // Prioritize video file passed from parent component
-    const url = createUrl(posterFile)
-    return url
-  }
-  return ''
+  return await posterComp.createPoster()
 }
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
@@ -131,12 +116,25 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   }
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    const posterURL = await createPosterURL()
-    if (!posterURL) {
-      throw new Error('Poster component not ready after wait')
+    try {
+      const posterURL = await createPosterURL()
+      if (!posterURL) {
+        throw new Error('Failed to generate poster URL')
+      }
+
+      const shareResult = platform.shareFunction.shareImage(posterURL)
+
+      // if shareResult is from an async function, await it
+      if (shareResult instanceof Promise) {
+        const comp = await shareResult
+        imageShareComponent.value = comp ? markRaw(comp) : null
+      } else {
+        imageShareComponent.value = shareResult ? markRaw(shareResult) : null
+      }
+    } catch (error) {
+      console.error('Failed to setup platform share content:', error)
+      imageShareComponent.value = null
     }
-    const comp = platform.shareFunction.shareImage(posterURL)
-    imageShareComponent.value = comp ? markRaw(comp) : comp
     return
   }
 }
