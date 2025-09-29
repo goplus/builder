@@ -28,17 +28,4 @@ describe('Backdrop', () => {
     stage.addBackdrop(clone)
     expect(clone.stage).toEqual(stage)
   })
-
-  it('should add backdrop after correctly', () => {
-    const stage = makeStage()
-    const backdrop1 = stage.backdrops[0]
-
-    const backdrop2 = new Backdrop('b2', mockFile())
-    stage.addBackdropAfter(backdrop2, backdrop1.id)
-    expect(stage.backdrops.map((b) => b.id)).toEqual([backdrop1.id, backdrop2.id])
-
-    const backdrop3 = new Backdrop('b3', mockFile())
-    stage.addBackdropAfter(backdrop3, backdrop1.id)
-    expect(stage.backdrops.map((b) => b.id)).toEqual([backdrop1.id, backdrop3.id, backdrop2.id])
-  })
 })

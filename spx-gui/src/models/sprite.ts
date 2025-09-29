@@ -195,7 +195,7 @@ export class Sprite extends Disposable {
       this.costumeIndex = this.costumeIndex - 1
     }
   }
-  private initializeCostume(costume: Costume) {
+  private prepareAddCostume(costume: Costume) {
     const newCostumeName = ensureValidCostumeName(costume.name, this)
     costume.setName(newCostumeName)
     costume.setParent(this)
@@ -205,19 +205,23 @@ export class Sprite extends Disposable {
    * NOTE: the costume's name may be altered to avoid conflict
    */
   addCostume(costume: Costume) {
-    this.initializeCostume(costume)
+    this.prepareAddCostume(costume)
     this.costumes.push(costume)
   }
   /**
    * Add given costume after the specified reference costume.
-   * @param costume Costume to be added
-   * @param referenceId ID of the reference costume
    */
-  addCostumeAfter(costume: Costume, referenceId: string) {
+  addCostumeAfter(
+    /** Costume to be added */
+    costume: Costume,
+    /** ID of the reference costume */
+    referenceId: string
+  ) {
     const index = this.costumes.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`costume ${referenceId} not found`)
-    this.initializeCostume(costume)
+    this.prepareAddCostume(costume)
     this.costumes.splice(index + 1, 0, costume)
+    if (index < this.costumeIndex) this.costumeIndex += 1
   }
   /** Move a costume within the costumes array, without changing the default costume */
   moveCostume(from: number, to: number) {
@@ -242,7 +246,7 @@ export class Sprite extends Disposable {
     animation.setSprite(null)
     animation.dispose()
   }
-  private initializeAnimation(animation: Animation) {
+  private prepareAddAnimation(animation: Animation) {
     const newAnimationName = ensureValidAnimationName(animation.name, this)
     animation.setName(newAnimationName)
     animation.setSprite(this)
@@ -252,18 +256,21 @@ export class Sprite extends Disposable {
    * NOTE: the animation's name may be altered to avoid conflict
    */
   addAnimation(animation: Animation) {
-    this.initializeAnimation(animation)
+    this.prepareAddAnimation(animation)
     this.animations.push(animation)
   }
   /**
    * Add given animation after the specified reference animation.
-   * @param animation Animation to be added
-   * @param referenceId ID of the reference animation
    */
-  addAnimationAfter(animation: Animation, referenceId: string) {
+  addAnimationAfter(
+    /** Animation to be added */
+    animation: Animation,
+    /** ID of the reference animation */
+    referenceId: string
+  ) {
     const index = this.animations.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`animation ${referenceId} not found`)
-    this.initializeAnimation(animation)
+    this.prepareAddAnimation(animation)
     this.animations.splice(index + 1, 0, animation)
   }
   /** Move a animation within the animations array */

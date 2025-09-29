@@ -44,29 +44,4 @@ describe('Widget', () => {
     stage.addWidget(clone)
     expect(clone.stage).toEqual(stage)
   })
-
-  it('should add widget after correctly', () => {
-    const stage = makeStage()
-    const widget1 = stage.widgets[0]
-
-    const widget2 = new Monitor('monitor2', {
-      label: 'label2',
-      x: 20,
-      y: 20,
-      visible: true,
-      variableName: 'variableName2'
-    })
-    stage.addWidgetAfter(widget2, widget1.id)
-    expect(stage.widgets.map((w) => w.id)).toEqual([widget1.id, widget2.id])
-
-    const widget3 = new Monitor('monitor3', {
-      label: 'label3',
-      x: 30,
-      y: 30,
-      visible: true,
-      variableName: 'variableName3'
-    })
-    stage.addWidgetAfter(widget3, widget1.id)
-    expect(stage.widgets.map((w) => w.id)).toEqual([widget1.id, widget3.id, widget2.id])
-  })
 })

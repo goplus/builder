@@ -144,7 +144,7 @@ export class Project extends Disposable {
     if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
   }
-  private initializeSprite(sprite: Sprite) {
+  private prepareAddSprite(sprite: Sprite) {
     const newName = ensureValidSpriteName(sprite.name, this)
     sprite.setName(newName)
     sprite.setProject(this)
@@ -155,7 +155,7 @@ export class Project extends Disposable {
    * NOTE: the sprite's name may be altered to avoid conflict
    */
   addSprite(sprite: Sprite) {
-    this.initializeSprite(sprite)
+    this.prepareAddSprite(sprite)
     this.sprites.push(sprite)
     if (!this.zorder.includes(sprite.id)) {
       this.zorder = [...this.zorder, sprite.id]
@@ -163,14 +163,17 @@ export class Project extends Disposable {
   }
   /**
    * Add a sprite after the specified reference sprite.
-   * @param sprite Sprite to be added
-   * @param referenceId ID of the reference sprite
    */
-  addSpriteAfter(sprite: Sprite, referenceId: string) {
+  addSpriteAfter(
+    /** Sprite to be added */
+    sprite: Sprite,
+    /** ID of the reference sprite */
+    referenceId: string
+  ) {
     const index = this.sprites.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`sprite ${referenceId} not found`)
 
-    this.initializeSprite(sprite)
+    this.prepareAddSprite(sprite)
     this.sprites.splice(index + 1, 0, sprite)
     if (!this.zorder.includes(sprite.id)) {
       const idx = this.zorder.indexOf(referenceId)
@@ -226,7 +229,7 @@ export class Project extends Disposable {
     }
     sound.dispose()
   }
-  private initializeSound(sound: Sound) {
+  private prepareAddSound(sound: Sound) {
     const newName = ensureValidSoundName(sound.name, this)
     sound.setName(newName)
     sound.setProject(this)
@@ -237,19 +240,22 @@ export class Project extends Disposable {
    * NOTE: the sound's name may be altered to avoid conflict
    */
   addSound(sound: Sound) {
-    this.initializeSound(sound)
+    this.prepareAddSound(sound)
     this.sounds.push(sound)
   }
   /**
    * Add a sound after the specified reference sound.
-   * @param sound Sound to be added
-   * @param referenceId ID of the sound to insert after
    */
-  addSoundAfter(sound: Sound, referenceId: string) {
+  addSoundAfter(
+    /** Sound to be added */
+    sound: Sound,
+    /** ID of the reference sound */
+    referenceId: string
+  ) {
     const index = this.sounds.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`sound ${referenceId} not found`)
 
-    this.initializeSound(sound)
+    this.prepareAddSound(sound)
     this.sounds.splice(index + 1, 0, sound)
   }
   /** Move a sound within the sounds array, without changing the sound zorder */

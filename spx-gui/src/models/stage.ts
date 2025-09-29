@@ -96,7 +96,7 @@ export class Stage extends Disposable {
     this.backdropIndex = idx
   }
 
-  private initializeBackdrop(backdrop: Backdrop) {
+  private prepareAddBackdrop(backdrop: Backdrop) {
     const newBackdropName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newBackdropName)
     backdrop.setStage(this)
@@ -106,19 +106,25 @@ export class Stage extends Disposable {
    * NOTE: the backdrop's name may be altered to avoid conflict.
    */
   addBackdrop(backdrop: Backdrop) {
-    this.initializeBackdrop(backdrop)
+    this.prepareAddBackdrop(backdrop)
     this.backdrops.push(backdrop)
   }
   /**
    * Add a backdrop after the specified reference backdrop.
-   * @param backdrop Backdrop to be added
-   * @param referenceId ID of the backdrop to insert after
    */
-  addBackdropAfter(backdrop: Backdrop, referenceId: string) {
+  addBackdropAfter(
+    /** Backdrop to be added */
+    backdrop: Backdrop,
+    /** ID of the backdrop to insert after */
+    referenceId: string
+  ) {
     const index = this.backdrops.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`backdrop ${referenceId} not found`)
-    this.initializeBackdrop(backdrop)
+    this.prepareAddBackdrop(backdrop)
     this.backdrops.splice(index + 1, 0, backdrop)
+    if (index < this.backdropIndex) {
+      this.backdropIndex = this.backdropIndex + 1
+    }
   }
 
   removeBackdrop(id: string): void {
@@ -156,7 +162,7 @@ export class Stage extends Disposable {
   /** Zorder for widgets, will be merged with sprites in model `Project` */
   widgetsZorder: string[]
 
-  private initializeWidget(widget: Widget) {
+  private prepareAddWidget(widget: Widget) {
     const newName = ensureValidWidgetName(widget.name, this)
     widget.setName(newName)
     widget.setStage(this)
@@ -167,7 +173,7 @@ export class Stage extends Disposable {
    * NOTE: the widget's name may be altered to avoid conflict.
    */
   addWidget(widget: Widget) {
-    this.initializeWidget(widget)
+    this.prepareAddWidget(widget)
     this.widgets.push(widget)
 
     if (!this.widgetsZorder.includes(widget.id)) {
@@ -176,13 +182,16 @@ export class Stage extends Disposable {
   }
   /**
    * Add a widget after the specified reference widget.
-   * @param widget Widget to be added
-   * @param referenceId ID of the widget to insert after
    */
-  addWidgetAfter(widget: Widget, referenceId: string) {
+  addWidgetAfter(
+    /** Widget to be added */
+    widget: Widget,
+    /** ID of the widget to insert after */
+    referenceId: string
+  ) {
     const index = this.widgets.findIndex((s) => s.id === referenceId) // ensure referenceId exists
     if (index === -1) throw new Error(`widget ${referenceId} not found`)
-    this.initializeWidget(widget)
+    this.prepareAddWidget(widget)
     this.widgets.splice(index + 1, 0, widget)
 
     if (!this.widgetsZorder.includes(widget.id)) {

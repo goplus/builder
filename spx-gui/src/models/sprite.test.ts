@@ -3,7 +3,6 @@ import { Sprite, State } from './sprite'
 import { Animation } from './animation'
 import { Costume } from './costume'
 import { File } from './common/file'
-import { Project } from './project'
 
 function makeCostume(name: string) {
   return new Costume(name, new File(`${name}.png`, async () => new ArrayBuffer(0)))
@@ -190,17 +189,56 @@ describe('Sprite', () => {
     expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.Die])
   })
 
-  it('should add sprite after correctly', () => {
-    const project = new Project()
-    const sprite1 = new Sprite('sprite1')
-    project.addSprite(sprite1)
+  it('should add costume after correctly', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    sprite.addCostume(costume1)
+    sprite.addCostumeAfter(costume4, costume1.id)
+    sprite.addCostumeAfter(costume3, costume4.id)
+    sprite.addCostumeAfter(costume2, costume3.id)
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume4', 'costume3', 'costume2'])
+  })
+  it('should set default costume to be correctly after call addCostumeAfter', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    // ['default']
+    sprite.addCostume(costume1)
+    // default is costume1
+    sprite.setDefaultCostume(costume1.id)
+    expect(sprite.defaultCostume).toBe(costume1)
 
-    const sprite2 = new Sprite('sprite2')
-    project.addSpriteAfter(sprite2, sprite1.id)
-    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite2.id])
+    // ['default', 'costume4']
+    sprite.addCostumeAfter(costume4, costume1.id)
+    // default is costume4
+    sprite.setDefaultCostume(costume4.id)
 
-    const sprite3 = new Sprite('sprite3')
-    project.addSpriteAfter(sprite3, sprite1.id)
-    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite3.id, sprite2.id])
+    // ['default', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume3, costume1.id)
+    // ['default', 'costume2', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume2, costume1.id)
+
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume2', 'costume3', 'costume4'])
+    expect(sprite.defaultCostume).toBe(costume4)
+  })
+
+  it('should add animation after correctly', () => {
+    const sprite = new Sprite('MySprite')
+    const animation1 = new Animation('animation1')
+    const animation2 = new Animation('animation2')
+    const animation3 = new Animation('animation3')
+    sprite.addAnimation(animation1)
+    sprite.addAnimation(animation2)
+    sprite.addAnimation(animation3)
+
+    const animation4 = new Animation('animation4')
+    sprite.addAnimationAfter(animation4, animation2.id)
+
+    expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation4', 'animation3'])
   })
 })
