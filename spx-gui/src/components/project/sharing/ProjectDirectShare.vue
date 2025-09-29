@@ -39,7 +39,11 @@
         <component :is="imageShareComponent" v-if="imageShareComponent" />
         <div v-else-if="selectedPlatform?.shareType.supportImage" class="loading-container">
           <div class="loading-icon">⏳</div>
-          <span class="loading-text">{{ $t({ en: 'Preparing guide...', zh: '正在准备引导...' }) }}</span>
+          <span class="loading-text">{{
+            isGeneratingPoster
+              ? $t({ en: 'Generating poster...', zh: '正在生成海报...' })
+              : $t({ en: 'Preparing guide...', zh: '正在准备引导...' })
+          }}</span>
         </div>
       </div>
     </div>
@@ -53,7 +57,7 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
-import { computed, ref, type Component, shallowRef, markRaw } from 'vue'
+import { computed, ref, type Component, shallowRef, markRaw, onMounted } from 'vue'
 import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
@@ -86,15 +90,29 @@ const handleCopy = useMessageHandle(
   { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
 )
 
-function handlePlatformChange(platform: PlatformConfig) {
-  selectedPlatform.value = platform
-  setupPlatformShareContent(platform)
-}
-
 // Create poster and return cloud URL
 async function createPosterURL(): Promise<string> {
   const posterComp = await untilNotNull(posterCompRef)
   return await posterComp.createPoster()
+}
+
+// 缓存海报URL，避免每次切换平台都重新生成
+const posterURL = ref<string | null>(null)
+const isGeneratingPoster = ref(false)
+
+// 初始化时生成海报URL
+async function initializePoster() {
+  if (posterURL.value || isGeneratingPoster.value) {
+    return // 已经生成过或正在生成中
+  }
+  isGeneratingPoster.value = true
+  posterURL.value = await createPosterURL()
+  isGeneratingPoster.value = false
+}
+
+function handlePlatformChange(platform: PlatformConfig) {
+  selectedPlatform.value = platform
+  setupPlatformShareContent(platform)
 }
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
@@ -117,12 +135,16 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     try {
-      const posterURL = await createPosterURL()
-      if (!posterURL) {
+      // 确保海报URL已经生成
+      if (!posterURL.value) {
+        await initializePoster()
+      }
+
+      if (!posterURL.value) {
         throw new Error('Failed to generate poster URL')
       }
 
-      const shareResult = platform.shareFunction.shareImage(posterURL)
+      const shareResult = platform.shareFunction.shareImage(posterURL.value)
 
       // if shareResult is from an async function, await it
       if (shareResult instanceof Promise) {
@@ -138,6 +160,11 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
     return
   }
 }
+
+// 组件挂载时初始化海报生成
+onMounted(() => {
+  initializePoster()
+})
 </script>
 
 <style scoped lang="scss">

@@ -27,6 +27,10 @@ const urlShareComponent = shallowRef<Component | null>(null)
 const guideComponent = ref<Component | null>(null)
 const isGeneratingQR = ref(false)
 
+// 缓存海报URL，避免每次切换平台都重新生成
+const posterURL = ref<string | null>(null)
+const isGeneratingPoster = ref(false)
+
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
@@ -60,6 +64,17 @@ async function createPosterURL(): Promise<string> {
   return posterURL
 }
 
+// 初始化时生成海报URL
+async function initializePoster() {
+  if (posterURL.value || isGeneratingPoster.value) {
+    return // 已经生成过或正在生成中
+  }
+
+  isGeneratingPoster.value = true
+  posterURL.value = await createPosterURL()
+  isGeneratingPoster.value = false
+}
+
 // Generate share URL for platform
 async function generateShareContent(platform: PlatformConfig): Promise<void> {
   let shareURL = ''
@@ -71,10 +86,17 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     try {
-      const posterURL = await createPosterURL()
+      // 确保海报URL已经生成
+      if (!posterURL.value) {
+        await initializePoster()
+      }
+
+      if (!posterURL.value) {
+        throw new Error('Failed to generate poster URL')
+      }
 
       // if shareResult is from an async function, await it
-      const shareResult = platform.shareFunction.shareImage(posterURL)
+      const shareResult = platform.shareFunction.shareImage(posterURL.value)
 
       if (shareResult instanceof Promise) {
         const comp = await shareResult
@@ -139,6 +161,9 @@ watch(
       urlShareComponent.value = null
       guideComponent.value = null
 
+      // 初始化海报生成
+      initializePoster()
+
       // Wait for DOM update then generate share content
       nextTick(() => {
         if (selectedPlatform.value) {
@@ -166,6 +191,14 @@ watch(
             <div class="qr-section-inner">
               <component :is="guideComponent" v-if="guideComponent" />
               <component :is="urlShareComponent" v-else-if="urlShareComponent" />
+              <div v-else-if="isGeneratingPoster || isGeneratingQR" class="loading-container">
+                <div class="loading-icon">⏳</div>
+                <span class="loading-text">{{
+                  isGeneratingPoster
+                    ? $t({ en: 'Generating poster...', zh: '正在生成海报...' })
+                    : $t({ en: 'Preparing guide...', zh: '正在准备引导...' })
+                }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -356,6 +389,35 @@ watch(
   &:hover {
     background: var(--ui-color-red-tint);
     border-color: var(--ui-color-red-main);
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.loading-text {
+  font-size: 12px;
+  color: var(--ui-color-hint-2);
+  text-align: center;
+}
+
+.loading-icon {
+  font-size: 48px;
+  opacity: 0.7;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
