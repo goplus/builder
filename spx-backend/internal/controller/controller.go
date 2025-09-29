@@ -40,6 +40,7 @@ type Controller struct {
 	assetCompletion 		*AssetCompletionService
 	recommendationCache 	 cache.Cache
 	algorithmService    	*AlgorithmService
+	imageFilterService  	*ImageFilterService
 }
 
 // New creates a new controller.
@@ -91,6 +92,9 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 	algorithmService := NewAlgorithmService(&cfg.Algorithm)
 
 	
+	// Initialize image filter service
+	imageFilterService := NewImageFilterService(db, &cfg.ImageFilter)
+
 	ctrl:=&Controller{
 		db:                  db,
 		kodo:                kodoClient,
@@ -102,6 +106,7 @@ func New(ctx context.Context, db *gorm.DB, cfg *config.Config, redisClient *redi
 		recommendationCache: recommendationCache,
 		algorithmService:    algorithmService,
 		assetCompletion: 	 assetCompletionService,
+		imageFilterService:  imageFilterService,
 	}
 	// Initialize sample game assets data
 	if err := ctrl.InitializeGameAssetsData(ctx); err != nil {

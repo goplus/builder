@@ -62,8 +62,10 @@ func Load(logger *log.Logger) (*Config, error) {
 			Endpoint: mustGetEnv(logger, "AIGC_ENDPOINT"),
 		},
 		Algorithm: AlgorithmConfig{
-			Endpoint: getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
-			Timeout:  getEnvAsDuration("ALGORITHM_TIMEOUT", "60s"),
+			Endpoint:           getEnvAsString("ALGORITHM_ENDPOINT", "http://localhost:5000"),
+			Timeout:            getEnvAsDuration("ALGORITHM_TIMEOUT", "60s"),
+			SearchThreshold:    getEnvAsFloat("ALGORITHM_SEARCH_THRESHOLD", 0.1),
+			RecommendThreshold: getEnvAsFloat("ALGORITHM_RECOMMEND_THRESHOLD", 0.2),
 		},
 
 		Providers: ProvidersConfig{
@@ -89,6 +91,15 @@ func Load(logger *log.Logger) (*Config, error) {
 					ImageToImage: getEnvAsString("RECRAFT_IMAGE_TO_IMAGE_ENDPOINT", "/v1/images/imageToImage"),
 				},
 			},
+		},
+
+		ImageFilter: ImageFilterConfig{
+			Enabled:               getEnvAsBool("IMAGE_FILTER_ENABLED", true),
+			DefaultWindowDays:     getEnvAsInt("IMAGE_FILTER_DEFAULT_WINDOW_DAYS", 30),
+			DefaultMaxFilterRatio: getEnvAsFloat("IMAGE_FILTER_DEFAULT_MAX_RATIO", 0.8),
+			SearchExpansionRatio:  getEnvAsFloat("IMAGE_FILTER_SEARCH_EXPANSION_RATIO", 2.0),
+			EnableDegradation:     getEnvAsBool("IMAGE_FILTER_ENABLE_DEGRADATION", true),
+			EnableMetrics:         getEnvAsBool("IMAGE_FILTER_ENABLE_METRICS", true),
 		},
 	}
 	return config, nil

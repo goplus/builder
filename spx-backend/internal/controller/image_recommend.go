@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/google/uuid"
+	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/svggen"
@@ -185,8 +186,11 @@ func (p *ImageFeedbackParams) Validate() (bool, string) {
 // and reuses the cached results throughout the entire recommendation process.
 func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecommendParams) (*ImageRecommendResult, error) {
 	logger := log.GetReqLogger(ctx)
-	
-	
+
+	// Generate unique query ID at the beginning for consistent tracking
+	queryID := generateQueryID()
+	logger.Printf("Generated query ID: %s for recommendation request", queryID)
+
 	// Get provider based on theme
 	provider := params.GetProviderForTheme()
 	logger.Printf("RecommendImages request - text: %q, theme: %s, provider: %s, top_k: %d", params.Text, params.Theme, provider, params.TopK)
@@ -199,15 +203,32 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 	// This performs AI analysis only once and caches all optimized prompt variations
 	promptCtx := NewPromptAnalysisContext(ctx, params.Text, params.Theme, ctrl.copilot, params.SearchOnly)
 
+	// Determine optimal search count upfront to avoid multiple search calls
+	searchTopK := params.TopK
+	var filterMetrics *FilterMetrics
+
+	// If user is authenticated, expand search proactively for filtering
+	if _, ok := authn.UserFromContext(ctx); ok {
+		expansionRatio := ctrl.imageFilterService.config.GetSearchExpansionRatio()
+		expandedTopK := int(float64(params.TopK) * expansionRatio)
+		searchTopK = expandedTopK
+		logger.Printf("User authenticated: expanding search from %d to %d for filtering compensation",
+			params.TopK, searchTopK)
+	}
+
+	// Create search params with optimal TopK
+	searchParams := *params
+	searchParams.TopK = searchTopK
+
 	var foundResults []RecommendedImageResult
 	var err error
 
 	if params.Theme != ThemeNone {
 		// Use dual-path search strategy for theme-based requests
-		foundResults, err = ctrl.dualPathSearchOptimized(ctx, params, promptCtx)
+		foundResults, err = ctrl.dualPathSearchOptimized(ctx, &searchParams, promptCtx)
 	} else {
 		// Use single semantic search for non-themed requests
-		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, params, promptCtx)
+		foundResults, err = ctrl.singleSemanticSearchOptimized(ctx, &searchParams, promptCtx)
 	}
 
 	if err != nil {
@@ -215,7 +236,24 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		return nil, fmt.Errorf("search failed: %w", err)
 	}
 
-	logger.Printf("Found %d matching images from search", len(foundResults))
+	logger.Printf("Found %d matching images from optimized search (requested: %d)", len(foundResults), searchTopK)
+
+	// Apply image filtering with degradation strategies if user is authenticated
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		// Apply filtering using the same queryID for consistent tracking
+		filteredResults, metrics, err := ctrl.imageFilterService.FilterResults(
+			ctx, mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults, params.TopK)
+		if err != nil {
+			logger.Printf("Filtering failed, using unfiltered results: %v", err)
+		} else {
+			foundResults = filteredResults
+			filterMetrics = metrics
+			logger.Printf("Filtering applied: %d candidates -> %d results (%.1f%% filtered)",
+				metrics.TotalCandidates, len(foundResults), metrics.FilterRatio*100)
+		}
+	} else {
+		logger.Printf("No authenticated user, skipping image filtering")
+	}
 
 	// Generate AI SVGs if we don't have enough results and SearchOnly is false
 	if !params.SearchOnly && len(foundResults) < params.TopK {
@@ -244,9 +282,16 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
-	// Generate unique query ID for tracking
-	queryID := generateQueryID()
-	logger.Printf("Generated query ID: %s for query: %q", queryID, promptCtx.OptimizedPrompt)
+	// Record recommendation history for authenticated users
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		go func() {
+			// Record history asynchronously to avoid blocking the response
+			if err := ctrl.imageFilterService.RecordRecommendationHistory(
+				context.Background(), mUser.ID, queryID, promptCtx.OptimizedPrompt, foundResults); err != nil {
+				logger.Printf("Failed to record recommendation history: %v", err)
+			}
+		}()
+	}
 
 	// Extract recommended pic IDs for feedback tracking
 	recommendedPics := make([]int64, len(foundResults))
@@ -265,6 +310,15 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 
 	// OPTIMIZATION: Use cached optimized prompt for final query instead of calling OptimizePromptWithAnalysis again
 	logger.Printf("Returning recommendation result with %d results", len(foundResults))
+
+
+	// Log filter metrics if available
+	if filterMetrics != nil {
+		logger.Printf("Filter metrics: %d total candidates, %d filtered (%.1f%%), degradation level: %d",
+			filterMetrics.TotalCandidates, filterMetrics.FilteredCount, filterMetrics.FilterRatio*100, filterMetrics.DegradationLevel)
+	}
+
+
 	return &ImageRecommendResult{
 		QueryID:      queryID,
 		Query:        promptCtx.OptimizedPrompt,
@@ -276,6 +330,11 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 // callAlgorithmService calls the spx-algorithm service for semantic search.
 func (ctrl *Controller) callAlgorithmService(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
 	return ctrl.algorithmService.SearchSimilarImages(ctx, text, topK)
+}
+
+// callAlgorithmServiceForSearch calls the spx-algorithm service for semantic search with search threshold.
+func (ctrl *Controller) callAlgorithmServiceForSearch(ctx context.Context, text string, topK int) (*AlgorithmSearchResponse, error) {
+	return ctrl.algorithmService.SearchSimilarImagesForSearch(ctx, text, topK)
 }
 
 // generateAISVGsOptimized generates AI SVG images using pre-optimized prompt.
@@ -425,7 +484,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		semanticPrompt := promptCtx.SemanticPrompt
 		logger.Printf("Semantic search prompt: %q", semanticPrompt)
 
-		algorithmResp, err := ctrl.callAlgorithmService(ctx, semanticPrompt, semanticCount)
+		algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, semanticPrompt, semanticCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "semantic"}
 			return
@@ -440,7 +499,7 @@ func (ctrl *Controller) dualPathSearchOptimized(ctx context.Context, params *Ima
 		themePrompt := promptCtx.ThemePrompt
 		logger.Printf("Theme search prompt: %q", themePrompt)
 
-		algorithmResp, err := ctrl.callAlgorithmService(ctx, themePrompt, themeCount)
+		algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, themePrompt, themeCount)
 		if err != nil {
 			resultChan <- searchResult{err: err, source: "theme"}
 			return
@@ -512,7 +571,7 @@ func (ctrl *Controller) singleSemanticSearchOptimized(ctx context.Context, param
 	searchPrompt := promptCtx.SemanticPrompt
 	logger.Printf("Single semantic search for prompt: %q", searchPrompt)
 
-	algorithmResp, err := ctrl.callAlgorithmService(ctx, searchPrompt, params.TopK)
+	algorithmResp, err := ctrl.callAlgorithmServiceForSearch(ctx, searchPrompt, params.TopK)
 	if err != nil {
 		return nil, fmt.Errorf("algorithm service call failed: %w", err)
 	}
@@ -640,6 +699,17 @@ func (ctrl *Controller) SubmitImageFeedback(ctx context.Context, params *ImageFe
 	if err != nil {
 		logger.Printf("Failed to submit feedback to algorithm service: %v", err)
 		return fmt.Errorf("failed to submit feedback: %w", err)
+	}
+
+	// Mark image as selected in filter service for authenticated users
+	if mUser, ok := authn.UserFromContext(ctx); ok {
+		go func() {
+			// Mark selection asynchronously to avoid blocking the response
+			if err := ctrl.imageFilterService.MarkImageSelected(
+				context.Background(), mUser.ID, params.QueryID, params.ChosenPic); err != nil {
+				logger.Printf("Failed to mark image as selected: %v", err)
+			}
+		}()
 	}
 
 	logger.Printf("Successfully submitted feedback for QueryID: %s", params.QueryID)

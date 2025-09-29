@@ -6,15 +6,16 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	Server    ServerConfig
-	Database  DatabaseConfig
-	Redis     RedisConfig
-	Kodo      KodoConfig
-	Casdoor   CasdoorConfig
-	OpenAI    OpenAIConfig
-	AIGC      AIGCConfig
-	Algorithm AlgorithmConfig
-	Providers ProvidersConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	Redis       RedisConfig
+	Kodo        KodoConfig
+	Casdoor     CasdoorConfig
+	OpenAI      OpenAIConfig
+	AIGC        AIGCConfig
+	Algorithm   AlgorithmConfig
+	Providers   ProvidersConfig
+	ImageFilter ImageFilterConfig
 }
 
 // ServerConfig holds server configuration.
@@ -142,6 +143,24 @@ type AIGCConfig struct {
 type AlgorithmConfig struct {
 	Endpoint string
 	Timeout  time.Duration
+	SearchThreshold    float64 // Threshold for search operations (lower for more results)
+	RecommendThreshold float64 // Threshold for recommendation operations (higher for quality)
+}
+
+// GetSearchThreshold returns the search threshold, defaulting to 0.1 if not set.
+func (c *AlgorithmConfig) GetSearchThreshold() float64 {
+	if c.SearchThreshold > 0 {
+		return c.SearchThreshold
+	}
+	return 0.1 // Lower threshold for broader search results
+}
+
+// GetRecommendThreshold returns the recommendation threshold, defaulting to 0.2 if not set.
+func (c *AlgorithmConfig) GetRecommendThreshold() float64 {
+	if c.RecommendThreshold > 0 {
+		return c.RecommendThreshold
+	}
+	return 0.2 // Higher threshold for quality recommendations
 }
 
 // ProvidersConfig holds provider configurations for SVG generation.
@@ -183,6 +202,51 @@ type RecraftEndpoints struct {
 }
 
 
+
+// ImageFilterConfig holds image recommendation filtering configuration.
+type ImageFilterConfig struct {
+	// Enabled controls whether image filtering is enabled globally
+	Enabled bool `default:"true"`
+
+	// DefaultWindowDays is the default filter window in days
+	DefaultWindowDays int `default:"30"`
+
+	// DefaultMaxFilterRatio is the default maximum filter ratio (0-1)
+	DefaultMaxFilterRatio float64 `default:"0.8"`
+
+	// SearchExpansionRatio controls how much to expand search results before filtering
+	SearchExpansionRatio float64 `default:"2.0"`
+
+	// EnableDegradation controls whether degradation strategies are enabled
+	EnableDegradation bool `default:"true"`
+
+	// EnableMetrics controls whether to store filtering metrics
+	EnableMetrics bool `default:"true"`
+}
+
+// GetDefaultWindowDays returns the default window days, with fallback.
+func (c *ImageFilterConfig) GetDefaultWindowDays() int {
+	if c.DefaultWindowDays > 0 {
+		return c.DefaultWindowDays
+	}
+	return 30
+}
+
+// GetDefaultMaxFilterRatio returns the default max filter ratio, with fallback.
+func (c *ImageFilterConfig) GetDefaultMaxFilterRatio() float64 {
+	if c.DefaultMaxFilterRatio > 0 && c.DefaultMaxFilterRatio <= 1 {
+		return c.DefaultMaxFilterRatio
+	}
+	return 0.8
+}
+
+// GetSearchExpansionRatio returns the search expansion ratio, with fallback.
+func (c *ImageFilterConfig) GetSearchExpansionRatio() float64 {
+	if c.SearchExpansionRatio > 1 {
+		return c.SearchExpansionRatio
+	}
+	return 2.0
+}
 
 // IsProviderEnabled checks if a provider is enabled.
 func (c *Config) IsProviderEnabled(provider string) bool {

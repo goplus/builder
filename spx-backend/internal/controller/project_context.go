@@ -17,6 +17,7 @@ type ProjectContextParams struct {
 	ProjectID          int64  `json:"project_id"`
 	ProjectName        string `json:"project_name"`
 	ProjectDescription string `json:"project_description,omitempty"`
+	ForceRegenerate    bool   `json:"force_regenerate,omitempty"` // If true, regenerate even if context exists
 }
 
 // Validate validates the project context parameters
@@ -61,11 +62,38 @@ func (p *InstantRecommendParams) Validate() (bool, string) {
 	return true, ""
 }
 
+// GetProjectContext retrieves existing project context from database
+func (ctrl *Controller) GetProjectContext(ctx context.Context, projectID int64) (*model.ProjectContext, error) {
+	logger := log.GetReqLogger(ctx)
+
+	var projectContext model.ProjectContext
+	err := ctrl.db.Where("project_id = ?", projectID).First(&projectContext).Error
+	if err != nil {
+		logger.Printf("Project context not found for project %d: %v", projectID, err)
+		return nil, err
+	}
+
+	logger.Printf("Found existing project context for project %d with %d words", projectID, projectContext.RelatedWords.Count())
+	return &projectContext, nil
+}
+
 // GenerateProjectContext generates project context keywords using LLM
 func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *ProjectContextParams) (*model.ProjectContext, error) {
 	logger := log.GetReqLogger(ctx)
-	logger.Printf("GenerateProjectContext request - project_id: %d, name: %q",
-		params.ProjectID, params.ProjectName)
+	logger.Printf("GenerateProjectContext request - project_id: %d, name: %q, force_regenerate: %v",
+		params.ProjectID, params.ProjectName, params.ForceRegenerate)
+
+	// Check if context already exists and we don't need to force regenerate
+	if !params.ForceRegenerate {
+		existingContext, err := ctrl.GetProjectContext(ctx, params.ProjectID)
+		if err == nil && !existingContext.RelatedWords.IsEmpty() {
+			logger.Printf("Using existing project context for project %d (cached)", params.ProjectID)
+			return existingContext, nil
+		}
+		logger.Printf("No existing context found or context is empty, generating new one")
+	} else {
+		logger.Printf("Force regenerating project context for project %d", params.ProjectID)
+	}
 
 	// Generate related words using LLM
 	relatedWords, err := ctrl.generateRelatedWordsWithLLM(ctx, params.ProjectName, params.ProjectDescription)
@@ -73,7 +101,7 @@ func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *Proj
 		return nil, fmt.Errorf("failed to generate related words: %w", err)
 	}
 
-	// Create project context
+	// Create or update project context
 	projectContext := &model.ProjectContext{
 		ProjectID:    params.ProjectID,
 		Name:         params.ProjectName,
@@ -82,7 +110,7 @@ func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *Proj
 		CreatedAt:    time.Now(),
 	}
 
-	// Save to database
+	// Use upsert to handle both create and update cases
 	if err := ctrl.db.Save(projectContext).Error; err != nil {
 		return nil, fmt.Errorf("failed to save project context: %w", err)
 	}
@@ -214,10 +242,8 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 	logger.Printf("InstantRecommend request - project_id: %d, prompt: %q, top_k: %d",
 		params.ProjectID, params.UserPrompt, params.TopK)
 
-	// Get project context
-	var projectContext model.ProjectContext
-	err := ctrl.db.Where("project_id = ?", params.ProjectID).First(&projectContext).Error
-
+	// Get project context using unified method
+	projectContext, err := ctrl.GetProjectContext(ctx, params.ProjectID)
 	if err != nil {
 		logger.Printf("Project context not found for project %d, using original prompt", params.ProjectID)
 		// Fallback to original recommendation without context (SearchOnly mode)

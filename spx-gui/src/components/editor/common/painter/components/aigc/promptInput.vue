@@ -1,7 +1,7 @@
 <template>
   <!-- 提示词输入 -->
   <div class="form-group">
-    <label class="form-label">{{ $t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
+    <label class="form-label">{{ t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
 
     <!-- 模板类型选择按钮 -->
     <div class="template-buttons">
@@ -11,7 +11,7 @@
         :class="['template-button', { active: activeTemplate === templateType.key }]"
         @click="switchTemplate(templateType.key)"
       >
-        {{ templateType.label }}
+        {{ t(templateType.label) }}
       </button>
     </div>
 
@@ -34,14 +34,14 @@
       </template>
     </div>
     <div v-if="previewText && activeTemplate !== 'smart'" class="preview-section">
-      <div class="preview-label">{{ $t({ en: 'Preview', zh: '预览' }) }}:</div>
+      <div class="preview-label">{{ t({ en: 'Preview', zh: '预览' }) }}:</div>
       <div class="preview-content">{{ previewText }}</div>
     </div>
     <div class="input-hint">
       {{
         activeTemplate === 'smart'
-          ? $t({ en: 'Tip: Enter your complete prompt description', zh: '提示：输入您的完整提示词描述' })
-          : $t({ en: 'Tip: Fill in the blanks to complete your prompt', zh: '提示：填写空白处以完成您的提示词' })
+          ? t({ en: 'Tip: Enter your complete prompt description', zh: '提示：输入您的完整提示词描述' })
+          : t({ en: 'Tip: Fill in the blanks to complete your prompt', zh: '提示：填写空白处以完成您的提示词' })
       }}
     </div>
   </div>
@@ -51,6 +51,9 @@
 import { ref, computed, watch } from 'vue'
 import { NInput } from 'naive-ui'
 import PromptEditor from './promptEditor.vue'
+import { useI18n } from '@/utils/i18n'
+
+const { t } = useI18n()
 
 // Props
 interface Props {
@@ -71,25 +74,31 @@ const smartInput = ref('')
 
 // 定义不同类型的模板
 const templates = {
-  sprite: '一个（可爱）的（猫咪），颜色是（橘色）',
-  prop: '一个（金币），颜色是（金色）',
-  decoration: '一个（中世纪）风格的（帽子），颜色是（灰色）',
-  smart: ''
+  sprite: { en: 'A （cute） （cat）, color is （orange)）', zh: '一个（可爱）的（猫咪），颜色是（橘色）' },
+  prop: { en: 'A （coin）, color is （golden）', zh: '一个（金币），颜色是（金色）' },
+  decoration: {
+    en: 'A （medieval） style （hat）, color is （gray）',
+    zh: '一个（中世纪）风格的（帽子），颜色是（灰色）'
+  },
+  smart: { en: '', zh: '' }
 }
 
 // 模板类型定义
 const templateTypes = [
-  { key: 'sprite' as const, label: '精灵' },
-  { key: 'prop' as const, label: '道具' },
-  { key: 'decoration' as const, label: '装饰' },
-  { key: 'smart' as const, label: '智能' }
+  { key: 'sprite' as const, label: { en: 'Sprite', zh: '精灵' } },
+  { key: 'prop' as const, label: { en: 'Prop', zh: '道具' } },
+  { key: 'decoration' as const, label: { en: 'Decoration', zh: '装饰' } },
+  { key: 'smart' as const, label: { en: 'Smart', zh: '智能' } }
 ] as const
 
 // 当前激活的模板类型
 const activeTemplate = ref<keyof typeof templates>('sprite')
 
 // 当前模板内容
-const template = computed(() => (templates[activeTemplate.value] !== 'smart' ? templates[activeTemplate.value] : ''))
+const template = computed(() => {
+  if (activeTemplate.value === 'smart') return ''
+  return t(templates[activeTemplate.value])
+})
 
 // 解析模板的接口
 interface TemplatePart {

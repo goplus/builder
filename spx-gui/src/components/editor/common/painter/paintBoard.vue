@@ -72,7 +72,6 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="7" y1="17" x2="17" y2="7"></line>
               </svg>
-              <span>{{ $t({ en: 'Line', zh: '直线' }) }}</span>
             </button>
 
             <button
@@ -86,7 +85,6 @@
                   d="m7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08-2 2.51-2 2.68-2.02 0.44 0 3.34-1.66 3.34-3.02z"
                 ></path>
               </svg>
-              <span>{{ $t({ en: 'Brush', zh: '笔刷' }) }}</span>
             </button>
 
             <button
@@ -98,7 +96,6 @@
                 <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
                 <path d="m13 13 6 6"></path>
               </svg>
-              <span>{{ $t({ en: 'Reshape', zh: '变形' }) }}</span>
             </button>
 
             <button
@@ -111,7 +108,6 @@
                 <path d="M22 21H7"></path>
                 <path d="m5 11 9 9"></path>
               </svg>
-              <span>{{ $t({ en: 'Eraser', zh: '橡皮' }) }}</span>
             </button>
 
             <button
@@ -122,7 +118,6 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect width="18" height="12" x="3" y="6" rx="2"></rect>
               </svg>
-              <span>{{ $t({ en: 'Rectangle', zh: '矩形' }) }}</span>
             </button>
 
             <button
@@ -133,7 +128,6 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="9"></circle>
               </svg>
-              <span>{{ $t({ en: 'Circle', zh: '圆形' }) }}</span>
             </button>
 
             <button
@@ -148,7 +142,6 @@
                 <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
                 <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"></path>
               </svg>
-              <span>{{ $t({ en: 'Fill', zh: '填充' }) }}</span>
             </button>
 
             <button
@@ -161,7 +154,6 @@
                 <path d="M9 20h6"></path>
                 <path d="M12 4v16"></path>
               </svg>
-              <span>{{ $t({ en: 'Text', zh: '文本' }) }}</span>
             </button>
           </div>
         </div>

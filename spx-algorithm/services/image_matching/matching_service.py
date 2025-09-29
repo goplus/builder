@@ -3,6 +3,7 @@
 """
 
 import logging
+import math
 from typing import List, Dict, Any, Optional
 import numpy as np
 
@@ -261,16 +262,22 @@ class ImageMatchingService:
                 logger.error("SVG图片向量化失败")
                 return []
             
-            # 在向量数据库中搜索（使用距离度量）
-            search_results = self.milvus_ops.search_by_vector_distance(
+            # 在向量数据库中搜索（使用现有IP索引）
+            search_results = self.milvus_ops.search_by_vector(
                 query_vector.tolist(), 
                 limit=top_k
             )
             
-            # 应用相似度阈值过滤（统一使用similarity进行过滤，消除与search路由的歧义）
+            # IP到L2距离转换：对于归一化向量，L2 = sqrt(2 * (1 - IP))
+            # 添加L2距离信息
+            for result in search_results:
+                # 限制相似度在[-1, 1]范围内，避免浮点数精度问题
+                similarity = max(-1.0, min(1.0, result['similarity']))
+                result['distance'] = math.sqrt(max(0.0, 2 * (1 - similarity)))
+            
+            # 应用相似度阈值过滤
             if threshold > 0:
                 before_count = len(search_results)
-                # 统一使用相似度阈值过滤：similarity越大越相似，所以是大于等于阈值
                 search_results = [r for r in search_results if r['similarity'] >= threshold]
                 logger.info(f"相似度阈值过滤: {before_count} -> {len(search_results)} 个结果（最小相似度: {threshold}）")
             
