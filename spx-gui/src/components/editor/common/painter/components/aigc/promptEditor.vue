@@ -37,8 +37,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-
+import { ref, watch, nextTick, inject } from 'vue'
+import { instantImageRecommend } from '@/apis/image-recommend'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+const editorCtx = useEditorCtx()
 // @ts-ignore
 import getCaretCoordinates from 'textarea-caret'
 import { getPrompt } from '@/apis/prompt'
@@ -71,6 +73,9 @@ const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const status = ref({ key: 'idle', text: t({ en: 'Ready', zh: '准备就绪' }) })
 const completionSuggestions = ref<string[]>([])
 const showSuggestions = ref(false)
+const setImmediateGenerateResult = inject('setImmediateGenerateResult') as (
+  svgContents: { blob: string; svgContent: string }[]
+) => void
 
 // 新增：用于访问 DOM 元素和动态样式
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -102,26 +107,27 @@ const submitContent = async () => {
   // console.log(`[API Call] 准备发送内容: "${content.value}"`)
 
   try {
-    // const response = await new Promise<string[]>((resolve) => {
-    //   setTimeout(() => {
-    //     resolve([
-    //       '生成一辆汽车，只展示车的侧面，红色车身，白色轮毂',
-    //       '生成一辆跑车，金色车身，在赛道上',
-    //       '生成一辆老爷车，黑白色调'
-    //     ])
-    //   }, 1000)
-    // })
+    const projectId = editorCtx.project.id ? parseInt(editorCtx.project.id, 10) : 0
     const response = await getPrompt(content.value, 3)
 
-    status.value = { key: 'saved', text: t({ en: 'Completed!', zh: '已补全！' }) }
-    completionSuggestions.value = response
+    status.value = { key: 'saved', text: '已补全！' }
+    // 确保响应是数组格式
+    completionSuggestions.value = Array.isArray(response) ? response : []
 
     // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
-    nextTick(() => {
-      showSuggestions.value = true
-      updateDropdownPosition() // 再次调用以确保位置正确
+    if (completionSuggestions.value.length > 0) {
+      nextTick(() => {
+        showSuggestions.value = true
+        updateDropdownPosition() // 再次调用以确保位置正确
+      })
+    }
+
+    let previewPics = await instantImageRecommend(projectId, content.value, {
+      top_k: 4,
+      theme: '' // 可以根据需要设置主题
     })
 
+    setImmediateGenerateResult(previewPics.svgContents)
     // console.log('[API Success] 内容补全成功!', response)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t({ en: 'Unknown error', zh: '未知错误' })
@@ -134,6 +140,7 @@ const selectSuggestion = (suggestion: string) => {
   content.value = suggestion
   showSuggestions.value = false
   completionSuggestions.value = []
+  status.value = { key: 'idle', text: '准备就绪' }
 }
 
 const handleEscape = () => {
@@ -146,17 +153,29 @@ const handleEscape = () => {
 const updateDropdownPosition = () => {
   if (!textareaRef.value) return
 
-  const textarea = textareaRef.value // 获取光标在 textarea 中的像素坐标
+  try {
+    const textarea = textareaRef.value
 
-  const caret = getCaretCoordinates(textarea, textarea.selectionEnd) // 关键修正：将 textarea 内部的滚动位置考虑进去
-  // caret.top 是相对于 textarea 可视区域的顶部
-  // textarea.offsetTop 是 textarea 元素相对于其 offsetParent 的距离
-  // textarea.scrollTop 是 textarea 内容垂直滚动的距离
-  const top = textarea.offsetTop + caret.top + caret.height - textarea.scrollTop + 5
-  const left = textarea.offsetLeft + caret.left - textarea.scrollLeft // 更新样式
-  dropdownStyle.value = {
-    top: `${top}px`,
-    left: `${left}px`
+    // 确保 textarea 已经完全渲染并且可以访问其属性
+    if (!textarea.offsetParent) return
+
+    // 获取光标在 textarea 中的像素坐标
+    const caret = getCaretCoordinates(textarea, textarea.selectionEnd)
+
+    // 关键修正：将 textarea 内部的滚动位置考虑进去
+    // caret.top 是相对于 textarea 可视区域的顶部
+    // textarea.offsetTop 是 textarea 元素相对于其 offsetParent 的距离
+    // textarea.scrollTop 是 textarea 内容垂直滚动的距离
+    const top = textarea.offsetTop + caret.top + caret.height - textarea.scrollTop + 5
+    const left = textarea.offsetLeft + caret.left - textarea.scrollLeft
+
+    // 更新样式
+    dropdownStyle.value = {
+      top: `${top}px`,
+      left: `${left}px`
+    }
+  } catch (error) {
+    console.warn('Failed to update dropdown position:', error)
   }
 }
 

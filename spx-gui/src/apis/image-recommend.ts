@@ -97,33 +97,35 @@ export async function convertKodoUrlToBlobUrl(
 
   // 2. 获取SVG文本内容
   const svgContent = await toText(file)
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+  const blobUrl = URL.createObjectURL(blob)
 
   // 3. 获取 blob URL
-  const blobUrl = await new Promise<string>((resolve, reject) => {
-    let cleanup: (() => void) | null = null
+  // const blobUrl = await new Promise<string>((resolve, reject) => {
+  //   let cleanup: (() => void) | null = null
 
-    file
-      .url((disposer) => {
-        cleanup = disposer
-      })
-      .then((url) => {
-        resolve(url)
-      })
-      .catch((error) => {
-        reject(error)
-      })
+  //   file
+  //     .url((disposer) => {
+  //       cleanup = disposer
+  //     })
+  //     .then((url) => {
+  //       resolve(url)
+  //     })
+  //     .catch((error) => {
+  //       reject(error)
+  //     })
 
-    // 设置超时
-    const timeoutId = setTimeout(() => {
-      cleanup?.() // 清理资源
-      reject(new Error('获取 blob URL 超时'))
-    }, 10000)
+  //   // 设置超时
+  //   const timeoutId = setTimeout(() => {
+  //     // cleanup?.() // 清理资源
+  //     reject(new Error('获取 blob URL 超时'))
+  //   }, 10000)
 
-    // 成功后清除超时
-    Promise.resolve().then(() => {
-      clearTimeout(timeoutId)
-    })
-  })
+  //   // 成功后清除超时
+  //   Promise.resolve().then(() => {
+  //     clearTimeout(timeoutId)
+  //   })
+  // })
 
   // 4. 返回包含blob和svgContent的对象
   return {
