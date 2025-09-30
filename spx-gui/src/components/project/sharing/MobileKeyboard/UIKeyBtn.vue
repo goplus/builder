@@ -8,9 +8,11 @@ const props = withDefaults(
   defineProps<{
     value: string
     active?: boolean
+    size?: number
   }>(),
   {
-    active: false
+    active: false,
+    size: 50
   }
 )
 const emit = defineEmits<{
@@ -56,23 +58,17 @@ function press(down: boolean) {
 </script>
 
 <template>
-  <div v-if="!props.active" class="ui-key-btn">{{ getKeyDisplayText(props.value) }}</div>
-  <div
-    v-else
-    class="ui-key-btn"
-    @pointerdown.prevent.stop="press(true)"
-    @pointerup.prevent.stop="press(false)"
-    @pointercancel.prevent.stop="press(false)"
-    @pointerleave.prevent.stop="press(false)"
-  >
+  <div v-if="!props.active" class="ui-key-btn" :style="{ width: props.size + 'px', height: props.size + 'px' }">{{
+    getKeyDisplayText(props.value) }}</div>
+  <div v-else class="ui-key-btn" :style="{ width: props.size + 'px', height: props.size + 'px' }"
+    @pointerdown.prevent.stop="press(true)" @pointerup.prevent.stop="press(false)"
+    @pointercancel.prevent.stop="press(false)" @pointerleave.prevent.stop="press(false)">
     {{ getKeyDisplayText(props.value) }}
   </div>
 </template>
 
 <style lang="scss" scoped>
 .ui-key-btn {
-  width: 50px;
-  height: 50px;
   background-color: #b6b4b4;
   user-select: none;
   border-radius: 100px;

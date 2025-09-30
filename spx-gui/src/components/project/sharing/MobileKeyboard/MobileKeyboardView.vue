@@ -67,19 +67,8 @@ function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
 }
 
 function getKeyStyle(zone: 'lt' | 'rt' | 'lb' | 'rb', posx: number, posy: number) {
-  // 根据不同角落计算CSS定位，与 Editor 保持一致
-  switch (zone) {
-    case 'lt': // 左上角
-      return { position: 'absolute', left: posx + 'px', top: posy + 'px' }
-    case 'rt': // 右上角
-      return { position: 'absolute', right: posx + 'px', top: posy + 'px' }
-    case 'lb': // 左下角
-      return { position: 'absolute', left: posx + 'px', bottom: posy + 'px' }
-    case 'rb': // 右下角
-      return { position: 'absolute', right: posx + 'px', bottom: posy + 'px' }
-    default:
-      return { position: 'absolute', left: posx + 'px', top: posy + 'px' }
-  }
+  // 统一使用 left/top 定位，不再相对四角
+  return { position: 'absolute', left: posx + 'px', top: posy + 'px' }
 }
 </script>
 

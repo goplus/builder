@@ -11,8 +11,8 @@
             <div class="pool-header">{{ t({ en: 'Recognized Keys', zh: '识别的按键' }) }}</div>
             <div ref="paletteAutoRef" class="palette">
               <div v-for="k in autoPool" :key="`P-${k}`" class="palette-item"
-                @pointerdown.stop="startDragPool('autoPool', k, $event as PointerEvent)">
-                <UIKeyBtn :value="k" :active="false" :size="BtnSize" />
+                @pointerdown="startDragPool('autoPool', k, $event as PointerEvent)">
+                <UIKeyBtn :value="k" />
               </div>
             </div>
           </div>
@@ -40,14 +40,14 @@
                   <div v-for="(k, i) in zoneTokeys[z]" :key="k.keyValue + '-' + i" class="key"
                     :class="{ dragging: drag?.kind === 'key' && drag.zone === z && drag.index === i }"
                     :style="getKeyStyle(z, k.posx, k.posy)" @pointerdown.stop="startDragKey(z, i, $event)">
-                    <UIKeyBtn :value="k.keyValue" :active="false" :size="BtnSize" />
+                    <UIKeyBtn :value="k.keyValue" :active="false" />
                   </div>
                 </div>
 
                 <!-- 拖拽中的浮层（跟随指针） -->
                 <div v-if="drag" class="floating"
-                  :style="{ transform: `translate(${drag.x - BtnSize / 2}px, ${drag.y - BtnSize / 2}px)` }">
-                  <UIKeyBtn :value="drag.keyValue" :active="false" :size="BtnSize" />
+                  :style="{ transform: `translate(${drag.x - 25}px, ${drag.y - 25}px)` }">
+                  <UIKeyBtn :value="drag.keyValue" :active="false" />
                 </div>
               </div>
             </div>
@@ -69,7 +69,7 @@
               <div ref="paletteAllRef" class="palette">
                 <div v-for="k in allPool" :key="`P-${k}`" class="palette-item"
                   @pointerdown.stop="startDragPool('allPool', k, $event as PointerEvent)">
-                  <UIKeyBtn :value="k" :active="false" :size="BtnSize" />
+                  <UIKeyBtn :value="k" />
                 </div>
               </div>
             </n-collapse-transition>
@@ -112,7 +112,7 @@ const assignedKeys = new Set(
     .flatMap((arr) => arr ?? [])
     .map((btn) => btn.label)
 )
-const BtnSize = 50
+
 const allPool = ref<string[]>(webKeys.filter((k) => !props.projectKeys?.includes(k) && !assignedKeys.has(k)))
 const autoPool = ref<string[]>(props.projectKeys ? props.projectKeys.filter((k) => !assignedKeys.has(k)) : [])
 const zones = ['lt', 'rt', 'lb', 'rb'] as const
@@ -161,12 +161,16 @@ type DragState =
     x: number
     y: number
     originFrom: 'autoPool' | 'allPool'
+    // 记录拖拽开始时鼠标相对于按键的偏移
+    offsetX: number
+    offsetY: number
   }
 const drag = ref<DragState | null>(null)
 const hoverZone = ref<ZoneId | null>(null)
 
 function startDragPool(from: 'autoPool' | 'allPool', keyValue: string, e: PointerEvent) {
   drag.value = { kind: 'pool', from, keyValue, x: e.clientX, y: e.clientY }
+  console.log('startDragPool', from, keyValue, e.clientX, e.clientY)
   window.addEventListener('pointermove', onMove)
   window.addEventListener('pointerup', onUp, { once: true })
 }
@@ -175,6 +179,36 @@ function startDragKey(zone: ZoneId, index: number, e: PointerEvent) {
   const k = zoneTokeys[zone][index]
   if (!k) return
 
+  // 计算鼠标相对于按键当前位置的偏移
+  const zoneEl = zoneRefs[zone]?.value
+  if (!zoneEl) return
+
+  const zoneRect = zoneEl.getBoundingClientRect()
+  let keyX: number, keyY: number
+
+  // 根据不同角落计算按键的绝对位置
+  switch (zone) {
+    case 'lt':
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.top + k.posy
+      break
+    case 'rt':
+      keyX = zoneRect.right - k.posx
+      keyY = zoneRect.top + k.posy
+      break
+    case 'lb':
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.bottom - k.posy
+      break
+    case 'rb':
+      keyX = zoneRect.right - k.posx
+      keyY = zoneRect.bottom - k.posy
+      break
+    default:
+      keyX = zoneRect.left + k.posx
+      keyY = zoneRect.top + k.posy
+  }
+
   drag.value = {
     kind: 'key',
     zone,
@@ -182,7 +216,9 @@ function startDragKey(zone: ZoneId, index: number, e: PointerEvent) {
     keyValue: k.keyValue,
     x: e.clientX,
     y: e.clientY,
-    originFrom: k.origin ?? (props.projectKeys?.includes(k.keyValue) ? 'autoPool' : 'allPool')
+    originFrom: k.origin ?? (props.projectKeys?.includes(k.keyValue) ? 'autoPool' : 'allPool'),
+    offsetX: e.clientX - keyX,
+    offsetY: e.clientY - keyY
   }
   window.addEventListener('pointermove', onMove)
   window.addEventListener('pointerup', onUp, { once: true })
@@ -198,6 +234,7 @@ function onMove(e: PointerEvent) {
       break
     }
   }
+  // 拖拽过程中不实时更新按键位置，只在松开时更新
 }
 function onUp(e: PointerEvent) {
   window.removeEventListener('pointermove', onMove)
@@ -223,11 +260,17 @@ function onUp(e: PointerEvent) {
   // d.kind === 'key'
   const fromZone = d.zone
   if (targetZone && targetZone !== fromZone) {
-    const [px, py] = getPixelInZone(targetZone, e.clientX, e.clientY)
+    // 跨区域移动时也使用偏移量
+    const adjustedX = e.clientX - (d.kind === 'key' ? d.offsetX : 0)
+    const adjustedY = e.clientY - (d.kind === 'key' ? d.offsetY : 0)
+    const [px, py] = getPixelInZone(targetZone, adjustedX, adjustedY)
     const item = zoneTokeys[fromZone].splice(d.index, 1)[0]
     if (item) zoneTokeys[targetZone].push({ keyValue: item.keyValue, posx: px, posy: py, origin: item.origin ?? d.originFrom })
   } else if (targetZone === fromZone) {
-    const [px, py] = getPixelInZone(fromZone, e.clientX, e.clientY)
+    // 使用偏移量计算正确的位置
+    const adjustedX = e.clientX - (d.kind === 'key' ? d.offsetX : 0)
+    const adjustedY = e.clientY - (d.kind === 'key' ? d.offsetY : 0)
+    const [px, py] = getPixelInZone(fromZone, adjustedX, adjustedY)
     const kp = zoneTokeys[fromZone][d.index]
     if (kp) {
       kp.posx = px; kp.posy = py
@@ -249,12 +292,23 @@ function onUp(e: PointerEvent) {
 function hit(el: HTMLElement | null, x: number, y: number) {
   if (!el) return false
   const r = el.getBoundingClientRect()
-  return x - BtnSize / 2 >= r.left && x + BtnSize / 2 <= r.right && y - BtnSize / 2 >= r.top && y + BtnSize / 2 <= r.bottom
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
 }
 
 function getKeyStyle(zone: ZoneId, posx: number, posy: number) {
-  // 统一使用 left/top 定位，不再相对四角
-  return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+  // 根据不同角落计算CSS定位
+  switch (zone) {
+    case 'lt': // 左上角
+      return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+    case 'rt': // 右上角
+      return { right: posx + 'px', top: posy + 'px', touchAction: 'none' }
+    case 'lb': // 左下角
+      return { left: posx + 'px', bottom: posy + 'px', touchAction: 'none' }
+    case 'rb': // 右下角
+      return { right: posx + 'px', bottom: posy + 'px', touchAction: 'none' }
+    default:
+      return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+  }
 }
 
 function getPixelInZone(zone: ZoneId, clientX: number, clientY: number): [number, number] {
@@ -262,9 +316,30 @@ function getPixelInZone(zone: ZoneId, clientX: number, clientY: number): [number
   if (!el) return [0, 0]
   const r = el.getBoundingClientRect()
 
-  // 统一使用相对于区域左上角的坐标
-  const px = clientX - r.left
-  const py = clientY - r.top
+  // 根据不同角落计算相对坐标
+  // 由于按键使用了 transform: translate(-50%, -50%)，我们需要计算按键中心点的位置
+  let px: number, py: number
+  switch (zone) {
+    case 'lt': // 左上角 - 坐标就是相对左上角的距离
+      px = clientX - r.left
+      py = clientY - r.top
+      break
+    case 'rt': // 右上角 - 坐标是相对右上角的距离
+      px = r.right - clientX
+      py = clientY - r.top
+      break
+    case 'lb': // 左下角 - 坐标是相对左下角的距离
+      px = clientX - r.left
+      py = r.bottom - clientY
+      break
+    case 'rb': // 右下角 - 坐标是相对右下角的距离
+      px = r.right - clientX
+      py = r.bottom - clientY
+      break
+    default:
+      px = clientX - r.left
+      py = clientY - r.top
+  }
 
   return [px, py]
 }
@@ -278,6 +353,7 @@ function confirm() {
     rb: zoneTokeys.rb.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy }))
   }
 
+  console.log('提交的数据:', result)
   emit('resolved', result)
 }
 onUnmounted(() => {
