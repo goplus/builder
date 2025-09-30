@@ -18,6 +18,12 @@
     >
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
+        <DecoratorNode
+          v-for="(decorator, idx) in editorCtx.project.tilemap?.decorators ?? []"
+          :key="idx"
+          :decorator="decorator"
+          :map-size="mapSize"
+        />
         <SpriteNode
           v-for="sprite in visibleSprites"
           :key="sprite.id"
@@ -97,6 +103,7 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
 

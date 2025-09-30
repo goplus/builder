@@ -16,6 +16,7 @@ import { MapMode } from '@/models/stage'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 
 const props = defineProps<{
@@ -432,13 +433,19 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
     >
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig" @click="handleBackdropClick"></v-rect>
+        <DecoratorNode
+          v-for="(decorator, idx) in props.project.tilemap?.decorators ?? []"
+          :key="idx"
+          :decorator="decorator"
+          :map-size="mapSize"
+        />
         <SpriteNode
           v-for="sprite in visibleSprites"
           :key="sprite.id"
           :sprite="sprite"
           :selected="selectedSprite?.id === sprite.id"
           :project="props.project"
-          :map-size="mapSize!"
+          :map-size="mapSize"
           :node-ready-map="nodeReadyMap"
           @drag-move="handleSpriteDragMove"
           @drag-end="handleSpriteDragEnd"
