@@ -56,6 +56,7 @@ import { File } from '@/models/common/file'
 import { Input, Output, Conversion, ALL_FORMATS, BlobSource, Mp4OutputFormat, BufferTarget } from 'mediabunny'
 import { useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { submitTranscode, getTranscodeStatus } from '@/apis/transcode'
 
 const message = useMessage()
 const { t } = useI18n()
@@ -391,31 +392,75 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
       })
     }
 
-    let finalVideoFile = recordFile
-    try {
-      finalVideoFile = await convertWebmToMp4(recordFile)
-    } catch (error) {
-      console.error('视频转换失败，使用原始文件:', error)
-      message.warning(
-        t({
-          en: 'Video format conversion failed. Please try a different browser.',
-          zh: '视频格式转换失败，请尝试换个浏览器。'
+    // 1. 上传原始 WebM 文件
+    message.info(
+      t({
+        en: 'Uploading video...',
+        zh: '正在上传视频...'
+      })
+    )
+    
+    const projectFile = createProjectFile(recordFile)
+    const originalURL = await saveFile(projectFile) // 上传原始 WebM 文件
+    
+    // 2. 提交转码任务
+    message.info(
+      t({
+        en: 'Converting video format...',
+        zh: '正在转码视频...'
+      })
+    )
+    
+    const transcodeResponse = await submitTranscode({ sourceUrl: originalURL })
+    
+    // 3. 轮询查询转码状态
+    const maxRetries = 60 // 最多查询 60 次
+    const retryInterval = 2000 // 每 2 秒查询一次
+    let retries = 0
+    let transcodedURL = ''
+    
+    while (retries < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, retryInterval))
+      
+      const status = await getTranscodeStatus(transcodeResponse.taskId)
+      
+      if (status.status === 'completed') {
+        transcodedURL = status.outputUrl!
+        break
+      } else if (status.status === 'failed') {
+        throw new DefaultException({
+          en: `Video transcoding failed: ${status.error || 'Unknown error'}`,
+          zh: `视频转码失败: ${status.error || '未知错误'}`
         })
-      )
+      }
+      
+      retries++
     }
-
-    const projectFile = createProjectFile(finalVideoFile)
-    const RecordingURL = await saveFile(projectFile) // Store to cloud and get video storage URL
-
+    
+    if (!transcodedURL) {
+      throw new DefaultException({
+        en: 'Video transcoding timeout, please try again',
+        zh: '视频转码超时,请重试'
+      })
+    }
+    
+    // 4. 使用转码后的 URL 创建 recording
+    message.success(
+      t({
+        en: 'Video ready!',
+        zh: '视频准备完成!'
+      })
+    )
+    
     const params: CreateRecordingParams = {
       projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
       title: projectData.value.name,
       description: projectData.value.description ?? '',
-      videoUrl: RecordingURL,
+      videoUrl: transcodedURL, // 使用转码后的 MP4 URL
       thumbnailUrl: projectData.value.thumbnail || ''
     }
 
-    const created: RecordingData = await createRecording(params) // Call Recording APIs to store to backend
+    const created: RecordingData = await createRecording(params)
     recordData.value = created
     return created
   })()
