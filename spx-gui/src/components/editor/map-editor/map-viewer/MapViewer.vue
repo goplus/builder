@@ -291,38 +291,44 @@ const cameraEdgeScrollConfig = {
   interval: 50 // ms
 }
 
-const handleSpriteDragMove = throttle(function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
-  if (cameraEdgeScrollCheckTimer != null) return
-  if (stageRef.value == null) return
-  const stage = stageRef.value.getStage()
-  const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
+const handleSpriteDragMove = throttle(
+  function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
+    if (cameraEdgeScrollCheckTimer != null) return
+    if (stageRef.value == null) return
+    const stage = stageRef.value.getStage()
+    const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
 
-  cameraEdgeScrollCheckTimer = setInterval(() => {
-    const pointerPos = stage.getPointerPosition()
-    if (pointerPos == null) {
-      clearCameraEdgeScrollCheckTimer()
-      return
-    }
+    cameraEdgeScrollCheckTimer = setInterval(() => {
+      const pointerPos = stage.getPointerPosition()
+      if (pointerPos == null) {
+        clearCameraEdgeScrollCheckTimer()
+        return
+      }
 
-    const oldMapPos = mapPos.value
-    const targetMapPos = { ...oldMapPos }
-    if (pointerPos.x < edgeThreshold) {
-      targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
-    } else if (pointerPos.x > stage.width() - edgeThreshold) {
-      targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
-    }
-    if (pointerPos.y < edgeThreshold) {
-      targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
-    } else if (pointerPos.y > stage.height() - edgeThreshold) {
-      targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
-    }
-    const newMapPos = setMapPos(targetMapPos)
-    notifyCameraScroll({
-      x: (newMapPos.x - oldMapPos.x) / mapScale.value,
-      y: (newMapPos.y - oldMapPos.y) / mapScale.value
-    })
-  }, interval)
-}, 100)
+      const oldMapPos = mapPos.value
+      const targetMapPos = { ...oldMapPos }
+      if (pointerPos.x < edgeThreshold) {
+        targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
+      } else if (pointerPos.x > stage.width() - edgeThreshold) {
+        targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
+      }
+      if (pointerPos.y < edgeThreshold) {
+        targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
+      } else if (pointerPos.y > stage.height() - edgeThreshold) {
+        targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
+      }
+      const newMapPos = setMapPos(targetMapPos)
+      notifyCameraScroll({
+        x: (newMapPos.x - oldMapPos.x) / mapScale.value,
+        y: (newMapPos.y - oldMapPos.y) / mapScale.value
+      })
+    }, interval)
+  },
+  100,
+  {
+    trailing: false // Ensure cameraEdgeScrollCheckTimer properly cleared in handleSpriteDragEnd
+  }
+)
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()
