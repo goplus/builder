@@ -22,7 +22,7 @@ import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
-import { Tilemap } from '../tilemap'
+import { DumbTilemap as Tilemap } from '../tilemap'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'

@@ -13,7 +13,7 @@ export function useCodeEditorUICtx() {
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
-import { computedShallowReactive, untilNotNull, localStorageRef } from '@/utils/utils'
+import { computedShallowReactive, untilNotNull, localStorageRef, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
@@ -135,10 +135,10 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   contextmenu: false
 }))
 
-const monacEditorRef = shallowRef<MonacoEditor | null>(null)
+const monacoEditorRef = shallowRef<MonacoEditor | null>(null)
 
 async function handleMonacoEditorInit(editor: MonacoEditor) {
-  monacEditorRef.value = editor
+  monacoEditorRef.value = editor
 }
 
 const handleMonacoEditorDrag = throttle((clientPoint: { x: number; y: number } | null) => {
@@ -199,8 +199,10 @@ watch(
     const signal = getCleanupSignal(onCleanUp)
     signal.addEventListener('abort', () => ui.dispose())
 
-    const editor = await untilNotNull(monacEditorRef)
+    const editor = await untilNotNull(monacoEditorRef)
     signal.throwIfAborted()
+
+    await untilTaskScheduled('user-visible', signal)
     ui.init(editor)
 
     ui.editor.onDidChangeConfiguration((e) => {

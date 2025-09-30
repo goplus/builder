@@ -458,3 +458,33 @@ export function unicodeSafeSlice(input: string, start: number, end: number = inp
   const codePoints = Array.from(input)
   return codePoints.slice(start, end).join('')
 }
+
+declare global {
+  interface Window {
+    scheduler?: {
+      postTask<T>(
+        callback: () => T,
+        options: { priority: 'user-blocking' | 'user-visible' | 'background'; signal?: AbortSignal }
+      ): Promise<T>
+    }
+  }
+}
+
+/** https://developer.mozilla.org/en-US/docs/Web/API/Prioritized_Task_Scheduling_API#task_priorities */
+export function untilTaskScheduled(
+  priority: 'user-blocking' | 'user-visible' | 'background' = 'user-visible',
+  signal?: AbortSignal
+) {
+  const startAt = performance.now()
+  // TODO: better fallback for browsers not supporting `window.scheduler.postTask`
+  if (window.scheduler == null) return timeout(0, signal)
+  return window.scheduler.postTask(
+    () => {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug(`task yielded (${priority})`, performance.now() - startAt)
+      }
+    },
+    { priority, signal }
+  )
+}

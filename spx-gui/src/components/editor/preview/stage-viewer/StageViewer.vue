@@ -87,7 +87,8 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { until, untilNotNull } from '@/utils/utils'
+import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
+import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
@@ -177,21 +178,25 @@ function setMapPos(pos: Pos) {
   return mapPos.value
 }
 
-function setMapPosWithTransition(pos: Pos, durationInMs: number) {
+async function setMapPosWithTransition(pos: Pos, durationInMs: number) {
   if (mapRef.value == null) {
     setMapPos(pos)
     return
   }
+  const mapNode = mapRef.value.getNode()
   const newMapPos = getValidMapPos(pos)
-  new Konva.Tween({
-    node: mapRef.value.getNode(),
-    duration: durationInMs / 1000,
-    x: newMapPos.x,
-    y: newMapPos.y,
-    onFinish: () => {
-      setMapPos(newMapPos)
-    }
-  }).play()
+  return new Promise<void>((resolve) => {
+    new Konva.Tween({
+      node: mapNode,
+      duration: durationInMs / 1000,
+      x: newMapPos.x,
+      y: newMapPos.y,
+      onFinish: () => {
+        setMapPos(newMapPos)
+        resolve()
+      }
+    }).play()
+  })
 }
 
 /** Check if given position (in game) is in viewport */
@@ -209,21 +214,24 @@ function inViewport({ x, y }: Pos) {
 // If camera enabled, update camera behavior when selected sprite changes
 watch(
   () => editorCtx.state.selectedSprite,
-  (selectedSprite) => {
+  async (selectedSprite, _, onCleanup) => {
     const project = editorCtx.project
     if (!project.isCameraEnabled) return
-    // Set camera follow sprite
-    project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
-      project.setCameraFollowSprite(selectedSprite?.id ?? null)
-    )
+
+    await untilTaskScheduled('user-visible', getCleanupSignal(onCleanup))
     // Center map to selected sprite if it's out of viewport
     if (selectedSprite != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
         x: -(mapSize.value.width / 2 + selectedSprite.x - viewportSize.value.width / 2),
         y: -(mapSize.value.height / 2 - selectedSprite.y - viewportSize.value.height / 2)
       }
-      setMapPosWithTransition(mapPosForSprite, 300)
+      await setMapPosWithTransition(mapPosForSprite, 300)
     }
+
+    // Set camera follow sprite
+    project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
+      project.setCameraFollowSprite(selectedSprite?.id ?? null)
+    )
   },
   { immediate: true }
 )
@@ -342,38 +350,44 @@ const cameraEdgeScrollConfig = {
   interval: 50 // ms
 }
 
-function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
-  if (cameraEdgeScrollCheckTimer != null) return
-  if (stageRef.value == null) return
-  const stage = stageRef.value.getStage()
-  const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
+const handleSpriteDragMove = throttle(
+  function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
+    if (cameraEdgeScrollCheckTimer != null) return
+    if (stageRef.value == null) return
+    const stage = stageRef.value.getStage()
+    const { edgeThreshold, scrollSpeed, interval } = cameraEdgeScrollConfig
 
-  cameraEdgeScrollCheckTimer = setInterval(() => {
-    const pointerPos = stage.getPointerPosition()
-    if (pointerPos == null) {
-      clearCameraEdgeScrollCheckTimer()
-      return
-    }
+    cameraEdgeScrollCheckTimer = setInterval(() => {
+      const pointerPos = stage.getPointerPosition()
+      if (pointerPos == null) {
+        clearCameraEdgeScrollCheckTimer()
+        return
+      }
 
-    const oldMapPos = mapPos.value
-    const targetMapPos = { ...oldMapPos }
-    if (pointerPos.x < edgeThreshold) {
-      targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
-    } else if (pointerPos.x > stage.width() - edgeThreshold) {
-      targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
-    }
-    if (pointerPos.y < edgeThreshold) {
-      targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
-    } else if (pointerPos.y > stage.height() - edgeThreshold) {
-      targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
-    }
-    const newMapPos = setMapPos(targetMapPos)
-    notifyCameraScroll({
-      x: newMapPos.x - oldMapPos.x,
-      y: newMapPos.y - oldMapPos.y
-    })
-  }, interval)
-}
+      const oldMapPos = mapPos.value
+      const targetMapPos = { ...oldMapPos }
+      if (pointerPos.x < edgeThreshold) {
+        targetMapPos.x += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.x)
+      } else if (pointerPos.x > stage.width() - edgeThreshold) {
+        targetMapPos.x -= (scrollSpeed / edgeThreshold) * (pointerPos.x - (stage.width() - edgeThreshold))
+      }
+      if (pointerPos.y < edgeThreshold) {
+        targetMapPos.y += (scrollSpeed / edgeThreshold) * (edgeThreshold - pointerPos.y)
+      } else if (pointerPos.y > stage.height() - edgeThreshold) {
+        targetMapPos.y -= (scrollSpeed / edgeThreshold) * (pointerPos.y - (stage.height() - edgeThreshold))
+      }
+      const newMapPos = setMapPos(targetMapPos)
+      notifyCameraScroll({
+        x: newMapPos.x - oldMapPos.x,
+        y: newMapPos.y - oldMapPos.y
+      })
+    }, interval)
+  },
+  100,
+  {
+    trailing: false // Ensure cameraEdgeScrollCheckTimer properly cleared in handleSpriteDragEnd
+  }
+)
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()

@@ -270,6 +270,12 @@ export class EditorState extends Disposable {
   private updateRouter(router: IRouter, replace: boolean) {
     const routePath = this.getRoute()
     const currentRoute = router.currentRoute.value
+
+    // Vue Router currently calculates the scroll position on every router.push navigation,
+    // which triggers layout recalculations that can negatively impact performance.
+    // See details in https://github.com/vuejs/router/issues/2393.
+    // TODO: We need to monitor the issue and update Vue Router when it is fixed.
+
     // Vue Router checks if we are already on the same route, and prevents redundant navigation.
     // So we do not need to check it manually to avoid infinite loops.
     router.push({
