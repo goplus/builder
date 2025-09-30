@@ -5,7 +5,6 @@ import { type Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
 import { useRenameSprite } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
-// import SpriteConfigItem from '@/components/editor/common/config/sprite/SpriteConfigItem.vue'
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
@@ -55,7 +54,7 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
       }}
     </UITooltip>
   </div>
-  <MapConfig class="config">
+  <MapConfig>
     <SpritePositionSize :sprite="sprite" :project="project" />
     <SpriteDirection :sprite="sprite" :project="project" />
     <SpriteVisible :sprite="sprite" :project="project" />
@@ -83,9 +82,5 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
 
 .spacer {
   flex: 1;
-}
-
-.config {
-  padding: 0;
 }
 </style>

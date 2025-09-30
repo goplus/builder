@@ -28,7 +28,7 @@ defineProps<{ title?: string; question?: string }>()
   vertical-align: middle;
 
   .label-cell {
-    width: 0;
+    min-width: 0;
     vertical-align: inherit;
   }
 
