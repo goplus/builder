@@ -8,6 +8,8 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
+import { untilTaskScheduled } from '@/utils/utils'
+import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
@@ -117,21 +119,25 @@ function setMapPos(pos: Pos) {
   return mapPos.value
 }
 
-function setMapPosWithTransition(pos: Pos, durationInMs: number) {
+async function setMapPosWithTransition(pos: Pos, durationInMs: number) {
   if (mapRef.value == null) {
     setMapPos(pos)
     return
   }
+  const mapNode = mapRef.value.getNode()
   const newMapPos = getValidMapPos(pos)
-  new Konva.Tween({
-    node: mapRef.value.getNode(),
-    duration: durationInMs / 1000,
-    x: newMapPos.x,
-    y: newMapPos.y,
-    onFinish: () => {
-      setMapPos(newMapPos)
-    }
-  }).play()
+  return new Promise<void>((resolve) => {
+    new Konva.Tween({
+      node: mapNode,
+      duration: durationInMs / 1000,
+      x: newMapPos.x,
+      y: newMapPos.y,
+      onFinish: () => {
+        setMapPos(newMapPos)
+        resolve()
+      }
+    }).play()
+  })
 }
 
 // When viewport size or map size changes, fit the map in the viewport and center it.
@@ -163,7 +169,8 @@ function inViewport({ x, y }: Pos) {
 
 watch(
   () => props.selectedSprite,
-  (selectedSprite) => {
+  async (selectedSprite, _, onCleanup) => {
+    await untilTaskScheduled('user-visible', getCleanupSignal(onCleanup))
     if (selectedSprite != null && viewportSize.value != null && !inViewport(selectedSprite)) {
       const mapPosForSprite = {
         x: viewportSize.value.width / 2 - (mapSize.value.width / 2 + selectedSprite.x) * mapScale.value,
@@ -284,7 +291,7 @@ const cameraEdgeScrollConfig = {
   interval: 50 // ms
 }
 
-function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
+const handleSpriteDragMove = throttle(function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
   if (cameraEdgeScrollCheckTimer != null) return
   if (stageRef.value == null) return
   const stage = stageRef.value.getStage()
@@ -315,7 +322,7 @@ function handleSpriteDragMove(notifyCameraScroll: CameraScrollNotifyFn) {
       y: (newMapPos.y - oldMapPos.y) / mapScale.value
     })
   }, interval)
-}
+}, 100)
 
 function handleSpriteDragEnd() {
   clearCameraEdgeScrollCheckTimer()

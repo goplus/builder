@@ -1,3 +1,4 @@
+import { markRaw } from 'vue'
 import { resolve } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
 
@@ -224,6 +225,10 @@ export class Tilemap extends Disposable {
     this.decorators = decorators ?? []
     this.extraConfig = extraConfig ?? {}
     this.tileSet = tileSet
+
+    // For now we do not support reactive changes on tilemap.
+    // Temporarily we mark it as raw to improve performance.
+    markRaw(this)
   }
 
   static async load(rawTilemapPath: string, parentDir: string, files: Files): Promise<Tilemap | null> {
@@ -285,5 +290,37 @@ export class Tilemap extends Disposable {
       [tilemapPath]: fromConfig(tilemapPath, rawTilemapConfig),
       ...textures
     }
+  }
+}
+
+export class DumbTilemap extends Disposable {
+  tilemapPath: string
+  files: Files
+
+  constructor(tilemapPath: string, files: Files) {
+    super()
+    this.tilemapPath = tilemapPath
+    this.files = files
+    markRaw(this)
+  }
+
+  static async load(rawTilemapPath: string, parentDir: string, files: Files): Promise<DumbTilemap | null> {
+    const tilemapFiles: Files = {}
+    const tilemapPath = resolve(parentDir, rawTilemapPath)
+    const tilemapFile = files[tilemapPath]
+    if (tilemapFile == null) throw new Error(`tilemap file not found: ${tilemapPath}`)
+    tilemapFiles[tilemapPath] = tilemapFile
+    const others = listAllFiles(files, resolve(parentDir, tilemapsAssetsPathName)).filter(
+      (filePath) => !filePath.endsWith('.DS_Store') && !filePath.endsWith('.import')
+    )
+    for (const filePath of others) {
+      tilemapFiles[filePath] = files[filePath]
+    }
+    return new DumbTilemap(rawTilemapPath, tilemapFiles)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export(parentDir: string): Files {
+    return this.files
   }
 }
