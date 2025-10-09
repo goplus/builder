@@ -136,27 +136,53 @@ const submitContent = async () => {
 
   try {
     const projectId = editorCtx.project.id ? parseInt(editorCtx.project.id, 10) : 0
-    const response = await getPrompt(content.value, 3)
 
-    status.value = { key: 'saved', text: '已补全！' }
-    // 确保响应是数组格式
-    completionSuggestions.value = Array.isArray(response) ? response : []
-
-    // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
-    if (completionSuggestions.value.length > 0) {
-      nextTick(() => {
-        showSuggestions.value = true
-        updateDropdownPosition() // 再次调用以确保位置正确
+    // 并行执行两个API调用以减少等待时间
+    const [promptResponse, imageResponse] = await Promise.allSettled([
+      getPrompt(content.value, 3),
+      instantImageRecommend(projectId, content.value, {
+        top_k: 4,
+        theme: '' // 可以根据需要设置主题
       })
+    ])
+
+    // 处理prompt补全结果
+    if (promptResponse.status === 'fulfilled') {
+      status.value = { key: 'saved', text: '已补全！' }
+      // 确保响应是数组格式
+      completionSuggestions.value = Array.isArray(promptResponse.value) ? promptResponse.value : []
+
+      // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
+      if (completionSuggestions.value.length > 0) {
+        nextTick(() => {
+          showSuggestions.value = true
+          updateDropdownPosition() // 再次调用以确保位置正确
+        })
+      }
+    } else {
+      console.error('[Prompt API Error]', promptResponse.reason)
+      // prompt补全失败不影响图片推荐，只是不显示补全建议
+      completionSuggestions.value = []
     }
 
-    let previewPics = await instantImageRecommend(projectId, content.value, {
-      top_k: 4,
-      theme: '' // 可以根据需要设置主题
-    })
+    // 处理图片推荐结果
+    if (imageResponse.status === 'fulfilled') {
+      setImmediateGenerateResult(imageResponse.value.svgContents)
+    } else {
+      console.error('[Image API Error]', imageResponse.reason)
+      // 图片推荐失败时可以显示错误提示，但不影响prompt补全
+    }
 
-    setImmediateGenerateResult(previewPics.svgContents)
-    // console.log('[API Success] 内容补全成功!', response)
+    // 如果两个API都失败了，才显示错误状态
+    if (promptResponse.status === 'rejected' && imageResponse.status === 'rejected') {
+      const errorMessage =
+        promptResponse.reason instanceof Error
+          ? promptResponse.reason.message
+          : t({ en: 'Unknown error', zh: '未知错误' })
+      status.value = { key: 'error', text: `${t({ en: 'Request failed', zh: '请求失败' })}: ${errorMessage}` }
+    }
+
+    // console.log('[API Success] 内容补全成功!', promptResponse)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t({ en: 'Unknown error', zh: '未知错误' })
     status.value = { key: 'error', text: `${t({ en: 'Request failed', zh: '请求失败' })}: ${errorMessage}` }
