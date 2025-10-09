@@ -1,7 +1,9 @@
 <template>
   <!-- 提示词输入 -->
   <div class="form-group">
-    <label v-if="showLabel" class="form-label">{{ t({ en: 'Describe the image you want', zh: '描述您想要的图片' }) }}</label>
+    <label v-if="showLabel" class="form-label">{{
+      t({ en: 'Describe the image you want', zh: '描述您想要的图片' })
+    }}</label>
 
     <!-- 智能补全模式：直接textarea输入 -->
     <div class="prompt-editor">
@@ -108,7 +110,7 @@ const dropdownStyle = ref({ top: '0px', left: '0px' })
 const handleInput = () => {
   status.value = { key: 'typing', text: t({ en: 'Typing...', zh: '正在输入...' }) }
   showSuggestions.value = false
-  
+
   // 更新 fullFilled 状态
   fullFilled.value = content.value.trim() !== ''
 
