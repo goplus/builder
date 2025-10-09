@@ -374,6 +374,172 @@ func (s *RecraftService) BeautifyImage(ctx context.Context, req BeautifyImageReq
 	}, nil
 }
 
+// ChangeCharacterStyle changes character styling while preserving character identity using Recraft's image-to-image API.
+func (s *RecraftService) ChangeCharacterStyle(ctx context.Context, req CharacterStyleChangeRequest) (*CharacterStyleChangeResponse, error) {
+	logger := log.GetReqLogger(ctx)
+	logger.Printf("[RECRAFT] Starting character style change request...")
+
+	// Validate request
+	if len(req.ImageData) == 0 {
+		return nil, errors.New("image data is required")
+	}
+	if req.StylePrompt == "" {
+		return nil, errors.New("style prompt is required")
+	}
+	if req.Strength < 0 || req.Strength > 1 {
+		return nil, errors.New("strength must be between 0 and 1")
+	}
+
+	// Build prompt that emphasizes character preservation
+	finalPrompt := s.buildCharacterPreservationPrompt(req.StylePrompt, req.PreserveIdentity)
+	finalNegativePrompt := s.buildCharacterPreservationNegativePrompt(req.NegativePrompt)
+
+	logger.Printf("[RECRAFT] Style prompt: %s", req.StylePrompt)
+	logger.Printf("[RECRAFT] Final prompt: %s", finalPrompt)
+	logger.Printf("[RECRAFT] Strength: %.2f", req.Strength)
+	logger.Printf("[RECRAFT] Preserve identity: %v", req.PreserveIdentity)
+
+	// Create multipart form
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	// Add image file
+	part, err := writer.CreateFormFile("image", "image.png")
+	if err != nil {
+		return nil, fmt.Errorf("create form file: %w", err)
+	}
+	_, err = part.Write(req.ImageData)
+	if err != nil {
+		return nil, fmt.Errorf("write image data: %w", err)
+	}
+
+	// Add form fields
+	writer.WriteField("prompt", finalPrompt)
+	writer.WriteField("strength", fmt.Sprintf("%.2f", req.Strength))
+	writer.WriteField("response_format", "url")
+
+	// Set default values optimized for character style change
+	style := req.Style
+	if style == "" {
+		style = "realistic_image" // Default style for character changes
+	}
+	writer.WriteField("style", style)
+
+	if req.SubStyle != "" {
+		writer.WriteField("sub_style", req.SubStyle)
+	}
+
+	if finalNegativePrompt != "" {
+		writer.WriteField("negative_prompt", finalNegativePrompt)
+	}
+
+	// Default to 1 image
+	writer.WriteField("n", "1")
+
+	// Set model
+	model := s.config.DefaultModel
+	if model == "" {
+		model = "recraftv3"
+	}
+	writer.WriteField("model", model)
+
+	writer.Close()
+
+	// Build request URL
+	url := s.config.BaseURL + s.config.Endpoints.ImageToImage
+	logger.Printf("[RECRAFT] Sending character style change request to %s with payload size: %d bytes", url, buf.Len())
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("Authorization", "Bearer "+s.getAPIKey())
+
+	resp, err := s.httpClient.Do(httpReq)
+	if err != nil {
+		logger.Printf("[RECRAFT] HTTP request failed: %v", err)
+		return nil, fmt.Errorf("http request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	logger.Printf("[RECRAFT] Received response with status: %s", resp.Status)
+
+	if resp.StatusCode >= 300 {
+		var errResp map[string]interface{}
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
+		logger.Printf("[RECRAFT] Error response body: %+v", errResp)
+		return nil, fmt.Errorf("recraft API error: %s", resp.Status)
+	}
+
+	var recraftResp RecraftImageToImageResp
+	if err := json.NewDecoder(resp.Body).Decode(&recraftResp); err != nil {
+		logger.Printf("[RECRAFT] Failed to decode response: %v", err)
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+
+	if len(recraftResp.Data) == 0 {
+		logger.Printf("[RECRAFT] No images in response")
+		return nil, errors.New("no images generated")
+	}
+
+	imageData := recraftResp.Data[0] // Take the first image
+	logger.Printf("[RECRAFT] Successfully changed character style - URL: %s", imageData.URL)
+
+	// Generate a simple ID
+	imageID := GenerateImageID(ProviderRecraft)
+
+	return &CharacterStyleChangeResponse{
+		ID:             imageID,
+		OriginalPrompt: req.StylePrompt,
+		StylePrompt:    finalPrompt,
+		NegativePrompt: finalNegativePrompt,
+		Style:          req.Style,
+		Strength:       req.Strength,
+		URL:            imageData.URL,
+		Width:          1024, // Default, as Recraft doesn't provide dimensions in response
+		Height:         1024, // Default, as Recraft doesn't provide dimensions in response
+		CreatedAt:      time.Unix(int64(recraftResp.Created), 0),
+		Provider:       ProviderRecraft,
+		PreserveIdentity: req.PreserveIdentity,
+	}, nil
+}
+
+// buildCharacterPreservationPrompt builds a prompt that emphasizes character preservation during style changes.
+func (s *RecraftService) buildCharacterPreservationPrompt(stylePrompt string, preserveIdentity bool) string {
+	var promptBuilder strings.Builder
+
+	if preserveIdentity {
+		// Add character preservation instructions
+		promptBuilder.WriteString("保持角色的面部特征、体型和基本外观不变，")
+		promptBuilder.WriteString("只改变")
+	}
+
+	promptBuilder.WriteString(stylePrompt)
+
+	if preserveIdentity {
+		promptBuilder.WriteString("，确保角色身份完全保持不变，面部特征和体型必须保持一致")
+	}
+
+	return promptBuilder.String()
+}
+
+// buildCharacterPreservationNegativePrompt builds negative prompts to avoid unwanted character changes.
+func (s *RecraftService) buildCharacterPreservationNegativePrompt(negativePrompt string) string {
+	var negativeBuilder strings.Builder
+
+	if negativePrompt != "" {
+		negativeBuilder.WriteString(negativePrompt)
+		negativeBuilder.WriteString(", ")
+	}
+
+	// Add character preservation negative prompts
+	negativeBuilder.WriteString("改变面部特征, 改变角色身份, 不同的人, 面部变形, 体型改变, 性别改变, 年龄变化")
+
+	return negativeBuilder.String()
+}
+
 // getAPIKey gets the API key from environment or configuration.
 func (s *RecraftService) getAPIKey() string {
 	// Get API key from environment variable

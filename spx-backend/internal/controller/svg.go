@@ -87,6 +87,17 @@ type BeautifyImageParams struct {
 	Provider       svggen.Provider `json:"provider,omitempty"`           // Provider to use (defaults to Recraft)
 }
 
+// ChangeCharacterStyleParams represents parameters for character style change.
+type ChangeCharacterStyleParams struct {
+	StylePrompt      string          `json:"style_prompt"`                 // Description of desired style changes (e.g., "change to casual clothes")
+	Strength         float64         `json:"strength"`                     // Strength of transformation (0-1), lower values preserve character better
+	Style            string          `json:"style,omitempty"`              // Image style
+	SubStyle         string          `json:"sub_style,omitempty"`          // Sub-style
+	NegativePrompt   string          `json:"negative_prompt,omitempty"`    // What to avoid
+	Provider         svggen.Provider `json:"provider,omitempty"`           // Provider to use (defaults to Recraft)
+	PreserveIdentity bool            `json:"preserve_identity"`            // Emphasize preserving character identity (default: true)
+}
+
 // Validate validates the image beautification parameters.
 func (p *BeautifyImageParams) Validate() (bool, string) {
 	if len(p.Prompt) < 3 {
@@ -105,6 +116,34 @@ func (p *BeautifyImageParams) Validate() (bool, string) {
 	// Validate provider (only Recraft supports PNG beautification currently)
 	if p.Provider != svggen.ProviderRecraft {
 		return false, "only recraft provider supports PNG beautification"
+	}
+
+	return true, ""
+}
+
+// Validate validates the character style change parameters.
+func (p *ChangeCharacterStyleParams) Validate() (bool, string) {
+	if len(p.StylePrompt) < 3 {
+		return false, "style_prompt must be at least 3 characters"
+	}
+
+	if p.Strength < 0 || p.Strength > 1 {
+		return false, "strength must be between 0 and 1"
+	}
+
+	// Default to Recraft provider if not specified
+	if p.Provider == "" {
+		p.Provider = svggen.ProviderRecraft
+	}
+
+	// Validate provider (only Recraft supports character style change currently)
+	if p.Provider != svggen.ProviderRecraft {
+		return false, "only recraft provider supports character style change"
+	}
+
+	// Default to preserve identity if not specified
+	if !p.PreserveIdentity {
+		p.PreserveIdentity = true // Default to preserve identity
 	}
 
 	return true, ""
@@ -150,6 +189,25 @@ type BeautifyImageResponse struct {
 	Height         int             `json:"height"`           // Image height
 	Provider       svggen.Provider `json:"provider"`         // Provider used
 	CreatedAt      time.Time       `json:"created_at"`       // Creation timestamp
+}
+
+// ChangeCharacterStyleResponse represents the response for character style change requests.
+type ChangeCharacterStyleResponse struct {
+	ID               string          `json:"id"`               // Unique ID for the styled character image
+	URL              string          `json:"url"`              // URL of the styled character image
+	KodoURL          string          `json:"kodo_url,omitempty"`           // Kodo storage URL if stored
+	AIResourceID     int64           `json:"ai_resource_id,omitempty"`     // Database record ID if stored
+	SVGData          []byte          `json:"svg_data,omitempty"`           // Generated SVG byte array
+	OriginalPrompt   string          `json:"original_prompt"`  // Original style prompt used
+	StylePrompt      string          `json:"style_prompt"`     // Final style prompt used
+	NegativePrompt   string          `json:"negative_prompt,omitempty"`    // Negative prompt used
+	Style            string          `json:"style"`            // Style applied
+	Strength         float64         `json:"strength"`         // Strength of transformation
+	Width            int             `json:"width"`            // Image width
+	Height           int             `json:"height"`           // Image height
+	Provider         svggen.Provider `json:"provider"`         // Provider used
+	PreserveIdentity bool            `json:"preserve_identity"` // Whether character identity was preserved
+	CreatedAt        time.Time       `json:"created_at"`       // Creation timestamp
 }
 
 // GenerateSVG generates an SVG image and returns the SVG content directly.
@@ -505,6 +563,110 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	}, nil
 }
 
+// ChangeCharacterStyle changes character styling while preserving character identity and returns the styled image metadata.
+func (ctrl *Controller) ChangeCharacterStyle(ctx context.Context, params *ChangeCharacterStyleParams, imageData []byte) (*ChangeCharacterStyleResponse, error) {
+	logger := log.GetReqLogger(ctx)
+	logger.Printf("ChangeCharacterStyle request - provider: %s, style_prompt: %q, strength: %.2f, preserve_identity: %v", params.Provider, params.StylePrompt, params.Strength, params.PreserveIdentity)
+
+	// Validate image data
+	if len(imageData) == 0 {
+		return nil, fmt.Errorf("image data is required")
+	}
+
+	// Check image size (5MB limit)
+	const maxImageSize = 5 * 1024 * 1024 // 5MB
+	if len(imageData) > maxImageSize {
+		return nil, fmt.Errorf("image size exceeds 5MB limit")
+	}
+
+	// Validate PNG format
+	if !ctrl.isPNGFormat(imageData) {
+		return nil, fmt.Errorf("only PNG format is supported for character style change")
+	}
+	logger.Printf("Validated PNG format")
+
+	// Convert to svggen request
+	req := svggen.CharacterStyleChangeRequest{
+		ImageData:        imageData,  // Use PNG data for Recraft API
+		StylePrompt:      params.StylePrompt,
+		Strength:         params.Strength,
+		Style:            params.Style,
+		SubStyle:         params.SubStyle,
+		NegativePrompt:   params.NegativePrompt,
+		Provider:         params.Provider,
+		PreserveIdentity: params.PreserveIdentity,
+	}
+
+	// Change character style
+	result, err := ctrl.svggen.ChangeCharacterStyle(ctx, req)
+	if err != nil {
+		logger.Printf("Character style change failed: %v", err)
+		return nil, fmt.Errorf("failed to change character style: %w", err)
+	}
+
+	logger.Printf("Character style change successful - ID: %s, URL: %s", result.ID, result.URL)
+
+	// Store styled image data if available
+	var kodoURL string
+	var aiResourceID int64
+	var styledBytes []byte = result.Data
+
+	if len(styledBytes) > 0 {
+		// Use SVG extension for styled output
+		filename := fmt.Sprintf("%s_styled.svg", result.ID)
+
+		uploadStart := time.Now()
+		uploadResult, err := ctrl.kodo.UploadFile(ctx, styledBytes, filename)
+		logger.Printf("[PERF] Kodo upload took %v", time.Since(uploadStart))
+		if err != nil {
+			logger.Printf("Failed to upload styled character image to Kodo: %v", err)
+			// Continue without Kodo storage, don't fail the request
+		} else {
+			kodoURL = uploadResult.KodoURL
+			logger.Printf("Styled character image uploaded to Kodo: %s", kodoURL)
+
+			// Save to database if Kodo upload successful
+			aiResource := &model.AIResource{
+				URL: kodoURL,
+			}
+			if dbErr := ctrl.db.Create(aiResource).Error; dbErr != nil {
+				logger.Printf("Failed to save AI resource to database: %v", dbErr)
+			} else {
+				aiResourceID = aiResource.ID
+				logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
+
+				// Call vector service to add styled image data
+				vectorStart := time.Now()
+				if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoURL, styledBytes); vectorErr != nil {
+					logger.Printf("Failed to call vector service: %v", vectorErr)
+					// Don't fail the request, just log the error
+				} else {
+					logger.Printf("[PERF] Vector service call took %v", time.Since(vectorStart))
+				}
+			}
+		}
+	} else {
+		logger.Printf("No styled character image data available from svggen")
+	}
+
+	return &ChangeCharacterStyleResponse{
+		ID:               result.ID,
+		URL:              result.URL,
+		KodoURL:          kodoURL,
+		AIResourceID:     aiResourceID,
+		SVGData:          styledBytes,
+		OriginalPrompt:   result.OriginalPrompt,
+		StylePrompt:      result.StylePrompt,
+		NegativePrompt:   result.NegativePrompt,
+		Style:            result.Style,
+		Strength:         result.Strength,
+		Width:            result.Width,
+		Height:           result.Height,
+		Provider:         result.Provider,
+		PreserveIdentity: result.PreserveIdentity,
+		CreatedAt:        result.CreatedAt,
+	}, nil
+}
 
 // isPNGFormat checks if the uploaded data is a valid PNG file.
 func (ctrl *Controller) isPNGFormat(data []byte) bool {

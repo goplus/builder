@@ -142,6 +142,11 @@ func (s *SVGIOService) BeautifyImage(ctx context.Context, req BeautifyImageReque
 	return nil, errors.New("BeautifyImage is not supported by SVGIO provider")
 }
 
+// ChangeCharacterStyle is not supported by SVGIO provider.
+func (s *SVGIOService) ChangeCharacterStyle(ctx context.Context, req CharacterStyleChangeRequest) (*CharacterStyleChangeResponse, error) {
+	return nil, errors.New("ChangeCharacterStyle is not supported by SVGIO provider")
+}
+
 // getAPIKey gets the API key from environment or configuration.
 func (s *SVGIOService) getAPIKey() string {
 	// Get API key from environment variable

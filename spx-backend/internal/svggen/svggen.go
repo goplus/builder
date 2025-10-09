@@ -16,6 +16,7 @@ import (
 type ProviderService interface {
 	GenerateImage(ctx context.Context, req GenerateRequest) (*ImageResponse, error)
 	BeautifyImage(ctx context.Context, req BeautifyImageRequest) (*BeautifyImageResponse, error)
+	ChangeCharacterStyle(ctx context.Context, req CharacterStyleChangeRequest) (*CharacterStyleChangeResponse, error)
 }
 
 // ServiceManager manages multiple upstream services.
@@ -175,6 +176,50 @@ func (sm *ServiceManager) BeautifyImage(ctx context.Context, req BeautifyImageRe
 		} else {
 			resp.Data = data
 			logger.Printf("Successfully downloaded beautified image data (%d bytes)", len(data))
+		}
+	}
+
+	return resp, nil
+}
+
+// ChangeCharacterStyle changes character styling while preserving character identity using the specified provider.
+func (sm *ServiceManager) ChangeCharacterStyle(ctx context.Context, req CharacterStyleChangeRequest) (*CharacterStyleChangeResponse, error) {
+	logger := log.GetReqLogger(ctx)
+	start := time.Now()
+	defer func() {
+		logger.Printf("[PERF] SVG ChangeCharacterStyle (%s) took %v", req.Provider, time.Since(start))
+	}()
+
+	// Default to Recraft provider if not specified (since it's the only one that supports character style change)
+	if req.Provider == "" {
+		req.Provider = ProviderRecraft
+	}
+
+	provider := sm.GetProvider(req.Provider)
+	if provider == nil {
+		logger.Printf("provider not configured: %s", string(req.Provider))
+		return nil, errors.New("provider not configured: " + string(req.Provider))
+	}
+
+	logger.Printf("changing character style with provider: %s", string(req.Provider))
+	providerStart := time.Now()
+	resp, err := provider.ChangeCharacterStyle(ctx, req)
+	logger.Printf("[PERF] Provider %s character style change took %v", req.Provider, time.Since(providerStart))
+	if err != nil {
+		return nil, err
+	}
+
+	// Download the styled image data if URL is available
+	if resp.URL != "" {
+		downloadStart := time.Now()
+		data, err := DownloadFile(ctx, resp.URL)
+		logger.Printf("[PERF] File download took %v", time.Since(downloadStart))
+		if err != nil {
+			logger.Printf("Failed to download styled character image: %v", err)
+			// Don't fail the request, just log the error
+		} else {
+			resp.Data = data
+			logger.Printf("Successfully downloaded styled character image data (%d bytes)", len(data))
 		}
 	}
 
