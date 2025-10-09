@@ -542,7 +542,7 @@ export const step2: DefinitionDocumentationItem = {
 export const stepTo0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true,
+  hiddenFromList: true, // similar to `stepTo1`, but `stepTo1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -611,7 +611,7 @@ export const stepTo3: DefinitionDocumentationItem = {
 export const stepTo4: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true,
+  hiddenFromList: true, // similar to `stepTo5`, but `stepTo5` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -663,7 +663,6 @@ export const stepTo6: DefinitionDocumentationItem = {
 export const stepTo7: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -681,7 +680,7 @@ export const stepTo7: DefinitionDocumentationItem = {
 export const stepTo8: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true,
+  hiddenFromList: true, // similar to `stepTo9`, but `stepTo9` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -733,7 +732,6 @@ export const stepToA: DefinitionDocumentationItem = {
 export const stepToB: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true,
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
