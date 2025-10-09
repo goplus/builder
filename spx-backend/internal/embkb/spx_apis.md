@@ -16,6 +16,7 @@ ask,"ask ""What is your name?""",Ask player a question and wait for player to an
 changeGraphicEffect,"changeGraphicEffect ColorEffect, 10","Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 clearGraphicEffects,,Clear all graphic effects of the stage
+findPath,"findPath(0, 0, 100, 100)","Find path from (fromX, fromY) to (toX, toY)"
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
 onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
@@ -98,6 +99,7 @@ ask,"ask ""What is your name?""",Ask player a question and wait for player to an
 changeGraphicEffect,"changeGraphicEffect ColorEffect, 10","Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 clearGraphicEffects,,Clear all graphic effects of the sprite
+findPath,"findPath(0, 0, 100, 100)","Find path from (fromX, fromY) to (toX, toY)"
 stopPlaying,"stopPlaying ""s1""",Stop sound with given name
 gravity,,"The gravity for the sprite. The value is relative to the global gravity. For example, 2 means double the global gravity, 0 means no gravity"
 isOnFloor,,If the sprite is currently on the floor
@@ -128,8 +130,12 @@ step,step 100,"Step toward current heading with given distance. Animation for st
 step,"step 100, 1","Step toward current heading with given distance and speed. Animation for state ""step"" will be played"
 step,"step 100, 1, ""a1""","Step toward current heading with given distance, speed and animation"
 stepTo,"stepTo ""S1""","Step to the sprite with given name. Animation for state ""step"" will be played"
+stepTo,"stepTo 100, 100","Step to given position. Animation for state ""step"" will be played"
+stepTo,stepTo Mouse,"Step to the given object. Animation for state ""step"" will be played"
 stepTo,"stepTo ""S1"", 1","Step to the sprite with given name and specify speed. Animation for state ""step"" will be played"
+stepTo,"stepTo 100, 100, 1","Step to given position and specify speed. Animation for state ""step"" will be played"
 stepTo,"stepTo ""S1"", 1, ""a1""",Step to the sprite with given name and specify speed and animation
+stepTo,"stepTo 100, 100, 1, ""a1""",Step to given position and specify speed and animation
 stopAnimation,"stopAnimation ""a1""",Stop animation with given name
 think,"think ""Emmm...""",Think of some word
 think,"think ""Emmm..."", 1",Think of some word for given seconds
