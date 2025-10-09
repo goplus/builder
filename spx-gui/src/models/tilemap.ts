@@ -4,6 +4,7 @@ import { Disposable } from '@/utils/disposable'
 
 import { File, fromConfig, listAllFiles, toConfig, type Files } from './common/file'
 import type { Size } from './common'
+import { CollisionShapeType, type CollisionPivot, type CollisionShapeParams } from './sprite'
 
 export type Coord = { x: number; y: number }
 
@@ -45,9 +46,15 @@ export type RawTilemapConfig = {
 type RawDecoratorConfig = {
   name?: string
   parent?: string
+  path?: string
   position?: Coord
-  texture_path?: string
+  scale?: Coord
+  rotation?: number
+  pivot?: Coord
   z_index?: number // omitemptys
+  collider_type?: CollisionShapeType
+  collider_pivot?: CollisionPivot
+  collider_points?: CollisionShapeParams
 }
 
 type RawTileInfoConfig = {
@@ -171,36 +178,30 @@ class TileSet {
   }
 }
 
-class Decorator {
-  constructor(
-    public name: string,
-    public position: Coord,
-    public texture: Texture,
-    public zIndex?: number,
-    public parent?: string
-  ) {}
+export class Decorator {
+  readonly img: File
+  readonly position: Coord
+  readonly scale: Coord
+  readonly rotation: number
+  readonly pivot: Coord
 
-  static load(
-    { name, parent, position, texture_path, z_index }: RawDecoratorConfig,
-    dir: string,
-    tileTextures: TileTextures
-  ) {
-    if (texture_path == null || name == null || position == null) return null
+  constructor(img: File, config: Omit<RawDecoratorConfig, 'path'>) {
+    this.img = img
+    this.position = config.position ?? { x: 0, y: 0 }
+    this.scale = config.scale ?? { x: 1, y: 1 }
+    this.rotation = config.rotation ?? 0
+    this.pivot = config.pivot ?? { x: 0, y: 0 }
+  }
 
-    const texture = tileTextures.texture(resolve(dir, texture_path))
-    if (texture == null) return null
-
-    return new Decorator(name, position, texture, z_index, parent)
+  static load({ path, ...config }: RawDecoratorConfig, dir: string, files: Files) {
+    if (path == null) throw new Error('path expected for decorator')
+    const imgFile = files[resolve(dir, path)]
+    if (imgFile == null) throw new Error(`file ${path} for decorator ${config.name} not found`)
+    return new Decorator(imgFile, config)
   }
 
   export(): RawDecoratorConfig {
-    return {
-      name: this.name,
-      position: this.position,
-      texture_path: this.texture.relativePath,
-      z_index: this.zIndex,
-      parent: this.parent
-    }
+    throw new Error('not implemented')
   }
 }
 
@@ -254,7 +255,7 @@ export class Tilemap extends Disposable {
     const currentDir = resolve(parentDir, tilemapsAssetsPathName)
     const tileTextures = TileTextures.load(files, currentDir)
     const tileSet = TileSet.load({ sources: tileset?.sources ?? [] }, currentDir, tileTextures)
-    const decorators = rawDecorators.flatMap((d) => Decorator.load(d, currentDir, tileTextures) ?? [])
+    const decorators = rawDecorators.map((d) => Decorator.load(d, currentDir, files))
     const layers = rawLayers.flatMap(({ id, name = '', tile_data = [], z_index }) =>
       id != null ? { id, name, tileData: tile_data, zIndex: z_index ?? 0 } : []
     )
@@ -296,27 +297,32 @@ export class Tilemap extends Disposable {
 export class DumbTilemap extends Disposable {
   tilemapPath: string
   files: Files
+  decorators: Decorator[] = []
 
-  constructor(tilemapPath: string, files: Files) {
+  constructor(tilemapPath: string, files: Files, decorators: Decorator[]) {
     super()
     this.tilemapPath = tilemapPath
     this.files = files
+    this.decorators = decorators
     markRaw(this)
   }
 
   static async load(rawTilemapPath: string, parentDir: string, files: Files): Promise<DumbTilemap | null> {
     const tilemapFiles: Files = {}
     const tilemapPath = resolve(parentDir, rawTilemapPath)
+    const tilemapsAssetsPath = resolve(parentDir, tilemapsAssetsPathName)
     const tilemapFile = files[tilemapPath]
     if (tilemapFile == null) throw new Error(`tilemap file not found: ${tilemapPath}`)
     tilemapFiles[tilemapPath] = tilemapFile
-    const others = listAllFiles(files, resolve(parentDir, tilemapsAssetsPathName)).filter(
+    const others = listAllFiles(files, tilemapsAssetsPath).filter(
       (filePath) => !filePath.endsWith('.DS_Store') && !filePath.endsWith('.import')
     )
     for (const filePath of others) {
       tilemapFiles[filePath] = files[filePath]
     }
-    return new DumbTilemap(rawTilemapPath, tilemapFiles)
+    const config = (await toConfig(tilemapFile)) as RawTilemapConfig
+    const decorators = (config.decorators ?? []).map((d) => Decorator.load(d, tilemapsAssetsPath, files))
+    return new DumbTilemap(rawTilemapPath, tilemapFiles, decorators)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
