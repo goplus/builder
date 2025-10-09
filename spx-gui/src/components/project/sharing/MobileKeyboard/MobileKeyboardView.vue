@@ -49,7 +49,7 @@ function dispatchKeyEvent(type: KeyboardEventType, key: WebKeyValue) {
 
       <div v-for="z in zones" :key="z" class="zone" :class="z">
         <div
-          v-for="btn in zoneToKeys[z] || []"
+          v-for="btn in zoneToKeys[z] ?? []"
           :key="btn.webKeyValue"
           class="key"
           :style="getKeyStyle(z, btn.posx, btn.posy)"

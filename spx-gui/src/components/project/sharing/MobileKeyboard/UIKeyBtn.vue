@@ -37,8 +37,8 @@ const keyDisplayMap: Record<string, string> = {
 }
 
 // 获取按键的显示文本
-function getKeyDisplayText(keywebKeyValue: string): string {
-  const textEn = webKeyToTextMap.get(keywebKeyValue) ?? keywebKeyValue
+function getKeyDisplayText(webKeyValue: string): string {
+  const textEn = webKeyToTextMap.get(webKeyValue) ?? webKeyValue
   return keyDisplayMap[textEn] ?? textEn
 }
 

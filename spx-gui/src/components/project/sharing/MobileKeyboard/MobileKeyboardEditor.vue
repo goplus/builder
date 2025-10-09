@@ -308,8 +308,12 @@ function confirm() {
   emit('resolved', result)
 }
 onUnmounted(() => {
-  window.removeEventListener('pointermove', onMove)
-  window.removeEventListener('pointerup', onUp)
+  onUnmounted(() => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    drag.value = null
+    hoverZone.value = null
+  })
 })
 </script>
 

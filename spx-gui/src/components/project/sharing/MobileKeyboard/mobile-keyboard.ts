@@ -1,4 +1,5 @@
 import type { Type as IconType } from '@/components/ui/icons/UIIcon.vue'
+import type { MobileKeyboardZoneToKeyMapping } from '@/apis/project'
 export type KeyboardEventType = 'keydown' | 'keyup'
 /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
 export type WebKeyValue = string
@@ -24,7 +25,14 @@ export const systemKeys: SystemKeyType[] = [
     action: 'close'
   }
 ]
-export function getKeyStyle(zone: ZoneId, posx: number, posy: number) {
+type KeyStyle = {
+  left?: string
+  right?: string
+  top?: string
+  bottom?: string
+  transform: string
+}
+export function getKeyStyle(zone: ZoneId, posx: number, posy: number): KeyStyle {
   switch (zone) {
     case 'lt':
       return { left: `${posx}px`, top: `${posy}px`, transform: 'translate(-50%, -50%)' }
@@ -36,3 +44,9 @@ export function getKeyStyle(zone: ZoneId, posx: number, posy: number) {
       return { right: `${posx}px`, bottom: `${posy}px`, transform: 'translate(50%, 50%)' }
   }
 }
+export const EMPTY_ZONE_MAPPING: MobileKeyboardZoneToKeyMapping = {
+  lt: null,
+  rt: null,
+  lb: null,
+  rb: null
+} as const

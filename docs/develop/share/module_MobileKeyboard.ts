@@ -42,7 +42,7 @@ export declare function KeyboardEditorModal(
  * use:
  * ```vue
  * <MobileKeyboardView
- * :ZoneToKeyMapping="{ lt: [{label: 'Q', posx: 10, posy: 10}], rt: [{label: 'E', posx: 10, posy: 10}] }"
+ * :ZoneToKeyMapping="{ lt: [{webKeyValue: 'Q', posx: 10, posy: 10}], rt: [{webKeyValue: 'E', posx: 10, posy: 10}] }"
  * @close="emit('close')"
  * @rerun="emit('rerun')"
  * @key="handleOnKeyEvent">
@@ -92,8 +92,8 @@ export declare function MobileKeyboardView(
 //            }
 //              return `<div class="key-wrapper" style="${style}">
 //               <UIKeyBtn
-//                 key="${btn.KeyCode}"
-//                 value="${btn.KeyCode}"
+//                 key="${btn.webKeyValue}"
+//                 value="${btn.webKeyValue}"
 //                 active={true}
 //                 onKey=${handleOnKeyEvent}
 //               />
