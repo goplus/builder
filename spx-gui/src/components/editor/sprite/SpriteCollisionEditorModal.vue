@@ -6,7 +6,7 @@ import { useMessageHandle } from '@/utils/exception'
 
 import { UIButton, UIFormModal } from '@/components/ui'
 
-import SpritePhysicsEditor, { type PhysicsParams } from './SpritePhysicsEditor.vue'
+import SpriteCollisionEditor, { type CollisionParams } from './SpriteCollisionEditor.vue'
 import type { Project } from '@/models/project'
 
 const props = defineProps<{
@@ -22,15 +22,15 @@ const emit = defineEmits<{
 
 /** Whether the values have been modified */
 const dirty = ref(false)
-const physicsParams = ref<PhysicsParams>({
+const collisionParams = ref<CollisionParams>({
   pivotPos: { x: 0, y: 0 },
   colliderSize: { width: 0, height: 0 },
   colliderPos: { x: 0, y: 0 }
 })
 
-function handleUpdatePhysicsParams(params: PhysicsParams) {
+function handleUpdateCollisionParams(params: CollisionParams) {
   dirty.value = true
-  physicsParams.value = params
+  collisionParams.value = params
 }
 
 const { fn: handleConfirm } = useMessageHandle(
@@ -39,8 +39,8 @@ const { fn: handleConfirm } = useMessageHandle(
     const defaultCostume = props.sprite.defaultCostume
     if (defaultCostume == null) throw new Error('Sprite has no default costume')
 
-    await props.project.history.doAction({ name: { en: 'Update sprite settings', zh: '更新精灵设置' } }, () => {
-      const { pivotPos, colliderSize, colliderPos } = physicsParams.value
+    await props.project.history.doAction({ name: { en: 'Update sprite collision', zh: '更新精灵碰撞' } }, () => {
+      const { pivotPos, colliderSize, colliderPos } = collisionParams.value
       sprite.applyCostumesPivotChange({
         x: pivotPos.x - defaultCostume.pivot.x,
         y: pivotPos.y - defaultCostume.pivot.y
@@ -55,25 +55,29 @@ const { fn: handleConfirm } = useMessageHandle(
     emit('resolved')
   },
   {
-    en: 'Failed to save sprite settings',
-    zh: '保存精灵设置失败'
+    en: 'Failed to save sprite collision params',
+    zh: '保存精灵碰撞参数失败'
+  },
+  {
+    en: 'Save sprite collision params successfully',
+    zh: '保存精灵碰撞参数成功'
   }
 )
 </script>
 
 <template>
   <UIFormModal
-    :radar="{ name: 'Physics modal', desc: 'Physics settings modal, which includes collision, pivot editing, etc.' }"
-    style="width: 560px"
-    :title="$t({ en: 'Physics', zh: '物理' })"
+    :radar="{ name: 'Collision modal', desc: 'Collision editor modal, which includes collision, pivot editing, etc.' }"
+    style="width: 712px"
+    :title="$t({ en: 'Collision Editor', zh: '碰撞编辑器' })"
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
-    <SpritePhysicsEditor class="editor" :sprite="sprite" @update-physics-params="handleUpdatePhysicsParams" />
+    <SpriteCollisionEditor class="editor" :sprite="sprite" @update-collision-params="handleUpdateCollisionParams" />
 
     <div class="action">
       <UIButton
-        v-radar="{ name: 'Save button', desc: 'Click to save sprite physics' }"
+        v-radar="{ name: 'Save button', desc: 'Click to save sprite collision params' }"
         type="primary"
         :disabled="!dirty"
         @click="handleConfirm"
@@ -90,8 +94,11 @@ const { fn: handleConfirm } = useMessageHandle(
 }
 .editor {
   height: 456px;
+  border-radius: var(--ui-border-radius-2);
 }
 .action {
-  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 </style>

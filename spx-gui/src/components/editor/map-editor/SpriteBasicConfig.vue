@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
+import { PhysicsMode, type Sprite } from '@/models/sprite'
+import { useRenameSprite, useCollisionEditor } from '@/components/asset'
+import { useMessageHandle } from '@/utils/exception'
 
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
@@ -8,18 +12,28 @@ import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisibl
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
 import AssetName from '@/components/asset/AssetName.vue'
 import { UIIcon } from '@/components/ui'
-import { useRenameSprite } from '@/components/asset'
-import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   sprite: Sprite
   project: Project
 }>()
 
+const isCollisionSettingsEnabled = computed(() => {
+  if (!props.project.stage.physics.enabled) return false
+  if (props.sprite.physicsMode === PhysicsMode.NoPhysics) return false
+  return true
+})
+
 const renameSprite = useRenameSprite()
 const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
   en: 'Failed to rename sprite',
   zh: '重命名精灵失败'
+}).fn
+
+const editCollision = useCollisionEditor()
+const handleEditCollision = useMessageHandle(() => editCollision(props.sprite), {
+  en: 'Failed to edit collision',
+  zh: '编辑碰撞属性失败'
 }).fn
 </script>
 
@@ -48,6 +62,11 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
     <div v-if="project.stage.physics.enabled" class="config-item">
       <div class="label">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <SpritePhysics :sprite="sprite" :project="project" />
+    </div>
+    <div v-if="isCollisionSettingsEnabled" class="config-item">
+      <div class="label">{{ $t({ en: 'Physics settings', zh: '物理设置' }) }}</div>
+      <div>{{ $t({ zh: '碰撞编辑器', en: 'Collision Editor' }) }}</div>
+      <UIIcon class="icon" type="setting" @click="handleEditCollision" />
     </div>
   </div>
 </template>

@@ -20,15 +20,6 @@
         value="animations"
         >{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab
       >
-      <!-- <UITab
-        v-if="canConfigurePhysics(sprite)"
-        v-radar="{
-          name: 'Physics tab',
-          desc: 'Click to switch to physics settings, which includes collision, pivot editing, etc.'
-        }"
-        value="physics"
-        >{{ $t({ en: 'Physics', zh: '物理' }) }}</UITab
-      > -->
     </UITabs>
     <template #extra>
       <FormatButton v-if="state.selected.type === 'code'" :code-file-path="sprite.codeFilePath" />
@@ -47,7 +38,6 @@
   <CostumesEditor v-if="state.selected.type === 'costumes'" :sprite="sprite" :state="state.costumesState" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
   <AnimationEditor v-if="state.selected.type === 'animations'" :sprite="sprite" :state="state.animationsState" />
-  <!-- <SpritePhysicsEditor v-if="state.selected.type === 'physics'" :sprite="sprite" /> -->
 </template>
 
 <script lang="ts">
@@ -65,24 +55,12 @@ export type Selected =
       type: 'animations'
       animation: Animation | null
     }
-// | {
-//     type: 'physics'
-//   }
 
 export class SpriteEditorState extends Disposable {
   constructor(getSprite: () => Sprite | null, initialSelected?: Selected) {
     super()
     this.costumesState = new CostumesEditorState(getSprite)
     this.addDisposable((this.animationsState = new AnimationsEditorState(getSprite)))
-
-    // if (initialSelected != null) {
-    //   const sprite = getSprite()
-    //   // Selection for previous sprite may be used as initial selection.
-    //   // If the initial selection is 'physics' but the sprite cannot configure physics, fallback to 'code'.
-    //   if (initialSelected.type === 'physics' && sprite != null && !canConfigurePhysics(sprite)) {
-    //     initialSelected = { type: 'code' }
-    //   }
-    // }
     this.selectedTypeRef = ref(initialSelected?.type ?? 'code')
   }
 
@@ -99,8 +77,6 @@ export class SpriteEditorState extends Disposable {
         return { type: 'costumes', costume: this.costumesState.selected }
       case 'animations':
         return { type: 'animations', animation: this.animationsState.selected }
-      // case 'physics':
-      //   return { type: 'physics' }
       default:
         throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
     }
@@ -147,9 +123,6 @@ export class SpriteEditorState extends Disposable {
         this.select('animations')
         this.animationsState.selectByRoute(extra)
         break
-      // case 'physics':
-      //   this.select('physics')
-      //   break
       default:
         throw new Error(`Unknown type: ${type}`)
     }
@@ -163,17 +136,9 @@ export class SpriteEditorState extends Disposable {
         return ['costumes', ...this.costumesState.getRoute()]
       case 'animations':
         return ['animations', ...this.animationsState.getRoute()]
-      // case 'physics':
-      //   return ['physics']
     }
   }
 }
-
-// function canConfigurePhysics(sprite: Sprite) {
-//   if (sprite.physicsMode === PhysicsMode.NoPhysics) return false
-//   if (sprite.project != null && !sprite.project.stage.physics.enabled) return false
-//   return true
-// }
 </script>
 
 <script setup lang="ts">
@@ -189,7 +154,6 @@ import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor, { CostumesEditorState } from './CostumesEditor.vue'
 import AnimationEditor, { AnimationsEditorState } from './AnimationEditor.vue'
-// import SpritePhysicsEditor from './SpritePhysicsEditor.vue'
 
 defineProps<{
   sprite: Sprite
