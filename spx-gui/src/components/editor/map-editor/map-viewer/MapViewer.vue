@@ -388,10 +388,6 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   menuVisible.value = false
 }
 
-function handleBackdropClick() {
-  emit('update:selectedSprite', null)
-}
-
 const scaleBy = 1.02
 
 const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -432,7 +428,7 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       @wheel="handleWheel"
     >
       <v-layer ref="mapRef" :config="mapConfig" @dragmove="handleMapDragMove" @dragend="handleMapDragEnd">
-        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig" @click="handleBackdropClick"></v-rect>
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
         <DecoratorNode
           v-for="(decorator, idx) in props.project.tilemap?.decorators ?? []"
           :key="idx"

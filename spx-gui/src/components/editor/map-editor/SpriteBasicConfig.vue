@@ -6,7 +6,6 @@ import SpritePositionSize from '@/components/editor/common/config/sprite/SpriteP
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
-import MapConfig from '../common/config/MapConfig.vue'
 import AssetName from '@/components/asset/AssetName.vue'
 import { UIIcon } from '@/components/ui'
 import { useRenameSprite } from '@/components/asset'
@@ -36,22 +35,24 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
     />
     <div class="spacer" />
   </div>
-  <MapConfig>
+  <div class="config-wrapper">
     <SpritePositionSize :sprite="sprite" :project="project" />
-    <SpriteDirection :sprite="sprite" :project="project" />
-    <SpriteVisible :sprite="sprite" :project="project" />
-    <SpritePhysics v-if="project.stage.physics.enabled" :sprite="sprite" :project="project" />
-  </MapConfig>
+    <div class="config-item">
+      <div class="label">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
+      <SpriteDirection :sprite="sprite" :project="project" />
+    </div>
+    <div class="config-item">
+      <div class="label">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
+      <SpriteVisible :sprite="sprite" :project="project" />
+    </div>
+    <div v-if="project.stage.physics.enabled" class="config-item">
+      <div class="label">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
+      <SpritePhysics :sprite="sprite" :project="project" />
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.main {
-  display: flex;
-  padding: 16px;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-}
-
 .header {
   height: 28px;
   color: var(--ui-color-title);
@@ -72,5 +73,21 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
 
 .spacer {
   flex: 1;
+}
+
+.config-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-middle);
+
+  .config-item {
+    display: flex;
+    align-items: center;
+
+    .label {
+      white-space: nowrap;
+      margin-right: 16px;
+    }
+  }
 }
 </style>

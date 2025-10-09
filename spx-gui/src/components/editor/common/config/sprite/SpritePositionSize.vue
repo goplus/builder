@@ -8,7 +8,6 @@ import { wrapUpdateHandler } from '../utils'
 import { round } from '@/utils/utils'
 
 import { UINumberInput } from '@/components/ui'
-import MapConfigItem from '../MapConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -33,36 +32,34 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 </script>
 
 <template>
-  <MapConfigItem>
-    <div class="content">
-      <UINumberInput
-        v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
-        :value="sprite.x"
-        @update:value="handleXUpdate"
-      >
-        <template #prefix>X:</template>
-      </UINumberInput>
-      <UINumberInput
-        v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
-        :value="sprite.y"
-        @update:value="handleYUpdate"
-      >
-        <template #prefix>Y:</template>
-      </UINumberInput>
-      <UINumberInput
-        v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
-        :min="0"
-        :value="sizePercent"
-        @update:value="handleSizePercentUpdate"
-      >
-        <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
-        <template #suffix>%</template>
-      </UINumberInput>
-    </div>
-  </MapConfigItem>
+  <div class="content">
+    <UINumberInput
+      v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
+      :value="sprite.x"
+      @update:value="handleXUpdate"
+    >
+      <template #prefix>X:</template>
+    </UINumberInput>
+    <UINumberInput
+      v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
+      :value="sprite.y"
+      @update:value="handleYUpdate"
+    >
+      <template #prefix>Y:</template>
+    </UINumberInput>
+    <UINumberInput
+      v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
+      :min="0"
+      :value="sizePercent"
+      @update:value="handleSizePercentUpdate"
+    >
+      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
+      <template #suffix>%</template>
+    </UINumberInput>
+  </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .content {
   display: flex;
   gap: 12px;

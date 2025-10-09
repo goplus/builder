@@ -11,7 +11,6 @@ import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UINumberInput, UITooltip 
 import rotateIcon from './rotate.svg?raw'
 import leftRightIcon from './left-right.svg?raw'
 import noRotateIcon from './no-rotate.svg?raw'
-import MapConfigItem from '../MapConfigItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -58,97 +57,88 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
 
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <MapConfigItem :title="$t({ en: 'Rotation', zh: '旋转' })">
-    <div class="content">
-      <UIButtonGroup
-        v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
-        :value="sprite.rotationStyle"
-        @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
-      >
-        <UITooltip>
-          {{ $t(rotationStyleTips.normal) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.Normal">
-              <i class="rotation-icon" v-html="rotateIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-        <UITooltip>
-          {{ $t(rotationStyleTips.leftRight) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.LeftRight">
-              <i class="rotation-icon" v-html="leftRightIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-        <UITooltip>
-          {{ $t(rotationStyleTips.none) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.None">
-              <i class="rotation-icon" v-html="noRotateIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-      </UIButtonGroup>
-      <UIDropdown
-        v-if="sprite.rotationStyle !== RotationStyle.LeftRight"
-        trigger="manual"
-        placement="top"
-        :visible="rotateDropdownVisible"
-        :disabled="sprite.rotationStyle === RotationStyle.None"
-        @click-outside="rotateDropdownVisible = false"
-      >
+  <div class="content">
+    <UIButtonGroup
+      v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
+      :value="sprite.rotationStyle"
+      @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
+    >
+      <UITooltip>
+        {{ $t(rotationStyleTips.normal) }}
         <template #trigger>
-          <UINumberInput
-            v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
-            :disabled="sprite.rotationStyle === RotationStyle.None"
-            :min="-180"
-            :max="180"
-            :value="sprite.heading"
-            @update:value="handleHeadingUpdate"
-            @focus="rotateDropdownVisible = true"
-          >
-            <template #prefix>
-              {{
-                $t({
-                  en: 'Heading',
-                  zh: '朝向'
-                })
-              }}:
-            </template>
-          </UINumberInput>
+          <UIButtonGroupItem :value="RotationStyle.Normal">
+            <i class="rotation-icon" v-html="rotateIcon"></i>
+          </UIButtonGroupItem>
         </template>
-        <div class="rotation-heading-container">
-          <div>{{ $t({ en: 'Heading', zh: '朝向' }) }}</div>
-          <AnglePicker :model-value="sprite.heading" @update:model-value="handleHeadingUpdate" />
-        </div>
-      </UIDropdown>
-      <UIButtonGroup
-        v-show="sprite.rotationStyle === RotationStyle.LeftRight"
-        v-radar="{ name: 'Direction control', desc: 'Control to set sprite left or right direction' }"
-        type="text"
-        :value="headingToLeftRight(sprite.heading)"
-        @update:value="(v) => handleHeadingUpdate(leftRightToHeading(v as LeftRight))"
-      >
-        <UIButtonGroupItem :value="LeftRight.left">
-          {{ $t({ en: 'Left', zh: '左' }) }}
-        </UIButtonGroupItem>
-        <UIButtonGroupItem :value="LeftRight.right">
-          {{ $t({ en: 'Right', zh: '右' }) }}
-        </UIButtonGroupItem>
-      </UIButtonGroup>
-    </div>
-  </MapConfigItem>
+      </UITooltip>
+      <UITooltip>
+        {{ $t(rotationStyleTips.leftRight) }}
+        <template #trigger>
+          <UIButtonGroupItem :value="RotationStyle.LeftRight">
+            <i class="rotation-icon" v-html="leftRightIcon"></i>
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{ $t(rotationStyleTips.none) }}
+        <template #trigger>
+          <UIButtonGroupItem :value="RotationStyle.None">
+            <i class="rotation-icon" v-html="noRotateIcon"></i>
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+    </UIButtonGroup>
+    <UIDropdown
+      v-if="sprite.rotationStyle !== RotationStyle.LeftRight"
+      trigger="manual"
+      placement="top"
+      :visible="rotateDropdownVisible"
+      :disabled="sprite.rotationStyle === RotationStyle.None"
+      @click-outside="rotateDropdownVisible = false"
+    >
+      <template #trigger>
+        <UINumberInput
+          v-radar="{ name: 'Heading input', desc: 'Input to set sprite heading angle' }"
+          :disabled="sprite.rotationStyle === RotationStyle.None"
+          :min="-180"
+          :max="180"
+          :value="sprite.heading"
+          @update:value="handleHeadingUpdate"
+          @focus="rotateDropdownVisible = true"
+        >
+          <template #prefix>
+            {{
+              $t({
+                en: 'Heading',
+                zh: '朝向'
+              })
+            }}:
+          </template>
+        </UINumberInput>
+      </template>
+      <div class="rotation-heading-container">
+        <div>{{ $t({ en: 'Heading', zh: '朝向' }) }}</div>
+        <AnglePicker :model-value="sprite.heading" @update:model-value="handleHeadingUpdate" />
+      </div>
+    </UIDropdown>
+    <UIButtonGroup
+      v-show="sprite.rotationStyle === RotationStyle.LeftRight"
+      v-radar="{ name: 'Direction control', desc: 'Control to set sprite left or right direction' }"
+      type="text"
+      :value="headingToLeftRight(sprite.heading)"
+      @update:value="(v) => handleHeadingUpdate(leftRightToHeading(v as LeftRight))"
+    >
+      <UIButtonGroupItem :value="LeftRight.left">
+        {{ $t({ en: 'Left', zh: '左' }) }}
+      </UIButtonGroupItem>
+      <UIButtonGroupItem :value="LeftRight.right">
+        {{ $t({ en: 'Right', zh: '右' }) }}
+      </UIButtonGroupItem>
+    </UIButtonGroup>
+  </div>
 </template>
 
-<style lang="scss">
-.with-label {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  word-break: keep-all;
-}
-
+<style lang="scss" scoped>
 .content {
   display: flex;
   gap: 12px;

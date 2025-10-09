@@ -26,7 +26,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:selectedSprite': [sprite: Sprite | null]
+  'update:selectedSprite': [sprite: Sprite]
 }>()
 
 const sprites = computed(() => props.project.sprites)
@@ -40,7 +40,7 @@ function isSelected(sprite: Sprite) {
 }
 
 function handleSpriteClick(sprite: Sprite) {
-  emit('update:selectedSprite', props.selectedSprite !== sprite ? sprite : null)
+  emit('update:selectedSprite', sprite)
 }
 
 const handleSorted = useMessageHandle(
@@ -103,12 +103,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
       </template>
     </PanelHeader>
 
-    <PanelList
-      class="list-wrapper"
-      :sortable="{ list: sprites }"
-      @sorted="handleSorted"
-      @click="emit('update:selectedSprite', null)"
-    >
+    <PanelList class="list-wrapper" :sortable="{ list: sprites }" @sorted="handleSorted">
       <SpriteItem
         v-for="sprite in sprites"
         :key="sprite.id"

@@ -6,8 +6,6 @@ import type { Project } from '@/models/project'
 import { UINumberInput } from '@/components/ui'
 import { defaultMapSize } from '@/models/stage'
 
-import MapConfigItem from '../common/config/MapConfigItem.vue'
-
 const props = defineProps<{
   project: Project
 }>()
@@ -23,24 +21,22 @@ const handleHeightChange = debounce((v: number | null) => {
 </script>
 
 <template>
-  <MapConfigItem :title="$t({ en: 'Map size', zh: '地图尺寸' })">
-    <div class="inputs">
-      <UINumberInput
-        v-radar="{ name: 'width input', desc: 'Input to set map width' }"
-        :value="project.stage.mapWidth"
-        @update:value="handleWidthChange"
-      >
-        <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}:</template>
-      </UINumberInput>
-      <UINumberInput
-        v-radar="{ name: 'height input', desc: 'Input to set map height' }"
-        :value="project.stage.mapHeight"
-        @update:value="handleHeightChange"
-      >
-        <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}:</template>
-      </UINumberInput>
-    </div>
-  </MapConfigItem>
+  <div class="inputs">
+    <UINumberInput
+      v-radar="{ name: 'width input', desc: 'Input to set map width' }"
+      :value="project.stage.mapWidth"
+      @update:value="handleWidthChange"
+    >
+      <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}:</template>
+    </UINumberInput>
+    <UINumberInput
+      v-radar="{ name: 'height input', desc: 'Input to set map height' }"
+      :value="project.stage.mapHeight"
+      @update:value="handleHeightChange"
+    >
+      <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}:</template>
+    </UINumberInput>
+  </div>
 </template>
 
 <style lang="scss" scoped>

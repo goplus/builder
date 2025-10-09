@@ -21,11 +21,11 @@ const emit = defineEmits<{
 const selectedSpriteId = ref(props.selectedSpriteId)
 const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === selectedSpriteId.value) ?? null)
 
-const collapsed = ref(false)
+const collapsed = ref(selectedSpriteId.value != null)
 
 function handleSpriteSelect(sprite: Sprite | null) {
   selectedSpriteId.value = sprite?.id ?? null
-  collapsed.value = sprite == null ? collapsed.value : true
+  collapsed.value = true
 }
 </script>
 
@@ -62,7 +62,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
             />
           </UICardHeader>
           <Transition>
-            <MapBasicConfig v-if="!collapsed" :project="project" />
+            <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
           </Transition>
         </UICard>
         <SpriteList
@@ -129,6 +129,10 @@ function handleSpriteSelect(sprite: Sprite | null) {
   .v-enter-from,
   .v-leave-to {
     opacity: 0;
+  }
+
+  .map-config {
+    padding: 16px;
   }
 }
 .sprite-list {

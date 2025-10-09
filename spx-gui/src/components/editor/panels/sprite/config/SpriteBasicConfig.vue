@@ -8,7 +8,6 @@ import AssetName from '@/components/asset/AssetName.vue'
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
-import MapConfig from '@/components/editor/common/config/MapConfig.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -54,11 +53,17 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
       }}
     </UITooltip>
   </div>
-  <MapConfig>
+  <div class="config-wrapper">
     <SpritePositionSize :sprite="sprite" :project="project" />
-    <SpriteDirection :sprite="sprite" :project="project" />
-    <SpriteVisible :sprite="sprite" :project="project" />
-  </MapConfig>
+    <div class="config-item">
+      <div class="label">{{ $t({ en: 'Rotation', zh: '旋转' }) }}</div>
+      <SpriteDirection :sprite="sprite" :project="project" />
+    </div>
+    <div class="config-item">
+      <div class="label">{{ $t({ en: 'Show', zh: '显示' }) }}</div>
+      <SpriteVisible :sprite="sprite" :project="project" />
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -82,5 +87,21 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
 
 .spacer {
   flex: 1;
+}
+
+.config-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-middle);
+
+  .config-item {
+    display: flex;
+    align-items: center;
+
+    .label {
+      white-space: nowrap;
+      margin-right: 16px;
+    }
+  }
 }
 </style>
