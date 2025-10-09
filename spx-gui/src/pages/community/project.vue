@@ -53,7 +53,6 @@ import type { RecordingData, CreateRecordingParams } from '@/apis/recording'
 import { createRecording, deleteRecording } from '@/apis/recording'
 import { saveFile } from '@/models/common/cloud'
 import { File } from '@/models/common/file'
-import { Input, Output, Conversion, ALL_FORMATS, BlobSource, Mp4OutputFormat, BufferTarget } from 'mediabunny'
 import { useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { submitTranscode, getTranscodeStatus } from '@/apis/transcode'
@@ -392,38 +391,28 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
       })
     }
 
-    // 1. 上传原始 WebM 文件
     message.info(
       t({
-        en: 'Uploading video...',
-        zh: '正在上传视频...'
+        en: 'Uploading video...Please wait',
+        zh: '正在上传视频...请稍候'
       })
     )
-    
+
     const projectFile = createProjectFile(recordFile)
-    const originalURL = await saveFile(projectFile) // 上传原始 WebM 文件
-    
-    // 2. 提交转码任务
-    message.info(
-      t({
-        en: 'Converting video format...',
-        zh: '正在转码视频...'
-      })
-    )
-    
+    const originalURL = await saveFile(projectFile) // Upload original WebM file
+
     const transcodeResponse = await submitTranscode({ sourceUrl: originalURL })
-    
-    // 3. 轮询查询转码状态
-    const maxRetries = 60 // 最多查询 60 次
-    const retryInterval = 2000 // 每 2 秒查询一次
+
+    const maxRetries = 60 // Query at most 60 times
+    const retryInterval = 2000 // Query every 2 seconds
     let retries = 0
     let transcodedURL = ''
-    
+
     while (retries < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, retryInterval))
-      
+      await new Promise((resolve) => setTimeout(resolve, retryInterval))
+
       const status = await getTranscodeStatus(transcodeResponse.taskId)
-      
+
       if (status.status === 'completed') {
         transcodedURL = status.outputUrl!
         break
@@ -433,30 +422,29 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
           zh: `视频转码失败: ${status.error || '未知错误'}`
         })
       }
-      
+
       retries++
     }
-    
+
     if (!transcodedURL) {
       throw new DefaultException({
         en: 'Video transcoding timeout, please try again',
         zh: '视频转码超时,请重试'
       })
     }
-    
-    // 4. 使用转码后的 URL 创建 recording
+
     message.success(
       t({
         en: 'Video ready!',
         zh: '视频准备完成!'
       })
     )
-    
+
     const params: CreateRecordingParams = {
       projectFullName: `${projectData.value.owner}/${projectData.value.name}`,
       title: projectData.value.name,
       description: projectData.value.description ?? '',
-      videoUrl: transcodedURL, // 使用转码后的 MP4 URL
+      videoUrl: transcodedURL, // Use transcoded MP4 URL
       thumbnailUrl: projectData.value.thumbnail || ''
     }
 
@@ -464,58 +452,6 @@ function saveRecording(recordFile: globalThis.File): Promise<RecordingData> {
     recordData.value = created
     return created
   })()
-}
-
-async function convertWebmToMp4(webmVideo: globalThis.File): Promise<globalThis.File> {
-  try {
-    const input = new Input({
-      source: new BlobSource(webmVideo),
-      formats: ALL_FORMATS
-    })
-
-    const output = new Output({
-      format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
-      target: new BufferTarget()
-    })
-
-    const conversion = await Conversion.init({
-      input,
-      output,
-      video: () => ({
-        codec: 'av1'
-      }),
-      audio: () => ({
-        codec: 'aac'
-      })
-    })
-
-    const hasVideoTrack = conversion.utilizedTracks.some((track) => track.type === 'video')
-    const hasAudioTrack = conversion.utilizedTracks.some((track) => track.type === 'audio')
-
-    if (!hasVideoTrack) {
-      throw new Error('Transcoding failed: Video track was dropped, cannot generate a valid MP4 file')
-    }
-
-    if (!hasAudioTrack) {
-      console.warn('[Recording] Warning: Audio track was dropped')
-    }
-
-    await conversion.execute()
-
-    const buffer = output.target.buffer
-    if (!buffer) throw new Error('Transcoding failed: Output buffer is empty')
-
-    // Filename is hardcoded since saveFile() will generate its own identifier anyway
-    // and this filename won't be used in the final cloud storage URL
-    const mp4File = new globalThis.File([buffer], 'converted.mp4', {
-      type: 'video/mp4'
-    })
-
-    return mp4File
-  } catch (error) {
-    console.error('[Recording] Mediabunny transcoding failed:', error)
-    throw error
-  }
 }
 
 // Handle recording sharing results

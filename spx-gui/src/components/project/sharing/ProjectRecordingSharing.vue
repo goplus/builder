@@ -15,12 +15,12 @@ const props = defineProps<{
 
 type SharingResult =
   | {
-    type: 'shared'
-    platform: string
-  }
+      type: 'shared'
+      platform: string
+    }
   | {
-    type: 'rerecord'
-  }
+      type: 'rerecord'
+    }
 const emit = defineEmits<{
   cancelled: []
   resolved: [result: SharingResult]
@@ -128,17 +128,16 @@ async function generateShareContent() {
           throw new Error('Video URL not available')
         }
         const videoWebURL = await universalUrlToWebUrl(currentRecording.value.videoUrl)
-        console.log('Sharing video URL:', videoWebURL)
-        
+
         const shareResult = platform.shareFunction.shareVideo(videoWebURL)
-        
+
         if (shareResult instanceof Promise) {
           const comp = await shareResult
           guideComponent.value = comp ? markRaw(comp) : null
         } else {
           guideComponent.value = shareResult ? markRaw(shareResult) : null
         }
-        
+
         // When manual guide is shown, QR is not needed; use currentUrl as placeholder
         shareURL = currentUrl
       } catch (error) {

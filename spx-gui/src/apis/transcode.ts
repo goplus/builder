@@ -1,35 +1,35 @@
 import { client } from './common'
 
-// 提交转码任务的参数
+// Parameters for submitting transcoding task
 export interface SubmitTranscodeParams {
-  sourceUrl: string // 原始文件的 kodo URL
+  sourceUrl: string // Original file's kodo URL
 }
 
-// 提交转码任务的响应
+// Response for submitting transcoding task
 export interface SubmitTranscodeResponse {
-  taskId: string            // 转码任务 ID
-  expectedOutputUrl: string // 预期的输出文件 URL
+  taskId: string // Transcoding task ID
+  expectedOutputUrl: string // Expected output file URL
 }
 
-// 转码状态
+// Transcoding status
 export type TranscodeStatus = 'processing' | 'completed' | 'failed'
 
-// 查询转码状态的响应
+// Response for querying transcoding status
 export interface TranscodeStatusResponse {
   status: TranscodeStatus
-  outputUrl?: string // 转码后的文件 URL (完成后才有)
-  error?: string     // 错误信息 (失败时才有)
+  outputUrl?: string // Transcoded file URL (only available when completed)
+  error?: string // Error message (only available when failed)
 }
 
 /**
- * 提交视频转码任务
+ * Submit video transcoding task
  */
 export async function submitTranscode(params: SubmitTranscodeParams): Promise<SubmitTranscodeResponse> {
   return client.post('/transcode/submit', params)
 }
 
 /**
- * 查询转码状态
+ * Query transcoding status
  */
 export async function getTranscodeStatus(taskId: string): Promise<TranscodeStatusResponse> {
   return client.get(`/transcode/status/${taskId}`)

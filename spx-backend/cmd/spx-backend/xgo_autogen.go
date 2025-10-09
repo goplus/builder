@@ -218,10 +218,6 @@ type post_recording_id_view struct {
 	yap.Handler
 	*AppV2
 }
-type post_transcode_callback struct {
-	yap.Handler
-	*AppV2
-}
 type post_transcode_submit struct {
 	yap.Handler
 	*AppV2
@@ -420,19 +416,18 @@ func (this *AppV2) Main() {
 	_xgo_obj43 := &post_recording{AppV2: this}
 	_xgo_obj44 := &post_recording_id_liking{AppV2: this}
 	_xgo_obj45 := &post_recording_id_view{AppV2: this}
-	_xgo_obj46 := &post_transcode_callback{AppV2: this}
-	_xgo_obj47 := &post_transcode_submit{AppV2: this}
-	_xgo_obj48 := &post_user_username_following{AppV2: this}
-	_xgo_obj49 := &post_util_fileurls{AppV2: this}
-	_xgo_obj50 := &post_wechat_jssdk_config{AppV2: this}
-	_xgo_obj51 := &post_workflow_stream_message{AppV2: this}
-	_xgo_obj52 := &put_asset_id{AppV2: this}
-	_xgo_obj53 := &put_course_series_id{AppV2: this}
-	_xgo_obj54 := &put_course_id{AppV2: this}
-	_xgo_obj55 := &put_project_owner_name{AppV2: this}
-	_xgo_obj56 := &put_recording_id{AppV2: this}
-	_xgo_obj57 := &put_user{AppV2: this}
-	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51, _xgo_obj52, _xgo_obj53, _xgo_obj54, _xgo_obj55, _xgo_obj56, _xgo_obj57)
+	_xgo_obj46 := &post_transcode_submit{AppV2: this}
+	_xgo_obj47 := &post_user_username_following{AppV2: this}
+	_xgo_obj48 := &post_util_fileurls{AppV2: this}
+	_xgo_obj49 := &post_wechat_jssdk_config{AppV2: this}
+	_xgo_obj50 := &post_workflow_stream_message{AppV2: this}
+	_xgo_obj51 := &put_asset_id{AppV2: this}
+	_xgo_obj52 := &put_course_series_id{AppV2: this}
+	_xgo_obj53 := &put_course_id{AppV2: this}
+	_xgo_obj54 := &put_project_owner_name{AppV2: this}
+	_xgo_obj55 := &put_recording_id{AppV2: this}
+	_xgo_obj56 := &put_user{AppV2: this}
+	yap.Gopt_AppV2_Main(this, _xgo_obj0, _xgo_obj1, _xgo_obj2, _xgo_obj3, _xgo_obj4, _xgo_obj5, _xgo_obj6, _xgo_obj7, _xgo_obj8, _xgo_obj9, _xgo_obj10, _xgo_obj11, _xgo_obj12, _xgo_obj13, _xgo_obj14, _xgo_obj15, _xgo_obj16, _xgo_obj17, _xgo_obj18, _xgo_obj19, _xgo_obj20, _xgo_obj21, _xgo_obj22, _xgo_obj23, _xgo_obj24, _xgo_obj25, _xgo_obj26, _xgo_obj27, _xgo_obj28, _xgo_obj29, _xgo_obj30, _xgo_obj31, _xgo_obj32, _xgo_obj33, _xgo_obj34, _xgo_obj35, _xgo_obj36, _xgo_obj37, _xgo_obj38, _xgo_obj39, _xgo_obj40, _xgo_obj41, _xgo_obj42, _xgo_obj43, _xgo_obj44, _xgo_obj45, _xgo_obj46, _xgo_obj47, _xgo_obj48, _xgo_obj49, _xgo_obj50, _xgo_obj51, _xgo_obj52, _xgo_obj53, _xgo_obj54, _xgo_obj55, _xgo_obj56)
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_xgo_arg0 *yap.Context) {
@@ -2589,37 +2584,6 @@ func (this *post_recording_id_view) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/post_transcode_callback.yap:10
-func (this *post_transcode_callback) Main(_xgo_arg0 *yap.Context) {
-	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/post_transcode_callback.yap:10:1
-	ctx := &this.Context
-//line cmd/spx-backend/post_transcode_callback.yap:12:1
-	params := &controller.QiniuPfopCallbackParams{}
-//line cmd/spx-backend/post_transcode_callback.yap:13:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_transcode_callback.yap:14:1
-		return
-	}
-//line cmd/spx-backend/post_transcode_callback.yap:17:1
-	err := this.ctrl.HandleTranscodeCallback(ctx.Context(), params)
-//line cmd/spx-backend/post_transcode_callback.yap:18:1
-	if err != nil {
-//line cmd/spx-backend/post_transcode_callback.yap:19:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_transcode_callback.yap:20:1
-		return
-	}
-//line cmd/spx-backend/post_transcode_callback.yap:24:1
-	this.Text__0(200, "", "")
-}
-func (this *post_transcode_callback) Classfname() string {
-	return "post_transcode_callback"
-}
-func (this *post_transcode_callback) Classclone() yap.HandlerProto {
-	_xgo_ret := *this
-	return &_xgo_ret
-}
 //line cmd/spx-backend/post_transcode_submit.yap:10
 func (this *post_transcode_submit) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
@@ -2632,26 +2596,26 @@ func (this *post_transcode_submit) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_transcode_submit.yap:14:1
 		return
 	}
-//line cmd/spx-backend/post_transcode_submit.yap:17:1
+//line cmd/spx-backend/post_transcode_submit.yap:16:1
 	if
-//line cmd/spx-backend/post_transcode_submit.yap:17:1
+//line cmd/spx-backend/post_transcode_submit.yap:16:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_transcode_submit.yap:18:1
+//line cmd/spx-backend/post_transcode_submit.yap:17:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_transcode_submit.yap:19:1
+//line cmd/spx-backend/post_transcode_submit.yap:18:1
 		return
 	}
-//line cmd/spx-backend/post_transcode_submit.yap:22:1
+//line cmd/spx-backend/post_transcode_submit.yap:21:1
 	response, err := this.ctrl.SubmitTranscode(ctx.Context(), params)
-//line cmd/spx-backend/post_transcode_submit.yap:23:1
+//line cmd/spx-backend/post_transcode_submit.yap:22:1
 	if err != nil {
-//line cmd/spx-backend/post_transcode_submit.yap:24:1
+//line cmd/spx-backend/post_transcode_submit.yap:23:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_transcode_submit.yap:25:1
+//line cmd/spx-backend/post_transcode_submit.yap:24:1
 		return
 	}
-//line cmd/spx-backend/post_transcode_submit.yap:28:1
-	this.Json__1(response)
+//line cmd/spx-backend/post_transcode_submit.yap:27:1
+	this.Json__0(201, response)
 }
 func (this *post_transcode_submit) Classfname() string {
 	return "post_transcode_submit"
