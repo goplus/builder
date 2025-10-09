@@ -24,7 +24,7 @@
               </div>
 
               <!-- 提示词输入 -->
-              <PromptInput v-model="prompt" />
+              <PromptEditor v-model="prompt" />
 
               <!-- 生成按钮 -->
               <div class="form-group">
@@ -47,6 +47,12 @@
                   <div class="loading-spinner large"></div>
                   <div class="loading-text">
                     {{ $t({ en: 'AI is generating images for you...', zh: 'AI正在为您生成图片...' }) }}
+                  </div>
+                </div>
+                <div v-else-if="isSearching" class="preview-loading">
+                  <div class="loading-spinner large"></div>
+                  <div class="loading-text">
+                    {{ $t({ en: 'AI is searching for images...', zh: 'AI正在为您搜索图片...' }) }}
                   </div>
                 </div>
                 <div v-else-if="previewUrls.length > 0" class="preview-images-wrapper">
@@ -115,7 +121,7 @@ import { ref, watch, provide, onUnmounted } from 'vue'
 import { generateSvgDirect } from '@/apis/picgc'
 import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
-import PromptInput from './promptInput.vue'
+import PromptEditor from './promptEditor.vue'
 import { submitImageFeedback } from '@/apis/aifeedback'
 
 // Props
@@ -149,6 +155,7 @@ const prompt = ref('')
 const previewUrls = ref<string[]>([])
 const selectedImageIndex = ref<number>(-1)
 const isGenerating = ref(false)
+const isSearching = ref(false)
 const imageSize = ref('')
 const queryId = ref('')
 
@@ -203,6 +210,12 @@ const setImmediateGenerateResult = async (svgContents: { blob: string; svgConten
     console.error('failed to generate image2:', error)
   }
 }
+
+const setSearchingLoading = (loading: boolean) => {
+  isSearching.value = loading
+}
+
+provide('setSearchingLoading', setSearchingLoading)
 provide('setImmediateGenerateResult', setImmediateGenerateResult)
 
 const handleConfirm = () => {
