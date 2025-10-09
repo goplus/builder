@@ -48,7 +48,7 @@ export type ProjectData = {
   /** Number of remixes associated with the project */
   remixCount: number
   mobileKeyboardType: MobileKeyboardType
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping
 }
 
 export enum MobileKeyboardType {
@@ -60,7 +60,7 @@ export const MOBILE_KEYBOARD_ZONES = ['lt', 'rt', 'lb', 'rb'] as const
 
 export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number]
 export type KeyBtn = {
-  label: string
+  webKeyValue: string
 
   posx: number
 

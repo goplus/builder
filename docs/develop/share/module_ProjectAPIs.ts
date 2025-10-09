@@ -10,8 +10,8 @@ import { type ProjectRelease } from "../../../spx-gui/src/apis/project-release.t
 export const MOBILE_KEYBOARD_ZONES = ["lt", "rt", "lb", "rb"] as const;
 
 export type KeyBtn = {
-  /** The text displayed on the key. */
-  label: string;
+  /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
+  webKeyValue: string;
   /** The horizontal coordinate relative to one of the four corners of the screen (pixels). */
   posx: number;
   /** The vertical coordinate relative to one of the four corners of the screen (pixels). */

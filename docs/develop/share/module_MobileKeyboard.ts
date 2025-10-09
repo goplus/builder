@@ -60,12 +60,12 @@ export declare function MobileKeyboardView(
   emits: {
     close: [];
     rerun: [];
-    key: [type: KeyboardEventType, key: KeyCode];
+    key: [type: KeyboardEventType, key: WebKeyValue];
   }
 ): UI;
 //  {
 //   const zones = Object.keys(zoneToKeyMapping);
-//   const handleOnKeyEvent = (type: KeyboardEventType, key: KeyCode) => {
+//   const handleOnKeyEvent = (type: KeyboardEventType, key: WebKeyValue) => {
 //     emit('key', type, key);
 //   }
 //   const keyButtons = zones
@@ -74,14 +74,31 @@ export declare function MobileKeyboardView(
 //         `<div class="zone ${zone}">
 //            ${zoneToKeyMapping[zone]
 //            .map(
-//              (btn) => `<div class="key-wrapper" style="left: ${btn.posx}px; top: ${btn.posy}px;">
+//              (btn) => {
+//             let style = ''
+//             switch (zone) {
+//               case 'lt':
+//                 style = `left: ${btn.posx}px; top: ${btn.posy}px; transform: translate(-50%, -50%);`
+//                 break
+//               case 'rt':
+//                 style = `right: ${btn.posx}px; top: ${btn.posy}px; transform: translate(50%, -50%);`
+//                 break
+//               case 'lb':
+//                 style = `left: ${btn.posx}px; bottom: ${btn.posy}px; transform: translate(-50%, 50%);`
+//                 break
+//               case 'rb':
+//                 style = `right: ${btn.posx}px; bottom: ${btn.posy}px; transform: translate(50%, 50%);`
+//                 break
+//            }
+//              return `<div class="key-wrapper" style="${style}">
 //               <UIKeyBtn
-//                 key="${btn.label}"
-//                 value="${btn.label}"
+//                 key="${btn.KeyCode}"
+//                 value="${btn.KeyCode}"
 //                 active={true}
 //                 onKey=${handleOnKeyEvent}
 //               />
 //            </div>`
+//               }
 // )
 //   return `
 //     <div className="phone-layout">
@@ -98,7 +115,7 @@ export declare function MobileKeyboardView(
 // active is used to indicate whether a button has functionality（onKeyEvent）.
 export declare function UIKeyBtn(
   props: {
-    value: string;
+    webKeyValue: string;
     active?: boolean;
   },
   emits: {

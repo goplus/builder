@@ -10,9 +10,13 @@
           <div class="key-pool-side">
             <div class="pool-header">{{ t({ en: 'Recognized Keys', zh: '识别的按键' }) }}</div>
             <div ref="paletteAutoRef" class="palette">
-              <div v-for="k in autoPool" :key="`P-${k}`" class="palette-item"
-                @pointerdown.stop="startDragPool('autoPool', k, $event as PointerEvent)">
-                <UIKeyBtn :value="k" :active="false" :size="BtnSize" />
+              <div
+                v-for="k in autoPool"
+                :key="`P-${k}`"
+                class="palette-item"
+                @pointerdown.stop="startDragPool('autoPool', k, $event as PointerEvent)"
+              >
+                <UIKeyBtn :web-key-value="k" :active="false" :size="BtnSize" />
               </div>
             </div>
           </div>
@@ -20,34 +24,51 @@
             <div class="phone-1YZxt">
               <img :src="phone" alt="phone" style="transform: rotate(180deg)" />
               <div class="stage" :class="{ dragging: !!drag }">
-                <div v-for="z in zones" :key="z" class="zone" :class="z"
-                  :ref="(el) => (zoneRefs[z].value = el as HTMLElement)">
+                <div
+                  v-for="z in zones"
+                  :key="z"
+                  :ref="(el) => (zoneRefs[z].value = el as HTMLElement)"
+                  class="zone"
+                  :class="z"
+                >
                   <!-- 系统键：在 lt 区域显示重新运行按钮 -->
-                  <div v-if="z === 'lt'" class="system-key" style="left: 10px; top: 10px;">
-                    <UIButton v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
-                      icon="rotate" size="small">
-                      {{ t({ en: 'Rerun', zh: '重新运行' }) }}
+                  <div v-if="z === 'lt'" class="system-key sysA">
+                    <UIButton
+                      v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
+                      :icon="systemKeys?.[0]?.icon"
+                    >
+                      {{ t({ en: systemKeys?.[0]?.textEn ?? '', zh: systemKeys?.[0]?.textZh ?? '' }) }}
                     </UIButton>
                   </div>
                   <!-- 系统键：在 rt 区域显示关闭按钮 -->
-                  <div v-if="z === 'rt'" class="system-key" style="right: 10px; top: 10px;">
-                    <UIButton v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
-                      icon="close" size="small">
-                      {{ t({ en: 'Close', zh: '关闭' }) }}
+                  <div v-if="z === 'rt'" class="system-key sysB">
+                    <UIButton
+                      v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+                      :icon="systemKeys?.[1]?.icon"
+                    >
+                      {{ t({ en: systemKeys?.[1]?.textEn ?? '', zh: systemKeys?.[1]?.textZh ?? '' }) }}
                     </UIButton>
                   </div>
                   <!-- 用户自定义键 -->
-                  <div v-for="(k, i) in zoneTokeys[z]" :key="k.keyValue + '-' + i" class="key"
+                  <div
+                    v-for="(k, i) in zoneTokeys[z]"
+                    :key="k.keyValue + '-' + i"
+                    class="key"
                     :class="{ dragging: drag?.kind === 'key' && drag.zone === z && drag.index === i }"
-                    :style="getKeyStyle(z, k.posx, k.posy)" @pointerdown.stop="startDragKey(z, i, $event)">
-                    <UIKeyBtn :value="k.keyValue" :active="false" :size="BtnSize" />
+                    :style="getKeyStyle(z, k.posx, k.posy)"
+                    @pointerdown.stop="startDragKey(z, i, $event)"
+                  >
+                    <UIKeyBtn :web-key-value="k.keyValue" :active="false" :size="BtnSize" />
                   </div>
                 </div>
 
                 <!-- 拖拽中的浮层（跟随指针） -->
-                <div v-if="drag" class="floating"
-                  :style="{ transform: `translate(${drag.x - BtnSize / 2}px, ${drag.y - BtnSize / 2}px)` }">
-                  <UIKeyBtn :value="drag.keyValue" :active="false" :size="BtnSize" />
+                <div
+                  v-if="drag"
+                  class="floating"
+                  :style="{ transform: `translate(${drag.x - BtnSize / 2}px, ${drag.y - BtnSize / 2}px)` }"
+                >
+                  <UIKeyBtn :web-key-value="drag.keyValue" :active="false" :size="BtnSize" />
                 </div>
               </div>
             </div>
@@ -67,9 +88,13 @@
             <n-collapse-transition :show="show">
               <div class="pool-header"></div>
               <div ref="paletteAllRef" class="palette">
-                <div v-for="k in allPool" :key="`P-${k}`" class="palette-item"
-                  @pointerdown.stop="startDragPool('allPool', k, $event as PointerEvent)">
-                  <UIKeyBtn :value="k" :active="false" :size="BtnSize" />
+                <div
+                  v-for="k in allPool"
+                  :key="`P-${k}`"
+                  class="palette-item"
+                  @pointerdown.stop="startDragPool('allPool', k, $event as PointerEvent)"
+                >
+                  <UIKeyBtn :web-key-value="k" :active="false" :size="BtnSize" />
                 </div>
               </div>
             </n-collapse-transition>
@@ -91,59 +116,45 @@ import { UIFullScreenModal, UIButton } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { onUnmounted } from 'vue'
 import { NSpace, NSwitch, NCollapseTransition } from 'naive-ui'
-import type { KeyCode } from './mobile-keyboard'
+import type { WebKeyValue } from './mobile-keyboard'
+import { zones, systemKeys, getKeyStyle } from './mobile-keyboard'
+import type { ZoneId } from './mobile-keyboard'
+import UIKeyBtn from './UIKeyBtn.vue'
+import phone from './mobile.png'
+import { reactive, ref } from 'vue'
+import { webKeys } from '@/utils/spx'
 defineOptions({ name: 'MobileKeyboardEdit' })
 const props = defineProps<
   ModalComponentProps & {
     zoneToKeyMapping: MobileKeyboardZoneToKeyMapping | null
-    projectKeys: KeyCode[] | null
+    projectKeys: WebKeyValue[] | null
   }
 >()
 const emit = defineEmits<ModalComponentEmits<MobileKeyboardZoneToKeyMapping>>()
 const show = ref(false)
 const { t } = useI18n()
-import UIKeyBtn from './UIKeyBtn.vue'
-import phone from './mobile.png'
-import { reactive, ref } from 'vue'
-import { webKeys } from '@/utils/spx'
-
+const BtnSize = 50
 const assignedKeys = new Set(
   Object.values(props.zoneToKeyMapping ?? {})
     .flatMap((arr) => arr ?? [])
-    .map((btn) => btn.label)
+    .map((btn) => btn.webKeyValue)
 )
-const BtnSize = 50
 const allPool = ref<string[]>(webKeys.filter((k) => !props.projectKeys?.includes(k) && !assignedKeys.has(k)))
 const autoPool = ref<string[]>(props.projectKeys ? props.projectKeys.filter((k) => !assignedKeys.has(k)) : [])
-const zones = ['lt', 'rt', 'lb', 'rb'] as const
-type ZoneId = (typeof zones)[number]
-type KeyPos = { keyValue: string, posx: number, posy: number, origin?: 'autoPool' | 'allPool' }
 
-// 直接使用 props 数据，只需转换 label 到 keyValue
+type KeyPos = { keyValue: WebKeyValue; posx: number; posy: number; origin?: 'autoPool' | 'allPool' }
+
 const initZoneTokeys = () => {
   const result: Record<ZoneId, KeyPos[]> = { lt: [], rt: [], lb: [], rb: [] }
   const mapping = props.zoneToKeyMapping ?? { lt: [], rt: [], lb: [], rb: [] }
   for (const id of zones) {
     const arr = mapping[id] ?? []
-    result[id] = arr.map((btn) => ({ keyValue: btn.label, posx: btn.posx, posy: btn.posy }))
+    result[id] = arr.map((btn) => ({ keyValue: btn.webKeyValue, posx: btn.posx, posy: btn.posy }))
   }
   return result
 }
 
 const zoneTokeys = reactive<Record<ZoneId, KeyPos[]>>(initZoneTokeys())
-
-
-const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>(props.zoneToKeyMapping ?? { lt: [], rt: [], lb: [], rb: [] })
-
-const zoneOriginPool = reactive<Record<ZoneId, 'autoPool' | 'allPool' | undefined>>({ lt: undefined, rt: undefined, lb: undefined, rb: undefined })
-
-for (const id of zones) {
-  const k = zoneToKey[id]
-  if (k) {
-    const hasProjectKey = (k ?? []).some(btn => (props.projectKeys?.includes(btn.label) ?? false))
-    zoneOriginPool[id] = hasProjectKey ? 'autoPool' : 'allPool'
-  }
-}
 
 const zoneRefs = Object.fromEntries(zones.map((id) => [id, ref<HTMLElement | null>(null)])) as Record<
   ZoneId,
@@ -154,14 +165,14 @@ const paletteAllRef = ref<HTMLElement | null>(null)
 type DragState =
   | { kind: 'pool'; from: 'autoPool' | 'allPool'; keyValue: string; x: number; y: number }
   | {
-    kind: 'key'
-    zone: ZoneId
-    index: number
-    keyValue: string
-    x: number
-    y: number
-    originFrom: 'autoPool' | 'allPool'
-  }
+      kind: 'key'
+      zone: ZoneId
+      index: number
+      keyValue: string
+      x: number
+      y: number
+      originFrom: 'autoPool' | 'allPool'
+    }
 const drag = ref<DragState | null>(null)
 const hoverZone = ref<ZoneId | null>(null)
 
@@ -225,12 +236,14 @@ function onUp(e: PointerEvent) {
   if (targetZone && targetZone !== fromZone) {
     const [px, py] = getPixelInZone(targetZone, e.clientX, e.clientY)
     const item = zoneTokeys[fromZone].splice(d.index, 1)[0]
-    if (item) zoneTokeys[targetZone].push({ keyValue: item.keyValue, posx: px, posy: py, origin: item.origin ?? d.originFrom })
+    if (item)
+      zoneTokeys[targetZone].push({ keyValue: item.keyValue, posx: px, posy: py, origin: item.origin ?? d.originFrom })
   } else if (targetZone === fromZone) {
     const [px, py] = getPixelInZone(fromZone, e.clientX, e.clientY)
     const kp = zoneTokeys[fromZone][d.index]
     if (kp) {
-      kp.posx = px; kp.posy = py
+      kp.posx = px
+      kp.posy = py
     }
   } else {
     // 未命中区域：无论是否命中面板，都回到原始池子
@@ -249,22 +262,36 @@ function onUp(e: PointerEvent) {
 function hit(el: HTMLElement | null, x: number, y: number) {
   if (!el) return false
   const r = el.getBoundingClientRect()
-  return x - BtnSize / 2 >= r.left && x + BtnSize / 2 <= r.right && y - BtnSize / 2 >= r.top && y + BtnSize / 2 <= r.bottom
-}
-
-function getKeyStyle(zone: ZoneId, posx: number, posy: number) {
-  // 统一使用 left/top 定位，不再相对四角
-  return { left: posx + 'px', top: posy + 'px', touchAction: 'none' }
+  return (
+    x - BtnSize / 2 >= r.left && x + BtnSize / 2 <= r.right && y - BtnSize / 2 >= r.top && y + BtnSize / 2 <= r.bottom
+  )
 }
 
 function getPixelInZone(zone: ZoneId, clientX: number, clientY: number): [number, number] {
   const el = zoneRefs[zone]?.value
   if (!el) return [0, 0]
   const r = el.getBoundingClientRect()
+  let px = 0,
+    py = 0
 
-  // 统一使用相对于区域左上角的坐标
-  const px = clientX - r.left
-  const py = clientY - r.top
+  switch (zone) {
+    case 'lt': // 左上角
+      px = clientX - r.left
+      py = clientY - r.top
+      break
+    case 'rt': // 右上角
+      px = r.right - clientX
+      py = clientY - r.top
+      break
+    case 'lb': // 左下角
+      px = clientX - r.left
+      py = r.bottom - clientY
+      break
+    case 'rb': // 右下角
+      px = r.right - clientX
+      py = r.bottom - clientY
+      break
+  }
 
   return [px, py]
 }
@@ -272,10 +299,10 @@ function getPixelInZone(zone: ZoneId, clientX: number, clientY: number): [number
 function confirm() {
   // 转换 zoneTokeys 数据格式为 MobileKeyboardZoneToKeyMapping
   const result: MobileKeyboardZoneToKeyMapping = {
-    lt: zoneTokeys.lt.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
-    rt: zoneTokeys.rt.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
-    lb: zoneTokeys.lb.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy })),
-    rb: zoneTokeys.rb.map(k => ({ label: k.keyValue, posx: k.posx, posy: k.posy }))
+    lt: zoneTokeys.lt.map((k) => ({ webKeyValue: k.keyValue, posx: k.posx, posy: k.posy })),
+    rt: zoneTokeys.rt.map((k) => ({ webKeyValue: k.keyValue, posx: k.posx, posy: k.posy })),
+    lb: zoneTokeys.lb.map((k) => ({ webKeyValue: k.keyValue, posx: k.posx, posy: k.posy })),
+    rb: zoneTokeys.rb.map((k) => ({ webKeyValue: k.keyValue, posx: k.posx, posy: k.posy }))
   }
 
   emit('resolved', result)
@@ -284,10 +311,11 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', onMove)
   window.removeEventListener('pointerup', onUp)
 })
-
 </script>
 
 <style scoped lang="scss">
+@use './mobile-keyboard.scss' as *;
+
 .keyboard-editor {
   display: flex;
   flex-direction: column;
@@ -355,33 +383,8 @@ onUnmounted(() => {
   z-index: 2;
 
   .zone {
-    position: absolute;
-    width: 30%;
-    height: 42%;
-    border: 2px dashed #fff;
-    transition:
-      box-shadow 0.15s,
-      border-color 0.15s;
-  }
-
-  .zone.lt {
-    left: 20px;
-    top: 20px;
-  }
-
-  .zone.rt {
-    right: 20px;
-    top: 20px;
-  }
-
-  .zone.lb {
-    left: 20px;
-    bottom: 20px;
-  }
-
-  .zone.rb {
-    right: 20px;
-    bottom: 20px;
+    @include zone-base(true);
+    @include zone-directions;
   }
 
   .key {
@@ -397,7 +400,8 @@ onUnmounted(() => {
   .system-key {
     position: absolute;
     z-index: 3;
-    pointer-events: auto;
+    pointer-events: none;
+    @include sys-btn;
   }
 
   &.dragging .zone {

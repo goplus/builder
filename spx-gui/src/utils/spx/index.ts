@@ -290,7 +290,7 @@ export const nameKeyMap = keys.reduce((map, key) => {
   return map
 }, new Map<string, KeyDefinition>())
 
-export const webKeyMap = keys.reduce((map, key) => {
+export const webKeyToTextMap = keys.reduce((map, key) => {
   map.set(key.webKeyValue, key.text.en)
   return map
 }, new Map<string, string>())

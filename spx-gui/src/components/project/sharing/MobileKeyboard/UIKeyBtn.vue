@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
+import type { KeyboardEventType, WebKeyValue } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 
-import { webKeyMap } from '@/utils/spx'
+import { webKeyToTextMap } from '@/utils/spx'
 defineOptions({ name: 'UIKeyBtn' })
 
 const props = withDefaults(
   defineProps<{
-    value: string
+    webKeyValue: string
     active?: boolean
     size?: number
   }>(),
@@ -16,7 +16,7 @@ const props = withDefaults(
   }
 )
 const emit = defineEmits<{
-  key: [type: KeyboardEventType, key: KeyCode]
+  key: [type: KeyboardEventType, key: WebKeyValue]
 }>()
 
 // 按键显示映射 - 将长按键名映射为短字符显示
@@ -37,8 +37,8 @@ const keyDisplayMap: Record<string, string> = {
 }
 
 // 获取按键的显示文本
-function getKeyDisplayText(keyValue: string): string {
-  const textEn = webKeyMap.get(keyValue) ?? keyValue
+function getKeyDisplayText(keywebKeyValue: string): string {
+  const textEn = webKeyToTextMap.get(keywebKeyValue) ?? keywebKeyValue
   return keyDisplayMap[textEn] ?? textEn
 }
 
@@ -49,21 +49,28 @@ function press(down: boolean) {
   }
   if (down && !isPressed) {
     isPressed = true
-    dispatchKey('keydown', props.value)
+    dispatchKey('keydown', props.webKeyValue)
   } else if (!down && isPressed) {
     isPressed = false
-    dispatchKey('keyup', props.value)
+    dispatchKey('keyup', props.webKeyValue)
   }
 }
 </script>
 
 <template>
-  <div v-if="!props.active" class="ui-key-btn" :style="{ width: props.size + 'px', height: props.size + 'px' }">{{
-    getKeyDisplayText(props.value) }}</div>
-  <div v-else class="ui-key-btn" :style="{ width: props.size + 'px', height: props.size + 'px' }"
-    @pointerdown.prevent.stop="press(true)" @pointerup.prevent.stop="press(false)"
-    @pointercancel.prevent.stop="press(false)" @pointerleave.prevent.stop="press(false)">
-    {{ getKeyDisplayText(props.value) }}
+  <div v-if="!props.active" class="ui-key-btn" :style="{ width: props.size + 'px', height: props.size + 'px' }">
+    {{ getKeyDisplayText(props.webKeyValue) }}
+  </div>
+  <div
+    v-else
+    class="ui-key-btn"
+    :style="{ width: props.size + 'px', height: props.size + 'px' }"
+    @pointerdown.prevent.stop="press(true)"
+    @pointerup.prevent.stop="press(false)"
+    @pointercancel.prevent.stop="press(false)"
+    @pointerleave.prevent.stop="press(false)"
+  >
+    {{ getKeyDisplayText(props.webKeyValue) }}
   </div>
 </template>
 
