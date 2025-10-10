@@ -141,10 +141,6 @@ func (p *ChangeCharacterStyleParams) Validate() (bool, string) {
 		return false, "only recraft provider supports character style change"
 	}
 
-	// Default to preserve identity if not specified
-	if !p.PreserveIdentity {
-		p.PreserveIdentity = true // Default to preserve identity
-	}
 
 	return true, ""
 }
