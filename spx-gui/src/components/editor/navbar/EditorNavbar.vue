@@ -91,6 +91,30 @@
       </template>
     </template>
     <template #right>
+      <NavbarDropdown
+        :trigger-radar="{
+          name: 'editor type menu',
+          desc: 'Hover to see editor type options (preview, global)'
+        }"
+      >
+        <template #trigger>
+          <div class="editor-type-selected">
+            <img :src="selectedEditorTypeItem.icon" />
+            {{ $t(selectedEditorTypeItem.display) }}
+          </div>
+        </template>
+        <UIMenu>
+          <UIMenuItem
+            v-for="(typeItem, index) in editorTypeItems"
+            :key="index"
+            class="editor-type-item"
+            @click="$emit('updateSelectedEditorType', typeItem.value)"
+          >
+            <template #icon><img :src="typeItem.icon" /></template>
+            {{ $t(typeItem.display) }}
+          </UIMenuItem>
+        </UIMenu>
+      </NavbarDropdown>
       <div v-show="canManageProject" class="publish">
         <UIButton
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
@@ -104,6 +128,13 @@
     </template>
   </NavbarWrapper>
 </template>
+
+<script lang="ts">
+export enum EditorType {
+  Preview = 'preview',
+  Global = 'global'
+}
+</script>
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -144,6 +175,8 @@ import importScratchSvg from './icons/import-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
+import gamePreview from './icons/game-preview.svg'
+import globalSettings from './icons/global-settings.svg'
 import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
@@ -152,6 +185,11 @@ import cloudCheckSvg from './icons/cloud-check.svg?raw'
 const props = defineProps<{
   project: Project | null
   state: EditorState | null
+  selectedEditorType: EditorType
+}>()
+
+defineEmits<{
+  updateSelectedEditorType: [type: EditorType]
 }>()
 
 const { isOnline } = useNetwork()
@@ -167,6 +205,22 @@ const canManageProject = computed(() => {
 })
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
+
+const editorTypeItems = [
+  {
+    display: { en: 'Game Preview', zh: '游戏预览' },
+    value: EditorType.Preview,
+    icon: gamePreview
+  },
+  {
+    display: { en: 'Global Settings', zh: '全局设置' },
+    value: EditorType.Global,
+    icon: globalSettings
+  }
+]
+const selectedEditorTypeItem = computed(
+  () => editorTypeItems.find((item) => item.value === props.selectedEditorType) ?? editorTypeItems[0]
+)
 
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
@@ -374,5 +428,18 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   height: 100%;
   display: flex;
   align-items: center;
+}
+
+.editor-type-selected {
+  display: flex;
+  gap: 4px;
+}
+
+.editor-type-item {
+  &::after {
+    content: ' ';
+    width: 16px;
+    height: 16px;
+  }
 }
 </style>
