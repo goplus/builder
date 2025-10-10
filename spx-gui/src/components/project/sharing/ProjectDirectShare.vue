@@ -123,7 +123,7 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
     shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
     if (platform.addShareStateURL) {
-      shareURL = await platform.addShareStateURL(shareURL)
+      shareURL = platform.addShareStateURL(shareURL)
     }
 
     if (shareURL) {

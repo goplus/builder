@@ -116,7 +116,7 @@ async function generateShareContent() {
       // Support URL sharing, directly share recording page link
       shareURL = await initShareURL(platform.basicInfo.name, currentUrl)
       if (platform.addShareStateURL) {
-        shareURL = await platform.addShareStateURL(shareURL)
+        shareURL = platform.addShareStateURL(shareURL)
       }
       const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {

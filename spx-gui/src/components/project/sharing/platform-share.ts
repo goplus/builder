@@ -60,8 +60,8 @@ export interface PlatformConfig {
   shareType: ShareType
   basicInfo: BasicInfo
   shareFunction: ShareFunction
-  addShareStateURL?: (url: string) => Promise<string>
-  delShareStateURL?: (url: string) => Promise<string>
+  addShareStateURL?: (url: string) => string
+  delShareStateURL?: (url: string) => string
   initShareInfo: (shareInfo?: ShareInfo) => Promise<void>
 }
 
@@ -172,13 +172,13 @@ class QQPlatform implements PlatformConfig {
       })
   }
 
-  async addShareStateURL(url: string) {
+  addShareStateURL(url: string) {
     const shareURL = new URL(url)
     shareURL.searchParams.set('share-state', 'init')
     return shareURL.toString()
   }
 
-  async delShareStateURL(url: string) {
+  delShareStateURL(url: string) {
     const shareURL = new URL(url)
     if (shareURL.searchParams.get('share-state') === 'init') {
       shareURL.searchParams.delete('share-state')
@@ -265,13 +265,13 @@ class WeChatPlatform implements PlatformConfig {
       })
   }
 
-  async addShareStateURL(url: string) {
+  addShareStateURL(url: string) {
     const shareURL = new URL(url)
     shareURL.searchParams.set('share-state', 'init')
     return shareURL.toString()
   }
 
-  async delShareStateURL(url: string) {
+  delShareStateURL(url: string) {
     const shareURL = new URL(url)
     if (shareURL.searchParams.get('share-state') === 'init') {
       shareURL.searchParams.delete('share-state')

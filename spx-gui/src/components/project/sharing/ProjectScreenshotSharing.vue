@@ -82,7 +82,7 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
   shareURL = getCurrentProjectUrl()
   shareURL = await initShareURL(platform.basicInfo.name, shareURL)
   if (platform.addShareStateURL) {
-    shareURL = await platform.addShareStateURL(shareURL)
+    shareURL = platform.addShareStateURL(shareURL)
   }
 
   // Prefer image flow: render platform's manual guide component if provided
