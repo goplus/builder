@@ -206,22 +206,6 @@ const createPoster = async (): Promise<string> => {
     throw new Error('Project data is undefined')
   }
 
-  // Wait for poster element to be mounted using watch
-  if (!posterElementRef.value) {
-    await new Promise<void>((resolve) => {
-      const unwatch = watch(
-        posterElementRef,
-        (element) => {
-          if (element) {
-            unwatch()
-            resolve()
-          }
-        },
-        { immediate: true, flush: 'post' }
-      )
-    })
-  }
-
   await ensureImagesReady()
 
   const posterElement = posterElementRef.value!

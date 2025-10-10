@@ -36,8 +36,9 @@
         <Poster ref="posterCompRef" :project-data="props.projectData" />
       </div>
       <div class="qrcode side">
-        <component :is="imageShareComponent" v-if="imageShareComponent" />
-        <div v-else-if="selectedPlatform?.shareType.supportImage" class="loading-container">
+        <component :is="guideComponent" v-if="guideComponent" />
+        <component :is="urlShareComponent" v-else-if="urlShareComponent" />
+        <div v-else-if="isGeneratingPoster || isGeneratingQR" class="loading-container">
           <div class="loading-icon">⏳</div>
           <span class="loading-text">{{
             isGeneratingPoster
@@ -57,7 +58,7 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
-import { computed, ref, type Component, shallowRef, markRaw, onMounted } from 'vue'
+import { computed, ref, type Component, shallowRef, markRaw, onMounted, watch, nextTick } from 'vue'
 import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
@@ -78,7 +79,7 @@ const emit = defineEmits<{
 const selectedPlatform = ref<PlatformConfig | undefined>(undefined)
 const posterCompRef = ref<InstanceType<typeof Poster>>()
 const urlShareComponent = shallowRef<Component | null>(null)
-const imageShareComponent = shallowRef<Component | null>(null)
+const guideComponent = shallowRef<Component | null>(null)
 
 const projectSharingLink = computed(() => {
   return `${location.origin}${getProjectShareRoute(props.projectData.owner, props.projectData.name)}`
@@ -99,6 +100,7 @@ async function createPosterURL(): Promise<string> {
 // 缓存海报URL，避免每次切换平台都重新生成
 const posterURL = ref<string | null>(null)
 const isGeneratingPoster = ref(false)
+const isGeneratingQR = ref(false)
 
 // 初始化时生成海报URL
 async function initializePoster() {
@@ -112,52 +114,73 @@ async function initializePoster() {
 
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  setupPlatformShareContent(platform)
+  // Reset components before regeneration
+  guideComponent.value = null
+  urlShareComponent.value = null
+  void handleGenerateShareContent()
 }
 
-async function setupPlatformShareContent(platform: PlatformConfig) {
-  imageShareComponent.value = null
-  urlShareComponent.value = null
+// 生成分享内容（对齐截图分享逻辑：优先图片引导，其次URL）
+async function generateShareContent(platform: PlatformConfig): Promise<void> {
+  // Prefer image flow when supported
+  if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
+    try {
+      if (!posterURL.value) {
+        await initializePoster()
+      }
+      if (!posterURL.value) {
+        throw new Error('Failed to generate poster URL')
+      }
+      const shareResult = platform.shareFunction.shareImage(posterURL.value)
+      if (shareResult instanceof Promise) {
+        const comp = await shareResult
+        guideComponent.value = comp ? markRaw(comp) : null
+      } else {
+        guideComponent.value = shareResult ? markRaw(shareResult) : null
+      }
+      return
+    } catch (error) {
+      console.error('Failed to generate poster URL:', error)
+      guideComponent.value = null
+    }
+  }
 
-  let shareURL = ''
+  // Fallback to URL flow
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
-    shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
-    shareURL = await addShareStateURL(shareURL)
-
-    if (shareURL) {
+    try {
+      let shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
+      shareURL = await addShareStateURL(shareURL)
       const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {
         urlShareComponent.value = markRaw(shareComponent)
       }
-    }
-    return
-  }
-
-  if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
-    try {
-      // 确保海报URL已经生成
-      if (!posterURL.value) {
-        await initializePoster()
-      }
-
-      if (!posterURL.value) {
-        throw new Error('Failed to generate poster URL')
-      }
-
-      const shareResult = platform.shareFunction.shareImage(posterURL.value)
-
-      // if shareResult is from an async function, await it
-      if (shareResult instanceof Promise) {
-        const comp = await shareResult
-        imageShareComponent.value = comp ? markRaw(comp) : null
-      } else {
-        imageShareComponent.value = shareResult ? markRaw(shareResult) : null
-      }
     } catch (error) {
-      console.error('Failed to setup platform share content:', error)
-      imageShareComponent.value = null
+      console.error('Failed to generate URL share component:', error)
+      urlShareComponent.value = null
     }
-    return
+  }
+}
+
+// 包装带消息的生成器
+const generateShareContentWithMessage = useMessageHandle(
+  async (): Promise<void> => {
+    if (!selectedPlatform.value) return
+    await generateShareContent(selectedPlatform.value)
+  },
+  {
+    en: 'Failed to generate share content',
+    zh: '生成分享内容失败'
+  }
+)
+
+// 处理加载状态的外层函数
+async function handleGenerateShareContent(): Promise<void> {
+  if (!selectedPlatform.value) return
+  isGeneratingQR.value = true
+  try {
+    await generateShareContentWithMessage.fn()
+  } finally {
+    isGeneratingQR.value = false
   }
 }
 
@@ -165,6 +188,21 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
 onMounted(() => {
   initializePoster()
 })
+
+// 监听可见性以在打开时触发生成
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) {
+      guideComponent.value = null
+      urlShareComponent.value = null
+      initializePoster()
+      nextTick(() => {
+        void handleGenerateShareContent()
+      })
+    }
+  }
+)
 </script>
 
 <style scoped lang="scss">
