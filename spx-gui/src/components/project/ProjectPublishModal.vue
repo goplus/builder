@@ -12,8 +12,9 @@ import { stringifyProjectFullName } from '@/apis/project'
 import { ref } from 'vue'
 import { useModal } from '@/components/ui'
 import MobileKeyboardEdit from './sharing/MobileKeyboard/MobileKeyboardEditor.vue'
-import type { MobileKeyboardZoneToKeyMapping } from '@/apis/project'
-import { MobileKeyboardType } from '@/apis/project'
+import { type MobileKeyboardZoneToKeyMapping, MobileKeyboardType } from '@/apis/project'
+import { EMPTY_ZONE_MAPPING } from './sharing/MobileKeyboard/mobile-keyboard'
+
 const props = defineProps<{
   project: Project
   visible: boolean
@@ -72,7 +73,8 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     project.mobileKeyboardType = keyboardMode.value
-    project.mobileKeyboardZoneToKey = keyboardMode.value === 2 ? mobileKeyboardZoneToKey.value || {} : {}
+    project.mobileKeyboardZoneToKey =
+      keyboardMode.value === 2 ? mobileKeyboardZoneToKey.value ?? EMPTY_ZONE_MAPPING : EMPTY_ZONE_MAPPING
     if (project.isUsingAIInteraction()) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
@@ -89,7 +91,7 @@ const handleSubmit = useMessageHandle(
 // mobile
 const keyboardMode = ref<MobileKeyboardType>(props.project.mobileKeyboardType ?? MobileKeyboardType.NoKeyboard)
 const mobileKeyboardZoneToKey = ref<MobileKeyboardZoneToKeyMapping | null>(
-  props.project.mobileKeyboardZoneToKey ?? null
+  props.project.mobileKeyboardZoneToKey ?? EMPTY_ZONE_MAPPING
 )
 const openKeyboardEditor = useModal(MobileKeyboardEdit)
 async function handleEidtKeyboard() {

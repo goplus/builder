@@ -1,0 +1,39 @@
+@mixin zone-base($with-border: true) {
+  position: absolute;
+  width: 30%;
+  height: 42%;
+  @if $with-border {
+    border: 2px dashed #fff;
+    transition:
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+}
+@mixin zone-directions {
+  &.lt {
+    left: 20px;
+    top: 20px;
+  }
+  &.rt {
+    right: 20px;
+    top: 20px;
+  }
+  &.lb {
+    left: 20px;
+    bottom: 20px;
+  }
+  &.rb {
+    right: 20px;
+    bottom: 20px;
+  }
+}
+@mixin sys-btn {
+  &.sysA {
+    top: 2%;
+    left: 2%;
+  }
+  &.sysB {
+    top: 2%;
+    right: 2%;
+  }
+}

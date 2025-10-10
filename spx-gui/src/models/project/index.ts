@@ -11,7 +11,7 @@ import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
-import { Visibility, type ProjectData, MobileKeyboardType } from '@/apis/project'
+import { Visibility, type ProjectData, MobileKeyboardType, type MobileKeyboardZoneToKeyMapping } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -98,7 +98,7 @@ export class Project extends Disposable {
   releaseCount?: number
   remixCount?: number
   mobileKeyboardType?: MobileKeyboardType
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping
 
   stage: Stage
   sprites: Sprite[]
@@ -358,7 +358,7 @@ export class Project extends Disposable {
     this.aiDescription = null
     this.aiDescriptionHash = null
     this.mobileKeyboardType = MobileKeyboardType.NoKeyboard
-    this.mobileKeyboardZoneToKey = {}
+    this.mobileKeyboardZoneToKey = { lt: null, rt: null, lb: null, rb: null }
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
     return reactiveThis
   }

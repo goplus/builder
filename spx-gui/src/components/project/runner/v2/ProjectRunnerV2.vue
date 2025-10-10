@@ -14,7 +14,7 @@ import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
-import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
+import type { KeyboardEventType, WebKeyValue } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
 
@@ -199,7 +199,7 @@ defineExpose({
     if (win == null) return
     return await win.stopRecording?.()
   },
-  dispatchKeyboardEvent(type: KeyboardEventType, key: KeyCode) {
+  dispatchKeyboardEvent(type: KeyboardEventType, key: WebKeyValue) {
     const win = iframeRef.value?.contentWindow as IframeWindow | null
     if (win == null) return
     const doc = win.document

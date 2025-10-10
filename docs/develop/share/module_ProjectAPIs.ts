@@ -7,25 +7,22 @@ import { type ProjectRelease } from "../../../spx-gui/src/apis/project-release.t
 /**
  * Valid mobile keyboard zones
  */
-export const MOBILE_KEYBOARD_ZONES = [
-  "lt",
-  "rt",
-  "lbUp",
-  "lbLeft",
-  "lbRight",
-  "lbDown",
-  "rbA",
-  "rbB",
-  "rbX",
-  "rbY",
-] as const;
+export const MOBILE_KEYBOARD_ZONES = ["lt", "rt", "lb", "rb"] as const;
 
+export type KeyBtn = {
+  /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
+  webKeyValue: string;
+  /** The horizontal coordinate relative to one of the four corners of the screen (pixels). */
+  posx: number;
+  /** The vertical coordinate relative to one of the four corners of the screen (pixels). */
+  posy: number;
+};
 export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number];
 /**
  * Zone to key mapping for mobile keyboard
  */
 export type MobileKeyboardZoneToKeyMapping = {
-  [zone in MobileKeyboardZone]: string | null;
+  [zone in MobileKeyboardZone]: KeyBtn[] | null;
 };
 /**
  * Mobile keyboard type

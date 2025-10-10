@@ -7,7 +7,7 @@ import { UIButton, UIModalClose, useResponsive } from '@/components/ui'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { useLastClickEvent } from '@/utils/dom'
 import MobileKeyboardView from '../sharing/MobileKeyboard/MobileKeyboardView.vue'
-import type { KeyboardEventType, KeyCode } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
+import type { KeyboardEventType, WebKeyValue } from '@/components/project/sharing/MobileKeyboard/mobile-keyboard'
 const props = defineProps<{
   project: Project
   visible: boolean
@@ -59,7 +59,7 @@ const handleRerun = useMessageHandle(() => projectRunnerRef.value?.rerun(), {
   zh: '重新运行项目失败'
 })
 const isMobile = useResponsive('mobile')
-async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
+async function handleOnKeyEvent(type: KeyboardEventType, key: WebKeyValue) {
   await projectRunnerRef.value?.dispatchKeyboardEvent(type, key)
 }
 </script>
@@ -105,7 +105,7 @@ async function handleOnKeyEvent(type: KeyboardEventType, key: KeyCode) {
       <div class="main">
         <MobileKeyboardView
           v-if="isMobile"
-          :zone-to-key-mapping="project.mobileKeyboardZoneToKey || {}"
+          :zone-to-key-mapping="project.mobileKeyboardZoneToKey || { lt: null, rt: null, lb: null, rb: null }"
           @key="handleOnKeyEvent"
           @rerun="handleRerun.fn"
           @close="emit('close')"
