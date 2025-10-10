@@ -154,3 +154,32 @@ type BeautifyImageResponse struct {
 	Provider       Provider  `json:"provider"`
 }
 
+// CharacterStyleChangeRequest represents a request to change character styling while preserving character identity.
+type CharacterStyleChangeRequest struct {
+	ImageData      []byte   `json:"-"`           // The character image data to restyle
+	StylePrompt    string   `json:"style_prompt"`// Description of desired style changes (e.g., "change to casual clothes", "add sunglasses")
+	Strength       float64  `json:"strength"`    // Strength of transformation (0-1), lower values preserve character better
+	Style          string   `json:"style,omitempty"`
+	SubStyle       string   `json:"sub_style,omitempty"`
+	NegativePrompt string   `json:"negative_prompt,omitempty"`
+	Provider       Provider `json:"provider,omitempty"`
+	PreserveIdentity bool   `json:"preserve_identity"` // Emphasize preserving character identity
+}
+
+// CharacterStyleChangeResponse represents the response from character style change.
+type CharacterStyleChangeResponse struct {
+	ID             string    `json:"id"`
+	OriginalPrompt string    `json:"original_prompt"`
+	StylePrompt    string    `json:"style_prompt"`  // The style change prompt used
+	NegativePrompt string    `json:"negative_prompt"`
+	Style          string    `json:"style"`
+	Strength       float64   `json:"strength"`
+	URL            string    `json:"url"`
+	Data           []byte    `json:"-"`         // Downloaded styled image data
+	Width          int       `json:"width"`
+	Height         int       `json:"height"`
+	CreatedAt      time.Time `json:"created_at"`
+	Provider       Provider  `json:"provider"`
+	PreserveIdentity bool    `json:"preserve_identity"`
+}
+

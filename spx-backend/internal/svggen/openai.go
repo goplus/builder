@@ -179,6 +179,11 @@ func (s *OpenAIService) BeautifyImage(ctx context.Context, req BeautifyImageRequ
 	return nil, errors.New("BeautifyImage is not supported by OpenAI provider")
 }
 
+// ChangeCharacterStyle is not supported by OpenAI provider.
+func (s *OpenAIService) ChangeCharacterStyle(ctx context.Context, req CharacterStyleChangeRequest) (*CharacterStyleChangeResponse, error) {
+	return nil, errors.New("ChangeCharacterStyle is not supported by OpenAI provider")
+}
+
 // encodeSVGToBase64 encodes SVG to Base64.
 func (s *OpenAIService) encodeSVGToBase64(svgCode string) string {
 	return base64.StdEncoding.EncodeToString([]byte(svgCode))

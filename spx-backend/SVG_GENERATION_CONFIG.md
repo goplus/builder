@@ -163,6 +163,41 @@ Generates an image and returns metadata information.
 }
 ```
 
+### POST /character/style/change
+Changes character styling while preserving character identity.
+
+**Request Body (multipart/form-data):**
+```
+image: [PNG file]                      # Required: Character image to be restyled
+style_prompt: "change to casual clothes" # Required: Description of style changes
+strength: 0.3                         # Optional: Transformation strength (0-1, default: 0.3)
+style: "realistic_image"               # Optional: Image style
+sub_style: "detailed"                  # Optional: Sub-style
+negative_prompt: "ugly, distorted"     # Optional: What to avoid
+provider: "recraft"                    # Optional: Provider (default: recraft)
+preserve_identity: true                # Optional: Preserve character identity (default: true)
+```
+
+**Response:**
+```json
+{
+  "id": "recraft_style_1234567890",
+  "url": "https://example.com/styled-character.png",
+  "kodo_url": "https://kodo.example.com/styled-character.svg",
+  "ai_resource_id": 12345,
+  "original_prompt": "change to casual clothes",
+  "style_prompt": "保持角色的面部特征、体型和基本外观不变，只改变change to casual clothes，确保角色身份完全保持不变",
+  "negative_prompt": "ugly, distorted, 改变面部特征, 改变角色身份, 不同的人",
+  "style": "realistic_image",
+  "strength": 0.3,
+  "width": 1024,
+  "height": 1024,
+  "provider": "recraft",
+  "preserve_identity": true,
+  "created_at": "2025-01-01T12:00:00Z"
+}
+```
+
 ## Provider Selection
 
 You can specify which provider to use in the request:
@@ -174,7 +209,7 @@ You can specify which provider to use in the request:
 Each provider has different strengths:
 
 - **SVG.IO**: Direct SVG generation, good for simple vector graphics
-- **Recraft**: High-quality AI image generation with vectorization
+- **Recraft**: High-quality AI image generation with vectorization, supports image beautification and character style changes
 - **OpenAI**: LLM-powered SVG code generation, highly customizable
 
 ## Development Setup
@@ -214,4 +249,12 @@ curl -X POST http://localhost:8080/image \
     "model": "recraftv3",
     "size": "1024x1024"
   }'
+
+# Change character style
+curl -X POST http://localhost:8080/character/style/change \
+  -F "image=@character.png" \
+  -F "style_prompt=change to medieval knight armor" \
+  -F "strength=0.4" \
+  -F "preserve_identity=true" \
+  -F "provider=recraft"
 ```
