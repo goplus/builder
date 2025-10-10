@@ -3,7 +3,7 @@ import { ref, watch, nextTick, type Component, shallowRef, markRaw } from 'vue'
 import Poster from './ProjectPoster.vue'
 import PlatformSelector from './PlatformSelector.vue'
 import type { ProjectData } from '@/apis/project'
-import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
+import { type PlatformConfig, initShareURL } from './platform-share'
 import { useMessageHandle, DefaultException } from '@/utils/exception'
 
 const props = defineProps<{
@@ -81,7 +81,9 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
 
   shareURL = getCurrentProjectUrl()
   shareURL = await initShareURL(platform.basicInfo.name, shareURL)
-  shareURL = await addShareStateURL(shareURL)
+  if (platform.addShareStateURL) {
+    shareURL = platform.addShareStateURL(shareURL)
+  }
 
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
