@@ -37,13 +37,14 @@ class ImageMatchingService:
         
         logger.info("图文匹配服务初始化完成")
     
-    def add_image_by_url(self, id: int, url: str) -> bool:
+    def add_image_by_url(self, id: int, url: str, auto_flush: bool = True) -> bool:
         """
         通过URL添加图片到数据库
         
         Args:
             id: 图片ID
             url: 图片URL
+            auto_flush: 是否自动刷新到磁盘
             
         Returns:
             是否添加成功
@@ -58,7 +59,7 @@ class ImageMatchingService:
                 return False
             
             # 使用upsert方法处理插入或更新
-            success = self.milvus_ops.upsert(id, url, vector.tolist())
+            success = self.milvus_ops.upsert(id, url, vector.tolist(), auto_flush)
             
             if success:
                 logger.info(f"图片成功添加: ID={id}")
@@ -71,7 +72,7 @@ class ImageMatchingService:
             logger.error(f"添加图片异常: ID={id}, URL={url}, 错误: {e}")
             return False
     
-    def add_image_with_svg_content(self, id: int, url: str, svg_content: str) -> bool:
+    def add_image_with_svg_content(self, id: int, url: str, svg_content: str, auto_flush: bool = True) -> bool:
         """
         通过SVG内容添加图片到数据库
         
@@ -79,6 +80,7 @@ class ImageMatchingService:
             id: 图片ID
             url: 图片URL（仅用于记录）
             svg_content: SVG内容
+            auto_flush: 是否自动刷新到磁盘
             
         Returns:
             是否添加成功
@@ -93,7 +95,7 @@ class ImageMatchingService:
                 return False
             
             # 使用upsert方法处理插入或更新
-            success = self.milvus_ops.upsert(id, url, vector.tolist())
+            success = self.milvus_ops.upsert(id, url, vector.tolist(), auto_flush)
             
             if success:
                 logger.info(f"SVG图片成功添加: ID={id}")
@@ -140,11 +142,11 @@ class ImageMatchingService:
                         failed_count += 1
                         continue
                     
-                    # 根据是否有SVG内容选择添加方法
+                    # 根据是否有SVG内容选择添加方法，批量添加时禁用auto_flush
                     if svg_content:
-                        success = self.add_image_with_svg_content(image_id, image_url, svg_content)
+                        success = self.add_image_with_svg_content(image_id, image_url, svg_content, auto_flush=False)
                     else:
-                        success = self.add_image_by_url(image_id, image_url)
+                        success = self.add_image_by_url(image_id, image_url, auto_flush=False)
                     
                     result = {
                         'index': i,
@@ -169,6 +171,12 @@ class ImageMatchingService:
                         'error': str(e)
                     })
                     failed_count += 1
+            
+            # 批量添加完成后统一flush
+            if success_count > 0:
+                flush_success = self.milvus_ops.batch_flush()
+                if not flush_success:
+                    logger.warning("批量flush失败，但数据已经添加到内存中")
             
             logger.info(f"批量添加完成: 总数={total}, 成功={success_count}, 失败={failed_count}")
             

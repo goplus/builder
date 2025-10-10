@@ -116,7 +116,7 @@ class MilvusOperations:
             logger.error(f"创建索引失败: {e}")
             raise
     
-    def upsert(self, id: int, url: str, vector: List[float]) -> bool:
+    def upsert(self, id: int, url: str, vector: List[float], auto_flush: bool = True) -> bool:
         """
         插入或更新数据（如果记录已存在则更新，否则插入）
         
@@ -124,6 +124,7 @@ class MilvusOperations:
             id: 图片ID
             url: 图片URL
             vector: 特征向量
+            auto_flush: 是否自动刷新到磁盘
             
         Returns:
             是否操作成功
@@ -141,8 +142,9 @@ class MilvusOperations:
             # 使用Milvus原生的upsert方法
             self.collection.upsert(entities)
             
-            # 刷新数据到磁盘
-            self.collection.flush()
+            # 条件性刷新数据到磁盘
+            if auto_flush:
+                self.collection.flush()
             
             logger.info(f"数据成功upsert: ID={id}")
             return True
@@ -347,3 +349,18 @@ class MilvusOperations:
                 'index_type': self.config.index_type,
                 'metric_type': self.config.metric_type
             }
+    
+    def batch_flush(self) -> bool:
+        """
+        批量刷新数据到磁盘
+        
+        Returns:
+            是否刷新成功
+        """
+        try:
+            self.collection.flush()
+            logger.info("批量flush完成")
+            return True
+        except Exception as e:
+            logger.error(f"批量flush失败: {e}")
+            return False
