@@ -202,15 +202,32 @@ onMounted(() => {
 })
 
 const createPoster = async (): Promise<string> => {
-  if (!posterElementRef.value || !props.projectData) {
-    throw new Error('Poster element not ready or project data is undefined')
+  if (!props.projectData) {
+    throw new Error('Project data is undefined')
+  }
+
+  // Wait for poster element to be mounted using watch
+  if (!posterElementRef.value) {
+    await new Promise<void>((resolve) => {
+      const unwatch = watch(
+        posterElementRef,
+        (element) => {
+          if (element) {
+            unwatch()
+            resolve()
+          }
+        },
+        { immediate: true, flush: 'post' }
+      )
+    })
   }
 
   await ensureImagesReady()
 
-  const rect = posterElementRef.value.getBoundingClientRect()
+  const posterElement = posterElementRef.value!
+  const rect = posterElement.getBoundingClientRect()
 
-  const posterCanvas = await html2canvas(posterElementRef.value, {
+  const posterCanvas = await html2canvas(posterElement, {
     width: rect.width,
     height: rect.height,
     useCORS: true,
@@ -226,7 +243,6 @@ const createPoster = async (): Promise<string> => {
 
   const projectFile = fromBlob(`${props.projectData.name}-poster.png`, blob)
   const webUrl = await saveFileForWebUrl(projectFile)
-
   return webUrl
 }
 
@@ -236,13 +252,14 @@ const ensureImagesReady = async () => {
   if (!imgUrl.value) {
     await new Promise<void>((resolve) => {
       const unwatch = watch(
-        () => imgUrl.value,
+        imgUrl,
         (newValue) => {
           if (newValue) {
             unwatch()
             resolve()
           }
-        }
+        },
+        { immediate: true, flush: 'post' }
       )
     })
   }
@@ -260,7 +277,6 @@ const ensureImagesReady = async () => {
           console.warn('Image failed to load:', img.src)
           resolve()
         }
-        setTimeout(() => resolve(), 2000)
       })
     })
   )

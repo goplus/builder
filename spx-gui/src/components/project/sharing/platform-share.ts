@@ -525,6 +525,7 @@ class BilibiliPlatform implements PlatformConfig {
             }
           ],
           defaultButtonLabel: { en: 'Download video', zh: '下载视频' },
+          downloadUrl: video, // 传递下载URL用于生成二维码
           onDownload: createDataDownloadHandler(video, 'xbuilder-video.mp4')
         })
     }
@@ -617,6 +618,7 @@ function createImageManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载图片', en: 'Download image' },
+      downloadUrl: image, // 传递下载URL用于生成二维码
       onDownload: createDataDownloadHandler(image, filename || 'xbuilder-poster.png')
     })
   }
@@ -641,6 +643,7 @@ function createVideoManualShareGuide(options: {
       steps,
       buttonText,
       defaultButtonLabel: { zh: '下载视频', en: 'Download video' },
+      downloadUrl: video, // 传递下载URL用于生成二维码
       onDownload: createDataDownloadHandler(video, filename || 'xbuilder-video.mp4')
     })
   }
