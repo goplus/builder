@@ -158,12 +158,12 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
         if (shareComponent) {
           urlShareComponent.value = markRaw(shareComponent)
         }
-      } 
-    }catch (error) {
-        console.error('Failed to generate URL share component:', error)
-        urlShareComponent.value = null
       }
+    } catch (error) {
+      console.error('Failed to generate URL share component:', error)
+      urlShareComponent.value = null
     }
+  }
 }
 
 // 包装带消息的生成器
