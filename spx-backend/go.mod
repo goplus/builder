@@ -22,8 +22,6 @@ require (
 	gorm.io/gorm v1.30.2
 )
 
-require github.com/hashicorp/golang-lru/v2 v2.0.7
-
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect

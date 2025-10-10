@@ -2589,32 +2589,39 @@ func (this *post_transcode_submit) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_transcode_submit.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_transcode_submit.yap:12:1
-	params := &controller.SubmitTranscodeParams{}
-//line cmd/spx-backend/post_transcode_submit.yap:13:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_transcode_submit.yap:14:1
-		return
-	}
-//line cmd/spx-backend/post_transcode_submit.yap:16:1
+//line cmd/spx-backend/post_transcode_submit.yap:11:1
 	if
+//line cmd/spx-backend/post_transcode_submit.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_transcode_submit.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_transcode_submit.yap:15:1
+	params := &controller.SubmitTranscodeParams{}
 //line cmd/spx-backend/post_transcode_submit.yap:16:1
-	ok, msg := params.Validate(); !ok {
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_transcode_submit.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_transcode_submit.yap:19:1
+	if
+//line cmd/spx-backend/post_transcode_submit.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_transcode_submit.yap:20:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_transcode_submit.yap:18:1
-		return
-	}
 //line cmd/spx-backend/post_transcode_submit.yap:21:1
-	response, err := this.ctrl.SubmitTranscode(ctx.Context(), params)
-//line cmd/spx-backend/post_transcode_submit.yap:22:1
-	if err != nil {
-//line cmd/spx-backend/post_transcode_submit.yap:23:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_transcode_submit.yap:24:1
 		return
 	}
+//line cmd/spx-backend/post_transcode_submit.yap:24:1
+	response, err := this.ctrl.SubmitTranscode(ctx.Context(), params)
+//line cmd/spx-backend/post_transcode_submit.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_transcode_submit.yap:26:1
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_transcode_submit.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_transcode_submit.yap:30:1
 	this.Json__0(201, response)
 }
 func (this *post_transcode_submit) Classfname() string {
