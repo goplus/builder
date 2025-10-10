@@ -11,11 +11,11 @@ type UserImageFilterConfig struct {
 	// UserID is the foreign key to user table
 	UserID int64 `gorm:"column:user_id;not null;uniqueIndex" json:"user_id"`
 
-	// FilterWindowDays is the number of days to look back for filtering (default 30)
-	FilterWindowDays int `gorm:"column:filter_window_days;default:30" json:"filter_window_days"`
-
 	// MaxFilterRatio is the maximum ratio of results that can be filtered out (0-1, default 0.8)
 	MaxFilterRatio float64 `gorm:"column:max_filter_ratio;type:decimal(3,2);default:0.80" json:"max_filter_ratio"`
+
+	// SessionEnabled indicates if session-level filtering is enabled for this user
+	SessionEnabled bool `gorm:"column:session_enabled;default:true" json:"session_enabled"`
 }
 
 // TableName implements [gorm.io/gorm/schema.Tabler].
@@ -35,6 +35,9 @@ type UserImageRecommendationHistory struct {
 
 	// QueryID is the recommendation query ID for tracking
 	QueryID string `gorm:"column:query_id;type:varchar(36);not null;index" json:"query_id"`
+
+	// SessionID is the session ID for tracking user sessions (nullable for backward compatibility)
+	SessionID *string `gorm:"column:session_id;type:varchar(36);index:idx_user_session" json:"session_id"`
 
 	// Query is the user's original search query
 	Query string `gorm:"column:query;type:text" json:"query"`

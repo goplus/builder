@@ -1148,39 +1148,39 @@ func (this *get_project_owner_name_liking) Classclone() yap.HandlerProto {
 	_xgo_ret := *this
 	return &_xgo_ret
 }
-//line cmd/spx-backend/get_projects_context.yap:12
+//line cmd/spx-backend/get_projects_context.yap:13
 func (this *get_projects_context) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
-//line cmd/spx-backend/get_projects_context.yap:12:1
+//line cmd/spx-backend/get_projects_context.yap:13:1
 	ctx := &this.Context
-//line cmd/spx-backend/get_projects_context.yap:14:1
-	projectIDStr := ctx.FormValue("project_id")
 //line cmd/spx-backend/get_projects_context.yap:15:1
-	if projectIDStr == "" {
+	projectIDStr := ctx.FormValue("project_id")
 //line cmd/spx-backend/get_projects_context.yap:16:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "project_id is required")
+	if projectIDStr == "" {
 //line cmd/spx-backend/get_projects_context.yap:17:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "project_id is required")
+//line cmd/spx-backend/get_projects_context.yap:18:1
 		return
 	}
-//line cmd/spx-backend/get_projects_context.yap:20:1
-	projectID, err := strconv.ParseInt(projectIDStr, 10, 64)
 //line cmd/spx-backend/get_projects_context.yap:21:1
-	if err != nil || projectID <= 0 {
+	projectID, err := strconv.ParseInt(projectIDStr, 10, 64)
 //line cmd/spx-backend/get_projects_context.yap:22:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "project_id must be a positive integer")
+	if err != nil || projectID <= 0 {
 //line cmd/spx-backend/get_projects_context.yap:23:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, "project_id must be a positive integer")
+//line cmd/spx-backend/get_projects_context.yap:24:1
 		return
 	}
-//line cmd/spx-backend/get_projects_context.yap:26:1
-	result, err := this.ctrl.GetProjectContext(ctx.Context(), projectID)
 //line cmd/spx-backend/get_projects_context.yap:27:1
-	if err != nil {
+	result, err := this.ctrl.GetProjectContext(ctx.Context(), projectID)
 //line cmd/spx-backend/get_projects_context.yap:28:1
-		replyWithCodeMsg(ctx, errorNotFound, "project context not found")
+	if err != nil {
 //line cmd/spx-backend/get_projects_context.yap:29:1
+		replyWithCodeMsg(ctx, errorNotFound, "project context not found")
+//line cmd/spx-backend/get_projects_context.yap:30:1
 		return
 	}
-//line cmd/spx-backend/get_projects_context.yap:32:1
+//line cmd/spx-backend/get_projects_context.yap:33:1
 	this.Json__1(result)
 }
 func (this *get_projects_context) Classfname() string {
@@ -2347,9 +2347,7 @@ func (this *post_images_recommend) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_images_recommend.yap:28:1
 		return
 	}
-
 //line cmd/spx-backend/post_images_recommend.yap:31:1
-
 	this.Json__1(result)
 }
 func (this *post_images_recommend) Classfname() string {

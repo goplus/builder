@@ -39,17 +39,17 @@ func NewImageFilterService(db *gorm.DB, cfg *config.ImageFilterConfig) *ImageFil
 
 // FilterConfig holds configuration for filtering behavior
 type FilterConfig struct {
-	FilterWindowDays int     // Number of days to look back for filtering history
 	MaxFilterRatio   float64 // Maximum ratio of results that can be filtered (0-1)
+	SessionEnabled   bool    // Whether session-level filtering is enabled
 	Enabled          bool    // Whether filtering is enabled
 }
 
 // DefaultFilterConfig returns the default filter configuration from service config
 func (s *ImageFilterService) DefaultFilterConfig() *FilterConfig {
 	return &FilterConfig{
-		FilterWindowDays: s.config.GetDefaultWindowDays(),
-		MaxFilterRatio:   s.config.GetDefaultMaxFilterRatio(),
-		Enabled:          s.config.Enabled,
+		MaxFilterRatio: s.config.GetDefaultMaxFilterRatio(),
+		SessionEnabled: true, // Enable session-level filtering by default
+		Enabled:        s.config.Enabled,
 	}
 }
 
@@ -149,6 +149,103 @@ func (s *ImageFilterService) FilterResults(ctx context.Context, userID int64, qu
 	return filteredResults, filterCtx.Metrics, nil
 }
 
+// FilterWithSession applies session-level filtering to search results with degradation strategies
+func (s *ImageFilterService) FilterWithSession(ctx context.Context, userID int64, sessionID string, queryID string, query string,
+	candidates []RecommendedImageResult, requestedCount int) ([]RecommendedImageResult, *FilterMetrics, error) {
+
+	logger := log.GetReqLogger(ctx)
+
+	// Get user filter configuration
+	config, err := s.getUserFilterConfig(ctx, userID)
+	if err != nil {
+		logger.Printf("Failed to get user filter config, using default: %v", err)
+		config = s.DefaultFilterConfig()
+	}
+
+	// If filtering is disabled globally, return original results
+	if !s.config.Enabled || !config.Enabled {
+		return candidates, &FilterMetrics{
+			TotalCandidates:  len(candidates),
+			FilteredCount:    0,
+			FilterRatio:      0,
+			FinalResultCount: len(candidates),
+		}, nil
+	}
+
+	// Create filter context for session-level filtering
+	filterCtx := &FilterContext{
+		UserID:          userID,
+		QueryID:         queryID,
+		Query:           query,
+		RequestedCount:  requestedCount,
+		Config:          config,
+		DegradationUsed: DegradationNone,
+		Metrics: &FilterMetrics{
+			TotalCandidates: len(candidates),
+		},
+	}
+
+	var filteredResults []RecommendedImageResult
+
+	// Apply session-level filtering if enabled and session ID is provided
+	if config.SessionEnabled && sessionID != "" {
+		sessionFiltered, err := s.applySessionFiltering(ctx, userID, sessionID, candidates)
+		if err != nil {
+			logger.Printf("Session filtering failed, using unfiltered results: %v", err)
+			filteredResults = candidates
+		} else {
+			filteredResults = sessionFiltered
+		}
+	} else {
+		logger.Printf("Session filtering disabled or no session ID, skipping session filtering")
+		filteredResults = candidates
+	}
+
+	// Check if we have enough results and apply degradation if needed
+	if len(filteredResults) < requestedCount {
+		filterRatio := float64(len(candidates)-len(filteredResults)) / float64(len(candidates))
+
+		// Check if we need degradation (filter ratio too high) and degradation is enabled
+		if s.config.EnableDegradation && filterRatio > config.MaxFilterRatio {
+			logger.Printf("High filter ratio detected (%.1f%% > %.1f%%), applying degradation strategies",
+				filterRatio*100, config.MaxFilterRatio*100)
+
+			degradedResults, err := s.applyDegradationStrategies(ctx, filterCtx, candidates)
+			if err != nil {
+				logger.Printf("Degradation failed, using filtered results: %v", err)
+			} else {
+				filteredResults = degradedResults
+			}
+		}
+	}
+
+	// Limit to requested count
+	if len(filteredResults) > requestedCount {
+		filteredResults = filteredResults[:requestedCount]
+	}
+
+	// Update final metrics
+	filterCtx.Metrics.FinalResultCount = len(filteredResults)
+	filterCtx.Metrics.FilteredCount = filterCtx.Metrics.TotalCandidates - len(filteredResults)
+	if filterCtx.Metrics.TotalCandidates > 0 {
+		filterCtx.Metrics.FilterRatio = float64(filterCtx.Metrics.FilteredCount) / float64(filterCtx.Metrics.TotalCandidates)
+	}
+
+	// Store metrics asynchronously if enabled
+	if s.config.EnableMetrics {
+		go func() {
+			if err := s.storeFilterMetrics(context.Background(), filterCtx); err != nil {
+				logger.Printf("Failed to store filter metrics: %v", err)
+			}
+		}()
+	}
+
+	logger.Printf("Session-level filtering completed: %d candidates -> %d results (%.1f%% filtered, degradation: %s)",
+		filterCtx.Metrics.TotalCandidates, len(filteredResults), filterCtx.Metrics.FilterRatio*100, filterCtx.DegradationUsed)
+
+	return filteredResults, filterCtx.Metrics, nil
+}
+
 // applyFilteringWithDegradation applies filtering with progressive degradation strategies
 func (s *ImageFilterService) applyFilteringWithDegradation(ctx context.Context, filterCtx *FilterContext,
 	candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
@@ -180,12 +277,16 @@ func (s *ImageFilterService) applyFilteringWithDegradation(ctx context.Context, 
 	return filtered, nil
 }
 
-// applyBasicFiltering applies basic filtering based on user history
+// applyBasicFiltering applies basic filtering based on user history (fallback method)
+// This is kept for backward compatibility with degradation strategies
 func (s *ImageFilterService) applyBasicFiltering(ctx context.Context, filterCtx *FilterContext,
 	candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
 
+	// Use a default 7-day window for basic filtering as fallback
+	defaultWindowDays := 7
+
 	// Get user's recommendation history within the filter window
-	historyImageIDs, err := s.getUserRecommendationHistory(ctx, filterCtx.UserID, filterCtx.Config.FilterWindowDays)
+	historyImageIDs, err := s.getUserRecommendationHistory(ctx, filterCtx.UserID, defaultWindowDays)
 	if err != nil {
 		return candidates, fmt.Errorf("failed to get user history: %w", err)
 	}
@@ -222,15 +323,24 @@ func (s *ImageFilterService) applyDegradationStrategies(ctx context.Context, fil
 
 		logger.Printf("Applying degradation level %d: reducing time window to %d days", level+1, windowDays)
 
-		// Try filtering with reduced time window
-		tempConfig := *filterCtx.Config
-		tempConfig.FilterWindowDays = windowDays
-		tempCtx := *filterCtx
-		tempCtx.Config = &tempConfig
-
-		filtered, err := s.applyBasicFiltering(ctx, &tempCtx, candidates)
+		// Try filtering with reduced time window using getUserRecommendationHistory directly
+		historyImageIDs, err := s.getUserRecommendationHistory(ctx, filterCtx.UserID, windowDays)
 		if err != nil {
 			continue
+		}
+
+		// Create a map for fast lookup
+		seenImages := make(map[int64]bool, len(historyImageIDs))
+		for _, imageID := range historyImageIDs {
+			seenImages[imageID] = true
+		}
+
+		// Filter out already recommended images
+		var filtered []RecommendedImageResult
+		for _, candidate := range candidates {
+			if !seenImages[candidate.ID] {
+				filtered = append(filtered, candidate)
+			}
 		}
 
 		filterRatio := float64(len(candidates)-len(filtered)) / float64(len(candidates))
@@ -309,9 +419,9 @@ func (s *ImageFilterService) getUserFilterConfig(ctx context.Context, userID int
 	if err == gorm.ErrRecordNotFound {
 		// Create default config for new user using service config defaults
 		defaultConfig := model.UserImageFilterConfig{
-			UserID:           userID,
-			FilterWindowDays: s.config.GetDefaultWindowDays(),
-			MaxFilterRatio:   s.config.GetDefaultMaxFilterRatio(),
+			UserID:         userID,
+			MaxFilterRatio: s.config.GetDefaultMaxFilterRatio(),
+			SessionEnabled: true, // Enable session filtering by default
 		}
 
 		err = s.db.WithContext(ctx).Create(&defaultConfig).Error
@@ -320,9 +430,9 @@ func (s *ImageFilterService) getUserFilterConfig(ctx context.Context, userID int
 		}
 
 		return &FilterConfig{
-			FilterWindowDays: defaultConfig.FilterWindowDays,
-			MaxFilterRatio:   defaultConfig.MaxFilterRatio,
-			Enabled:          s.config.Enabled,
+			MaxFilterRatio: defaultConfig.MaxFilterRatio,
+			SessionEnabled: defaultConfig.SessionEnabled,
+			Enabled:        s.config.Enabled,
 		}, nil
 	}
 
@@ -331,9 +441,9 @@ func (s *ImageFilterService) getUserFilterConfig(ctx context.Context, userID int
 	}
 
 	return &FilterConfig{
-		FilterWindowDays: config.FilterWindowDays,
-		MaxFilterRatio:   config.MaxFilterRatio,
-		Enabled:          true,
+		MaxFilterRatio: config.MaxFilterRatio,
+		SessionEnabled: config.SessionEnabled,
+		Enabled:        true,
 	}, nil
 }
 
@@ -356,9 +466,72 @@ func (s *ImageFilterService) getUserRecommendationHistory(ctx context.Context, u
 	return imageIDs, err
 }
 
+// getSessionRecommendationHistory gets image IDs that have been recommended to user within the session
+func (s *ImageFilterService) getSessionRecommendationHistory(ctx context.Context, userID int64, sessionID string) ([]int64, error) {
+	// If no database is available, return empty history
+	if s.db == nil {
+		return []int64{}, nil
+	}
+
+	if sessionID == "" {
+		return []int64{}, nil // No session ID provided
+	}
+
+	var imageIDs []int64
+
+	err := s.db.WithContext(ctx).
+		Model(&model.UserImageRecommendationHistory{}).
+		Where("user_id = ? AND session_id = ?", userID, sessionID).
+		Pluck("image_id", &imageIDs).Error
+
+	return imageIDs, err
+}
+
+// applySessionFiltering applies session-level filtering to exclude images already recommended in current session
+func (s *ImageFilterService) applySessionFiltering(ctx context.Context, userID int64, sessionID string, candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
+	logger := log.GetReqLogger(ctx)
+
+	if sessionID == "" {
+		logger.Printf("No session ID provided, skipping session-level filtering")
+		return candidates, nil // Skip session filtering if no session ID
+	}
+
+	// Get session recommendation history
+	historyImageIDs, err := s.getSessionRecommendationHistory(ctx, userID, sessionID)
+	if err != nil {
+		logger.Printf("Failed to get session history: %v", err)
+		return candidates, fmt.Errorf("failed to get session history: %w", err)
+	}
+
+	// Create a map for fast lookup
+	seenImages := make(map[int64]bool, len(historyImageIDs))
+	for _, imageID := range historyImageIDs {
+		seenImages[imageID] = true
+	}
+
+	// Filter out images already recommended in this session
+	var filtered []RecommendedImageResult
+	for _, candidate := range candidates {
+		if !seenImages[candidate.ID] {
+			filtered = append(filtered, candidate)
+		}
+	}
+
+	logger.Printf("Session filtering applied: %d candidates -> %d results (filtered %d from session %s)",
+		len(candidates), len(filtered), len(candidates)-len(filtered), sessionID)
+
+	return filtered, nil
+}
+
 // RecordRecommendationHistory records the images that were recommended to a user
 func (s *ImageFilterService) RecordRecommendationHistory(ctx context.Context, userID int64, queryID string,
 	query string, results []RecommendedImageResult) error {
+	return s.RecordRecommendationHistoryWithSession(ctx, userID, queryID, "", query, results)
+}
+
+// RecordRecommendationHistoryWithSession records the images that were recommended to a user with session support
+func (s *ImageFilterService) RecordRecommendationHistoryWithSession(ctx context.Context, userID int64, queryID string,
+	sessionID string, query string, results []RecommendedImageResult) error {
 
 	logger := log.GetReqLogger(ctx)
 
@@ -385,6 +558,12 @@ func (s *ImageFilterService) RecordRecommendationHistory(ctx context.Context, us
 			Rank:       result.Rank,
 			Selected:   false,
 		}
+
+		// Set session ID if provided
+		if sessionID != "" {
+			history.SessionID = &sessionID
+		}
+
 		histories = append(histories, history)
 	}
 
