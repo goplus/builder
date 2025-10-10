@@ -10,13 +10,10 @@ package controller
 import (
 	"context"
 	"encoding/base64"
-	"time"
-
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/qiniu/go-sdk/v7/storage"
 )
 
@@ -29,23 +26,11 @@ const (
 	TranscodeStatusFailed     TranscodeStatus = "failed"
 )
 
-// Global transcoding result storage using LRU cache with TTL.
-// Automatically evicts least recently used entries and expires old entries.
-// - Max size: 10000 entries (prevents unbounded growth)
-// - TTL: 24 hours (completed/failed tasks expire after 1 day)
-// Thread-safe by design, no manual locking needed.
-var transcodeStore = expirable.NewLRU[string, *TranscodeResult](
-	10000,        // max 10,000 entries
-	nil,          // no eviction callback
-	24*time.Hour, // TTL: 24 hours
-)
-
 // TranscodeResult transcoding result
 type TranscodeResult struct {
 	Status    TranscodeStatus `json:"status"`
 	OutputURL string          `json:"outputUrl,omitempty"` // Transcoded file URL
-	Error     string          `json:"error,omitempty"`
-	SourceKey string          `json:"-"` // Original file key for deletion (not exposed to frontend)
+	Error     string          `json:"error,omitempty"`     // Error message
 }
 
 // SubmitTranscodeParams parameters for submitting transcoding task
@@ -128,17 +113,11 @@ func (ctrl *Controller) SubmitTranscode(ctx context.Context, params *SubmitTrans
 		UseHTTPS: true,
 	})
 
-	// Submit persistent processing task (the notifyURL is optional)
+	// Submit persistent processing task without callback (uses polling-based status check)
 	persistentID, err := pfopManager.Pfop(bucket, sourceKey, fops, "", "", true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit transcode task: %w", err)
 	}
-
-	// Initialize transcoding status as processing
-	transcodeStore.Add(persistentID, &TranscodeResult{
-		Status:    TranscodeStatusProcessing,
-		SourceKey: sourceKey, // Save original file key for later deletion
-	})
 
 	// Construct expected output URL
 	expectedOutputURL := fmt.Sprintf("kodo://%s/%s", bucket, outputKey)
@@ -149,45 +128,35 @@ func (ctrl *Controller) SubmitTranscode(ctx context.Context, params *SubmitTrans
 	}, nil
 }
 
-// GetTranscodeStatus queries transcoding status
+// GetTranscodeStatus queries transcoding status from Qiniu Cloud
 func (ctrl *Controller) GetTranscodeStatus(ctx context.Context, taskID string) (*TranscodeResult, error) {
-	result, ok := transcodeStore.Get(taskID)
-
-	if ok && (result.Status == TranscodeStatusCompleted || result.Status == TranscodeStatusFailed) {
-		return result, nil
-	}
-
-	// Actively query Qiniu Cloud
+	// Get region configuration
 	region, err := getRegionByID(ctrl.kodo.bucketRegion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get region: %w", err)
 	}
 
-	cfg := &storage.Config{
+	// Create operation manager
+	operationManager := storage.NewOperationManager(ctrl.kodo.cred, &storage.Config{
 		Region:   region,
 		UseHTTPS: true,
-	}
+	})
 
-	operationManager := storage.NewOperationManager(ctrl.kodo.cred, cfg)
-
+	// Query transcoding status from Qiniu Cloud
 	qiniuResult, err := operationManager.Prefop(taskID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query transcode status from qiniu: %w", err)
 	}
 
-	return ctrl.updateTranscodeResult(taskID, qiniuResult.Code, qiniuResult.Items, qiniuResult.Desc, true)
-}
-
-// updateTranscodeResult updates transcoding status based on Qiniu Cloud return result
-// deleteSource: whether to delete the original file
-func (ctrl *Controller) updateTranscodeResult(taskID string, code int, items []storage.FopResult, desc string, deleteSource bool) (*TranscodeResult, error) {
+	// Parse result and construct response
 	var result *TranscodeResult
 
-	switch code {
+	switch qiniuResult.Code {
 	case 0:
-		// Transcoding successful (there is only one transcoding task)
-		if len(items) > 0 && items[0].Code == 0 {
-			outputKey := items[0].Key
+		// Task completed - check item status for actual transcoding result
+		if len(qiniuResult.Items) > 0 && qiniuResult.Items[0].Code == 0 {
+			// Transcoding successful
+			outputKey := qiniuResult.Items[0].Key
 			outputURL := fmt.Sprintf("kodo://%s/%s", ctrl.kodo.bucket, outputKey)
 
 			result = &TranscodeResult{
@@ -195,33 +164,23 @@ func (ctrl *Controller) updateTranscodeResult(taskID string, code int, items []s
 				OutputURL: outputURL,
 			}
 
-			if deleteSource {
-				oldResult, ok := transcodeStore.Get(taskID)
-				if !ok || oldResult.SourceKey == "" {
-					fmt.Printf("warning: source key not found in cache for taskID %s\n", taskID)
-				} else {
-					sourceKey := oldResult.SourceKey
+			// Delete original source file using InputKey from Qiniu response
+			if qiniuResult.InputKey != "" {
+				bucketManager := storage.NewBucketManager(ctrl.kodo.cred, &storage.Config{
+					Region:   region,
+					UseHTTPS: true,
+				})
 
-					region, err := getRegionByID(ctrl.kodo.bucketRegion)
-					if err != nil {
-						fmt.Printf("failed to get region for deletion: %v\n", err)
-					} else {
-						bucketManager := storage.NewBucketManager(ctrl.kodo.cred, &storage.Config{
-							Region:   region,
-							UseHTTPS: true,
-						})
-
-						if err := bucketManager.Delete(ctrl.kodo.bucket, sourceKey); err != nil {
-							fmt.Printf("failed to delete source file %s: %v\n", sourceKey, err)
-						}
-					}
+				if err := bucketManager.Delete(ctrl.kodo.bucket, qiniuResult.InputKey); err != nil {
+					// Log error but don't fail the request since transcoding succeeded
+					fmt.Printf("failed to delete source file %s: %v\n", qiniuResult.InputKey, err)
 				}
 			}
 		} else {
-			// Error in items
-			errorMsg := desc
-			if len(items) > 0 && items[0].Error != "" {
-				errorMsg = items[0].Error
+			// Transcoding failed (items contain error)
+			errorMsg := qiniuResult.Desc
+			if len(qiniuResult.Items) > 0 && qiniuResult.Items[0].Error != "" {
+				errorMsg = qiniuResult.Items[0].Error
 			}
 
 			result = &TranscodeResult{
@@ -230,21 +189,20 @@ func (ctrl *Controller) updateTranscodeResult(taskID string, code int, items []s
 			}
 		}
 	case 3, 4:
-		// code == 3: Processing failed
-		// code == 4: Callback failed
+		// code=3: Processing failed
+		// code=4: Notification callback failed
 		result = &TranscodeResult{
 			Status: TranscodeStatusFailed,
-			Error:  desc,
+			Error:  qiniuResult.Desc,
 		}
 	default:
-		// code == 1: Waiting for processing
-		// code == 2: Processing
-		// Other unknown status
+		// code=1: Waiting for processing (queued)
+		// code=2: Processing in progress
+		// Other unknown status codes
 		result = &TranscodeResult{
 			Status: TranscodeStatusProcessing,
 		}
 	}
 
-	transcodeStore.Add(taskID, result)
 	return result, nil
 }
