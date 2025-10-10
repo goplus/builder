@@ -21,21 +21,21 @@ import (
 type ProjectDTO struct {
 	ModelDTO
 
-	Owner                   string               `json:"owner"`
-	RemixedFrom             *RemixSource         `json:"remixedFrom,omitempty"`
-	LatestRelease           *ProjectReleaseDTO   `json:"latestRelease,omitempty"`
-	Name                    string               `json:"name"`
-	Version                 int                  `json:"version"`
-	Files                   model.FileCollection `json:"files"`
-	Visibility              model.Visibility     `json:"visibility"`
-	Description             string               `json:"description"`
-	Instructions            string               `json:"instructions"`
-	Thumbnail               string               `json:"thumbnail"`
-	ViewCount               int64                `json:"viewCount"`
-	LikeCount               int64                `json:"likeCount"`
-	ReleaseCount            int64                `json:"releaseCount"`
-	RemixCount              int64                `json:"remixCount"`
-	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
+	Owner                   string                    `json:"owner"`
+	RemixedFrom             *RemixSource              `json:"remixedFrom,omitempty"`
+	LatestRelease           *ProjectReleaseDTO        `json:"latestRelease,omitempty"`
+	Name                    string                    `json:"name"`
+	Version                 int                       `json:"version"`
+	Files                   model.FileCollection      `json:"files"`
+	Visibility              model.Visibility          `json:"visibility"`
+	Description             string                    `json:"description"`
+	Instructions            string                    `json:"instructions"`
+	Thumbnail               string                    `json:"thumbnail"`
+	ViewCount               int64                     `json:"viewCount"`
+	LikeCount               int64                     `json:"likeCount"`
+	ReleaseCount            int64                     `json:"releaseCount"`
+	RemixCount              int64                     `json:"remixCount"`
+	MobileKeyboardType      int                       `json:"mobileKeyboardType"`
 	MobileKeyboardZoneToKey map[string][]model.KeyBtn `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
@@ -80,7 +80,7 @@ func convertZoneToKeyMapping(ztkm model.MobileKeyboardZoneToKeyMapping) map[stri
 	if ztkm == nil {
 		return nil
 	}
-	result := make(map[string][]model.KeyBtn)
+	result := make(map[string][]model.KeyBtn, len(ztkm))
 	for zone, buttons := range ztkm {
 		result[string(zone)] = buttons
 	}
@@ -742,12 +742,12 @@ func equalZoneToKeyMapping(dtoMapping map[string][]model.KeyBtn, modelMapping mo
 		if len(dtoButtons) != len(modelButtons) {
 			return false
 		}
-		
+
 		for i, dtoBtn := range dtoButtons {
 			modelBtn := modelButtons[i]
 			if dtoBtn.WebKeyValue != modelBtn.WebKeyValue ||
-			   dtoBtn.PosX != modelBtn.PosX ||
-			   dtoBtn.PosY != modelBtn.PosY {
+				dtoBtn.PosX != modelBtn.PosX ||
+				dtoBtn.PosY != modelBtn.PosY {
 				return false
 			}
 		}
