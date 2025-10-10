@@ -10,12 +10,13 @@ package controller
 import (
 	"context"
 	"encoding/base64"
+	"time"
 
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
 
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/qiniu/go-sdk/v7/storage"
 )
 
@@ -28,37 +29,23 @@ const (
 	TranscodeStatusFailed     TranscodeStatus = "failed"
 )
 
+// Global transcoding result storage using LRU cache with TTL.
+// Automatically evicts least recently used entries and expires old entries.
+// - Max size: 10000 entries (prevents unbounded growth)
+// - TTL: 24 hours (completed/failed tasks expire after 1 day)
+// Thread-safe by design, no manual locking needed.
+var transcodeStore = expirable.NewLRU[string, *TranscodeResult](
+	10000,        // max 10,000 entries
+	nil,          // no eviction callback
+	24*time.Hour, // TTL: 24 hours
+)
+
 // TranscodeResult transcoding result
 type TranscodeResult struct {
 	Status    TranscodeStatus `json:"status"`
 	OutputURL string          `json:"outputUrl,omitempty"` // Transcoded file URL
-	Error     string          `json:"error,omitempty"`     // Error message
-}
-
-// transcodeStorage interface for storing transcoding results
-type transcodeStorage struct {
-	mu      sync.RWMutex
-	results map[string]*TranscodeResult // key: taskId, value: result
-}
-
-// Global transcoding result storage (in-memory cache)
-var transcodeStore = &transcodeStorage{
-	results: make(map[string]*TranscodeResult),
-}
-
-// Save saves transcoding result
-func (s *transcodeStorage) Save(taskID string, result *TranscodeResult) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.results[taskID] = result
-}
-
-// Get gets transcoding result
-func (s *transcodeStorage) Get(taskID string) (*TranscodeResult, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	result, ok := s.results[taskID]
-	return result, ok
+	Error     string          `json:"error,omitempty"`
+	SourceKey string          `json:"-"` // Original file key for deletion (not exposed to frontend)
 }
 
 // SubmitTranscodeParams parameters for submitting transcoding task
@@ -66,7 +53,6 @@ type SubmitTranscodeParams struct {
 	SourceURL string `json:"sourceUrl"` // Original file's kodo URL
 }
 
-// Validate validates parameters
 func (p *SubmitTranscodeParams) Validate() (ok bool, msg string) {
 	if p.SourceURL == "" {
 		return false, "sourceUrl is required"
@@ -149,8 +135,9 @@ func (ctrl *Controller) SubmitTranscode(ctx context.Context, params *SubmitTrans
 	}
 
 	// Initialize transcoding status as processing
-	transcodeStore.Save(persistentID, &TranscodeResult{
-		Status: TranscodeStatusProcessing,
+	transcodeStore.Add(persistentID, &TranscodeResult{
+		Status:    TranscodeStatusProcessing,
+		SourceKey: sourceKey, // Save original file key for later deletion
 	})
 
 	// Construct expected output URL
@@ -209,9 +196,26 @@ func (ctrl *Controller) updateTranscodeResult(taskID string, code int, items []s
 			}
 
 			if deleteSource {
-				sourceKey := strings.TrimSuffix(outputKey, ".mp4") + ".webm"
-				bucketManager := storage.NewBucketManager(ctrl.kodo.cred, &storage.Config{})
-				_ = bucketManager.Delete(ctrl.kodo.bucket, sourceKey)
+				oldResult, ok := transcodeStore.Get(taskID)
+				if !ok || oldResult.SourceKey == "" {
+					fmt.Printf("warning: source key not found in cache for taskID %s\n", taskID)
+				} else {
+					sourceKey := oldResult.SourceKey
+
+					region, err := getRegionByID(ctrl.kodo.bucketRegion)
+					if err != nil {
+						fmt.Printf("failed to get region for deletion: %v\n", err)
+					} else {
+						bucketManager := storage.NewBucketManager(ctrl.kodo.cred, &storage.Config{
+							Region:   region,
+							UseHTTPS: true,
+						})
+
+						if err := bucketManager.Delete(ctrl.kodo.bucket, sourceKey); err != nil {
+							fmt.Printf("failed to delete source file %s: %v\n", sourceKey, err)
+						}
+					}
+				}
 			}
 		} else {
 			// Error in items
@@ -241,6 +245,6 @@ func (ctrl *Controller) updateTranscodeResult(taskID string, code int, items []s
 		}
 	}
 
-	transcodeStore.Save(taskID, result)
+	transcodeStore.Add(taskID, result)
 	return result, nil
 }
