@@ -19,7 +19,6 @@ import { Costume } from '@/models/costume'
 import type { Widget } from '@/models/widget'
 import RenameModal from '../common/RenameModal.vue'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
-import SpriteCollisionEditorModal from '../editor/sprite/SpriteCollisionEditorModal.vue'
 import { useEditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
 import { getResourceIdentifier } from '../editor/code-editor/common'
@@ -335,13 +334,5 @@ export function useRenameWidget() {
         warning: await getRenameWarning()
       }
     })
-  }
-}
-
-export function useCollisionEditor() {
-  const invokeModal = useModal(SpriteCollisionEditorModal)
-  const editorCtx = useEditorCtx()
-  return async function editCollision(sprite: Sprite) {
-    return invokeModal({ project: editorCtx.project, sprite })
   }
 }

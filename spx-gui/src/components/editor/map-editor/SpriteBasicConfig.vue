@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import type { Project } from '@/models/project'
 import { PhysicsMode, type Sprite } from '@/models/sprite'
-import { useRenameSprite, useCollisionEditor } from '@/components/asset'
+import { useRenameSprite } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
@@ -11,7 +11,8 @@ import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDire
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
 import AssetName from '@/components/asset/AssetName.vue'
-import { UIIcon } from '@/components/ui'
+import { UIIcon, useModal } from '@/components/ui'
+import SpriteCollisionEditorModal from '../sprite/SpriteCollisionEditorModal.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -30,11 +31,14 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
   zh: '重命名精灵失败'
 }).fn
 
-const editCollision = useCollisionEditor()
-const handleEditCollision = useMessageHandle(() => editCollision(props.sprite), {
-  en: 'Failed to edit collision',
-  zh: '编辑碰撞属性失败'
-}).fn
+const editSpriteCollision = useModal(SpriteCollisionEditorModal)
+const handleEditCollision = useMessageHandle(
+  () => editSpriteCollision({ sprite: props.sprite, project: props.project }),
+  {
+    en: 'Failed to update sprite collision',
+    zh: '更新精灵碰撞失败'
+  }
+).fn
 </script>
 
 <template>
@@ -65,7 +69,7 @@ const handleEditCollision = useMessageHandle(() => editCollision(props.sprite), 
     </div>
     <div v-if="isCollisionSettingsEnabled" class="config-item">
       <div class="label">{{ $t({ en: 'Physics settings', zh: '物理设置' }) }}</div>
-      <div>{{ $t({ zh: '碰撞编辑器', en: 'Collision Editor' }) }}</div>
+      <div>{{ $t({ zh: '精灵碰撞编辑器', en: 'Sprite Collision Editor' }) }}</div>
       <UIIcon class="icon" type="setting" @click="handleEditCollision" />
     </div>
   </div>

@@ -1,11 +1,3 @@
-<script lang="ts">
-export type CollisionParams = {
-  pivotPos: CostumePivot
-  colliderSize: Size
-  colliderPos: { x: number; y: number }
-}
-</script>
-
 <script setup lang="ts">
 import { computed, effect, ref, watch } from 'vue'
 import type { StageConfig } from 'konva/lib/Stage'
@@ -26,14 +18,17 @@ import { CollisionShapeType, type Sprite } from '@/models/sprite'
 import type { Pivot as CostumePivot } from '@/models/costume'
 import type { CustomTransformer, CustomTransformerConfig } from '../common/viewer/custom-transformer'
 import CheckerboardBackground from './CheckerboardBackground.vue'
-import type { Size } from '@/models/common'
+import { UIButton } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
+import type { Project } from '@/models/project'
 
 const props = defineProps<{
+  project: Project
   sprite: Sprite
 }>()
 
 const emits = defineEmits<{
-  updateCollisionParams: [CollisionParams]
+  updateSuccess: []
 }>()
 
 const i18n = useI18n()
@@ -55,6 +50,8 @@ const canvasSize = computed(() => {
   }
 })
 
+/** Whether the values have been modified */
+const dirty = ref(false)
 /** Position of the pivot in the layer */
 const pivotPos = ref<CostumePivot>({ x: 0, y: 0 })
 /** Size of the collider bounding box in the layer */
@@ -90,17 +87,18 @@ async function resetValues() {
     default:
       console.warn('Unsupported collider shape type:', sprite.collisionShapeType)
   }
+  dirty.value = false
 }
+
+watch(
+  [pivotPos, colliderSize, colliderPos],
+  () => {
+    dirty.value = true
+  },
+  { flush: 'sync' }
+)
 
 watch(() => props.sprite, resetValues, { immediate: true })
-
-function emitUpdateCollisionParams() {
-  emits('updateCollisionParams', {
-    pivotPos: pivotPos.value,
-    colliderPos: colliderPos.value,
-    colliderSize: colliderSize.value
-  })
-}
 
 const stageScale = computed(() => {
   if (canvasSize.value == null || wrapperSize.value == null) return 1
@@ -161,7 +159,6 @@ const pivotGroupConfig = computed(() => {
 
 function handlePivotCircleGroupDragEnd(e: KonvaEventObject<unknown>) {
   pivotPos.value = { x: e.target.x(), y: e.target.y() }
-  emitUpdateCollisionParams()
 }
 
 const pivotCircleConfig = computed(
@@ -247,7 +244,6 @@ function syncColliderTitlePos(e: KonvaEventObject<unknown>) {
 
 function handleColliderRectDragEnd(e: KonvaEventObject<unknown>) {
   colliderPos.value = { x: e.target.x(), y: e.target.y() }
-  emitUpdateCollisionParams()
 }
 
 function handleColliderRectTransformEnd(e: KonvaEventObject<unknown>) {
@@ -258,40 +254,89 @@ function handleColliderRectTransformEnd(e: KonvaEventObject<unknown>) {
   colliderPos.value = { x: node.x(), y: node.y() }
   node.scaleX(1)
   node.scaleY(1)
-  emitUpdateCollisionParams()
 }
+
+const { fn: handleConfirm } = useMessageHandle(
+  async () => {
+    const sprite = props.sprite
+    const defaultCostume = props.sprite.defaultCostume
+    if (defaultCostume == null) throw new Error('Sprite has no default costume')
+
+    await props.project.history.doAction({ name: { en: 'Update sprite collision', zh: '更新精灵碰撞' } }, () => {
+      sprite.applyCostumesPivotChange({
+        x: pivotPos.value.x - defaultCostume.pivot.x,
+        y: pivotPos.value.y - defaultCostume.pivot.y
+      })
+      sprite.setCollisionPivot({
+        x: colliderPos.value.x + colliderSize.value.width / 2 - pivotPos.value.x,
+        y: -(colliderPos.value.y + colliderSize.value.height / 2 - pivotPos.value.y)
+      })
+      sprite.setCollisionShapeRect(colliderSize.value.width, colliderSize.value.height)
+    })
+    dirty.value = false
+    emits('updateSuccess')
+  },
+  {
+    en: 'Failed to update sprite collision',
+    zh: '更新精灵碰撞失败'
+  },
+  {
+    en: 'Save sprite collision successfully',
+    zh: '更新精灵碰撞成功'
+  }
+)
 </script>
 
 <template>
-  <div ref="wrapper" class="sprite-collision-editor">
-    <CheckerboardBackground class="background" />
-    <v-stage v-if="stageConfig != null" :config="stageConfig">
-      <v-layer v-if="layerConfig != null" :config="layerConfig">
-        <v-image v-if="imgConfig != null" :config="imgConfig" />
-        <v-text ref="colliderTitle" :config="colliderTitleConfig" />
-        <v-rect
-          ref="colliderRect"
-          :config="colliderRectConfig"
-          @dragmove="syncColliderTitlePos"
-          @dragend="handleColliderRectDragEnd"
-          @transform="syncColliderTitlePos"
-          @transformend="handleColliderRectTransformEnd"
-        />
-        <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
-        <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
-          <v-text :config="pivotTitleConfig" />
-          <v-circle :config="pivotCircleConfig" />
-        </v-group>
-      </v-layer>
-    </v-stage>
+  <div class="sprite-collision-editor">
+    <div ref="wrapper" class="wrapper">
+      <CheckerboardBackground class="background" />
+      <v-stage v-if="stageConfig != null" :config="stageConfig">
+        <v-layer v-if="layerConfig != null" :config="layerConfig">
+          <v-image v-if="imgConfig != null" :config="imgConfig" />
+          <v-text ref="colliderTitle" :config="colliderTitleConfig" />
+          <v-rect
+            ref="colliderRect"
+            :config="colliderRectConfig"
+            @dragmove="syncColliderTitlePos"
+            @dragend="handleColliderRectDragEnd"
+            @transform="syncColliderTitlePos"
+            @transformend="handleColliderRectTransformEnd"
+          />
+          <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
+          <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
+            <v-text :config="pivotTitleConfig" />
+            <v-circle :config="pivotCircleConfig" />
+          </v-group>
+        </v-layer>
+      </v-stage>
+    </div>
+    <UIButton
+      v-radar="{ name: 'Save button', desc: 'Click to save sprite collision' }"
+      type="primary"
+      :disabled="!dirty"
+      @click="handleConfirm"
+    >
+      {{ $t({ en: 'Save', zh: '保存' }) }}
+    </UIButton>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .sprite-collision-editor {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   width: 100%;
   height: 100%;
+}
+.wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--ui-border-radius-2);
+  position: relative;
   overflow: hidden;
 }
 .background {
