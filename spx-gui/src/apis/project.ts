@@ -48,7 +48,7 @@ export type ProjectData = {
   /** Number of remixes associated with the project */
   remixCount: number
   mobileKeyboardType: MobileKeyboardType
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping
 }
 
 export enum MobileKeyboardType {
@@ -56,34 +56,30 @@ export enum MobileKeyboardType {
   CustomKeyboard = 2
 }
 
-export const MOBILE_KEYBOARD_ZONES = [
-  'lt',
-  'rt',
-  'lbUp',
-  'lbLeft',
-  'lbRight',
-  'lbDown',
-  'rbA',
-  'rbB',
-  'rbX',
-  'rbY'
-] as const
+export const MOBILE_KEYBOARD_ZONES = ['lt', 'rt', 'lb', 'rb'] as const
 
 export type MobileKeyboardZone = (typeof MOBILE_KEYBOARD_ZONES)[number]
-
-export type MobileKeyboardZoneToKeyMapping = { [zone: string]: string | null }
+export type KeyBtn = {
+  /** Corresponding value of `KeyboardEvent.key`, see details in https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values */
+  webKeyValue: string
+  /** The horizontal coordinate relative to one of the four corners of the screen (pixels). */
+  posx: number
+  /** The vertical coordinate relative to one of the four corners of the screen (pixels). */
+  posy: number
+}
+export type MobileKeyboardZoneToKeyMapping = { [zone in MobileKeyboardZone]: KeyBtn[] | null }
 
 export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility' | 'mobileKeyboardType'> & {
   /** Full name of the project or project release to remix from. */
   remixSource: string
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping
 }
 
 export type AddProjectParams = Pick<
   ProjectData,
   'name' | 'files' | 'visibility' | 'thumbnail' | 'mobileKeyboardType'
 > & {
-  mobileKeyboardZoneToKey?: { [zone: string]: string | null }
+  mobileKeyboardZoneToKey?: MobileKeyboardZoneToKeyMapping
 }
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>

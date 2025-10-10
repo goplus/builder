@@ -2,9 +2,9 @@
 import type { MobileKeyboardZoneToKeyMapping } from '@/apis/project'
 import { UIButton } from '@/components/ui'
 import UIKeyBtn from './UIKeyBtn.vue'
-import type { Type as IconType } from '@/components/ui/icons/UIIcon.vue'
-import { reactive, onMounted } from 'vue'
-import type { KeyboardEventType, KeyCode } from './mobile-keyboard'
+import { reactive } from 'vue'
+import type { KeyboardEventType, WebKeyValue } from './mobile-keyboard'
+import { zones, systemKeys, getKeyStyle } from './mobile-keyboard'
 defineOptions({ name: 'MobileKeyboardView' })
 const props = defineProps<{
   zoneToKeyMapping: MobileKeyboardZoneToKeyMapping
@@ -12,45 +12,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   rerun: []
-  key: [type: KeyboardEventType, key: KeyCode]
+  key: [type: KeyboardEventType, key: WebKeyValue]
 }>()
 
-type SystemKeyType = {
-  textEn?: string
-  textZh?: string
-  icon?: IconType
-  action: string
-}
-const systemKeys: SystemKeyType[] = [
-  {
-    textEn: 'Rerun',
-    textZh: '重新运行',
-    icon: 'rotate' as IconType,
-    action: 'rerun'
-  },
-  {
-    textEn: 'Close',
-    textZh: '关闭',
-    icon: 'close' as IconType,
-    action: 'close'
-  }
-]
-const zoneToKey = reactive<MobileKeyboardZoneToKeyMapping>({
-  lt: null,
-  rt: null,
-  lbUp: null,
-  lbLeft: null,
-  lbRight: null,
-  lbDown: null,
-  rbA: null,
-  rbB: null,
-  rbX: null,
-  rbY: null
-})
-onMounted(() => {
-  Object.assign(zoneToKey, props.zoneToKeyMapping)
-})
-function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
+const zoneToKeys = reactive<MobileKeyboardZoneToKeyMapping>(props.zoneToKeyMapping)
+
+function dispatchKeyEvent(type: KeyboardEventType, key: WebKeyValue) {
   emit('key', type, key)
 }
 </script>
@@ -59,57 +26,43 @@ function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
   <div class="phone-1YZxt">
     <slot name="gameView" class="game-view"></slot>
     <div class="stage-vTZqo">
-      <div class="sys sysA">
-        <UIButton class="button" :icon="systemKeys?.[0]?.icon" @click="emit('rerun')">
+      <div class="system-key sysA">
+        <UIButton
+          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in full screen' }"
+          class="button"
+          :icon="systemKeys?.[0]?.icon"
+          @click="emit('rerun')"
+        >
           {{ $t({ en: systemKeys?.[0]?.textEn ?? '', zh: systemKeys?.[0]?.textZh ?? '' }) }}
         </UIButton>
       </div>
-      <div class="sys sysB">
-        <UIButton class="button" :icon="systemKeys?.[1]?.icon" @click="emit('close')">
+      <div class="system-key sysB">
+        <UIButton
+          v-radar="{ name: 'Close full screen', desc: 'Click to close full screen project runner' }"
+          class="button"
+          :icon="systemKeys?.[1]?.icon"
+          @click="emit('close')"
+        >
           {{ $t({ en: systemKeys?.[1]?.textEn ?? '', zh: systemKeys?.[1]?.textZh ?? '' }) }}
         </UIButton>
       </div>
 
-      <!-- 左上角-->
-      <div class="zone lt">
-        <UIKeyBtn v-if="zoneToKey.lt" :value="zoneToKey.lt!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <!-- 右上角 -->
-      <div class="zone rt">
-        <UIKeyBtn v-if="zoneToKey.rt" :value="zoneToKey.rt!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-
-      <!-- 左下角 4 -->
-      <div class="zone lb-up">
-        <UIKeyBtn v-if="zoneToKey.lbUp" :value="zoneToKey.lbUp!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-left">
-        <UIKeyBtn v-if="zoneToKey.lbLeft" :value="zoneToKey.lbLeft!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-right">
-        <UIKeyBtn v-if="zoneToKey.lbRight" :value="zoneToKey.lbRight!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone lb-down">
-        <UIKeyBtn v-if="zoneToKey.lbDown" :value="zoneToKey.lbDown!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-
-      <!-- 右下角 4 -->
-      <div class="zone rb-a">
-        <UIKeyBtn v-if="zoneToKey.rbA" :value="zoneToKey.rbA!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-b">
-        <UIKeyBtn v-if="zoneToKey.rbB" :value="zoneToKey.rbB!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-x">
-        <UIKeyBtn v-if="zoneToKey.rbX" :value="zoneToKey.rbX!" :active="true" @key="dispatchKeyEvent" />
-      </div>
-      <div class="zone rb-y">
-        <UIKeyBtn v-if="zoneToKey.rbY" :value="zoneToKey.rbY!" :active="true" @key="dispatchKeyEvent" />
+      <div v-for="z in zones" :key="z" class="zone" :class="z">
+        <div
+          v-for="btn in zoneToKeys[z] ?? []"
+          :key="btn.webKeyValue"
+          class="key"
+          :style="getKeyStyle(z, btn.posx, btn.posy)"
+        >
+          <UIKeyBtn :web-key-value="btn.webKeyValue" :active="true" @key="dispatchKeyEvent" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 <style lang="scss" scoped>
+@use './mobile-keyboard.scss' as *;
+
 .phone-1YZxt {
   position: relative;
   display: inline-block;
@@ -124,80 +77,24 @@ function dispatchKeyEvent(type: KeyboardEventType, key: KeyCode) {
 }
 
 .stage-vTZqo {
-  // background-color: #413e3e;
   position: absolute;
   inset: 0;
   z-index: 2;
 
-  .sys {
+  .system-key {
     position: absolute;
-    top: 2%;
-  }
-
-  .sysA {
-    left: 2%;
-  }
-
-  .sysB {
-    right: 10%;
+    z-index: 3;
+    @include sys-btn;
   }
 
   .zone {
+    @include zone-base(false);
+    @include zone-directions;
+  }
+
+  .key {
     position: absolute;
-    display: grid;
-    place-items: center;
-    height: 23%;
-    padding: 1%;
-  }
-
-  .lt {
-    left: 6%;
-    top: 8%;
-  }
-
-  .rt {
-    right: 6%;
-    top: 8%;
-  }
-
-  .lb-up {
-    left: 10%;
-    bottom: 40%;
-  }
-
-  .lb-left {
-    left: 4%;
-    bottom: 24%;
-  }
-
-  .lb-right {
-    left: 16%;
-    bottom: 24%;
-  }
-
-  .lb-down {
-    left: 10%;
-    bottom: 8%;
-  }
-
-  .rb-a {
-    right: 15%;
-    bottom: 35%;
-  }
-
-  .rb-b {
-    right: 5%;
-    bottom: 35%;
-  }
-
-  .rb-x {
-    right: 15%;
-    bottom: 10%;
-  }
-
-  .rb-y {
-    right: 5%;
-    bottom: 10%;
+    transform: translate(-50%, -50%);
   }
 }
 </style>
