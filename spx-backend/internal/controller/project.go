@@ -36,7 +36,7 @@ type ProjectDTO struct {
 	ReleaseCount            int64                `json:"releaseCount"`
 	RemixCount              int64                `json:"remixCount"`
 	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
-	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
+	MobileKeyboardZoneToKey map[string][]model.KeyBtn `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // toProjectDTO converts the model project to its DTO.
@@ -75,14 +75,14 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 	}
 }
 
-// Type conversion function that converts model's MobileKeyboardZoneToKeyMapping to DTO's map[string]*string
-func convertZoneToKeyMapping(ztkm model.MobileKeyboardZoneToKeyMapping) map[string]*string {
+// convertZoneToKeyMapping converts model's MobileKeyboardZoneToKeyMapping to DTO's map[string][]model.KeyBtn
+func convertZoneToKeyMapping(ztkm model.MobileKeyboardZoneToKeyMapping) map[string][]model.KeyBtn {
 	if ztkm == nil {
 		return nil
 	}
-	result := make(map[string]*string)
-	for zone, key := range ztkm {
-		result[string(zone)] = key
+	result := make(map[string][]model.KeyBtn)
+	for zone, buttons := range ztkm {
+		result[string(zone)] = buttons
 	}
 	return result
 }
@@ -244,15 +244,15 @@ func (ctrl *Controller) ensureProject(ctx context.Context, fullName ProjectFullN
 
 // CreateProjectParams holds parameters for creating project.
 type CreateProjectParams struct {
-	RemixSource             *RemixSource         `json:"remixSource"`
-	Name                    string               `json:"name"`
-	Files                   model.FileCollection `json:"files"`
-	Visibility              model.Visibility     `json:"visibility"`
-	Description             string               `json:"description"`
-	Instructions            string               `json:"instructions"`
-	Thumbnail               string               `json:"thumbnail"`
-	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
-	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
+	RemixSource             *RemixSource              `json:"remixSource"`
+	Name                    string                    `json:"name"`
+	Files                   model.FileCollection      `json:"files"`
+	Visibility              model.Visibility          `json:"visibility"`
+	Description             string                    `json:"description"`
+	Instructions            string                    `json:"instructions"`
+	Thumbnail               string                    `json:"thumbnail"`
+	MobileKeyboardType      int                       `json:"mobileKeyboardType"`
+	MobileKeyboardZoneToKey map[string][]model.KeyBtn `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // Validate validates the parameters.
@@ -648,13 +648,13 @@ func (ctrl *Controller) GetProject(ctx context.Context, fullName ProjectFullName
 
 // UpdateProjectParams holds parameters for updating project.
 type UpdateProjectParams struct {
-	Files                   model.FileCollection `json:"files"`
-	Visibility              model.Visibility     `json:"visibility"`
-	Description             string               `json:"description"`
-	Instructions            string               `json:"instructions"`
-	Thumbnail               string               `json:"thumbnail"`
-	MobileKeyboardType      int                  `json:"mobileKeyboardType"`
-	MobileKeyboardZoneToKey map[string]*string   `json:"mobileKeyboardZoneToKey,omitempty"`
+	Files                   model.FileCollection      `json:"files"`
+	Visibility              model.Visibility          `json:"visibility"`
+	Description             string                    `json:"description"`
+	Instructions            string                    `json:"instructions"`
+	Thumbnail               string                    `json:"thumbnail"`
+	MobileKeyboardType      int                       `json:"mobileKeyboardType"`
+	MobileKeyboardZoneToKey map[string][]model.KeyBtn `json:"mobileKeyboardZoneToKey,omitempty"`
 }
 
 // Validate validates the parameters.
@@ -712,38 +712,44 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 	return updates
 }
 
-// convertToModelZoneToKeyMapping converts DTO's map[string]*string to model's MobileKeyboardZoneToKeyMapping
-func convertToModelZoneToKeyMapping(dtoMapping map[string]*string) model.MobileKeyboardZoneToKeyMapping {
+// convertToModelZoneToKeyMapping converts DTO's map[string][]model.KeyBtn to model's MobileKeyboardZoneToKeyMapping
+func convertToModelZoneToKeyMapping(dtoMapping map[string][]model.KeyBtn) model.MobileKeyboardZoneToKeyMapping {
 	if dtoMapping == nil {
 		return make(model.MobileKeyboardZoneToKeyMapping)
 	}
 	result := make(model.MobileKeyboardZoneToKeyMapping)
-	for zoneStr, key := range dtoMapping {
+	for zoneStr, buttons := range dtoMapping {
 		zone := model.MobileKeyboardZoneId(zoneStr)
-		result[zone] = key
+		result[zone] = buttons
 	}
 	return result
 }
 
 // equalZoneToKeyMapping compares if two ZoneToKey mappings are equal
-func equalZoneToKeyMapping(dtoMapping map[string]*string, modelMapping model.MobileKeyboardZoneToKeyMapping) bool {
+func equalZoneToKeyMapping(dtoMapping map[string][]model.KeyBtn, modelMapping model.MobileKeyboardZoneToKeyMapping) bool {
 	if len(dtoMapping) != len(modelMapping) {
 		return false
 	}
 
-	for zoneStr, dtoKey := range dtoMapping {
+	for zoneStr, dtoButtons := range dtoMapping {
 		zone := model.MobileKeyboardZoneId(zoneStr)
-		modelKey, exists := modelMapping[zone]
+		modelButtons, exists := modelMapping[zone]
 		if !exists {
 			return false
 		}
 
-		// Compare the values pointed to by the pointers
-		if (dtoKey == nil) != (modelKey == nil) {
+		// Compare button arrays
+		if len(dtoButtons) != len(modelButtons) {
 			return false
 		}
-		if dtoKey != nil && modelKey != nil && *dtoKey != *modelKey {
-			return false
+		
+		for i, dtoBtn := range dtoButtons {
+			modelBtn := modelButtons[i]
+			if dtoBtn.WebKeyValue != modelBtn.WebKeyValue ||
+			   dtoBtn.PosX != modelBtn.PosX ||
+			   dtoBtn.PosY != modelBtn.PosY {
+				return false
+			}
 		}
 	}
 

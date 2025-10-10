@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"slices"
 )
 
 // Project is the model for projects.
@@ -95,72 +96,89 @@ func (p *Project) IsCustomKeyboard() bool {
 	return p.MobileKeyboardType == MobileKeyboardTypeCustom
 }
 
+// KeyBtn represents a virtual keyboard button with its position.
+type KeyBtn struct {
+	// WebKeyValue is the key value (e.g., "Q", "W", "Space")
+	WebKeyValue string `json:"webKeyValue"`
+	// PosX is the X coordinate of the button
+	PosX float64 `json:"posx"`
+	// PosY is the Y coordinate of the button
+	PosY float64 `json:"posy"`
+}
+
 // MobileKeyboardZoneId represents the zone ID type for virtual keyboard.
 type MobileKeyboardZoneId string
 
-// Zone ID constants for the 10 virtual keyboard zones.
+// Zone ID constants for the 4 virtual keyboard zones.
 const (
-	MobileKeyboardZoneIdLT      MobileKeyboardZoneId = "lt"      // Left Top
-	MobileKeyboardZoneIdRT      MobileKeyboardZoneId = "rt"      // Right Top
-	MobileKeyboardZoneIdLBUp    MobileKeyboardZoneId = "lbUp"    // Left Bottom Up
-	MobileKeyboardZoneIdLBLeft  MobileKeyboardZoneId = "lbLeft"  // Left Bottom Left
-	MobileKeyboardZoneIdLBRight MobileKeyboardZoneId = "lbRight" // Left Bottom Right
-	MobileKeyboardZoneIdLBDown  MobileKeyboardZoneId = "lbDown"  // Left Bottom Down
-	MobileKeyboardZoneIdRBA     MobileKeyboardZoneId = "rbA"     // Right Bottom A
-	MobileKeyboardZoneIdRBB     MobileKeyboardZoneId = "rbB"     // Right Bottom B
-	MobileKeyboardZoneIdRBX     MobileKeyboardZoneId = "rbX"     // Right Bottom X
-	MobileKeyboardZoneIdRBY     MobileKeyboardZoneId = "rbY"     // Right Bottom Y
+	MobileKeyboardZoneIdLT MobileKeyboardZoneId = "lt" // Left Top
+	MobileKeyboardZoneIdRT MobileKeyboardZoneId = "rt" // Right Top
+	MobileKeyboardZoneIdLB MobileKeyboardZoneId = "lb" // Left Bottom
+	MobileKeyboardZoneIdRB MobileKeyboardZoneId = "rb" // Right Bottom
 )
 
 // AllMobileKeyboardZoneIds returns all valid zone IDs.
 func AllMobileKeyboardZoneIds() []MobileKeyboardZoneId {
 	return []MobileKeyboardZoneId{
-		MobileKeyboardZoneIdLT, MobileKeyboardZoneIdRT, MobileKeyboardZoneIdLBUp, MobileKeyboardZoneIdLBLeft, MobileKeyboardZoneIdLBRight,
-		MobileKeyboardZoneIdLBDown, MobileKeyboardZoneIdRBA, MobileKeyboardZoneIdRBB, MobileKeyboardZoneIdRBX, MobileKeyboardZoneIdRBY,
+		MobileKeyboardZoneIdLT,
+		MobileKeyboardZoneIdRT,
+		MobileKeyboardZoneIdLB,
+		MobileKeyboardZoneIdRB,
 	}
 }
 
 // IsValid checks if the zone ID is valid.
 func (z MobileKeyboardZoneId) IsValid() bool {
-	for _, validZone := range AllMobileKeyboardZoneIds() {
-		if z == validZone {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(AllMobileKeyboardZoneIds(), z)
 }
 
-// MobileKeyboardZoneToKeyMapping is a map from zone ID to key name.
-// Key name can be null (represented as nil pointer) if the zone is not mapped to any key.
-type MobileKeyboardZoneToKeyMapping map[MobileKeyboardZoneId]*string
+// MobileKeyboardZoneToKeyMapping is a map from zone ID to key buttons array.
+// The value can be:
+// - nil: zone is not configured
+// - empty array []: zone is configured but has no buttons yet
+// - array with buttons: zone has one or more configured buttons
+type MobileKeyboardZoneToKeyMapping map[MobileKeyboardZoneId][]KeyBtn
 
 // Scan implements [sql.Scanner].
-func (ztkm *MobileKeyboardZoneToKeyMapping) Scan(src any) error {
-	switch src := src.(type) {
-	case string:
-		if src == "" {
-			*ztkm = make(MobileKeyboardZoneToKeyMapping)
-			return nil
-		}
-		return json.Unmarshal([]byte(src), ztkm)
-	case []byte:
-		if len(src) == 0 {
-			*ztkm = make(MobileKeyboardZoneToKeyMapping)
-			return nil
-		}
-		return json.Unmarshal(src, ztkm)
-	case nil:
-		*ztkm = make(MobileKeyboardZoneToKeyMapping)
+func (m *MobileKeyboardZoneToKeyMapping) Scan(value any) error {
+	if value == nil {
+		*m = make(MobileKeyboardZoneToKeyMapping)
 		return nil
-	default:
-		return errors.New("incompatible type for MobileKeyboardZoneToKeyMapping")
 	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan MobileKeyboardZoneToKeyMapping: value is not []byte")
+	}
+
+	// First unmarshal to map[string][]KeyBtn
+	var temp map[string][]KeyBtn
+	if err := json.Unmarshal(bytes, &temp); err != nil {
+		return err
+	}
+
+	// Convert to map[MobileKeyboardZoneId][]KeyBtn
+	result := make(MobileKeyboardZoneToKeyMapping, len(temp))
+	for zoneStr, buttons := range temp {
+		zone := MobileKeyboardZoneId(zoneStr)
+		result[zone] = buttons
+	}
+
+	*m = result
+	return nil
 }
 
 // Value implements [driver.Valuer].
-func (ztkm MobileKeyboardZoneToKeyMapping) Value() (driver.Value, error) {
-	if ztkm == nil {
-		return nil, nil
+func (m MobileKeyboardZoneToKeyMapping) Value() (driver.Value, error) {
+	if m == nil {
+		return json.Marshal(map[string][]KeyBtn{})
 	}
-	return json.Marshal(ztkm)
+
+	// Convert map[MobileKeyboardZoneId][]KeyBtn to map[string][]KeyBtn for JSON
+	result := make(map[string][]KeyBtn, len(m))
+	for zone, buttons := range m {
+		result[string(zone)] = buttons
+	}
+
+	return json.Marshal(result)
 }
