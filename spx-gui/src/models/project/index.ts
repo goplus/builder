@@ -21,6 +21,7 @@ import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-nam
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
+import { isProjectUsingAIInteraction } from '@/utils/project'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
 import { DumbTilemap as Tilemap } from '../tilemap'
 import { Sprite } from '../sprite'
@@ -52,8 +53,6 @@ const mainFileMaxLength = 60_000
 const spriteFileMaxLength = 20_000
 const projectConfigMaxLength = 15_000
 const spriteConfigMaxLength = 5_000
-
-const aiPlayerPattern = /\sai\.Player/
 
 type RawRunConfig = {
   width?: number
@@ -526,7 +525,7 @@ export class Project extends Disposable {
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
-      if (this.isUsingAIInteraction()) await this.ensureAIDescription() // Ensure AI description is available if needed
+      if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription() // Ensure AI description is available if needed
       return [this.exportMetadata(), this.exportGameFiles()]
     })
   }
@@ -569,7 +568,7 @@ export class Project extends Disposable {
 
   async saveToCloud(signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
-    if (this.isUsingAIInteraction()) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
+    if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
     const [metadata, files] = await this.export()
     const saved = await cloudHelper.save(metadata, files, signal)
     this.loadMetadata(saved.metadata)
@@ -732,23 +731,6 @@ export class Project extends Disposable {
     }
 
     return result
-  }
-
-  /** Check if project is using AI Interaction features */
-  isUsingAIInteraction(): boolean {
-    // Check stage code
-    if (this.stage.code && aiPlayerPattern.test(this.stage.code)) {
-      return true
-    }
-
-    // Check all sprite codes
-    for (const sprite of this.sprites) {
-      if (sprite.code && aiPlayerPattern.test(sprite.code)) {
-        return true
-      }
-    }
-
-    return false
   }
 }
 

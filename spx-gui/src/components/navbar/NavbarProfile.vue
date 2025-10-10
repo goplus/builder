@@ -1,7 +1,7 @@
 <template>
   <div v-if="!signedInUser" class="sign-in">
     <UIButton
-      v-radar="{ name: 'Sign in button', desc: 'Click to sign in' }"
+      v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
       type="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"

@@ -443,7 +443,7 @@ onBeforeUnmount(
                 })
               }}
             </p>
-            <button class="sign-button" @click="initiateSignIn()">{{ $t({ en: 'Sign in', zh: '登录' }) }}</button>
+            <button class="sign-in-button" @click="initiateSignIn()">{{ $t({ en: 'Sign in', zh: '登录' }) }}</button>
           </div>
         </template>
       </div>
@@ -705,7 +705,7 @@ $toColor: #c390ff;
     color: var(--ui-color-grey-800);
   }
 
-  .sign-button {
+  .sign-in-button {
     border: none;
     border-radius: 12px;
     width: 100%;

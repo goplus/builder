@@ -1470,32 +1470,39 @@ func (this *post_ai_description) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_ai_description.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_ai_description.yap:18:1
-	params := &controller.AIDescriptionParams{}
-//line cmd/spx-backend/post_ai_description.yap:19:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_description.yap:20:1
-		return
-	}
-//line cmd/spx-backend/post_ai_description.yap:22:1
+//line cmd/spx-backend/post_ai_description.yap:11:1
 	if
-//line cmd/spx-backend/post_ai_description.yap:22:1
+//line cmd/spx-backend/post_ai_description.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_ai_description.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_ai_description.yap:15:1
+	params := &controller.AIDescriptionParams{}
+//line cmd/spx-backend/post_ai_description.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_ai_description.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_ai_description.yap:19:1
+	if
+//line cmd/spx-backend/post_ai_description.yap:19:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_ai_description.yap:23:1
+//line cmd/spx-backend/post_ai_description.yap:20:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_ai_description.yap:21:1
+		return
+	}
 //line cmd/spx-backend/post_ai_description.yap:24:1
-		return
-	}
-//line cmd/spx-backend/post_ai_description.yap:27:1
 	result, err := this.ctrl.GenerateAIDescription(ctx.Context(), params)
-//line cmd/spx-backend/post_ai_description.yap:28:1
+//line cmd/spx-backend/post_ai_description.yap:25:1
 	if err != nil {
-//line cmd/spx-backend/post_ai_description.yap:29:1
+//line cmd/spx-backend/post_ai_description.yap:26:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_description.yap:30:1
+//line cmd/spx-backend/post_ai_description.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_ai_description.yap:32:1
+//line cmd/spx-backend/post_ai_description.yap:29:1
 	this.Json__1(result)
 }
 func (this *post_ai_description) Classfname() string {
@@ -1510,32 +1517,39 @@ func (this *post_ai_interaction_archive) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_ai_interaction_archive.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_ai_interaction_archive.yap:18:1
-	params := &controller.AIInteractionArchiveParams{}
-//line cmd/spx-backend/post_ai_interaction_archive.yap:19:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:20:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_archive.yap:22:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:11:1
 	if
-//line cmd/spx-backend/post_ai_interaction_archive.yap:22:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_ai_interaction_archive.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:15:1
+	params := &controller.AIInteractionArchiveParams{}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_ai_interaction_archive.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:19:1
+	if
+//line cmd/spx-backend/post_ai_interaction_archive.yap:19:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:23:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:20:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:21:1
+		return
+	}
 //line cmd/spx-backend/post_ai_interaction_archive.yap:24:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_archive.yap:27:1
 	result, err := this.ctrl.PerformAIInteractionArchive(ctx.Context(), params)
-//line cmd/spx-backend/post_ai_interaction_archive.yap:28:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:25:1
 	if err != nil {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:29:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:26:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_interaction_archive.yap:30:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_ai_interaction_archive.yap:32:1
+//line cmd/spx-backend/post_ai_interaction_archive.yap:29:1
 	this.Json__1(result)
 }
 func (this *post_ai_interaction_archive) Classfname() string {
@@ -1550,32 +1564,39 @@ func (this *post_ai_interaction_turn) Main(_xgo_arg0 *yap.Context) {
 	this.Handler.Main(_xgo_arg0)
 //line cmd/spx-backend/post_ai_interaction_turn.yap:10:1
 	ctx := &this.Context
-//line cmd/spx-backend/post_ai_interaction_turn.yap:18:1
-	params := &controller.AIInteractionTurnParams{}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:20:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:22:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:11:1
 	if
-//line cmd/spx-backend/post_ai_interaction_turn.yap:22:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:11:1
+	_, ok := ensureAuthenticatedUser(ctx); !ok {
+//line cmd/spx-backend/post_ai_interaction_turn.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:15:1
+	params := &controller.AIInteractionTurnParams{}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_ai_interaction_turn.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
+	if
+//line cmd/spx-backend/post_ai_interaction_turn.yap:19:1
 	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:23:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:20:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_ai_interaction_turn.yap:21:1
+		return
+	}
 //line cmd/spx-backend/post_ai_interaction_turn.yap:24:1
-		return
-	}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:27:1
 	result, err := this.ctrl.PerformAIInteractionTurn(ctx.Context(), params)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:28:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:25:1
 	if err != nil {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:29:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:26:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:30:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:27:1
 		return
 	}
-//line cmd/spx-backend/post_ai_interaction_turn.yap:32:1
+//line cmd/spx-backend/post_ai_interaction_turn.yap:29:1
 	this.Json__1(result)
 }
 func (this *post_ai_interaction_turn) Classfname() string {

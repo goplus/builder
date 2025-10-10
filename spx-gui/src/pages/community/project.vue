@@ -6,12 +6,13 @@ import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
+import { isSignInRequiredForProject } from '@/utils/project'
 import { usePageTitle } from '@/utils/utils'
 import { ownerAll, recordProjectView, stringifyProjectFullName, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
-import { useUser, isSignedIn, getSignedInUsername } from '@/stores/user'
+import { useUser, isSignedIn, getSignedInUsername, initiateSignIn } from '@/stores/user'
 import { getOwnProjectEditorRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -38,6 +39,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
+import kikoWaveSvg from './kiko-wave.svg'
 
 const props = defineProps<{
   owner: string
@@ -138,6 +140,14 @@ const remixCount = computed(() => {
 
 const ensureSignedIn = useEnsureSignedIn()
 
+const needsSignInToRun = computed(
+  () => !isSignedIn() && project.value != null && isSignInRequiredForProject(project.value)
+)
+
+function handleSignIn() {
+  initiateSignIn()
+}
+
 const handleRun = useMessageHandle(
   async () => {
     runnerState.value = 'loading'
@@ -155,10 +165,17 @@ const handleStop = useMessageHandle(
   { en: 'Failed to stop project', zh: '停止项目失败' }
 )
 
-const handleRerun = useMessageHandle(async () => projectRunnerRef.value?.rerun(), {
-  en: 'Failed to rerun project',
-  zh: '重新运行项目失败'
-})
+const handleRerun = useMessageHandle(
+  async () => {
+    runnerState.value = 'loading'
+    await projectRunnerRef.value?.rerun()
+    runnerState.value = 'running'
+  },
+  {
+    en: 'Failed to rerun project',
+    zh: '重新运行项目失败'
+  }
+)
 
 const handleEdit = useMessageHandle(
   async () => {
@@ -295,7 +312,30 @@ const remixesRet = useQuery(
           <template v-if="project != null">
             <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
             <div v-show="runnerState === 'initial'" class="runner-mask">
+              <div v-if="needsSignInToRun" class="sign-in-prompt">
+                <div class="sign-in-card">
+                  <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
+                  <p class="message">
+                    {{
+                      $t({
+                        en: 'Please sign in to run this project',
+                        zh: '请先登录以运行该项目'
+                      })
+                    }}
+                  </p>
+                  <UIButton
+                    v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+                    class="sign-in-button"
+                    size="large"
+                    type="primary"
+                    @click="handleSignIn"
+                  >
+                    {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
+                  </UIButton>
+                </div>
+              </div>
               <UIButton
+                v-else
                 v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
                 class="run-button"
                 type="primary"
@@ -317,15 +357,6 @@ const remixesRet = useQuery(
         />
         <div class="ops">
           <UIButton
-            v-if="runnerState === 'initial'"
-            v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
-            type="primary"
-            icon="fullScreen"
-            @click="isFullScreenRunning = true"
-          >
-            {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
-          </UIButton>
-          <UIButton
             v-if="runnerState === 'running'"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
             type="primary"
@@ -337,13 +368,24 @@ const remixesRet = useQuery(
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
           </UIButton>
           <UIButton
-            v-if="runnerState === 'running'"
-            v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+            v-if="runnerState === 'loading' || runnerState === 'running'"
+            v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
             type="boring"
             icon="end"
+            :loading="handleStop.isLoading.value"
             @click="handleStop.fn"
           >
             {{ $t({ en: 'Stop', zh: '停止' }) }}
+          </UIButton>
+          <UIButton
+            v-if="runnerState === 'loading' || runnerState === 'running'"
+            v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
+            type="boring"
+            icon="fullScreen"
+            :disabled="handleStop.isLoading.value"
+            @click="isFullScreenRunning = true"
+          >
+            {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
           </UIButton>
           <UITooltip>
             <template #trigger>
@@ -560,6 +602,45 @@ const remixesRet = useQuery(
 
     .run-button {
       width: 160px;
+    }
+
+    .sign-in-prompt {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      padding: 24px;
+      background: rgba(11, 55, 82, 0.35);
+
+      .sign-in-card {
+        position: relative;
+        width: 340px;
+        padding: 68px 24px 24px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 24px 32px -16px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        overflow: visible;
+      }
+
+      .kiko-wave {
+        position: absolute;
+        top: -56px;
+      }
+
+      .message {
+        margin-bottom: 44px;
+        line-height: 24px;
+        color: var(--ui-color-grey-800);
+      }
+
+      .sign-in-button {
+        width: 100%;
+      }
     }
   }
 

@@ -14,6 +14,8 @@ import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
+import { isProjectUsingAIInteraction } from '@/utils/project'
+import { Cancelled } from '@/utils/exception/base'
 
 const runnerBaseUrl = `/spx_${spxVersion}`
 const runnerUrl = `${runnerBaseUrl}/runner.html`
@@ -122,10 +124,31 @@ async function zip(files: Files, reporter: ProgressReporter, signal?: AbortSigna
     zip.file(path, nativeFile)
   })
 
-  const zipped = await zip.generateAsync({ type: 'arraybuffer' })
-  signal?.throwIfAborted()
+  // `zip.generateAsync` is a long-running task without built-in cancellation. We wrap it with `withAbort` so the abort
+  // signal propagates.
+  const zipped = await withAbort(zip.generateAsync({ type: 'arraybuffer' }), signal)
   zipReporter.report(1)
   return zipped
+}
+
+function withAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (signal == null) return promise
+  if (signal.aborted) throw signal.reason ?? new Cancelled('aborted')
+
+  return new Promise<T>((resolve, reject) => {
+    const handleAbort = () => reject(signal.reason ?? new Cancelled('aborted'))
+    signal.addEventListener('abort', handleAbort)
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', handleAbort)
+        resolve(value)
+      },
+      (err) => {
+        signal.removeEventListener('abort', handleAbort)
+        reject(err)
+      }
+    )
+  })
 }
 
 const registered = registerPlayer(() => {
@@ -133,10 +156,6 @@ const registered = registerPlayer(() => {
   // the user to activate another audio player when `ProjectRunner` visible.
   // If you see this warning in console, you need to think what the proper behavior is.
   console.warn('unexpected call')
-})
-
-onUnmounted(() => {
-  registered.onStopped()
 })
 
 const assetURLs = {
@@ -158,75 +177,103 @@ onMounted(() => {
 
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
 
+let runPromise: Promise<unknown> | null = null
+let runCtrl: AbortController | null = null
+function getRunCtrl() {
+  runCtrl?.abort(new Cancelled('new run'))
+  const ctrl = new AbortController()
+  runCtrl = ctrl
+  return ctrl
+}
+
+onUnmounted(() => {
+  runCtrl?.abort(new Cancelled('unmounted'))
+  registered.onStopped()
+})
+
+async function runInternal(ctrl: AbortController) {
+  loading.value = true
+  failed.value = false
+  try {
+    const collector = new ProgressCollector()
+    collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
+    const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
+    const getProjectDataReporter = collector.getSubReporter(
+      { en: 'Loading project data...', zh: '加载项目数据中...' },
+      5
+    )
+    const startGameReporter = collector.getSubReporter(
+      { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
+      5
+    )
+
+    registered.onStart()
+
+    const files = props.project.exportGameFiles()
+
+    const iframeWindow = await untilNotNull(iframeWindowRef, ctrl.signal)
+    iframeLoadReporter.report(1)
+
+    const isUsingAIInteraction = isProjectUsingAIInteraction(props.project)
+
+    const [zipped, aiDescription] = await Promise.all([
+      zip(files, getProjectDataReporter, ctrl.signal),
+      // Conditionally generate AI description only if project uses AI Interaction features
+      isUsingAIInteraction ? props.project.ensureAIDescription(false, ctrl.signal) : Promise.resolve(null)
+    ])
+
+    // Ensure the latest progress update to be rendered to UI
+    // This is necessary because now spx runs in the same thread as the main thread of editor.
+    // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
+    // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
+    await timeout(50, ctrl.signal)
+
+    // TODO: get progress for engine-loading, which is now included in `startGame`
+    startGameReporter.startAutoReport(10 * 1000)
+    await iframeWindow.startGame(
+      zipped,
+      assetURLs,
+      () => {
+        if (isUsingAIInteraction) {
+          // Inject AI description.
+          iframeWindow.setAIDescription(aiDescription!)
+
+          // Set up API endpoint for AI Interaction.
+          iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+
+          // Set up token provider for AI Interaction.
+          iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+        }
+      },
+      logLevels.LOG_LEVEL_ERROR
+    )
+    ctrl.signal.throwIfAborted()
+    startGameReporter.report(1)
+    return hashFiles(files)
+  } catch (err) {
+    if (err instanceof Cancelled) throw err
+    console.warn('ProjectRunner run game error:', err)
+    failed.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
 defineExpose({
-  async run(signal?: AbortSignal) {
-    loading.value = true
-    failed.value = false
-    try {
-      const collector = new ProgressCollector()
-      collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
-      const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
-      const getProjectDataReporter = collector.getSubReporter(
-        { en: 'Loading project data...', zh: '加载项目数据中...' },
-        5
-      )
-      const startGameReporter = collector.getSubReporter(
-        { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
-        5
-      )
-
-      registered.onStart()
-
-      const files = props.project.exportGameFiles()
-
-      const iframeWindow = await untilNotNull(iframeWindowRef)
-      signal?.throwIfAborted()
-      iframeLoadReporter.report(1)
-
-      const isUsingAIInteraction = props.project.isUsingAIInteraction()
-
-      const [zipped, aiDescription] = await Promise.all([
-        zip(files, getProjectDataReporter, signal),
-        // Conditionally generate AI description only if project uses AI Interaction features
-        isUsingAIInteraction ? props.project.ensureAIDescription(false, signal) : Promise.resolve(null)
-      ])
-
-      // Ensure the latest progress update to be rendered to UI
-      // This is necessary because now spx runs in the same thread as the main thread of editor.
-      // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
-      // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
-      await timeout(50)
-
-      // TODO: get progress for engine-loading, which is now included in `startGame`
-      startGameReporter.startAutoReport(10 * 1000)
-      await iframeWindow.startGame(
-        zipped,
-        assetURLs,
-        () => {
-          if (isUsingAIInteraction) {
-            // Inject AI description.
-            iframeWindow.setAIDescription(aiDescription!)
-
-            // Set up API endpoint for AI Interaction.
-            iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
-
-            // Set up token provider for AI Interaction.
-            iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
-          }
-        },
-        logLevels.LOG_LEVEL_ERROR
-      )
-      signal?.throwIfAborted()
-      startGameReporter.report(1)
-      return hashFiles(files)
-    } catch (err) {
-      console.warn('ProjectRunner run game error:', err)
-      failed.value = true
-    } finally {
-      loading.value = false
-    }
+  async run() {
+    const ctrl = getRunCtrl()
+    const promise = runInternal(ctrl)
+    runPromise = promise
+    return promise.finally(() => {
+      if (runPromise === promise) runPromise = null
+    })
   },
   async stop() {
+    const promise = runPromise
+    runCtrl?.abort(new Cancelled('stop'))
+    if (promise != null) await promise.catch(() => {})
+    loading.value = false
+
     const iframeWindow = iframeWindowRef.value
     if (iframeWindow == null) return
     iframeWindow.__xb_is_stale = true
