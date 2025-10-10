@@ -59,7 +59,7 @@ import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
 import { computed, ref, type Component, shallowRef, markRaw, onMounted, watch, nextTick } from 'vue'
-import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
+import { type PlatformConfig, initShareURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
 import Poster from './ProjectPoster.vue'
@@ -149,16 +149,21 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
     try {
       let shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
-      shareURL = await addShareStateURL(shareURL)
-      const shareComponent = await platform.shareFunction.shareURL(shareURL)
-      if (shareComponent) {
-        urlShareComponent.value = markRaw(shareComponent)
+      if (platform.addShareStateURL) {
+        shareURL = platform.addShareStateURL(shareURL)
       }
-    } catch (error) {
-      console.error('Failed to generate URL share component:', error)
-      urlShareComponent.value = null
+
+      if (shareURL) {
+        const shareComponent = await platform.shareFunction.shareURL(shareURL)
+        if (shareComponent) {
+          urlShareComponent.value = markRaw(shareComponent)
+        }
+      } 
+    }catch (error) {
+        console.error('Failed to generate URL share component:', error)
+        urlShareComponent.value = null
+      }
     }
-  }
 }
 
 // 包装带消息的生成器

@@ -2,7 +2,7 @@
 import { ref, computed, watch, type Component, shallowRef, markRaw } from 'vue'
 import PlatformSelector from './PlatformSelector.vue'
 import { type RecordingData } from '@/apis/recording'
-import { type PlatformConfig, initShareURL, addShareStateURL } from './platform-share'
+import { type PlatformConfig, initShareURL } from './platform-share'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { useObjectUrlManager } from '@/utils/object-url'
 import { DefaultException, useMessageHandle } from '@/utils/exception'
@@ -115,7 +115,9 @@ async function generateShareContent() {
     if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
       // Support URL sharing, directly share recording page link
       shareURL = await initShareURL(platform.basicInfo.name, currentUrl)
-      shareURL = await addShareStateURL(shareURL)
+      if (platform.addShareStateURL) {
+        shareURL = platform.addShareStateURL(shareURL)
+      }
       const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {
         urlShareComponent.value = markRaw(shareComponent)
