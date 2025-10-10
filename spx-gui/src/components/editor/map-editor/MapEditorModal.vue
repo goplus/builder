@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UICard, UICardHeader, UIFullScreenModal, UIFullScreenModalHeader, UIIcon } from '@/components/ui'
+import { UICard, UICardHeader, UIFullScreenModal, UIFullScreenModalHeader } from '@/components/ui'
 import type { Project } from '@/models/project'
 import MapViewer from './map-viewer/MapViewer.vue'
 import SpriteList from './SpriteList.vue'
@@ -21,11 +21,8 @@ const emit = defineEmits<{
 const selectedSpriteId = ref(props.selectedSpriteId)
 const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === selectedSpriteId.value) ?? null)
 
-const collapsed = ref(selectedSpriteId.value != null)
-
 function handleSpriteSelect(sprite: Sprite | null) {
   selectedSpriteId.value = sprite?.id ?? null
-  collapsed.value = true
 }
 </script>
 
@@ -54,16 +51,8 @@ function handleSpriteSelect(sprite: Sprite | null) {
                 zh: '全局配置'
               })
             }}
-            <UIIcon
-              class="collapse-icon"
-              :class="{ collapsed }"
-              type="doubleArrowDown"
-              @click="collapsed = !collapsed"
-            />
           </UICardHeader>
-          <Transition>
-            <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
-          </Transition>
+          <MapBasicConfig class="map-config" :project="project" />
         </UICard>
         <SpriteList
           class="sprite-list"
@@ -100,35 +89,13 @@ function handleSpriteSelect(sprite: Sprite | null) {
   align-items: center;
 }
 .sider {
-  flex: 0 0 400px; // todo temp
+  flex: 0 0 400px;
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-middle);
 
   @include responsive(desktop-large) {
     flex-basis: 492px;
-  }
-
-  .collapse-icon {
-    transition: transform 0.3s;
-    margin-left: 8px;
-    cursor: pointer;
-
-    &.collapsed {
-      transform: rotate(-180deg);
-    }
-  }
-
-  .v-enter-active {
-    transition: opacity ease-in 0.2s;
-  }
-  .v-leave-active {
-    transition: opacity ease-out 0.2s;
-  }
-
-  .v-enter-from,
-  .v-leave-to {
-    opacity: 0;
   }
 
   .map-config {
