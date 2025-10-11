@@ -31,7 +31,7 @@ class MilvusConfig:
             default_index_params = {
                 'HNSW': {
                     "M": 16,               # 适中的连接数
-                    "efConstruction": 200  # 生产环境高质量配置，提升召回率到95-98%
+                    "efConstruction": 200  # 生产环境高质量配置
                 },
                 'IVF_FLAT': {
                     "nlist": 64  # 大幅减少聚类数量
