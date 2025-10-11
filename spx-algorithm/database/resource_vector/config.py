@@ -30,8 +30,8 @@ class MilvusConfig:
         if self.index_params is None:
             if self.index_type == 'HNSW':
                 self.index_params = {
-                    "M": 16,              # 适中的连接数
-                    "efConstruction": 64  # 适中的构建质量
+                    "M": 16,               # 适中的连接数
+                    "efConstruction": 200  # 生产环境高质量配置
                 }
             elif self.index_type == 'IVF_FLAT':
                 self.index_params = {
@@ -43,7 +43,7 @@ class MilvusConfig:
         if self.search_params is None:
             if self.index_type == 'HNSW':
                 self.search_params = {
-                    "ef": 32  # HNSW搜索参数
+                    "ef": 64  # HNSW搜索参数，提升搜索精度
                 }
             elif self.index_type == 'IVF_FLAT':
                 self.search_params = {
@@ -61,7 +61,7 @@ class MilvusConfig:
             alias=os.getenv('MILVUS_ALIAS', 'default'),
             collection_name=os.getenv('MILVUS_COLLECTION_NAME', 'spx_vector_collection'),
             dimension=int(os.getenv('MILVUS_DIMENSION', '512')),
-            index_type=os.getenv('MILVUS_INDEX_TYPE', 'IVF_FLAT'),
+            index_type=os.getenv('MILVUS_INDEX_TYPE', 'HNSW'),
             metric_type=os.getenv('MILVUS_METRIC_TYPE', 'IP')
         )
     
