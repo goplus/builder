@@ -290,7 +290,7 @@ func (s *RecraftService) BeautifyImage(ctx context.Context, req BeautifyImageReq
 
 	// Set default values
 	if req.Style == "" {
-		req.Style = "realistic_image"
+		req.Style = "vector_illustration"
 	}
 	writer.WriteField("style", req.Style)
 

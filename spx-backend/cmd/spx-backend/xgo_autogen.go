@@ -2104,7 +2104,7 @@ func (this *post_image_beautify) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_image_beautify.yap:28:1
 	if err != nil {
 //line cmd/spx-backend/post_image_beautify.yap:29:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "SVG file is required")
+		replyWithCodeMsg(ctx, errorInvalidArgs, "PNG file is required")
 //line cmd/spx-backend/post_image_beautify.yap:30:1
 		return
 	}
@@ -2115,7 +2115,7 @@ func (this *post_image_beautify) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_image_beautify.yap:36:1
 	if err != nil {
 //line cmd/spx-backend/post_image_beautify.yap:37:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read SVG data")
+		replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read PNG data")
 //line cmd/spx-backend/post_image_beautify.yap:38:1
 		return
 	}

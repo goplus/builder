@@ -1,4 +1,4 @@
-// Beautify an uploaded SVG image using AI.
+// Beautify an uploaded PNG image using AI.
 //
 // Request:
 //   POST /image/beautify
@@ -23,18 +23,18 @@ if err != nil {
 	return
 }
 
-// Get SVG file from form
+// Get PNG file from form
 file, _, err := ctx.Request.FormFile("image")
 if err != nil {
-	replyWithCodeMsg(ctx, errorInvalidArgs, "SVG file is required")
+	replyWithCodeMsg(ctx, errorInvalidArgs, "PNG file is required")
 	return
 }
 defer file.Close()
 
-// Read SVG data
+// Read PNG data
 imageData, err := io.ReadAll(file)
 if err != nil {
-	replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read SVG data")
+	replyWithCodeMsg(ctx, errorInvalidArgs, "Failed to read PNG data")
 	return
 }
 
