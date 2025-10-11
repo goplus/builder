@@ -11,9 +11,9 @@ import { computed, ref, watch } from 'vue'
 
 import { type Project } from '@/models/project'
 import { PhysicsMode, type Sprite } from '@/models/sprite'
+import { wrapUpdateHandler } from '../utils'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
-import { UICheckbox, UICheckboxGroup } from '@/components/ui'
+import { UICheckbox, UICheckboxGroup, UITooltip } from '@/components/ui'
 import { isEmpty, xor } from 'lodash'
 
 const props = defineProps<{
@@ -87,45 +87,58 @@ function getCheckedPhysicsFlags(physicsMode: PhysicsMode): PhysicsFlag[] {
 </script>
 
 <template>
-  <SpriteConfigItem class="physics-config">
-    <div class="title">{{ $t({ en: 'Physics', zh: '物理特性' }) }}:</div>
-    <UICheckboxGroup class="check-group" :value="checkedPhysicsFlags" @update:value="handlePhysicsFlagsChange">
-      <UICheckbox
-        v-radar="{ name: 'collision check', desc: 'Check to set sprite physics collision' }"
-        :value="PhysicsFlag.Collision"
-        :disabled="disabledPhysicsOptions.collision"
-      >
-        <div>{{ $t({ en: 'Collision', zh: '碰撞' }) }}</div>
-      </UICheckbox>
-      <UICheckbox
-        v-radar="{ name: 'gravity check', desc: 'Check to set sprite physics gravity' }"
-        :value="PhysicsFlag.Gravity"
-        :disabled="disabledPhysicsOptions.gravity"
-      >
-        <div>{{ $t({ en: 'Gravity', zh: '重力' }) }}</div>
-      </UICheckbox>
-      <UICheckbox
-        v-radar="{ name: 'immovable check', desc: 'Check to set sprite physics immovable' }"
-        :value="PhysicsFlag.Immovable"
-        :disabled="disabledPhysicsOptions.immovable"
-      >
-        <div>{{ $t({ en: 'Immovable', zh: '固定位置' }) }}</div>
-      </UICheckbox>
-    </UICheckboxGroup>
-  </SpriteConfigItem>
+  <UICheckboxGroup class="check-group" :value="checkedPhysicsFlags" @update:value="handlePhysicsFlagsChange">
+    <UITooltip>
+      <template #trigger>
+        <UICheckbox
+          v-radar="{ name: 'collision check', desc: 'Check to set sprite physics collision' }"
+          :value="PhysicsFlag.Collision"
+          :disabled="disabledPhysicsOptions.collision"
+        >
+          <div>{{ $t({ en: 'Collision', zh: '碰撞' }) }}</div>
+        </UICheckbox>
+      </template>
+      {{
+        $t({
+          en: 'The sprite can collide with other sprites or map obstacles',
+          zh: '精灵可以与其他精灵或地图障碍物发生碰撞'
+        })
+      }}
+    </UITooltip>
+    <UITooltip>
+      <template #trigger>
+        <UICheckbox
+          v-radar="{ name: 'gravity check', desc: 'Check to set sprite physics gravity' }"
+          :value="PhysicsFlag.Gravity"
+          :disabled="disabledPhysicsOptions.gravity"
+        >
+          <div>{{ $t({ en: 'Gravity', zh: '重力' }) }}</div>
+        </UICheckbox>
+      </template>
+      {{ $t({ en: 'The sprite is affected by gravity', zh: '精灵会受到重力影响' }) }}
+    </UITooltip>
+    <UITooltip>
+      <template #trigger>
+        <UICheckbox
+          v-radar="{ name: 'immovable check', desc: 'Check to set sprite physics immovable' }"
+          :value="PhysicsFlag.Immovable"
+          :disabled="disabledPhysicsOptions.immovable"
+        >
+          <div>{{ $t({ en: 'Immovable', zh: '固定位置' }) }}</div>
+        </UICheckbox>
+      </template>
+      {{
+        $t({
+          zh: '精灵会发生碰撞，但是位置固定，如墙壁、障碍物等',
+          en: 'The sprite can collide with other sprites, but its position is fixed, e.g., walls, obstacles'
+        })
+      }}
+    </UITooltip>
+  </UICheckboxGroup>
 </template>
 
-<style lang="scss">
-.physics-config {
-  flex-direction: column;
-  align-items: baseline;
-
-  .title {
-    width: 100%;
-  }
-
-  .check-group {
-    white-space: nowrap;
-  }
+<style lang="scss" scoped>
+.check-group {
+  white-space: nowrap;
 }
 </style>

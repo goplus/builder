@@ -4,7 +4,8 @@ import { ref } from 'vue'
 import { type Project } from '@/models/project'
 import { headingToLeftRight, LeftRight, leftRightToHeading, RotationStyle, type Sprite } from '@/models/sprite'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
+import { wrapUpdateHandler } from '../utils'
+
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UINumberInput, UITooltip } from '@/components/ui'
 import rotateIcon from './rotate.svg?raw'
@@ -56,40 +57,37 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
 
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <SpriteConfigItem>
-    <p class="with-label">
-      {{ $t({ en: 'Rotation', zh: '旋转' }) }}:
-      <UIButtonGroup
-        v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
-        :value="sprite.rotationStyle"
-        @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
-      >
-        <UITooltip>
-          {{ $t(rotationStyleTips.normal) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.Normal">
-              <i class="rotation-icon" v-html="rotateIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-        <UITooltip>
-          {{ $t(rotationStyleTips.leftRight) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.LeftRight">
-              <i class="rotation-icon" v-html="leftRightIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-        <UITooltip>
-          {{ $t(rotationStyleTips.none) }}
-          <template #trigger>
-            <UIButtonGroupItem :value="RotationStyle.None">
-              <i class="rotation-icon" v-html="noRotateIcon"></i>
-            </UIButtonGroupItem>
-          </template>
-        </UITooltip>
-      </UIButtonGroup>
-    </p>
+  <div class="content">
+    <UIButtonGroup
+      v-radar="{ name: 'Rotation style control', desc: 'Control to set sprite rotation style' }"
+      :value="sprite.rotationStyle"
+      @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
+    >
+      <UITooltip>
+        {{ $t(rotationStyleTips.normal) }}
+        <template #trigger>
+          <UIButtonGroupItem :value="RotationStyle.Normal">
+            <i class="rotation-icon" v-html="rotateIcon"></i>
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{ $t(rotationStyleTips.leftRight) }}
+        <template #trigger>
+          <UIButtonGroupItem :value="RotationStyle.LeftRight">
+            <i class="rotation-icon" v-html="leftRightIcon"></i>
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+      <UITooltip>
+        {{ $t(rotationStyleTips.none) }}
+        <template #trigger>
+          <UIButtonGroupItem :value="RotationStyle.None">
+            <i class="rotation-icon" v-html="noRotateIcon"></i>
+          </UIButtonGroupItem>
+        </template>
+      </UITooltip>
+    </UIButtonGroup>
     <UIDropdown
       v-if="sprite.rotationStyle !== RotationStyle.LeftRight"
       trigger="manual"
@@ -137,15 +135,14 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
         {{ $t({ en: 'Right', zh: '右' }) }}
       </UIButtonGroupItem>
     </UIButtonGroup>
-  </SpriteConfigItem>
+  </div>
 </template>
 
-<style lang="scss">
-.with-label {
+<style lang="scss" scoped>
+.content {
   display: flex;
-  gap: 4px;
+  gap: 12px;
   align-items: center;
-  word-break: keep-all;
 }
 
 .rotation-heading-container {

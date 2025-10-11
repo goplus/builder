@@ -3,8 +3,8 @@ import { computed } from 'vue'
 
 import { type Project } from '@/models/project'
 import { type Sprite } from '@/models/sprite'
+import { wrapUpdateHandler } from '../utils'
 
-import SpriteConfigItem, { wrapUpdateHandler } from './SpriteConfigItem.vue'
 import { round } from '@/utils/utils'
 
 import { UINumberInput } from '@/components/ui'
@@ -32,7 +32,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 </script>
 
 <template>
-  <SpriteConfigItem>
+  <div class="content">
     <UINumberInput
       v-radar="{ name: 'X position input', desc: 'Input to set sprite X position' }"
       :value="sprite.x"
@@ -56,7 +56,13 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
       <template #suffix>%</template>
     </UINumberInput>
-  </SpriteConfigItem>
+  </div>
 </template>
 
-<style lang="scss"></style>
+<style lang="scss" scoped>
+.content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+</style>

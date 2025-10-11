@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIFullScreenModal, UIFullScreenModalHeader } from '@/components/ui'
+import { UICard, UICardHeader, UIFullScreenModal, UIFullScreenModalHeader } from '@/components/ui'
 import type { Project } from '@/models/project'
 import MapViewer from './map-viewer/MapViewer.vue'
 import SpriteList from './SpriteList.vue'
-import SpriteBasicConfig from './SpriteBasicConfig.vue'
 import MapBasicConfig from './MapBasicConfig.vue'
 import type { Sprite } from '@/models/sprite'
 
@@ -44,22 +43,31 @@ function handleSpriteSelect(sprite: Sprite | null) {
         <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
       </div>
       <div class="sider">
+        <UICard class="collapse-card">
+          <UICardHeader>
+            {{
+              $t({
+                en: 'Global Configuration',
+                zh: '全局配置'
+              })
+            }}
+          </UICardHeader>
+          <MapBasicConfig class="map-config" :project="project" />
+        </UICard>
         <SpriteList
           class="sprite-list"
           :project="project"
           :selected-sprite="selectedSprite"
           @update:selected-sprite="handleSpriteSelect"
         />
-        <div class="footer">
-          <SpriteBasicConfig v-if="selectedSprite != null" :sprite="selectedSprite" :project="project" />
-          <MapBasicConfig v-else :project="project" />
-        </div>
       </div>
     </div>
   </UIFullScreenModal>
 </template>
 
 <style lang="scss" scoped>
+@import '@/components/ui/responsive';
+
 .title {
   text-align: center;
   overflow: hidden;
@@ -75,20 +83,26 @@ function handleSpriteSelect(sprite: Sprite | null) {
 }
 .main {
   flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .sider {
-  flex: 0 0 304px; // 3 columns for sprite list
+  flex: 0 0 400px;
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-middle);
+
+  @include responsive(desktop-large) {
+    flex-basis: 492px;
+  }
+
+  .map-config {
+    padding: 16px;
+  }
 }
 .sprite-list {
   flex: 1 1 0;
-}
-.footer {
-  flex: 0 0 auto;
 }
 </style>

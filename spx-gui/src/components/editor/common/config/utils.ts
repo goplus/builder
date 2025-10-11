@@ -1,4 +1,3 @@
-<script lang="ts">
 import { debounce } from 'lodash'
 
 import { type Project } from '@/models/project'
@@ -15,21 +14,3 @@ export function wrapUpdateHandler<Args extends any[]>(
   const wrapped = (...args: Args) => project.history.doAction(action, () => handler(...args))
   return withDebounce ? debounce(wrapped, 300) : wrapped
 }
-
-// TODO: fix `"default" is not exported by xxx` error
-export default {}
-</script>
-
-<template>
-  <div class="item">
-    <slot></slot>
-  </div>
-</template>
-
-<style lang="scss">
-.item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-</style>

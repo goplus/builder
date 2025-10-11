@@ -17,6 +17,8 @@ import PanelList from '../panels/common/PanelList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
+import PanelFooter from '../panels/common/PanelFooter.vue'
+import SpriteBasicConfig from './SpriteBasicConfig.vue'
 
 const props = defineProps<{
   project: Project
@@ -24,7 +26,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:selectedSprite': [sprite: Sprite | null]
+  'update:selectedSprite': [sprite: Sprite]
 }>()
 
 const sprites = computed(() => props.project.sprites)
@@ -38,7 +40,7 @@ function isSelected(sprite: Sprite) {
 }
 
 function handleSpriteClick(sprite: Sprite) {
-  emit('update:selectedSprite', props.selectedSprite !== sprite ? sprite : null)
+  emit('update:selectedSprite', sprite)
 }
 
 const handleSorted = useMessageHandle(
@@ -101,12 +103,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
       </template>
     </PanelHeader>
 
-    <PanelList
-      class="list-wrapper"
-      :sortable="{ list: sprites }"
-      @sorted="handleSorted"
-      @click="emit('update:selectedSprite', null)"
-    >
+    <PanelList class="list-wrapper" :sortable="{ list: sprites }" @sorted="handleSorted">
       <SpriteItem
         v-for="sprite in sprites"
         :key="sprite.id"
@@ -117,6 +114,17 @@ const handleAddFromAssetLibrary = useMessageHandle(
         @click.stop="handleSpriteClick(sprite)"
       />
     </PanelList>
+
+    <PanelFooter
+      v-if="selectedSprite != null"
+      v-radar="{
+        name: `Basic configuration for selected sprite`,
+        desc: 'Panel for configuring sprite basic settings'
+      }"
+      class="footer"
+    >
+      <SpriteBasicConfig :sprite="selectedSprite" :project="project" />
+    </PanelFooter>
   </UICard>
 </template>
 
@@ -128,5 +136,9 @@ const handleAddFromAssetLibrary = useMessageHandle(
   .list-wrapper {
     flex: 1;
   }
+}
+
+.footer {
+  padding: 16px;
 }
 </style>
