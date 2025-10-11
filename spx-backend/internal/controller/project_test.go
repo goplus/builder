@@ -2972,9 +2972,17 @@ func TestCreateProjectParamsMobileKeyboard(t *testing.T) {
 
 	t.Run("ValidCustomKeyboard", func(t *testing.T) {
 		params := &CreateProjectParams{
-			Name:                    "testproject",
-			MobileKeyboardType:      2,
-			MobileKeyboardZoneToKey: map[string]*string{"lt": stringPtr("space")},
+			Name:               "testproject",
+			MobileKeyboardType: 2,
+			MobileKeyboardZoneToKey: map[string][]model.KeyBtn{
+				"lt": {
+					{WebKeyValue: "Q", PosX: 100.0, PosY: 200.0},
+					{WebKeyValue: "W", PosX: 150.0, PosY: 200.0},
+				},
+				"rt": {},
+				"lb": nil,
+				"rb": nil,
+			},
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
@@ -3004,9 +3012,11 @@ func TestCreateProjectParamsMobileKeyboard(t *testing.T) {
 
 	t.Run("NoKeyboardWithMapping", func(t *testing.T) {
 		params := &CreateProjectParams{
-			Name:                    "testproject",
-			MobileKeyboardType:      1,
-			MobileKeyboardZoneToKey: map[string]*string{"lt": stringPtr("space")},
+			Name:               "testproject",
+			MobileKeyboardType: 1,
+			MobileKeyboardZoneToKey: map[string][]model.KeyBtn{
+				"lt": {{WebKeyValue: "Space", PosX: 100.0, PosY: 100.0}},
+			},
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
