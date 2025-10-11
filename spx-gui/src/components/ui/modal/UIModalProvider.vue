@@ -14,11 +14,12 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component } from 'vue'
+import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, watchEffect } from 'vue'
 import { NModalProvider } from 'naive-ui'
 import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
+import { getCleanupSignal } from '@/utils/disposable'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -85,6 +86,30 @@ const emitter: ModalEvents = new Emitter()
 async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
   const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
   currentModals.push(currentModal)
+
+  /**
+   * Listen for ESC key when modal is visible.
+   * Only closes the top-most modal to avoid affecting other modals.
+   * The event listener is automatically cleaned up when modal is hidden or destroyed.
+   */
+  watchEffect((onCleanup) => {
+    if (currentModal.visible) {
+      const signal = getCleanupSignal(onCleanup)
+      document.addEventListener(
+        'keydown',
+        (e) => {
+          // Only handle ESC key for the top modal
+          if (e.code === 'Escape') {
+            const lastModal = currentModals.at(-1)
+            if (lastModal?.id === id) {
+              remove(id, (m) => m.handlers.reject(new Cancelled('by ESC')))
+            }
+          }
+        },
+        { signal }
+      )
+    }
+  })
   // delay visible-setting, so there will be animation for modal-show
   // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
   await nextTick()
