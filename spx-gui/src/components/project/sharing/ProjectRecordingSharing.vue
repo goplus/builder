@@ -68,8 +68,6 @@ async function updateVideoSrc() {
 // Handle platform selection change
 function handlePlatformChange(platform: PlatformConfig) {
   selectedPlatform.value = platform
-  guideComponent.value = null
-  urlShareComponent.value = null
 
   // 检查是否需要显示下载提示
   if (!platform.shareType.supportVideo && !platform.shareType.supportURL) {
@@ -121,6 +119,7 @@ async function generateShareContent() {
       const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {
         urlShareComponent.value = markRaw(shareComponent)
+        guideComponent.value = null
       }
     } else if (platform.shareType.supportVideo && platform.shareFunction.shareVideo && props.video) {
       try {
@@ -137,6 +136,7 @@ async function generateShareContent() {
         } else {
           guideComponent.value = shareResult ? markRaw(shareResult) : null
         }
+        urlShareComponent.value = null
 
         // When manual guide is shown, QR is not needed; use currentUrl as placeholder
         shareURL = currentUrl
@@ -257,12 +257,15 @@ watch(
               <div v-else class="qr-content">
                 <div class="qr-code">
                   <div class="qr-placeholder">
-                    <span>{{ $t({ en: 'Select platform to generate QR code', zh: '选择平台生成二维码' }) }}</span>
+                    <span>{{ $t({ en: 'Video is uploading, \nplease wait 😊', zh: '视频正在上传,请稍等' }) }}</span>
                   </div>
                 </div>
                 <div class="qr-hint">
                   {{
-                    $t({ en: 'Scan the code with the corresponding platform to share', zh: '用对应平台进行扫码分享' })
+                    $t({
+                      en: 'After upload is complete,\nopen the platform app to scan and share',
+                      zh: '上传完毕后\n打开对应平台扫码分享'
+                    })
                   }}
                 </div>
               </div>
@@ -504,18 +507,19 @@ watch(
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--ui-color-hint-2);
   padding: 20px;
+  white-space: pre-line;
 }
 
 .qr-hint {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--ui-color-hint-2);
-  line-height: 1.3;
   text-align: center;
   word-wrap: break-word;
   max-width: 100%;
+  white-space: pre-line;
 }
 
 .action-buttons {
