@@ -68,9 +68,10 @@ const handleEditCollision = useMessageHandle(
       <SpritePhysics :sprite="sprite" :project="project" />
     </div>
     <div v-if="isCollisionSettingsEnabled" class="config-item">
-      <div class="label">{{ $t({ en: 'Physics settings', zh: '物理设置' }) }}</div>
-      <div>{{ $t({ zh: '精灵碰撞编辑器', en: 'Sprite Collision Editor' }) }}</div>
-      <UIIcon class="icon" type="setting" @click="handleEditCollision" />
+      <div class="label">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
+      <button class="edit-collision-button" @click="handleEditCollision">
+        <UIIcon type="setting" />
+      </button>
     </div>
   </div>
 </template>
@@ -111,6 +112,25 @@ const handleEditCollision = useMessageHandle(
       white-space: nowrap;
       margin-right: 16px;
     }
+  }
+}
+
+.edit-collision-button {
+  border: none;
+  outline: none;
+  border-radius: var(--ui-border-radius-1);
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--ui-color-primary-400);
+    background-color: var(--ui-color-primary-200);
+  }
+  &:active {
+    color: var(--ui-color-primary-500);
+    background-color: var(--ui-color-primary-300);
   }
 }
 </style>
