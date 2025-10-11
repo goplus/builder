@@ -498,6 +498,7 @@ async function handleShareResult(result: any, recordingToDelete: RecordingData |
 // Main recording handler function
 const handleRecordingSharing = useMessageHandle(
   async () => {
+    await ensureSignedIn()
     if (!isRecording.value) {
       // Start recording
       return await startRecording()
