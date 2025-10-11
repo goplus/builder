@@ -1,28 +1,30 @@
-// Create traffic source record for sharing.
+// Submit a transcode task.
 //
 // Request:
-//   POST /analytics/traffic-source
+//   POST /transcode/submit
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
 )
 
 ctx := &Context
-
-params := &controller.CreateTrafficSourceParams{}
-if !parseJSON(ctx, params) {
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
+params := &controller.SubmitTranscodeParams{}
+if !parseJSON(ctx, params) {
+	return
+}
 if ok, msg := params.Validate(); !ok {
 	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 	return
 }
 
-response, err := ctrl.CreateTrafficSource(ctx.Context(), params)
+response, err := ctrl.SubmitTranscode(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
 
-json response
+json 201, response
