@@ -1,26 +1,44 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
+import { PhysicsMode, type Sprite } from '@/models/sprite'
+import { useRenameSprite } from '@/components/asset'
+import { useMessageHandle } from '@/utils/exception'
 
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
 import AssetName from '@/components/asset/AssetName.vue'
-import { UIIcon } from '@/components/ui'
-import { useRenameSprite } from '@/components/asset'
-import { useMessageHandle } from '@/utils/exception'
+import { UIIcon, useModal } from '@/components/ui'
+import SpriteCollisionEditorModal from '../sprite/SpriteCollisionEditorModal.vue'
 
 const props = defineProps<{
   sprite: Sprite
   project: Project
 }>()
 
+const isCollisionSettingsEnabled = computed(() => {
+  if (!props.project.stage.physics.enabled) return false
+  if (props.sprite.physicsMode === PhysicsMode.NoPhysics) return false
+  return true
+})
+
 const renameSprite = useRenameSprite()
 const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
   en: 'Failed to rename sprite',
   zh: '重命名精灵失败'
 }).fn
+
+const editSpriteCollision = useModal(SpriteCollisionEditorModal)
+const handleEditCollision = useMessageHandle(
+  () => editSpriteCollision({ sprite: props.sprite, project: props.project }),
+  {
+    en: 'Failed to update sprite collision',
+    zh: '更新精灵碰撞失败'
+  }
+).fn
 </script>
 
 <template>
@@ -48,6 +66,12 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
     <div v-if="project.stage.physics.enabled" class="config-item">
       <div class="label">{{ $t({ en: 'Physics', zh: '物理特性' }) }}</div>
       <SpritePhysics :sprite="sprite" :project="project" />
+    </div>
+    <div v-if="isCollisionSettingsEnabled" class="config-item">
+      <div class="label">{{ $t({ en: 'Collision settings', zh: '碰撞设置' }) }}</div>
+      <button class="edit-collision-button" @click="handleEditCollision">
+        <UIIcon type="setting" />
+      </button>
     </div>
   </div>
 </template>
@@ -88,6 +112,25 @@ const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
       white-space: nowrap;
       margin-right: 16px;
     }
+  }
+}
+
+.edit-collision-button {
+  border: none;
+  outline: none;
+  border-radius: var(--ui-border-radius-1);
+  padding: 8px;
+  color: var(--ui-color-grey-1000);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--ui-color-primary-400);
+    background-color: var(--ui-color-primary-200);
+  }
+  &:active {
+    color: var(--ui-color-primary-500);
+    background-color: var(--ui-color-primary-300);
   }
 }
 </style>

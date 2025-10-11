@@ -56,6 +56,7 @@ import end from './end.svg?raw'
 import eyedrop from './eyedrop.svg?raw'
 import tutorial from './tutorial.svg?raw'
 import question from './question.svg?raw'
+import setting from './setting.svg?raw'
 
 const typeIconMap = {
   file,
@@ -108,7 +109,8 @@ const typeIconMap = {
   end,
   eyedrop,
   tutorial,
-  question
+  question,
+  setting
 }
 
 export type Type = keyof typeof typeIconMap
