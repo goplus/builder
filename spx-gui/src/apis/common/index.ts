@@ -62,6 +62,34 @@ export function useRequest<T>(
   }
 }
 
+export function useFormDataRequest<T>(
+  baseUrl: string = '',
+  responseHandler: ResponseHandler<T>,
+  defaultTimeout: number = 10 * 1000 // 10 seconds
+) {
+  async function prepareRequest(path: string, formData: FormData, options?: RequestOptions) {
+    const url = baseUrl + path
+    const method = options?.method ?? 'POST'
+    const token = await tokenProvider()
+    const headers = options?.headers ?? new Headers()
+    if (token != null) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+    return new Request(url, { method, headers, body: formData })
+  }
+
+  return async function request(path: string, formData: FormData, options?: RequestOptions) {
+    const req = await prepareRequest(path, formData, options)
+    options?.signal?.throwIfAborted()
+    const timeout = options?.timeout ?? defaultTimeout
+    const timeoutCtrl = new AbortController()
+    const timeoutTimer = setTimeout(() => timeoutCtrl.abort(new TimeoutException()), timeout)
+    const signal = mergeSignals(options?.signal, timeoutCtrl.signal)
+    const resp = await fetch(req, { signal }).finally(() => clearTimeout(timeoutTimer))
+    return responseHandler(resp)
+  }
+}
+
 export type QueryParams = {
   [k: string]: unknown
 }
