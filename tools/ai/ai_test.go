@@ -2,6 +2,7 @@ package ai
 
 import (
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 )
@@ -59,7 +60,7 @@ func TestPlayerAppendHistory(t *testing.T) {
 
 		var wg sync.WaitGroup
 		wg.Add(numGoroutines)
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			go func(idx int) {
 				defer wg.Done()
 				p.appendHistory(Turn{
@@ -78,15 +79,12 @@ func TestPlayerAppendHistory(t *testing.T) {
 func TestPlayerPrepareArchive(t *testing.T) {
 	makeHistory := func(count int, initialPattern []int) []Turn {
 		history := make([]Turn, count)
-		for i := 0; i < count; i++ {
+		for i := range count {
 			history[i] = Turn{
 				RequestContent: string(rune('a' + i%26)),
 			}
-			for _, pos := range initialPattern {
-				if i == pos {
-					history[i].IsInitial = true
-					break
-				}
+			if slices.Contains(initialPattern, i) {
+				history[i].IsInitial = true
 			}
 		}
 		return history
@@ -185,7 +183,7 @@ func TestPlayerPrepareArchive(t *testing.T) {
 		p := &Player{}
 
 		// Build history with clear boundaries.
-		for i := 0; i < 35; i++ {
+		for i := range 35 {
 			p.appendHistory(Turn{
 				RequestContent: string(rune('a' + i%26)),
 				IsInitial:      i%10 == 0,
@@ -230,7 +228,7 @@ func TestPlayerPrepareArchive(t *testing.T) {
 		p := &Player{}
 
 		// Build history.
-		for i := 0; i < 40; i++ {
+		for i := range 40 {
 			p.history = append(p.history, Turn{
 				RequestContent: string(rune('a' + i%26)),
 				IsInitial:      i%10 == 0,
@@ -423,7 +421,7 @@ func TestPlayerCancelArchive(t *testing.T) {
 		p := &Player{}
 
 		// Build history.
-		for i := 0; i < 35; i++ {
+		for i := range 35 {
 			p.appendHistory(Turn{
 				RequestContent: string(rune('a' + i%26)),
 				IsInitial:      i%10 == 0,
