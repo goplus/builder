@@ -173,15 +173,17 @@ class ImageMatchingService:
                     failed_count += 1
             
             # 批量添加完成后统一flush
+            flush_success = True  # 默认为True，当没有数据需要flush时
             if success_count > 0:
                 flush_success = self.milvus_ops.batch_flush()
                 if not flush_success:
-                    logger.warning("批量flush失败，但数据已经添加到内存中")
+                    logger.warning("批量flush失败，数据仅存在于内存中，系统重启将丢失数据")
             
-            logger.info(f"批量添加完成: 总数={total}, 成功={success_count}, 失败={failed_count}")
+            logger.info(f"批量添加完成: 总数={total}, 成功={success_count}, 失败={failed_count}, flush成功={flush_success}")
             
             return {
                 'success': True,
+                'flush_success': flush_success,  # 告知调用者数据是否成功持久化
                 'total': total,
                 'success_count': success_count,
                 'failed_count': failed_count,
