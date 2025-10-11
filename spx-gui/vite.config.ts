@@ -12,7 +12,13 @@ const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [vue(), VueDevTools(), ViteEjsPlugin(), vercel()],
+    plugins: [
+      vue(),
+      // Disable VueDevTools in test mode to avoid plugin conflicts
+      ...(mode === 'test' ? [] : [VueDevTools()]),
+      ViteEjsPlugin(),
+      vercel()
+    ],
     resolve: {
       alias: {
         '@': resolve('src'),
