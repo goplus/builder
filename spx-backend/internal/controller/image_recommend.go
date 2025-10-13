@@ -49,6 +49,16 @@ func (p *ImageRecommendParams) Validate() (bool, string) {
 		return false, "invalid theme type"
 	}
 
+	// Validate session_id format if provided
+	if p.SessionID != "" {
+		if len(p.SessionID) != 36 {
+			return false, "session_id must be a valid UUID"
+		}
+		if _, err := uuid.Parse(p.SessionID); err != nil {
+			return false, "invalid session_id format"
+		}
+	}
+
 	return true, ""
 }
 
@@ -289,8 +299,7 @@ func (ctrl *Controller) RecommendImages(ctx context.Context, params *ImageRecomm
 		countBySource(foundResults, "search"),
 		countBySource(foundResults, "generated"))
 
-	// Note: History recording is now handled in applyBasicFilteringForRecommendation
-
+	
 	// Extract recommended pic IDs for feedback tracking
 	recommendedPics := make([]int64, len(foundResults))
 	for i, result := range foundResults {
@@ -817,103 +826,3 @@ func (ctrl *Controller) RecommendImagesInstant(ctx context.Context, params *Imag
 	}, nil
 }
 
-// applyInstantSearchFiltering applies basic filtering for instant search without degradation
-func (ctrl *Controller) applyInstantSearchFiltering(ctx context.Context, userID int64, candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
-	logger := log.GetReqLogger(ctx)
-
-	// Get user filter configuration
-	config, err := ctrl.imageFilterService.getUserFilterConfig(ctx, userID)
-	if err != nil {
-		logger.Printf("Failed to get user filter config, using default: %v", err)
-		config = ctrl.imageFilterService.DefaultFilterConfig()
-	}
-
-	// If filtering is disabled globally, return original results
-	if !ctrl.imageFilterService.config.Enabled || !config.Enabled {
-		return candidates, nil
-	}
-
-	// Get user's recommendation history within the filter window (use default 7 days for instant search)
-	defaultWindowDays := 7
-	historyImageIDs, err := ctrl.imageFilterService.getUserRecommendationHistory(ctx, userID, defaultWindowDays)
-	if err != nil {
-		return candidates, fmt.Errorf("failed to get user history: %w", err)
-	}
-
-	// Create a map for fast lookup
-	seenImages := make(map[int64]bool, len(historyImageIDs))
-	for _, imageID := range historyImageIDs {
-		seenImages[imageID] = true
-	}
-
-	// Filter out already recommended images
-	var filtered []RecommendedImageResult
-	for _, candidate := range candidates {
-		if !seenImages[candidate.ID] {
-			filtered = append(filtered, candidate)
-		}
-	}
-
-	logger.Printf("Instant search filtering: %d candidates -> %d results (filtered %d)",
-		len(candidates), len(filtered), len(candidates)-len(filtered))
-
-	return filtered, nil
-}
-
-// applyBasicFilteringForRecommendation applies basic filtering for recommendation with history recording
-func (ctrl *Controller) applyBasicFilteringForRecommendation(ctx context.Context, userID int64, queryID string, query string, candidates []RecommendedImageResult) ([]RecommendedImageResult, error) {
-	logger := log.GetReqLogger(ctx)
-
-	// Get user filter configuration
-	config, err := ctrl.imageFilterService.getUserFilterConfig(ctx, userID)
-	if err != nil {
-		logger.Printf("Failed to get user filter config, using default: %v", err)
-		config = ctrl.imageFilterService.DefaultFilterConfig()
-	}
-
-	// If filtering is disabled globally, return original results
-	if !ctrl.imageFilterService.config.Enabled || !config.Enabled {
-		// Still record recommendation history even if filtering is disabled
-		go func() {
-			if err := ctrl.imageFilterService.RecordRecommendationHistory(
-				context.Background(), userID, queryID, query, candidates); err != nil {
-				logger.Printf("Failed to record recommendation history: %v", err)
-			}
-		}()
-		return candidates, nil
-	}
-
-	// Get user's recommendation history within the filter window (use default 7 days for basic filtering)
-	defaultWindowDays := 7
-	historyImageIDs, err := ctrl.imageFilterService.getUserRecommendationHistory(ctx, userID, defaultWindowDays)
-	if err != nil {
-		return candidates, fmt.Errorf("failed to get user history: %w", err)
-	}
-
-	// Create a map for fast lookup
-	seenImages := make(map[int64]bool, len(historyImageIDs))
-	for _, imageID := range historyImageIDs {
-		seenImages[imageID] = true
-	}
-
-	// Filter out already recommended images
-	var filtered []RecommendedImageResult
-	for _, candidate := range candidates {
-		if !seenImages[candidate.ID] {
-			filtered = append(filtered, candidate)
-		}
-	}
-
-	logger.Printf("Recommendation filtering: %d candidates -> %d results (filtered %d)",
-		len(candidates), len(filtered), len(candidates)-len(filtered))
-
-	// Record filtered results for future filtering (async)
-	go func() {
-		if err := ctrl.imageFilterService.RecordRecommendationHistory(
-			context.Background(), userID, queryID, query, filtered); err != nil {
-			logger.Printf("Failed to record recommendation history: %v", err)
-		}
-	}()
-
-	return filtered, nil
-}

@@ -98,10 +98,8 @@ func TestDegradationStrategy_String(t *testing.T) {
 		expected string
 	}{
 		{DegradationNone, "none"},
-		{DegradationTimeWindow, "time_window_expansion"},
-		{DegradationThemeExpansion, "theme_expansion"},
-		{DegradationSimilarityThreshold, "similarity_threshold_reduction"},
-		{DegradationNewUserMix, "new_user_content_mix"},
+		{DegradationTimeWindow, "time_window_reduction"},
+		{DegradationSimilarityThreshold, "similarity_threshold_mixing"},
 	}
 
 	for _, test := range tests {
@@ -186,7 +184,7 @@ func TestFilterMetrics_Validation(t *testing.T) {
 		FilteredCount:       20,
 		FilterRatio:         0.2,
 		DegradationLevel:    1,
-		DegradationStrategy: "time_window_expansion",
+		DegradationStrategy: "time_window_reduction",
 		FinalResultCount:    80,
 	}
 
