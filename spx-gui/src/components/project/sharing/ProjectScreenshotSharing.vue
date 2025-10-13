@@ -64,15 +64,31 @@ async function createPosterURL(): Promise<string> {
   return posterURL
 }
 
-// 初始化时生成海报URL
-async function initializePoster() {
-  if (posterURL.value || isGeneratingPoster.value) {
-    return // 已经生成过或正在生成中
+async function initializePoster(): Promise<void> {
+  if (posterURL.value) {
+    return
+  }
+
+  if (isGeneratingPoster.value) {
+    return new Promise<void>((resolve) => {
+      const unwatch = watch(isGeneratingPoster, (generating) => {
+        if (!generating) {
+          unwatch()
+          resolve()
+        }
+      })
+    })
   }
 
   isGeneratingPoster.value = true
-  posterURL.value = await createPosterURL()
-  isGeneratingPoster.value = false
+  try {
+    posterURL.value = await createPosterURL()
+  } catch (error) {
+    console.error('Failed to generate poster:', error)
+    throw error
+  } finally {
+    isGeneratingPoster.value = false
+  }
 }
 
 // Generate share URL for platform
@@ -88,16 +104,12 @@ async function generateShareContent(platform: PlatformConfig): Promise<void> {
   // Prefer image flow: render platform's manual guide component if provided
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     try {
-      // 确保海报URL已经生成
-      if (!posterURL.value) {
-        await initializePoster()
-      }
+      await initializePoster()
 
       if (!posterURL.value) {
         throw new Error('Failed to generate poster URL')
       }
 
-      // if shareResult is from an async function, await it
       const shareResult = platform.shareFunction.shareImage(posterURL.value)
 
       if (shareResult instanceof Promise) {
@@ -162,9 +174,6 @@ watch(
       // Reset state
       urlShareComponent.value = null
       guideComponent.value = null
-
-      // 初始化海报生成
-      initializePoster()
 
       // Wait for DOM update then generate share content
       nextTick(() => {

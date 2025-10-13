@@ -57,7 +57,7 @@
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectShareRoute } from '@/router'
-import { computed, ref, type Component, shallowRef, markRaw, onMounted } from 'vue'
+import { computed, ref, type Component, shallowRef, markRaw, watch } from 'vue'
 import { type PlatformConfig, initShareURL } from './platform-share'
 import type { ProjectData } from '@/apis/project'
 import PlatformSelector from './PlatformSelector.vue'
@@ -100,14 +100,31 @@ async function createPosterURL(): Promise<string> {
 const posterURL = ref<string | null>(null)
 const isGeneratingPoster = ref(false)
 
-// 初始化时生成海报URL
-async function initializePoster() {
-  if (posterURL.value || isGeneratingPoster.value) {
-    return // 已经生成过或正在生成中
+async function initializePoster(): Promise<void> {
+  if (posterURL.value) {
+    return
   }
+
+  if (isGeneratingPoster.value) {
+    return new Promise<void>((resolve) => {
+      const unwatch = watch(isGeneratingPoster, (generating) => {
+        if (!generating) {
+          unwatch()
+          resolve()
+        }
+      })
+    })
+  }
+
   isGeneratingPoster.value = true
-  posterURL.value = await createPosterURL()
-  isGeneratingPoster.value = false
+  try {
+    posterURL.value = await createPosterURL()
+  } catch (error) {
+    console.error('Failed to generate poster:', error)
+    throw error
+  } finally {
+    isGeneratingPoster.value = false
+  }
 }
 
 function handlePlatformChange(platform: PlatformConfig) {
@@ -137,10 +154,8 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
     try {
-      // 确保海报URL已经生成
-      if (!posterURL.value) {
-        await initializePoster()
-      }
+      // lazy load poster URL
+      await initializePoster()
 
       if (!posterURL.value) {
         throw new Error('Failed to generate poster URL')
@@ -162,11 +177,6 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
     return
   }
 }
-
-// 组件挂载时初始化海报生成
-onMounted(() => {
-  initializePoster()
-})
 </script>
 
 <style scoped lang="scss">
