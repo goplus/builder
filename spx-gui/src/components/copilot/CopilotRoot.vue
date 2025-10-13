@@ -1,5 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
+import dayjs from 'dayjs'
 import { debounce } from 'lodash'
 import {
   inject,
@@ -23,7 +24,7 @@ import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
-import { getCodeFilePath, isSelectionEmpty } from '../editor/code-editor/common'
+import { getCodeFilePath, isSelectionEmpty, textDocumentId2CodeFileName } from '../editor/code-editor/common'
 import type { TextDocument } from '../editor/code-editor/text-document'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
@@ -389,12 +390,12 @@ class RuntimeContextProvider implements ICopilotContextProvider {
     const recentOutputs = outputs.slice(-maxOutputs)
     const outputsStr = recentOutputs
       .map((output) => {
-        const timestamp = new Date(output.time).toISOString()
+        const time = dayjs(output.time).format('HH:mm:ss.SSS')
         const kindStr = output.kind === 'error' ? 'ERROR' : 'LOG'
         const sourceStr = output.source
-          ? ` (${output.source.textDocument.uri}:${output.source.range.start.line}:${output.source.range.start.column})`
+          ? ` [${textDocumentId2CodeFileName(output.source.textDocument).en}:${output.source.range.start.line}]`
           : ''
-        return `[${timestamp}] ${kindStr}${sourceStr}: ${output.message}`
+        return `[${time}] ${kindStr}${sourceStr}: ${output.message}`
       })
       .join('\n')
     return `# Runtime output
