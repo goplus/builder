@@ -395,11 +395,11 @@ class RuntimeContextProvider implements ICopilotContextProvider {
         const sourceStr = output.source
           ? ` [${textDocumentId2CodeFileName(output.source.textDocument).en}:${output.source.range.start.line}]`
           : ''
-        return `[${time}] ${kindStr}${sourceStr}: ${output.message}`
+        return `[${time}] ${kindStr}${sourceStr}: ${output.message.trim()}`
       })
       .join('\n')
-    return `# Runtime output
-Recent runtime outputs (last ${recentOutputs.length} of ${outputs.length}):
+    return `# Game runtime output
+Recent game runtime outputs (last ${recentOutputs.length} of ${outputs.length}):
 ${outputsStr}`
   }
 }
