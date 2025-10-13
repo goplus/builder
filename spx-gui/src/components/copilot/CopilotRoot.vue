@@ -392,7 +392,7 @@ class RuntimeContextProvider implements ICopilotContextProvider {
         const timestamp = new Date(output.time).toISOString()
         const kindStr = output.kind === 'error' ? 'ERROR' : 'LOG'
         const sourceStr = output.source
-          ? ` (${output.source.uri}:${output.source.range.start.line}:${output.source.range.start.column})`
+          ? ` (${output.source.textDocument.uri}:${output.source.range.start.line}:${output.source.range.start.column})`
           : ''
         return `[${timestamp}] ${kindStr}${sourceStr}: ${output.message}`
       })
