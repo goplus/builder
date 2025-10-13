@@ -376,6 +376,32 @@ ${JSON.stringify(code)}`
     return result
   }
 }
+
+class RuntimeContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+
+  provideContext(): string {
+    const runtime = this.editorCtxRef.value?.state.runtime
+    if (runtime == null) return ''
+    const outputs = runtime.outputs
+    if (outputs.length === 0) return ''
+    const maxOutputs = 50
+    const recentOutputs = outputs.slice(-maxOutputs)
+    const outputsStr = recentOutputs
+      .map((output) => {
+        const timestamp = new Date(output.time).toISOString()
+        const kindStr = output.kind === 'error' ? 'ERROR' : 'LOG'
+        const sourceStr = output.source
+          ? ` (${output.source.uri}:${output.source.range.start.line}:${output.source.range.start.column})`
+          : ''
+        return `[${timestamp}] ${kindStr}${sourceStr}: ${output.message}`
+      })
+      .join('\n')
+    return `# Runtime output
+Recent runtime outputs (last ${recentOutputs.length} of ${outputs.length}):
+${outputsStr}`
+  }
+}
 </script>
 
 <script setup lang="ts">
@@ -439,6 +465,7 @@ copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
+copilot.registerContextProvider(new RuntimeContextProvider(editorCtxRef))
 
 const isRouteLoaded = useIsRouteLoaded()
 
