@@ -106,6 +106,10 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
+  /** The maximum idle time (in milliseconds) allowed after the last Round has completed */
+  idleTimeout?: number
+  /** The maximum total duration (in milliseconds) a Session is allowed to run. Once this time is reached, the Session will be terminated automatically */
+  maxDuration?: number
 }
 
 export enum RoundState {
@@ -121,6 +125,15 @@ export enum RoundState {
   Cancelled = 'cancelled',
   /** The round failed due to an error */
   Failed = 'failed'
+}
+
+enum SessionState {
+  /** The session is currently active and processing messages. */
+  Active = 'active',
+  /** The session has exceeded the configured idle timeout period */
+  IdleExpired = 'idle-expired',
+  /** The session has reached the configured maximum total duration */
+  MaxDurationExpired = 'max-duration-expired'
 }
 
 export interface IMessageStreamGenerator {
@@ -304,6 +317,7 @@ export type SessionExported = {
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
+  state: SessionState = SessionState.Active
 
   private maxRounds = 10
 
