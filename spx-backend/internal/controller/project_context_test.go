@@ -119,6 +119,36 @@ func TestInstantRecommendParams_Validate(t *testing.T) {
 			wantOk:  false,
 			wantMsg: "invalid theme type",
 		},
+		{
+			name: "valid session_id",
+			params: InstantRecommendParams{
+				ProjectID:  1,
+				UserPrompt: "test prompt",
+				SessionID:  "550e8400-e29b-41d4-a716-446655440000",
+				TopK:       4,
+			},
+			wantOk: true,
+		},
+		{
+			name: "invalid session_id length",
+			params: InstantRecommendParams{
+				ProjectID:  1,
+				UserPrompt: "test",
+				SessionID:  "invalid-session",
+			},
+			wantOk:  false,
+			wantMsg: "session_id must be a valid UUID",
+		},
+		{
+			name: "invalid session_id format",
+			params: InstantRecommendParams{
+				ProjectID:  1,
+				UserPrompt: "test",
+				SessionID:  "550e8400-e29b-41d4-a716-44665544000z", // invalid UUID
+			},
+			wantOk:  false,
+			wantMsg: "invalid session_id format",
+		},
 	}
 
 	for _, tt := range tests {
