@@ -4,7 +4,7 @@
 
 import { apiBaseUrl } from '@/utils/env'
 import { ApiException } from './exception'
-import { useRequest, withQueryParams, type RequestOptions, type QueryParams } from '.'
+import { useRequest, useFormDataRequest, withQueryParams, type RequestOptions, type QueryParams } from '.'
 
 /** Response body when exception encountered for API calling */
 export type ApiExceptionPayload = {
@@ -55,8 +55,24 @@ export class Client {
     }
   })
 
+  private requestFormData = useFormDataRequest(apiBaseUrl, async (resp) => {
+    if (!resp.ok) {
+      const body = await resp.json()
+      if (!isApiExceptionPayload(body)) {
+        throw new Error('api call failed')
+      }
+      throw new ApiException(body.code, body.msg)
+    }
+    if (resp.status === 204) return null
+    return resp.json()
+  })
+
   async postTextStream(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestTextStream(path, payload, { ...options, method: 'POST' })
+  }
+
+  async postFormData(path: string, formData: FormData, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestFormData(path, formData, { ...options, method: 'POST' })
   }
 
   get(path: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
