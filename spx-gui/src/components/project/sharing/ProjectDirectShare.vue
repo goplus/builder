@@ -101,10 +101,12 @@ const posterURL = ref<string | null>(null)
 const isGeneratingPoster = ref(false)
 
 async function initializePoster(): Promise<void> {
+  // if posterURL is already set, return immediately
   if (posterURL.value) {
     return
   }
 
+  // if poster is being generated, wait for it to finish
   if (isGeneratingPoster.value) {
     return new Promise<void>((resolve) => {
       const unwatch = watch(isGeneratingPoster, (generating) => {
@@ -113,6 +115,11 @@ async function initializePoster(): Promise<void> {
           resolve()
         }
       })
+      // Immediately check the current value in case it's already false
+      if (!isGeneratingPoster.value) {
+        unwatch()
+        resolve()
+      }
     })
   }
 
@@ -120,7 +127,11 @@ async function initializePoster(): Promise<void> {
   try {
     posterURL.value = await createPosterURL()
   } catch (error) {
-    console.error('Failed to generate poster:', error)
+    if (import.meta.env.DEV) {
+      console.error('Failed to generate poster:', error)
+    } else {
+      throw new Error('Failed to generate poster')
+    }
     throw error
   } finally {
     isGeneratingPoster.value = false
@@ -133,9 +144,6 @@ function handlePlatformChange(platform: PlatformConfig) {
 }
 
 async function setupPlatformShareContent(platform: PlatformConfig) {
-  imageShareComponent.value = null
-  urlShareComponent.value = null
-
   let shareURL = ''
   if (platform.shareType.supportURL && platform.shareFunction.shareURL) {
     shareURL = await initShareURL(platform.basicInfo.name, projectSharingLink.value)
@@ -147,12 +155,18 @@ async function setupPlatformShareContent(platform: PlatformConfig) {
       const shareComponent = await platform.shareFunction.shareURL(shareURL)
       if (shareComponent) {
         urlShareComponent.value = markRaw(shareComponent)
+      } else {
+        urlShareComponent.value = null
       }
+    } else {
+      urlShareComponent.value = null
     }
+    imageShareComponent.value = null
     return
   }
 
   if (platform.shareType.supportImage && platform.shareFunction.shareImage) {
+    urlShareComponent.value = null
     try {
       // lazy load poster URL
       await initializePoster()
