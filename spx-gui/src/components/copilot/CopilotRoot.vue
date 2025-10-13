@@ -1,5 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
+import dayjs from 'dayjs'
 import { debounce } from 'lodash'
 import {
   inject,
@@ -23,7 +24,7 @@ import { getSignedInUsername } from '@/stores/user'
 import { useModalEvents } from '@/components/ui/modal/UIModalProvider.vue'
 import { useEditorCtxRef, type EditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtxRef, type CodeEditorCtx } from '../editor/code-editor/context'
-import { getCodeFilePath, isSelectionEmpty } from '../editor/code-editor/common'
+import { getCodeFilePath, isSelectionEmpty, textDocumentId2CodeFileName } from '../editor/code-editor/common'
 import type { TextDocument } from '../editor/code-editor/text-document'
 import { useMessageEvents } from '../ui/message/UIMessageProvider.vue'
 import { Copilot, type ICopilotContextProvider, type ToolDefinition } from './copilot'
@@ -376,6 +377,32 @@ ${JSON.stringify(code)}`
     return result
   }
 }
+
+class RuntimeContextProvider implements ICopilotContextProvider {
+  constructor(private editorCtxRef: ComputedRef<EditorCtx | undefined>) {}
+
+  provideContext(): string {
+    const runtime = this.editorCtxRef.value?.state.runtime
+    if (runtime == null) return ''
+    const outputs = runtime.outputs
+    if (outputs.length === 0) return ''
+    const maxOutputs = 50
+    const recentOutputs = outputs.slice(-maxOutputs)
+    const outputsStr = recentOutputs
+      .map((output) => {
+        const time = dayjs(output.time).format('HH:mm:ss.SSS')
+        const kindStr = output.kind === 'error' ? 'ERROR' : 'LOG'
+        const sourceStr = output.source
+          ? ` [${textDocumentId2CodeFileName(output.source.textDocument).en}:${output.source.range.start.line}]`
+          : ''
+        return `[${time}] ${kindStr}${sourceStr}: ${output.message.trim()}`
+      })
+      .join('\n')
+    return `# Game runtime output
+Recent game runtime outputs (last ${recentOutputs.length} of ${outputs.length}):
+${outputsStr}`
+  }
+}
 </script>
 
 <script setup lang="ts">
@@ -439,6 +466,7 @@ copilot.registerContextProvider(new LocationContextProvider(router))
 copilot.registerContextProvider(new ProjectContextProvider(editorCtxRef))
 copilot.registerContextProvider(new SpriteContextProvider(editorCtxRef))
 copilot.registerContextProvider(new CodeContextProvider(codeEditorCtxRef))
+copilot.registerContextProvider(new RuntimeContextProvider(editorCtxRef))
 
 const isRouteLoaded = useIsRouteLoaded()
 
