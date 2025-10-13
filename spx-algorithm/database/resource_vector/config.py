@@ -18,8 +18,8 @@ class MilvusConfig:
     dimension: int = 512
     
     # 索引配置
-    index_type: str = 'IVF_FLAT'
-    metric_type: str = 'IP'  # 内积相似度
+    index_type: str = 'HNSW'  # 改为HNSW，适合生产环境
+    metric_type: str = 'IP'   # 内积相似度
     index_params: Dict[str, Any] = None
     
     # 搜索配置
@@ -28,14 +28,27 @@ class MilvusConfig:
     def __post_init__(self):
         """初始化后处理"""
         if self.index_params is None:
-            self.index_params = {
-                "nlist": 1024
+            default_index_params = {
+                'HNSW': {
+                    "M": 16,               # 适中的连接数
+                    "efConstruction": 200  # 生产环境高质量配置
+                },
+                'IVF_FLAT': {
+                    "nlist": 64  # 大幅减少聚类数量
+                }
             }
+            self.index_params = default_index_params.get(self.index_type, {})
         
         if self.search_params is None:
-            self.search_params = {
-                "nprobe": 10
+            default_search_params = {
+                'HNSW': {
+                    "ef": 64  # HNSW搜索参数，提升搜索精度
+                },
+                'IVF_FLAT': {
+                    "nprobe": 8  # 减少搜索的聚类数
+                }
             }
+            self.search_params = default_search_params.get(self.index_type, {})
     
     @classmethod
     def from_env(cls) -> 'MilvusConfig':
@@ -46,7 +59,7 @@ class MilvusConfig:
             alias=os.getenv('MILVUS_ALIAS', 'default'),
             collection_name=os.getenv('MILVUS_COLLECTION_NAME', 'spx_vector_collection'),
             dimension=int(os.getenv('MILVUS_DIMENSION', '512')),
-            index_type=os.getenv('MILVUS_INDEX_TYPE', 'IVF_FLAT'),
+            index_type=os.getenv('MILVUS_INDEX_TYPE', 'HNSW'),
             metric_type=os.getenv('MILVUS_METRIC_TYPE', 'IP')
         )
     
