@@ -1,37 +1,51 @@
 <template>
-  <div class="debounced-textarea-wrapper">
-    <textarea
-      ref="textareaRef"
-      v-model="content"
-      class="textarea"
-      :placeholder="
-        t({
-          en: 'Please enter content here... After input stops, it will be completed',
-          zh: '请在此输入内容... 输入停止后会补全请求'
-        })
-      "
-      rows="8"
-      @input="handleInput"
-      @keydown.esc="handleEscape"
-    ></textarea>
-    <div
-      v-show="completionSuggestions !== null && completionSuggestions.length > 0 && showSuggestions"
-      class="completion-dropdown"
-      :style="dropdownStyle"
-    >
-      <ul class="suggestion-list">
-        <li
-          v-for="(suggestion, index) in completionSuggestions"
-          :key="index"
-          class="suggestion-item"
-          @click="selectSuggestion(suggestion)"
+  <!-- 提示词输入 -->
+  <div class="form-group">
+    <label v-if="showLabel" class="form-label">{{
+      t({ en: 'Describe the image you want', zh: '描述您想要的图片' })
+    }}</label>
+
+    <!-- 智能补全模式：直接textarea输入 -->
+    <div class="prompt-editor">
+      <div class="debounced-textarea-wrapper">
+        <textarea
+          ref="textareaRef"
+          v-model="content"
+          class="textarea"
+          :placeholder="
+            t({
+              en: 'Please enter content here... After input stops, it will be completed',
+              zh: '请在此输入内容... 输入停止后会补全请求'
+            })
+          "
+          rows="8"
+          @input="handleInput"
+          @keydown.esc="handleEscape"
+        ></textarea>
+        <div
+          v-show="completionSuggestions !== null && completionSuggestions.length > 0 && showSuggestions"
+          class="completion-dropdown"
+          :style="dropdownStyle"
         >
-          {{ suggestion }}
-        </li>
-      </ul>
+          <ul class="suggestion-list">
+            <li
+              v-for="(suggestion, index) in completionSuggestions"
+              :key="index"
+              class="suggestion-item"
+              @click="selectSuggestion(suggestion)"
+            >
+              {{ suggestion }}
+            </li>
+          </ul>
+        </div>
+        <div class="status-indicator">
+          <span :class="['status', status.key]">{{ status.text }}</span>
+        </div>
+      </div>
     </div>
-    <div class="status-indicator">
-      <span :class="['status', status.key]">{{ status.text }}</span>
+
+    <div v-if="showHint" class="input-hint">
+      {{ t({ en: 'Tip: Enter your complete prompt description', zh: '提示：输入您的完整提示词描述' }) }}
     </div>
   </div>
 </template>
@@ -64,6 +78,14 @@ const props = defineProps({
   delay: {
     type: Number,
     default: 750
+  },
+  showLabel: {
+    type: Boolean,
+    default: true
+  },
+  showHint: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -73,9 +95,11 @@ const debounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const status = ref({ key: 'idle', text: t({ en: 'Ready', zh: '准备就绪' }) })
 const completionSuggestions = ref<string[]>([])
 const showSuggestions = ref(false)
+const fullFilled = ref(false)
 const setImmediateGenerateResult = inject('setImmediateGenerateResult') as (
   svgContents: { blob: string; svgContent: string }[]
 ) => void
+const setSearchingLoading = inject('setSearchingLoading') as (loading: boolean) => void
 
 // 新增：用于访问 DOM 元素和动态样式
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
@@ -86,6 +110,9 @@ const dropdownStyle = ref({ top: '0px', left: '0px' })
 const handleInput = () => {
   status.value = { key: 'typing', text: t({ en: 'Typing...', zh: '正在输入...' }) }
   showSuggestions.value = false
+
+  // 更新 fullFilled 状态
+  fullFilled.value = content.value.trim() !== ''
 
   if (debounceTimer.value !== null) {
     clearTimeout(debounceTimer.value)
@@ -104,35 +131,64 @@ const submitContent = async () => {
     return
   }
   status.value = { key: 'saving', text: t({ en: 'Completing...', zh: '正在补全...' }) }
+  setSearchingLoading(true)
   // console.log(`[API Call] 准备发送内容: "${content.value}"`)
 
   try {
     const projectId = editorCtx.project.id ? parseInt(editorCtx.project.id, 10) : 0
-    const response = await getPrompt(content.value, 3)
 
-    status.value = { key: 'saved', text: '已补全！' }
-    // 确保响应是数组格式
-    completionSuggestions.value = Array.isArray(response) ? response : []
-
-    // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
-    if (completionSuggestions.value.length > 0) {
-      nextTick(() => {
-        showSuggestions.value = true
-        updateDropdownPosition() // 再次调用以确保位置正确
+    // 并行执行两个API调用以减少等待时间
+    const [promptResponse, imageResponse] = await Promise.allSettled([
+      getPrompt(content.value, 3),
+      instantImageRecommend(projectId, content.value, {
+        top_k: 4,
+        theme: '' // 可以根据需要设置主题
       })
+    ])
+
+    // 处理prompt补全结果
+    if (promptResponse.status === 'fulfilled') {
+      status.value = { key: 'saved', text: '已补全！' }
+      // 确保响应是数组格式
+      completionSuggestions.value = Array.isArray(promptResponse.value) ? promptResponse.value : []
+
+      // 关键：确保在 DOM 更新后显示下拉框，并再次更新位置
+      if (completionSuggestions.value.length > 0) {
+        nextTick(() => {
+          showSuggestions.value = true
+          updateDropdownPosition() // 再次调用以确保位置正确
+        })
+      }
+    } else {
+      console.error('[Prompt API Error]', promptResponse.reason)
+      // prompt补全失败不影响图片推荐，只是不显示补全建议
+      completionSuggestions.value = []
     }
 
-    let previewPics = await instantImageRecommend(projectId, content.value, {
-      top_k: 4,
-      theme: '' // 可以根据需要设置主题
-    })
+    // 处理图片推荐结果
+    if (imageResponse.status === 'fulfilled') {
+      setImmediateGenerateResult(imageResponse.value.svgContents)
+    } else {
+      console.error('[Image API Error]', imageResponse.reason)
+      // 图片推荐失败时可以显示错误提示，但不影响prompt补全
+    }
 
-    setImmediateGenerateResult(previewPics.svgContents)
-    // console.log('[API Success] 内容补全成功!', response)
+    // 如果两个API都失败了，才显示错误状态
+    if (promptResponse.status === 'rejected' && imageResponse.status === 'rejected') {
+      const errorMessage =
+        promptResponse.reason instanceof Error
+          ? promptResponse.reason.message
+          : t({ en: 'Unknown error', zh: '未知错误' })
+      status.value = { key: 'error', text: `${t({ en: 'Request failed', zh: '请求失败' })}: ${errorMessage}` }
+    }
+
+    // console.log('[API Success] 内容补全成功!', promptResponse)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : t({ en: 'Unknown error', zh: '未知错误' })
     status.value = { key: 'error', text: `${t({ en: 'Request failed', zh: '请求失败' })}: ${errorMessage}` }
     console.error(`[API Error]`, error)
+  } finally {
+    setSearchingLoading(false)
   }
 }
 
@@ -192,10 +248,35 @@ watch(
 // 监听 content 变化，触发 update:modelValue 事件
 watch(content, (newValue) => {
   emit('update:modelValue', newValue)
+  // 同时更新 fullFilled 状态
+  fullFilled.value = newValue.trim() !== ''
+})
+
+// 暴露 fullFilled 状态给父组件
+defineExpose({
+  fullFilled
 })
 </script>
 
 <style scoped lang="scss">
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.input-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .debounced-textarea-wrapper {
   position: relative;
   width: 100%;
