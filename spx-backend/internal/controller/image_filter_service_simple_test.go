@@ -17,18 +17,31 @@ func TestImageFilterService_NewService(t *testing.T) {
 		t.Error("Service should have default config when nil is passed")
 	}
 
-	// Verify default values
-	defaultConfig := service.DefaultFilterConfig()
-	if defaultConfig.FilterWindowDays != 30 {
-		t.Errorf("Default FilterWindowDays = %d, want 30", defaultConfig.FilterWindowDays)
+	// Verify default values from service config
+	if service.config.DefaultWindowDays != 30 {
+		t.Errorf("Default DefaultWindowDays = %d, want 30", service.config.DefaultWindowDays)
 	}
 
+	if service.config.DefaultMaxFilterRatio != 0.8 {
+		t.Errorf("Default DefaultMaxFilterRatio = %.2f, want 0.8", service.config.DefaultMaxFilterRatio)
+	}
+
+	if !service.config.Enabled {
+		t.Error("Default config should be enabled")
+	}
+
+	// Verify DefaultFilterConfig method
+	defaultConfig := service.DefaultFilterConfig()
 	if defaultConfig.MaxFilterRatio != 0.8 {
 		t.Errorf("Default MaxFilterRatio = %.2f, want 0.8", defaultConfig.MaxFilterRatio)
 	}
 
 	if !defaultConfig.Enabled {
-		t.Error("Default config should be enabled")
+		t.Error("Default FilterConfig should be enabled")
+	}
+
+	if !defaultConfig.SessionEnabled {
+		t.Error("Default FilterConfig should have session filtering enabled")
 	}
 }
 
@@ -47,13 +60,35 @@ func TestImageFilterService_WithConfig(t *testing.T) {
 		t.Error("Service should use provided config")
 	}
 
-	defaultConfig := service.DefaultFilterConfig()
-	if defaultConfig.FilterWindowDays != 15 {
-		t.Errorf("Custom FilterWindowDays = %d, want 15", defaultConfig.FilterWindowDays)
+	// Test service config fields directly
+	if service.config.DefaultWindowDays != 15 {
+		t.Errorf("Custom DefaultWindowDays = %d, want 15", service.config.DefaultWindowDays)
 	}
 
+	if service.config.DefaultMaxFilterRatio != 0.6 {
+		t.Errorf("Custom DefaultMaxFilterRatio = %.2f, want 0.6", service.config.DefaultMaxFilterRatio)
+	}
+
+	if service.config.SearchExpansionRatio != 3.0 {
+		t.Errorf("Custom SearchExpansionRatio = %.1f, want 3.0", service.config.SearchExpansionRatio)
+	}
+
+	if service.config.EnableDegradation {
+		t.Error("EnableDegradation should be false")
+	}
+
+	if service.config.EnableMetrics {
+		t.Error("EnableMetrics should be false")
+	}
+
+	// Test DefaultFilterConfig method uses custom values
+	defaultConfig := service.DefaultFilterConfig()
 	if defaultConfig.MaxFilterRatio != 0.6 {
 		t.Errorf("Custom MaxFilterRatio = %.2f, want 0.6", defaultConfig.MaxFilterRatio)
+	}
+
+	if !defaultConfig.Enabled {
+		t.Error("FilterConfig should be enabled when config is enabled")
 	}
 }
 
@@ -63,10 +98,8 @@ func TestDegradationStrategy_String(t *testing.T) {
 		expected string
 	}{
 		{DegradationNone, "none"},
-		{DegradationTimeWindow, "time_window_expansion"},
-		{DegradationThemeExpansion, "theme_expansion"},
-		{DegradationSimilarityThreshold, "similarity_threshold_reduction"},
-		{DegradationNewUserMix, "new_user_content_mix"},
+		{DegradationTimeWindow, "time_window_reduction"},
+		{DegradationSimilarityThreshold, "similarity_threshold_mixing"},
 	}
 
 	for _, test := range tests {
@@ -86,36 +119,45 @@ func TestFilterConfig_Validation(t *testing.T) {
 		{
 			name: "Valid config",
 			config: FilterConfig{
-				FilterWindowDays: 30,
-				MaxFilterRatio:   0.8,
-				Enabled:          true,
+				MaxFilterRatio: 0.8,
+				SessionEnabled: true,
+				Enabled:        true,
 			},
 			expectError: false,
 		},
 		{
-			name: "Zero window days",
+			name: "Session disabled",
 			config: FilterConfig{
-				FilterWindowDays: 0,
-				MaxFilterRatio:   0.8,
-				Enabled:          true,
+				MaxFilterRatio: 0.8,
+				SessionEnabled: false,
+				Enabled:        true,
 			},
-			expectError: false, // Zero is valid, means no time filtering
+			expectError: false,
 		},
 		{
-			name: "Invalid filter ratio too high",
+			name: "Zero filter ratio",
 			config: FilterConfig{
-				FilterWindowDays: 30,
-				MaxFilterRatio:   1.5,
-				Enabled:          true,
+				MaxFilterRatio: 0,
+				SessionEnabled: true,
+				Enabled:        true,
 			},
-			expectError: false, // Values > 1 are allowed in our implementation
+			expectError: false, // Zero is valid, means no filtering limit
+		},
+		{
+			name: "High filter ratio",
+			config: FilterConfig{
+				MaxFilterRatio: 1.0,
+				SessionEnabled: true,
+				Enabled:        true,
+			},
+			expectError: false, // Values up to 1.0 are allowed
 		},
 		{
 			name: "Disabled config",
 			config: FilterConfig{
-				FilterWindowDays: 30,
-				MaxFilterRatio:   0.8,
-				Enabled:          false,
+				MaxFilterRatio: 0.8,
+				SessionEnabled: true,
+				Enabled:        false,
 			},
 			expectError: false,
 		},
@@ -126,11 +168,11 @@ func TestFilterConfig_Validation(t *testing.T) {
 			// For now, we just verify the config can be created without panicking
 			// In a real scenario, you'd add validation methods to FilterConfig
 			config := test.config
-			if config.FilterWindowDays < 0 {
-				t.Error("FilterWindowDays should not be negative")
-			}
 			if config.MaxFilterRatio < 0 {
 				t.Error("MaxFilterRatio should not be negative")
+			}
+			if config.MaxFilterRatio > 1.0 {
+				t.Error("MaxFilterRatio should not exceed 1.0")
 			}
 		})
 	}
@@ -142,7 +184,7 @@ func TestFilterMetrics_Validation(t *testing.T) {
 		FilteredCount:       20,
 		FilterRatio:         0.2,
 		DegradationLevel:    1,
-		DegradationStrategy: "time_window_expansion",
+		DegradationStrategy: "time_window_reduction",
 		FinalResultCount:    80,
 	}
 
@@ -190,7 +232,7 @@ func TestFilterContext_Initialization(t *testing.T) {
 		QueryID:         "test-query",
 		Query:           "test query",
 		RequestedCount:  10,
-		Config:          &FilterConfig{FilterWindowDays: 30, MaxFilterRatio: 0.8, Enabled: true},
+		Config:          &FilterConfig{MaxFilterRatio: 0.8, SessionEnabled: true, Enabled: true},
 		DegradationUsed: DegradationNone,
 		Metrics:         &FilterMetrics{},
 	}
@@ -213,5 +255,18 @@ func TestFilterContext_Initialization(t *testing.T) {
 
 	if ctx.Metrics == nil {
 		t.Error("FilterContext Metrics should not be nil")
+	}
+
+	// Verify config fields
+	if ctx.Config.MaxFilterRatio != 0.8 {
+		t.Errorf("FilterContext MaxFilterRatio = %.2f, want 0.8", ctx.Config.MaxFilterRatio)
+	}
+
+	if !ctx.Config.SessionEnabled {
+		t.Error("FilterContext SessionEnabled should be true")
+	}
+
+	if !ctx.Config.Enabled {
+		t.Error("FilterContext Enabled should be true")
 	}
 }

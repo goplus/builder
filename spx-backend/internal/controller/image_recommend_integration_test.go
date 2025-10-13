@@ -124,16 +124,16 @@ func TestImageRecommendationWithFiltering_ConfigDefaults(t *testing.T) {
 
 	defaultConfig := filterService.DefaultFilterConfig()
 
-	if defaultConfig.FilterWindowDays != 30 {
-		t.Errorf("Expected default FilterWindowDays=30, got %d", defaultConfig.FilterWindowDays)
-	}
-
 	if defaultConfig.MaxFilterRatio != 0.8 {
 		t.Errorf("Expected default MaxFilterRatio=0.8, got %.2f", defaultConfig.MaxFilterRatio)
 	}
 
 	if !defaultConfig.Enabled {
 		t.Error("Expected default filtering to be enabled")
+	}
+
+	if !defaultConfig.SessionEnabled {
+		t.Error("Expected default session filtering to be enabled")
 	}
 
 	// Test config getter methods

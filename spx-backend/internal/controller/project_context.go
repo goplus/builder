@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	
 	"github.com/goplus/builder/spx-backend/internal/copilot"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -40,6 +42,7 @@ type InstantRecommendParams struct {
 	UserPrompt string    `json:"user_prompt"`
 	TopK       int       `json:"top_k,omitempty"`
 	Theme      ThemeType `json:"theme,omitempty"`
+	SessionID  string    `json:"session_id,omitempty"` // Session ID for session-level filtering
 }
 
 // Validate validates the instant recommendation parameters
@@ -59,6 +62,17 @@ func (p *InstantRecommendParams) Validate() (bool, string) {
 	if !IsValidTheme(p.Theme) {
 		return false, "invalid theme type"
 	}
+
+	// Validate session_id format if provided
+	if p.SessionID != "" {
+		if len(p.SessionID) != 36 {
+			return false, "session_id must be a valid UUID"
+		}
+		if _, err := uuid.Parse(p.SessionID); err != nil {
+			return false, "invalid session_id format"
+		}
+	}
+
 	return true, ""
 }
 
@@ -122,7 +136,6 @@ func (ctrl *Controller) GenerateProjectContext(ctx context.Context, params *Proj
 // generateRelatedWordsWithLLM uses LLM to generate related words for the project
 func (ctrl *Controller) generateRelatedWordsWithLLM(ctx context.Context, projectName, projectDescription string) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
-	
 
 	// Build the prompt for word generation
 	systemPrompt := `你是一个专业的游戏项目分析师，请为项目生成15-20个相关的关键词，这些关键词将用于图片推荐。
@@ -251,6 +264,7 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 			Text:       params.UserPrompt,
 			TopK:       params.TopK,
 			Theme:      params.Theme,
+			SessionID:  params.SessionID, // Pass through session ID for filtering
 			SearchOnly: true, // Instant recommend should only search, not generate
 		}
 		return ctrl.RecommendImagesInstant(ctx, imageParams)
@@ -265,6 +279,7 @@ func (ctrl *Controller) RecommendImagesWithContext(ctx context.Context, params *
 		Text:       enhancedPrompt,
 		TopK:       params.TopK,
 		Theme:      params.Theme,
+		SessionID:  params.SessionID, // Pass through session ID for filtering
 		SearchOnly: true, // Instant recommend should only search, not generate
 	}
 

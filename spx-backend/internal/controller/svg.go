@@ -79,12 +79,12 @@ type GenerateImageParams struct {
 
 // BeautifyImageParams represents parameters for PNG image beautification.
 type BeautifyImageParams struct {
-	Prompt         string          `json:"prompt"`                       // Description of desired changes
-	Strength       float64         `json:"strength"`                     // Strength of transformation (0-1)
-	Style          string          `json:"style,omitempty"`              // Image style
-	SubStyle       string          `json:"sub_style,omitempty"`          // Sub-style
-	NegativePrompt string          `json:"negative_prompt,omitempty"`    // What to avoid
-	Provider       svggen.Provider `json:"provider,omitempty"`           // Provider to use (defaults to Recraft)
+	Prompt         string          `json:"prompt"`                    // Description of desired changes
+	Strength       float64         `json:"strength"`                  // Strength of transformation (0-1)
+	Style          string          `json:"style,omitempty"`           // Image style
+	SubStyle       string          `json:"sub_style,omitempty"`       // Sub-style
+	NegativePrompt string          `json:"negative_prompt,omitempty"` // What to avoid
+	Provider       svggen.Provider `json:"provider,omitempty"`        // Provider to use (defaults to Recraft)
 }
 
 // Validate validates the image beautification parameters.
@@ -112,44 +112,44 @@ func (p *BeautifyImageParams) Validate() (bool, string) {
 
 // SVGResponse represents the response for direct SVG requests.
 type SVGResponse struct {
-	Data          []byte            `json:"-"`                    // SVG content
-	Headers       map[string]string `json:"-"`                    // Response headers
-	KodoURL       string            `json:"kodo_url,omitempty"`   // Kodo storage URL if stored
-	AIResourceID  int64             `json:"ai_resource_id,omitempty"` // Database record ID if stored
+	Data         []byte            `json:"-"`                        // SVG content
+	Headers      map[string]string `json:"-"`                        // Response headers
+	KodoURL      string            `json:"kodo_url,omitempty"`       // Kodo storage URL if stored
+	AIResourceID int64             `json:"ai_resource_id,omitempty"` // Database record ID if stored
 }
 
 // ImageResponse represents the response for image metadata requests.
 type ImageResponse struct {
-	ID               string            `json:"id"`
-	SVGURL           string            `json:"svg_url"`
-	PNGURL           string            `json:"png_url,omitempty"`
-	KodoSVGURL       string            `json:"kodo_svg_url,omitempty"`      // Kodo storage URL for SVG
-	AIResourceID     int64             `json:"ai_resource_id,omitempty"`    // Database record ID if stored
-	Width            int               `json:"width"`
-	Height           int               `json:"height"`
-	Provider         svggen.Provider   `json:"provider"`
-	OriginalPrompt   string            `json:"original_prompt,omitempty"`
-	TranslatedPrompt string            `json:"translated_prompt,omitempty"`
-	WasTranslated    bool              `json:"was_translated"`
-	CreatedAt        time.Time         `json:"created_at"`
+	ID               string          `json:"id"`
+	SVGURL           string          `json:"svg_url"`
+	PNGURL           string          `json:"png_url,omitempty"`
+	KodoSVGURL       string          `json:"kodo_svg_url,omitempty"`   // Kodo storage URL for SVG
+	AIResourceID     int64           `json:"ai_resource_id,omitempty"` // Database record ID if stored
+	Width            int             `json:"width"`
+	Height           int             `json:"height"`
+	Provider         svggen.Provider `json:"provider"`
+	OriginalPrompt   string          `json:"original_prompt,omitempty"`
+	TranslatedPrompt string          `json:"translated_prompt,omitempty"`
+	WasTranslated    bool            `json:"was_translated"`
+	CreatedAt        time.Time       `json:"created_at"`
 }
 
 // BeautifyImageResponse represents the response for image beautification requests.
 type BeautifyImageResponse struct {
-	ID             string          `json:"id"`               // Unique ID for the beautified image
-	URL            string          `json:"url"`              // URL of the beautified image
-	KodoURL        string          `json:"kodo_url,omitempty"`           // Kodo storage URL if stored
-	AIResourceID   int64           `json:"ai_resource_id,omitempty"`     // Database record ID if stored
-	SVGData        []byte          `json:"svg_data,omitempty"`           // Generated SVG byte array
-	OriginalPrompt string          `json:"original_prompt"`  // Original prompt used
-	Prompt         string          `json:"prompt"`           // Final prompt used
-	NegativePrompt string          `json:"negative_prompt,omitempty"`    // Negative prompt used
-	Style          string          `json:"style"`            // Style applied
-	Strength       float64         `json:"strength"`         // Strength of transformation
-	Width          int             `json:"width"`            // Image width
-	Height         int             `json:"height"`           // Image height
-	Provider       svggen.Provider `json:"provider"`         // Provider used
-	CreatedAt      time.Time       `json:"created_at"`       // Creation timestamp
+	ID             string          `json:"id"`                        // Unique ID for the beautified image
+	URL            string          `json:"url"`                       // URL of the beautified image
+	KodoURL        string          `json:"kodo_url,omitempty"`        // Kodo storage URL if stored
+	AIResourceID   int64           `json:"ai_resource_id,omitempty"`  // Database record ID if stored
+	SVGData        []byte          `json:"svg_data,omitempty"`        // Beautified image byte array (typically SVG format)
+	OriginalPrompt string          `json:"original_prompt"`           // Original prompt used
+	Prompt         string          `json:"prompt"`                    // Final prompt used
+	NegativePrompt string          `json:"negative_prompt,omitempty"` // Negative prompt used
+	Style          string          `json:"style"`                     // Style applied
+	Strength       float64         `json:"strength"`                  // Strength of transformation
+	Width          int             `json:"width"`                     // Image width
+	Height         int             `json:"height"`                    // Image height
+	Provider       svggen.Provider `json:"provider"`                  // Provider used
+	CreatedAt      time.Time       `json:"created_at"`                // Creation timestamp
 }
 
 // GenerateSVG generates an SVG image and returns the SVG content directly.
@@ -234,7 +234,6 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		}
 	}
 
-
 	// Prepare response headers
 	headers := map[string]string{
 		"Content-Type":        "image/svg+xml",
@@ -244,7 +243,7 @@ func (ctrl *Controller) GenerateSVG(ctx context.Context, params *GenerateSVGPara
 		"X-Image-Height":      strconv.Itoa(result.Height),
 		"X-Provider":          string(result.Provider),
 	}
-	
+
 	// Add Kodo URL to headers if available
 	if kodoURL != "" {
 		headers["X-Kodo-URL"] = kodoURL
@@ -308,7 +307,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 	// Store SVG to Kodo if possible
 	var kodoSVGURL string
 	var aiResourceID int64
-	
+
 	if result.SVGURL != "" {
 		svgBytes, err := ctrl.getSVGContent(ctx, result.SVGURL)
 		if err != nil {
@@ -331,7 +330,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 				} else {
 					aiResourceID = aiResource.ID
 					logger.Printf("AI resource saved to database with ID: %d", aiResourceID)
-					
+
 					// Call vector service to add SVG data
 					if vectorErr := ctrl.callVectorService(ctx, aiResourceID, kodoSVGURL, svgBytes); vectorErr != nil {
 						logger.Printf("Failed to call vector service: %v", vectorErr)
@@ -362,7 +361,7 @@ func (ctrl *Controller) GenerateImage(ctx context.Context, params *GenerateImage
 func (ctrl *Controller) callVectorService(ctx context.Context, id int64, url string, svgContent []byte) error {
 	return ctrl.algorithmService.AddVector(ctx, id, url, svgContent)
 }
-	
+
 // getSVGContent retrieves SVG content from URL or data URL.
 func (ctrl *Controller) getSVGContent(ctx context.Context, svgURL string) ([]byte, error) {
 	if strings.HasPrefix(svgURL, "data:") {
@@ -432,10 +431,9 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	}
 	logger.Printf("Validated PNG format")
 
-
 	// Convert to svggen request
 	req := svggen.BeautifyImageRequest{
-		ImageData:      imageData,  // Use PNG data for Recraft API
+		ImageData:      imageData, // Use PNG data for Recraft API
 		Prompt:         params.Prompt,
 		Strength:       params.Strength,
 		Style:          params.Style,
@@ -459,7 +457,7 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	var beautifiedBytes []byte = result.Data
 
 	if len(beautifiedBytes) > 0 {
-		// Use SVG extension for beautified output
+		// Use SVG extension for beautified output (Recraft typically outputs SVG)
 		filename := fmt.Sprintf("%s_beautified.svg", result.ID)
 
 		uploadStart := time.Now()
@@ -505,7 +503,6 @@ func (ctrl *Controller) BeautifyImage(ctx context.Context, params *BeautifyImage
 	}, nil
 }
 
-
 // isPNGFormat checks if the uploaded data is a valid PNG file.
 func (ctrl *Controller) isPNGFormat(data []byte) bool {
 	if len(data) < 8 {
@@ -518,7 +515,6 @@ func (ctrl *Controller) isPNGFormat(data []byte) bool {
 	// Check if the first 8 bytes match PNG signature
 	return bytes.Equal(data[:8], pngSignature)
 }
-
 
 // GetThemes returns all available themes with their information.
 func (ctrl *Controller) GetThemes(ctx context.Context) ([]ThemeInfo, error) {

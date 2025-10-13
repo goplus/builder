@@ -33,21 +33,21 @@ func TestUserImageFilterConfigFields(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		UserID:           123,
-		FilterWindowDays: 30,
-		MaxFilterRatio:   0.8,
+		UserID:         123,
+		MaxFilterRatio: 0.8,
+		SessionEnabled: true,
 	}
 
 	if config.UserID == 0 {
 		t.Error("UserImageFilterConfig UserID should not be zero")
 	}
 
-	if config.FilterWindowDays <= 0 {
-		t.Error("UserImageFilterConfig FilterWindowDays should be positive")
-	}
-
 	if config.MaxFilterRatio <= 0 || config.MaxFilterRatio > 1 {
 		t.Error("UserImageFilterConfig MaxFilterRatio should be between 0 and 1")
+	}
+
+	if !config.SessionEnabled {
+		t.Error("UserImageFilterConfig SessionEnabled should be true by default")
 	}
 }
 

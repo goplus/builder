@@ -125,6 +125,24 @@ func TestInstantRecommendParams_EdgeCases(t *testing.T) {
 			},
 			wantOk: true,
 		},
+		{
+			name: "valid UUID session_id",
+			params: InstantRecommendParams{
+				ProjectID:  1,
+				UserPrompt: "test",
+				SessionID:  "550e8400-e29b-41d4-a716-446655440000",
+			},
+			wantOk: true,
+		},
+		{
+			name: "empty session_id should be valid",
+			params: InstantRecommendParams{
+				ProjectID:  1,
+				UserPrompt: "test",
+				SessionID:  "",
+			},
+			wantOk: true,
+		},
 	}
 
 	for _, tt := range tests {
