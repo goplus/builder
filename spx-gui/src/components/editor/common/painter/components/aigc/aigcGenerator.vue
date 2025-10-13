@@ -24,7 +24,7 @@
               </div>
 
               <!-- 提示词输入 -->
-              <PromptEditor v-model="prompt" :session_id="sessionId" />
+              <PromptEditor v-model="prompt" :sessionId="sessionId" />
 
               <!-- 生成按钮 -->
               <div class="form-group">
