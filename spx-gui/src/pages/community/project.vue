@@ -238,14 +238,19 @@ const { data: projectData } = useQuery(
 const shareProject = useShareProject()
 
 const handleShare = useMessageHandle(
-  () => {
-    // 在移动端显示分享提示蒙版
+  async (): Promise<void> => {
+    // 在移动端显示分享提示蒙版，等待用户关闭后再恢复游戏
     if (isMobile.value) {
       showMobileShareHint.value = true
       return
     }
     if (!projectData.value) return
-    return shareProject(projectData.value)
+    try {
+      await projectRunnerRef.value?.pauseGame()
+      await shareProject(projectData.value)
+    } finally {
+      await projectRunnerRef.value?.resumeGame()
+    }
   },
   {
     en: 'Failed to share project',
