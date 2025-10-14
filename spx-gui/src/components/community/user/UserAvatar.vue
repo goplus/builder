@@ -8,8 +8,8 @@
 </template>
 
 <script setup lang="ts">
-import { useExternalUrl } from '@/utils/utils'
 import { useUser } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
 import UserLink from './UserLink.vue'
 
 export type Size = 'small' | 'medium'
@@ -25,7 +25,7 @@ const props = withDefaults(
 )
 
 const { data: userInfo } = useUser(() => props.user)
-const avatarUrl = useExternalUrl(() => userInfo.value?.avatar)
+const avatarUrl = useAvatarUrl(() => userInfo.value?.avatar)
 </script>
 
 <style lang="scss" scoped>

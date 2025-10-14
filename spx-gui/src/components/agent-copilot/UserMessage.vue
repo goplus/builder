@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import MarkdownView from './markdown/MarkdownView.vue'
 import { useSignedInUser } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
 
 const props = defineProps<{
   content: string
 }>()
 
 const { data: signedInUser } = useSignedInUser()
+const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
 </script>
 
 <template>
   <section class="user-message">
-    <img class="avatar" :src="signedInUser?.avatar || ''" />
+    <img class="avatar" :src="avatarUrl ?? undefined" />
     <MarkdownView class="content" :value="props.content" />
   </section>
 </template>
