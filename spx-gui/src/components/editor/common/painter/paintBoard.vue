@@ -403,7 +403,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'svg-change', svg: string): void
-  (e: 'ai-beautify', imgSrc: string): void
 }>()
 
 // 根据 url 自动判断并导入到画布（优先解析为 SVG，其次作为位图 Raster）

@@ -51,6 +51,101 @@ export interface AiBeautifyResponse {
 }
 
 /**
+ * 验证文件是否为真实的 SVG 文件
+ * @param file - 要验证的文件
+ * @returns 是否为有效的 SVG 文件
+ */
+async function isValidSVG(file: File): Promise<boolean> {
+  try {
+    // 读取文件内容的前几个字节
+    const text = await file.text()
+    const trimmedText = text.trim()
+
+    // 检查是否以 SVG 标签或 XML 声明开头
+    const svgPattern = /^(<\?xml[^>]*\?>)?\s*<svg[\s>]/i
+    return svgPattern.test(trimmedText)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 验证文件是否为真实的 PNG 文件
+ * @param file - 要验证的文件
+ * @returns 是否为有效的 PNG 文件
+ */
+async function isValidPNG(file: File): Promise<boolean> {
+  try {
+    // PNG 文件的魔术字节: 89 50 4E 47 0D 0A 1A 0A
+    const buffer = await file.slice(0, 8).arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+
+    return (
+      bytes.length === 8 &&
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47 &&
+      bytes[4] === 0x0d &&
+      bytes[5] === 0x0a &&
+      bytes[6] === 0x1a &&
+      bytes[7] === 0x0a
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 获取文件扩展名
+ * @param filename - 文件名
+ * @returns 小写的文件扩展名（不包含点）
+ */
+function getFileExtension(filename: string): string {
+  const lastDot = filename.lastIndexOf('.')
+  if (lastDot === -1) return ''
+  return filename.substring(lastDot + 1).toLowerCase()
+}
+
+/**
+ * 验证文件类型（包括扩展名和内容验证）
+ * @param file - 要验证的文件
+ * @returns 是否为支持的有效文件
+ */
+async function validateFileType(file: File): Promise<{ valid: boolean; error?: string }> {
+  const extension = getFileExtension(file.name)
+
+  // 检查文件扩展名
+  if (!['svg', 'png'].includes(extension)) {
+    return {
+      valid: false,
+      error: '文件扩展名必须是 .svg 或 .png'
+    }
+  }
+
+  // 根据扩展名验证文件内容
+  if (extension === 'svg') {
+    const isValid = await isValidSVG(file)
+    if (!isValid) {
+      return {
+        valid: false,
+        error: '文件内容不是有效的 SVG 格式'
+      }
+    }
+  } else if (extension === 'png') {
+    const isValid = await isValidPNG(file)
+    if (!isValid) {
+      return {
+        valid: false,
+        error: '文件内容不是有效的 PNG 格式'
+      }
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
  * 美化图像
  * @param imageFile - 图像文件
  * @param options - 美化选项
@@ -82,10 +177,14 @@ export async function beautifyImage(
     throw new Error('图像文件大小不能超过10MB')
   }
 
-  // 文件类型验证
-  const supportedTypes = ['image/svg+xml', 'image/png']
-  if (!supportedTypes.includes(imageFile.type)) {
-    throw new Error('仅支持 SVG 和 PNG 格式的图像文件')
+  // 文件类型验证（扩展名 + 内容验证）
+  const validationResult = await validateFileType(imageFile)
+  if (!validationResult.valid) {
+    throw new Error(validationResult.error || '不支持的文件格式')
+  }
+  // 额外 MIME 验证
+  if (!['image/png', 'image/svg+xml'].includes(imageFile.type)) {
+    throw new Error('不支持的文件类型')
   }
   // 构建 FormData
   const formData = new FormData()

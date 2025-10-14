@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import DescriptionModal from './descriptionModal.vue'
 import BeautifyConfig from './beautifyConfig.vue'
 import { beautifyImage } from '@/apis/aiBeautify'
@@ -229,9 +229,6 @@ const handleCancel = (): void => {
   if (beautifyImageUrl.value) {
     destroyBlobUrl(beautifyImageUrl.value)
   }
-  if (beautifyImageSvg.value) {
-    destroyBlobUrl(beautifyImageSvg.value)
-  }
   beautifyImageUrl.value = null
   beautifyImageSvg.value = null
   emit('update:visible', false)
@@ -265,6 +262,10 @@ const handleConfirm = (): void => {
 
   handleCancel()
 }
+
+onUnmounted(() => {
+  handleCancel()
+})
 </script>
 
 <style scoped>

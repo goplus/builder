@@ -122,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import ModelSelector from '../aigc/modelSelector.vue'
 import { ModelList } from '../aigc/modelList'
@@ -166,22 +166,35 @@ watch(
   { deep: true, immediate: true }
 )
 
-// 恢复选中的模型（只在初始化或 selectedModelId 变化时执行）
+// 设置选中的模型的辅助函数
+const setSelectedModel = (modelId: string | undefined) => {
+  if (!modelSelectorRef.value) return
+
+  if (modelId !== undefined) {
+    // 根据保存的模型ID找到对应的模型对象
+    const model = ModelList.find((m) => m.id === modelId)
+    if (model) {
+      modelSelectorRef.value.selectedModel = model
+    }
+  } else {
+    // 如果 selectedModelId 被清空，也清空模型选择
+    modelSelectorRef.value.selectedModel = undefined
+  }
+}
+
+// 组件挂载后设置初始值
+onMounted(() => {
+  if (props.config.selectedModelId !== undefined) {
+    setSelectedModel(props.config.selectedModelId)
+  }
+})
+
+// 监听 selectedModelId 的后续变化（不使用 immediate）
 watch(
   () => props.config.selectedModelId,
   (newModelId) => {
-    if (modelSelectorRef.value && newModelId !== undefined) {
-      // 根据保存的模型ID找到对应的模型对象
-      const model = ModelList.find((m) => m.id === newModelId)
-      if (model) {
-        modelSelectorRef.value.selectedModel = model
-      }
-    } else if (modelSelectorRef.value && newModelId === undefined) {
-      // 如果 selectedModelId 被清空，也清空模型选择
-      modelSelectorRef.value.selectedModel = undefined
-    }
-  },
-  { immediate: true }
+    setSelectedModel(newModelId)
+  }
 )
 
 // 重置配置
