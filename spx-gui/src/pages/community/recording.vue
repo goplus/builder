@@ -133,6 +133,22 @@
         </ProjectsSection>
       </div>
     </CenteredWrapper>
+    <!-- Mobile share hint overlay -->
+    <div v-if="showMobileShareHint" class="mobile-share-hint-overlay" @click="closeMobileShareHint">
+      <div class="mobile-share-hint-content">
+        <div class="hint-arrow">
+          <UIIcon class="icon" type="arrowShare" />
+        </div>
+        <div class="hint-text">
+          {{
+            $t({
+              en: 'Tap the share button in the upper right corner to send this to a friend',
+              zh: '请点击右上角将它发送给指定朋友'
+            })
+          }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -181,6 +197,14 @@ const numInRow = computed(() => {
   if (isMobile.value) return 2
   return isDesktopLarge.value ? 5 : 4
 })
+
+// Mobile share hint state
+const showMobileShareHint = ref(false)
+
+// Close mobile share hint
+function closeMobileShareHint() {
+  showMobileShareHint.value = false
+}
 
 // 点赞状态
 const liking = ref(false)
@@ -459,7 +483,13 @@ const handlePlayProject = useMessageHandle(
 )
 
 const handleShare = () => {
-  // 分享功能
+  // Show mobile share hint overlay on mobile devices
+  if (isMobile.value) {
+    showMobileShareHint.value = true
+    return
+  }
+
+  // Desktop share functionality
   const url = window.location.href
   navigator.clipboard.writeText(url).then(() => {
     // console.log('URL copied to clipboard')
@@ -817,6 +847,43 @@ watchEffect((onCleanup) => {
 
   .related-content-frame {
     padding: 16px;
+  }
+}
+/* Mobile share hint overlay styles */
+.mobile-share-hint-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  color: #fff;
+
+  @include responsive(mobile) {
+    .mobile-share-hint-content {
+      padding: 0 24px;
+      text-align: center;
+      max-width: 280px;
+
+      .hint-arrow {
+        margin: 25px 0;
+        display: flex;
+        justify-content: flex-end;
+
+        .icon {
+          transform: scale(4);
+        }
+      }
+
+      .hint-text {
+        font-size: 16px;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+    }
   }
 }
 </style>
