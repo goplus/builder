@@ -15,6 +15,7 @@ import type { Size } from '.'
 export type Metadata = {
   universalUrl?: string
   hash?: string
+  imgSize?: Size
 }
 
 export type Options = {
@@ -153,12 +154,17 @@ async function getBitmapImageSize(bitmapImgFile: File) {
   })
 }
 
-export async function getImageSize(file: File) {
+export async function getImageSize(file: File): Promise<Size> {
+  if (file.meta.imgSize != null) return file.meta.imgSize
+  let size: Size
   if (file.type === 'image/svg+xml') {
     const svgText = await toText(file)
-    return getSVGSize(svgText)
+    size = await getSVGSize(svgText)
+  } else {
+    size = await getBitmapImageSize(file)
   }
-  return getBitmapImageSize(file)
+  file.meta.imgSize = size
+  return size
 }
 
 export function listDirs(
@@ -174,4 +180,36 @@ export function listDirs(
     if (segments.length > 1 && !dirs.includes(segments[0])) dirs.push(segments[0])
   }
   return dirs
+}
+
+export function listFiles(
+  files: { [path: string]: unknown },
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const fileList: string[] = []
+  const prefix = dirname + '/'
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const segments = filePath.slice(prefix.length).split('/')
+    if (segments.length === 1) fileList.push(segments[0])
+  }
+  return fileList
+}
+
+export function listAllFiles(
+  files: Files,
+  /** path of parent dir to do list, with no tailing slash */
+  dirname: string
+) {
+  const prefix = dirname + '/'
+  const fileList: string[] = []
+  for (const filePath of Object.keys(files)) {
+    if (!filePath.startsWith(prefix)) continue
+    const relative = filePath.slice(prefix.length)
+    if (relative && !relative.endsWith('/')) {
+      fileList.push(filePath)
+    }
+  }
+  return fileList
 }

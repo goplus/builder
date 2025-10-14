@@ -20,7 +20,7 @@
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton
-          v-radar="{ name: 'Sign in button', desc: 'Click to sign in with token' }"
+          v-radar="{ name: 'Sign-in button', desc: 'Click to sign in with token' }"
           type="primary"
           html-type="submit"
           :loading="handleSubmit.isLoading.value"

@@ -21,7 +21,9 @@ import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-nam
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
 import { hashFiles } from '../common/hash'
-import { Stage, type RawStageConfig } from '../stage'
+import { isProjectUsingAIInteraction } from '@/utils/project'
+import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
+import { DumbTilemap as Tilemap } from '../tilemap'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
@@ -42,32 +44,50 @@ export type Metadata = Partial<CloudMetadata> & {
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
-const projectConfigFilePath = join('assets', projectConfigFileName)
+const assetsDir = 'assets'
+export const projectConfigFilePath = join(assetsDir, projectConfigFileName)
 
-const aiPlayerPattern = /\sai\.Player/
+const aiDescriptionMaxContentLength = 150_000 // Keep in sync with maxContentLength in spx-backend/internal/controller/aidescription.go
+const aiDescriptionTruncationNotice = '\n[TRUNCATED]\n'
+const mainFileMaxLength = 60_000
+const spriteFileMaxLength = 20_000
+const projectConfigMaxLength = 15_000
+const spriteConfigMaxLength = 5_000
 
-export type RunConfig = {
+type RawRunConfig = {
   width?: number
   height?: number
 }
 
+type RawAudioAttenuationConfig = {
+  audioAttenuation?: number
+  audioMaxDistance?: number
+}
+
+type RawCameraConfig = {
+  /** Name of sprite to follow. Empty string means no following. */
+  on: string
+}
+
 type ZorderItem = string | RawWidgetConfig
 
-type RawProjectConfig = RawStageConfig & {
-  zorder?: ZorderItem[]
-  run?: RunConfig
-  /**
-   * Sprite order info, used by Builder to determine the order of sprites.
-   * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_spriteOrder?: string[]
-  /**
-   * Sound order info, used by Builder to determine the order of sounds.
-   * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
-   */
-  builder_soundOrder?: string[]
-  // TODO: camera
-}
+export type RawProjectConfig = RawStageConfig &
+  RawAudioAttenuationConfig & {
+    zorder?: ZorderItem[]
+    run?: RawRunConfig
+    camera?: RawCameraConfig
+    tilemapPath?: string
+    /**
+     * Sprite order info, used by Builder to determine the order of sprites.
+     * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_spriteOrder?: string[]
+    /**
+     * Sound order info, used by Builder to determine the order of sounds.
+     * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+     */
+    builder_soundOrder?: string[]
+  }
 
 export type ScreenshotTaker = (
   /** File name without extention */
@@ -75,6 +95,15 @@ export type ScreenshotTaker = (
   /** Signal for aborting the operation */
   signal?: AbortSignal
 ) => Promise<File>
+
+export type ViewportSize = {
+  width: number
+  height: number
+}
+
+const defaultViewportSize: ViewportSize = defaultMapSize
+const maxAudioAttenuationViewportScale = 1.6 // The maximum scaling factor for the viewport
+const disabledAudioAttenuationFlag = 0
 
 export class Project extends Disposable {
   id?: string
@@ -98,6 +127,7 @@ export class Project extends Disposable {
   remixCount?: number
 
   stage: Stage
+  tilemap?: Tilemap | null
   sprites: Sprite[]
   sounds: Sound[]
   zorder: string[]
@@ -110,20 +140,44 @@ export class Project extends Disposable {
     if (idx < 0) throw new Error(`sprite ${id} not found`)
     const [sprite] = this.sprites.splice(idx, 1)
     this.zorder = this.zorder.filter((v) => v !== sprite.id)
+    if (this.cameraFollowSpriteId === sprite.id) this.cameraFollowSpriteId = null
     sprite.dispose()
+  }
+  private prepareAddSprite(sprite: Sprite) {
+    const newName = ensureValidSpriteName(sprite.name, this)
+    sprite.setName(newName)
+    sprite.setProject(this)
+    sprite.addDisposer(() => sprite.setProject(null))
   }
   /**
    * Add given sprite to project.
    * NOTE: the sprite's name may be altered to avoid conflict
    */
   addSprite(sprite: Sprite) {
-    const newName = ensureValidSpriteName(sprite.name, this)
-    sprite.setName(newName)
-    sprite.setProject(this)
-    sprite.addDisposer(() => sprite.setProject(null))
+    this.prepareAddSprite(sprite)
     this.sprites.push(sprite)
     if (!this.zorder.includes(sprite.id)) {
       this.zorder = [...this.zorder, sprite.id]
+    }
+  }
+  /**
+   * Add a sprite after the specified reference sprite.
+   */
+  addSpriteAfter(
+    /** Sprite to be added */
+    sprite: Sprite,
+    /** ID of the reference sprite */
+    referenceId: string
+  ) {
+    const index = this.sprites.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`sprite ${referenceId} not found`)
+
+    this.prepareAddSprite(sprite)
+    this.sprites.splice(index + 1, 0, sprite)
+    if (!this.zorder.includes(sprite.id)) {
+      const idx = this.zorder.indexOf(referenceId)
+      if (idx === -1) this.zorder.push(sprite.id)
+      else this.zorder.splice(idx + 1, 0, sprite.id)
     }
   }
   /**
@@ -174,16 +228,34 @@ export class Project extends Disposable {
     }
     sound.dispose()
   }
+  private prepareAddSound(sound: Sound) {
+    const newName = ensureValidSoundName(sound.name, this)
+    sound.setName(newName)
+    sound.setProject(this)
+    sound.addDisposer(() => sound.setProject(null))
+  }
   /**
    * Add given sound to project.
    * NOTE: the sound's name may be altered to avoid conflict
    */
   addSound(sound: Sound) {
-    const newName = ensureValidSoundName(sound.name, this)
-    sound.setName(newName)
-    sound.setProject(this)
-    sound.addDisposer(() => sound.setProject(null))
+    this.prepareAddSound(sound)
     this.sounds.push(sound)
+  }
+  /**
+   * Add a sound after the specified reference sound.
+   */
+  addSoundAfter(
+    /** Sound to be added */
+    sound: Sound,
+    /** ID of the reference sound */
+    referenceId: string
+  ) {
+    const index = this.sounds.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`sound ${referenceId} not found`)
+
+    this.prepareAddSound(sound)
+    this.sounds.splice(index + 1, 0, sound)
   }
   /** Move a sound within the sounds array, without changing the sound zorder */
   moveSound(from: number, to: number) {
@@ -193,6 +265,28 @@ export class Project extends Disposable {
     const sound = this.sounds[from]
     this.sounds.splice(from, 1)
     this.sounds.splice(to, 0, sound)
+  }
+
+  readonly viewportSize = defaultViewportSize
+
+  private cameraFollowSpriteId: string | null
+  get cameraFollowSprite(): Sprite | null {
+    if (this.cameraFollowSpriteId == null) return null
+    return this.sprites.find((s) => s.id === this.cameraFollowSpriteId) ?? null
+  }
+  setCameraFollowSprite(spriteId: string | null) {
+    this.cameraFollowSpriteId = spriteId
+  }
+
+  /**
+   * Camera is considered enabled if the map size is larger than viewport size.
+   * To keep backward-compatibility, we optionally enables other camera-related features
+   * (e.g. audio attenuation, camera following) by checking this flag.
+   */
+  get isCameraEnabled() {
+    const mapSize = this.stage.getMapSize()
+    const viewport = this.viewportSize
+    return mapSize.width > viewport.width || mapSize.height > viewport.height
   }
 
   getResourceModel(id: ResourceModelIdentifier): ResourceModel | null {
@@ -280,7 +374,10 @@ export class Project extends Disposable {
       this.sounds.splice(0).forEach((s) => s.dispose())
       this.zorder = []
       this.stage.dispose()
+      this.tilemap?.dispose()
+      this.tilemap = null
     })
+    this.cameraFollowSpriteId = null
     this.aiDescription = null
     this.aiDescriptionHash = null
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
@@ -316,8 +413,13 @@ export class Project extends Disposable {
     }
     const {
       zorder: rawZorder,
+      // For now runConfig will be ignored, as the fixed viewport / run size is used in builder
+      // TODO: support customized viewport / run size
+      run: runConfig,
+      camera: cameraConfig,
       builder_spriteOrder: spriteOrder,
       builder_soundOrder: soundOrder,
+      tilemapPath,
       ...rawStageConfig
     } = config
 
@@ -341,6 +443,7 @@ export class Project extends Disposable {
       }
     })
 
+    this.stage.dispose()
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
 
@@ -350,26 +453,43 @@ export class Project extends Disposable {
     this.sounds.splice(0).forEach((s) => s.dispose())
     orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
+
+    this.tilemap?.dispose()
+    this.tilemap = tilemapPath != null ? await Tilemap.load(tilemapPath, assetsDir, files) : null
+
+    // Set camera-follow-sprite
+    let cameraFollowSprite: Sprite | null = null
+    const cameraOn = cameraConfig?.on || null
+    if (cameraOn != null) cameraFollowSprite = this.sprites.find((s) => s.name === cameraOn) ?? null
+    this.cameraFollowSpriteId = cameraFollowSprite?.id || null
   }
 
   private exportGameFilesWithoutMemo(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
+
+    const tilemap = this.tilemap
+    if (tilemap != null) {
+      const tileFiles = tilemap.export(assetsDir)
+      Object.assign(files, tileFiles)
+    }
+
     const zorderNames = this.zorder.map((id) => {
       const sprite = this.sprites.find((s) => s.id === id)
       if (sprite == null) throw new Error(`sprite ${id} not found`)
       return sprite.name
     })
+    const { width, height } = this.viewportSize
     const config: RawProjectConfig = {
       ...restStageConfig,
-      run: {
-        // TODO: we should not hard code the width & height here,
-        // instead we should use the runtime size of component `ProjectRunner`,
-        // after https://github.com/goplus/builder/issues/584
-        width: stageConfig.map?.width,
-        height: stageConfig.map?.height
+      audioAttenuation: this.isCameraEnabled ? 1 : disabledAudioAttenuationFlag, // Enable audio attenuation only when the map is larger than viewport
+      audioMaxDistance: Math.max(width, height) * maxAudioAttenuationViewportScale, // Always export audioMaxDistance config for backward-compatibility
+      run: { width, height },
+      camera: {
+        on: this.cameraFollowSprite?.name || ''
       },
+      tilemapPath: tilemap?.tilemapPath,
       zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id)
@@ -405,7 +525,7 @@ export class Project extends Disposable {
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
-      if (this.isUsingAIInteraction()) await this.ensureAIDescription() // Ensure AI description is available if needed
+      if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription() // Ensure AI description is available if needed
       return [this.exportMetadata(), this.exportGameFiles()]
     })
   }
@@ -448,7 +568,7 @@ export class Project extends Disposable {
 
   async saveToCloud(signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
-    if (this.isUsingAIInteraction()) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
+    if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
     const [metadata, files] = await this.export()
     const saved = await cloudHelper.save(metadata, files, signal)
     this.loadMetadata(saved.metadata)
@@ -494,75 +614,123 @@ export class Project extends Disposable {
   /** Serialize for AI use */
   private async serializeForAI() {
     const files = this.exportGameFiles()
-    const parts: string[] = []
+    let remaining = aiDescriptionMaxContentLength
+    let result = ''
+    const skippedSections: string[] = []
 
-    // Header with project metadata
+    const append = (value: string) => {
+      if (value.length === 0 || remaining <= 0) return remaining > 0
+      const toWrite = Math.min(value.length, remaining)
+      result += value.slice(0, toWrite)
+      remaining -= toWrite
+      return toWrite === value.length
+    }
+    const appendLine = (line: string) => append(`${line}\n`)
+    const appendBlankLine = () => append('\n')
+
+    const appendBody = (body: string) => {
+      if (body.length === 0) return true
+      if (body.length <= remaining) {
+        return append(body)
+      }
+      if (remaining < aiDescriptionTruncationNotice.length) {
+        return false
+      }
+      const allowedLength = remaining - aiDescriptionTruncationNotice.length
+      if (allowedLength > 0) {
+        append(body.slice(0, allowedLength))
+      }
+      append(aiDescriptionTruncationNotice)
+      return false
+    }
+
+    const appendSection = async (title: string, file: File, maxBodyLength?: number) => {
+      if (remaining <= 0) {
+        skippedSections.push(title)
+        return
+      }
+
+      const header = `=== ${title} ===`
+      const headerLength = header.length + 1
+      if (remaining <= headerLength) {
+        skippedSections.push(title)
+        return
+      }
+
+      const body = await toText(file)
+      let sectionBudget = remaining - headerLength
+      if (maxBodyLength != null) sectionBudget = Math.min(sectionBudget, maxBodyLength)
+      if (sectionBudget <= 0) {
+        skippedSections.push(title)
+        return
+      }
+      let bodyToAppend = body
+      if (body.length > sectionBudget) {
+        const sliceLength = sectionBudget - aiDescriptionTruncationNotice.length
+        if (sliceLength <= 0) {
+          skippedSections.push(title)
+          return
+        }
+        bodyToAppend = body.slice(0, sliceLength) + aiDescriptionTruncationNotice
+      }
+
+      appendLine(header)
+      append(bodyToAppend)
+      if (remaining > 0) appendBlankLine()
+    }
+
+    const metadataLines: string[] = []
     if (this.name != null && this.name !== '') {
-      parts.push(`Game: ${this.name}`)
+      metadataLines.push(`Game: ${this.name}`)
     }
     if (this.description != null && this.description !== '') {
-      parts.push(`Description: ${this.description}`)
+      metadataLines.push(`Description: ${this.description}`)
     }
     if (this.instructions != null && this.instructions !== '') {
-      parts.push(`Instructions: ${this.instructions}`)
+      metadataLines.push(`Instructions: ${this.instructions}`)
     }
-    parts.push('')
+    if (metadataLines.length > 0) {
+      appendBody(`${metadataLines.join('\n')}\n`)
+      if (remaining > 0) appendBlankLine()
+    }
 
-    // Main stage file
     const mainSpxFile = files['main.spx']
     if (mainSpxFile != null) {
-      parts.push('=== File: main.spx ===')
-      parts.push(await toText(mainSpxFile))
-      parts.push('')
+      await appendSection('File: main.spx', mainSpxFile, mainFileMaxLength)
     }
 
-    // Sprite code files
     for (const sprite of this.sprites) {
       const spriteFile = files[`${sprite.name}.spx`]
       if (spriteFile != null) {
-        parts.push(`=== File: ${sprite.name}.spx ===`)
-        parts.push(await toText(spriteFile))
-        parts.push('')
+        await appendSection(`File: ${sprite.name}.spx`, spriteFile, spriteFileMaxLength)
       }
     }
 
-    // Project configuration
     const projectConfig = files[projectConfigFilePath]
     if (projectConfig != null) {
-      parts.push('=== Project Config (assets/index.json) ===')
-      parts.push(await toText(projectConfig))
-      parts.push('')
+      await appendSection('Project Config (assets/index.json)', projectConfig, projectConfigMaxLength)
     }
 
-    // Sprite configuration files
     for (const sprite of this.sprites) {
       const spriteConfigPath = join('assets', 'sprites', sprite.name, 'index.json')
       const spriteConfig = files[spriteConfigPath]
       if (spriteConfig != null) {
-        parts.push(`=== Sprite Config: assets/sprites/${sprite.name}/index.json ===`)
-        parts.push(await toText(spriteConfig))
-        parts.push('')
+        await appendSection(`Sprite Config: ${spriteConfigPath}`, spriteConfig, spriteConfigMaxLength)
       }
     }
 
-    return parts.join('\n')
-  }
-
-  /** Check if project is using AI Interaction features */
-  isUsingAIInteraction(): boolean {
-    // Check stage code
-    if (this.stage.code && aiPlayerPattern.test(this.stage.code)) {
-      return true
-    }
-
-    // Check all sprite codes
-    for (const sprite of this.sprites) {
-      if (sprite.code && aiPlayerPattern.test(sprite.code)) {
-        return true
+    if (skippedSections.length > 0 && remaining > 0) {
+      const header = '=== Skipped Sections ==='
+      if (remaining > header.length + 1) {
+        appendLine(header)
+        for (const name of skippedSections) {
+          if (remaining <= 0) break
+          appendLine(name)
+        }
       }
     }
 
-    return false
+    return result
   }
 }
 

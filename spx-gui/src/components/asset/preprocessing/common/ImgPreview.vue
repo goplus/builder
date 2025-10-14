@@ -8,6 +8,7 @@
 import { computed, effect, ref } from 'vue'
 import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
+import { getImgDrawingCtx } from '@/utils/canvas'
 import type { File } from '@/models/common/file'
 
 const props = defineProps<{
@@ -29,10 +30,10 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const [imgRef] = useFileImg(() => props.file)
 
 const wrapperSize = useContentSize(wrapperRef)
-const maxWidthRef = computed(() => wrapperSize.width.value)
+const maxWidthRef = computed(() => wrapperSize.value?.width)
 const maxHeightRef = computed(() => {
   if (props.multiple) return 230 // px
-  return wrapperSize.height.value
+  return wrapperSize.value?.height
 })
 
 effect(() => {
@@ -53,8 +54,7 @@ effect(() => {
   const [canvas, img] = [canvasRef.value, imgRef.value]
   if (canvas == null || img == null) return
   // draw image on canvas
-  const ctx = canvas.getContext('2d')
-  if (ctx == null) return
+  const ctx = getImgDrawingCtx(canvas)
   canvas.width = img.naturalWidth
   canvas.height = img.naturalHeight
   ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight)

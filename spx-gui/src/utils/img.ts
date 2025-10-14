@@ -1,4 +1,5 @@
 import { Disposable } from '@/utils/disposable'
+import { getImgDrawingCtx } from './canvas'
 
 /** Convert arbitrary-type (supported by current browser) image content to another type. */
 export function convertImg(
@@ -17,7 +18,7 @@ export function convertImg(
         size = await getSVGSize(svgText)
       }
       const canvas = new OffscreenCanvas(size.width, size.height)
-      const ctx = canvas.getContext('2d')!
+      const ctx = getImgDrawingCtx(canvas)
       ctx.drawImage(img, 0, 0, size.width, size.height)
       resolve(canvas.convertToBlob({ type }))
     }
@@ -65,4 +66,80 @@ export async function getSVGSize(svgText: string) {
   if (width === 0) width = svg.width.baseVal.value
   if (height === 0) height = svg.height.baseVal.value
   return { width, height }
+}
+
+export type Rect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * Get the bounding rectangle of the non-transparent content of an image.
+ * The returned rectangle is relative to the top-left corner of the image.
+ * If the image is fully transparent, empty rectangle (`{ x: 0, y: 0, width: 0, height: 0 }`) will be returned.
+ */
+export async function getContentBoundingRect(imgBlob: Blob): Promise<Rect> {
+  const d = new Disposable()
+  return new Promise<Rect>((resolve, reject) => {
+    const img = new Image()
+    img.onload = async () => {
+      try {
+        let size = { width: img.naturalWidth, height: img.naturalHeight }
+        if (imgBlob.type === 'image/svg+xml') {
+          const svgText = await imgBlob.text()
+          size = await getSVGSize(svgText)
+        }
+        const canvas = new OffscreenCanvas(size.width, size.height)
+        const ctx = getImgDrawingCtx(canvas)
+        ctx.drawImage(img, 0, 0, size.width, size.height)
+
+        const imageData = ctx.getImageData(0, 0, size.width, size.height)
+        const bounds = findContentBounds(imageData)
+        resolve(bounds)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    img.onerror = (e) => reject(new Error(`load image failed: ${e.toString()}`))
+    const url = URL.createObjectURL(imgBlob)
+    d.addDisposer(() => URL.revokeObjectURL(url))
+    img.src = url
+  }).finally(() => d.dispose())
+}
+
+const emptyRect: Rect = { x: 0, y: 0, width: 0, height: 0 }
+
+function findContentBounds(imageData: ImageData): Rect {
+  const { data, width, height } = imageData
+  if (width === 0 || height === 0) return emptyRect
+
+  // Scan all pixels to find bounds of non-transparent content
+  let minX = width,
+    minY = height,
+    maxX = -1,
+    maxY = -1
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = data[(y * width + x) * 4 + 3] // Alpha channel
+      if (alpha > 0) {
+        // Non-transparent pixel
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
+      }
+    }
+  }
+
+  // No non-transparent pixels found
+  if (maxX === -1) return emptyRect
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1
+  }
 }

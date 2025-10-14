@@ -21,3 +21,10 @@ Here are instructions for TypeScript development in spx-gui:
 	3. Local files: relative paths starting with `./` or `../`
 
 * Use Prettier (`npx prettier --write <file>`) for code formatting after making changes.
+
+* Use `PascalCase` for the following:
+	- Class names
+	- Interface names
+	- Type alias names
+	- Enum names and enum members
+	- Vue component names

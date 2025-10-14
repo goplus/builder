@@ -1,3 +1,5 @@
+import { getImgDrawingCtx } from '@/utils/canvas'
+
 export type Point = [x: number, y: number]
 export type Color = [r: number, g: number, b: number, a: number]
 
@@ -160,7 +162,7 @@ export async function* recognizeSpriteGrid(img: HTMLImageElement): AsyncGenerato
   yield { type: 'size', ...size }
 
   const canvas = new OffscreenCanvas(size.width, size.height)
-  const ctx = canvas.getContext('2d')!
+  const ctx = getImgDrawingCtx(canvas)
   ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, canvas.width, canvas.height)
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const bgColor = getBgColor(imageData) // TODO: allow caller to adjust color
@@ -233,7 +235,7 @@ function cutCell(
 ) {
   const rectSize = { width: img.naturalWidth / colNum, height: img.naturalHeight / rowNum }
   const canvas = new OffscreenCanvas(rectSize.width, rectSize.height)
-  const ctx = canvas.getContext('2d')!
+  const ctx = getImgDrawingCtx(canvas)
   ctx.drawImage(
     img,
     rectSize.width * colIndex,

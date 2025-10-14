@@ -258,4 +258,76 @@ describe('Stage', () => {
     expect(() => stage.moveWidget(2, 3)).toThrow()
     expect(() => stage.moveWidget(-1, 1)).toThrow()
   })
+
+  it('should add backdrop after correctly', () => {
+    const stage = new Stage()
+    const backdrop1 = makeBackdrop('b1')
+    stage.addBackdrop(backdrop1)
+
+    const backdrop2 = makeBackdrop('b2')
+    stage.addBackdropAfter(backdrop2, backdrop1.id)
+    expect(stage.backdrops.map((b) => b.id)).toEqual([backdrop1.id, backdrop2.id])
+
+    const backdrop3 = makeBackdrop('b3')
+    stage.addBackdropAfter(backdrop3, backdrop1.id)
+    expect(stage.backdrops.map((b) => b.id)).toEqual([backdrop1.id, backdrop3.id, backdrop2.id])
+  })
+
+  it('should set default backdrop to be correctly after call addBackdropAfter', () => {
+    const stage = new Stage()
+    const backdrop1 = makeBackdrop('b1')
+    stage.addBackdrop(backdrop1)
+
+    stage.setDefaultBackdrop(backdrop1.id)
+    expect(stage.defaultBackdrop).toBe(backdrop1)
+
+    const backdrop2 = makeBackdrop('b2')
+    // ['b1', 'b2'], default is b1
+    stage.addBackdropAfter(backdrop2, backdrop1.id)
+    expect(stage.defaultBackdrop).toBe(backdrop1)
+
+    // set default to b2
+    stage.setDefaultBackdrop(backdrop2.id)
+
+    const backdrop3 = makeBackdrop('b3')
+    // ['b1', 'b3', 'b2'], default is b2
+    stage.addBackdropAfter(backdrop3, backdrop1.id)
+    const backdrop4 = makeBackdrop('b4')
+    // ['b1', 'b3', 'b2', 'b4']
+    stage.addBackdropAfter(backdrop4, backdrop2.id)
+
+    expect(stage.defaultBackdrop).toBe(backdrop2)
+  })
+
+  it('should add widget after correctly', () => {
+    const stage = new Stage()
+    const widget1 = new Monitor('monitor1', {
+      label: 'label1',
+      x: 10,
+      y: 10,
+      visible: true,
+      variableName: 'variableName1'
+    })
+    stage.addWidget(widget1)
+
+    const widget2 = new Monitor('monitor2', {
+      label: 'label2',
+      x: 20,
+      y: 20,
+      visible: true,
+      variableName: 'variableName2'
+    })
+    stage.addWidgetAfter(widget2, widget1.id)
+    expect(stage.widgets.map((w) => w.id)).toEqual([widget1.id, widget2.id])
+
+    const widget3 = new Monitor('monitor3', {
+      label: 'label3',
+      x: 30,
+      y: 30,
+      visible: true,
+      variableName: 'variableName3'
+    })
+    stage.addWidgetAfter(widget3, widget1.id)
+    expect(stage.widgets.map((w) => w.id)).toEqual([widget1.id, widget3.id, widget2.id])
+  })
 })

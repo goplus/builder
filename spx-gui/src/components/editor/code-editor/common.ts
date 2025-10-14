@@ -284,7 +284,8 @@ export const mainCategories = {
   sensing: 'sensing',
   sound: 'sound',
   control: 'control',
-  game: 'game'
+  game: 'game',
+  other: 'other'
 }
 
 export const subCategories = {
@@ -301,6 +302,7 @@ export const subCategories = {
     heading: 'heading',
     size: 'size',
     rotationStyle: 'rotation-style',
+    physics: 'physics',
     others: 'others'
   },
   look: {
@@ -329,7 +331,12 @@ export const subCategories = {
   game: {
     startStop: 'start-stop',
     sprite: 'sprite',
+    camera: 'camera',
     others: 'others'
+  },
+  other: {
+    value: 'value',
+    list: 'list'
   }
 }
 

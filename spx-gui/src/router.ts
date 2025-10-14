@@ -148,6 +148,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/docs/api/:pathMatch(.*)?',
     component: () => import('@/pages/docs/api.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/pages/404/index.vue')
   }
 ]
 

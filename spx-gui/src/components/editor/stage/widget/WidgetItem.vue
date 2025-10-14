@@ -40,7 +40,7 @@ const { fn: handleDuplicate } = useMessageHandle(
     const action = { name: { en: `Duplicate widget ${widget.name}`, zh: `复制控件 ${widget.name}` } }
     await editorCtx.project.history.doAction(action, () => {
       const newWidget = widget.clone()
-      stage.addWidget(newWidget)
+      stage.addWidgetAfter(newWidget, widget.id)
       editorCtx.state.selectWidget(newWidget.id)
     })
   },

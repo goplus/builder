@@ -31,13 +31,13 @@ describe('Sprite', () => {
     const animation = new Animation('animation')
     animation.setCostumes([makeCostume('costume1')])
     sprite.addAnimation(animation)
-    sprite.setAnimationBoundStates(animation.id, [State.turn, State.die])
-    expect(sprite.getAnimationBoundStates(animation.id)).toEqual([State.die, State.turn])
+    sprite.setAnimationBoundStates(animation.id, [State.Turn, State.Die])
+    expect(sprite.getAnimationBoundStates(animation.id)).toEqual([State.Die, State.Turn])
 
     const exported = sprite.export({ sounds: [] })
     const imported = await Sprite.loadAll(exported, { sounds: [] })
 
-    expect(imported[0].getAnimationBoundStates(animation.id)).toEqual([State.die, State.turn])
+    expect(imported[0].getAnimationBoundStates(animation.id)).toEqual([State.Die, State.Turn])
   })
   it('should move costumes correctly', async () => {
     const sprite = new Sprite('MySprite')
@@ -81,21 +81,21 @@ describe('Sprite', () => {
     sprite.addAnimation(animation1)
     sprite.addAnimation(animation2)
     sprite.addAnimation(animation3)
-    sprite.setAnimationBoundStates(animation1.id, [State.default])
-    sprite.setAnimationBoundStates(animation2.id, [State.step])
-    sprite.setAnimationBoundStates(animation3.id, [State.die])
+    sprite.setAnimationBoundStates(animation1.id, [State.Default])
+    sprite.setAnimationBoundStates(animation2.id, [State.Step])
+    sprite.setAnimationBoundStates(animation3.id, [State.Die])
 
     expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation3'])
     sprite.moveAnimation(0, 1)
     expect(sprite.animations.map((a) => a.name)).toEqual(['animation2', 'animation1', 'animation3'])
-    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.default])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.step])
-    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die])
+    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Step])
+    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.Die])
     sprite.moveAnimation(2, 0)
     expect(sprite.animations.map((a) => a.name)).toEqual(['animation3', 'animation2', 'animation1'])
-    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.default])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.step])
-    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die])
+    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Step])
+    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.Die])
   })
   it('should setAnimationBoundStates correctly with overwrite', () => {
     const sprite = new Sprite('MySprite')
@@ -105,25 +105,25 @@ describe('Sprite', () => {
     sprite.addAnimation(animation1)
     sprite.addAnimation(animation2)
     sprite.addAnimation(animation3)
-    sprite.setAnimationBoundStates(animation1.id, [State.default, State.step], true)
-    sprite.setAnimationBoundStates(animation2.id, [State.default, State.die], true)
-    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.step])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.default, State.die])
+    sprite.setAnimationBoundStates(animation1.id, [State.Default, State.Step], true)
+    sprite.setAnimationBoundStates(animation2.id, [State.Default, State.Die], true)
+    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.Step])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Default, State.Die])
 
-    sprite.setAnimationBoundStates(animation3.id, [State.die, State.step])
+    sprite.setAnimationBoundStates(animation3.id, [State.Die, State.Step])
     expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.default])
-    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die, State.step])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.Die, State.Step])
 
-    sprite.setAnimationBoundStates(animation3.id, [State.die])
+    sprite.setAnimationBoundStates(animation3.id, [State.Die])
     expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.default])
-    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.Die])
 
-    sprite.setAnimationBoundStates(animation1.id, [State.default, State.step], false)
-    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.step])
-    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.default])
-    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.die])
+    sprite.setAnimationBoundStates(animation1.id, [State.Default, State.Step], false)
+    expect(sprite.getAnimationBoundStates(animation1.id)).toEqual([State.Step])
+    expect(sprite.getAnimationBoundStates(animation2.id)).toEqual([State.Default])
+    expect(sprite.getAnimationBoundStates(animation3.id)).toEqual([State.Die])
   })
 
   it('should clone correctly', () => {
@@ -179,13 +179,66 @@ describe('Sprite', () => {
     sprite.addAnimation(animation1)
     sprite.addAnimation(animation2)
 
-    sprite.setAnimationBoundStates(animation1.id, [State.default, State.step])
-    sprite.setAnimationBoundStates(animation2.id, [State.die])
+    sprite.setAnimationBoundStates(animation1.id, [State.Default, State.Step])
+    sprite.setAnimationBoundStates(animation2.id, [State.Die])
 
     const clone = sprite.clone()
 
     expect(clone.getDefaultAnimation()?.name).toEqual(animation1.name)
-    expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.default, State.step])
-    expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.die])
+    expect(clone.getAnimationBoundStates(clone.animations[0].id)).toEqual([State.Default, State.Step])
+    expect(clone.getAnimationBoundStates(clone.animations[1].id)).toEqual([State.Die])
+  })
+
+  it('should add costume after correctly', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    sprite.addCostume(costume1)
+    sprite.addCostumeAfter(costume4, costume1.id)
+    sprite.addCostumeAfter(costume3, costume4.id)
+    sprite.addCostumeAfter(costume2, costume3.id)
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume4', 'costume3', 'costume2'])
+  })
+  it('should set default costume to be correctly after call addCostumeAfter', () => {
+    const sprite = new Sprite('sprite1')
+    const costume1 = makeCostume('default')
+    const costume2 = makeCostume('costume2')
+    const costume3 = makeCostume('costume3')
+    const costume4 = makeCostume('costume4')
+    // ['default']
+    sprite.addCostume(costume1)
+    // default is costume1
+    sprite.setDefaultCostume(costume1.id)
+    expect(sprite.defaultCostume).toBe(costume1)
+
+    // ['default', 'costume4']
+    sprite.addCostumeAfter(costume4, costume1.id)
+    // default is costume4
+    sprite.setDefaultCostume(costume4.id)
+
+    // ['default', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume3, costume1.id)
+    // ['default', 'costume2', 'costume3', 'costume4']
+    sprite.addCostumeAfter(costume2, costume1.id)
+
+    expect(sprite.costumes.map(({ name }) => name)).toEqual(['default', 'costume2', 'costume3', 'costume4'])
+    expect(sprite.defaultCostume).toBe(costume4)
+  })
+
+  it('should add animation after correctly', () => {
+    const sprite = new Sprite('MySprite')
+    const animation1 = new Animation('animation1')
+    const animation2 = new Animation('animation2')
+    const animation3 = new Animation('animation3')
+    sprite.addAnimation(animation1)
+    sprite.addAnimation(animation2)
+    sprite.addAnimation(animation3)
+
+    const animation4 = new Animation('animation4')
+    sprite.addAnimationAfter(animation4, animation2.id)
+
+    expect(sprite.animations.map((a) => a.name)).toEqual(['animation1', 'animation2', 'animation4', 'animation3'])
   })
 })

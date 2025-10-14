@@ -7,6 +7,7 @@ import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
 import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
+import { isProjectUsingAIInteraction } from '@/utils/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { stringifyProjectFullName } from '@/apis/project'
 
@@ -67,7 +68,7 @@ const handleSubmit = useMessageHandle(
     project.setVisibility(Visibility.Public)
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
-    if (project.isUsingAIInteraction()) await project.ensureAIDescription(true) // Ensure AI description is available if needed
+    if (isProjectUsingAIInteraction(project)) await project.ensureAIDescription(true) // Ensure AI description is available if needed
     await project.saveToCloud()
     const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({

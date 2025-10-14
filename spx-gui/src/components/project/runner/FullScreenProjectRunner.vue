@@ -3,9 +3,8 @@ import { ref, shallowRef, watch, type CSSProperties } from 'vue'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { Project } from '@/models/project'
-import { UIButton, UIModalClose } from '@/components/ui'
+import { UIButton, UIModalClose, useLastClickEvent } from '@/components/ui'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
-import { useLastClickEvent } from '@/utils/dom'
 
 const props = defineProps<{
   project: Project

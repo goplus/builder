@@ -434,7 +434,7 @@ export const distanceTo2: DefinitionDocumentationItem = {
   },
   insertSnippet: 'distanceTo(${1:Mouse})',
   insertSnippetParameterHints: ['object'],
-  overview: 'distanceTo(obj)',
+  overview: 'distanceTo(object)',
   detail: makeBasicMarkdownString({
     en: 'Distance from the sprite to given object',
     zh: '精灵到指定对象的距离'
@@ -539,6 +539,24 @@ export const step2: DefinitionDocumentationItem = {
   })
 }
 
+export const stepTo0: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo1`, but `stepTo1` is more recommended
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '0'
+  },
+  insertSnippet: 'stepTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'stepTo sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given sprite. Animation for state "step" will be played',
+    zh: '行走到指定精灵，自动播放“行走”状态的动画'
+  })
+}
+
 export const stepTo1: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
@@ -548,38 +566,42 @@ export const stepTo1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
-  insertSnippetParameterHints: ['target'],
-  overview: 'stepTo target',
+  insertSnippetParameterHints: ['name'],
+  overview: 'stepTo name',
   detail: makeBasicMarkdownString({
     en: 'Step to the sprite with given name. Animation for state "step" will be played',
     zh: '行走到精灵（指定名字），自动播放“行走”状态的动画'
   })
 }
 
-export const stepTo0: DefinitionDocumentationItem = {
-  ...step1,
-  hiddenFromList: true,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.stepTo',
-    overloadId: '0'
-  },
-  insertSnippet: 'stepTo ${1:sprite}',
-  detail: makeBasicMarkdownString({
-    en: 'Step to given sprite. Animation for state "step" will be played',
-    zh: '行走到指定精灵，自动播放“行走”状态的动画'
-  })
-}
-
 export const stepTo2: DefinitionDocumentationItem = {
-  ...step1,
-  hiddenFromList: true,
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
     overloadId: '2'
   },
-  insertSnippet: 'stepTo ${1:specialObj}',
+  insertSnippet: 'stepTo ${1:100}, ${2:100}',
+  insertSnippetParameterHints: ['x', 'y'],
+  overview: 'stepTo x, y',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given position. Animation for state "step" will be played',
+    zh: '行走到指定位置，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo3: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '3'
+  },
+  insertSnippet: 'stepTo ${1:Mouse}',
+  insertSnippetParameterHints: ['object'],
+  overview: 'stepTo object',
   detail: makeBasicMarkdownString({
     en: 'Step to the given object. Animation for state "step" will be played',
     zh: '行走到指定对象，自动播放“行走”状态的动画'
@@ -589,29 +611,15 @@ export const stepTo2: DefinitionDocumentationItem = {
 export const stepTo4: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo5`, but `stepTo5` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
     overloadId: '4'
   },
-  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
-  insertSnippetParameterHints: ['target', 'speed'],
-  overview: 'stepTo target, speed',
-  detail: makeBasicMarkdownString({
-    en: 'Step to the sprite with given name and specify speed. Animation for state "step" will be played',
-    zh: '行走到精灵（指定名字），并指定行走速度，自动播放“行走”状态的动画'
-  })
-}
-
-export const stepTo3: DefinitionDocumentationItem = {
-  ...stepTo4,
-  hiddenFromList: true,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.stepTo',
-    overloadId: '3'
-  },
-  insertSnippet: 'stepTo ${1:sprite}, ${2:1}',
+  insertSnippet: 'stepTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
+  insertSnippetParameterHints: ['sprite', 'speed'],
+  overview: 'stepTo sprite, speed',
   detail: makeBasicMarkdownString({
     en: 'Step to given sprite and specify speed. Animation for state "step" will be played',
     zh: '行走到指定精灵，并指定行走速度，自动播放“行走”状态的动画'
@@ -619,17 +627,36 @@ export const stepTo3: DefinitionDocumentationItem = {
 }
 
 export const stepTo5: DefinitionDocumentationItem = {
-  ...stepTo4,
-  hiddenFromList: true,
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
     overloadId: '5'
   },
-  insertSnippet: 'stepTo ${1:specialObj}, ${2:1}',
+  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
+  insertSnippetParameterHints: ['name', 'speed'],
+  overview: 'stepTo name, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step to given object and specify the step speed. Animation for state "step" will be played',
-    zh: '行走到指定对象，并指定行走速度，自动播放“行走”状态的动画'
+    en: 'Step to the sprite with given name and specify speed. Animation for state "step" will be played',
+    zh: '行走到精灵（指定名字），并指定行走速度，自动播放“行走”状态的动画'
+  })
+}
+
+export const stepTo6: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: '6'
+  },
+  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}',
+  insertSnippetParameterHints: ['x', 'y', 'speed'],
+  overview: 'stepTo x, y, speed',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given position and specify speed. Animation for state "step" will be played',
+    zh: '行走到指定位置，并指定行走速度，自动播放“行走”状态的动画'
   })
 }
 
@@ -641,39 +668,78 @@ export const stepTo7: DefinitionDocumentationItem = {
     name: 'Sprite.stepTo',
     overloadId: '7'
   },
-  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
-  insertSnippetParameterHints: ['target', 'speed', 'animation'],
-  overview: 'stepTo target, speed, animation',
+  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}',
+  insertSnippetParameterHints: ['object', 'speed'],
+  overview: 'stepTo object, speed',
   detail: makeBasicMarkdownString({
-    en: 'Step to the sprite with given name and specify speed and animation',
-    zh: '行走到指定精灵，并指定行走速度和动画'
+    en: 'Step to given object and specify the step speed. Animation for state "step" will be played',
+    zh: '行走到指定对象，并指定行走速度，自动播放“行走”状态的动画'
   })
 }
 
-export const stepTo6: DefinitionDocumentationItem = {
-  ...stepTo7,
-  hiddenFromList: true,
+export const stepTo8: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo9`, but `stepTo9` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
-    overloadId: '6'
+    overloadId: '8'
   },
-  insertSnippet: 'stepTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'stepTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['sprite', 'speed', 'animation'],
+  overview: 'stepTo sprite, speed, animation',
   detail: makeBasicMarkdownString({
     en: 'Step to given sprite and specify speed and animation',
     zh: '行走到指定精灵，并指定行走速度和动画'
   })
 }
 
-export const stepTo8: DefinitionDocumentationItem = {
-  ...stepTo7,
-  hiddenFromList: true,
+export const stepTo9: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
-    overloadId: '8'
+    overloadId: '9'
   },
-  insertSnippet: 'stepTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'stepTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['name', 'speed', 'animation'],
+  overview: 'stepTo name, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Step to the sprite with given name and specify speed and animation',
+    zh: '行走到精灵（指定名字），并指定行走速度和动画'
+  })
+}
+
+export const stepToA: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: 'a'
+  },
+  insertSnippet: 'stepTo ${1:100}, ${2:100}, ${3:1}, ${4:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['x', 'y', 'speed', 'animation'],
+  overview: 'stepTo x, y, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Step to given position and specify speed and animation',
+    zh: '行走到指定位置，并指定行走速度和动画'
+  })
+}
+
+export const stepToB: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.stepTo',
+    overloadId: 'b'
+  },
+  insertSnippet: 'stepTo ${1:Mouse}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['object', 'speed', 'animation'],
+  overview: 'stepTo object, speed, animation',
   detail: makeBasicMarkdownString({
     en: 'Step to given object and specify speed and animation',
     zh: '行走到指定对象，并指定行走速度和动画'
@@ -742,7 +808,7 @@ export const glide3: DefinitionDocumentationItem = {
   },
   insertSnippet: 'glide ${1:Mouse}, ${2:1}',
   insertSnippetParameterHints: ['object', 'seconds'],
-  overview: 'glide obj, seconds',
+  overview: 'glide object, seconds',
   detail: makeBasicMarkdownString({
     en: 'Glide to given object within given duration',
     zh: '在指定时间内滑行到指定对象'
@@ -1010,7 +1076,7 @@ export const turnTo3: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '3'
   },
-  insertSnippet: 'turnTo ${1:specialObj}',
+  insertSnippet: 'turnTo ${1:Mouse}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object',
     zh: '转向指定对象'
@@ -1072,7 +1138,7 @@ export const turnTo7: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: '7'
   },
-  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}',
+  insertSnippet: 'turnTo ${1:Mouse}, ${2:1}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object, and specify the turn speed',
     zh: '转向指定对象，并指定旋转速度'
@@ -1126,7 +1192,7 @@ export const turnToA: DefinitionDocumentationItem = {
   })
 }
 
-export const turnTo: DefinitionDocumentationItem = {
+export const turnToB: DefinitionDocumentationItem = {
   ...turnTo9,
   hiddenFromList: true,
   definition: {
@@ -1134,7 +1200,7 @@ export const turnTo: DefinitionDocumentationItem = {
     name: 'Sprite.turnTo',
     overloadId: 'b'
   },
-  insertSnippet: 'turnTo ${1:specialObj}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'turnTo ${1:Mouse}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object, and specify the turn speed and animation',
     zh: '转向指定对象，并指定旋转速度和动画'
@@ -1358,7 +1424,7 @@ export const touching2: DefinitionDocumentationItem = {
   },
   insertSnippet: 'touching(${1:Edge})',
   insertSnippetParameterHints: ['object'],
-  overview: 'touching(obj)',
+  overview: 'touching(object)',
   detail: makeBasicMarkdownString({
     en: 'If sprite touching given object',
     zh: '精灵是否与指定对象接触'
@@ -2331,6 +2397,156 @@ export const spriteOnBackdrop1: DefinitionDocumentationItem = {
   }
 }
 
+export const spritePhysicsMode: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.physicsMode'
+  },
+  insertSnippet: 'physicsMode',
+  overview: 'physicsMode',
+  detail: makeBasicMarkdownString({
+    en: 'The physics mode for the sprite',
+    zh: '精灵的物理模式'
+  })
+}
+
+export const spriteSetPhysicsMode: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setPhysicsMode'
+  },
+  insertSnippet: 'setPhysicsMode ${1:NoPhysics}',
+  insertSnippetParameterHints: ['mode'],
+  overview: 'setPhysicsMode mode',
+  detail: makeBasicMarkdownString({
+    en: 'Set the physics mode for the sprite',
+    zh: '设置精灵的物理模式'
+  })
+}
+
+export const spriteVelocity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.velocity'
+  },
+  insertSnippet: 'velocity',
+  overview: 'velocity',
+  detail: makeBasicMarkdownString({
+    en: 'The velocity for the sprite. It is a 2D vector represented as (vx, vy), where vx is the distance to move in x axis per second, and vy is the distance to move in y axis per second',
+    zh: '精灵的速度。它是一个二维向量，表示为 (vx, vy)，其中 vx 是每秒在 x 轴上移动的距离，vy 是每秒在 y 轴上移动的距离'
+  })
+}
+
+export const spriteSetVelocity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setVelocity'
+  },
+  insertSnippet: 'setVelocity ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['vx', 'vy'],
+  overview: 'setVelocity vx, vy',
+  detail: makeBasicMarkdownString({
+    en: 'Set the velocity for the sprite',
+    zh: '设置精灵的速度'
+  })
+}
+
+export const spriteGravity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.gravity'
+  },
+  insertSnippet: 'gravity',
+  overview: 'gravity',
+  detail: makeBasicMarkdownString({
+    en: 'The gravity for the sprite. The value is relative to the global gravity. For example, 2 means double the global gravity, 0 means no gravity',
+    zh: '精灵受到的重力。该值相对于全局重力。例如，2 表示是全局重力的两倍，0 表示没有重力'
+  })
+}
+
+export const spriteSetGravity: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.setGravity'
+  },
+  insertSnippet: 'setGravity ${1:0}',
+  insertSnippetParameterHints: ['g'],
+  overview: 'setGravity g',
+  detail: makeBasicMarkdownString({
+    en: 'Set the gravity for the sprite',
+    zh: '设置精灵的重力'
+  })
+}
+
+export const spriteAddImpulse: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.addImpulse'
+  },
+  insertSnippet: 'addImpulse ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['ix', 'iy'],
+  overview: 'addImpulse ix, iy',
+  detail: makeBasicMarkdownString({
+    en: 'Add impulse to the sprite. The impulse is an instant velocity change, i.e., the velocity will be changed by (ix, iy) instantly',
+    zh: '给精灵一个冲量。冲量是瞬时的速度变化，即速度会立即改变 (ix, iy)'
+  })
+}
+
+export const spriteIsOnFloor: DefinitionDocumentationItem = {
+  categories: [categories.motion.physics],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.isOnFloor'
+  },
+  insertSnippet: 'isOnFloor',
+  overview: 'isOnFloor',
+  detail: makeBasicMarkdownString({
+    en: 'If the sprite is currently on the floor',
+    zh: '精灵当前是否在地面上'
+  })
+}
+
+export const gameFindPath0: DefinitionDocumentationItem = {
+  categories: [categories.game.others],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Game.findPath',
+    overloadId: '0'
+  },
+  insertSnippet: 'findPath(${1:0}, ${2:0}, ${3:100}, ${4:100})',
+  insertSnippetParameterHints: ['fromX', 'fromY', 'toX', 'toY'],
+  overview: 'findPath(fromX, fromY, toX, toY)',
+  detail: makeBasicMarkdownString({
+    en: 'Find path from (fromX, fromY) to (toX, toY)',
+    zh: '寻找从 (fromX, fromY) 到 (toX, toY) 的路径'
+  })
+}
+
+export const spriteFindPath0: DefinitionDocumentationItem = {
+  ...gameFindPath0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.findPath',
+    overloadId: '0'
+  }
+}
+
 export const rand0: DefinitionDocumentationItem = {
   categories: [categories.game.others],
   kind: DefinitionKind.Read,
@@ -2792,6 +3008,132 @@ export const monitorChangeSize: DefinitionDocumentationItem = {
   }
 }
 
+export const camera: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'Game.Camera'
+  },
+  insertSnippet: 'Camera',
+  overview: 'Camera',
+  detail: makeBasicMarkdownString({
+    en: 'Camera, which controls the visible area of the stage',
+    zh: '摄像机，控制舞台的显示区域'
+  })
+}
+
+export const cameraZoom: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.zoom'
+  },
+  insertSnippet: 'Camera.zoom',
+  overview: 'Camera.zoom',
+  detail: makeBasicMarkdownString({
+    en: 'Zoom factor of the camera. Value 1 means no zoom, greater than 1 means zoom in, and between 0 and 1 means zoom out',
+    zh: '摄像机缩放比例。值为 1 表示不缩放，大于 1 表示放大，小于 1 且大于 0 表示缩小'
+  })
+}
+
+export const cameraSetZoom: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.setZoom'
+  },
+  insertSnippet: 'Camera.setZoom ${1:1}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'Camera.setZoom zoom',
+  detail: makeBasicMarkdownString({
+    en: 'Set zoom factor of the camera',
+    zh: '设置摄像机缩放比例'
+  })
+}
+
+export const cameraXpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.xpos'
+  },
+  insertSnippet: 'Camera.xpos',
+  overview: 'Camera.xpos',
+  detail: makeBasicMarkdownString({
+    en: 'The X position of the camera center',
+    zh: '摄像机中心的 X 坐标位置'
+  })
+}
+
+export const cameraYpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.ypos'
+  },
+  insertSnippet: 'Camera.ypos',
+  overview: 'Camera.ypos',
+  detail: makeBasicMarkdownString({
+    en: 'The Y position of the camera center',
+    zh: '摄像机中心的 Y 坐标位置'
+  })
+}
+
+export const cameraSetXYpos: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.setXYpos'
+  },
+  insertSnippet: 'Camera.setXYpos ${1:0}, ${2:0}',
+  insertSnippetParameterHints: ['x', 'y'],
+  overview: 'Camera.setXYpos x, y',
+  detail: makeBasicMarkdownString({
+    en: 'Set the X and Y position of the camera center',
+    zh: '设置摄像机中心的 X 和 Y 坐标位置'
+  })
+}
+
+export const cameraFollow0: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.follow',
+    overloadId: '0'
+  },
+  insertSnippet: 'Camera.follow ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'Camera.follow sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Make the camera follow the given sprite',
+    zh: '让摄像机跟随指定的精灵'
+  })
+}
+
+export const cameraFollow1: DefinitionDocumentationItem = {
+  categories: [categories.game.camera],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Camera.follow',
+    overloadId: '1'
+  },
+  insertSnippet: 'Camera.follow ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
+  insertSnippetParameterHints: ['spriteName'],
+  overview: 'Camera.follow spriteName',
+  detail: makeBasicMarkdownString({
+    en: 'Make the camera follow the given sprite by name',
+    zh: '让摄像机跟随指定名字的精灵'
+  })
+}
+
 export const movingInfoOldX: DefinitionDocumentationItem = {
   categories: [],
   kind: DefinitionKind.Variable,
@@ -2977,3 +3319,269 @@ export const edgeBottom = defineConst('EdgeBottom', [categories.sensing.distance
   en: 'Bottom edge of the stage',
   zh: '舞台下边缘'
 })
+
+export const noPhysics = defineConst('NoPhysics', [categories.motion.physics], {
+  en: 'No physics effect',
+  zh: '无物理效果'
+})
+export const kinematicPhysics = defineConst('KinematicPhysics', [categories.motion.physics], {
+  en: 'Kinematic physics effect',
+  zh: '运动学物理效果'
+})
+export const dynamicPhysics = defineConst('DynamicPhysics', [categories.motion.physics], {
+  en: 'Dynamic physics effect',
+  zh: '动力学物理效果'
+})
+export const staticPhysics = defineConst('StaticPhysics', [categories.motion.physics], {
+  en: 'Static physics effect',
+  zh: '静态物理效果'
+})
+
+export const value: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'Value'
+  },
+  insertSnippet: 'Value',
+  overview: 'Value',
+  detail: makeBasicMarkdownString({
+    en: 'Value type for dynamic data',
+    zh: '用于动态数据的值类型'
+  })
+}
+
+export const valueEqual: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.equal'
+  },
+  insertSnippet: 'myValue.equal ${1:otherValue}',
+  insertSnippetParameterHints: ['otherValue'],
+  overview: 'equal otherValue',
+  detail: makeBasicMarkdownString({
+    en: 'Check if two values are equal',
+    zh: '检查两个值是否相等'
+  })
+}
+
+export const valueFloat: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.float'
+  },
+  insertSnippet: 'myValue.float',
+  overview: 'float',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to a floating-point number',
+    zh: '将值转换为浮点数'
+  })
+}
+
+export const valueInt: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.int'
+  },
+  insertSnippet: 'myValue.int',
+  overview: 'int',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to an integer',
+    zh: '将值转换为整数'
+  })
+}
+
+export const valueString: DefinitionDocumentationItem = {
+  categories: [categories.other.value],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Value.string'
+  },
+  insertSnippet: 'myValue.string',
+  overview: 'string',
+  detail: makeBasicMarkdownString({
+    en: 'Convert the value to a string',
+    zh: '将值转换为字符串'
+  })
+}
+
+export const list: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Variable,
+  definition: {
+    package: packageSpx,
+    name: 'List'
+  },
+  insertSnippet: 'List',
+  overview: 'List',
+  detail: makeBasicMarkdownString({
+    en: 'List data structure for storing multiple values',
+    zh: '用于存储多个值的列表数据结构'
+  })
+}
+
+export const listAppend: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.append'
+  },
+  insertSnippet: 'myList.append ${1:"value"}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'append value',
+  detail: makeBasicMarkdownString({
+    en: 'Add a value to the end of the list',
+    zh: '将值添加到列表末尾'
+  })
+}
+
+export const listAt: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.at'
+  },
+  insertSnippet: 'myList.at ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'at index',
+  detail: makeBasicMarkdownString({
+    en: 'Get the value at a specific index',
+    zh: '获取指定索引处的值'
+  })
+}
+
+export const listContains: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.contains'
+  },
+  insertSnippet: 'myList.contains ${1:"value"}',
+  insertSnippetParameterHints: ['value'],
+  overview: 'contains value',
+  detail: makeBasicMarkdownString({
+    en: 'Check if the list contains a specific value',
+    zh: '检查列表是否包含特定值'
+  })
+}
+
+export const listDelete: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.delete'
+  },
+  insertSnippet: 'myList.delete ${1:0}',
+  insertSnippetParameterHints: ['index'],
+  overview: 'delete index',
+  detail: makeBasicMarkdownString({
+    en: 'Remove the item at a specific index',
+    zh: '删除指定索引处的项'
+  })
+}
+
+export const listInit: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.init'
+  },
+  insertSnippet: 'myList.init ${1:"a"}, ${2:"b"}, ${3:"c"}',
+  insertSnippetParameterHints: ['value1', 'value2', 'value3'],
+  overview: 'init values...',
+  detail: makeBasicMarkdownString({
+    en: 'Initialize the list with given values',
+    zh: '使用给定的值初始化列表'
+  })
+}
+
+export const listInitFrom: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.initFrom'
+  },
+  insertSnippet: 'myList.initFrom ${1:otherList}',
+  insertSnippetParameterHints: ['sourceList'],
+  overview: 'initFrom sourceList',
+  detail: makeBasicMarkdownString({
+    en: 'Initialize the list by copying from another list',
+    zh: '通过复制另一个列表来初始化列表'
+  })
+}
+
+export const listInsert: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.insert'
+  },
+  insertSnippet: 'myList.insert ${1:0}, ${2:"value"}',
+  insertSnippetParameterHints: ['index', 'value'],
+  overview: 'insert index, value',
+  detail: makeBasicMarkdownString({
+    en: 'Insert a value at a specific index',
+    zh: '在指定索引处插入值'
+  })
+}
+
+export const listLen: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.len'
+  },
+  insertSnippet: 'myList.len',
+  overview: 'len',
+  detail: makeBasicMarkdownString({
+    en: 'Get the length of the list',
+    zh: '获取列表的长度'
+  })
+}
+
+export const listSet: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'List.set'
+  },
+  insertSnippet: 'myList.set ${1:0}, ${2:"newValue"}',
+  insertSnippetParameterHints: ['index', 'value'],
+  overview: 'set index, value',
+  detail: makeBasicMarkdownString({
+    en: 'Set the value at a specific index',
+    zh: '设置指定索引处的值'
+  })
+}
+
+export const listString: DefinitionDocumentationItem = {
+  categories: [categories.other.list],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'List.string'
+  },
+  insertSnippet: 'myList.string',
+  overview: 'string',
+  detail: makeBasicMarkdownString({
+    en: 'Get the string representation of the list',
+    zh: '获取列表的字符串表示'
+  })
+}

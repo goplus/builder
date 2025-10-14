@@ -57,10 +57,11 @@ const { fn: handleDuplicate } = useMessageHandle(
     const sprite = props.sprite
     const action = { name: { en: `Duplicate sprite ${sprite.name}`, zh: `复制精灵 ${sprite.name}` } }
     await editorCtx.project.history.doAction(action, () => {
-      const newSprite = props.sprite.clone()
-      editorCtx.project.addSprite(newSprite)
-      newSprite.randomizePosition()
-      newSprite.clampToMap()
+      const newSprite = sprite.clone()
+      // Offset the new sprite a bit to avoid being exactly overlapped with the original one
+      newSprite.setX(newSprite.x + 10)
+      newSprite.setY(newSprite.y - 10)
+      editorCtx.project.addSpriteAfter(newSprite, sprite.id)
       editorCtx.state.selectSprite(newSprite.id)
     })
   },
@@ -89,7 +90,6 @@ const duplicateCostume = useMessageHandle(
     await editorCtx.project.history.doAction(action, async () => {
       const newCostume = costume.clone()
       props.sprite.addCostume(newCostume)
-      await props.sprite.autoFitCostumes([newCostume])
       props.sprite.setDefaultCostume(newCostume.id)
     })
   },

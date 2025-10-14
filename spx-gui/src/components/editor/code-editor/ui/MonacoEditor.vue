@@ -1,7 +1,8 @@
 <script lang="ts">
 import { debounce } from 'lodash'
-import { untilNotNull } from '@/utils/utils'
+import { untilTaskScheduled, untilNotNull } from '@/utils/utils'
 import { type Monaco, type MonacoEditor, type monaco as tmonaco } from '../monaco'
+import { getCleanupSignal } from '@/utils/disposable'
 </script>
 
 <script setup lang="ts">
@@ -19,8 +20,11 @@ const emit = defineEmits<{
 const editorElRef = ref<HTMLDivElement>()
 
 watchEffect(async (onClenaup) => {
+  const signal = getCleanupSignal(onClenaup)
   const monaco = props.monaco
   const editorEl = await untilNotNull(editorElRef)
+
+  await untilTaskScheduled('user-visible', signal)
 
   const editor = monaco.editor.create(editorEl, {
     minimap: { enabled: false },
@@ -83,7 +87,7 @@ watchEffect(async (onClenaup) => {
   resizeObserver.observe(editorEl)
 
   emit('init', editor)
-  onClenaup(() => {
+  signal.addEventListener('abort', () => {
     editor.dispose()
     resizeObserver.disconnect()
   })

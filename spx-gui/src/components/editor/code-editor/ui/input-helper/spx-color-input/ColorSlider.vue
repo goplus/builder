@@ -39,8 +39,8 @@ const barRef = ref<HTMLDivElement | null>(null)
 const barSize = useContentSize(barRef)
 const valueRef = computed(() => dragging.value?.value ?? props.value)
 const handlerLeft = computed(() => {
-  if (barSize.width.value == null) return 0
-  return (valueRef.value / 100) * barSize.width.value
+  if (barSize.value == null) return 0
+  return (valueRef.value / 100) * barSize.value.width
 })
 
 function normalizeValue(value: number) {

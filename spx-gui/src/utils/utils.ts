@@ -42,6 +42,24 @@ export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>
   return r
 }
 
+/**
+ * Like `useAsyncComputed`, but reset value to `null` when re-evaluating.
+ * TODO: Migrate usages of `useAsyncComputed` to this if possible.
+ */
+export function useAsyncComputedFixed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+  const r = shallowRef<T | null>(null)
+  watchEffect(async (onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    r.value = null
+    const result = await getter(onCleanup)
+    if (!cancelled) r.value = result
+  })
+  return r
+}
+
 /** Do math round with given decimal places */
 export function round(num: number, decimalPlaceNum = 0) {
   const factor = 10 ** decimalPlaceNum
@@ -439,4 +457,34 @@ export function unicodeSafeSlice(input: string, start: number, end: number = inp
   input = input.slice(0, end * MAX_CODE_UNIT_PER_CODE_POINT)
   const codePoints = Array.from(input)
   return codePoints.slice(start, end).join('')
+}
+
+declare global {
+  interface Window {
+    scheduler?: {
+      postTask<T>(
+        callback: () => T,
+        options: { priority: 'user-blocking' | 'user-visible' | 'background'; signal?: AbortSignal }
+      ): Promise<T>
+    }
+  }
+}
+
+/** https://developer.mozilla.org/en-US/docs/Web/API/Prioritized_Task_Scheduling_API#task_priorities */
+export function untilTaskScheduled(
+  priority: 'user-blocking' | 'user-visible' | 'background' = 'user-visible',
+  signal?: AbortSignal
+) {
+  const startAt = performance.now()
+  // TODO: better fallback for browsers not supporting `window.scheduler.postTask`
+  if (window.scheduler == null) return timeout(0, signal)
+  return window.scheduler.postTask(
+    () => {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug(`task yielded (${priority})`, performance.now() - startAt)
+      }
+    },
+    { priority, signal }
+  )
 }

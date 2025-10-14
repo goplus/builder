@@ -1,16 +1,14 @@
-import { ref, toValue, watch, watchEffect, type WatchSource } from 'vue'
+import { ref, toValue, watch, type WatchSource } from 'vue'
 import { throttle } from 'lodash'
 import { getCleanupSignal } from './disposable'
 import { createResettableObject } from '@/utils/utils'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
-  const width = ref<number | null>(null)
-  const height = ref<number | null>(null)
+  const size = ref<{ width: number; height: number } | null>(null)
 
   function onElementResize(entries: ResizeObserverEntry[]) {
     const { width: elementWidth, height: elementHeight } = entries[0].contentRect
-    width.value = elementWidth
-    height.value = elementHeight
+    size.value = { width: elementWidth, height: elementHeight }
   }
 
   watch(
@@ -25,10 +23,7 @@ export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
     { immediate: true }
   )
 
-  return {
-    width,
-    height
-  }
+  return size
 }
 
 export function loadImg(src: string, timeout?: number) {
@@ -114,22 +109,6 @@ export function useBottomSticky(elSource: WatchSource<HTMLElement | null>) {
     },
     { immediate: true }
   )
-}
-
-/** Returns the last click event in the page. */
-export function useLastClickEvent() {
-  const lastClickEvent = ref<MouseEvent | null>(null)
-
-  function onClick(e: MouseEvent) {
-    lastClickEvent.value = e
-  }
-
-  watchEffect((onCleanup) => {
-    const signal = getCleanupSignal(onCleanup)
-    document.body.addEventListener('click', onClick, { capture: true, passive: true, signal })
-  })
-
-  return lastClickEvent
 }
 
 export function useDraggableAngleForElement(

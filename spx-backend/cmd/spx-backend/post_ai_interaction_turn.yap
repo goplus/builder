@@ -8,12 +8,9 @@ import (
 )
 
 ctx := &Context
-
-// FIXME: Uncomment the following line to ensure the user is authenticated once
-// https://github.com/goplus/builder/issues/1673 is fixed.
-// if _, ok := ensureAuthenticatedUser(ctx); !ok {
-// 	return
-// }
+if _, ok := ensureAuthenticatedUser(ctx); !ok {
+	return
+}
 
 params := &controller.AIInteractionTurnParams{}
 if !parseJSON(ctx, params) {

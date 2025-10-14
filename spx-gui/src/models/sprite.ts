@@ -15,44 +15,93 @@ import {
   validateSpriteName
 } from './common/asset-name'
 import type { AssetMetadata } from './common/asset'
-import { type RawCostumeConfig, Costume } from './costume'
+import { type RawCostumeConfig, Costume, type Pivot as CostumePivot } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
 import { nanoid } from 'nanoid'
 import type { Sound } from './sound'
 
 export enum RotationStyle {
-  none = 'none',
-  normal = 'normal',
-  leftRight = 'left-right'
+  None = 'none',
+  Normal = 'normal',
+  LeftRight = 'left-right'
+}
+
+export enum PhysicsMode {
+  KinematicPhysics = 'kinematic',
+  DynamicPhysics = 'dynamic',
+  StaticPhysics = 'static',
+  NoPhysics = 'no'
 }
 
 export enum State {
-  default = 'default',
-  die = 'die',
-  step = 'step',
+  Default = 'default',
+  Die = 'die',
+  Step = 'step',
   // not supported by builder:
-  turn = 'turn',
-  glide = 'glide'
+  Turn = 'turn',
+  Glide = 'glide'
 }
 
 export type Pivot = {
+  /** The x offset. Positive value means right direction, negative means left direction. */
   x: number
+  /** The y offset. Positive value means up direction, negative means down direction. */
   y: number
 }
+
+export type CollisionPivot = {
+  /** The x offset. Positive value means right direction, negative means left direction. */
+  x: number
+  /** The y offset. Positive value means up direction, negative means down direction. */
+  y: number
+}
+
+export enum CollisionShapeType {
+  /** No collision */
+  None = 'none',
+  /** Automatically sized collider. Bounding box of non-transparent pixels in the sprite's default costume will be used. */
+  Auto = 'auto',
+  Circle = 'circle',
+  Rect = 'rect',
+  Capsule = 'capsule',
+  Polygon = 'polygon'
+}
+
+/**
+ * CollisionShapeParams specify numeric parameters for each CollisionShapeType:
+ * - Rect: [width, height]
+ * - Circle: [radius]
+ * - Capsule: [radius, height]
+ * - Polygon: [x1, y1, x2, y2, ...] — vertex coordinates in (x, y) pairs
+ * - None / Auto: []
+ */
+export type CollisionShapeParams = number[]
 
 export type SpriteInits = {
   id?: string
   heading?: number
+  /**
+   * The x offset of the sprite's origin position from center of the map.
+   * Positive value means right direction, negative means left direction.
+   */
   x?: number
+  /**
+   * The y offset of the sprite's origin position from center of the map.
+   * Positive value means up direction, negative means down direction.
+   */
   y?: number
   size?: number
-  rotationStyle?: string
+  rotationStyle?: RotationStyle
   costumeIndex?: number
   visible?: boolean
+  physicsMode?: PhysicsMode
   isDraggable?: boolean
   animationBindings?: Record<State, string | undefined>
-  pivot?: Pivot
+  /** Offset of the sprite’s collider center from the sprite's origin position. */
+  collisionPivot?: CollisionPivot
+  collisionShapeType?: CollisionShapeType
+  collisionShapeParams?: CollisionShapeParams
   assetMetadata?: AssetMetadata
   /** Additional config not recognized by builder */
   extraConfig?: object
@@ -67,6 +116,11 @@ export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings' | 'as
   fAnimations?: Record<string, RawAnimationConfig | undefined>
   defaultAnimation?: string
   animBindings?: Record<string, string | undefined>
+  /**
+   * Offset of the sprite’s pivot from the top-left corner.
+   * @deprecated Use the costume pivot (`Costume.x`, `Costume.y`) instead.
+   */
+  pivot?: Pivot
   // Not supported by builder:
   costumeSet?: unknown
   costumeMPSet?: unknown
@@ -96,7 +150,7 @@ export type SpriteExportLoadOptions = {
 export class Sprite extends Disposable {
   id: string
 
-  private project: Project | null = null
+  project: Project | null = null
   setProject(project: Project | null) {
     this.project = project
   }
@@ -141,15 +195,33 @@ export class Sprite extends Disposable {
       this.costumeIndex = this.costumeIndex - 1
     }
   }
+  private prepareAddCostume(costume: Costume) {
+    const newCostumeName = ensureValidCostumeName(costume.name, this)
+    costume.setName(newCostumeName)
+    costume.setParent(this)
+  }
   /**
    * Add given costume to sprite.
    * NOTE: the costume's name may be altered to avoid conflict
    */
   addCostume(costume: Costume) {
-    const newCostumeName = ensureValidCostumeName(costume.name, this)
-    costume.setName(newCostumeName)
-    costume.setParent(this)
+    this.prepareAddCostume(costume)
     this.costumes.push(costume)
+  }
+  /**
+   * Add given costume after the specified reference costume.
+   */
+  addCostumeAfter(
+    /** Costume to be added */
+    costume: Costume,
+    /** ID of the reference costume */
+    referenceId: string
+  ) {
+    const index = this.costumes.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`costume ${referenceId} not found`)
+    this.prepareAddCostume(costume)
+    this.costumes.splice(index + 1, 0, costume)
+    if (index < this.costumeIndex) this.costumeIndex += 1
   }
   /** Move a costume within the costumes array, without changing the default costume */
   moveCostume(from: number, to: number) {
@@ -174,15 +246,32 @@ export class Sprite extends Disposable {
     animation.setSprite(null)
     animation.dispose()
   }
+  private prepareAddAnimation(animation: Animation) {
+    const newAnimationName = ensureValidAnimationName(animation.name, this)
+    animation.setName(newAnimationName)
+    animation.setSprite(this)
+  }
   /**
    * Add given animation to sprite.
    * NOTE: the animation's name may be altered to avoid conflict
    */
   addAnimation(animation: Animation) {
-    const newAnimationName = ensureValidAnimationName(animation.name, this)
-    animation.setName(newAnimationName)
-    animation.setSprite(this)
+    this.prepareAddAnimation(animation)
     this.animations.push(animation)
+  }
+  /**
+   * Add given animation after the specified reference animation.
+   */
+  addAnimationAfter(
+    /** Animation to be added */
+    animation: Animation,
+    /** ID of the reference animation */
+    referenceId: string
+  ) {
+    const index = this.animations.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`animation ${referenceId} not found`)
+    this.prepareAddAnimation(animation)
+    this.animations.splice(index + 1, 0, animation)
   }
   /** Move a animation within the animations array */
   moveAnimation(from: number, to: number) {
@@ -216,7 +305,7 @@ export class Sprite extends Disposable {
     })
   }
   getDefaultAnimation() {
-    return this.animations.find((a) => a.id === this.animationBindings[State.default]) ?? null
+    return this.animations.find((a) => a.id === this.animationBindings[State.Default]) ?? null
   }
 
   heading: number
@@ -244,6 +333,16 @@ export class Sprite extends Disposable {
     this.rotationStyle = rotationStyle
   }
 
+  physicsMode: PhysicsMode
+  setPhysicsMode(physicsMode: PhysicsMode) {
+    this.physicsMode = physicsMode
+    if (physicsMode !== PhysicsMode.NoPhysics && this.collisionShapeType === CollisionShapeType.None) {
+      this.setCollisionShapeAuto()
+    } else if (physicsMode === PhysicsMode.NoPhysics && this.collisionShapeType !== CollisionShapeType.None) {
+      this.setCollisionShapeNone()
+    }
+  }
+
   visible: boolean
   setVisible(visible: boolean) {
     this.visible = visible
@@ -254,9 +353,50 @@ export class Sprite extends Disposable {
     this.isDraggable = isDraggable
   }
 
-  pivot: Pivot
-  setPivot(pivot: Pivot) {
-    this.pivot = pivot
+  collisionPivot: CollisionPivot
+  setCollisionPivot(p: CollisionPivot) {
+    this.collisionPivot = p
+  }
+
+  collisionShapeType: CollisionShapeType
+  collisionShapeParams: CollisionShapeParams
+  private setCollisionShape(type: CollisionShapeType, params: CollisionShapeParams) {
+    this.collisionShapeType = type
+    this.collisionShapeParams = params
+  }
+  setCollisionShapeNone() {
+    this.setCollisionShape(CollisionShapeType.None, [])
+  }
+  setCollisionShapeAuto() {
+    this.setCollisionShape(CollisionShapeType.Auto, [])
+  }
+  setCollisionShapeCircle(radius: number) {
+    this.setCollisionShape(CollisionShapeType.Circle, [radius])
+  }
+  setCollisionShapeRect(width: number, height: number) {
+    this.setCollisionShape(CollisionShapeType.Rect, [width, height])
+  }
+  setCollisionShapeCapsule(radius: number, height: number) {
+    this.setCollisionShape(CollisionShapeType.Capsule, [radius, height])
+  }
+  setCollisionShapePolygon(points: number[]) {
+    this.setCollisionShape(CollisionShapeType.Polygon, points)
+  }
+
+  /**
+   * Apply pivot change to all costumes to keep their relative positions unchanged
+   * TODO: We should allow users to configure pivot for each costume separately in the future.
+   */
+  applyCostumesPivotChange(dCostumePivot: CostumePivot) {
+    for (const c of this.costumes) {
+      c.setPivot({
+        x: c.pivot.x + dCostumePivot.x,
+        y: c.pivot.y + dCostumePivot.y
+      })
+    }
+    for (const a of this.animations) {
+      a.applyCostumesPivotChange(dCostumePivot)
+    }
   }
 
   assetMetadata: AssetMetadata | null
@@ -279,72 +419,28 @@ export class Sprite extends Disposable {
       this.animations.splice(0).forEach((a) => a.dispose())
     })
     this.animationBindings = inits?.animationBindings ?? {
-      [State.default]: undefined,
-      [State.die]: undefined,
-      [State.step]: undefined,
-      [State.turn]: undefined,
-      [State.glide]: undefined
+      [State.Default]: undefined,
+      [State.Die]: undefined,
+      [State.Step]: undefined,
+      [State.Turn]: undefined,
+      [State.Glide]: undefined
     }
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
-    this.rotationStyle = getRotationStyle(inits?.rotationStyle)
+    this.rotationStyle = inits?.rotationStyle ?? RotationStyle.Normal
+    this.physicsMode = inits?.physicsMode ?? PhysicsMode.NoPhysics
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
-    this.pivot = inits?.pivot ?? { x: 0, y: 0 }
+    this.collisionPivot = inits?.collisionPivot ?? { x: 0, y: 0 }
+    this.collisionShapeType = inits?.collisionShapeType ?? CollisionShapeType.None
+    this.collisionShapeParams = inits?.collisionShapeParams ?? []
     this.id = inits?.id ?? nanoid()
     this.assetMetadata = inits?.assetMetadata ?? null
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
-  }
-
-  randomizePosition() {
-    const { project } = this
-    if (project == null) throw new Error('`randomizePosition` should be called after added to a project')
-    const mapSize = project.stage.getMapSize()
-    this.setX(Math.floor(Math.random() * mapSize.width - mapSize.width / 2))
-    this.setY(Math.floor(Math.random() * mapSize.height - mapSize.height / 2))
-  }
-
-  async clampToMap() {
-    const { project, defaultCostume, size, x, y, pivot } = this
-    if (project == null) throw new Error('`clampToMap` should be called after added to a project')
-    if (defaultCostume != null) {
-      const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
-      if (mapSize == null) return
-      const halfCostumeWidth = (costumeSize.width * size) / 2
-      const halfCostumeHeight = (costumeSize.height * size) / 2
-      const visualCenter = {
-        x: costumeSize.width / 2,
-        y: -costumeSize.height / 2
-      }
-      /**
-       * Meaning of offsetX / offsetY:
-       * ------------------------------------
-       * When calculating the position of the sprite, the coordinates (x, y)
-       * are normally based on the "pivot" (anchor point).
-       * But visually we want the sprite to be aligned relative to its
-       * "visualCenter" instead.
-       *
-       * offset is the difference between the visual center
-       * and (pivot + costume’s own offset), multiplied by scale (size).
-       *
-       * In short:
-       * - offsetX/offsetY adjust the coordinates so that the visual center
-       *   is aligned with the map, not the pivot.
-       * - Without this correction, the sprite may appear shifted
-       *   because the pivot might not be at the visual center.
-       */
-      const offsetX = (visualCenter.x - pivot.x - defaultCostume.x) * size
-      const offsetY = (visualCenter.y - pivot.y + defaultCostume.y) * size
-
-      const maxX = Math.max(mapSize.width / 2 - halfCostumeWidth, 0)
-      const maxY = Math.max(mapSize.height / 2 - halfCostumeHeight, 0)
-      this.setX(Math.floor(Math.max(-maxX, Math.min(x, maxX)) - offsetX))
-      this.setY(Math.floor(Math.max(-maxY, Math.min(y, maxY)) - offsetY))
-    }
   }
 
   /**
@@ -363,16 +459,9 @@ export class Sprite extends Disposable {
         this.setSize(size)
       }
       // ensure the sprite placed in the center of stage
-      // TODO: it may be better to keep updating the pivot whenever defaultCostume's size changed.
-      // while it introduces extra complexity. In the future we gonna see if it deserves so.
-      this.setPivot({ x: costumeSize.width / 2, y: -costumeSize.height / 2 })
       this.setX(0)
       this.setY(0)
     }
-  }
-
-  async autoFitCostumes(costumes = this.costumes) {
-    await Promise.all(costumes.map((c) => c.autoFit()))
   }
 
   /** Create sprite within builder (by user actions) */
@@ -418,9 +507,13 @@ export class Sprite extends Disposable {
       visible,
       heading,
       rotationStyle,
+      physicsMode,
       costumeIndex,
       isDraggable,
-      pivot,
+      pivot: legacyPivot,
+      collisionPivot,
+      collisionShapeType,
+      collisionShapeParams,
       ...extraConfig
     } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
@@ -432,7 +525,15 @@ export class Sprite extends Disposable {
     const costumes: Costume[] = []
     if (costumeConfigs != null) {
       for (const config of costumeConfigs) {
-        costumes.push(Costume.load(config, files, { basePath: pathPrefix, includeId }))
+        const costume = Costume.load(config, files, { basePath: pathPrefix, includeId })
+        if (legacyPivot != null) {
+          // Apply legacy sprite-level pivot offset to each costume for backward compatibility
+          costume.setPivot({
+            x: costume.pivot.x + legacyPivot.x,
+            y: costume.pivot.y - legacyPivot.y
+          })
+        }
+        costumes.push(costume)
       }
     } else {
       if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
@@ -461,16 +562,19 @@ export class Sprite extends Disposable {
       visible,
       heading,
       rotationStyle,
+      physicsMode,
       isDraggable,
-      pivot,
+      collisionPivot,
+      collisionShapeType,
+      collisionShapeParams,
       id: includeId ? id : undefined,
       costumeIndex: costumeIndex ?? currentCostumeIndex,
       animationBindings: {
-        [State.default]: animationNameToId(defaultAnimation),
-        [State.die]: animationNameToId(animBindings?.[State.die]),
-        [State.step]: animationNameToId(animBindings?.[State.step]),
-        [State.turn]: animationNameToId(animBindings?.[State.turn]),
-        [State.glide]: animationNameToId(animBindings?.[State.glide])
+        [State.Default]: animationNameToId(defaultAnimation),
+        [State.Die]: animationNameToId(animBindings?.[State.Die]),
+        [State.Step]: animationNameToId(animBindings?.[State.Step]),
+        [State.Turn]: animationNameToId(animBindings?.[State.Turn]),
+        [State.Glide]: animationNameToId(animBindings?.[State.Glide])
       },
       assetMetadata: includeMetadata ? metadata : undefined,
       extraConfig
@@ -518,15 +622,18 @@ export class Sprite extends Disposable {
       visible: this.visible,
       heading: this.heading,
       rotationStyle: this.rotationStyle,
+      physicsMode: this.physicsMode,
       isDraggable: this.isDraggable,
-      pivot: this.pivot,
+      collisionPivot: this.collisionPivot,
+      collisionShapeType: this.collisionShapeType,
+      collisionShapeParams: this.collisionShapeParams,
       costumeIndex: this.costumeIndex,
       animationBindings: {
-        [State.default]: animationNameToId(animBindings[State.default]),
-        [State.die]: animationNameToId(animBindings[State.die]),
-        [State.step]: animationNameToId(animBindings[State.step]),
-        [State.turn]: animationNameToId(animBindings[State.turn]),
-        [State.glide]: animationNameToId(animBindings[State.glide])
+        [State.Default]: animationNameToId(animBindings[State.Default]),
+        [State.Die]: animationNameToId(animBindings[State.Die]),
+        [State.Step]: animationNameToId(animBindings[State.Step]),
+        [State.Turn]: animationNameToId(animBindings[State.Turn]),
+        [State.Glide]: animationNameToId(animBindings[State.Glide])
       },
       assetMetadata: this.assetMetadata ?? undefined,
       extraConfig: { ...this.extraConfig }
@@ -562,7 +669,7 @@ export class Sprite extends Disposable {
       costumeConfigs.push(...animationCostumesConfigs)
       Object.assign(files, animationFiles)
     }
-    const { [State.default]: defaultAnimationId, ...animBindings } = this.animationBindings
+    const { [State.Default]: defaultAnimationId, ...animBindings } = this.animationBindings
     const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
     if (defaultAnimationId && defaultAnimationName == null)
       console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
@@ -583,10 +690,13 @@ export class Sprite extends Disposable {
       y: this.y,
       size: this.size,
       rotationStyle: this.rotationStyle,
+      physicsMode: this.physicsMode,
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
-      pivot: this.pivot,
+      collisionPivot: this.collisionPivot,
+      collisionShapeType: this.collisionShapeType,
+      collisionShapeParams: this.collisionShapeParams,
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
       defaultAnimation: defaultAnimationName,
@@ -602,12 +712,6 @@ export class Sprite extends Disposable {
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
-}
-
-function getRotationStyle(rotationStyle?: string) {
-  if (rotationStyle === 'left-right') return RotationStyle.leftRight
-  if (rotationStyle === 'none') return RotationStyle.none
-  return RotationStyle.normal
 }
 
 export enum LeftRight {

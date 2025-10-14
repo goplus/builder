@@ -11,10 +11,12 @@ broadcast,"broadcast ""ping""",Broadcast a message
 broadcast,"broadcast ""ping"", 1",Broadcast a message along with extra data
 broadcastAndWait,"broadcastAndWait ""ping""","Broadcast a message, with waiting for related (`onMsg`) behaviors to complete"
 broadcastAndWait,"broadcastAndWait ""ping"", 1","Broadcast a message along with extra data, with waiting for related (`onMsg`) behaviors to complete"
+Camera,,"Camera, which controls the visible area of the stage"
 ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
 changeGraphicEffect,"changeGraphicEffect ColorEffect, 10","Change graphic effect of the stage. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for stage sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 clearGraphicEffects,,Clear all graphic effects of the stage
+findPath,"findPath(0, 0, 100, 100)","Find path from (fromX, fromY) to (toX, toY)"
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
 onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
@@ -92,11 +94,15 @@ setXpos,setXpos 0,Set the sprite's X position
 setYpos,setYpos 0,Set the sprite's Y position
 show,,Make the sprite visible
 size,,"Size of the sprite. Value is relative to initial size. For example, 2 means current size is twice the initial size"
+addImpulse,"addImpulse 0, 0","Add impulse to the sprite. The impulse is an instant velocity change, i.e., the velocity will be changed by (ix, iy) instantly"
 ask,"ask ""What is your name?""",Ask player a question and wait for player to answer
 changeGraphicEffect,"changeGraphicEffect ColorEffect, 10","Change graphic effect of the sprite. For example, if initial effect value is 100, changing by 10 will result in 110"
 changeVolume,changeVolume 10,"Change the volume for sprite sounds with given volume change. For example, if initial volume is 100, changing by 10 will result in volume 110"
 clearGraphicEffects,,Clear all graphic effects of the sprite
+findPath,"findPath(0, 0, 100, 100)","Find path from (fromX, fromY) to (toX, toY)"
 stopPlaying,"stopPlaying ""s1""",Stop sound with given name
+gravity,,"The gravity for the sprite. The value is relative to the global gravity. For example, 2 means double the global gravity, 0 means no gravity"
+isOnFloor,,If the sprite is currently on the floor
 onAnyKey,onAnyKey key => {},Listen to any key pressed
 onBackdrop,onBackdrop backdrop => {},Listen to backdrop switching
 onBackdrop,"onBackdrop ""bg1"", => {}",Listen to switching to specific backdrop
@@ -108,19 +114,28 @@ onMsg,"onMsg ""ping"", => {}",Listen to specific message broadcasted
 onStart,onStart => {},Listen to game start
 onSwipe,"onSwipe Left, => {}",Listen to swipe in given direction
 pausePlaying,"pausePlaying ""s1""",Pause sound with given name
+physicsMode,,The physics mode for the sprite
 play,"play ""s1"", true",Play sound with given name in a loop
 play,"play ""s1""",Play sound with given name
 playAndWait,"playAndWait ""s1""",Play sound with waiting
 resumePlaying,"resumePlaying ""s1""",Resume sound with given name
 setGraphicEffect,"setGraphicEffect ColorEffect, 100",Set graphic effect of the sprite
+setGravity,setGravity 0,Set the gravity for the sprite
+setPhysicsMode,setPhysicsMode NoPhysics,Set the physics mode for the sprite
+setVelocity,"setVelocity 0, 0",Set the velocity for the sprite
 setVolume,setVolume 100,Set the volume for sprite sounds
+velocity,,"The velocity for the sprite. It is a 2D vector represented as (vx, vy), where vx is the distance to move in x axis per second, and vy is the distance to move in y axis per second"
 volume,,The volume for sprite sounds
 step,step 100,"Step toward current heading with given distance. Animation for state ""step"" will be played"
 step,"step 100, 1","Step toward current heading with given distance and speed. Animation for state ""step"" will be played"
 step,"step 100, 1, ""a1""","Step toward current heading with given distance, speed and animation"
 stepTo,"stepTo ""S1""","Step to the sprite with given name. Animation for state ""step"" will be played"
+stepTo,"stepTo 100, 100","Step to given position. Animation for state ""step"" will be played"
+stepTo,stepTo Mouse,"Step to the given object. Animation for state ""step"" will be played"
 stepTo,"stepTo ""S1"", 1","Step to the sprite with given name and specify speed. Animation for state ""step"" will be played"
+stepTo,"stepTo 100, 100, 1","Step to given position and specify speed. Animation for state ""step"" will be played"
 stepTo,"stepTo ""S1"", 1, ""a1""",Step to the sprite with given name and specify speed and animation
+stepTo,"stepTo 100, 100, 1, ""a1""",Step to given position and specify speed and animation
 stopAnimation,"stopAnimation ""a1""",Stop animation with given name
 think,"think ""Emmm...""",Think of some word
 think,"think ""Emmm..."", 1",Think of some word for given seconds
@@ -148,7 +163,15 @@ Forward,,Forward
 Front,,Front
 hSB,"HSB(50, 100, 100)",Define HSB color
 hSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
+Camera.follow,Camera.follow S1,Make the camera follow the given sprite
+Camera.follow,"Camera.follow ""S1""",Make the camera follow the given sprite by name
+Camera.setXYpos,"Camera.setXYpos 0, 0",Set the X and Y position of the camera center
+Camera.setZoom,Camera.setZoom 1,Set zoom factor of the camera
+Camera.xpos,,The X position of the camera center
+Camera.ypos,,The Y position of the camera center
+Camera.zoom,,"Zoom factor of the camera. Value 1 means no zoom, greater than 1 means zoom in, and between 0 and 1 means zoom out"
 Down,,"Down direction, i.e., 180 degree"
+DynamicPhysics,,Dynamic physics effect
 Edge,,Edge of the stage
 EdgeBottom,,Bottom edge of the stage
 EdgeLeft,,Left edge of the stage
@@ -156,8 +179,20 @@ EdgeRight,,Right edge of the stage
 EdgeTop,,Top edge of the stage
 exit,,Exit the game
 forever,forever => {},Repeat forever
+KinematicPhysics,,Kinematic physics effect
 Left,,"Left direction, i.e., -90 degree"
 LeftRight,,Left-Right
+List,,List data structure for storing multiple values
+List.append,"myList.append ""value""",Add a value to the end of the list
+List.at,myList.at 0,Get the value at a specific index
+List.contains,"myList.contains ""value""",Check if the list contains a specific value
+List.delete,myList.delete 0,Remove the item at a specific index
+List.init,"myList.init ""a"", ""b"", ""c""",Initialize the list with given values
+List.initFrom,myList.initFrom otherList,Initialize the list by copying from another list
+List.insert,"myList.insert 0, ""value""",Insert a value at a specific index
+List.len,myList.len,Get the length of the list
+List.set,"myList.set 0, ""newValue""",Set the value at a specific index
+List.string,myList.string,Get the string representation of the list
 Monitor,,Monitor widget
 Monitor.changeSize,changeSize 0.1,Change size of the widget
 Monitor.changeXYpos,"changeXYpos 10, 10",Change the widget's position
@@ -181,6 +216,7 @@ MovingInfo.NewY,newY,The Y position after moving
 MovingInfo.OldX,oldX,The X position before moving
 MovingInfo.OldY,oldY,The Y position before moving
 Next,,Next item
+NoPhysics,,No physics effect
 None,,Don't Rotate
 Normal,,Normal
 Prev,,Previous item
@@ -190,10 +226,16 @@ repeat,"repeat 10, => {}",Repeat for given times
 repeatUntil,"repeatUntil false, => {}",Repeat until given condition is met
 Right,,"Right direction, i.e., 90 degree"
 Sprite,,Type for sprite
+StaticPhysics,,Static physics effect
 TurningInfo.dir,dir,The degree changed by turning
 TurningInfo.NewDir,NewDir,The heading direction after turning
 TurningInfo.OldDir,OldDir,The heading direction before turning
 Up,,"Up direction, i.e., 0 degree"
+Value,,Value type for dynamic data
+Value.equal,myValue.equal otherValue,Check if two values are equal
+Value.float,myValue.float,Convert the value to a floating-point number
+Value.int,myValue.int,Convert the value to an integer
+Value.string,myValue.string,Convert the value to a string
 waitUntil,waitUntil true,Wait until given condition is met
 Widget.changeSize,changeSize 0.1,Change size of the widget
 Widget.changeXYpos,"changeXYpos 10, 10",Change the widget's position

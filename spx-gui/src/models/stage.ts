@@ -17,31 +17,59 @@ export type StageInits = {
   mapWidth?: number
   mapHeight?: number
   mapMode?: MapMode
+  physics?: Physics
+  layerSortMode?: LayerSortMode
   /** Additional config not recognized by builder */
   extraConfig?: object
 }
 
-export type RawMapConfig = {
+type RawMapConfig = {
   width?: number
   height?: number
   mode?: string
 }
 
-export type RawStageConfig = {
+type RawPhysicsConfig = {
+  /** If physics engine enabled */
+  physics?: boolean
+  /** Global gravity scaling factor, default 1 */
+  globalGravity?: number
+  /** Global friction scaling factor, default 1 */
+  globalFriction?: number
+  /** Global air drag scaling factor, default 1 */
+  globalAirDrag?: number
+}
+
+export type RawStageConfig = RawPhysicsConfig & {
   backdrops?: RawBackdropConfig[]
   backdropIndex?: number
   widgets?: RawWidgetConfig[]
   map?: RawMapConfig
+  /** whether to auto set collision layer, default true */
+  autoSetCollisionLayer?: boolean
   // For compatibility
   scenes?: RawBackdropConfig[]
   sceneIndex?: number
   costumes?: RawBackdropConfig[]
   currentCostumeIndex?: number
+  layerSortMode?: LayerSortMode
 }
 
 export type MapSize = {
   width: number
   height: number
+}
+
+export type Physics = {
+  enabled: boolean
+  gravity?: number
+  friction?: number
+  airDrag?: number
+}
+
+export enum LayerSortMode {
+  Default = '',
+  Vertical = 'vertical'
 }
 
 export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.gmx']
@@ -68,15 +96,35 @@ export class Stage extends Disposable {
     this.backdropIndex = idx
   }
 
+  private prepareAddBackdrop(backdrop: Backdrop) {
+    const newBackdropName = ensureValidBackdropName(backdrop.name, this)
+    backdrop.setName(newBackdropName)
+    backdrop.setStage(this)
+  }
   /**
    * Add given backdrop to stage.
    * NOTE: the backdrop's name may be altered to avoid conflict.
    */
   addBackdrop(backdrop: Backdrop) {
-    const newName = ensureValidBackdropName(backdrop.name, this)
-    backdrop.setName(newName)
-    backdrop.setStage(this)
+    this.prepareAddBackdrop(backdrop)
     this.backdrops.push(backdrop)
+  }
+  /**
+   * Add a backdrop after the specified reference backdrop.
+   */
+  addBackdropAfter(
+    /** Backdrop to be added */
+    backdrop: Backdrop,
+    /** ID of the backdrop to insert after */
+    referenceId: string
+  ) {
+    const index = this.backdrops.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`backdrop ${referenceId} not found`)
+    this.prepareAddBackdrop(backdrop)
+    this.backdrops.splice(index + 1, 0, backdrop)
+    if (index < this.backdropIndex) {
+      this.backdropIndex = this.backdropIndex + 1
+    }
   }
 
   removeBackdrop(id: string): void {
@@ -114,19 +162,42 @@ export class Stage extends Disposable {
   /** Zorder for widgets, will be merged with sprites in model `Project` */
   widgetsZorder: string[]
 
+  private prepareAddWidget(widget: Widget) {
+    const newName = ensureValidWidgetName(widget.name, this)
+    widget.setName(newName)
+    widget.setStage(this)
+    widget.addDisposer(() => widget.setStage(null))
+  }
   /**
    * Add given widget to stage.
    * NOTE: the widget's name may be altered to avoid conflict.
    */
   addWidget(widget: Widget) {
-    const newName = ensureValidWidgetName(widget.name, this)
-    widget.setName(newName)
-    widget.setStage(this)
-    widget.addDisposer(() => widget.setStage(null))
+    this.prepareAddWidget(widget)
     this.widgets.push(widget)
 
     if (!this.widgetsZorder.includes(widget.id)) {
       this.widgetsZorder = [...this.widgetsZorder, widget.id]
+    }
+  }
+  /**
+   * Add a widget after the specified reference widget.
+   */
+  addWidgetAfter(
+    /** Widget to be added */
+    widget: Widget,
+    /** ID of the widget to insert after */
+    referenceId: string
+  ) {
+    const index = this.widgets.findIndex((s) => s.id === referenceId) // ensure referenceId exists
+    if (index === -1) throw new Error(`widget ${referenceId} not found`)
+    this.prepareAddWidget(widget)
+    this.widgets.splice(index + 1, 0, widget)
+
+    if (!this.widgetsZorder.includes(widget.id)) {
+      const idx = this.widgetsZorder.indexOf(referenceId)
+      if (idx === -1) this.widgetsZorder.push(widget.id)
+      else this.widgetsZorder.splice(idx + 1, 0, widget.id)
     }
   }
   removeWidget(id: string): void {
@@ -192,6 +263,16 @@ export class Stage extends Disposable {
     return { width: this.mapWidth, height: this.mapHeight }
   }
 
+  physics: Physics
+  setPhysics(physics: Physics) {
+    this.physics = physics
+  }
+
+  layerSortMode: LayerSortMode
+  setLayerSortMode(layerSortMode: LayerSortMode) {
+    this.layerSortMode = layerSortMode
+  }
+
   extraConfig: object
   setExtraConfig(extraConfig: object) {
     this.extraConfig = extraConfig
@@ -211,6 +292,8 @@ export class Stage extends Disposable {
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = inits?.mapMode ?? MapMode.fillRatio
+    this.physics = inits?.physics ?? { enabled: false }
+    this.layerSortMode = inits?.layerSortMode ?? LayerSortMode.Default
     this.extraConfig = inits?.extraConfig ?? {}
     return reactive(this) as this
   }
@@ -225,6 +308,12 @@ export class Stage extends Disposable {
       costumes: costumeConfigs,
       currentCostumeIndex,
       map,
+      physics: physicsEnabled,
+      globalGravity,
+      globalFriction,
+      globalAirDrag,
+      layerSortMode,
+      autoSetCollisionLayer,
       ...extraConfig
     }: RawStageConfig,
     files: Files
@@ -237,6 +326,7 @@ export class Stage extends Disposable {
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode),
+      layerSortMode,
       extraConfig
     })
     const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
@@ -247,6 +337,12 @@ export class Stage extends Disposable {
     for (const widget of widgets) {
       stage.addWidget(widget)
     }
+    stage.setPhysics({
+      enabled: physicsEnabled === true,
+      gravity: globalGravity,
+      friction: globalFriction,
+      airDrag: globalAirDrag
+    })
     return stage
   }
 
@@ -270,6 +366,12 @@ export class Stage extends Disposable {
       backdropIndex: backdropIndex,
       widgets: widgetsConfig,
       map: { width: mapWidth, height: mapHeight, mode: mapMode },
+      physics: this.physics.enabled,
+      globalGravity: this.physics.gravity,
+      globalFriction: this.physics.friction,
+      globalAirDrag: this.physics.airDrag,
+      layerSortMode: this.layerSortMode,
+      autoSetCollisionLayer: !this.physics.enabled,
       ...this.extraConfig
     }
     return [config, files]

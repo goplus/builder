@@ -3,11 +3,11 @@ import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
 import { Costume } from '../costume'
-import { fromText, type Files } from '../common/file'
+import { fromText, toConfig, type Files } from '../common/file'
 import * as hashHelper from '../common/hash'
 import { Backdrop } from '../backdrop'
 import { Monitor } from '../widget/monitor'
-import { Project } from '.'
+import { Project, projectConfigFilePath, type RawProjectConfig } from '.'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -142,5 +142,71 @@ describe('Project', () => {
     expect(project.sounds.map((s) => s.name)).toEqual(['sound2', 'sound1', 'sound3'])
     project.moveSound(2, 0)
     expect(project.sounds.map((s) => s.name)).toEqual(['sound3', 'sound2', 'sound1'])
+  })
+
+  it('should audio attenuation be enabled when map size exceeds viewport size', async () => {
+    const project = new Project()
+    const stage = project.stage
+    const viewport = project.viewportSize
+
+    async function reloadProjectConfig() {
+      const exports = project.exportGameFiles()
+      return toConfig(exports[projectConfigFilePath]!) as RawProjectConfig
+    }
+
+    // initial map size equals to viewport size, so audio attenuation is disabled
+    expect(stage.getMapSize()).toEqual(viewport)
+    let projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(0)
+
+    // increase map width and height, audio attenuation should be enabled
+    stage.setMapWidth(viewport.width + 100)
+    stage.setMapHeight(viewport.height)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
+
+    // increase map width and height, audio attenuation should still be enabled
+    stage.setMapWidth(viewport.width + 100)
+    stage.setMapHeight(viewport.height + 200)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
+
+    // reset map size to equal to viewport size, audio attenuation should be disabled
+    stage.setMapWidth(viewport.width)
+    stage.setMapHeight(viewport.height)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(0)
+
+    // increase map height, audio attenuation should be enabled
+    stage.setMapHeight(viewport.height + 200)
+    projectConfig = await reloadProjectConfig()
+    expect(projectConfig.audioAttenuation).toBe(1)
+  })
+
+  it('should add sprite after correctly', () => {
+    const project = new Project()
+    const sprite1 = new Sprite('sprite1')
+    project.addSprite(sprite1)
+
+    const sprite2 = new Sprite('sprite2')
+    project.addSpriteAfter(sprite2, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite2.id])
+
+    const sprite3 = new Sprite('sprite3')
+    project.addSpriteAfter(sprite3, sprite1.id)
+    expect(project.sprites.map((s) => s.id)).toEqual([sprite1.id, sprite3.id, sprite2.id])
+  })
+
+  it('should add sound after correctly', () => {
+    const project = makeProject()
+    const sound1 = project.sounds[0]
+
+    const sound2 = new Sound('sound2', mockFile())
+    project.addSoundAfter(sound2, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound2.id])
+
+    const sound3 = new Sound('sound3', mockFile())
+    project.addSoundAfter(sound3, sound1.id)
+    expect(project.sounds.map((s) => s.id)).toEqual([sound1.id, sound3.id, sound2.id])
   })
 })

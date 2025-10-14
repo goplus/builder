@@ -3,7 +3,7 @@ import { reactive } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { ensureValidCostumeName, getAnimationName, validateAnimationName } from './common/asset-name'
 import type { Files } from './common/file'
-import type { Costume, RawCostumeConfig } from './costume'
+import type { Costume, RawCostumeConfig, Pivot as CostumePivot } from './costume'
 import type { Sprite } from './sprite'
 import { nanoid } from 'nanoid'
 import type { Sound } from './sound'
@@ -81,6 +81,15 @@ export class Animation extends Disposable {
     this.costumes = costumes
     if (this.duration === 0) {
       this.duration = costumes.length / defaultFps
+    }
+  }
+
+  applyCostumesPivotChange(dCostumePivot: CostumePivot) {
+    for (const c of this.costumes) {
+      c.setPivot({
+        x: c.pivot.x + dCostumePivot.x,
+        y: c.pivot.y + dCostumePivot.y
+      })
     }
   }
 

@@ -31,9 +31,11 @@ var Break = errors.New("break interaction")
 // A zero-value Player is ready to use.
 type Player struct {
 	mu                sync.RWMutex
+	interactionCond   *sync.Cond
+	interactionActive bool
 	role              string
 	roleContext       map[string]any
-	commands          sync.Map // map[string]commandInfo
+	commands          map[string]commandInfo
 	errorHandler      func(error)
 	history           []Turn
 	archivedHistory   string
@@ -73,22 +75,29 @@ func Gopt_Player_Gopx_OnCmd[T any](p *Player, handler func(cmd T) error) {
 // PlayerOnCmd_ is a helper func that is meant to be called by
 // [Gopt_Player_Gopx_OnCmd] only.
 func PlayerOnCmd_(p *Player, cmd any, handler any) {
-	cmdType := reflect.TypeOf(cmd)
-	if cmdType.Kind() != reflect.Struct {
+	typ := reflect.TypeOf(cmd)
+	if typ.Kind() != reflect.Struct {
 		panic("AI command must be a struct type")
 	}
-	cmdTypeName := cmdType.Name()
-	if cmdTypeName == "" {
+	typeName := typ.Name()
+	if typeName == "" {
 		panic("AI command struct must have a name")
 	}
-	cmdID := cmdTypeName
 
-	spec := extractCommandSpec(cmdType)
-	p.commands.Store(cmdID, commandInfo{
-		typ:     cmdType,
+	id := typeName
+	spec := extractCommandSpec(typ)
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.commands == nil {
+		p.commands = make(map[string]commandInfo)
+	}
+	p.commands[id] = commandInfo{
+		typ:     typ,
 		handler: handler,
 		spec:    spec,
-	})
+	}
 }
 
 // Think sends a message to the AI and processes its response. The optional
@@ -114,6 +123,9 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		backoffCap          = 2 * time.Second        // Maximum backoff time cap.
 	)
 
+	p.beginInteraction()
+	defer p.endInteraction()
+
 	var (
 		currentMsg     = msg
 		currentContext = context
@@ -128,12 +140,12 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		currentHistory := slices.Clone(p.history)
 		currentArchivedHistory := p.archivedHistory
 		var currentCommandSpecs []CommandSpec
-		p.commands.Range(func(k, v any) bool {
-			if info, ok := v.(commandInfo); ok {
+		if len(p.commands) > 0 {
+			currentCommandSpecs = make([]CommandSpec, 0, len(p.commands))
+			for _, info := range p.commands {
 				currentCommandSpecs = append(currentCommandSpecs, info.spec)
 			}
-			return true
-		})
+		}
 		currentKnowledgeBase := p.knowledgeBase()
 		p.mu.RUnlock()
 
@@ -200,13 +212,10 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		hasExecutedAtLeastOneCommandInThisCall = true
 
 		var executedResult *CommandResult
-		if cmdInfoIface, ok := p.commands.Load(resp.CommandName); ok {
-			cmdInfo, ok := cmdInfoIface.(commandInfo)
-			if !ok {
-				p.handleError(owner, fmt.Errorf("invalid type found in command map for %s", resp.CommandName))
-				return
-			}
-
+		p.mu.RLock()
+		cmdInfo, ok := p.commands[resp.CommandName]
+		p.mu.RUnlock()
+		if ok {
 			var err error
 			executedResult, err = callCommandHandler(owner, cmdInfo, resp.CommandArgs)
 			if err != nil {
@@ -248,6 +257,29 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 
 	// Manage history asynchronously.
 	go p.manageHistory()
+}
+
+// beginInteraction acquires exclusive access for the upcoming interaction sequence.
+func (p *Player) beginInteraction() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.interactionCond == nil {
+		p.interactionCond = sync.NewCond(&p.mu)
+	}
+	for p.interactionActive {
+		p.interactionCond.Wait()
+	}
+	p.interactionActive = true
+}
+
+// endInteraction releases exclusive access and wakes up any waiting sequence.
+func (p *Player) endInteraction() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.interactionActive = false
+	p.interactionCond.Signal()
 }
 
 // OnErr registers a handler that is called when an AI interaction fails. If no
