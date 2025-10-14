@@ -27,6 +27,7 @@ export interface GenerateImageRequest {
   /** Number of images to generate */
   n?: number
   top_k?: number
+  session_id?: string
 }
 
 /** Response from backend API */
@@ -56,6 +57,7 @@ export async function generateSvgDirect(
     substyle?: string
     n?: number
     top_k?: number
+    session_id?: string
   }
 ): Promise<{
   svgContents: { blob: string; svgContent: string; id: number }[]
@@ -72,7 +74,8 @@ export async function generateSvgDirect(
     size: options?.size,
     substyle: options?.substyle,
     n: options?.n,
-    top_k: options?.top_k
+    top_k: options?.top_k,
+    session_id: options?.session_id || ''
   }
 
   if (options?.top_k) {

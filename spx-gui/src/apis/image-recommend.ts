@@ -16,6 +16,8 @@ export interface InstantRecommendRequest {
   top_k?: number
   /** 图片主题风格 */
   theme?: 'cartoon' | 'realistic' | 'minimal' | 'nature' | ''
+  /** 会话ID */
+  session_id?: string
 }
 
 /** 组件使用的图片结果接口 */
@@ -38,13 +40,15 @@ export async function instantImageRecommend(
   options?: {
     top_k?: number
     theme?: 'cartoon' | 'realistic' | 'minimal' | 'nature' | ''
-  }
+  },
+  session_id?: string
 ): Promise<{
   svgContents: { blob: string; svgContent: string }[]
   query: string
   results_count: number
 }> {
   const payload: InstantRecommendRequest = {
+    session_id: session_id || '',
     project_id: projectId,
     user_prompt: userPrompt,
     top_k: options?.top_k || 4,

@@ -24,7 +24,7 @@
               </div>
 
               <!-- 提示词输入 -->
-              <PromptEditor v-model="prompt" />
+              <PromptEditor v-model="prompt" :session-id="sessionId" />
 
               <!-- 生成按钮 -->
               <div class="form-group">
@@ -123,6 +123,7 @@ import ErrorModal from './errorModal.vue'
 import ModelSelector from './modelSelector.vue'
 import PromptEditor from './promptEditor.vue'
 import { submitImageFeedback } from '@/apis/aifeedback'
+import { generateSessionId } from './sessionId'
 
 // Props
 interface Props {
@@ -132,6 +133,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   visible: false
 })
+
+const sessionId = ref('')
 
 // Emits
 const emit = defineEmits<{
@@ -299,10 +302,13 @@ const handleRealGenerate = async () => {
     let svgResult
     if (selectedModelInfo !== null) {
       svgResult = await generateSvgDirect(prompt.value, {
-        theme: selectedModelInfo.id
+        theme: selectedModelInfo.id,
+        session_id: sessionId.value
       })
     } else {
-      svgResult = await generateSvgDirect(prompt.value, {})
+      svgResult = await generateSvgDirect(prompt.value, {
+        session_id: sessionId.value
+      })
     }
 
     // 处理返回的四张图片
@@ -347,7 +353,10 @@ const handleRealGenerate = async () => {
 watch(
   () => props.visible,
   (newVal) => {
-    if (!newVal) {
+    if (newVal) {
+      // 弹窗打开时生成唯一的 sessionId
+      sessionId.value = generateSessionId()
+    } else {
       // 弹窗关闭时重置状态
       setTimeout(() => {
         cleanupBlobUrls()
@@ -356,6 +365,7 @@ watch(
         queryId.value = ''
         selectedImageIndex.value = -1
         isGenerating.value = false
+        sessionId.value = ''
       }, 300)
     }
   }

@@ -67,6 +67,10 @@ const emit = defineEmits<{
 
 // --- 定义 Props ---
 const props = defineProps({
+  sessionId: {
+    type: String,
+    default: ''
+  },
   modelValue: {
     type: String,
     default: ''
@@ -140,10 +144,15 @@ const submitContent = async () => {
     // 并行执行两个API调用以减少等待时间
     const [promptResponse, imageResponse] = await Promise.allSettled([
       getPrompt(content.value, 3),
-      instantImageRecommend(projectId, content.value, {
-        top_k: 4,
-        theme: '' // 可以根据需要设置主题
-      })
+      instantImageRecommend(
+        projectId,
+        content.value,
+        {
+          top_k: 4,
+          theme: '' // 可以根据需要设置主题
+        },
+        props.sessionId
+      )
     ])
 
     // 处理prompt补全结果
