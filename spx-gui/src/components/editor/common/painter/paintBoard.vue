@@ -397,7 +397,7 @@ const skipNextImport = ref<boolean>(false)
 const historyManager = ref<HistoryManager | null>(null)
 
 const props = defineProps<{
-  imgSrc: string
+  imgSrc: string | null
   imgLoading: boolean
 }>()
 

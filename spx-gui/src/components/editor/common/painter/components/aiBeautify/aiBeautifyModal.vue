@@ -23,7 +23,7 @@
         <div class="dialog-body">
           <div class="dialog-content-wrapper">
             <div class="origin-image">
-              <img :src="imgSrc" alt="origin" />
+              <img :src="imgSrc || ''" alt="origin" />
             </div>
             <div class="panel">
               <button class="btn btn-secondary" @click="showConfigModal">参数设置</button>
@@ -106,12 +106,12 @@ const isBeautifying = ref<boolean>(false)
 // Props
 interface Props {
   visible: boolean
-  imgSrc: string
+  imgSrc: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
-  imgSrc: ''
+  imgSrc: null
 })
 
 // Emits
@@ -160,7 +160,10 @@ const closeConfigModal = (): void => {
 // 处理开始美化
 const handleStartBeautify = async (): Promise<void> => {
   if (!props.imgSrc) {
-    console.error('图片源不存在')
+    if (props.imgSrc === null) {
+      console.error('图片源不存在')
+      return
+    }
     return
   }
 
