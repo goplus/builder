@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useHovered } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'
 import { UIImg, UISpriteItem } from '@/components/ui'
@@ -13,7 +13,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
-const sprite = useAsyncComputed(() => asset2Sprite(props.asset))
+const sprite = useAsyncComputedLegacy(() => asset2Sprite(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 const name = computed(() => props.asset.displayName)
 const wrapperRef = ref<InstanceType<typeof UISpriteItem>>()

@@ -29,7 +29,11 @@ export const isSound = (url: string): boolean => {
   return ['wav', 'mp3', 'ogg'].includes(extension)
 }
 
-export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+/**
+ * @deprecated Use `useAsyncComputed` instead if possible.
+ * Like `useAsyncComputed`, but keep the previous value when re-evaluating.
+ */
+export function useAsyncComputedLegacy<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
@@ -43,10 +47,10 @@ export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>
 }
 
 /**
- * Like `useAsyncComputed`, but reset value to `null` when re-evaluating.
- * TODO: Migrate usages of `useAsyncComputed` to this if possible.
+ * Like `useAsyncComputedLegacy`, but reset value to `null` when re-evaluating.
+ * TODO: Migrate usages of `useAsyncComputedLegacy` to this if possible.
  */
-export function useAsyncComputedFixed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
+export function useAsyncComputed<T>(getter: (onCleanup: OnCleanup) => Promise<T>) {
   const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false

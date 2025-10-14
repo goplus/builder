@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { asset2Sound } from '@/models/common/asset'
 import type { AssetData } from '@/apis/asset'
@@ -16,7 +16,7 @@ const props = defineProps<{
   sound: Sound | AssetData
 }>()
 
-const sound = useAsyncComputed(async () => {
+const sound = useAsyncComputedLegacy(async () => {
   if (props.sound instanceof Sound) return props.sound
   return asset2Sound(props.sound)
 })

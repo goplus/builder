@@ -1,5 +1,5 @@
 import { shallowRef, watch, type WatchSource } from 'vue'
-import { useAsyncComputedFixed, useExternalUrl } from '@/utils/utils'
+import { useAsyncComputed, useExternalUrl } from '@/utils/utils'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 
 export function useAvatarUrl(urlSource: WatchSource<string | null | undefined>) {
@@ -15,7 +15,7 @@ export function useAvatarUrl(urlSource: WatchSource<string | null | undefined>) 
     { immediate: true }
   )
 
-  const resolvedUrl = useAsyncComputedFixed(async () => {
+  const resolvedUrl = useAsyncComputed(async () => {
     const raw = latestRawRef.value
     if (raw == null) return null
 
