@@ -1,5 +1,6 @@
 <template>
-  <NModalProvider>
+  <slot></slot>
+  <div ref="modalContainer">
     <template v-for="modal in currentModals" :key="modal.id">
       <component
         :is="modal.component"
@@ -9,16 +10,15 @@
         @resolved="(resolved?: unknown) => handleResolved(modal.id, resolved)"
       />
     </template>
-    <slot></slot>
-  </NModalProvider>
+  </div>
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component } from 'vue'
-import { NModalProvider } from 'naive-ui'
+import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component, watch, ref } from 'vue'
 import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 import Emitter from '@/utils/emitter'
+import { provideModalContainer } from '../utils'
 
 // The Modal Component should provide Props as following:
 export type ModalComponentProps = {
@@ -79,6 +79,7 @@ export function useModalEvents(): ModalEvents {
 </script>
 
 <script setup lang="ts">
+const modalContainer = ref<HTMLElement>()
 const currentModals = shallowReactive<ModalInfo[]>([])
 const emitter: ModalEvents = new Emitter()
 
@@ -116,5 +117,45 @@ function handleResolved(id: number, resolved?: unknown) {
   emitter.emit('resolved')
 }
 
+watch(
+  modalContainer,
+  (value, _, onCleanUp) => {
+    if (value == null) return
+
+    // naive-ui does not adequately support simultaneously having "focus outside the modal" and allowing the modal to be "closed by the ESC key."
+    // Refer to: https://github.com/goplus/builder/pull/1874#discussion_r2220769290
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (currentModals.length === 0) return
+      if (e.key !== 'Escape') return
+
+      const target = e.target
+      if (
+        // Non-focusable DOM elements cannot trigger keydown events,so the target is either the body or a focusable DOM element.
+        // If the target is the body, the modal should be closed normally.
+        target != document.body &&
+        target instanceof HTMLElement &&
+        // ignore events if the focused element is outside the modal container subtree.
+        !value.contains(target)
+      ) {
+        return
+      }
+
+      const lastModal = currentModals.at(-1)
+      if (lastModal != null) {
+        handleCancelled(lastModal.id, 'by ESC')
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown)
+    onCleanUp(() => {
+      document.removeEventListener('keydown', handleKeydown)
+    })
+  },
+  {
+    immediate: true
+  }
+)
+
 provide(modalContextInjectKey, { add, events: emitter })
+provideModalContainer(modalContainer)
 </script>
