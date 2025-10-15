@@ -318,8 +318,8 @@ const remixesRet = useQuery(
                   <p class="message">
                     {{
                       $t({
-                        en: 'Please sign in to run this project',
-                        zh: '请先登录以运行该项目'
+                        en: 'This game requires sign-in before playing',
+                        zh: '该游戏需要先登录才能体验'
                       })
                     }}
                   </p>
@@ -611,7 +611,6 @@ const remixesRet = useQuery(
       width: 100%;
       height: 100%;
       padding: 24px;
-      background: rgba(11, 55, 82, 0.35);
 
       .sign-in-card {
         position: relative;
