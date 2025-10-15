@@ -114,7 +114,13 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
-import { humanizeCount, humanizeExactCount, humanizeTime, humanizeExactTime, useAsyncComputed } from '@/utils/utils'
+import {
+  humanizeCount,
+  humanizeExactCount,
+  humanizeTime,
+  humanizeExactTime,
+  useAsyncComputedLegacy
+} from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { createFileWithUniversalUrl, getPublishedContent } from '@/models/common/cloud'
@@ -158,7 +164,7 @@ const to = computed(() => {
   return props.context === 'edit' ? getProjectEditorRoute(owner, name) : getProjectPageRoute(owner, name)
 })
 
-const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
   const thumbnailUniversalUrl = getPublishedContent(props.project)?.thumbnail ?? props.project.thumbnail
   if (thumbnailUniversalUrl === '') return null
   const thumbnail = createFileWithUniversalUrl(thumbnailUniversalUrl)

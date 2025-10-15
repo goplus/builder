@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/common/asset'
@@ -14,7 +14,7 @@ const props = defineProps<{
   backdrop: Backdrop | AssetData
 }>()
 
-const backdrop = useAsyncComputed(async () => {
+const backdrop = useAsyncComputedLegacy(async () => {
   if (props.backdrop instanceof Backdrop) return props.backdrop
   return asset2Backdrop(props.backdrop)
 })

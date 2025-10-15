@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useMessageHandle } from '@/utils/exception'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { createFileWithWebUrl, saveFileForWebUrl, selectFileWithUploadLimit } from '@/models/common/cloud'
 import { fromNativeFile } from '@/models/common/file'
 import { UIIcon, UIImg, UILoading } from '@/components/ui'
@@ -26,7 +26,7 @@ const handleUpload = useMessageHandle(
   }
 )
 
-const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
   if (props.thumbnail === '') return null
   const file = createFileWithWebUrl(props.thumbnail)
   return file.url(onCleanup)

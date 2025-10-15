@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFileUrl } from '@/utils/file'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useAudioDuration } from '@/utils/audio'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sound } from '@/models/common/asset'
@@ -13,7 +13,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
-const sound = useAsyncComputed(() => asset2Sound(props.asset))
+const sound = useAsyncComputedLegacy(() => asset2Sound(props.asset))
 const [audioSrc] = useFileUrl(() => sound.value?.file)
 const name = computed(() => props.asset.displayName)
 const { formattedDuration } = useAudioDuration(() => {

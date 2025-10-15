@@ -5,7 +5,7 @@ import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action, Project } from '@/models/project'
 import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
-import { nomalizeDegree, round, useAsyncComputed } from '@/utils/utils'
+import { nomalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
 
@@ -32,7 +32,7 @@ const nodeRef = ref<KonvaNodeInstance<Image>>()
 const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useFileImg(() => costume.value?.img)
-const rawSize = useAsyncComputed(async () => costume.value?.getRawSize() ?? null)
+const rawSize = useAsyncComputedLegacy(async () => costume.value?.getRawSize() ?? null)
 
 const nodeId = computed(() => getNodeId(props.sprite))
 

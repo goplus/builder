@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Backdrop } from '@/models/common/asset'
@@ -11,7 +11,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
-const backdrop = useAsyncComputed(() => asset2Backdrop(props.asset))
+const backdrop = useAsyncComputedLegacy(() => asset2Backdrop(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 const name = computed(() => props.asset.displayName)
 </script>

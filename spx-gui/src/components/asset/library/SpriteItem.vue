@@ -20,7 +20,7 @@ import { UIImg, UISpriteItem, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useHovered } from '@/utils/dom'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 
@@ -29,7 +29,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
-const sprite = useAsyncComputed(() => asset2Sprite(props.asset))
+const sprite = useAsyncComputedLegacy(() => asset2Sprite(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 const wrapperRef = ref<InstanceType<typeof UISpriteItem>>()
 const hovered = useHovered(() => wrapperRef.value?.$el ?? null)
