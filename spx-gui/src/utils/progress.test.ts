@@ -7,9 +7,9 @@ describe('ProgressReporter', () => {
     const onProgress = vitest.fn()
     const reporter = new ProgressReporter(onProgress)
     reporter.report(0.1, { en: 'foo', zh: 'foo' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.1, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.1, desc: { en: 'foo', zh: 'foo' } })
     reporter.report(0.2, { en: 'bar', zh: 'bar' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.2, desc: { en: 'bar', zh: 'bar' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.2, desc: { en: 'bar', zh: 'bar' } })
 
     onProgress.mockClear()
     reporter.report(0.3, { en: 'baz', zh: 'baz' })
@@ -17,9 +17,9 @@ describe('ProgressReporter', () => {
     expect(onProgress).toHaveBeenCalledTimes(2)
 
     reporter.report(0.5)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.5, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.5, desc: null })
     reporter.report(0.8, { en: 'quux', zh: 'quux' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.8, desc: { en: 'quux', zh: 'quux' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.8, desc: { en: 'quux', zh: 'quux' } })
   })
   describe('startAutoReport', () => {
     it('should work well', async () => {
@@ -63,22 +63,22 @@ describe('ProgressCollector', () => {
     const subReporter2 = collector.getSubReporter({ en: '2', zh: '2' })
 
     subReporter.report(0.1, { en: 'foo', zh: 'foo' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.05, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.05, desc: { en: 'foo', zh: 'foo' } })
 
     subReporter.report(0.6, null)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.3, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.3, desc: null })
 
     subReporter2.report(0.2, { en: 'bar', zh: 'bar' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.4, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.4, desc: null })
 
     subReporter.report(1, null)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.6, desc: { en: 'bar', zh: 'bar' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.6, desc: { en: 'bar', zh: 'bar' } })
 
     subReporter2.report(0.6, null)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.8, desc: { en: '2', zh: '2' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.8, desc: { en: '2', zh: '2' } })
 
     subReporter2.report(1, { en: 'baz', zh: 'baz' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 1, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1, desc: null })
   })
 
   it('should collect progress well with descBase', () => {
@@ -93,21 +93,21 @@ describe('ProgressCollector', () => {
     const subReporter3 = collector.getSubReporter()
 
     subReporter.report(0.9, { en: 'foo', zh: 'foo' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.3, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.3, desc: { en: 'foo', zh: 'foo' } })
 
     subReporter.report(0.9, null)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
       percentage: 0.3,
       desc: { en: 'base (0/3)', zh: 'base（0/3）' }
     })
 
     subReporter.report(1)
     subReporter2.report(0.5, { en: 'bar', zh: 'bar' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.5, desc: { en: 'bar', zh: 'bar' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.5, desc: { en: 'bar', zh: 'bar' } })
 
     subReporter2.report(1)
     subReporter3.report(0.7)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({
+    expect(onProgress.mock.lastCall![0]).toMatchObject({
       percentage: 0.9,
       desc: { en: 'base (2/3)', zh: 'base（2/3）' }
     })
@@ -121,16 +121,16 @@ describe('ProgressCollector', () => {
     const subReporter2 = collector.getSubReporter(null, 3)
 
     subReporter.report(0.6)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.15, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.15, desc: null })
 
     subReporter2.report(0.6)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.6, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.6, desc: null })
 
     subReporter2.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.9, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.9, desc: null })
 
     subReporter.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 1, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1, desc: null })
   })
 
   it('should collect progress well with nested collector', () => {
@@ -147,23 +147,23 @@ describe('ProgressCollector', () => {
     const subReporter22 = subCollector2.getSubReporter()
 
     subReporter11.report(0.2, { en: 'foo', zh: 'foo' })
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.05, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.05, desc: { en: 'foo', zh: 'foo' } })
 
     subReporter12.report(0.6)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.2, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.2, desc: { en: 'foo', zh: 'foo' } })
 
     subReporter21.report(0.2, { en: 'bar', zh: 'bar' })
     subReporter22.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.5, desc: { en: 'foo', zh: 'foo' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.5, desc: { en: 'foo', zh: 'foo' } })
 
     subReporter11.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.7, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.7, desc: null })
 
     subReporter12.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.8, desc: { en: 'bar', zh: 'bar' } })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.8, desc: { en: 'bar', zh: 'bar' } })
 
     subReporter21.report(1)
-    expect(onProgress.mock.lastCall[0]).toMatchObject({ percentage: 1, desc: null })
+    expect(onProgress.mock.lastCall![0]).toMatchObject({ percentage: 1, desc: null })
   })
 
   describe('collectorFor', () => {
@@ -176,7 +176,7 @@ describe('ProgressCollector', () => {
 
       const subReporter = collector.getSubReporter()
       subReporter.report(0.5, null)
-      expect(onReporterProgress.mock.lastCall[0]).toMatchObject({ percentage: 0.5, desc: null })
+      expect(onReporterProgress.mock.lastCall![0]).toMatchObject({ percentage: 0.5, desc: null })
     })
     it('should work well with baseDesc', () => {
       const onReporterProgress = vitest.fn()
@@ -190,7 +190,7 @@ describe('ProgressCollector', () => {
 
       const subReporter = collector.getSubReporter()
       subReporter.report(0.5, null)
-      expect(onReporterProgress.mock.lastCall[0]).toMatchObject({
+      expect(onReporterProgress.mock.lastCall![0]).toMatchObject({
         percentage: 0.5,
         desc: { en: 'base (0/1)', zh: 'base（0/1）' }
       })
@@ -214,14 +214,14 @@ describe('ProgressCollector', () => {
       const subReporter2 = collector2.getSubReporter()
 
       subReporter1.report(0.5, null)
-      expect(onReporterProgress.mock.lastCall[0]).toMatchObject({
+      expect(onReporterProgress.mock.lastCall![0]).toMatchObject({
         percentage: 0.25,
         desc: { en: 'base2 (0/2)', zh: 'base2（0/2）' }
       })
 
       subReporter1.report(1, null)
       subReporter2.report(0.5, null)
-      expect(onReporterProgress.mock.lastCall[0]).toMatchObject({
+      expect(onReporterProgress.mock.lastCall![0]).toMatchObject({
         percentage: 0.75,
         desc: { en: 'base2 (1/2)', zh: 'base2（1/2）' }
       })
