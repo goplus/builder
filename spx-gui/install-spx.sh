@@ -2,7 +2,7 @@
 set -e
 
 # Version of spx, keep in sync with the version in `.env`.
-SPX_VERSION=2.0.0-pre.22
+SPX_VERSION=2.0.0-pre.23
 SPX_NAME="spx_${SPX_VERSION}"
 SPX_FILE_NAME="${SPX_NAME}.zip"
 SPX_FILE_URL="https://github.com/goplus/spx/releases/download/v${SPX_VERSION}/spx_web.zip"
