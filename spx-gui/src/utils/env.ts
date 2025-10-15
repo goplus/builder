@@ -51,3 +51,6 @@ export const sentryLSPSampleRate = parseFloat(import.meta.env.VITE_SENTRY_LSP_SA
 
 /** If tutorials entry should be shown in the Navbar */
 export const showTutorialsEntry = import.meta.env.VITE_SHOW_TUTORIALS_ENTRY === 'true'
+
+/** Default language, e.g. `en`, `zh` */
+export const defaultLang = (import.meta.env.VITE_DEFAULT_LANG as string) || 'en'
