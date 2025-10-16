@@ -535,6 +535,7 @@ onMounted(() => {
       return localStorage.getItem(sessionLocalStorageKey)
     }
   })
+  copilot.syncRoundIdleTimeout()
 })
 </script>
 

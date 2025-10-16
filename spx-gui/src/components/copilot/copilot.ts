@@ -2,7 +2,7 @@ import type { ZodObject, ZodTypeAny } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { debounce, throttle } from 'lodash'
 import { shallowRef, ref, shallowReactive, type Component, watch } from 'vue'
-import { localStorageRef } from '@/utils/utils'
+import { localStorageRef, timeout } from '@/utils/utils'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import { ActionException, Cancelled, capture } from '@/utils/exception'
@@ -10,6 +10,7 @@ import * as apis from '@/apis/copilot'
 import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
+import dayjs from 'dayjs'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -106,6 +107,10 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
+  /** The maximum idle time (in milliseconds) allowed after the last Round has completed */
+  idleTimeout?: number
+  /** The maximum total duration (in milliseconds) a Session is allowed to run. Once this time is reached, the Session will be terminated automatically */
+  maxDuration?: number
 }
 
 export enum RoundState {
@@ -121,6 +126,15 @@ export enum RoundState {
   Cancelled = 'cancelled',
   /** The round failed due to an error */
   Failed = 'failed'
+}
+
+export enum SessionState {
+  /** The session is currently active and processing messages. */
+  Active = 'active',
+  /** The session has exceeded the configured idle timeout period */
+  IdleExpired = 'idle-expired',
+  /** The session has reached the configured maximum total duration */
+  MaxDurationExpired = 'max-duration-expired'
 }
 
 export interface IMessageStreamGenerator {
@@ -299,11 +313,15 @@ export class Round {
 type SessionExported = {
   topic: Topic
   rounds: RoundExported[]
+  lastRoundStartTime?: number | null
+  state?: SessionState
 }
 
 export class Session {
   topic: Topic
   rounds: Round[] = shallowReactive([])
+  state = ref<SessionState>(SessionState.Active)
+  lastRoundStartTime?: number | null = null
 
   private maxRounds = 10
 
@@ -317,12 +335,16 @@ export class Session {
   export(): SessionExported {
     return {
       topic: this.topic,
-      rounds: this.rounds.map((round) => round.export())
+      rounds: this.rounds.map((round) => round.export()),
+      lastRoundStartTime: this.lastRoundStartTime,
+      state: this.state.value
     }
   }
 
   static load(exported: SessionExported, copilot: Copilot): Session {
     const session = new Session(exported.topic, copilot)
+    session.lastRoundStartTime = exported.lastRoundStartTime
+    session.state.value = exported.state ?? SessionState.Active
     session.rounds.push(...exported.rounds.map((round) => Round.load(round, copilot, session)))
     return session
   }
@@ -336,6 +358,8 @@ export class Session {
   }
 
   private startCurrentRound() {
+    // Recording lastRoundStartTime when a new round starts is not necessarily reliable.
+    this.lastRoundStartTime = dayjs().valueOf()
     this.currentRound?.start()
   }
 
@@ -348,7 +372,15 @@ export class Session {
     }
   }
 
+  restore() {
+    this.state.value = SessionState.Active
+    this.lastRoundStartTime = dayjs().valueOf()
+  }
+
   addUserMessage(m: UserMessage) {
+    // A Session that is not in the Active state requires further processing before it can accept new UserMessages.
+    if (this.state.value !== SessionState.Active) return
+
     this.abortCurrentRound() // TODO: or should we wait for the current round to finish? Then there may be a user message queue
     const round = new Round(m, this.copilot, this)
     this.rounds.push(round)
@@ -436,10 +468,19 @@ export interface IStorage {
   get(): string | null
 }
 
+const defaultIdleTimeout = 30 * 1000 // temp 30 seconds
+
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
   description: '',
-  reactToEvents: false
+  reactToEvents: false,
+  idleTimeout: defaultIdleTimeout
+}
+
+function createTimeoutProcessor(callback: () => void, delay: number) {
+  const abort = new AbortController()
+  timeout(delay, abort.signal).then(callback)
+  return abort
 }
 
 export class Copilot extends Disposable {
@@ -448,6 +489,8 @@ export class Copilot extends Disposable {
   private customElementMap = new Map<string, CustomElementDefinition>()
   private toolMap = new Map<string, ToolDefinition>()
   private stateIndicatorComponentMap: Map<string, Component> = shallowReactive(new Map())
+
+  private idleTimeoutAbort: AbortController | null = null
 
   private getTools(): ToolDefinition[] {
     return Array.from(this.toolMap.values())
@@ -463,6 +506,8 @@ export class Copilot extends Disposable {
 
   constructor(public generator: IMessageStreamGenerator = apis) {
     super()
+
+    this.addDisposer(() => this.cancelIdleTimeout())
   }
 
   /** If copilot is active (the panel is visible) */
@@ -552,6 +597,24 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     return this.quickInputProviders.map((provider) => provider.provideQuickInput(lastCopilotMessage, topic)).flat()
   }
 
+  private cancelIdleTimeout() {
+    this.idleTimeoutAbort?.abort(new Cancelled('idle timeout'))
+    this.idleTimeoutAbort = null
+  }
+  private refreshIdleTimeout() {
+    this.cancelIdleTimeout()
+    const session = this.currentSession
+    if (session == null || session.state.value != SessionState.Active) return
+
+    const { topic } = session
+    const idleTimeout = topic.idleTimeout
+    if (idleTimeout == null) return
+    // lastRoundStartTime is used to calibrate the timer after the page is closed.
+    const lastRoundStartTime = session.lastRoundStartTime ?? dayjs().valueOf()
+    const timeout = idleTimeout - (dayjs().valueOf() - lastRoundStartTime)
+    this.idleTimeoutAbort = createTimeoutProcessor(() => (session.state.value = SessionState.IdleExpired), timeout)
+  }
+
   /**
    * Start a new session for the copilot.
    * If a session is already running, it will be ended first.
@@ -564,6 +627,24 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
+  /**
+   * The timer needs to be refreshed when the Round state changes.
+   */
+  syncRoundIdleTimeout() {
+    this.addDisposer(
+      watch(
+        () => this.currentSession?.currentRound?.state,
+        throttle((v) => {
+          if (v == null) return
+          this.refreshIdleTimeout()
+        }, 100),
+        {
+          immediate: true
+        }
+      )
+    )
+  }
+
   syncSessionWith(storage: IStorage): void {
     try {
       const saved = storage.get()
@@ -574,6 +655,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     } catch (e) {
       capture(e, 'Failed to load session from storage')
     }
+
     this.addDisposer(
       watch(
         () => this.currentSession?.export() ?? null,
