@@ -151,8 +151,13 @@ function handleSignIn() {
 const handleRun = useMessageHandle(
   async () => {
     runnerState.value = 'loading'
-    await projectRunnerRef.value?.run()
-    runnerState.value = 'running'
+    try {
+      await projectRunnerRef.value?.run()
+      runnerState.value = 'running'
+    } catch (err) {
+      runnerState.value = 'initial'
+      throw err
+    }
   },
   { en: 'Failed to run project', zh: '运行项目失败' }
 )
@@ -168,8 +173,13 @@ const handleStop = useMessageHandle(
 const handleRerun = useMessageHandle(
   async () => {
     runnerState.value = 'loading'
-    await projectRunnerRef.value?.rerun()
-    runnerState.value = 'running'
+    try {
+      await projectRunnerRef.value?.rerun()
+      runnerState.value = 'running'
+    } catch (err) {
+      runnerState.value = 'initial'
+      throw err
+    }
   },
   {
     en: 'Failed to rerun project',
@@ -311,42 +321,46 @@ const remixesRet = useQuery(
         <div class="project-wrapper">
           <template v-if="project != null">
             <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
-            <div v-show="runnerState === 'initial'" class="runner-mask">
-              <div v-if="needsSignInToRun" class="sign-in-prompt">
-                <div class="sign-in-card">
-                  <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
-                  <p class="message">
-                    {{
-                      $t({
-                        en: 'This game requires sign-in before playing',
-                        zh: '该游戏需要先登录才能体验'
-                      })
-                    }}
-                  </p>
+            <Transition name="runner-mask-fade">
+              <div v-if="runnerState !== 'running'" :class="['runner-mask', { initial: runnerState === 'initial' }]">
+                <template v-if="runnerState === 'initial'">
+                  <div v-if="needsSignInToRun" class="sign-in-prompt">
+                    <div class="sign-in-card">
+                      <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
+                      <p class="message">
+                        {{
+                          $t({
+                            en: 'This game requires sign-in before playing',
+                            zh: '该游戏需要先登录才能体验'
+                          })
+                        }}
+                      </p>
+                      <UIButton
+                        v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+                        class="sign-in-button"
+                        size="large"
+                        type="primary"
+                        @click="handleSignIn"
+                      >
+                        {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
+                      </UIButton>
+                    </div>
+                  </div>
                   <UIButton
-                    v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-                    class="sign-in-button"
-                    size="large"
+                    v-else
+                    v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
+                    class="run-button"
                     type="primary"
-                    @click="handleSignIn"
+                    size="large"
+                    icon="playHollow"
+                    :disabled="projectRunnerRef == null"
+                    :loading="handleRun.isLoading.value"
+                    @click="handleRun.fn"
+                    >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
                   >
-                    {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
-                  </UIButton>
-                </div>
+                </template>
               </div>
-              <UIButton
-                v-else
-                v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
-                class="run-button"
-                type="primary"
-                size="large"
-                icon="playHollow"
-                :disabled="projectRunnerRef == null"
-                :loading="handleRun.isLoading.value"
-                @click="handleRun.fn"
-                >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
-              >
-            </div>
+            </Transition>
           </template>
         </div>
         <FullScreenProjectRunner
@@ -579,6 +593,17 @@ const remixesRet = useQuery(
 
 .left {
   flex: 1 1 744px;
+
+  .runner-mask-fade-enter-from,
+  .runner-mask-fade-leave-to {
+    opacity: 0;
+  }
+
+  .runner-mask-fade-enter-active,
+  .runner-mask-fade-leave-active {
+    transition: opacity 0.2s ease;
+  }
+
   .project-wrapper {
     position: relative;
     width: 100%;
@@ -596,8 +621,15 @@ const remixesRet = useQuery(
       justify-content: center;
       align-items: center;
       border-radius: var(--ui-border-radius-1);
-      background: rgba(87, 96, 106, 0.2);
+      background: rgba(36, 41, 47, 0.6);
       backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .runner-mask.initial {
+      pointer-events: auto;
     }
 
     .run-button {
@@ -640,6 +672,17 @@ const remixesRet = useQuery(
       .sign-in-button {
         width: 100%;
       }
+    }
+
+    :deep(.ui-detailed-loading.cover .text) {
+      color: var(--ui-color-grey-100);
+    }
+
+    :deep(.ui-detailed-loading.cover) {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      z-index: 3;
     }
   }
 

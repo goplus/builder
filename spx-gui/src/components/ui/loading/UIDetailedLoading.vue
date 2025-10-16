@@ -75,7 +75,9 @@ watch(
     height: 100%;
 
     &.mask-semi-transparent {
-      background-color: rgba(36, 41, 47, 0.7);
+      background-color: rgba(36, 41, 47, 0.6);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
 
       .text {
         color: var(--ui-color-grey-100);
