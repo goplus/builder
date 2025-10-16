@@ -52,6 +52,8 @@ import apply from './apply.svg?raw'
 import insert from './insert.svg?raw'
 import copy from './copy.svg?raw'
 import fullScreen from './full-screen.svg?raw'
+import enterFullScreen from './enter-full-screen.svg?raw'
+import exitFullScreen from './exit-full-screen.svg?raw'
 import end from './end.svg?raw'
 import eyedrop from './eyedrop.svg?raw'
 import tutorial from './tutorial.svg?raw'
@@ -106,6 +108,8 @@ const typeIconMap = {
   insert,
   copy,
   fullScreen,
+  enterFullScreen,
+  exitFullScreen,
   end,
   eyedrop,
   tutorial,

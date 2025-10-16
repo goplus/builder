@@ -3,72 +3,85 @@
     v-radar="{ name: 'Editor preview', desc: 'Preview panel for stage preview and project running' }"
     class="editor-preview"
   >
-    <UICardHeader v-if="running.mode !== 'debug'">
+    <UICardHeader>
       <div class="header">
-        {{ $t({ en: 'Preview', zh: '预览' }) }}
+        {{ $t(headerTitle) }}
       </div>
       <UIButton
-        ref="runButtonRef"
+        v-if="runnerState === 'initial'"
         v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
         class="button"
         type="primary"
         icon="playHollow"
-        :loading="startDebugging.isLoading.value"
-        @click="startDebugging.fn"
+        :loading="handleRun.isLoading.value"
+        @click="handleRun.fn"
       >
         {{ $t({ en: 'Run', zh: '运行' }) }}
       </UIButton>
-      <UITooltip placement="top-end">
-        <template #trigger>
-          <UIButton
-            v-radar="{ name: 'Full screen run button', desc: 'Click to run in full screen mode' }"
-            class="button full-screen-run-button"
-            type="boring"
-            icon="fullScreen"
-            :loading="startRunning.isLoading.value"
-            @click="startRunning.fn"
-          ></UIButton>
-        </template>
-        {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
-      </UITooltip>
+      <template v-else>
+        <UIButton
+          v-if="runnerState === 'running' && !handleStop.isLoading.value"
+          v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
+          class="button"
+          type="primary"
+          icon="rotate"
+          :loading="handleRerun.isLoading.value"
+          @click="handleRerun.fn"
+        >
+          {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+        </UIButton>
+        <UIButton
+          v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
+          class="button"
+          type="boring"
+          icon="end"
+          :loading="handleStop.isLoading.value"
+          @click="handleStop.fn"
+        >
+          {{ $t({ en: 'Stop', zh: '停止' }) }}
+        </UIButton>
+        <UITooltip placement="top-end">
+          <template #trigger>
+            <UIButton
+              v-radar="{ name: 'Enter full screen button', desc: 'Click to enter full screen for the running project' }"
+              class="button"
+              type="boring"
+              icon="enterFullScreen"
+              :disabled="handleStop.isLoading.value"
+              @click="handleEnterFullscreen"
+            ></UIButton>
+          </template>
+          {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
+        </UITooltip>
+      </template>
     </UICardHeader>
-    <UICardHeader v-else>
-      <div class="header">
-        {{ $t({ en: 'Running', zh: '运行中' }) }}
-      </div>
-      <UIButton
-        v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
-        class="button"
-        type="primary"
-        icon="rotate"
-        :disabled="running.initializing"
-        :loading="handleInPlaceRerun.isLoading.value"
-        @click="handleInPlaceRerun.fn"
-      >
-        {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-      </UIButton>
-      <UIButton
-        v-radar="{ name: 'Stop button', desc: 'Click to stop the running project' }"
-        class="button"
-        type="boring"
-        icon="end"
-        @click="handleStop"
-      >
-        {{ $t({ en: 'Stop', zh: '停止' }) }}
-      </UIButton>
-    </UICardHeader>
-
-    <FullScreenProjectRunner
-      :project="editorCtx.project"
-      :visible="running.mode === 'run'"
-      @close="handleStop"
-      @exit="handleExit"
-    />
 
     <div class="main">
-      <div class="stage-viewer-container">
+      <div
+        ref="stageContainerRef"
+        class="stage-viewer-container"
+        :class="{ 'stage-viewer-container--running': runnerState !== 'initial' }"
+      >
         <StageViewer />
-        <UITooltip>
+        <div v-show="fullscreen || runnerState !== 'initial' || runnerHostSticky" class="runner-host">
+          <ProjectRunnerSurface
+            ref="projectRunnerSurfaceRef"
+            v-model:fullscreen="fullscreen"
+            :project="editorCtx.project"
+            :runner-state="runnerState"
+            :run="handleRun.fn"
+            :run-loading="handleRun.isLoading.value"
+            :rerun="handleRerun.fn"
+            :rerun-loading="handleRerun.isLoading.value"
+            :stop="handleStop.fn"
+            :stop-loading="handleStop.isLoading.value"
+            :inline-anchor="getStageInlineAnchor"
+            @console="handleConsole"
+            @update:fullscreen="handleFullscreenChange"
+            @exit="handleExit"
+          />
+        </div>
+        <UITooltip v-if="runnerState === 'initial'">
           <template #trigger>
             <button
               v-radar="{ name: 'Full map button', desc: 'Click to view & edit the full map' }"
@@ -101,50 +114,176 @@
           </template>
           {{ $t({ en: 'View full map', zh: '查看完整地图' }) }}
         </UITooltip>
-        <div v-show="running.mode === 'debug'" class="in-place-runner">
-          <InPlaceRunner ref="inPlaceRunner" :project="editorCtx.project" :visible="running.mode === 'debug'" />
-        </div>
       </div>
     </div>
   </UICard>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
-import { humanizeListWithLimit } from '@/utils/utils'
+import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
-import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
+import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
 import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
+import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import InPlaceRunner from './InPlaceRunner.vue'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 
-const running = computed(() => editorCtx.state.runtime.running)
+const runtime = computed(() => editorCtx.state.runtime)
+const running = computed(() => runtime.value.running)
+const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
-function handleStop() {
-  editorCtx.state.runtime.setRunning({ mode: 'none' })
-}
+const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
+const stageContainerRef = ref<HTMLDivElement | null>(null)
+const fullscreen = ref(false)
+const ignoreNextModeSync = ref(false)
+const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
+const runnerHostSticky = ref(false)
+let runnerHostReleaseTimer: number | null = null
 
-function handleExit(code: number) {
-  editorCtx.state.runtime.emit('didExit', code)
-}
+watch(
+  () => running.value.mode,
+  (mode) => {
+    if (mode === 'none') {
+      runnerState.value = 'initial'
+      if (ignoreNextModeSync.value) {
+        ignoreNextModeSync.value = false
+        return
+      }
+      fullscreen.value = false
+      return
+    }
+    ignoreNextModeSync.value = false
+    if (mode === 'run') fullscreen.value = true
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [fullscreen.value, runnerState.value],
+  ([isFullscreen, state]) => {
+    if (isFullscreen || state !== 'initial') {
+      runnerHostSticky.value = false
+      if (runnerHostReleaseTimer != null) {
+        window.clearTimeout(runnerHostReleaseTimer)
+        runnerHostReleaseTimer = null
+      }
+    }
+  }
+)
+
+const headerTitle = computed(() => {
+  if (runnerState.value === 'loading') return { en: 'Loading', zh: '加载中' } satisfies LocaleMessage
+  if (runnerState.value === 'running') return { en: 'Running', zh: '运行中' } satisfies LocaleMessage
+  return { en: 'Preview', zh: '预览' } satisfies LocaleMessage
+})
 
 const i18n = useI18n()
 const confirm = useConfirmDialog()
 
+const lastPanicOutput = ref<RuntimeOutput | null>(null)
+
+function appendRuntimeOutput(output: RuntimeOutput) {
+  runtime.value.addOutput(output)
+}
+
+function keepRunnerHostVisibleForOverlay() {
+  runnerHostSticky.value = true
+  if (runnerHostReleaseTimer != null) window.clearTimeout(runnerHostReleaseTimer)
+  runnerHostReleaseTimer = window.setTimeout(() => {
+    runnerHostSticky.value = false
+    runnerHostReleaseTimer = null
+  }, 450)
+}
+
+function handleConsole(type: 'log' | 'warn', args: unknown[]) {
+  if (type === 'log' && args.length === 1 && typeof args[0] === 'string') {
+    try {
+      const logMsg = JSON.parse(args[0])
+      if (logMsg.level === 'INFO') {
+        appendRuntimeOutput({
+          kind: RuntimeOutputKind.Log,
+          time: logMsg.time,
+          message: logMsg.msg,
+          source: {
+            textDocument: {
+              uri: `file:///${logMsg.file}`
+            },
+            range: {
+              start: { line: logMsg.line, column: 1 },
+              end: { line: logMsg.line, column: 1 }
+            }
+          }
+        })
+        return
+      }
+      if (logMsg.level === 'ERROR' && logMsg.error && logMsg.msg === 'panic') {
+        lastPanicOutput.value = {
+          kind: RuntimeOutputKind.Error,
+          time: logMsg.time,
+          message: `panic: ${logMsg.error}`,
+          source: {
+            textDocument: {
+              uri: `file:///${logMsg.file}`
+            },
+            range: {
+              start: { line: logMsg.line, column: logMsg.column },
+              end: { line: logMsg.line, column: logMsg.column }
+            }
+          }
+        }
+        return
+      }
+    } catch {
+      // fall through to default handling
+    }
+  }
+
+  const message = args.join(' ')
+  if (/^panic: .+ \[recovered\]$/.test(message)) return
+
+  if (
+    type === 'log' &&
+    lastPanicOutput.value != null &&
+    (message === lastPanicOutput.value.message || message === '\t' + lastPanicOutput.value.message)
+  ) {
+    appendRuntimeOutput(lastPanicOutput.value)
+    lastPanicOutput.value = null
+  } else {
+    appendRuntimeOutput({
+      kind: type === 'warn' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
+      time: Date.now(),
+      message
+    })
+  }
+}
+
+function handleExit(code: number) {
+  runtime.value.emit('didExit', code)
+  if (exitGuard.value === 'manualStopPending') {
+    exitGuard.value = 'idle'
+    return
+  }
+  exitGuard.value = 'idle'
+  fullscreen.value = false
+  runnerState.value = 'initial'
+  lastPanicOutput.value = null
+  editorCtx.state.runtime.setRunning({ mode: 'none' })
+}
+
 async function checkAndNotifyError() {
   const r = await codeEditorCtx.mustEditor().diagnosticWorkspace()
   const codeFilesWithError: LocaleMessage[] = []
-  for (const i of r.items) {
-    if (!i.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
-    codeFilesWithError.push(textDocumentId2CodeFileName(i.textDocument))
+  for (const item of r.items) {
+    if (!item.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error)) continue
+    codeFilesWithError.push(textDocumentId2CodeFileName(item.textDocument))
   }
   if (codeFilesWithError.length === 0) return
   const codeFileNamesWithError = humanizeListWithLimit(codeFilesWithError)
@@ -162,28 +301,106 @@ async function tryFormatWorkspace() {
     await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
       codeEditorCtx.mustEditor().formatWorkspace()
     )
-  } catch (e) {
-    console.warn('Failed to format workspace', e)
+  } catch (error) {
+    console.warn('Failed to format workspace', error)
   }
 }
 
-const startRunning = useMessageHandle(async () => {
-  await checkAndNotifyError()
-  await tryFormatWorkspace()
-  editorCtx.state.runtime.setRunning({ mode: 'run' })
-})
+async function executeRun(action: 'run' | 'rerun') {
+  exitGuard.value = 'idle'
+  runnerState.value = 'loading'
+  lastPanicOutput.value = null
+  await nextTick()
+  const surface = await untilNotNull(projectRunnerSurfaceRef)
+  const shouldStayFullscreen = fullscreen.value
+  runtime.value.clearOutputs()
+  if (!shouldStayFullscreen) {
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+  } else {
+    editorCtx.state.runtime.setRunning({ mode: 'run' })
+  }
+  try {
+    const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
+    runnerState.value = 'running'
+    if (shouldStayFullscreen) {
+      editorCtx.state.runtime.setRunning({ mode: 'run' })
+    } else {
+      editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash!)
+    }
+  } catch (error) {
+    runnerState.value = 'initial'
+    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    throw error
+  }
+}
 
-const startDebugging = useMessageHandle(async () => {
-  await checkAndNotifyError()
-  await tryFormatWorkspace()
-  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
-})
+const handleRun = useMessageHandle(
+  async () => {
+    await checkAndNotifyError()
+    await tryFormatWorkspace()
+    await executeRun('run')
+  },
+  { en: 'Failed to run project', zh: '运行项目失败' }
+)
 
-const inPlaceRunner = ref<InstanceType<typeof InPlaceRunner>>()
+const handleRerun = useMessageHandle(
+  async () => {
+    await executeRun('rerun')
+  },
+  { en: 'Failed to rerun project', zh: '重新运行项目失败' }
+)
 
-const handleInPlaceRerun = useMessageHandle(() => inPlaceRunner.value?.rerun(), {
-  en: 'Failed to rerun project',
-  zh: '重新运行项目失败'
+const handleStop = useMessageHandle(
+  async () => {
+    const surface = projectRunnerSurfaceRef.value
+    if (surface == null) return
+    const wasFullscreen = fullscreen.value
+    exitGuard.value = 'manualStopPending'
+    let handled = false
+    try {
+      await surface.stop()
+      lastPanicOutput.value = null
+      runnerState.value = 'initial'
+      ignoreNextModeSync.value = wasFullscreen
+      editorCtx.state.runtime.setRunning({ mode: 'none' })
+      if (!wasFullscreen) fullscreen.value = false
+      handled = true
+    } finally {
+      if (!handled) exitGuard.value = 'idle'
+    }
+  },
+  { en: 'Failed to stop project', zh: '停止项目失败' }
+)
+
+function handleFullscreenChange(value: boolean) {
+  fullscreen.value = value
+  if (value) {
+    if (runnerState.value !== 'initial') {
+      editorCtx.state.runtime.setRunning({ mode: 'run' })
+    }
+    return
+  }
+  if (runnerState.value === 'initial') {
+    keepRunnerHostVisibleForOverlay()
+    editorCtx.state.runtime.setRunning({ mode: 'none' })
+  } else {
+    editorCtx.state.runtime.setRunning({
+      mode: 'debug',
+      initializing: runnerState.value === 'loading'
+    })
+  }
+}
+
+function handleEnterFullscreen() {
+  if (runnerState.value === 'initial') return
+  projectRunnerSurfaceRef.value?.toggleFullscreen(true)
+}
+
+onBeforeUnmount(() => {
+  if (runnerHostReleaseTimer != null) {
+    window.clearTimeout(runnerHostReleaseTimer)
+    runnerHostReleaseTimer = null
+  }
 })
 
 const invokeMapEditor = useModal(MapEditorModal)
@@ -193,6 +410,10 @@ const handleEditMap = useMessageHandle(() =>
     selectedSpriteId: editorCtx.state.selectedSprite?.id ?? null
   })
 ).fn
+
+function getStageInlineAnchor() {
+  return stageContainerRef.value
+}
 </script>
 
 <style scoped lang="scss">
@@ -212,10 +433,6 @@ const handleEditMap = useMessageHandle(() =>
     margin-left: 8px;
   }
 
-  .full-screen-run-button :deep(.content) {
-    padding: 0 9px;
-  }
-
   .main {
     display: flex;
     overflow: hidden;
@@ -230,6 +447,43 @@ const handleEditMap = useMessageHandle(() =>
     height: 100%;
     border-radius: var(--ui-border-radius-1);
     overflow: hidden;
+    background-color: var(--ui-color-grey-200);
+
+    &--running {
+      :deep(.stage-viewer) {
+        filter: blur(4px);
+        pointer-events: none;
+        user-select: none;
+      }
+    }
+
+    .runner-host {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--ui-color-grey-300);
+
+      :deep(.project-runner-surface) {
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
+
+      :deep(.project-runner-surface:not(.fullscreen)) {
+        align-items: center;
+        justify-content: center;
+      }
+
+      :deep(.project-runner-surface:not(.fullscreen) .runner) {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        aspect-ratio: 4 / 3;
+        height: auto;
+      }
+    }
 
     .edit-map-button {
       position: absolute;
@@ -255,14 +509,5 @@ const handleEditMap = useMessageHandle(() =>
       }
     }
   }
-}
-
-.in-place-runner {
-  position: absolute;
-  z-index: 10;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
 }
 </style>
