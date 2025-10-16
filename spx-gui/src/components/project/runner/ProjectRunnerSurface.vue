@@ -376,10 +376,6 @@ function closeFullscreen() {
   emit('update:fullscreen', false)
 }
 
-function toggleFullscreen(value?: boolean) {
-  emit('update:fullscreen', value ?? !props.fullscreen)
-}
-
 defineExpose({
   async run() {
     return runnerRef.value?.run()
@@ -389,8 +385,7 @@ defineExpose({
   },
   async rerun() {
     return runnerRef.value?.rerun()
-  },
-  toggleFullscreen
+  }
 })
 </script>
 
@@ -417,72 +412,59 @@ defineExpose({
       }"
     >
       <div v-if="overlayActive && (overlayVisible || overlayClosing || overlayOpening)" class="header">
-        <slot
-          name="overlay-header"
-          :close="closeFullscreen"
-          :run="handleRunClick"
-          :run-loading="runButtonLoading"
-          :rerun="handleRerunClick"
-          :rerun-loading="rerunButtonLoading"
-          :stop="handleStopClick"
-          :stop-loading="stopButtonLoading"
-          :runner-state="runnerState"
-          :initial-loading="initialLoading"
-        >
-          <div class="header-left"></div>
-          <div class="project-name">
-            {{ project.name }}
-          </div>
-          <div class="header-right">
-            <UIButton
-              v-if="runnerState === 'initial'"
-              v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
-              class="button"
-              type="primary"
-              icon="playHollow"
-              :loading="runButtonLoading"
-              @click="handleRunClick"
-            >
-              {{ $t({ en: 'Run', zh: '运行' }) }}
-            </UIButton>
-            <UIButton
-              v-else-if="runnerState === 'running' && !stopButtonLoading"
-              v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
-              class="button"
-              icon="rotate"
-              :loading="rerunButtonLoading"
-              @click="handleRerunClick"
-            >
-              {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-            </UIButton>
-            <UIButton
-              v-if="runnerState !== 'initial'"
-              v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
-              class="button"
-              type="boring"
-              icon="end"
-              :loading="stopButtonLoading"
-              @click="handleStopClick"
-            >
-              {{ $t({ en: 'Stop', zh: '停止' }) }}
-            </UIButton>
-            <UITooltip>
-              <template #trigger>
-                <UIButton
-                  v-radar="{
-                    name: 'Exit full screen button',
-                    desc: 'Click to exit full screen for the running project'
-                  }"
-                  class="button"
-                  type="boring"
-                  icon="exitFullScreen"
-                  @click="closeFullscreen"
-                ></UIButton>
-              </template>
-              {{ $t({ en: 'Exit full screen', zh: '退出全屏' }) }}
-            </UITooltip>
-          </div>
-        </slot>
+        <div class="header-left"></div>
+        <div class="project-name">
+          {{ project.name }}
+        </div>
+        <div class="header-right">
+          <UIButton
+            v-if="runnerState === 'initial'"
+            v-radar="{ name: 'Run button', desc: 'Click to run the project in overlay' }"
+            class="button"
+            type="primary"
+            icon="playHollow"
+            :loading="runButtonLoading"
+            @click="handleRunClick"
+          >
+            {{ $t({ en: 'Run', zh: '运行' }) }}
+          </UIButton>
+          <UIButton
+            v-else-if="runnerState === 'running' && !stopButtonLoading"
+            v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
+            class="button"
+            icon="rotate"
+            :loading="rerunButtonLoading"
+            @click="handleRerunClick"
+          >
+            {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+          </UIButton>
+          <UIButton
+            v-if="runnerState !== 'initial'"
+            v-radar="{ name: 'Stop button', desc: 'Click to stop the project' }"
+            class="button"
+            type="boring"
+            icon="end"
+            :loading="stopButtonLoading"
+            @click="handleStopClick"
+          >
+            {{ $t({ en: 'Stop', zh: '停止' }) }}
+          </UIButton>
+          <UITooltip>
+            <template #trigger>
+              <UIButton
+                v-radar="{
+                  name: 'Exit full screen button',
+                  desc: 'Click to exit full screen for the running project'
+                }"
+                class="button"
+                type="boring"
+                icon="exitFullScreen"
+                @click="closeFullscreen"
+              ></UIButton>
+            </template>
+            {{ $t({ en: 'Exit full screen', zh: '退出全屏' }) }}
+          </UITooltip>
+        </div>
       </div>
       <div class="runner-area">
         <ProjectRunner
@@ -496,7 +478,6 @@ defineExpose({
         <div v-if="overlayActive && initialLoading && !overlayOpening" class="overlay-loading"></div>
       </div>
     </div>
-    <slot name="inline-footer" />
   </div>
 </template>
 

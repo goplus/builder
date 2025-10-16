@@ -393,7 +393,7 @@ function handleFullscreenChange(value: boolean) {
 
 function handleEnterFullscreen() {
   if (runnerState.value === 'initial') return
-  projectRunnerSurfaceRef.value?.toggleFullscreen(true)
+  handleFullscreenChange(true)
 }
 
 onBeforeUnmount(() => {
