@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <NavbarWrapper>
+  <NavbarWrapper disabled-lang>
     <template #left>
       <NavbarDropdown
         :trigger-radar="{
@@ -57,24 +57,23 @@
           </UIMenuGroup>
         </UIMenu>
       </NavbarDropdown>
-      <NavbarDropdown
-        v-if="project != null"
-        :trigger-radar="{ name: 'History menu', desc: 'Hover to see history options (undo/redo)' }"
-      >
+
+      <UITooltip :disabled="undoAction == null">
         <template #trigger>
-          <UIIcon type="clock" />
+          <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
+            <UIIcon class="icon" type="undo" />
+          </button>
         </template>
-        <UIMenu>
-          <UIMenuItem :disabled="undoAction == null" @click="handleUndo.fn">
-            <template #icon><img :src="undoSvg" /></template>
-            <span class="history-menu-text">{{ $t(undoText) }}</span>
-          </UIMenuItem>
-          <UIMenuItem :disabled="redoAction == null" @click="handleRedo.fn">
-            <template #icon><img :src="redoSvg" /></template>
-            <span class="history-menu-text">{{ $t(redoText) }}</span>
-          </UIMenuItem>
-        </UIMenu>
-      </NavbarDropdown>
+        <span class="history-menu-text">{{ $t(undoText) }}</span>
+      </UITooltip>
+      <UITooltip :disabled="redoAction == null">
+        <template #trigger>
+          <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
+            <UIIcon class="icon" type="redo" />
+          </button>
+        </template>
+        <span class="history-menu-text">{{ $t(redoText) }}</span>
+      </UITooltip>
     </template>
     <template #center>
       <template v-if="project != null">
@@ -166,8 +165,6 @@ import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import { SavingState, EditingMode } from '../editing'
 import type { EditorState } from '../editor-state'
-import undoSvg from './icons/undo.svg'
-import redoSvg from './icons/redo.svg'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
@@ -391,6 +388,33 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 .owner-info::after {
   content: '/';
   margin: 0 4px;
+}
+
+.history-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 100%;
+  background: none;
+  outline: none;
+  border: none;
+  padding: 0;
+  color: white;
+
+  .icon {
+    width: 18px;
+  }
+
+  &[disabled] {
+    color: #9de6ec;
+    cursor: not-allowed;
+  }
+
+  &:hover:not([disabled]) {
+    background-color: var(--ui-color-primary-600);
+    cursor: pointer;
+  }
 }
 
 .auto-save-state {
