@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { useExternalUrl } from '@/utils/utils'
+import { useAvatarUrl } from '@/stores/user/avatar'
 import { useI18n } from '@/utils/i18n'
 import { type User } from '@/apis/user'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
-const avatarUrl = useExternalUrl(() => props.user.avatar)
+const avatarUrl = useAvatarUrl(() => props.user.avatar)
 
 const form = useForm({
   description: [props.user.description, validateDescription]

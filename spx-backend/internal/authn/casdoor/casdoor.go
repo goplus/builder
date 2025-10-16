@@ -8,16 +8,13 @@ import (
 	"strings"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
-	"github.com/goplus/builder/spx-backend/internal/authn"
-	"github.com/goplus/builder/spx-backend/internal/config"
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
-)
 
-var (
-	insecureAvatarDomains = []string{
-		"http://thirdqq.qlogo.cn",
-	}
+	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/avatar"
+	"github.com/goplus/builder/spx-backend/internal/config"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // client defines the interface for Casdoor client operations.
@@ -28,13 +25,17 @@ type client interface {
 
 // authenticator implements [authn.Authenticator] using Casdoor.
 type authenticator struct {
-	client  client
-	orgName string
-	db      *gorm.DB
+	client        client
+	orgName       string
+	db            *gorm.DB
+	avatarManager avatar.Manager
 }
 
 // New creates a new Casdoor authenticator.
-func New(db *gorm.DB, cfg config.CasdoorConfig) authn.Authenticator {
+func New(db *gorm.DB, cfg config.CasdoorConfig, avatarManager avatar.Manager) (authn.Authenticator, error) {
+	if avatarManager == nil {
+		return nil, errors.New("missing avatar manager")
+	}
 	client := casdoorsdk.NewClientWithConf(&casdoorsdk.AuthConfig{
 		Endpoint:         cfg.Endpoint,
 		ClientId:         cfg.ClientID,
@@ -44,10 +45,11 @@ func New(db *gorm.DB, cfg config.CasdoorConfig) authn.Authenticator {
 		ApplicationName:  cfg.ApplicationName,
 	})
 	return &authenticator{
-		client:  client,
-		orgName: cfg.OrganizationName,
-		db:      db,
-	}
+		client:        client,
+		orgName:       cfg.OrganizationName,
+		db:            db,
+		avatarManager: avatarManager,
+	}, nil
 }
 
 // Authenticate implements [authn.Authenticator].
@@ -56,53 +58,103 @@ func (a *authenticator) Authenticate(ctx context.Context, token string) (*model.
 	if err != nil {
 		return nil, errors.Join(authn.ErrUnauthorized, fmt.Errorf("failed to parse token: %w", err))
 	}
+
+	// Get latest user info from Casdoor.
+	casdoorUser, err := a.client.GetUser(claims.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user %q from casdoor: %w", claims.Name, err)
+	}
+
+	var mUser model.User
+	if err = a.db.WithContext(ctx).Where("username = ?", casdoorUser.Name).First(&mUser).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// First time user, create new one.
+			return a.createUser(ctx, casdoorUser)
+		}
+		return nil, fmt.Errorf("failed to get user %q: %w", casdoorUser.Name, err)
+	}
+
+	// Existing user, sync info.
+	return a.syncUser(ctx, &mUser, casdoorUser)
+}
+
+// createUser creates a new user with info from Casdoor.
+func (a *authenticator) createUser(ctx context.Context, casdoorUser *casdoorsdk.User) (*model.User, error) {
+	avatarURL, err := a.prepareAvatar(ctx, []byte(casdoorUser.Name), casdoorUser.Avatar)
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare avatar: %w", err)
+	}
+
 	mUser, err := model.FirstOrCreateUser(ctx, a.db, model.CreateUserAttrs{
-		Username:    claims.Name,
-		DisplayName: claims.DisplayName,
-		// TODO(wyvern): https://github.com/goplus/builder/issues/2159
-		// The avatar URL for the three-party oauth authorization may be http,
-		// which will cause the browser to not be able to obtain the avatar.
-		// Currently, it is temporarily replaced with https. A better way is to
-		// download it to our kodo and then obtain it from kodo. Kodo defaults to https.
-		Avatar: fixAvatar(claims.Avatar),
-		Roles:  nil,
-		Plan:   model.UserPlanFree,
+		Username:    casdoorUser.Name,
+		DisplayName: casdoorUser.DisplayName,
+		Avatar:      avatarURL,
+		Roles:       a.extractUserRolesFromGroups(casdoorUser.Groups),
+		Plan:        a.extractUserPlanFromGroups(casdoorUser.Groups),
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	// Sync user info from Casdoor.
-	casdoorUser, err := a.client.GetUser(mUser.Username)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user %q from casdoor: %w", mUser.Username, err)
-	}
-	mUserUpdates := map[string]any{}
-	if mUser.DisplayName != casdoorUser.DisplayName {
-		mUserUpdates["display_name"] = casdoorUser.DisplayName
-	}
-	fixedAvatar := fixAvatar(casdoorUser.Avatar)
-	if mUser.Avatar != fixedAvatar {
-		mUserUpdates["avatar"] = fixedAvatar
-	}
-	if roles := a.extractUserRolesFromGroups(casdoorUser.Groups); !slices.Equal(mUser.Roles, roles) {
-		mUserUpdates["roles"] = roles
-	}
-	if plan := a.extractUserPlanFromGroups(casdoorUser.Groups); mUser.Plan != plan {
-		mUserUpdates["plan"] = plan
-	}
-	if len(mUserUpdates) > 0 {
-		if err := a.db.WithContext(ctx).Model(&mUser).Updates(mUserUpdates).Error; err != nil {
-			return nil, fmt.Errorf("failed to update user %q: %w", mUser.Username, err)
-		}
-	}
-
 	return mUser, nil
 }
 
-// extractUserRolesFromGroups extracts user roles from Casdoor user groups. Expected
-// format: "GoPlus/role:assetAdmin" for single role or multiple groups containing
-// "GoPlus/role:" prefix.
+// syncUser syncs info from Casdoor for an existing user.
+func (a *authenticator) syncUser(ctx context.Context, mUser *model.User, casdoorUser *casdoorsdk.User) (*model.User, error) {
+	mUserUpdates := map[string]any{}
+
+	// Migrate legacy user avatars from third-party platforms.
+	if !isKodoURL(mUser.Avatar) {
+		candidateURL := strings.TrimSpace(casdoorUser.Avatar)
+		if candidateURL == "" {
+			candidateURL = mUser.Avatar
+		}
+		if candidateURL != "" {
+			avatarURL, err := a.prepareAvatar(ctx, []byte(mUser.Username), candidateURL)
+			if err != nil {
+				logger := log.GetReqLogger(ctx)
+				logger.Printf("failed to migrate avatar for user %q: %v", mUser.Username, err)
+			} else if avatarURL != "" && avatarURL != mUser.Avatar {
+				mUserUpdates["avatar"] = avatarURL
+				mUser.Avatar = avatarURL
+			}
+		}
+	}
+
+	// Sync roles for authorization.
+	roles := a.extractUserRolesFromGroups(casdoorUser.Groups)
+	if !slices.Equal(mUser.Roles, roles) {
+		mUserUpdates["roles"] = roles
+	}
+
+	// Sync plan for authorization.
+	plan := a.extractUserPlanFromGroups(casdoorUser.Groups)
+	if mUser.Plan != plan {
+		mUserUpdates["plan"] = plan
+	}
+
+	if len(mUserUpdates) > 0 {
+		if err := a.db.WithContext(ctx).Model(mUser).Updates(mUserUpdates).Error; err != nil {
+			return nil, fmt.Errorf("failed to update user %q: %w", mUser.Username, err)
+		}
+	}
+	return mUser, nil
+}
+
+// prepareAvatar ensures the avatar URL points to Kodo by uploading when needed.
+func (a *authenticator) prepareAvatar(ctx context.Context, seed []byte, sourceURL string) (string, error) {
+	sourceURL = strings.TrimSpace(sourceURL)
+	if isKodoURL(sourceURL) {
+		return sourceURL, nil
+	}
+	if sourceURL != "" {
+		return a.avatarManager.UploadFromURL(ctx, sourceURL)
+	}
+	return a.avatarManager.UploadDefault(ctx, seed)
+}
+
+// extractUserRolesFromGroups extracts user roles from Casdoor user groups.
+// Expected format: "GoPlus/role:assetAdmin" for single role or multiple groups
+// containing "GoPlus/role:" prefix.
 func (a *authenticator) extractUserRolesFromGroups(groups []string) model.UserRoles {
 	rolePrefix := fmt.Sprintf("%s/role:", a.orgName)
 
@@ -119,8 +171,8 @@ func (a *authenticator) extractUserRolesFromGroups(groups []string) model.UserRo
 	return roles
 }
 
-// extractUserPlanFromGroups extracts user plan from Casdoor user groups. Expected
-// format: "GoPlus/plan:free" or "GoPlus/plan:plus".
+// extractUserPlanFromGroups extracts user plan from Casdoor user groups.
+// Expected format: "GoPlus/plan:free" or "GoPlus/plan:plus".
 func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPlan {
 	planPrefix := fmt.Sprintf("%s/plan:", a.orgName)
 
@@ -140,12 +192,8 @@ func (a *authenticator) extractUserPlanFromGroups(groups []string) model.UserPla
 	return model.UserPlanFree
 }
 
-// fixAvatar fixes the avatar URL by replacing http with https.
-func fixAvatar(avatar string) string {
-	for _, domain := range insecureAvatarDomains {
-		if strings.HasPrefix(avatar, domain) {
-			return strings.Replace(avatar, "http://", "https://", 1)
-		}
-	}
-	return avatar
+// isKodoURL reports whether the avatar already uses the kodo:// scheme.
+func isKodoURL(avatar string) bool {
+	avatar = strings.TrimSpace(strings.ToLower(avatar))
+	return strings.HasPrefix(avatar, "kodo://")
 }

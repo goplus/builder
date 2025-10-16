@@ -14,6 +14,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/authz/embpdp"
 	"github.com/goplus/builder/spx-backend/internal/authz/quota"
+	"github.com/goplus/builder/spx-backend/internal/avatar"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -64,8 +65,17 @@ if err != nil {
 }
 // TODO: Configure connection pool and timeouts.
 
+// Initialize avatar manager.
+avatarManager, err := avatar.NewKodoManager(cfg.Kodo)
+if err != nil {
+	logger.Fatalln("failed to create avatar manager:", err)
+}
+
 // Initialize authenticator.
-authenticator := casdoor.New(db, cfg.Casdoor)
+authenticator, err := casdoor.New(db, cfg.Casdoor, avatarManager)
+if err != nil {
+	logger.Fatalln("failed to create authenticator:", err)
+}
 
 // Initialize authorizer.
 var quotaTracker authz.QuotaTracker

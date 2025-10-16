@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useSlotText } from '@/utils/vnode'
 import { parseDefinitionId, type DefinitionDocumentationItem } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const codeEditorCtx = useCodeEditorUICtx()
 
-const documentation = useAsyncComputed<DefinitionDocumentationItem | null>(async () => {
+const documentation = useAsyncComputedLegacy<DefinitionDocumentationItem | null>(async () => {
   const defId = parseDefinitionId(props.defId)
   const documentBase = codeEditorCtx.ui.documentBase
   if (documentBase == null) return null

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type User } from '@/apis/user'
-import { useExternalUrl } from '@/utils/utils'
+import { useAvatarUrl } from '@/stores/user/avatar'
 import { useMessageHandle } from '@/utils/exception'
 import { getSignedInUsername } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const isSignedInUser = computed(() => props.user.username === getSignedInUsername())
-const avatarUrl = useExternalUrl(() => props.user.avatar)
+const avatarUrl = useAvatarUrl(() => props.user.avatar)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)

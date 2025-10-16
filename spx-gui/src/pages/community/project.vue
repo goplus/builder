@@ -31,8 +31,7 @@ import {
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
-import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
-import FullScreenProjectRunner from '@/components/project/runner/FullScreenProjectRunner.vue'
+import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
@@ -99,7 +98,7 @@ watch(
 const isOwner = computed(() => props.owner === getSignedInUsername())
 const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
-const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
+const projectRunnerRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const isFullScreenRunning = ref(false)
 
 const likeCount = computed(() => {
@@ -151,8 +150,13 @@ function handleSignIn() {
 const handleRun = useMessageHandle(
   async () => {
     runnerState.value = 'loading'
-    await projectRunnerRef.value?.run()
-    runnerState.value = 'running'
+    try {
+      await projectRunnerRef.value?.run()
+      runnerState.value = 'running'
+    } catch (err) {
+      runnerState.value = 'initial'
+      throw err
+    }
   },
   { en: 'Failed to run project', zh: '运行项目失败' }
 )
@@ -168,8 +172,13 @@ const handleStop = useMessageHandle(
 const handleRerun = useMessageHandle(
   async () => {
     runnerState.value = 'loading'
-    await projectRunnerRef.value?.rerun()
-    runnerState.value = 'running'
+    try {
+      await projectRunnerRef.value?.rerun()
+      runnerState.value = 'running'
+    } catch (err) {
+      runnerState.value = 'initial'
+      throw err
+    }
   },
   {
     en: 'Failed to rerun project',
@@ -310,58 +319,73 @@ const remixesRet = useQuery(
       <div class="left">
         <div class="project-wrapper">
           <template v-if="project != null">
-            <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
-            <div v-show="runnerState === 'initial'" class="runner-mask">
-              <div v-if="needsSignInToRun" class="sign-in-prompt">
-                <div class="sign-in-card">
-                  <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
-                  <p class="message">
-                    {{
-                      $t({
-                        en: 'Please sign in to run this project',
-                        zh: '请先登录以运行该项目'
-                      })
-                    }}
-                  </p>
-                  <UIButton
-                    v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
-                    class="sign-in-button"
-                    size="large"
-                    type="primary"
-                    @click="handleSignIn"
+            <ProjectRunnerSurface
+              ref="projectRunnerRef"
+              :key="`${project.owner}/${project.name}`"
+              v-model:fullscreen="isFullScreenRunning"
+              :project="project"
+              :runner-state="runnerState"
+              :run="handleRun.fn"
+              :run-loading="handleRun.isLoading.value"
+              :rerun="handleRerun.fn"
+              :rerun-loading="handleRerun.isLoading.value"
+              :stop="handleStop.fn"
+              :stop-loading="handleStop.isLoading.value"
+            >
+              <template #inline-overlay>
+                <Transition name="runner-mask-fade" appear>
+                  <div
+                    v-if="runnerState !== 'running'"
+                    :class="['runner-mask', { initial: runnerState === 'initial' }]"
                   >
-                    {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
-                  </UIButton>
-                </div>
-              </div>
-              <UIButton
-                v-else
-                v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
-                class="run-button"
-                type="primary"
-                size="large"
-                icon="playHollow"
-                :disabled="projectRunnerRef == null"
-                :loading="handleRun.isLoading.value"
-                @click="handleRun.fn"
-                >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
-              >
-            </div>
+                    <template v-if="runnerState === 'initial'">
+                      <div v-if="needsSignInToRun" class="sign-in-prompt">
+                        <div class="sign-in-card">
+                          <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
+                          <p class="message">
+                            {{
+                              $t({
+                                en: 'This game requires sign-in before playing',
+                                zh: '该游戏需要先登录后才能体验'
+                              })
+                            }}
+                          </p>
+                          <UIButton
+                            v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+                            class="sign-in-button"
+                            size="large"
+                            type="primary"
+                            @click="handleSignIn"
+                          >
+                            {{ $t({ en: 'Sign in', zh: '立即登录' }) }}
+                          </UIButton>
+                        </div>
+                      </div>
+                      <UIButton
+                        v-else
+                        v-radar="{ name: 'Run button', desc: 'Click to run the project' }"
+                        type="primary"
+                        size="large"
+                        icon="playHollow"
+                        :disabled="projectRunnerRef == null"
+                        :loading="handleRun.isLoading.value"
+                        @click="handleRun.fn"
+                        >{{ $t({ en: 'Run', zh: '运行' }) }}</UIButton
+                      >
+                    </template>
+                  </div>
+                </Transition>
+              </template>
+            </ProjectRunnerSurface>
           </template>
         </div>
-        <FullScreenProjectRunner
-          v-if="project != null"
-          :project="project"
-          :visible="isFullScreenRunning"
-          @close="isFullScreenRunning = false"
-        />
         <div class="ops">
           <UIButton
-            v-if="runnerState === 'running'"
+            v-if="runnerState === 'running' && !handleStop.isLoading.value"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
             type="primary"
             icon="rotate"
-            :disabled="projectRunnerRef == null"
+            :disabled="projectRunnerRef == null || handleStop.isLoading.value"
             :loading="handleRerun.isLoading.value"
             @click="handleRerun.fn"
           >
@@ -377,16 +401,21 @@ const remixesRet = useQuery(
           >
             {{ $t({ en: 'Stop', zh: '停止' }) }}
           </UIButton>
-          <UIButton
-            v-if="runnerState === 'loading' || runnerState === 'running'"
-            v-radar="{ name: 'Full screen run button', desc: 'Click to run project in full screen' }"
-            type="boring"
-            icon="fullScreen"
-            :disabled="handleStop.isLoading.value"
-            @click="isFullScreenRunning = true"
-          >
-            {{ $t({ en: 'Run in full screen', zh: '全屏运行' }) }}
-          </UIButton>
+          <UITooltip v-if="runnerState === 'loading' || runnerState === 'running'">
+            <template #trigger>
+              <UIButton
+                v-radar="{
+                  name: 'Enter full screen button',
+                  desc: 'Click to enter full screen for the running project'
+                }"
+                type="boring"
+                icon="enterFullScreen"
+                :disabled="handleStop.isLoading.value"
+                @click="isFullScreenRunning = true"
+              ></UIButton>
+            </template>
+            {{ $t({ en: 'Enter full screen', zh: '进入全屏' }) }}
+          </UITooltip>
           <UITooltip>
             <template #trigger>
               <UIButton
@@ -579,11 +608,21 @@ const remixesRet = useQuery(
 
 .left {
   flex: 1 1 744px;
+
+  .runner-mask-fade-enter-from,
+  .runner-mask-fade-leave-to {
+    opacity: 0;
+  }
+
+  .runner-mask-fade-enter-active,
+  .runner-mask-fade-leave-active {
+    transition: opacity 0.2s ease;
+  }
+
   .project-wrapper {
     position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: var(--ui-border-radius-1);
     overflow: hidden;
 
     .runner-mask {
@@ -595,13 +634,16 @@ const remixesRet = useQuery(
       display: flex;
       justify-content: center;
       align-items: center;
-      border-radius: var(--ui-border-radius-1);
-      background: rgba(87, 96, 106, 0.2);
+      border-radius: var(--ui-border-radius-2);
+      background: rgba(36, 41, 47, 0.6);
       backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 2;
+      pointer-events: none;
     }
 
-    .run-button {
-      width: 160px;
+    .runner-mask.initial {
+      pointer-events: auto;
     }
 
     .sign-in-prompt {
@@ -611,7 +653,6 @@ const remixesRet = useQuery(
       width: 100%;
       height: 100%;
       padding: 24px;
-      background: rgba(11, 55, 82, 0.35);
 
       .sign-in-card {
         position: relative;
@@ -641,6 +682,17 @@ const remixesRet = useQuery(
       .sign-in-button {
         width: 100%;
       }
+    }
+
+    :deep(.ui-detailed-loading.cover.mask-semi-transparent .text) {
+      color: var(--ui-color-grey-100);
+    }
+
+    :deep(.project-runner-surface:not(.fullscreen) .ui-detailed-loading.cover) {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      z-index: 3;
     }
   }
 

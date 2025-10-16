@@ -8,7 +8,7 @@ import type { GroupConfig } from 'konva/lib/Group'
 import type { LayerConfig } from 'konva/lib/Layer'
 import type { Rect, RectConfig } from 'konva/lib/shapes/Rect'
 import type { CircleConfig } from 'konva/lib/shapes/Circle'
-import { useAsyncComputedFixed } from '@/utils/utils'
+import { useAsyncComputed } from '@/utils/utils'
 import { useI18n } from '@/utils/i18n'
 import { useFileImg } from '@/utils/file'
 import { useContentSize } from '@/utils/dom'
@@ -41,7 +41,7 @@ const defaultCostume = computed(() => {
   return c
 })
 const [image] = useFileImg(() => defaultCostume.value.img)
-const costumeSize = useAsyncComputedFixed(() => defaultCostume.value.getSize())
+const costumeSize = useAsyncComputed(() => defaultCostume.value.getSize())
 const canvasSize = computed(() => {
   if (costumeSize.value == null) return null
   return {

@@ -15,7 +15,7 @@
 import { ref, watch } from 'vue'
 import WaveformWithControls from './WaveformWithControls.vue'
 import { getAudioContext, trimAndApplyGainToWavBlob } from '@/utils/audio'
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { registerPlayer } from '@/utils/player-registry'
 
 const props = defineProps<{
@@ -145,7 +145,7 @@ watch(
   { immediate: true }
 )
 
-const waveformDataFromSrc = useAsyncComputed(async () => {
+const waveformDataFromSrc = useAsyncComputedLegacy(async () => {
   if (!props.audioSrc) return null
   const scale = 5
   const audioContext = getAudioContext()

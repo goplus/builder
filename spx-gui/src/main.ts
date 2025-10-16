@@ -1,5 +1,5 @@
 import './polyfills'
-import { createApp, type App as VueApp } from 'vue'
+import { createApp, watchEffect, type App as VueApp } from 'vue'
 import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'
 import VueKonva from 'vue-konva'
@@ -11,15 +11,15 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/zh'
 
-import { initI18n } from './i18n'
 import App from './App.vue'
 import { initRouter } from './router'
 import { initUserState, ensureAccessToken } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/common/viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
+import { createI18n, normalizeLang } from './utils/i18n'
 import { isCodeEditorOperation, isLSPOperation } from './utils/tracing'
-import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate } from './utils/env'
+import { sentryDsn, sentryTracesSampleRate, sentryLSPSampleRate, defaultLang } from './utils/env'
 import { createRadar } from './utils/radar'
 import { createSpotlight } from './utils/spotlight'
 import { createAppState } from './utils/app-state'
@@ -59,6 +59,17 @@ function initSentry(app: VueApp<Element>, router: Router) {
       return inheritOrSampleWith(sentryTracesSampleRate)
     }
   })
+}
+
+const langLocalStorageKey = 'spx-gui-language'
+
+function initI18n(app: VueApp) {
+  const lang = localStorage.getItem(langLocalStorageKey) ?? defaultLang
+  const i18n = createI18n({ lang: normalizeLang(lang) })
+  watchEffect(() => {
+    localStorage.setItem(langLocalStorageKey, i18n.lang.value)
+  })
+  app.use(i18n)
 }
 
 async function initApp() {

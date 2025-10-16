@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAsyncComputed } from '@/utils/utils'
+import { useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'
@@ -14,7 +14,7 @@ const props = defineProps<{
   sprite: Sprite | AssetData
 }>()
 
-const sprite = useAsyncComputed(async () => {
+const sprite = useAsyncComputedLegacy(async () => {
   if (props.sprite instanceof Sprite) return props.sprite
   return asset2Sprite(props.sprite)
 })

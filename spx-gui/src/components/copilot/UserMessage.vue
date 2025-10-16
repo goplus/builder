@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useExternalUrl } from '@/utils/utils'
 import { useSignedInUser } from '@/stores/user'
+import { useAvatarUrl } from '@/stores/user/avatar'
 import type { UserMessage } from './copilot'
 import MarkdownView from './MarkdownView.vue'
 
@@ -9,7 +9,7 @@ defineProps<{
 }>()
 
 const signedInUser = useSignedInUser()
-const avatarUrl = useExternalUrl(() => signedInUser.data.value?.avatar)
+const avatarUrl = useAvatarUrl(() => signedInUser.data.value?.avatar)
 </script>
 
 <template>
