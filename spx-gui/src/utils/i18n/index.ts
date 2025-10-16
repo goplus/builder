@@ -15,6 +15,11 @@ import {
 
 export type Lang = 'en' | 'zh'
 
+export function normalizeLang(lang: string): Lang {
+  if (lang === 'zh') return 'zh'
+  return 'en'
+}
+
 // We may also support `VNode` as translated resule in the future, if needed
 export type Translated = string
 
