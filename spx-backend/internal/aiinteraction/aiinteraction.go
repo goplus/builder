@@ -13,8 +13,11 @@ const (
 	// maxTokens defines the maximum number of tokens for the AI response.
 	maxTokens = 2048
 
-	// temperature defines the sampling temperature for the AI response.
-	temperature = 0.6
+	// temperature assumes DeepSeek-based deployments and keeps gameplay
+	// agents stable with zero randomness.
+	//
+	// See https://api-docs.deepseek.com/quick_start/parameter_settings.
+	temperature = 0.0
 )
 
 // AIInteraction represents the structure for interacting with the AI.

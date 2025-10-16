@@ -10,7 +10,8 @@ You will be provided with:
 - New interaction turns: Recent turns to be added to the archive
 
 Create a consolidated archive that combines both the existing archive and new turns into a single, comprehensive
-summary.
+summary. Match the language used in the existing archive when it is provided. Otherwise, match the dominant language of
+the new turns.
 
 ## Output requirements
 
@@ -37,6 +38,7 @@ Prioritize capturing:
 - **Error resolution**: Problems encountered and how they were addressed
 - **Game progression**: Key milestones, achievements, or story developments
 - **Strategic patterns**: AI learning and adaptation over time
+- **Temporal markers**: Round numbers, in-game days, or timestamps when available
 
 ## Formatting guidelines
 
