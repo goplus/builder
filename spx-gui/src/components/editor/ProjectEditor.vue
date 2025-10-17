@@ -1,5 +1,6 @@
 <template>
   <UICard
+    v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
     class="main"
   >
@@ -20,10 +21,11 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div class="sider">
+  <div v-show="isPreviewMode" class="sider">
     <EditorPreview />
     <EditorPanels />
   </div>
+  <GlobalSettings v-if="!isPreviewMode" />
 </template>
 
 <script setup lang="ts">
@@ -51,11 +53,14 @@ import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asse
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
 import { Monitor } from '@/models/widget/monitor'
+import GlobalSettings from '@/components/editor/map-editor/GlobalSettings.vue'
+import { EditMode } from './editor-state'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
+const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Preview)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
