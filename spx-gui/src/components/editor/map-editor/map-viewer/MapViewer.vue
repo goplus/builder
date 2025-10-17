@@ -37,7 +37,14 @@ type Pos = { x: number; y: number }
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
-const stageConfig = computed(() => containerSize.value)
+const stageConfig = computed(() => {
+  if (containerSize.value == null) return null
+  // Konva canvas cannot have a width or height of zero
+  return {
+    width: Math.max(containerSize.value.width, 1),
+    height: Math.max(containerSize.value.height, 1)
+  }
+})
 const mapRef = ref<{
   getNode(): Konva.Layer
 }>()
