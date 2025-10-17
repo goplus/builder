@@ -21,7 +21,9 @@ export type Position = {
 }
 
 export type Range = {
+  /** The range's start position, inclusive */
   start: Position
+  /** The range's end position, exclusive */
   end: Position
 }
 
@@ -456,7 +458,7 @@ export function isSelectionEmpty(selection: Selection | null) {
 export function containsPosition(range: Range, position: Position) {
   if (position.line < range.start.line || position.line > range.end.line) return false
   if (position.line === range.start.line && position.column < range.start.column) return false
-  if (position.line === range.end.line && position.column > range.end.column) return false
+  if (position.line === range.end.line && position.column >= range.end.column) return false
   return true
 }
 
@@ -830,7 +832,10 @@ export function rangeEq(a: Range | null, b: Range | null) {
 }
 
 export function rangeContains(a: Range, b: Range) {
-  return containsPosition(a, b.start) && containsPosition(a, b.end)
+  return (
+    (positionEq(a.start, b.start) || positionAfter(b.start, a.start)) &&
+    (positionEq(a.end, b.end) || positionAfter(a.end, b.end))
+  )
 }
 
 const textDocumentURIPrefix = 'file:///'
