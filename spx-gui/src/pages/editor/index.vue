@@ -1,12 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <EditorNavbar
-        :project="project"
-        :state="state"
-        :selected-editor-type="selectedEditorType"
-        @update-selected-editor-type="selectedEditorType = $event"
-      />
+      <EditorNavbar :project="project" :state="state" />
     </header>
     <main class="editor-main">
       <UIDetailedLoading v-if="allQueryRet.isLoading.value" :percentage="allQueryRet.progress.value.percentage">
@@ -17,14 +12,13 @@
       </UIError>
       <EditorContextProvider v-else :project="project!" :state="state!">
         <ProjectEditor />
-        <GlobalSettings v-if="selectedEditorType === EditorType.Global" class="global-wrapper" />
       </EditorContextProvider>
     </main>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { getSignedInUsername } from '@/stores/user'
 import { Project } from '@/models/project'
@@ -38,7 +32,7 @@ import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/comp
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { untilNotNull, usePageTitle } from '@/utils/utils'
-import EditorNavbar, { EditorType } from '@/components/editor/navbar/EditorNavbar.vue'
+import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
@@ -46,7 +40,6 @@ import { usePublishProject } from '@/components/project'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
 import { Editing, EditingMode } from '@/components/editor/editing'
 import { EditorState } from '@/components/editor/editor-state'
-import GlobalSettings from '@/components/editor/map-editor/GlobalSettings.vue'
 
 const props = defineProps<{
   ownerName: string
@@ -57,8 +50,6 @@ usePageTitle(() => ({
   en: `Edit ${props.projectName}`,
   zh: `编辑 ${props.projectName}`
 }))
-
-const selectedEditorType = ref(EditorType.Preview)
 
 const LOCAL_CACHE_KEY = 'XBUILDER_CACHED_PROJECT'
 

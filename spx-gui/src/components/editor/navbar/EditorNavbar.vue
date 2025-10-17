@@ -98,16 +98,16 @@
       >
         <template #trigger>
           <div class="editor-type-selected">
-            <img :src="selectedEditorTypeItem.icon" />
-            {{ $t(selectedEditorTypeItem.display) }}
+            <img :src="selectedEditModeItem.icon" />
+            {{ $t(selectedEditModeItem.display) }}
           </div>
         </template>
         <UIMenu>
           <UIMenuItem
-            v-for="(typeItem, index) in editorTypeItems"
+            v-for="(typeItem, index) in editModeItems"
             :key="index"
             class="editor-type-item"
-            @click="$emit('updateSelectedEditorType', typeItem.value)"
+            @click="state?.selectEditMode(typeItem.value)"
           >
             <template #icon><img :src="typeItem.icon" /></template>
             {{ $t(typeItem.display) }}
@@ -127,13 +127,6 @@
     </template>
   </NavbarWrapper>
 </template>
-
-<script lang="ts">
-export enum EditorType {
-  Preview = 'preview',
-  Global = 'global'
-}
-</script>
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -164,7 +157,7 @@ import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import { SavingState, EditingMode } from '../editing'
-import type { EditorState } from '../editor-state'
+import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
@@ -182,11 +175,6 @@ import cloudCheckSvg from './icons/cloud-check.svg?raw'
 const props = defineProps<{
   project: Project | null
   state: EditorState | null
-  selectedEditorType: EditorType
-}>()
-
-defineEmits<{
-  updateSelectedEditorType: [type: EditorType]
 }>()
 
 const { isOnline } = useNetwork()
@@ -203,20 +191,20 @@ const canManageProject = computed(() => {
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
-const editorTypeItems = [
+const editModeItems = [
   {
     display: { en: 'Game Preview', zh: '游戏预览' },
-    value: EditorType.Preview,
+    value: EditMode.Preview,
     icon: gamePreview
   },
   {
     display: { en: 'Global Settings', zh: '全局设置' },
-    value: EditorType.Global,
+    value: EditMode.Global,
     icon: globalSettings
   }
 ]
-const selectedEditorTypeItem = computed(
-  () => editorTypeItems.find((item) => item.value === props.selectedEditorType) ?? editorTypeItems[0]
+const selectedEditModeItem = computed(
+  () => editModeItems.find((item) => item.value === props.state?.selectedEditMode) ?? editModeItems[0]
 )
 
 const ownerInfoToDisplay = computed(() => {
