@@ -1,0 +1,19 @@
+{
+  "name": "spx-gui-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "build": "npx tsup -d . --external electron main.ts preload.ts",
+    "start": "npm run build && electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "electron": "^38.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  }
+}
