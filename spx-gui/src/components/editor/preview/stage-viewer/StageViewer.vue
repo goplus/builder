@@ -148,8 +148,9 @@ const stageScale = computed(() => {
 
 const stageConfig = computed(() => {
   if (stageScale.value == null || viewportSize.value == null || container.value == null) return null
-  const width = viewportSize.value.width * stageScale.value
-  const height = viewportSize.value.height * stageScale.value
+  // Konva canvas cannot have a width or height of zero
+  const width = Math.max(viewportSize.value.width * stageScale.value, 1)
+  const height = Math.max(viewportSize.value.height * stageScale.value, 1)
   return {
     container: container.value,
     width,
