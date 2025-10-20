@@ -13,22 +13,22 @@ const props = withDefaults(
     project: Project
     fullscreen?: boolean
     inlineAnchor?: () => HTMLElement | null
-    run?: () => void | Promise<void>
+    onRun?: () => void | Promise<void>
     runLoading?: boolean
-    rerun?: () => void | Promise<void>
+    onRerun?: () => void | Promise<void>
     rerunLoading?: boolean
-    stop?: () => void | Promise<void>
+    onStop?: () => void | Promise<void>
     stopLoading?: boolean
     runnerState?: RunnerState
   }>(),
   {
     fullscreen: false,
     inlineAnchor: undefined,
-    run: undefined,
+    onRun: undefined,
     runLoading: false,
-    rerun: undefined,
+    onRerun: undefined,
     rerunLoading: false,
-    stop: undefined,
+    onStop: undefined,
     stopLoading: false,
     runnerState: 'running' as RunnerState
   }
@@ -343,16 +343,18 @@ const handleInternalStop = useMessageHandle(() => runnerRef.value?.stop(), {
   zh: '停止项目失败'
 })
 
-const runHandler = computed(() => props.run ?? handleInternalRun.fn)
-const runButtonLoading = computed(() => (props.run != null ? props.runLoading : handleInternalRun.isLoading.value))
+const runHandler = computed(() => props.onRun ?? handleInternalRun.fn)
+const runButtonLoading = computed(() => (props.onRun != null ? props.runLoading : handleInternalRun.isLoading.value))
 
-const rerunHandler = computed(() => props.rerun ?? handleInternalRerun.fn)
+const rerunHandler = computed(() => props.onRerun ?? handleInternalRerun.fn)
 const rerunButtonLoading = computed(() =>
-  props.rerun != null ? props.rerunLoading : handleInternalRerun.isLoading.value
+  props.onRerun != null ? props.rerunLoading : handleInternalRerun.isLoading.value
 )
 
-const stopHandler = computed(() => props.stop ?? handleInternalStop.fn)
-const stopButtonLoading = computed(() => (props.stop != null ? props.stopLoading : handleInternalStop.isLoading.value))
+const stopHandler = computed(() => props.onStop ?? handleInternalStop.fn)
+const stopButtonLoading = computed(() =>
+  props.onStop != null ? props.stopLoading : handleInternalStop.isLoading.value
+)
 
 function handleRunClick() {
   const fn = runHandler.value
