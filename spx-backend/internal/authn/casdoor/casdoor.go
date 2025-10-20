@@ -108,15 +108,13 @@ func (a *authenticator) syncUser(ctx context.Context, mUser *model.User, casdoor
 		if candidateURL == "" {
 			candidateURL = mUser.Avatar
 		}
-		if candidateURL != "" {
-			avatarURL, err := a.prepareAvatar(ctx, []byte(mUser.Username), candidateURL)
-			if err != nil {
-				logger := log.GetReqLogger(ctx)
-				logger.Printf("failed to migrate avatar for user %q: %v", mUser.Username, err)
-			} else if avatarURL != "" && avatarURL != mUser.Avatar {
-				mUserUpdates["avatar"] = avatarURL
-				mUser.Avatar = avatarURL
-			}
+		avatarURL, err := a.prepareAvatar(ctx, []byte(mUser.Username), candidateURL)
+		if err != nil {
+			logger := log.GetReqLogger(ctx)
+			logger.Printf("failed to prepare avatar for user %q: %v", mUser.Username, err)
+		} else if avatarURL != mUser.Avatar {
+			mUserUpdates["avatar"] = avatarURL
+			mUser.Avatar = avatarURL
 		}
 	}
 
