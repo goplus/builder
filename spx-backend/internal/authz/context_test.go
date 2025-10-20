@@ -17,10 +17,16 @@ func newTestAuthorizer() *Authorizer {
 
 func newTestUserCapabilities() UserCapabilities {
 	return UserCapabilities{
-		CanManageAssets:         true,
-		CanUsePremiumLLM:        false,
-		CopilotMessageQuota:     100,
-		CopilotMessageQuotaLeft: 85,
+		CanManageAssets:               true,
+		CanUsePremiumLLM:              false,
+		CopilotMessageQuota:           100,
+		CopilotMessageQuotaLeft:       85,
+		AIDescriptionQuota:            300,
+		AIDescriptionQuotaLeft:        290,
+		AIInteractionTurnQuota:        12000,
+		AIInteractionTurnQuotaLeft:    11700,
+		AIInteractionArchiveQuota:     8000,
+		AIInteractionArchiveQuotaLeft: 7600,
 	}
 }
 

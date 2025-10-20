@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
+	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -75,6 +77,41 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 		logger := log.GetReqLogger(ctx.Context())
 		logger.Printf("failed to handle request [%s %s]: %v", ctx.Method, ctx.URL, err)
 		replyWithCode(ctx, errorUnknown)
+	}
+}
+
+// ensureQuotaLeft checks the remaining quota and replies with a 429 error if exhausted.
+func ensureQuotaLeft(ctx *yap.Context, resource authz.Resource) bool {
+	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
+	if !ok {
+		return true
+	}
+
+	var quotaLeft int64
+	switch resource {
+	case authz.ResourceCopilotMessage:
+		quotaLeft = caps.CopilotMessageQuotaLeft
+	case authz.ResourceAIDescription:
+		quotaLeft = caps.AIDescriptionQuotaLeft
+	case authz.ResourceAIInteractionTurn:
+		quotaLeft = caps.AIInteractionTurnQuotaLeft
+	case authz.ResourceAIInteractionArchive:
+		quotaLeft = caps.AIInteractionArchiveQuotaLeft
+	default:
+		return true
+	}
+	if quotaLeft <= 0 {
+		replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s quota exceeded", resource))
+		return false
+	}
+	return true
+}
+
+// consumeQuota consumes the quota for the given resource and logs failures.
+func consumeQuota(ctx *yap.Context, resource authz.Resource, amount int64) {
+	if err := authz.ConsumeQuota(ctx.Context(), resource, amount); err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to consume %s quota: %v", resource, err)
 	}
 }
 
