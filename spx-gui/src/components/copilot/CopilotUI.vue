@@ -46,6 +46,7 @@ const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
 
 const session = computed(() => copilot.currentSession)
+const canRestoreSession = computed(() => copilot.prevSession && !copilot.currentSession)
 
 const rounds = computed(() => {
   if (session.value == null || session.value.rounds.length === 0) return null
@@ -331,6 +332,11 @@ const handleQuickInputClick = useMessageHandle(
   { en: 'Failed to send message', zh: '发送消息失败' }
 ).fn
 
+const handleRestoreSession = useMessageHandle(() => copilot.restoreSession(), {
+  en: 'Failed to restore session',
+  zh: '恢复会话失败'
+}).fn
+
 onBeforeUnmount(
   spotlight.on('revealed', async ({ rect }) => {
     const panelEl = panelRef.value
@@ -411,8 +417,15 @@ onBeforeUnmount(
           </svg>
         </div>
         <template v-if="isSignedIn()">
-          <template v-if="activeRound != null">
-            <div ref="outputRef" class="output">
+          <div ref="outputRef" class="output">
+            <div v-if="canRestoreSession" class="restore-session" @click="handleRestoreSession">
+              <div>{{ $t({ zh: '会话已自动关闭，您可以', en: 'The session has been auto ended. You can' }) }}</div>
+              <UITag type="boring">{{ $t({ zh: '恢复会话', en: 'restore session' }) }}</UITag>
+              <div>
+                {{ $t({ zh: '或输入任意问题开启新的会话', en: 'or enter any question to start a new session' }) }}
+              </div>
+            </div>
+            <template v-if="activeRound != null">
               <CopilotRound :round="activeRound" is-last-round />
               <div v-if="quickInputs.length > 0" class="quick-inputs">
                 <UITooltip v-for="(qi, i) in quickInputs" :key="i">
@@ -422,9 +435,9 @@ onBeforeUnmount(
                   </template>
                 </UITooltip>
               </div>
-            </div>
-            <div class="divider"></div>
-          </template>
+            </template>
+          </div>
+          <div class="divider"></div>
           <CopilotInput
             ref="inputRef"
             class="input"
@@ -616,9 +629,19 @@ $toColor: #c390ff;
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
-    margin-top: 14px;
     overflow-y: auto;
     scrollbar-width: thin;
+
+    &:not(:empty) {
+      margin-top: 14px;
+    }
+  }
+
+  .restore-session {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 6px 16px 20px 16px;
   }
 
   .divider {

@@ -9,7 +9,7 @@ export const isRaw = false
 export const detailedDescription = `
 If and only if **Course Abandonment** has been detected and the system is currently executing the **Mandatory Course Termination (Prediction Confirmation)** phase of the \`escalation protocol\`:
 1. You **must** terminate the course and append the system tag to the *very end* of your final message.
-2. The required tag is: <${tagName} />
+2. The required tag is: <tutorial-course-abandonment />
 `
 
 export const attributes = z.object({})

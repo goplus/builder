@@ -439,7 +439,7 @@ export interface ISessionExportedStorage {
   get(): SessionExported | null
 }
 
-const defaultIdleTimeout = 2 * 60 * 60 * 1000 // 2 hours
+const defaultIdleTimeout = 1 * 60 * 1000 // TODO: adjust to 1min for demo, default is 2 hours (2 * 60 * 60 * 1000)
 
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
@@ -480,6 +480,10 @@ export class Copilot extends Disposable {
   private currentSessionRef = shallowRef<Session | null>(null)
   get currentSession() {
     return this.currentSessionRef.value
+  }
+  private prevSessionRef = localStorageRef<SessionExported | null>('spx-gui-copilot-prev-session', null)
+  get prevSession() {
+    return this.prevSessionRef.value
   }
 
   private getContext(): string {
@@ -570,6 +574,13 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
+  restoreSession() {
+    if (this.prevSession == null) return
+    this.open()
+    this.currentSessionRef.value = Session.load(this.prevSession, this)
+    this.prevSessionRef.value = null
+  }
+
   private lastStartTime = localStorageRef<number | null>('spx-gui-copilot-last-start-time', null)
   /**
    * The timer needs to be refreshed when the Round state changes.
@@ -577,28 +588,31 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   syncIdleTimeout() {
     // When entering the page for the first time, the session might be restored from SessionStorage, at which point the lastStartTime needs to be aligned once.
     let isRestoredSession = this.lastStartTime.value != null
-    this.addDisposer(
-      watch(
-        () => this.currentSession?.currentRound?.state,
-        throttle((state, _, onCleanup) => {
-          if (state == null) return
+    let timeoutId: NodeJS.Timeout
+    const stop = watch(
+      () => this.currentSession?.currentRound?.state,
+      throttle((state, _, onCleanup) => {
+        if (state == null) return
 
-          const lastStartTime = this.lastStartTime.value
-          let idleTimeout = this.currentSession?.topic.idleTimeout ?? defaultIdleTimeout
-          if (isRestoredSession && lastStartTime != null) {
-            idleTimeout = idleTimeout - (dayjs().valueOf() - lastStartTime)
-            isRestoredSession = false
-          } else {
-            this.lastStartTime.value = dayjs().valueOf()
-          }
-          const timeoutId = setTimeout(() => this.endCurrentSession(), idleTimeout)
-          onCleanup(() => clearTimeout(timeoutId))
-        }, 100),
-        {
-          immediate: true
+        const lastStartTime = this.lastStartTime.value
+        let idleTimeout = this.currentSession?.topic.idleTimeout ?? defaultIdleTimeout
+        if (isRestoredSession && lastStartTime != null) {
+          idleTimeout = idleTimeout - (dayjs().valueOf() - lastStartTime)
+          isRestoredSession = false
+        } else {
+          this.lastStartTime.value = dayjs().valueOf()
         }
-      )
+        timeoutId = setTimeout(() => this.endCurrentSession(), idleTimeout)
+        onCleanup(() => clearTimeout(timeoutId))
+      }, 100),
+      {
+        immediate: true
+      }
     )
+    this.addDisposer(() => {
+      clearTimeout(timeoutId)
+      stop()
+    })
   }
 
   syncSessionWith(storage: ISessionExportedStorage): void {
@@ -625,8 +639,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** End the current session. */
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
-    this.currentSessionRef.value = null
+    this.prevSessionRef.value = this.currentSession != null ? this.currentSession.export() : null
     this.lastStartTime.value = null
+    this.currentSessionRef.value = null
   }
 
   open() {
