@@ -3,6 +3,7 @@ import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import { timeout, until } from '@/utils/utils'
+import { useUserLocalStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/custom-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
@@ -10,7 +11,7 @@ import type { CourseSeries } from '@/apis/course-series'
 
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
-import { useUserLocalStorageRef } from '@/utils/user-storage'
+import { tagName as tutorialCourseAbandonTagName } from './TutorialCourseAbandon.vue'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -133,6 +134,19 @@ Then guide the user through each step. For each step:
 5. If the user finished current step, move on to the next step.
 
 If all steps are completed according to the criteria, invoke a success dialog using <${tutorialCourseSuccessTagName} />.
+
+Course Abandonment Prediction and Management:
+Constantly monitor user activity and system state to predict potential course abandonment based on the following criteria:
+- Deviation from Entry/Target: The user repeatedly interacts with UI elements or navigates to pages not directly related to the current step's <${highlightLinkTagName}> target or the defined course scope.
+- Irrelevant Actions: The user frequently performs actions that open unrelated modals, side panels, or system settings, without closing them promptly to return to the course task.
+
+When potential abandonment is detected, follow this escalation protocol:
+1. **First Warning (Gentle Redirection)**: If a user's action or navigation deviates from the current instruction for the first time, issue a gentle, non-intrusive reminder.
+  - \`Example Message Style\`: "It looks like you've opened something new! Remember, the current step is about [current step goal]. Please click <${highlightLinkTagName} target-id="...">here</${highlightLinkTagName}> to continue."
+2. **Second Warning (Direct Check)**: If deviation or prolonged inactivity occurs a second time or the user performs a major irrelevant action, explicitly check their intent.
+  - \`Example Message Style\`: "I notice you've been doing things outside the tutorial's path. Are you encountering any issues, or would you like to exit the course now? "
+3. **Mandatory Course Termination (Prediction Confirmation)**: If the user ignores the second warning and continues the non-guided behavior, assume course abandonment is highly likely. Invoke a forced course termination using a designated system action (e.g., <${tutorialCourseAbandonTagName} /> if available, or a standard exit call).
+  - \`Pre-Termination Message\`: "Since the activity is continuously deviating from the course path, I will now end this tutorial. You can restart it anytime."
 
 When coding tasks are involved:
 

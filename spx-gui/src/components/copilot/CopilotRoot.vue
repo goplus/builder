@@ -535,7 +535,7 @@ onMounted(() => {
       return sessionLocalStorageRef.value
     }
   })
-  copilot.syncRoundIdleTimeout()
+  copilot.syncIdleTimeout()
 })
 </script>
 
