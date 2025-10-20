@@ -18,5 +18,8 @@ type QuotaTracker interface {
 type Resource string
 
 const (
-	ResourceCopilotMessage Resource = "copilotMessage"
+	ResourceCopilotMessage       Resource = "copilotMessage"
+	ResourceAIDescription        Resource = "aiDescription"
+	ResourceAIInteractionTurn    Resource = "aiInteractionTurn"
+	ResourceAIInteractionArchive Resource = "aiInteractionArchive"
 )

@@ -75,10 +75,16 @@ func TestAuthorizerMiddleware(t *testing.T) {
 
 	t.Run("ValidUser", func(t *testing.T) {
 		wantCaps := UserCapabilities{
-			CanManageAssets:         true,
-			CanUsePremiumLLM:        true,
-			CopilotMessageQuota:     1000,
-			CopilotMessageQuotaLeft: 900,
+			CanManageAssets:               true,
+			CanUsePremiumLLM:              true,
+			CopilotMessageQuota:           1000,
+			CopilotMessageQuotaLeft:       900,
+			AIDescriptionQuota:            1000,
+			AIDescriptionQuotaLeft:        850,
+			AIInteractionTurnQuota:        24000,
+			AIInteractionTurnQuotaLeft:    23500,
+			AIInteractionArchiveQuota:     16000,
+			AIInteractionArchiveQuotaLeft: 15500,
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
