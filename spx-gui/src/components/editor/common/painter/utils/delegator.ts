@@ -2,6 +2,7 @@ import paper from 'paper'
 
 // 工具类型定义
 export type ToolType =
+  | 'select'
   | 'line'
   | 'brush'
   | 'reshape'
@@ -28,7 +29,7 @@ export interface ToolHandler {
   handleMouseDown?: (point: Point | paper.Point) => void
   handleMouseMove?: (point: Point | paper.Point, event?: MouseEvent) => void
   handleMouseDrag?: (point: Point | paper.Point) => void
-  handleMouseUp?: (point: Point | paper.Point) => void
+  handleMouseUp?: (point?: Point | paper.Point) => void
   handleMouseEnter?: (point: Point | paper.Point, event?: MouseEvent) => void
   handleMouseLeave?: (point: Point | paper.Point, event?: MouseEvent) => void
   eraserSize?: number
@@ -36,6 +37,7 @@ export interface ToolHandler {
 
 // 工具引用映射
 export interface ToolRefs {
+  select?: ToolHandler
   line?: ToolHandler
   brush?: ToolHandler
   reshape?: ToolHandler
@@ -147,7 +149,9 @@ export class CanvasEventDelegator {
     if (!handler) return
 
     // 根据工具类型调用不同的处理方法
-    if (this.currentTool === 'line' && handler.handleMouseMove) {
+    if (this.currentTool === 'select' && handler.handleMouseMove) {
+      handler.handleMouseMove(point)
+    } else if (this.currentTool === 'line' && handler.handleMouseMove) {
       handler.handleMouseMove({ x: point.x, y: point.y })
     } else if (this.currentTool === 'brush' && handler.handleMouseDrag) {
       handler.handleMouseDrag({ x: point.x, y: point.y })
@@ -233,9 +237,9 @@ export class CanvasEventDelegator {
     const handler = this.toolRefs[this.currentTool]
     if (!handler?.handleMouseUp) return
 
-    // reshape 工具的全局鼠标释放事件
-    if (this.currentTool === 'reshape') {
-      handler.handleMouseUp
+    // select 和 reshape 工具的全局鼠标释放事件
+    if (this.currentTool === 'select' || this.currentTool === 'reshape') {
+      handler.handleMouseUp()
     }
   }
 

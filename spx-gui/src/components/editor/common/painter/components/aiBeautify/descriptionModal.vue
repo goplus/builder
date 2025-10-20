@@ -6,7 +6,7 @@
       <div class="modal-content" @click.stop>
         <!-- 标题栏 -->
         <div class="modal-header">
-          <h3 class="modal-title">{{ $t({ en: 'Help Information', zh: '帮助信息' }) }}</h3>
+          <h3 class="modal-title">{{ $t({ en: 'What is AI beautification function', zh: '什么是AI美化功能' }) }}</h3>
           <button class="close-btn" @click="handleClose">×</button>
         </div>
 
@@ -216,7 +216,6 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: bold;
   color: #374151;
-  padding: 40px 20px;
 }
 
 /* 图片对比滑块样式 */

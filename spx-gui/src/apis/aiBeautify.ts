@@ -192,7 +192,7 @@ export async function beautifyImage(
 
   formData.append(
     'prompt',
-    'Refine hand-drawn sketch. Maintain original raw, imperfect style and colors.  No new elements, objects, or background. Gentle cleanup and enhancement only.' +
+    'A delightful illustration in modern 2D animation style , clean bold line art, vibrant and cheerful color palette, simple background, masterpiece, high quality. ' +
       (options?.positivePrompt ?? '')
   )
   formData.append('style', options?.selectedModelId ?? '')
