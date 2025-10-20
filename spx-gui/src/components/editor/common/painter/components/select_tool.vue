@@ -25,6 +25,7 @@ const hasMoved = ref<boolean>(false) // 追踪是否真正移动过
 const selectedPath = ref<paper.Path | paper.CompoundPath | paper.Shape | null>(null)
 const dragStartPoint = ref<paper.Point | null>(null)
 const pathOriginalPosition = ref<paper.Point | null>(null)
+const isUpdateScheduled = ref<boolean>(false) // 用于节流画布更新
 
 // 注入父组件接口
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
@@ -124,7 +125,14 @@ const handleMouseMove = (point: paper.Point): void => {
     selectedPath.value.position = pathOriginalPosition.value.add(delta)
   }
 
-  paper.view.update()
+  // 使用 requestAnimationFrame 节流重绘
+  if (!isUpdateScheduled.value) {
+    isUpdateScheduled.value = true
+    requestAnimationFrame(() => {
+      paper.view.update()
+      isUpdateScheduled.value = false
+    })
+  }
 }
 
 // 处理鼠标释放
