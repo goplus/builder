@@ -30,11 +30,11 @@ import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/uti
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip, UITag, UIButton } from '@/components/ui'
+import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
-import { type QuickInput, RoundState, SessionState } from './copilot'
+import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
 
 const copilot = useCopilot()
@@ -46,7 +46,6 @@ const inputRef = ref<InstanceType<typeof CopilotInput>>()
 const panelRef = ref<HTMLElement>()
 
 const session = computed(() => copilot.currentSession)
-const sessionState = computed(() => copilot.currentSession?.state.value)
 
 const rounds = computed(() => {
   if (session.value == null || session.value.rounds.length === 0) return null
@@ -414,22 +413,15 @@ onBeforeUnmount(
         <template v-if="isSignedIn()">
           <template v-if="activeRound != null">
             <div ref="outputRef" class="output">
-              <div v-if="sessionState === SessionState.IdleExpired" class="session-expired">
-                Session has expired
-                <UIButton @click="session?.restore()">restore</UIButton>
-                <UIButton @click="copilot.endCurrentSession()">new session</UIButton>
+              <CopilotRound :round="activeRound" is-last-round />
+              <div v-if="quickInputs.length > 0" class="quick-inputs">
+                <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                  {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                  <template #trigger>
+                    <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
+                  </template>
+                </UITooltip>
               </div>
-              <template v-else>
-                <CopilotRound :round="activeRound" is-last-round />
-                <div v-if="quickInputs.length > 0" class="quick-inputs">
-                  <UITooltip v-for="(qi, i) in quickInputs" :key="i">
-                    {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
-                    <template #trigger>
-                      <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
-                    </template>
-                  </UITooltip>
-                </div>
-              </template>
             </div>
             <div class="divider"></div>
           </template>
@@ -627,16 +619,6 @@ $toColor: #c390ff;
     margin-top: 14px;
     overflow-y: auto;
     scrollbar-width: thin;
-  }
-
-  .session-expired {
-    padding: 16px;
-    font-size: 14px;
-    color: var(--ui-color-grey-700);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
   }
 
   .divider {
