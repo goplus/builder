@@ -81,6 +81,15 @@
           <h3 class="tool-title">{{ $t({ en: 'Drawing Tools', zh: '绘图工具' }) }}</h3>
           <div class="tool-grid">
             <button
+              :class="['tool-btn', { active: currentTool === 'select' }]"
+              :title="$t({ en: 'Select', zh: '选择' })"
+              @click="selectTool('select')"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+              </svg>
+            </button>
+            <button
               :class="['tool-btn', { active: currentTool === 'line' }]"
               :title="$t({ en: 'Line Tool', zh: '直线工具' })"
               @click="selectTool('line')"
@@ -108,10 +117,11 @@
               :title="$t({ en: 'Reshape Tool', zh: '变形工具' })"
               @click="selectTool('reshape')"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <!-- <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
                 <path d="m13 13 6 6"></path>
-              </svg>
+              </svg> -->
+              <img src="./icon/reshape.png" width="20" height="20" style="object-fit: fill" />
             </button>
 
             <button
@@ -188,6 +198,9 @@
           @mouseenter="handleCanvasMouseEnter"
           @mouseleave="handleCanvasMouseLeave"
         ></canvas>
+
+        <!-- 选择工具组件 -->
+        <SelectTool ref="selectToolRef" :is-active="currentTool === 'select'" />
 
         <!-- 直线绘制组件 -->
         <DrawLine
@@ -273,6 +286,7 @@ import RectangleTool from './components/rectangle_tool.vue'
 import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
+import SelectTool from './components/select_tool.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
@@ -282,7 +296,17 @@ import SelectColor from './components/select_color.vue'
 import AiBeautifyModal from './components/aiBeautify/aiBeautifyModal.vue'
 
 // 工具类型
-type ToolType = 'line' | 'brush' | 'reshape' | 'eraser' | 'rectangle' | 'circle' | 'fill' | 'text' | 'selectColor'
+type ToolType =
+  | 'select'
+  | 'line'
+  | 'brush'
+  | 'reshape'
+  | 'eraser'
+  | 'rectangle'
+  | 'circle'
+  | 'fill'
+  | 'text'
+  | 'selectColor'
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -293,6 +317,7 @@ const canvasColor = ref<string>('#1f11ff')
 
 // 工具状态
 const currentTool = ref<ToolType | null>(null)
+const selectToolRef = ref<InstanceType<typeof SelectTool> | null>(null)
 const drawLineRef = ref<InstanceType<typeof DrawLine> | null>(null)
 const drawBrushRef = ref<InstanceType<typeof DrawBrush> | null>(null)
 const reshapeRef = ref<InstanceType<typeof Reshape> | null>(null)
@@ -309,6 +334,7 @@ let importExportManager: ImportExportManager | null = null
 //事件分发器
 const initEventDelegator = (): void => {
   canvasEventDelegator.setToolRefs({
+    select: selectToolRef.value as ToolHandler,
     line: drawLineRef.value as ToolHandler,
     brush: drawBrushRef.value as ToolHandler,
     reshape: reshapeRef.value as ToolHandler,
@@ -671,6 +697,7 @@ watch(currentTool, (newTool) => {
 // 监听工具引用变化，更新委托器
 watch(
   [
+    selectToolRef,
     drawLineRef,
     drawBrushRef,
     reshapeRef,
