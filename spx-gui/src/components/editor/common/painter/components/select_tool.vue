@@ -33,19 +33,17 @@ const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 选中路径(独占选择)
 const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape | null): void => {
-  // 取消所有路径的选中状态
-  getAllPathsValue().forEach((p) => {
-    p.selected = false
-  })
+  // 如果有已选中的路径，并且它不是将要选中的路径，则取消它的选中状态
+  if (selectedPath.value && selectedPath.value !== path) {
+    selectedPath.value.selected = false
+  }
 
   // 选中指定路径
   if (path) {
     path.selected = true
-    selectedPath.value = path
-  } else {
-    selectedPath.value = null
   }
 
+  selectedPath.value = path
   paper.view.update()
 }
 
