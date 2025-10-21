@@ -5,7 +5,8 @@ import {
   type IStorage,
   type IMessageStreamGenerator,
   type Topic,
-  RoundState
+  RoundState,
+  type SessionExported
 } from './copilot'
 import type { Message } from '@/apis/copilot'
 import * as apis from '@/apis/copilot'
@@ -85,12 +86,12 @@ describe('sampleApiMessages', () => {
   })
 })
 
-class MockStorage implements IStorage {
-  private saved: string | null = null
-  set(value: string | null): void {
+class MockStorage implements IStorage<SessionExported | null> {
+  private saved: SessionExported | null = null
+  set(value: SessionExported | null): void {
     this.saved = value
   }
-  get(): string | null {
+  get(): SessionExported | null {
     return this.saved
   }
 }
@@ -156,9 +157,8 @@ describe('Copilot', () => {
     await waitForThrottledSave()
     const savedData = storage.get()
     expect(savedData).not.toBe(null)
-    const parsedData = JSON.parse(savedData!)
-    expect(parsedData.topic).toEqual(topic)
-    expect(parsedData.rounds).toEqual([])
+    expect(savedData!.topic).toEqual(topic)
+    expect(savedData!.rounds).toEqual([])
 
     // Add a user message
     copilot.addUserTextMessage('What is the weather today?', topic)
@@ -269,11 +269,11 @@ describe('Copilot', () => {
   })
 
   it('should handle storage errors gracefully', async () => {
-    class FailingStorage implements IStorage {
+    class FailingStorage implements IStorage<SessionExported | null> {
       set(): void {
         // Silently fail to avoid unhandled rejections
       }
-      get(): string | null {
+      get(): SessionExported | null {
         throw new Error('Storage read failed')
       }
     }
