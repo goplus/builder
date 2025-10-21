@@ -3,7 +3,7 @@
  */
 
 import { apiBaseUrl } from '@/utils/env'
-import { ApiException } from './exception'
+import { ApiException, ApiExceptionCode } from './exception'
 import { useRequest, withQueryParams, type RequestOptions, type QueryParams } from '.'
 
 /** Response body when exception encountered for API calling */
@@ -18,14 +18,40 @@ function isApiExceptionPayload(body: any): body is ApiExceptionPayload {
   return body && typeof body.code === 'number' && typeof body.msg === 'string'
 }
 
+async function readApiExceptionPayload(resp: Response): Promise<ApiExceptionPayload | null> {
+  try {
+    const body = await resp.json()
+    return isApiExceptionPayload(body) ? body : null
+  } catch {
+    return null
+  }
+}
+
+function parseRetryAfter(header: string | null): number | null {
+  if (header == null) return null
+  const seconds = parseInt(header, 10)
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
+}
+
+async function handleFailedResponse(resp: Response): Promise<never> {
+  const retryAfterSeconds = parseRetryAfter(resp.headers.get('Retry-After'))
+  const payload = await readApiExceptionPayload(resp)
+  if (payload == null) {
+    throw new ApiException(ApiExceptionCode.errorUnknown, 'api call failed', {
+      status: resp.status,
+      retryAfterSeconds
+    })
+  }
+  throw new ApiException(payload.code, payload.msg, {
+    status: resp.status,
+    retryAfterSeconds
+  })
+}
+
 export class Client {
   private request = useRequest(apiBaseUrl, async (resp) => {
     if (!resp.ok) {
-      const body = await resp.json()
-      if (!isApiExceptionPayload(body)) {
-        throw new Error('api call failed')
-      }
-      throw new ApiException(body.code, body.msg)
+      await handleFailedResponse(resp)
     }
     if (resp.status === 204) return null
     return resp.json()
@@ -33,11 +59,7 @@ export class Client {
 
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
     if (!resp.ok) {
-      const body = await resp.json()
-      if (!isApiExceptionPayload(body)) {
-        throw new Error('api call failed')
-      }
-      throw new ApiException(body.code, body.msg)
+      await handleFailedResponse(resp)
     }
 
     const reader = resp.body?.getReader()

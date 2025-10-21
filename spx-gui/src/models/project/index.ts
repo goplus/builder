@@ -20,6 +20,7 @@ import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { ResourceModelIdentifier, type ResourceModel } from '../common/resource-model'
 import { generateAIDescription } from '@/apis/ai-description'
+import { ApiException } from '@/apis/common/exception'
 import { hashFiles } from '../common/hash'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { defaultMapSize, Stage, type RawStageConfig } from '../stage'
@@ -604,6 +605,7 @@ export class Project extends Disposable {
         this.aiDescriptionHash = currentHash
       } catch (e) {
         if (e instanceof Cancelled) throw e
+        if (e instanceof ApiException) throw e
         throw new Error(`failed to generate AI description: ${e instanceof Error ? e.message : String(e)}`)
       }
     }

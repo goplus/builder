@@ -10,17 +10,30 @@ import (
 )
 
 const (
-	copilotQuotaFree              = 100
-	copilotQuotaPlus              = 1000
-	aiDescriptionQuotaFree        = 300
-	aiDescriptionQuotaPlus        = 1000
-	aiInteractionTurnQuotaFree    = 12000
-	aiInteractionTurnQuotaPlus    = 24000
-	aiInteractionArchiveQuotaFree = 8000
-	aiInteractionArchiveQuotaPlus = 16000
+	copilotQuotaFree     = 100
+	copilotQuotaPlus     = 1000
+	copilotRateLimitFree = 30
+	copilotRateLimitPlus = 60
+
+	aiDescriptionQuotaFree     = 300
+	aiDescriptionQuotaPlus     = 1000
+	aiDescriptionRateLimitFree = 10
+	aiDescriptionRateLimitPlus = 30
+
+	aiInteractionTurnQuotaFree     = 12000
+	aiInteractionTurnQuotaPlus     = 24000
+	aiInteractionTurnRateLimitFree = 20
+	aiInteractionTurnRateLimitPlus = 60
+
+	aiInteractionArchiveQuotaFree     = 8000
+	aiInteractionArchiveQuotaPlus     = 16000
+	aiInteractionArchiveRateLimitFree = 10
+	aiInteractionArchiveRateLimitPlus = 20
+
+	rateWindowSeconds = 60
 )
 
-// embeddedPDP implements authz.PolicyDecisionPoint with embedded authorization policies.
+// embeddedPDP implements [authz.PolicyDecisionPoint] with embedded authorization policies.
 type embeddedPDP struct {
 	quotaTracker authz.QuotaTracker
 }
@@ -32,16 +45,28 @@ func New(quotaTracker authz.QuotaTracker) authz.PolicyDecisionPoint {
 	}
 }
 
-// ComputeUserCapabilities implements authz.PolicyDecisionPoint.
+// ComputeUserCapabilities implements [authz.PolicyDecisionPoint].
 func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.User) (authz.UserCapabilities, error) {
 	caps := authz.UserCapabilities{
-		CanManageAssets:           p.hasRole(mUser, userRoleAssetAdmin),
-		CanManageCourses:          p.hasRole(mUser, userRoleCourseAdmin),
-		CanUsePremiumLLM:          p.hasPlusPlan(mUser),
-		CopilotMessageQuota:       p.getCopilotQuota(mUser),
-		AIDescriptionQuota:        p.getAIDescriptionQuota(mUser),
-		AIInteractionTurnQuota:    p.getAIInteractionTurnQuota(mUser),
-		AIInteractionArchiveQuota: p.getAIInteractionArchiveQuota(mUser),
+		CanManageAssets:  p.hasRole(mUser, userRoleAssetAdmin),
+		CanManageCourses: p.hasRole(mUser, userRoleCourseAdmin),
+		CanUsePremiumLLM: p.hasPlusPlan(mUser),
+
+		CopilotMessageQuota:             p.copilotQuota(mUser),
+		CopilotMessageRateLimit:         p.copilotRateLimit(mUser),
+		CopilotMessageRateWindowSeconds: rateWindowSeconds,
+
+		AIDescriptionQuota:             p.aiDescriptionQuota(mUser),
+		AIDescriptionRateLimit:         p.aiDescriptionRateLimit(mUser),
+		AIDescriptionRateWindowSeconds: rateWindowSeconds,
+
+		AIInteractionTurnQuota:             p.aiInteractionTurnQuota(mUser),
+		AIInteractionTurnRateLimit:         p.aiInteractionTurnRateLimit(mUser),
+		AIInteractionTurnRateWindowSeconds: rateWindowSeconds,
+
+		AIInteractionArchiveQuota:             p.aiInteractionArchiveQuota(mUser),
+		AIInteractionArchiveRateLimit:         p.aiInteractionArchiveRateLimit(mUser),
+		AIInteractionArchiveRateWindowSeconds: rateWindowSeconds,
 	}
 	if usage, err := p.quotaTracker.Usage(ctx, mUser.ID, authz.ResourceCopilotMessage); err != nil {
 		return authz.UserCapabilities{}, fmt.Errorf("failed to retrieve copilot message quota usage for user %q: %w", mUser.Username, err)
@@ -66,14 +91,6 @@ func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.
 	return caps, nil
 }
 
-// userRole represents a user role in the system.
-type userRole string
-
-const (
-	userRoleAssetAdmin  userRole = "assetAdmin"
-	userRoleCourseAdmin userRole = "courseAdmin"
-)
-
 // hasRole checks if the user has a specific role.
 func (p *embeddedPDP) hasRole(mUser *model.User, role userRole) bool {
 	if len(mUser.Roles) == 0 {
@@ -87,8 +104,8 @@ func (p *embeddedPDP) hasPlusPlan(mUser *model.User) bool {
 	return mUser.Plan == model.UserPlanPlus
 }
 
-// getCopilotQuota returns the appropriate quota based on user plan.
-func (p *embeddedPDP) getCopilotQuota(mUser *model.User) int64 {
+// copilotQuota returns the appropriate quota based on user plan.
+func (p *embeddedPDP) copilotQuota(mUser *model.User) int64 {
 	switch mUser.Plan {
 	case model.UserPlanPlus:
 		return copilotQuotaPlus
@@ -97,8 +114,18 @@ func (p *embeddedPDP) getCopilotQuota(mUser *model.User) int64 {
 	}
 }
 
-// getAIDescriptionQuota returns the daily AI description quota for the user.
-func (p *embeddedPDP) getAIDescriptionQuota(mUser *model.User) int64 {
+// copilotRateLimit returns the maximum copilot messages allowed in one rate window for the user.
+func (p *embeddedPDP) copilotRateLimit(mUser *model.User) int64 {
+	switch mUser.Plan {
+	case model.UserPlanPlus:
+		return copilotRateLimitPlus
+	default:
+		return copilotRateLimitFree
+	}
+}
+
+// aiDescriptionQuota returns the daily AI description quota for the user.
+func (p *embeddedPDP) aiDescriptionQuota(mUser *model.User) int64 {
 	switch mUser.Plan {
 	case model.UserPlanPlus:
 		return aiDescriptionQuotaPlus
@@ -107,8 +134,18 @@ func (p *embeddedPDP) getAIDescriptionQuota(mUser *model.User) int64 {
 	}
 }
 
-// getAIInteractionTurnQuota returns the daily AI interaction turn quota for the user.
-func (p *embeddedPDP) getAIInteractionTurnQuota(mUser *model.User) int64 {
+// aiDescriptionRateLimit returns the maximum AI descriptions allowed in one rate window for the user.
+func (p *embeddedPDP) aiDescriptionRateLimit(mUser *model.User) int64 {
+	switch mUser.Plan {
+	case model.UserPlanPlus:
+		return aiDescriptionRateLimitPlus
+	default:
+		return aiDescriptionRateLimitFree
+	}
+}
+
+// aiInteractionTurnQuota returns the daily AI interaction turn quota for the user.
+func (p *embeddedPDP) aiInteractionTurnQuota(mUser *model.User) int64 {
 	switch mUser.Plan {
 	case model.UserPlanPlus:
 		return aiInteractionTurnQuotaPlus
@@ -117,8 +154,18 @@ func (p *embeddedPDP) getAIInteractionTurnQuota(mUser *model.User) int64 {
 	}
 }
 
-// getAIInteractionArchiveQuota returns the daily AI interaction archive quota for the user.
-func (p *embeddedPDP) getAIInteractionArchiveQuota(mUser *model.User) int64 {
+// aiInteractionTurnRateLimit returns the maximum AI interaction turns allowed in one rate window for the user.
+func (p *embeddedPDP) aiInteractionTurnRateLimit(mUser *model.User) int64 {
+	switch mUser.Plan {
+	case model.UserPlanPlus:
+		return aiInteractionTurnRateLimitPlus
+	default:
+		return aiInteractionTurnRateLimitFree
+	}
+}
+
+// aiInteractionArchiveQuota returns the daily AI interaction archive quota for the user.
+func (p *embeddedPDP) aiInteractionArchiveQuota(mUser *model.User) int64 {
 	switch mUser.Plan {
 	case model.UserPlanPlus:
 		return aiInteractionArchiveQuotaPlus
@@ -126,6 +173,24 @@ func (p *embeddedPDP) getAIInteractionArchiveQuota(mUser *model.User) int64 {
 		return aiInteractionArchiveQuotaFree
 	}
 }
+
+// aiInteractionArchiveRateLimit returns the maximum AI interaction archives allowed in one rate window for the user.
+func (p *embeddedPDP) aiInteractionArchiveRateLimit(mUser *model.User) int64 {
+	switch mUser.Plan {
+	case model.UserPlanPlus:
+		return aiInteractionArchiveRateLimitPlus
+	default:
+		return aiInteractionArchiveRateLimitFree
+	}
+}
+
+// userRole represents a user role in the system.
+type userRole string
+
+const (
+	userRoleAssetAdmin  userRole = "assetAdmin"
+	userRoleCourseAdmin userRole = "courseAdmin"
+)
 
 // remainingQuota returns the leftover quota after deducting the used amount.
 func remainingQuota(total, used int64) int64 {

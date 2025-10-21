@@ -46,10 +46,10 @@ func TestMiddleware(t *testing.T) {
 
 	t.Run("ValidBearerToken", func(t *testing.T) {
 		auth := &mockAuthenticator{}
-		wantUser := newTestUser()
+		user := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "valid-token", token)
-			return wantUser, nil
+			return user, nil
 		}
 
 		middleware := Middleware(auth)
@@ -107,10 +107,10 @@ func TestMiddleware(t *testing.T) {
 
 	t.Run("AuthorizationWithoutBearer", func(t *testing.T) {
 		auth := &mockAuthenticator{}
-		wantUser := newTestUser()
+		user := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "Basic dXNlcjpwYXNz", token)
-			return wantUser, nil
+			return user, nil
 		}
 
 		middleware := Middleware(auth)
@@ -143,10 +143,10 @@ func TestMiddleware(t *testing.T) {
 
 	t.Run("BearerWithoutToken", func(t *testing.T) {
 		auth := &mockAuthenticator{}
-		wantUser := newTestUser()
+		user := newTestUser()
 		auth.authenticateFunc = func(ctx context.Context, token string) (*model.User, error) {
 			assert.Equal(t, "", token)
-			return wantUser, nil
+			return user, nil
 		}
 
 		middleware := Middleware(auth)
