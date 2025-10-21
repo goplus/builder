@@ -912,6 +912,7 @@ paths:
 
         - Each message consumes 1 quota from the authenticated user's allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - Rate limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1020,6 +1021,7 @@ paths:
 
         - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - Rate limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1074,6 +1076,7 @@ paths:
 
         - Each request consumes 1 quota from the authenticated user's AI description allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - Rate limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1102,6 +1105,7 @@ paths:
 
         - Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - Rate limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1130,6 +1134,7 @@ paths:
 
         - Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - Rate limits vary based on the authenticated user's plan.
       requestBody:
         required: true
         content:
@@ -1718,6 +1723,20 @@ components:
           description: Remaining quota for Copilot messages.
           examples:
             - 789
+        copilotMessageRateLimit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Rate limit for Copilot messages within the rate window.
+          examples:
+            - 30
+        copilotMessageRateWindowSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Length of the Copilot message rate window in seconds.
+          examples:
+            - 60
         aiDescriptionQuota:
           type: integer
           format: int64
@@ -1732,6 +1751,20 @@ components:
           description: Remaining quota for AI description generations.
           examples:
             - 295
+        aiDescriptionRateLimit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Rate limit for AI description generations within the rate window.
+          examples:
+            - 10
+        aiDescriptionRateWindowSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Length of the AI description rate window in seconds.
+          examples:
+            - 60
         aiInteractionTurnQuota:
           type: integer
           format: int64
@@ -1746,6 +1779,20 @@ components:
           description: Remaining quota for AI interaction turns.
           examples:
             - 11900
+        aiInteractionTurnRateLimit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Rate limit for AI interaction turns within the rate window.
+          examples:
+            - 20
+        aiInteractionTurnRateWindowSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Length of the AI interaction turn rate window in seconds.
+          examples:
+            - 60
         aiInteractionArchiveQuota:
           type: integer
           format: int64
@@ -1760,6 +1807,20 @@ components:
           description: Remaining quota for AI interaction archive requests.
           examples:
             - 7980
+        aiInteractionArchiveRateLimit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Rate limit for AI interaction archive requests within the rate window.
+          examples:
+            - 10
+        aiInteractionArchiveRateWindowSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Length of the AI interaction archive rate window in seconds.
+          examples:
+            - 60
 
     Project:
       type: object

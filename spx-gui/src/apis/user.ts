@@ -36,18 +36,34 @@ export type UserCapabilities = {
   copilotMessageQuota: number
   /** Remaining quota for Copilot messages */
   copilotMessageQuotaLeft: number
+  /** Rate limit for Copilot messages */
+  copilotMessageRateLimit: number
+  /** Rate window for Copilot messages in seconds */
+  copilotMessageRateWindowSeconds: number
   /** Total quota for AI description generations */
   aiDescriptionQuota: number
   /** Remaining quota for AI description generations */
   aiDescriptionQuotaLeft: number
+  /** Rate limit for AI description generations */
+  aiDescriptionRateLimit: number
+  /** Rate window for AI description generations in seconds */
+  aiDescriptionRateWindowSeconds: number
   /** Total quota for AI interaction turns */
   aiInteractionTurnQuota: number
   /** Remaining quota for AI interaction turns */
   aiInteractionTurnQuotaLeft: number
+  /** Rate limit for AI interaction turns */
+  aiInteractionTurnRateLimit: number
+  /** Rate window for AI interaction turns in seconds */
+  aiInteractionTurnRateWindowSeconds: number
   /** Total quota for AI interaction archives */
   aiInteractionArchiveQuota: number
   /** Remaining quota for AI interaction archives */
   aiInteractionArchiveQuotaLeft: number
+  /** Rate limit for AI interaction archives */
+  aiInteractionArchiveRateLimit: number
+  /** Rate window for AI interaction archives in seconds */
+  aiInteractionArchiveRateWindowSeconds: number
 }
 
 export async function getUser(name: string): Promise<User> {

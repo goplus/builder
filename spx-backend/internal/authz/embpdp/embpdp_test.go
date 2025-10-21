@@ -55,6 +55,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			wantAIDescriptionQuota        int64
 			wantAIInteractionTurnQuota    int64
 			wantAIInteractionArchiveQuota int64
+			wantCopilotRateLimit          int64
+			wantAIDescriptionRateLimit    int64
+			wantAIInteractionTurnRateLimit int64
+			wantAIInteractionArchiveRateLimit int64
 		}{
 			{
 				name: "AssetAdminWithPlusPlan",
@@ -71,6 +75,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCopilotRateLimit:          copilotRateLimitPlus,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitPlus,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitPlus,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitPlus,
 			},
 			{
 				name: "RegularPlusUser",
@@ -87,6 +95,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCopilotRateLimit:          copilotRateLimitPlus,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitPlus,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitPlus,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitPlus,
 			},
 			{
 				name: "RegularFreeUser",
@@ -103,6 +115,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCopilotRateLimit:          copilotRateLimitFree,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitFree,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitFree,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitFree,
 			},
 			{
 				name: "AdminWithFreePlan",
@@ -119,6 +135,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCopilotRateLimit:          copilotRateLimitFree,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitFree,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitFree,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitFree,
 			},
 			{
 				name: "UserWithMultipleRoles",
@@ -135,6 +155,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCopilotRateLimit:          copilotRateLimitFree,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitFree,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitFree,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitFree,
 			},
 			{
 				name: "CourseAdminUser",
@@ -151,6 +175,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCopilotRateLimit:          copilotRateLimitFree,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitFree,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitFree,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitFree,
 			},
 			{
 				name: "UserWithMultipleAdminRoles",
@@ -167,6 +195,10 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
 				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
 				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCopilotRateLimit:          copilotRateLimitPlus,
+				wantAIDescriptionRateLimit:    aiDescriptionRateLimitPlus,
+				wantAIInteractionTurnRateLimit: aiInteractionTurnRateLimitPlus,
+				wantAIInteractionArchiveRateLimit: aiInteractionArchiveRateLimitPlus,
 			},
 		} {
 			t.Run(tt.name, func(t *testing.T) {
@@ -177,15 +209,23 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantCanManageAssets, caps.CanManageAssets)
 				assert.Equal(t, tt.wantCanManageCourses, caps.CanManageCourses)
-				assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
-				assert.Equal(t, tt.wantCopilotMessageQuota, caps.CopilotMessageQuota)
-				assert.Equal(t, caps.CopilotMessageQuota, caps.CopilotMessageQuotaLeft)
-				assert.Equal(t, tt.wantAIDescriptionQuota, caps.AIDescriptionQuota)
-				assert.Equal(t, caps.AIDescriptionQuota, caps.AIDescriptionQuotaLeft)
-				assert.Equal(t, tt.wantAIInteractionTurnQuota, caps.AIInteractionTurnQuota)
-				assert.Equal(t, caps.AIInteractionTurnQuota, caps.AIInteractionTurnQuotaLeft)
-				assert.Equal(t, tt.wantAIInteractionArchiveQuota, caps.AIInteractionArchiveQuota)
-				assert.Equal(t, caps.AIInteractionArchiveQuota, caps.AIInteractionArchiveQuotaLeft)
+			assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
+			assert.Equal(t, tt.wantCopilotMessageQuota, caps.CopilotMessageQuota)
+			assert.Equal(t, caps.CopilotMessageQuota, caps.CopilotMessageQuotaLeft)
+			assert.Equal(t, tt.wantCopilotRateLimit, caps.CopilotMessageRateLimit)
+			assert.Equal(t, int64(rateWindowSeconds), caps.CopilotMessageRateWindowSeconds)
+			assert.Equal(t, tt.wantAIDescriptionQuota, caps.AIDescriptionQuota)
+			assert.Equal(t, caps.AIDescriptionQuota, caps.AIDescriptionQuotaLeft)
+			assert.Equal(t, tt.wantAIDescriptionRateLimit, caps.AIDescriptionRateLimit)
+			assert.Equal(t, int64(rateWindowSeconds), caps.AIDescriptionRateWindowSeconds)
+			assert.Equal(t, tt.wantAIInteractionTurnQuota, caps.AIInteractionTurnQuota)
+			assert.Equal(t, caps.AIInteractionTurnQuota, caps.AIInteractionTurnQuotaLeft)
+			assert.Equal(t, tt.wantAIInteractionTurnRateLimit, caps.AIInteractionTurnRateLimit)
+			assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionTurnRateWindowSeconds)
+			assert.Equal(t, tt.wantAIInteractionArchiveQuota, caps.AIInteractionArchiveQuota)
+			assert.Equal(t, caps.AIInteractionArchiveQuota, caps.AIInteractionArchiveQuotaLeft)
+			assert.Equal(t, tt.wantAIInteractionArchiveRateLimit, caps.AIInteractionArchiveRateLimit)
+			assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionArchiveRateWindowSeconds)
 			})
 		}
 	})
@@ -214,15 +254,23 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, false, caps.CanManageAssets)
 		assert.Equal(t, false, caps.CanManageCourses)
-		assert.Equal(t, false, caps.CanUsePremiumLLM)
-		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(copilotQuotaFree-30), caps.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
-		assert.Equal(t, int64(aiDescriptionQuotaFree-5), caps.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree-120), caps.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree-10), caps.AIInteractionArchiveQuotaLeft)
+	assert.Equal(t, false, caps.CanUsePremiumLLM)
+	assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
+	assert.Equal(t, int64(copilotQuotaFree-30), caps.CopilotMessageQuotaLeft)
+	assert.Equal(t, int64(copilotRateLimitFree), caps.CopilotMessageRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.CopilotMessageRateWindowSeconds)
+	assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
+	assert.Equal(t, int64(aiDescriptionQuotaFree-5), caps.AIDescriptionQuotaLeft)
+	assert.Equal(t, int64(aiDescriptionRateLimitFree), caps.AIDescriptionRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIDescriptionRateWindowSeconds)
+	assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
+	assert.Equal(t, int64(aiInteractionTurnQuotaFree-120), caps.AIInteractionTurnQuotaLeft)
+	assert.Equal(t, int64(aiInteractionTurnRateLimitFree), caps.AIInteractionTurnRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionTurnRateWindowSeconds)
+	assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
+	assert.Equal(t, int64(aiInteractionArchiveQuotaFree-10), caps.AIInteractionArchiveQuotaLeft)
+	assert.Equal(t, int64(aiInteractionArchiveRateLimitFree), caps.AIInteractionArchiveRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionArchiveRateWindowSeconds)
 	})
 
 	t.Run("QuotaExhausted", func(t *testing.T) {
@@ -247,13 +295,21 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
 		require.NoError(t, err)
-		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(0), caps.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
-		assert.Equal(t, int64(0), caps.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
-		assert.Equal(t, int64(0), caps.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(0), caps.AIInteractionArchiveQuotaLeft)
+	assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
+	assert.Equal(t, int64(0), caps.CopilotMessageQuotaLeft)
+	assert.Equal(t, int64(copilotRateLimitFree), caps.CopilotMessageRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.CopilotMessageRateWindowSeconds)
+	assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
+	assert.Equal(t, int64(0), caps.AIDescriptionQuotaLeft)
+	assert.Equal(t, int64(aiDescriptionRateLimitFree), caps.AIDescriptionRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIDescriptionRateWindowSeconds)
+	assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
+	assert.Equal(t, int64(0), caps.AIInteractionTurnQuotaLeft)
+	assert.Equal(t, int64(aiInteractionTurnRateLimitFree), caps.AIInteractionTurnRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionTurnRateWindowSeconds)
+	assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
+	assert.Equal(t, int64(0), caps.AIInteractionArchiveQuotaLeft)
+	assert.Equal(t, int64(aiInteractionArchiveRateLimitFree), caps.AIInteractionArchiveRateLimit)
+	assert.Equal(t, int64(rateWindowSeconds), caps.AIInteractionArchiveRateWindowSeconds)
 	})
 }
