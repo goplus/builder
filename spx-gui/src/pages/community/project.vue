@@ -325,11 +325,11 @@ const remixesRet = useQuery(
               v-model:fullscreen="isFullScreenRunning"
               :project="project"
               :runner-state="runnerState"
-              :run="handleRun.fn"
+              :on-run="handleRun.fn"
               :run-loading="handleRun.isLoading.value"
-              :rerun="handleRerun.fn"
+              :on-rerun="handleRerun.fn"
               :rerun-loading="handleRerun.isLoading.value"
-              :stop="handleStop.fn"
+              :on-stop="handleStop.fn"
               :stop-loading="handleStop.isLoading.value"
             >
               <template #inline-overlay>

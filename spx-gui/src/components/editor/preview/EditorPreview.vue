@@ -69,11 +69,11 @@
             v-model:fullscreen="fullscreen"
             :project="editorCtx.project"
             :runner-state="runnerState"
-            :run="handleRun.fn"
+            :on-run="handleRun.fn"
             :run-loading="handleRun.isLoading.value"
-            :rerun="handleRerun.fn"
+            :on-rerun="handleRerun.fn"
             :rerun-loading="handleRerun.isLoading.value"
-            :stop="handleStop.fn"
+            :on-stop="handleStop.fn"
             :stop-loading="handleStop.isLoading.value"
             :inline-anchor="getStageInlineAnchor"
             @console="handleConsole"
@@ -137,34 +137,15 @@ const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 
 const runtime = computed(() => editorCtx.state.runtime)
-const running = computed(() => runtime.value.running)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
 
 const projectRunnerSurfaceRef = ref<InstanceType<typeof ProjectRunnerSurface> | null>(null)
 const stageContainerRef = ref<HTMLDivElement | null>(null)
 const fullscreen = ref(false)
-const ignoreNextModeSync = ref(false)
 const exitGuard = ref<'idle' | 'manualStopPending'>('idle')
 const runnerHostSticky = ref(false)
+const lastFilesHash = ref<string | null>(null)
 let runnerHostReleaseTimer: number | null = null
-
-watch(
-  () => running.value.mode,
-  (mode) => {
-    if (mode === 'none') {
-      runnerState.value = 'initial'
-      if (ignoreNextModeSync.value) {
-        ignoreNextModeSync.value = false
-        return
-      }
-      fullscreen.value = false
-      return
-    }
-    ignoreNextModeSync.value = false
-    if (mode === 'run') fullscreen.value = true
-  },
-  { immediate: true }
-)
 
 watch(
   () => [fullscreen.value, runnerState.value],
@@ -272,10 +253,9 @@ function handleExit(code: number) {
     return
   }
   exitGuard.value = 'idle'
-  fullscreen.value = false
-  runnerState.value = 'initial'
   lastPanicOutput.value = null
-  editorCtx.state.runtime.setRunning({ mode: 'none' })
+  const shouldRestore = restoreDebugRuntime()
+  runnerState.value = shouldRestore ? 'running' : 'loading'
 }
 
 async function checkAndNotifyError() {
@@ -312,21 +292,15 @@ async function executeRun(action: 'run' | 'rerun') {
   lastPanicOutput.value = null
   await nextTick()
   const surface = await untilNotNull(projectRunnerSurfaceRef)
-  const shouldStayFullscreen = fullscreen.value
   runtime.value.clearOutputs()
-  if (!shouldStayFullscreen) {
-    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
-  } else {
-    editorCtx.state.runtime.setRunning({ mode: 'run' })
-  }
+  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
-    if (shouldStayFullscreen) {
-      editorCtx.state.runtime.setRunning({ mode: 'run' })
-    } else {
-      editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash!)
-    }
+    if (filesHash != null) lastFilesHash.value = filesHash
+    const nextHash = filesHash ?? lastFilesHash.value
+    if (nextHash != null) editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, nextHash)
+    else editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
   } catch (error) {
     runnerState.value = 'initial'
     editorCtx.state.runtime.setRunning({ mode: 'none' })
@@ -354,29 +328,41 @@ const handleStop = useMessageHandle(
   async () => {
     const surface = projectRunnerSurfaceRef.value
     if (surface == null) return
-    const wasFullscreen = fullscreen.value
     exitGuard.value = 'manualStopPending'
-    let handled = false
     try {
       await surface.stop()
       lastPanicOutput.value = null
       runnerState.value = 'initial'
-      ignoreNextModeSync.value = wasFullscreen
       editorCtx.state.runtime.setRunning({ mode: 'none' })
-      if (!wasFullscreen) fullscreen.value = false
-      handled = true
-    } finally {
-      if (!handled) exitGuard.value = 'idle'
+    } catch (error) {
+      exitGuard.value = 'idle'
+      throw error
     }
   },
   { en: 'Failed to stop project', zh: '停止项目失败' }
 )
 
+function restoreDebugRuntime() {
+  const filesHash = lastFilesHash.value ?? runtime.value.filesHash
+  if (runnerState.value === 'loading' || filesHash == null) {
+    editorCtx.state.runtime.setRunning({
+      mode: 'debug',
+      initializing: true
+    })
+    return false
+  }
+  editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
+  return true
+}
+
 function handleFullscreenChange(value: boolean) {
   fullscreen.value = value
   if (value) {
     if (runnerState.value !== 'initial') {
-      editorCtx.state.runtime.setRunning({ mode: 'run' })
+      editorCtx.state.runtime.setRunning({
+        mode: 'debug',
+        initializing: runnerState.value !== 'running'
+      })
     }
     return
   }
@@ -384,10 +370,7 @@ function handleFullscreenChange(value: boolean) {
     keepRunnerHostVisibleForOverlay()
     editorCtx.state.runtime.setRunning({ mode: 'none' })
   } else {
-    editorCtx.state.runtime.setRunning({
-      mode: 'debug',
-      initializing: runnerState.value === 'loading'
-    })
+    restoreDebugRuntime()
   }
 }
 
