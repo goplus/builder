@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { UICard, UICardHeader, UIFullScreenModal, UIFullScreenModalHeader } from '@/components/ui'
+import { UIFullScreenModal, UIFullScreenModalHeader } from '@/components/ui'
 import type { Project } from '@/models/project'
-import MapViewer from './map-viewer/MapViewer.vue'
-import SpriteList from './SpriteList.vue'
-import MapBasicConfig from './MapBasicConfig.vue'
-import type { Sprite } from '@/models/sprite'
+import MapEditor from './MapEditor.vue'
 
-const props = defineProps<{
+defineProps<{
   visible: boolean
   project: Project
   selectedSpriteId: string | null
@@ -17,13 +13,6 @@ const emit = defineEmits<{
   resolved: []
   cancelled: []
 }>()
-
-const selectedSpriteId = ref(props.selectedSpriteId)
-const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === selectedSpriteId.value) ?? null)
-
-function handleSpriteSelect(sprite: Sprite | null) {
-  selectedSpriteId.value = sprite?.id ?? null
-}
 </script>
 
 <template>
@@ -38,71 +27,19 @@ function handleSpriteSelect(sprite: Sprite | null) {
         }}
       </h2>
     </UIFullScreenModalHeader>
-    <div class="body">
-      <div class="main">
-        <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
-      </div>
-      <div class="sider">
-        <UICard class="collapse-card">
-          <UICardHeader>
-            {{
-              $t({
-                en: 'Global Configuration',
-                zh: '全局配置'
-              })
-            }}
-          </UICardHeader>
-          <MapBasicConfig class="map-config" :project="project" />
-        </UICard>
-        <SpriteList
-          class="sprite-list"
-          :project="project"
-          :selected-sprite="selectedSprite"
-          @update:selected-sprite="handleSpriteSelect"
-        />
-      </div>
-    </div>
+    <MapEditor class="editor" :project="project" :selected-sprite-id="selectedSpriteId" />
   </UIFullScreenModal>
 </template>
 
 <style lang="scss" scoped>
-@import '@/components/ui/responsive';
-
 .title {
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.body {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: row;
+
+.editor {
   padding: var(--ui-gap-middle);
-  gap: var(--ui-gap-middle);
-}
-.main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.sider {
-  flex: 0 0 400px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-middle);
-
-  @include responsive(desktop-large) {
-    flex-basis: 492px;
-  }
-
-  .map-config {
-    padding: 16px;
-  }
-}
-.sprite-list {
-  flex: 1 1 0;
 }
 </style>

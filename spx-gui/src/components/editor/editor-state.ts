@@ -38,6 +38,11 @@ export interface IRouter {
   push(to: RouteLocationAsRelativeGeneric): Promise<unknown>
 }
 
+export enum EditMode {
+  Preview = 'preview',
+  Global = 'global'
+}
+
 export class EditorState extends Disposable {
   constructor(
     private project: Project,
@@ -75,9 +80,14 @@ export class EditorState extends Disposable {
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
+  private selectedEditModeRef = ref<EditMode>(EditMode.Preview)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)
   private selectedSoundIdRef = ref<string | null>(null)
+
+  get selectedEditMode() {
+    return this.selectedEditModeRef.value
+  }
 
   get selectedSprite() {
     if (this.selectedTypeRef.value !== 'sprite') return null
@@ -124,6 +134,10 @@ export class EditorState extends Disposable {
       default:
         throw new Error(`Unknown selected type: ${this.selectedTypeRef.value}`)
     }
+  }
+
+  selectEditMode(editMode: EditMode) {
+    this.selectedEditModeRef.value = editMode
   }
 
   select(target: { type: 'stage' } | { type: 'sprite'; id?: string | null } | { type: 'sound'; id?: string | null }) {
