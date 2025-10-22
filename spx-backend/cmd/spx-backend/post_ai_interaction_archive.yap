@@ -13,6 +13,10 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
+if !ensureRateLimit(ctx, authz.ResourceAIInteractionArchive) {
+	return
+}
+
 if !ensureQuotaLeft(ctx, authz.ResourceAIInteractionArchive) {
 	return
 }

@@ -46,20 +46,23 @@ func TestNew(t *testing.T) {
 	db := &gorm.DB{}
 	pdp := &mockPolicyDecisionPoint{}
 	quotaTracker := &mockQuotaTracker{}
+	rateLimiter := &mockRateLimiter{}
 
-	authorizer := New(db, pdp, quotaTracker)
+	authorizer := New(db, pdp, quotaTracker, rateLimiter)
 
 	require.NotNil(t, authorizer)
 	assert.Equal(t, db, authorizer.db)
 	assert.Equal(t, pdp, authorizer.pdp)
 	assert.Equal(t, quotaTracker, authorizer.quotaTracker)
+	assert.Equal(t, rateLimiter, authorizer.rateLimiter)
 }
 
 func TestAuthorizerMiddleware(t *testing.T) {
 	t.Run("NoUser", func(t *testing.T) {
 		pdp := &mockPolicyDecisionPoint{}
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
 		handler := middleware(newTestHandler(t, nil))
@@ -75,16 +78,24 @@ func TestAuthorizerMiddleware(t *testing.T) {
 
 	t.Run("ValidUser", func(t *testing.T) {
 		wantCaps := UserCapabilities{
-			CanManageAssets:               true,
-			CanUsePremiumLLM:              true,
-			CopilotMessageQuota:           1000,
-			CopilotMessageQuotaLeft:       900,
-			AIDescriptionQuota:            1000,
-			AIDescriptionQuotaLeft:        850,
-			AIInteractionTurnQuota:        24000,
-			AIInteractionTurnQuotaLeft:    23500,
-			AIInteractionArchiveQuota:     16000,
-			AIInteractionArchiveQuotaLeft: 15500,
+			CanManageAssets:                       true,
+			CanUsePremiumLLM:                      true,
+			CopilotMessageQuota:                   1000,
+			CopilotMessageQuotaLeft:               900,
+			CopilotMessageRateLimit:               30,
+			CopilotMessageRateWindowSeconds:       60,
+			AIDescriptionQuota:                    1000,
+			AIDescriptionQuotaLeft:                850,
+			AIDescriptionRateLimit:                10,
+			AIDescriptionRateWindowSeconds:        60,
+			AIInteractionTurnQuota:                24000,
+			AIInteractionTurnQuotaLeft:            23500,
+			AIInteractionTurnRateLimit:            20,
+			AIInteractionTurnRateWindowSeconds:    60,
+			AIInteractionArchiveQuota:             16000,
+			AIInteractionArchiveQuotaLeft:         15500,
+			AIInteractionArchiveRateLimit:         10,
+			AIInteractionArchiveRateWindowSeconds: 60,
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
@@ -95,7 +106,8 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		}
 
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
 		handler := middleware(newTestHandler(t, &wantCaps))
@@ -119,7 +131,8 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		}
 
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
 		handler := middleware(newTestHandler(t, nil))

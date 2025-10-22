@@ -13,6 +13,11 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
+// Enforce rate limit.
+if !ensureRateLimit(ctx, authz.ResourceCopilotMessage) {
+	return
+}
+
 // Check remaining quota (workflow uses copilot quota).
 if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
 	return

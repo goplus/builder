@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -78,6 +80,28 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 		logger.Printf("failed to handle request [%s %s]: %v", ctx.Method, ctx.URL, err)
 		replyWithCode(ctx, errorUnknown)
 	}
+}
+
+// ensureRateLimit checks the rate limiter and responds with a 429 if exceeded.
+func ensureRateLimit(ctx *yap.Context, resource authz.Resource) bool {
+	allowed, retryAfter, err := authz.AllowRateLimit(ctx.Context(), resource)
+	if err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to enforce %s rate limit: %v", resource, err)
+		replyWithCode(ctx, errorUnknown)
+		return false
+	}
+	if allowed {
+		return true
+	}
+	if retryAfter > 0 {
+		seconds := int(math.Ceil(retryAfter.Seconds()))
+		if seconds > 0 {
+			ctx.ResponseWriter.Header().Set("Retry-After", strconv.Itoa(seconds))
+		}
+	}
+	replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s rate limit exceeded", resource))
+	return false
 }
 
 // ensureQuotaLeft checks the remaining quota and replies with a 429 error if exhausted.

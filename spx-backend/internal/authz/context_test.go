@@ -12,21 +12,30 @@ import (
 func newTestAuthorizer() *Authorizer {
 	pdp := &mockPolicyDecisionPoint{}
 	quotaTracker := &mockQuotaTracker{}
-	return New(&gorm.DB{}, pdp, quotaTracker)
+	rateLimiter := &mockRateLimiter{}
+	return New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 }
 
 func newTestUserCapabilities() UserCapabilities {
 	return UserCapabilities{
-		CanManageAssets:               true,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       85,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        290,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11700,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7600,
+		CanManageAssets:                       true,
+		CanUsePremiumLLM:                      false,
+		CopilotMessageQuota:                   100,
+		CopilotMessageQuotaLeft:               85,
+		CopilotMessageRateLimit:               30,
+		CopilotMessageRateWindowSeconds:       60,
+		AIDescriptionQuota:                    300,
+		AIDescriptionQuotaLeft:                290,
+		AIDescriptionRateLimit:                10,
+		AIDescriptionRateWindowSeconds:        60,
+		AIInteractionTurnQuota:                12000,
+		AIInteractionTurnQuotaLeft:            11700,
+		AIInteractionTurnRateLimit:            20,
+		AIInteractionTurnRateWindowSeconds:    60,
+		AIInteractionArchiveQuota:             8000,
+		AIInteractionArchiveQuotaLeft:         7600,
+		AIInteractionArchiveRateLimit:         10,
+		AIInteractionArchiveRateWindowSeconds: 60,
 	}
 }
 
