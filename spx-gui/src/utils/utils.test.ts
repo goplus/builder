@@ -8,7 +8,8 @@ import {
   localStorageRef,
   humanizeListWithLimit,
   humanizeFileSize,
-  isCrossOriginUrl
+  isCrossOriginUrl,
+  withRetry
 } from './utils'
 import { sleep } from './test'
 
@@ -291,5 +292,148 @@ describe('isCrossOriginUrl', () => {
   it('should work well with data URLs', () => {
     expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example.com')).toBe(false)
     expect(isCrossOriginUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA', 'https://example2.com')).toBe(false)
+  })
+})
+
+describe('withRetry', () => {
+  it('should return result on first success', async () => {
+    const mockFn = vitest.fn().mockResolvedValue('success')
+
+    const result = await withRetry(mockFn)
+
+    expect(result).toBe('success')
+    expect(mockFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('should retry on failure and eventually succeed', async () => {
+    let attemptCount = 0
+    const mockFn = vitest.fn().mockImplementation(async () => {
+      attemptCount++
+      if (attemptCount < 3) {
+        throw new Error(`Attempt ${attemptCount} failed`)
+      }
+      return 'success on third attempt'
+    })
+
+    const result = await withRetry(mockFn, 3, 50)
+
+    expect(result).toBe('success on third attempt')
+    expect(mockFn).toHaveBeenCalledTimes(3)
+  })
+
+  it('should throw error after max retries exceeded', async () => {
+    const mockFn = vitest.fn().mockRejectedValue(new Error('persistent failure'))
+
+    await expect(withRetry(mockFn, 2, 50)).rejects.toThrow('persistent failure')
+    expect(mockFn).toHaveBeenCalledTimes(3) // initial attempt + 2 retries
+  })
+
+  it('should use default maxRetries and delayMs when not specified', async () => {
+    const mockFn = vitest.fn().mockRejectedValue(new Error('always fails'))
+
+    const startTime = Date.now()
+    await expect(withRetry(mockFn)).rejects.toThrow('always fails')
+    const endTime = Date.now()
+
+    expect(mockFn).toHaveBeenCalledTimes(4) // initial attempt + 3 retries (default)
+    // Should take at least 3 seconds (3 delays of 1000ms each)
+    expect(endTime - startTime).toBeGreaterThan(2900)
+  })
+
+  it('should wait specified delay between retries', async () => {
+    const mockFn = vitest.fn().mockRejectedValue(new Error('fails'))
+    const delayMs = 100
+
+    const startTime = Date.now()
+    await expect(withRetry(mockFn, 2, delayMs)).rejects.toThrow('fails')
+    const endTime = Date.now()
+
+    expect(mockFn).toHaveBeenCalledTimes(3) // initial + 2 retries
+    // Should take at least 2 * delayMs (2 delays)
+    expect(endTime - startTime).toBeGreaterThan(delayMs * 2 - 50)
+  })
+
+  it('should work with async functions that return different types', async () => {
+    const numberFn = vitest.fn().mockResolvedValue(42)
+    const objectFn = vitest.fn().mockResolvedValue({ data: 'test' })
+    const arrayFn = vitest.fn().mockResolvedValue([1, 2, 3])
+
+    expect(await withRetry(numberFn)).toBe(42)
+    expect(await withRetry(objectFn)).toEqual({ data: 'test' })
+    expect(await withRetry(arrayFn)).toEqual([1, 2, 3])
+  })
+
+  it('should handle functions with parameters', async () => {
+    const mockFn = vitest.fn().mockImplementation(async (a: number, b: string) => {
+      return `${a}-${b}`
+    })
+
+    const wrappedFn = () => mockFn(123, 'test')
+    const result = await withRetry(wrappedFn)
+
+    expect(result).toBe('123-test')
+    expect(mockFn).toHaveBeenCalledWith(123, 'test')
+  })
+
+  it('should handle zero maxRetries', async () => {
+    const mockFn = vitest.fn().mockRejectedValue(new Error('immediate failure'))
+
+    await expect(withRetry(mockFn, 0, 50)).rejects.toThrow('immediate failure')
+    expect(mockFn).toHaveBeenCalledTimes(1) // only initial attempt, no retries
+  })
+
+  it('should handle zero delay', async () => {
+    let attemptCount = 0
+    const mockFn = vitest.fn().mockImplementation(async () => {
+      attemptCount++
+      if (attemptCount < 2) {
+        throw new Error('first attempt fails')
+      }
+      return 'success'
+    })
+
+    const startTime = Date.now()
+    const result = await withRetry(mockFn, 2, 0)
+    const endTime = Date.now()
+
+    expect(result).toBe('success')
+    expect(mockFn).toHaveBeenCalledTimes(2)
+    // Should complete quickly with zero delay
+    expect(endTime - startTime).toBeLessThan(100)
+  })
+
+  it('should handle negative maxRetries by throwing error', async () => {
+    const mockFn = vitest.fn().mockRejectedValue(new Error('failure'))
+    await expect(withRetry(mockFn, -1, 50)).rejects.toThrow('invalid maxRetries: -1')
+    expect(mockFn).toHaveBeenCalledTimes(0) // function never called due to loop condition
+  })
+
+  it('should preserve original error types and messages', async () => {
+    class CustomError extends Error {
+      constructor(
+        message: string,
+        public code: number
+      ) {
+        super(message)
+        this.name = 'CustomError'
+      }
+    }
+
+    const mockFn = vitest.fn().mockRejectedValue(new CustomError('custom error message', 500))
+
+    await expect(withRetry(mockFn, 1, 50)).rejects.toMatchObject({
+      name: 'CustomError',
+      message: 'custom error message',
+      code: 500
+    })
+  })
+
+  it('should work with functions that throw synchronously', async () => {
+    const mockFn = vitest.fn().mockImplementation(() => {
+      throw new Error('sync error')
+    })
+
+    await expect(withRetry(mockFn, 1, 50)).rejects.toThrow('sync error')
+    expect(mockFn).toHaveBeenCalledTimes(2) // initial + 1 retry
   })
 })

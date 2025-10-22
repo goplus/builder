@@ -1,5 +1,5 @@
 import { mergeSignals } from '@/utils/disposable'
-import { Exception } from '@/utils/exception'
+import { TimeoutException } from '@/utils/exception'
 import { Client } from './client'
 import * as Sentry from '@sentry/vue'
 
@@ -23,14 +23,6 @@ export type RequestOptions = {
    */
   timeout?: number
   signal?: AbortSignal
-}
-
-class TimeoutException extends Exception {
-  name = 'TimeoutException'
-  userMessage = { en: 'request timeout', zh: '请求超时' }
-  constructor() {
-    super('request timeout')
-  }
 }
 
 export function useRequest<T>(

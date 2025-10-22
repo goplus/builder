@@ -492,3 +492,20 @@ export function untilTaskScheduled(
     { priority, signal }
   )
 }
+
+/**
+ * Retry given async function upon failure.
+ * The function will be retried up to `maxRetries` times (totally `maxRetries + 1` attempts),
+ * with a delay of `delayMs` milliseconds between each attempt.
+ */
+export async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3, delayMs: number = 1000): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (attempt < maxRetries) await timeout(delayMs)
+      else throw error
+    }
+  }
+  throw new Error(`invalid maxRetries: ${maxRetries}`)
+}
