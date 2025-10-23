@@ -411,8 +411,8 @@ onBeforeUnmount(
           </svg>
         </div>
         <template v-if="isSignedIn()">
-          <div ref="outputRef" class="output">
-            <template v-if="activeRound != null">
+          <template v-if="activeRound != null">
+            <div ref="outputRef" class="output">
               <CopilotRound :round="activeRound" is-last-round />
               <div v-if="quickInputs.length > 0" class="quick-inputs">
                 <UITooltip v-for="(qi, i) in quickInputs" :key="i">
@@ -422,9 +422,9 @@ onBeforeUnmount(
                   </template>
                 </UITooltip>
               </div>
-            </template>
-          </div>
-          <div class="divider"></div>
+            </div>
+            <div class="divider"></div>
+          </template>
           <CopilotInput
             ref="inputRef"
             class="input"
@@ -616,12 +616,9 @@ $toColor: #c390ff;
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
+    margin-top: 14px;
     overflow-y: auto;
     scrollbar-width: thin;
-
-    &:not(:empty) {
-      margin-top: 14px;
-    }
   }
 
   .divider {

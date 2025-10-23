@@ -1,4 +1,4 @@
-import { inject, provide } from 'vue'
+import { inject, provide, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
@@ -57,11 +57,20 @@ export class Tutorial {
     return this.series.value
   }
 
+  private abandonCountRef = ref(0)
+  abandon() {
+    return ++this.abandonCountRef.value
+  }
+  dismissAbandon() {
+    this.abandonCountRef.value = 0
+  }
+
   async startCourse(course: Course, series: CourseSeriesWithCourses): Promise<void> {
     try {
       this.endCurrentCourse()
       this.course.value = course
       this.series.value = series
+      this.abandonCountRef.value = 0
 
       const { entrypoint } = course
 
@@ -141,14 +150,9 @@ Predict abandonment based on:
 1. **Path Deviation**: User repeatedly interacts with UI elements/pages unrelated to the current step's <${highlightLinkTagName}> target or course scope.
 2. **Irrelevant Actions**: User frequently performs actions that open unrelated modals, side panels, settings, etc., without a prompt return to the task.
 
-**Escalation Protocol:**
-1. **Level 1 (Soft Redirect)**: First Predict abandonment, issue a gentle reminder.
-  * **Example**: "Looks like you opened something new. The current step is about [current step goal]. Please click <${highlightLinkTagName} target-id="...">here</${highlightLinkTagName}> to continue."
-2. **Level 2 (Direct Check)**: Second deviation or a **major** irrelevant action, **explicitly** check intent.
-  * **Example**: "I see you're outside the tutorial's path. Issues, or wish to exit?"
-3. **Mandatory Termination**: User ignores Level 2 and continues non-guided behavior, **assume** abandonment, force exit immediately.
-  * **Action**: Invoke <${tutorialCourseAbandonTagName} />.
-  * **Example**: "Activity is deviating; ending the tutorial. Restart anytime."
+**Protocol:**
+When abandonment is predicted based on the rules above, insert <${tutorialCourseAbandonTagName} abandon /> in your response.
+When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonTagName} :abandon="false" /> in your response to dismiss the prompt and continue.
 
 When coding tasks are involved:
 
@@ -216,5 +220,6 @@ This is an example for messages between you and the user in a course:
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
+    this.abandonCountRef.value = 0
   }
 }

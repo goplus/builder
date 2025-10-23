@@ -7,33 +7,58 @@ export const tagName = 'tutorial-course-abandon'
 export const isRaw = false
 
 export const detailedDescription = `
-If and only if **Course Abandonment** has been detected and the system is currently executing the **Mandatory Course Termination (Prediction Confirmation)** phase of the \`escalation protocol\`:
-1. You **must** terminate the course and append the system tag to the *very end* of your final message.
-2. The required tag is: <tutorial-course-abandonment />
+Triggers course abandonment handling logic.
+**Usage**:
+- Trigger abandonment: <${tagName} abandon />
+- Dismiss abandonment: <${tagName} :abandon="false" />
+**Constraints**:
+- MUST be placed at the **last line** of your message.
+- Use at most ONCE per message.
+- After dismissing with \`:abandon="false"\`, do NOT use again until next abandonment.
 `
 
-export const attributes = z.object({})
+export const attributes = z.object({
+  abandon: z.boolean().optional().default(false)
+})
+
+const maxAbandonCount = 5
 </script>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-import { useTutorial } from './tutorial'
 import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 
-const tutorial = useTutorial()
+import { useTutorial } from './tutorial'
+
+const props = withDefaults(
+  defineProps<{
+    abandon?: boolean
+  }>(),
+  {
+    abandon: false
+  }
+)
+
 const copilot = useCopilot()
+const tutorial = useTutorial()
 
 onMounted(async () => {
-  if (!tutorial.currentCourse || !tutorial.currentSeries) {
-    throw new Error('No course or series in progress')
+  if (props.abandon) {
+    const count = tutorial.abandon()
+    if (count > maxAbandonCount) {
+      await timeout(500)
+      copilot.close()
+      tutorial.endCurrentCourse()
+    }
+  } else {
+    tutorial.dismissAbandon()
   }
-  await timeout(500)
-  copilot.close()
-  tutorial.endCurrentCourse()
 })
 </script>
 
 <template>
   <slot />
 </template>
+
+<style lang="scss" scoped></style>

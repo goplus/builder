@@ -5,10 +5,12 @@ export const name = 'tutorial-state-indicator'
 <script lang="ts" setup>
 import { computed } from 'vue'
 
+import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIDropdownWithTooltip, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
+const copilot = useCopilot()
 const tutorial = useTutorial()
 
 const course = computed(() => {
@@ -17,6 +19,7 @@ const course = computed(() => {
 
 const { fn: handleExitTutorial } = useMessageHandle(
   () => {
+    copilot.close()
     tutorial.endCurrentCourse()
   },
   { zh: '退出课程时遇到问题', en: 'Encountered an issue when exiting the course' }
