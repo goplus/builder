@@ -52,7 +52,7 @@ func TestDefaultTransport(t *testing.T) {
 func TestNotSetTransportInteract(t *testing.T) {
 	transport := &notSetTransport{}
 	req := Request{Content: "test"}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	resp, err := transport.Interact(ctx, req)
 	if got, want := err, ErrTransportNotSet; !errors.Is(got, want) {
@@ -66,7 +66,7 @@ func TestNotSetTransportInteract(t *testing.T) {
 func TestNotSetTransportArchive(t *testing.T) {
 	transport := &notSetTransport{}
 	turns := []Turn{{RequestContent: "test"}}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	archived, err := transport.Archive(ctx, turns, "")
 	if got, want := err, ErrTransportNotSet; !errors.Is(got, want) {

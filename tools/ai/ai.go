@@ -116,11 +116,11 @@ func (p *Player) Think__1(msg string) {
 }
 func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
-		transportTimeout    = 45 * time.Second       // Timeout for each transport call.
-		maxTransportRetries = 3                      // Maximum number of retries for each AI transport call.
-		maxTurns            = 20                     // Maximum number of turns in a single call to prevent infinite loops.
-		backoffBase         = 100 * time.Millisecond // Base time for exponential backoff calculation.
-		backoffCap          = 2 * time.Second        // Maximum backoff time cap.
+		transportTimeout     = 45 * time.Second       // Timeout for each transport call.
+		maxTransportAttempts = 3                      // Maximum number of transport attempts per call.
+		maxTurns             = 20                     // Maximum number of turns in a single call to prevent infinite loops.
+		backoffBase          = 100 * time.Millisecond // Base time for exponential backoff calculation.
+		backoffCap           = 2 * time.Second        // Maximum backoff time cap.
 	)
 
 	p.beginInteraction()
@@ -147,6 +147,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			}
 		}
 		currentKnowledgeBase := p.knowledgeBase()
+		currentTransport := p.transport()
 		p.mu.RUnlock()
 
 		request := Request{
@@ -162,33 +163,20 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		}
 
 		// Call AI transport with retries.
-		transport := p.transport()
 		var (
 			resp    Response
 			lastErr error
 		)
-	TransportRetryLoop:
-		for attempt := range maxTransportRetries {
+		for range backoffAttempts(stdContext.Background(), maxTransportAttempts, backoffBase, backoffCap) {
 			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), transportTimeout)
-
-			if attempt > 0 {
-				select {
-				case <-time.After(backoffSleep(backoffBase, backoffCap, attempt)):
-				case <-ctx.Done():
-					lastErr = ctx.Err()
-					cancel()
-					break TransportRetryLoop
-				}
-			}
-
-			resp, lastErr = transport.Interact(ctx, request)
+			resp, lastErr = currentTransport.Interact(ctx, request)
 			cancel()
 			if lastErr == nil {
-				break TransportRetryLoop
+				break
 			}
 		}
 		if lastErr != nil {
-			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport retries: %w", maxTransportRetries, lastErr))
+			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
 			return
 		}
 
@@ -323,10 +311,10 @@ func (p *Player) appendHistory(turn Turn) {
 // manageHistory checks if archiving is needed and performs it if necessary.
 func (p *Player) manageHistory() {
 	const (
-		archiveTimeout = 120 * time.Second      // Timeout for archive operation.
-		maxRetries     = 3                      // Maximum retry attempts.
-		backoffBase    = 500 * time.Millisecond // Base time for exponential backoff.
-		backoffCap     = 5 * time.Second        // Maximum backoff time cap.
+		archiveTimeout     = 120 * time.Second      // Timeout for archive operation.
+		maxArchiveAttempts = 3                      // Maximum number of archive attempts.
+		backoffBase        = 500 * time.Millisecond // Base time for exponential backoff.
+		backoffCap         = 5 * time.Second        // Maximum backoff time cap.
 	)
 
 	// Prepare archive if needed.
@@ -341,20 +329,8 @@ func (p *Player) manageHistory() {
 		archived ArchivedHistory
 		lastErr  error
 	)
-ArchiveRetryLoop:
-	for attempt := range maxRetries {
+	for range backoffAttempts(stdContext.Background(), maxArchiveAttempts, backoffBase, backoffCap) {
 		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
-
-		if attempt > 0 {
-			select {
-			case <-time.After(backoffSleep(backoffBase, backoffCap, attempt)):
-			case <-ctx.Done():
-				lastErr = ctx.Err()
-				cancel()
-				break ArchiveRetryLoop
-			}
-		}
-
 		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
@@ -362,7 +338,7 @@ ArchiveRetryLoop:
 		}
 	}
 	if lastErr != nil {
-		log.Printf("failed to archive history after %d retries: %v", maxRetries, lastErr)
+		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)
 		p.cancelArchive()
 		return
 	}
