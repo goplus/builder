@@ -597,20 +597,22 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.addDisposer(
       watch(
         () => this.active,
-        (value) => {
+        throttle((value, oldValue) => {
           const session = this.currentSession
           if (session == null) return
 
           const lastStartTime = this.lastStartTime.value
           if (lastStartTime == null) return
 
-          if (!value) {
+          // Check idle timeout when reopening copilot
+          // Terminates session if lastStartTime is too old (user was idle for too long)
+          if (value && oldValue === false) {
             const idleTimeout = session.topic.idleTimeout ?? defaultIdleTimeout
             if (dayjs().valueOf() - lastStartTime > idleTimeout) {
               this.endCurrentSession()
             }
           }
-        },
+        }, 100),
         {
           immediate: true
         }
