@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   Copilot,
   sampleApiMessages,
-  type IStorage,
+  type ISessionExportedStorage,
   type IMessageStreamGenerator,
   type Topic,
   RoundState,
@@ -86,7 +86,7 @@ describe('sampleApiMessages', () => {
   })
 })
 
-class MockStorage implements IStorage<SessionExported | null> {
+class MockStorage implements ISessionExportedStorage {
   private saved: SessionExported | null = null
   set(value: SessionExported | null): void {
     this.saved = value
@@ -269,7 +269,7 @@ describe('Copilot', () => {
   })
 
   it('should handle storage errors gracefully', async () => {
-    class FailingStorage implements IStorage<SessionExported | null> {
+    class FailingStorage implements ISessionExportedStorage {
       set(): void {
         // Silently fail to avoid unhandled rejections
       }

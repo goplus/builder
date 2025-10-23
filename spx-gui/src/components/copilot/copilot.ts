@@ -431,9 +431,9 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
-export interface IStorage<T> {
-  set(value: T | null): void
-  get(): T | null
+export interface ISessionExportedStorage {
+  set(value: SessionExported | null): void
+  get(): SessionExported | null
 }
 
 const defaultTopic: Topic = {
@@ -564,7 +564,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
-  syncSessionWith(storage: IStorage<SessionExported>): void {
+  syncSessionWith(storage: ISessionExportedStorage): void {
     try {
       const saved = storage.get()
       if (saved != null) {
