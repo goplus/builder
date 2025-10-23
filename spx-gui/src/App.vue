@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider, type Config } from '@/components/ui'
 import AgentCopilotProvider from '@/components/agent-copilot/CopilotProvider.vue'
 import CopilotRoot from '@/components/copilot/CopilotRoot.vue'
@@ -25,9 +25,7 @@ import CopilotUI from '@/components/copilot/CopilotUI.vue'
 import TutorialRoot from '@/components/tutorials/TutorialRoot.vue'
 import { SpotlightUI } from '@/utils/spotlight'
 import { useI18n } from '@/utils/i18n'
-import { clearAllUserStorage } from '@/utils/user-storage'
 import { useInstallRouteLoading } from '@/utils/route-loading'
-import { isSignedIn } from '@/stores/user'
 
 const { t } = useI18n()
 
@@ -43,13 +41,6 @@ const config = computed<Config>(() => ({
     retryText: t({ en: 'Retry', zh: '重试' })
   }
 }))
-
-// Clear all user-scoped storage when user signs out
-watchEffect(() => {
-  if (!isSignedIn()) {
-    clearAllUserStorage()
-  }
-})
 
 useInstallRouteLoading()
 </script>

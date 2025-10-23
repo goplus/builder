@@ -1,103 +1,70 @@
+import { computed, ref } from 'vue'
 import { getSignedInUsername } from '@/stores/user'
-import { computed, shallowReactive } from 'vue'
+import { isObject, isString } from 'lodash'
 
-type IStorage<T> = {
-  get(key: string): T | null
-  set(key: string, value: T): void
-  remove(key: string): void
-  keys(): string[]
+type IStorage = {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
 }
 
-function implIStorage(storage: Storage): IStorage<any> {
-  return {
-    get<T>(key: string): T | null {
-      const item = storage.getItem(key)
-      return item == null ? null : JSON.parse(item)
-    },
-    set<T>(key: string, value: T) {
-      storage.setItem(key, JSON.stringify(value))
-    },
-    remove(key: string) {
-      storage.removeItem(key)
-    },
-    keys() {
-      const keysToDelete: string[] = []
-      for (let i = 0; i < storage.length; i++) {
-        const key = storage.key(i)
-        if (key != null) {
-          keysToDelete.push(key)
-        }
-      }
-      return keysToDelete
-    }
-  }
+type UserScopeValue<T> = {
+  user: string
+  value: T
 }
 
-const local = implIStorage(localStorage)
-const session = implIStorage(sessionStorage)
-// Unique prefix to identify user-scoped storage keys
-const prefix = '__D7p9D__'
+function isUserScopeValue<T>(obj: any): obj is UserScopeValue<T> {
+  return obj != null && isObject(obj) && 'user' in obj && isString(obj.user) && 'value' in obj
+}
+
 // Default scope for non-authenticated users
 const defaultScope = '__G&PW8H7fKv__'
 
-const lsSyncer = shallowReactive(new Map<string, number>())
-function watchLSChange(key: string) {
-  lsSyncer.get(key)
-}
-function fireLSChange(key: string) {
-  const val = lsSyncer.get(key) ?? 0
-  lsSyncer.set(key, val + 1)
-}
-
-function getScopeKey(scope: string, key: string) {
-  return `${prefix}:${encodeURIComponent(scope)}:${key}`
-}
-
 // private
-// refer from: spx-gui/src/utils/utils.ts#localStorageRef
-function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage<T> = local) {
+function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
   const scope = computed(() => getSignedInUsername() ?? defaultScope)
+  const syncer = ref(0)
   return computed<T>({
     get() {
-      const scopeKey = getScopeKey(scope.value, key)
-      watchLSChange(scopeKey)
-      let value = storage.get(scopeKey)
-      if (value == null) {
-        // TODO: Fallback to global key for backward compatibility
-        value = storage.get(key)
-        if (value != null) {
-          storage.set(scopeKey, value)
-          storage.remove(key)
-        }
+      syncer.value
+      const currentScope = scope.value
+      const exportedValue = storage.getItem(key)
+      if (exportedValue == null) {
+        return initialValue
+      }
+      const parsedValue = JSON.parse(exportedValue)
+      const { user, value: scopeValue } = isUserScopeValue<T>(parsedValue)
+        ? parsedValue
+        : // Legacy data compatibility: Old data without user scope is treated as shared/public until
+          // a user writes to it. When reading legacy data, we bind it to the current user without
+          // persisting (no setItem here), so it remains accessible to all users until someone writes.
+          { user: currentScope, value: parsedValue }
+      let value = scopeValue
+      if (user !== currentScope) {
+        storage.removeItem(key)
+        value = null
       }
       return value == null ? initialValue : value
     },
     set(newValue) {
-      const scopeKey = getScopeKey(scope.value, key)
       if (newValue === initialValue) {
-        storage.remove(scopeKey)
+        storage.removeItem(key)
       } else {
-        storage.set(scopeKey, newValue)
+        const userScopeValue: UserScopeValue<T> = {
+          user: scope.value,
+          value: newValue
+        }
+        storage.setItem(key, JSON.stringify(userScopeValue))
       }
-      fireLSChange(scopeKey)
+      syncer.value++
     }
   })
 }
 
 export function useUserLocalStorageRef<T>(key: string, initialValue: T) {
-  return useUserStorageRef<T>(key, initialValue, local)
+  return useUserStorageRef<T>(key, initialValue, localStorage)
 }
 
 export function useUserSessionStorageRef<T>(key: string, initialValue: T) {
-  return useUserStorageRef<T>(key, initialValue, session)
-}
-
-export function clearAllUserStorage() {
-  ;[local, session].forEach((storage) => {
-    storage.keys().forEach((key) => {
-      if (key.startsWith(prefix)) {
-        storage.remove(key)
-      }
-    })
-  })
+  return useUserStorageRef<T>(key, initialValue, sessionStorage)
 }
