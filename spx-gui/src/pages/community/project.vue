@@ -381,12 +381,12 @@ const remixesRet = useQuery(
         </div>
         <div class="ops">
           <UIButton
-            v-if="runnerState === 'running' && !handleStop.isLoading.value"
+            v-if="runnerState !== 'initial'"
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
             type="primary"
             icon="rotate"
-            :disabled="projectRunnerRef == null || handleStop.isLoading.value"
-            :loading="handleRerun.isLoading.value"
+            :disabled="runnerState !== 'running' || projectRunnerRef == null || handleStop.isLoading.value"
+            :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
             @click="handleRerun.fn"
           >
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
