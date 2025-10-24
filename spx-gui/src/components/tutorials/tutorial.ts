@@ -2,7 +2,7 @@ import { inject, provide } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
-import { timeout, localStorageRef, until } from '@/utils/utils'
+import { timeout, until } from '@/utils/utils'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/custom-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
@@ -10,6 +10,7 @@ import type { CourseSeries } from '@/apis/course-series'
 
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
+import { useUserLocalStorageRef } from '@/utils/user-storage'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -38,8 +39,8 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
 }
 
 export class Tutorial {
-  private course = localStorageRef<Course | null>('spx-gui-tutorial-course', null)
-  private series = localStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
+  private course = useUserLocalStorageRef<Course | null>('spx-gui-tutorial-course', null)
+  private series = useUserLocalStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
 
   constructor(
     private copilot: Copilot,

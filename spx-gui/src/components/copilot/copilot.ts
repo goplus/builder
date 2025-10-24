@@ -296,7 +296,7 @@ export class Round {
 }
 
 // NOTE: Keep backward compatibility of `SessionExported` to avoid errors when loading old sessions.
-type SessionExported = {
+export type SessionExported = {
   topic: Topic
   rounds: RoundExported[]
 }
@@ -431,9 +431,9 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
-export interface IStorage {
-  set(value: string | null): void
-  get(): string | null
+export interface ISessionExportedStorage {
+  set(value: SessionExported | null): void
+  get(): SessionExported | null
 }
 
 const defaultTopic: Topic = {
@@ -564,12 +564,11 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
-  syncSessionWith(storage: IStorage): void {
+  syncSessionWith(storage: ISessionExportedStorage): void {
     try {
       const saved = storage.get()
       if (saved != null) {
-        const sessionExported = JSON.parse(saved) as SessionExported
-        this.currentSessionRef.value = Session.load(sessionExported, this)
+        this.currentSessionRef.value = Session.load(saved, this)
       }
     } catch (e) {
       capture(e, 'Failed to load session from storage')
@@ -579,8 +578,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
         () => this.currentSession?.export() ?? null,
         // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
         throttle((exported: SessionExported | null) => {
-          const toSave = exported == null ? null : JSON.stringify(exported)
-          storage.set(toSave)
+          storage.set(exported)
         }, 300)
       )
     )

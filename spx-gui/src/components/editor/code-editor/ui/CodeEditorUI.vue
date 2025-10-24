@@ -13,7 +13,7 @@ export function useCodeEditorUICtx() {
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
-import { computedShallowReactive, untilNotNull, localStorageRef, untilTaskScheduled } from '@/utils/utils'
+import { computedShallowReactive, untilNotNull, untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
@@ -60,6 +60,7 @@ import InlayHintUI from './inlay-hint/InlayHintUI.vue'
 import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
+import { useUserLocalStorageRef } from '@/utils/user-storage'
 
 const props = defineProps<{
   codeFilePath: string
@@ -124,7 +125,7 @@ const uiRef = computed(() => {
 })
 
 const initialFontSize = 12
-const fontSize = localStorageRef('spx-gui-code-font-size', initialFontSize)
+const fontSize = useUserLocalStorageRef('spx-gui-code-font-size', initialFontSize)
 
 const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'spx',
@@ -231,7 +232,7 @@ const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
 const codeEditorEl = ref<HTMLDivElement>()
 const resizeHandleEl = ref<HTMLDivElement>()
-const sidebarWidth = localStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
+const sidebarWidth = useUserLocalStorageRef('spx-code-editor-sidebar-width', defaultSidebarWidth)
 const isResizing = ref(false)
 
 watchEffect((onCleanup) => {
