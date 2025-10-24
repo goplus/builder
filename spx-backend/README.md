@@ -24,7 +24,7 @@ go install ./cmd/claudegen
 ### Generate documentation
 
 ```sh
-cd internal/copilot/standard
+cd internal/copilot
 go generate
 ```
 
