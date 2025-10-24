@@ -1,5 +1,7 @@
 package copilot
 
+//go:generate claudegen
+
 import (
 	_ "embed"
 	"encoding/json"
@@ -32,6 +34,7 @@ var CodeSystemPrompt string
 type codeSystemPromptTplData struct {
 	XGoSyntax               string         // XGo language syntax
 	SpxAPIs                 string         // spx APIs
+	AIInteraction           string         // AI interaction guidelines
 	CustomElementCodeLink   string         // Custom element code linking documentation
 	CustomElementCodeChange string         // Custom element code change documentation
 	Tools                   []Tool         // Available tools for the AI assistant
@@ -48,6 +51,7 @@ func SystemPromptWithTools(tools []Tool) string {
 	tplData := codeSystemPromptTplData{
 		XGoSyntax:               embkb.XGoSyntax(),
 		SpxAPIs:                 embkb.SpxAPIs(),
+		AIInteraction:           embkb.AIInteraction(),
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 		Tools:                   tools,
@@ -78,10 +82,33 @@ func SystemPromptWithTools(tools []Tool) string {
 	return sb.String()
 }
 
+// GenerateClaudeSystemPrompt generates the system prompt for CLAUDE.md
+// This version excludes custom element documentation
+func GenerateClaudeSystemPrompt() string {
+	tplData := codeSystemPromptTplData{
+		XGoSyntax:     embkb.XGoSyntax(),
+		SpxAPIs:       embkb.SpxAPIs(),
+		AIInteraction: embkb.AIInteraction(),
+		// Exclude custom elements for CLAUDE.md
+		CustomElementCodeLink:   "",
+		CustomElementCodeChange: "",
+	}
+	tpl, err := template.New("system-prompt").Parse(codeSystemPromptTpl)
+	if err != nil {
+		panic(err)
+	}
+	var sb strings.Builder
+	if err := tpl.Execute(&sb, tplData); err != nil {
+		panic(err)
+	}
+	return sb.String()
+}
+
 func init() {
 	tplData := codeSystemPromptTplData{
 		XGoSyntax:               embkb.XGoSyntax(),
 		SpxAPIs:                 embkb.SpxAPIs(),
+		AIInteraction:           embkb.AIInteraction(),
 		CustomElementCodeLink:   customElementCodeLink,
 		CustomElementCodeChange: customElementCodeChange,
 	}
