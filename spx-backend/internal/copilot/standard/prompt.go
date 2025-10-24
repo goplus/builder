@@ -1,5 +1,7 @@
 package standard
 
+//go:generate claudegen
+
 import (
 	_ "embed"
 	"strings"
@@ -10,6 +12,9 @@ import (
 
 //go:embed system_prompt.md
 var systemPromptTpl string
+
+//go:embed claude_system_prompt.md
+var claudeSystemPromptTpl string
 
 // SystemPrompt is the fully rendered system prompt used to instruct the AI assistant.
 // It is initialized during package initialization.
@@ -23,6 +28,29 @@ type systemPromptTplData struct {
 	AboutSpx      string
 	SpxAPIs       string
 	AboutXBuilder string
+	AIInteraction string
+}
+
+// GenerateClaudeSystemPrompt generates the system prompt for CLAUDE.md
+// This version excludes custom element documentation
+func GenerateClaudeSystemPrompt() string {
+	tplData := systemPromptTplData{
+		AboutXGo:      embkb.AboutXGo(),
+		XGoSyntax:     embkb.XGoSyntax(),
+		AboutSpx:      embkb.AboutSpx(),
+		SpxAPIs:       embkb.SpxAPIs(),
+		AboutXBuilder: embkb.AboutXBuilder(),
+		AIInteraction: embkb.AIInteraction(),
+	}
+	tpl, err := template.New("system-prompt").Parse(claudeSystemPromptTpl)
+	if err != nil {
+		panic(err)
+	}
+	var sb strings.Builder
+	if err := tpl.Execute(&sb, tplData); err != nil {
+		panic(err)
+	}
+	return sb.String()
 }
 
 func init() {
@@ -32,6 +60,7 @@ func init() {
 		AboutSpx:      embkb.AboutSpx(),
 		SpxAPIs:       embkb.SpxAPIs(),
 		AboutXBuilder: embkb.AboutXBuilder(),
+		AIInteraction: embkb.AIInteraction(),
 	}
 	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
 	if err != nil {

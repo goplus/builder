@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/goplus/builder/spx-backend/internal/copilot"
+	"github.com/goplus/builder/spx-backend/internal/copilot/standard"
 )
 
 func main() {
 	// Generate CLAUDE.md content
-	content := copilot.GenerateClaudeSystemPrompt()
+	content := standard.GenerateClaudeSystemPrompt()
 
 	// Set output file path in current working directory
 	outputPath := "./CLAUDE.md"

@@ -25,6 +25,9 @@ var WorkflowSystemPromptTpl string
 //go:embed code_system_prompt.md
 var codeSystemPromptTpl string
 
+//go:embed claude_system_prompt.md
+var claudeSystemPromptTpl string
+
 // CodeSystemPrompt is the fully rendered system prompt used to instruct the code copilot.
 // It is initialized during package initialization.
 var CodeSystemPrompt string
@@ -89,11 +92,8 @@ func GenerateClaudeSystemPrompt() string {
 		XGoSyntax:     embkb.XGoSyntax(),
 		SpxAPIs:       embkb.SpxAPIs(),
 		AIInteraction: embkb.AIInteraction(),
-		// Exclude custom elements for CLAUDE.md
-		CustomElementCodeLink:   "",
-		CustomElementCodeChange: "",
 	}
-	tpl, err := template.New("system-prompt").Parse(codeSystemPromptTpl)
+	tpl, err := template.New("system-prompt").Parse(claudeSystemPromptTpl)
 	if err != nil {
 		panic(err)
 	}
