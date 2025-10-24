@@ -47,7 +47,9 @@ function initSentry(app: VueApp<Element>, router: Router) {
           // Ignore them to avoid exceeding event size limits.
           if (url.startsWith('data:')) return false
           return true
-        }
+        },
+        finalTimeout: 30000, // Same as default, but make it explicit
+        childSpanTimeout: 30000 // Keep child span timeout in sync with final timeout to maximize chance of collecting span data
       })
     ],
     environment: process.env.NODE_ENV,

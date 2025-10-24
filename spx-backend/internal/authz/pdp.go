@@ -29,4 +29,22 @@ type UserCapabilities struct {
 
 	// CopilotMessageQuotaLeft is the remaining quota for copilot messages.
 	CopilotMessageQuotaLeft int64 `json:"copilotMessageQuotaLeft"`
+
+	// AIDescriptionQuota is the total quota for AI description generations.
+	AIDescriptionQuota int64 `json:"aiDescriptionQuota"`
+
+	// AIDescriptionQuotaLeft is the remaining quota for AI description generations.
+	AIDescriptionQuotaLeft int64 `json:"aiDescriptionQuotaLeft"`
+
+	// AIInteractionTurnQuota is the total quota for AI interaction turns.
+	AIInteractionTurnQuota int64 `json:"aiInteractionTurnQuota"`
+
+	// AIInteractionTurnQuotaLeft is the remaining quota for AI interaction turns.
+	AIInteractionTurnQuotaLeft int64 `json:"aiInteractionTurnQuotaLeft"`
+
+	// AIInteractionArchiveQuota is the total quota for AI interaction archive requests.
+	AIInteractionArchiveQuota int64 `json:"aiInteractionArchiveQuota"`
+
+	// AIInteractionArchiveQuotaLeft is the remaining quota for AI interaction archive requests.
+	AIInteractionArchiveQuotaLeft int64 `json:"aiInteractionArchiveQuotaLeft"`
 }

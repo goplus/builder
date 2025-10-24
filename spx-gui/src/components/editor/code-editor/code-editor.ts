@@ -102,7 +102,7 @@ const apiReferenceItems = [
   'xgo:?if_else_statement',
 
   `xgo:${packageSpx}?Game.wait`,
-  `xgo:${packageSpx}?Game.waitUntil`,
+  `xgo:${packageSpx}?waitUntil`, // TODO: Consider updating spx to define `waitUntil` on `Game` to keep consistent with `Game.wait`
   `xgo:${packageSpx}?Game.timer`,
   `xgo:${packageSpx}?Game.resetTimer`,
 

@@ -1,13 +1,13 @@
 import * as qiniu from 'qiniu-js'
 import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
-import { humanizeFileSize } from '@/utils/utils'
+import { humanizeFileSize, withRetry } from '@/utils/utils'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
 import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
-import { DefaultException } from '@/utils/exception'
+import { DefaultException, TimeoutException } from '@/utils/exception'
 import type { Metadata } from '../project'
 import { File, toNativeFile, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
@@ -127,7 +127,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
 export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
   const file = new File(name, async () => {
     const webUrl = await universalUrlToWebUrl(url)
-    const resp = await fetch(webUrl)
+    const resp = await fetchFile(webUrl)
     return resp.arrayBuffer()
   })
   setUniversalUrl(file, url)
@@ -136,9 +136,22 @@ export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(ur
 
 export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   return new File(name, async () => {
-    const resp = await fetch(url)
+    const resp = await fetchFile(url)
     return resp.arrayBuffer()
   })
+}
+
+async function fetchFile(url: WebUrl) {
+  const timeout = 10_000 // ms. Timeout for response (headers) to arrive
+  return withRetry(
+    () => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(new TimeoutException()), timeout)
+      return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId))
+    },
+    2,
+    500
+  )
 }
 
 export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {

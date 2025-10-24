@@ -46,12 +46,15 @@ func TestNew(t *testing.T) {
 func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 	t.Run("Basic", func(t *testing.T) {
 		for _, tt := range []struct {
-			name                    string
-			mUser                   *model.User
-			wantCanManageAssets     bool
-			wantCanManageCourses    bool
-			wantCanUsePremiumLLM    bool
-			wantCopilotMessageQuota int64
+			name                          string
+			mUser                         *model.User
+			wantCanManageAssets           bool
+			wantCanManageCourses          bool
+			wantCanUsePremiumLLM          bool
+			wantCopilotMessageQuota       int64
+			wantAIDescriptionQuota        int64
+			wantAIInteractionTurnQuota    int64
+			wantAIInteractionArchiveQuota int64
 		}{
 			{
 				name: "AssetAdminWithPlusPlan",
@@ -61,10 +64,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"assetAdmin"},
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:     true,
-				wantCanManageCourses:    false,
-				wantCanUsePremiumLLM:    true,
-				wantCopilotMessageQuota: 1000,
+				wantCanManageAssets:           true,
+				wantCanManageCourses:          false,
+				wantCanUsePremiumLLM:          true,
+				wantCopilotMessageQuota:       copilotQuotaPlus,
+				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
 			},
 			{
 				name: "RegularPlusUser",
@@ -74,10 +80,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    nil,
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:     false,
-				wantCanManageCourses:    false,
-				wantCanUsePremiumLLM:    true,
-				wantCopilotMessageQuota: 1000,
+				wantCanManageAssets:           false,
+				wantCanManageCourses:          false,
+				wantCanUsePremiumLLM:          true,
+				wantCopilotMessageQuota:       copilotQuotaPlus,
+				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
 			},
 			{
 				name: "RegularFreeUser",
@@ -87,10 +96,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    nil,
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:     false,
-				wantCanManageCourses:    false,
-				wantCanUsePremiumLLM:    false,
-				wantCopilotMessageQuota: 100,
+				wantCanManageAssets:           false,
+				wantCanManageCourses:          false,
+				wantCanUsePremiumLLM:          false,
+				wantCopilotMessageQuota:       copilotQuotaFree,
+				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
 			},
 			{
 				name: "AdminWithFreePlan",
@@ -100,10 +112,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"admin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:     false,
-				wantCanManageCourses:    false,
-				wantCanUsePremiumLLM:    false,
-				wantCopilotMessageQuota: 100,
+				wantCanManageAssets:           false,
+				wantCanManageCourses:          false,
+				wantCanUsePremiumLLM:          false,
+				wantCopilotMessageQuota:       copilotQuotaFree,
+				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
 			},
 			{
 				name: "UserWithMultipleRoles",
@@ -113,10 +128,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"user", "assetAdmin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:     true,
-				wantCanManageCourses:    false,
-				wantCanUsePremiumLLM:    false,
-				wantCopilotMessageQuota: 100,
+				wantCanManageAssets:           true,
+				wantCanManageCourses:          false,
+				wantCanUsePremiumLLM:          false,
+				wantCopilotMessageQuota:       copilotQuotaFree,
+				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
 			},
 			{
 				name: "CourseAdminUser",
@@ -126,10 +144,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"courseAdmin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:     false,
-				wantCanManageCourses:    true,
-				wantCanUsePremiumLLM:    false,
-				wantCopilotMessageQuota: 100,
+				wantCanManageAssets:           false,
+				wantCanManageCourses:          true,
+				wantCanUsePremiumLLM:          false,
+				wantCopilotMessageQuota:       copilotQuotaFree,
+				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
 			},
 			{
 				name: "UserWithMultipleAdminRoles",
@@ -139,10 +160,13 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"assetAdmin", "courseAdmin"},
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:     true,
-				wantCanManageCourses:    true,
-				wantCanUsePremiumLLM:    true,
-				wantCopilotMessageQuota: 1000,
+				wantCanManageAssets:           true,
+				wantCanManageCourses:          true,
+				wantCanUsePremiumLLM:          true,
+				wantCopilotMessageQuota:       copilotQuotaPlus,
+				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
+				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
+				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
 			},
 		} {
 			t.Run(tt.name, func(t *testing.T) {
@@ -156,6 +180,12 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
 				assert.Equal(t, tt.wantCopilotMessageQuota, caps.CopilotMessageQuota)
 				assert.Equal(t, caps.CopilotMessageQuota, caps.CopilotMessageQuotaLeft)
+				assert.Equal(t, tt.wantAIDescriptionQuota, caps.AIDescriptionQuota)
+				assert.Equal(t, caps.AIDescriptionQuota, caps.AIDescriptionQuotaLeft)
+				assert.Equal(t, tt.wantAIInteractionTurnQuota, caps.AIInteractionTurnQuota)
+				assert.Equal(t, caps.AIInteractionTurnQuota, caps.AIInteractionTurnQuotaLeft)
+				assert.Equal(t, tt.wantAIInteractionArchiveQuota, caps.AIInteractionArchiveQuota)
+				assert.Equal(t, caps.AIInteractionArchiveQuota, caps.AIInteractionArchiveQuotaLeft)
 			})
 		}
 	})
@@ -173,14 +203,26 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 
 		err := quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceCopilotMessage, 30)
 		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIDescription, 5)
+		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionTurn, 120)
+		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionArchive, 10)
+		require.NoError(t, err)
 
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
 		require.NoError(t, err)
 		assert.Equal(t, false, caps.CanManageAssets)
 		assert.Equal(t, false, caps.CanManageCourses)
 		assert.Equal(t, false, caps.CanUsePremiumLLM)
-		assert.Equal(t, int64(100), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(70), caps.CopilotMessageQuotaLeft)
+		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
+		assert.Equal(t, int64(copilotQuotaFree-30), caps.CopilotMessageQuotaLeft)
+		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
+		assert.Equal(t, int64(aiDescriptionQuotaFree-5), caps.AIDescriptionQuotaLeft)
+		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
+		assert.Equal(t, int64(aiInteractionTurnQuotaFree-120), caps.AIInteractionTurnQuotaLeft)
+		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
+		assert.Equal(t, int64(aiInteractionArchiveQuotaFree-10), caps.AIInteractionArchiveQuotaLeft)
 	})
 
 	t.Run("QuotaExhausted", func(t *testing.T) {
@@ -194,12 +236,24 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			Plan:     model.UserPlanFree,
 		}
 
-		err := quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceCopilotMessage, 150)
+		err := quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceCopilotMessage, copilotQuotaFree+50)
+		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIDescription, aiDescriptionQuotaFree+100)
+		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionTurn, aiInteractionTurnQuotaFree+5000)
+		require.NoError(t, err)
+		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionArchive, aiInteractionArchiveQuotaFree+3000)
 		require.NoError(t, err)
 
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
 		require.NoError(t, err)
-		assert.Equal(t, int64(100), caps.CopilotMessageQuota)
+		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
 		assert.Equal(t, int64(0), caps.CopilotMessageQuotaLeft)
+		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
+		assert.Equal(t, int64(0), caps.AIDescriptionQuotaLeft)
+		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
+		assert.Equal(t, int64(0), caps.AIInteractionTurnQuotaLeft)
+		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
+		assert.Equal(t, int64(0), caps.AIInteractionArchiveQuotaLeft)
 	})
 }

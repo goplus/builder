@@ -6,7 +6,6 @@
 import (
 	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/controller"
-	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
 ctx := &Context
@@ -15,11 +14,8 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 }
 
 // Check remaining quota (workflow uses copilot quota).
-if caps, ok := authz.UserCapabilitiesFromContext(ctx.Context()); ok {
-	if caps.CopilotMessageQuotaLeft <= 0 {
-		replyWithCodeMsg(ctx, errorTooManyRequests, "Copilot message quota exceeded")
-		return
-	}
+if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
+	return
 }
 
 params := &controller.WorkflowMessageParams{}
@@ -39,10 +35,7 @@ if err != nil {
 }
 
 // Consume quota after successful workflow initiation.
-if err := authz.ConsumeQuota(ctx.Context(), authz.ResourceCopilotMessage, 1); err != nil {
-	logger := log.GetReqLogger(ctx.Context())
-	logger.Printf("failed to consume copilot quota: %v", err)
-}
+consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
 
 defer read.Close()
 

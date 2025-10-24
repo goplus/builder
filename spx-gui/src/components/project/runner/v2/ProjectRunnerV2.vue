@@ -273,6 +273,7 @@ defineExpose({
     runCtrl?.abort(new Cancelled('stop'))
     if (promise != null) await promise.catch(() => {})
     loading.value = false
+    failed.value = false
 
     const iframeWindow = iframeWindowRef.value
     if (iframeWindow == null) return
