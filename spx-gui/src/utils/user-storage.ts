@@ -9,36 +9,38 @@ type IStorage = {
 }
 
 type UserScopeValue<T> = {
-  user: string
-  value: T
+  [userKey]: string
+  [valueKey]: T
 }
+
+const userKey = '__user__'
+const valueKey = '__value__'
+// Default scope for non-authenticated users
+const defaultScope = '__guest__'
 
 function isUserScopeValue<T>(obj: any): obj is UserScopeValue<T> {
-  return obj != null && isObject(obj) && 'user' in obj && isString(obj.user) && 'value' in obj
+  return obj != null && isObject(obj) && userKey in obj && isString(obj[userKey]) && valueKey in obj
 }
-
-// Default scope for non-authenticated users
-const defaultScope = '__G&PW8H7fKv__'
 
 // private
 function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
   const scope = computed(() => getSignedInUsername() ?? defaultScope)
-  const syncer = ref(0)
+  const counter = ref(0)
   return computed<T>({
     get() {
-      syncer.value
+      counter.value
       const currentScope = scope.value
       const exportedValue = storage.getItem(key)
       if (exportedValue == null) {
         return initialValue
       }
       const parsedValue = JSON.parse(exportedValue)
-      const { user, value: scopeValue } = isUserScopeValue<T>(parsedValue)
+      const { [userKey]: user, [valueKey]: scopeValue } = isUserScopeValue<T>(parsedValue)
         ? parsedValue
         : // Legacy data compatibility: Old data without user scope is treated as shared/public until
           // a user writes to it. When reading legacy data, we bind it to the current user without
           // persisting (no setItem here), so it remains accessible to all users until someone writes.
-          { user: currentScope, value: parsedValue }
+          { [userKey]: currentScope, [valueKey]: parsedValue }
       let value = scopeValue
       if (user !== currentScope) {
         storage.removeItem(key)
@@ -51,12 +53,12 @@ function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage = 
         storage.removeItem(key)
       } else {
         const userScopeValue: UserScopeValue<T> = {
-          user: scope.value,
-          value: newValue
+          [userKey]: scope.value,
+          [valueKey]: newValue
         }
         storage.setItem(key, JSON.stringify(userScopeValue))
       }
-      syncer.value++
+      counter.value++
     }
   })
 }
