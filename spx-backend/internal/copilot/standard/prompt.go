@@ -1,7 +1,5 @@
 package standard
 
-//go:generate claudegen
-
 import (
 	_ "embed"
 	"strings"
