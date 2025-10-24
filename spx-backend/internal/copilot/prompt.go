@@ -25,6 +25,9 @@ var WorkflowSystemPromptTpl string
 //go:embed code_system_prompt.md
 var codeSystemPromptTpl string
 
+//go:embed claude_system_prompt.md
+var claudeSystemPromptTpl string
+
 // CodeSystemPrompt is the fully rendered system prompt used to instruct the code copilot.
 // It is initialized during package initialization.
 var CodeSystemPrompt string
@@ -39,6 +42,15 @@ type codeSystemPromptTplData struct {
 	CustomElementCodeChange string         // Custom element code change documentation
 	Tools                   []Tool         // Available tools for the AI assistant
 	Reference               *model.Project // Reference to the project model for context
+}
+
+// claudeSystemPromptTplData holds all data needed to populate the CLAUDE.md system prompt template.
+type claudeSystemPromptTplData struct {
+	AboutXGo      string
+	XGoSyntax     string
+	AboutSpx      string
+	SpxAPIs       string
+	AIInteraction string
 }
 
 // init initializes the package by:
@@ -79,6 +91,27 @@ func SystemPromptWithTools(tools []Tool) string {
 		panic(err)
 	}
 
+	return sb.String()
+}
+
+// GenerateClaudeSystemPrompt generates the system prompt for CLAUDE.md
+// This version excludes custom element documentation
+func GenerateClaudeSystemPrompt() string {
+	tplData := claudeSystemPromptTplData{
+		AboutXGo:      embkb.AboutXGo(),
+		XGoSyntax:     embkb.XGoSyntax(),
+		AboutSpx:      embkb.AboutSpx(),
+		SpxAPIs:       embkb.SpxAPIs(),
+		AIInteraction: embkb.AIInteraction(),
+	}
+	tpl, err := template.New("system-prompt").Parse(claudeSystemPromptTpl)
+	if err != nil {
+		panic(err)
+	}
+	var sb strings.Builder
+	if err := tpl.Execute(&sb, tplData); err != nil {
+		panic(err)
+	}
 	return sb.String()
 }
 
