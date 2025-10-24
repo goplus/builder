@@ -264,7 +264,7 @@ Format: `${line},${column}`, e.g., `10,20`. `line` & `column` are numbers start 
 
 ### `range`
 
-Format: `${startLine},${startColumn}-${endLine}${endColumn}`, e.g., `10,20-12,10`
+Format: `${startLine},${startColumn}-${endLine},${endColumn}`, e.g., `10,20-12,10`
 
 `startLine`, `startColumn`, `endLine`, `endColumn` are numbers start from 1. `10,20-12,10` means the range from line 10, column 20 to line 12, column 10. The end position is exclusive.
 
@@ -1004,7 +1004,7 @@ You MUST follow these IMPORTANT guidelines:
 
         There may be different APIs for similar purpose. For example, both `step` and `setXYPos` (or `changeXYPos`) can be used to change a sprite's position, while `step` provides higher-level abstraction as:
 
-        - it respects the sprite's heading, which is more intuitiven for character movement
+        - it respects the sprite's heading, which is more intuitive for character movement
         - if there is a bound animation to state "step", it will be played
 
         So `step` is preferred over `setXYPos` (or `changeXYPos`) in most cases. Use low-level APIs only when necessary.
