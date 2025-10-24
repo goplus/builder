@@ -20,12 +20,12 @@
       </UIButton>
       <template v-else>
         <UIButton
-          v-if="runnerState === 'running' && !handleStop.isLoading.value"
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
           class="button"
           type="primary"
           icon="rotate"
-          :loading="handleRerun.isLoading.value"
+          :disabled="runnerState !== 'running' || handleStop.isLoading.value"
+          :loading="handleRerun.isLoading.value && !handleStop.isLoading.value"
           @click="handleRerun.fn"
         >
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}

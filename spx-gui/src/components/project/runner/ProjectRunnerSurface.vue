@@ -431,11 +431,12 @@ defineExpose({
             {{ $t({ en: 'Run', zh: '运行' }) }}
           </UIButton>
           <UIButton
-            v-else-if="runnerState === 'running' && !stopButtonLoading"
+            v-else
             v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project in overlay' }"
             class="button"
             icon="rotate"
-            :loading="rerunButtonLoading"
+            :disabled="runnerState !== 'running' || stopButtonLoading"
+            :loading="rerunButtonLoading && !stopButtonLoading"
             @click="handleRerunClick"
           >
             {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
