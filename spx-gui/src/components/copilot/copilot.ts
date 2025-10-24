@@ -10,6 +10,7 @@ import * as apis from '@/apis/copilot'
 import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
+import dayjs from 'dayjs'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -106,6 +107,8 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
+  /** The maximum idle time (in milliseconds) allowed after the last Round has completed */
+  idleTimeout?: number
 }
 
 export enum RoundState {
@@ -436,10 +439,13 @@ export interface IStorage {
   get(): string | null
 }
 
+const defaultIdleTimeout = 1 * 60 * 1000 // TODO: adjust to 1min for demo, default is 2 hours (2 * 60 * 60 * 1000)
+
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
   description: '',
-  reactToEvents: false
+  reactToEvents: false,
+  idleTimeout: defaultIdleTimeout
 }
 
 export class Copilot extends Disposable {
@@ -564,6 +570,56 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
+  private lastStartTime = localStorageRef<number | null>('spx-gui-copilot-last-start-time', null)
+  /**
+   * The timer needs to be refreshed when the Round state changes.
+   */
+  syncIdleTimeout() {
+    // When entering the page for the first time, the session might be restored from SessionStorage, at which point the lastStartTime needs to be aligned once.
+    let isRestoredSession = this.lastStartTime.value != null
+    this.addDisposer(
+      watch(
+        () => this.currentSession?.currentRound?.state,
+        throttle((state) => {
+          if (state == null) return
+
+          if (isRestoredSession) {
+            isRestoredSession = false
+            return
+          }
+          this.lastStartTime.value = dayjs().valueOf()
+        }, 100),
+        {
+          immediate: true
+        }
+      )
+    )
+    this.addDisposer(
+      watch(
+        () => this.active,
+        throttle((value, oldValue) => {
+          const session = this.currentSession
+          if (session == null) return
+
+          const lastStartTime = this.lastStartTime.value
+          if (lastStartTime == null) return
+
+          // Check idle timeout when reopening copilot
+          // Terminates session if lastStartTime is too old (user was idle for too long)
+          if (value && oldValue === false) {
+            const idleTimeout = session.topic.idleTimeout ?? defaultIdleTimeout
+            if (dayjs().valueOf() - lastStartTime > idleTimeout) {
+              this.endCurrentSession()
+            }
+          }
+        }, 100),
+        {
+          immediate: true
+        }
+      )
+    )
+  }
+
   syncSessionWith(storage: IStorage): void {
     try {
       const saved = storage.get()
@@ -574,6 +630,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     } catch (e) {
       capture(e, 'Failed to load session from storage')
     }
+
     this.addDisposer(
       watch(
         () => this.currentSession?.export() ?? null,
@@ -589,6 +646,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** End the current session. */
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
+    this.lastStartTime.value = null
     this.currentSessionRef.value = null
   }
 

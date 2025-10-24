@@ -525,16 +525,17 @@ watch(
 provide(copilotInjectionKey, copilot)
 
 onMounted(() => {
-  const sessionLocalStorageKey = 'spx-gui-copilot-session'
+  const copilotSessionStorageKey = 'spx-gui-copilot-session'
   copilot.syncSessionWith({
     set(value: string | null) {
-      if (value == null) localStorage.removeItem(sessionLocalStorageKey)
-      else localStorage.setItem(sessionLocalStorageKey, value)
+      if (value == null) sessionStorage.removeItem(copilotSessionStorageKey)
+      else sessionStorage.setItem(copilotSessionStorageKey, value)
     },
     get() {
-      return localStorage.getItem(sessionLocalStorageKey)
+      return sessionStorage.getItem(copilotSessionStorageKey)
     }
   })
+  copilot.syncIdleTimeout()
 })
 </script>
 
