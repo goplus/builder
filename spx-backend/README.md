@@ -11,6 +11,25 @@ Then install deps:
 go mod tidy
 ```
 
+## Generate CLAUDE.md Documentation
+
+The project includes a tool to automatically generate `CLAUDE.md` documentation from system prompts. This ensures documentation stays in sync with the actual prompts used by the AI system.
+
+### Install the generation tool
+
+```sh
+go install ./cmd/claudegen
+```
+
+### Generate documentation
+
+```sh
+cd internal/copilot
+go generate
+```
+
+This will create `CLAUDE.md` in the copilot directory, containing the system prompt without custom element documentation (suitable for external Claude usage).
+
 ## Run server for development
 
 Run

@@ -23,6 +23,7 @@ type systemPromptTplData struct {
 	AboutSpx      string
 	SpxAPIs       string
 	AboutXBuilder string
+	AIInteraction string
 }
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 		AboutSpx:      embkb.AboutSpx(),
 		SpxAPIs:       embkb.SpxAPIs(),
 		AboutXBuilder: embkb.AboutXBuilder(),
+		AIInteraction: embkb.AIInteraction(),
 	}
 	tpl, err := template.New("system-prompt").Parse(systemPromptTpl)
 	if err != nil {
