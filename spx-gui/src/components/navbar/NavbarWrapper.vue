@@ -4,7 +4,7 @@
       <div class="left">
         <NavbarLogo />
         <slot name="left"></slot>
-        <NavbarLang />
+        <NavbarLang v-if="!disabledLang" />
         <NavbarTutorials v-if="showTutorialsEntry" />
       </div>
       <div class="center">
@@ -33,9 +33,11 @@ withDefaults(
      * - We center the navbar content for community pages
      */
     centered?: boolean
+    disabledLang?: boolean
   }>(),
   {
-    centered: false
+    centered: false,
+    disableLang: false
   }
 )
 </script>
