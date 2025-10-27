@@ -79,13 +79,18 @@ export class CanvasEventDelegator {
   }
 
   /**
-   * 将鼠标事件坐标转换为画布坐标
+   * 将鼠标事件坐标转换为画布坐标（考虑视图缩放和变换）
    */
   private getCanvasPoint(event: MouseEvent, canvasRef: HTMLCanvasElement | null): paper.Point | null {
-    if (!canvasRef) return null
+    if (!canvasRef || !paper.view) return null
 
     const rect = canvasRef.getBoundingClientRect()
-    return new paper.Point(event.clientX - rect.left, event.clientY - rect.top)
+    // 获取相对于 canvas 的像素坐标
+    const viewPoint = new paper.Point(event.clientX - rect.left, event.clientY - rect.top)
+
+    // 使用 Paper.js 的 viewToProject 方法转换为项目坐标
+    // 这会自动处理缩放、平移等视图变换
+    return paper.view.viewToProject(viewPoint)
   }
 
   /**

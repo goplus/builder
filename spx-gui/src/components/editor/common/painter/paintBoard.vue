@@ -50,6 +50,9 @@
       </div>
 
       <div class="tool-section">
+        <!-- 缩放控件 -->
+        <ZoomControl ref="zoomControlRef" />
+
         <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3,6 5,6 21,6"></polyline>
@@ -288,6 +291,7 @@ import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import SelectTool from './components/select_tool.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
+import ZoomControl from './components/zoom_control.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
 import { createImportExportManager, type ImportExportManager } from './utils/import-export-manager'
 import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
@@ -327,6 +331,7 @@ const rectangleToolRef = ref<InstanceType<typeof RectangleTool> | null>(null)
 const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
 const selectColorRef = ref<InstanceType<typeof SelectColor> | null>(null)
 const textToolRef = ref<InstanceType<typeof TextTool> | null>(null)
+const zoomControlRef = ref<InstanceType<typeof ZoomControl> | null>(null)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null

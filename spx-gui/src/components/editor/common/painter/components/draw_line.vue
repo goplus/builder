@@ -2,10 +2,10 @@
   <!-- 临时直线预览 -->
   <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
     <line
-      :x1="startPoint.x"
-      :y1="startPoint.y"
-      :x2="previewPoint.x"
-      :y2="previewPoint.y"
+      :x1="startPointView.x"
+      :y1="startPointView.y"
+      :x2="previewPointView.x"
+      :y2="previewPointView.y"
       :stroke="canvasColor"
       stroke-width="3"
       stroke-dasharray="5,5"
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { type Ref, ref, watch } from 'vue'
+import { type Ref, ref, watch, computed } from 'vue'
 import paper from 'paper'
 
 // Props
@@ -51,6 +51,21 @@ import { inject } from 'vue'
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
+
+// 将项目坐标转换为视图坐标（用于 SVG 预览）
+const startPointView = computed(() => {
+  if (!startPoint.value || !paper.view) return { x: 0, y: 0 }
+  const point = new paper.Point(startPoint.value.x, startPoint.value.y)
+  const viewPoint = paper.view.projectToView(point)
+  return { x: viewPoint.x, y: viewPoint.y }
+})
+
+const previewPointView = computed(() => {
+  if (!paper.view) return { x: 0, y: 0 }
+  const point = new paper.Point(previewPoint.value.x, previewPoint.value.y)
+  const viewPoint = paper.view.projectToView(point)
+  return { x: viewPoint.x, y: viewPoint.y }
+})
 
 // 创建直线路径
 const createLine = (start: Point, end: Point): paper.Path => {

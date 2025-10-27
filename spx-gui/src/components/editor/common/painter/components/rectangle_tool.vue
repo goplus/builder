@@ -2,10 +2,10 @@
   <!-- 临时矩形预览 -->
   <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
     <rect
-      :x="previewRect.x"
-      :y="previewRect.y"
-      :width="previewRect.width"
-      :height="previewRect.height"
+      :x="previewRectView.x"
+      :y="previewRectView.y"
+      :width="previewRectView.width"
+      :height="previewRectView.height"
       fill="none"
       :stroke="canvasColor"
       stroke-width="3"
@@ -41,7 +41,7 @@ import { inject } from 'vue'
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
-// 计算预览矩形
+// 计算预览矩形（项目坐标）
 const previewRect = computed(() => {
   if (!startPoint.value) return { x: 0, y: 0, width: 0, height: 0 }
   const sx = startPoint.value.x
@@ -67,6 +67,28 @@ const previewRect = computed(() => {
     return { x, y, width: w, height: h }
   }
 })
+
+// 将项目坐标的矩形转换为视图坐标（用于 SVG 预览）
+const previewRectView = computed(() => {
+  if (!paper.view) return { x: 0, y: 0, width: 0, height: 0 }
+
+  const rect = previewRect.value
+  // 左上角和右下角的项目坐标
+  const topLeft = new paper.Point(rect.x, rect.y)
+  const bottomRight = new paper.Point(rect.x + rect.width, rect.y + rect.height)
+
+  // 转换为视图坐标
+  const topLeftView = paper.view.projectToView(topLeft)
+  const bottomRightView = paper.view.projectToView(bottomRight)
+
+  return {
+    x: topLeftView.x,
+    y: topLeftView.y,
+    width: bottomRightView.x - topLeftView.x,
+    height: bottomRightView.y - topLeftView.y
+  }
+})
+
 // 创建矩形/正方形路径
 const createRectangle = (rect: { x: number; y: number; width: number; height: number }): paper.Path => {
   const shape = new paper.Path.Rectangle({
