@@ -449,8 +449,29 @@ onBeforeUnmount(
       </div>
     </div>
     <div class="footer">
-      <div v-if="StateIndicator != null" class="footer-wrapper">
-        <StateIndicator />
+      <div class="footer-wrapper">
+        <template v-if="StateIndicator != null">
+          <StateIndicator />
+          <div class="v-line"></div>
+        </template>
+        <div class="fold" :class="[triggerState]" @click="copilot.close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M12 12.6667V3.33333"
+              stroke="#A7B1BB"
+              stroke-width="1.33333"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
+              stroke="#A7B1BB"
+              stroke-width="1.33333"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   </div>
@@ -645,6 +666,7 @@ $toColor: #c390ff;
   justify-content: center;
   .footer-wrapper {
     display: flex;
+    gap: 8px;
     align-items: center;
     height: 36px;
     padding: 6px;
@@ -652,6 +674,25 @@ $toColor: #c390ff;
     border: 1px solid var(--ui-color-grey-400);
     background: var(--ui-color-grey-100);
     box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
+  }
+
+  .v-line {
+    border-right: 1px solid var(--ui-color-grey-400);
+    height: 60%;
+  }
+
+  .fold {
+    width: 22px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease-in;
+    cursor: pointer;
+
+    &.left {
+      transform: rotate(180deg);
+    }
   }
 }
 
