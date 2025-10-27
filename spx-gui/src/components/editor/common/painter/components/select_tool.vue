@@ -30,8 +30,9 @@ const isUpdateScheduled = ref<boolean>(false) // 用于节流画布更新
 // 画布拖拽相关
 const isPanningCanvas = ref<boolean>(false)
 const panStartCenter = ref<paper.Point | null>(null)
+const dragStartScreenPoint = ref<paper.Point | null>(null) // 保存屏幕坐标
 
-// 注入父组件接口
+// 注入父组件
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
@@ -114,6 +115,8 @@ const handleMouseDown = (point: paper.Point): void => {
     dragStartPoint.value = point.clone()
     if (paper.view) {
       panStartCenter.value = paper.view.center.clone()
+      // 保存起始点的屏幕坐标，避免拖动时坐标系变化导致抖动
+      dragStartScreenPoint.value = paper.view.projectToView(point)
     }
     hasMoved.value = false
   }
@@ -124,18 +127,23 @@ const handleMouseMove = (point: paper.Point): void => {
   if (!props.isActive || !dragStartPoint.value) return
 
   // 处理画布拖拽
-  if (isPanningCanvas.value && panStartCenter.value && paper.view) {
-    // 计算鼠标移动的距离（在项目坐标系中）
-    const delta = point.subtract(dragStartPoint.value)
+  if (isPanningCanvas.value && panStartCenter.value && dragStartScreenPoint.value && paper.view) {
+    // 将当前鼠标的项目坐标转换为屏幕坐标
+    const currentScreenPoint = paper.view.projectToView(point)
+
+    // 在屏幕坐标系中计算差值（避免因 view.center 变化导致坐标系抖动）
+    const screenDelta = currentScreenPoint.subtract(dragStartScreenPoint.value)
 
     // 只有移动距离超过阈值才认为是真正的拖动
-    if (delta.length > 1) {
+    if (screenDelta.length > 1) {
       hasMoved.value = true
     }
 
+    // 将屏幕坐标差值转换为项目坐标差值（除以缩放比例）
+    const projectDelta = screenDelta.divide(paper.view.zoom)
+
     // 反向移动画布中心（因为拖动画布是让画布跟随鼠标）
-    // 注意：delta 已经是项目坐标，直接用于移动 center
-    paper.view.center = panStartCenter.value.subtract(delta)
+    paper.view.center = panStartCenter.value.subtract(projectDelta)
 
     // 使用 requestAnimationFrame 节流重绘
     if (!isUpdateScheduled.value) {
@@ -193,6 +201,7 @@ const handleMouseUp = (): void => {
   dragStartPoint.value = null
   pathOriginalPosition.value = null
   panStartCenter.value = null
+  dragStartScreenPoint.value = null
 }
 
 // 处理点击(用于单纯的选择,不拖动的情况)
@@ -251,6 +260,7 @@ watch(
       dragStartPoint.value = null
       pathOriginalPosition.value = null
       panStartCenter.value = null
+      dragStartScreenPoint.value = null
     }
   }
 )
