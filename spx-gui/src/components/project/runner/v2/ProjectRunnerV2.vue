@@ -48,7 +48,9 @@ interface IframeWindow extends Window {
     buffer: ArrayBuffer,
     assetURLs: Record<string, string>,
     onSpxReady?: () => void,
-    logLevel?: number
+    config?: {
+      logLevel?: number
+    }
   ): Promise<void>
   /**
    * NOTE: This method is not recommended to be used now.
@@ -230,7 +232,8 @@ async function runInternal(ctrl: AbortController) {
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10 * 1000)
-    await iframeWindow.startGame(
+
+    const startGamePromise = iframeWindow.startGame(
       zipped,
       assetURLs,
       () => {
@@ -245,8 +248,21 @@ async function runInternal(ctrl: AbortController) {
           iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
         }
       },
-      logLevels.LOG_LEVEL_ERROR
+      {
+        logLevel: logLevels.LOG_LEVEL_ERROR
+      }
     )
+
+    // TODO: wait for `spx` update
+    {
+      await timeout(10, ctrl.signal)
+      const gameApp = (iframeWindow as any).eval?.('typeof gameApp !== "undefined" ? gameApp : null')
+      if (gameApp?.gameConfig) {
+        gameApp.gameConfig.canvasResizePolicy = 2
+      }
+    }
+
+    await startGamePromise
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
     return hashFiles(files)
