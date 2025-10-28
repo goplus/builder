@@ -1,5 +1,5 @@
 /**
- * @file Currency Limit
+ * @file Concurrency Limit
  * @desc Utility to limit concurrency of async tasks
  */
 
