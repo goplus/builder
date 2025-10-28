@@ -675,6 +675,11 @@ const clearCanvas = (): void => {
     drawBrushRef.value.resetDrawing()
   }
 
+  // 重置缩放到 100%
+  if (zoomControlRef.value) {
+    zoomControlRef.value.resetZoom()
+  }
+
   // 保存清空后的状态
   const svgContentAfterClear = importExportManager.exportSvg()
   if (svgContentAfterClear) {
