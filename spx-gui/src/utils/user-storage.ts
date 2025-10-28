@@ -23,7 +23,7 @@ function isUserScopeValue<T>(obj: any): obj is UserScopeValue<T> {
 }
 
 // private
-function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
+function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
   const scope = computed(() => getSignedInUsername() ?? defaultScope)
   const counter = ref(0)
   return computed<T>({
@@ -63,10 +63,10 @@ function useUserStorageRef<T>(key: string, initialValue: T, storage: IStorage = 
   })
 }
 
-export function useUserLocalStorageRef<T>(key: string, initialValue: T) {
-  return useUserStorageRef<T>(key, initialValue, localStorage)
+export function userLocalStorageRef<T>(key: string, initialValue: T) {
+  return userStorageRef<T>(key, initialValue, localStorage)
 }
 
-export function useUserSessionStorageRef<T>(key: string, initialValue: T) {
-  return useUserStorageRef<T>(key, initialValue, sessionStorage)
+export function userSessionStorageRef<T>(key: string, initialValue: T) {
+  return userStorageRef<T>(key, initialValue, sessionStorage)
 }

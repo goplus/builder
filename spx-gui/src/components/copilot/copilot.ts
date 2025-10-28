@@ -107,7 +107,11 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
-  /** The maximum idle time (in milliseconds) allowed after the last Round has completed */
+  /**
+   * The maximum idle time (in milliseconds) allowed after the last Round state change.
+   * If the time since lastStartTime exceeds this value, the session will be ended upon reopen.
+   * Defaults to 2 hours.
+   */
   idleTimeout?: number
 }
 
@@ -439,7 +443,7 @@ export interface ISessionExportedStorage {
   get(): SessionExported | null
 }
 
-const defaultIdleTimeout = 1 * 60 * 1000 // TODO: adjust to 1min for demo, default is 2 hours (2 * 60 * 60 * 1000)
+const defaultIdleTimeout = 2 * 60 * 60 * 1000
 
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
@@ -572,7 +576,8 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
 
   private lastStartTime = localStorageRef<number | null>('spx-gui-copilot-last-start-time', null)
   /**
-   * The timer needs to be refreshed when the Round state changes.
+   * Update `lastStartTime` when Round state changes
+   * Check for idle timeout when copilot is reopened, ending the session if idle too long
    */
   syncIdleTimeout() {
     // When entering the page for the first time, the session might be restored from SessionStorage, at which point the lastStartTime needs to be aligned once.

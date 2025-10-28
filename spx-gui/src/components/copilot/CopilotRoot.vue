@@ -34,7 +34,7 @@ import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
-import { useUserLocalStorageRef } from '@/utils/user-storage'
+import { userLocalStorageRef } from '@/utils/user-storage'
 
 const copilotInjectionKey: InjectionKey<Copilot> = Symbol('copilot')
 
@@ -525,7 +525,7 @@ watch(
 
 provide(copilotInjectionKey, copilot)
 
-const sessionLocalStorageRef = useUserLocalStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
+const sessionLocalStorageRef = userLocalStorageRef<SessionExported | null>('spx-gui-copilot-session', null)
 onMounted(() => {
   copilot.syncSessionWith({
     set(value) {

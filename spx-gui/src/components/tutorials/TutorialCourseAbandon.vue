@@ -21,6 +21,7 @@ export const attributes = z.object({
   abandon: z.boolean().optional().default(false)
 })
 
+// Maximum number of abandonment events before automatically ending the course
 const maxAbandonCount = 5
 </script>
 
