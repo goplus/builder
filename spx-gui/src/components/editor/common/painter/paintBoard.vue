@@ -298,6 +298,7 @@ import { clearCanvas as clearCanvasFunction } from './utils/clear-canvas'
 import { HistoryManager } from './utils/history-manager'
 import SelectColor from './components/select_color.vue'
 import AiBeautifyModal from './components/aiBeautify/aiBeautifyModal.vue'
+import { useEditorCtxRef } from '../../../editor/EditorContextProvider.vue'
 
 // 工具类型
 type ToolType =
@@ -311,6 +312,9 @@ type ToolType =
   | 'fill'
   | 'text'
   | 'selectColor'
+
+// 获取编辑器上下文（用于获取舞台尺寸）
+const editorCtxRef = useEditorCtxRef()
 
 // 响应式变量
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -427,6 +431,10 @@ const skipNextImport = ref<boolean>(false)
 
 const historyManager = ref<HistoryManager | null>(null)
 
+// 边界限制配置
+const BOUNDARY_SCALE = 10 // 边界是舞台的10倍
+const boundaryRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
+
 const props = defineProps<{
   imgSrc: string | null
   imgLoading: boolean
@@ -441,6 +449,33 @@ const loadFileToCanvas = async (imageSrc: string): Promise<void> => {
   if (importExportManager) {
     await importExportManager.importFile(imageSrc)
   }
+}
+
+/**
+ * 检查给定的 center 和 zoom 是否会导致 view.bounds 超出边界
+ * @param center 视图中心点
+ * @param zoom 缩放级别
+ * @returns 如果在边界内返回 true，否则返回 false
+ */
+const isViewBoundsWithinBoundary = (center: paper.Point, zoom: number): boolean => {
+  if (!paper.view || !boundaryRect.value) return true
+
+  // 计算在给定 center 和 zoom 下的 view.bounds
+  const viewWidth = paper.view.viewSize.width / zoom
+  const viewHeight = paper.view.viewSize.height / zoom
+
+  const left = center.x - viewWidth / 2
+  const top = center.y - viewHeight / 2
+  const right = center.x + viewWidth / 2
+  const bottom = center.y + viewHeight / 2
+
+  // 严格检查：bounds 完全在边界内
+  return (
+    left >= boundaryRect.value.x &&
+    top >= boundaryRect.value.y &&
+    right <= boundaryRect.value.x + boundaryRect.value.width &&
+    bottom <= boundaryRect.value.y + boundaryRect.value.height
+  )
 }
 
 // 初始化 Paper.js
@@ -459,6 +494,24 @@ const initPaper = (): void => {
     fillColor: 'transparent'
   })
   backgroundRect.value = background
+
+  // 获取舞台尺寸（如果在编辑器环境中）
+  const stage = editorCtxRef?.value?.project?.stage
+  const stageWidth = stage?.mapWidth ?? canvasWidth.value
+  const stageHeight = stage?.mapHeight ?? canvasHeight.value
+
+  // 计算边界矩形（以画布中心为基准，边界是舞台的 BOUNDARY_SCALE 倍）
+  const canvasCenterX = canvasWidth.value / 2
+  const canvasCenterY = canvasHeight.value / 2
+  const boundaryWidth = stageWidth * BOUNDARY_SCALE
+  const boundaryHeight = stageHeight * BOUNDARY_SCALE
+
+  boundaryRect.value = {
+    x: canvasCenterX - boundaryWidth / 2,
+    y: canvasCenterY - boundaryHeight / 2,
+    width: boundaryWidth,
+    height: boundaryHeight
+  }
 
   // 初始图片加载交由下面的 watch 处理
 
@@ -818,6 +871,8 @@ provide('backgroundRect', backgroundRect)
 provide('isImportingFromProps', isImportingFromProps)
 provide('exportSvgAndEmit', exportSvgAndEmit)
 provide('canvasColor', canvasColor)
+provide('boundaryRect', boundaryRect)
+provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
 </script>
 
 <style scoped>

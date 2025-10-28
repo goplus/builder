@@ -24,8 +24,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, inject } from 'vue'
 import paper from 'paper'
+
+// 注入边界检查函数
+const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>(
+  'isViewBoundsWithinBoundary'
+)!
 
 // 缩放相关的状态
 const zoomLevel = ref<number>(1)
@@ -40,10 +45,16 @@ const MAX_ZOOM = 5 // 最大放大到 500%
  * 更新缩放级别
  */
 const updateZoom = (newZoom: number): void => {
+  if (!paper.view) return
+
   // 限制缩放范围
   const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
 
-  if (!paper.view) return
+  // 检查新的 zoom 是否会导致超出边界
+  if (!isViewBoundsWithinBoundary(paper.view.center, clampedZoom)) {
+    // 拒绝缩放，保持当前状态
+    return
+  }
 
   // 以画布中心为基准进行缩放
   const center = paper.view.center

@@ -36,6 +36,9 @@ const dragStartScreenPoint = ref<paper.Point | null>(null) // 保存屏幕坐标
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
+const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>(
+  'isViewBoundsWithinBoundary'
+)!
 
 // 选中路径(独占选择)
 const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape | null): void => {
@@ -142,8 +145,17 @@ const handleMouseMove = (point: paper.Point): void => {
     // 将屏幕坐标差值转换为项目坐标差值（除以缩放比例）
     const projectDelta = screenDelta.divide(paper.view.zoom)
 
+    // 计算新的画布中心
+    const newCenter = panStartCenter.value.subtract(projectDelta)
+
+    // 检查新的 center 是否会导致超出边界
+    if (!isViewBoundsWithinBoundary(newCenter, paper.view.zoom)) {
+      // 拒绝移动，保持当前状态
+      return
+    }
+
     // 反向移动画布中心（因为拖动画布是让画布跟随鼠标）
-    paper.view.center = panStartCenter.value.subtract(projectDelta)
+    paper.view.center = newCenter
 
     // 使用 requestAnimationFrame 节流重绘
     if (!isUpdateScheduled.value) {
