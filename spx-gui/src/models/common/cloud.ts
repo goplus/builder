@@ -2,6 +2,7 @@ import * as qiniu from 'qiniu-js'
 import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
+import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
@@ -141,18 +142,21 @@ export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   })
 }
 
-async function fetchFile(url: WebUrl) {
-  const timeout = 10_000 // ms. Timeout for response (headers) to arrive
-  return withRetry(
-    () => {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(new TimeoutException()), timeout)
-      return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId))
-    },
-    2,
-    500
-  )
-}
+const fetchFileController = new ConcurrencyLimitController(20)
+
+const fetchFile = (url: WebUrl) =>
+  fetchFileController.run(() => {
+    const timeout = 15_000 // ms. Timeout for response (headers) to arrive
+    return withRetry(
+      () => {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(new TimeoutException()), timeout)
+        return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId))
+      },
+      2,
+      500
+    )
+  })
 
 export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   const universalUrl = await saveFile(file, signal)
@@ -260,40 +264,43 @@ type KodoUploadRes = {
   hash: string
 }
 
-async function uploadToKodo(file: File, signal?: AbortSignal): Promise<UniversalUrl> {
-  const nativeFile = await toNativeFile(file)
-  const { token, maxSize, bucket, region } = await getUpInfoWithCache()
-  if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
-  const observable = qiniu.upload(
-    nativeFile,
-    null,
-    token,
-    {
-      fname: file.name,
-      mimeType: file.type === '' ? undefined : file.type
-    },
-    { region: region as any }
-  )
-  const { key } = await new Promise<KodoUploadRes>((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(signal.reason)
-      return
-    }
-    const subscription = observable.subscribe({
-      error(e) {
-        reject(e)
+const uploadToKodoController = new ConcurrencyLimitController(20)
+
+const uploadToKodo = (file: File, signal?: AbortSignal) =>
+  uploadToKodoController.run<UniversalUrl>(async () => {
+    const nativeFile = await toNativeFile(file)
+    const { token, maxSize, bucket, region } = await getUpInfoWithCache()
+    if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
+    const observable = qiniu.upload(
+      nativeFile,
+      null,
+      token,
+      {
+        fname: file.name,
+        mimeType: file.type === '' ? undefined : file.type
       },
-      complete(res) {
-        resolve(res)
+      { region: region as any }
+    )
+    const { key } = await new Promise<KodoUploadRes>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(signal.reason)
+        return
       }
+      const subscription = observable.subscribe({
+        error(e) {
+          reject(e)
+        },
+        complete(res) {
+          resolve(res)
+        }
+      })
+      signal?.addEventListener('abort', () => {
+        subscription.unsubscribe()
+        reject(signal.reason)
+      })
     })
-    signal?.addEventListener('abort', () => {
-      subscription.unsubscribe()
-      reject(signal.reason)
-    })
+    return `${fileUniversalUrlSchemes.kodo}//${bucket}/${key}`
   })
-  return `${fileUniversalUrlSchemes.kodo}//${bucket}/${key}`
-}
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {
   /** Timestamp (ms) after which the uptoken is considered expired */
