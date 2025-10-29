@@ -12,7 +12,7 @@
   
 ### 第二章：对象 - 与游戏对象交互(4+2节)
 - [2.1 转向对象](https://x.qiniu.com/editor/curator/Coding-Course-8/sprites/Kiko/code)
-  - [转向对象,课后练习](https://x.qiniu.com/editor/curator/Coding-Course-9/sprites/Kiko/code)
+  - [转向对象，课后练习](https://x.qiniu.com/editor/curator/Coding-Course-9/sprites/Kiko/code)
 - [2.2 朝对象步进](https://x.qiniu.com/editor/curator/Coding-Course-10/sprites/Kiko/code)
 - [2.3 更复杂的路径](https://x.qiniu.com/editor/curator/Coding-Course-11/sprites/Kiko/code)
 - [2.4 基于对象的转向与步进](https://x.qiniu.com/editor/curator/Coding-Course-12/sprites/Kiko/code)
@@ -58,11 +58,11 @@
 - [7.3 复杂条件处理](https://x.qiniu.com/editor/curator/Coding-Course-35/sprites/Kiko/code)
   - [复杂条件处理TODO](https://x.qiniu.com/editor/curator/Coding-Course-36/sprites/Kiko/code)
 
-### 综合2：往期章节综合练习(4节)  
-  - [综合课后练习1](https://x.qiniu.com/editor/curator/Coding-Course-37/sprites/Kiko/code)  
-  - [综合课后练习2](https://x.qiniu.com/editor/curator/Coding-Course-38/sprites/Kiko/code)  
-  - [综合课后练习3](https://x.qiniu.com/editor/curator/Coding-Course-39/sprites/Kiko/code)  
-  - [综合课后练习4](https://x.qiniu.com/editor/curator/Coding-Course-40/sprites/Kiko/code)  
+### 综合2：往期章节综合练习(4节)
+  - [综合课后练习1](https://x.qiniu.com/editor/curator/Coding-Course-37/sprites/Kiko/code)
+  - [综合课后练习2](https://x.qiniu.com/editor/curator/Coding-Course-38/sprites/Kiko/code)
+  - [综合课后练习3](https://x.qiniu.com/editor/curator/Coding-Course-39/sprites/Kiko/code)
+  - [综合课后练习4](https://x.qiniu.com/editor/curator/Coding-Course-40/sprites/Kiko/code)
 
 ### 第八章：事件 - 响应用户操作(4+2节)
 
@@ -70,8 +70,8 @@
 - [8.2 方向控制](https://x.qiniu.com/editor/curator/Coding-Course-42/sprites/Kiko/code)
 - [8.3 完整的方向控制](https://x.qiniu.com/editor/curator/Coding-Course-43/sprites/Kiko/code)
 - [8.4 WASD控制和点击事件](https://x.qiniu.com/editor/curator/Coding-Course-44/sprites/Kiko/code)
-    - [事件章节练习1](https://x.qiniu.com/editor/curator/Coding-Course-45/sprites/Kiko/code)
-    - [事件章节练习2](https://x.qiniu.com/editor/curator/Coding-Course-46/sprites/Kiko/code)
+  - [事件章节练习1](https://x.qiniu.com/editor/curator/Coding-Course-45/sprites/Kiko/code)
+  - [事件章节练习2](https://x.qiniu.com/editor/curator/Coding-Course-46/sprites/Kiko/code)
 
 ### 第九章：跨文件编程 - 多个精灵协同工作(5节)
 
