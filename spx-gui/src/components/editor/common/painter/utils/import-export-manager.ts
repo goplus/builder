@@ -54,7 +54,7 @@ export class ImportExportManager {
    * 导出当前画布为SVG
    */
   exportSvg(options: ExportOptions = {}): string | null {
-    const { embedImages = true, bounds = paper.view.bounds } = options
+    const { embedImages = true, bounds } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -66,10 +66,13 @@ export class ImportExportManager {
       this.hideControlPointsForExport()
       const prevVisible = this.hideBackgroundForExport()
 
+      // 使用提供的bounds，如果没有提供则使用activeLayer的bounds（所有内容的边界）
+      const exportBounds = bounds || paper.project.activeLayer?.bounds
+
       const svgStr = paper.project.exportSVG({
         asString: true,
         embedImages,
-        bounds
+        bounds: exportBounds
       }) as string
 
       // 恢复背景可见性
