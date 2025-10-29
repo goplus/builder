@@ -19,6 +19,17 @@ enum TriggerVisibility {
   None = '' // The trigger is not visible
 }
 
+type SuggestedPrompt = {
+  message: LocaleMessage
+}
+
+enum OutputState {
+  Round = 'round',
+  UsageGuide = 'usage-guide',
+  Error = 'error',
+  None = 'none'
+}
+
 const panelBoundaryBuffer = [20, 20]
 const triggerSnapThreshold = 20
 </script>
@@ -30,12 +41,13 @@ import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/uti
 import { useMessageHandle } from '@/utils/exception'
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
+import { providePopupContainer, UITooltip, UITag, UIIcon } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
+import type { LocaleMessage } from '@/utils/i18n'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
@@ -57,6 +69,26 @@ const activeRound = computed(() => {
     return null
   }
   return lastRound
+})
+// const activeUsageGuide = computed(() => {
+//   const lastRound = rounds.value?.at(-1)
+//   if (lastRound != null) return false
+//   return true
+// })
+// const activeError = computed(() => {
+//   const lastRound = rounds.value?.at(-1)
+//   if (lastRound != null && !isSignedIn() && lastRound.state === RoundState.Failed) {
+//     return true
+//   }
+//   return false
+// })
+
+const outputState = computed(() => {
+  const lastRound = rounds.value?.at(-1)
+  if (lastRound == null) return OutputState.UsageGuide
+  if (!isSignedIn() && lastRound.state === RoundState.Failed) return OutputState.Error
+  if (![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) return OutputState.Round
+  return OutputState.None
 })
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
@@ -315,6 +347,19 @@ useDraggable(draggerRef, {
   onDragEnd
 })
 
+const suggestedPrompts: SuggestedPrompt[] = [
+  {
+    message: {
+      en: 'How to create a new project?',
+      zh: '如何创建一个新项目？'
+    }
+  }
+]
+const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
+  en: 'Failed to send message',
+  zh: '发送消息失败'
+}).fn
+
 const quickInputs = computed(() => copilot.getQuickInputs())
 
 const handleQuickInputClick = useMessageHandle(
@@ -410,42 +455,51 @@ onBeforeUnmount(
             <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
           </svg>
         </div>
-        <template v-if="isSignedIn()">
-          <template v-if="activeRound != null">
-            <div ref="outputRef" class="output">
-              <CopilotRound :round="activeRound" is-last-round />
-              <div v-if="quickInputs.length > 0" class="quick-inputs">
-                <UITooltip v-for="(qi, i) in quickInputs" :key="i">
-                  {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
-                  <template #trigger>
-                    <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
-                  </template>
-                </UITooltip>
-              </div>
-            </div>
-            <div class="divider"></div>
-          </template>
-          <CopilotInput
-            ref="inputRef"
-            class="input"
-            :class="{ 'only-input': activeRound == null }"
-            :copilot="copilot"
-          />
-        </template>
-        <template v-else>
-          <div class="placeholder">
-            <h4 class="title">{{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}</h4>
-            <p class="description">
+        <div ref="outputRef" class="output">
+          <template v-if="outputState === OutputState.Error">
+            <div class="error-message">
               {{
-                $t({
-                  en: 'I can help you with XBuilder, please sign in to continue.',
-                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续。'
-                })
+                $t({ en: "You need to log in to use this feature. Let's go log in ！", zh: '请登录以使用 Copilot。' })
               }}
-            </p>
-            <button class="sign-in-button" @click="initiateSignIn()">{{ $t({ en: 'Sign in', zh: '登录' }) }}</button>
-          </div>
-        </template>
+            </div>
+            <UITag type="primary" class="sign-in-button" @click="initiateSignIn()">
+              {{ $t({ en: 'Sign In', zh: '登录' }) }}
+              <UIIcon type="arrowRightSmall" />
+            </UITag>
+          </template>
+          <template v-else-if="outputState === OutputState.Round">
+            <CopilotRound :round="activeRound!" is-last-round />
+            <div v-if="quickInputs.length > 0" class="quick-inputs">
+              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                <template #trigger>
+                  <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
+                </template>
+              </UITooltip>
+            </div>
+          </template>
+          <template v-else-if="outputState === OutputState.UsageGuide">
+            <div class="hi">
+              {{ $t({ en: 'Hi, I can help you with XBuilder', zh: '嗨，我可以帮助你使用 XBuilder' }) }}
+            </div>
+            <div class="tips">
+              {{ $t({ en: 'If you have any questions, just ask!', zh: '如果你有任何问题，尽管问！' }) }}
+            </div>
+            <div class="wrapper">
+              <UITag
+                v-for="(suggestedPrompt, index) in suggestedPrompts"
+                :key="index"
+                type="boring"
+                class="button"
+                @click="handleSuggestedPromptClick($t(suggestedPrompt.message))"
+                ><span style="flex: 1">{{ $t(suggestedPrompt.message) }}</span
+                ><UIIcon type="arrowRightSmall"
+              /></UITag>
+            </div>
+          </template>
+        </div>
+        <div class="divider"></div>
+        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
       </div>
     </div>
     <div class="footer">
@@ -456,16 +510,9 @@ onBeforeUnmount(
         </template>
         <div class="fold" :class="[triggerState]" @click="copilot.close()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M12 12.6667V3.33333"
-              stroke="#A7B1BB"
-              stroke-width="1.33333"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+            <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
             <path
               d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
-              stroke="#A7B1BB"
               stroke-width="1.33333"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -637,9 +684,39 @@ $toColor: #c390ff;
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
-    margin-top: 14px;
     overflow-y: auto;
     scrollbar-width: thin;
+
+    &:not(:empty) {
+      margin-top: 14px;
+      padding: 6px 16px 20px 16px;
+    }
+
+    .hi {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ui-color-grey-1000);
+    }
+    .tips {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .wrapper {
+      width: 100%;
+      margin-top: 24px;
+
+      .button {
+        padding: 12px;
+        overflow-wrap: anywhere;
+        height: fit-content;
+        gap: 8px;
+        width: 100%;
+        justify-content: space-between;
+        white-space: normal;
+        text-align: left;
+      }
+    }
   }
 
   .divider {
@@ -666,7 +743,7 @@ $toColor: #c390ff;
   justify-content: center;
   .footer-wrapper {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
     height: 36px;
     padding: 6px;
@@ -682,89 +759,24 @@ $toColor: #c390ff;
   }
 
   .fold {
-    width: 22px;
-    height: 100%;
+    width: 28px;
+    height: 28px;
+    border-radius: 28px;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: transform 0.3s ease-in;
+    stroke: var(--ui-color-grey-700);
     cursor: pointer;
 
     &.left {
       transform: rotate(180deg);
     }
-  }
-}
-
-.btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: none;
-  background: none;
-  border-radius: 50%;
-  color: var(--ui-color-grey-700);
-  transition: background-color 0.2s;
-  outline: none;
-
-  &:not(:disabled) {
-    cursor: pointer;
-    &:hover {
-      background-color: var(--ui-color-grey-400);
-    }
-    &:active {
-      background-color: var(--ui-color-grey-500);
-    }
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    color: var(--ui-color-grey-600);
-  }
-}
-
-.placeholder {
-  padding: 26px 24px;
-  background: var(--ui-color-grey-100);
-  border-radius: 16px;
-
-  .title {
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 28px;
-    color: var(--ui-color-title);
-  }
-
-  .description {
-    margin-top: 10px;
-    font-weight: 600;
-    line-height: 22px;
-    color: var(--ui-color-grey-800);
-  }
-
-  .sign-in-button {
-    border: none;
-    border-radius: 12px;
-    width: 100%;
-    height: 40px;
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 28px;
-    color: var(--ui-color-grey-100);
-    background-color: var(--ui-color-sound-main);
-    outline: none;
-    cursor: pointer;
 
     &:hover {
-      background-color: var(--ui-color-purple-400);
-    }
-
-    &:active {
-      background-color: var(--ui-color-purple-600);
+      cursor: pointer;
+      stroke: var(--ui-color-primary-500);
+      background: var(--ui-color-primary-200);
     }
   }
 }
