@@ -36,9 +36,7 @@ const dragStartScreenPoint = ref<paper.Point | null>(null) // 保存屏幕坐标
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
-const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>(
-  'isViewBoundsWithinBoundary'
-)!
+const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>('isViewBoundsWithinBoundary')!
 
 // 选中路径(独占选择)
 const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape | null): void => {

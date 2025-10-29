@@ -339,10 +339,7 @@ export class ImportExportManager {
     // 只设置位置，不进行任何缩放
     if (position === 'center') {
       // 使用逻辑画布中心点，而不是视图中心
-      item.position = new paper.Point(
-        this.dependencies.canvasWidth.value / 2,
-        this.dependencies.canvasHeight.value / 2
-      )
+      item.position = new paper.Point(this.dependencies.canvasWidth.value / 2, this.dependencies.canvasHeight.value / 2)
     }
     // position === 'original' 时保持原始位置，什么都不做
   }
