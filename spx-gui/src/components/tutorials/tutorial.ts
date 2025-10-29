@@ -57,12 +57,12 @@ export class Tutorial {
     return this.series.value
   }
 
-  private abandonCountRef = ref(0)
+  private suspectedAbandonCountRef = ref(0)
   abandon() {
-    return ++this.abandonCountRef.value
+    return ++this.suspectedAbandonCountRef.value
   }
   dismissAbandon() {
-    this.abandonCountRef.value = 0
+    this.suspectedAbandonCountRef.value = 0
   }
 
   async startCourse(course: Course, series: CourseSeriesWithCourses): Promise<void> {
@@ -70,7 +70,7 @@ export class Tutorial {
       this.endCurrentCourse()
       this.course.value = course
       this.series.value = series
-      this.abandonCountRef.value = 0
+      this.suspectedAbandonCountRef.value = 0
 
       const { entrypoint } = course
 
@@ -217,9 +217,10 @@ This is an example for messages between you and the user in a course:
   }
 
   endCurrentCourse() {
+    this.copilot.close()
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
-    this.abandonCountRef.value = 0
+    this.suspectedAbandonCountRef.value = 0
   }
 }

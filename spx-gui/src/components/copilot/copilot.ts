@@ -107,12 +107,6 @@ export type Topic = {
   endable?: boolean
   /** Component (name) to render the topic state indicator, e.g. tip for current tutorial course */
   stateIndicator?: string
-  /**
-   * The maximum idle time (in milliseconds) allowed after the last Round state change.
-   * If the time since lastStartTime exceeds this value, the session will be ended upon reopen.
-   * Defaults to 2 hours.
-   */
-  idleTimeout?: number
 }
 
 export enum RoundState {
@@ -141,6 +135,7 @@ type RoundExported = {
   inProgressCopilotMessageContent: string | null
   error: LocaleMessage | null
   state: RoundState
+  updatedAt?: number
 }
 
 export class Round {
@@ -158,6 +153,11 @@ export class Round {
   get state() {
     return this.stateRef.value
   }
+  private setState(state: RoundState) {
+    this.stateRef.value = state
+    this.updatedAt = dayjs().valueOf()
+  }
+
   private ctrl = new AbortController()
 
   constructor(
@@ -166,7 +166,11 @@ export class Round {
     private session: Session
   ) {
     this.userMessage = userMessage
+    this.updatedAt = dayjs().valueOf()
   }
+
+  /** When the round state changes, consider whether an update is needed. */
+  updatedAt: number
 
   export(): RoundExported {
     return {
@@ -174,7 +178,8 @@ export class Round {
       resultMessages: this.resultMessages,
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
-      state: this.state
+      state: this.state,
+      updatedAt: this.updatedAt
     }
   }
 
@@ -183,6 +188,7 @@ export class Round {
     round.resultMessages.push(...exported.resultMessages)
     round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
     round.errorRef.value = exported.error
+    round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -207,7 +213,7 @@ export class Round {
   }
 
   private completeRound() {
-    this.stateRef.value = RoundState.Completed
+    this.setState(RoundState.Completed)
   }
 
   private handleResponseError(err: unknown) {
@@ -217,14 +223,14 @@ export class Round {
       this.ctrl.abort(err)
     }
     if (err instanceof Cancelled) {
-      this.stateRef.value = RoundState.Cancelled
+      this.setState(RoundState.Cancelled)
       return
     }
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
     }).userMessage
-    this.stateRef.value = RoundState.Failed
+    this.setState(RoundState.Failed)
   }
 
   private async handleCopilotMessage(message: CopilotMessage) {
@@ -270,7 +276,7 @@ export class Round {
       for await (const chunk of result) {
         if (this.inProgressCopilotMessageContentRef.value == null) {
           this.inProgressCopilotMessageContentRef.value = ''
-          this.stateRef.value = RoundState.InProgress
+          this.setState(RoundState.InProgress)
         }
         this.inProgressCopilotMessageContentRef.value += chunk
       }
@@ -285,7 +291,7 @@ export class Round {
     this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
-    this.stateRef.value = RoundState.Loading
+    this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
   }
@@ -443,13 +449,17 @@ export interface ISessionExportedStorage {
   get(): SessionExported | null
 }
 
+/**
+ * The maximum idle time (in milliseconds) allowed after the last Round state change.
+ * If the time since the last round update exceeds this value, the session will be ended upon reopening.
+ * Defaults to 2 hours.
+ */
 const defaultIdleTimeout = 2 * 60 * 60 * 1000
 
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
   description: '',
-  reactToEvents: false,
-  idleTimeout: defaultIdleTimeout
+  reactToEvents: false
 }
 
 export class Copilot extends Disposable {
@@ -473,6 +483,7 @@ export class Copilot extends Disposable {
 
   constructor(public generator: IMessageStreamGenerator = apis) {
     super()
+    this.syncIdleTimeout()
   }
 
   /** If copilot is active (the panel is visible) */
@@ -574,52 +585,27 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
-  private lastStartTime = localStorageRef<number | null>('spx-gui-copilot-last-start-time', null)
   /**
-   * Update `lastStartTime` when Round state changes
    * Check for idle timeout when copilot is reopened, ending the session if idle too long
    */
   syncIdleTimeout() {
-    // When entering the page for the first time, the session might be restored from SessionStorage, at which point the lastStartTime needs to be aligned once.
-    let isRestoredSession = this.lastStartTime.value != null
-    this.addDisposer(
-      watch(
-        () => this.currentSession?.currentRound?.state,
-        throttle((state) => {
-          if (state == null) return
-
-          if (isRestoredSession) {
-            isRestoredSession = false
-            return
-          }
-          this.lastStartTime.value = dayjs().valueOf()
-        }, 100),
-        {
-          immediate: true
-        }
-      )
-    )
     this.addDisposer(
       watch(
         () => this.active,
-        throttle((value, oldValue) => {
+        (value, oldValue) => {
           const session = this.currentSession
           if (session == null) return
 
-          const lastStartTime = this.lastStartTime.value
-          if (lastStartTime == null) return
+          const lastRoundUpdatedTime = session.currentRound?.updatedAt
+          if (lastRoundUpdatedTime == null) return
 
           // Check idle timeout when reopening copilot
-          // Terminates session if lastStartTime is too old (user was idle for too long)
+          // Terminates session if lastRoundUpdatedTime is too old (user was idle for too long)
           if (value && oldValue === false) {
-            const idleTimeout = session.topic.idleTimeout ?? defaultIdleTimeout
-            if (dayjs().valueOf() - lastStartTime > idleTimeout) {
+            if (dayjs().valueOf() - lastRoundUpdatedTime > defaultIdleTimeout) {
               this.endCurrentSession()
             }
           }
-        }, 100),
-        {
-          immediate: true
         }
       )
     )
@@ -649,7 +635,6 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /** End the current session. */
   endCurrentSession(): void {
     this.currentSession?.abortCurrentRound()
-    this.lastStartTime.value = null
     this.currentSessionRef.value = null
   }
 

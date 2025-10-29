@@ -1,6 +1,5 @@
 <script lang="ts">
 import { z } from 'zod'
-import { timeout } from '@/utils/utils'
 
 export const tagName = 'tutorial-course-abandon'
 
@@ -22,7 +21,7 @@ export const attributes = z.object({
 })
 
 // Maximum number of abandonment events before automatically ending the course
-const maxAbandonCount = 5
+const maxAbandonCount = 3
 </script>
 
 <script setup lang="ts">
@@ -48,7 +47,6 @@ onMounted(async () => {
   if (props.abandon) {
     const count = tutorial.abandon()
     if (count > maxAbandonCount) {
-      await timeout(500)
       copilot.close()
       tutorial.endCurrentCourse()
     }
