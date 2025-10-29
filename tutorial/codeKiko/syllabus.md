@@ -1,16 +1,5 @@
 ## 课程大纲
 
-### TODO list
-
-- [x] [2.4 基于对象的转向与步进](12&13 TODO)
-- [x] 函数调用 - 使用内置功能(2节+TODO 课后练习2节)
-- [ ] [复杂条件处理TODO](https://x.qiniu.com/editor/curator/Coding-Course-36/sprites/Kiko/code)
-- [x] [事件章节练习](45,46 TODO)
-- [ ] [跨文件编程 - 多个精灵协同工作](48,49,50,51,52 TODO)
-- [ ] [10.3 多角色公用函数](53 TODO)
-  - [ ] [函数定义与调用练习](54 TODO)
-- [ ] [综合练习大型](55 TODO)
-
 ### 第一章：初步 - 基础动作（6+1节）
 
 - [1.1 第一个程序](https://x.qiniu.com/editor/curator/Coding-Course-1/sprites/Kiko/code)
@@ -87,14 +76,17 @@
 ### 第九章：跨文件编程 - 多个精灵协同工作(5节)
 
 - [9.1 精灵文件结构](https://x.qiniu.com/editor/curator/Coding-Course-47/sprites/Kiko/code)
-  - [章节练习](48&49&50&51)
+  - [精灵文件结构](https://x.qiniu.com/editor/curator/Coding-Course-48/sprites/Kiko/code)
+- [9.2 跨文件通信：broadcast & onMsg](https://x.qiniu.com/editor/curator/Coding-Course-49/sprites/Kiko/code)
+  - [跨文件通信练习题](https://x.qiniu.com/editor/curator/Coding-Course-50/sprites/Kiko/code)
+  - [章节练习](https://x.qiniu.com/editor/curator/Coding-Course-51/sprites/Kiko/code)
 
 ### 第十章：函数定义与调用 - 组织代码(3+1节)
 
 - [10.1 定义函数](https://x.qiniu.com/editor/curator/Coding-Course-52/sprites/Kiko/code)
 - [10.2 使用函数](https://x.qiniu.com/editor/curator/Coding-Course-52/sprites/Kiko/code)
-- [10.3 多角色公用函数](53TODO)
-  - [函数定义与调用练习](54TODO)
+- [10.3 多角色公用函数](https://x.qiniu.com/editor/curator/Coding-Course-53/sprites/Kiko/code)
+  - [函数定义与调用练习](https://x.qiniu.com/editor/curator/Coding-Course-54/sprites/Kiko/code)
 
 ### 综合3：最终大型游戏(1节)
-  - [综合练习大型](55 TODO)
+  - [综合练习大型](https://x.qiniu.com/editor/curator/Coding-Course-55/sprites/Kiko/code)
