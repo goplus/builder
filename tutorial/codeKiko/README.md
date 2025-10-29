@@ -76,8 +76,6 @@
     - [10.2 使用函数](#102-使用函数)
     - [10.3 多角色公用函数](#103-多角色公用函数)
     - [练习：函数定义与调用练习](#练习函数定义与调用练习)
-  - [综合1：游戏制作综合练习](#综合1游戏制作综合练习)
-  - [综合2：高级游戏开发](#综合2高级游戏开发)
   - [综合3：最终大型游戏](#综合3最终大型游戏)
 
 ---
@@ -438,8 +436,10 @@ onStart => {
 ```
 
 **命令解释：**
-- `waitUntil xpos > 200`: 等待直到 x 坐标大于 200
-- `say "到达目标位置！"`: 显示文字消息
+- `waitUntil 萝卜.mature`: 等待直到萝卜对象的mature属性为真（成熟）
+- `萝卜.mature`: 访问萝卜对象的mature属性，表示萝卜是否成熟
+- `turnTo 萝卜`: 等待结束后，让精灵转向萝卜对象
+- `stepTo 萝卜`: 让精灵移动到萝卜对象位置
 
 ## 第四章：变量 - 存储和使用数据
 
@@ -488,8 +488,10 @@ onStart => {
 ```
 
 **命令解释：**
-- `var count int = 5`: 定义一个名为count的整数变量，并赋值为5
-- `repeat count, => {}`: 使用变量count作为循环次数
+- `var n int = 3`: 定义一个名为n的整数变量，并赋值为3
+- `repeat n, => {}`: 使用变量n作为循环次数，重复执行花括号内的代码n次（3次）
+- `turn -60`: 让精灵向左转60度
+- `step 100`: 让精灵朝当前方向前进100步
 
 ### 4.3 定义循环体变量
 
@@ -509,8 +511,10 @@ onStart => {
 ```
 
 **命令解释：**
-- `var stepSize int = 100`: 定义步长变量
-- `step stepSize`: 使用变量作为步进距离
+- `var stepN float64 = 100`: 定义一个名为stepN的浮点数变量，并赋值为100
+- `repeat 3, => {}`: 重复执行花括号内的代码3次
+- `turn Left`: 让精灵向左转90度
+- `step stepN`: 使用变量stepN作为步进距离，让精灵前进100步
 
 ### 练习：定义循环体变量1
 
@@ -566,11 +570,11 @@ onStart => {
 - `var x float64 = 145`: 定义一个名为x的浮点数变量，并赋值为145
 - `repeat 3, => {}`: 重复执行花括号内的代码3次
 - `turn Right`: 让精灵向右转90度
-- `step x`: 让精灵朝当前方向前进x步
+- `step x`: 让精灵朝当前方向前进x步（第一次是145步）
 - `step -x`: 让精灵向后退x步（负数表示后退）
 - `turn Left`: 让精灵向左转90度
 - `step 161`: 让精灵朝当前方向前进161步
-- `x = x + 70`: 将变量x的值增加70
+- `x = x + 70`: 将变量x的值增加70，每次循环后x都会变大（145→215→285）
 
 ### 练习：变量章节课后练习1
 
@@ -976,77 +980,92 @@ onKey KeyDown, => {
 
 ### 8.4 方向控制和点击事件
 
-通过 上下左右 控制方向，点击农场，可以种植萝卜。
+通过上下左右箭头键控制方向，按Q键种植萝卜，按W键浇水：
 
 ![Course-44](./assets/事件-4.png)
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-44/sprites/Kiko/code
 
 ```xgo
 var (
-    radishs []Radish
+	radishs []Radish
 )
 
-onKey KeyD, => {
-    if heading != Right {
-        setHeading Right
-    }
-    step 20
+onKey KeyRight, => {
+	if heading != Right {
+		setHeading Right
+	}
+	step 20
 }
 
-onKey KeyA, => {
-    if heading != Left {
-        setHeading Left
-    }
-    step 20
+onKey KeyLeft, => {
+	if heading != Left {
+		setHeading Left
+	}
+	step 20
+}
+
+onKey KeyUp, => {
+	if heading != Up {
+		setHeading Up
+	}
+	step 20
+}
+
+onKey KeyDown, => {
+	if heading != Down {
+		setHeading Down
+	}
+	step 20
+}
+
+onKey KeyQ, => {
+	// 找一个 离Kiko 最近的可以种萝卜的地方
+	rad, ok := farm.findPlot(xpos, ypos)
+	if ok {
+		turnTo rad
+		step distanceTo(rad)-20
+		rad.show
+		radishs = append(radishs, rad)
+	}
 }
 
 onKey KeyW, => {
-    if heading != Up {
-        setHeading Up
-    }
-    step 20
-}
-
-onKey KeyS, => {
-    if heading != Down {
-        setHeading Down
-    }
-    step 20
-}
-
-farm.onClick => {
-    rad, ok := farm.findPlot()
-    if ok {
-        turnTo rad
-        step distanceTo(rad)-20
-        rad.show
-        radishs = append(radishs, rad)
-
-        rad.onClick => {
-            if !rad.IsMature() {
-                turnTo rad
-                step distanceTo(rad)-20
-                rad.Water()
-                animateAndWait "浇水"
-                animate "默认", true
-            }
-        }
-    }
+	// 找一个离 Kiko 最近的萝卜
+	rad, ok := farm.findPlant(xpos, ypos)
+	if ok && !rad.IsMature() {
+		turnTo rad
+		step distanceTo(rad)-20
+		rad.Water()
+		animateAndWait "浇水"
+		animate "默认", true
+	}
 }
 ```
 
 **命令解释：**
-- `var (radishs []Radish)`: 定义一个全局的Radish类型数组变量
-- `onKey KeyD, => {}`: 当用户按下D键时的事件处理器
-- `KeyD`, `KeyA`, `KeyW`, `KeyS`: WASD键的键码常量
-- `farm.onClick => {}`: 当用户点击farm对象时的事件处理器
-- `rad, ok := farm.findPlot()`: 调用farm对象的findPlot方法，返回萝卜对象和布尔值
+- `var (radishs []Radish)`: 定义一个全局的Radish类型数组变量，用于存储种植的萝卜
+- `onKey KeyRight, => {}`: 当用户按下右箭头键时的事件处理器
+- `onKey KeyLeft, => {}`: 当用户按下左箭头键时的事件处理器
+- `onKey KeyUp, => {}`: 当用户按下上箭头键时的事件处理器
+- `onKey KeyDown, => {}`: 当用户按下下箭头键时的事件处理器
+- `if heading != Right`: 如果精灵的当前朝向不是向右
+- `setHeading Right`: 设置精灵的朝向为向右
+- `step 20`: 让精灵朝当前方向前进20步
+- `onKey KeyQ, => {}`: 当用户按下Q键时的事件处理器（种植功能）
+- `rad, ok := farm.findPlot(xpos, ypos)`: 调用farm对象的findPlot方法，根据Kiko的当前坐标查找最近的可种植地块
+- `xpos, ypos`: 精灵当前的X和Y坐标位置
 - `if ok`: 如果找到了可种植的地块
-- `rad.show`: 显示萝卜对象
-- `radishs = append(radishs, rad)`: 将新萝卜对象添加到数组中
+- `turnTo rad`: 让精灵转向找到的种植位置
+- `step distanceTo(rad)-20`: 让精灵前进到距离种植位置20步的地方
+- `distanceTo(rad)`: 函数，计算精灵到种植位置的距离
+- `rad.show`: 显示萝卜对象（让种植的萝卜可见）
+- `radishs = append(radishs, rad)`: 将新种植的萝卜对象添加到数组中
 - `append(radishs, rad)`: 函数，向数组中添加新元素
-- `rad.onClick => {}`: 为萝卜对象设置点击事件处理器
-- `!rad.IsMature()`: 如果萝卜没有成熟（!表示逻辑非）
+- `onKey KeyW, => {}`: 当用户按下W键时的事件处理器（浇水功能）
+- `rad, ok := farm.findPlant(xpos, ypos)`: 调用farm对象的findPlant方法，查找最近的已种植萝卜
+- `ok && !rad.IsMature()`: 如果找到萝卜且萝卜没有成熟（!表示逻辑非）
+- `rad.Water()`: 调用萝卜对象的浇水方法
+- `animateAndWait "浇水"`: 播放"浇水"动画并等待动画完成
 - `animate "默认", true`: 播放"默认"动画并循环播放
 
 ### 练习：事件章节练习1
@@ -1196,19 +1215,23 @@ var (
 ![Course-49](./assets/跨文件编程-2.png)
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-49/sprites/Kiko/code
 
+**舞台代码：**
 ```xgo
-// 舞台代码
 var (
 	followRole string
 )
+```
 
-// Kiko 精灵代码
+**Kiko精灵代码：**
+```xgo
 onStart => {
 	say "你好 Jenny"
 	broadcast "hello"
 }
+```
 
-// Jenny 精灵代码
+**Jenny精灵代码：**
+```xgo
 onMsg "hello", => {
 	wait 1
 	say "你好 Kiko"
@@ -1216,8 +1239,12 @@ onMsg "hello", => {
 ```
 
 **命令解释：**
-- `broadcast "hello"`: 广播消息给所有精灵
-- `onMsg "hello", => {}`: 监听特定消息的事件处理器
+- `var (followRole string)`: 在舞台中定义全局字符串变量followRole
+- `say "你好 Jenny"`: 让Kiko精灵显示文字"你好 Jenny"
+- `broadcast "hello"`: 广播名为"hello"的消息给游戏中的所有对象
+- `onMsg "hello", => {}`: 监听名为"hello"的消息的事件处理器
+- `wait 1`: 等待1秒
+- `say "你好 Kiko"`: 让Jenny精灵显示文字"你好 Kiko"
 
 ### 练习：跨文件通信练习题
 
@@ -1239,7 +1266,7 @@ onMsg "hello", => {
 
 ## 第十章：函数定义与调用 - 组织代码
 
-函数让我们可以将代码组织成可重用的模块。
+函数让我们可以将代码组织成可重用的模块，提高代码的可读性和维护性。
 
 ### 10.1 定义函数
 
@@ -1249,7 +1276,7 @@ onMsg "hello", => {
 func plant() {
 	// 是否站在农田上
 	if f, ok := findFarm(xpos, ypos); ok {
-		// 找一个 离Kiko 最近的可以种萝卜的地方
+		// 找一个离Kiko最近的可以种萝卜的地方
 		rad, ok := f.findPlot(xpos, ypos)
 		if ok {
 			turnTo rad
@@ -1261,7 +1288,7 @@ func plant() {
 
 func water() {
 	if f, ok := findFarm(xpos, ypos); ok {
-		// 找一个离 Kiko 最近的萝卜
+		// 找一个离Kiko最近的萝卜
 		rad, ok := f.findPlant(xpos, ypos)
 		if ok && !rad.IsMature() {
 			turnTo rad
@@ -1275,7 +1302,7 @@ func water() {
 
 func harvest() {
 	if f, ok := findFarm(xpos, ypos); ok {
-		// 找一个离 Kiko 最近的萝卜
+		// 找一个离Kiko最近的萝卜
 		rad, ok := f.findPlant(xpos, ypos)
 		if ok && rad.IsMature() {
 			turnTo rad
@@ -1286,35 +1313,51 @@ func harvest() {
 ```
 
 **命令解释：**
-- `func plant() Radish`: 定义一个名为plant的函数，接受两个浮点数参数，返回Radish类型
-- `rad := farm.findPlot(x, y)`: 调用farm对象的PlantRadish方法，在指定坐标种植萝卜
-- `return rad`: 返回萝卜对象
-- `func water()`: 定义一个名为water的函数，无返回值
-- `func harvest()`: 定义一个名为harvest的函数
+- `func plant()`: 定义一个名为plant的函数，用于种植萝卜
+- `if f, ok := findFarm(xpos, ypos); ok`: 查找当前位置是否有农田，如果找到则执行后续操作
+- `findFarm(xpos, ypos)`: 函数调用，根据坐标查找农田对象
+- `xpos`, `ypos`: 精灵当前的X和Y坐标
+- `rad, ok := f.findPlot(xpos, ypos)`: 在农田中查找可种植的地块
+- `turnTo rad`: 让精灵转向萝卜种植位置
+- `step distanceTo(rad)-20`: 让精灵移动到距离种植位置20步的地方
+- `rad.show`: 显示萝卜对象（让萝卜可见）
+- `func water()`: 定义一个名为water的函数，用于给萝卜浇水
+- `f.findPlant(xpos, ypos)`: 在农田中查找已种植的萝卜
+- `!rad.IsMature()`: 检查萝卜是否未成熟
+- `rad.Water()`: 调用萝卜对象的浇水方法
+- `animateAndWait "浇水"`: 播放浇水动画并等待完成
+- `func harvest()`: 定义一个名为harvest的函数，用于收获萝卜
+- `rad.IsMature()`: 检查萝卜是否已经成熟
+- `stepTo rad`: 让精灵移动到萝卜位置进行收获
 
 ### 10.2 使用函数
 
 ```xgo
 onKey KeyQ, => {
-	plant
+	plant()
 }
 
 onKey KeyW, => {
-	water
+	water()
 }
 
 onKey KeyE, => {
-	harvest
+	harvest()
 }
 ```
 
+**命令解释：**
+- `onKey KeyQ, => {}`: 当用户按下Q键时的事件处理器
+- `plant()`: 调用plant函数执行种植操作
+- `onKey KeyW, => {}`: 当用户按下W键时的事件处理器
+- `water()`: 调用water函数执行浇水操作
+- `onKey KeyE, => {}`: 当用户按下E键时的事件处理器
+- `harvest()`: 调用harvest函数执行收获操作
+
 ### 10.3 多角色公用函数
 
-> https://x.qiniu.com/editor/curator/Coding-Course-53/sprites/Kiko/code
-
 ```xgo
-// 舞台
-
+// 舞台代码
 func moveDir(s Sprite, dir Direction, n float64) {
 	if s.name != followRole {
 		return
@@ -1329,9 +1372,7 @@ func plant(s Sprite) {
 	if s.name != followRole {
 		return
 	}
-	// 是否站在农田上
 	if f, ok := findFarm(s.xpos, s.ypos); ok {
-		// 找一个 离Kiko 最近的可以种萝卜的地方
 		rad, ok := f.findPlot(s.xpos, s.ypos)
 		if ok {
 			s.turnTo rad
@@ -1340,177 +1381,53 @@ func plant(s Sprite) {
 		}
 	}
 }
+```
 
-func water(s Sprite) {
-	if s.name != followRole {
-		return
-	}
-	if f, ok := findFarm(s.xpos, s.ypos); ok {
-		// 找一个离 Kiko 最近的萝卜
-		rad, ok := f.findPlant(s.xpos, s.ypos)
-		if ok && !rad.IsMature() {
-			s.turnTo rad
-			s.step s.distanceTo(rad)-20
-			rad.Water()
-			s.animateAndWait "浇水"
-			s.animate "默认", true
-		}
-	}
-}
+**命令解释：**
+- `func moveDir(s Sprite, dir Direction, n float64)`: 定义一个通用的移动函数，接受精灵对象、方向和距离作为参数
+- `s Sprite`: 参数，表示要移动的精灵对象
+- `dir Direction`: 参数，表示移动方向
+- `n float64`: 参数，表示移动距离
+- `if s.name != followRole`: 如果精灵的名字不等于当前跟随的角色名
+- `return`: 直接返回，不执行后续操作
+- `s.setHeading dir`: 设置精灵s的朝向为指定方向
+- `s.step n`: 让精灵s前进n步
+- `func plant(s Sprite)`: 定义一个通用的种植函数，接受精灵对象作为参数
+- `s.xpos, s.ypos`: 获取精灵s的坐标位置
+- `s.turnTo rad`: 让精灵s转向萝卜位置
+- `s.distanceTo(rad)`: 计算精灵s到萝卜的距离
 
-func harvest(s Sprite) {
-	if s.name != followRole {
-		return
-	}
-	if f, ok := findFarm(s.xpos, s.ypos); ok {
-		// 找一个离 Kiko 最近的萝卜
-		rad, ok := f.findPlant(s.xpos, s.ypos)
-		if ok && rad.IsMature() {
-			s.turnTo rad
-			s.stepTo rad
-		}
-	}
-}
-
-// Kiko 代码
-var (
-	radishNeed      int
-	radishCollected int
-)
-
-radishNeed = 3
-
+**精灵代码中的调用：**
+```xgo
 onKey KeyRight, => {
 	moveDir this, Right, 20
 }
 
-onKey KeyLeft, => {
-	moveDir this, Left, 20
-}
-
-onKey KeyUp, => {
-	moveDir this, Up, 20
-}
-
-onKey KeyDown, => {
-	moveDir this, Down, 20
-}
-
 onKey KeyQ, => {
 	plant this
-}
-
-onKey KeyW, => {
-	water this
-}
-
-onKey KeyE, => {
-	harvest this
-}
-
-onClick => {
-	followRole = name
-}
-
-// Jenny 代码
-var (
-	radishNeed      int
-	radishCollected int
-)
-
-radishNeed = 3
-
-onKey KeyRight, => {
-	moveDir this, Right, 20
-}
-
-onKey KeyLeft, => {
-	moveDir this, Left, 20
-}
-
-onKey KeyUp, => {
-	moveDir this, Up, 20
-}
-
-onKey KeyDown, => {
-	moveDir this, Down, 20
-}
-
-onKey KeyQ, => {
-	plant this
-}
-
-onKey KeyW, => {
-	water this
-}
-
-onKey KeyE, => {
-	harvest this
-}
-
-onClick => {
-	followRole = name
 }
 ```
 
 **命令解释：**
-- `var radishs []Radish = [萝卜1, 萝卜2, 萝卜3]`: 定义萝卜对象数组
-- `for v in radishs`: 遍历萝卜数组
-- `if !v.IsMature()`: 如果萝卜没有成熟
-- `water(v)`: 调用water函数浇水
-- `waitUntil v.IsMature()`: 等待萝卜成熟
-- `harvest(v)`: 调用harvest函数收获萝卜
+- `moveDir this, Right, 20`: 调用moveDir函数，传入当前精灵对象(this)、向右方向(Right)和距离20
+- `this`: 代表当前精灵对象本身
+- `plant this`: 调用plant函数，传入当前精灵对象(this)作为参数
+
+通过将函数定义在舞台中，多个精灵可以共享相同的功能代码，避免重复编写相同的逻辑。每个精灵只需要调用这些公用函数并传入自己的对象引用(`this`)即可。
+
+这种设计模式的优势：
+1. **代码复用**：避免在每个精灵中重复编写相同的功能
+2. **统一管理**：所有公用逻辑集中在舞台中，便于维护和修改
+3. **参数化**：通过传入不同的精灵对象，同一个函数可以作用于不同的精灵
+4. **权限控制**：通过`followRole`变量控制哪个精灵可以执行操作
+
+这样的函数组织方式让代码更加模块化和可维护，是编程中的良好实践。
 
 ### 练习：函数定义与调用练习
 
 练习函数定义和调用的综合应用：
 
 > 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-54/sprites/Kiko/code
-
-**练习内容：**
-掌握如何定义和使用函数来组织代码，提高代码的可读性和重用性。
-
-学习不同精灵之间如何传递信息：
-
-![Course-49](./assets/跨文件编程-2.png)
-> 课程地址：https://x.qiniu.com/editor/curator/Coding-Course-49/sprites/Kiko/code
-
-```xgo
-// 舞台代码
-var (
-	gameScore int
-	currentPlayer string
-)
-
-// Kiko 精灵代码
-onStart => {
-	currentPlayer = "Kiko"
-	gameScore = gameScore + 10
-	broadcast "scoreChanged"
-}
-
-// Jenny 精灵代码
-onMsg "scoreChanged", => {
-	say "当前得分: " + toString(gameScore)
-}
-```
-
-**练习内容：**
-通过广播和消息监听实现多精灵之间的信息交换和协作。
-
-## 综合1：游戏制作综合练习
-
-**练习：综合游戏制作**
-
-**练习内容：**
-运用前面学到的编程知识，创建一个综合性的游戏项目。
-
-## 综合2：高级游戏开发
-
-**练习：高级游戏项目**
-
-**练习内容：**
-创建更复杂的游戏，运用所有学过的编程概念和技巧。
 
 ## 综合3：最终大型游戏
 
