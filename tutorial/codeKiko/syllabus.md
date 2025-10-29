@@ -56,7 +56,7 @@
   - [条件与循环结合2](https://x.qiniu.com/editor/curator/Coding-Course-34/sprites/Kiko/code)
   - [条件与循环结合1](https://x.qiniu.com/editor/curator/Coding-Course-33/sprites/Kiko/code)
 - [7.3 复杂条件处理](https://x.qiniu.com/editor/curator/Coding-Course-35/sprites/Kiko/code)
-  - [复杂条件处理TODO](https://x.qiniu.com/editor/curator/Coding-Course-36/sprites/Kiko/code)
+  - [复杂条件处理](https://x.qiniu.com/editor/curator/Coding-Course-36/sprites/Kiko/code)
 
 ### 综合2：往期章节综合练习(4节)
   - [综合课后练习1](https://x.qiniu.com/editor/curator/Coding-Course-37/sprites/Kiko/code)
@@ -69,7 +69,7 @@
 - [8.1 键盘事件](https://x.qiniu.com/editor/curator/Coding-Course-41/sprites/Kiko/code)
 - [8.2 方向控制](https://x.qiniu.com/editor/curator/Coding-Course-42/sprites/Kiko/code)
 - [8.3 完整的方向控制](https://x.qiniu.com/editor/curator/Coding-Course-43/sprites/Kiko/code)
-- [8.4 WASD控制和点击事件](https://x.qiniu.com/editor/curator/Coding-Course-44/sprites/Kiko/code)
+- [8.4 方向控制和点击事件](https://x.qiniu.com/editor/curator/Coding-Course-44/sprites/Kiko/code)
   - [事件章节练习1](https://x.qiniu.com/editor/curator/Coding-Course-45/sprites/Kiko/code)
   - [事件章节练习2](https://x.qiniu.com/editor/curator/Coding-Course-46/sprites/Kiko/code)
 
