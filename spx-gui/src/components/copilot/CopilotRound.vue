@@ -73,7 +73,6 @@ const resultContent = computed<string | null>(() => {
 }
 
 .answer {
-  padding: 6px 16px 20px 16px;
   align-self: stretch;
 }
 
@@ -84,10 +83,6 @@ const resultContent = computed<string | null>(() => {
   gap: 4px;
   align-items: flex-start;
   font-size: 12px;
-
-  &:not(:empty) {
-    padding: 5px 20px 16px 20px;
-  }
 }
 
 .answer ~ .state {
