@@ -306,7 +306,7 @@ sequenceDiagram
 **Performance Benefits:**
 - **Inlined Files**: Zero network overhead, instant access
 - **Kodo Uploads**: CDN distribution, reliable storage
-- **Deduplication**: ~15% of files skip upload entirely
+- **Deduplication**: Files with existing universal URLs skip upload
 
 ## Cloud Deduplication & Hashing
 
