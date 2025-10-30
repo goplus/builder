@@ -25,7 +25,7 @@
 - [3.2 带停止条件的循环](https://x.qiniu.com/editor/curator/Coding-Course-28/sprites/Kiko/code)
 - [3.3 无循环体的条件等待](https://x.qiniu.com/editor/curator/Coding-Course-29/sprites/Kiko/code)
 
-### 第四章：变量 - 存储和使用数据(4+4节)
+### 第四章：变量 - 存储和使用数据(4+3节)
 - [4.1 定义和使用变量](https://x.qiniu.com/editor/curator/Coding-Course-19/sprites/Kiko/code)
 - [4.2 定义循环次数变量](https://x.qiniu.com/editor/curator/Coding-Course-20/sprites/Kiko/code)
 - [4.3 定义循环体变量](https://x.qiniu.com/editor/curator/Coding-Course-21/sprites/Kiko/code)
