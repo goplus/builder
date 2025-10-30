@@ -83,10 +83,9 @@
 
 ### 第十章：函数定义与调用 - 组织代码(3+1节)
 
-- [10.1 定义函数](https://x.qiniu.com/editor/curator/Coding-Course-52/sprites/Kiko/code)
-- [10.2 使用函数](https://x.qiniu.com/editor/curator/Coding-Course-52/sprites/Kiko/code)
-- [10.3 多角色公用函数](https://x.qiniu.com/editor/curator/Coding-Course-53/sprites/Kiko/code)
-  - [10.3.1 函数定义与调用练习](https://x.qiniu.com/editor/curator/Coding-Course-54/sprites/Kiko/code)
+- [10.1 定义函数与使用](https://x.qiniu.com/editor/curator/Coding-Course-52/sprites/Kiko/code)
+- [10.2 多角色公用函数](https://x.qiniu.com/editor/curator/Coding-Course-53/sprites/Kiko/code)
+  - [10.2.1 函数定义与调用练习](https://x.qiniu.com/editor/curator/Coding-Course-54/sprites/Kiko/code)
 
 ### 综合3：最终大型游戏(1节)
   - [综合3：综合练习大型](https://x.qiniu.com/editor/curator/Coding-Course-55/sprites/Kiko/code)
