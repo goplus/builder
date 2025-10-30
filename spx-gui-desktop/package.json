@@ -1,0 +1,35 @@
+{
+  "name": "spx-gui-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "build": "npx tsup -d . --external electron main.ts preload.ts",
+    "dev": "npm run build && electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "author": "nighca",
+  "license": "ISC",
+  "description": "Desktop version for XBuilder",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^24.7.2",
+    "electron": "^38.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "electron-squirrel-startup": "^1.0.1"
+  }
+}
