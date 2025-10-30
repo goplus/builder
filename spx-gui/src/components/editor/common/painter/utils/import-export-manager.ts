@@ -54,7 +54,7 @@ export class ImportExportManager {
    * 导出当前画布为SVG
    */
   exportSvg(options: ExportOptions = {}): string | null {
-    const { embedImages = true, bounds = paper.view.bounds } = options
+    const { embedImages = true, bounds } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -66,10 +66,13 @@ export class ImportExportManager {
       this.hideControlPointsForExport()
       const prevVisible = this.hideBackgroundForExport()
 
+      // 使用提供的bounds，如果没有提供则使用activeLayer的bounds（所有内容的边界）
+      const exportBounds = bounds || paper.project.activeLayer?.bounds
+
       const svgStr = paper.project.exportSVG({
         asString: true,
         embedImages,
-        bounds
+        bounds: exportBounds
       }) as string
 
       // 恢复背景可见性
@@ -126,8 +129,8 @@ export class ImportExportManager {
         return false
       }
 
-      // 自动调整大小并设置位置
-      this.fitItemToCanvas(importedItem, position)
+      // 设置位置（不进行缩放，保持原始尺寸）
+      this.positionItem(importedItem, position)
 
       // 收集可编辑路径
       if (updatePaths) {
@@ -178,14 +181,8 @@ export class ImportExportManager {
         return false
       }
 
-      const targetSize = new paper.Size(512, 512)
-
-      const targetBounds = new paper.Rectangle({
-        center: paper.view.center,
-        size: targetSize
-      })
-
-      importedItem.fitBounds(targetBounds)
+      // 设置位置（不进行缩放，保持 AI 生成的原始尺寸）
+      this.positionItem(importedItem, 'center')
 
       // 收集可编辑路径
       if (updatePaths) {
@@ -233,8 +230,8 @@ export class ImportExportManager {
 
       raster.onLoad = () => {
         try {
-          // 自动调整大小并设置位置
-          this.fitItemToCanvas(raster, position)
+          // 设置位置（不进行缩放，保持原始尺寸）
+          this.positionItem(raster, position)
 
           // 将图片放到最底层作为背景
           raster.sendToBack()
@@ -337,33 +334,17 @@ export class ImportExportManager {
   }
 
   /**
-   * 自动调整导入项目的大小以适应画布
+   * 设置导入项目的位置（不进行缩放）
    */
-  private fitItemToCanvas(item: paper.Item, position: 'center' | 'original' = 'center'): void {
-    if (!item || !paper.view) return
+  private positionItem(item: paper.Item, position: 'center' | 'original' = 'center'): void {
+    if (!item) return
 
-    const itemBounds = item.bounds
-    const viewBounds = paper.view.bounds
-
-    // 计算画布的可用区域
-    const availableWidth = viewBounds.width
-    const availableHeight = viewBounds.height
-
-    // 检查是否需要缩放
-    if (itemBounds.width > availableWidth || itemBounds.height > availableHeight) {
-      // 计算缩放比例，保持宽高比
-      const scaleX = availableWidth / itemBounds.width
-      const scaleY = availableHeight / itemBounds.height
-      const scale = Math.min(scaleX, scaleY)
-
-      // 应用缩放
-      item.scale(scale)
-    }
-
-    // 设置位置
+    // 只设置位置，不进行任何缩放
     if (position === 'center') {
-      item.position = paper.view.center
+      // 使用逻辑画布中心点，而不是视图中心
+      item.position = new paper.Point(this.dependencies.canvasWidth.value / 2, this.dependencies.canvasHeight.value / 2)
     }
+    // position === 'original' 时保持原始位置，什么都不做
   }
 
   /**

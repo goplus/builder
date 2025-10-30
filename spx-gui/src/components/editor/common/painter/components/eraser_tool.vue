@@ -16,6 +16,7 @@
 import { ref, inject, watch, onMounted, onUnmounted, computed } from 'vue'
 import paper from 'paper'
 import { PaperOffset } from 'paperjs-offset'
+import { projectPaperPointToView } from '../utils/coordinate-transform'
 
 const props = defineProps<{
   isActive: boolean
@@ -226,12 +227,15 @@ const handleMouseUp = (): void => {
 
 // 更新CSS光标位置
 const updateCursorPosition = (point: paper.Point): void => {
-  if (!canvasElement.value) return
+  if (!canvasElement.value || !paper.view) return
+
+  // 将项目坐标转换为视图坐标（考虑缩放）
+  const viewPoint = projectPaperPointToView(point)
 
   const canvasRect = canvasElement.value.getBoundingClientRect()
   cursorPosition.value = {
-    x: point.x + canvasRect.left,
-    y: point.y + canvasRect.top
+    x: viewPoint.x + canvasRect.left,
+    y: viewPoint.y + canvasRect.top
   }
 }
 

@@ -2,10 +2,10 @@
   <!-- 临时矩形预览 -->
   <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
     <rect
-      :x="previewRect.x"
-      :y="previewRect.y"
-      :width="previewRect.width"
-      :height="previewRect.height"
+      :x="previewRectView.x"
+      :y="previewRectView.y"
+      :width="previewRectView.width"
+      :height="previewRectView.height"
       fill="none"
       :stroke="canvasColor"
       stroke-width="3"
@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted, type Ref } from 'vue'
 import paper from 'paper'
+import { projectRectToView } from '../utils/coordinate-transform'
 // Props
 interface Props {
   canvasWidth: number
@@ -41,7 +42,7 @@ import { inject } from 'vue'
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
-// 计算预览矩形
+// 计算预览矩形（项目坐标）
 const previewRect = computed(() => {
   if (!startPoint.value) return { x: 0, y: 0, width: 0, height: 0 }
   const sx = startPoint.value.x
@@ -67,6 +68,12 @@ const previewRect = computed(() => {
     return { x, y, width: w, height: h }
   }
 })
+
+// 将项目坐标的矩形转换为视图坐标（用于 SVG 预览）
+const previewRectView = computed(() => {
+  return projectRectToView(previewRect.value)
+})
+
 // 创建矩形/正方形路径
 const createRectangle = (rect: { x: number; y: number; width: number; height: number }): paper.Path => {
   const shape = new paper.Path.Rectangle({

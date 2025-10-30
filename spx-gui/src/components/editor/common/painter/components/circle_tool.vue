@@ -2,10 +2,10 @@
   <!-- 临时圆形预览 -->
   <svg v-if="isDrawing && startPoint" class="preview-layer" :width="canvasWidth" :height="canvasHeight">
     <ellipse
-      :cx="centerPoint.x"
-      :cy="centerPoint.y"
-      :rx="Math.abs(radiusX)"
-      :ry="Math.abs(radiusY)"
+      :cx="centerPointView.x"
+      :cy="centerPointView.y"
+      :rx="Math.abs(radiusXView)"
+      :ry="Math.abs(radiusYView)"
       fill="none"
       :stroke="canvasColor"
       stroke-width="3"
@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, type Ref } from 'vue'
 import paper from 'paper'
+import { projectToView, projectDistanceToView } from '../utils/coordinate-transform'
 
 // Props
 interface Props {
@@ -46,7 +47,7 @@ const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
-// 计算圆心和半径
+// 计算圆心和半径（项目坐标）
 const centerPoint = computed(() => {
   if (!startPoint.value || !currentPoint.value) return { x: 0, y: 0 }
   return {
@@ -63,6 +64,21 @@ const radiusX = computed(() => {
 const radiusY = computed(() => {
   if (!startPoint.value || !currentPoint.value) return 0
   return Math.abs(currentPoint.value.y - startPoint.value.y) / 2
+})
+
+// 将项目坐标转换为视图坐标（用于 SVG 预览）
+const centerPointView = computed(() => {
+  return projectToView(centerPoint.value)
+})
+
+const radiusXView = computed(() => {
+  // 计算半径在视图中的长度（考虑缩放）
+  return projectDistanceToView(radiusX.value)
+})
+
+const radiusYView = computed(() => {
+  // 计算半径在视图中的长度（考虑缩放）
+  return projectDistanceToView(radiusY.value)
 })
 
 // 创建圆形/椭圆路径
