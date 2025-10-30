@@ -361,6 +361,12 @@ export class Stage extends Disposable {
       if (widget == null) throw new Error(`widget ${id} not found`)
       return widget.export()
     })
+    const extraConfig = {
+      // refer to: https://github.com/goplus/spx/pull/964
+      // It should default to `true`
+      stretchMode: true,
+      ...this.extraConfig
+    }
     const config: RawStageConfig = {
       backdrops: backdropConfigs,
       backdropIndex: backdropIndex,
@@ -372,7 +378,7 @@ export class Stage extends Disposable {
       globalAirDrag: this.physics.airDrag,
       layerSortMode: this.layerSortMode,
       autoSetCollisionLayer: !this.physics.enabled,
-      ...this.extraConfig
+      ...extraConfig
     }
     return [config, files]
   }
