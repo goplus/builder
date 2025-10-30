@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { ref, watch, inject } from 'vue'
 import paper from 'paper'
+import { projectPaperPointToView } from '../utils/coordinate-transform'
 
 // 接口定义
 interface ExtendedItem extends paper.Item {
@@ -117,7 +118,8 @@ const handleMouseDown = (point: paper.Point): void => {
     if (paper.view) {
       panStartCenter.value = paper.view.center.clone()
       // 保存起始点的屏幕坐标，避免拖动时坐标系变化导致抖动
-      dragStartScreenPoint.value = paper.view.projectToView(point)
+      const viewPoint = projectPaperPointToView(point)
+      dragStartScreenPoint.value = new paper.Point(viewPoint.x, viewPoint.y)
     }
     hasMoved.value = false
   }
@@ -130,7 +132,8 @@ const handleMouseMove = (point: paper.Point): void => {
   // 处理画布拖拽
   if (isPanningCanvas.value && panStartCenter.value && dragStartScreenPoint.value && paper.view) {
     // 将当前鼠标的项目坐标转换为屏幕坐标
-    const currentScreenPoint = paper.view.projectToView(point)
+    const viewPoint = projectPaperPointToView(point)
+    const currentScreenPoint = new paper.Point(viewPoint.x, viewPoint.y)
 
     // 在屏幕坐标系中计算差值（避免因 view.center 变化导致坐标系抖动）
     const screenDelta = currentScreenPoint.subtract(dragStartScreenPoint.value)

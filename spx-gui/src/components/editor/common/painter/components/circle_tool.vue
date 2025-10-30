@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, type Ref } from 'vue'
 import paper from 'paper'
+import { projectToView, projectDistanceToView } from '../utils/coordinate-transform'
 
 // Props
 interface Props {
@@ -67,23 +68,17 @@ const radiusY = computed(() => {
 
 // 将项目坐标转换为视图坐标（用于 SVG 预览）
 const centerPointView = computed(() => {
-  if (!paper.view) return { x: 0, y: 0 }
-  const center = centerPoint.value
-  const point = new paper.Point(center.x, center.y)
-  const viewPoint = paper.view.projectToView(point)
-  return { x: viewPoint.x, y: viewPoint.y }
+  return projectToView(centerPoint.value)
 })
 
 const radiusXView = computed(() => {
-  if (!paper.view) return 0
   // 计算半径在视图中的长度（考虑缩放）
-  return radiusX.value * paper.view.zoom
+  return projectDistanceToView(radiusX.value)
 })
 
 const radiusYView = computed(() => {
-  if (!paper.view) return 0
   // 计算半径在视图中的长度（考虑缩放）
-  return radiusY.value * paper.view.zoom
+  return projectDistanceToView(radiusY.value)
 })
 
 // 创建圆形/椭圆路径

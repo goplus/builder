@@ -8,6 +8,7 @@
 <script setup lang="ts">
 import { inject, ref, type Ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import paper from 'paper'
+import { projectPaperPointToView } from '../utils/coordinate-transform'
 
 // Props
 interface Props {
@@ -45,7 +46,7 @@ const updateCursorPosition = (point: paper.Point): void => {
   if (!canvasElement.value || !paper.view) return
 
   // 将项目坐标转换为视图坐标（考虑缩放）
-  const viewPoint = paper.view.projectToView(point)
+  const viewPoint = projectPaperPointToView(point)
 
   const canvasRect = canvasElement.value.getBoundingClientRect()
   cursorPosition.value = {

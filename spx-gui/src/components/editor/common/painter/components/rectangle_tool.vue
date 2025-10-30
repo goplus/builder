@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted, type Ref } from 'vue'
 import paper from 'paper'
+import { projectRectToView } from '../utils/coordinate-transform'
 // Props
 interface Props {
   canvasWidth: number
@@ -70,23 +71,7 @@ const previewRect = computed(() => {
 
 // 将项目坐标的矩形转换为视图坐标（用于 SVG 预览）
 const previewRectView = computed(() => {
-  if (!paper.view) return { x: 0, y: 0, width: 0, height: 0 }
-
-  const rect = previewRect.value
-  // 左上角和右下角的项目坐标
-  const topLeft = new paper.Point(rect.x, rect.y)
-  const bottomRight = new paper.Point(rect.x + rect.width, rect.y + rect.height)
-
-  // 转换为视图坐标
-  const topLeftView = paper.view.projectToView(topLeft)
-  const bottomRightView = paper.view.projectToView(bottomRight)
-
-  return {
-    x: topLeftView.x,
-    y: topLeftView.y,
-    width: bottomRightView.x - topLeftView.x,
-    height: bottomRightView.y - topLeftView.y
-  }
+  return projectRectToView(previewRect.value)
 })
 
 // 创建矩形/正方形路径

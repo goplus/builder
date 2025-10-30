@@ -16,6 +16,7 @@
 <script setup lang="ts">
 import { type Ref, ref, watch, computed } from 'vue'
 import paper from 'paper'
+import { projectToView } from '../utils/coordinate-transform'
 
 // Props
 interface Props {
@@ -54,17 +55,12 @@ const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 将项目坐标转换为视图坐标（用于 SVG 预览）
 const startPointView = computed(() => {
-  if (!startPoint.value || !paper.view) return { x: 0, y: 0 }
-  const point = new paper.Point(startPoint.value.x, startPoint.value.y)
-  const viewPoint = paper.view.projectToView(point)
-  return { x: viewPoint.x, y: viewPoint.y }
+  if (!startPoint.value) return { x: 0, y: 0 }
+  return projectToView(startPoint.value)
 })
 
 const previewPointView = computed(() => {
-  if (!paper.view) return { x: 0, y: 0 }
-  const point = new paper.Point(previewPoint.value.x, previewPoint.value.y)
-  const viewPoint = paper.view.projectToView(point)
-  return { x: viewPoint.x, y: viewPoint.y }
+  return projectToView(previewPoint.value)
 })
 
 // 创建直线路径
