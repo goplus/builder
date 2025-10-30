@@ -397,6 +397,6 @@ The `Project` class (`src/models/project/index.ts`) provides a unified interface
 ```typescript
 class Project {
   async load(metadata: Metadata, files: Files): Promise<void>
-  async export(): Promise<{ metadata: Metadata; files: Files }>
+  async export(): Promise<[Metadata, Files]>
 }
 ```
