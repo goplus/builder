@@ -2,7 +2,7 @@
 import { ownerAll } from '@/apis/common'
 import { getCourse, listCourse } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
-import { orderBy, useTutorial } from '@/components/tutorials/tutorial'
+import { defaultCoursesPageSize, orderBy, useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import { composeQuery, useQuery } from '@/utils/query'
 
@@ -19,7 +19,11 @@ const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSerie
 })
 const coursesQuery = useQuery(
   async () => {
-    const { data } = await listCourse({ courseSeriesID: props.courseSeriesId, owner: ownerAll })
+    const { data } = await listCourse({
+      courseSeriesID: props.courseSeriesId,
+      owner: ownerAll,
+      pageSize: defaultCoursesPageSize
+    })
     return data
   },
   { en: 'Failed to load courses', zh: '加载课程列表失败' }
@@ -36,7 +40,7 @@ const allQueryRet = useQuery(
       composeQuery(ctx, coursesQuery, [{ en: 'Loading courses...', zh: '加载课程列表...' }, 1]),
       composeQuery(ctx, courseQuery, [{ en: 'Loading course...', zh: '加载课程...' }, 1])
     ])
-    tutorial.startCourse(course, { ...courseSeries, courses: orderBy(courses, courseSeries.courseIDs) })
+    await tutorial.startCourse(course, { ...courseSeries, courses: orderBy(courses, courseSeries.courseIDs) })
   },
   {
     en: 'Failed to start course',

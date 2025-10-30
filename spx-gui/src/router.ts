@@ -120,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/tutorials/index.vue')
   },
   {
-    path: '/tutorials/:courseSeriesId/:courseId/start',
+    path: '/course/:courseSeriesId/:courseId/start',
     component: () => import('@/pages/tutorials/course-start.vue'),
     props: true
   },

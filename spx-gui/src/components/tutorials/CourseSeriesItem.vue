@@ -2,7 +2,7 @@
 import { listCourse } from '@/apis/course'
 import { useQuery } from '@/utils/query'
 import { ownerAll } from '@/apis/common'
-import { orderBy } from './tutorial'
+import { defaultCoursesPageSize, orderBy } from './tutorial'
 
 import { UIEmpty } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -15,7 +15,11 @@ const props = defineProps<{
 
 const courseQuery = useQuery(
   async () => {
-    const { data } = await listCourse({ courseSeriesID: props.courseSeriesId, owner: ownerAll })
+    const { data } = await listCourse({
+      courseSeriesID: props.courseSeriesId,
+      owner: ownerAll,
+      pageSize: defaultCoursesPageSize
+    })
     return orderBy(data, props.courseIDs)
   },
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
