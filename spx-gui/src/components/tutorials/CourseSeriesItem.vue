@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { listCourse, type Course } from '@/apis/course'
+import { listCourse } from '@/apis/course'
 import { useQuery } from '@/utils/query'
 import { ownerAll } from '@/apis/common'
+import { orderBy } from './tutorial'
 
 import { UIEmpty } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -11,11 +12,6 @@ const props = defineProps<{
   courseIDs?: string[]
   title: string
 }>()
-
-function orderBy(courses: Course[], courseIDs?: string[]) {
-  if (!courseIDs) return courses
-  return courses.sort((a, b) => courseIDs.indexOf(a.id) - courseIDs.indexOf(b.id))
-}
 
 const courseQuery = useQuery(
   async () => {
