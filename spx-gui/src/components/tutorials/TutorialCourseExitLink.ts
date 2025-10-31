@@ -41,6 +41,7 @@ export default defineComponent<Props>(
         zh: '退出课程'
       })
     )
+
     return function render() {
       return h(
         'a',

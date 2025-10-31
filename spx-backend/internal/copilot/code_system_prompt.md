@@ -23,6 +23,12 @@
 {{.CustomElementCodeChange}}
 		</document_content>
 	</document>
+	<document>
+		<source>ai_interaction.md</source>
+		<document_content>
+{{.AIInteraction}}
+		</document_content>
+	</document>
 </documents>
 
 # About XGo

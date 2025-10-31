@@ -10,6 +10,7 @@ import * as apis from '@/apis/copilot'
 import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './tool-executor'
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
+import dayjs from 'dayjs'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -134,6 +135,7 @@ type RoundExported = {
   inProgressCopilotMessageContent: string | null
   error: LocaleMessage | null
   state: RoundState
+  updatedAt?: number
 }
 
 export class Round {
@@ -147,10 +149,17 @@ export class Round {
   get error() {
     return this.errorRef.value
   }
+
+  /** When the round state changes, consider whether `updatedAt` needs to be updated. */
   private stateRef = ref(RoundState.Initialized)
   get state() {
     return this.stateRef.value
   }
+  private setState(state: RoundState) {
+    this.stateRef.value = state
+    this.updatedAt = dayjs().valueOf()
+  }
+
   private ctrl = new AbortController()
 
   constructor(
@@ -159,7 +168,14 @@ export class Round {
     private session: Session
   ) {
     this.userMessage = userMessage
+    this.updatedAt = dayjs().valueOf()
   }
+
+  /**
+   * Not all `state changes` require updating `updatedAt`.
+   * For example, when restoring from `load` function, the state change describes a previous state and does not represent new user interaction.
+   */
+  updatedAt: number
 
   export(): RoundExported {
     return {
@@ -167,7 +183,8 @@ export class Round {
       resultMessages: this.resultMessages,
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
-      state: this.state
+      state: this.state,
+      updatedAt: this.updatedAt
     }
   }
 
@@ -176,6 +193,7 @@ export class Round {
     round.resultMessages.push(...exported.resultMessages)
     round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
     round.errorRef.value = exported.error
+    round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -200,7 +218,7 @@ export class Round {
   }
 
   private completeRound() {
-    this.stateRef.value = RoundState.Completed
+    this.setState(RoundState.Completed)
   }
 
   private handleResponseError(err: unknown) {
@@ -210,14 +228,14 @@ export class Round {
       this.ctrl.abort(err)
     }
     if (err instanceof Cancelled) {
-      this.stateRef.value = RoundState.Cancelled
+      this.setState(RoundState.Cancelled)
       return
     }
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
     }).userMessage
-    this.stateRef.value = RoundState.Failed
+    this.setState(RoundState.Failed)
   }
 
   private async handleCopilotMessage(message: CopilotMessage) {
@@ -263,7 +281,7 @@ export class Round {
       for await (const chunk of result) {
         if (this.inProgressCopilotMessageContentRef.value == null) {
           this.inProgressCopilotMessageContentRef.value = ''
-          this.stateRef.value = RoundState.InProgress
+          this.setState(RoundState.InProgress)
         }
         this.inProgressCopilotMessageContentRef.value += chunk
       }
@@ -278,7 +296,7 @@ export class Round {
     this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
-    this.stateRef.value = RoundState.Loading
+    this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
   }
@@ -296,7 +314,7 @@ export class Round {
 }
 
 // NOTE: Keep backward compatibility of `SessionExported` to avoid errors when loading old sessions.
-type SessionExported = {
+export type SessionExported = {
   topic: Topic
   rounds: RoundExported[]
 }
@@ -431,10 +449,17 @@ function stringifyZodSchema(schema: ZodTypeAny): string {
   return JSON.stringify(pruned)
 }
 
-export interface IStorage {
-  set(value: string | null): void
-  get(): string | null
+export interface ISessionExportedStorage {
+  set(value: SessionExported | null): void
+  get(): SessionExported | null
 }
+
+/**
+ * The maximum idle time (in milliseconds) allowed after the last Round state change.
+ * If the time since the last round update exceeds this value, the session will be ended upon reopening.
+ * Defaults to 2 hours.
+ */
+const defaultIdleTimeout = 2 * 60 * 60 * 1000
 
 const defaultTopic: Topic = {
   title: { en: 'New chat', zh: '新会话' },
@@ -564,23 +589,39 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     if (userMessage != null) session.addUserMessage(userMessage as UserMessage)
   }
 
-  syncSessionWith(storage: IStorage): void {
+  /**
+   * Check for idle timeout when copilot is reopened, ending the session if idle too long
+   */
+  private checkIdleTimeout() {
+    const session = this.currentSession
+    if (session == null || this.activeRef.value) return
+
+    const lastRoundUpdatedTime = session.currentRound?.updatedAt
+    if (lastRoundUpdatedTime == null) return
+
+    // Check idle timeout when reopening copilot
+    // Terminates session if lastRoundUpdatedTime is too old (user was idle for too long)
+    if (dayjs().valueOf() - lastRoundUpdatedTime > defaultIdleTimeout) {
+      this.endCurrentSession()
+    }
+  }
+
+  syncSessionWith(storage: ISessionExportedStorage): void {
     try {
       const saved = storage.get()
       if (saved != null) {
-        const sessionExported = JSON.parse(saved) as SessionExported
-        this.currentSessionRef.value = Session.load(sessionExported, this)
+        this.currentSessionRef.value = Session.load(saved, this)
       }
     } catch (e) {
       capture(e, 'Failed to load session from storage')
     }
+
     this.addDisposer(
       watch(
         () => this.currentSession?.export() ?? null,
         // inProgressCopilotMessageContent may change quite often when streaming, so we throttle the save operation
         throttle((exported: SessionExported | null) => {
-          const toSave = exported == null ? null : JSON.stringify(exported)
-          storage.set(toSave)
+          storage.set(exported)
         }, 300)
       )
     )
@@ -592,7 +633,9 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSessionRef.value = null
   }
 
+  /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
+    this.checkIdleTimeout()
     this.activeRef.value = true
   }
 
@@ -624,6 +667,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If no session is running, nothing will happen.
    */
   notifyUserEvent(name: LocaleMessage, detail: string): void {
+    this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
     this.open()

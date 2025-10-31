@@ -43,3 +43,11 @@ var aboutXBuilder string
 func AboutXBuilder() string {
 	return aboutXBuilder
 }
+
+//go:embed ai_interaction.md
+var aiInteraction string
+
+// AIInteraction returns AI Interaction knowledge.
+func AIInteraction() string {
+	return aiInteraction
+}

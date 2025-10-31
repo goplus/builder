@@ -64,3 +64,9 @@ export type ListCourseParams = PaginationParams & {
 export async function listCourse(params: ListCourseParams, signal?: AbortSignal) {
   return client.get('/courses/list', params, { signal }) as Promise<ByPage<Course>>
 }
+
+/** Get all courses that match the given filters; returns at most 100 items. */
+export async function listAllCourses(params: Omit<ListCourseParams, keyof PaginationParams>, signal?: AbortSignal) {
+  const { data } = await listCourse({ ...params, pageIndex: 1, pageSize: 100 }, signal)
+  return data
+}
