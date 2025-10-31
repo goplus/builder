@@ -18,6 +18,11 @@ export type CourseSeriesWithCourses = CourseSeries & {
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
+export function orderBy(courses: Course[], courseIDs?: string[]) {
+  if (!courseIDs) return courses
+  return [...courses].sort((a, b) => courseIDs.indexOf(a.id) - courseIDs.indexOf(b.id))
+}
+
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
   if (tutorial == null) {
