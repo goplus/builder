@@ -10,6 +10,7 @@ import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import * as tutorialCourseSuccess from './TutorialCourseSuccess.vue'
 import * as tutorialCourseExitLink from './TutorialCourseExitLink'
 import * as tutorialStateIndicator from './TutorialStateIndicator.vue'
+import { tutorialCourseAbandonPrediction, tutorialCourseAbandonDismissal } from './tutorial-course-abandon'
 
 const i18n = useI18n()
 const copilot = useCopilot()
@@ -37,6 +38,9 @@ onUnmounted(
     component: tutorialCourseExitLink.default
   })
 )
+
+onUnmounted(copilot.registerCustomElement(tutorialCourseAbandonPrediction))
+onUnmounted(copilot.registerCustomElement(tutorialCourseAbandonDismissal))
 
 onUnmounted(copilot.registerStateIndicatorComponent(tutorialStateIndicator.name, tutorialStateIndicator.default))
 

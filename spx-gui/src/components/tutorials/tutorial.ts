@@ -1,8 +1,9 @@
-import { inject, provide } from 'vue'
+import { inject, provide, ref } from 'vue'
 import type { InjectionKey, Ref } from 'vue'
 import type { Router } from 'vue-router'
 
 import { timeout, until } from '@/utils/utils'
+import { userLocalStorageRef } from '@/utils/user-storage'
 import type { Copilot, Topic } from '@/components/copilot/copilot'
 import { tagName as highlightLinkTagName } from '@/components/copilot/custom-elements/HighlightLink.vue'
 import type { Course } from '@/apis/course'
@@ -10,7 +11,7 @@ import type { CourseSeries } from '@/apis/course-series'
 
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
-import { useUserLocalStorageRef } from '@/utils/user-storage'
+import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -44,8 +45,8 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
 }
 
 export class Tutorial {
-  private course = useUserLocalStorageRef<Course | null>('spx-gui-tutorial-course', null)
-  private series = useUserLocalStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
+  private course = userLocalStorageRef<Course | null>('spx-gui-tutorial-course', null)
+  private series = userLocalStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
 
   constructor(
     private copilot: Copilot,
@@ -61,11 +62,20 @@ export class Tutorial {
     return this.series.value
   }
 
+  private abandonPredictionCountRef = ref(0)
+  predictAbandon() {
+    return ++this.abandonPredictionCountRef.value
+  }
+  dismissAbandon() {
+    this.abandonPredictionCountRef.value = 0
+  }
+
   async startCourse(course: Course, series: CourseSeriesWithCourses): Promise<void> {
     try {
-      this.endCurrentCourse()
+      this.copilot.endCurrentSession()
       this.course.value = course
       this.series.value = series
+      this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course
 
@@ -139,13 +149,22 @@ Then guide the user through each step. For each step:
 
 If all steps are completed according to the criteria, invoke a success dialog using <${tutorialCourseSuccessTagName} />.
 
+**Course Abandon-Prediction and Dismissal**
+**Rules:**
+Predict abandon when:
+1. **Path Deviation**: User repeatedly interacts with UI elements/pages unrelated to the current step's <${highlightLinkTagName}> target or course scope.
+2. **Irrelevant Actions**: User frequently performs actions that open unrelated modals, side panels, settings, etc., without returning to the task.
+
+**Protocol:**
+When deviation is detected based on the rules above, insert <${tutorialCourseAbandonPrediction.tagName} /> in your response.
+When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonDismissal.tagName} /> in your response to dismiss and continue.
+
 When coding tasks are involved:
 
 * If a project reference is available for the course, treat it as the standard answer.
 * Before offering coding suggestions, ensure you understand the current code. If not, use appropriate tools to review it first.
 * Avoid giving complete solution code directly. Instead, guide the user step-by-step with hints and explanations.
 * Prefer to insert code by dragging corresponding items (if available) from "API References" into the code editor over providing manual code snippets.
-* If you found the user is navigated outside editor for the correct project, prompt them to return or suggest exiting the course if desired.
 
 When tool result received:
 
@@ -203,8 +222,10 @@ This is an example for messages between you and the user in a course:
   }
 
   endCurrentCourse() {
+    this.copilot.close()
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
+    this.abandonPredictionCountRef.value = 0
   }
 }
