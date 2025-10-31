@@ -633,6 +633,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
     this.currentSessionRef.value = null
   }
 
+  /** Open copilot, checks idle timeout and may end the current session if conditions are met */
   open() {
     this.checkIdleTimeout()
     this.activeRef.value = true

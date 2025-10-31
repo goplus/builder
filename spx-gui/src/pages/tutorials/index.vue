@@ -25,7 +25,7 @@
                 v-for="course in courseList"
                 :key="course.id"
                 :href="`/course/${courseSeries.id}/${course.id}/start`"
-                @click.prevent="handleCourseClick(course, courseSeries, courseList)"
+                @click="handleCourseClick($event, course, courseSeries, courseList)"
               >
                 <CourseItem :course="course" />
               </a>
@@ -73,7 +73,12 @@ const courseSeriesQuery = useQuery(
   { en: 'Failed to load course series', zh: '加载课程系列失败' }
 )
 
-function handleCourseClick(course: Course, courseSeries: CourseSeries, courseList: Course[]) {
+function handleCourseClick(event: MouseEvent, course: Course, courseSeries: CourseSeries, courseList: Course[]) {
+  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
+    return
+  }
+
+  event.preventDefault()
   tutorial.startCourse(course, {
     ...courseSeries,
     courses: courseList
