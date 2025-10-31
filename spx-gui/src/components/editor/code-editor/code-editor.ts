@@ -528,6 +528,10 @@ class HoverProvider implements IHoverProvider {
     }
     const lspHover = await this.lspClient.textDocumentHover({ signal: ctx.signal }, lspParams)
     if (lspHover == null) return null
+    // LS may return hover info for a range that doesn't include the position (See details in https://github.com/goplus/builder/issues/2043).
+    // That may introduce inconsistency when there are also other hover UI sources (e.g., diagnostics, resource-references).
+    // So we drop such hover info here.
+    if (lspHover.range != null && !containsPosition(fromLSPRange(lspHover.range), position)) return null
     const contents: DefinitionDocumentationString[] = []
     if (lsp.MarkupContent.is(lspHover.contents)) {
       // For now, we support MarkupContent only

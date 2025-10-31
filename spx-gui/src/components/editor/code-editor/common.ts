@@ -13,6 +13,14 @@ import { Animation } from '@/models/animation'
 import { isWidget } from '@/models/widget'
 import { stageCodeFilePaths } from '@/models/stage'
 
+/**
+ * Position stands for the position of a **character** in the document.
+ * As LSP / Monaco position is "between two characters like an ‘insert’ cursor in an editor",
+ * we use the "cursor" position before the character when converting between our Position and LSP / Monaco position.
+ * See details in
+ * - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#position
+ * - https://microsoft.github.io/monaco-editor/docs.html#interfaces/IPosition.html#column
+ */
 export type Position = {
   /** The line number, starting from `1` */
   line: number
@@ -21,7 +29,9 @@ export type Position = {
 }
 
 export type Range = {
+  /** The range's start position, inclusive */
   start: Position
+  /** The range's end position, exclusive */
   end: Position
 }
 
@@ -456,7 +466,7 @@ export function isSelectionEmpty(selection: Selection | null) {
 export function containsPosition(range: Range, position: Position) {
   if (position.line < range.start.line || position.line > range.end.line) return false
   if (position.line === range.start.line && position.column < range.start.column) return false
-  if (position.line === range.end.line && position.column > range.end.column) return false
+  if (position.line === range.end.line && position.column >= range.end.column) return false
   return true
 }
 
@@ -830,7 +840,10 @@ export function rangeEq(a: Range | null, b: Range | null) {
 }
 
 export function rangeContains(a: Range, b: Range) {
-  return containsPosition(a, b.start) && containsPosition(a, b.end)
+  return (
+    (positionEq(a.start, b.start) || positionAfter(b.start, a.start)) &&
+    (positionEq(a.end, b.end) || positionAfter(a.end, b.end))
+  )
 }
 
 const textDocumentURIPrefix = 'file:///'
