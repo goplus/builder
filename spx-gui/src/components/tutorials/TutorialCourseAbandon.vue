@@ -8,46 +8,42 @@ export const isRaw = false
 export const detailedDescription = `
 Triggers course abandonment handling logic.
 **Usage**:
-- Trigger abandonment: <${tagName} type="abandon" />
-- Dismiss abandonment: <${tagName} type="resume" />
+- Trigger abandonment prediction: <${tagName} type="predicted" />
+- Dismiss abandonment prediction: <${tagName} type="dismissed" />
 **Constraints**:
 - MUST be placed at the **last line** of your message.
 - Use at most ONCE per message.
-- After dismissing with \`type="resume"\`, do NOT use again until next abandonment.
+- After dismissing with \`type="dismissed"\`, do NOT use again until next abandonment.
 `
 
 export const attributes = z.object({
-  type: z.enum(['abandon', 'resume']).default('abandon')
+  type: z.enum(['predicted', 'dismissed']).default('predicted')
 })
 
-// Maximum number of abandonment events before automatically ending the course
+// Maximum number of consecutive abandonment predictions allowed before automatically ending the course
 const maxAbandonCount = 3
 </script>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
-
 import { useTutorial } from './tutorial'
 
 const props = withDefaults(
   defineProps<{
-    type?: 'abandon' | 'resume'
+    type: 'predicted' | 'dismissed'
   }>(),
   {
-    type: 'abandon'
+    type: 'predicted'
   }
 )
 
-const copilot = useCopilot()
 const tutorial = useTutorial()
 
 onMounted(async () => {
-  if (props.type === 'abandon') {
+  if (props.type === 'predicted') {
     const count = tutorial.abandon()
     if (count > maxAbandonCount) {
-      copilot.close()
       tutorial.endCurrentCourse()
     }
   } else {

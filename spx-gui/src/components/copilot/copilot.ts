@@ -149,6 +149,8 @@ export class Round {
   get error() {
     return this.errorRef.value
   }
+
+  /** When the round state changes, consider whether `updatedAt` needs to be updated. */
   private stateRef = ref(RoundState.Initialized)
   get state() {
     return this.stateRef.value
@@ -169,7 +171,10 @@ export class Round {
     this.updatedAt = dayjs().valueOf()
   }
 
-  /** When the round state changes, consider whether an update is needed. */
+  /**
+   * Not all `state changes` require updating `updatedAt`.
+   * For example, when restoring from `load` function, the state change describes a previous state and does not represent new user interaction.
+   */
   updatedAt: number
 
   export(): RoundExported {
@@ -483,7 +488,6 @@ export class Copilot extends Disposable {
 
   constructor(public generator: IMessageStreamGenerator = apis) {
     super()
-    this.syncIdleTimeout()
   }
 
   /** If copilot is active (the panel is visible) */
@@ -588,27 +592,18 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   /**
    * Check for idle timeout when copilot is reopened, ending the session if idle too long
    */
-  syncIdleTimeout() {
-    this.addDisposer(
-      watch(
-        () => this.active,
-        (value, oldValue) => {
-          const session = this.currentSession
-          if (session == null) return
+  private checkIdleTimeout() {
+    const session = this.currentSession
+    if (session == null) return
 
-          const lastRoundUpdatedTime = session.currentRound?.updatedAt
-          if (lastRoundUpdatedTime == null) return
+    const lastRoundUpdatedTime = session.currentRound?.updatedAt
+    if (lastRoundUpdatedTime == null) return
 
-          // Check idle timeout when reopening copilot
-          // Terminates session if lastRoundUpdatedTime is too old (user was idle for too long)
-          if (value && oldValue === false) {
-            if (dayjs().valueOf() - lastRoundUpdatedTime > defaultIdleTimeout) {
-              this.endCurrentSession()
-            }
-          }
-        }
-      )
-    )
+    // Check idle timeout when reopening copilot
+    // Terminates session if lastRoundUpdatedTime is too old (user was idle for too long)
+    if (dayjs().valueOf() - lastRoundUpdatedTime > defaultIdleTimeout) {
+      this.endCurrentSession()
+    }
   }
 
   syncSessionWith(storage: ISessionExportedStorage): void {
@@ -639,6 +634,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
   }
 
   open() {
+    this.checkIdleTimeout()
     this.activeRef.value = true
   }
 

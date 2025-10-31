@@ -151,8 +151,8 @@ Predict abandonment based on:
 2. **Irrelevant Actions**: User frequently performs actions that open unrelated modals, side panels, settings, etc., without a prompt return to the task.
 
 **Protocol:**
-When abandonment is predicted based on the rules above, insert <${tutorialCourseAbandonTagName} type="abandon" /> in your response.
-When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonTagName} type="resume" /> in your response to dismiss the prompt and continue.
+When abandonment is predicted based on the rules above, insert <${tutorialCourseAbandonTagName} type="predicted" /> in your response.
+When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonTagName} type="dismissed" /> in your response to dismiss the prompt and continue.
 
 When coding tasks are involved:
 
