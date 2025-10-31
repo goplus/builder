@@ -20,12 +20,15 @@
             :title="courseSeries.title"
           >
             <template #default="{ data: courseList }">
-              <CourseItem
+              <!-- a tag are used for: link preview on hover, context menu support, and better accessibility -->
+              <a
                 v-for="course in courseList"
                 :key="course.id"
-                :course="course"
-                @click="handleCourseClick(course, courseSeries, courseList)"
-              />
+                :href="`/course/${courseSeries.id}/${course.id}/start`"
+                @click.prevent="handleCourseClick(course, courseSeries, courseList)"
+              >
+                <CourseItem :course="course" />
+              </a>
             </template>
           </CourseSeriesItem>
         </ul>
