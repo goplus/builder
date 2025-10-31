@@ -68,8 +68,8 @@ const { fn: handleExitTutorial } = useMessageHandle(
     color: var(--ui-color-primary-main);
   }
   .icon-arrow {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     transform: rotate(180deg);
     color: var(--ui-color-primary-main);
   }
