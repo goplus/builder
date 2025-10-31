@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { listCourse } from '@/apis/course'
+import { listAllCourses } from '@/apis/course'
 import { useQuery } from '@/utils/query'
 import { ownerAll } from '@/apis/common'
-import { defaultCoursesPageSize, orderBy } from './tutorial'
+import { orderBy } from './tutorial'
 
 import { UIEmpty } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -15,10 +15,9 @@ const props = defineProps<{
 
 const courseQuery = useQuery(
   async () => {
-    const { data } = await listCourse({
+    const data = await listAllCourses({
       courseSeriesID: props.courseSeriesId,
-      owner: ownerAll,
-      pageSize: defaultCoursesPageSize
+      owner: ownerAll
     })
     return orderBy(data, props.courseIDs)
   },

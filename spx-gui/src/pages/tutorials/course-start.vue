@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ownerAll } from '@/apis/common'
-import { getCourse, listCourse } from '@/apis/course'
+import { getCourse, listAllCourses } from '@/apis/course'
 import { getCourseSeries } from '@/apis/course-series'
-import { defaultCoursesPageSize, orderBy, useTutorial } from '@/components/tutorials/tutorial'
+import { orderBy, useTutorial } from '@/components/tutorials/tutorial'
 import { UIDetailedLoading, UIError } from '@/components/ui'
 import { composeQuery, useQuery } from '@/utils/query'
 
@@ -19,10 +19,9 @@ const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSerie
 })
 const coursesQuery = useQuery(
   async () => {
-    const { data } = await listCourse({
+    const data = await listAllCourses({
       courseSeriesID: props.courseSeriesId,
-      owner: ownerAll,
-      pageSize: defaultCoursesPageSize
+      owner: ownerAll
     })
     return data
   },

@@ -16,9 +16,6 @@ export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
 }
 
-// TODO: temp value
-export const defaultCoursesPageSize = 100
-
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 
 export function orderBy(courses: Course[], courseIDs?: string[]) {
