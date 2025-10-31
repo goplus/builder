@@ -11,7 +11,7 @@ import type { CourseSeries } from '@/apis/course-series'
 
 import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue'
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
-import { tagName as tutorialCourseAbandonTagName } from './TutorialCourseAbandon.vue'
+import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
 export type CourseSeriesWithCourses = CourseSeries & {
   courses: Course[]
@@ -57,12 +57,12 @@ export class Tutorial {
     return this.series.value
   }
 
-  private suspectedAbandonCountRef = ref(0)
-  abandon() {
-    return ++this.suspectedAbandonCountRef.value
+  private abandonPredictionCountRef = ref(0)
+  predictAbandon() {
+    return ++this.abandonPredictionCountRef.value
   }
   dismissAbandon() {
-    this.suspectedAbandonCountRef.value = 0
+    this.abandonPredictionCountRef.value = 0
   }
 
   async startCourse(course: Course, series: CourseSeriesWithCourses): Promise<void> {
@@ -70,7 +70,7 @@ export class Tutorial {
       this.copilot.endCurrentSession()
       this.course.value = course
       this.series.value = series
-      this.suspectedAbandonCountRef.value = 0
+      this.abandonPredictionCountRef.value = 0
 
       const { entrypoint } = course
 
@@ -144,15 +144,15 @@ Then guide the user through each step. For each step:
 
 If all steps are completed according to the criteria, invoke a success dialog using <${tutorialCourseSuccessTagName} />.
 
-**Course Abandonment Prediction and Management**
+**Course Abandon-Prediction and Dismissal**
 **Rules:**
-Predict abandonment based on:
+Predict abandon when:
 1. **Path Deviation**: User repeatedly interacts with UI elements/pages unrelated to the current step's <${highlightLinkTagName}> target or course scope.
-2. **Irrelevant Actions**: User frequently performs actions that open unrelated modals, side panels, settings, etc., without a prompt return to the task.
+2. **Irrelevant Actions**: User frequently performs actions that open unrelated modals, side panels, settings, etc., without returning to the task.
 
 **Protocol:**
-When abandonment is predicted based on the rules above, insert <${tutorialCourseAbandonTagName} type="predicted" /> in your response.
-When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonTagName} type="dismissed" /> in your response to dismiss the prompt and continue.
+When deviation is detected based on the rules above, insert <${tutorialCourseAbandonPrediction.tagName} /> in your response.
+When the user returns to the course (by clicking "return to course" or showing clear intent to continue), insert <${tutorialCourseAbandonDismissal.tagName} /> in your response to dismiss and continue.
 
 When coding tasks are involved:
 
@@ -221,6 +221,6 @@ This is an example for messages between you and the user in a course:
     this.copilot.endCurrentSession()
     this.course.value = null
     this.series.value = null
-    this.suspectedAbandonCountRef.value = 0
+    this.abandonPredictionCountRef.value = 0
   }
 }

@@ -594,7 +594,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    */
   private checkIdleTimeout() {
     const session = this.currentSession
-    if (session == null) return
+    if (session == null || this.activeRef.value) return
 
     const lastRoundUpdatedTime = session.currentRound?.updatedAt
     if (lastRoundUpdatedTime == null) return
@@ -666,6 +666,7 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
    * If no session is running, nothing will happen.
    */
   notifyUserEvent(name: LocaleMessage, detail: string): void {
+    this.checkIdleTimeout()
     if (this.currentSession == null) return
     if (this.currentSession.topic.reactToEvents === false) return
     this.open()
