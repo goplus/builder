@@ -14,6 +14,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/authz/embpdp"
 	"github.com/goplus/builder/spx-backend/internal/authz/quota"
+	"github.com/goplus/builder/spx-backend/internal/authz/rate"
 	"github.com/goplus/builder/spx-backend/internal/avatar"
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -86,8 +87,16 @@ if cfg.Redis.Addr != "" {
 	quotaTracker = quota.NewNopQuotaTracker()
 	logger.Println("using no-op quota tracker")
 }
+var rateLimiter authz.RateLimiter
+if cfg.Redis.Addr != "" {
+	rateLimiter = rate.NewRedisRateLimiter(cfg.Redis)
+	logger.Printf("using redis rate limiter at %s", cfg.Redis.GetAddr())
+} else {
+	rateLimiter = rate.NewNopRateLimiter()
+	logger.Println("using no-op rate limiter")
+}
 pdp := embpdp.New(quotaTracker)
-authorizer := authz.New(db, pdp, quotaTracker)
+authorizer := authz.New(db, pdp, quotaTracker, rateLimiter)
 
 // Initialize controller.
 ctrl, err = controller.New(context.Background(), db, cfg)

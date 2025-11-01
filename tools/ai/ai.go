@@ -114,6 +114,7 @@ func (p *Player) Think__0(msg string, context map[string]any) {
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
+
 func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout     = 45 * time.Second       // Timeout for each transport call.
@@ -164,16 +165,21 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 
 		// Call AI transport with retries.
 		var (
-			resp    Response
-			lastErr error
+			resp     Response
+			lastErr  error
+			rateGate rateLimitGate
 		)
 		for range backoffAttempts(stdContext.Background(), maxTransportAttempts, backoffBase, backoffCap) {
+			rateGate.Wait()
+
 			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), transportTimeout)
 			resp, lastErr = currentTransport.Interact(ctx, request)
 			cancel()
 			if lastErr == nil {
 				break
 			}
+
+			rateGate.Observe(lastErr)
 		}
 		if lastErr != nil {
 			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
@@ -328,14 +334,19 @@ func (p *Player) manageHistory() {
 	var (
 		archived ArchivedHistory
 		lastErr  error
+		rateGate rateLimitGate
 	)
 	for range backoffAttempts(stdContext.Background(), maxArchiveAttempts, backoffBase, backoffCap) {
+		rateGate.Wait()
+
 		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
 		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
 			break
 		}
+
+		rateGate.Observe(lastErr)
 	}
 	if lastErr != nil {
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)

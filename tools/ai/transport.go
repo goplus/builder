@@ -3,7 +3,11 @@ package ai
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 // Transport defines the interface for communicating with the AI backend.
@@ -135,4 +139,77 @@ func SetDefaultTransport(t Transport) {
 		t = &notSetTransport{}
 	}
 	defaultTransport = t
+}
+
+// RateLimitError represents a transport-level rate limiting error.
+type RateLimitError struct {
+	RetryAfter time.Duration
+	Err        error
+}
+
+// Error implements [error].
+func (rle *RateLimitError) Error() string {
+	if rle.RetryAfter > 0 {
+		if rle.Err != nil {
+			return fmt.Sprintf("rate limited (retry after %s): %v", rle.RetryAfter, rle.Err)
+		}
+		return fmt.Sprintf("rate limited (retry after %s)", rle.RetryAfter)
+	}
+	if rle.Err != nil {
+		return fmt.Sprintf("rate limited: %v", rle.Err)
+	}
+	return "rate limited"
+}
+
+// Unwrap returns the underlying error.
+func (rle *RateLimitError) Unwrap() error {
+	return rle.Err
+}
+
+// RetryAfterFromHeader converts a Retry-After header value to [time.Duration].
+func RetryAfterFromHeader(value string) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(value); err == nil {
+		if secs <= 0 {
+			return 0
+		}
+		return time.Duration(secs) * time.Second
+	}
+	if d, err := time.ParseDuration(value); err == nil {
+		if d <= 0 {
+			return 0
+		}
+		return d
+	}
+	return 0
+}
+
+// rateLimitGate coordinates Retry-After windows so callers wait until the
+// backend allows another attempt.
+type rateLimitGate struct {
+	nextAllowed time.Time
+}
+
+// Wait blocks until the next allowed time if the backend asked us to delay.
+func (rlg *rateLimitGate) Wait() {
+	wait := time.Until(rlg.nextAllowed)
+	if wait > 0 {
+		time.Sleep(wait)
+	}
+}
+
+// Observe records rate limiting hints from errors returned by the [Transport].
+func (rlg *rateLimitGate) Observe(err error) {
+	var rateErr *RateLimitError
+	if !errors.As(err, &rateErr) {
+		return
+	}
+
+	retryAt := time.Now().Add(rateErr.RetryAfter)
+	if retryAt.After(rlg.nextAllowed) {
+		rlg.nextAllowed = retryAt
+	}
 }

@@ -79,7 +79,7 @@ func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, resour
 	return nil
 }
 
-// Close closes the Redis connection.
+// Close implements [io.Closer].
 func (t *redisQuotaTracker) Close() error {
 	if c, ok := t.client.(io.Closer); ok {
 		return c.Close()

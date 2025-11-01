@@ -30,11 +30,23 @@ type UserCapabilities struct {
 	// CopilotMessageQuotaLeft is the remaining quota for copilot messages.
 	CopilotMessageQuotaLeft int64 `json:"copilotMessageQuotaLeft"`
 
+	// CopilotMessageRateLimit is the maximum number of copilot messages allowed within the rate window.
+	CopilotMessageRateLimit int64 `json:"-"`
+
+	// CopilotMessageRateWindowSeconds is the duration of the rate limiting window in seconds.
+	CopilotMessageRateWindowSeconds int64 `json:"-"`
+
 	// AIDescriptionQuota is the total quota for AI description generations.
 	AIDescriptionQuota int64 `json:"aiDescriptionQuota"`
 
 	// AIDescriptionQuotaLeft is the remaining quota for AI description generations.
 	AIDescriptionQuotaLeft int64 `json:"aiDescriptionQuotaLeft"`
+
+	// AIDescriptionRateLimit is the maximum number of AI descriptions allowed within the rate window.
+	AIDescriptionRateLimit int64 `json:"-"`
+
+	// AIDescriptionRateWindowSeconds is the duration of the rate limiting window in seconds.
+	AIDescriptionRateWindowSeconds int64 `json:"-"`
 
 	// AIInteractionTurnQuota is the total quota for AI interaction turns.
 	AIInteractionTurnQuota int64 `json:"aiInteractionTurnQuota"`
@@ -42,9 +54,21 @@ type UserCapabilities struct {
 	// AIInteractionTurnQuotaLeft is the remaining quota for AI interaction turns.
 	AIInteractionTurnQuotaLeft int64 `json:"aiInteractionTurnQuotaLeft"`
 
+	// AIInteractionTurnRateLimit is the maximum number of AI interaction turns allowed within the rate window.
+	AIInteractionTurnRateLimit int64 `json:"-"`
+
+	// AIInteractionTurnRateWindowSeconds is the duration of the rate limiting window in seconds.
+	AIInteractionTurnRateWindowSeconds int64 `json:"-"`
+
 	// AIInteractionArchiveQuota is the total quota for AI interaction archive requests.
 	AIInteractionArchiveQuota int64 `json:"aiInteractionArchiveQuota"`
 
 	// AIInteractionArchiveQuotaLeft is the remaining quota for AI interaction archive requests.
 	AIInteractionArchiveQuotaLeft int64 `json:"aiInteractionArchiveQuotaLeft"`
+
+	// AIInteractionArchiveRateLimit is the maximum number of AI interaction archive requests allowed within the rate window.
+	AIInteractionArchiveRateLimit int64 `json:"-"`
+
+	// AIInteractionArchiveRateWindowSeconds is the duration of the rate limiting window in seconds.
+	AIInteractionArchiveRateWindowSeconds int64 `json:"-"`
 }

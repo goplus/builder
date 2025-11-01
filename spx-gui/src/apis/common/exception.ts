@@ -8,13 +8,21 @@ import { Exception } from '@/utils/exception'
 export class ApiException extends Exception {
   name = 'ApiError'
   userMessage: LocaleMessage | null
+  readonly status: number | null
+  readonly retryAfterSeconds: number | null
 
   constructor(
     public code: number,
-    message: string
+    message: string,
+    options?: {
+      status?: number | null
+      retryAfterSeconds?: number | null
+    }
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
+    this.status = options?.status ?? null
+    this.retryAfterSeconds = options?.retryAfterSeconds ?? null
   }
 }
 

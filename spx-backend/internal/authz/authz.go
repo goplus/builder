@@ -13,14 +13,16 @@ type Authorizer struct {
 	db           *gorm.DB
 	pdp          PolicyDecisionPoint
 	quotaTracker QuotaTracker
+	rateLimiter  RateLimiter
 }
 
 // New creates a new [Authorizer].
-func New(db *gorm.DB, pdp PolicyDecisionPoint, quotaTracker QuotaTracker) *Authorizer {
+func New(db *gorm.DB, pdp PolicyDecisionPoint, quotaTracker QuotaTracker, rateLimiter RateLimiter) *Authorizer {
 	return &Authorizer{
 		db:           db,
 		pdp:          pdp,
 		quotaTracker: quotaTracker,
+		rateLimiter:  rateLimiter,
 	}
 }
 

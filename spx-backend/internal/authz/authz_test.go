@@ -46,20 +46,23 @@ func TestNew(t *testing.T) {
 	db := &gorm.DB{}
 	pdp := &mockPolicyDecisionPoint{}
 	quotaTracker := &mockQuotaTracker{}
+	rateLimiter := &mockRateLimiter{}
 
-	authorizer := New(db, pdp, quotaTracker)
+	authorizer := New(db, pdp, quotaTracker, rateLimiter)
 
 	require.NotNil(t, authorizer)
 	assert.Equal(t, db, authorizer.db)
 	assert.Equal(t, pdp, authorizer.pdp)
 	assert.Equal(t, quotaTracker, authorizer.quotaTracker)
+	assert.Equal(t, rateLimiter, authorizer.rateLimiter)
 }
 
 func TestAuthorizerMiddleware(t *testing.T) {
 	t.Run("NoUser", func(t *testing.T) {
 		pdp := &mockPolicyDecisionPoint{}
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
 		handler := middleware(newTestHandler(t, nil))
@@ -74,34 +77,24 @@ func TestAuthorizerMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidUser", func(t *testing.T) {
-		wantCaps := UserCapabilities{
-			CanManageAssets:               true,
-			CanUsePremiumLLM:              true,
-			CopilotMessageQuota:           1000,
-			CopilotMessageQuotaLeft:       900,
-			AIDescriptionQuota:            1000,
-			AIDescriptionQuotaLeft:        850,
-			AIInteractionTurnQuota:        24000,
-			AIInteractionTurnQuotaLeft:    23500,
-			AIInteractionArchiveQuota:     16000,
-			AIInteractionArchiveQuotaLeft: 15500,
-		}
+		caps := newTestUserCapabilities()
 
 		pdp := &mockPolicyDecisionPoint{}
 		pdp.computeUserCapabilitiesFunc = func(ctx context.Context, mUser *model.User) (UserCapabilities, error) {
 			assert.Equal(t, int64(123), mUser.ID)
 			assert.Equal(t, "test-user", mUser.Username)
-			return wantCaps, nil
+			return caps, nil
 		}
 
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, &wantCaps))
+		handler := middleware(newTestHandler(t, &caps))
 
-		testUser := newTestUser()
-		ctx := authn.NewContextWithUser(context.Background(), testUser)
+		user := newTestUser()
+		ctx := authn.NewContextWithUser(context.Background(), user)
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = req.WithContext(ctx)
 		recorder := httptest.NewRecorder()
@@ -119,13 +112,14 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		}
 
 		quotaTracker := &mockQuotaTracker{}
-		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+		rateLimiter := &mockRateLimiter{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker, rateLimiter)
 
 		middleware := authorizer.Middleware()
 		handler := middleware(newTestHandler(t, nil))
 
-		testUser := newTestUser()
-		ctx := authn.NewContextWithUser(context.Background(), testUser)
+		user := newTestUser()
+		ctx := authn.NewContextWithUser(context.Background(), user)
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = req.WithContext(ctx)
 		recorder := httptest.NewRecorder()

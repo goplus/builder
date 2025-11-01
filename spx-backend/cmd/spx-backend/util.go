@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -22,6 +24,63 @@ func ensureAuthenticatedUser(ctx *yap.Context) (mUser *model.User, ok bool) {
 		replyWithCode(ctx, errorUnauthorized)
 	}
 	return
+}
+
+// ensureQuotaLeft checks the remaining quota and replies with a 429 error if exhausted.
+func ensureQuotaLeft(ctx *yap.Context, resource authz.Resource) bool {
+	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
+	if !ok {
+		return true
+	}
+
+	var quotaLeft int64
+	switch resource {
+	case authz.ResourceCopilotMessage:
+		quotaLeft = caps.CopilotMessageQuotaLeft
+	case authz.ResourceAIDescription:
+		quotaLeft = caps.AIDescriptionQuotaLeft
+	case authz.ResourceAIInteractionTurn:
+		quotaLeft = caps.AIInteractionTurnQuotaLeft
+	case authz.ResourceAIInteractionArchive:
+		quotaLeft = caps.AIInteractionArchiveQuotaLeft
+	default:
+		return true
+	}
+	if quotaLeft <= 0 {
+		replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s quota exceeded", resource))
+		return false
+	}
+	return true
+}
+
+// consumeQuota consumes the quota for the given resource and logs failures.
+func consumeQuota(ctx *yap.Context, resource authz.Resource, amount int64) {
+	if err := authz.ConsumeQuota(ctx.Context(), resource, amount); err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to consume %s quota: %v", resource, err)
+	}
+}
+
+// ensureRateLimit checks the rate limiter and responds with a 429 if exceeded.
+func ensureRateLimit(ctx *yap.Context, resource authz.Resource) bool {
+	allowed, retryAfter, err := authz.AllowRateLimit(ctx.Context(), resource)
+	if err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to enforce %s rate limit: %v", resource, err)
+		replyWithCode(ctx, errorUnknown)
+		return false
+	}
+	if allowed {
+		return true
+	}
+	if retryAfter > 0 {
+		seconds := int(math.Ceil(retryAfter.Seconds()))
+		if seconds > 0 {
+			ctx.ResponseWriter.Header().Set("Retry-After", strconv.Itoa(seconds))
+		}
+	}
+	replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s rate limit exceeded", resource))
+	return false
 }
 
 // parseJSON parses the JSON from the request body into the target.
@@ -77,41 +136,6 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 		logger := log.GetReqLogger(ctx.Context())
 		logger.Printf("failed to handle request [%s %s]: %v", ctx.Method, ctx.URL, err)
 		replyWithCode(ctx, errorUnknown)
-	}
-}
-
-// ensureQuotaLeft checks the remaining quota and replies with a 429 error if exhausted.
-func ensureQuotaLeft(ctx *yap.Context, resource authz.Resource) bool {
-	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
-	if !ok {
-		return true
-	}
-
-	var quotaLeft int64
-	switch resource {
-	case authz.ResourceCopilotMessage:
-		quotaLeft = caps.CopilotMessageQuotaLeft
-	case authz.ResourceAIDescription:
-		quotaLeft = caps.AIDescriptionQuotaLeft
-	case authz.ResourceAIInteractionTurn:
-		quotaLeft = caps.AIInteractionTurnQuotaLeft
-	case authz.ResourceAIInteractionArchive:
-		quotaLeft = caps.AIInteractionArchiveQuotaLeft
-	default:
-		return true
-	}
-	if quotaLeft <= 0 {
-		replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s quota exceeded", resource))
-		return false
-	}
-	return true
-}
-
-// consumeQuota consumes the quota for the given resource and logs failures.
-func consumeQuota(ctx *yap.Context, resource authz.Resource, amount int64) {
-	if err := authz.ConsumeQuota(ctx.Context(), resource, amount); err != nil {
-		logger := log.GetReqLogger(ctx.Context())
-		logger.Printf("failed to consume %s quota: %v", resource, err)
 	}
 }
 

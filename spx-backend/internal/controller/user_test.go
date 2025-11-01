@@ -32,19 +32,27 @@ func newTestUser() *model.User {
 }
 
 func newContextWithTestUser(ctx context.Context) context.Context {
-	testUser := newTestUser()
-	ctx = authn.NewContextWithUser(ctx, testUser)
+	user := newTestUser()
+	ctx = authn.NewContextWithUser(ctx, user)
 	ctx = authz.NewContextWithUserCapabilities(ctx, authz.UserCapabilities{
-		CanManageAssets:               false,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       100,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        295,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11900,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7980,
+		CanManageAssets:                       false,
+		CanUsePremiumLLM:                      false,
+		CopilotMessageQuota:                   100,
+		CopilotMessageQuotaLeft:               100,
+		CopilotMessageRateLimit:               30,
+		CopilotMessageRateWindowSeconds:       60,
+		AIDescriptionQuota:                    300,
+		AIDescriptionQuotaLeft:                295,
+		AIDescriptionRateLimit:                10,
+		AIDescriptionRateWindowSeconds:        60,
+		AIInteractionTurnQuota:                12000,
+		AIInteractionTurnQuotaLeft:            11900,
+		AIInteractionTurnRateLimit:            20,
+		AIInteractionTurnRateWindowSeconds:    60,
+		AIInteractionArchiveQuota:             8000,
+		AIInteractionArchiveQuotaLeft:         7980,
+		AIInteractionArchiveRateLimit:         10,
+		AIInteractionArchiveRateWindowSeconds: 60,
 	})
 	return ctx
 }
@@ -494,8 +502,8 @@ func TestControllerGetAuthenticatedUser(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		testUser := newTestUser()
-		ctx := authn.NewContextWithUser(context.Background(), testUser)
+		user := newTestUser()
+		ctx := authn.NewContextWithUser(context.Background(), user)
 
 		_, err := ctrl.GetAuthenticatedUser(ctx)
 		require.Error(t, err)

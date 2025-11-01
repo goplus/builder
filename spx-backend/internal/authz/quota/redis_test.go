@@ -257,13 +257,11 @@ func TestRedisQuotaTrackerResetUsage(t *testing.T) {
 }
 
 func TestRedisQuotaTrackerClose(t *testing.T) {
-	t.Run("CloseSuccess", func(t *testing.T) {
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
+	client, mock := redismock.NewClientMock()
+	tracker := &redisQuotaTracker{client: client}
 
-		err := tracker.Close()
-		require.NoError(t, err)
+	err := tracker.Close()
+	require.NoError(t, err)
 
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
+	require.NoError(t, mock.ExpectationsWereMet())
 }
