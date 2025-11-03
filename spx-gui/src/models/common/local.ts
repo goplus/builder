@@ -39,8 +39,8 @@ function fromRawFile({ name, content, ...options }: RawFile): File {
   return new File(name, async () => content, options)
 }
 
-async function toRawFile(file: File): Promise<RawFile> {
-  const content = await file.arrayBuffer()
+async function toRawFile(file: File, signal?: AbortSignal): Promise<RawFile> {
+  const content = await file.arrayBuffer(signal)
   return {
     name: file.name,
     type: file.type,
@@ -56,8 +56,8 @@ async function readFile(key: string, path: string): Promise<File> {
   return fromRawFile(rawFile as RawFile)
 }
 
-async function writeFile(key: string, path: string, file: File) {
-  const rawFile = await toRawFile(file)
+async function writeFile(key: string, path: string, file: File, signal?: AbortSignal) {
+  const rawFile = await toRawFile(file, signal)
   await storage.setItem(`${key}/${path}`, rawFile)
 }
 
@@ -93,11 +93,14 @@ export async function load(key: string) {
   }
 }
 
-export async function save(key: string, { thumbnail, ...metadata }: Metadata, files: Files) {
+export async function save(key: string, { thumbnail, ...metadata }: Metadata, files: Files, signal?: AbortSignal) {
   await clear(key)
   const fileList = Object.keys(files)
   let rawThumbnail: RawFile | null = null
-  if (thumbnail != null) rawThumbnail = await toRawFile(thumbnail)
+  if (thumbnail != null) rawThumbnail = await toRawFile(thumbnail, signal)
   const metadataEx: MetadataEx = { ...metadata, thumbnail: rawThumbnail, files: fileList }
-  await Promise.all([setMetadataEx(key, metadataEx), ...fileList.map((path) => writeFile(key, path, files[path]!))])
+  await Promise.all([
+    setMetadataEx(key, metadataEx),
+    ...fileList.map((path) => writeFile(key, path, files[path]!, signal))
+  ])
 }

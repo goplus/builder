@@ -385,7 +385,7 @@ class DiagnosticsProvider
 
   private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
     const { outputs, filesHash } = this.runtime
-    const currentFilesHash = await hashFiles(this.project.exportGameFiles())
+    const currentFilesHash = await hashFiles(this.project.exportGameFiles(), ctx.signal)
     if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
     for (const output of outputs) {

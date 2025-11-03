@@ -188,7 +188,10 @@ const handleImportProjectFile = useMessageHandle(
 
 const handleExportProjectFile = useMessageHandle(
   async () => {
-    const xbpFile = await props.project!.exportXbpFile()
+    const project = props.project
+    if (project == null) throw new Error('No project to export')
+    // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
+    const xbpFile = await project.exportXbpFile(project.getSignal())
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
   },
   { en: 'Failed to export project file', zh: '导出项目文件失败' }

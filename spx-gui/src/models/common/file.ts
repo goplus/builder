@@ -8,8 +8,7 @@ import { markRaw } from 'vue'
 import { getMimeFromExt } from '@/utils/file'
 import { getSVGSize } from '@/utils/img'
 import { extname } from '@/utils/path'
-import { Disposable, type Disposer } from '@/utils/disposable'
-import { Cancelled } from '@/utils/exception'
+import { Disposable, getCleanupSignal, type Disposer } from '@/utils/disposable'
 import type { Size } from '.'
 
 export type Metadata = {
@@ -27,7 +26,7 @@ export type Options = {
   meta?: Metadata
 }
 
-export type Loader = () => Promise<ArrayBuffer>
+export type Loader = (signal?: AbortSignal) => Promise<ArrayBuffer>
 
 /** File-like class, while load lazily */
 export class File {
@@ -60,21 +59,25 @@ export class File {
   private content: ArrayBuffer | null = null
   private promisedContent: Promise<ArrayBuffer> | null = null
 
-  async arrayBuffer() {
+  async arrayBuffer(signal?: AbortSignal) {
     if (this.content != null) return this.content
     if (this.promisedContent != null) return this.promisedContent
-    return (this.promisedContent = this.loader().then((ab) => {
-      return (this.content = ab)
-    }))
+    return (this.promisedContent = this.loader(signal)
+      .then((ab) => {
+        this.content = ab
+        return ab
+      })
+      .finally(() => {
+        this.promisedContent = null
+      }))
   }
 
   async url(onCleanup: (disposer: Disposer) => void) {
-    let cancelled = false
-    onCleanup(() => (cancelled = true))
-    const ab = await this.arrayBuffer()
-    if (cancelled) throw new Cancelled()
+    const signal = getCleanupSignal(onCleanup)
+    const ab = await this.arrayBuffer(signal)
+    signal.throwIfAborted()
     const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
-    onCleanup(() => URL.revokeObjectURL(url))
+    signal.addEventListener('abort', () => URL.revokeObjectURL(url))
     return url
   }
 }
@@ -101,8 +104,8 @@ export function fromNativeFile(file: globalThis.File) {
   return fromBlob(file.name, file)
 }
 
-export async function toNativeFile(file: File) {
-  const ab = await file.arrayBuffer()
+export async function toNativeFile(file: File, signal?: AbortSignal) {
+  const ab = await file.arrayBuffer(signal)
   return new window.File([ab], file.name, {
     type: file.type
   })
@@ -114,8 +117,8 @@ export function fromText(name: string, text: string, options?: Options) {
   return new File(name, async () => str2Ab(text), { ...options, type })
 }
 
-export async function toText(file: File) {
-  const ab = await file.arrayBuffer()
+export async function toText(file: File, signal?: AbortSignal) {
+  const ab = await file.arrayBuffer(signal)
   const decoder = new TextDecoder()
   return decoder.decode(ab)
 }

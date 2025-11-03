@@ -111,9 +111,10 @@ export class Editing extends Disposable {
 
   private startAutoPreload() {
     this.addDisposer(
-      watchEffect(() => {
+      watchEffect((onCleanup) => {
+        const signal = getCleanupSignal(onCleanup)
         const files = this.project.exportGameFiles()
-        Object.values(files).forEach((file) => file?.arrayBuffer())
+        Object.values(files).forEach((file) => file?.arrayBuffer(signal))
       })
     )
   }
