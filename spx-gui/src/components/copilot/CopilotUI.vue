@@ -26,7 +26,7 @@ type SuggestedPrompt = {
 enum OutputState {
   Round = 'round',
   UsageGuide = 'usage-guide',
-  Error = 'error',
+  Feedback = 'feedback',
   None = 'none'
 }
 
@@ -86,7 +86,7 @@ const activeRound = computed(() => {
 const outputState = computed(() => {
   const lastRound = rounds.value?.at(-1)
   if (lastRound == null) return OutputState.UsageGuide
-  if (!isSignedIn() && lastRound.state === RoundState.Failed) return OutputState.Error
+  if (!isSignedIn()) return OutputState.Feedback
   if (![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) return OutputState.Round
   return OutputState.None
 })
@@ -456,18 +456,7 @@ onBeforeUnmount(
           </svg>
         </div>
         <div ref="outputRef" class="output">
-          <template v-if="outputState === OutputState.Error">
-            <div class="error-message">
-              {{
-                $t({ en: "You need to log in to use this feature. Let's go log in ！", zh: '请登录以使用 Copilot。' })
-              }}
-            </div>
-            <UITag type="primary" class="sign-in-button" @click="initiateSignIn()">
-              {{ $t({ en: 'Sign In', zh: '登录' }) }}
-              <UIIcon type="arrowRightSmall" />
-            </UITag>
-          </template>
-          <template v-else-if="outputState === OutputState.Round">
+          <template v-if="outputState === OutputState.Round">
             <CopilotRound :round="activeRound!" is-last-round />
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
@@ -496,6 +485,20 @@ onBeforeUnmount(
                 ><UIIcon type="arrowRightSmall"
               /></UITag>
             </div>
+          </template>
+          <template v-if="outputState === OutputState.Feedback">
+            <div class="error-message">
+              {{
+                $t({
+                  en: 'I can help you with XBuilder, please sign in to continue.',
+                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续。'
+                })
+              }}
+            </div>
+            <UITag type="primary" class="sign-in-button" @click="initiateSignIn()">
+              {{ $t({ en: 'Sign In', zh: '登录' }) }}
+              <UIIcon type="arrowRightSmall" />
+            </UITag>
           </template>
         </div>
         <div class="divider"></div>
