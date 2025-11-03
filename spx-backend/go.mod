@@ -5,8 +5,8 @@ go 1.23.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/aofei/cameron v1.3.2
-	github.com/casdoor/casdoor-go-sdk v1.27.0
-	github.com/getsentry/sentry-go v0.36.1
+	github.com/casdoor/casdoor-go-sdk v1.29.0
+	github.com/getsentry/sentry-go v0.36.2
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-migrate/migrate/v4 v4.19.0
@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	gocloud.dev v0.36.0 // indirect
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/gorm v1.31.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
