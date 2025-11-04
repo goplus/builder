@@ -1,4 +1,4 @@
-import { computed, useSlots, type VNode, type VNodeChild } from 'vue'
+import { computed, onBeforeMount, onBeforeUpdate, ref, useSlots, type Slot, type VNode, type VNodeChild } from 'vue'
 import { trimLineBreaks as doTrimLineBreaks } from './utils'
 
 export function getTextForVNodeChild(child: VNodeChild): string {
@@ -58,9 +58,38 @@ export function useSlotText(name = 'default', trimLineBreaks = false) {
   })
 }
 
+/**
+ * Compared to `useSlotText`, this method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
+ * You can start by using it locally to ensure its stability.
+ */
+export function useSlotTextFixed(name = 'default', trimLineBreaks = false) {
+  const slotsRef = useSlotsRef()
+
+  return computed(() => {
+    let text = getTextForVNodeChild(slotsRef.value[name]?.())
+    if (trimLineBreaks) text = doTrimLineBreaks(text)
+    return text
+  })
+}
+
 export function useChildrenWithDefault(defaultChildren: VNodeChild) {
   const slots = useSlots()
   return {
     default: () => slots.default?.() || defaultChildren
   }
+}
+
+/**
+ * A reactive version of useSlots that triggers updates when slots change.
+ * Refer to the issue: https://github.com/goplus/builder/issues/2410
+ */
+export function useSlotsRef() {
+  const slots = useSlots()
+  const slotsRef = ref<Record<string, Slot | undefined>>({})
+
+  const updateSlots = () => (slotsRef.value = { ...slots })
+  onBeforeMount(updateSlots)
+  onBeforeUpdate(updateSlots)
+
+  return slotsRef
 }
