@@ -41,7 +41,7 @@ function mockLocalStorage() {
   }
 }
 
-function mockEditing({
+function makeEditing({
   project = mockProject({}),
   isOnline = () => true,
   signedInUsername: username = () => 'user',
@@ -78,7 +78,7 @@ describe('Editing', () => {
       saveToLocalCache: vi.fn(async (localCacheKey: string, signal?: AbortSignal) => timeout(100, signal))
     })
     const localStorage = mockLocalStorage()
-    const editing = mockEditing({ project, localStorage })
+    const editing = makeEditing({ project, localStorage })
     editing.start()
 
     expect(editing.mode).toBe(EditingMode.AutoSave)
@@ -118,7 +118,7 @@ describe('Editing', () => {
         .mockRejectedValueOnce(new Error('Cloud save failed again'))
         .mockResolvedValue(undefined)
     })
-    const editing = mockEditing({ project })
+    const editing = makeEditing({ project })
     editing.start()
 
     files['file1.txt'] = mockFile('file1.txt updated')
@@ -144,7 +144,7 @@ describe('Editing', () => {
   it('should cancel pending saving when editing is disposed', async () => {
     const files = mockFiles()
     const project = mockProject({ files })
-    const editing = mockEditing({ project })
+    const editing = makeEditing({ project })
     editing.start()
 
     files['file1.txt'] = mockFile('file1.txt updated')
@@ -160,7 +160,7 @@ describe('Editing', () => {
   it('should abort previous saveToCloud call when a new one is initiated', async () => {
     const files = mockFiles()
     const project = mockProject({ files })
-    const editing = mockEditing({ project })
+    const editing = makeEditing({ project })
     editing.start()
 
     files['file1.txt'] = mockFile('file1.txt updated')
@@ -183,7 +183,7 @@ describe('Editing', () => {
   it('should not trigger auto-save for effect-free mode', async () => {
     const files = mockFiles()
     const project = mockProject({ files, owner: 'project-owner' })
-    const editing = mockEditing({
+    const editing = makeEditing({
       project,
       signedInUsername: () => 'different-user' // Different user from project owner
     })
@@ -217,7 +217,7 @@ describe('Editing', () => {
       saveToCloud: vi.fn(async (signal?: AbortSignal) => timeout(500, signal)) // Add delay to mock save
     })
     const isOnline = ref(false) // Start offline
-    const editing = mockEditing({ project, isOnline })
+    const editing = makeEditing({ project, isOnline })
     editing.start()
 
     expect(editing.dirty).toBe(false)

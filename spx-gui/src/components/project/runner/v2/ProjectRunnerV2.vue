@@ -120,35 +120,12 @@ async function zip(files: Files, reporter: ProgressReporter, signal?: AbortSigna
   Object.entries(files).forEach(([path, file]) => {
     if (file == null) return
     const r = filesCollector.getSubReporter()
-    const nativeFile = toNativeFile(file).then((f) => (r.report(1), f))
+    const nativeFile = toNativeFile(file, signal).then((f) => (r.report(1), f))
     zip.file(path, nativeFile)
   })
-
-  // `zip.generateAsync` is a long-running task without built-in cancellation. We wrap it with `withAbort` so the abort
-  // signal propagates.
-  const zipped = await withAbort(zip.generateAsync({ type: 'arraybuffer' }), signal)
+  const zipped = await zip.generateAsync({ type: 'arraybuffer' })
   zipReporter.report(1)
   return zipped
-}
-
-function withAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
-  if (signal == null) return promise
-  if (signal.aborted) throw signal.reason ?? new Cancelled('aborted')
-
-  return new Promise<T>((resolve, reject) => {
-    const handleAbort = () => reject(signal.reason ?? new Cancelled('aborted'))
-    signal.addEventListener('abort', handleAbort)
-    promise.then(
-      (value) => {
-        signal.removeEventListener('abort', handleAbort)
-        resolve(value)
-      },
-      (err) => {
-        signal.removeEventListener('abort', handleAbort)
-        reject(err)
-      }
-    )
-  })
 }
 
 const registered = registerPlayer(() => {
@@ -249,7 +226,7 @@ async function runInternal(ctrl: AbortController) {
     )
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
-    return hashFiles(files)
+    return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
     console.warn('ProjectRunner run game error:', err)

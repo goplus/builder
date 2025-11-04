@@ -60,10 +60,15 @@ export function getCleanupSignal(onCleanup: OnCleanup) {
   return ctrl.signal
 }
 
-// TODO: Reimplement this with `AbortSignal.any()` once it is widely supported (including Node.js version we're using) or properly polyfilled.
-export function mergeSignals(...signals: Array<AbortSignal | null | undefined>) {
+export function mergeSignals(...signals: Array<AbortSignal | null | undefined>): AbortSignal | null {
   const nonEmptySignals = signals.filter((s) => s != null) as AbortSignal[]
+  if (nonEmptySignals.length === 0) return null
   if (nonEmptySignals.length === 1) return nonEmptySignals[0]
+  if (typeof (AbortSignal as any).any === 'function') {
+    // TODO: Remove the `as any` cast with typescript 5.5 or later.
+    return (AbortSignal as any).any(nonEmptySignals)
+  }
+  // TODO: Remove polyfill code here once `AbortSignal.any()` is reliably supported, especially in Safari.
   const ctrl = new AbortController()
   const resultSignal = ctrl.signal
   for (const signal of nonEmptySignals) {

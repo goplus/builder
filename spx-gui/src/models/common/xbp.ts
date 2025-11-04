@@ -44,7 +44,7 @@ export async function load(xbpFile: File) {
   return { metadata, files }
 }
 
-export async function save(metadata: Metadata, files: LazyFiles) {
+export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortSignal) {
   const zip = new JSZip()
   zip.file(
     metadataFileName,
@@ -55,17 +55,18 @@ export async function save(metadata: Metadata, files: LazyFiles) {
   )
   if (metadata.thumbnail != null) {
     const ext = getExtFromMime(metadata.thumbnail.type) ?? 'jpg'
-    zip.file(`${thumbnailFileName}.${ext}`, metadata.thumbnail.arrayBuffer())
+    zip.file(`${thumbnailFileName}.${ext}`, metadata.thumbnail.arrayBuffer(signal))
   }
 
   const aiDescriptionFiles = createAIDescriptionFiles(metadata)
   Object.entries(aiDescriptionFiles).forEach(([path, file]) => {
-    if (file != null) zip.file(path, file.arrayBuffer())
+    if (file != null) zip.file(path, file.arrayBuffer(signal))
   })
 
   Object.entries(files).forEach(([path, file]) => {
-    if (file != null) zip.file(path, file.arrayBuffer())
+    if (file != null) zip.file(path, file.arrayBuffer(signal))
   })
   const blob = await zip.generateAsync({ type: 'blob' })
+  signal?.throwIfAborted()
   return new File([blob], (metadata.name || 'Untitled') + '.xbp')
 }
