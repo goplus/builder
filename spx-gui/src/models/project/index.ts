@@ -586,7 +586,7 @@ export class Project extends Disposable {
   async saveToLocalCache(key: string, signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
     const [metadata, files] = await this.export(signal)
-    await localHelper.save(key, metadata, files)
+    await localHelper.save(key, metadata, files, signal)
   }
 
   /** Ensure AI description is available */
