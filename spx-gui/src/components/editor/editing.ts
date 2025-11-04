@@ -114,7 +114,12 @@ export class Editing extends Disposable {
       watchEffect((onCleanup) => {
         const signal = getCleanupSignal(onCleanup)
         const files = this.project.exportGameFiles()
-        Object.values(files).forEach((file) => file?.arrayBuffer(signal))
+        Object.values(files).forEach((file) => {
+          if (file == null) return
+          file.arrayBuffer(signal).catch((e) => {
+            capture(e, 'Failed to preload file ' + file.name)
+          })
+        })
       })
     )
   }

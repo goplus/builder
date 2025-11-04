@@ -28,6 +28,41 @@ export type Options = {
 
 export type Loader = (signal?: AbortSignal) => Promise<ArrayBuffer>
 
+/** File loading operation */
+class Loading {
+  private ctrl: AbortController
+  private promise: Promise<ArrayBuffer>
+  constructor(loader: Loader) {
+    this.ctrl = new AbortController()
+    this.promise = loader(this.ctrl.signal)
+  }
+
+  private waitingNum = 0
+  private cancelWaiting(reason: unknown) {
+    this.waitingNum--
+    if (this.waitingNum <= 0) {
+      this.ctrl.abort(reason)
+    }
+  }
+  wait(signal?: AbortSignal) {
+    signal?.throwIfAborted()
+    this.waitingNum++
+    const promise = this.promise
+    if (signal == null) return promise
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      promise.then(resolve, reject)
+      signal.addEventListener(
+        'abort',
+        () => {
+          reject(signal.reason)
+          this.cancelWaiting(signal.reason)
+        },
+        { once: true }
+      )
+    })
+  }
+}
+
 /** File-like class, while load lazily */
 export class File {
   /** MIME type of file */
@@ -57,19 +92,22 @@ export class File {
   }
 
   private content: ArrayBuffer | null = null
-  private promisedContent: Promise<ArrayBuffer> | null = null
+  private loading: Loading | null = null
 
-  async arrayBuffer(signal?: AbortSignal) {
-    if (this.content != null) return this.content
-    if (this.promisedContent != null) return this.promisedContent
-    return (this.promisedContent = this.loader(signal)
-      .then((ab) => {
-        this.content = ab
-        return ab
-      })
-      .finally(() => {
-        this.promisedContent = null
-      }))
+  arrayBuffer(signal?: AbortSignal) {
+    if (this.content != null) return Promise.resolve(this.content)
+    if (this.loading != null) return this.loading.wait(signal)
+    this.loading = new Loading((signal) =>
+      this.loader(signal)
+        .then((ab) => {
+          this.content = ab
+          return ab
+        })
+        .finally(() => {
+          this.loading = null
+        })
+    )
+    return this.loading.wait(signal)
   }
 
   async url(onCleanup: (disposer: Disposer) => void) {

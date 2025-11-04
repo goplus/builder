@@ -64,6 +64,19 @@ export function mergeSignals(...signals: Array<AbortSignal | null | undefined>):
   const nonEmptySignals = signals.filter((s) => s != null) as AbortSignal[]
   if (nonEmptySignals.length === 0) return null
   if (nonEmptySignals.length === 1) return nonEmptySignals[0]
-  // TODO: Remove the `as any` cast with typescript 5.5 or later.
-  return (AbortSignal as any).any(nonEmptySignals)
+  if (typeof (AbortSignal as any).any === 'function') {
+    // TODO: Remove the `as any` cast with typescript 5.5 or later.
+    return (AbortSignal as any).any(nonEmptySignals)
+  }
+  // TODO: Remove polyfill code here once `AbortSignal.any()` is reliably supported, especially in Safari.
+  const ctrl = new AbortController()
+  const resultSignal = ctrl.signal
+  for (const signal of nonEmptySignals) {
+    if (signal.aborted) {
+      ctrl.abort(signal.reason)
+      break
+    }
+    signal.addEventListener('abort', () => ctrl.abort(signal.reason), { signal: resultSignal })
+  }
+  return resultSignal
 }
