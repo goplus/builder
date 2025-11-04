@@ -27,7 +27,7 @@ export const attributes = z.object({
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSlotTextFixed } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle, ActionException } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -50,7 +50,7 @@ const props = defineProps<{
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
 
-const childrenText = useSlotTextFixed()
+const childrenText = useSlotText()
 const codeToAdd = computed(() => {
   // strip leading line break to keep consistent with markdown code block
   let code = childrenText.value.replace(/^\n/, '')

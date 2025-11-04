@@ -1,4 +1,13 @@
-import { computed, onBeforeMount, onBeforeUpdate, ref, useSlots, type Slot, type VNode, type VNodeChild } from 'vue'
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUpdate,
+  shallowReactive,
+  useSlots,
+  type Slot,
+  type VNode,
+  type VNodeChild
+} from 'vue'
 import { trimLineBreaks as doTrimLineBreaks } from './utils'
 
 export function getTextForVNodeChild(child: VNodeChild): string {
@@ -49,7 +58,11 @@ export function getElementForVNode(vnode: VNode): HTMLElement | null {
   return null
 }
 
-export function useSlotText(name = 'default', trimLineBreaks = false) {
+/**
+ * @deprecated
+ * Use `useSlotText` instead, which provides safer reactive handling.
+ */
+export function useSlotTextLegacy(name = 'default', trimLineBreaks = false) {
   const slots = useSlots()
   return computed(() => {
     let text = getTextForVNodeChild(slots[name]?.())
@@ -59,14 +72,13 @@ export function useSlotText(name = 'default', trimLineBreaks = false) {
 }
 
 /**
- * Compared to `useSlotText`, this method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
- * You can start by using it locally to ensure its stability.
+ * Compared to `useSlotTextLegacy`, this method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
  */
-export function useSlotTextFixed(name = 'default', trimLineBreaks = false) {
-  const slotsRef = useSlotsRef()
+export function useSlotText(name = 'default', trimLineBreaks = false) {
+  const slotsRef = useReactiveSlots()
 
   return computed(() => {
-    let text = getTextForVNodeChild(slotsRef.value[name]?.())
+    let text = getTextForVNodeChild(slotsRef[name]?.())
     if (trimLineBreaks) text = doTrimLineBreaks(text)
     return text
   })
@@ -83,11 +95,15 @@ export function useChildrenWithDefault(defaultChildren: VNodeChild) {
  * A reactive version of useSlots that triggers updates when slots change.
  * Refer to the issue: https://github.com/goplus/builder/issues/2410
  */
-export function useSlotsRef() {
+export function useReactiveSlots() {
   const slots = useSlots()
-  const slotsRef = ref<Record<string, Slot | undefined>>({})
+  const slotsRef = shallowReactive<Record<string, Slot | undefined>>({ ...slots })
 
-  const updateSlots = () => (slotsRef.value = { ...slots })
+  const updateSlots = () => {
+    for (const key in slots) {
+      slotsRef[key] = slots[key]
+    }
+  }
   onBeforeMount(updateSlots)
   onBeforeUpdate(updateSlots)
 

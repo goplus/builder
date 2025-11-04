@@ -1,7 +1,7 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, markRaw } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
-import { useSlotText } from '@/utils/vnode'
+import { useSlotTextLegacy } from '@/utils/vnode'
 import MarkdowView, { preprocessCustomRawComponents, preprocessIncompleteTags } from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
@@ -154,11 +154,11 @@ describe('MarkdownView', () => {
     const result = await renderToString(MarkdowView, {
       props: {
         value: 'Before<test-comp-1 content="Hello" />After',
-        components: {
+        components: markRaw({
           custom: {
             'test-comp-1': testComp1
           }
-        }
+        })
       }
     })
     expect(result).toBe('<div><p>Before<div class="test-comp-1">Hello</div>After</p></div>')
@@ -170,11 +170,11 @@ describe('MarkdownView', () => {
     const result = await renderToString(MarkdowView, {
       props: {
         value: 'Before<test-comp-1>Content</test-comp-1>After',
-        components: {
+        components: markRaw({
           custom: {
             'test-comp-1': testComp1
           }
-        }
+        })
       }
     })
     expect(result).toBe('<div><p>Before<div class="test-comp-1"><!--[-->Content<!--]--></div>After</p></div>')
@@ -182,7 +182,7 @@ describe('MarkdownView', () => {
   it('should handle custom raw components', async () => {
     const customRawComponent = defineComponent(
       () => {
-        const innerText = useSlotText()
+        const innerText = useSlotTextLegacy()
         return function render() {
           return h('div', { class: 'test-comp-1' }, [innerText.value])
         }
@@ -203,11 +203,11 @@ Content1
 </custom-raw-component>
 
 After`,
-        components: {
+        components: markRaw({
           customRaw: {
             'custom-raw-component': customRawComponent
           }
-        }
+        })
       }
     })
     expect(result).toBe(`<div><p>Before</p>
@@ -238,7 +238,7 @@ After`,
 </test-comp3>
 
 <test-comp1 />aaa<test-comp2 content="bbb" /><test-comp2 content="ccc" />ddd<test-comp3 />`,
-        components: {
+        components: markRaw({
           custom: {
             'test-comp1': testComp1,
             'test-comp2': testComp2
@@ -246,7 +246,7 @@ After`,
           customRaw: {
             'test-comp3': testComp3
           }
-        }
+        })
       }
     })
     expect(result).toBe(`<div><div class="test-comp-3"><!--[-->1111
