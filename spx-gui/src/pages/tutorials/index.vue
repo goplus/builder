@@ -40,12 +40,10 @@
 </template>
 
 <script setup lang="ts">
-import { sortBy } from 'lodash'
 import { useQuery } from '@/utils/query'
 import { usePageTitle } from '@/utils/utils'
 
-import { listCourseSeries, type CourseSeries } from '@/apis/course-series'
-import { ownerAll } from '@/apis/common'
+import { type CourseSeries, listAllCourseSeriesByOrder } from '@/apis/course-series'
 import type { Course } from '@/apis/course'
 
 import { UIEmpty } from '@/components/ui'
@@ -65,13 +63,10 @@ usePageTitle({
 
 const tutorial = useTutorial()
 
-const courseSeriesQuery = useQuery(
-  async () => {
-    const { data } = await listCourseSeries({ owner: ownerAll })
-    return sortBy(data, ['order'])
-  },
-  { en: 'Failed to load course series', zh: '加载课程系列失败' }
-)
+const courseSeriesQuery = useQuery((ctx) => listAllCourseSeriesByOrder(ctx.signal), {
+  en: 'Failed to load course series',
+  zh: '加载课程系列失败'
+})
 
 function handleCourseClick(event: MouseEvent, course: Course, courseSeries: CourseSeries, courseList: Course[]) {
   if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
