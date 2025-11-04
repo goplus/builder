@@ -1,4 +1,4 @@
-import { client, type ByPage, type PaginationParams } from './common'
+import { client, type ByPage, type PaginationParams, ownerAll } from './common'
 
 export type CourseSeries = {
   /** Unique identifier */
@@ -46,4 +46,13 @@ export type ListCourseSeriesParams = PaginationParams & {
 
 export async function listCourseSeries(params?: ListCourseSeriesParams, signal?: AbortSignal) {
   return client.get('/course-serieses/list', params, { signal }) as Promise<ByPage<CourseSeries>>
+}
+
+/** List all course series (owned by all users) by order. 100 items at most. */
+export async function listAllCourseSeriesByOrder(signal?: AbortSignal) {
+  const result = await listCourseSeries(
+    { owner: ownerAll, pageIndex: 1, pageSize: 100, orderBy: 'order', sortOrder: 'asc' },
+    signal
+  )
+  return result.data
 }
