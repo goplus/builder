@@ -24,8 +24,11 @@ type SuggestedPrompt = {
 }
 
 enum OutputState {
+  // Show conversation with copilot response
   Round = 'round',
+  // Welcome screen for first-time users with suggested prompts
   UsageGuide = 'usage-guide',
+  // Sign-in prompt shown to unauthenticated users after first interaction
   Feedback = 'feedback',
   None = 'none'
 }
@@ -35,11 +38,13 @@ const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, type WatchSource } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { initiateSignIn, isSignedIn } from '@/stores/user'
+import { getSignedInUsername, initiateSignIn, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
 import { providePopupContainer, UITooltip, UITag, UIIcon } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
@@ -48,9 +53,11 @@ import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
 import type { LocaleMessage } from '@/utils/i18n'
+import { debounce } from 'lodash'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
+const router = useRouter()
 
 const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
@@ -70,24 +77,18 @@ const activeRound = computed(() => {
   }
   return lastRound
 })
-// const activeUsageGuide = computed(() => {
-//   const lastRound = rounds.value?.at(-1)
-//   if (lastRound != null) return false
-//   return true
-// })
-// const activeError = computed(() => {
-//   const lastRound = rounds.value?.at(-1)
-//   if (lastRound != null && !isSignedIn() && lastRound.state === RoundState.Failed) {
-//     return true
-//   }
-//   return false
-// })
 
 const outputState = computed(() => {
   const lastRound = rounds.value?.at(-1)
+  // Show usage guide when there are no rounds yet (first-time users)
   if (lastRound == null) return OutputState.UsageGuide
+
+  // Prompt sign-in for non-authenticated users after their first interaction
   if (!isSignedIn()) return OutputState.Feedback
+
+  // Show active round when it has meaningful content (not loading/initializing)
   if (![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) return OutputState.Round
+
   return OutputState.None
 })
 
@@ -405,7 +406,37 @@ onBeforeUnmount(
   })
 )
 
-// TODO: prevent click in copilot panel from closing other dropdowns
+// Copilot open handling, implemented here due to high business logic coupling
+const signedInUsername = computed(() => getSignedInUsername())
+const userUsedCopilotRef = localStorageRef<string[]>('spx-gui-used-copilot-user', [])
+watch(router.currentRoute, (route) => {
+  // Open copilot when not signed in and entering the community homepage (/)
+  if (route.path === '/' && !isSignedIn()) {
+    copilot.open()
+  }
+})
+/** Track whether user has used copilot */
+watch(
+  () => session.value?.currentRound,
+  debounce((round) => {
+    if (round == null || signedInUsername.value == null) return
+    const username = signedInUsername.value
+    const userUsedCopilot = userUsedCopilotRef.value
+    if (userUsedCopilot.includes(username)) return
+    userUsedCopilotRef.value = [...userUsedCopilot, username]
+  }, 100),
+  {
+    immediate: true
+  }
+)
+/** Open copilot for signed-in users on their first copilot use */
+onMounted(async () => {
+  await timeout()
+  const username = signedInUsername.value
+  if (username == null || session.value != null) return
+  if (!isSignedIn() || userUsedCopilotRef.value.includes(username)) return
+  copilot.open()
+})
 </script>
 
 <template>
@@ -487,7 +518,7 @@ onBeforeUnmount(
             </div>
           </template>
           <template v-if="outputState === OutputState.Feedback">
-            <div class="error-message">
+            <div class="feedback-message">
               {{
                 $t({
                   en: 'I can help you with XBuilder, please sign in to continue.',
@@ -496,7 +527,7 @@ onBeforeUnmount(
               }}
             </div>
             <UITag type="primary" class="sign-in-button" @click="initiateSignIn()">
-              {{ $t({ en: 'Sign In', zh: '登录' }) }}
+              {{ $t({ en: 'Sign in', zh: '登录' }) }}
               <UIIcon type="arrowRightSmall" />
             </UITag>
           </template>
@@ -720,19 +751,28 @@ $toColor: #c390ff;
         text-align: left;
       }
     }
+
+    .quick-inputs {
+      padding: 20px 16px 16px 0px;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      background: var(--ui-color-grey-100);
+    }
+
+    .feedback-message {
+      color: var(--ui-color-grey-800);
+      margin: 12px 0 16px 0;
+    }
+
+    .sign-in-button {
+      gap: 8px;
+    }
   }
 
   .divider {
     @include copilotBaseLinearBackground();
     height: 1px;
-  }
-
-  .quick-inputs {
-    padding: 0 16px 16px;
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    background: var(--ui-color-grey-100);
   }
 
   .input {

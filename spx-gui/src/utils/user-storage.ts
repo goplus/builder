@@ -22,6 +22,13 @@ function isUserScopeValue<T>(obj: any): obj is UserScopeValue<T> {
   return obj != null && isObject(obj) && userKey in obj && isString(obj[userKey]) && valueKey in obj
 }
 
+function createUserScopeValue<T>(user: string, value: T): UserScopeValue<T> {
+  return {
+    [userKey]: user,
+    [valueKey]: value
+  }
+}
+
 // private
 function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = localStorage) {
   const scope = computed(() => getSignedInUsername() ?? defaultScope)
@@ -40,9 +47,9 @@ function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = loc
         : // Legacy data compatibility: Old data without user scope is treated as shared/public until
           // a user writes to it. When reading legacy data, we bind it to the current user without
           // persisting (no setItem here), so it remains accessible to all users until someone writes.
-          { [userKey]: currentScope, [valueKey]: parsedValue }
+          createUserScopeValue(currentScope, parsedValue)
       let value = scopeValue
-      if (user !== currentScope) {
+      if (user !== currentScope && user !== defaultScope) {
         storage.removeItem(key)
         value = null
       }
@@ -52,11 +59,7 @@ function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = loc
       if (newValue === initialValue) {
         storage.removeItem(key)
       } else {
-        const userScopeValue: UserScopeValue<T> = {
-          [userKey]: scope.value,
-          [valueKey]: newValue
-        }
-        storage.setItem(key, JSON.stringify(userScopeValue))
+        storage.setItem(key, JSON.stringify(createUserScopeValue(scope.value, newValue)))
       }
       counter.value++
     }

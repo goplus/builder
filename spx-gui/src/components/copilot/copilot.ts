@@ -611,6 +611,14 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       const saved = storage.get()
       if (saved != null) {
         this.currentSessionRef.value = Session.load(saved, this)
+
+        // If the last round was in Failed or Cancelled state when saved, retry on page refresh
+        // so the unfinished conversation can continue.
+        // Primary user scenario: preserve session continuity after the user completes login.
+        const round = this.currentSession?.currentRound
+        if (round && round.state === RoundState.Failed && round.userMessage.type !== 'event') {
+          round.retry()
+        }
       }
     } catch (e) {
       capture(e, 'Failed to load session from storage')
