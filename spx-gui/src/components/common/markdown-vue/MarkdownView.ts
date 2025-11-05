@@ -276,9 +276,6 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
     props = hastProps2VueProps(element.properties)
     children = element.children.map((c, i) => renderHastNode(c, components, i))
   }
-  // There's issue when children of custom component (for exmaple `DefinitionOverviewWrapper`) updated: the component will not be notified,
-  // here we use random key to force re-render the component as a workaround. TODO: find the reason and fix it
-  key = key + '' + Math.random()
   return h(type, { ...props, key }, children)
 }
 

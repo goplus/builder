@@ -1,6 +1,6 @@
 <script lang="ts">
 import { z } from 'zod'
-import { useSlotText } from '@/utils/vnode'
+import { useSlotTextLegacy } from '@/utils/vnode'
 
 export const tagName = 'highlight-link'
 
@@ -37,7 +37,7 @@ const props = defineProps<{
 
 const radar = useRadar()
 const spotlight = useSpotlight()
-const text = useSlotText()
+const text = useSlotTextLegacy()
 
 const { fn: handleClick } = useMessageHandle(
   () => {

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useSlotText } from '@/utils/vnode'
+import { useSlotTextLegacy } from '@/utils/vnode'
 import CodeView from '@/components/common/CodeView.vue'
 
 defineProps<{
   language?: string
 }>()
 
-const code = useSlotText()
+const code = useSlotTextLegacy()
 </script>
 
 <template>
