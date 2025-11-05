@@ -24,27 +24,31 @@ type UserCapabilities struct {
 	// CanUsePremiumLLM indicates if user can access premium LLM models.
 	CanUsePremiumLLM bool `json:"canUsePremiumLLM"`
 
-	// CopilotMessageQuota is the total quota for copilot messages.
-	CopilotMessageQuota int64 `json:"copilotMessageQuota"`
+	// CopilotMessageQuota represents quotas for copilot messages.
+	CopilotMessageQuota Quota `json:"-"`
 
-	// CopilotMessageQuotaLeft is the remaining quota for copilot messages.
-	CopilotMessageQuotaLeft int64 `json:"copilotMessageQuotaLeft"`
+	// AIDescriptionQuota represents quotas for AI description generations.
+	AIDescriptionQuota Quota `json:"-"`
 
-	// AIDescriptionQuota is the total quota for AI description generations.
-	AIDescriptionQuota int64 `json:"aiDescriptionQuota"`
+	// AIInteractionTurnQuota represents quotas for AI interaction turns.
+	AIInteractionTurnQuota Quota `json:"-"`
 
-	// AIDescriptionQuotaLeft is the remaining quota for AI description generations.
-	AIDescriptionQuotaLeft int64 `json:"aiDescriptionQuotaLeft"`
+	// AIInteractionArchiveQuota represents quotas for AI interaction archive requests.
+	AIInteractionArchiveQuota Quota `json:"-"`
+}
 
-	// AIInteractionTurnQuota is the total quota for AI interaction turns.
-	AIInteractionTurnQuota int64 `json:"aiInteractionTurnQuota"`
-
-	// AIInteractionTurnQuotaLeft is the remaining quota for AI interaction turns.
-	AIInteractionTurnQuotaLeft int64 `json:"aiInteractionTurnQuotaLeft"`
-
-	// AIInteractionArchiveQuota is the total quota for AI interaction archive requests.
-	AIInteractionArchiveQuota int64 `json:"aiInteractionArchiveQuota"`
-
-	// AIInteractionArchiveQuotaLeft is the remaining quota for AI interaction archive requests.
-	AIInteractionArchiveQuotaLeft int64 `json:"aiInteractionArchiveQuotaLeft"`
+// Quota returns the quota for the given resource.
+func (uc UserCapabilities) Quota(resource Resource) (Quota, bool) {
+	switch resource {
+	case ResourceCopilotMessage:
+		return uc.CopilotMessageQuota, true
+	case ResourceAIDescription:
+		return uc.AIDescriptionQuota, true
+	case ResourceAIInteractionTurn:
+		return uc.AIInteractionTurnQuota, true
+	case ResourceAIInteractionArchive:
+		return uc.AIInteractionArchiveQuota, true
+	default:
+		return Quota{}, false
+	}
 }

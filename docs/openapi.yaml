@@ -908,10 +908,11 @@ paths:
       description: |
         Generate a message by sending a list of input messages.
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each message consumes 1 quota from the authenticated user's allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -955,8 +956,13 @@ paths:
                     content:
                       type: text
                       text: Hello!
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /copilot/stream/message:
     post:
@@ -966,10 +972,11 @@ paths:
       description: |
         Generate a stream message by sending a list of input messages.
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each message consumes 1 quota from the authenticated user's allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -1005,8 +1012,13 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /workflow/stream/message:
     post:
@@ -1016,10 +1028,11 @@ paths:
       description: |
         Generate a stream message by sending a list of input messages.
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -1058,8 +1071,13 @@ paths:
           description: Stream Message successfully generated.
           content:
             application/stream:
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /ai/description:
     post:
@@ -1070,10 +1088,11 @@ paths:
         Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
         content (such as spx source code and project structure).
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each request consumes 1 quota from the authenticated user's AI description allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -1087,8 +1106,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIDescriptionResponse"
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /ai/interaction/turn:
     post:
@@ -1098,10 +1122,11 @@ paths:
       description: |
         Send a message and context to the AI, receive a response including text and an optional command.
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -1115,8 +1140,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIInteractionResponse"
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /ai/interaction/archive:
     post:
@@ -1126,10 +1156,11 @@ paths:
       description: |
         Archive a batch of interaction turns into a condensed summary for future context.
 
-        #### Quota requirements
+        #### Quota limits
 
         - Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
         - Quota limits vary based on the authenticated user's plan.
+        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
       requestBody:
         required: true
         content:
@@ -1143,8 +1174,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AIInteractionArchiveResponse"
-        "429":
-          description: Insufficient quota to perform this operation.
+        "403":
+          description: Insufficient permissions or quota to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the limit.
+              schema:
+                type: integer
 
   /course:
     post:
@@ -1682,7 +1718,7 @@ components:
           $ref: "#/components/schemas/UserCapabilities"
           nullable: true
           description: |
-            Capabilities and quotas of the user.
+            Capabilities of the user.
 
             **This field is only present for the authenticated user's own profile.**
 
@@ -1704,62 +1740,6 @@ components:
           description: Whether user can access premium LLM models.
           examples:
             - true
-        copilotMessageQuota:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Total quota for Copilot messages.
-          examples:
-            - 1000
-        copilotMessageQuotaLeft:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Remaining quota for Copilot messages.
-          examples:
-            - 789
-        aiDescriptionQuota:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Total quota for AI description generations.
-          examples:
-            - 300
-        aiDescriptionQuotaLeft:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Remaining quota for AI description generations.
-          examples:
-            - 295
-        aiInteractionTurnQuota:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Total quota for AI interaction turns.
-          examples:
-            - 12000
-        aiInteractionTurnQuotaLeft:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Remaining quota for AI interaction turns.
-          examples:
-            - 11900
-        aiInteractionArchiveQuota:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Total quota for AI interaction archive requests.
-          examples:
-            - 8000
-        aiInteractionArchiveQuotaLeft:
-          type: integer
-          format: int64
-          minimum: 0
-          description: Remaining quota for AI interaction archive requests.
-          examples:
-            - 7980
 
     Project:
       type: object

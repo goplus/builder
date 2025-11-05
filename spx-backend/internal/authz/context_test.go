@@ -16,17 +16,30 @@ func newTestAuthorizer() *Authorizer {
 }
 
 func newTestUserCapabilities() UserCapabilities {
+	const quotaWindow = 24 * 60 * 60
 	return UserCapabilities{
-		CanManageAssets:               true,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       85,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        290,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11700,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7600,
+		CanManageAssets:  true,
+		CanUsePremiumLLM: false,
+		CopilotMessageQuota: Quota{
+			Limit:     100,
+			Remaining: 85,
+			Window:    quotaWindow,
+		},
+		AIDescriptionQuota: Quota{
+			Limit:     300,
+			Remaining: 290,
+			Window:    quotaWindow,
+		},
+		AIInteractionTurnQuota: Quota{
+			Limit:     12000,
+			Remaining: 11700,
+			Window:    quotaWindow,
+		},
+		AIInteractionArchiveQuota: Quota{
+			Limit:     8000,
+			Remaining: 7600,
+			Window:    quotaWindow,
+		},
 	}
 }
 
