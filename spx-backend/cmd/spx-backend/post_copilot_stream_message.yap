@@ -13,8 +13,11 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-// Check remaining quota.
-if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
+const (
+	quotaResource = authz.ResourceCopilotMessage
+	quotaAmount   = 1
+)
+if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 	return
 }
 
@@ -33,11 +36,9 @@ if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-
-// Consume quota after successful stream initiation.
-consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
-
 defer read.Close()
+
+consumeQuota(ctx, quotaResource, quotaAmount)
 
 buf := make([]byte, 4096)
 stream read, buf

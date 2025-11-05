@@ -13,8 +13,11 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-// Check remaining quota.
-if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
+const (
+	quotaResource = authz.ResourceCopilotMessage
+	quotaAmount   = 1
+)
+if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 	return
 }
 
@@ -34,7 +37,6 @@ if err != nil {
 	return
 }
 
-// Consume quota after successful generation.
-consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
+consumeQuota(ctx, quotaResource, quotaAmount)
 
 json result
