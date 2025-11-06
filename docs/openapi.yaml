@@ -1398,14 +1398,14 @@ paths:
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
-                courseIDs:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
-                order:
-                  $ref: "#/components/schemas/CourseSeries/properties/order"
                 thumbnail:
                   $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
                 description:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
         "201":
           description: Successfully created the course series.
@@ -1518,14 +1518,14 @@ paths:
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
-                courseIDs:
-                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
-                order:
-                  $ref: "#/components/schemas/CourseSeries/properties/order"
                 thumbnail:
                   $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
                 description:
                   $ref: "#/components/schemas/CourseSeries/properties/description"
+                courseIDs:
+                  $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
+                order:
+                  $ref: "#/components/schemas/CourseSeries/properties/order"
       responses:
         "200":
           description: Successfully updated the course series.
@@ -2007,6 +2007,8 @@ components:
           description: URL of the course series's thumbnail image.
         description:
           type: string
+          examples:
+            - A series of courses on XBuilder programming.
           description: Description of the course series.
         courseIDs:
           type: array
