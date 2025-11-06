@@ -66,6 +66,7 @@ async function handleSvgChange(svg: string) {
   position: relative;
   overflow: hidden;
   min-height: 400px; // 确保画板有足够的高度
+  min-width: 0;
 }
 
 .background {

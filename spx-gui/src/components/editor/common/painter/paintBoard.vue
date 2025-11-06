@@ -886,12 +886,15 @@ provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
   flex-direction: column;
   height: 100%;
   width: 100%;
+  min-width: 0; /* 防止 flex 子项溢出 */
   background-color: #f5f5f5;
+  overflow: hidden; /* 防止内容溢出父容器 */
 }
 
 /* 工具栏样式 */
 .toolbar {
   width: auto;
+  max-width: 200px; /* 限制最大宽度 */
   background-color: #ffffff;
   border-right: 1px solid #e0e0e0;
   padding: 16px;
@@ -900,6 +903,10 @@ provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
   flex-wrap: wrap;
   gap: 24px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 1; /* 允许收缩 */
+  overflow-y: auto; /* 允许垂直滚动 */
+  overflow-x: hidden; /* 防止水平溢出 */
+  max-height: 100%; /* 限制最大高度 */
 }
 
 .tool-section {
@@ -1001,6 +1008,10 @@ provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
   align-items: center;
   width: 100%;
   height: 100%;
+  min-width: 0; /* 防止溢出 */
+  min-height: 0; /* 防止溢出 */
+  flex: 1; /* 占据剩余空间 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 canvas {
@@ -1011,6 +1022,11 @@ canvas {
   z-index: 1;
   width: 100%;
   height: 100%;
+  max-width: 100%; /* 确保不超出容器 */
+  max-height: 100%; /* 确保不超出容器 */
+  object-fit: contain; /* 保持宽高比 */
+  min-width: 0;
+  flex: 1 1 0;
 }
 
 canvas:hover {
@@ -1066,25 +1082,37 @@ canvas:hover {
   display: flex;
   flex-direction: row;
   flex: 1;
+  min-width: 0; /* 防止溢出 */
+  min-height: 0; /* 防止溢出 */
+  overflow: hidden; /* 防止内容溢出 */
+  position: relative;
 }
 
 .toolbar-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; /* 允许换行 */
   /* height: 20%; */
   width: 100%;
+  max-width: 100%; /* 确保不超出 */
+  min-width: 0; /* 防止溢出 */
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   padding: 16px;
   z-index: 10;
+  flex-shrink: 0; /* 防止工具栏被压缩 */
+  gap: 12px; /* 添加间距 */
 }
 
 .toolbar-top .tool-section {
   display: flex;
+  flex-wrap: wrap; /* 允许换行 */
   flex-direction: row;
   align-items: center;
   gap: 16px;
+  flex-shrink: 1; /* 允许收缩 */
+  min-width: 0; /* 防止溢出 */
 }
 
 .toolbar-top .tool-section .tool-title {
