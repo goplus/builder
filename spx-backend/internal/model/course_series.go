@@ -18,6 +18,12 @@ type CourseSeries struct {
 	// Title is the title of the course series.
 	Title string `gorm:"column:title;index:,class:FULLTEXT"`
 
+	// Thumbnail is the universal URL of the course series's thumbnail image.
+	Thumbnail string `gorm:"column:thumbnail"`
+
+	// Description is the description of the course series.
+	Description string `gorm:"column:description"`
+
 	// CourseIDs contains the array of course IDs included in this series.
 	CourseIDs CourseIDCollection `gorm:"column:course_ids"`
 

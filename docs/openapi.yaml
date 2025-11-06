@@ -1402,6 +1402,10 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
       responses:
         "201":
           description: Successfully created the course series.
@@ -1518,6 +1522,10 @@ paths:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
                   $ref: "#/components/schemas/CourseSeries/properties/order"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
       responses:
         "200":
           description: Successfully updated the course series.
@@ -1991,6 +1999,15 @@ components:
           examples:
             - XGo Programming Series
           description: Title of the course series.
+        thumbnail:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course-thumbnail.png
+          description: URL of the course series's thumbnail image.
+        description:
+          type: string
+          description: Description of the course series.
         courseIDs:
           type: array
           items:

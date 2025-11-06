@@ -1,14 +1,24 @@
 <script lang="ts" setup>
 import type { CourseSeries } from '@/apis/course-series'
+import { useAsyncComputed } from '@/utils/utils'
+import { createFileWithWebUrl } from '@/models/common/cloud'
+import { UIImg } from '@/components/ui'
 
-defineProps<{
+const props = defineProps<{
   courseSeries: CourseSeries
 }>()
+
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+  if (props.courseSeries.thumbnail === '' || props.courseSeries.thumbnail == null) return null
+  const file = createFileWithWebUrl(props.courseSeries.thumbnail)
+  return file.url(onCleanup)
+})
 </script>
 
 <template>
   <li class="course-series-item">
-    <div class="content">
+    <UIImg v-if="thumbnailUrl != null" class="thumbnail" :src="thumbnailUrl" size="cover" />
+    <div class="content" :class="{ 'has-thumbnail': thumbnailUrl != null }">
       <div class="order">{{ courseSeries.order }}</div>
       <h3 class="title" :title="courseSeries.title">{{ courseSeries.title }}</h3>
       <div class="course-count">
@@ -51,7 +61,17 @@ defineProps<{
   }
 }
 
+.thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .content {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -59,6 +79,21 @@ defineProps<{
   height: 100%;
   padding: 20px;
   text-align: center;
+
+  &.has-thumbnail {
+    .title {
+      color: var(--ui-color-grey-100);
+    }
+
+    .order {
+      color: var(--ui-color-grey-100);
+    }
+
+    .course-count {
+      color: var(--ui-color-grey-400);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+  }
 }
 
 .order {
@@ -67,33 +102,27 @@ defineProps<{
   left: 12px;
   width: 28px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ui-color-primary);
-  color: white;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 600;
+  color: var(--ui-color-grey-900);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .title {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   font-size: 16px;
-  font-weight: 600;
   color: var(--ui-color-grey-900);
   overflow: hidden;
   display: -webkit-box;
   line-clamp: 2;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
   line-height: 1.4;
   width: 100%;
   word-break: break-word;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .course-count {
-  font-size: 14px;
   color: var(--ui-color-grey-600);
 }
 
