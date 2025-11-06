@@ -369,6 +369,7 @@ const initImportExportManager = (): void => {
     reshapeRef,
     backgroundRect,
     backgroundImage,
+    boundaryRect,
     isImportingFromProps,
     emit: (event: string, data: any) => emit(event as any, data)
   })
@@ -432,7 +433,7 @@ const skipNextImport = ref<boolean>(false)
 const historyManager = ref<HistoryManager | null>(null)
 
 // 边界限制配置
-const BOUNDARY_SCALE = 10 // 边界是舞台的10倍
+const BOUNDARY_SCALE = 5 // 边界是舞台的5倍
 const boundaryRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
 
 const props = defineProps<{

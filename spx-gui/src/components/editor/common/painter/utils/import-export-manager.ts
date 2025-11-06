@@ -18,6 +18,9 @@ export interface ImportExportDependencies {
   backgroundRect: Ref<paper.Path | null>
   backgroundImage: Ref<paper.Raster | null>
 
+  // 边界限制
+  boundaryRect: Ref<{ x: number; y: number; width: number; height: number } | null>
+
   // 状态标记
   isImportingFromProps: Ref<boolean>
 
@@ -66,8 +69,20 @@ export class ImportExportManager {
       this.hideControlPointsForExport()
       const prevVisible = this.hideBackgroundForExport()
 
-      // 使用提供的bounds，如果没有提供则使用activeLayer的bounds（所有内容的边界）
-      const exportBounds = bounds || paper.project.activeLayer?.bounds
+      // 使用提供的bounds，如果没有提供则使用整个逻辑画布的尺寸（boundaryRect）
+      let exportBounds: paper.Rectangle
+      if (bounds) {
+        console.log('Using provided bounds for SVG export:', bounds)
+        exportBounds = bounds
+      } else if (this.dependencies.boundaryRect.value) {
+        console.log('Using boundaryRect for SVG export:', this.dependencies.boundaryRect.value)
+        const boundary = this.dependencies.boundaryRect.value
+        exportBounds = new paper.Rectangle(boundary.x, boundary.y, boundary.width, boundary.height)
+      } else {
+        console.log('No bounds provided, using canvas dimensions for SVG export')
+        // 回退到视图尺寸
+        exportBounds = new paper.Rectangle(0, 0, this.dependencies.canvasWidth.value, this.dependencies.canvasHeight.value)
+      }
 
       const svgStr = paper.project.exportSVG({
         asString: true,
