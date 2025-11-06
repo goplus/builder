@@ -11,6 +11,7 @@ import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './too
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 import dayjs from 'dayjs'
+import { ApiException } from '@/apis/common/exception'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -135,7 +136,8 @@ type RoundExported = {
   inProgressCopilotMessageContent: string | null
   error: LocaleMessage | null
   state: RoundState
-  updatedAt?: number
+  updatedAt?: number | null
+  errorCode?: number | null
 }
 
 export class Round {
@@ -177,6 +179,8 @@ export class Round {
    */
   updatedAt: number
 
+  errorCode?: number | null
+
   export(): RoundExported {
     return {
       userMessage: this.userMessage,
@@ -184,7 +188,8 @@ export class Round {
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
       state: this.state,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      errorCode: this.errorCode
     }
   }
 
@@ -194,6 +199,7 @@ export class Round {
     round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
     round.errorRef.value = exported.error
     round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
+    round.errorCode = exported.errorCode
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -231,6 +237,11 @@ export class Round {
       this.setState(RoundState.Cancelled)
       return
     }
+
+    if (err instanceof ApiException) {
+      this.errorCode = err.code
+    }
+
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
@@ -296,6 +307,7 @@ export class Round {
     this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
+    this.errorCode = null
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
@@ -611,14 +623,6 @@ ${parts.filter((p) => p.trim() !== '').join('\n\n')}
       const saved = storage.get()
       if (saved != null) {
         this.currentSessionRef.value = Session.load(saved, this)
-
-        // If the last round was in Failed or Cancelled state when saved, retry on page refresh
-        // so the unfinished conversation can continue.
-        // Primary user scenario: preserve session continuity after the user completes login.
-        const round = this.currentSession?.currentRound
-        if (round && round.state === RoundState.Failed && round.userMessage.type !== 'event') {
-          round.retry()
-        }
       }
     } catch (e) {
       capture(e, 'Failed to load session from storage')

@@ -54,9 +54,9 @@ const { fn: handleExitTutorial } = useMessageHandle(
 <style lang="scss" scoped>
 .tutorial-state-indicator {
   display: flex;
-  gap: 2px;
-  width: 44px;
-  height: 24px;
+  gap: 4px;
+  width: 52px;
+  height: 28px;
   border-radius: 100px;
   background: var(--ui-color-primary-200);
   align-items: center;

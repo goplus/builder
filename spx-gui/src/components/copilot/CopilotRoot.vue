@@ -33,6 +33,7 @@ import * as pageLink from './custom-elements/PageLink'
 import * as highlightLink from './custom-elements/HighlightLink.vue'
 import * as codeLink from './custom-elements/CodeLink'
 import * as codeChange from './custom-elements/CodeChange.vue'
+import * as signInBtn from './custom-elements/SignInBtn.vue'
 import { codeFilePathSchema, parseProjectIdentifier, projectIdentifierSchema } from './common'
 import { userSessionStorageRef } from '@/utils/user-storage'
 
@@ -459,6 +460,13 @@ copilot.registerCustomElement({
   attributes: codeChange.attributes,
   isRaw: codeChange.isRaw,
   component: codeChange.default
+})
+copilot.registerCustomElement({
+  tagName: signInBtn.tagName,
+  description: signInBtn.description,
+  attributes: signInBtn.attributes,
+  isRaw: signInBtn.isRaw,
+  component: signInBtn.default
 })
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))

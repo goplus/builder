@@ -23,16 +23,6 @@ type SuggestedPrompt = {
   message: LocaleMessage
 }
 
-enum OutputState {
-  // Show conversation with copilot response
-  Round = 'round',
-  // Welcome screen for first-time users with suggested prompts
-  UsageGuide = 'usage-guide',
-  // Sign-in prompt shown to unauthenticated users after first interaction
-  Feedback = 'feedback',
-  None = 'none'
-}
-
 const panelBoundaryBuffer = [20, 20]
 const triggerSnapThreshold = 20
 </script>
@@ -44,9 +34,9 @@ import { useRouter } from 'vue-router'
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { getSignedInUsername, initiateSignIn, isSignedIn } from '@/stores/user'
+import { getSignedInUsername, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip, UITag, UIIcon } from '@/components/ui'
+import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
@@ -76,20 +66,6 @@ const activeRound = computed(() => {
     return null
   }
   return lastRound
-})
-
-const outputState = computed(() => {
-  const lastRound = rounds.value?.at(-1)
-  // Show usage guide when there are no rounds yet (first-time users)
-  if (lastRound == null) return OutputState.UsageGuide
-
-  // Prompt sign-in for non-authenticated users after their first interaction
-  if (!isSignedIn()) return OutputState.Feedback
-
-  // Show active round when it has meaningful content (not loading/initializing)
-  if (![RoundState.Loading, RoundState.Initialized].includes(lastRound.state)) return OutputState.Round
-
-  return OutputState.None
 })
 
 const StateIndicator = computed(() => copilot.stateIndicatorComponent)
@@ -351,8 +327,20 @@ useDraggable(draggerRef, {
 const suggestedPrompts: SuggestedPrompt[] = [
   {
     message: {
+      en: 'Who are you?',
+      zh: '你是谁？'
+    }
+  },
+  {
+    message: {
       en: 'How to create a new project?',
       zh: '如何创建一个新项目？'
+    }
+  },
+  {
+    message: {
+      en: 'Please describe the functions of this page.',
+      zh: '介绍下这个页面有哪些功能。'
     }
   }
 ]
@@ -487,8 +475,8 @@ onMounted(async () => {
           </svg>
         </div>
         <div ref="outputRef" class="output">
-          <template v-if="outputState === OutputState.Round">
-            <CopilotRound :round="activeRound!" is-last-round />
+          <template v-if="activeRound != null">
+            <CopilotRound :round="activeRound" is-last-round />
             <div v-if="quickInputs.length > 0" class="quick-inputs">
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
@@ -498,12 +486,14 @@ onMounted(async () => {
               </UITooltip>
             </div>
           </template>
-          <template v-else-if="outputState === OutputState.UsageGuide">
+          <template v-else-if="session == null">
             <div class="hi">
-              {{ $t({ en: 'Hi, I can help you with XBuilder', zh: '嗨，我可以帮助你使用 XBuilder' }) }}
+              {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
             </div>
             <div class="tips">
-              {{ $t({ en: 'If you have any questions, just ask!', zh: '如果你有任何问题，尽管问！' }) }}
+              {{
+                $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
+              }}
             </div>
             <div class="wrapper">
               <UITag
@@ -512,24 +502,9 @@ onMounted(async () => {
                 type="boring"
                 class="button"
                 @click="handleSuggestedPromptClick($t(suggestedPrompt.message))"
-                ><span style="flex: 1">{{ $t(suggestedPrompt.message) }}</span
-                ><UIIcon type="arrowRightSmall"
-              /></UITag>
+                ><span style="flex: 1">{{ $t(suggestedPrompt.message) }}</span>
+              </UITag>
             </div>
-          </template>
-          <template v-if="outputState === OutputState.Feedback">
-            <div class="feedback-message">
-              {{
-                $t({
-                  en: 'I can help you with XBuilder, please sign in to continue.',
-                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续。'
-                })
-              }}
-            </div>
-            <UITag type="primary" class="sign-in-button" @click="initiateSignIn()">
-              {{ $t({ en: 'Sign in', zh: '登录' }) }}
-              <UIIcon type="arrowRightSmall" />
-            </UITag>
           </template>
         </div>
         <div class="divider"></div>
@@ -718,55 +693,45 @@ $toColor: #c390ff;
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
+    font-size: 13px;
     overflow-y: auto;
     scrollbar-width: thin;
 
     &:not(:empty) {
       margin-top: 14px;
-      padding: 6px 16px 20px 16px;
+      padding: 6px 16px 24px 16px;
     }
 
     .hi {
       font-size: 20px;
-      font-weight: 600;
       color: var(--ui-color-grey-1000);
     }
     .tips {
-      font-size: 14px;
-      font-weight: 600;
-      margin-top: 10px;
+      margin-top: 4px;
+      color: var(--ui-color-grey-700);
     }
     .wrapper {
       width: 100%;
       margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
 
       .button {
         padding: 12px;
-        overflow-wrap: anywhere;
         height: fit-content;
-        gap: 8px;
         width: 100%;
-        justify-content: space-between;
         white-space: normal;
         text-align: left;
       }
     }
 
     .quick-inputs {
-      padding: 20px 16px 16px 0px;
+      padding-top: 20px;
       display: flex;
       flex-direction: row;
       gap: 8px;
       background: var(--ui-color-grey-100);
-    }
-
-    .feedback-message {
-      color: var(--ui-color-grey-800);
-      margin: 12px 0 16px 0;
-    }
-
-    .sign-in-button {
-      gap: 8px;
     }
   }
 
@@ -789,7 +754,7 @@ $toColor: #c390ff;
     gap: 4px;
     align-items: center;
     height: 36px;
-    padding: 6px;
+    padding: 0 4px;
     border-radius: 100px;
     border: 1px solid var(--ui-color-grey-400);
     background: var(--ui-color-grey-100);
