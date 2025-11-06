@@ -36,7 +36,7 @@ import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/uti
 import { useMessageHandle } from '@/utils/exception'
 import { getSignedInUsername, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
+import { providePopupContainer, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
@@ -481,7 +481,7 @@ onMounted(async () => {
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
                 <template #trigger>
-                  <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
+                  <button class="flat-button quick-input" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</button>
                 </template>
               </UITooltip>
             </div>
@@ -495,15 +495,15 @@ onMounted(async () => {
                 $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
               }}
             </div>
-            <div class="wrapper">
-              <UITag
+            <div class="suggested-wrapper">
+              <button
                 v-for="(suggestedPrompt, index) in suggestedPrompts"
                 :key="index"
-                type="boring"
-                class="button"
+                class="flat-button suggested-item"
                 @click="handleSuggestedPromptClick($t(suggestedPrompt.message))"
-                ><span style="flex: 1">{{ $t(suggestedPrompt.message) }}</span>
-              </UITag>
+              >
+                {{ $t(suggestedPrompt.message) }}
+              </button>
             </div>
           </template>
         </div>
@@ -699,7 +699,7 @@ $toColor: #c390ff;
 
     &:not(:empty) {
       margin-top: 14px;
-      padding: 6px 16px 24px 16px;
+      padding: 12px 16px 24px 16px;
     }
 
     .hi {
@@ -710,19 +710,16 @@ $toColor: #c390ff;
       margin-top: 4px;
       color: var(--ui-color-grey-700);
     }
-    .wrapper {
+    .suggested-wrapper {
       width: 100%;
       margin-top: 24px;
       display: flex;
       flex-direction: column;
       gap: 8px;
 
-      .button {
-        padding: 12px;
-        height: fit-content;
+      .suggested-item {
         width: 100%;
-        white-space: normal;
-        text-align: left;
+        padding: 9px 12px;
       }
     }
 
@@ -732,6 +729,36 @@ $toColor: #c390ff;
       flex-direction: row;
       gap: 8px;
       background: var(--ui-color-grey-100);
+
+      .quick-input {
+        width: fit-content;
+        height: 32px;
+        padding: 0 16px;
+      }
+    }
+
+    .flat-button {
+      --bg-color: var(--ui-color-grey-300);
+      border-radius: var(--ui-border-radius-2);
+      background: var(--bg-color);
+      border: 1px solid var(--bg-color);
+      color: var(--ui-color-grey-900);
+      font-size: 13px;
+      line-height: inherit;
+      white-space: normal;
+      text-align: left;
+      transition: 0.3s;
+      cursor: pointer;
+
+      &:hover {
+        --bg-color: var(--ui-color-grey-200);
+      }
+      &:active {
+        --bg-color: var(--ui-color-grey-400);
+      }
+      &:focus {
+        --bg-color: var(--ui-color-grey-500);
+      }
     }
   }
 
@@ -754,7 +781,7 @@ $toColor: #c390ff;
     gap: 4px;
     align-items: center;
     height: 36px;
-    padding: 0 4px;
+    padding: 0 3px;
     border-radius: 100px;
     border: 1px solid var(--ui-color-grey-400);
     background: var(--ui-color-grey-100);

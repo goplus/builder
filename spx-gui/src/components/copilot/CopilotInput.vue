@@ -95,7 +95,7 @@ defineExpose({ focus })
     &::after,
     &::before,
     .dot {
-      background-color: var(--ui-color-grey-900);
+      background-color: var(--ui-color-grey-700);
       border-radius: 50%;
       content: '';
       display: block;

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RoundState, type Round } from './copilot'
 import MarkdownView from './MarkdownView.vue'
 import { ApiExceptionCode } from '@/apis/common/exception'
+import SignInTip from './feedback/SignInTip.vue'
 
 const props = defineProps<{
   round: Round
@@ -13,22 +14,10 @@ const retryable = computed(() => {
   return props.isLastRound && [RoundState.Cancelled, RoundState.Failed].includes(props.round.state)
 })
 
-// todo: abstracted to copilot Round
-const feedback = computed(() => {
+const FeedbackComponent = computed(() => {
   const { state, errorCode } = props.round
-  if (state === RoundState.Failed && errorCode === ApiExceptionCode.errorUnauthorized) {
-    return {
-      message: {
-        zh: `请先登录并继续。
-
-<sign-in-btn />`,
-        en: `
-Please sign in to continue.
-
-<sign-in-btn />
-`
-      }
-    }
+  if (state === RoundState.Failed) {
+    if (errorCode === ApiExceptionCode.errorUnauthorized) return SignInTip
   }
 
   return null
@@ -56,7 +45,9 @@ const resultContent = computed<string | null>(() => {
   <section class="copilot-round">
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized" class="state">
-      <MarkdownView v-if="feedback != null" :value="$t(feedback.message)" />
+      <template v-if="FeedbackComponent != null">
+        <FeedbackComponent :round="round" />
+      </template>
       <template v-else>
         <div v-if="round.state === RoundState.Cancelled" class="cancelled">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
