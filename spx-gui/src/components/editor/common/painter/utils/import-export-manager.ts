@@ -81,7 +81,12 @@ export class ImportExportManager {
         exportBounds = new paper.Rectangle(boundary.x, boundary.y, boundary.width, boundary.height)
       } else {
         // 回退到视图尺寸
-        exportBounds = new paper.Rectangle(0, 0, this.dependencies.canvasWidth.value, this.dependencies.canvasHeight.value)
+        exportBounds = new paper.Rectangle(
+          0,
+          0,
+          this.dependencies.canvasWidth.value,
+          this.dependencies.canvasHeight.value
+        )
       }
 
       let svgStr: string
@@ -89,7 +94,10 @@ export class ImportExportManager {
 
       if (scaleForExport) {
         // 缩小画板内容到1/5，回到舞台尺寸，从而避免导出内容过大
-        const center = new paper.Point(this.dependencies.canvasWidth.value / 2, this.dependencies.canvasHeight.value / 2)
+        const center = new paper.Point(
+          this.dependencies.canvasWidth.value / 2,
+          this.dependencies.canvasHeight.value / 2
+        )
         originalPosition = paper.project.activeLayer.position.clone()
         paper.project.activeLayer.scale(SCALE_FACTOR, center)
 
