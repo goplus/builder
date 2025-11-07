@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import { parseDefinitionId, type DefinitionDocumentationItem } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
@@ -20,7 +20,7 @@ const documentation = useAsyncComputedLegacy<DefinitionDocumentationItem | null>
   return documentBase.getDocumentation(defId)
 })
 
-const childrenText = useSlotTextLegacy('default', true)
+const childrenText = useSlotText('default', true)
 const hasContent = computed(() => documentation.value != null || childrenText.value !== '')
 </script>
 
