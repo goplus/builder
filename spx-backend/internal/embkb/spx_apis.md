@@ -71,10 +71,10 @@ clone,,Make a clone of the sprite
 clone,clone 1,Make a clone of the sprite and pass extra data
 costumeName,,The name of the current costume
 die,,"Let the sprite die. Animation for state ""die"" will be played"
-distanceTo,"distanceTo(""S1"")",Distance from the sprite to another sprite with given name
+distanceTo,distanceTo(S1),Distance from the sprite to another sprite
 distanceTo,distanceTo(Mouse),Distance from the sprite to given object
 glide,"glide 100, 100, 1",Glide to given position within given duration
-glide,"glide ""S1"", 1",Glide to the sprite with given name within given duration
+glide,"glide S1, 1",Glide to given sprite within given duration
 glide,"glide Mouse, 1",Glide to given object within given duration
 heading,,The sprite's heading direction
 hide,,Make the sprite invisible
@@ -129,25 +129,33 @@ volume,,The volume for sprite sounds
 step,step 100,"Step toward current heading with given distance. Animation for state ""step"" will be played"
 step,"step 100, 1","Step toward current heading with given distance and speed. Animation for state ""step"" will be played"
 step,"step 100, 1, ""a1""","Step toward current heading with given distance, speed and animation"
-stepTo,"stepTo ""S1""","Step to the sprite with given name. Animation for state ""step"" will be played"
+stepTo,stepTo S1,"Step to given sprite. Animation for state ""step"" will be played"
 stepTo,"stepTo 100, 100","Step to given position. Animation for state ""step"" will be played"
 stepTo,stepTo Mouse,"Step to the given object. Animation for state ""step"" will be played"
-stepTo,"stepTo ""S1"", 1","Step to the sprite with given name and specify speed. Animation for state ""step"" will be played"
+stepTo,"stepTo S1, 1","Step to given sprite and specify speed. Animation for state ""step"" will be played"
 stepTo,"stepTo 100, 100, 1","Step to given position and specify speed. Animation for state ""step"" will be played"
-stepTo,"stepTo ""S1"", 1, ""a1""",Step to the sprite with given name and specify speed and animation
+stepTo,"stepTo Mouse, 1","Step to given object and specify the step speed. Animation for state ""step"" will be played"
+stepTo,"stepTo S1, 1, ""a1""",Step to given sprite and specify speed and animation
 stepTo,"stepTo 100, 100, 1, ""a1""",Step to given position and specify speed and animation
+stepTo,"stepTo Mouse, 1, ""a1""",Step to given object and specify speed and animation
 stopAnimation,"stopAnimation ""a1""",Stop animation with given name
 think,"think ""Emmm...""",Think of some word
 think,"think ""Emmm..."", 1",Think of some word for given seconds
-touching,"touching(""S1"")",If sprite touching another sprite with given name
+touching,touching(S1),if sprite touching given sprite
 touching,touching(Edge),If sprite touching given object
 touchingColor,"touchingColor(HSB(50,100,100))",If sprite touching given color
 turn,turn Right,"Turn by given direction. For example, if initially heading at 30 degrees, turning right will result in heading 120 degrees"
 turn,"turn Right, 1",Turn by given direction and specify the turn speed
 turn,"turn Right, 1, ""a1""","Turn by given direction, specify the turn speed and animation"
-turnTo,"turnTo ""S1""",Turn to the sprite with given name
-turnTo,"turnTo ""S1"", 1","Turn to the sprite with given name, and specify the turn speed"
-turnTo,"turnTo ""S1"", 1, ""a1""","Turn to the sprite with given name, and specify the turn speed and animation"
+turnTo,turnTo S1,Turn to given sprite
+turnTo,turnTo Right,Turn to given direction
+turnTo,turnTo Mouse,Turn to given object
+turnTo,"turnTo S1, 1","Turn to given sprite, and specify the turn speed"
+turnTo,"turnTo Right, 1","Turn to given direction, and specify the turn speed"
+turnTo,"turnTo Mouse, 1","Turn to given object, and specify the turn speed"
+turnTo,"turnTo S1, 1, ""a1""","Turn to given sprite, and specify the turn speed and animation"
+turnTo,"turnTo Right, 1, ""a1""","Turn to given direction, and specify the turn speed and animation"
+turnTo,"turnTo Mouse, 1, ""a1""","Turn to given object, and specify the turn speed and animation"
 visible,,If sprite visible
 xpos,,The sprite's X position
 ypos,,The sprite's Y position
@@ -164,7 +172,6 @@ Front,,Front
 hSB,"HSB(50, 100, 100)",Define HSB color
 hSBA,"HSBA(50, 100, 100, 100)",Define HSBA color
 Camera.follow,Camera.follow S1,Make the camera follow the given sprite
-Camera.follow,"Camera.follow ""S1""",Make the camera follow the given sprite by name
 Camera.setXYpos,"Camera.setXYpos 0, 0",Set the X and Y position of the camera center
 Camera.setZoom,Camera.setZoom 1,Set zoom factor of the camera
 Camera.xpos,,The X position of the camera center
