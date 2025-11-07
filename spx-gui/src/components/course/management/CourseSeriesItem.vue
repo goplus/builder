@@ -1,17 +1,16 @@
 <script lang="ts" setup>
 import type { CourseSeries } from '@/apis/course-series'
 import { useAsyncComputed } from '@/utils/utils'
-import { createFileWithWebUrl } from '@/models/common/cloud'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIImg } from '@/components/ui'
-import { isEmpty } from 'lodash'
 
 const props = defineProps<{
   courseSeries: CourseSeries
 }>()
 
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
-  if (props.courseSeries.thumbnail == null || isEmpty(props.courseSeries.thumbnail)) return null
-  const file = createFileWithWebUrl(props.courseSeries.thumbnail)
+  if (props.courseSeries.thumbnail === '') return null
+  const file = createFileWithUniversalUrl(props.courseSeries.thumbnail)
   return file.url(onCleanup)
 })
 </script>
