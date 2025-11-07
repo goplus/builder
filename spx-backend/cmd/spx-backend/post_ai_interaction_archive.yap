@@ -13,7 +13,11 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-if !ensureQuotaLeft(ctx, authz.ResourceAIInteractionArchive) {
+const (
+	quotaResource = authz.ResourceAIInteractionArchive
+	quotaAmount   = 1
+)
+if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 	return
 }
 
@@ -32,5 +36,6 @@ if err != nil {
 	return
 }
 
-consumeQuota(ctx, authz.ResourceAIInteractionArchive, 1)
+consumeQuota(ctx, quotaResource, quotaAmount)
+
 json result

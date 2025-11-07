@@ -2,6 +2,7 @@ package quota
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -10,9 +11,6 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/config"
 	"github.com/redis/go-redis/v9"
 )
-
-// quotaTTL is the TTL for quota keys in Redis.
-const quotaTTL = 24 * time.Hour
 
 // redisQuotaTracker implements [authz.QuotaTracker] using Redis storage.
 type redisQuotaTracker struct {
@@ -40,28 +38,50 @@ func NewRedisQuotaTracker(cfg config.RedisConfig) authz.QuotaTracker {
 }
 
 // Usage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, resource authz.Resource) (int64, error) {
-	key := fmt.Sprintf("%d:%s", userID, resource)
+func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, resource authz.Resource) (authz.QuotaUsage, error) {
+	key := quotaKey(userID, resource)
 
-	usage, err := t.client.Get(ctx, key).Int64()
-	if err != nil {
-		if err == redis.Nil {
-			// Key doesn't exist, return 0.
-			return 0, nil
-		}
-		return 0, fmt.Errorf("failed to get usage from Redis: %w", err)
+	var (
+		usageCmd *redis.StringCmd
+		ttlCmd   *redis.DurationCmd
+	)
+	if _, err := t.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		usageCmd = pipe.Get(ctx, key)
+		ttlCmd = pipe.PTTL(ctx, key)
+		return nil
+	}); err != nil && !errors.Is(err, redis.Nil) {
+		return authz.QuotaUsage{}, fmt.Errorf("failed to fetch usage from Redis: %w", err)
 	}
+
+	var usage authz.QuotaUsage
+
+	if used, err := usageCmd.Int64(); err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return authz.QuotaUsage{}, fmt.Errorf("failed to get usage from Redis: %w", err)
+		}
+	} else if used > 0 {
+		usage.Used = used
+	}
+
+	if ttl, err := ttlCmd.Result(); err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return authz.QuotaUsage{}, fmt.Errorf("failed to get TTL from Redis: %w", err)
+		}
+	} else if ttl > 0 {
+		usage.ResetTime = time.Now().Add(ttl)
+	}
+
 	return usage, nil
 }
 
 // IncrementUsage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, resource authz.Resource, amount int64) error {
-	key := fmt.Sprintf("%d:%s", userID, resource)
+func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, resource authz.Resource, amount int64, policy authz.QuotaPolicy) error {
+	key := quotaKey(userID, resource)
 
 	// Use pipeline to atomically increment and set TTL.
 	pipe := t.client.Pipeline()
 	pipe.IncrBy(ctx, key, amount)
-	pipe.Expire(ctx, key, quotaTTL)
+	pipe.ExpireNX(ctx, key, policy.Window)
 
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("failed to increment usage in Redis: %w", err)
@@ -71,7 +91,7 @@ func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, re
 
 // ResetUsage implements [authz.QuotaTracker].
 func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, resource authz.Resource) error {
-	key := fmt.Sprintf("%d:%s", userID, resource)
+	key := quotaKey(userID, resource)
 
 	if _, err := t.client.Del(ctx, key).Result(); err != nil {
 		return fmt.Errorf("failed to reset usage in Redis: %w", err)
@@ -85,4 +105,9 @@ func (t *redisQuotaTracker) Close() error {
 		return c.Close()
 	}
 	return nil
+}
+
+// quotaKey returns the Redis key for quota tracking.
+func quotaKey(userID int64, resource authz.Resource) string {
+	return fmt.Sprintf("%d:%s", userID, resource)
 }

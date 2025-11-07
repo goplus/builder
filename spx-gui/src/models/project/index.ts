@@ -519,13 +519,13 @@ export class Project extends Disposable {
   }
 
   /** Export metadata & game files */
-  async export(): Promise<[Metadata, Files]> {
+  async export(signal?: AbortSignal): Promise<[Metadata, Files]> {
     return this.historyMutex.runExclusive(async () => {
       // Do flush pending thumbnail updates to ensure the exported thumbnail up-to-date.
       // So the caller of `export` (cloud-saving, local-saving, xbp-exporting, etc.) always get the latest thumbnail.
       // For more details, see https://github.com/goplus/builder/issues/1807 .
       await this.updateThumbnail.flush()
-      if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription() // Ensure AI description is available if needed
+      if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription(undefined, signal) // Ensure AI description is available if needed
       return [this.exportMetadata(), this.exportGameFiles()]
     })
   }
@@ -535,9 +535,9 @@ export class Project extends Disposable {
     await this.load(metadata, files)
   }
 
-  async exportXbpFile() {
-    const [metadata, files] = await this.export()
-    return await xbpHelper.save(metadata, files)
+  async exportXbpFile(signal?: AbortSignal) {
+    const [metadata, files] = await this.export(signal)
+    return await xbpHelper.save(metadata, files, signal)
   }
 
   /** Load from cloud */
@@ -569,7 +569,7 @@ export class Project extends Disposable {
   async saveToCloud(signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
     if (isProjectUsingAIInteraction(this)) await this.ensureAIDescription(false, signal) // Ensure AI description is available if needed
-    const [metadata, files] = await this.export()
+    const [metadata, files] = await this.export(signal)
     const saved = await cloudHelper.save(metadata, files, signal)
     this.loadMetadata(saved.metadata)
   }
@@ -583,10 +583,10 @@ export class Project extends Disposable {
   }
 
   /** Save to local cache */
-  async saveToLocalCache(key: string) {
+  async saveToLocalCache(key: string, signal?: AbortSignal) {
     if (this.isDisposed) throw new Error('disposed')
-    const [metadata, files] = await this.export()
-    await localHelper.save(key, metadata, files)
+    const [metadata, files] = await this.export(signal)
+    await localHelper.save(key, metadata, files, signal)
   }
 
   /** Ensure AI description is available */
@@ -594,7 +594,7 @@ export class Project extends Disposable {
     if (this.aiDescription != null && !checkForUpdate) return this.aiDescription
 
     const files = this.exportGameFiles()
-    const currentHash = await hashFiles(files)
+    const currentHash = await hashFiles(files, signal)
 
     // Generate or update if necessary
     if (this.aiDescription == null || this.aiDescriptionHash !== currentHash) {

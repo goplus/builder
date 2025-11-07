@@ -71,6 +71,8 @@ export function useMessageHandle<Args extends any[], T>(
  */
 export function capture(err: unknown, ctx?: unknown) {
   if (err instanceof Cancelled) return
-  captureException(err)
-  if (process.env.NODE_ENV !== 'test') console.warn(ctx, err)
+  if (process.env.NODE_ENV !== 'test') {
+    captureException(err)
+    console.warn(ctx, err)
+  }
 }

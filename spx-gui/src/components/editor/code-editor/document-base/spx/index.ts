@@ -85,7 +85,7 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertSnippet: 'onTouchStart ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, sprite => {\n\t$0\n}',
-  insertSnippetParameterHints: ['sprite'],
+  insertSnippetParameterHints: ['name'],
   overview: 'onTouchStart name, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to sprite touching another sprite with given name',
@@ -112,7 +112,7 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertSnippet: 'onTouchStart ${1:["${BUILDER_OTHER_SPRITE_NAME:S1}"]}, sprite => {\n\t$0\n}',
-  insertSnippetParameterHints: ['sprites'],
+  insertSnippetParameterHints: ['names'],
   overview: 'onTouchStart names, sprite => {}',
   detail: makeBasicMarkdownString({
     en: 'Listen to sprite touching another sprite with one of given names',
@@ -392,7 +392,6 @@ export const think1: DefinitionDocumentationItem = {
 export const distanceTo0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
-  hiddenFromList: true, // similar to `distanceTo1`, but `distanceTo1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.distanceTo',
@@ -410,13 +409,14 @@ export const distanceTo0: DefinitionDocumentationItem = {
 export const distanceTo1: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
+  hiddenFromList: true, // similar to `distanceTo0`, but `distanceTo0` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.distanceTo',
     overloadId: '1'
   },
   insertSnippet: 'distanceTo(${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"})',
-  insertSnippetParameterHints: ['sprite'],
+  insertSnippetParameterHints: ['name'],
   overview: 'distanceTo(name)',
   detail: makeBasicMarkdownString({
     en: 'Distance from the sprite to another sprite with given name',
@@ -542,7 +542,6 @@ export const step2: DefinitionDocumentationItem = {
 export const stepTo0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true, // similar to `stepTo1`, but `stepTo1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -560,6 +559,7 @@ export const stepTo0: DefinitionDocumentationItem = {
 export const stepTo1: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo0`, but `stepTo0` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -611,7 +611,6 @@ export const stepTo3: DefinitionDocumentationItem = {
 export const stepTo4: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true, // similar to `stepTo5`, but `stepTo5` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -629,6 +628,7 @@ export const stepTo4: DefinitionDocumentationItem = {
 export const stepTo5: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo4`, but `stepTo4` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -680,7 +680,6 @@ export const stepTo7: DefinitionDocumentationItem = {
 export const stepTo8: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
-  hiddenFromList: true, // similar to `stepTo9`, but `stepTo9` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -698,6 +697,7 @@ export const stepTo8: DefinitionDocumentationItem = {
 export const stepTo9: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `stepTo8`, but `stepTo8` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.stepTo',
@@ -771,26 +771,26 @@ export const glide1: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '1'
   },
-  insertSnippet: 'glide {$1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
+  insertSnippet: 'glide ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
   insertSnippetParameterHints: ['sprite', 'seconds'],
   overview: 'glide sprite, seconds',
   detail: makeBasicMarkdownString({
     en: 'Glide to given sprite within given duration',
     zh: '在指定时间内滑行到指定精灵'
-  }),
-  hiddenFromList: true // similar to `glide2`, but `glide2` is more recommended
+  })
 }
 
 export const glide2: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `glide1`, but `glide1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.glide',
     overloadId: '2'
   },
   insertSnippet: 'glide ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
-  insertSnippetParameterHints: ['sprite', 'seconds'],
+  insertSnippetParameterHints: ['name', 'seconds'],
   overview: 'glide name, seconds',
   detail: makeBasicMarkdownString({
     en: 'Glide to the sprite with given name within given duration',
@@ -1023,107 +1023,120 @@ export const turn2: DefinitionDocumentationItem = {
   })
 }
 
+export const turnTo0: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '0'
+  },
+  insertSnippet: 'turnTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}',
+  insertSnippetParameterHints: ['sprite'],
+  overview: 'turnTo sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to given sprite',
+    zh: '转向指定精灵'
+  })
+}
+
 export const turnTo1: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `turnTo0`, but `turnTo0` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '1'
   },
   insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}',
-  insertSnippetParameterHints: ['target'],
-  overview: 'turnTo target',
+  insertSnippetParameterHints: ['name'],
+  overview: 'turnTo name',
   detail: makeBasicMarkdownString({
     en: 'Turn to the sprite with given name',
     zh: '转向指定名字的精灵'
   })
 }
 
-export const turnTo0: DefinitionDocumentationItem = {
-  ...turnTo1,
-  hiddenFromList: true,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turnTo',
-    overloadId: '0'
-  },
-  insertSnippet: 'turnTo ${1:sprite}',
-  detail: makeBasicMarkdownString({
-    en: 'Turn to given sprite',
-    zh: '转向指定精灵'
-  })
-}
 export const turnTo2: DefinitionDocumentationItem = {
-  ...turnTo1,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '2'
   },
   insertSnippet: 'turnTo ${1:Right}',
+  insertSnippetParameterHints: ['direction'],
+  overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
     en: 'Turn to given direction',
     zh: '转向指定方向'
   })
 }
 export const turnTo3: DefinitionDocumentationItem = {
-  ...turnTo1,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '3'
   },
   insertSnippet: 'turnTo ${1:Mouse}',
+  insertSnippetParameterHints: ['object'],
+  overview: 'turnTo object',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object',
     zh: '转向指定对象'
   })
 }
 
-export const turnTo5: DefinitionDocumentationItem = {
+export const turnTo4: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '5'
-  },
-  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
-  insertSnippetParameterHints: ['target', 'speed'],
-  overview: 'turnTo target, speed',
-  detail: makeBasicMarkdownString({
-    en: 'Turn to the sprite with given name, and specify the turn speed',
-    zh: '转向精灵（指定名字），并指定旋转速度'
-  })
-}
-
-export const turnTo4: DefinitionDocumentationItem = {
-  ...turnTo5,
-  hiddenFromList: true,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turnTo',
     overloadId: '4'
   },
-  insertSnippet: 'turnTo ${1:sprite}, ${2:1}',
+  insertSnippet: 'turnTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}',
+  insertSnippetParameterHints: ['sprite', 'speed'],
+  overview: 'turnTo sprite, speed',
   detail: makeBasicMarkdownString({
     en: 'Turn to given sprite, and specify the turn speed',
     zh: '转向指定精灵，并指定旋转速度'
   })
 }
 
+export const turnTo5: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `turnTo4`, but `turnTo4` is more recommended
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '5'
+  },
+  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}',
+  insertSnippetParameterHints: ['name', 'speed'],
+  overview: 'turnTo name, speed',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to the sprite with given name, and specify the turn speed',
+    zh: '转向精灵（指定名字），并指定旋转速度'
+  })
+}
+
 export const turnTo6: DefinitionDocumentationItem = {
-  ...turnTo5,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '6'
   },
   insertSnippet: 'turnTo ${1:Right}, ${2:1}',
+  insertSnippetParameterHints: ['direction', 'speed'],
+  overview: 'turnTo direction, speed',
   detail: makeBasicMarkdownString({
     en: 'Turn to given direction, and specify the turn speed',
     zh: '转向指定方向，并指定旋转速度'
@@ -1131,61 +1144,68 @@ export const turnTo6: DefinitionDocumentationItem = {
 }
 
 export const turnTo7: DefinitionDocumentationItem = {
-  ...turnTo5,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: '7'
   },
   insertSnippet: 'turnTo ${1:Mouse}, ${2:1}',
+  insertSnippetParameterHints: ['object', 'speed'],
+  overview: 'turnTo object, speed',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object, and specify the turn speed',
     zh: '转向指定对象，并指定旋转速度'
   })
 }
 
-export const turnTo9: DefinitionDocumentationItem = {
+export const turnTo8: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '9'
-  },
-  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
-  insertSnippetParameterHints: ['target', 'speed', 'animation'],
-  overview: 'turnTo target, speed, animation',
-  detail: makeBasicMarkdownString({
-    en: 'Turn to the sprite with given name, and specify the turn speed and animation',
-    zh: '转向精灵（指定名字），并指定旋转速度和动画'
-  })
-}
-
-export const turnTo8: DefinitionDocumentationItem = {
-  ...turnTo9,
-  hiddenFromList: true,
-  definition: {
-    package: packageSpx,
-    name: 'Sprite.turnTo',
     overloadId: '8'
   },
-  insertSnippet: 'turnTo ${1:sprite}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippet: 'turnTo ${1:${BUILDER_OTHER_SPRITE_NAME:S1}}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['sprite', 'speed', 'animation'],
+  overview: 'turnTo sprite, speed, animation',
   detail: makeBasicMarkdownString({
     en: 'Turn to given sprite, and specify the turn speed and animation',
     zh: '转向指定精灵，并指定旋转速度和动画'
   })
 }
 
+export const turnTo9: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `turnTo8`, but `turnTo8` is more recommended
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '9'
+  },
+  insertSnippet: 'turnTo ${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['name', 'speed', 'animation'],
+  overview: 'turnTo name, speed, animation',
+  detail: makeBasicMarkdownString({
+    en: 'Turn to the sprite with given name, and specify the turn speed and animation',
+    zh: '转向精灵（指定名字），并指定旋转速度和动画'
+  })
+}
+
 export const turnToA: DefinitionDocumentationItem = {
-  ...turnTo9,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: 'a'
   },
   insertSnippet: 'turnTo ${1:Right}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['direction', 'speed', 'animation'],
+  overview: 'turnTo direction, speed, animation',
   detail: makeBasicMarkdownString({
     en: 'Turn to given direction, and specify the turn speed and animation',
     zh: '转向指定方向，并指定旋转速度和动画'
@@ -1193,14 +1213,16 @@ export const turnToA: DefinitionDocumentationItem = {
 }
 
 export const turnToB: DefinitionDocumentationItem = {
-  ...turnTo9,
-  hiddenFromList: true,
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
     overloadId: 'b'
   },
   insertSnippet: 'turnTo ${1:Mouse}, ${2:1}, ${3:"${BUILDER_FIRST_ANIMATION_NAME:a1}"}',
+  insertSnippetParameterHints: ['object', 'speed', 'animation'],
+  overview: 'turnTo object, speed, animation',
   detail: makeBasicMarkdownString({
     en: 'Turn to given object, and specify the turn speed and animation',
     zh: '转向指定对象，并指定旋转速度和动画'
@@ -1383,13 +1405,14 @@ export const spriteClearGraphicEffects: DefinitionDocumentationItem = {
 export const touching0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
+  hiddenFromList: true, // similar to `touching1`, but `touching1` is more recommended
   definition: {
     package: packageSpx,
     name: 'Sprite.touching',
     overloadId: '0'
   },
   insertSnippet: 'touching(${1:"${BUILDER_OTHER_SPRITE_NAME:S1}"})',
-  insertSnippetParameterHints: ['sprite'],
+  insertSnippetParameterHints: ['name'],
   overview: 'touching(name)',
   detail: makeBasicMarkdownString({
     en: 'If sprite touching another sprite with given name',
@@ -1405,13 +1428,13 @@ export const touching1: DefinitionDocumentationItem = {
     name: 'Sprite.touching',
     overloadId: '1'
   },
-  insertSnippet: 'touching(${1:sprite})',
+  insertSnippet: 'touching(${1:${BUILDER_OTHER_SPRITE_NAME:S1}})',
+  insertSnippetParameterHints: ['sprite'],
   overview: 'touching(sprite)',
   detail: makeBasicMarkdownString({
     en: 'if sprite touching given sprite',
     zh: '精灵是否与指定的其他精灵接触'
-  }),
-  hiddenFromList: true // similar to `touching0`, but `touching0` is more recommended
+  })
 }
 
 export const touching2: DefinitionDocumentationItem = {
@@ -1540,9 +1563,10 @@ export const setBackdrop1: DefinitionDocumentationItem = {
     zh: '（指定序号）切换背景'
   })
 }
+
 export const setBackdrop2: DefinitionDocumentationItem = {
   ...setBackdrop1,
-  hiddenFromList: true,
+  hiddenFromList: true, // duplicate with `setBackdrop1`
   definition: {
     package: packageSpx,
     name: 'Game.setBackdrop',
@@ -1602,7 +1626,7 @@ export const setBackdropAndWait1: DefinitionDocumentationItem = {
 }
 export const setBackdropAndWait2: DefinitionDocumentationItem = {
   ...setBackdropAndWait1,
-  hiddenFromList: true,
+  hiddenFromList: true, // duplicate with `setBackdropAndWait1`
   definition: {
     package: packageSpx,
     name: 'Game.setBackdropAndWait',
@@ -3120,6 +3144,7 @@ export const cameraFollow0: DefinitionDocumentationItem = {
 export const cameraFollow1: DefinitionDocumentationItem = {
   categories: [categories.game.camera],
   kind: DefinitionKind.Command,
+  hiddenFromList: true, // similar to `cameraFollow0`, but `cameraFollow0` is more recommended
   definition: {
     package: packageSpx,
     name: 'Camera.follow',

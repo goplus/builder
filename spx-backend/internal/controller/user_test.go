@@ -35,16 +35,28 @@ func newContextWithTestUser(ctx context.Context) context.Context {
 	testUser := newTestUser()
 	ctx = authn.NewContextWithUser(ctx, testUser)
 	ctx = authz.NewContextWithUserCapabilities(ctx, authz.UserCapabilities{
-		CanManageAssets:               false,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       100,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        295,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11900,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7980,
+		CanManageAssets:  false,
+		CanUsePremiumLLM: false,
+		CopilotMessageQuota: authz.Quota{
+			Limit:     100,
+			Remaining: 100,
+			Window:    24 * 60 * 60,
+		},
+		AIDescriptionQuota: authz.Quota{
+			Limit:     300,
+			Remaining: 295,
+			Window:    24 * 60 * 60,
+		},
+		AIInteractionTurnQuota: authz.Quota{
+			Limit:     12000,
+			Remaining: 11900,
+			Window:    24 * 60 * 60,
+		},
+		AIInteractionArchiveQuota: authz.Quota{
+			Limit:     8000,
+			Remaining: 7980,
+			Window:    24 * 60 * 60,
+		},
 	})
 	return ctx
 }
@@ -469,14 +481,6 @@ func TestControllerGetAuthenticatedUser(t *testing.T) {
 		assert.NotNil(t, result.Capabilities)
 		assert.False(t, result.Capabilities.CanManageAssets)
 		assert.False(t, result.Capabilities.CanUsePremiumLLM)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(300), result.Capabilities.AIDescriptionQuota)
-		assert.Equal(t, int64(295), result.Capabilities.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(12000), result.Capabilities.AIInteractionTurnQuota)
-		assert.Equal(t, int64(11900), result.Capabilities.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(8000), result.Capabilities.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(7980), result.Capabilities.AIInteractionArchiveQuotaLeft)
 	})
 
 	t.Run("Unauthorized", func(t *testing.T) {
@@ -550,14 +554,6 @@ func TestControllerUpdateAuthenticatedUser(t *testing.T) {
 		assert.NotNil(t, result.Capabilities)
 		assert.False(t, result.Capabilities.CanManageAssets)
 		assert.False(t, result.Capabilities.CanUsePremiumLLM)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(300), result.Capabilities.AIDescriptionQuota)
-		assert.Equal(t, int64(295), result.Capabilities.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(12000), result.Capabilities.AIInteractionTurnQuota)
-		assert.Equal(t, int64(11900), result.Capabilities.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(8000), result.Capabilities.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(7980), result.Capabilities.AIInteractionArchiveQuotaLeft)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})

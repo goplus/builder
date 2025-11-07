@@ -164,8 +164,8 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.heading`,
   `xgo:${packageSpx}?Sprite.turn#0`,
   `xgo:${packageSpx}?Sprite.turn#1`,
-  `xgo:${packageSpx}?Sprite.turnTo#1`,
-  `xgo:${packageSpx}?Sprite.turnTo#5`,
+  `xgo:${packageSpx}?Sprite.turnTo#0`,
+  `xgo:${packageSpx}?Sprite.turnTo#4`,
   `xgo:${packageSpx}?Sprite.changeHeading`,
   `xgo:${packageSpx}?Sprite.setHeading`,
   `xgo:${packageSpx}?Up`,
@@ -181,12 +181,12 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Sprite.ypos`,
   `xgo:${packageSpx}?Sprite.step#0`,
   `xgo:${packageSpx}?Sprite.step#1`,
-  `xgo:${packageSpx}?Sprite.stepTo#1`,
+  `xgo:${packageSpx}?Sprite.stepTo#0`,
   `xgo:${packageSpx}?Sprite.stepTo#2`,
-  `xgo:${packageSpx}?Sprite.stepTo#5`,
+  `xgo:${packageSpx}?Sprite.stepTo#4`,
   `xgo:${packageSpx}?Sprite.stepTo#6`,
   `xgo:${packageSpx}?Sprite.glide#0`,
-  `xgo:${packageSpx}?Sprite.glide#2`,
+  `xgo:${packageSpx}?Sprite.glide#1`,
   `xgo:${packageSpx}?Sprite.glide#3`,
   `xgo:${packageSpx}?Sprite.changeXpos`,
   `xgo:${packageSpx}?Sprite.setXpos`,
@@ -205,9 +205,9 @@ const apiReferenceItems = [
 
   `xgo:${packageSpx}?Sprite.die`,
 
-  `xgo:${packageSpx}?Sprite.touching#0`,
+  `xgo:${packageSpx}?Sprite.touching#1`,
   `xgo:${packageSpx}?Sprite.touching#2`,
-  `xgo:${packageSpx}?Sprite.distanceTo#1`,
+  `xgo:${packageSpx}?Sprite.distanceTo#0`,
   `xgo:${packageSpx}?Sprite.distanceTo#2`,
 
   `xgo:${packageSpx}?Edge`,
@@ -265,7 +265,7 @@ const apiReferenceItems = [
   `xgo:${packageSpx}?Camera.xpos`,
   `xgo:${packageSpx}?Camera.ypos`,
   `xgo:${packageSpx}?Camera.setXYpos`,
-  `xgo:${packageSpx}?Camera.follow#1`
+  `xgo:${packageSpx}?Camera.follow#0`
 ]
 
 class APIReferenceProvider implements IAPIReferenceProvider {
@@ -385,7 +385,7 @@ class DiagnosticsProvider
 
   private async getRuntimeDiagnostics(ctx: DiagnosticsContext) {
     const { outputs, filesHash } = this.runtime
-    const currentFilesHash = await hashFiles(this.project.exportGameFiles())
+    const currentFilesHash = await hashFiles(this.project.exportGameFiles(), ctx.signal)
     if (filesHash !== currentFilesHash) return []
     const diagnostics: Diagnostic[] = []
     for (const output of outputs) {
@@ -528,6 +528,10 @@ class HoverProvider implements IHoverProvider {
     }
     const lspHover = await this.lspClient.textDocumentHover({ signal: ctx.signal }, lspParams)
     if (lspHover == null) return null
+    // LS may return hover info for a range that doesn't include the position (See details in https://github.com/goplus/builder/issues/2043).
+    // That may introduce inconsistency when there are also other hover UI sources (e.g., diagnostics, resource-references).
+    // So we drop such hover info here.
+    if (lspHover.range != null && !containsPosition(fromLSPRange(lspHover.range), position)) return null
     const contents: DefinitionDocumentationString[] = []
     if (lsp.MarkupContent.is(lspHover.contents)) {
       // For now, we support MarkupContent only

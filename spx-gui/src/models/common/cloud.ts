@@ -2,6 +2,7 @@ import * as qiniu from 'qiniu-js'
 import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
+import { mergeSignals } from '@/utils/disposable'
 import { ConcurrencyLimitController } from '@/utils/concurrency-limit'
 import { selectFile, selectFiles, type FileSelectOptions } from '@/utils/file'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
@@ -126,9 +127,10 @@ function getUniversalUrl(file: File): UniversalUrl | null {
 }
 
 export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
-  const file = new File(name, async () => {
+  const file = new File(name, async (signal) => {
     const webUrl = await universalUrlToWebUrl(url)
-    const resp = await fetchFile(webUrl)
+    signal?.throwIfAborted()
+    const resp = await fetchFile(webUrl, signal)
     return resp.arrayBuffer()
   })
   setUniversalUrl(file, url)
@@ -136,22 +138,24 @@ export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(ur
 }
 
 export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
-  return new File(name, async () => {
-    const resp = await fetchFile(url)
+  return new File(name, async (signal) => {
+    const resp = await fetchFile(url, signal)
     return resp.arrayBuffer()
   })
 }
 
 const fetchFileController = new ConcurrencyLimitController(20)
 
-const fetchFile = (url: WebUrl) =>
+const fetchFile = (url: WebUrl, signal?: AbortSignal) =>
   fetchFileController.run(() => {
+    signal?.throwIfAborted()
     const timeout = 15_000 // ms. Timeout for response (headers) to arrive
     return withRetry(
       () => {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(new TimeoutException()), timeout)
-        return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeoutId))
+        const mergedSignal = mergeSignals(signal, controller.signal)
+        return fetch(url, { signal: mergedSignal }).finally(() => clearTimeout(timeoutId))
       },
       2,
       500
@@ -230,15 +234,15 @@ export async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 
-  const url = await ((await isInlineable(file)) ? inlineFile(file) : uploadToKodo(file, signal))
+  const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : uploadToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }
 
-async function isInlineable(file: File) {
+async function isInlineable(file: File, signal?: AbortSignal) {
   const maxInlineSize = 10 * 1024 // 10 KB threshold
   if (!isText(file)) return false
-  const arrayBuffer = await file.arrayBuffer()
+  const arrayBuffer = await file.arrayBuffer(signal)
   return arrayBuffer.byteLength <= maxInlineSize
 }
 
@@ -268,7 +272,7 @@ const uploadToKodoController = new ConcurrencyLimitController(20)
 
 const uploadToKodo = (file: File, signal?: AbortSignal) =>
   uploadToKodoController.run<UniversalUrl>(async () => {
-    const nativeFile = await toNativeFile(file)
+    const nativeFile = await toNativeFile(file, signal)
     const { token, maxSize, bucket, region } = await getUpInfoWithCache()
     if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
     const observable = qiniu.upload(

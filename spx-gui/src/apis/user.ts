@@ -21,7 +21,7 @@ export type User = {
 }
 
 export type SignedInUser = User & {
-  /** Capabilities and quotas of the user */
+  /** Capabilities of the user */
   capabilities: UserCapabilities
 }
 
@@ -32,22 +32,6 @@ export type UserCapabilities = {
   canManageCourses: boolean
   /** Whether user can access premium LLM models */
   canUsePremiumLLM: boolean
-  /** Total quota for Copilot messages */
-  copilotMessageQuota: number
-  /** Remaining quota for Copilot messages */
-  copilotMessageQuotaLeft: number
-  /** Total quota for AI description generations */
-  aiDescriptionQuota: number
-  /** Remaining quota for AI description generations */
-  aiDescriptionQuotaLeft: number
-  /** Total quota for AI interaction turns */
-  aiInteractionTurnQuota: number
-  /** Remaining quota for AI interaction turns */
-  aiInteractionTurnQuotaLeft: number
-  /** Total quota for AI interaction archives */
-  aiInteractionArchiveQuota: number
-  /** Remaining quota for AI interaction archives */
-  aiInteractionArchiveQuotaLeft: number
 }
 
 export async function getUser(name: string): Promise<User> {

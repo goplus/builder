@@ -16,6 +16,7 @@ import {
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
+import { capture } from './exception'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -503,8 +504,9 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3,
     try {
       return await fn()
     } catch (error) {
-      if (attempt < maxRetries) await timeout(delayMs)
-      else throw error
+      if (attempt >= maxRetries) throw error
+      capture(error, `Attempt ${attempt + 1} failed, retrying...`)
+      await timeout(delayMs)
     }
   }
   throw new Error(`invalid maxRetries: ${maxRetries}`)
