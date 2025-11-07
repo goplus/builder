@@ -14,10 +14,12 @@ import (
 type CourseSeriesDTO struct {
 	ModelDTO
 
-	Owner     string   `json:"owner"`
-	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIDs"`
-	Order     int      `json:"order"`
+	Owner       string   `json:"owner"`
+	Title       string   `json:"title"`
+	Thumbnail   string   `json:"thumbnail"`
+	Description string   `json:"description"`
+	CourseIDs   []string `json:"courseIDs"`
+	Order       int      `json:"order"`
 }
 
 // toCourseSeriesDTO converts the model course series to its DTO.
@@ -27,11 +29,13 @@ func toCourseSeriesDTO(mCourseSeries model.CourseSeries) CourseSeriesDTO {
 		courseIDs[i] = strconv.FormatInt(id, 10)
 	}
 	return CourseSeriesDTO{
-		ModelDTO:  toModelDTO(mCourseSeries.Model),
-		Owner:     mCourseSeries.Owner.Username,
-		Title:     mCourseSeries.Title,
-		CourseIDs: courseIDs,
-		Order:     mCourseSeries.Order,
+		ModelDTO:    toModelDTO(mCourseSeries.Model),
+		Owner:       mCourseSeries.Owner.Username,
+		Title:       mCourseSeries.Title,
+		Thumbnail:   mCourseSeries.Thumbnail,
+		Description: mCourseSeries.Description,
+		CourseIDs:   courseIDs,
+		Order:       mCourseSeries.Order,
 	}
 }
 
@@ -60,9 +64,11 @@ func (ctrl *Controller) ensureCourseSeries(ctx context.Context, id int64, ownedO
 
 // CreateCourseSeriesParams holds parameters for creating a course series.
 type CreateCourseSeriesParams struct {
-	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIDs"`
-	Order     int      `json:"order"`
+	Title       string   `json:"title"`
+	Thumbnail   string   `json:"thumbnail"`
+	Description string   `json:"description"`
+	CourseIDs   []string `json:"courseIDs"`
+	Order       int      `json:"order"`
 }
 
 // Validate validates the parameters.
@@ -96,10 +102,12 @@ func (ctrl *Controller) CreateCourseSeries(ctx context.Context, params *CreateCo
 		return nil, authn.ErrUnauthorized
 	}
 	mCourseSeries := model.CourseSeries{
-		OwnerID:   mUser.ID,
-		Title:     params.Title,
-		CourseIDs: adaptCourseIDs(params.CourseIDs),
-		Order:     params.Order,
+		OwnerID:     mUser.ID,
+		Title:       params.Title,
+		Thumbnail:   params.Thumbnail,
+		Description: params.Description,
+		CourseIDs:   adaptCourseIDs(params.CourseIDs),
+		Order:       params.Order,
 	}
 	if err := ctrl.db.WithContext(ctx).Create(&mCourseSeries).Error; err != nil {
 		return nil, fmt.Errorf("failed to create course series: %w", err)
@@ -130,9 +138,11 @@ func (ctrl *Controller) GetCourseSeries(ctx context.Context, id string) (*Course
 
 // UpdateCourseSeriesParams holds parameters for updating a course series.
 type UpdateCourseSeriesParams struct {
-	Title     string   `json:"title"`
-	CourseIDs []string `json:"courseIDs"`
-	Order     int      `json:"order"`
+	Title       string   `json:"title"`
+	Thumbnail   string   `json:"thumbnail"`
+	Description string   `json:"description"`
+	CourseIDs   []string `json:"courseIDs"`
+	Order       int      `json:"order"`
 }
 
 // Validate validates the parameters.
@@ -153,6 +163,12 @@ func (p *UpdateCourseSeriesParams) Diff(mCourseSeries *model.CourseSeries) map[s
 	updates := map[string]any{}
 	if p.Title != mCourseSeries.Title {
 		updates["title"] = p.Title
+	}
+	if p.Thumbnail != mCourseSeries.Thumbnail {
+		updates["thumbnail"] = p.Thumbnail
+	}
+	if p.Description != mCourseSeries.Description {
+		updates["description"] = p.Description
 	}
 	pCourseIDs := adaptCourseIDs(p.CourseIDs)
 	if !courseIDsEqual(pCourseIDs, mCourseSeries.CourseIDs) {

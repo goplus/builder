@@ -1398,6 +1398,10 @@ paths:
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
@@ -1514,6 +1518,10 @@ paths:
               properties:
                 title:
                   $ref: "#/components/schemas/CourseSeries/properties/title"
+                thumbnail:
+                  $ref: "#/components/schemas/CourseSeries/properties/thumbnail"
+                description:
+                  $ref: "#/components/schemas/CourseSeries/properties/description"
                 courseIDs:
                   $ref: "#/components/schemas/CourseSeries/properties/courseIDs"
                 order:
@@ -1991,6 +1999,17 @@ components:
           examples:
             - XGo Programming Series
           description: Title of the course series.
+        thumbnail:
+          type: string
+          format: uri
+          examples:
+            - https://example.com/course-thumbnail.png
+          description: URL of the course series's thumbnail image.
+        description:
+          type: string
+          examples:
+            - A series of courses on XBuilder programming.
+          description: Description of the course series.
         courseIDs:
           type: array
           items:
