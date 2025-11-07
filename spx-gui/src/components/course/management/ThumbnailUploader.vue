@@ -17,8 +17,8 @@ const handleUpload = useMessageHandle(
   async () => {
     const nativeFile = await selectFileWithUploadLimit({ accept: ['.png', '.jpg', '.jpeg', '.gif', '.webp'] })
     const file = fromNativeFile(nativeFile)
-    const webUrl = await saveFile(file)
-    emit('update:thumbnail', webUrl)
+    const universalUrl = await saveFile(file)
+    emit('update:thumbnail', universalUrl)
   },
   {
     en: 'Failed to upload image',
