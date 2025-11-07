@@ -19,10 +19,6 @@ enum TriggerVisibility {
   None = '' // The trigger is not visible
 }
 
-type SuggestedPrompt = {
-  message: LocaleMessage
-}
-
 const panelBoundaryBuffer = [20, 20]
 const triggerSnapThreshold = 20
 </script>
@@ -30,6 +26,7 @@ const triggerSnapThreshold = 20
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
+import { debounce } from 'lodash'
 
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
@@ -43,7 +40,7 @@ import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
 import type { LocaleMessage } from '@/utils/i18n'
-import { debounce } from 'lodash'
+import { homePageName } from '@/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
@@ -99,7 +96,9 @@ watch(panelSize, () => {
 })
 watch(
   () => copilot.active,
-  async (active) => {
+  // TODO: Add debounce to prevent rapid and frequent toggling of the copilot active state
+  // to avoid animation glitches.
+  debounce(async (active) => {
     await untilNotNull(panelSize)
 
     if (active) {
@@ -107,7 +106,7 @@ watch(
     } else {
       closePanel()
     }
-  },
+  }, 50),
   {
     immediate: true
   }
@@ -324,24 +323,18 @@ useDraggable(draggerRef, {
   onDragEnd
 })
 
-const suggestedPrompts: SuggestedPrompt[] = [
+const suggestedPrompts: LocaleMessage[] = [
   {
-    message: {
-      en: 'Who are you?',
-      zh: '你是谁？'
-    }
+    en: 'What can XBuilder do?',
+    zh: 'XBuilder可以做什么？'
   },
   {
-    message: {
-      en: 'How to create a new project?',
-      zh: '如何创建一个新项目？'
-    }
+    en: 'How to create a new project?',
+    zh: '如何创建一个新项目？'
   },
   {
-    message: {
-      en: 'Please describe the functions of this page.',
-      zh: '介绍下这个页面有哪些功能。'
-    }
+    en: 'Please describe the functions of this page.',
+    zh: '介绍下这个页面有哪些功能。'
   }
 ]
 const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
@@ -398,31 +391,28 @@ onBeforeUnmount(
 const signedInUsername = computed(() => getSignedInUsername())
 const userUsedCopilotRef = localStorageRef<string[]>('spx-gui-used-copilot-user', [])
 watch(router.currentRoute, (route) => {
-  // Open copilot when not signed in and entering the community homepage (/)
-  if (route.path === '/' && !isSignedIn()) {
+  // Open copilot when not signed in and entering the homepage
+  if (route.name === homePageName && !isSignedIn()) {
     copilot.open()
   }
 })
 /** Track whether user has used copilot */
 watch(
-  () => session.value?.currentRound,
-  debounce((round) => {
-    if (round == null || signedInUsername.value == null) return
+  () => [session.value?.currentRound, copilot.active],
+  ([round, active]) => {
+    if (signedInUsername.value == null) return
     const username = signedInUsername.value
     const userUsedCopilot = userUsedCopilotRef.value
-    if (userUsedCopilot.includes(username)) return
+    // If a conversation occurs or copilot is closed, it is considered as having used copilot.
+    if ((round == null && active) || userUsedCopilot.includes(username)) return
+
     userUsedCopilotRef.value = [...userUsedCopilot, username]
-  }, 100),
-  {
-    immediate: true
   }
 )
 /** Open copilot for signed-in users on their first copilot use */
-onMounted(async () => {
-  await timeout()
+onMounted(() => {
   const username = signedInUsername.value
-  if (username == null || session.value != null) return
-  if (!isSignedIn() || userUsedCopilotRef.value.includes(username)) return
+  if (username == null || userUsedCopilotRef.value.includes(username)) return
   copilot.open()
 })
 </script>
@@ -481,6 +471,7 @@ onMounted(async () => {
               <UITooltip v-for="(qi, i) in quickInputs" :key="i">
                 {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
                 <template #trigger>
+                  <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
                   <button class="flat-button quick-input" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</button>
                 </template>
               </UITooltip>
@@ -496,13 +487,14 @@ onMounted(async () => {
               }}
             </div>
             <div class="suggested-wrapper">
+              <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
               <button
                 v-for="(suggestedPrompt, index) in suggestedPrompts"
                 :key="index"
                 class="flat-button suggested-item"
-                @click="handleSuggestedPromptClick($t(suggestedPrompt.message))"
+                @click="handleSuggestedPromptClick($t(suggestedPrompt))"
               >
-                {{ $t(suggestedPrompt.message) }}
+                {{ $t(suggestedPrompt) }}
               </button>
             </div>
           </template>
@@ -517,17 +509,22 @@ onMounted(async () => {
           <StateIndicator />
           <div class="v-line"></div>
         </template>
-        <div class="fold" :class="[triggerState]" @click="copilot.close()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
-            <path
-              d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
-              stroke-width="1.33333"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
+        <UITooltip>
+          <template #trigger>
+            <div class="fold" :class="[triggerState]" @click="copilot.close()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </template>
+          {{ $t({ en: 'Close Copilot', zh: '关闭 Copilot' }) }}
+        </UITooltip>
       </div>
     </div>
   </div>

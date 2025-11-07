@@ -15,9 +15,9 @@ const retryable = computed(() => {
 })
 
 const FeedbackComponent = computed(() => {
-  const { state, errorCode } = props.round
+  const { state, apiExceptionCode } = props.round
   if (state === RoundState.Failed) {
-    if (errorCode === ApiExceptionCode.errorUnauthorized) return SignInTip
+    if (apiExceptionCode === ApiExceptionCode.errorUnauthorized) return SignInTip
   }
 
   return null

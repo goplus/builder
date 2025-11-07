@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { onMounted } from 'vue'
 
-import { Round, RoundState } from '../copilot'
+import { Round } from '../copilot'
 
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 
@@ -10,9 +10,7 @@ const props = defineProps<{
 }>()
 
 onMounted(() => {
-  if (!props.round || !isSignedIn()) return
-  if (props.round.state !== RoundState.Failed) return
-
+  if (!isSignedIn()) return
   props.round.retry()
 })
 </script>
@@ -20,6 +18,7 @@ onMounted(() => {
 <template>
   <div class="sign-in-container">
     <div class="message">{{ $t({ en: 'Please sign in to continue.', zh: '请先登录并继续' }) }}</div>
+    <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
     <button class="sign-in-btn" @click="initiateSignIn()">
       {{ $t({ en: 'Sign in', zh: '登录' }) }}
     </button>

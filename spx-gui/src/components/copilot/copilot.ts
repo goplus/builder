@@ -137,7 +137,7 @@ type RoundExported = {
   error: LocaleMessage | null
   state: RoundState
   updatedAt?: number | null
-  errorCode?: number | null
+  apiExceptionCode?: number | null
 }
 
 export class Round {
@@ -179,7 +179,12 @@ export class Round {
    */
   updatedAt: number
 
-  errorCode?: number | null
+  /**
+   * API exception code when the round failed.
+   * Non-null indicates an api exception occurred
+   * refer to `ApiExceptionCode` for the list of possible values.
+   */
+  apiExceptionCode?: number | null
 
   export(): RoundExported {
     return {
@@ -189,7 +194,7 @@ export class Round {
       error: this.error,
       state: this.state,
       updatedAt: this.updatedAt,
-      errorCode: this.errorCode
+      apiExceptionCode: this.apiExceptionCode
     }
   }
 
@@ -199,7 +204,7 @@ export class Round {
     round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
     round.errorRef.value = exported.error
     round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
-    round.errorCode = exported.errorCode
+    round.apiExceptionCode = exported.apiExceptionCode
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -239,7 +244,7 @@ export class Round {
     }
 
     if (err instanceof ApiException) {
-      this.errorCode = err.code
+      this.apiExceptionCode = err.code
     }
 
     this.errorRef.value = new ActionException(err, {
@@ -307,7 +312,7 @@ export class Round {
     this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
-    this.errorCode = null
+    this.apiExceptionCode = null
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()
