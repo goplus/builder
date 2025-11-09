@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <NavbarWrapper disabled-lang>
+  <NavbarWrapper disabled-lang disabled-tutorials>
     <template #left>
       <NavbarDropdown
         :trigger-radar="{
@@ -58,22 +58,26 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <UITooltip :disabled="undoAction == null">
-        <template #trigger>
-          <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
-            <UIIcon class="icon" type="undo" />
-          </button>
-        </template>
-        <span class="history-menu-text">{{ $t(undoText) }}</span>
-      </UITooltip>
-      <UITooltip :disabled="redoAction == null">
-        <template #trigger>
-          <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
-            <UIIcon class="icon" type="redo" />
-          </button>
-        </template>
-        <span class="history-menu-text">{{ $t(redoText) }}</span>
-      </UITooltip>
+      <NavbarTutorials v-if="showTutorialsEntry" />
+
+      <div class="history-button-wrapper">
+        <UITooltip :disabled="undoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
+              <UIIcon class="icon" type="undo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(undoText) }}</span>
+        </UITooltip>
+        <UITooltip :disabled="redoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
+              <UIIcon class="icon" type="redo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(redoText) }}</span>
+        </UITooltip>
+      </div>
     </template>
     <template #center>
       <template v-if="project != null">
@@ -90,40 +94,30 @@
       </template>
     </template>
     <template #right>
-      <NavbarDropdown
-        :trigger-radar="{
-          name: 'editor type menu',
-          desc: 'Hover to see editor type options (preview, global)'
-        }"
+      <UIButtonGroup
+        v-radar="{ name: 'editor type menu', desc: 'Hover to see editor type options (preview, global)' }"
+        class="editor-mode-wrapper"
+        type="text"
+        :value="selectedEditMode"
+        @update:value="(v) => state?.selectEditMode(v as EditMode)"
       >
-        <template #trigger>
-          <div class="editor-type-selected">
-            <img :src="selectedEditModeItem.icon" />
-            {{ $t(selectedEditModeItem.display) }}
-          </div>
-        </template>
-        <UIMenu>
-          <UIMenuItem
-            v-for="(typeItem, index) in editModeItems"
-            :key="index"
-            class="editor-type-item"
-            @click="state?.selectEditMode(typeItem.value)"
-          >
-            <template #icon><img :src="typeItem.icon" /></template>
-            {{ $t(typeItem.display) }}
-          </UIMenuItem>
-        </UIMenu>
-      </NavbarDropdown>
-      <div v-show="canManageProject" class="publish">
-        <UIButton
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          type="secondary"
-          :disabled="!isOnline"
-          @click="handlePublishProject"
-        >
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
-      </div>
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Preview">
+              <div class="icon" v-html="gamePreviewSvg"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Preview', zh: '预览' }) }}
+        </UITooltip>
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Global">
+              <div class="icon" v-html="globalSettingsSvg"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Global Settings', zh: '全局设置' }) }}
+        </UITooltip>
+      </UIButtonGroup>
     </template>
   </NavbarWrapper>
 </template>
@@ -139,8 +133,9 @@ import {
   UIIcon,
   UITooltip,
   useConfirmDialog,
-  UIButton,
-  useMessage
+  useMessage,
+  UIButtonGroup,
+  UIButtonGroupItem
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -150,12 +145,14 @@ import { type Project } from '@/models/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
+import { showTutorialsEntry } from '@/utils/env'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
+import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import { SavingState, EditingMode } from '../editing'
 import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
@@ -165,12 +162,12 @@ import importScratchSvg from './icons/import-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
-import gamePreview from './icons/game-preview.svg'
-import globalSettings from './icons/global-settings.svg'
 import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
+import gamePreviewSvg from './icons/game-preview.svg?raw'
+import globalSettingsSvg from './icons/global-settings.svg?raw'
 
 const props = defineProps<{
   project: Project | null
@@ -191,20 +188,8 @@ const canManageProject = computed(() => {
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
-const editModeItems = [
-  {
-    display: { en: 'Game Preview', zh: '游戏预览' },
-    value: EditMode.Preview,
-    icon: gamePreview
-  },
-  {
-    display: { en: 'Global Settings', zh: '全局设置' },
-    value: EditMode.Global,
-    icon: globalSettings
-  }
-]
-const selectedEditModeItem = computed(
-  () => editModeItems.find((item) => item.value === props.state?.selectedEditMode) ?? editModeItems[0]
+const selectedEditMode = computed(() =>
+  props.state?.selectedEditMode != null ? props.state!.selectedEditMode : EditMode.Preview
 )
 
 const ownerInfoToDisplay = computed(() => {
@@ -378,30 +363,35 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   margin: 0 4px;
 }
 
-.history-button {
+.history-button-wrapper {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 40px;
-  height: 100%;
-  background: none;
-  outline: none;
-  border: none;
-  padding: 0;
-  color: white;
+  margin-left: 16px;
 
-  .icon {
-    width: 18px;
-  }
+  .history-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 100%;
+    background: none;
+    outline: none;
+    border: none;
+    padding: 0;
+    color: white;
 
-  &[disabled] {
-    color: #9de6ec;
-    cursor: not-allowed;
-  }
+    .icon {
+      width: 18px;
+    }
 
-  &:hover:not([disabled]) {
-    background-color: var(--ui-color-primary-600);
-    cursor: pointer;
+    &[disabled] {
+      color: #9de6ec;
+      cursor: not-allowed;
+    }
+
+    &:hover:not([disabled]) {
+      background-color: var(--ui-color-primary-600);
+      cursor: pointer;
+    }
   }
 }
 
@@ -432,6 +422,23 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
         }
       }
     }
+  }
+}
+
+.editor-mode-wrapper {
+  align-items: center;
+
+  & .ui-button-group-item {
+    background-color: #47d8e4;
+    color: var(--ui-color-grey-200);
+    &.active {
+      background-color: var(--ui-color-grey-200);
+      color: #47d8e4;
+    }
+  }
+
+  .icon {
+    display: flex;
   }
 }
 

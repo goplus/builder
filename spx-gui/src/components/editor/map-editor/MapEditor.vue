@@ -58,6 +58,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
 }
 .main {
   flex: 1;
+  width: 0;
   min-width: 0;
   display: flex;
   justify-content: center;
@@ -70,7 +71,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
   gap: var(--ui-gap-middle);
 
   @include responsive(desktop-large) {
-    flex-basis: 492px;
+    flex-basis: 494px;
   }
 
   .collapse-icon {
