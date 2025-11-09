@@ -5,7 +5,7 @@
         <NavbarLogo />
         <slot name="left"></slot>
         <NavbarLang v-if="!disabledLang" />
-        <NavbarTutorials v-if="showTutorialsEntry" />
+        <NavbarTutorials v-if="!disabledTutorials && showTutorialsEntry" />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -34,10 +34,12 @@ withDefaults(
      */
     centered?: boolean
     disabledLang?: boolean
+    disabledTutorials?: boolean
   }>(),
   {
     centered: false,
-    disableLang: false
+    disableLang: false,
+    disabledTutorials: false
   }
 )
 </script>
