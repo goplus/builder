@@ -59,20 +59,7 @@ export function getElementForVNode(vnode: VNode): HTMLElement | null {
 }
 
 /**
- * @deprecated
- * Use `useSlotText` instead, which provides safer reactive handling.
- */
-export function useSlotTextLegacy(name = 'default', trimLineBreaks = false) {
-  const slots = useSlots()
-  return computed(() => {
-    let text = getTextForVNodeChild(slots[name]?.())
-    if (trimLineBreaks) text = doTrimLineBreaks(text)
-    return text
-  })
-}
-
-/**
- * Compared to `useSlotTextLegacy`, this method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
+ * This method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
  */
 export function useSlotText(name = 'default', trimLineBreaks = false) {
   const slotsRef = useReactiveSlots()

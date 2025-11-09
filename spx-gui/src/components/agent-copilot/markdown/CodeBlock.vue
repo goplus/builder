@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import highlight from 'highlight.js'
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import 'highlight.js/styles/github.css'
 import CodeView from './CodeView.vue'
 import { UIIcon } from '@/components/ui'
@@ -24,7 +24,7 @@ const codeRef = ref<HTMLElement | null>(null) // Reference to code element for h
 const isCollapsed = ref(props.collapsed ?? false) // Collapse state with default from props
 
 // Extract code from slot if not provided via props
-const slotCode = useSlotTextLegacy()
+const slotCode = useSlotText()
 const codeText = computed(() => props.code || slotCode.value)
 
 // Compute display title from props or fallback to default

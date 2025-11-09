@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import { useMessageHandle } from '@/utils/exception'
 import CodeView from '@/components/common/CodeView.vue'
 import { useEditorCtxRef } from '@/components/editor/EditorContextProvider.vue'
@@ -14,7 +14,7 @@ defineProps<{
 
 const editorCtxRef = useEditorCtxRef()
 const codeEditorCtxRef = useCodeEditorCtxRef()
-const code = useSlotTextLegacy()
+const code = useSlotText()
 
 const handleInsert = useMessageHandle(
   () => {
