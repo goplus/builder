@@ -93,7 +93,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled, until, untilNotNull } from '@/utils/utils'
+import { untilTaskScheduled, until, untilNotNull, useCachedWhen } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { fromBlob } from '@/models/common/file'
 import type { Sprite } from '@/models/sprite'
@@ -109,7 +109,11 @@ import WidgetNode from './widgets/WidgetNode.vue'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
-const containerSize = useContentSize(container)
+const containerSizeRef = useContentSize(container)
+const containerSize = useCachedWhen(
+  () => containerSizeRef.value,
+  (value) => value != null && value.width !== 0 && value.height !== 0
+)
 
 type Pos = { x: number; y: number }
 
@@ -149,8 +153,8 @@ const stageScale = computed(() => {
 const stageConfig = computed(() => {
   if (stageScale.value == null || viewportSize.value == null || container.value == null) return null
   // Konva canvas cannot have a width or height of zero
-  const width = Math.max(viewportSize.value.width * stageScale.value, 1)
-  const height = Math.max(viewportSize.value.height * stageScale.value, 1)
+  const width = viewportSize.value.width * stageScale.value
+  const height = viewportSize.value.height * stageScale.value
   return {
     container: container.value,
     width,
