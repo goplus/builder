@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/aofei/cameron v1.3.2
-	github.com/casdoor/casdoor-go-sdk v1.29.0
+	github.com/casdoor/casdoor-go-sdk v1.31.0
 	github.com/getsentry/sentry-go v0.36.2
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-sql-driver/mysql v1.9.3
