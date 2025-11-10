@@ -25,7 +25,7 @@
     <EditorPreview />
     <EditorPanels />
   </div>
-  <GlobalSettings v-if="!isPreviewMode" />
+  <GlobalConfig v-if="!isPreviewMode" />
 </template>
 
 <script setup lang="ts">
@@ -53,7 +53,7 @@ import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asse
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
 import { Monitor } from '@/models/widget/monitor'
-import GlobalSettings from '@/components/editor/map-editor/GlobalSettings.vue'
+import GlobalConfig from '@/components/editor/map-editor/GlobalConfig.vue'
 import { EditMode } from './editor-state'
 
 const editorCtx = useEditorCtx()

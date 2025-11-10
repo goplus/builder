@@ -195,6 +195,18 @@ function untilConditionMet<T>(
   })
 }
 
+export function useCachedWhen<T>(
+  getter: (onCleanup: OnCleanup) => T,
+  condition: (value: T) => boolean = (value) => value != null
+) {
+  const r = shallowRef<T | null>(null)
+  watchEffect((onCleanup) => {
+    const value = getter(onCleanup)
+    if (condition(value)) r.value = value
+  })
+  return r
+}
+
 /** Convert arbitrary degree value to `(-180, 180]` */
 export function nomalizeDegree(num: number) {
   if (!Number.isFinite(num) || Number.isNaN(num)) return num

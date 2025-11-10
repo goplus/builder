@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UICard, UICardHeader } from '@/components/ui'
+import { UICard, UICardHeader, UIIcon, UITooltip } from '@/components/ui'
 import type { Project } from '@/models/project'
 import MapViewer from './map-viewer/MapViewer.vue'
 import SpriteList from './SpriteList.vue'
@@ -13,10 +13,13 @@ const props = defineProps<{
 }>()
 
 const selectedSpriteId = ref(props.selectedSpriteId)
+const collapsed = ref(props.selectedSpriteId != null && props.project.stage.physics.enabled)
+
 const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === selectedSpriteId.value) ?? null)
 
 function handleSpriteSelect(sprite: Sprite | null) {
   selectedSpriteId.value = sprite?.id ?? null
+  collapsed.value = true
 }
 </script>
 
@@ -26,16 +29,31 @@ function handleSpriteSelect(sprite: Sprite | null) {
       <MapViewer :project="project" :selected-sprite="selectedSprite" @update:selected-sprite="handleSpriteSelect" />
     </div>
     <div class="sider">
-      <UICard class="collapse-card">
+      <UICard>
         <UICardHeader>
-          {{
-            $t({
-              en: 'Global Configuration',
-              zh: '全局配置'
-            })
-          }}
+          <div class="collapse-header">
+            {{
+              $t({
+                en: 'Global Config',
+                zh: '全局配置'
+              })
+            }}
+            <UITooltip>
+              <template #trigger>
+                <UIIcon
+                  class="collapse-icon"
+                  :class="{ collapsed }"
+                  type="doubleArrowDown"
+                  @click="collapsed = !collapsed"
+                />
+              </template>
+              {{ $t({ en: collapsed ? 'Expand' : 'Collapse', zh: collapsed ? '展开' : '收起' }) }}
+            </UITooltip>
+          </div>
         </UICardHeader>
-        <MapBasicConfig class="map-config" :project="project" />
+        <Transition>
+          <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
+        </Transition>
       </UICard>
       <SpriteList
         class="sprite-list"
@@ -72,6 +90,13 @@ function handleSpriteSelect(sprite: Sprite | null) {
 
   @include responsive(desktop-large) {
     flex-basis: 494px;
+  }
+
+  .collapse-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .collapse-icon {
