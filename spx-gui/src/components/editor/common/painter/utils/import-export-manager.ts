@@ -18,6 +18,9 @@ export interface ImportExportDependencies {
   backgroundRect: Ref<paper.Path | null>
   backgroundImage: Ref<paper.Raster | null>
 
+  // 边界限制
+  boundaryRect: Ref<{ x: number; y: number; width: number; height: number } | null>
+
   // 状态标记
   isImportingFromProps: Ref<boolean>
 
@@ -37,6 +40,7 @@ export interface ExportOptions {
   embedImages?: boolean
   bounds?: paper.Rectangle
   quality?: number
+  scaleForExport?: boolean // 是否缩放到1/5（用于最终导出），默认true
 }
 
 /**
@@ -54,7 +58,7 @@ export class ImportExportManager {
    * 导出当前画布为SVG
    */
   exportSvg(options: ExportOptions = {}): string | null {
-    const { embedImages = true, bounds } = options
+    const { embedImages = true, bounds, scaleForExport = true } = options
 
     if (!paper.project) {
       console.warn('Paper project not initialized')
@@ -66,14 +70,62 @@ export class ImportExportManager {
       this.hideControlPointsForExport()
       const prevVisible = this.hideBackgroundForExport()
 
-      // 使用提供的bounds，如果没有提供则使用activeLayer的bounds（所有内容的边界）
-      const exportBounds = bounds || paper.project.activeLayer?.bounds
+      // 使用提供的bounds，如果没有提供则使用整个逻辑画布的尺寸（boundaryRect）
+      let exportBounds: paper.Rectangle
+      const SCALE_FACTOR = 1 / 5 // 缩小5倍
 
-      const svgStr = paper.project.exportSVG({
-        asString: true,
-        embedImages,
-        bounds: exportBounds
-      }) as string
+      if (bounds) {
+        exportBounds = bounds
+      } else if (this.dependencies.boundaryRect.value) {
+        const boundary = this.dependencies.boundaryRect.value
+        exportBounds = new paper.Rectangle(boundary.x, boundary.y, boundary.width, boundary.height)
+      } else {
+        // 回退到视图尺寸
+        exportBounds = new paper.Rectangle(
+          0,
+          0,
+          this.dependencies.canvasWidth.value,
+          this.dependencies.canvasHeight.value
+        )
+      }
+
+      let svgStr: string
+      let originalPosition: paper.Point | null = null
+
+      if (scaleForExport) {
+        // 缩小画板内容到1/5，回到舞台尺寸，从而避免导出内容过大
+        const center = new paper.Point(
+          this.dependencies.canvasWidth.value / 2,
+          this.dependencies.canvasHeight.value / 2
+        )
+        originalPosition = paper.project.activeLayer.position.clone()
+        paper.project.activeLayer.scale(SCALE_FACTOR, center)
+
+        // 缩放后的导出边界也要相应调整
+        const scaledBounds = new paper.Rectangle(
+          center.x + (exportBounds.x - center.x) * SCALE_FACTOR,
+          center.y + (exportBounds.y - center.y) * SCALE_FACTOR,
+          exportBounds.width * SCALE_FACTOR,
+          exportBounds.height * SCALE_FACTOR
+        )
+
+        svgStr = paper.project.exportSVG({
+          asString: true,
+          embedImages,
+          bounds: scaledBounds
+        }) as string
+
+        // 恢复原始大小
+        paper.project.activeLayer.scale(1 / SCALE_FACTOR, center)
+        paper.project.activeLayer.position = originalPosition
+      } else {
+        // 不缩放，直接导出（用于历史记录）
+        svgStr = paper.project.exportSVG({
+          asString: true,
+          embedImages,
+          bounds: exportBounds
+        }) as string
+      }
 
       // 恢复背景可见性
       this.restoreBackgroundAfterExport(prevVisible)

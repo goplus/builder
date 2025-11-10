@@ -27,8 +27,9 @@
 import { ref, onMounted, onUnmounted, inject } from 'vue'
 import paper from 'paper'
 
-// 注入边界检查函数
+// 注入边界检查函数和边界矩形
 const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>('isViewBoundsWithinBoundary')!
+const boundaryRect = inject<{ value: { x: number; y: number; width: number; height: number } | null }>('boundaryRect')!
 
 // 缩放相关的状态
 const zoomLevel = ref<number>(1)
@@ -36,8 +37,55 @@ const zoomPercentage = ref<number>(100)
 
 // 缩放配置
 const ZOOM_STEP = 0.1 // 每次缩放 10%
-const MIN_ZOOM = 0.1 // 最小缩放到 10%
+const MIN_ZOOM = 0.5 // 最小缩放到 50%
 const MAX_ZOOM = 5 // 最大放大到 500%
+
+/**
+ * 调整中心点以适应边界
+ * @param center 当前中心点
+ * @param zoom 目标缩放级别
+ * @returns 调整后的中心点
+ */
+const adjustCenterToFitBoundary = (center: paper.Point, zoom: number): paper.Point => {
+  if (!paper.view || !boundaryRect.value) return center
+
+  // 计算在给定 zoom 下的视图尺寸
+  const viewWidth = paper.view.viewSize.width / zoom
+  const viewHeight = paper.view.viewSize.height / zoom
+
+  // 计算当前中心点对应的视图边界
+  let left = center.x - viewWidth / 2
+  let top = center.y - viewHeight / 2
+  let right = center.x + viewWidth / 2
+  let bottom = center.y + viewHeight / 2
+
+  // 获取边界限制
+  const boundary = boundaryRect.value
+  const boundaryLeft = boundary.x
+  const boundaryTop = boundary.y
+  const boundaryRight = boundary.x + boundary.width
+  const boundaryBottom = boundary.y + boundary.height
+
+  // 调整中心点以确保视图在边界内
+  let adjustedCenterX = center.x
+  let adjustedCenterY = center.y
+
+  // 调整 X 轴
+  if (left < boundaryLeft) {
+    adjustedCenterX = boundaryLeft + viewWidth / 2
+  } else if (right > boundaryRight) {
+    adjustedCenterX = boundaryRight - viewWidth / 2
+  }
+
+  // 调整 Y 轴
+  if (top < boundaryTop) {
+    adjustedCenterY = boundaryTop + viewHeight / 2
+  } else if (bottom > boundaryBottom) {
+    adjustedCenterY = boundaryBottom - viewHeight / 2
+  }
+
+  return new paper.Point(adjustedCenterX, adjustedCenterY)
+}
 
 /**
  * 更新缩放级别
@@ -48,14 +96,16 @@ const updateZoom = (newZoom: number): void => {
   // 限制缩放范围
   const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
 
+  // 获取当前中心点
+  let center = paper.view.center
+
   // 检查新的 zoom 是否会导致超出边界
-  if (!isViewBoundsWithinBoundary(paper.view.center, clampedZoom)) {
-    // 拒绝缩放，保持当前状态
-    return
+  if (!isViewBoundsWithinBoundary(center, clampedZoom)) {
+    // 调整中心点以适应边界
+    center = adjustCenterToFitBoundary(center, clampedZoom)
   }
 
-  // 以画布中心为基准进行缩放
-  const center = paper.view.center
+  // 应用缩放和调整后的中心点
   paper.view.zoom = clampedZoom
   paper.view.center = center
 

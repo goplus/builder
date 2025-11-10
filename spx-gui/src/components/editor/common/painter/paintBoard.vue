@@ -369,6 +369,7 @@ const initImportExportManager = (): void => {
     reshapeRef,
     backgroundRect,
     backgroundImage,
+    boundaryRect,
     isImportingFromProps,
     emit: (event: string, data: any) => emit(event as any, data)
   })
@@ -432,7 +433,7 @@ const skipNextImport = ref<boolean>(false)
 const historyManager = ref<HistoryManager | null>(null)
 
 // 边界限制配置
-const BOUNDARY_SCALE = 10 // 边界是舞台的10倍
+const BOUNDARY_SCALE = 5 // 边界是舞台的5倍
 const boundaryRect = ref<{ x: number; y: number; width: number; height: number } | null>(null)
 
 const props = defineProps<{
@@ -552,8 +553,8 @@ const setAllPathsValue = (paths: paper.Path[]): void => {
   //历史记录保存
   if (!historyManager.value || !importExportManager) return
 
-  //这里保存的是修改后的值
-  const svgContent = importExportManager.exportSvg()
+  //这里保存的是修改后的值，不缩放（scaleForExport: false）以保持原始大小
+  const svgContent = importExportManager.exportSvg({ scaleForExport: false })
   if (svgContent) {
     historyManager.value.addState(svgContent)
   }
@@ -680,8 +681,8 @@ const clearCanvas = (): void => {
     zoomControlRef.value.resetZoom()
   }
 
-  // 保存清空后的状态
-  const svgContentAfterClear = importExportManager.exportSvg()
+  // 保存清空后的状态，不缩放（scaleForExport: false）以保持原始大小
+  const svgContentAfterClear = importExportManager.exportSvg({ scaleForExport: false })
   if (svgContentAfterClear) {
     historyManager.value.addState(svgContentAfterClear, 'Clear')
   }
@@ -741,7 +742,8 @@ watch(
     // 加载新内容
     await loadFileToCanvas(newImgSrc)
     historyManager.value?.clearHistory()
-    historyManager.value?.setInitialState(importExportManager?.exportSvg() || '')
+    // 设置初始状态时不缩放（scaleForExport: false）以保持原始大小
+    historyManager.value?.setInitialState(importExportManager?.exportSvg({ scaleForExport: false }) || '')
     // 导入完成后清理状态，不自动恢复控制点显示
     // 让用户主动点击路径来显示控制点，避免干扰绘制体验
     setTimeout(() => {
