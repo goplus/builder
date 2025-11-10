@@ -112,10 +112,10 @@
         <UITooltip>
           <template #trigger>
             <UIButtonGroupItem :value="EditMode.Global">
-              <div class="icon" v-html="globalSettingsSvg"></div>
+              <div class="icon" v-html="globalConfig"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Global Settings', zh: '全局设置' }) }}
+          {{ $t({ en: 'Global Config', zh: '全局配置' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>
@@ -167,7 +167,7 @@ import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
 import gamePreviewSvg from './icons/game-preview.svg?raw'
-import globalSettingsSvg from './icons/global-settings.svg?raw'
+import globalConfig from './icons/global-config.svg?raw'
 
 const props = defineProps<{
   project: Project | null

@@ -5,13 +5,13 @@ SpriteList
 -->
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 import { useMessageHandle } from '@/utils/exception'
 
-import { getCssVars, UICard, UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
+import { getCssVars, UICard, UIIcon, UIMenu, UIMenuItem, UITooltip, useUIVariables } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
 import PanelList from '../panels/common/PanelList.vue'
 import PanelHeader from '../panels/common/PanelHeader.vue'
@@ -30,6 +30,12 @@ const emit = defineEmits<{
 }>()
 
 const sprites = computed(() => props.project.sprites)
+
+const footerExpanded = ref(props.selectedSprite != null)
+watch(
+  () => props.selectedSprite,
+  (newSprite) => (footerExpanded.value = newSprite != null)
+)
 
 // TODO: CSS variables may not work when the component implementation changes
 const uiVariables = useUIVariables()
@@ -85,7 +91,7 @@ const handleAddFromAssetLibrary = useMessageHandle(
     class="sprite-list-card"
     :style="cssVars"
   >
-    <PanelHeader active>
+    <PanelHeader :active="selectedSprite != null">
       {{ $t({ en: 'Sprites', zh: '精灵' }) }}
       <template #add-options>
         <UIMenu>
@@ -116,20 +122,37 @@ const handleAddFromAssetLibrary = useMessageHandle(
     </PanelList>
 
     <PanelFooter
-      v-if="selectedSprite != null"
+      v-if="footerExpanded && selectedSprite != null"
       v-radar="{
         name: `Basic configuration for selected sprite`,
         desc: 'Panel for configuring sprite basic settings'
       }"
       class="footer"
     >
-      <SpriteBasicConfig :sprite="selectedSprite" :project="project" />
+      <SpriteBasicConfig :sprite="selectedSprite" :project="project" @collapse="footerExpanded = false" />
     </PanelFooter>
+
+    <UITooltip v-if="!footerExpanded && selectedSprite != null">
+      <template #trigger>
+        <div
+          v-radar="{
+            name: 'Expand button',
+            desc: 'Button to expand the basic configuration panel for selected sprite'
+          }"
+          class="footer-expand-button"
+          @click="footerExpanded = true"
+        >
+          <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
+        </div>
+      </template>
+      {{ $t({ en: 'Expand', zh: '展开' }) }}
+    </UITooltip>
   </UICard>
 </template>
 
 <style lang="scss" scoped>
 .sprite-list-card {
+  position: relative;
   display: flex;
   flex-direction: column;
 
@@ -140,5 +163,23 @@ const handleAddFromAssetLibrary = useMessageHandle(
 
 .footer {
   padding: 16px;
+}
+
+.footer-expand-button {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  right: 12px;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px -2px 8px 0px rgba(51, 51, 51, 0.08);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
+}
+
+.footer-expand-icon {
+  transform: rotate(180deg);
 }
 </style>
