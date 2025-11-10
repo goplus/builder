@@ -14,15 +14,6 @@ const retryable = computed(() => {
   return props.isLastRound && [RoundState.Cancelled, RoundState.Failed].includes(props.round.state)
 })
 
-const FeedbackComponent = computed(() => {
-  const { state, apiExceptionCode } = props.round
-  if (state === RoundState.Failed) {
-    if (apiExceptionCode === ApiExceptionCode.errorUnauthorized) return SignInTip
-  }
-
-  return null
-})
-
 function handleRetry() {
   props.round.retry()
 }
@@ -45,9 +36,10 @@ const resultContent = computed<string | null>(() => {
   <section class="copilot-round">
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized" class="state">
-      <template v-if="FeedbackComponent != null">
-        <FeedbackComponent :round="round" />
-      </template>
+      <SignInTip
+        v-if="round.state === RoundState.Failed && round.apiExceptionCode === ApiExceptionCode.errorUnauthorized"
+        :round="round"
+      />
       <template v-else>
         <div v-if="round.state === RoundState.Cancelled" class="cancelled">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">

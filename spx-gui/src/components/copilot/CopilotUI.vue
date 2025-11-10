@@ -26,7 +26,6 @@ const triggerSnapThreshold = 20
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
 import { useRouter } from 'vue-router'
-import { debounce } from 'lodash'
 
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
@@ -96,17 +95,22 @@ watch(panelSize, () => {
 })
 watch(
   () => copilot.active,
-  // TODO: Add debounce to prevent rapid and frequent toggling of the copilot active state
-  // to avoid animation glitches.
-  debounce(async (active) => {
+  async (newActive, oldActive) => {
     await untilNotNull(panelSize)
 
-    if (active) {
+    // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
+    if (oldActive == null) {
+      updateTriggerVisibility()
+      updatePanelClampedPosition()
+      return
+    }
+
+    if (newActive) {
       openPanel()
     } else {
       closePanel()
     }
-  }, 50),
+  },
   {
     immediate: true
   }
@@ -189,6 +193,10 @@ const triggerState = ref(panelStatePosition.value.state)
 const triggerVisibility = ref(TriggerVisibility.None)
 
 const triggerTooltipDisabled = computed(() => !triggerVisibility.value || panelStatePosition.value.state === State.Move)
+
+function updateTriggerVisibility() {
+  triggerVisibility.value = copilot.active ? TriggerVisibility.None : TriggerVisibility.Visible
+}
 
 function updatePanelClampedPosition() {
   const { panelW, panelH } = getCurrentSizes()
@@ -390,12 +398,18 @@ onBeforeUnmount(
 // Copilot open handling, implemented here due to high business logic coupling
 const signedInUsername = computed(() => getSignedInUsername())
 const userUsedCopilotRef = localStorageRef<string[]>('spx-gui-used-copilot-user', [])
-watch(router.currentRoute, (route) => {
-  // Open copilot when not signed in and entering the homepage
-  if (route.name === homePageName && !isSignedIn()) {
-    copilot.open()
+watch(
+  router.currentRoute,
+  (route) => {
+    // Open copilot when not signed in and entering the homepage
+    if (route.name === homePageName && !isSignedIn()) {
+      copilot.open()
+    }
+  },
+  {
+    immediate: true
   }
-})
+)
 /** Track whether user has used copilot */
 watch(
   () => [session.value?.currentRound, copilot.active],
