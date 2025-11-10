@@ -1,39 +1,52 @@
 <script lang="ts" setup>
-import { listAllCourses } from '@/apis/course'
-import { useQuery } from '@/utils/query'
-import { ownerAll } from '@/apis/common'
-import { orderBy } from './tutorial'
+// import { listAllCourses } from '@/apis/course'
+// import { useQuery } from '@/utils/query'
+// import { ownerAll } from '@/apis/common'
+// import { orderBy } from './tutorial'
 
-import { UIEmpty } from '@/components/ui'
-import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import { UIImg, UITooltip } from '@/components/ui'
+// import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
+import type { CourseSeries } from '@/apis/course-series'
+import { useAsyncComputed } from '@/utils/utils'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
 
 const props = defineProps<{
-  courseSeriesId: string
-  courseIDs?: string[]
-  title: string
+  courseSeries: CourseSeries
 }>()
 
-const courseQuery = useQuery(
-  async () => {
-    const data = await listAllCourses({
-      courseSeriesID: props.courseSeriesId,
-      owner: ownerAll
-    })
-    return orderBy(data, props.courseIDs)
-  },
-  { en: 'Failed to load course list', zh: '加载课程列表失败' }
-)
+// const courseQuery = useQuery(
+//   async () => {
+//     const data = await listAllCourses({
+//       courseSeriesID: props.courseSeriesId,
+//       owner: ownerAll
+//     })
+//     return orderBy(data, props.courseIDs)
+//   },
+//   { en: 'Failed to load course list', zh: '加载课程列表失败' }
+// )
+
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
+  const thumbnailUniversalUrl = props.courseSeries.thumbnail
+  if (thumbnailUniversalUrl === '') return null
+  const thumbnail = createFileWithUniversalUrl(thumbnailUniversalUrl)
+  return thumbnail.url(onCleanup)
+})
 </script>
 
 <template>
-  <section class="course-series-item">
-    <header class="header">
-      <h2 class="title">
-        {{ title }}
-      </h2>
-    </header>
+  <li class="course-series-item">
+    <UIImg v-if="thumbnailUrl" class="thumbnail" :src="thumbnailUrl" size="cover" />
 
-    <div class="course-series-warpper">
+    <UITooltip>
+      <template #trigger>
+        <div class="title">{{ courseSeries.title }}</div>
+      </template>
+      {{ courseSeries.title }}
+    </UITooltip>
+    <!-- <div class="header">
+    </div> -->
+    <!-- 
+      <div class="course-series-warpper">
       <ListResultWrapper :query-ret="courseQuery" :height="214">
         <template #empty="{ style }">
           <UIEmpty size="large" img="game" :style="style">
@@ -45,13 +58,43 @@ const courseQuery = useQuery(
             <slot :data="data" />
           </ul>
         </template>
-      </ListResultWrapper>
+      </ListResultWrapper> 
     </div>
-  </section>
+    -->
+  </li>
 </template>
 
 <style lang="scss" scoped>
 .course-series-item {
+  position: relative;
+  width: 232px;
+  height: 214px;
+  border-radius: var(--ui-border-radius-3);
+  background: var(--ui-color-grey-50);
+  border: 2px solid var(--ui-color-grey-300);
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+
+  .thumbnail {
+    width: 100%;
+    height: 100%;
+  }
+
+  .title {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 32px;
+    line-height: 32px;
+    color: #fff;
+    padding: 0 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
+  }
+
   .header {
     display: flex;
     align-items: center;
