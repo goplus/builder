@@ -84,16 +84,16 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 // ensureQuotaRemaining checks the remaining quota for the given amount and
 // replies with a 403 error if exceeded.
 func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
-	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
+	quotas, ok := authz.UserQuotasFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
 
-	quota, ok := caps.Quota(resource)
+	quota, ok := quotas.Limits[resource]
 	if !ok {
 		return true
 	}
-	if quota.Remaining < amount {
+	if quota.Remaining() < amount {
 		if reset := quota.Reset(); reset > 0 {
 			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
 		}
