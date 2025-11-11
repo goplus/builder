@@ -24,21 +24,26 @@ const triggerSnapThreshold = 20
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, type WatchSource } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type WatchSource } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { isRectIntersecting, useBottomSticky, useContentSize } from '@/utils/dom'
 import { assertNever, localStorageRef, timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { initiateSignIn, isSignedIn } from '@/stores/user'
+import { getSignedInUsername, isSignedIn } from '@/stores/user'
 import { useDraggable, type Offset } from '@/utils/draggable'
-import { providePopupContainer, UITooltip, UITag } from '@/components/ui'
+import { providePopupContainer, UITooltip } from '@/components/ui'
 import CopilotInput from './CopilotInput.vue'
 import CopilotRound from './CopilotRound.vue'
 import { useCopilot } from './CopilotRoot.vue'
 import { type QuickInput, RoundState } from './copilot'
 import { useSpotlight } from '@/utils/spotlight'
+import type { LocaleMessage } from '@/utils/i18n'
+import { homePageName } from '@/router'
 
 const copilot = useCopilot()
 const spotlight = useSpotlight()
+const router = useRouter()
 
 const outputRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
@@ -90,10 +95,17 @@ watch(panelSize, () => {
 })
 watch(
   () => copilot.active,
-  async (active) => {
+  async (newActive, oldActive) => {
     await untilNotNull(panelSize)
 
-    if (active) {
+    // On initialization, update triggerVisibility and panelStatePosition based on the copilot's active state
+    if (oldActive == null) {
+      updateTriggerVisibility()
+      updatePanelClampedPosition()
+      return
+    }
+
+    if (newActive) {
       openPanel()
     } else {
       closePanel()
@@ -181,6 +193,10 @@ const triggerState = ref(panelStatePosition.value.state)
 const triggerVisibility = ref(TriggerVisibility.None)
 
 const triggerTooltipDisabled = computed(() => !triggerVisibility.value || panelStatePosition.value.state === State.Move)
+
+function updateTriggerVisibility() {
+  triggerVisibility.value = copilot.active ? TriggerVisibility.None : TriggerVisibility.Visible
+}
 
 function updatePanelClampedPosition() {
   const { panelW, panelH } = getCurrentSizes()
@@ -315,6 +331,25 @@ useDraggable(draggerRef, {
   onDragEnd
 })
 
+const suggestedQuestions: LocaleMessage[] = [
+  {
+    en: 'What can XBuilder do?',
+    zh: 'XBuilder 可以做什么？'
+  },
+  {
+    en: 'How to create a new project?',
+    zh: '如何创建一个新项目？'
+  },
+  {
+    en: 'Please describe the functions of this page.',
+    zh: '介绍下这个页面有哪些功能。'
+  }
+]
+const handleSuggestedPromptClick = useMessageHandle((message: string) => copilot.addUserTextMessage(message), {
+  en: 'Failed to send message',
+  zh: '发送消息失败'
+}).fn
+
 const quickInputs = computed(() => copilot.getQuickInputs())
 
 const handleQuickInputClick = useMessageHandle(
@@ -360,7 +395,48 @@ onBeforeUnmount(
   })
 )
 
-// TODO: prevent click in copilot panel from closing other dropdowns
+// Copilot open handling, implemented here due to high business logic coupling
+const signedInUsername = computed(() => getSignedInUsername())
+const usedCopilotUsersRef = localStorageRef<string[]>('spx-gui-used-copilot-users', [])
+watch(
+  router.currentRoute,
+  (route) => {
+    // Open copilot when not signed in and entering the homepage
+    if (route.name === homePageName && !isSignedIn()) {
+      copilot.open()
+    }
+  },
+  {
+    immediate: true
+  }
+)
+/**
+ * Records that the current user has used Copilot when the specified condition is met.
+ */
+function recordCopilotUsage(shouldRecord: () => boolean) {
+  if (signedInUsername.value == null) return
+  const username = signedInUsername.value
+  const userUsedCopilot = usedCopilotUsersRef.value
+  // Skip if condition is not met or user has already been recorded
+  if (!shouldRecord() || userUsedCopilot.includes(username)) return
+
+  usedCopilotUsersRef.value = [...userUsedCopilot, username]
+}
+/** Track whether user has used copilot */
+watch(
+  () => session.value?.currentRound,
+  (round) => recordCopilotUsage(() => round != null)
+)
+watch(
+  () => copilot.active,
+  (active) => recordCopilotUsage(() => !active)
+)
+/** Open copilot for signed-in users on their first copilot use */
+onMounted(() => {
+  const username = signedInUsername.value
+  if (username == null || usedCopilotUsersRef.value.includes(username)) return
+  copilot.open()
+})
 </script>
 
 <template>
@@ -410,47 +486,67 @@ onBeforeUnmount(
             <circle cx="10.5" cy="4.5" r="1" fill="#A7B1BB" />
           </svg>
         </div>
-        <template v-if="isSignedIn()">
+        <div ref="outputRef" class="output">
           <template v-if="activeRound != null">
-            <div ref="outputRef" class="output">
-              <CopilotRound :round="activeRound" is-last-round />
-              <div v-if="quickInputs.length > 0" class="quick-inputs">
-                <UITooltip v-for="(qi, i) in quickInputs" :key="i">
-                  {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
-                  <template #trigger>
-                    <UITag type="boring" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</UITag>
-                  </template>
-                </UITooltip>
-              </div>
+            <CopilotRound :round="activeRound" is-last-round />
+            <div v-if="quickInputs.length > 0" class="quick-inputs">
+              <UITooltip v-for="(qi, i) in quickInputs" :key="i">
+                {{ $t({ en: `Click to send "${qi.text.en}"`, zh: `点击发送“${qi.text.zh}”` }) }}
+                <template #trigger>
+                  <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
+                  <button class="flat-button quick-input" @click="handleQuickInputClick(qi)">{{ $t(qi.text) }}</button>
+                </template>
+              </UITooltip>
             </div>
-            <div class="divider"></div>
           </template>
-          <CopilotInput
-            ref="inputRef"
-            class="input"
-            :class="{ 'only-input': activeRound == null }"
-            :copilot="copilot"
-          />
-        </template>
-        <template v-else>
-          <div class="placeholder">
-            <h4 class="title">{{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}</h4>
-            <p class="description">
+          <template v-else-if="session == null">
+            <div class="hi">
+              {{ $t({ en: 'Hi, friend', zh: '你好，小伙伴' }) }}
+            </div>
+            <div class="tips">
               {{
-                $t({
-                  en: 'I can help you with XBuilder, please sign in to continue.',
-                  zh: '我可以帮助你了解并使用 XBuilder，请先登录并继续。'
-                })
+                $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
               }}
-            </p>
-            <button class="sign-in-button" @click="initiateSignIn()">{{ $t({ en: 'Sign in', zh: '登录' }) }}</button>
-          </div>
-        </template>
+            </div>
+            <div class="suggested-questions-wrapper">
+              <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
+              <button
+                v-for="(suggestedQuestion, index) in suggestedQuestions"
+                :key="index"
+                class="flat-button suggested-question"
+                @click="handleSuggestedPromptClick($t(suggestedQuestion))"
+              >
+                {{ $t(suggestedQuestion) }}
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="divider"></div>
+        <CopilotInput ref="inputRef" class="input" :class="{ 'only-input': activeRound == null }" :copilot="copilot" />
       </div>
     </div>
     <div class="footer">
-      <div v-if="StateIndicator != null" class="footer-wrapper">
-        <StateIndicator />
+      <div class="footer-wrapper">
+        <template v-if="StateIndicator != null">
+          <StateIndicator />
+          <div class="v-line"></div>
+        </template>
+        <UITooltip>
+          <template #trigger>
+            <div class="fold" :class="[triggerState]" @click="copilot.close()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </template>
+          {{ $t({ en: 'Close Copilot', zh: '关闭 Copilot' }) }}
+        </UITooltip>
       </div>
     </div>
   </div>
@@ -616,22 +712,78 @@ $toColor: #c390ff;
   .output {
     background: var(--ui-color-grey-100);
     max-height: 300px;
-    margin-top: 14px;
+    font-size: 13px;
     overflow-y: auto;
     scrollbar-width: thin;
+
+    &:not(:empty) {
+      margin-top: 14px;
+      padding: 12px 16px 24px 16px;
+    }
+
+    .hi {
+      font-size: 20px;
+      color: var(--ui-color-grey-1000);
+    }
+    .tips {
+      margin-top: 4px;
+      color: var(--ui-color-grey-700);
+    }
+    .suggested-questions-wrapper {
+      width: 100%;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .suggested-question {
+        width: 100%;
+        padding: 9px 12px;
+      }
+    }
+
+    .quick-inputs {
+      padding-top: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      background: var(--ui-color-grey-100);
+
+      .quick-input {
+        width: fit-content;
+        height: 32px;
+        padding: 0 16px;
+      }
+    }
+
+    .flat-button {
+      --bg-color: var(--ui-color-grey-300);
+      border-radius: var(--ui-border-radius-2);
+      background: var(--bg-color);
+      border: 1px solid var(--bg-color);
+      color: var(--ui-color-grey-900);
+      font-size: 13px;
+      line-height: inherit;
+      white-space: normal;
+      text-align: left;
+      transition: 0.3s;
+      cursor: pointer;
+
+      &:hover {
+        --bg-color: var(--ui-color-grey-200);
+      }
+      &:active {
+        --bg-color: var(--ui-color-grey-400);
+      }
+      &:focus {
+        --bg-color: var(--ui-color-grey-500);
+      }
+    }
   }
 
   .divider {
     @include copilotBaseLinearBackground();
     height: 1px;
-  }
-
-  .quick-inputs {
-    padding: 0 16px 16px;
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    background: var(--ui-color-grey-100);
   }
 
   .input {
@@ -645,85 +797,40 @@ $toColor: #c390ff;
   justify-content: center;
   .footer-wrapper {
     display: flex;
+    gap: 4px;
     align-items: center;
     height: 36px;
-    padding: 6px;
+    padding: 0 3px;
     border-radius: 100px;
     border: 1px solid var(--ui-color-grey-400);
     background: var(--ui-color-grey-100);
     box-shadow: 0px 1px 8px 0px rgba(10, 13, 20, 0.05);
   }
-}
 
-.btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: none;
-  background: none;
-  border-radius: 50%;
-  color: var(--ui-color-grey-700);
-  transition: background-color 0.2s;
-  outline: none;
-
-  &:not(:disabled) {
-    cursor: pointer;
-    &:hover {
-      background-color: var(--ui-color-grey-400);
-    }
-    &:active {
-      background-color: var(--ui-color-grey-500);
-    }
+  .v-line {
+    border-right: 1px solid var(--ui-color-grey-400);
+    height: 60%;
   }
 
-  &:disabled {
-    cursor: not-allowed;
-    color: var(--ui-color-grey-600);
-  }
-}
-
-.placeholder {
-  padding: 26px 24px;
-  background: var(--ui-color-grey-100);
-  border-radius: 16px;
-
-  .title {
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 28px;
-    color: var(--ui-color-title);
-  }
-
-  .description {
-    margin-top: 10px;
-    font-weight: 600;
-    line-height: 22px;
-    color: var(--ui-color-grey-800);
-  }
-
-  .sign-in-button {
-    border: none;
-    border-radius: 12px;
-    width: 100%;
-    height: 40px;
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 28px;
-    color: var(--ui-color-grey-100);
-    background-color: var(--ui-color-sound-main);
-    outline: none;
+  .fold {
+    width: 28px;
+    height: 28px;
+    border-radius: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease-in;
+    stroke: var(--ui-color-grey-700);
     cursor: pointer;
 
-    &:hover {
-      background-color: var(--ui-color-purple-400);
+    &.left {
+      transform: rotate(180deg);
     }
 
-    &:active {
-      background-color: var(--ui-color-purple-600);
+    &:hover {
+      cursor: pointer;
+      stroke: var(--ui-color-primary-500);
+      background: var(--ui-color-primary-200);
     }
   }
 }
