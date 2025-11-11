@@ -58,6 +58,7 @@
         </UIMenu>
       </NavbarDropdown>
 
+      <NavbarLang />
       <NavbarTutorials v-if="showTutorialsEntry" />
 
       <div class="history-button-wrapper">
@@ -168,6 +169,7 @@ import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
 import gamePreviewSvg from './icons/game-preview.svg?raw'
 import globalConfig from './icons/global-config.svg?raw'
+import NavbarLang from '@/components/navbar/NavbarLang.vue'
 
 const props = defineProps<{
   project: Project | null
@@ -365,7 +367,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 
 .history-button-wrapper {
   display: flex;
-  margin-left: 16px;
 
   .history-button {
     display: flex;
@@ -433,12 +434,13 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
     color: var(--ui-color-grey-200);
     &.active {
       background-color: var(--ui-color-grey-200);
-      color: #47d8e4;
+      color: var(--ui-color-turquoise-600);
     }
   }
 
   .icon {
     display: flex;
+    width: 16px;
   }
 }
 

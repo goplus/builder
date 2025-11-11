@@ -25,7 +25,7 @@
           :disabled="!isOnline"
           @click="handlePublishProject"
         >
-          <img :src="publishSvg" />
+          <img :src="publishSvg" style="width: 14px" />
           {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
       </template>

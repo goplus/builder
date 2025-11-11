@@ -22,10 +22,16 @@ import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import type { Project } from '@/models/project'
 
-const props = defineProps<{
-  project: Project
-  sprite: Sprite
-}>()
+const props = withDefaults(
+  defineProps<{
+    project: Project
+    sprite: Sprite
+    enabledCollision: boolean | null
+  }>(),
+  {
+    enabledCollision: true
+  }
+)
 
 const emits = defineEmits<{
   updateSuccess: []
@@ -294,15 +300,17 @@ const { fn: handleConfirm } = useMessageHandle(
       <v-stage v-if="stageConfig != null" :config="stageConfig">
         <v-layer v-if="layerConfig != null" :config="layerConfig">
           <v-image v-if="imgConfig != null" :config="imgConfig" />
-          <v-text ref="colliderTitle" :config="colliderTitleConfig" />
-          <v-rect
-            ref="colliderRect"
-            :config="colliderRectConfig"
-            @dragmove="syncColliderTitlePos"
-            @dragend="handleColliderRectDragEnd"
-            @transform="syncColliderTitlePos"
-            @transformend="handleColliderRectTransformEnd"
-          />
+          <template v-if="enabledCollision">
+            <v-text ref="colliderTitle" :config="colliderTitleConfig" />
+            <v-rect
+              ref="colliderRect"
+              :config="colliderRectConfig"
+              @dragmove="syncColliderTitlePos"
+              @dragend="handleColliderRectDragEnd"
+              @transform="syncColliderTitlePos"
+              @transformend="handleColliderRectTransformEnd"
+            />
+          </template>
           <v-custom-transformer ref="colliderRectTransformer" :config="colliderRectTransformerConfig" />
           <v-group :config="pivotGroupConfig" @dragend="handlePivotCircleGroupDragEnd">
             <v-text :config="pivotTitleConfig" />
@@ -313,7 +321,7 @@ const { fn: handleConfirm } = useMessageHandle(
     </div>
     <UIButton
       v-radar="{ name: 'Save button', desc: 'Click to save sprite collision' }"
-      type="primary"
+      type="success"
       :disabled="!dirty"
       @click="handleConfirm"
     >
