@@ -331,10 +331,10 @@ useDraggable(draggerRef, {
   onDragEnd
 })
 
-const suggestedPrompts: LocaleMessage[] = [
+const suggestedQuestions: LocaleMessage[] = [
   {
     en: 'What can XBuilder do?',
-    zh: 'XBuilder可以做什么？'
+    zh: 'XBuilder 可以做什么？'
   },
   {
     en: 'How to create a new project?',
@@ -397,7 +397,7 @@ onBeforeUnmount(
 
 // Copilot open handling, implemented here due to high business logic coupling
 const signedInUsername = computed(() => getSignedInUsername())
-const userUsedCopilotRef = localStorageRef<string[]>('spx-gui-used-copilot-user', [])
+const usedCopilotUsersRef = localStorageRef<string[]>('spx-gui-used-copilot-users', [])
 watch(
   router.currentRoute,
   (route) => {
@@ -410,23 +410,31 @@ watch(
     immediate: true
   }
 )
+/**
+ * Records that the current user has used Copilot when the specified condition is met.
+ */
+function recordCopilotUsage(shouldRecord: () => boolean) {
+  if (signedInUsername.value == null) return
+  const username = signedInUsername.value
+  const userUsedCopilot = usedCopilotUsersRef.value
+  // Skip if condition is not met or user has already been recorded
+  if (!shouldRecord() || userUsedCopilot.includes(username)) return
+
+  usedCopilotUsersRef.value = [...userUsedCopilot, username]
+}
 /** Track whether user has used copilot */
 watch(
-  () => [session.value?.currentRound, copilot.active],
-  ([round, active]) => {
-    if (signedInUsername.value == null) return
-    const username = signedInUsername.value
-    const userUsedCopilot = userUsedCopilotRef.value
-    // If a conversation occurs or copilot is closed, it is considered as having used copilot.
-    if ((round == null && active) || userUsedCopilot.includes(username)) return
-
-    userUsedCopilotRef.value = [...userUsedCopilot, username]
-  }
+  () => session.value?.currentRound,
+  (round) => recordCopilotUsage(() => round != null)
+)
+watch(
+  () => copilot.active,
+  (active) => recordCopilotUsage(() => !active)
 )
 /** Open copilot for signed-in users on their first copilot use */
 onMounted(() => {
   const username = signedInUsername.value
-  if (username == null || userUsedCopilotRef.value.includes(username)) return
+  if (username == null || usedCopilotUsersRef.value.includes(username)) return
   copilot.open()
 })
 </script>
@@ -500,15 +508,15 @@ onMounted(() => {
                 $t({ en: 'I can help you with XBuilder, just ask!', zh: '我可以帮助你了解并使用 XBuilder，尽管问！' })
               }}
             </div>
-            <div class="suggested-wrapper">
+            <div class="suggested-questions-wrapper">
               <!-- TODO: temporary, will be handled uniformly after the button design specification is complete -->
               <button
-                v-for="(suggestedPrompt, index) in suggestedPrompts"
+                v-for="(suggestedQuestion, index) in suggestedQuestions"
                 :key="index"
-                class="flat-button suggested-item"
-                @click="handleSuggestedPromptClick($t(suggestedPrompt))"
+                class="flat-button suggested-question"
+                @click="handleSuggestedPromptClick($t(suggestedQuestion))"
               >
-                {{ $t(suggestedPrompt) }}
+                {{ $t(suggestedQuestion) }}
               </button>
             </div>
           </template>
@@ -721,14 +729,14 @@ $toColor: #c390ff;
       margin-top: 4px;
       color: var(--ui-color-grey-700);
     }
-    .suggested-wrapper {
+    .suggested-questions-wrapper {
       width: 100%;
       margin-top: 24px;
       display: flex;
       flex-direction: column;
       gap: 8px;
 
-      .suggested-item {
+      .suggested-question {
         width: 100%;
         padding: 9px 12px;
       }
