@@ -15,16 +15,16 @@ func NewNopQuotaTracker() authz.QuotaTracker {
 }
 
 // Usage implements [authz.QuotaTracker].
-func (*nopQuotaTracker) Usage(context.Context, int64, authz.Resource) (authz.QuotaUsage, error) {
+func (*nopQuotaTracker) Usage(context.Context, int64, authz.QuotaPolicy) (authz.QuotaUsage, error) {
 	return authz.QuotaUsage{}, nil
 }
 
 // IncrementUsage implements [authz.QuotaTracker].
-func (*nopQuotaTracker) IncrementUsage(context.Context, int64, authz.Resource, int64, authz.QuotaPolicy) error {
+func (*nopQuotaTracker) IncrementUsage(context.Context, int64, authz.QuotaPolicy, int64) error {
 	return nil
 }
 
 // ResetUsage implements [authz.QuotaTracker].
-func (*nopQuotaTracker) ResetUsage(context.Context, int64, authz.Resource) error {
+func (*nopQuotaTracker) ResetUsage(context.Context, int64, authz.QuotaPolicy) error {
 	return nil
 }

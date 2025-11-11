@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/authn"
@@ -36,26 +37,46 @@ func newContextWithTestUser(ctx context.Context) context.Context {
 	ctx = authn.NewContextWithUser(ctx, testUser)
 	ctx = authz.NewContextWithUserCapabilities(ctx, authz.UserCapabilities{
 		CanManageAssets:  false,
+		CanManageCourses: false,
 		CanUsePremiumLLM: false,
-		CopilotMessageQuota: authz.Quota{
-			Limit:     100,
-			Remaining: 100,
-			Window:    24 * 60 * 60,
-		},
-		AIDescriptionQuota: authz.Quota{
-			Limit:     300,
-			Remaining: 295,
-			Window:    24 * 60 * 60,
-		},
-		AIInteractionTurnQuota: authz.Quota{
-			Limit:     12000,
-			Remaining: 11900,
-			Window:    24 * 60 * 60,
-		},
-		AIInteractionArchiveQuota: authz.Quota{
-			Limit:     8000,
-			Remaining: 7980,
-			Window:    24 * 60 * 60,
+	})
+	ctx = authz.NewContextWithUserQuotas(ctx, authz.UserQuotas{
+		Limits: map[authz.Resource]authz.Quota{
+			authz.ResourceCopilotMessage: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "copilotMessage:limit",
+					Resource: authz.ResourceCopilotMessage,
+					Limit:    100,
+					Window:   24 * time.Hour,
+				},
+			},
+			authz.ResourceAIDescription: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiDescription:limit",
+					Resource: authz.ResourceAIDescription,
+					Limit:    300,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 5},
+			},
+			authz.ResourceAIInteractionTurn: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiInteractionTurn:limit",
+					Resource: authz.ResourceAIInteractionTurn,
+					Limit:    12000,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 100},
+			},
+			authz.ResourceAIInteractionArchive: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiInteractionArchive:limit",
+					Resource: authz.ResourceAIInteractionArchive,
+					Limit:    8000,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 20},
+			},
 		},
 	})
 	return ctx

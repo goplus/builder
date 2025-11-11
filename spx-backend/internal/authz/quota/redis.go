@@ -38,8 +38,8 @@ func NewRedisQuotaTracker(cfg config.RedisConfig) authz.QuotaTracker {
 }
 
 // Usage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, resource authz.Resource) (authz.QuotaUsage, error) {
-	key := quotaKey(userID, resource)
+func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, policy authz.QuotaPolicy) (authz.QuotaUsage, error) {
+	key := quotaKey(userID, policy)
 
 	var (
 		usageCmd *redis.StringCmd
@@ -75,8 +75,8 @@ func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, resource au
 }
 
 // IncrementUsage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, resource authz.Resource, amount int64, policy authz.QuotaPolicy) error {
-	key := quotaKey(userID, resource)
+func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy, amount int64) error {
+	key := quotaKey(userID, policy)
 
 	// Use pipeline to atomically increment and set TTL.
 	pipe := t.client.Pipeline()
@@ -90,8 +90,8 @@ func (t *redisQuotaTracker) IncrementUsage(ctx context.Context, userID int64, re
 }
 
 // ResetUsage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, resource authz.Resource) error {
-	key := quotaKey(userID, resource)
+func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
+	key := quotaKey(userID, policy)
 
 	if _, err := t.client.Del(ctx, key).Result(); err != nil {
 		return fmt.Errorf("failed to reset usage in Redis: %w", err)
@@ -108,6 +108,10 @@ func (t *redisQuotaTracker) Close() error {
 }
 
 // quotaKey returns the Redis key for quota tracking.
-func quotaKey(userID int64, resource authz.Resource) string {
-	return fmt.Sprintf("%d:%s", userID, resource)
+func quotaKey(userID int64, policy authz.QuotaPolicy) string {
+	name := policy.Name
+	if name == "" {
+		name = string(policy.Resource)
+	}
+	return fmt.Sprintf("%d:%s", userID, name)
 }
