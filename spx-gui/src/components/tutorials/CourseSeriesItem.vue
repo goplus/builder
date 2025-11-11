@@ -35,14 +35,16 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 
 <template>
   <li class="course-series-item">
-    <UIImg v-if="thumbnailUrl" class="thumbnail" :src="thumbnailUrl" size="cover" />
+    <RouterLink :to="`/course-series/${props.courseSeries.id}`">
+      <UIImg v-if="thumbnailUrl" class="thumbnail" :src="thumbnailUrl" size="cover" />
 
-    <UITooltip>
-      <template #trigger>
-        <div class="title">{{ courseSeries.title }}</div>
-      </template>
-      {{ courseSeries.title }}
-    </UITooltip>
+      <UITooltip>
+        <template #trigger>
+          <div class="title">{{ courseSeries.title }}</div>
+        </template>
+        {{ courseSeries.title }}
+      </UITooltip>
+    </RouterLink>
     <!-- <div class="header">
     </div> -->
     <!-- 
@@ -75,6 +77,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   cursor: pointer;
   transition: all 0.2s;
   overflow: hidden;
+  background-image: url(@/assets/images/stage-bg.svg);
 
   .thumbnail {
     width: 100%;
