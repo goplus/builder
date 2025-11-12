@@ -1,4 +1,13 @@
-import { computed, useSlots, type VNode, type VNodeChild } from 'vue'
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUpdate,
+  shallowReactive,
+  useSlots,
+  type Slot,
+  type VNode,
+  type VNodeChild
+} from 'vue'
 import { trimLineBreaks as doTrimLineBreaks } from './utils'
 
 export function getTextForVNodeChild(child: VNodeChild): string {
@@ -49,10 +58,14 @@ export function getElementForVNode(vnode: VNode): HTMLElement | null {
   return null
 }
 
+/**
+ * This method provides safer reactive handling, allowing `slot` changes to be listened to (or: tracked).
+ */
 export function useSlotText(name = 'default', trimLineBreaks = false) {
-  const slots = useSlots()
+  const slotsRef = useReactiveSlots()
+
   return computed(() => {
-    let text = getTextForVNodeChild(slots[name]?.())
+    let text = getTextForVNodeChild(slotsRef[name]?.())
     if (trimLineBreaks) text = doTrimLineBreaks(text)
     return text
   })
@@ -63,4 +76,23 @@ export function useChildrenWithDefault(defaultChildren: VNodeChild) {
   return {
     default: () => slots.default?.() || defaultChildren
   }
+}
+
+/**
+ * A reactive version of useSlots that triggers updates when slots change.
+ * Refer to the issue: https://github.com/goplus/builder/issues/2410
+ */
+export function useReactiveSlots() {
+  const slots = useSlots()
+  const slotsRef = shallowReactive<Record<string, Slot | undefined>>({ ...slots })
+
+  const updateSlots = () => {
+    for (const key in slots) {
+      slotsRef[key] = slots[key]
+    }
+  }
+  onBeforeMount(updateSlots)
+  onBeforeUpdate(updateSlots)
+
+  return slotsRef
 }

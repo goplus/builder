@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,16 +18,53 @@ func newTestAuthorizer() *Authorizer {
 
 func newTestUserCapabilities() UserCapabilities {
 	return UserCapabilities{
-		CanManageAssets:               true,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       85,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        290,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11700,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7600,
+		CanManageAssets:  true,
+		CanManageCourses: false,
+		CanUsePremiumLLM: true,
+	}
+}
+
+func newTestUserQuotas() UserQuotas {
+	const quotaWindow = 24 * time.Hour
+	return UserQuotas{
+		Limits: map[Resource]Quota{
+			ResourceCopilotMessage: {
+				QuotaPolicy: QuotaPolicy{
+					Name:     "copilotMessage:limit",
+					Resource: ResourceCopilotMessage,
+					Limit:    100,
+					Window:   quotaWindow,
+				},
+				QuotaUsage: QuotaUsage{Used: 15},
+			},
+			ResourceAIDescription: {
+				QuotaPolicy: QuotaPolicy{
+					Name:     "aiDescription:limit",
+					Resource: ResourceAIDescription,
+					Limit:    300,
+					Window:   quotaWindow,
+				},
+				QuotaUsage: QuotaUsage{Used: 10},
+			},
+			ResourceAIInteractionTurn: {
+				QuotaPolicy: QuotaPolicy{
+					Name:     "aiInteractionTurn:limit",
+					Resource: ResourceAIInteractionTurn,
+					Limit:    12000,
+					Window:   quotaWindow,
+				},
+				QuotaUsage: QuotaUsage{Used: 300},
+			},
+			ResourceAIInteractionArchive: {
+				QuotaPolicy: QuotaPolicy{
+					Name:     "aiInteractionArchive:limit",
+					Resource: ResourceAIInteractionArchive,
+					Limit:    8000,
+					Window:   quotaWindow,
+				},
+				QuotaUsage: QuotaUsage{Used: 400},
+			},
+		},
 	}
 }
 
@@ -113,5 +151,48 @@ func TestUserCapabilitiesFromContext(t *testing.T) {
 		caps, ok := UserCapabilitiesFromContext(ctx)
 		require.False(t, ok)
 		require.Zero(t, caps)
+	})
+}
+
+func TestNewContextWithUserQuotas(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		wantQuotas := newTestUserQuotas()
+		ctx := NewContextWithUserQuotas(context.Background(), wantQuotas)
+
+		quotas, ok := ctx.Value(userQuotasContextKey{}).(UserQuotas)
+		require.True(t, ok)
+		assert.Equal(t, wantQuotas, quotas)
+	})
+
+	t.Run("ZeroQuotas", func(t *testing.T) {
+		ctx := NewContextWithUserQuotas(context.Background(), UserQuotas{})
+
+		value := ctx.Value(userQuotasContextKey{})
+		assert.Zero(t, value)
+	})
+}
+
+func TestUserQuotasFromContext(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		wantQuotas := newTestUserQuotas()
+		ctx := NewContextWithUserQuotas(context.Background(), wantQuotas)
+
+		quotas, ok := UserQuotasFromContext(ctx)
+		require.True(t, ok)
+		assert.Equal(t, wantQuotas, quotas)
+	})
+
+	t.Run("NoQuotas", func(t *testing.T) {
+		quotas, ok := UserQuotasFromContext(context.Background())
+		require.False(t, ok)
+		require.Zero(t, quotas)
+	})
+
+	t.Run("WrongContextValue", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), userQuotasContextKey{}, "not-quotas")
+
+		quotas, ok := UserQuotasFromContext(ctx)
+		require.False(t, ok)
+		require.Zero(t, quotas)
 	})
 }

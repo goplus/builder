@@ -21,6 +21,7 @@ import {
 } from '@/components/ui'
 import CourseSelector from './CourseSelector.vue'
 import SelectedCoursesList from './SelectedCoursesList.vue'
+import ThumbnailUploader from './ThumbnailUploader.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -51,6 +52,14 @@ const form = useForm({
       return null
     }
   ],
+  thumbnail: [
+    '',
+    (v: string) => {
+      if (v === '') return i18n.t({ en: 'Please upload a thumbnail', zh: '请上传缩略图' })
+      return null
+    }
+  ],
+  description: [''],
   order: [1],
   courseIDs: [
     [] as string[],
@@ -93,10 +102,14 @@ watch(
     if (visible) {
       if (props.courseSeries) {
         form.value.title = props.courseSeries.title
+        form.value.thumbnail = props.courseSeries.thumbnail
+        form.value.description = props.courseSeries.description
         form.value.order = props.courseSeries.order
         form.value.courseIDs = [...props.courseSeries.courseIDs]
       } else {
         form.value.title = ''
+        form.value.thumbnail = ''
+        form.value.description = ''
         form.value.order = 1
         form.value.courseIDs = []
       }
@@ -111,6 +124,8 @@ const handleSubmit = useMessageHandle(
   async () => {
     const formData: AddUpdateCourseSeriesParams = {
       title: form.value.title,
+      thumbnail: form.value.thumbnail,
+      description: form.value.description,
       courseIDs: form.value.courseIDs,
       order: form.value.order
     }
@@ -145,29 +160,49 @@ const handleSubmit = useMessageHandle(
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
       <div class="form-row">
-        <UIFormItem path="title" :label="$t({ en: 'Title', zh: '标题' })">
-          <UITextInput
-            v-model:value="form.value.title"
-            :placeholder="
-              $t({
-                en: 'Enter course series title',
-                zh: '请输入课程系列标题'
-              })
-            "
-          />
+        <UIFormItem class="thumbnail-wrapper" path="thumbnail" :label="$t({ en: 'Thumbnail', zh: '缩略图' })">
+          <ThumbnailUploader :thumbnail="form.value.thumbnail" @update:thumbnail="(v) => (form.value.thumbnail = v)" />
         </UIFormItem>
 
-        <UIFormItem path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
-          <UINumberInput
-            v-model:value="form.value.order"
-            :placeholder="
-              $t({
-                en: 'Enter sort order (1, 2, 3...)',
-                zh: '请输入排序优先级（1, 2, 3...）'
-              })
-            "
-          />
-        </UIFormItem>
+        <div>
+          <UIFormItem path="title" :label="$t({ en: 'Title', zh: '标题' })">
+            <UITextInput
+              v-model:value="form.value.title"
+              :placeholder="
+                $t({
+                  en: 'Enter course series title',
+                  zh: '请输入课程系列标题'
+                })
+              "
+            />
+          </UIFormItem>
+
+          <UIFormItem path="description" :label="$t({ en: 'Description', zh: '描述' })">
+            <UITextInput
+              v-model:value="form.value.description"
+              type="textarea"
+              :rows="3"
+              :placeholder="
+                $t({
+                  en: 'Enter course series description',
+                  zh: '请输入课程系列描述'
+                })
+              "
+            />
+          </UIFormItem>
+
+          <UIFormItem path="order" :label="$t({ en: 'Sort order', zh: '排序优先级' })">
+            <UINumberInput
+              v-model:value="form.value.order"
+              :placeholder="
+                $t({
+                  en: 'Enter sort order (1, 2, 3...)',
+                  zh: '请输入排序优先级（1, 2, 3...）'
+                })
+              "
+            />
+          </UIFormItem>
+        </div>
       </div>
 
       <UIFormItem v-show="false" path="courseIDs">
@@ -217,13 +252,22 @@ const handleSubmit = useMessageHandle(
 <style lang="scss" scoped>
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 200px;
+  grid-template-columns: 350px 1fr;
   gap: 24px;
   margin-bottom: 24px;
 
   > :deep(.ui-form-item) {
     margin-top: 0 !important;
   }
+
+  :deep(.thumbnail-wrapper) > div {
+    height: 260px;
+  }
+}
+
+.thumbnail-uploader {
+  width: 100%;
+  height: 100%;
 }
 
 .courses-section {

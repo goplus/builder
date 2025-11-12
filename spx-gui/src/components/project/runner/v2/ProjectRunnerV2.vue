@@ -50,7 +50,9 @@ interface IframeWindow extends Window {
     fileHash: string,
     assetURLs: Record<string, string>,
     onSpxReady?: () => void,
-    logLevel?: number
+    config?: {
+      logLevel?: number
+    }
   ): Promise<void>
   /**
    * NOTE: This method is not recommended to be used now.
@@ -237,7 +239,9 @@ async function runInternal(ctrl: AbortController) {
           iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
         }
       },
-      logLevels.LOG_LEVEL_ERROR
+      {
+        logLevel: logLevels.LOG_LEVEL_ERROR
+      }
     )
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)

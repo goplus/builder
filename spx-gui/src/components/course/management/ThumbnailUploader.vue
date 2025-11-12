@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useMessageHandle } from '@/utils/exception'
-import { useAsyncComputedLegacy } from '@/utils/utils'
-import { createFileWithWebUrl, saveFileForWebUrl, selectFileWithUploadLimit } from '@/models/common/cloud'
+import { useAsyncComputed } from '@/utils/utils'
+import { createFileWithUniversalUrl, saveFile, selectFileWithUploadLimit } from '@/models/common/cloud'
 import { fromNativeFile } from '@/models/common/file'
 import { UIIcon, UIImg, UILoading } from '@/components/ui'
 
@@ -17,8 +17,8 @@ const handleUpload = useMessageHandle(
   async () => {
     const nativeFile = await selectFileWithUploadLimit({ accept: ['.png', '.jpg', '.jpeg', '.gif', '.webp'] })
     const file = fromNativeFile(nativeFile)
-    const webUrl = await saveFileForWebUrl(file)
-    emit('update:thumbnail', webUrl)
+    const universalUrl = await saveFile(file)
+    emit('update:thumbnail', universalUrl)
   },
   {
     en: 'Failed to upload image',
@@ -26,9 +26,9 @@ const handleUpload = useMessageHandle(
   }
 )
 
-const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   if (props.thumbnail === '') return null
-  const file = createFileWithWebUrl(props.thumbnail)
+  const file = createFileWithUniversalUrl(props.thumbnail)
   return file.url(onCleanup)
 })
 </script>

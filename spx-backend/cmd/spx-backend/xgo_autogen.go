@@ -1491,38 +1491,43 @@ func (this *post_ai_description) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_ai_description.yap:16:1
-	if !ensureQuotaLeft(ctx, authz.ResourceAIDescription) {
-//line cmd/spx-backend/post_ai_description.yap:17:1
-		return
-	}
+	const (
+		quotaResource = authz.ResourceAIDescription
+		quotaAmount   = 1
+	)
 //line cmd/spx-backend/post_ai_description.yap:20:1
-	params := &controller.AIDescriptionParams{}
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_ai_description.yap:21:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_description.yap:22:1
 		return
 	}
 //line cmd/spx-backend/post_ai_description.yap:24:1
-	if
-//line cmd/spx-backend/post_ai_description.yap:24:1
-	ok, msg := params.Validate(); !ok {
+	params := &controller.AIDescriptionParams{}
 //line cmd/spx-backend/post_ai_description.yap:25:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_ai_description.yap:26:1
 		return
 	}
+//line cmd/spx-backend/post_ai_description.yap:28:1
+	if
+//line cmd/spx-backend/post_ai_description.yap:28:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_ai_description.yap:29:1
-	result, err := this.ctrl.GenerateAIDescription(ctx.Context(), params)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_ai_description.yap:30:1
-	if err != nil {
-//line cmd/spx-backend/post_ai_description.yap:31:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_description.yap:32:1
 		return
 	}
+//line cmd/spx-backend/post_ai_description.yap:33:1
+	result, err := this.ctrl.GenerateAIDescription(ctx.Context(), params)
+//line cmd/spx-backend/post_ai_description.yap:34:1
+	if err != nil {
 //line cmd/spx-backend/post_ai_description.yap:35:1
-	consumeQuota(ctx, authz.ResourceAIDescription, 1)
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_ai_description.yap:36:1
+		return
+	}
+//line cmd/spx-backend/post_ai_description.yap:39:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
+//line cmd/spx-backend/post_ai_description.yap:41:1
 	this.Json__1(result)
 }
 func (this *post_ai_description) Classfname() string {
@@ -1545,38 +1550,43 @@ func (this *post_ai_interaction_archive) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_ai_interaction_archive.yap:16:1
-	if !ensureQuotaLeft(ctx, authz.ResourceAIInteractionArchive) {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:17:1
-		return
-	}
+	const (
+		quotaResource = authz.ResourceAIInteractionArchive
+		quotaAmount   = 1
+	)
 //line cmd/spx-backend/post_ai_interaction_archive.yap:20:1
-	params := &controller.AIInteractionArchiveParams{}
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_ai_interaction_archive.yap:21:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:22:1
 		return
 	}
 //line cmd/spx-backend/post_ai_interaction_archive.yap:24:1
-	if
-//line cmd/spx-backend/post_ai_interaction_archive.yap:24:1
-	ok, msg := params.Validate(); !ok {
+	params := &controller.AIInteractionArchiveParams{}
 //line cmd/spx-backend/post_ai_interaction_archive.yap:25:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_ai_interaction_archive.yap:26:1
 		return
 	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:28:1
+	if
+//line cmd/spx-backend/post_ai_interaction_archive.yap:28:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_ai_interaction_archive.yap:29:1
-	result, err := this.ctrl.PerformAIInteractionArchive(ctx.Context(), params)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_ai_interaction_archive.yap:30:1
-	if err != nil {
-//line cmd/spx-backend/post_ai_interaction_archive.yap:31:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_interaction_archive.yap:32:1
 		return
 	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:33:1
+	result, err := this.ctrl.PerformAIInteractionArchive(ctx.Context(), params)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:34:1
+	if err != nil {
 //line cmd/spx-backend/post_ai_interaction_archive.yap:35:1
-	consumeQuota(ctx, authz.ResourceAIInteractionArchive, 1)
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_ai_interaction_archive.yap:36:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_archive.yap:39:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
+//line cmd/spx-backend/post_ai_interaction_archive.yap:41:1
 	this.Json__1(result)
 }
 func (this *post_ai_interaction_archive) Classfname() string {
@@ -1599,38 +1609,43 @@ func (this *post_ai_interaction_turn) Main(_xgo_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_ai_interaction_turn.yap:16:1
-	if !ensureQuotaLeft(ctx, authz.ResourceAIInteractionTurn) {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:17:1
-		return
-	}
+	const (
+		quotaResource = authz.ResourceAIInteractionTurn
+		quotaAmount   = 1
+	)
 //line cmd/spx-backend/post_ai_interaction_turn.yap:20:1
-	params := &controller.AIInteractionTurnParams{}
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:21:1
-	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:22:1
 		return
 	}
 //line cmd/spx-backend/post_ai_interaction_turn.yap:24:1
-	if
-//line cmd/spx-backend/post_ai_interaction_turn.yap:24:1
-	ok, msg := params.Validate(); !ok {
+	params := &controller.AIInteractionTurnParams{}
 //line cmd/spx-backend/post_ai_interaction_turn.yap:25:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:26:1
 		return
 	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:28:1
+	if
+//line cmd/spx-backend/post_ai_interaction_turn.yap:28:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:29:1
-	result, err := this.ctrl.PerformAIInteractionTurn(ctx.Context(), params)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_ai_interaction_turn.yap:30:1
-	if err != nil {
-//line cmd/spx-backend/post_ai_interaction_turn.yap:31:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_ai_interaction_turn.yap:32:1
 		return
 	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:33:1
+	result, err := this.ctrl.PerformAIInteractionTurn(ctx.Context(), params)
+//line cmd/spx-backend/post_ai_interaction_turn.yap:34:1
+	if err != nil {
 //line cmd/spx-backend/post_ai_interaction_turn.yap:35:1
-	consumeQuota(ctx, authz.ResourceAIInteractionTurn, 1)
+		replyWithInnerError(ctx, err)
 //line cmd/spx-backend/post_ai_interaction_turn.yap:36:1
+		return
+	}
+//line cmd/spx-backend/post_ai_interaction_turn.yap:39:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
+//line cmd/spx-backend/post_ai_interaction_turn.yap:41:1
 	this.Json__1(result)
 }
 func (this *post_ai_interaction_turn) Classfname() string {
@@ -1756,41 +1771,46 @@ func (this *post_copilot_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_message.yap:13:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_message.yap:17:1
-	if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
-//line cmd/spx-backend/post_copilot_message.yap:18:1
-		return
-	}
+//line cmd/spx-backend/post_copilot_message.yap:16:1
+	const (
+		quotaResource = authz.ResourceCopilotMessage
+		quotaAmount   = 1
+	)
+//line cmd/spx-backend/post_copilot_message.yap:20:1
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_copilot_message.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:24:1
 	params := &controller.GenerateMessageParams{}
-//line cmd/spx-backend/post_copilot_message.yap:22:1
+//line cmd/spx-backend/post_copilot_message.yap:25:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_copilot_message.yap:23:1
-		return
-	}
-//line cmd/spx-backend/post_copilot_message.yap:25:1
-	if
-//line cmd/spx-backend/post_copilot_message.yap:25:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_copilot_message.yap:26:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:28:1
+	if
+//line cmd/spx-backend/post_copilot_message.yap:28:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_copilot_message.yap:29:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_copilot_message.yap:27:1
-		return
-	}
 //line cmd/spx-backend/post_copilot_message.yap:30:1
-	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_copilot_message.yap:31:1
-	result, err := this.ctrl.GenerateMessage(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_copilot_message.yap:32:1
-	if err != nil {
-//line cmd/spx-backend/post_copilot_message.yap:33:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_copilot_message.yap:34:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_message.yap:38:1
-	consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
+//line cmd/spx-backend/post_copilot_message.yap:33:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
+//line cmd/spx-backend/post_copilot_message.yap:34:1
+	result, err := this.ctrl.GenerateMessage(ctx.Context(), params, canUsePremium)
+//line cmd/spx-backend/post_copilot_message.yap:35:1
+	if err != nil {
+//line cmd/spx-backend/post_copilot_message.yap:36:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_copilot_message.yap:37:1
+		return
+	}
 //line cmd/spx-backend/post_copilot_message.yap:40:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
+//line cmd/spx-backend/post_copilot_message.yap:42:1
 	this.Json__1(result)
 }
 func (this *post_copilot_message) Classfname() string {
@@ -1812,45 +1832,50 @@ func (this *post_copilot_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_copilot_stream_message.yap:13:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:17:1
-	if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
-//line cmd/spx-backend/post_copilot_stream_message.yap:18:1
-		return
-	}
+//line cmd/spx-backend/post_copilot_stream_message.yap:16:1
+	const (
+		quotaResource = authz.ResourceCopilotMessage
+		quotaAmount   = 1
+	)
+//line cmd/spx-backend/post_copilot_stream_message.yap:20:1
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_copilot_stream_message.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_stream_message.yap:24:1
 	params := &controller.GenerateMessageParams{}
-//line cmd/spx-backend/post_copilot_stream_message.yap:22:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:25:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_copilot_stream_message.yap:23:1
-		return
-	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:25:1
-	if
-//line cmd/spx-backend/post_copilot_stream_message.yap:25:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_copilot_stream_message.yap:26:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_stream_message.yap:28:1
+	if
+//line cmd/spx-backend/post_copilot_stream_message.yap:28:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_copilot_stream_message.yap:29:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_copilot_stream_message.yap:27:1
-		return
-	}
 //line cmd/spx-backend/post_copilot_stream_message.yap:30:1
-	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_copilot_stream_message.yap:31:1
-	read, err := this.ctrl.GenerateMessageStream(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_copilot_stream_message.yap:32:1
-	if err != nil {
-//line cmd/spx-backend/post_copilot_stream_message.yap:33:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_copilot_stream_message.yap:34:1
 		return
 	}
-//line cmd/spx-backend/post_copilot_stream_message.yap:38:1
-	consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
-//line cmd/spx-backend/post_copilot_stream_message.yap:40:1
+//line cmd/spx-backend/post_copilot_stream_message.yap:33:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
+//line cmd/spx-backend/post_copilot_stream_message.yap:34:1
+	read, err := this.ctrl.GenerateMessageStream(ctx.Context(), params, canUsePremium)
+//line cmd/spx-backend/post_copilot_stream_message.yap:35:1
+	if err != nil {
+//line cmd/spx-backend/post_copilot_stream_message.yap:36:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_copilot_stream_message.yap:37:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_stream_message.yap:39:1
 	defer read.Close()
-//line cmd/spx-backend/post_copilot_stream_message.yap:42:1
-	buf := make([]byte, 4096)
+//line cmd/spx-backend/post_copilot_stream_message.yap:41:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
 //line cmd/spx-backend/post_copilot_stream_message.yap:43:1
+	buf := make([]byte, 4096)
+//line cmd/spx-backend/post_copilot_stream_message.yap:44:1
 	this.Stream__2(read, buf)
 }
 func (this *post_copilot_stream_message) Classfname() string {
@@ -2211,45 +2236,50 @@ func (this *post_workflow_stream_message) Main(_xgo_arg0 *yap.Context) {
 //line cmd/spx-backend/post_workflow_stream_message.yap:13:1
 		return
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:17:1
-	if !ensureQuotaLeft(ctx, authz.ResourceCopilotMessage) {
-//line cmd/spx-backend/post_workflow_stream_message.yap:18:1
-		return
-	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:16:1
+	const (
+		quotaResource = authz.ResourceCopilotMessage
+		quotaAmount   = 1
+	)
+//line cmd/spx-backend/post_workflow_stream_message.yap:20:1
+	if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
 //line cmd/spx-backend/post_workflow_stream_message.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:24:1
 	params := &controller.WorkflowMessageParams{}
-//line cmd/spx-backend/post_workflow_stream_message.yap:22:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:25:1
 	if !parseJSON(ctx, params) {
-//line cmd/spx-backend/post_workflow_stream_message.yap:23:1
-		return
-	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:25:1
-	if
-//line cmd/spx-backend/post_workflow_stream_message.yap:25:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_workflow_stream_message.yap:26:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:28:1
+	if
+//line cmd/spx-backend/post_workflow_stream_message.yap:28:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_workflow_stream_message.yap:29:1
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_workflow_stream_message.yap:27:1
-		return
-	}
 //line cmd/spx-backend/post_workflow_stream_message.yap:30:1
-	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
-//line cmd/spx-backend/post_workflow_stream_message.yap:31:1
-	read, err := this.ctrl.WorkflowMessageStream(ctx.Context(), params, canUsePremium)
-//line cmd/spx-backend/post_workflow_stream_message.yap:32:1
-	if err != nil {
-//line cmd/spx-backend/post_workflow_stream_message.yap:33:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_workflow_stream_message.yap:34:1
 		return
 	}
-//line cmd/spx-backend/post_workflow_stream_message.yap:38:1
-	consumeQuota(ctx, authz.ResourceCopilotMessage, 1)
-//line cmd/spx-backend/post_workflow_stream_message.yap:40:1
+//line cmd/spx-backend/post_workflow_stream_message.yap:33:1
+	canUsePremium := authz.CanUsePremiumLLM(ctx.Context())
+//line cmd/spx-backend/post_workflow_stream_message.yap:34:1
+	read, err := this.ctrl.WorkflowMessageStream(ctx.Context(), params, canUsePremium)
+//line cmd/spx-backend/post_workflow_stream_message.yap:35:1
+	if err != nil {
+//line cmd/spx-backend/post_workflow_stream_message.yap:36:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_workflow_stream_message.yap:37:1
+		return
+	}
+//line cmd/spx-backend/post_workflow_stream_message.yap:39:1
 	defer read.Close()
-//line cmd/spx-backend/post_workflow_stream_message.yap:42:1
-	buf := make([]byte, 4096)
+//line cmd/spx-backend/post_workflow_stream_message.yap:41:1
+	consumeQuota(ctx, quotaResource, quotaAmount)
 //line cmd/spx-backend/post_workflow_stream_message.yap:43:1
+	buf := make([]byte, 4096)
+//line cmd/spx-backend/post_workflow_stream_message.yap:44:1
 	this.Stream__2(read, buf)
 }
 func (this *post_workflow_stream_message) Classfname() string {

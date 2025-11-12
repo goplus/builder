@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/authn"
@@ -35,16 +36,48 @@ func newContextWithTestUser(ctx context.Context) context.Context {
 	testUser := newTestUser()
 	ctx = authn.NewContextWithUser(ctx, testUser)
 	ctx = authz.NewContextWithUserCapabilities(ctx, authz.UserCapabilities{
-		CanManageAssets:               false,
-		CanUsePremiumLLM:              false,
-		CopilotMessageQuota:           100,
-		CopilotMessageQuotaLeft:       100,
-		AIDescriptionQuota:            300,
-		AIDescriptionQuotaLeft:        295,
-		AIInteractionTurnQuota:        12000,
-		AIInteractionTurnQuotaLeft:    11900,
-		AIInteractionArchiveQuota:     8000,
-		AIInteractionArchiveQuotaLeft: 7980,
+		CanManageAssets:  false,
+		CanManageCourses: false,
+		CanUsePremiumLLM: false,
+	})
+	ctx = authz.NewContextWithUserQuotas(ctx, authz.UserQuotas{
+		Limits: map[authz.Resource]authz.Quota{
+			authz.ResourceCopilotMessage: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "copilotMessage:limit",
+					Resource: authz.ResourceCopilotMessage,
+					Limit:    100,
+					Window:   24 * time.Hour,
+				},
+			},
+			authz.ResourceAIDescription: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiDescription:limit",
+					Resource: authz.ResourceAIDescription,
+					Limit:    300,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 5},
+			},
+			authz.ResourceAIInteractionTurn: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiInteractionTurn:limit",
+					Resource: authz.ResourceAIInteractionTurn,
+					Limit:    12000,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 100},
+			},
+			authz.ResourceAIInteractionArchive: {
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     "aiInteractionArchive:limit",
+					Resource: authz.ResourceAIInteractionArchive,
+					Limit:    8000,
+					Window:   24 * time.Hour,
+				},
+				QuotaUsage: authz.QuotaUsage{Used: 20},
+			},
+		},
 	})
 	return ctx
 }
@@ -469,14 +502,6 @@ func TestControllerGetAuthenticatedUser(t *testing.T) {
 		assert.NotNil(t, result.Capabilities)
 		assert.False(t, result.Capabilities.CanManageAssets)
 		assert.False(t, result.Capabilities.CanUsePremiumLLM)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(300), result.Capabilities.AIDescriptionQuota)
-		assert.Equal(t, int64(295), result.Capabilities.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(12000), result.Capabilities.AIInteractionTurnQuota)
-		assert.Equal(t, int64(11900), result.Capabilities.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(8000), result.Capabilities.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(7980), result.Capabilities.AIInteractionArchiveQuotaLeft)
 	})
 
 	t.Run("Unauthorized", func(t *testing.T) {
@@ -550,14 +575,6 @@ func TestControllerUpdateAuthenticatedUser(t *testing.T) {
 		assert.NotNil(t, result.Capabilities)
 		assert.False(t, result.Capabilities.CanManageAssets)
 		assert.False(t, result.Capabilities.CanUsePremiumLLM)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuota)
-		assert.Equal(t, int64(100), result.Capabilities.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(300), result.Capabilities.AIDescriptionQuota)
-		assert.Equal(t, int64(295), result.Capabilities.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(12000), result.Capabilities.AIInteractionTurnQuota)
-		assert.Equal(t, int64(11900), result.Capabilities.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(8000), result.Capabilities.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(7980), result.Capabilities.AIInteractionArchiveQuotaLeft)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})

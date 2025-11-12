@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/authz"
@@ -80,28 +81,23 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 	}
 }
 
-// ensureQuotaLeft checks the remaining quota and replies with a 429 error if exhausted.
-func ensureQuotaLeft(ctx *yap.Context, resource authz.Resource) bool {
-	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
+// ensureQuotaRemaining checks the remaining quota for the given amount and
+// replies with a 403 error if exceeded.
+func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
+	quotas, ok := authz.UserQuotasFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
 
-	var quotaLeft int64
-	switch resource {
-	case authz.ResourceCopilotMessage:
-		quotaLeft = caps.CopilotMessageQuotaLeft
-	case authz.ResourceAIDescription:
-		quotaLeft = caps.AIDescriptionQuotaLeft
-	case authz.ResourceAIInteractionTurn:
-		quotaLeft = caps.AIInteractionTurnQuotaLeft
-	case authz.ResourceAIInteractionArchive:
-		quotaLeft = caps.AIInteractionArchiveQuotaLeft
-	default:
+	quota, ok := quotas.Limits[resource]
+	if !ok {
 		return true
 	}
-	if quotaLeft <= 0 {
-		replyWithCodeMsg(ctx, errorTooManyRequests, fmt.Sprintf("%s quota exceeded", resource))
+	if quota.Remaining() < amount {
+		if reset := quota.Reset(); reset > 0 {
+			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
+		}
+		replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
 		return false
 	}
 	return true
@@ -131,6 +127,7 @@ const (
 	errorInvalidArgs     errorCode = 40001
 	errorUnauthorized    errorCode = 40100
 	errorForbidden       errorCode = 40300
+	errorQuotaExceeded   errorCode = 40301
 	errorNotFound        errorCode = 40400
 	errorTooManyRequests errorCode = 42900
 	errorUnknown         errorCode = 50000
@@ -141,6 +138,7 @@ var errorMsgs = map[errorCode]string{
 	errorInvalidArgs:     "Invalid args",
 	errorUnauthorized:    "Unauthorized",
 	errorForbidden:       "Forbidden",
+	errorQuotaExceeded:   "Quota exceeded",
 	errorNotFound:        "Not found",
 	errorTooManyRequests: "Too many requests",
 	errorUnknown:         "Internal error",

@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 )
@@ -35,5 +36,14 @@ func ConsumeQuota(ctx context.Context, resource Resource, amount int64) error {
 	if !ok {
 		return errors.New("missing authenticated user in context")
 	}
-	return authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, resource, amount)
+	quotas, ok := UserQuotasFromContext(ctx)
+	if !ok {
+		return errors.New("missing user quotas in context")
+	}
+
+	quota, ok := quotas.Limits[resource]
+	if !ok {
+		return fmt.Errorf("unsupported quota resource %q", resource)
+	}
+	return authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, quota.QuotaPolicy, amount)
 }

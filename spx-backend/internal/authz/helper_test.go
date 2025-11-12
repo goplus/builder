@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/stretchr/testify/assert"
@@ -14,10 +15,8 @@ import (
 func TestCanManageAssets(t *testing.T) {
 	t.Run("HasPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         true,
-			CanUsePremiumLLM:        false,
-			CopilotMessageQuota:     100,
-			CopilotMessageQuotaLeft: 50,
+			CanManageAssets:  true,
+			CanUsePremiumLLM: false,
 		})
 
 		result := CanManageAssets(ctx)
@@ -26,10 +25,8 @@ func TestCanManageAssets(t *testing.T) {
 
 	t.Run("NoPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         false,
-			CanUsePremiumLLM:        true,
-			CopilotMessageQuota:     100,
-			CopilotMessageQuotaLeft: 50,
+			CanManageAssets:  false,
+			CanUsePremiumLLM: true,
 		})
 
 		result := CanManageAssets(ctx)
@@ -61,11 +58,9 @@ func TestCanManageAssets(t *testing.T) {
 func TestCanManageCourses(t *testing.T) {
 	t.Run("HasPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         false,
-			CanManageCourses:        true,
-			CanUsePremiumLLM:        false,
-			CopilotMessageQuota:     100,
-			CopilotMessageQuotaLeft: 50,
+			CanManageAssets:  false,
+			CanManageCourses: true,
+			CanUsePremiumLLM: false,
 		})
 
 		result := CanManageCourses(ctx)
@@ -74,11 +69,9 @@ func TestCanManageCourses(t *testing.T) {
 
 	t.Run("NoPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         true,
-			CanManageCourses:        false,
-			CanUsePremiumLLM:        true,
-			CopilotMessageQuota:     100,
-			CopilotMessageQuotaLeft: 50,
+			CanManageAssets:  true,
+			CanManageCourses: false,
+			CanUsePremiumLLM: true,
 		})
 
 		result := CanManageCourses(ctx)
@@ -110,10 +103,8 @@ func TestCanManageCourses(t *testing.T) {
 func TestCanUsePremiumLLM(t *testing.T) {
 	t.Run("HasPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         false,
-			CanUsePremiumLLM:        true,
-			CopilotMessageQuota:     1000,
-			CopilotMessageQuotaLeft: 800,
+			CanManageAssets:  false,
+			CanUsePremiumLLM: true,
 		})
 
 		result := CanUsePremiumLLM(ctx)
@@ -122,10 +113,8 @@ func TestCanUsePremiumLLM(t *testing.T) {
 
 	t.Run("NoPermission", func(t *testing.T) {
 		ctx := NewContextWithUserCapabilities(context.Background(), UserCapabilities{
-			CanManageAssets:         true,
-			CanUsePremiumLLM:        false,
-			CopilotMessageQuota:     100,
-			CopilotMessageQuotaLeft: 30,
+			CanManageAssets:  true,
+			CanUsePremiumLLM: false,
 		})
 
 		result := CanUsePremiumLLM(ctx)
@@ -157,10 +146,12 @@ func TestCanUsePremiumLLM(t *testing.T) {
 func TestConsumeQuota(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, resource Resource, amount int64) error {
+		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
 			assert.Equal(t, int64(123), userID)
-			assert.Equal(t, ResourceCopilotMessage, resource)
+			assert.Equal(t, ResourceCopilotMessage, policy.Resource)
 			assert.Equal(t, int64(2), amount)
+			assert.Equal(t, int64(100), policy.Limit)
+			assert.Equal(t, 24*time.Hour, policy.Window)
 			return nil
 		}
 
@@ -171,6 +162,42 @@ func TestConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
+		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
+			Limits: map[Resource]Quota{
+				ResourceCopilotMessage: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "copilotMessage:limit",
+						Resource: ResourceCopilotMessage,
+						Limit:    100,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIDescription: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiDescription:limit",
+						Resource: ResourceAIDescription,
+						Limit:    300,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIInteractionTurn: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionTurn:limit",
+						Resource: ResourceAIInteractionTurn,
+						Limit:    12000,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIInteractionArchive: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionArchive:limit",
+						Resource: ResourceAIInteractionArchive,
+						Limit:    8000,
+						Window:   24 * time.Hour,
+					},
+				},
+			},
+		})
 
 		err := ConsumeQuota(ctx, ResourceCopilotMessage, 2)
 		assert.NoError(t, err)
@@ -201,7 +228,7 @@ func TestConsumeQuota(t *testing.T) {
 
 	t.Run("QuotaTrackerError", func(t *testing.T) {
 		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, resource Resource, amount int64) error {
+		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
 			return errors.New("quota exceeded")
 		}
 
@@ -212,10 +239,61 @@ func TestConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
+		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
+			Limits: map[Resource]Quota{
+				ResourceCopilotMessage: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "copilotMessage:limit",
+						Resource: ResourceCopilotMessage,
+						Limit:    100,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIDescription: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiDescription:limit",
+						Resource: ResourceAIDescription,
+						Limit:    300,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIInteractionTurn: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionTurn:limit",
+						Resource: ResourceAIInteractionTurn,
+						Limit:    12000,
+						Window:   24 * time.Hour,
+					},
+				},
+				ResourceAIInteractionArchive: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionArchive:limit",
+						Resource: ResourceAIInteractionArchive,
+						Limit:    8000,
+						Window:   24 * time.Hour,
+					},
+				},
+			},
+		})
 
 		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "quota exceeded")
+	})
+
+	t.Run("NoQuotas", func(t *testing.T) {
+		quotaTracker := &mockQuotaTracker{}
+		pdp := &mockPolicyDecisionPoint{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+
+		testUser := newTestUser()
+		ctx := context.Background()
+		ctx = authn.NewContextWithUser(ctx, testUser)
+		ctx = newContextWithAuthorizer(ctx, authorizer)
+
+		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		require.Error(t, err)
+		assert.EqualError(t, err, "missing user quotas in context")
 	})
 
 	t.Run("WrongAuthorizerContextValue", func(t *testing.T) {

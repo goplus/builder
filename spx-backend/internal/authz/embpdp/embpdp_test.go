@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authz"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -11,28 +12,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	copilotQuotaLimitFree = quotaLimitForPlan(authz.ResourceCopilotMessage, model.UserPlanFree)
+	copilotQuotaLimitPlus = quotaLimitForPlan(authz.ResourceCopilotMessage, model.UserPlanPlus)
+	copilotQuotaWindow    = quotaWindowFor(authz.ResourceCopilotMessage)
+
+	aiDescriptionQuotaLimitFree = quotaLimitForPlan(authz.ResourceAIDescription, model.UserPlanFree)
+	aiDescriptionQuotaLimitPlus = quotaLimitForPlan(authz.ResourceAIDescription, model.UserPlanPlus)
+	aiDescriptionQuotaWindow    = quotaWindowFor(authz.ResourceAIDescription)
+
+	aiInteractionTurnQuotaLimitFree = quotaLimitForPlan(authz.ResourceAIInteractionTurn, model.UserPlanFree)
+	aiInteractionTurnQuotaLimitPlus = quotaLimitForPlan(authz.ResourceAIInteractionTurn, model.UserPlanPlus)
+	aiInteractionTurnQuotaWindow    = quotaWindowFor(authz.ResourceAIInteractionTurn)
+
+	aiInteractionArchiveQuotaLimitFree = quotaLimitForPlan(authz.ResourceAIInteractionArchive, model.UserPlanFree)
+	aiInteractionArchiveQuotaLimitPlus = quotaLimitForPlan(authz.ResourceAIInteractionArchive, model.UserPlanPlus)
+	aiInteractionArchiveQuotaWindow    = quotaWindowFor(authz.ResourceAIInteractionArchive)
+)
+
+func quotaLimitForPlan(resource authz.Resource, plan model.UserPlan) int64 {
+	for _, spec := range quotaLimitSpecs {
+		if spec.Resource == resource {
+			return spec.policy(plan).Limit
+		}
+	}
+	panic(fmt.Sprintf("unsupported quota resource %q", resource))
+}
+
+func quotaWindowFor(resource authz.Resource) time.Duration {
+	for _, spec := range quotaLimitSpecs {
+		if spec.Resource == resource {
+			return spec.Window
+		}
+	}
+	panic(fmt.Sprintf("unsupported quota resource %q", resource))
+}
+
 type mockQuotaTracker struct {
-	usage map[string]int64
+	usage map[string]authz.QuotaUsage
 }
 
 func newMockQuotaTracker() *mockQuotaTracker {
-	return &mockQuotaTracker{usage: make(map[string]int64)}
+	return &mockQuotaTracker{usage: make(map[string]authz.QuotaUsage)}
 }
 
-func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, resource authz.Resource) (int64, error) {
-	key := fmt.Sprintf("%d:%s", userID, resource)
+func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy authz.QuotaPolicy) (authz.QuotaUsage, error) {
+	key := fmt.Sprintf("%d:%s", userID, policy.Name)
 	return m.usage[key], nil
 }
 
-func (m *mockQuotaTracker) IncrementUsage(ctx context.Context, userID int64, resource authz.Resource, amount int64) error {
-	key := fmt.Sprintf("%d:%s", userID, resource)
-	m.usage[key] += amount
+func (m *mockQuotaTracker) IncrementUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy, amount int64) error {
+	key := fmt.Sprintf("%d:%s", userID, policy.Name)
+	entry := m.usage[key]
+	entry.Used += amount
+	if policy.Window > 0 {
+		entry.ResetTime = time.Now().Add(policy.Window)
+	}
+	m.usage[key] = entry
 	return nil
 }
 
-func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, resource authz.Resource) error {
-	key := fmt.Sprintf("%d:%s", userID, resource)
-	m.usage[key] = 0
+func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
+	key := fmt.Sprintf("%d:%s", userID, policy.Name)
+	m.usage[key] = authz.QuotaUsage{}
 	return nil
 }
 
@@ -46,15 +88,19 @@ func TestNew(t *testing.T) {
 func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 	t.Run("Basic", func(t *testing.T) {
 		for _, tt := range []struct {
-			name                          string
-			mUser                         *model.User
-			wantCanManageAssets           bool
-			wantCanManageCourses          bool
-			wantCanUsePremiumLLM          bool
-			wantCopilotMessageQuota       int64
-			wantAIDescriptionQuota        int64
-			wantAIInteractionTurnQuota    int64
-			wantAIInteractionArchiveQuota int64
+			name                                string
+			mUser                               *model.User
+			wantCanManageAssets                 bool
+			wantCanManageCourses                bool
+			wantCanUsePremiumLLM                bool
+			wantCopilotMessageQuotaLimit        int64
+			wantCopilotMessageQuotaWindow       time.Duration
+			wantAIDescriptionQuotaLimit         int64
+			wantAIDescriptionQuotaWindow        time.Duration
+			wantAIInteractionTurnQuotaLimit     int64
+			wantAIInteractionTurnQuotaWindow    time.Duration
+			wantAIInteractionArchiveQuotaLimit  int64
+			wantAIInteractionArchiveQuotaWindow time.Duration
 		}{
 			{
 				name: "AssetAdminWithPlusPlan",
@@ -64,13 +110,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"assetAdmin"},
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:           true,
-				wantCanManageCourses:          false,
-				wantCanUsePremiumLLM:          true,
-				wantCopilotMessageQuota:       copilotQuotaPlus,
-				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCanManageAssets:                 true,
+				wantCanManageCourses:                false,
+				wantCanUsePremiumLLM:                true,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "RegularPlusUser",
@@ -80,13 +130,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    nil,
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:           false,
-				wantCanManageCourses:          false,
-				wantCanUsePremiumLLM:          true,
-				wantCopilotMessageQuota:       copilotQuotaPlus,
-				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCanManageAssets:                 false,
+				wantCanManageCourses:                false,
+				wantCanUsePremiumLLM:                true,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "RegularFreeUser",
@@ -96,13 +150,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    nil,
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:           false,
-				wantCanManageCourses:          false,
-				wantCanUsePremiumLLM:          false,
-				wantCopilotMessageQuota:       copilotQuotaFree,
-				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCanManageAssets:                 false,
+				wantCanManageCourses:                false,
+				wantCanUsePremiumLLM:                false,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "AdminWithFreePlan",
@@ -112,13 +170,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"admin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:           false,
-				wantCanManageCourses:          false,
-				wantCanUsePremiumLLM:          false,
-				wantCopilotMessageQuota:       copilotQuotaFree,
-				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCanManageAssets:                 false,
+				wantCanManageCourses:                false,
+				wantCanUsePremiumLLM:                false,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "UserWithMultipleRoles",
@@ -128,13 +190,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"user", "assetAdmin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:           true,
-				wantCanManageCourses:          false,
-				wantCanUsePremiumLLM:          false,
-				wantCopilotMessageQuota:       copilotQuotaFree,
-				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCanManageAssets:                 true,
+				wantCanManageCourses:                false,
+				wantCanUsePremiumLLM:                false,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "CourseAdminUser",
@@ -144,13 +210,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"courseAdmin"},
 					Plan:     model.UserPlanFree,
 				},
-				wantCanManageAssets:           false,
-				wantCanManageCourses:          true,
-				wantCanUsePremiumLLM:          false,
-				wantCopilotMessageQuota:       copilotQuotaFree,
-				wantAIDescriptionQuota:        aiDescriptionQuotaFree,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaFree,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaFree,
+				wantCanManageAssets:                 false,
+				wantCanManageCourses:                true,
+				wantCanUsePremiumLLM:                false,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 			{
 				name: "UserWithMultipleAdminRoles",
@@ -160,13 +230,17 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 					Roles:    model.UserRoles{"assetAdmin", "courseAdmin"},
 					Plan:     model.UserPlanPlus,
 				},
-				wantCanManageAssets:           true,
-				wantCanManageCourses:          true,
-				wantCanUsePremiumLLM:          true,
-				wantCopilotMessageQuota:       copilotQuotaPlus,
-				wantAIDescriptionQuota:        aiDescriptionQuotaPlus,
-				wantAIInteractionTurnQuota:    aiInteractionTurnQuotaPlus,
-				wantAIInteractionArchiveQuota: aiInteractionArchiveQuotaPlus,
+				wantCanManageAssets:                 true,
+				wantCanManageCourses:                true,
+				wantCanUsePremiumLLM:                true,
+				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
+				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
+				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
+				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
+				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
+				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
+				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
+				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
 			},
 		} {
 			t.Run(tt.name, func(t *testing.T) {
@@ -178,14 +252,37 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 				assert.Equal(t, tt.wantCanManageAssets, caps.CanManageAssets)
 				assert.Equal(t, tt.wantCanManageCourses, caps.CanManageCourses)
 				assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
-				assert.Equal(t, tt.wantCopilotMessageQuota, caps.CopilotMessageQuota)
-				assert.Equal(t, caps.CopilotMessageQuota, caps.CopilotMessageQuotaLeft)
-				assert.Equal(t, tt.wantAIDescriptionQuota, caps.AIDescriptionQuota)
-				assert.Equal(t, caps.AIDescriptionQuota, caps.AIDescriptionQuotaLeft)
-				assert.Equal(t, tt.wantAIInteractionTurnQuota, caps.AIInteractionTurnQuota)
-				assert.Equal(t, caps.AIInteractionTurnQuota, caps.AIInteractionTurnQuotaLeft)
-				assert.Equal(t, tt.wantAIInteractionArchiveQuota, caps.AIInteractionArchiveQuota)
-				assert.Equal(t, caps.AIInteractionArchiveQuota, caps.AIInteractionArchiveQuotaLeft)
+
+				quotas, err := pdp.ComputeUserQuotas(context.Background(), tt.mUser)
+				require.NoError(t, err)
+
+				copilotMessage, ok := quotas.Limits[authz.ResourceCopilotMessage]
+				require.True(t, ok)
+				assert.Equal(t, tt.wantCopilotMessageQuotaLimit, copilotMessage.Limit)
+				assert.Equal(t, tt.wantCopilotMessageQuotaWindow, copilotMessage.Window)
+				assert.Equal(t, copilotMessage.Limit, copilotMessage.Remaining())
+				assert.Equal(t, int64(tt.wantCopilotMessageQuotaWindow/time.Second), copilotMessage.Reset())
+
+				aiDescription, ok := quotas.Limits[authz.ResourceAIDescription]
+				require.True(t, ok)
+				assert.Equal(t, tt.wantAIDescriptionQuotaLimit, aiDescription.Limit)
+				assert.Equal(t, tt.wantAIDescriptionQuotaWindow, aiDescription.Window)
+				assert.Equal(t, aiDescription.Limit, aiDescription.Remaining())
+				assert.Equal(t, int64(tt.wantAIDescriptionQuotaWindow/time.Second), aiDescription.Reset())
+
+				aiInteractionTurn, ok := quotas.Limits[authz.ResourceAIInteractionTurn]
+				require.True(t, ok)
+				assert.Equal(t, tt.wantAIInteractionTurnQuotaLimit, aiInteractionTurn.Limit)
+				assert.Equal(t, tt.wantAIInteractionTurnQuotaWindow, aiInteractionTurn.Window)
+				assert.Equal(t, aiInteractionTurn.Limit, aiInteractionTurn.Remaining())
+				assert.Equal(t, int64(tt.wantAIInteractionTurnQuotaWindow/time.Second), aiInteractionTurn.Reset())
+
+				aiInteractionArchive, ok := quotas.Limits[authz.ResourceAIInteractionArchive]
+				require.True(t, ok)
+				assert.Equal(t, tt.wantAIInteractionArchiveQuotaLimit, aiInteractionArchive.Limit)
+				assert.Equal(t, tt.wantAIInteractionArchiveQuotaWindow, aiInteractionArchive.Window)
+				assert.Equal(t, aiInteractionArchive.Limit, aiInteractionArchive.Remaining())
+				assert.Equal(t, int64(tt.wantAIInteractionArchiveQuotaWindow/time.Second), aiInteractionArchive.Reset())
 			})
 		}
 	})
@@ -201,13 +298,53 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			Plan:     model.UserPlanFree,
 		}
 
-		err := quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceCopilotMessage, 30)
+		err := quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "copilotMessage:limit",
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    copilotQuotaLimitFree,
+				Window:   copilotQuotaWindow,
+			},
+			30,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIDescription, 5)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiDescription:limit",
+				Resource: authz.ResourceAIDescription,
+				Limit:    aiDescriptionQuotaLimitFree,
+				Window:   aiDescriptionQuotaWindow,
+			},
+			5,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionTurn, 120)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiInteractionTurn:limit",
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    aiInteractionTurnQuotaLimitFree,
+				Window:   aiInteractionTurnQuotaWindow,
+			},
+			120,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionArchive, 10)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiInteractionArchive:limit",
+				Resource: authz.ResourceAIInteractionArchive,
+				Limit:    aiInteractionArchiveQuotaLimitFree,
+				Window:   aiInteractionArchiveQuotaWindow,
+			},
+			10,
+		)
 		require.NoError(t, err)
 
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
@@ -215,17 +352,40 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 		assert.Equal(t, false, caps.CanManageAssets)
 		assert.Equal(t, false, caps.CanManageCourses)
 		assert.Equal(t, false, caps.CanUsePremiumLLM)
-		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(copilotQuotaFree-30), caps.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
-		assert.Equal(t, int64(aiDescriptionQuotaFree-5), caps.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree-120), caps.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree-10), caps.AIInteractionArchiveQuotaLeft)
+
+		quotas, err := pdp.ComputeUserQuotas(context.Background(), mUser)
+		require.NoError(t, err)
+
+		copilotMessage, ok := quotas.Limits[authz.ResourceCopilotMessage]
+		require.True(t, ok)
+		assert.Equal(t, int64(copilotQuotaLimitFree), copilotMessage.Limit)
+		assert.Equal(t, copilotQuotaWindow, copilotMessage.Window)
+		assert.Equal(t, int64(copilotQuotaLimitFree-30), copilotMessage.Remaining())
+		assert.Equal(t, int64(copilotQuotaWindow/time.Second), copilotMessage.Reset())
+
+		aiDescription, ok := quotas.Limits[authz.ResourceAIDescription]
+		require.True(t, ok)
+		assert.Equal(t, int64(aiDescriptionQuotaLimitFree), aiDescription.Limit)
+		assert.Equal(t, aiDescriptionQuotaWindow, aiDescription.Window)
+		assert.Equal(t, int64(aiDescriptionQuotaLimitFree-5), aiDescription.Remaining())
+		assert.Equal(t, int64(aiDescriptionQuotaWindow/time.Second), aiDescription.Reset())
+
+		aiInteractionTurn, ok := quotas.Limits[authz.ResourceAIInteractionTurn]
+		require.True(t, ok)
+		assert.Equal(t, int64(aiInteractionTurnQuotaLimitFree), aiInteractionTurn.Limit)
+		assert.Equal(t, aiInteractionTurnQuotaWindow, aiInteractionTurn.Window)
+		assert.Equal(t, int64(aiInteractionTurnQuotaLimitFree-120), aiInteractionTurn.Remaining())
+		assert.Equal(t, int64(aiInteractionTurnQuotaWindow/time.Second), aiInteractionTurn.Reset())
+
+		aiInteractionArchive, ok := quotas.Limits[authz.ResourceAIInteractionArchive]
+		require.True(t, ok)
+		assert.Equal(t, int64(aiInteractionArchiveQuotaLimitFree), aiInteractionArchive.Limit)
+		assert.Equal(t, aiInteractionArchiveQuotaWindow, aiInteractionArchive.Window)
+		assert.Equal(t, int64(aiInteractionArchiveQuotaLimitFree-10), aiInteractionArchive.Remaining())
+		assert.Equal(t, int64(aiInteractionArchiveQuotaWindow/time.Second), aiInteractionArchive.Reset())
 	})
 
-	t.Run("QuotaExhausted", func(t *testing.T) {
+	t.Run("QuotaExceeded", func(t *testing.T) {
 		quotaTracker := newMockQuotaTracker()
 		pdp := New(quotaTracker)
 
@@ -236,24 +396,155 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			Plan:     model.UserPlanFree,
 		}
 
-		err := quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceCopilotMessage, copilotQuotaFree+50)
+		err := quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "copilotMessage:limit",
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    copilotQuotaLimitFree,
+				Window:   copilotQuotaWindow,
+			},
+			copilotQuotaLimitFree+50,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIDescription, aiDescriptionQuotaFree+100)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiDescription:limit",
+				Resource: authz.ResourceAIDescription,
+				Limit:    aiDescriptionQuotaLimitFree,
+				Window:   aiDescriptionQuotaWindow,
+			},
+			aiDescriptionQuotaLimitFree+100,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionTurn, aiInteractionTurnQuotaFree+5000)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiInteractionTurn:limit",
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    aiInteractionTurnQuotaLimitFree,
+				Window:   aiInteractionTurnQuotaWindow,
+			},
+			aiInteractionTurnQuotaLimitFree+5000,
+		)
 		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(context.Background(), mUser.ID, authz.ResourceAIInteractionArchive, aiInteractionArchiveQuotaFree+3000)
+		err = quotaTracker.IncrementUsage(
+			context.Background(),
+			mUser.ID,
+			authz.QuotaPolicy{
+				Name:     "aiInteractionArchive:limit",
+				Resource: authz.ResourceAIInteractionArchive,
+				Limit:    aiInteractionArchiveQuotaLimitFree,
+				Window:   aiInteractionArchiveQuotaWindow,
+			},
+			aiInteractionArchiveQuotaLimitFree+3000,
+		)
 		require.NoError(t, err)
 
-		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
+		quotas, err := pdp.ComputeUserQuotas(context.Background(), mUser)
 		require.NoError(t, err)
-		assert.Equal(t, int64(copilotQuotaFree), caps.CopilotMessageQuota)
-		assert.Equal(t, int64(0), caps.CopilotMessageQuotaLeft)
-		assert.Equal(t, int64(aiDescriptionQuotaFree), caps.AIDescriptionQuota)
-		assert.Equal(t, int64(0), caps.AIDescriptionQuotaLeft)
-		assert.Equal(t, int64(aiInteractionTurnQuotaFree), caps.AIInteractionTurnQuota)
-		assert.Equal(t, int64(0), caps.AIInteractionTurnQuotaLeft)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaFree), caps.AIInteractionArchiveQuota)
-		assert.Equal(t, int64(0), caps.AIInteractionArchiveQuotaLeft)
+		for resource, wantLimit := range map[authz.Resource]int64{
+			authz.ResourceCopilotMessage:       copilotQuotaLimitFree,
+			authz.ResourceAIDescription:        aiDescriptionQuotaLimitFree,
+			authz.ResourceAIInteractionTurn:    aiInteractionTurnQuotaLimitFree,
+			authz.ResourceAIInteractionArchive: aiInteractionArchiveQuotaLimitFree,
+		} {
+			quota, ok := quotas.Limits[resource]
+			require.True(t, ok)
+			assert.Equal(t, wantLimit, quota.Limit)
+			assert.Equal(t, quotaWindowFor(resource), quota.Window)
+			assert.Equal(t, int64(0), quota.Remaining())
+			assert.Equal(t, int64(quotaWindowFor(resource)/time.Second), quota.Reset())
+		}
+	})
+}
+
+func TestQuotaSpec(t *testing.T) {
+	t.Run("DefaultLimitUsedWhenNoOverride", func(t *testing.T) {
+		spec := quotaSpec{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     "default",
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    50,
+				Window:   time.Minute,
+			},
+		}
+		policy := spec.policy(model.UserPlanFree)
+		assert.Equal(t, int64(50), policy.Limit)
+		assert.Equal(t, spec.QuotaPolicy, policy)
+		assert.Equal(t, spec.Name, policy.Name)
+		assert.Equal(t, spec.Resource, policy.Resource)
+		assert.Equal(t, spec.Window, policy.Window)
+	})
+
+	t.Run("OverrideAppliedForPlusPlan", func(t *testing.T) {
+		spec := quotaSpec{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     "plus",
+				Resource: authz.ResourceAIDescription,
+				Limit:    75,
+				Window:   2 * time.Minute,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 125,
+			},
+		}
+		policy := spec.policy(model.UserPlanPlus)
+		assert.Equal(t, int64(125), policy.Limit)
+		assert.Equal(t, spec.Name, policy.Name)
+		assert.Equal(t, spec.Resource, policy.Resource)
+		assert.Equal(t, spec.Window, policy.Window)
+	})
+
+	t.Run("UnknownPlanFallsBackToDefault", func(t *testing.T) {
+		spec := quotaSpec{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     "enterprise",
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    200,
+				Window:   time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 400,
+			},
+		}
+		policy := spec.policy(model.UserPlan(42))
+		assert.Equal(t, int64(200), policy.Limit)
+		assert.Equal(t, spec.Name, policy.Name)
+		assert.Equal(t, spec.Resource, policy.Resource)
+		assert.Equal(t, spec.Window, policy.Window)
+	})
+}
+
+func TestQuotaResetTime(t *testing.T) {
+	t.Run("TrackerProvidesReset", func(t *testing.T) {
+		resetAt := time.Now().Add(2 * time.Minute)
+		usage := authz.QuotaUsage{
+			Used:      10,
+			ResetTime: resetAt,
+		}
+		got := quotaResetTime(24*time.Hour, usage)
+		require.True(t, got.Equal(resetAt))
+	})
+
+	t.Run("FreshWindowDefaultsToWindow", func(t *testing.T) {
+		const window = time.Hour
+		usage := authz.QuotaUsage{Used: 0}
+		got := quotaResetTime(window, usage)
+		require.False(t, got.IsZero())
+
+		remaining := time.Until(got)
+		require.Greater(t, remaining, 0*time.Second)
+		assert.InDelta(t, float64(window), float64(remaining), float64(time.Second))
+	})
+
+	t.Run("NoResetInfo", func(t *testing.T) {
+		usage := authz.QuotaUsage{Used: 100}
+		got := quotaResetTime(time.Hour, usage)
+		assert.True(t, got.IsZero())
 	})
 }

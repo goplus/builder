@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -25,7 +26,7 @@ func newTestUser() *model.User {
 	}
 }
 
-func newTestHandler(t *testing.T, wantCaps *UserCapabilities) http.HandlerFunc {
+func newTestHandler(t *testing.T, wantCaps *UserCapabilities, wantQuotas *UserQuotas) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		caps, ok := UserCapabilitiesFromContext(r.Context())
 		if wantCaps != nil {
@@ -38,6 +39,15 @@ func newTestHandler(t *testing.T, wantCaps *UserCapabilities) http.HandlerFunc {
 			require.Zero(t, caps)
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("no capabilities"))
+		}
+
+		quotas, ok := UserQuotasFromContext(r.Context())
+		if wantQuotas != nil {
+			require.True(t, ok)
+			assert.Equal(t, *wantQuotas, quotas)
+		} else {
+			require.False(t, ok)
+			require.Zero(t, quotas)
 		}
 	}
 }
@@ -62,7 +72,7 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, nil))
+		handler := middleware(newTestHandler(t, nil, nil))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -74,17 +84,50 @@ func TestAuthorizerMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidUser", func(t *testing.T) {
+		const quotaWindow = 24 * time.Hour
 		wantCaps := UserCapabilities{
-			CanManageAssets:               true,
-			CanUsePremiumLLM:              true,
-			CopilotMessageQuota:           1000,
-			CopilotMessageQuotaLeft:       900,
-			AIDescriptionQuota:            1000,
-			AIDescriptionQuotaLeft:        850,
-			AIInteractionTurnQuota:        24000,
-			AIInteractionTurnQuotaLeft:    23500,
-			AIInteractionArchiveQuota:     16000,
-			AIInteractionArchiveQuotaLeft: 15500,
+			CanManageAssets:  true,
+			CanUsePremiumLLM: true,
+		}
+		wantQuotas := UserQuotas{
+			Limits: map[Resource]Quota{
+				ResourceCopilotMessage: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "copilotMessage:limit",
+						Resource: ResourceCopilotMessage,
+						Limit:    1000,
+						Window:   quotaWindow,
+					},
+					QuotaUsage: QuotaUsage{Used: 100},
+				},
+				ResourceAIDescription: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiDescription:limit",
+						Resource: ResourceAIDescription,
+						Limit:    1000,
+						Window:   quotaWindow,
+					},
+					QuotaUsage: QuotaUsage{Used: 150},
+				},
+				ResourceAIInteractionTurn: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionTurn:limit",
+						Resource: ResourceAIInteractionTurn,
+						Limit:    24000,
+						Window:   quotaWindow,
+					},
+					QuotaUsage: QuotaUsage{Used: 500},
+				},
+				ResourceAIInteractionArchive: {
+					QuotaPolicy: QuotaPolicy{
+						Name:     "aiInteractionArchive:limit",
+						Resource: ResourceAIInteractionArchive,
+						Limit:    16000,
+						Window:   quotaWindow,
+					},
+					QuotaUsage: QuotaUsage{Used: 500},
+				},
+			},
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
@@ -93,12 +136,17 @@ func TestAuthorizerMiddleware(t *testing.T) {
 			assert.Equal(t, "test-user", mUser.Username)
 			return wantCaps, nil
 		}
+		pdp.computeUserQuotasFunc = func(ctx context.Context, mUser *model.User) (UserQuotas, error) {
+			assert.Equal(t, int64(123), mUser.ID)
+			assert.Equal(t, "test-user", mUser.Username)
+			return wantQuotas, nil
+		}
 
 		quotaTracker := &mockQuotaTracker{}
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, &wantCaps))
+		handler := middleware(newTestHandler(t, &wantCaps, &wantQuotas))
 
 		testUser := newTestUser()
 		ctx := authn.NewContextWithUser(context.Background(), testUser)
@@ -122,7 +170,7 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, nil))
+		handler := middleware(newTestHandler(t, nil, nil))
 
 		testUser := newTestUser()
 		ctx := authn.NewContextWithUser(context.Background(), testUser)

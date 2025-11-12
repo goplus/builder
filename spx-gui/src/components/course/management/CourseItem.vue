@@ -1,16 +1,16 @@
 <script lang="ts" setup>
 import type { Course } from '@/apis/course'
-import { useAsyncComputedLegacy } from '@/utils/utils'
-import { createFileWithWebUrl } from '@/models/common/cloud'
+import { useAsyncComputed } from '@/utils/utils'
+import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { UIImg } from '@/components/ui'
 
 const props = defineProps<{
   course: Course
 }>()
 
-const thumbnailUrl = useAsyncComputedLegacy(async (onCleanup) => {
+const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   if (props.course.thumbnail == null) return null
-  const file = createFileWithWebUrl(props.course.thumbnail)
+  const file = await createFileWithUniversalUrl(props.course.thumbnail)
   return file.url(onCleanup)
 })
 </script>
