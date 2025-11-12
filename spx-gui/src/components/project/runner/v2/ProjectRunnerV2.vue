@@ -47,6 +47,7 @@ interface IframeWindow extends Window {
   initGame(assetURLs: Record<string, string>, onSpxReady?: () => void): Promise<void>
   startGame(
     buffer: ArrayBuffer,
+    fileHash: string,
     assetURLs: Record<string, string>,
     onSpxReady?: () => void,
     logLevel?: number
@@ -196,14 +197,18 @@ async function runInternal(ctrl: AbortController) {
     registered.onStart()
 
     const files = props.project.exportGameFiles()
+    const codeFiles = Object.fromEntries(
+      Object.entries(files).filter(([path]) => path.endsWith('.spx') || path.endsWith('.json'))
+    )
 
     const iframeWindow = await untilNotNull(iframeWindowRef, ctrl.signal)
     iframeLoadReporter.report(1)
 
     const isUsingAIInteraction = isProjectUsingAIInteraction(props.project)
 
-    const [zipped, aiDescription] = await Promise.all([
+    const [zipped, fileHash, aiDescription] = await Promise.all([
       zip(files, getProjectDataReporter, ctrl.signal),
+      hashFiles(codeFiles, ctrl.signal),
       // Conditionally generate AI description only if project uses AI Interaction features
       isUsingAIInteraction ? props.project.ensureAIDescription(false, ctrl.signal) : Promise.resolve(null)
     ])
@@ -218,6 +223,7 @@ async function runInternal(ctrl: AbortController) {
     startGameReporter.startAutoReport(10 * 1000)
     await iframeWindow.startGame(
       zipped,
+      fileHash,
       assetURLs,
       () => {
         if (isUsingAIInteraction) {
@@ -235,7 +241,6 @@ async function runInternal(ctrl: AbortController) {
     )
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
-    return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
     console.warn('ProjectRunner run game error:', err)
