@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"syscall/js"
+	"time"
 
 	"github.com/goplus/builder/tools/ai"
 )
@@ -124,14 +125,34 @@ func (t *wasmTransport) fetchAndParse(ctx context.Context, path string, body []b
 	if !jsResp.Get("ok").Bool() {
 		status := jsResp.Get("status").Int()
 		statusText := jsResp.Get("statusText").String()
+		retryAfter := time.Duration(0)
+		if headers := jsResp.Get("headers"); headers.Truthy() {
+			headerValue := headers.Call("get", "Retry-After")
+			if headerValue.Truthy() {
+				retryAfter = ai.RetryAfterFromHeader(headerValue.String())
+			}
+		}
 
 		bodyPromise := jsResp.Call("text")
 		bodyTextVal, bodyErr := awaitPromise(ctx, bodyPromise)
 		if bodyErr != nil {
-			return fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
+			err := fmt.Errorf("failed to fetch with status %d %s (and failed to read error body: %w)", status, statusText, bodyErr)
+			if status == 429 {
+				return &ai.TooManyRequestsError{
+					RetryAfter: retryAfter,
+					Err:        err,
+				}
+			}
+			return err
 		}
 
 		bodyText := bodyTextVal.String()
+		if status == 429 {
+			return &ai.TooManyRequestsError{
+				RetryAfter: retryAfter,
+				Err:        fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText),
+			}
+		}
 		return fmt.Errorf("failed to fetch with status %d %s: %s", status, statusText, bodyText)
 	}
 

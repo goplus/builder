@@ -81,25 +81,36 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 	}
 }
 
-// ensureQuotaRemaining checks the remaining quota for the given amount and
-// replies with a 403 error if exceeded.
+// ensureQuotaRemaining enforces rate limits and long-window quotas for the
+// given amount, replying with 429 or 403 when exhausted.
 func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
 	quotas, ok := authz.UserQuotasFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
 
-	quota, ok := quotas.Limits[resource]
-	if !ok {
-		return true
+	// Check rate limits.
+	if quotas, ok := quotas.RateLimits[resource]; ok {
+		for _, quota := range quotas {
+			if quota.Remaining() < amount {
+				if reset := quota.Reset(); reset > 0 {
+					ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
+				}
+				replyWithCodeMsg(ctx, errorRateLimitExceeded, fmt.Sprintf("%s rate limit exceeded", resource))
+				return false
+			}
+		}
 	}
-	if quota.Remaining() < amount {
+
+	// Check quota limits.
+	if quota, ok := quotas.Limits[resource]; ok && quota.Remaining() < amount {
 		if reset := quota.Reset(); reset > 0 {
 			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
 		}
 		replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
 		return false
 	}
+
 	return true
 }
 
@@ -124,22 +135,24 @@ type errorCode int
 //
 // The first 3 digits of the value are the corresponding HTTP status code.
 const (
-	errorInvalidArgs     errorCode = 40001
-	errorUnauthorized    errorCode = 40100
-	errorForbidden       errorCode = 40300
-	errorQuotaExceeded   errorCode = 40301
-	errorNotFound        errorCode = 40400
-	errorTooManyRequests errorCode = 42900
-	errorUnknown         errorCode = 50000
+	errorInvalidArgs       errorCode = 40001
+	errorUnauthorized      errorCode = 40100
+	errorForbidden         errorCode = 40300
+	errorQuotaExceeded     errorCode = 40301
+	errorNotFound          errorCode = 40400
+	errorTooManyRequests   errorCode = 42900
+	errorRateLimitExceeded errorCode = 42901
+	errorUnknown           errorCode = 50000
 )
 
 // errorMsgs defines messages for error codes.
 var errorMsgs = map[errorCode]string{
-	errorInvalidArgs:     "Invalid args",
-	errorUnauthorized:    "Unauthorized",
-	errorForbidden:       "Forbidden",
-	errorQuotaExceeded:   "Quota exceeded",
-	errorNotFound:        "Not found",
-	errorTooManyRequests: "Too many requests",
-	errorUnknown:         "Internal error",
+	errorInvalidArgs:       "Invalid args",
+	errorUnauthorized:      "Unauthorized",
+	errorForbidden:         "Forbidden",
+	errorQuotaExceeded:     "Quota exceeded",
+	errorNotFound:          "Not found",
+	errorTooManyRequests:   "Too many requests",
+	errorRateLimitExceeded: "Rate limit exceeded",
+	errorUnknown:           "Internal error",
 }

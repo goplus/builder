@@ -114,6 +114,7 @@ func (p *Player) Think__0(msg string, context map[string]any) {
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
+
 func (p *Player) think(owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout     = 45 * time.Second       // Timeout for each transport call.
@@ -121,6 +122,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 		maxTurns             = 20                     // Maximum number of turns in a single call to prevent infinite loops.
 		backoffBase          = 100 * time.Millisecond // Base time for exponential backoff calculation.
 		backoffCap           = 2 * time.Second        // Maximum backoff time cap.
+		rateLimitWaitTimeout = 2 * time.Minute        // Maximum wait time for rate limiting.
 	)
 
 	p.beginInteraction()
@@ -164,16 +166,27 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 
 		// Call AI transport with retries.
 		var (
-			resp    Response
-			lastErr error
+			resp     Response
+			lastErr  error
+			rateGate rateLimitGate
 		)
 		for range backoffAttempts(stdContext.Background(), maxTransportAttempts, backoffBase, backoffCap) {
+			waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+			waitErr := rateGate.Wait(waitCtx)
+			waitCancel()
+			if waitErr != nil {
+				lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
+				break
+			}
+
 			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), transportTimeout)
 			resp, lastErr = currentTransport.Interact(ctx, request)
 			cancel()
 			if lastErr == nil {
 				break
 			}
+
+			rateGate.Observe(lastErr)
 		}
 		if lastErr != nil {
 			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
@@ -311,10 +324,11 @@ func (p *Player) appendHistory(turn Turn) {
 // manageHistory checks if archiving is needed and performs it if necessary.
 func (p *Player) manageHistory() {
 	const (
-		archiveTimeout     = 120 * time.Second      // Timeout for archive operation.
-		maxArchiveAttempts = 3                      // Maximum number of archive attempts.
-		backoffBase        = 500 * time.Millisecond // Base time for exponential backoff.
-		backoffCap         = 5 * time.Second        // Maximum backoff time cap.
+		archiveTimeout       = 120 * time.Second      // Timeout for archive operation.
+		maxArchiveAttempts   = 3                      // Maximum number of archive attempts.
+		backoffBase          = 500 * time.Millisecond // Base time for exponential backoff.
+		backoffCap           = 5 * time.Second        // Maximum backoff time cap.
+		rateLimitWaitTimeout = 2 * time.Minute        // Maximum wait time for rate limiting.
 	)
 
 	// Prepare archive if needed.
@@ -328,14 +342,25 @@ func (p *Player) manageHistory() {
 	var (
 		archived ArchivedHistory
 		lastErr  error
+		rateGate rateLimitGate
 	)
 	for range backoffAttempts(stdContext.Background(), maxArchiveAttempts, backoffBase, backoffCap) {
+		waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+		waitErr := rateGate.Wait(waitCtx)
+		waitCancel()
+		if waitErr != nil {
+			lastErr = fmt.Errorf("aborted due to excessive rate limit wait time (%s)", rateLimitWaitTimeout)
+			break
+		}
+
 		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
 		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
 			break
 		}
+
+		rateGate.Observe(lastErr)
 	}
 	if lastErr != nil {
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)

@@ -145,13 +145,13 @@ func TestCanUsePremiumLLM(t *testing.T) {
 
 func TestConsumeQuota(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
+		var policies []QuotaPolicy
 		quotaTracker := &mockQuotaTracker{}
 		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
+			policies = append(policies, policy)
 			assert.Equal(t, int64(123), userID)
 			assert.Equal(t, ResourceCopilotMessage, policy.Resource)
 			assert.Equal(t, int64(2), amount)
-			assert.Equal(t, int64(100), policy.Limit)
-			assert.Equal(t, 24*time.Hour, policy.Window)
 			return nil
 		}
 
@@ -197,10 +197,69 @@ func TestConsumeQuota(t *testing.T) {
 					},
 				},
 			},
+			RateLimits: map[Resource][]Quota{
+				ResourceCopilotMessage: {
+					{
+						QuotaPolicy: QuotaPolicy{
+							Name:     "copilotMessage:rateLimit:1m",
+							Resource: ResourceCopilotMessage,
+							Limit:    30,
+							Window:   time.Minute,
+						},
+					},
+					{
+						QuotaPolicy: QuotaPolicy{
+							Name:     "copilotMessage:rateLimit:5m",
+							Resource: ResourceCopilotMessage,
+							Limit:    150,
+							Window:   5 * time.Minute,
+						},
+					},
+				},
+			},
 		})
 
 		err := ConsumeQuota(ctx, ResourceCopilotMessage, 2)
 		assert.NoError(t, err)
+		assert.Len(t, policies, 3)
+		assert.Equal(t, "copilotMessage:limit", policies[0].Name)
+		assert.Equal(t, "copilotMessage:rateLimit:1m", policies[1].Name)
+		assert.Equal(t, "copilotMessage:rateLimit:5m", policies[2].Name)
+	})
+
+	t.Run("RateLimitOnly", func(t *testing.T) {
+		quotaTracker := &mockQuotaTracker{}
+		count := 0
+		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
+			count++
+			return nil
+		}
+
+		pdp := &mockPolicyDecisionPoint{}
+		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
+
+		testUser := newTestUser()
+		ctx := context.Background()
+		ctx = authn.NewContextWithUser(ctx, testUser)
+		ctx = newContextWithAuthorizer(ctx, authorizer)
+		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
+			RateLimits: map[Resource][]Quota{
+				ResourceCopilotMessage: {
+					{
+						QuotaPolicy: QuotaPolicy{
+							Name:     "copilotMessage:rateLimit:1m",
+							Resource: ResourceCopilotMessage,
+							Limit:    30,
+							Window:   time.Minute,
+						},
+					},
+				},
+			},
+		})
+
+		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, count)
 	})
 
 	t.Run("NoAuthorizer", func(t *testing.T) {
