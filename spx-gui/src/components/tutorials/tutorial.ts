@@ -13,9 +13,7 @@ import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
-export type CourseSeriesWithCourses = CourseSeries & {
-  courses: Course[]
-}
+export type CourseSeriesWithCourses = CourseSeries
 
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
 

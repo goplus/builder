@@ -51,7 +51,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 
 const page = useRouteQueryParamInt('p', 1)
 const isDesktopLarge = useResponsive('desktop-large')
-const numInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * 2)
 const height = computed(() => Math.ceil(pageSize.value / numInRow.value) * (214 + 20)) // course item height + gap
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
@@ -72,16 +72,13 @@ const courseQuery = useQuery(
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
 
-function handleCourseClick(event: MouseEvent, course: Course, courseSeries: CourseSeries, courseList: Course[]) {
+function handleCourseClick(event: MouseEvent, course: Course, courseSeries: CourseSeries) {
   if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
     return
   }
 
   event.preventDefault()
-  tutorial.startCourse(course, {
-    ...courseSeries,
-    courses: courseList
-  })
+  tutorial.startCourse(course, courseSeries)
 }
 </script>
 
@@ -89,7 +86,7 @@ function handleCourseClick(event: MouseEvent, course: Course, courseSeries: Cour
   <div class="course-series-page">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
-    <CenteredWrapper size="large">
+    <CenteredWrapper size="medium">
       <CommunityCard class="header">
         <UILoading v-if="isLoading" cover mask="solid" />
         <UIError v-else-if="error != null" class="error" :retry="refetch">
@@ -147,7 +144,7 @@ function handleCourseClick(event: MouseEvent, course: Course, courseSeries: Cour
                   v-for="course in data.data"
                   :key="course.id"
                   :href="`/course/${courseSeries.id}/${course.id}/start`"
-                  @click="handleCourseClick($event, course, courseSeries, data.data)"
+                  @click="handleCourseClick($event, course, courseSeries)"
                 >
                   <CourseItem :course="course" />
                 </a>
