@@ -50,6 +50,7 @@ interface IframeWindow extends Window {
     onSpxReady?: () => void,
     config?: {
       logLevel?: number
+      useProfiler?: boolean
     }
   ): Promise<void>
   /**
@@ -225,7 +226,8 @@ async function runInternal(ctrl: AbortController) {
         }
       },
       {
-        logLevel: logLevels.LOG_LEVEL_ERROR
+        logLevel: logLevels.LOG_LEVEL_ERROR,
+        useProfiler: false
       }
     )
     ctrl.signal.throwIfAborted()
