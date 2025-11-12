@@ -21,7 +21,10 @@
           :placeholder="$t({ en: 'Search project', zh: '搜索项目' })"
           @keypress.enter="handleSearch"
         >
-          <template #prefix><UIIcon class="search-icon" type="search" /></template>
+          <template #prefix><UIIcon type="search" /></template>
+          <template #suffix
+            ><UIIcon v-if="searchInput" class="close-icon" type="close" @click="searchInput = ''"
+          /></template>
         </UITextInput>
       </div>
     </template>
@@ -72,9 +75,13 @@ watch(
 
 <style lang="scss" scoped>
 .search {
-  margin-right: 8px;
+  padding: 0 12px;
   width: 340px;
   display: flex;
   align-items: center;
+}
+
+.close-icon {
+  cursor: pointer;
 }
 </style>
