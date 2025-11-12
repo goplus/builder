@@ -199,9 +199,6 @@ async function runInternal(ctrl: AbortController) {
     registered.onStart()
 
     const files = props.project.exportGameFiles()
-    const codeFiles = Object.fromEntries(
-      Object.entries(files).filter(([path]) => path.endsWith('.spx') || path.endsWith('.json'))
-    )
 
     const iframeWindow = await untilNotNull(iframeWindowRef, ctrl.signal)
     iframeLoadReporter.report(1)
@@ -210,7 +207,7 @@ async function runInternal(ctrl: AbortController) {
 
     const [zipped, fileHash, aiDescription] = await Promise.all([
       zip(files, getProjectDataReporter, ctrl.signal),
-      hashFiles(codeFiles, ctrl.signal),
+      hashFiles(files, ctrl.signal),
       // Conditionally generate AI description only if project uses AI Interaction features
       isUsingAIInteraction ? props.project.ensureAIDescription(false, ctrl.signal) : Promise.resolve(null)
     ])
