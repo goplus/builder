@@ -34,8 +34,8 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 </script>
 
 <template>
-  <li class="course-series-item">
-    <RouterLink :to="`/course-series/${props.courseSeries.id}`">
+  <RouterLink :to="`/course-series/${props.courseSeries.id}`">
+    <li class="course-series-item">
       <UIImg v-if="thumbnailUrl" class="thumbnail" :src="thumbnailUrl" size="cover" />
 
       <UITooltip>
@@ -44,26 +44,26 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
         </template>
         {{ courseSeries.title }}
       </UITooltip>
-    </RouterLink>
-    <!-- <div class="header">
-    </div> -->
-    <!-- 
-      <div class="course-series-warpper">
-      <ListResultWrapper :query-ret="courseQuery" :height="214">
-        <template #empty="{ style }">
-          <UIEmpty size="large" img="game" :style="style">
-            {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
-          </UIEmpty>
-        </template>
-        <template #default="{ data }">
-          <ul class="course-item-list">
-            <slot :data="data" />
-          </ul>
-        </template>
-      </ListResultWrapper> 
-    </div>
-    -->
-  </li>
+      <!-- <div class="header">
+      </div> -->
+      <!-- 
+        <div class="course-series-warpper">
+        <ListResultWrapper :query-ret="courseQuery" :height="214">
+          <template #empty="{ style }">
+            <UIEmpty size="large" img="game" :style="style">
+              {{ $t({ zh: `${title}没有可用的课程`, en: `${title} has no available courses` }) }}
+            </UIEmpty>
+          </template>
+          <template #default="{ data }">
+            <ul class="course-item-list">
+              <slot :data="data" />
+            </ul>
+          </template>
+        </ListResultWrapper> 
+      </div>
+      -->
+    </li>
+  </RouterLink>
 </template>
 
 <style lang="scss" scoped>
