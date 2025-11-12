@@ -365,6 +365,15 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   margin: 0 4px;
 }
 
+.icon {
+  display: flex;
+
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .history-button-wrapper {
   display: flex;
 
@@ -372,16 +381,16 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
     height: 100%;
     background: none;
     outline: none;
     border: none;
-    padding: 0;
+    padding: 0 20px;
     color: white;
 
     .icon {
-      width: 18px;
+      width: 24px;
+      height: 24px;
     }
 
     &[disabled] {
@@ -404,11 +413,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
     width: 24px;
     height: 24px;
 
-    :deep(svg) {
-      width: 100%;
-      height: 100%;
-    }
-
     &.pending :deep(svg) path,
     &.saving :deep(svg) path {
       stroke-dasharray: 2;
@@ -427,6 +431,7 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 }
 
 .editor-mode-wrapper {
+  margin: 0 12px;
   align-items: center;
 
   & .ui-button-group-item {
@@ -439,8 +444,7 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 
   .icon {
-    display: flex;
-    width: 16px;
+    width: 18px;
   }
 }
 

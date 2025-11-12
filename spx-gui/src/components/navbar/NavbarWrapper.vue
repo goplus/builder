@@ -90,7 +90,6 @@ withDefaults(
 }
 
 .right {
-  gap: 8px;
   justify-content: flex-end;
 }
 </style>

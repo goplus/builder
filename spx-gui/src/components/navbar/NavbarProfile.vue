@@ -8,7 +8,7 @@
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
+  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="avatar">
         <img class="avatar-img" :src="avatarUrl ?? undefined" />
@@ -133,7 +133,8 @@ function handleSignOut() {
 <style lang="scss" scoped>
 .sign-in,
 .avatar {
-  margin: 0 4px 0 0;
+  padding: 0 20px;
+  margin-right: 8px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -144,7 +145,6 @@ function handleSignOut() {
 }
 
 .avatar {
-  width: 72px;
   justify-content: center;
 
   &:hover {
