@@ -40,6 +40,24 @@ const strokeRegionController = createStrokeRegionController({
 //注入父组件接口
 import { inject } from 'vue'
 
+/*
+
+路径简化公差；数值越大保留的点越少，越小越贴合原始轨迹
+
+paperjs的简化公式采用的是Ramer-Douglas-Peucker算法（RDP）
+这里的参数是RDP算法中的tolerance值，单位是像素
+当dmax <= tolerance时，表示路径的最大偏差小于等于公差，可以简化路径
+当dmax > tolerance时，表示路径的最大偏差大于公差，不能简化路径
+在这里我们可以了理解为：
+  以PATH_SIMPLIFY_TOLERANCE = 5 为例子，
+  当一段曲线的最大偏移距离不超过5像素时，可以用直线替代这条曲线
+
+注：path.simplify() 的默认参数为2.5
+
+*/
+
+const PATH_SIMPLIFY_TOLERANCE = 5
+
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
@@ -141,6 +159,10 @@ const handleMouseUp = (): void => {
   if (drawingMode.value === 'region') {
     finalizeRegionStroke()
   } else if (currentPath.value) {
+    // 简化锚点，避免生成过多控制点
+    if (currentPath.value.segments.length > 2) {
+      currentPath.value.simplify(PATH_SIMPLIFY_TOLERANCE)
+    }
     const currentPaths = getAllPathsValue()
     currentPaths.push(currentPath.value)
     setAllPathsValue(currentPaths)
