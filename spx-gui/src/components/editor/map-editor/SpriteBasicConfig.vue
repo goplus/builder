@@ -82,7 +82,7 @@ const handleEditCollision = useMessageHandle(
   outline: none;
   border-radius: var(--ui-border-radius-1);
   padding: 8px;
-  color: var(--ui-color-grey-900);
+  color: var(--ui-color-grey-1000);
   background-color: var(--ui-color-grey-300);
   cursor: pointer;
 
