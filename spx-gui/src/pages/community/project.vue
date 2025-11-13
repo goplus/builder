@@ -38,7 +38,7 @@ import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProjec
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 import TextView from '@/components/community/TextView.vue'
-import kikoWaveSvg from './kiko-wave.svg'
+import kikoWaveSvg from './kiko-wave.svg?raw'
 
 const props = defineProps<{
   owner: string
@@ -341,7 +341,8 @@ const remixesRet = useQuery(
                     <template v-if="runnerState === 'initial'">
                       <div v-if="needsSignInToRun" class="sign-in-prompt">
                         <div class="sign-in-card">
-                          <img :src="kikoWaveSvg" class="kiko-wave" alt="" />
+                          <!-- eslint-disable-next-line vue/no-v-html -->
+                          <div class="kiko-wave" aria-hidden="true" v-html="kikoWaveSvg"></div>
                           <p class="message">
                             {{
                               $t({
@@ -671,6 +672,14 @@ const remixesRet = useQuery(
       .kiko-wave {
         position: absolute;
         top: -56px;
+        width: 340px;
+        line-height: 0;
+
+        :deep(svg) {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
       }
 
       .message {
