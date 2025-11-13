@@ -4,7 +4,7 @@
     <div class="toolbar-top">
       <div class="tool-section">
         <!-- 笔刷粗细选择器（只在笔刷选定时出现） -->
-        <BrushThickness v-if="currentTool === 'brush'" />
+        <BrushThickness v-if="currentTool === 'brush'" v-model="brushThickness" />
         <!-- 当前颜色显示（选择颜色） -->
         <SelectColor ref="selectColorRef" :is-active="currentTool === 'selectColor'" />
         <button
@@ -221,6 +221,7 @@
           :canvas-width="canvasWidth"
           :canvas-height="canvasHeight"
           :is-active="currentTool === 'brush'"
+          :brush-thickness="brushThickness"
         />
 
         <!-- 变形工具组件 -->
@@ -339,6 +340,9 @@ const fillToolRef = ref<InstanceType<typeof FillTool> | null>(null)
 const selectColorRef = ref<InstanceType<typeof SelectColor> | null>(null)
 const textToolRef = ref<InstanceType<typeof TextTool> | null>(null)
 const zoomControlRef = ref<InstanceType<typeof ZoomControl> | null>(null)
+
+//笔刷粗细控制
+const brushThickness = ref<number>(5)
 
 // 导入导出管理器
 let importExportManager: ImportExportManager | null = null

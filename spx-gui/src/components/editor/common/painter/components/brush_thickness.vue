@@ -16,20 +16,35 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, defineEmits, defineProps } from 'vue'
 
-import { ref, watch, defineEmits } from 'vue'
-
-// 定义事件
-const emit = defineEmits<{
-  (e: 'thicknessChange', value: number): void
+// 受控属性
+const props = defineProps<{
+  modelValue: number
 }>()
-// 响应式变量
-const thickness = ref<number>(5)
-// 监听thickness变化并发出事件
-watch(thickness, (newVal) => {
-  emit('thicknessChange', newVal)
-})
 
+// v-model 事件
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: number): void
+}>()
+
+// 本地副本用于驱动 range
+const thickness = ref<number>(props.modelValue ?? 5)
+
+// 父组件更新时同步 slider
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (typeof newVal === 'number' && newVal !== thickness.value) {
+      thickness.value = newVal
+    }
+  }
+)
+
+// slider 调整时通知父组件
+watch(thickness, (newVal) => {
+  emit('update:modelValue', newVal)
+})
 </script>
 
 

@@ -11,6 +11,7 @@ interface Props {
   canvasWidth: number
   canvasHeight: number
   isActive: boolean
+  brushThickness: number
 }
 
 const props = defineProps<Props>()
@@ -37,7 +38,7 @@ const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 const createNewPath = (startPoint: Point): paper.Path => {
   const path = new paper.Path()
   path.strokeColor = new paper.Color(canvasColor.value)
-  path.strokeWidth = 2
+  path.strokeWidth = props.brushThickness ?? 2
   path.strokeCap = 'round'
   path.strokeJoin = 'round'
 
@@ -94,6 +95,17 @@ watch(
   (newValue) => {
     if (!newValue) {
       resetDrawing()
+    }
+  }
+)
+
+// 监听粗细变化，若当前在绘制则同步路径线宽
+watch(
+  () => props.brushThickness,
+  (newValue) => {
+    if (currentPath.value) {
+      currentPath.value.strokeWidth = newValue
+      paper.view.update()
     }
   }
 )
