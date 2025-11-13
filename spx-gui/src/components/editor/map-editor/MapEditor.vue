@@ -61,9 +61,7 @@ function handleSpriteSelect(sprite: Sprite | null) {
             </UITooltip>
           </div>
         </UICardHeader>
-        <Transition>
-          <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
-        </Transition>
+        <MapBasicConfig v-if="!collapsed" class="map-config" :project="project" />
       </UICard>
       <SpriteList
         class="sprite-list"
@@ -117,18 +115,6 @@ function handleSpriteSelect(sprite: Sprite | null) {
     &.collapsed {
       transform: rotate(-180deg);
     }
-  }
-
-  .v-enter-active {
-    transition: opacity ease-in 0.2s;
-  }
-  .v-leave-active {
-    transition: opacity ease-out 0.2s;
-  }
-
-  .v-enter-from,
-  .v-leave-to {
-    opacity: 0;
   }
 
   .map-config {
