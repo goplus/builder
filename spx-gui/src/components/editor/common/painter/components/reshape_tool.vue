@@ -44,10 +44,10 @@ const selectPathExclusive = (path: paper.Path | null): void => {
 const createControlPoint = (position: paper.Point): ExtendedItem => {
   const point = new paper.Path.Circle({
     center: position,
-    radius: 8,
+    radius: 4,
     fillColor: '#ff4444',
     strokeColor: '#cc0000',
-    strokeWidth: 2
+    strokeWidth: 1
   }) as ExtendedItem
 
   point.isControlPoint = true
