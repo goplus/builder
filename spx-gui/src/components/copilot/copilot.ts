@@ -11,7 +11,7 @@ import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './too
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 import dayjs from 'dayjs'
-import { ApiException } from '@/apis/common/exception'
+import { ApiException, type ApiExceptionMeta } from '@/apis/common/exception'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -138,6 +138,7 @@ type RoundExported = {
   state: RoundState
   updatedAt?: number | null
   apiExceptionCode?: number | null
+  apiExceptionMeta?: ApiExceptionMeta | null
 }
 
 export class Round {
@@ -185,6 +186,10 @@ export class Round {
    * refer to `ApiExceptionCode` for the list of possible values.
    */
   apiExceptionCode?: number | null
+  /**
+   * API exception meta data when the round failed.
+   */
+  apiExceptionMeta?: ApiExceptionMeta | null
 
   export(): RoundExported {
     return {
@@ -194,7 +199,8 @@ export class Round {
       error: this.error,
       state: this.state,
       updatedAt: this.updatedAt,
-      apiExceptionCode: this.apiExceptionCode
+      apiExceptionCode: this.apiExceptionCode,
+      apiExceptionMeta: this.apiExceptionMeta
     }
   }
 
@@ -205,6 +211,7 @@ export class Round {
     round.errorRef.value = exported.error
     round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
     round.apiExceptionCode = exported.apiExceptionCode
+    round.apiExceptionMeta = exported.apiExceptionMeta
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -245,6 +252,7 @@ export class Round {
 
     if (err instanceof ApiException) {
       this.apiExceptionCode = err.code
+      this.apiExceptionMeta = err.meta
     }
 
     this.errorRef.value = new ActionException(err, {
@@ -313,6 +321,7 @@ export class Round {
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
     this.apiExceptionCode = null
+    this.apiExceptionMeta = null
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()

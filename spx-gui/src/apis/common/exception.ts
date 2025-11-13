@@ -5,16 +5,21 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/exception'
 
+export type ApiExceptionMeta = Record<string, unknown>
+
 export class ApiException extends Exception {
   name = 'ApiError'
   userMessage: LocaleMessage | null
+  meta: ApiExceptionMeta
 
   constructor(
     public code: number,
-    message: string
+    message: string,
+    header: Headers
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(header) ?? {}
   }
 }
 
@@ -27,6 +32,12 @@ export enum ApiExceptionCode {
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
   errorUnknown = 50000
+}
+
+const codeMetas: Record<number, (headers: Headers) => ApiExceptionMeta> = {
+  [ApiExceptionCode.errorQuotaExceeded]: (headers) => ({
+    retryAfter: headers.get('Retry-After') != null ? Number(headers.get('Retry-After')) : null
+  })
 }
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {

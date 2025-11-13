@@ -25,7 +25,7 @@ export class Client {
       if (!isApiExceptionPayload(body)) {
         throw new Error('api call failed')
       }
-      throw new ApiException(body.code, body.msg)
+      throw new ApiException(body.code, body.msg, resp.headers)
     }
     if (resp.status === 204) return null
     return resp.json()
@@ -37,7 +37,7 @@ export class Client {
       if (!isApiExceptionPayload(body)) {
         throw new Error('api call failed')
       }
-      throw new ApiException(body.code, body.msg)
+      throw new ApiException(body.code, body.msg, resp.headers)
     }
 
     const reader = resp.body?.getReader()

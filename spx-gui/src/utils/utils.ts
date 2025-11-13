@@ -12,7 +12,8 @@ import {
   onDeactivated,
   ref,
   onActivated,
-  toValue
+  toValue,
+  onScopeDispose
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
@@ -338,6 +339,40 @@ export function timeout(duration = 0, signal?: AbortSignal) {
       else signal.addEventListener('abort', onAbort)
     }
   })
+}
+
+export function useInterval(
+  callback: () => void,
+  options?: { interval?: number; immediate?: boolean },
+  signal?: AbortSignal
+) {
+  const { interval = 1000, immediate = true } = options ?? {}
+
+  let timer: NodeJS.Timeout | undefined = undefined
+
+  function pause() {
+    clearInterval(timer)
+    timer = undefined
+  }
+  function resume() {
+    if (timer != null) return
+    timer = setInterval(callback, interval)
+  }
+
+  if (immediate) resume()
+  if (signal != null) {
+    const onAbort = () => {
+      pause()
+      signal?.removeEventListener('abort', onAbort)
+    }
+    if (signal.aborted) onAbort()
+    else signal.addEventListener('abort', onAbort)
+  }
+  onScopeDispose(pause)
+  return {
+    resume,
+    pause
+  }
 }
 
 export function trimLineBreaks(str: string) {
