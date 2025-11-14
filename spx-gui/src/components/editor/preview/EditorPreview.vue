@@ -7,17 +7,28 @@
       <div class="header">
         {{ $t(headerTitle) }}
       </div>
-      <UIButton
-        v-if="runnerState === 'initial'"
-        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        class="button"
-        type="primary"
-        icon="playHollow"
-        :loading="handleRun.isLoading.value"
-        @click="handleRun.fn"
-      >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
+      <template v-if="runnerState === 'initial'">
+        <UIButton
+          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+          class="button"
+          type="primary"
+          icon="playHollow"
+          :loading="handleRun.isLoading.value"
+          @click="handleRun.fn"
+        >
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </UIButton>
+
+        <UIButton
+          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          type="secondary"
+          :disabled="!isOnline"
+          @click="handlePublishProject"
+        >
+          <img :src="publishSvg" style="width: 14px" />
+          {{ $t({ en: 'Publish', zh: '发布' }) }}
+        </UIButton>
+      </template>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
@@ -83,9 +94,11 @@
         </div>
         <UITooltip v-if="runnerState === 'initial'">
           <template #trigger>
+            <!-- TODO display is none -->
             <button
               v-radar="{ name: 'Full map button', desc: 'Click to view & edit the full map' }"
               class="edit-map-button"
+              style="display: none"
               @click="handleEditMap"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -132,9 +145,13 @@ import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
+import { useNetwork } from '@/utils/network'
+import { usePublishProject } from '@/components/project'
+import publishSvg from './publish.svg'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const { isOnline } = useNetwork()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -298,6 +315,12 @@ async function executeRun(action: 'run' | 'rerun') {
   }
 }
 
+const publishProject = usePublishProject()
+const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
+  en: 'Failed to publish project',
+  zh: '发布项目失败'
+}).fn
+
 const handleRun = useMessageHandle(
   async () => {
     await checkAndNotifyError()
@@ -402,7 +425,7 @@ function getStageInlineAnchor() {
   }
 
   .button {
-    margin-left: 8px;
+    margin: 0 8px;
   }
 
   .main {

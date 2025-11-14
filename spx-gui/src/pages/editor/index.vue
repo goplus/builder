@@ -319,5 +319,12 @@ function openProject(owner: string, name: string) {
   display: flex;
   gap: var(--ui-gap-middle);
   padding: 16px;
+  position: relative;
+}
+.global-wrapper {
+  background-color: var(--ui-color-grey-100);
+  padding: 16px;
+  position: absolute;
+  inset: 0;
 }
 </style>

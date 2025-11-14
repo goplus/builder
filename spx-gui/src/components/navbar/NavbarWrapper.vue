@@ -4,8 +4,8 @@
       <div class="left">
         <NavbarLogo />
         <slot name="left"></slot>
-        <NavbarLang />
-        <NavbarTutorials v-if="showTutorialsEntry" />
+        <NavbarLang v-if="!disabledLang" />
+        <NavbarTutorials v-if="!disabledTutorials && showTutorialsEntry" />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -33,9 +33,13 @@ withDefaults(
      * - We center the navbar content for community pages
      */
     centered?: boolean
+    disabledLang?: boolean
+    disabledTutorials?: boolean
   }>(),
   {
-    centered: false
+    centered: false,
+    disabledLang: false,
+    disabledTutorials: false
   }
 )
 </script>
@@ -86,7 +90,6 @@ withDefaults(
 }
 
 .right {
-  gap: 8px;
   justify-content: flex-end;
 }
 </style>
