@@ -3,7 +3,11 @@ package ai
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 // Transport defines the interface for communicating with the AI backend.
@@ -135,4 +139,119 @@ func SetDefaultTransport(t Transport) {
 		t = &notSetTransport{}
 	}
 	defaultTransport = t
+}
+
+// TooManyRequestsError represents a transport-level HTTP 429 error.
+type TooManyRequestsError struct {
+	RetryAfter time.Duration
+	Err        error
+}
+
+// Error implements [error].
+func (tmr *TooManyRequestsError) Error() string {
+	if tmr.RetryAfter > 0 {
+		if tmr.Err != nil {
+			return fmt.Sprintf("too many requests (retry after %s): %v", tmr.RetryAfter, tmr.Err)
+		}
+		return fmt.Sprintf("too many requests (retry after %s)", tmr.RetryAfter)
+	}
+	if tmr.Err != nil {
+		return fmt.Sprintf("too many requests: %v", tmr.Err)
+	}
+	return "too many requests"
+}
+
+// Unwrap returns the underlying error.
+func (tmr *TooManyRequestsError) Unwrap() error {
+	return tmr.Err
+}
+
+// RetryAfterFromHeader converts a Retry-After header value to [time.Duration].
+func RetryAfterFromHeader(value string) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(value); err == nil {
+		if secs <= 0 {
+			return 0
+		}
+		return time.Duration(secs) * time.Second
+	}
+	if retryAt, err := parseHTTPTime(value); err == nil {
+		wait := time.Until(retryAt)
+		if wait <= 0 {
+			return 0
+		}
+		return wait
+	}
+	return 0
+}
+
+const httpTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
+
+var httpTimeFormats = []string{
+	httpTimeFormat,
+	time.RFC850,
+	time.ANSIC,
+}
+
+// parseHTTPTime parses a time header (such as the Date: header), trying each of
+// the three formats allowed by HTTP/1.1: [TimeFormat], [time.RFC850], and
+// [time.ANSIC].
+//
+// NOTE: This is a copy of [net/http.ParseTime], so we don't need to import
+// net/http since this package is mainly used in WebAssembly environments.
+func parseHTTPTime(text string) (t time.Time, err error) {
+	for _, layout := range httpTimeFormats {
+		t, err = time.Parse(layout, text)
+		if err == nil {
+			return
+		}
+	}
+	return
+}
+
+// rateLimitGate coordinates Retry-After windows so callers wait until the
+// backend allows another attempt.
+type rateLimitGate struct {
+	nextAllowed time.Time
+}
+
+// Wait blocks until the gate opens or the provided context finishes. It returns
+// nil when waiting is not required or the wait completes. Otherwise it returns
+// ctx.Err().
+func (rlg *rateLimitGate) Wait(ctx context.Context) error {
+	wait := time.Until(rlg.nextAllowed)
+	if wait <= 0 {
+		return nil
+	}
+
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Observe records rate limiting hints from errors returned by the [Transport].
+func (rlg *rateLimitGate) Observe(err error) {
+	var tmrErr *TooManyRequestsError
+	if !errors.As(err, &tmrErr) {
+		return
+	}
+
+	delay := tmrErr.RetryAfter
+	if delay <= 0 {
+		delay = time.Second
+	}
+
+	retryAt := time.Now().Add(delay)
+	if retryAt.After(rlg.nextAllowed) {
+		rlg.nextAllowed = retryAt
+	}
 }

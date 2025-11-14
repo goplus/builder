@@ -460,6 +460,7 @@ copilot.registerCustomElement({
   isRaw: codeChange.isRaw,
   component: codeChange.default
 })
+
 copilot.registerTool(new GetUINodeTextContentTool(radar))
 copilot.registerContextProvider(new UIContextProvider(radar, i18n))
 copilot.registerContextProvider(new UserContextProvider())

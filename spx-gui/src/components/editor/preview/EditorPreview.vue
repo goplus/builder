@@ -276,16 +276,6 @@ async function checkAndNotifyError() {
   })
 }
 
-async function tryFormatWorkspace() {
-  try {
-    await editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
-      codeEditorCtx.mustEditor().formatWorkspace()
-    )
-  } catch (error) {
-    console.warn('Failed to format workspace', error)
-  }
-}
-
 async function executeRun(action: 'run' | 'rerun') {
   exitGuard.value = 'idle'
   runnerState.value = 'loading'
@@ -311,7 +301,6 @@ async function executeRun(action: 'run' | 'rerun') {
 const handleRun = useMessageHandle(
   async () => {
     await checkAndNotifyError()
-    await tryFormatWorkspace()
     await executeRun('run')
   },
   { en: 'Failed to run project', zh: '运行项目失败' }

@@ -147,6 +147,13 @@ func handleResponse(resp *http.Response, target any) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			retryAfter := ai.RetryAfterFromHeader(resp.Header.Get("Retry-After"))
+			return &ai.TooManyRequestsError{
+				RetryAfter: retryAfter,
+				Err:        fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body),
+			}
+		}
 		return fmt.Errorf("failed to fetch with status: %s: %s", resp.Status, body)
 	}
 

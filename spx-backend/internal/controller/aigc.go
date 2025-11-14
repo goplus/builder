@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
@@ -13,6 +15,8 @@ type MattingParams struct {
 	// ImageUrl is the image URL to be matted.
 	ImageUrl string `json:"imageUrl"`
 }
+
+var lookupIP = net.LookupIP
 
 func (p *MattingParams) Validate() (ok bool, msg string) {
 	if p.ImageUrl == "" {
@@ -31,22 +35,45 @@ func (p *MattingParams) Validate() (ok bool, msg string) {
 	}
 
 	hostname := url.Hostname()
-	ips, err := net.LookupIP(hostname)
+	if hostname == "" {
+		return false, "invalid imageUrl"
+	}
+
+	if isLocalHostname(hostname) {
+		return false, "invalid imageUrl: private IP"
+	}
+
+	if ip := net.ParseIP(hostname); ip != nil {
+		if isIPPrivate(ip) {
+			return false, "invalid imageUrl: private IP"
+		}
+		return true, ""
+	}
+
+	ips, err := lookupIP(hostname)
 	if err != nil {
 		return false, "invalid imageUrl: lookup IP failed"
 	}
 
-	for _, ip := range ips {
-		if isIPPrivate(ip) {
-			return false, "invalid imageUrl: private IP"
-		}
+	if slices.ContainsFunc(ips, isIPPrivate) {
+		return false, "invalid imageUrl: private IP"
 	}
 
 	return true, ""
 }
 
+func isLocalHostname(hostname string) bool {
+	trimmed := strings.TrimSuffix(strings.ToLower(hostname), ".")
+	switch trimmed {
+	case "localhost", "localhost.localdomain", "ip6-localhost", "ip6-loopback":
+		return true
+	default:
+		return false
+	}
+}
+
 func isIPPrivate(ip net.IP) bool {
-	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() {
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() || ip.IsUnspecified() {
 		return true
 	}
 	return false

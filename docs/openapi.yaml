@@ -908,11 +908,13 @@ paths:
       description: |
         Generate a message by sending a list of input messages.
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each message consumes 1 quota from the authenticated user's allowance.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -960,7 +962,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 
@@ -972,11 +981,13 @@ paths:
       description: |
         Generate a stream message by sending a list of input messages.
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each message consumes 1 quota from the authenticated user's allowance.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -1016,7 +1027,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 
@@ -1028,11 +1046,13 @@ paths:
       description: |
         Generate a stream message by sending a list of input messages.
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each workflow execution may consume multiple quotas from the authenticated user's allowance.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -1075,7 +1095,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 
@@ -1088,11 +1115,13 @@ paths:
         Generate an AI-powered descriptive summary of a game from the player's perspective based on provided game
         content (such as spx source code and project structure).
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each request consumes 1 quota from the authenticated user's AI description allowance.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
         - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -1110,7 +1139,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 
@@ -1122,11 +1158,13 @@ paths:
       description: |
         Send a message and context to the AI, receive a response including text and an optional command.
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each turn consumes 1 quota from the authenticated user's AI interaction turn allowance.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -1144,7 +1182,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 
@@ -1156,11 +1201,13 @@ paths:
       description: |
         Archive a batch of interaction turns into a condensed summary for future context.
 
-        #### Quota limits
+        #### Quota & rate limits
 
         - Each archive request consumes 1 quota from the authenticated user's AI interaction archive allowance.
-        - Quota limits vary based on the authenticated user's plan.
-        - When the limit is reached, the 403 response includes a `Retry-After` header with the wait time in seconds.
+        - Per-user short-window rate limits also apply to prevent bursts. Hitting them returns 429 with `Retry-After`.
+        - Long-window quota limits vary based on the authenticated user's plan.
+        - When the long-window quota limit is reached, the 403 response includes a `Retry-After` header with the wait
+          time in seconds.
       requestBody:
         required: true
         content:
@@ -1178,7 +1225,14 @@ paths:
           description: Insufficient permissions or quota to perform this operation.
           headers:
             Retry-After:
-              description: Seconds to wait before retrying after hitting the limit.
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
               schema:
                 type: integer
 

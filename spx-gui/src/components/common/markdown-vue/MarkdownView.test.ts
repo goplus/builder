@@ -1,7 +1,7 @@
 import { defineComponent, h, markRaw } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import MarkdowView, { preprocessCustomRawComponents, preprocessIncompleteTags } from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
@@ -182,7 +182,7 @@ describe('MarkdownView', () => {
   it('should handle custom raw components', async () => {
     const customRawComponent = defineComponent(
       () => {
-        const innerText = useSlotTextLegacy()
+        const innerText = useSlotText()
         return function render() {
           return h('div', { class: 'test-comp-1' }, [innerText.value])
         }

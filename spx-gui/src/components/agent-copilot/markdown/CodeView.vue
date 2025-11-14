@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
 import { useAsyncComputedLegacy } from '@/utils/utils'
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 
 const props = withDefaults(
   defineProps<{
@@ -24,7 +24,7 @@ const props = withDefaults(
   }
 )
 
-const childrenText = useSlotTextLegacy()
+const childrenText = useSlotText()
 const codeToDisplay = computed(() => childrenText.value.replace(/\n$/, '')) // omit last line break when displaying
 const highlighter = useAsyncComputedLegacy(getHighlighter)
 

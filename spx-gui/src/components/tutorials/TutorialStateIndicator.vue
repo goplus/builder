@@ -54,9 +54,9 @@ const { fn: handleExitTutorial } = useMessageHandle(
 <style lang="scss" scoped>
 .tutorial-state-indicator {
   display: flex;
-  gap: 2px;
-  width: 44px;
-  height: 24px;
+  gap: 4px;
+  width: 52px;
+  height: 28px;
   border-radius: 100px;
   background: var(--ui-color-primary-200);
   align-items: center;
@@ -68,8 +68,8 @@ const { fn: handleExitTutorial } = useMessageHandle(
     color: var(--ui-color-primary-main);
   }
   .icon-arrow {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     transform: rotate(180deg);
     color: var(--ui-color-primary-main);
   }

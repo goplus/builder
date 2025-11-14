@@ -6,7 +6,7 @@
  * https://github.com/goplus/builder/issues/464
  */
 
-import JSZip from 'jszip'
+import { zip, unzip, type Zippable } from '@/utils/zip'
 import { filename, stripExt } from '@/utils/path'
 import { getExtFromMime } from '@/utils/file'
 import { File as LazyFile, toConfig, type Files as LazyFiles } from './file'
@@ -18,12 +18,13 @@ const thumbnailFileName = 'builder-thumbnail'
 
 export async function load(xbpFile: File) {
   const metadata: Metadata = {}
-  const jszip = await JSZip.loadAsync(xbpFile)
+  const arrayBuffer = await xbpFile.arrayBuffer()
+  const unzipped = await unzip(new Uint8Array(arrayBuffer))
   const files: LazyFiles = {}
   await Promise.all(
-    Object.keys(jszip.files).map(async (path) => {
-      const zipEntry = jszip.files[path]
-      const file = new LazyFile(filename(path), () => zipEntry.async('arraybuffer'))
+    Object.keys(unzipped).map(async (path) => {
+      const uint8Array = unzipped[path]
+      const file = new LazyFile(filename(path), () => Promise.resolve(uint8Array.buffer))
       if (path === metadataFileName) {
         const m = await toConfig(file)
         Object.assign(metadata, m)
@@ -45,28 +46,27 @@ export async function load(xbpFile: File) {
 }
 
 export async function save(metadata: Metadata, files: LazyFiles, signal?: AbortSignal) {
-  const zip = new JSZip()
-  zip.file(
-    metadataFileName,
-    JSON.stringify({
-      description: metadata.description,
-      instructions: metadata.instructions
-    })
-  )
+  const zippable: Zippable = {}
+
+  const metadataJson = JSON.stringify({
+    description: metadata.description,
+    instructions: metadata.instructions
+  })
+  zippable[metadataFileName] = new TextEncoder().encode(metadataJson)
+
   if (metadata.thumbnail != null) {
     const ext = getExtFromMime(metadata.thumbnail.type) ?? 'jpg'
-    zip.file(`${thumbnailFileName}.${ext}`, metadata.thumbnail.arrayBuffer(signal))
+    const arrayBuffer = await metadata.thumbnail.arrayBuffer(signal)
+    zippable[`${thumbnailFileName}.${ext}`] = new Uint8Array(arrayBuffer)
   }
 
   const aiDescriptionFiles = createAIDescriptionFiles(metadata)
-  Object.entries(aiDescriptionFiles).forEach(([path, file]) => {
-    if (file != null) zip.file(path, file.arrayBuffer(signal))
-  })
+  await Promise.all(
+    [...Object.entries(aiDescriptionFiles), ...Object.entries(files)].map(async ([path, file]) => {
+      if (file != null) zippable[path] = new Uint8Array(await file.arrayBuffer(signal))
+    })
+  )
 
-  Object.entries(files).forEach(([path, file]) => {
-    if (file != null) zip.file(path, file.arrayBuffer(signal))
-  })
-  const blob = await zip.generateAsync({ type: 'blob' })
-  signal?.throwIfAborted()
-  return new File([blob], (metadata.name || 'Untitled') + '.xbp')
+  const zipped = await zip(zippable, { level: 6, signal })
+  return new File([zipped], (metadata.name || 'Untitled') + '.xbp')
 }

@@ -10,20 +10,112 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
-const (
-	copilotQuotaLimitFree = 100
-	copilotQuotaLimitPlus = 1000
+var (
+	// quotaLimitSpecs defines long-window quota limits per resource and plan.
+	quotaLimitSpecs = []quotaSpec{
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceCopilotMessage),
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    100,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 1000,
+			},
+		},
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIDescription),
+				Resource: authz.ResourceAIDescription,
+				Limit:    300,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 1000,
+			},
+		},
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionTurn),
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    12000,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 24000,
+			},
+		},
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionArchive),
+				Resource: authz.ResourceAIInteractionArchive,
+				Limit:    8000,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 16000,
+			},
+		},
+	}
 
-	aiDescriptionQuotaLimitFree = 300
-	aiDescriptionQuotaLimitPlus = 1000
-
-	aiInteractionTurnQuotaLimitFree = 12000
-	aiInteractionTurnQuotaLimitPlus = 24000
-
-	aiInteractionArchiveQuotaLimitFree = 8000
-	aiInteractionArchiveQuotaLimitPlus = 16000
-
-	quotaWindow = 24 * 60 * 60
+	// rateLimitSpecs defines short-window rate limits per resource and plan.
+	//
+	// NOTE: Entries must be ordered by ascending window and then limit.
+	rateLimitSpecs = map[authz.Resource][]quotaSpec{
+		authz.ResourceCopilotMessage: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceCopilotMessage),
+					Resource: authz.ResourceCopilotMessage,
+					Limit:    30,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 60,
+				},
+			},
+		},
+		authz.ResourceAIDescription: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIDescription),
+					Resource: authz.ResourceAIDescription,
+					Limit:    10,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 30,
+				},
+			},
+		},
+		authz.ResourceAIInteractionTurn: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIInteractionTurn),
+					Resource: authz.ResourceAIInteractionTurn,
+					Limit:    20,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 60,
+				},
+			},
+		},
+		authz.ResourceAIInteractionArchive: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIInteractionArchive),
+					Resource: authz.ResourceAIInteractionArchive,
+					Limit:    10,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 20,
+				},
+			},
+		},
+	}
 )
 
 // embeddedPDP implements [authz.PolicyDecisionPoint] with embedded authorization policies.
@@ -40,45 +132,49 @@ func New(quotaTracker authz.QuotaTracker) authz.PolicyDecisionPoint {
 
 // ComputeUserCapabilities implements [authz.PolicyDecisionPoint].
 func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.User) (authz.UserCapabilities, error) {
-	caps := authz.UserCapabilities{
+	return authz.UserCapabilities{
 		CanManageAssets:  p.hasRole(mUser, userRoleAssetAdmin),
 		CanManageCourses: p.hasRole(mUser, userRoleCourseAdmin),
 		CanUsePremiumLLM: p.hasPlusPlan(mUser),
+	}, nil
+}
 
-		CopilotMessageQuota: authz.Quota{
-			Limit:  p.quotaLimitForPlan(mUser, copilotQuotaLimitFree, copilotQuotaLimitPlus),
-			Window: quotaWindow,
-		},
-		AIDescriptionQuota: authz.Quota{
-			Limit:  p.quotaLimitForPlan(mUser, aiDescriptionQuotaLimitFree, aiDescriptionQuotaLimitPlus),
-			Window: quotaWindow,
-		},
-		AIInteractionTurnQuota: authz.Quota{
-			Limit:  p.quotaLimitForPlan(mUser, aiInteractionTurnQuotaLimitFree, aiInteractionTurnQuotaLimitPlus),
-			Window: quotaWindow,
-		},
-		AIInteractionArchiveQuota: authz.Quota{
-			Limit:  p.quotaLimitForPlan(mUser, aiInteractionArchiveQuotaLimitFree, aiInteractionArchiveQuotaLimitPlus),
-			Window: quotaWindow,
-		},
-	}
-	for _, v := range []struct {
-		resource authz.Resource
-		quota    *authz.Quota
-	}{
-		{resource: authz.ResourceCopilotMessage, quota: &caps.CopilotMessageQuota},
-		{resource: authz.ResourceAIDescription, quota: &caps.AIDescriptionQuota},
-		{resource: authz.ResourceAIInteractionTurn, quota: &caps.AIInteractionTurnQuota},
-		{resource: authz.ResourceAIInteractionArchive, quota: &caps.AIInteractionArchiveQuota},
-	} {
-		usage, err := p.quotaTracker.Usage(ctx, mUser.ID, v.resource)
+// ComputeUserQuotas implements [authz.PolicyDecisionPoint].
+func (p *embeddedPDP) ComputeUserQuotas(ctx context.Context, mUser *model.User) (authz.UserQuotas, error) {
+	limits := make(map[authz.Resource]authz.Quota, len(quotaLimitSpecs))
+	for _, spec := range quotaLimitSpecs {
+		policy := spec.policy(mUser.Plan)
+
+		usage, err := p.quotaTracker.Usage(ctx, mUser.ID, policy)
 		if err != nil {
-			return authz.UserCapabilities{}, fmt.Errorf("failed to retrieve %s quota usage for user %q: %w", v.resource, mUser.Username, err)
+			return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s quota usage for user %q: %w", policy.Resource, mUser.Username, err)
 		}
-		v.quota.Remaining = quotaRemaining(v.quota.Limit, usage)
-		v.quota.ResetTime = quotaResetTime(v.quota.Window, usage)
+		usage.ResetTime = quotaResetTime(policy.Window, usage)
+
+		limits[policy.Resource] = authz.Quota{QuotaPolicy: policy, QuotaUsage: usage}
 	}
-	return caps, nil
+
+	rateLimits := make(map[authz.Resource][]authz.Quota, len(rateLimitSpecs))
+	for resource, specs := range rateLimitSpecs {
+		quotas := make([]authz.Quota, 0, len(specs))
+		for _, spec := range specs {
+			policy := spec.policy(mUser.Plan)
+
+			usage, err := p.quotaTracker.Usage(ctx, mUser.ID, policy)
+			if err != nil {
+				return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s rate limit usage for user %q: %w", policy.Resource, mUser.Username, err)
+			}
+			usage.ResetTime = quotaResetTime(policy.Window, usage)
+
+			quotas = append(quotas, authz.Quota{QuotaPolicy: policy, QuotaUsage: usage})
+		}
+		rateLimits[resource] = quotas
+	}
+
+	return authz.UserQuotas{
+		Limits:     limits,
+		RateLimits: rateLimits,
+	}, nil
 }
 
 // hasRole checks if the user has a specific role.
@@ -94,12 +190,21 @@ func (p *embeddedPDP) hasPlusPlan(mUser *model.User) bool {
 	return mUser.Plan == model.UserPlanPlus
 }
 
-// quotaLimitForPlan returns the quota limit for the user's plan.
-func (p *embeddedPDP) quotaLimitForPlan(mUser *model.User, freeLimit, plusLimit int64) int64 {
-	if p.hasPlusPlan(mUser) {
-		return plusLimit
+// quotaSpec holds the default quota policy together with plan-specific limit overrides.
+type quotaSpec struct {
+	authz.QuotaPolicy
+
+	limitOverrides map[model.UserPlan]int64
+}
+
+// policy returns a copy of the quota policy with the limit adjusted for the
+// requested plan.
+func (qs quotaSpec) policy(plan model.UserPlan) authz.QuotaPolicy {
+	policy := qs.QuotaPolicy
+	if override, ok := qs.limitOverrides[plan]; ok {
+		policy.Limit = override
 	}
-	return freeLimit
+	return policy
 }
 
 // userRole represents a user role in the system.
@@ -110,16 +215,11 @@ const (
 	userRoleCourseAdmin userRole = "courseAdmin"
 )
 
-// quotaRemaining returns the leftover quota after deducting the used amount.
-func quotaRemaining(limit int64, usage authz.QuotaUsage) int64 {
-	return max(limit-usage.Used, 0)
-}
-
 // quotaResetTime returns the time when the quota window resets for the given usage data.
-func quotaResetTime(window int64, usage authz.QuotaUsage) time.Time {
+func quotaResetTime(window time.Duration, usage authz.QuotaUsage) time.Time {
 	if usage.ResetTime.IsZero() {
 		if usage.Used == 0 && window > 0 {
-			return time.Now().Add(time.Duration(window) * time.Second)
+			return time.Now().Add(window)
 		}
 		return time.Time{}
 	}

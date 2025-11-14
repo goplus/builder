@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import CodeBlock from './CodeBlock.vue'
 
 const props = defineProps<{
@@ -15,7 +15,7 @@ const props = defineProps<{
   file?: string
 }>()
 
-const slotCode = useSlotTextLegacy()
+const slotCode = useSlotText()
 const getContent = computed(() => props.content || slotCode.value)
 
 // Determine display filename based on file path

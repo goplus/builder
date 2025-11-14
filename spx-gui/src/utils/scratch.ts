@@ -1,4 +1,4 @@
-import JSZip from 'jszip'
+import { unzip } from '@/utils/zip'
 import { getMimeFromExt } from './file'
 
 export interface ExportedScratchFile {
@@ -60,9 +60,12 @@ interface ScratchProject {
 const getFilename = (file: ScratchFile) => (file.md5ext ? file.md5ext : `${file.assetId}.${file.dataFormat}`)
 
 export const parseScratchFileAssets = async (file: File): Promise<ExportedScratchAssets> => {
-  const zip = await JSZip.loadAsync(file)
-  const projectJson = await zip.file('project.json')?.async('string')
-  if (!projectJson) throw new Error('Project JSON not found in the uploaded file.')
+  const arrayBuffer = await file.arrayBuffer()
+  const unzipped = await unzip(new Uint8Array(arrayBuffer))
+
+  const projectJsonData = unzipped['project.json']
+  if (projectJsonData == null) throw new Error('Project JSON not found in the uploaded file.')
+  const projectJson = new TextDecoder().decode(projectJsonData)
 
   const projectData: ScratchProject = JSON.parse(projectJson)
 
@@ -74,17 +77,16 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
 
   const convertScratchFile = async (file: ScratchFile): Promise<ExportedScratchFile | null> => {
     const zipFilename = getFilename(file)
-    const zipFile = zip.file(zipFilename)
+    const zipFile = unzipped[zipFilename]
     if (zipFile == null) {
       console.warn('File not found in zip: ', zipFilename)
       return null
     }
-    const arrayBuffer = await zipFile.async('arraybuffer')
     return {
       name: file.name,
       extension: file.dataFormat,
       filename: `${file.name}.${file.dataFormat}`,
-      blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) })
+      blob: new Blob([zipFile], { type: getMimeFromExt(file.dataFormat) })
     }
   }
 

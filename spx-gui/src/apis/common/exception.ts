@@ -24,6 +24,8 @@ export enum ApiExceptionCode {
   errorForbidden = 40300,
   errorQuotaExceeded = 40301,
   errorNotFound = 40400,
+  errorTooManyRequests = 42900,
+  errorRateLimitExceeded = 42901,
   errorUnknown = 50000
 }
 
@@ -43,6 +45,14 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorQuotaExceeded]: {
     en: 'quota exceeded',
     zh: '超出配额'
+  },
+  [ApiExceptionCode.errorTooManyRequests]: {
+    en: 'too many requests',
+    zh: '请求太频繁了'
+  },
+  [ApiExceptionCode.errorRateLimitExceeded]: {
+    en: 'rate limit exceeded, please retry later',
+    zh: '触发频率限制，请稍后重试'
   },
   [ApiExceptionCode.errorNotFound]: {
     en: 'resource not exist',

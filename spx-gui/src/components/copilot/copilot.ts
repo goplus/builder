@@ -11,6 +11,7 @@ import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './too
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 import dayjs from 'dayjs'
+import { ApiException } from '@/apis/common/exception'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -135,7 +136,8 @@ type RoundExported = {
   inProgressCopilotMessageContent: string | null
   error: LocaleMessage | null
   state: RoundState
-  updatedAt?: number
+  updatedAt?: number | null
+  apiExceptionCode?: number | null
 }
 
 export class Round {
@@ -177,6 +179,13 @@ export class Round {
    */
   updatedAt: number
 
+  /**
+   * API exception code when the round failed.
+   * Non-null indicates an api exception occurred
+   * refer to `ApiExceptionCode` for the list of possible values.
+   */
+  apiExceptionCode?: number | null
+
   export(): RoundExported {
     return {
       userMessage: this.userMessage,
@@ -184,7 +193,8 @@ export class Round {
       inProgressCopilotMessageContent: this.inProgressCopilotMessageContent,
       error: this.error,
       state: this.state,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      apiExceptionCode: this.apiExceptionCode
     }
   }
 
@@ -194,6 +204,7 @@ export class Round {
     round.inProgressCopilotMessageContentRef.value = exported.inProgressCopilotMessageContent
     round.errorRef.value = exported.error
     round.updatedAt = exported.updatedAt != null ? exported.updatedAt : dayjs().valueOf()
+    round.apiExceptionCode = exported.apiExceptionCode
     switch (exported.state) {
       case RoundState.Loading:
       case RoundState.InProgress:
@@ -231,6 +242,11 @@ export class Round {
       this.setState(RoundState.Cancelled)
       return
     }
+
+    if (err instanceof ApiException) {
+      this.apiExceptionCode = err.code
+    }
+
     this.errorRef.value = new ActionException(err, {
       en: 'Failed to get copilot response',
       zh: '获取 Copilot 响应失败'
@@ -296,6 +312,7 @@ export class Round {
     this.resultMessages.length = 0
     this.inProgressCopilotMessageContentRef.value = null
     this.errorRef.value = null
+    this.apiExceptionCode = null
     this.setState(RoundState.Loading)
     this.ctrl = new AbortController()
     this.generateCopilotMessage()

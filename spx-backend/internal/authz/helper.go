@@ -3,8 +3,6 @@ package authz
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 )
@@ -37,27 +35,23 @@ func ConsumeQuota(ctx context.Context, resource Resource, amount int64) error {
 	if !ok {
 		return errors.New("missing authenticated user in context")
 	}
-	caps, ok := UserCapabilitiesFromContext(ctx)
+	quotas, ok := UserQuotasFromContext(ctx)
 	if !ok {
-		return errors.New("missing user capabilities in context")
+		return errors.New("missing user quotas in context")
 	}
 
-	policy, err := quotaPolicyFromUserCapabilities(resource, caps)
-	if err != nil {
-		return err
+	if quota, ok := quotas.Limits[resource]; ok {
+		if err := authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, quota.QuotaPolicy, amount); err != nil {
+			return err
+		}
 	}
-	return authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, resource, amount, policy)
-}
 
-// quotaPolicyFromUserCapabilities converts [UserCapabilities] data into a
-// resource-specific [QuotaPolicy].
-func quotaPolicyFromUserCapabilities(resource Resource, caps UserCapabilities) (QuotaPolicy, error) {
-	quota, ok := caps.Quota(resource)
-	if !ok {
-		return QuotaPolicy{}, fmt.Errorf("unsupported quota resource %q", resource)
+	if quotas, ok := quotas.RateLimits[resource]; ok {
+		for _, quota := range quotas {
+			if err := authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, quota.QuotaPolicy, amount); err != nil {
+				return err
+			}
+		}
 	}
-	return QuotaPolicy{
-		Limit:  quota.Limit,
-		Window: time.Duration(quota.Window) * time.Second,
-	}, nil
+	return nil
 }

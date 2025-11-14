@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSlotTextLegacy } from '@/utils/vnode'
+import { useSlotText } from '@/utils/vnode'
 import { computed, ref } from 'vue'
 import MarkdownView from './MarkdownView.vue'
 
@@ -15,7 +15,7 @@ const props = defineProps<{
   content?: string
 }>()
 
-const slotText = useSlotTextLegacy()
+const slotText = useSlotText()
 const diagnosticContent = computed(() => props.content || slotText.value)
 
 // Extract filename from file path
