@@ -1,4 +1,4 @@
-import { debounce, escape, memoize } from 'lodash'
+import { debounce, escape, isFunction, memoize } from 'lodash'
 import dayjs from 'dayjs'
 import {
   shallowReactive,
@@ -13,7 +13,10 @@ import {
   ref,
   onActivated,
   toValue,
-  onScopeDispose
+  onScopeDispose,
+  type MaybeRefOrGetter,
+  isRef,
+  type WatchHandle
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
@@ -343,10 +346,10 @@ export function timeout(duration = 0, signal?: AbortSignal) {
 
 export function useInterval(
   callback: () => void,
-  options?: { interval?: number; immediate?: boolean },
+  options?: { interval?: MaybeRefOrGetter<number>; immediate?: boolean },
   signal?: AbortSignal
 ) {
-  const { interval = 1000, immediate = true } = options ?? {}
+  const { immediate = true, interval = 1000 } = options ?? {}
 
   let timer: NodeJS.Timeout | undefined = undefined
 
@@ -355,13 +358,23 @@ export function useInterval(
     timer = undefined
   }
   function resume() {
-    if (timer != null) return
-    timer = setInterval(callback, interval)
+    const intervalValue = toValue<number>(interval)
+    pause()
+    if (intervalValue <= 0) return
+    timer = setInterval(callback, intervalValue)
   }
 
   if (immediate) resume()
+
+  let stopWatch: WatchHandle | null = null
+  if (isRef(interval) || isFunction(interval)) {
+    stopWatch = watch(interval, resume)
+    onScopeDispose(stopWatch)
+  }
+
   if (signal != null) {
     const onAbort = () => {
+      stopWatch?.()
       pause()
       signal?.removeEventListener('abort', onAbort)
     }

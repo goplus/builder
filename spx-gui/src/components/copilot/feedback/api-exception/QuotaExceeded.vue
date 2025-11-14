@@ -1,3 +1,26 @@
+<script lang="ts">
+const unitTypes = ['h', 'm', 's'] as const
+
+// Callback interval per unit time, in milliseconds.
+// Why are h and m half an hour and half a minute? To avoid precision issues.
+// Update more frequently than the unit to ensure smooth transitions
+// e.g., for hours, update every 30min; for minutes, update every 30s
+const unitInterval = {
+  h: (60 * 60 * 1000) / 2,
+  m: (60 * 1000) / 2,
+  s: 1000
+} as const
+
+function getLargestUnitType(start: dayjs.Dayjs, end: dayjs.Dayjs) {
+  for (const unit of unitTypes) {
+    if (end.diff(start, unit) > 0) {
+      return unit
+    }
+  }
+  return 's'
+}
+</script>
+
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { isNumber } from 'lodash'
@@ -15,24 +38,30 @@ const props = defineProps<{
 const copilot = useCopilot()
 
 const retryAfterTime = ref<LocaleMessage | null>(null)
+const interval = ref(1000)
 
-const { pause } = useInterval(() => {
-  const { updatedAt, apiExceptionMeta } = props.round
-  if (!isNumber(apiExceptionMeta?.retryAfter)) {
-    pause()
-    return
-  }
-  const retryAfter = dayjs(updatedAt).add(apiExceptionMeta.retryAfter, 's')
-  retryAfterTime.value = {
-    en: retryAfter.locale('en').fromNow(),
-    zh: retryAfter.locale('zh').fromNow()
-  }
-  const dueSeconds = retryAfter.diff(dayjs(), 's')
-  if (dueSeconds <= 0) {
-    pause()
-    copilot.endCurrentSession()
-  }
-})
+const { pause } = useInterval(
+  () => {
+    const { updatedAt, apiExceptionMeta } = props.round
+    if (!isNumber(apiExceptionMeta?.retryAfter)) {
+      pause()
+      return
+    }
+    const retryAfter = dayjs(updatedAt).add(apiExceptionMeta.retryAfter, 's')
+    const unitType = getLargestUnitType(dayjs(), retryAfter)
+    interval.value = unitInterval[unitType]
+    retryAfterTime.value = {
+      en: retryAfter.locale('en').fromNow(),
+      zh: retryAfter.locale('zh').fromNow()
+    }
+    const dueSeconds = retryAfter.diff(dayjs(), 's')
+    if (dueSeconds <= 0) {
+      pause()
+      copilot.endCurrentSession()
+    }
+  },
+  { interval }
+)
 </script>
 
 <template>
@@ -46,10 +75,13 @@ const { pause } = useInterval(() => {
     <div class="message">
       {{
         $t({
-          en: `Quota exceeded. ${retryAfterTime?.en != null ? `Please try again ${retryAfterTime.en}` : ''}`,
-          zh: `配额已超限。${retryAfterTime?.zh != null ? `请${retryAfterTime.zh}重试` : ''}`
+          en: 'Quota exceeded.',
+          zh: '配额已超限。'
         })
       }}
+      <template v-if="retryAfterTime?.en != null">
+        {{ $t({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}重试` }) }}
+      </template>
     </div>
   </div>
 </template>

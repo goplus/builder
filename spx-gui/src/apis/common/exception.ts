@@ -15,11 +15,11 @@ export class ApiException extends Exception {
   constructor(
     public code: number,
     message: string,
-    header: Headers
+    headers: Headers
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode]?.(header) ?? {}
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? {}
   }
 }
 
@@ -35,9 +35,12 @@ export enum ApiExceptionCode {
 }
 
 const codeMetas: Record<number, (headers: Headers) => ApiExceptionMeta> = {
-  [ApiExceptionCode.errorQuotaExceeded]: (headers) => ({
-    retryAfter: headers.get('Retry-After') != null ? Number(headers.get('Retry-After')) : null
-  })
+  [ApiExceptionCode.errorQuotaExceeded]: (headers) => {
+    const retryAfter = Number(headers.get('Retry-After'))
+    return {
+      retryAfter: Number.isFinite(retryAfter) ? retryAfter : null
+    }
+  }
 }
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
