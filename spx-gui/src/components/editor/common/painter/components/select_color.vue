@@ -230,5 +230,4 @@ defineExpose({
   gap: 12px;
   margin-top: 20px;
 }
-
 </style>

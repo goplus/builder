@@ -119,9 +119,7 @@ export const buildRegionFromStroke = (
  * Creates a reusable controller that captures pointer input and produces a region path.
  * Consumers（例如橡皮擦、笔刷）只需要在鼠标事件里调用 `startStroke / extendStroke / finalizeRegion`。
  */
-export const createStrokeRegionController = (
-  options: StrokeRegionControllerOptions = {}
-): StrokeRegionController => {
+export const createStrokeRegionController = (options: StrokeRegionControllerOptions = {}): StrokeRegionController => {
   let activePath: paper.Path | null = null
   let lastPoint: paper.Point | null = null
   let currentStrokeWidth = 0
@@ -173,10 +171,7 @@ export const createStrokeRegionController = (
     lastPoint = point
   }
 
-  const finalizeRegion = ({
-    radius,
-    simplifyTolerance
-  }: FinalizeRegionOptions = {}): StrokeRegionResult => {
+  const finalizeRegion = ({ radius, simplifyTolerance }: FinalizeRegionOptions = {}): StrokeRegionResult => {
     if (!activePath) {
       return { region: null, strokePath: null }
     }

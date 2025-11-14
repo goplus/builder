@@ -1,14 +1,14 @@
 <template>
   <div class="brush-thickness-container">
     <label for="brush-thickness-slider" class="brush-thickness-label">
-        {{  $t({ en: 'Brush Thickness', zh: '笔刷粗细' })  }}
+      {{ $t({ en: 'Brush Thickness', zh: '笔刷粗细' }) }}
     </label>
     <input
       id="brush-thickness-slider"
+      v-model="thickness"
       type="range"
       min="1"
       max="10"
-      v-model="thickness"
       class="brush-thickness-slider"
     />
     <span class="brush-thickness-value">{{ thickness }}</span>
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineEmits, defineProps } from 'vue'
+import { ref, watch } from 'vue'
 
 // 受控属性
 const props = defineProps<{
@@ -47,9 +47,7 @@ watch(thickness, (newVal) => {
 })
 </script>
 
-
 <style scoped lang="scss">
-
 .brush-thickness-container {
   padding: 8px 6px;
   border: 1px solid #e0e0e0;
@@ -61,6 +59,4 @@ watch(thickness, (newVal) => {
   transition: all 0.2s ease;
   text-align: center;
 }
-
-
 </style>

@@ -29,7 +29,7 @@ const drawingMode = ref<'stroke' | 'region' | null>(null)
 const currentPath = ref<paper.Path | null>(null)
 const canvasColor = inject<Ref<string>>('canvasColor', ref('#000'))
 const strokeRegionController = createStrokeRegionController({
-  minDistance: 2,
+  minDistance: 10,
   simplifyTolerance: 2,
   strokeStyle: {
     strokeCap: 'round',
