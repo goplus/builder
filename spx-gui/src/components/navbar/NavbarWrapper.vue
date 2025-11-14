@@ -38,7 +38,7 @@ withDefaults(
   }>(),
   {
     centered: false,
-    disableLang: false,
+    disabledLang: false,
     disabledTutorials: false
   }
 )
