@@ -1,0 +1,255 @@
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yaml'
+      - 'spx-gui/**'
+      - 'spx-backend/**'
+      - 'tools/**'
+      - 'scripts/**'
+  pull_request:
+    paths:
+      - '.github/workflows/copilot-setup-steps.yaml'
+      - 'spx-gui/**'
+      - 'spx-backend/**'
+      - 'tools/**'
+      - 'scripts/**'
+
+jobs:
+  copilot-setup-steps:
+    name: Prepare Copilot workspace
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: copilot
+    permissions:
+      contents: read
+      packages: read
+    defaults:
+      run:
+        shell: bash
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: xbuilder
+          MYSQL_USER: xbuilder
+          MYSQL_PASSWORD: xbuilder
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      NODE_ENV: development
+      GOPROXY: https://proxy.golang.org,direct
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '3306'
+      MYSQL_USER: xbuilder
+      MYSQL_PASSWORD: xbuilder
+      MYSQL_DATABASE: xbuilder
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '6379'
+      PORT: ${{ vars.PORT }}
+      ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+      GOP_SPX_DSN: ${{ secrets.GOP_SPX_DSN }}
+      GOP_SPX_AUTO_MIGRATE: ${{ vars.GOP_SPX_AUTO_MIGRATE }}
+      GOP_SPX_MIGRATION_TIMEOUT: ${{ vars.GOP_SPX_MIGRATION_TIMEOUT }}
+      AIGC_ENDPOINT: ${{ vars.AIGC_ENDPOINT }}
+      KODO_AK: ${{ secrets.KODO_AK }}
+      KODO_SK: ${{ secrets.KODO_SK }}
+      KODO_BUCKET: ${{ vars.KODO_BUCKET }}
+      KODO_BUCKET_REGION: ${{ vars.KODO_BUCKET_REGION }}
+      KODO_BASE_URL: ${{ vars.KODO_BASE_URL }}
+      GOP_CASDOOR_ENDPOINT: ${{ vars.GOP_CASDOOR_ENDPOINT }}
+      GOP_CASDOOR_CLIENTID: ${{ secrets.GOP_CASDOOR_CLIENTID }}
+      GOP_CASDOOR_CLIENTSECRET: ${{ secrets.GOP_CASDOOR_CLIENTSECRET }}
+      GOP_CASDOOR_CERTIFICATE: ${{ secrets.GOP_CASDOOR_CERTIFICATE }}
+      GOP_CASDOOR_ORGANIZATIONNAME: ${{ vars.GOP_CASDOOR_ORGANIZATIONNAME }}
+      GOP_CASDOOR_APPLICATIONNAME: ${{ vars.GOP_CASDOOR_APPLICATIONNAME }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_API_ENDPOINT: ${{ vars.OPENAI_API_ENDPOINT }}
+      OPENAI_MODEL_ID: ${{ vars.OPENAI_MODEL_ID }}
+      OPENAI_LITE_API_KEY: ${{ secrets.OPENAI_LITE_API_KEY }}
+      OPENAI_LITE_API_ENDPOINT: ${{ vars.OPENAI_LITE_API_ENDPOINT }}
+      OPENAI_LITE_MODEL_ID: ${{ vars.OPENAI_LITE_MODEL_ID }}
+      OPENAI_PREMIUM_API_KEY: ${{ secrets.OPENAI_PREMIUM_API_KEY }}
+      OPENAI_PREMIUM_API_ENDPOINT: ${{ vars.OPENAI_PREMIUM_API_ENDPOINT }}
+      OPENAI_PREMIUM_MODEL_ID: ${{ vars.OPENAI_PREMIUM_MODEL_ID }}
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install base packages
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mysql-client redis-tools unzip jq
+
+      - name: Verify data services
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -uroot -proot >/dev/null 2>&1; then
+              echo "MySQL is ready"
+              break
+            fi
+            if [[ "$i" -eq 30 ]]; then
+              echo "MySQL failed to start" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT}" ping
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.11.1
+          cache: npm
+          cache-dependency-path: spx-gui/package-lock.json
+
+      - name: Set up Go and XGo
+        uses: goplus/setup-xgo@v1
+        with:
+          go-version: 1.24.x
+          xgo-version: 1.5.x
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('spx-backend/go.sum', 'tools/ai/go.sum', 'tools/spxls/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download Go modules (backend)
+        working-directory: spx-backend
+        run: |
+          set -euo pipefail
+          go env
+          go mod download
+
+      - name: Download Go modules (AI tools)
+        working-directory: tools/ai
+        run: |
+          set -euo pipefail
+          go mod download
+
+      - name: Download Go modules (spxls)
+        working-directory: tools/spxls
+        run: |
+          set -euo pipefail
+          go mod download
+
+      - name: Install Node dependencies
+        working-directory: spx-gui
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Install SPX runtime assets
+        working-directory: spx-gui
+        run: |
+          set -euo pipefail
+          ./install-spx.sh
+
+      - name: Build SPX WASM artifacts
+        working-directory: spx-gui
+        run: |
+          set -euo pipefail
+          ./build-wasm.sh
+
+      - name: Prime Vue type-check cache
+        working-directory: spx-gui
+        run: |
+          set -euo pipefail
+          npm run type-check
+
+      - name: Generate backend env template for Copilot
+        working-directory: spx-backend
+        run: |
+          set -euo pipefail
+          output_file=".env.copilot"
+          : > "${output_file}"
+
+          emit_var() {
+            local key="$1"
+            local value="${!key-}"
+            if [[ -z "${value}" ]]; then
+              printf '# %s=<unset>\n' "${key}" >> "${output_file}"
+              return
+            fi
+
+            local escaped="${value//\"/\\\"}"
+            if [[ "${value}" == *$'\n'* || "${value}" == *[[:space:]]* || "${value}" == *'='* ]]; then
+              printf '%s="%s"\n' "${key}" "${escaped}" >> "${output_file}"
+            else
+              printf '%s=%s\n' "${key}" "${value}" >> "${output_file}"
+            fi
+          }
+
+          for key in \
+            PORT \
+            ALLOWED_ORIGIN \
+            GOP_SPX_DSN \
+            GOP_SPX_AUTO_MIGRATE \
+            GOP_SPX_MIGRATION_TIMEOUT \
+            AIGC_ENDPOINT \
+            KODO_AK \
+            KODO_SK \
+            KODO_BUCKET \
+            KODO_BUCKET_REGION \
+            KODO_BASE_URL \
+            GOP_CASDOOR_ENDPOINT \
+            GOP_CASDOOR_CLIENTID \
+            GOP_CASDOOR_CLIENTSECRET \
+            GOP_CASDOOR_CERTIFICATE \
+            GOP_CASDOOR_ORGANIZATIONNAME \
+            GOP_CASDOOR_APPLICATIONNAME \
+            OPENAI_API_KEY \
+            OPENAI_API_ENDPOINT \
+            OPENAI_MODEL_ID \
+            OPENAI_LITE_API_KEY \
+            OPENAI_LITE_API_ENDPOINT \
+            OPENAI_LITE_MODEL_ID \
+            OPENAI_PREMIUM_API_KEY \
+            OPENAI_PREMIUM_API_ENDPOINT \
+            OPENAI_PREMIUM_MODEL_ID
+          do
+            emit_var "${key}"
+          done
+
+      - name: Summarize workspace status
+        run: |
+          set -euo pipefail
+          du -sh spx-gui/node_modules || true
+          du -sh ~/go/pkg/mod || true
+          ls spx-backend/.env.copilot
