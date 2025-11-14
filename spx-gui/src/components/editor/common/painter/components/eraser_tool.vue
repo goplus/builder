@@ -15,15 +15,13 @@
 <script setup lang="ts">
 import { ref, inject, watch, onMounted, onUnmounted, computed } from 'vue'
 import paper from 'paper'
-import { PaperOffset } from 'paperjs-offset'
 import { projectPaperPointToView } from '../utils/coordinate-transform'
+import { createStrokeRegionController } from '../utils/strokeRegionController'
 
 const props = defineProps<{
   isActive: boolean
 }>()
 
-// 用于存储当前擦除区域的路径
-const eraserPath = ref<paper.Path | null>(null)
 // 橡皮擦尺寸（可配置）
 const eraserSize = ref<number>(20)
 // CSS光标相关状态
@@ -31,8 +29,10 @@ const showCursor = ref<boolean>(false)
 const cursorPosition = ref<{ x: number; y: number }>({ x: 0, y: 0 })
 // 画布元素引用
 const canvasElement = ref<HTMLElement | null>(null)
-// 最后一次鼠标位置，用于减少不必要的更新
-const lastMousePosition = ref<paper.Point | null>(null)
+const eraserRegionController = createStrokeRegionController({
+  minDistance: 2,
+  simplifyTolerance: 3
+})
 
 // 通过 inject 从父组件 PainterBoard 获取全局路径数组和更新函数
 const getAllPathsValue = inject<() => paper.Path[]>('getAllPathsValue')!
@@ -51,19 +51,13 @@ const cursorStyle = computed(() => ({
 const handleMouseDown = (point: paper.Point): void => {
   if (!props.isActive) return
 
-  // 1. 创建一个简单的路径来记录轨迹
-  eraserPath.value = new paper.Path({
-    strokeColor: 'white',
+  eraserRegionController.startStroke({
+    point,
     strokeWidth: eraserSize.value,
+    strokeColor: 'white',
     strokeCap: 'round',
     strokeJoin: 'round'
   })
-
-  // 添加第一个点
-  eraserPath.value.add(point)
-
-  // 记录位置
-  lastMousePosition.value = point
 }
 
 const handleMouseMove = (point: paper.Point): void => {
@@ -73,58 +67,28 @@ const handleMouseMove = (point: paper.Point): void => {
   updateCursorPosition(point)
 
   // 如果正在擦除，向路径中添加点
-  if (eraserPath.value && lastMousePosition.value) {
-    // 性能优化：检查鼠标是否移动了足够的距离
-    const minDistance = 2
-    if (point.getDistance(lastMousePosition.value) < minDistance) {
-      return
-    }
-
-    eraserPath.value.add(point)
-
-    lastMousePosition.value = point
+  if (eraserRegionController.getPath()) {
+    eraserRegionController.extendStroke(point)
   }
 }
 const handleMouseUp = (): void => {
-  if (!props.isActive || !eraserPath.value || eraserPath.value.segments.length === 0) {
-    if (eraserPath.value) {
-      eraserPath.value.remove()
-      eraserPath.value = null
-    }
-    lastMousePosition.value = null
+  const activeStroke = eraserRegionController.getPath()
+
+  if (!props.isActive || !activeStroke || activeStroke.segments.length === 0) {
+    eraserRegionController.reset(true)
     return
   }
 
   // 1. 构造最终的 eraserShape
-  const strokePath = eraserPath.value
-  let eraserShape: paper.PathItem | null = null
+  const { region: eraserShape, strokePath } = eraserRegionController.finalizeRegion({
+    radius: eraserSize.value / 2
+  })
 
-  if (strokePath.segments.length === 1) {
-    // 单击 → 圆形橡皮
-    eraserShape = new paper.Path.Circle({
-      center: strokePath.firstSegment.point,
-      radius: eraserSize.value / 2
-    })
-  } else {
-    // 拖拽 → 轨迹膨胀
-    strokePath.simplify(3)
-
-    const offsetShape = PaperOffset.offsetStroke(strokePath, eraserSize.value / 2, {
-      cap: 'round',
-      join: 'round'
-    })
-
-    if (offsetShape) {
-      eraserShape = offsetShape.unite(offsetShape) // 避免自相交
-      offsetShape.remove()
-    }
+  if (strokePath) {
+    strokePath.remove()
   }
 
-  strokePath.remove()
-  eraserPath.value = null
-
   if (!eraserShape) {
-    lastMousePosition.value = null
     return
   }
   eraserShape.fillColor = null
@@ -208,7 +172,6 @@ const handleMouseUp = (): void => {
 
   // 4. 清理擦除区域
   eraserShape.remove()
-  lastMousePosition.value = null
 
   // 5. 强制刷新 + 同步 Vue 状态
   paper.view.update()
@@ -249,7 +212,7 @@ const getCanvasElement = (): void => {
 
 // 处理鼠标进入画布事件
 const handleMouseEnter = (point: paper.Point): void => {
-  if (props.isActive && !eraserPath.value) {
+  if (props.isActive && !eraserRegionController.getPath()) {
     showCursor.value = true
     updateCursorPosition(point)
   }
@@ -258,7 +221,7 @@ const handleMouseEnter = (point: paper.Point): void => {
 // 处理鼠标离开画布事件
 const handleMouseLeave = (): void => {
   showCursor.value = false
-  if (eraserPath.value) {
+  if (eraserRegionController.getPath()) {
     handleMouseUp()
   }
 }
@@ -274,7 +237,7 @@ watch(
       } else {
         canvas.style.cursor = 'default'
         showCursor.value = false
-        lastMousePosition.value = null
+        eraserRegionController.reset(true)
       }
     }
   }
@@ -293,19 +256,7 @@ onMounted(() => {
 // 清理资源
 onUnmounted(() => {
   showCursor.value = false
-
-  // 清理擦除路径
-  if (eraserPath.value) {
-    try {
-      eraserPath.value.remove()
-    } catch (error) {
-      console.warn('清理擦除路径时出错:', error)
-    }
-    eraserPath.value = null
-  }
-
-  // 清理其他引用
-  lastMousePosition.value = null
+  eraserRegionController.reset(true)
   canvasElement.value = null
 })
 

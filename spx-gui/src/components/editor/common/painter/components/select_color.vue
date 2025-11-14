@@ -1,7 +1,7 @@
 <template>
   <div class="color-selector">
     <button
-      :class="['tool-btn', { active: isActive }]"
+      :class="['tool-btn ai-btn', { active: isActive }]"
       :title="$t({ en: 'Select Color', zh: '选择颜色' })"
       type="button"
       @click="handleColorSelect"
@@ -176,7 +176,7 @@ defineExpose({
   font-size: 12px;
   transition: all 0.2s ease;
   text-align: center;
-  min-height: 36px;
+  min-height: 42px;
   font-size: 12px;
 }
 
