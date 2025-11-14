@@ -1,8 +1,10 @@
 package embpdp
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -76,6 +78,51 @@ func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy 
 	key := fmt.Sprintf("%d:%s", userID, policy.Name)
 	m.usage[key] = authz.QuotaUsage{}
 	return nil
+}
+
+func TestQuotaSpecs(t *testing.T) {
+	t.Run("UniqueNames", func(t *testing.T) {
+		seen := make(map[string]string)
+		record := func(name, kind, resource string) {
+			assert.NotEmptyf(t, name, "%s spec for resource %s must have name", kind, resource)
+			if name == "" {
+				return
+			}
+			if prev, ok := seen[name]; ok {
+				assert.Failf(t, "duplicate spec name", "%s conflicts with %s", name, prev)
+				return
+			}
+			seen[name] = fmt.Sprintf("%s(%s)", kind, resource)
+		}
+
+		for _, spec := range quotaLimitSpecs {
+			record(spec.Name, "limit", string(spec.Resource))
+		}
+
+		for resource, specs := range rateLimitSpecs {
+			for _, spec := range specs {
+				record(spec.Name, "rateLimit", string(resource))
+			}
+		}
+	})
+
+	t.Run("RateLimitSpecsSorted", func(t *testing.T) {
+		for resource, specs := range rateLimitSpecs {
+			isSorted := slices.IsSortedFunc(specs, func(a, b quotaSpec) int {
+				if diff := cmp.Compare(a.Window, b.Window); diff != 0 {
+					return diff
+				}
+				return cmp.Compare(a.Limit, b.Limit)
+			})
+			assert.Truef(t, isSorted, "rate limit specs for %s must be ordered by window then limit", resource)
+		}
+	})
+
+	t.Run("RateLimitSpecsNonEmpty", func(t *testing.T) {
+		for resource, specs := range rateLimitSpecs {
+			assert.NotEmptyf(t, specs, "rate limit specs for %s must not be empty", resource)
+		}
+	})
 }
 
 func TestNew(t *testing.T) {

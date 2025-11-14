@@ -10,52 +10,113 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
-var quotaLimitSpecs = []quotaSpec{
-	{
-		QuotaPolicy: authz.QuotaPolicy{
-			Name:     fmt.Sprintf("%s:limit", authz.ResourceCopilotMessage),
-			Resource: authz.ResourceCopilotMessage,
-			Limit:    100,
-			Window:   24 * time.Hour,
+var (
+	// quotaLimitSpecs defines long-window quota limits per resource and plan.
+	quotaLimitSpecs = []quotaSpec{
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceCopilotMessage),
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    100,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 1000,
+			},
 		},
-		limitOverrides: map[model.UserPlan]int64{
-			model.UserPlanPlus: 1000,
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIDescription),
+				Resource: authz.ResourceAIDescription,
+				Limit:    300,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 1000,
+			},
 		},
-	},
-	{
-		QuotaPolicy: authz.QuotaPolicy{
-			Name:     fmt.Sprintf("%s:limit", authz.ResourceAIDescription),
-			Resource: authz.ResourceAIDescription,
-			Limit:    300,
-			Window:   24 * time.Hour,
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionTurn),
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    12000,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 24000,
+			},
 		},
-		limitOverrides: map[model.UserPlan]int64{
-			model.UserPlanPlus: 1000,
+		{
+			QuotaPolicy: authz.QuotaPolicy{
+				Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionArchive),
+				Resource: authz.ResourceAIInteractionArchive,
+				Limit:    8000,
+				Window:   24 * time.Hour,
+			},
+			limitOverrides: map[model.UserPlan]int64{
+				model.UserPlanPlus: 16000,
+			},
 		},
-	},
-	{
-		QuotaPolicy: authz.QuotaPolicy{
-			Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionTurn),
-			Resource: authz.ResourceAIInteractionTurn,
-			Limit:    12000,
-			Window:   24 * time.Hour,
+	}
+
+	// rateLimitSpecs defines short-window rate limits per resource and plan.
+	//
+	// NOTE: Entries must be ordered by ascending window and then limit.
+	rateLimitSpecs = map[authz.Resource][]quotaSpec{
+		authz.ResourceCopilotMessage: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceCopilotMessage),
+					Resource: authz.ResourceCopilotMessage,
+					Limit:    30,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 60,
+				},
+			},
 		},
-		limitOverrides: map[model.UserPlan]int64{
-			model.UserPlanPlus: 24000,
+		authz.ResourceAIDescription: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIDescription),
+					Resource: authz.ResourceAIDescription,
+					Limit:    10,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 30,
+				},
+			},
 		},
-	},
-	{
-		QuotaPolicy: authz.QuotaPolicy{
-			Name:     fmt.Sprintf("%s:limit", authz.ResourceAIInteractionArchive),
-			Resource: authz.ResourceAIInteractionArchive,
-			Limit:    8000,
-			Window:   24 * time.Hour,
+		authz.ResourceAIInteractionTurn: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIInteractionTurn),
+					Resource: authz.ResourceAIInteractionTurn,
+					Limit:    20,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 60,
+				},
+			},
 		},
-		limitOverrides: map[model.UserPlan]int64{
-			model.UserPlanPlus: 16000,
+		authz.ResourceAIInteractionArchive: {
+			{
+				QuotaPolicy: authz.QuotaPolicy{
+					Name:     fmt.Sprintf("%s:rateLimit:1m", authz.ResourceAIInteractionArchive),
+					Resource: authz.ResourceAIInteractionArchive,
+					Limit:    10,
+					Window:   time.Minute,
+				},
+				limitOverrides: map[model.UserPlan]int64{
+					model.UserPlanPlus: 20,
+				},
+			},
 		},
-	},
-}
+	}
+)
 
 // embeddedPDP implements [authz.PolicyDecisionPoint] with embedded authorization policies.
 type embeddedPDP struct {
@@ -92,9 +153,27 @@ func (p *embeddedPDP) ComputeUserQuotas(ctx context.Context, mUser *model.User) 
 
 		limits[policy.Resource] = authz.Quota{QuotaPolicy: policy, QuotaUsage: usage}
 	}
+
+	rateLimits := make(map[authz.Resource][]authz.Quota, len(rateLimitSpecs))
+	for resource, specs := range rateLimitSpecs {
+		quotas := make([]authz.Quota, 0, len(specs))
+		for _, spec := range specs {
+			policy := spec.policy(mUser.Plan)
+
+			usage, err := p.quotaTracker.Usage(ctx, mUser.ID, policy)
+			if err != nil {
+				return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s rate limit usage for user %q: %w", policy.Resource, mUser.Username, err)
+			}
+			usage.ResetTime = quotaResetTime(policy.Window, usage)
+
+			quotas = append(quotas, authz.Quota{QuotaPolicy: policy, QuotaUsage: usage})
+		}
+		rateLimits[resource] = quotas
+	}
+
 	return authz.UserQuotas{
 		Limits:     limits,
-		RateLimits: make(map[authz.Resource][]authz.Quota),
+		RateLimits: rateLimits,
 	}, nil
 }
 
