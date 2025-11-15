@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import { ownerAll } from '@/apis/common'
 import { listCourse, type Course } from '@/apis/course'
 import { getCourseSeries, type CourseSeries } from '@/apis/course-series'
@@ -7,24 +9,22 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
-import CourseItem from '@/components/tutorials/CourseItem.vue'
+import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
 import { orderBy, useTutorial } from '@/components/tutorials/tutorial'
-import {
-  UICollapse,
-  UICollapseItem,
-  UIDivider,
-  UIEmpty,
-  UIError,
-  UIImg,
-  UILoading,
-  UIPagination,
-  useResponsive
-} from '@/components/ui'
+import { UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
-import { useAsyncComputed } from '@/utils/utils'
-import { computed } from 'vue'
+import { until, useAsyncComputed, usePageTitle } from '@/utils/utils'
+import { useMessageHandle } from '@/utils/exception'
+
+usePageTitle({
+  en: 'Course Series',
+  zh: '课程系列'
+})
+
+const coursePadding = 20
+const numInColumn = 2
 
 const props = defineProps<{
   courseSeriesId: string
@@ -32,19 +32,21 @@ const props = defineProps<{
 
 const tutorial = useTutorial()
 
-const {
-  isLoading,
-  error,
-  refetch,
-  data: courseSeries
-} = useQuery(async () => getCourseSeries(props.courseSeriesId), {
+const courseSeriesQuery = useQuery(async () => getCourseSeries(props.courseSeriesId), {
   en: 'Failed to load course series',
   zh: '加载课程系列失败'
 })
 
+const {
+  data: courseSeries,
+  error: courseSeriesError,
+  refetch: courseSeriesRefetch,
+  isLoading: courseSeriesIsLoading
+} = courseSeriesQuery
+
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
-  const thumbnailUniversalUrl = courseSeries.value?.thumbnail || ''
-  if (thumbnailUniversalUrl === '') return null
+  const thumbnailUniversalUrl = courseSeries.value?.thumbnail
+  if (thumbnailUniversalUrl == null || thumbnailUniversalUrl === '') return null
   const thumbnail = createFileWithUniversalUrl(thumbnailUniversalUrl)
   return thumbnail.url(onCleanup)
 })
@@ -52,87 +54,93 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 const page = useRouteQueryParamInt('p', 1)
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-const pageSize = computed(() => numInRow.value * 2)
-const height = computed(() => Math.ceil(pageSize.value / numInRow.value) * (214 + 20)) // course item height + gap
+const pageSize = computed(() => numInRow.value * numInColumn)
+const height = computed(
+  () => Math.ceil(pageSize.value / numInRow.value) * (courseItemHeight + coursePadding) - coursePadding
+)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
 
 const courseQuery = useQuery(
-  async () => {
-    const { data, ...others } = await listCourse({
-      courseSeriesID: props.courseSeriesId,
-      pageIndex: page.value,
-      pageSize: pageSize.value,
-      owner: ownerAll
-    })
+  async (ctx) => {
+    const [_, { data, ...others }] = await Promise.all([
+      courseSeriesIsLoading.value ? until(() => !courseSeriesIsLoading.value, ctx.signal) : Promise.resolve(),
+      listCourse(
+        {
+          courseSeriesID: props.courseSeriesId,
+          pageIndex: page.value,
+          pageSize: pageSize.value,
+          owner: ownerAll
+        },
+        ctx.signal
+      )
+    ])
     return {
       ...others,
-      data: orderBy(data, courseSeries.value?.courseIDs || [])
+      data: orderBy(data, courseSeries.value?.courseIDs)
     }
   },
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
 
-function handleCourseClick(event: MouseEvent, course: Course, courseSeries: CourseSeries) {
-  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
-    return
-  }
+const { fn: handleCourseClick } = useMessageHandle(
+  (event: MouseEvent, course: Course, courseSeries: CourseSeries) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return
+    }
 
-  event.preventDefault()
-  tutorial.startCourse(course, courseSeries)
-}
+    event.preventDefault()
+    tutorial.startCourse(course, courseSeries)
+  },
+  {
+    en: 'Failed to start course',
+    zh: '开始课程失败'
+  }
+)
 </script>
 
 <template>
   <div class="course-series-page">
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
+
     <CenteredWrapper size="medium">
       <CommunityCard class="header">
-        <UILoading v-if="isLoading" cover mask="solid" />
-        <UIError v-else-if="error != null" class="error" :retry="refetch">
-          {{ $t(error.userMessage) }}
+        <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
+        <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
+          {{ $t(courseSeriesError.userMessage) }}
         </UIError>
         <div class="left">
-          <UIImg v-if="thumbnailUrl != null" class="thumbnail" :src="thumbnailUrl" size="cover" />
+          <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
         </div>
         <div class="right">
           <template v-if="courseSeries != null">
-            <h2 class="title">{{ courseSeries?.title }}</h2>
-            <UIDivider />
+            <h2 class="title">{{ courseSeries.title }}</h2>
 
-            <UICollapse
+            <div
               v-radar="{
                 name: 'Course series details',
-                desc: 'Collapsible sections showing course series description'
+                desc: 'Course series description'
               }"
-              class="collapse"
-              :default-expanded-names="['description']"
+              class="description"
             >
-              <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
-                <TextView
-                  :text="courseSeries.description"
-                  :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })"
-                />
-              </UICollapseItem>
-            </UICollapse>
+              <TextView
+                :text="courseSeries.description"
+                :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })"
+              />
+            </div>
           </template>
         </div>
       </CommunityCard>
 
       <div class="courses-wrapper">
-        <h2 class="title">{{ $t({ en: 'Courses', zh: '课程' }) }}</h2>
-        <div
-          v-if="courseSeries"
-          class="course-series-warpper"
-          :style="{ '--course-list-height': `${height}px`, '--num-in-row': numInRow }"
-        >
+        <div v-if="courseSeries" :style="{ '--list-wrapper-height': `${height}px`, '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
               <UIEmpty size="large" img="game" :style="style">
                 {{
                   $t({
-                    zh: `${courseSeries?.title}没有可用的课程`,
-                    en: `${courseSeries?.title} has no available courses`
+                    zh: `${courseSeries.title}没有可用的课程`,
+                    en: `${courseSeries.title} has no available courses`
                   })
                 }}
               </UIEmpty>
@@ -177,8 +185,8 @@ function handleCourseClick(event: MouseEvent, course: Course, courseSeries: Cour
   background: var(--ui-color-grey-100);
 
   .left {
-    flex: 1 1 160px;
-    aspect-ratio: 0.96;
+    flex: 1 1 260px;
+    aspect-ratio: 1.09;
     overflow: hidden;
     border-radius: var(--ui-border-radius-3);
 
@@ -189,47 +197,37 @@ function handleCourseClick(event: MouseEvent, course: Course, courseSeries: Cour
   }
 
   .right {
-    flex: 1 1 800px;
+    flex: 1 1 940px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    gap: 20px;
 
     .title {
+      line-height: 28px;
       font-size: 20px;
-      word-break: break-word;
-      display: -webkit-box;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       overflow: hidden;
+      color: var(--ui-color-grey-1000);
     }
 
-    .divider {
-      margin: 16px 0;
-    }
-
-    .collapse {
+    .description {
       flex: 1 1 0;
-      overflow-y: scroll;
+      overflow: auto;
     }
   }
 }
 
 .courses-wrapper {
-  margin-top: 24px;
   display: flex;
+  margin-top: 28px;
   flex-direction: column;
-
-  .title {
-    line-height: 28px;
-    margin-bottom: 16px;
-    font-size: 20px;
-    color: var(--ui-color-title);
-  }
 
   .course-list {
     display: grid;
-    grid-template-columns: repeat(var(--num-in-row), 0fr);
-    height: var(--course-list-height);
+    grid-template-columns: repeat(var(--num-in-row), 1fr);
+    height: var(--list-wrapper-height);
     gap: 20px;
   }
 
