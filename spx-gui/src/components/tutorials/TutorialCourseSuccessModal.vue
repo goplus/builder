@@ -3,8 +3,9 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { type CourseSeriesWithCourses, type Tutorial } from './tutorial'
+import { type Tutorial } from './tutorial'
 import { getCourse, type Course } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIModal, UIModalClose } from '@/components/ui'
@@ -15,7 +16,7 @@ const props = defineProps<{
   visible: boolean
   tutorial: Tutorial
   course: Course
-  series: CourseSeriesWithCourses
+  series: CourseSeries
 }>()
 
 const emit = defineEmits<{

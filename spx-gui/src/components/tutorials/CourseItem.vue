@@ -1,3 +1,7 @@
+<script lang="ts">
+export const courseItemHeight = 214
+</script>
+
 <script lang="ts" setup>
 import { type Course } from '@/apis/course'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
@@ -17,7 +21,11 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 </script>
 
 <template>
-  <li class="course-item">
+  <li
+    v-radar="{ name: `Course item \u0022${props.course.title}\u0022`, desc: 'Click to start the course' }"
+    class="course-item"
+    :style="{ height: `${courseItemHeight}px` }"
+  >
     <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
 
     <div class="title">{{ course.title }}</div>
@@ -27,22 +35,15 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
 <style lang="scss" scoped>
 .course-item {
   width: 232px;
-  height: 214px;
-  border-radius: 20px;
+  border-radius: var(--ui-border-radius-3);
   overflow: hidden;
+  transition: all 0.2s;
   position: relative;
 
-  .title {
-    padding: 0 16px;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 40px;
-    line-height: 40px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #fff;
-    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
+  &:hover {
+    cursor: pointer;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .thumbnail {
@@ -50,8 +51,19 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
     height: 100%;
   }
 
-  &:hover {
-    cursor: pointer;
+  .title {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 40px;
+    font-size: 15px;
+    line-height: 40px;
+    padding: 0 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--ui-color-grey-100);
+    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
   }
 }
 </style>

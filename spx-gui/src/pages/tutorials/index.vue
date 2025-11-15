@@ -4,9 +4,11 @@
     <CommunityNavbar />
 
     <TutorialsBanner />
+
     <CenteredWrapper
+      v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
       class="centered-wrapper"
-      :style="{ '--course-series-list-height': `${height}px`, '--num-in-row': numInRow }"
+      :style="{ '--list-wrapper-height': `${height}px`, '--num-in-row': numInRow }"
     >
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">
         <template #empty>
@@ -38,7 +40,7 @@ import { listCourseSeries } from '@/apis/course-series'
 
 import { UIEmpty, UIPagination, useResponsive } from '@/components/ui'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
-import CourseSeriesItem from '@/components/tutorials/CourseSeriesItem.vue'
+import CourseSeriesItem, { courseSeriesItemHeight } from '@/components/tutorials/CourseSeriesItem.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
@@ -51,11 +53,17 @@ usePageTitle({
   zh: '教程'
 })
 
+const courseSeriesPadding = 16
+const numInColumn = 4
+
 const page = useRouteQueryParamInt('p', 1)
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
-const pageSize = computed(() => numInRow.value * 3)
-const height = computed(() => Math.ceil(pageSize.value / numInRow.value) * (212 + 16)) // course series item height + gap
+const pageSize = computed(() => numInRow.value * numInColumn)
+const height = computed(
+  () =>
+    Math.ceil(pageSize.value / numInRow.value) * (courseSeriesItemHeight + courseSeriesPadding) - courseSeriesPadding
+)
 const pageTotal = computed(() => Math.ceil((courseSeriesQuery.data.value?.total ?? 0) / pageSize.value))
 
 const courseSeriesQuery = useQuery(
@@ -97,7 +105,7 @@ const courseSeriesQuery = useQuery(
       display: grid;
       grid-template-columns: repeat(var(--num-in-row), 1fr);
       gap: var(--ui-gap-middle);
-      height: var(--course-series-list-height);
+      height: var(--list-wrapper-height);
     }
 
     .pagination {
