@@ -58,6 +58,7 @@
         </UIMenu>
       </NavbarDropdown>
 
+      <!-- TODO: Temporarily not adjusting the layout of NavbarWrapper left slot  -->
       <NavbarTutorials v-if="showTutorialsEntry" />
 
       <div class="history-button-wrapper">
@@ -189,7 +190,7 @@ const canManageProject = computed(() => {
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
 const selectedEditMode = computed(() =>
-  props.state?.selectedEditMode != null ? props.state!.selectedEditMode : EditMode.Preview
+  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Preview
 )
 
 const ownerInfoToDisplay = computed(() => {
@@ -443,26 +444,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 
   .icon {
     width: 18px;
-  }
-}
-
-.publish {
-  margin-right: 2px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.editor-type-selected {
-  display: flex;
-  gap: 4px;
-}
-
-.editor-type-item {
-  &::after {
-    content: ' ';
-    width: 16px;
-    height: 16px;
   }
 }
 </style>

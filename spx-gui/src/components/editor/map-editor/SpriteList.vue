@@ -1,9 +1,3 @@
-<!--
-SpriteList
-* list all sprites of the project
-* sprite selection / unselection supported
--->
-
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
