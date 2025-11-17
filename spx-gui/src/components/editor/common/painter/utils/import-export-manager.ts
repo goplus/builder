@@ -141,7 +141,11 @@ export class ImportExportManager {
    * 导出SVG并触发事件
    */
   exportSvgAndEmit(options: ExportOptions = {}): void {
-    const svgStr = this.exportSvg(options)
+    const mergedOptions: ExportOptions = {
+      scaleForExport: false,
+      ...options
+    }
+    const svgStr = this.exportSvg(mergedOptions)
     if (svgStr) {
       this.dependencies.emit('svg-change', svgStr)
     }
