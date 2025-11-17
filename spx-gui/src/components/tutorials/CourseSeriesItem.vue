@@ -3,7 +3,7 @@ export const courseSeriesItemHeight = 214
 </script>
 
 <script lang="ts" setup>
-import { UIImg, UITooltip } from '@/components/ui'
+import { UIImg } from '@/components/ui'
 import type { CourseSeries } from '@/apis/course-series'
 import { useAsyncComputed } from '@/utils/utils'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
@@ -31,12 +31,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   >
     <RouterLink :to="`/course-series/${props.courseSeries.id}`">
       <UIImg class="thumbnail" :src="thumbnailUrl" size="cover" />
-      <UITooltip>
-        <template #trigger>
-          <div class="title">{{ courseSeries.title }}</div>
-        </template>
-        {{ courseSeries.title }}
-      </UITooltip>
+      <div class="title">{{ courseSeries.title }}</div>
     </RouterLink>
   </li>
 </template>
@@ -74,7 +69,7 @@ const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
     white-space: nowrap;
     overflow: hidden;
     color: var(--ui-color-grey-100);
-    background: rgb(from var(--ui-color-grey-1000) r g b / 0.3);
+    background: rgb(from var(--ui-color-grey-1000) r g b / 0.2);
   }
 }
 </style>

@@ -185,10 +185,12 @@ const { fn: handleCourseClick } = useMessageHandle(
   background: var(--ui-color-grey-100);
 
   .left {
-    flex: 1 1 260px;
-    aspect-ratio: 1.09;
+    flex: 1 1 200px;
+    aspect-ratio: 1.08;
     overflow: hidden;
     border-radius: var(--ui-border-radius-3);
+    // TODO: Temporary background, replace with the latest assets
+    background-image: url(@/assets/images/stage-bg.svg);
 
     .thumbnail {
       width: 100%;
@@ -197,10 +199,11 @@ const { fn: handleCourseClick } = useMessageHandle(
   }
 
   .right {
-    flex: 1 1 940px;
+    flex: 1 1 1000px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    margin-right: 20px;
     gap: 20px;
 
     .title {
@@ -233,7 +236,7 @@ const { fn: handleCourseClick } = useMessageHandle(
 
   .pagination {
     align-self: center;
-    margin-top: 16px;
+    margin-top: 36px;
   }
 }
 </style>

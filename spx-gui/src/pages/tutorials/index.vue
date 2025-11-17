@@ -110,7 +110,7 @@ const courseSeriesQuery = useQuery(
 
     .pagination {
       align-self: center;
-      margin-top: 16px;
+      margin-top: 36px;
     }
   }
 }
