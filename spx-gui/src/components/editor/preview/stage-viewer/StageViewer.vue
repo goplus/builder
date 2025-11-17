@@ -110,6 +110,7 @@ import WidgetNode from './widgets/WidgetNode.vue'
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
 const containerSizeRef = useContentSize(container)
+// Konva canvas cannot have a width or height of zero
 const containerSize = useCachedWhen(
   () => containerSizeRef.value,
   (value) => value != null && value.width !== 0 && value.height !== 0
@@ -152,7 +153,6 @@ const stageScale = computed(() => {
 
 const stageConfig = computed(() => {
   if (stageScale.value == null || viewportSize.value == null || container.value == null) return null
-  // Konva canvas cannot have a width or height of zero
   const width = viewportSize.value.width * stageScale.value
   const height = viewportSize.value.height * stageScale.value
   return {

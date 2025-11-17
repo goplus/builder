@@ -199,7 +199,7 @@ export function useCachedWhen<T>(
   getter: (onCleanup: OnCleanup) => T,
   condition: (value: T) => boolean = (value) => value != null
 ) {
-  const r = shallowRef<T | null>(null)
+  const r = shallowRef<T>()
   watchEffect((onCleanup) => {
     const value = getter(onCleanup)
     if (condition(value)) r.value = value

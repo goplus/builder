@@ -26,7 +26,7 @@ const props = withDefaults(
   defineProps<{
     project: Project
     sprite: Sprite
-    enabledCollision: boolean | null
+    enabledCollision?: boolean
   }>(),
   {
     enabledCollision: true

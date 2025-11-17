@@ -16,20 +16,12 @@ const emits = defineEmits<{
   'update:selectedSpriteId': [string | null]
 }>()
 
-// const selectedSpriteId = ref(props.selectedSpriteId)
-// const collapsed = ref(props.selectedSpriteId != null && props.project.stage.physics.enabled)
 const collapsed = ref(false)
 
 const selectedSprite = computed(() => props.project.sprites.find((s) => s.id === props.selectedSpriteId) ?? null)
 
-// function handleSpriteSelect(sprite: Sprite | null) {
-//   selectedSpriteId.value = sprite?.id ?? null
-//   collapsed.value = true
-// }
 function handleSpriteSelect(sprite: Sprite | null) {
   emits('update:selectedSpriteId', sprite?.id ?? null)
-  // selectedSpriteId.value = sprite?.id ?? null
-  // collapsed.value = true
 }
 </script>
 

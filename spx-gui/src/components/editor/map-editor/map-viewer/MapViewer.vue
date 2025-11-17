@@ -30,6 +30,7 @@ const emit = defineEmits<{
 
 const container = ref<HTMLElement | null>(null)
 const containerSizeRef = useContentSize(container)
+// Konva canvas cannot have a width or height of zero
 const containerSize = useCachedWhen(
   () => containerSizeRef.value,
   (value) => value != null && value.width !== 0 && value.height !== 0
@@ -41,14 +42,7 @@ type Pos = { x: number; y: number }
 const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
-const stageConfig = computed(() => {
-  if (containerSize.value == null) return null
-  // Konva canvas cannot have a width or height of zero
-  return {
-    width: containerSize.value.width,
-    height: containerSize.value.height
-  }
-})
+const stageConfig = computed(() => containerSize.value)
 const mapRef = ref<{
   getNode(): Konva.Layer
 }>()
