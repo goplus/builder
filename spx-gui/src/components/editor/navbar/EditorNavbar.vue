@@ -58,7 +58,6 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <NavbarLang />
       <NavbarTutorials v-if="showTutorialsEntry" />
 
       <div class="history-button-wrapper">
@@ -169,7 +168,6 @@ import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
 import gamePreviewSvg from './icons/game-preview.svg?raw'
 import globalConfig from './icons/global-config.svg?raw'
-import NavbarLang from '@/components/navbar/NavbarLang.vue'
 
 const props = defineProps<{
   project: Project | null

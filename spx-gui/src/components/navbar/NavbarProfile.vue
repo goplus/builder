@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div v-if="!signedInUser" class="sign-in">
     <UIButton
@@ -18,7 +19,22 @@
     <UIMenu class="user-menu">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
-          {{ signedInUser?.displayName }}
+          <div class="user-info-wrapper">
+            {{ signedInUser?.displayName }}
+            <UIButtonGroup
+              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+              type="text"
+              :value="i18n.lang.value"
+              @update:value="handleLangChanged"
+            >
+              <UIButtonGroupItem class="lang-item" value="zh">
+                <div class="icon" v-html="zhSvg"></div>
+              </UIButtonGroupItem>
+              <UIButtonGroupItem class="lang-item" value="en">
+                <div class="icon" v-html="enSvg"></div>
+              </UIButtonGroupItem>
+            </UIButtonGroup>
+          </div>
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -71,15 +87,27 @@ import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
+import {
+  UIButton,
+  UIButtonGroup,
+  UIButtonGroupItem,
+  UIDropdown,
+  UIMenu,
+  UIMenuGroup,
+  UIMenuItem
+} from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
+import { useI18n, type Lang } from '@/utils/i18n'
+import enSvg from './icons/en.svg?raw'
+import zhSvg from './icons/zh.svg?raw'
 
 const { isOnline } = useNetwork()
 const router = useRouter()
 const { controls } = useAgentCopilotCtx()
+const i18n = useI18n()
 
 const { data: signedInUser } = useSignedInUser()
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
@@ -95,6 +123,10 @@ const handleAskCopilotAgent = useMessageHandle(
     zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
   })
 ).fn
+
+function handleLangChanged(lang: string) {
+  i18n.setLang(lang as Lang)
+}
 
 function handleUserPage() {
   router.push(getUserPageRoute(signedInUser.value!.username))
@@ -160,6 +192,31 @@ function handleSignOut() {
     width: 32px;
     height: 32px;
     border-radius: 16px;
+  }
+}
+
+.user-info-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  & .ui-button-group-item {
+    &.active {
+      color: var(--ui-color-turquoise-600);
+    }
+  }
+
+  .lang-item {
+    padding: 0 10px;
+  }
+  .icon {
+    width: 18px;
+    height: 18px;
+
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 
