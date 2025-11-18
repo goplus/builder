@@ -129,6 +129,37 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
+/**
+ * Preprocesses text immediately following custom self-closing elements and line breaks within a Markdown string.
+ * According to the Markdown specification, this behavior—the custom self-closing element,
+ * the line break, and the subsequent text being merged into a single html_block—is standard,
+ * but it is not the result we desire.
+ *
+ * We have addressed this situation while adhering to the Markdown specification.
+ * The text following the custom self-closing element and the line break is separated into two distinct paragraphs.
+ *
+ * For example:
+ * ```markdown
+ * <custom-component/>
+ * Content1
+ * ```
+ * will be preprocessed into:
+ * ```markdown
+ * <custom-component/>
+ *
+ * Content1
+ * ```
+ * Refer to: https://github.com/goplus/builder/issues/2472
+ */
+export function preprocessInlineComponents(value: string, tagNames: string[]) {
+  tagNames.forEach((tagName) => {
+    // This scenario only occurs with self-closing tags, so this processing currently only targets
+    // self-closing tags of custom elements.
+    value = value.replace(new RegExp(`(<${tagName}[^>]*/>)[ \t]*\r?\n([^\n]*\\S[^\n]*)`, 'g'), '$1\n\n$2')
+  })
+  return value
+}
+
 const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
 
 function processSelfClosingForHastRawNode(node: Raw, tagNames: string[]) {
@@ -200,6 +231,7 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
 function parseMarkdown({ value, components }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
+  value = preprocessInlineComponents(value, customTagNames)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
