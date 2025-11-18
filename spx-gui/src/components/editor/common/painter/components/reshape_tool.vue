@@ -6,8 +6,6 @@ import paper from 'paper'
 interface ExtendedItem extends paper.Item {
   isControlPoint?: boolean
   isTemporaryControlPoint?: boolean
-  segmentIndex?: number
-  parentPath?: paper.Path
   boundSegment?: paper.Segment
 }
 
@@ -42,14 +40,9 @@ const selectPathExclusive = (path: paper.Path | null): void => {
 }
 
 // 创建控制点
-const createControlPoint = (
-  position: paper.Point,
-  segment?: paper.Segment,
-  parentPath?: paper.Path,
-  index?: number
-): ExtendedItem => {
+const createControlPoint = (segment: paper.Segment): ExtendedItem => {
   const point = new paper.Path.Circle({
-    center: position,
+    center: segment.point.clone(),
     radius: 4,
     fillColor: '#ff4444',
     strokeColor: '#cc0000',
@@ -58,8 +51,6 @@ const createControlPoint = (
 
   point.isControlPoint = true
   point.boundSegment = segment
-  point.parentPath = parentPath
-  point.segmentIndex = index
 
   // 添加悬停效果
   point.onMouseEnter = () => {
@@ -83,15 +74,15 @@ const showControlPoints = (path: paper.Path): void => {
   selectPathExclusive(path)
 
   if (path && path.segments) {
-    path.segments.forEach((segment: paper.Segment, index: number) => {
-      const controlPoint = createControlPoint(segment.point, segment, path, index)
+    path.segments.forEach((segment: paper.Segment) => {
+      const controlPoint = createControlPoint(segment)
       controlPoints.value.push(controlPoint)
     })
   } else if (path instanceof paper.CompoundPath) {
     path.children.forEach((child: paper.Item) => {
       if (child instanceof paper.Path && child.segments) {
-        child.segments.forEach((segment: paper.Segment, segIndex: number) => {
-          const controlPoint = createControlPoint(segment.point, segment, child as paper.Path, segIndex)
+        child.segments.forEach((segment: paper.Segment) => {
+          const controlPoint = createControlPoint(segment)
           controlPoints.value.push(controlPoint)
         })
       }
@@ -242,8 +233,7 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
       showControlPoints(path)
 
       // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
-      const createdControlPoint =
-        controlPoints.value.find((p: ExtendedItem) => p.boundSegment === newSegment && p.parentPath === path) || null
+      const createdControlPoint = controlPoints.value.find((p: ExtendedItem) => p.boundSegment === newSegment) || null
 
       paper.view.update()
       return createdControlPoint
@@ -295,21 +285,13 @@ const handleMouseMove = (point: paper.Point): void => {
   if (isDragging.value && selectedPoint.value) {
     selectedPoint.value.position = point
 
-    const parentPath = selectedPoint.value.parentPath || selectedPoint.value.boundSegment?.path || null
     const targetSegment = selectedPoint.value.boundSegment
-      ? selectedPoint.value.boundSegment
-      : parentPath && selectedPoint.value.segmentIndex !== undefined
-        ? parentPath.segments[selectedPoint.value.segmentIndex]
-        : null
+    const parentPath = targetSegment?.path || null
 
     if (targetSegment && parentPath) {
       targetSegment.point = point
 
-      let segmentIndex = parentPath.segments.indexOf(targetSegment)
-      if (segmentIndex < 0 && selectedPoint.value.segmentIndex !== undefined) {
-        segmentIndex = selectedPoint.value.segmentIndex
-      }
-
+      const segmentIndex = parentPath.segments.indexOf(targetSegment)
       if (segmentIndex >= 0) {
         smoothLocalSegments(parentPath, segmentIndex)
       }
@@ -341,8 +323,9 @@ const handleMouseUp = (): void => {
     }
     controlPoints.value = controlPoints.value.filter((p: ExtendedItem) => p !== prevSelected)
 
-    if (prevSelected.parentPath) {
-      showControlPoints(prevSelected.parentPath)
+    const hostPath = prevSelected.boundSegment?.path
+    if (hostPath) {
+      showControlPoints(hostPath)
     } else if (prevMouseDownPath) {
       showControlPoints(prevMouseDownPath)
     }
@@ -378,8 +361,8 @@ const handleClick = (point: paper.Point): void => {
 
 // 删除选中的路径
 const deleteSelectedPath = (): void => {
-  if (controlPoints.value.length > 0 && controlPoints.value[0].parentPath) {
-    const pathToDelete = controlPoints.value[0].parentPath
+  if (controlPoints.value.length > 0 && controlPoints.value[0].boundSegment?.path) {
+    const pathToDelete = controlPoints.value[0].boundSegment.path
     pathToDelete.remove()
 
     // 使用注入的接口更新路径数组
