@@ -8,6 +8,7 @@ interface ExtendedItem extends paper.Item {
   isTemporaryControlPoint?: boolean
   segmentIndex?: number
   parentPath?: paper.Path
+  boundSegment?: paper.Segment
 }
 
 // Props定义
@@ -41,7 +42,7 @@ const selectPathExclusive = (path: paper.Path | null): void => {
 }
 
 // 创建控制点
-const createControlPoint = (position: paper.Point): ExtendedItem => {
+const createControlPoint = (position: paper.Point, segment?: paper.Segment, parentPath?: paper.Path, index?: number): ExtendedItem => {
   const point = new paper.Path.Circle({
     center: position,
     radius: 4,
@@ -51,6 +52,9 @@ const createControlPoint = (position: paper.Point): ExtendedItem => {
   }) as ExtendedItem
 
   point.isControlPoint = true
+  point.boundSegment = segment
+  point.parentPath = parentPath
+  point.segmentIndex = index
 
   // 添加悬停效果
   point.onMouseEnter = () => {
@@ -75,18 +79,14 @@ const showControlPoints = (path: paper.Path): void => {
 
   if (path && path.segments) {
     path.segments.forEach((segment: paper.Segment, index: number) => {
-      const controlPoint = createControlPoint(segment.point)
-      controlPoint.segmentIndex = index
-      controlPoint.parentPath = path
+      const controlPoint = createControlPoint(segment.point, segment, path, index)
       controlPoints.value.push(controlPoint)
     })
   } else if (path instanceof paper.CompoundPath) {
     path.children.forEach((child: paper.Item) => {
       if (child instanceof paper.Path && child.segments) {
         child.segments.forEach((segment: paper.Segment, segIndex: number) => {
-          const controlPoint = createControlPoint(segment.point)
-          controlPoint.segmentIndex = segIndex
-          controlPoint.parentPath = child as paper.Path
+          const controlPoint = createControlPoint(segment.point, segment, child as paper.Path, segIndex)
           controlPoints.value.push(controlPoint)
         })
       }
@@ -230,7 +230,9 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
 
       // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
       const createdControlPoint =
-        controlPoints.value.find((p: ExtendedItem) => p.segmentIndex === newSegment.index) || null
+        controlPoints.value.find(
+          (p: ExtendedItem) => p.boundSegment === newSegment && p.parentPath === path
+        ) || null
 
       paper.view.update()
       return createdControlPoint
@@ -282,11 +284,23 @@ const handleMouseMove = (point: paper.Point): void => {
   if (isDragging.value && selectedPoint.value) {
     selectedPoint.value.position = point
 
-    if (selectedPoint.value.parentPath && selectedPoint.value.segmentIndex !== undefined) {
-      const segment = selectedPoint.value.parentPath.segments[selectedPoint.value.segmentIndex]
-      if (segment) {
-        segment.point = point
-        smoothLocalSegments(selectedPoint.value.parentPath, selectedPoint.value.segmentIndex)
+    const parentPath = selectedPoint.value.parentPath || selectedPoint.value.boundSegment?.path || null
+    const targetSegment = selectedPoint.value.boundSegment
+      ? selectedPoint.value.boundSegment
+      : parentPath && selectedPoint.value.segmentIndex !== undefined
+        ? parentPath.segments[selectedPoint.value.segmentIndex]
+        : null
+
+    if (targetSegment && parentPath) {
+      targetSegment.point = point
+
+      let segmentIndex = parentPath.segments.indexOf(targetSegment)
+      if (segmentIndex < 0 && selectedPoint.value.segmentIndex !== undefined) {
+        segmentIndex = selectedPoint.value.segmentIndex
+      }
+
+      if (segmentIndex >= 0) {
+        smoothLocalSegments(parentPath, segmentIndex)
       }
     }
 
