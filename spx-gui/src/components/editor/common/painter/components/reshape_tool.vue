@@ -68,6 +68,18 @@ const createControlPoint = (segment: paper.Segment): ExtendedItem => {
   return point
 }
 
+const cleanupControlPoint = (point: ExtendedItem): void => {
+  if (!point) return
+  if (point.parent) {
+    point.remove()
+  }
+  point.boundSegment = undefined
+  point.isControlPoint = false
+  point.isTemporaryControlPoint = false
+  point.onMouseEnter = null
+  point.onMouseLeave = null
+}
+
 // 显示路径的控制点
 const showControlPoints = (path: paper.Path): void => {
   hideControlPoints()
@@ -93,9 +105,7 @@ const showControlPoints = (path: paper.Path): void => {
 // 隐藏控制点
 const hideControlPoints = (): void => {
   controlPoints.value.forEach((point: ExtendedItem) => {
-    if (point && point.parent) {
-      point.remove()
-    }
+    cleanupControlPoint(point)
   })
   controlPoints.value = []
   getAllPathsValue().forEach((p: paper.Path) => {
@@ -318,9 +328,7 @@ const handleMouseUp = (): void => {
   mouseDownPos.value = null
 
   if (prevSelected && (prevSelected as ExtendedItem).isTemporaryControlPoint) {
-    if (prevSelected.parent) {
-      prevSelected.remove()
-    }
+    cleanupControlPoint(prevSelected as ExtendedItem)
     controlPoints.value = controlPoints.value.filter((p: ExtendedItem) => p !== prevSelected)
 
     const hostPath = prevSelected.boundSegment?.path
