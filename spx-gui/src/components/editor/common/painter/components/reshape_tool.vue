@@ -42,7 +42,12 @@ const selectPathExclusive = (path: paper.Path | null): void => {
 }
 
 // 创建控制点
-const createControlPoint = (position: paper.Point, segment?: paper.Segment, parentPath?: paper.Path, index?: number): ExtendedItem => {
+const createControlPoint = (
+  position: paper.Point,
+  segment?: paper.Segment,
+  parentPath?: paper.Path,
+  index?: number
+): ExtendedItem => {
   const point = new paper.Path.Circle({
     center: position,
     radius: 4,
@@ -230,9 +235,7 @@ const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): Exten
 
       // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
       const createdControlPoint =
-        controlPoints.value.find(
-          (p: ExtendedItem) => p.boundSegment === newSegment && p.parentPath === path
-        ) || null
+        controlPoints.value.find((p: ExtendedItem) => p.boundSegment === newSegment && p.parentPath === path) || null
 
       paper.view.update()
       return createdControlPoint
