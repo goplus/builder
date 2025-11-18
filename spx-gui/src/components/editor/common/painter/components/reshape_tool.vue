@@ -19,7 +19,7 @@ const props = defineProps<{
 const isDragging = ref<boolean>(false)
 const selectedPoint = ref<ExtendedItem | null>(null)
 const controlPoints = ref<ExtendedItem[]>([])
-const mouseDownPath = ref<paper.Path | null>(null)
+const mouseDownPath = ref<paper.Path | paper.CompoundPath | null>(null)
 const mouseDownPos = ref<paper.Point | null>(null)
 
 //注入父组件接口
@@ -30,7 +30,7 @@ const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
 
 // 选中路径（独占选择）
-const selectPathExclusive = (path: paper.Path | null): void => {
+const selectPathExclusive = (path: paper.Path | paper.CompoundPath | null): void => {
   getAllPathsValue().forEach((p: paper.Path) => {
     p.selected = false
   })
@@ -81,11 +81,11 @@ const cleanupControlPoint = (point: ExtendedItem): void => {
 }
 
 // 显示路径的控制点
-const showControlPoints = (path: paper.Path): void => {
+const showControlPoints = (path: paper.Path | paper.CompoundPath): void => {
   hideControlPoints()
   selectPathExclusive(path)
 
-  if (path && path.segments) {
+  if (path instanceof paper.Path && path.segments) {
     path.segments.forEach((segment: paper.Segment) => {
       const controlPoint = createControlPoint(segment)
       controlPoints.value.push(controlPoint)
@@ -118,7 +118,7 @@ const hideControlPoints = (): void => {
 }
 
 // 检测点击的路径
-const getPathAtPoint = (point: paper.Point): paper.Path | null => {
+const getPathAtPoint = (point: paper.Point): paper.Path | paper.CompoundPath | null => {
   const hitResult = paper.project.hitTest(point, {
     segments: false,
     stroke: true,
@@ -228,28 +228,35 @@ const calculateLocalHandles = (
 }
 
 // 在路径上添加新的控制点
-const addControlPointOnPath = (path: paper.Path, clickPoint: paper.Point): ExtendedItem | null => {
-  const location = path.getNearestLocation(clickPoint)
-  if (location) {
-    // 在指定位置分割曲线，并自动计算新控制柄以保持形状
-    const newSegment = path.divideAt(location)
-
-    // divideAt 成功后会返回新创建的 Segment
-    if (newSegment) {
-      // 在分割之后，我们暂时不需要立即调用我们自己的平滑函数，
-      // 因为 divideAt 已经为我们保证了曲线的平滑。
-      // 我们的平滑函数应该在用户真正开始拖动这个新点时才介入。
-
-      showControlPoints(path)
-
-      // 找到刚刚为 newSegment 创建的那个可见的控制点 ExtendedItem
-      const createdControlPoint = controlPoints.value.find((p: ExtendedItem) => p.boundSegment === newSegment) || null
-
-      paper.view.update()
-      return createdControlPoint
+const addControlPointOnPath = (path: paper.Path | paper.CompoundPath, clickPoint: paper.Point): ExtendedItem | null => {
+  const getLocation = (target: paper.Path | paper.CompoundPath): paper.CurveLocation | null => {
+    if (typeof (target as paper.Path).getNearestLocation === 'function') {
+      return (target as paper.Path).getNearestLocation(clickPoint)
     }
+    return null
   }
-  return null
+
+  const location = getLocation(path)
+  const actualPath = location?.path || (path instanceof paper.Path ? path : null)
+
+  if (!location || !actualPath) {
+    return null
+  }
+
+  // 在指定位置分割曲线，并自动计算新控制柄以保持形状
+  const newSegment = actualPath.divideAt(location)
+
+  if (!newSegment) {
+    return null
+  }
+
+  // 刷新控制点显示（复用原始选择对象，保证CompoundPath保持高亮）
+  showControlPoints(path instanceof paper.CompoundPath ? path : actualPath)
+
+  const createdControlPoint = controlPoints.value.find((p: ExtendedItem) => p.boundSegment === newSegment) || null
+  paper.view.update()
+
+  return createdControlPoint
 }
 
 // 处理鼠标按下
