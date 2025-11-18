@@ -144,19 +144,27 @@ const getPathAtPoint = (point: paper.Point): paper.Path | null => {
   return null
 }
 
+const CONTROL_POINT_HIT_TOLERANCE = 15
+const DISTANCE_EPSILON = 1e-6
+
 // 检测点击的控制点
 const getControlPointAtPoint = (point: paper.Point): ExtendedItem | null => {
-  const hitResult = paper.project.hitTest(point, {
-    segments: false,
-    stroke: false,
-    fill: true,
-    tolerance: 15
-  })
+  let closestPoint: ExtendedItem | null = null
+  let minDistance = Infinity
 
-  if (hitResult && hitResult.item && (hitResult.item as ExtendedItem).isControlPoint) {
-    return hitResult.item as ExtendedItem
+  // 逆序遍历以保证重叠时优先命中视觉上位于最上层的控制点
+  for (let i = controlPoints.value.length - 1; i >= 0; i--) {
+    const controlPoint = controlPoints.value[i]
+    if (!controlPoint?.position) continue
+
+    const distance = controlPoint.position.getDistance(point)
+    if (distance <= CONTROL_POINT_HIT_TOLERANCE && distance + DISTANCE_EPSILON < minDistance) {
+      minDistance = distance
+      closestPoint = controlPoint
+    }
   }
-  return null
+
+  return closestPoint
 }
 
 // 局部平滑函数
