@@ -44,6 +44,10 @@ export type RawCostumeConfig = Omit<CostumeInits, 'id' | 'pivot'> & {
   builder_id?: string
   name?: string
   path?: string
+  /* Optional image width for engine performance optimization */
+  imageWidth?: number
+  /* Optional image height for engine performance optimization */
+  imageHeight?: number
 }
 
 export type CostumeExportLoadOptions = {
@@ -149,7 +153,17 @@ export class Costume {
   }
 
   static load(
-    { builder_id: id, name, path, x = 0, y = 0, bitmapResolution = 1, ...inits }: RawCostumeConfig,
+    {
+      builder_id: id,
+      name,
+      path,
+      x = 0,
+      y = 0,
+      bitmapResolution = 1,
+      imageWidth,
+      imageHeight,
+      ...inits
+    }: RawCostumeConfig,
     files: Files,
     { basePath, includeId }: CostumeExportLoadOptions
   ) {
@@ -157,6 +171,9 @@ export class Costume {
     if (path == null) throw new Error(`path expected for costume ${name}`)
     const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
+    if (imageWidth != null && imageHeight != null && file.meta.imgSize == null) {
+      file.meta.imgSize = { width: imageWidth, height: imageHeight }
+    }
     return new Costume(name, file, {
       ...inits,
       bitmapResolution,
@@ -180,6 +197,11 @@ export class Costume {
       path: filename
     }
     if (includeId) config.builder_id = this.id
+    if (this.img.meta.imgSize != null) {
+      const imgSize = this.img.meta.imgSize
+      config.imageWidth = imgSize.width
+      config.imageHeight = imgSize.height
+    }
     const files = {
       [resolve(basePath, filename)]: this.img
     }
