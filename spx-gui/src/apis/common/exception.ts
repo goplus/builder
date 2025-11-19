@@ -4,8 +4,7 @@
 
 import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/exception'
-
-export type ApiExceptionMeta = Record<string, unknown>
+import dayjs from 'dayjs'
 
 export class ApiException extends Exception {
   name = 'ApiError'
@@ -19,7 +18,7 @@ export class ApiException extends Exception {
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? {}
+    this.meta = codeMetas[this.code as ApiExceptionCode](headers)
   }
 }
 
@@ -34,14 +33,30 @@ export enum ApiExceptionCode {
   errorUnknown = 50000
 }
 
-const codeMetas: Record<number, (headers: Headers) => ApiExceptionMeta> = {
+export type ApiExceptionMeta = {}
+const defaultException = () => ({})
+const codeMetas = {
   [ApiExceptionCode.errorQuotaExceeded]: (headers) => {
-    const retryAfter = Number(headers.get('Retry-After'))
-    return {
-      retryAfter: Number.isFinite(retryAfter) ? retryAfter : null
+    const retryAfter = headers.get('Retry-After')
+    let date
+    if (retryAfter != null) {
+      const seconds = Number(retryAfter)
+      date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
     }
-  }
-}
+    return {
+      retryAfter: date?.isValid() ? date.valueOf() : null // milliseconds or null
+    }
+  },
+  [ApiExceptionCode.errorInvalidArgs]: defaultException,
+  [ApiExceptionCode.errorUnauthorized]: defaultException,
+  [ApiExceptionCode.errorForbidden]: defaultException,
+  [ApiExceptionCode.errorNotFound]: defaultException,
+  [ApiExceptionCode.errorTooManyRequests]: defaultException,
+  [ApiExceptionCode.errorRateLimitExceeded]: defaultException,
+  [ApiExceptionCode.errorUnknown]: defaultException
+} satisfies Record<ApiExceptionCode, (headers: Headers) => ApiExceptionMeta>
+type CodeMetas = typeof codeMetas
+export type ApiExceptionMetas = { [key in keyof CodeMetas]: ReturnType<CodeMetas[key]> }
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
