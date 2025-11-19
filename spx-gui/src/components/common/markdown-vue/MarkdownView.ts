@@ -129,6 +129,12 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
+const tagNamePattern = /<([a-zA-Z0-9-]+)(\s[^>]*)?\/>$/
+function getTagName(line: string): string | null {
+  const m = line.match(tagNamePattern)
+  return m != null ? m[1] : null
+}
+
 /**
  * Preprocesses text immediately following custom self-closing elements and line breaks within a Markdown string.
  * According to the Markdown specification, this behavior—the custom self-closing element,
@@ -152,12 +158,35 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
  * Refer to: https://github.com/goplus/builder/issues/2472
  */
 export function preprocessInlineComponents(value: string, tagNames: string[]) {
-  tagNames.forEach((tagName) => {
-    // This scenario only occurs with self-closing tags, so this processing currently only targets
-    // self-closing tags of custom elements.
-    value = value.replace(new RegExp(`(<${tagName}[^>]*/>)[ \t]*\r?\n([^\n]*\\S[^\n]*)`, 'g'), '$1\n\n$2')
-  })
-  return value
+  const tagSet = new Set(tagNames)
+  const lines = value.split(/\r?\n/)
+  const out: string[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trimEnd()
+
+    // Check if the line ends with a self-closing tag
+    if (trimmed.endsWith('/>')) {
+      const tag = getTagName(trimmed)
+      if (
+        // Tag name must be in the provided list
+        tag != null &&
+        tagSet.has(tag) &&
+        // There must be a following line
+        i + 1 < lines.length &&
+        // The next line must NOT be a blank line
+        lines[i + 1].trim() !== ''
+      ) {
+        out.push(line)
+        out.push('')
+        continue
+      }
+    }
+    out.push(line)
+  }
+
+  return out.join('\n')
 }
 
 const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
