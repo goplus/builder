@@ -137,13 +137,25 @@ describe('preprocessInlineComponents', () => {
     const value = '<x-comp />  \nHello'
     const tagNames = ['x-comp']
     const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />\n\nHello')
+    expect(result).toBe('<x-comp />  \n\nHello')
   })
   it('should not change when not self-closing', () => {
     const value = '<x-comp></x-comp>\nHello'
     const tagNames = ['x-comp']
     const result = preprocessInlineComponents(value, tagNames)
     expect(result).toBe('<x-comp></x-comp>\nHello')
+  })
+  it('should separate even when a self-closing tag is preceded by text', () => {
+    const value = 'before<x-comp />\nHello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('before<x-comp />\n\nHello')
+  })
+  it('should insert a blank line before an inline component when preceded by text', () => {
+    const value = '<x-comp />\n<x-comp />\nHello\n<x-comp />'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />\n\n<x-comp />\n\nHello\n<x-comp />')
   })
 })
 
