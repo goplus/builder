@@ -30,7 +30,7 @@ export interface ImportExportDependencies {
 
 export interface ImportOptions {
   clearCanvas?: boolean
-  position?: 'center' | 'original'
+  position?: 'center' | 'original' // TODO: 缩放逻辑暂只支持 center，暂勿传 original
   updatePaths?: boolean
   triggerExport?: boolean
 }
@@ -190,7 +190,7 @@ export class ImportExportManager {
       // 设置位置（不进行缩放，保持原始尺寸）
       this.positionItem(importedItem, position)
 
-      // 导入后放大到编辑尺寸
+      // 导入后放大到编辑尺寸（当前逻辑只支持 center 位置）
       this.scaleItemForEditor(importedItem)
 
       // 收集可编辑路径
@@ -245,7 +245,7 @@ export class ImportExportManager {
       // 设置位置（不进行缩放，保持 AI 生成的原始尺寸）
       this.positionItem(importedItem, 'center')
 
-      // 导入后放大到编辑尺寸
+      // 导入后放大到编辑尺寸（当前逻辑只支持 center 位置）
       this.scaleItemForEditor(importedItem)
 
       // 收集可编辑路径
