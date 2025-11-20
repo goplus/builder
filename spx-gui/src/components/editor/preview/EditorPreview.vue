@@ -20,6 +20,7 @@
         </UIButton>
 
         <UIButton
+          v-show="canManageProject"
           v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
           type="secondary"
           :disabled="!isOnline"
@@ -112,6 +113,7 @@ import StageViewer from './stage-viewer/StageViewer.vue'
 import { useNetwork } from '@/utils/network'
 import { usePublishProject } from '@/components/project'
 import publishSvg from './publish.svg'
+import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
@@ -279,6 +281,13 @@ async function executeRun(action: 'run' | 'rerun') {
   }
 }
 
+const canManageProject = computed(() => {
+  if (editorCtx.project == null) return false
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null) return false
+  if (editorCtx.project.owner !== signedInUsername) return false
+  return true
+})
 const publishProject = usePublishProject()
 const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
   en: 'Failed to publish project',

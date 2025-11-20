@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
@@ -8,7 +8,7 @@ import type { LayerConfig } from 'konva/lib/Layer'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
-import { untilTaskScheduled, useCachedWhen } from '@/utils/utils'
+import { untilTaskScheduled } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
@@ -31,10 +31,14 @@ const emit = defineEmits<{
 const container = ref<HTMLElement | null>(null)
 const containerSizeRef = useContentSize(container)
 // Konva canvas cannot have a width or height of zero
-const containerSize = useCachedWhen(
-  () => containerSizeRef.value,
-  (value) => value != null && value.width !== 0 && value.height !== 0
-)
+const containerSize = shallowRef(containerSizeRef.value)
+watchEffect(() => {
+  const value = containerSizeRef.value
+  if (value != null && value.width !== 0 && value.height !== 0) {
+    containerSize.value = value
+  }
+})
+
 const viewportSize = containerSize
 
 type Pos = { x: number; y: number }

@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
-  <NavbarWrapper disabled-lang disabled-tutorials>
+  <NavbarWrapper>
     <template #left>
       <NavbarDropdown
         :trigger-radar="{
@@ -58,7 +58,6 @@
         </UIMenu>
       </NavbarDropdown>
 
-      <!-- TODO: Temporarily not adjusting the layout of NavbarWrapper left slot  -->
       <NavbarTutorials v-if="showTutorialsEntry" />
 
       <div class="history-button-wrapper">
@@ -96,7 +95,7 @@
     </template>
     <template #right>
       <UIButtonGroup
-        v-radar="{ name: 'editor type menu', desc: 'Hover to see editor type options (preview, global)' }"
+        v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (normal, map editor)' }"
         class="editor-mode-wrapper"
         type="text"
         :value="selectedEditMode"
@@ -104,19 +103,19 @@
       >
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Preview">
+            <UIButtonGroupItem :value="EditMode.Normal">
               <div class="icon" v-html="gamePreviewSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Preview', zh: '预览' }) }}
+          {{ $t({ en: 'Normal', zh: '普通' }) }}
         </UITooltip>
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Global">
+            <UIButtonGroupItem :value="EditMode.MapEditor">
               <div class="icon" v-html="globalConfig"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Global Config', zh: '全局配置' }) }}
+          {{ $t({ en: 'Map Editor', zh: '地图编辑' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>
@@ -190,7 +189,7 @@ const canManageProject = computed(() => {
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
 const selectedEditMode = computed(() =>
-  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Preview
+  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Normal
 )
 
 const ownerInfoToDisplay = computed(() => {
@@ -392,12 +391,12 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
       height: 24px;
     }
 
-    &[disabled] {
+    &:disabled {
       color: #9de6ec;
       cursor: not-allowed;
     }
 
-    &:hover:not([disabled]) {
+    &:hover:not(:disabled) {
       background-color: var(--ui-color-primary-600);
       cursor: pointer;
     }
