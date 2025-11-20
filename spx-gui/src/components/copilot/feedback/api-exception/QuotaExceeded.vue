@@ -23,14 +23,13 @@ function getLargestUnitType(start: dayjs.Dayjs, end: dayjs.Dayjs) {
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-import { isNumber } from 'lodash'
 import dayjs from 'dayjs'
 
 import type { Round } from '@/components/copilot/copilot'
 import type { LocaleMessage } from '@/utils/i18n'
-import { useInterval } from '@/utils/utils'
+import { spacingLocaleZhMessage, useInterval } from '@/utils/utils'
 import RetryableWrapper from '../RetryableWrapper.vue'
-import { ApiExceptionCode, isQuotaExceededMeta } from '@/apis/common/exception'
+import { isQuotaExceededMeta } from '@/apis/common/exception'
 import { UIIcon } from '@/components/ui'
 
 const props = defineProps<{
@@ -42,12 +41,15 @@ const retryAfterTime = ref<LocaleMessage | null>(null)
 const interval = ref<number | null>(null)
 
 const updateRetryAfterTime = () => {
+  const apiExceptionCode = props.round.apiExceptionCode
   const apiExceptionMeta = props.round.apiExceptionMeta
   if (
-    !isQuotaExceededMeta(ApiExceptionCode.errorQuotaExceeded, apiExceptionMeta) ||
-    !isNumber(apiExceptionMeta.retryAfter)
+    apiExceptionCode == null ||
+    !isQuotaExceededMeta(apiExceptionCode, apiExceptionMeta) ||
+    apiExceptionMeta.retryAfter == null
   ) {
     interval.value = null
+    retryAfterTime.value = null
     return
   }
   const retryAfter = dayjs(apiExceptionMeta.retryAfter)
@@ -78,7 +80,9 @@ onMounted(updateRetryAfterTime)
       })
     }}
     <template v-if="retryAfterTime != null">
-      {{ $t({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }) }}
+      {{
+        $t(spacingLocaleZhMessage({ en: `Please try again ${retryAfterTime.en}`, zh: `请${retryAfterTime.zh}尝试` }))
+      }}
     </template>
   </RetryableWrapper>
 </template>

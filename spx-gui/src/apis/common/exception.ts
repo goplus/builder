@@ -18,7 +18,7 @@ export class ApiException extends Exception {
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? {}
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? null
   }
 }
 

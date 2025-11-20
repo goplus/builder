@@ -234,6 +234,22 @@ export function humanizeTime(time: string): LocaleMessage {
   }
 }
 
+const spacingRight = /([\u4e00-\u9fa5\u3040-\u30ff\uff00-\uffef])([a-zA-Z0-9])/g
+const spacingLeft = /([a-zA-Z0-9])([\u4e00-\u9fa5\u3040-\u30ff\uff00-\uffef])/g
+/**
+ * Add spaces between Chinese characters and numbers/English words.
+ * For example, change `将在1 小时后` to `将在 1 小时后`, and `你好world` to `你好 world`.
+ */
+export function spacingTextZh(text: string): string {
+  return text.replace(spacingRight, '$1 $2').replace(spacingLeft, '$1 $2')
+}
+export function spacingLocaleZhMessage(locale: LocaleMessage): LocaleMessage {
+  return {
+    en: locale.en,
+    zh: spacingTextZh(locale.zh)
+  }
+}
+
 /** Humanize exact time, e.g., "September 29, 2024 5:58 PM" */
 export function humanizeExactTime(time: string): LocaleMessage {
   const t = dayjs(time)
