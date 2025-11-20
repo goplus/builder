@@ -6,10 +6,16 @@ import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 import { fromBlob } from '@/models/common/file'
 import { Costume } from '@/models/costume'
+import type { ProjectSettings } from '@/models/project'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 
 export type AssetMetadata = Omit<AssetData, 'files'>
+
+export type AssetSettings = ProjectSettings & {
+  projectDescription: string | null
+  description: string | null
+}
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound

@@ -35,9 +35,15 @@ export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumb
   thumbnail: File | null
 }
 
+export type ProjectSettings = {
+  artStyle: string | null
+  perspective: string | null
+}
+
 export type Metadata = Partial<CloudMetadata> & {
   aiDescription?: string | null
   aiDescriptionHash?: string | null
+  settings?: ProjectSettings
 }
 
 // TODO: better organization & type derivation
@@ -132,8 +138,9 @@ export class Project extends Disposable {
   sounds: Sound[]
   zorder: string[]
 
-  private aiDescription: string | null
+  aiDescription: string | null
   private aiDescriptionHash: string | null
+  settings: ProjectSettings
 
   removeSprite(id: string) {
     const idx = this.sprites.findIndex((s) => s.id === id)
@@ -381,6 +388,10 @@ export class Project extends Disposable {
     this.aiDescription = null
     this.aiDescriptionHash = null
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
+    this.settings = {
+      artStyle: null,
+      perspective: null
+    }
     return reactiveThis
   }
 
@@ -401,7 +412,8 @@ export class Project extends Disposable {
       instructions: this.instructions,
       thumbnail: this.thumbnail,
       aiDescription: this.aiDescription,
-      aiDescriptionHash: this.aiDescriptionHash
+      aiDescriptionHash: this.aiDescriptionHash,
+      settings: this.settings
     }
   }
 
