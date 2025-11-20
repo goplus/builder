@@ -12,7 +12,8 @@ import {
   onDeactivated,
   ref,
   onActivated,
-  toValue
+  toValue,
+  onScopeDispose
 } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { getCleanupSignal, type Disposable, type OnCleanup } from './disposable'
@@ -233,6 +234,22 @@ export function humanizeTime(time: string): LocaleMessage {
   }
 }
 
+const spacingRight = /([\u4e00-\u9fa5\u3040-\u30ff\uff00-\uffef])([a-zA-Z0-9])/g
+const spacingLeft = /([a-zA-Z0-9])([\u4e00-\u9fa5\u3040-\u30ff\uff00-\uffef])/g
+/**
+ * Add spaces between Chinese characters and numbers/English words.
+ * For example, change `将在1 小时后` to `将在 1 小时后`, and `你好world` to `你好 world`.
+ */
+export function spacingTextZh(text: string): string {
+  return text.replace(spacingRight, '$1 $2').replace(spacingLeft, '$1 $2')
+}
+export function spacingLocaleZhMessage(locale: LocaleMessage): LocaleMessage {
+  return {
+    en: locale.en,
+    zh: spacingTextZh(locale.zh)
+  }
+}
+
 /** Humanize exact time, e.g., "September 29, 2024 5:58 PM" */
 export function humanizeExactTime(time: string): LocaleMessage {
   const t = dayjs(time)
@@ -338,6 +355,23 @@ export function timeout(duration = 0, signal?: AbortSignal) {
       else signal.addEventListener('abort', onAbort)
     }
   })
+}
+
+/**
+ * If intervalWatch is null, it will clear the interval.
+ */
+export function useInterval(callback: () => void, intervalWatch: WatchSource<number | null>) {
+  onScopeDispose(
+    watch(
+      intervalWatch,
+      (interval, _, onCleanup) => {
+        if (interval == null || interval <= 0) return
+        const timer = setInterval(callback, interval)
+        onCleanup(() => clearInterval(timer))
+      },
+      { immediate: true }
+    )
+  )
 }
 
 export function trimLineBreaks(str: string) {

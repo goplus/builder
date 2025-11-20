@@ -47,6 +47,7 @@ import heartHollow from './heart-hollow.svg?raw'
 import info from './info.svg?raw'
 import warning from './warning.svg?raw'
 import error from './error.svg?raw'
+import errorTriangle from './error-triangle.svg?raw'
 import success from './success.svg?raw'
 import apply from './apply.svg?raw'
 import insert from './insert.svg?raw'
@@ -103,6 +104,7 @@ const typeIconMap = {
   info,
   warning,
   error,
+  errorTriangle,
   success,
   apply,
   insert,

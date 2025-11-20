@@ -9,7 +9,8 @@ import {
   humanizeListWithLimit,
   humanizeFileSize,
   isCrossOriginUrl,
-  withRetry
+  withRetry,
+  spacingTextZh
 } from './utils'
 import { sleep } from './test'
 
@@ -194,6 +195,28 @@ describe('localStorageRef', () => {
     expect(onStored1Change).toHaveBeenCalledWith(4)
     expect(onStored2Change).toHaveBeenCalledTimes(2)
     expect(onStored2Change).toHaveBeenCalledWith(4)
+  })
+})
+
+describe('spacingTextZh', () => {
+  it('should add spaces between Chinese and English/Number', () => {
+    expect(spacingTextZh('将在1小时后')).toBe('将在 1 小时后')
+    expect(spacingTextZh('你好world')).toBe('你好 world')
+    expect(spacingTextZh('123你好')).toBe('123 你好')
+    expect(spacingTextZh('hello世界')).toBe('hello 世界')
+    expect(spacingTextZh('你好123世界')).toBe('你好 123 世界')
+  })
+
+  it('should not add spaces if already spaced', () => {
+    expect(spacingTextZh('将在 1 小时后')).toBe('将在 1 小时后')
+    expect(spacingTextZh('将在1 小时后')).toBe('将在 1 小时后')
+    expect(spacingTextZh('你好 world')).toBe('你好 world')
+  })
+
+  it('should not change pure Chinese or English/Number', () => {
+    expect(spacingTextZh('你好')).toBe('你好')
+    expect(spacingTextZh('hello')).toBe('hello')
+    expect(spacingTextZh('123')).toBe('123')
   })
 })
 

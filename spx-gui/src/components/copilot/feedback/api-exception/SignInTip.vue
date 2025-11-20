@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { onMounted } from 'vue'
 
-import { Round } from '../copilot'
+import type { Round } from '@/components/copilot/copilot'
 
 import { initiateSignIn, isSignedIn } from '@/stores/user'
 
