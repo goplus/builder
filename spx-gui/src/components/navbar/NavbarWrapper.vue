@@ -4,8 +4,6 @@
       <div class="left">
         <NavbarLogo />
         <slot name="left"></slot>
-        <NavbarLang v-if="!disabledLang" />
-        <NavbarTutorials v-if="!disabledTutorials && showTutorialsEntry" />
       </div>
       <div class="center">
         <slot name="center"></slot>
@@ -19,11 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import { showTutorialsEntry } from '@/utils/env'
 import NavbarLogo from './NavbarLogo.vue'
-import NavbarLang from './NavbarLang.vue'
 import NavbarProfile from './NavbarProfile.vue'
-import NavbarTutorials from './NavbarTutorials.vue'
 
 withDefaults(
   defineProps<{
@@ -33,13 +28,9 @@ withDefaults(
      * - We center the navbar content for community pages
      */
     centered?: boolean
-    disabledLang?: boolean
-    disabledTutorials?: boolean
   }>(),
   {
-    centered: false,
-    disabledLang: false,
-    disabledTutorials: false
+    centered: false
   }
 )
 </script>

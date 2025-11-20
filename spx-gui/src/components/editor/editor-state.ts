@@ -39,8 +39,8 @@ export interface IRouter {
 }
 
 export enum EditMode {
-  Preview = 'preview',
-  Global = 'global'
+  Normal = 'normal',
+  MapEditor = 'mapEditor'
 }
 
 export class EditorState extends Disposable {
@@ -80,7 +80,7 @@ export class EditorState extends Disposable {
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
-  private selectedEditModeRef = ref<EditMode>(EditMode.Preview)
+  private selectedEditModeRef = ref<EditMode>(EditMode.Normal)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)
   private selectedSoundIdRef = ref<string | null>(null)
