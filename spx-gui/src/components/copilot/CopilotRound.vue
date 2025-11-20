@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
+import { computed } from 'vue'
 import { RoundState, type Round } from './copilot'
 import MarkdownView from './MarkdownView.vue'
 import BaseFailed from './feedback/BaseFailed.vue'
@@ -13,24 +13,10 @@ const props = defineProps<{
   isLastRound: boolean
 }>()
 
-const apiExceptionComponents: Record<number, Component> = {
-  [ApiExceptionCode.errorUnauthorized]: SignInTip,
-  [ApiExceptionCode.errorQuotaExceeded]: QuotaExceeded
-}
-
 const feedbackProps = computed(() => ({
   round: props.round,
   isLastRound: props.isLastRound
 }))
-
-const ApiExceptionComponent = computed(() => {
-  const round = props.round
-  const apiExceptionCode = round.apiExceptionCode
-  if (apiExceptionCode != null && apiExceptionComponents[apiExceptionCode] != null) {
-    return apiExceptionComponents[apiExceptionCode]
-  }
-  return null
-})
 
 const resultContent = computed<string | null>(() => {
   const copilotMessages: string[] = []
@@ -51,9 +37,11 @@ const resultContent = computed<string | null>(() => {
     <MarkdownView v-if="resultContent != null" class="answer" :value="resultContent" />
     <div v-if="round.state !== RoundState.Initialized">
       <template v-if="round.state === RoundState.Failed">
-        <template v-if="ApiExceptionComponent != null">
-          <ApiExceptionComponent v-bind="feedbackProps" :exception-meta="round.apiExceptionMeta" />
-        </template>
+        <SignInTip v-if="round.apiExceptionCode === ApiExceptionCode.errorUnauthorized" :round="round" />
+        <QuotaExceeded
+          v-else-if="round.apiExceptionCode === ApiExceptionCode.errorQuotaExceeded"
+          v-bind="feedbackProps"
+        />
         <BaseFailed v-else v-bind="feedbackProps" />
       </template>
       <BaseCancelled v-else-if="round.state === RoundState.Cancelled" v-bind="feedbackProps" />

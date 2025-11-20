@@ -350,7 +350,6 @@ export function useInterval(callback: () => void, intervalWatch: WatchSource<num
       intervalWatch,
       (interval, _, onCleanup) => {
         if (interval == null || interval <= 0) return
-        callback()
         const timer = setInterval(callback, interval)
         onCleanup(() => clearInterval(timer))
       },

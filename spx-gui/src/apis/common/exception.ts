@@ -9,7 +9,7 @@ import dayjs from 'dayjs'
 export class ApiException extends Exception {
   name = 'ApiError'
   userMessage: LocaleMessage | null
-  meta: ApiExceptionMeta
+  meta: unknown
 
   constructor(
     public code: number,
@@ -18,7 +18,7 @@ export class ApiException extends Exception {
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode](headers)
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? {}
   }
 }
 
@@ -33,10 +33,12 @@ export enum ApiExceptionCode {
   errorUnknown = 50000
 }
 
-export type ApiExceptionMeta = {}
-const defaultException = () => ({})
-const codeMetas = {
-  [ApiExceptionCode.errorQuotaExceeded]: (headers) => {
+type QuotaExceededMeta = {
+  // milliseconds or null
+  retryAfter: number | null
+}
+const codeMetas: { [key in ApiExceptionCode]?: (headers: Headers) => unknown } = {
+  [ApiExceptionCode.errorQuotaExceeded]: (headers): QuotaExceededMeta => {
     const retryAfter = headers.get('Retry-After')
     let date
     if (retryAfter != null) {
@@ -44,19 +46,13 @@ const codeMetas = {
       date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
     }
     return {
-      retryAfter: date?.isValid() ? date.valueOf() : null // milliseconds or null
+      retryAfter: date?.isValid() ? date.valueOf() : null
     }
-  },
-  [ApiExceptionCode.errorInvalidArgs]: defaultException,
-  [ApiExceptionCode.errorUnauthorized]: defaultException,
-  [ApiExceptionCode.errorForbidden]: defaultException,
-  [ApiExceptionCode.errorNotFound]: defaultException,
-  [ApiExceptionCode.errorTooManyRequests]: defaultException,
-  [ApiExceptionCode.errorRateLimitExceeded]: defaultException,
-  [ApiExceptionCode.errorUnknown]: defaultException
-} satisfies Record<ApiExceptionCode, (headers: Headers) => ApiExceptionMeta>
-type CodeMetas = typeof codeMetas
-export type ApiExceptionMetas = { [key in keyof CodeMetas]: ReturnType<CodeMetas[key]> }
+  }
+}
+export function isQuotaExceededMeta(code: number, meta: unknown): meta is QuotaExceededMeta {
+  return code === ApiExceptionCode.errorQuotaExceeded && meta != null
+}
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {

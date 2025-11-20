@@ -11,7 +11,7 @@ import { ToolExecutor, type ToolExecution, type ToolExecutionInput } from './too
 import { tagName as toolUseTagName } from './custom-elements/ToolUse'
 import { findCustomComponentUsages } from './MarkdownView.vue'
 import dayjs from 'dayjs'
-import { ApiException, type ApiExceptionMeta } from '@/apis/common/exception'
+import { ApiException } from '@/apis/common/exception'
 
 /** Message with text content. */
 export type TextMessage = {
@@ -138,7 +138,7 @@ type RoundExported = {
   state: RoundState
   updatedAt?: number | null
   apiExceptionCode?: number | null
-  apiExceptionMeta?: ApiExceptionMeta | null
+  apiExceptionMeta?: unknown | null
 }
 
 export class Round {
@@ -189,7 +189,7 @@ export class Round {
   /**
    * API exception meta data when the round failed.
    */
-  apiExceptionMeta?: ApiExceptionMeta | null
+  apiExceptionMeta?: unknown | null
 
   export(): RoundExported {
     return {
