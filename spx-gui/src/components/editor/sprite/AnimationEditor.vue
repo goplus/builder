@@ -13,6 +13,17 @@
         </template>
         {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
       </UIButton>
+      <UIButton
+        v-radar="{ name: 'Generate animation button', desc: 'Click to generate animation with AI' }"
+        type="boring"
+        size="large"
+        @click="handleGenerateAnimation"
+      >
+        <template #icon>
+          <img :src="galleryIcon" />
+        </template>
+        {{ $t({ en: 'Generate animation', zh: '生成动画' }) }}
+      </UIButton>
     </template>
   </UIEmpty>
   <EditorList
@@ -38,6 +49,11 @@
           v-radar="{ name: 'Group costumes option', desc: 'Click to group costumes as animation' }"
           @click="handleGroupCostumes"
           >{{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}</UIMenuItem
+        >
+        <UIMenuItem
+          v-radar="{ name: 'Generate animation option', desc: 'Click to generate animation with AI' }"
+          @click="handleGenerateAnimation"
+          >{{ $t({ en: 'Generate animation', zh: '生成动画' }) }}</UIMenuItem
         >
       </UIMenu>
     </template>
@@ -108,6 +124,7 @@ import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useAddAnimationByGroupingCostumes } from '@/components/asset'
+import { useAnimationGeneratorModal } from '@/components/asset/library/generators'
 import AnimationDetail from './AnimationDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationItem from './AnimationItem.vue'
@@ -130,6 +147,23 @@ const handleGroupCostumes = useMessageHandle(
   {
     en: 'Failed to group costumes as animation',
     zh: '将造型合并为动画失败'
+  }
+).fn
+
+const generateAnimation = useAnimationGeneratorModal()
+const handleGenerateAnimation = useMessageHandle(
+  async () => {
+    const settings = {
+      ...editorCtx.project.settings,
+      projectDescription: editorCtx.project.description ?? editorCtx.project.aiDescription ?? null,
+      description: null
+    }
+    const animation = await generateAnimation(props.sprite, settings)
+    props.state.select(animation.id)
+  },
+  {
+    en: 'Failed to generate animation',
+    zh: '生成动画失败'
   }
 ).fn
 
