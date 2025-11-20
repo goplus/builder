@@ -10,13 +10,14 @@ import CommunityCard from '@/components/community/CommunityCard.vue'
 import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 import TextView from '@/components/community/TextView.vue'
 import CourseItem, { courseItemHeight } from '@/components/tutorials/CourseItem.vue'
-import { orderBy, useTutorial } from '@/components/tutorials/tutorial'
+import { useTutorial } from '@/components/tutorials/tutorial'
 import { UIEmpty, UIError, UIImg, UILoading, UIPagination, useResponsive } from '@/components/ui'
 import { createFileWithUniversalUrl } from '@/models/common/cloud'
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamInt } from '@/utils/route'
-import { until, useAsyncComputed, usePageTitle } from '@/utils/utils'
+import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
+import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 
 usePageTitle({
   en: 'Course Series',
@@ -62,22 +63,16 @@ const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) 
 
 const courseQuery = useQuery(
   async (ctx) => {
-    const [_, { data, ...others }] = await Promise.all([
-      courseSeriesIsLoading.value ? until(() => !courseSeriesIsLoading.value, ctx.signal) : Promise.resolve(),
-      listCourse(
-        {
-          courseSeriesID: props.courseSeriesId,
-          pageIndex: page.value,
-          pageSize: pageSize.value,
-          owner: ownerAll
-        },
-        ctx.signal
-      )
-    ])
-    return {
-      ...others,
-      data: orderBy(data, courseSeries.value?.courseIDs)
-    }
+    return listCourse(
+      {
+        courseSeriesID: props.courseSeriesId,
+        pageIndex: page.value,
+        pageSize: pageSize.value,
+        orderBy: 'courseIDs',
+        owner: ownerAll
+      },
+      ctx.signal
+    )
   },
   { en: 'Failed to load course list', zh: '加载课程列表失败' }
 )
@@ -103,7 +98,7 @@ const { fn: handleCourseClick } = useMessageHandle(
     <!-- TODO: Temporarily import the community component -->
     <CommunityNavbar />
 
-    <CenteredWrapper size="medium">
+    <CenteredWrapper size="medium" class="content-wrapper">
       <CommunityCard class="header">
         <UILoading v-if="courseSeriesIsLoading" cover mask="solid" />
         <UIError v-else-if="courseSeriesError != null" :retry="courseSeriesRefetch">
@@ -163,6 +158,8 @@ const { fn: handleCourseClick } = useMessageHandle(
         <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
       </div>
     </CenteredWrapper>
+
+    <CommunityFooter />
   </div>
 </template>
 
@@ -176,9 +173,12 @@ const { fn: handleCourseClick } = useMessageHandle(
   background-color: var(--ui-color-grey-300);
 }
 
+.content-wrapper {
+  margin: 24px auto;
+}
+
 .header {
   position: relative;
-  margin-top: 24px;
   padding: 20px;
   display: flex;
   gap: 40px;

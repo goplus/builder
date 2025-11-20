@@ -944,7 +944,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
 
       responses:
         "201":
@@ -1017,7 +1017,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
       responses:
         "201":
           description: Stream Message successfully generated.
@@ -1082,7 +1082,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
                 workflow:
                   $ref: "#/components/schemas/Workflow"
                   description: env of the workflow.
@@ -1310,6 +1310,7 @@ paths:
             enum:
               - createdAt
               - updatedAt
+              - courseIDs
             default: createdAt
             examples:
               - createdAt
@@ -2423,12 +2424,12 @@ components:
               type: string
               description: description of the function.
               examples:
-                - create project 
+                - create project
             parameters:
               type: object
               description: parameters of the function with json raw.
               examples:
-                - {"name": "NiuXiaoQi"}
+                - { "name": "NiuXiaoQi" }
     Workflow:
       type: object
       properties:
@@ -2436,7 +2437,7 @@ components:
           type: object
           description: env of the workflow.
           examples:
-            - {"reference_id": "275"}
+            - { "reference_id": "275" }
 
   parameters:
     SortOrder:
