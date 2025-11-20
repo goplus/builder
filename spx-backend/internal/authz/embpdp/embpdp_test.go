@@ -63,7 +63,33 @@ func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy authz
 	return m.usage[key], nil
 }
 
-func (m *mockQuotaTracker) IncrementUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy, amount int64) error {
+func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
+	key := fmt.Sprintf("%d:%s", userID, policy.Name)
+	m.usage[key] = authz.QuotaUsage{}
+	return nil
+}
+
+func (m *mockQuotaTracker) TryConsume(ctx context.Context, userID int64, policies []authz.QuotaPolicy, amount int64) (*authz.Quota, error) {
+	for _, policy := range policies {
+		key := fmt.Sprintf("%d:%s", userID, policy.Name)
+		usage := m.usage[key]
+		if policy.Limit > 0 && usage.Used+amount > policy.Limit {
+			return &authz.Quota{
+				QuotaPolicy: policy,
+				QuotaUsage: authz.QuotaUsage{
+					Used:      usage.Used,
+					ResetTime: time.Now().Add(policy.Window),
+				},
+			}, nil
+		}
+	}
+	for _, policy := range policies {
+		m.addUsage(userID, policy, amount)
+	}
+	return nil, nil
+}
+
+func (m *mockQuotaTracker) addUsage(userID int64, policy authz.QuotaPolicy, amount int64) {
 	key := fmt.Sprintf("%d:%s", userID, policy.Name)
 	entry := m.usage[key]
 	entry.Used += amount
@@ -71,13 +97,6 @@ func (m *mockQuotaTracker) IncrementUsage(ctx context.Context, userID int64, pol
 		entry.ResetTime = time.Now().Add(policy.Window)
 	}
 	m.usage[key] = entry
-	return nil
-}
-
-func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
-	key := fmt.Sprintf("%d:%s", userID, policy.Name)
-	m.usage[key] = authz.QuotaUsage{}
-	return nil
 }
 
 func TestQuotaSpecs(t *testing.T) {
@@ -345,8 +364,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			Plan:     model.UserPlanFree,
 		}
 
-		err := quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "copilotMessage:limit",
@@ -356,9 +374,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			30,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiDescription:limit",
@@ -368,9 +384,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			5,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiInteractionTurn:limit",
@@ -380,9 +394,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			120,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiInteractionArchive:limit",
@@ -392,7 +404,6 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			10,
 		)
-		require.NoError(t, err)
 
 		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
 		require.NoError(t, err)
@@ -443,8 +454,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			Plan:     model.UserPlanFree,
 		}
 
-		err := quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "copilotMessage:limit",
@@ -454,9 +464,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			copilotQuotaLimitFree+50,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiDescription:limit",
@@ -466,9 +474,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			aiDescriptionQuotaLimitFree+100,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiInteractionTurn:limit",
@@ -478,9 +484,7 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			aiInteractionTurnQuotaLimitFree+5000,
 		)
-		require.NoError(t, err)
-		err = quotaTracker.IncrementUsage(
-			context.Background(),
+		quotaTracker.addUsage(
 			mUser.ID,
 			authz.QuotaPolicy{
 				Name:     "aiInteractionArchive:limit",
@@ -490,7 +494,6 @@ func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
 			},
 			aiInteractionArchiveQuotaLimitFree+3000,
 		)
-		require.NoError(t, err)
 
 		quotas, err := pdp.ComputeUserQuotas(context.Background(), mUser)
 		require.NoError(t, err)
@@ -574,14 +577,14 @@ func TestQuotaResetTime(t *testing.T) {
 			Used:      10,
 			ResetTime: resetAt,
 		}
-		got := quotaResetTime(24*time.Hour, usage)
+		got := quotaResetTime(authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}, usage)
 		require.True(t, got.Equal(resetAt))
 	})
 
 	t.Run("FreshWindowDefaultsToWindow", func(t *testing.T) {
 		const window = time.Hour
 		usage := authz.QuotaUsage{Used: 0}
-		got := quotaResetTime(window, usage)
+		got := quotaResetTime(authz.QuotaPolicy{Limit: 100, Window: window}, usage)
 		require.False(t, got.IsZero())
 
 		remaining := time.Until(got)
@@ -589,9 +592,15 @@ func TestQuotaResetTime(t *testing.T) {
 		assert.InDelta(t, float64(window), float64(remaining), float64(time.Second))
 	})
 
-	t.Run("NoResetInfo", func(t *testing.T) {
+	t.Run("NoResetTime", func(t *testing.T) {
 		usage := authz.QuotaUsage{Used: 100}
-		got := quotaResetTime(time.Hour, usage)
+		got := quotaResetTime(authz.QuotaPolicy{Limit: 100, Window: time.Hour}, usage)
+		assert.True(t, got.IsZero())
+	})
+
+	t.Run("ZeroLimitYieldsNoReset", func(t *testing.T) {
+		usage := authz.QuotaUsage{Used: 0}
+		got := quotaResetTime(authz.QuotaPolicy{Limit: 0, Window: time.Hour}, usage)
 		assert.True(t, got.IsZero())
 	})
 }

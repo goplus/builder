@@ -10,11 +10,14 @@ type QuotaTracker interface {
 	// Usage returns the current usage for a user and quota policy.
 	Usage(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error)
 
-	// IncrementUsage increments the usage counter for a user and quota policy.
-	IncrementUsage(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error
-
 	// ResetUsage resets the usage counter for a user and quota policy.
 	ResetUsage(ctx context.Context, userID int64, policy QuotaPolicy) error
+
+	// TryConsume tries to consume the given amount of quotas across all
+	// provided quota policies in one atomic step. It returns a non-nil
+	// [*Quota] only when consumption would exceed that quota and no system
+	// failure occurs.
+	TryConsume(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error)
 }
 
 // QuotaPolicy defines the quota configuration for a usage update.
@@ -57,6 +60,9 @@ func (q Quota) Remaining() int64 {
 
 // Reset returns the remaining time in seconds before the window resets.
 func (q Quota) Reset() int64 {
+	if q.Limit <= 0 {
+		return 0
+	}
 	if q.ResetTime.IsZero() {
 		if q.Window > 0 && q.Used == 0 {
 			return ceilSeconds(q.Window)

@@ -13,11 +13,7 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-const (
-	quotaResource = authz.ResourceCopilotMessage
-	quotaAmount   = 1
-)
-if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
+if !ensureQuotaRemaining(ctx, authz.ResourceCopilotMessage, 1) {
 	return
 }
 
@@ -37,8 +33,6 @@ if err != nil {
 	return
 }
 defer read.Close()
-
-consumeQuota(ctx, quotaResource, quotaAmount)
 
 buf := make([]byte, 4096)
 stream read, buf

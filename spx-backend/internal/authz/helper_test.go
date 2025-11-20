@@ -143,16 +143,15 @@ func TestCanUsePremiumLLM(t *testing.T) {
 	})
 }
 
-func TestConsumeQuota(t *testing.T) {
+func TestTryConsumeQuota(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		var policies []QuotaPolicy
 		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
-			policies = append(policies, policy)
+		quotaTracker.tryConsumeFunc = func(ctx context.Context, userID int64, policiesArg []QuotaPolicy, amount int64) (*Quota, error) {
+			policies = append(policies, policiesArg...)
 			assert.Equal(t, int64(123), userID)
-			assert.Equal(t, ResourceCopilotMessage, policy.Resource)
 			assert.Equal(t, int64(2), amount)
-			return nil
+			return nil, nil
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
@@ -219,20 +218,21 @@ func TestConsumeQuota(t *testing.T) {
 			},
 		})
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 2)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 2)
 		assert.NoError(t, err)
 		assert.Len(t, policies, 3)
-		assert.Equal(t, "copilotMessage:limit", policies[0].Name)
-		assert.Equal(t, "copilotMessage:rateLimit:1m", policies[1].Name)
-		assert.Equal(t, "copilotMessage:rateLimit:5m", policies[2].Name)
+		assert.Equal(t, "copilotMessage:rateLimit:1m", policies[0].Name)
+		assert.Equal(t, "copilotMessage:rateLimit:5m", policies[1].Name)
+		assert.Equal(t, "copilotMessage:limit", policies[2].Name)
 	})
 
 	t.Run("RateLimitOnly", func(t *testing.T) {
 		quotaTracker := &mockQuotaTracker{}
 		count := 0
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
+		quotaTracker.tryConsumeFunc = func(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error) {
 			count++
-			return nil
+			assert.Len(t, policies, 1)
+			return nil, nil
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
@@ -257,7 +257,7 @@ func TestConsumeQuota(t *testing.T) {
 			},
 		})
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)
 	})
@@ -267,7 +267,7 @@ func TestConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "missing authorizer in context")
 	})
@@ -280,15 +280,15 @@ func TestConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = newContextWithAuthorizer(ctx, authorizer)
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "missing authenticated user in context")
 	})
 
 	t.Run("QuotaTrackerError", func(t *testing.T) {
 		quotaTracker := &mockQuotaTracker{}
-		quotaTracker.incrementUsageFunc = func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
-			return errors.New("quota exceeded")
+		quotaTracker.tryConsumeFunc = func(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error) {
+			return nil, errors.New("quota exceeded")
 		}
 
 		pdp := &mockPolicyDecisionPoint{}
@@ -335,7 +335,7 @@ func TestConsumeQuota(t *testing.T) {
 			},
 		})
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "quota exceeded")
 	})
@@ -350,7 +350,7 @@ func TestConsumeQuota(t *testing.T) {
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "missing user quotas in context")
 	})
@@ -361,7 +361,7 @@ func TestConsumeQuota(t *testing.T) {
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = context.WithValue(ctx, authorizerContextKey{}, "not-authorizer")
 
-		err := ConsumeQuota(ctx, ResourceCopilotMessage, 1)
+		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
 		assert.EqualError(t, err, "missing authorizer in context")
 	})

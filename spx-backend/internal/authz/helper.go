@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 )
@@ -25,33 +26,38 @@ func CanUsePremiumLLM(ctx context.Context) bool {
 	return ok && caps.CanUsePremiumLLM
 }
 
-// ConsumeQuota consumes the specified amount of quota for the user and resource.
-func ConsumeQuota(ctx context.Context, resource Resource, amount int64) error {
+// TryConsumeQuota tries to consume the given amount of quotas for the resource.
+// It returns a non-nil [*Quota] only when consumption would exceed that quota
+// and no system failure occurs.
+func TryConsumeQuota(ctx context.Context, resource Resource, amount int64) (*Quota, error) {
 	authorizer, ok := authorizerFromContext(ctx)
 	if !ok {
-		return errors.New("missing authorizer in context")
+		return nil, errors.New("missing authorizer in context")
 	}
 	mUser, ok := authn.UserFromContext(ctx)
 	if !ok {
-		return errors.New("missing authenticated user in context")
+		return nil, errors.New("missing authenticated user in context")
 	}
 	quotas, ok := UserQuotasFromContext(ctx)
 	if !ok {
-		return errors.New("missing user quotas in context")
+		return nil, errors.New("missing user quotas in context")
 	}
 
-	if quota, ok := quotas.Limits[resource]; ok {
-		if err := authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, quota.QuotaPolicy, amount); err != nil {
-			return err
-		}
-	}
-
+	// Collect applicable quota policies for the resource.
+	var policies []QuotaPolicy
 	if quotas, ok := quotas.RateLimits[resource]; ok {
+		policies = make([]QuotaPolicy, 0, len(quotas)+1)
 		for _, quota := range quotas {
-			if err := authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, quota.QuotaPolicy, amount); err != nil {
-				return err
-			}
+			policies = append(policies, quota.QuotaPolicy)
 		}
 	}
-	return nil
+	if quota, ok := quotas.Limits[resource]; ok {
+		policies = slices.Grow(policies, 1)
+		policies = append(policies, quota.QuotaPolicy)
+	}
+	if len(policies) == 0 {
+		return nil, nil
+	}
+
+	return authorizer.quotaTracker.TryConsume(ctx, mUser.ID, policies, amount)
 }
