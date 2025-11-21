@@ -205,7 +205,7 @@
             @mouseleave="handleCanvasMouseLeave"
           ></canvas>
 
-          <CanvasPanHandler :canvas-ref="canvasRef" />
+          <CanvasScrollbars :canvas-ref="canvasRef" />
         </div>
 
         <!-- 选择工具组件 -->
@@ -297,7 +297,7 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import SelectTool from './components/select_tool.vue'
-import CanvasPanHandler from './components/canvas_Scrollbar.vue'
+import CanvasScrollbars from './components/canvas_Scrollbar.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
 import ZoomControl from './components/zoom_control.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'

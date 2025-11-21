@@ -43,6 +43,7 @@ const suppressScrollEvent = ref<boolean>(false)
 const lastCenter = ref<paper.Point | null>(null)
 const lastZoom = ref<number | null>(null)
 let frameHandler: ((event: paper.Event) => void) | null = null
+let resizeHandler: (() => void) | null = null
 const getCanvasElement = (): HTMLCanvasElement | null => {
   return props.canvasRef ?? null
 }
@@ -226,10 +227,21 @@ const updateScrollbarAvailability = (): void => {
   canScrollHorizontal.value = horizontalRange > 0.5
   canScrollVertical.value = verticalRange > 0.5
 
-  horizontalContentSize.value = Math.max(boundary.width, 1000)
-  verticalContentSize.value = Math.max(boundary.height, 1000)
-
   nextTick(() => {
+    if (horizontalScrollbarRef.value) {
+      const trackWidth = Math.max(horizontalScrollbarRef.value.clientWidth, 1)
+      horizontalContentSize.value = canScrollHorizontal.value
+        ? trackWidth * (boundary.width / viewWidth)
+        : trackWidth
+    }
+
+    if (verticalScrollbarRef.value) {
+      const trackHeight = Math.max(verticalScrollbarRef.value.clientHeight, 1)
+      verticalContentSize.value = canScrollVertical.value
+        ? trackHeight * (boundary.height / viewHeight)
+        : trackHeight
+    }
+
     syncScrollbarsWithView()
   })
 }
@@ -325,6 +337,10 @@ const tryInitialize = (): void => {
   canScrollVertical.value = true
   addWheelListener()
   setupViewListeners()
+  if (typeof window !== 'undefined') {
+    resizeHandler = () => updateScrollbarAvailability()
+    window.addEventListener('resize', resizeHandler)
+  }
 }
 
 watch(
@@ -343,6 +359,10 @@ onMounted(() => {
 onUnmounted(() => {
   removeWheelListener()
   removeViewListeners()
+  if (resizeHandler && typeof window !== 'undefined') {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
+  }
 })
 </script>
 
@@ -369,17 +389,17 @@ onUnmounted(() => {
 
 .scrollbar.horizontal {
   position: absolute;
-  left: 12px;
-  right: 40px;
-  bottom: 0px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   height: 12px;
 }
 
 .scrollbar.vertical {
   position: absolute;
-  top: 12px;
-  bottom: 40px;
-  right: 0px;
+  top: 0;
+  bottom: 0;
+  right: 0;
   width: 12px;
 }
 
