@@ -66,7 +66,7 @@ const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
-const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Normal)
+const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
