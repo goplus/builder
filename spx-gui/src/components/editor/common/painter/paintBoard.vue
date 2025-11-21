@@ -1032,6 +1032,9 @@ provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
   position: relative;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding-right: 12px; /* 给垂直滚动条预留空间，避免遮挡右侧内容 */
+  padding-bottom: 12px; /* 给水平滚动条预留空间，避免遮挡底部内容 */
 }
 
 canvas {

@@ -390,7 +390,7 @@ onUnmounted(() => {
 .scrollbar.horizontal {
   position: absolute;
   left: 0;
-  right: 0;
+  right: 12px; /* 留出竖向滚动条的占位避免重叠角落 */
   bottom: 0;
   height: 12px;
 }
@@ -398,7 +398,7 @@ onUnmounted(() => {
 .scrollbar.vertical {
   position: absolute;
   top: 0;
-  bottom: 0;
+  bottom: 12px; /* 留出横向滚动条的占位避免重叠角落 */
   right: 0;
   width: 12px;
 }
