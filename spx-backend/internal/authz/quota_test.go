@@ -10,23 +10,9 @@ import (
 )
 
 type mockQuotaTracker struct {
-	usageFunc      func(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error)
-	resetUsageFunc func(ctx context.Context, userID int64, policy QuotaPolicy) error
 	tryConsumeFunc func(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error)
-}
-
-func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error) {
-	if m.usageFunc != nil {
-		return m.usageFunc(ctx, userID, policy)
-	}
-	return QuotaUsage{Used: 20}, nil
-}
-
-func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy QuotaPolicy) error {
-	if m.resetUsageFunc != nil {
-		return m.resetUsageFunc(ctx, userID, policy)
-	}
-	return nil
+	usageFunc      func(ctx context.Context, userID int64, policies []QuotaPolicy) ([]QuotaUsage, error)
+	resetUsageFunc func(ctx context.Context, userID int64, policies []QuotaPolicy) error
 }
 
 func (m *mockQuotaTracker) TryConsume(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error) {
@@ -34,6 +20,60 @@ func (m *mockQuotaTracker) TryConsume(ctx context.Context, userID int64, policie
 		return m.tryConsumeFunc(ctx, userID, policies, amount)
 	}
 	return nil, nil
+}
+
+func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policies []QuotaPolicy) ([]QuotaUsage, error) {
+	if m.usageFunc != nil {
+		return m.usageFunc(ctx, userID, policies)
+	}
+	usages := make([]QuotaUsage, len(policies))
+	for i := range usages {
+		usages[i] = QuotaUsage{Used: 20}
+	}
+	return usages, nil
+}
+
+func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policies []QuotaPolicy) error {
+	if m.resetUsageFunc != nil {
+		return m.resetUsageFunc(ctx, userID, policies)
+	}
+	return nil
+}
+
+func TestQuotaRemaining(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		quota Quota
+		want  int64
+	}{
+		{
+			name: "WithinLimit",
+			quota: Quota{
+				QuotaPolicy: QuotaPolicy{Limit: 100},
+				QuotaUsage:  QuotaUsage{Used: 20},
+			},
+			want: 80,
+		},
+		{
+			name: "OverLimit",
+			quota: Quota{
+				QuotaPolicy: QuotaPolicy{Limit: 50},
+				QuotaUsage:  QuotaUsage{Used: 80},
+			},
+			want: 0,
+		},
+		{
+			name: "ZeroLimit",
+			quota: Quota{
+				QuotaPolicy: QuotaPolicy{Limit: 0},
+			},
+			want: 0,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.quota.Remaining())
+		})
+	}
 }
 
 func TestQuotaReset(t *testing.T) {
@@ -89,42 +129,6 @@ func TestQuotaReset(t *testing.T) {
 		var quota Quota
 		assert.Equal(t, int64(0), quota.Reset())
 	})
-}
-
-func TestQuotaRemaining(t *testing.T) {
-	for _, tt := range []struct {
-		name  string
-		quota Quota
-		want  int64
-	}{
-		{
-			name: "WithinLimit",
-			quota: Quota{
-				QuotaPolicy: QuotaPolicy{Limit: 100},
-				QuotaUsage:  QuotaUsage{Used: 20},
-			},
-			want: 80,
-		},
-		{
-			name: "OverLimit",
-			quota: Quota{
-				QuotaPolicy: QuotaPolicy{Limit: 50},
-				QuotaUsage:  QuotaUsage{Used: 80},
-			},
-			want: 0,
-		},
-		{
-			name: "ZeroLimit",
-			quota: Quota{
-				QuotaPolicy: QuotaPolicy{Limit: 0},
-			},
-			want: 0,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.quota.Remaining())
-		})
-	}
 }
 
 func TestCeilSeconds(t *testing.T) {

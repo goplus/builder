@@ -40,42 +40,31 @@ func newContextWithTestUser(ctx context.Context) context.Context {
 		CanManageCourses: false,
 		CanUsePremiumLLM: false,
 	})
-	ctx = authz.NewContextWithUserQuotas(ctx, authz.UserQuotas{
-		Limits: map[authz.Resource]authz.Quota{
+	ctx = authz.NewContextWithUserQuotaPolicies(ctx, authz.UserQuotaPolicies{
+		Limits: map[authz.Resource]authz.QuotaPolicy{
 			authz.ResourceCopilotMessage: {
-				QuotaPolicy: authz.QuotaPolicy{
-					Name:     "copilotMessage:limit",
-					Resource: authz.ResourceCopilotMessage,
-					Limit:    100,
-					Window:   24 * time.Hour,
-				},
+				Name:     "copilotMessage:limit",
+				Resource: authz.ResourceCopilotMessage,
+				Limit:    100,
+				Window:   24 * time.Hour,
 			},
 			authz.ResourceAIDescription: {
-				QuotaPolicy: authz.QuotaPolicy{
-					Name:     "aiDescription:limit",
-					Resource: authz.ResourceAIDescription,
-					Limit:    300,
-					Window:   24 * time.Hour,
-				},
-				QuotaUsage: authz.QuotaUsage{Used: 5},
+				Name:     "aiDescription:limit",
+				Resource: authz.ResourceAIDescription,
+				Limit:    300,
+				Window:   24 * time.Hour,
 			},
 			authz.ResourceAIInteractionTurn: {
-				QuotaPolicy: authz.QuotaPolicy{
-					Name:     "aiInteractionTurn:limit",
-					Resource: authz.ResourceAIInteractionTurn,
-					Limit:    12000,
-					Window:   24 * time.Hour,
-				},
-				QuotaUsage: authz.QuotaUsage{Used: 100},
+				Name:     "aiInteractionTurn:limit",
+				Resource: authz.ResourceAIInteractionTurn,
+				Limit:    12000,
+				Window:   24 * time.Hour,
 			},
 			authz.ResourceAIInteractionArchive: {
-				QuotaPolicy: authz.QuotaPolicy{
-					Name:     "aiInteractionArchive:limit",
-					Resource: authz.ResourceAIInteractionArchive,
-					Limit:    8000,
-					Window:   24 * time.Hour,
-				},
-				QuotaUsage: authz.QuotaUsage{Used: 20},
+				Name:     "aiInteractionArchive:limit",
+				Resource: authz.ResourceAIInteractionArchive,
+				Limit:    8000,
+				Window:   24 * time.Hour,
 			},
 		},
 	})

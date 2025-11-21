@@ -11,8 +11,8 @@ type PolicyDecisionPoint interface {
 	// ComputeUserCapabilities computes the capabilities for a user.
 	ComputeUserCapabilities(ctx context.Context, mUser *model.User) (UserCapabilities, error)
 
-	// ComputeUserQuotas computes the quotas for a user.
-	ComputeUserQuotas(ctx context.Context, mUser *model.User) (UserQuotas, error)
+	// ComputeUserQuotaPolicies computes the quota policies for a user.
+	ComputeUserQuotaPolicies(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error)
 }
 
 // UserCapabilities represents user capabilities that control feature access.
@@ -27,13 +27,13 @@ type UserCapabilities struct {
 	CanUsePremiumLLM bool `json:"canUsePremiumLLM"`
 }
 
-// UserQuotas represents user quotas grouped by long-lived limits and
+// UserQuotaPolicies represents quota policies grouped by long-lived limits and
 // short-window rate limits.
-type UserQuotas struct {
-	// Limits stores long-lived limits per resource.
-	Limits map[Resource]Quota
+type UserQuotaPolicies struct {
+	// Limits stores long-lived limit policies per resource.
+	Limits map[Resource]QuotaPolicy
 
-	// RateLimits stores short-window rate limits per resource, ordered from
-	// shortest to longest window.
-	RateLimits map[Resource][]Quota
+	// RateLimits stores short-window rate limit policies per resource,
+	// ordered from shortest to longest window.
+	RateLimits map[Resource][]QuotaPolicy
 }

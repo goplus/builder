@@ -7,17 +7,19 @@ import (
 
 // QuotaTracker defines the interface for tracking resource usage quotas.
 type QuotaTracker interface {
-	// Usage returns the current usage for a user and quota policy.
-	Usage(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error)
-
-	// ResetUsage resets the usage counter for a user and quota policy.
-	ResetUsage(ctx context.Context, userID int64, policy QuotaPolicy) error
-
 	// TryConsume tries to consume the given amount of quotas across all
 	// provided quota policies in one atomic step. It returns a non-nil
 	// [*Quota] only when consumption would exceed that quota and no system
 	// failure occurs.
 	TryConsume(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error)
+
+	// Usage returns the current usage for the given user and quota
+	// policies. It returns a slice containing one [QuotaUsage] per policy,
+	// in the same order as the input, when no error occurs.
+	Usage(ctx context.Context, userID int64, policies []QuotaPolicy) ([]QuotaUsage, error)
+
+	// ResetUsage resets the usage counters for the given user and quota policies.
+	ResetUsage(ctx context.Context, userID int64, policies []QuotaPolicy) error
 }
 
 // QuotaPolicy defines the quota configuration for a usage update.

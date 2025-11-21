@@ -37,53 +37,6 @@ func NewRedisQuotaTracker(cfg config.RedisConfig) authz.QuotaTracker {
 	return &redisQuotaTracker{client: client}
 }
 
-// Usage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, policy authz.QuotaPolicy) (authz.QuotaUsage, error) {
-	key := quotaKey(userID, policy)
-
-	var (
-		usageCmd *redis.StringCmd
-		ttlCmd   *redis.DurationCmd
-	)
-	if _, err := t.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		usageCmd = pipe.Get(ctx, key)
-		ttlCmd = pipe.PTTL(ctx, key)
-		return nil
-	}); err != nil && !errors.Is(err, redis.Nil) {
-		return authz.QuotaUsage{}, fmt.Errorf("failed to fetch usage from Redis: %w", err)
-	}
-
-	var usage authz.QuotaUsage
-
-	if used, err := usageCmd.Int64(); err != nil {
-		if !errors.Is(err, redis.Nil) {
-			return authz.QuotaUsage{}, fmt.Errorf("failed to get usage from Redis: %w", err)
-		}
-	} else if used > 0 {
-		usage.Used = used
-	}
-
-	if ttl, err := ttlCmd.Result(); err != nil {
-		if !errors.Is(err, redis.Nil) {
-			return authz.QuotaUsage{}, fmt.Errorf("failed to get TTL from Redis: %w", err)
-		}
-	} else if ttl > 0 {
-		usage.ResetTime = time.Now().Add(ttl)
-	}
-
-	return usage, nil
-}
-
-// ResetUsage implements [authz.QuotaTracker].
-func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
-	key := quotaKey(userID, policy)
-
-	if _, err := t.client.Del(ctx, key).Result(); err != nil {
-		return fmt.Errorf("failed to reset usage in Redis: %w", err)
-	}
-	return nil
-}
-
 // luaTryConsume performs an atomic check-and-increment across multiple quota
 // keys. It returns {1} on success, or {0, failedIndex, used, ttl} on exhaustion
 // at KEYS[failedIndex] without mutating state.
@@ -182,6 +135,68 @@ func (t *redisQuotaTracker) TryConsume(ctx context.Context, userID int64, polici
 			ResetTime: resetTime,
 		},
 	}, nil
+}
+
+// Usage implements [authz.QuotaTracker].
+func (t *redisQuotaTracker) Usage(ctx context.Context, userID int64, policies []authz.QuotaPolicy) ([]authz.QuotaUsage, error) {
+	if len(policies) == 0 {
+		return []authz.QuotaUsage{}, nil
+	}
+
+	cmds := make([]struct {
+		get *redis.StringCmd
+		ttl *redis.DurationCmd
+	}, len(policies))
+	if _, err := t.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for i, policy := range policies {
+			key := quotaKey(userID, policy)
+			cmds[i].get = pipe.Get(ctx, key)
+			cmds[i].ttl = pipe.PTTL(ctx, key)
+		}
+		return nil
+	}); err != nil && !errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("failed to fetch usage from Redis: %w", err)
+	}
+
+	now := time.Now()
+
+	usages := make([]authz.QuotaUsage, len(policies))
+	for i, policy := range policies {
+		if used, err := cmds[i].get.Int64(); err != nil {
+			if !errors.Is(err, redis.Nil) {
+				return nil, fmt.Errorf("failed to get usage for %s from Redis: %w", policy.Name, err)
+			}
+		} else if used > 0 {
+			usages[i].Used = used
+		}
+
+		if ttl, err := cmds[i].ttl.Result(); err != nil {
+			if !errors.Is(err, redis.Nil) {
+				return nil, fmt.Errorf("failed to get TTL for %s from Redis: %w", policy.Name, err)
+			}
+		} else if ttl > 0 {
+			usages[i].ResetTime = now.Add(ttl)
+		}
+	}
+	return usages, nil
+}
+
+// ResetUsage implements [authz.QuotaTracker].
+func (t *redisQuotaTracker) ResetUsage(ctx context.Context, userID int64, policies []authz.QuotaPolicy) error {
+	if len(policies) == 0 {
+		return nil
+	}
+
+	if _, err := t.client.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, policy := range policies {
+			key := quotaKey(userID, policy)
+			pipe.Del(ctx, key)
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to reset usage in Redis: %w", err)
+	}
+	return nil
 }
 
 // Close closes the Redis connection.

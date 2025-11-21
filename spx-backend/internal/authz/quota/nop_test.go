@@ -9,30 +9,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNopQuotaTrackerTryConsume(t *testing.T) {
+	ctx := context.Background()
+	tracker := NewNopQuotaTracker()
+
+	quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}}, 10)
+	require.NoError(t, err)
+	assert.Nil(t, quota)
+}
+
 func TestNopQuotaTrackerUsage(t *testing.T) {
 	t.Run("AlwaysReturnsZero", func(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		usage, err := tracker.Usage(ctx, 123, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
 
 	t.Run("DifferentUsersReturnZero", func(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		usage1, err := tracker.Usage(ctx, 123, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		usages1, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage1.Used)
-		assert.True(t, usage1.ResetTime.IsZero())
+		require.Len(t, usages1, 1)
+		assert.Equal(t, int64(0), usages1[0].Used)
+		assert.True(t, usages1[0].ResetTime.IsZero())
 
-		usage2, err := tracker.Usage(ctx, 456, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		usages2, err := tracker.Usage(ctx, 456, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage2.Used)
-		assert.True(t, usage2.ResetTime.IsZero())
+		require.Len(t, usages2, 1)
+		assert.Equal(t, int64(0), usages2[0].Used)
+		assert.True(t, usages2[0].ResetTime.IsZero())
 	})
 }
 
@@ -41,7 +53,7 @@ func TestNopQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		err := tracker.ResetUsage(ctx, 123, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
 	})
 
@@ -49,21 +61,13 @@ func TestNopQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		err := tracker.ResetUsage(ctx, 123, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
 
-		usage, err := tracker.Usage(ctx, 123, authz.QuotaPolicy{Name: "copilotMessage:limit"})
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
-}
-
-func TestNopQuotaTrackerTryConsume(t *testing.T) {
-	ctx := context.Background()
-	tracker := NewNopQuotaTracker()
-
-	quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}}, 10)
-	require.NoError(t, err)
-	assert.Nil(t, quota)
 }
