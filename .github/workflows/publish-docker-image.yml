@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Configure spx-gui to use co-located spx-backend
         run: echo "VITE_API_BASE_URL=/api" > ./spx-gui/.env.staging.local
       - name: Log in to GitHub Container Registry
@@ -22,6 +24,8 @@ jobs:
           context: .
           build-args: |
             NODE_ENV=staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
           tags: |
             ghcr.io/${{github.repository}}:dev
