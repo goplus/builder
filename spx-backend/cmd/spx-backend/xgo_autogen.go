@@ -291,38 +291,38 @@ func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:101:1
 	logger.Printf("listening to %s", port)
 //line cmd/spx-backend/main.yap:103:1
-	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewCORSMiddleware(), NewReqIDMiddleware(), NewSentryMiddleware())
-//line cmd/spx-backend/main.yap:110:1
+	h := this.Handler(authorizer.Middleware(), authn.Middleware(authenticator), NewReqIDMiddleware(), NewSentryMiddleware())
+//line cmd/spx-backend/main.yap:109:1
 	server := &http.Server{Addr: port, Handler: h}
-//line cmd/spx-backend/main.yap:112:1
+//line cmd/spx-backend/main.yap:111:1
 	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-//line cmd/spx-backend/main.yap:113:1
+//line cmd/spx-backend/main.yap:112:1
 	defer stop()
-//line cmd/spx-backend/main.yap:114:1
+//line cmd/spx-backend/main.yap:113:1
 	var serverErr error
-//line cmd/spx-backend/main.yap:115:1
+//line cmd/spx-backend/main.yap:114:1
 	go func() {
-//line cmd/spx-backend/main.yap:116:1
+//line cmd/spx-backend/main.yap:115:1
 		serverErr = server.ListenAndServe()
-//line cmd/spx-backend/main.yap:117:1
+//line cmd/spx-backend/main.yap:116:1
 		stop()
 	}()
-//line cmd/spx-backend/main.yap:119:1
+//line cmd/spx-backend/main.yap:118:1
 	<-stopCtx.Done()
-//line cmd/spx-backend/main.yap:120:1
+//line cmd/spx-backend/main.yap:119:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-//line cmd/spx-backend/main.yap:121:1
+//line cmd/spx-backend/main.yap:120:1
 		logger.Fatalln("server error:", serverErr)
 	}
-//line cmd/spx-backend/main.yap:124:1
+//line cmd/spx-backend/main.yap:123:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
-//line cmd/spx-backend/main.yap:125:1
+//line cmd/spx-backend/main.yap:124:1
 	defer cancel()
-//line cmd/spx-backend/main.yap:126:1
+//line cmd/spx-backend/main.yap:125:1
 	if
-//line cmd/spx-backend/main.yap:126:1
+//line cmd/spx-backend/main.yap:125:1
 	err := server.Shutdown(shutdownCtx); err != nil {
-//line cmd/spx-backend/main.yap:127:1
+//line cmd/spx-backend/main.yap:126:1
 		logger.Fatalln("failed to gracefully shut down:", err)
 	}
 }
