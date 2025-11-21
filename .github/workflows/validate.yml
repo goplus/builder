@@ -13,6 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: spx-gui/node_modules
+          key: ${{runner.os}}-${{runner.arch}}-${{env.cache-name}}-${{hashFiles('spx-gui/package-lock.json')}}
+          restore-keys: |
+            ${{runner.os}}-${{runner.arch}}-${{env.cache-name}}-
+
       - name: Enable Corepack
         run: corepack enable
 
@@ -23,8 +33,8 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
-      - name: Install modules
-        run: npm install
+      - name: Install Node modules
+        run: npm install --prefer-offline
 
       - name: Install spx
         run: ./install-spx.sh
@@ -42,6 +52,10 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+          cache: true
+          cache-dependency-path: |
+            tools/spxls/go.sum
+            tools/ai/go.sum
 
       - name: Build WASM
         run: ./build-wasm.sh
@@ -60,10 +74,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Go & XGo
-        uses: goplus/setup-xgo@v1
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+          cache: true
+          cache-dependency-path: spx-backend/go.sum
+
+      - name: Set up XGo
+        uses: goplus/setup-xgo@v1
+        with:
           xgo-version: 1.5.x
 
       - name: Ensure xgo mod tidy is clean
@@ -87,6 +107,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+          cache: true
+          cache-dependency-path: tools/ai/go.sum
 
       - name: Run unit test cases
         run: go test -v -race ./...
