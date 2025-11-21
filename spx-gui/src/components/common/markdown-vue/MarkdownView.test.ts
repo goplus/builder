@@ -2,7 +2,11 @@ import { defineComponent, h, markRaw } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
 import { useSlotText } from '@/utils/vnode'
-import MarkdowView, { preprocessCustomRawComponents, preprocessIncompleteTags } from './MarkdownView'
+import MarkdowView, {
+  preprocessCustomRawComponents,
+  preprocessIncompleteTags,
+  preprocessInlineComponents
+} from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
   it('should convert custom raw components to <pre> tags', () => {
@@ -95,6 +99,63 @@ describe('preprocessCustomRawComponents', () => {
     const tagNames = ['custom-raw-component']
     const result = preprocessCustomRawComponents(value, tagNames)
     expect(result).toBe('<pre is="custom-raw-component" attr1="value1" attr2="value2" />')
+  })
+})
+
+describe('preprocessInlineComponents', () => {
+  it('should separate self-closing tag from next line text with blank line', () => {
+    const value = '<x-comp />\nHello world'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />\n\nHello world')
+  })
+  it('should separate self-closing tag from next line text with blank line with attributes', () => {
+    const value = '<x-comp some="foo" />\nHello world'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp some="foo" />\n\nHello world')
+  })
+  it('should preserve leading spaces of next line', () => {
+    const value = '<x-comp />\n   Hello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />\n\n   Hello')
+  })
+  it('should ignore when there is a blank line', () => {
+    const value = '<x-comp />\n\nHello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />\n\nHello')
+  })
+  it('should not change when inline already', () => {
+    const value = '<x-comp />Hello\nWorld'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />Hello\nWorld')
+  })
+  it('should match spaces before newline', () => {
+    const value = '<x-comp />  \nHello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />  \n\nHello')
+  })
+  it('should not change when not self-closing', () => {
+    const value = '<x-comp></x-comp>\nHello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp></x-comp>\nHello')
+  })
+  it('should separate even when a self-closing tag is preceded by text', () => {
+    const value = 'before<x-comp />\nHello'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('before<x-comp />\n\nHello')
+  })
+  it('should insert a blank line before an inline component when preceded by text', () => {
+    const value = '<x-comp />\n<x-comp />\nHello\n<x-comp />'
+    const tagNames = ['x-comp']
+    const result = preprocessInlineComponents(value, tagNames)
+    expect(result).toBe('<x-comp />\n\n<x-comp />\n\nHello\n<x-comp />')
   })
 })
 
@@ -254,5 +315,39 @@ After`,
 222
 <!--]--></div>
 <p><div class="test-comp-1"></div>aaa<div class="test-comp-2">bbb</div><div class="test-comp-2">ccc</div>ddd</p><div class="test-comp-3"><!--[--><p></p><!--]--></div></div>`)
+  })
+  it('should handle a custom self-closing tag with text on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div></p>\n<p>After</p></div>')
+  })
+  it('should handle a custom self-closing tag when text follows immediately on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />middle
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>middle\nAfter</p></div>')
   })
 })

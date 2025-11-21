@@ -11,7 +11,7 @@ const maxAbandonPredictionCount = 3
 
 const constraints = `
 **Constraints**:
-- MUST be placed at the **last line** of your message.
+- MUST be placed at the **first line** of your message.
 - Use at most ONCE per message.`
 
 const predictionTagName = 'tutorial-course-abandon-prediction'
