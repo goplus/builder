@@ -138,7 +138,12 @@ const isEventOverCanvas = (event: WheelEvent, canvasElement: HTMLCanvasElement):
   }
 
   const rect = canvasElement.getBoundingClientRect()
-  return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom
+  return (
+    event.clientX >= rect.left &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+  )
 }
 
 const handleWheel = (event: WheelEvent): void => {
@@ -230,16 +235,12 @@ const updateScrollbarAvailability = (): void => {
   nextTick(() => {
     if (horizontalScrollbarRef.value) {
       const trackWidth = Math.max(horizontalScrollbarRef.value.clientWidth, 1)
-      horizontalContentSize.value = canScrollHorizontal.value
-        ? trackWidth * (boundary.width / viewWidth)
-        : trackWidth
+      horizontalContentSize.value = canScrollHorizontal.value ? trackWidth * (boundary.width / viewWidth) : trackWidth
     }
 
     if (verticalScrollbarRef.value) {
       const trackHeight = Math.max(verticalScrollbarRef.value.clientHeight, 1)
-      verticalContentSize.value = canScrollVertical.value
-        ? trackHeight * (boundary.height / viewHeight)
-        : trackHeight
+      verticalContentSize.value = canScrollVertical.value ? trackHeight * (boundary.height / viewHeight) : trackHeight
     }
 
     syncScrollbarsWithView()
