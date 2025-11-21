@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -129,15 +130,17 @@ func (ctrl *Controller) GetCourse(ctx context.Context, id string) (*CourseDTO, e
 type ListCoursesOrderBy string
 
 const (
-	ListCoursesOrderByCreatedAt ListCoursesOrderBy = "createdAt"
-	ListCoursesOrderByUpdatedAt ListCoursesOrderBy = "updatedAt"
+	ListCoursesOrderByCreatedAt              ListCoursesOrderBy = "createdAt"
+	ListCoursesOrderByUpdatedAt              ListCoursesOrderBy = "updatedAt"
+	ListCoursesOrderBySequenceInCourseSeries ListCoursesOrderBy = "sequenceInCourseSeries"
 )
 
 // IsValid reports whether the order by condition is valid.
 func (ob ListCoursesOrderBy) IsValid() bool {
 	switch ob {
 	case ListCoursesOrderByCreatedAt,
-		ListCoursesOrderByUpdatedAt:
+		ListCoursesOrderByUpdatedAt,
+		ListCoursesOrderBySequenceInCourseSeries:
 		return true
 	}
 	return false
@@ -192,6 +195,7 @@ func (p *ListCoursesParams) Validate() (ok bool, msg string) {
 func (ctrl *Controller) ListCourses(ctx context.Context, params *ListCoursesParams) (*ByPage[CourseDTO], error) {
 	query := ctrl.db.WithContext(ctx).Model(&model.Course{})
 
+	var courseIDs []int64
 	if params.CourseSeriesID != nil {
 		mCourseSeriesID, err := strconv.ParseInt(*params.CourseSeriesID, 10, 64)
 		if err != nil {
@@ -202,7 +206,7 @@ func (ctrl *Controller) ListCourses(ctx context.Context, params *ListCoursesPara
 			return nil, fmt.Errorf("failed to get course series: %w", err)
 		}
 
-		courseIDs := []int64(mCourseSeries.CourseIDs)
+		courseIDs = []int64(mCourseSeries.CourseIDs)
 		if len(courseIDs) > 0 {
 			query = query.Where("course.id IN ?", courseIDs)
 		} else {
@@ -223,11 +227,17 @@ func (ctrl *Controller) ListCourses(ctx context.Context, params *ListCoursesPara
 		queryOrderByColumn = "course.created_at"
 	case ListCoursesOrderByUpdatedAt:
 		queryOrderByColumn = "course.updated_at"
-	}
-	if queryOrderByColumn == "" {
+	case ListCoursesOrderBySequenceInCourseSeries:
+		if len(courseIDs) > 0 {
+			orderByClause := fmt.Sprintf("FIELD(course.id, %s)", joinInt64s(courseIDs))
+			query = query.Order(fmt.Sprintf("%s %s", orderByClause, params.SortOrder))
+		}
+	default:
 		queryOrderByColumn = "course.created_at"
 	}
-	query = query.Order(fmt.Sprintf("%s %s, course.id", queryOrderByColumn, params.SortOrder))
+	if queryOrderByColumn != "" {
+		query = query.Order(fmt.Sprintf("%s %s, course.id", queryOrderByColumn, params.SortOrder))
+	}
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -346,4 +356,15 @@ func (ctrl *Controller) DeleteCourse(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete course: %w", err)
 	}
 	return nil
+}
+
+func joinInt64s(nums []int64) string {
+	if len(nums) == 0 {
+		return ""
+	}
+	str := make([]string, len(nums))
+	for i, num := range nums {
+		str[i] = strconv.FormatInt(num, 10)
+	}
+	return strings.Join(str, ",")
 }

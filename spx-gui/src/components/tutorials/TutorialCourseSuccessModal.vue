@@ -3,8 +3,9 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { type CourseSeriesWithCourses, type Tutorial } from './tutorial'
-import type { Course } from '@/apis/course'
+import { type Tutorial } from './tutorial'
+import { getCourse, type Course } from '@/apis/course'
+import type { CourseSeries } from '@/apis/course-series'
 import { useI18n } from '@/utils/i18n'
 
 import { UIButton, UIModal, UIModalClose } from '@/components/ui'
@@ -15,7 +16,7 @@ const props = defineProps<{
   visible: boolean
   tutorial: Tutorial
   course: Course
-  series: CourseSeriesWithCourses
+  series: CourseSeries
 }>()
 
 const emit = defineEmits<{
@@ -45,16 +46,16 @@ function handleBrowseTutorials() {
 const hasNextCourse = computed(() => {
   const currentCourse = props.course
   const currentSeries = props.series
-  const index = currentSeries.courses.findIndex(({ id }) => id === currentCourse.id)
-  return index !== -1 && index + 1 < currentSeries.courses.length
+  const index = currentSeries.courseIDs.indexOf(currentCourse.id)
+  return index !== -1 && index + 1 < currentSeries.courseIDs.length
 })
 
 const { fn: handleStartNextCourse } = useMessageHandle(
   async () => {
     const currentCourse = props.course
     const currentSeries = props.series
-    const findIndex = currentSeries.courses.findIndex(({ id }) => id === currentCourse.id)
-    if (findIndex === -1 || findIndex + 1 >= currentSeries.courses.length) {
+    const findIndex = currentSeries.courseIDs.indexOf(currentCourse.id)
+    if (findIndex === -1 || findIndex + 1 >= currentSeries.courseIDs.length) {
       throw new DefaultException({
         en: 'The course series is complete',
         zh: '课程系列已结束'
@@ -62,7 +63,7 @@ const { fn: handleStartNextCourse } = useMessageHandle(
     }
 
     const tutorial = props.tutorial
-    const nextCourse = currentSeries.courses[findIndex + 1]
+    const nextCourse = await getCourse(currentSeries.courseIDs[findIndex + 1])
     emit('cancelled')
     await tutorial.startCourse(nextCourse, currentSeries)
   },

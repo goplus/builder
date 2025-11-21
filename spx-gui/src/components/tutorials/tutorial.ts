@@ -13,16 +13,7 @@ import { name as tutorialStateIndicatorName } from './TutorialStateIndicator.vue
 import { tagName as tutorialCourseSuccessTagName } from './TutorialCourseSuccess.vue'
 import { tutorialCourseAbandonDismissal, tutorialCourseAbandonPrediction } from './tutorial-course-abandon'
 
-export type CourseSeriesWithCourses = CourseSeries & {
-  courses: Course[]
-}
-
 const tutorialKey: InjectionKey<Tutorial> = Symbol('tutorial')
-
-export function orderBy(courses: Course[], courseIDs?: string[]) {
-  if (!courseIDs) return courses
-  return [...courses].sort((a, b) => courseIDs.indexOf(a.id) - courseIDs.indexOf(b.id))
-}
 
 export function useTutorial() {
   const tutorial = inject(tutorialKey)
@@ -46,7 +37,7 @@ export function isTutorialTopic(topic: Topic): topic is TutorialTopic {
 
 export class Tutorial {
   private course = userSessionStorageRef<Course | null>('spx-gui-tutorial-course', null)
-  private series = userSessionStorageRef<CourseSeriesWithCourses | null>('spx-gui-tutorial-series', null)
+  private series = userSessionStorageRef<CourseSeries | null>('spx-gui-tutorial-series', null)
 
   constructor(
     private copilot: Copilot,
@@ -58,7 +49,7 @@ export class Tutorial {
     return this.course.value
   }
 
-  get currentSeries(): CourseSeriesWithCourses | null {
+  get currentSeries(): CourseSeries | null {
     return this.series.value
   }
 
@@ -70,7 +61,7 @@ export class Tutorial {
     this.abandonPredictionCountRef.value = 0
   }
 
-  async startCourse(course: Course, series: CourseSeriesWithCourses): Promise<void> {
+  async startCourse(course: Course, series: CourseSeries): Promise<void> {
     try {
       this.copilot.endCurrentSession()
       this.course.value = course
