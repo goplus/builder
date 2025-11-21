@@ -95,7 +95,7 @@
     </template>
     <template #right>
       <UIButtonGroup
-        v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (normal, map editor)' }"
+        v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="editor-mode-wrapper"
         type="text"
         :value="selectedEditMode"
@@ -103,19 +103,19 @@
       >
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.Normal">
+            <UIButtonGroupItem :value="EditMode.Default">
               <div class="icon" v-html="gamePreviewSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Normal', zh: '普通' }) }}
+          {{ $t({ en: 'Default', zh: '默认' }) }}
         </UITooltip>
         <UITooltip>
           <template #trigger>
-            <UIButtonGroupItem :value="EditMode.MapEditor">
+            <UIButtonGroupItem :value="EditMode.Map">
               <div class="icon" v-html="globalConfig"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Map Editor', zh: '地图编辑' }) }}
+          {{ $t({ en: 'Map', zh: '地图' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>
@@ -189,7 +189,7 @@ const canManageProject = computed(() => {
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
 
 const selectedEditMode = computed(() =>
-  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Normal
+  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Default
 )
 
 const ownerInfoToDisplay = computed(() => {

@@ -39,8 +39,8 @@ export interface IRouter {
 }
 
 export enum EditMode {
-  Normal = 'normal',
-  MapEditor = 'mapEditor'
+  Default = 'default',
+  Map = 'map'
 }
 
 export class EditorState extends Disposable {
@@ -80,7 +80,7 @@ export class EditorState extends Disposable {
   editing: editing.Editing
   stageState: StageEditorState
   spriteState: SpriteEditorState | null = null
-  private selectedEditModeRef = ref<EditMode>(EditMode.Normal)
+  private selectedEditModeRef = ref<EditMode>(EditMode.Default)
   private selectedTypeRef = ref<SelectedType>('sprite')
   private selectedSpriteIdRef = ref<string | null>(null)
   private selectedSoundIdRef = ref<string | null>(null)
@@ -242,7 +242,27 @@ export class EditorState extends Disposable {
   }
 
   private selectByRoute(path: PathSegments) {
-    const [segment, extra] = shiftPath(path)
+    let [segment, extra] = shiftPath(path)
+
+    switch (segment) {
+      // Temporarily retain `sounds` and `stage` routes for `map` mode.
+      // Although this deviates from the plan (where `map` mode only supports `sprites`),
+      // it is done to minimize the complexity of handling additional route redirects.
+      // For instance, navigating from `Sound` to `Map` might otherwise cause the history stack to shift from `map/sound` to `map/sprites/default/code`,
+      // increasing the cost of stack maintenance.
+      case EditMode.Map:
+        this.selectEditMode(EditMode.Map)
+        break
+      case EditMode.Default:
+      default:
+        this.selectEditMode(EditMode.Default)
+        break
+    }
+
+    if (this.selectedEditMode !== EditMode.Default) {
+      ;[segment, extra] = shiftPath(extra)
+    }
+
     switch (segment) {
       case 'stage':
         this.select({ type: 'stage' })
@@ -264,21 +284,37 @@ export class EditorState extends Disposable {
   }
 
   private getRoute(): PathSegments {
+    const pathSegments = []
     const selected = this.selected
+    const editMode = this.selectedEditMode
+
+    if (editMode !== EditMode.Default) {
+      pathSegments.push(editMode)
+    }
+
     switch (selected.type) {
       case 'stage':
-        return ['stage', ...this.stageState.getRoute()]
+        pathSegments.push('stage', ...this.stageState.getRoute())
+        break
       case 'sprite': {
         const sprite = selected.sprite
-        if (sprite == null || this.spriteState == null) return ['sprites']
-        return ['sprites', sprite.name, ...this.spriteState.getRoute()]
+        pathSegments.push('sprites')
+        if (sprite != null && this.spriteState != null) {
+          pathSegments.push(sprite.name, ...this.spriteState.getRoute())
+        }
+        break
       }
       case 'sound': {
         const sound = selected.sound
-        if (sound == null) return ['sounds']
-        return ['sounds', sound.name]
+        pathSegments.push('sounds')
+        if (sound != null) {
+          pathSegments.push(sound.name)
+        }
+        break
       }
     }
+
+    return pathSegments
   }
 
   private updateRouter(router: IRouter, replace: boolean) {
@@ -320,7 +356,12 @@ export class EditorState extends Disposable {
     // Sync from selected state to router
     this.addDisposer(
       watch(
-        () => this.selected,
+        // Why watch?
+        // We can switch to map without watching, but we need the map route in the history stack.
+        // This requires responding to changes in `selectedEditMode`.
+        // Scenario: Sound -> Stage -> Map -> Click Back.
+        // With watch: Back to Stage. Without watch: Back to Sound.
+        () => [this.selected, this.selectedEditMode],
         (_, __, onCleanup) => {
           // If `selected` changes, push new route
           this.updateRouter(router, false)
