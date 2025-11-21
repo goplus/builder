@@ -81,45 +81,34 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 	}
 }
 
-// ensureQuotaRemaining enforces rate limits and long-window quotas for the
-// given amount, replying with 429 or 403 when exhausted.
+// ensureQuotaRemaining atomically checks and consumes quota for the given
+// amount, replying with 429 or 403 when exhausted.
 func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
 	quotas, ok := authz.UserQuotasFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
 
-	// Check rate limits.
-	if quotas, ok := quotas.RateLimits[resource]; ok {
-		for _, quota := range quotas {
-			if quota.Remaining() < amount {
-				if reset := quota.Reset(); reset > 0 {
-					ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
-				}
-				replyWithCodeMsg(ctx, errorRateLimitExceeded, fmt.Sprintf("%s rate limit exceeded", resource))
-				return false
-			}
-		}
+	failedQuota, err := authz.TryConsumeQuota(ctx.Context(), resource, amount)
+	if err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to check and consume %s quota: %v", resource, err)
+		replyWithCode(ctx, errorUnknown)
+		return false
 	}
-
-	// Check quota limits.
-	if quota, ok := quotas.Limits[resource]; ok && quota.Remaining() < amount {
-		if reset := quota.Reset(); reset > 0 {
+	if failedQuota != nil {
+		if reset := failedQuota.Reset(); reset > 0 {
 			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
 		}
-		replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
+		if quota, ok := quotas.Limits[resource]; ok && quota.QuotaPolicy == failedQuota.QuotaPolicy {
+			replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
+		} else {
+			replyWithCodeMsg(ctx, errorRateLimitExceeded, fmt.Sprintf("%s rate limit exceeded", resource))
+		}
 		return false
 	}
 
 	return true
-}
-
-// consumeQuota consumes the quota for the given resource and logs failures.
-func consumeQuota(ctx *yap.Context, resource authz.Resource, amount int64) {
-	if err := authz.ConsumeQuota(ctx.Context(), resource, amount); err != nil {
-		logger := log.GetReqLogger(ctx.Context())
-		logger.Printf("failed to consume %s quota: %v", resource, err)
-	}
 }
 
 // errorPayload is the payload for error response.

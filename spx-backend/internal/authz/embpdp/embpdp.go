@@ -149,7 +149,7 @@ func (p *embeddedPDP) ComputeUserQuotas(ctx context.Context, mUser *model.User) 
 		if err != nil {
 			return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s quota usage for user %q: %w", policy.Resource, mUser.Username, err)
 		}
-		usage.ResetTime = quotaResetTime(policy.Window, usage)
+		usage.ResetTime = quotaResetTime(policy, usage)
 
 		limits[policy.Resource] = authz.Quota{QuotaPolicy: policy, QuotaUsage: usage}
 	}
@@ -164,7 +164,7 @@ func (p *embeddedPDP) ComputeUserQuotas(ctx context.Context, mUser *model.User) 
 			if err != nil {
 				return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s rate limit usage for user %q: %w", policy.Resource, mUser.Username, err)
 			}
-			usage.ResetTime = quotaResetTime(policy.Window, usage)
+			usage.ResetTime = quotaResetTime(policy, usage)
 
 			quotas = append(quotas, authz.Quota{QuotaPolicy: policy, QuotaUsage: usage})
 		}
@@ -215,11 +215,14 @@ const (
 	userRoleCourseAdmin userRole = "courseAdmin"
 )
 
-// quotaResetTime returns the time when the quota window resets for the given usage data.
-func quotaResetTime(window time.Duration, usage authz.QuotaUsage) time.Time {
+// quotaResetTime returns the time when the quota resets for the given usage data.
+func quotaResetTime(policy authz.QuotaPolicy, usage authz.QuotaUsage) time.Time {
+	if policy.Limit <= 0 {
+		return time.Time{}
+	}
 	if usage.ResetTime.IsZero() {
-		if usage.Used == 0 && window > 0 {
-			return time.Now().Add(window)
+		if usage.Used == 0 && policy.Window > 0 {
+			return time.Now().Add(policy.Window)
 		}
 		return time.Time{}
 	}

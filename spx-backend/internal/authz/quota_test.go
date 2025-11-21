@@ -10,9 +10,9 @@ import (
 )
 
 type mockQuotaTracker struct {
-	usageFunc          func(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error)
-	incrementUsageFunc func(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error
-	resetUsageFunc     func(ctx context.Context, userID int64, policy QuotaPolicy) error
+	usageFunc      func(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error)
+	resetUsageFunc func(ctx context.Context, userID int64, policy QuotaPolicy) error
+	tryConsumeFunc func(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error)
 }
 
 func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy QuotaPolicy) (QuotaUsage, error) {
@@ -22,18 +22,18 @@ func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy Quota
 	return QuotaUsage{Used: 20}, nil
 }
 
-func (m *mockQuotaTracker) IncrementUsage(ctx context.Context, userID int64, policy QuotaPolicy, amount int64) error {
-	if m.incrementUsageFunc != nil {
-		return m.incrementUsageFunc(ctx, userID, policy, amount)
-	}
-	return nil
-}
-
 func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy QuotaPolicy) error {
 	if m.resetUsageFunc != nil {
 		return m.resetUsageFunc(ctx, userID, policy)
 	}
 	return nil
+}
+
+func (m *mockQuotaTracker) TryConsume(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error) {
+	if m.tryConsumeFunc != nil {
+		return m.tryConsumeFunc(ctx, userID, policies, amount)
+	}
+	return nil, nil
 }
 
 func TestQuotaReset(t *testing.T) {
@@ -54,6 +54,9 @@ func TestQuotaReset(t *testing.T) {
 
 	t.Run("WithFutureResetTime", func(t *testing.T) {
 		quota := Quota{
+			QuotaPolicy: QuotaPolicy{
+				Limit: 100,
+			},
 			QuotaUsage: QuotaUsage{
 				ResetTime: time.Now().Add(5 * time.Second),
 			},
@@ -67,6 +70,16 @@ func TestQuotaReset(t *testing.T) {
 		quota := Quota{
 			QuotaUsage: QuotaUsage{
 				ResetTime: time.Now().Add(-1 * time.Second),
+			},
+		}
+		assert.Equal(t, int64(0), quota.Reset())
+	})
+
+	t.Run("ZeroLimit", func(t *testing.T) {
+		quota := Quota{
+			QuotaPolicy: QuotaPolicy{
+				Limit:  0,
+				Window: 3600 * time.Second,
 			},
 		}
 		assert.Equal(t, int64(0), quota.Reset())
@@ -101,7 +114,7 @@ func TestQuotaRemaining(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "Unlimited",
+			name: "ZeroLimit",
 			quota: Quota{
 				QuotaPolicy: QuotaPolicy{Limit: 0},
 			},

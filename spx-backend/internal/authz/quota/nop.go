@@ -19,12 +19,12 @@ func (*nopQuotaTracker) Usage(context.Context, int64, authz.QuotaPolicy) (authz.
 	return authz.QuotaUsage{}, nil
 }
 
-// IncrementUsage implements [authz.QuotaTracker].
-func (*nopQuotaTracker) IncrementUsage(context.Context, int64, authz.QuotaPolicy, int64) error {
-	return nil
-}
-
 // ResetUsage implements [authz.QuotaTracker].
 func (*nopQuotaTracker) ResetUsage(context.Context, int64, authz.QuotaPolicy) error {
 	return nil
+}
+
+// TryConsume implements [authz.QuotaTracker].
+func (*nopQuotaTracker) TryConsume(context.Context, int64, []authz.QuotaPolicy, int64) (*authz.Quota, error) {
+	return nil, nil
 }

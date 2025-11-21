@@ -13,11 +13,7 @@ if _, ok := ensureAuthenticatedUser(ctx); !ok {
 	return
 }
 
-const (
-	quotaResource = authz.ResourceAIDescription
-	quotaAmount   = 1
-)
-if !ensureQuotaRemaining(ctx, quotaResource, quotaAmount) {
+if !ensureQuotaRemaining(ctx, authz.ResourceAIDescription, 1) {
 	return
 }
 
@@ -35,7 +31,5 @@ if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-
-consumeQuota(ctx, quotaResource, quotaAmount)
 
 json result
