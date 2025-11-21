@@ -565,8 +565,8 @@ const setAllPathsValue = (paths: paper.Path[]): void => {
   //历史记录保存
   if (!historyManager.value || !importExportManager) return
 
-  //这里保存的是修改后的值，不缩放（scaleForExport: false）以保持原始大小
-  const svgContent = importExportManager.exportSvg({ scaleForExport: false })
+  // 保存舞台尺寸的 SVG 以便历史记录复原后统一放大
+  const svgContent = importExportManager.exportSvg()
   if (svgContent) {
     historyManager.value.addState(svgContent)
   }
@@ -693,8 +693,8 @@ const clearCanvas = (): void => {
     zoomControlRef.value.resetZoom()
   }
 
-  // 保存清空后的状态，不缩放（scaleForExport: false）以保持原始大小
-  const svgContentAfterClear = importExportManager.exportSvg({ scaleForExport: false })
+  // 保存清空后的舞台尺寸状态，导入时统一放大
+  const svgContentAfterClear = importExportManager.exportSvg()
   if (svgContentAfterClear) {
     historyManager.value.addState(svgContentAfterClear, 'Clear')
   }
@@ -754,8 +754,8 @@ watch(
     // 加载新内容
     await loadFileToCanvas(newImgSrc)
     historyManager.value?.clearHistory()
-    // 设置初始状态时不缩放（scaleForExport: false）以保持原始大小
-    historyManager.value?.setInitialState(importExportManager?.exportSvg({ scaleForExport: false }) || '')
+    // 设置初始状态为舞台尺寸，后续导入时再放大
+    historyManager.value?.setInitialState(importExportManager?.exportSvg() || '')
     // 导入完成后清理状态，不自动恢复控制点显示
     // 让用户主动点击路径来显示控制点，避免干扰绘制体验
     setTimeout(() => {
