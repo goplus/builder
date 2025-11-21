@@ -422,7 +422,7 @@ func TestControllerListCourses(t *testing.T) {
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("OrderByCourseIDs", func(t *testing.T) {
+	t.Run("OrderBySequenceInCourseSeries", func(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
@@ -439,7 +439,7 @@ func TestControllerListCourses(t *testing.T) {
 
 		params := NewListCoursesParams()
 		params.CourseSeriesID = &courseSeriesIDStr
-		params.OrderBy = ListCoursesOrderByCourseIDs
+		params.OrderBy = ListCoursesOrderBySequenceInCourseSeries
 
 		// Mock ensureCourseSeries
 		courseSeriesDBColumns, err := modeltest.ExtractDBColumns(db, model.CourseSeries{})

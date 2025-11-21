@@ -19,11 +19,6 @@ import { useAsyncComputed, usePageTitle } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 
-usePageTitle({
-  en: 'Course Series',
-  zh: '课程系列'
-})
-
 const coursePadding = 20
 const numInColumn = 2
 
@@ -44,6 +39,15 @@ const {
   refetch: courseSeriesRefetch,
   isLoading: courseSeriesIsLoading
 } = courseSeriesQuery
+
+usePageTitle(() => {
+  const parts = []
+  if (courseSeries.value != null) {
+    parts.push({ en: courseSeries.value.title, zh: courseSeries.value.title })
+  }
+  parts.push({ en: 'Course Series', zh: '课程系列' })
+  return parts
+})
 
 const thumbnailUrl = useAsyncComputed(async (onCleanup) => {
   const thumbnailUniversalUrl = courseSeries.value?.thumbnail
@@ -68,7 +72,7 @@ const courseQuery = useQuery(
         courseSeriesID: props.courseSeriesId,
         pageIndex: page.value,
         pageSize: pageSize.value,
-        orderBy: 'courseIDs',
+        orderBy: 'sequenceInCourseSeries',
         owner: ownerAll
       },
       ctx.signal

@@ -1310,7 +1310,7 @@ paths:
             enum:
               - createdAt
               - updatedAt
-              - courseIDs
+              - sequenceInCourseSeries
             default: createdAt
             examples:
               - createdAt

@@ -130,9 +130,9 @@ func (ctrl *Controller) GetCourse(ctx context.Context, id string) (*CourseDTO, e
 type ListCoursesOrderBy string
 
 const (
-	ListCoursesOrderByCreatedAt ListCoursesOrderBy = "createdAt"
-	ListCoursesOrderByUpdatedAt ListCoursesOrderBy = "updatedAt"
-	ListCoursesOrderByCourseIDs ListCoursesOrderBy = "courseIDs"
+	ListCoursesOrderByCreatedAt              ListCoursesOrderBy = "createdAt"
+	ListCoursesOrderByUpdatedAt              ListCoursesOrderBy = "updatedAt"
+	ListCoursesOrderBySequenceInCourseSeries ListCoursesOrderBy = "sequenceInCourseSeries"
 )
 
 // IsValid reports whether the order by condition is valid.
@@ -140,7 +140,7 @@ func (ob ListCoursesOrderBy) IsValid() bool {
 	switch ob {
 	case ListCoursesOrderByCreatedAt,
 		ListCoursesOrderByUpdatedAt,
-		ListCoursesOrderByCourseIDs:
+		ListCoursesOrderBySequenceInCourseSeries:
 		return true
 	}
 	return false
@@ -227,7 +227,7 @@ func (ctrl *Controller) ListCourses(ctx context.Context, params *ListCoursesPara
 		queryOrderByColumn = "course.created_at"
 	case ListCoursesOrderByUpdatedAt:
 		queryOrderByColumn = "course.updated_at"
-	case ListCoursesOrderByCourseIDs:
+	case ListCoursesOrderBySequenceInCourseSeries:
 		if len(courseIDs) > 0 {
 			orderByClause := fmt.Sprintf("FIELD(course.id, %s)", joinInt64s(courseIDs))
 			query = query.Order(fmt.Sprintf("%s %s", orderByClause, params.SortOrder))
