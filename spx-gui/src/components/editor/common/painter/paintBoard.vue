@@ -192,17 +192,21 @@
 
       <!-- 画布区域 -->
       <div class="canvas-wrapper">
-        <canvas
-          ref="canvasRef"
-          resize
-          style="width: 100%; height: 100%"
-          @click="handleCanvasClick"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          @mouseup="handleCanvasMouseUp"
-          @mouseenter="handleCanvasMouseEnter"
-          @mouseleave="handleCanvasMouseLeave"
-        ></canvas>
+        <div class="canvas-scroll-wrapper">
+          <canvas
+            ref="canvasRef"
+            resize
+            style="width: 100%; height: 100%"
+            @click="handleCanvasClick"
+            @mousedown="handleMouseDown"
+            @mousemove="handleMouseMove"
+            @mouseup="handleCanvasMouseUp"
+            @mouseenter="handleCanvasMouseEnter"
+            @mouseleave="handleCanvasMouseLeave"
+          ></canvas>
+
+          <CanvasScrollbars :canvas-ref="canvasRef" />
+        </div>
 
         <!-- 选择工具组件 -->
         <SelectTool ref="selectToolRef" :is-active="currentTool === 'select'" />
@@ -293,6 +297,7 @@ import CircleTool from './components/circle_tool.vue'
 import FillTool from './components/fill_tool.vue'
 import TextTool from './components/text_tool.vue'
 import SelectTool from './components/select_tool.vue'
+import CanvasScrollbars from './components/canvas_Scrollbar.vue'
 import AiGenerate from './components/aigc/aigcGenerator.vue'
 import ZoomControl from './components/zoom_control.vue'
 import { canvasEventDelegator, type ToolHandler } from './utils/delegator'
@@ -1021,6 +1026,15 @@ provide('isViewBoundsWithinBoundary', isViewBoundsWithinBoundary)
   min-height: 0; /* 防止溢出 */
   flex: 1; /* 占据剩余空间 */
   overflow: hidden; /* 防止内容溢出 */
+}
+
+.canvas-scroll-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding-right: 12px; /* 给垂直滚动条预留空间，避免遮挡右侧内容 */
+  padding-bottom: 12px; /* 给水平滚动条预留空间，避免遮挡底部内容 */
 }
 
 canvas {
