@@ -7,6 +7,9 @@ on:
 jobs:
   spx-gui-lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spx-gui
     steps:
       - uses: actions/checkout@v5
 
@@ -21,23 +24,18 @@ jobs:
           cache-dependency-path: spx-gui/package-lock.json
 
       - name: Install modules
-        working-directory: spx-gui
         run: npm install
 
       - name: Install spx
-        working-directory: spx-gui
         run: ./install-spx.sh
 
       - name: Run Vue TSC
-        working-directory: spx-gui
         run: npm run type-check
 
       - name: Run ESLint
-        working-directory: spx-gui
         run: npm run lint
 
       - name: Run format check
-        working-directory: spx-gui
         run: npm run format-check
 
       - name: Setup Go
@@ -46,19 +44,19 @@ jobs:
           go-version: 1.24.x
 
       - name: Build WASM
-        working-directory: spx-gui
         run: ./build-wasm.sh
 
       - name: Run Vitest
-        working-directory: spx-gui
         run: npm run test
 
       - name: Build
-        working-directory: spx-gui
         run: npm run build
 
   spx-backend-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spx-backend
     steps:
       - uses: actions/checkout@v5
 
@@ -68,12 +66,20 @@ jobs:
           go-version: 1.24.x
           xgo-version: 1.5.x
 
+      - name: Ensure xgo mod tidy is clean
+        working-directory: spx-backend/cmd/spx-backend
+        run: |
+          xgo mod tidy
+          git diff --exit-code
+
       - name: Run unit test cases
-        working-directory: spx-backend
         run: go test -v -race ./...
 
   tools-ai-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/ai
     steps:
       - uses: actions/checkout@v5
 
@@ -83,5 +89,4 @@ jobs:
           go-version: 1.24.x
 
       - name: Run unit test cases
-        working-directory: tools/ai
         run: go test -v -race ./...
