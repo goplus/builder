@@ -32,9 +32,7 @@ export type UnzipOptions = fflate.AsyncUnzipOptions & {
   signal?: AbortSignal
 }
 
-function decodeFilenameUtf8(bytes: Uint8Array): string {
-  return new TextDecoder('utf-8').decode(bytes)
-}
+const utf8Decoder = new TextDecoder('utf-8')
 
 export function unzip(data: Uint8Array, { signal, ...options }: UnzipOptions = {}) {
   return new Promise<Unzipped>((resolve, reject) => {
@@ -50,7 +48,7 @@ export function unzip(data: Uint8Array, { signal, ...options }: UnzipOptions = {
         // For now popular zip tools use UTF-8 by default
         // and some of them (e.g. macOS Archive Utility) **do not** set general purpose bit 11.
         // So we just always decode as UTF-8 to provide maximum compatibility.
-        decodeFilename: decodeFilenameUtf8,
+        decodeFilename: (bytes) => utf8Decoder.decode(bytes),
         ...options
       },
       (err, unzipped) => {
