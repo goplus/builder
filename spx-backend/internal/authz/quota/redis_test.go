@@ -327,12 +327,12 @@ func TestQuotaKey(t *testing.T) {
 	t.Run("UsesPolicyName", func(t *testing.T) {
 		policy := authz.QuotaPolicy{Name: "copilotMessage:limit", Resource: authz.ResourceCopilotMessage}
 		key := quotaKey(123, policy)
-		assert.Equal(t, "123:copilotMessage:limit", key)
+		assert.Equal(t, "quota:{user:123}:copilotMessage:limit", key)
 	})
 
 	t.Run("FallsBackToResourceWhenNameEmpty", func(t *testing.T) {
 		policy := authz.QuotaPolicy{Name: "", Resource: authz.ResourceAIDescription}
 		key := quotaKey(456, policy)
-		assert.Equal(t, "456:aiDescription", key)
+		assert.Equal(t, "quota:{user:456}:aiDescription", key)
 	})
 }

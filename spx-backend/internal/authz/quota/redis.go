@@ -213,5 +213,6 @@ func quotaKey(userID int64, policy authz.QuotaPolicy) string {
 	if name == "" {
 		name = string(policy.Resource)
 	}
-	return fmt.Sprintf("%d:%s", userID, name)
+	// Use a hash tag to keep all quota keys for the same user in one hash slot on Redis Cluster.
+	return fmt.Sprintf("quota:{user:%d}:%s", userID, name)
 }
