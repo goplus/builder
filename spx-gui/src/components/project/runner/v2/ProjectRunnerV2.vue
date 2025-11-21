@@ -72,6 +72,7 @@ async function loadFiles(files: Files, reporter: ProgressReporter, signal?: Abor
     Object.entries(files)
       .filter(([_, file]) => file != null)
       .map(async ([path, file]) => {
+        if (file == null) return
         const r = filesCollector.getSubReporter()
         runnerFiles[path] = {
           content: await file.arrayBuffer(signal),
@@ -135,6 +136,7 @@ watch(runnerIframeRef, (iframe) => {
 })
 
 function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
+  console.debug('ProjectRunner iframe loaded')
   // TODO: Clean up console logs in the runner page
   iframeWindow.console.log = function (...args: unknown[]) {
     // eslint-disable-next-line no-console
@@ -147,6 +149,7 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   }
 
   function handleRunnerReady() {
+    console.debug('ProjectRunner runner ready')
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
       console.warn('ProjectRunner game error:', err)
@@ -155,8 +158,9 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
     iframeWindow.onGameExit((code: number) => {
       emit('exit', code)
     })
+    console.debug('ProjectRunner init engine...')
     engineInitPromise = iframeWindow.initEngine(assetURLs, { logLevel: logLevels.LOG_LEVEL_ERROR, useProfiler: false })
-    engineInitPromise.catch((err) => {
+    engineInitPromise.then(() => console.debug('ProjectRunner engine initialized')).catch((err) => {
       console.warn('ProjectRunner init engine error:', err)
       failed.value = true
     })
@@ -246,9 +250,11 @@ async function runInternal(ctrl: AbortController) {
         engineInitPromise.then(() => initEngineReporter.report(1)),
         loadFiles(files, getProjectDataReporter, ctrl.signal)
       ]).then(async ([_, runnerFiles]) => {
+        console.debug('ProjectRunner init game files loaded')
         await iframeWindow.initGame(runnerFiles)
         ctrl.signal.throwIfAborted()
         initGameReporter.report(1)
+        console.debug('ProjectRunner init game done')
       }),
       prepareAIInteraction(props.project, iframeWindow, prepareAIInteractionReporter, ctrl.signal)
     ])
@@ -261,6 +267,7 @@ async function runInternal(ctrl: AbortController) {
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10 * 1000)
+    console.debug('ProjectRunner starting game...')
     await iframeWindow.startGame()
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
@@ -303,7 +310,7 @@ defineExpose({
 
 <template>
   <div class="iframe-container">
-    <iframe ref="iframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
+    <iframe ref="runnerIframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
     <UIImg v-show="progressRef.percentage !== 1" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
     <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
       <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
