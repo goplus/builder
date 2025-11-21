@@ -161,58 +161,46 @@ func TestTryConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
-		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
-			Limits: map[Resource]Quota{
+		ctx = NewContextWithUserQuotaPolicies(ctx, UserQuotaPolicies{
+			Limits: map[Resource]QuotaPolicy{
 				ResourceCopilotMessage: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "copilotMessage:limit",
-						Resource: ResourceCopilotMessage,
-						Limit:    100,
-						Window:   24 * time.Hour,
-					},
+					Name:     "copilotMessage:limit",
+					Resource: ResourceCopilotMessage,
+					Limit:    100,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIDescription: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiDescription:limit",
-						Resource: ResourceAIDescription,
-						Limit:    300,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiDescription:limit",
+					Resource: ResourceAIDescription,
+					Limit:    300,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionTurn: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionTurn:limit",
-						Resource: ResourceAIInteractionTurn,
-						Limit:    12000,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiInteractionTurn:limit",
+					Resource: ResourceAIInteractionTurn,
+					Limit:    12000,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionArchive: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionArchive:limit",
-						Resource: ResourceAIInteractionArchive,
-						Limit:    8000,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiInteractionArchive:limit",
+					Resource: ResourceAIInteractionArchive,
+					Limit:    8000,
+					Window:   24 * time.Hour,
 				},
 			},
-			RateLimits: map[Resource][]Quota{
+			RateLimits: map[Resource][]QuotaPolicy{
 				ResourceCopilotMessage: {
 					{
-						QuotaPolicy: QuotaPolicy{
-							Name:     "copilotMessage:rateLimit:1m",
-							Resource: ResourceCopilotMessage,
-							Limit:    30,
-							Window:   time.Minute,
-						},
+						Name:     "copilotMessage:rateLimit:1m",
+						Resource: ResourceCopilotMessage,
+						Limit:    30,
+						Window:   time.Minute,
 					},
 					{
-						QuotaPolicy: QuotaPolicy{
-							Name:     "copilotMessage:rateLimit:5m",
-							Resource: ResourceCopilotMessage,
-							Limit:    150,
-							Window:   5 * time.Minute,
-						},
+						Name:     "copilotMessage:rateLimit:5m",
+						Resource: ResourceCopilotMessage,
+						Limit:    150,
+						Window:   5 * time.Minute,
 					},
 				},
 			},
@@ -242,16 +230,14 @@ func TestTryConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
-		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
-			RateLimits: map[Resource][]Quota{
+		ctx = NewContextWithUserQuotaPolicies(ctx, UserQuotaPolicies{
+			RateLimits: map[Resource][]QuotaPolicy{
 				ResourceCopilotMessage: {
 					{
-						QuotaPolicy: QuotaPolicy{
-							Name:     "copilotMessage:rateLimit:1m",
-							Resource: ResourceCopilotMessage,
-							Limit:    30,
-							Window:   time.Minute,
-						},
+						Name:     "copilotMessage:rateLimit:1m",
+						Resource: ResourceCopilotMessage,
+						Limit:    30,
+						Window:   time.Minute,
 					},
 				},
 			},
@@ -298,39 +284,31 @@ func TestTryConsumeQuota(t *testing.T) {
 		ctx := context.Background()
 		ctx = authn.NewContextWithUser(ctx, testUser)
 		ctx = newContextWithAuthorizer(ctx, authorizer)
-		ctx = NewContextWithUserQuotas(ctx, UserQuotas{
-			Limits: map[Resource]Quota{
+		ctx = NewContextWithUserQuotaPolicies(ctx, UserQuotaPolicies{
+			Limits: map[Resource]QuotaPolicy{
 				ResourceCopilotMessage: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "copilotMessage:limit",
-						Resource: ResourceCopilotMessage,
-						Limit:    100,
-						Window:   24 * time.Hour,
-					},
+					Name:     "copilotMessage:limit",
+					Resource: ResourceCopilotMessage,
+					Limit:    100,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIDescription: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiDescription:limit",
-						Resource: ResourceAIDescription,
-						Limit:    300,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiDescription:limit",
+					Resource: ResourceAIDescription,
+					Limit:    300,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionTurn: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionTurn:limit",
-						Resource: ResourceAIInteractionTurn,
-						Limit:    12000,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiInteractionTurn:limit",
+					Resource: ResourceAIInteractionTurn,
+					Limit:    12000,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionArchive: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionArchive:limit",
-						Resource: ResourceAIInteractionArchive,
-						Limit:    8000,
-						Window:   24 * time.Hour,
-					},
+					Name:     "aiInteractionArchive:limit",
+					Resource: ResourceAIInteractionArchive,
+					Limit:    8000,
+					Window:   24 * time.Hour,
 				},
 			},
 		})
@@ -352,7 +330,7 @@ func TestTryConsumeQuota(t *testing.T) {
 
 		_, err := TryConsumeQuota(ctx, ResourceCopilotMessage, 1)
 		require.Error(t, err)
-		assert.EqualError(t, err, "missing user quotas in context")
+		assert.EqualError(t, err, "missing user quota policies in context")
 	})
 
 	t.Run("WrongAuthorizerContextValue", func(t *testing.T) {

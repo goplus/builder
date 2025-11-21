@@ -26,7 +26,7 @@ func newTestUser() *model.User {
 	}
 }
 
-func newTestHandler(t *testing.T, wantCaps *UserCapabilities, wantQuotas *UserQuotas) http.HandlerFunc {
+func newTestHandler(t *testing.T, wantCaps *UserCapabilities, wantQuotaPolicies *UserQuotaPolicies) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		caps, ok := UserCapabilitiesFromContext(r.Context())
 		if wantCaps != nil {
@@ -41,13 +41,13 @@ func newTestHandler(t *testing.T, wantCaps *UserCapabilities, wantQuotas *UserQu
 			w.Write([]byte("no capabilities"))
 		}
 
-		quotas, ok := UserQuotasFromContext(r.Context())
-		if wantQuotas != nil {
+		quotaPolicies, ok := UserQuotaPoliciesFromContext(r.Context())
+		if wantQuotaPolicies != nil {
 			require.True(t, ok)
-			assert.Equal(t, *wantQuotas, quotas)
+			assert.Equal(t, *wantQuotaPolicies, quotaPolicies)
 		} else {
 			require.False(t, ok)
-			require.Zero(t, quotas)
+			require.Zero(t, quotaPolicies)
 		}
 	}
 }
@@ -84,48 +84,35 @@ func TestAuthorizerMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidUser", func(t *testing.T) {
-		const quotaWindow = 24 * time.Hour
 		wantCaps := UserCapabilities{
 			CanManageAssets:  true,
 			CanUsePremiumLLM: true,
 		}
-		wantQuotas := UserQuotas{
-			Limits: map[Resource]Quota{
+		wantQuotaPolicies := UserQuotaPolicies{
+			Limits: map[Resource]QuotaPolicy{
 				ResourceCopilotMessage: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "copilotMessage:limit",
-						Resource: ResourceCopilotMessage,
-						Limit:    1000,
-						Window:   quotaWindow,
-					},
-					QuotaUsage: QuotaUsage{Used: 100},
+					Name:     "copilotMessage:limit",
+					Resource: ResourceCopilotMessage,
+					Limit:    1000,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIDescription: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiDescription:limit",
-						Resource: ResourceAIDescription,
-						Limit:    1000,
-						Window:   quotaWindow,
-					},
-					QuotaUsage: QuotaUsage{Used: 150},
+					Name:     "aiDescription:limit",
+					Resource: ResourceAIDescription,
+					Limit:    1000,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionTurn: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionTurn:limit",
-						Resource: ResourceAIInteractionTurn,
-						Limit:    24000,
-						Window:   quotaWindow,
-					},
-					QuotaUsage: QuotaUsage{Used: 500},
+					Name:     "aiInteractionTurn:limit",
+					Resource: ResourceAIInteractionTurn,
+					Limit:    24000,
+					Window:   24 * time.Hour,
 				},
 				ResourceAIInteractionArchive: {
-					QuotaPolicy: QuotaPolicy{
-						Name:     "aiInteractionArchive:limit",
-						Resource: ResourceAIInteractionArchive,
-						Limit:    16000,
-						Window:   quotaWindow,
-					},
-					QuotaUsage: QuotaUsage{Used: 500},
+					Name:     "aiInteractionArchive:limit",
+					Resource: ResourceAIInteractionArchive,
+					Limit:    16000,
+					Window:   24 * time.Hour,
 				},
 			},
 		}
@@ -136,17 +123,17 @@ func TestAuthorizerMiddleware(t *testing.T) {
 			assert.Equal(t, "test-user", mUser.Username)
 			return wantCaps, nil
 		}
-		pdp.computeUserQuotasFunc = func(ctx context.Context, mUser *model.User) (UserQuotas, error) {
+		pdp.computeUserQuotaPoliciesFunc = func(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error) {
 			assert.Equal(t, int64(123), mUser.ID)
 			assert.Equal(t, "test-user", mUser.Username)
-			return wantQuotas, nil
+			return wantQuotaPolicies, nil
 		}
 
 		quotaTracker := &mockQuotaTracker{}
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, &wantCaps, &wantQuotas))
+		handler := middleware(newTestHandler(t, &wantCaps, &wantQuotaPolicies))
 
 		testUser := newTestUser()
 		ctx := authn.NewContextWithUser(context.Background(), testUser)

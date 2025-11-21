@@ -139,39 +139,23 @@ func (p *embeddedPDP) ComputeUserCapabilities(ctx context.Context, mUser *model.
 	}, nil
 }
 
-// ComputeUserQuotas implements [authz.PolicyDecisionPoint].
-func (p *embeddedPDP) ComputeUserQuotas(ctx context.Context, mUser *model.User) (authz.UserQuotas, error) {
-	limits := make(map[authz.Resource]authz.Quota, len(quotaLimitSpecs))
+// ComputeUserQuotaPolicies implements [authz.PolicyDecisionPoint].
+func (p *embeddedPDP) ComputeUserQuotaPolicies(ctx context.Context, mUser *model.User) (authz.UserQuotaPolicies, error) {
+	limits := make(map[authz.Resource]authz.QuotaPolicy, len(quotaLimitSpecs))
 	for _, spec := range quotaLimitSpecs {
-		policy := spec.policy(mUser.Plan)
-
-		usage, err := p.quotaTracker.Usage(ctx, mUser.ID, policy)
-		if err != nil {
-			return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s quota usage for user %q: %w", policy.Resource, mUser.Username, err)
-		}
-		usage.ResetTime = quotaResetTime(policy, usage)
-
-		limits[policy.Resource] = authz.Quota{QuotaPolicy: policy, QuotaUsage: usage}
+		limits[spec.Resource] = spec.policy(mUser.Plan)
 	}
 
-	rateLimits := make(map[authz.Resource][]authz.Quota, len(rateLimitSpecs))
+	rateLimits := make(map[authz.Resource][]authz.QuotaPolicy, len(rateLimitSpecs))
 	for resource, specs := range rateLimitSpecs {
-		quotas := make([]authz.Quota, 0, len(specs))
+		policies := make([]authz.QuotaPolicy, 0, len(specs))
 		for _, spec := range specs {
-			policy := spec.policy(mUser.Plan)
-
-			usage, err := p.quotaTracker.Usage(ctx, mUser.ID, policy)
-			if err != nil {
-				return authz.UserQuotas{}, fmt.Errorf("failed to retrieve %s rate limit usage for user %q: %w", policy.Resource, mUser.Username, err)
-			}
-			usage.ResetTime = quotaResetTime(policy, usage)
-
-			quotas = append(quotas, authz.Quota{QuotaPolicy: policy, QuotaUsage: usage})
+			policies = append(policies, spec.policy(mUser.Plan))
 		}
-		rateLimits[resource] = quotas
+		rateLimits[resource] = policies
 	}
 
-	return authz.UserQuotas{
+	return authz.UserQuotaPolicies{
 		Limits:     limits,
 		RateLimits: rateLimits,
 	}, nil

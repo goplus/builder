@@ -58,14 +58,20 @@ func newMockQuotaTracker() *mockQuotaTracker {
 	return &mockQuotaTracker{usage: make(map[string]authz.QuotaUsage)}
 }
 
-func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policy authz.QuotaPolicy) (authz.QuotaUsage, error) {
-	key := fmt.Sprintf("%d:%s", userID, policy.Name)
-	return m.usage[key], nil
+func (m *mockQuotaTracker) Usage(ctx context.Context, userID int64, policies []authz.QuotaPolicy) ([]authz.QuotaUsage, error) {
+	usages := make([]authz.QuotaUsage, len(policies))
+	for i, policy := range policies {
+		key := fmt.Sprintf("%d:%s", userID, policy.Name)
+		usages[i] = m.usage[key]
+	}
+	return usages, nil
 }
 
-func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policy authz.QuotaPolicy) error {
-	key := fmt.Sprintf("%d:%s", userID, policy.Name)
-	m.usage[key] = authz.QuotaUsage{}
+func (m *mockQuotaTracker) ResetUsage(ctx context.Context, userID int64, policies []authz.QuotaPolicy) error {
+	for _, policy := range policies {
+		key := fmt.Sprintf("%d:%s", userID, policy.Name)
+		m.usage[key] = authz.QuotaUsage{}
+	}
 	return nil
 }
 
@@ -152,365 +158,177 @@ func TestNew(t *testing.T) {
 }
 
 func TestEmbeddedPDPComputeUserCapabilities(t *testing.T) {
-	t.Run("Basic", func(t *testing.T) {
-		for _, tt := range []struct {
-			name                                string
-			mUser                               *model.User
-			wantCanManageAssets                 bool
-			wantCanManageCourses                bool
-			wantCanUsePremiumLLM                bool
-			wantCopilotMessageQuotaLimit        int64
-			wantCopilotMessageQuotaWindow       time.Duration
-			wantAIDescriptionQuotaLimit         int64
-			wantAIDescriptionQuotaWindow        time.Duration
-			wantAIInteractionTurnQuotaLimit     int64
-			wantAIInteractionTurnQuotaWindow    time.Duration
-			wantAIInteractionArchiveQuotaLimit  int64
-			wantAIInteractionArchiveQuotaWindow time.Duration
-		}{
-			{
-				name: "AssetAdminWithPlusPlan",
-				mUser: &model.User{
-					Model:    model.Model{ID: 1},
-					Username: "admin-user",
-					Roles:    model.UserRoles{"assetAdmin"},
-					Plan:     model.UserPlanPlus,
-				},
-				wantCanManageAssets:                 true,
-				wantCanManageCourses:                false,
-				wantCanUsePremiumLLM:                true,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+	for _, tt := range []struct {
+		name                 string
+		mUser                *model.User
+		wantCanManageAssets  bool
+		wantCanManageCourses bool
+		wantCanUsePremiumLLM bool
+	}{
+		{
+			name: "AssetAdminWithPlusPlan",
+			mUser: &model.User{
+				Model:    model.Model{ID: 1},
+				Username: "admin-user",
+				Roles:    model.UserRoles{"assetAdmin"},
+				Plan:     model.UserPlanPlus,
 			},
-			{
-				name: "RegularPlusUser",
-				mUser: &model.User{
-					Model:    model.Model{ID: 2},
-					Username: "plus-user",
-					Roles:    nil,
-					Plan:     model.UserPlanPlus,
-				},
-				wantCanManageAssets:                 false,
-				wantCanManageCourses:                false,
-				wantCanUsePremiumLLM:                true,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+			wantCanManageAssets:  true,
+			wantCanManageCourses: false,
+			wantCanUsePremiumLLM: true,
+		},
+		{
+			name: "RegularPlusUser",
+			mUser: &model.User{
+				Model:    model.Model{ID: 2},
+				Username: "plus-user",
+				Plan:     model.UserPlanPlus,
 			},
-			{
-				name: "RegularFreeUser",
-				mUser: &model.User{
-					Model:    model.Model{ID: 3},
-					Username: "free-user",
-					Roles:    nil,
-					Plan:     model.UserPlanFree,
-				},
-				wantCanManageAssets:                 false,
-				wantCanManageCourses:                false,
-				wantCanUsePremiumLLM:                false,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+			wantCanManageAssets:  false,
+			wantCanManageCourses: false,
+			wantCanUsePremiumLLM: true,
+		},
+		{
+			name: "RegularFreeUser",
+			mUser: &model.User{
+				Model:    model.Model{ID: 3},
+				Username: "free-user",
+				Plan:     model.UserPlanFree,
 			},
-			{
-				name: "AdminWithFreePlan",
-				mUser: &model.User{
-					Model:    model.Model{ID: 4},
-					Username: "admin-free-user",
-					Roles:    model.UserRoles{"admin"},
-					Plan:     model.UserPlanFree,
-				},
-				wantCanManageAssets:                 false,
-				wantCanManageCourses:                false,
-				wantCanUsePremiumLLM:                false,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+			wantCanManageAssets:  false,
+			wantCanManageCourses: false,
+			wantCanUsePremiumLLM: false,
+		},
+		{
+			name: "UserWithMultipleRoles",
+			mUser: &model.User{
+				Model:    model.Model{ID: 5},
+				Username: "multi-role-user",
+				Roles:    model.UserRoles{"user", "assetAdmin"},
+				Plan:     model.UserPlanFree,
 			},
-			{
-				name: "UserWithMultipleRoles",
-				mUser: &model.User{
-					Model:    model.Model{ID: 5},
-					Username: "multi-role-user",
-					Roles:    model.UserRoles{"user", "assetAdmin"},
-					Plan:     model.UserPlanFree,
-				},
-				wantCanManageAssets:                 true,
-				wantCanManageCourses:                false,
-				wantCanUsePremiumLLM:                false,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+			wantCanManageAssets:  true,
+			wantCanManageCourses: false,
+			wantCanUsePremiumLLM: false,
+		},
+		{
+			name: "CourseAdminUser",
+			mUser: &model.User{
+				Model:    model.Model{ID: 6},
+				Username: "course-admin-user",
+				Roles:    model.UserRoles{"courseAdmin"},
+				Plan:     model.UserPlanFree,
 			},
-			{
-				name: "CourseAdminUser",
-				mUser: &model.User{
-					Model:    model.Model{ID: 6},
-					Username: "course-admin-user",
-					Roles:    model.UserRoles{"courseAdmin"},
-					Plan:     model.UserPlanFree,
-				},
-				wantCanManageAssets:                 false,
-				wantCanManageCourses:                true,
-				wantCanUsePremiumLLM:                false,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitFree,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitFree,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitFree,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitFree,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
+			wantCanManageAssets:  false,
+			wantCanManageCourses: true,
+			wantCanUsePremiumLLM: false,
+		},
+		{
+			name: "UserWithMultipleAdminRoles",
+			mUser: &model.User{
+				Model:    model.Model{ID: 7},
+				Username: "multi-admin-user",
+				Roles:    model.UserRoles{"assetAdmin", "courseAdmin"},
+				Plan:     model.UserPlanPlus,
 			},
-			{
-				name: "UserWithMultipleAdminRoles",
-				mUser: &model.User{
-					Model:    model.Model{ID: 7},
-					Username: "multi-admin-user",
-					Roles:    model.UserRoles{"assetAdmin", "courseAdmin"},
-					Plan:     model.UserPlanPlus,
-				},
-				wantCanManageAssets:                 true,
-				wantCanManageCourses:                true,
-				wantCanUsePremiumLLM:                true,
-				wantCopilotMessageQuotaLimit:        copilotQuotaLimitPlus,
-				wantCopilotMessageQuotaWindow:       copilotQuotaWindow,
-				wantAIDescriptionQuotaLimit:         aiDescriptionQuotaLimitPlus,
-				wantAIDescriptionQuotaWindow:        aiDescriptionQuotaWindow,
-				wantAIInteractionTurnQuotaLimit:     aiInteractionTurnQuotaLimitPlus,
-				wantAIInteractionTurnQuotaWindow:    aiInteractionTurnQuotaWindow,
-				wantAIInteractionArchiveQuotaLimit:  aiInteractionArchiveQuotaLimitPlus,
-				wantAIInteractionArchiveQuotaWindow: aiInteractionArchiveQuotaWindow,
-			},
-		} {
-			t.Run(tt.name, func(t *testing.T) {
-				quotaTracker := newMockQuotaTracker()
-				pdp := New(quotaTracker)
+			wantCanManageAssets:  true,
+			wantCanManageCourses: true,
+			wantCanUsePremiumLLM: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			quotaTracker := newMockQuotaTracker()
+			pdp := New(quotaTracker)
 
-				caps, err := pdp.ComputeUserCapabilities(context.Background(), tt.mUser)
-				require.NoError(t, err)
-				assert.Equal(t, tt.wantCanManageAssets, caps.CanManageAssets)
-				assert.Equal(t, tt.wantCanManageCourses, caps.CanManageCourses)
-				assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
+			caps, err := pdp.ComputeUserCapabilities(context.Background(), tt.mUser)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantCanManageAssets, caps.CanManageAssets)
+			assert.Equal(t, tt.wantCanManageCourses, caps.CanManageCourses)
+			assert.Equal(t, tt.wantCanUsePremiumLLM, caps.CanUsePremiumLLM)
+		})
+	}
+}
 
-				quotas, err := pdp.ComputeUserQuotas(context.Background(), tt.mUser)
-				require.NoError(t, err)
-
-				copilotMessage, ok := quotas.Limits[authz.ResourceCopilotMessage]
-				require.True(t, ok)
-				assert.Equal(t, tt.wantCopilotMessageQuotaLimit, copilotMessage.Limit)
-				assert.Equal(t, tt.wantCopilotMessageQuotaWindow, copilotMessage.Window)
-				assert.Equal(t, copilotMessage.Limit, copilotMessage.Remaining())
-				assert.Equal(t, int64(tt.wantCopilotMessageQuotaWindow/time.Second), copilotMessage.Reset())
-
-				aiDescription, ok := quotas.Limits[authz.ResourceAIDescription]
-				require.True(t, ok)
-				assert.Equal(t, tt.wantAIDescriptionQuotaLimit, aiDescription.Limit)
-				assert.Equal(t, tt.wantAIDescriptionQuotaWindow, aiDescription.Window)
-				assert.Equal(t, aiDescription.Limit, aiDescription.Remaining())
-				assert.Equal(t, int64(tt.wantAIDescriptionQuotaWindow/time.Second), aiDescription.Reset())
-
-				aiInteractionTurn, ok := quotas.Limits[authz.ResourceAIInteractionTurn]
-				require.True(t, ok)
-				assert.Equal(t, tt.wantAIInteractionTurnQuotaLimit, aiInteractionTurn.Limit)
-				assert.Equal(t, tt.wantAIInteractionTurnQuotaWindow, aiInteractionTurn.Window)
-				assert.Equal(t, aiInteractionTurn.Limit, aiInteractionTurn.Remaining())
-				assert.Equal(t, int64(tt.wantAIInteractionTurnQuotaWindow/time.Second), aiInteractionTurn.Reset())
-
-				aiInteractionArchive, ok := quotas.Limits[authz.ResourceAIInteractionArchive]
-				require.True(t, ok)
-				assert.Equal(t, tt.wantAIInteractionArchiveQuotaLimit, aiInteractionArchive.Limit)
-				assert.Equal(t, tt.wantAIInteractionArchiveQuotaWindow, aiInteractionArchive.Window)
-				assert.Equal(t, aiInteractionArchive.Limit, aiInteractionArchive.Remaining())
-				assert.Equal(t, int64(tt.wantAIInteractionArchiveQuotaWindow/time.Second), aiInteractionArchive.Reset())
-			})
+func TestEmbeddedPDPComputeUserQuotaPolicies(t *testing.T) {
+	for _, tt := range []struct {
+		name       string
+		mUser      *model.User
+		wantLimits map[authz.Resource]struct {
+			limit  int64
+			window time.Duration
 		}
-	})
-
-	t.Run("WithQuotaUsage", func(t *testing.T) {
-		quotaTracker := newMockQuotaTracker()
-		pdp := New(quotaTracker)
-
-		mUser := &model.User{
-			Model:    model.Model{ID: 1},
-			Username: "test-user",
-			Roles:    nil,
-			Plan:     model.UserPlanFree,
+		wantRateLimits map[authz.Resource][]struct {
+			limit  int64
+			window time.Duration
 		}
-
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "copilotMessage:limit",
-				Resource: authz.ResourceCopilotMessage,
-				Limit:    copilotQuotaLimitFree,
-				Window:   copilotQuotaWindow,
+	}{
+		{
+			name:  "FreePlan",
+			mUser: &model.User{Plan: model.UserPlanFree},
+			wantLimits: map[authz.Resource]struct {
+				limit  int64
+				window time.Duration
+			}{
+				authz.ResourceCopilotMessage:       {limit: copilotQuotaLimitFree, window: copilotQuotaWindow},
+				authz.ResourceAIDescription:        {limit: aiDescriptionQuotaLimitFree, window: aiDescriptionQuotaWindow},
+				authz.ResourceAIInteractionTurn:    {limit: aiInteractionTurnQuotaLimitFree, window: aiInteractionTurnQuotaWindow},
+				authz.ResourceAIInteractionArchive: {limit: aiInteractionArchiveQuotaLimitFree, window: aiInteractionArchiveQuotaWindow},
 			},
-			30,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiDescription:limit",
-				Resource: authz.ResourceAIDescription,
-				Limit:    aiDescriptionQuotaLimitFree,
-				Window:   aiDescriptionQuotaWindow,
+			wantRateLimits: map[authz.Resource][]struct {
+				limit  int64
+				window time.Duration
+			}{
+				authz.ResourceCopilotMessage:       {{limit: 30, window: time.Minute}},
+				authz.ResourceAIDescription:        {{limit: 10, window: time.Minute}},
+				authz.ResourceAIInteractionTurn:    {{limit: 20, window: time.Minute}},
+				authz.ResourceAIInteractionArchive: {{limit: 10, window: time.Minute}},
 			},
-			5,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiInteractionTurn:limit",
-				Resource: authz.ResourceAIInteractionTurn,
-				Limit:    aiInteractionTurnQuotaLimitFree,
-				Window:   aiInteractionTurnQuotaWindow,
+		},
+		{
+			name:  "PlusPlan",
+			mUser: &model.User{Plan: model.UserPlanPlus},
+			wantLimits: map[authz.Resource]struct {
+				limit  int64
+				window time.Duration
+			}{
+				authz.ResourceCopilotMessage:       {limit: copilotQuotaLimitPlus, window: copilotQuotaWindow},
+				authz.ResourceAIDescription:        {limit: aiDescriptionQuotaLimitPlus, window: aiDescriptionQuotaWindow},
+				authz.ResourceAIInteractionTurn:    {limit: aiInteractionTurnQuotaLimitPlus, window: aiInteractionTurnQuotaWindow},
+				authz.ResourceAIInteractionArchive: {limit: aiInteractionArchiveQuotaLimitPlus, window: aiInteractionArchiveQuotaWindow},
 			},
-			120,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiInteractionArchive:limit",
-				Resource: authz.ResourceAIInteractionArchive,
-				Limit:    aiInteractionArchiveQuotaLimitFree,
-				Window:   aiInteractionArchiveQuotaWindow,
+			wantRateLimits: map[authz.Resource][]struct {
+				limit  int64
+				window time.Duration
+			}{
+				authz.ResourceCopilotMessage:       {{limit: 60, window: time.Minute}},
+				authz.ResourceAIDescription:        {{limit: 30, window: time.Minute}},
+				authz.ResourceAIInteractionTurn:    {{limit: 60, window: time.Minute}},
+				authz.ResourceAIInteractionArchive: {{limit: 20, window: time.Minute}},
 			},
-			10,
-		)
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			pdp := New(newMockQuotaTracker())
 
-		caps, err := pdp.ComputeUserCapabilities(context.Background(), mUser)
-		require.NoError(t, err)
-		assert.Equal(t, false, caps.CanManageAssets)
-		assert.Equal(t, false, caps.CanManageCourses)
-		assert.Equal(t, false, caps.CanUsePremiumLLM)
-
-		quotas, err := pdp.ComputeUserQuotas(context.Background(), mUser)
-		require.NoError(t, err)
-
-		copilotMessage, ok := quotas.Limits[authz.ResourceCopilotMessage]
-		require.True(t, ok)
-		assert.Equal(t, int64(copilotQuotaLimitFree), copilotMessage.Limit)
-		assert.Equal(t, copilotQuotaWindow, copilotMessage.Window)
-		assert.Equal(t, int64(copilotQuotaLimitFree-30), copilotMessage.Remaining())
-		assert.Equal(t, int64(copilotQuotaWindow/time.Second), copilotMessage.Reset())
-
-		aiDescription, ok := quotas.Limits[authz.ResourceAIDescription]
-		require.True(t, ok)
-		assert.Equal(t, int64(aiDescriptionQuotaLimitFree), aiDescription.Limit)
-		assert.Equal(t, aiDescriptionQuotaWindow, aiDescription.Window)
-		assert.Equal(t, int64(aiDescriptionQuotaLimitFree-5), aiDescription.Remaining())
-		assert.Equal(t, int64(aiDescriptionQuotaWindow/time.Second), aiDescription.Reset())
-
-		aiInteractionTurn, ok := quotas.Limits[authz.ResourceAIInteractionTurn]
-		require.True(t, ok)
-		assert.Equal(t, int64(aiInteractionTurnQuotaLimitFree), aiInteractionTurn.Limit)
-		assert.Equal(t, aiInteractionTurnQuotaWindow, aiInteractionTurn.Window)
-		assert.Equal(t, int64(aiInteractionTurnQuotaLimitFree-120), aiInteractionTurn.Remaining())
-		assert.Equal(t, int64(aiInteractionTurnQuotaWindow/time.Second), aiInteractionTurn.Reset())
-
-		aiInteractionArchive, ok := quotas.Limits[authz.ResourceAIInteractionArchive]
-		require.True(t, ok)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaLimitFree), aiInteractionArchive.Limit)
-		assert.Equal(t, aiInteractionArchiveQuotaWindow, aiInteractionArchive.Window)
-		assert.Equal(t, int64(aiInteractionArchiveQuotaLimitFree-10), aiInteractionArchive.Remaining())
-		assert.Equal(t, int64(aiInteractionArchiveQuotaWindow/time.Second), aiInteractionArchive.Reset())
-	})
-
-	t.Run("QuotaExceeded", func(t *testing.T) {
-		quotaTracker := newMockQuotaTracker()
-		pdp := New(quotaTracker)
-
-		mUser := &model.User{
-			Model:    model.Model{ID: 1},
-			Username: "test-user",
-			Roles:    nil,
-			Plan:     model.UserPlanFree,
-		}
-
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "copilotMessage:limit",
-				Resource: authz.ResourceCopilotMessage,
-				Limit:    copilotQuotaLimitFree,
-				Window:   copilotQuotaWindow,
-			},
-			copilotQuotaLimitFree+50,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiDescription:limit",
-				Resource: authz.ResourceAIDescription,
-				Limit:    aiDescriptionQuotaLimitFree,
-				Window:   aiDescriptionQuotaWindow,
-			},
-			aiDescriptionQuotaLimitFree+100,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiInteractionTurn:limit",
-				Resource: authz.ResourceAIInteractionTurn,
-				Limit:    aiInteractionTurnQuotaLimitFree,
-				Window:   aiInteractionTurnQuotaWindow,
-			},
-			aiInteractionTurnQuotaLimitFree+5000,
-		)
-		quotaTracker.addUsage(
-			mUser.ID,
-			authz.QuotaPolicy{
-				Name:     "aiInteractionArchive:limit",
-				Resource: authz.ResourceAIInteractionArchive,
-				Limit:    aiInteractionArchiveQuotaLimitFree,
-				Window:   aiInteractionArchiveQuotaWindow,
-			},
-			aiInteractionArchiveQuotaLimitFree+3000,
-		)
-
-		quotas, err := pdp.ComputeUserQuotas(context.Background(), mUser)
-		require.NoError(t, err)
-		for resource, wantLimit := range map[authz.Resource]int64{
-			authz.ResourceCopilotMessage:       copilotQuotaLimitFree,
-			authz.ResourceAIDescription:        aiDescriptionQuotaLimitFree,
-			authz.ResourceAIInteractionTurn:    aiInteractionTurnQuotaLimitFree,
-			authz.ResourceAIInteractionArchive: aiInteractionArchiveQuotaLimitFree,
-		} {
-			quota, ok := quotas.Limits[resource]
-			require.True(t, ok)
-			assert.Equal(t, wantLimit, quota.Limit)
-			assert.Equal(t, quotaWindowFor(resource), quota.Window)
-			assert.Equal(t, int64(0), quota.Remaining())
-			assert.Equal(t, int64(quotaWindowFor(resource)/time.Second), quota.Reset())
-		}
-	})
+			policies, err := pdp.ComputeUserQuotaPolicies(context.Background(), tt.mUser)
+			require.NoError(t, err)
+			for resource, want := range tt.wantLimits {
+				got, ok := policies.Limits[resource]
+				require.True(t, ok)
+				assert.Equal(t, want.limit, got.Limit)
+				assert.Equal(t, want.window, got.Window)
+			}
+			for resource, wantList := range tt.wantRateLimits {
+				gotList, ok := policies.RateLimits[resource]
+				require.True(t, ok)
+				require.Len(t, gotList, len(wantList))
+				for i, want := range wantList {
+					assert.Equal(t, want.limit, gotList[i].Limit)
+					assert.Equal(t, want.window, gotList[i].Window)
+				}
+			}
+		})
+	}
 }
 
 func TestQuotaSpec(t *testing.T) {

@@ -38,22 +38,15 @@ func TryConsumeQuota(ctx context.Context, resource Resource, amount int64) (*Quo
 	if !ok {
 		return nil, errors.New("missing authenticated user in context")
 	}
-	quotas, ok := UserQuotasFromContext(ctx)
+	quotaPolicies, ok := UserQuotaPoliciesFromContext(ctx)
 	if !ok {
-		return nil, errors.New("missing user quotas in context")
+		return nil, errors.New("missing user quota policies in context")
 	}
 
 	// Collect applicable quota policies for the resource.
-	var policies []QuotaPolicy
-	if quotas, ok := quotas.RateLimits[resource]; ok {
-		policies = make([]QuotaPolicy, 0, len(quotas)+1)
-		for _, quota := range quotas {
-			policies = append(policies, quota.QuotaPolicy)
-		}
-	}
-	if quota, ok := quotas.Limits[resource]; ok {
-		policies = slices.Grow(policies, 1)
-		policies = append(policies, quota.QuotaPolicy)
+	policies := slices.Clone(quotaPolicies.RateLimits[resource])
+	if policy, ok := quotaPolicies.Limits[resource]; ok {
+		policies = append(policies, policy)
 	}
 	if len(policies) == 0 {
 		return nil, nil

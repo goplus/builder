@@ -35,8 +35,8 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 			// Inject the authorizer instance into the context.
 			ctx = newContextWithAuthorizer(ctx, a)
 
-			// Compute user capabilities and quotas for authenticated users
-			// and inject them into the context.
+			// Compute user capabilities and quota policies for authenticated
+			// users and inject them into the context.
 			if mUser, ok := authn.UserFromContext(ctx); ok {
 				caps, err := a.pdp.ComputeUserCapabilities(ctx, mUser)
 				if err != nil {
@@ -46,13 +46,13 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 				}
 				ctx = NewContextWithUserCapabilities(ctx, caps)
 
-				quotas, err := a.pdp.ComputeUserQuotas(ctx, mUser)
+				quotaPolicies, err := a.pdp.ComputeUserQuotaPolicies(ctx, mUser)
 				if err != nil {
 					logger.Printf("authorization system error: %v", err)
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
 				}
-				ctx = NewContextWithUserQuotas(ctx, quotas)
+				ctx = NewContextWithUserQuotaPolicies(ctx, quotaPolicies)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

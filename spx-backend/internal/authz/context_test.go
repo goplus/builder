@@ -24,45 +24,32 @@ func newTestUserCapabilities() UserCapabilities {
 	}
 }
 
-func newTestUserQuotas() UserQuotas {
-	const quotaWindow = 24 * time.Hour
-	return UserQuotas{
-		Limits: map[Resource]Quota{
+func newTestUserQuotaPolicies() UserQuotaPolicies {
+	return UserQuotaPolicies{
+		Limits: map[Resource]QuotaPolicy{
 			ResourceCopilotMessage: {
-				QuotaPolicy: QuotaPolicy{
-					Name:     "copilotMessage:limit",
-					Resource: ResourceCopilotMessage,
-					Limit:    100,
-					Window:   quotaWindow,
-				},
-				QuotaUsage: QuotaUsage{Used: 15},
+				Name:     "copilotMessage:limit",
+				Resource: ResourceCopilotMessage,
+				Limit:    100,
+				Window:   24 * time.Hour,
 			},
 			ResourceAIDescription: {
-				QuotaPolicy: QuotaPolicy{
-					Name:     "aiDescription:limit",
-					Resource: ResourceAIDescription,
-					Limit:    300,
-					Window:   quotaWindow,
-				},
-				QuotaUsage: QuotaUsage{Used: 10},
+				Name:     "aiDescription:limit",
+				Resource: ResourceAIDescription,
+				Limit:    300,
+				Window:   24 * time.Hour,
 			},
 			ResourceAIInteractionTurn: {
-				QuotaPolicy: QuotaPolicy{
-					Name:     "aiInteractionTurn:limit",
-					Resource: ResourceAIInteractionTurn,
-					Limit:    12000,
-					Window:   quotaWindow,
-				},
-				QuotaUsage: QuotaUsage{Used: 300},
+				Name:     "aiInteractionTurn:limit",
+				Resource: ResourceAIInteractionTurn,
+				Limit:    12000,
+				Window:   24 * time.Hour,
 			},
 			ResourceAIInteractionArchive: {
-				QuotaPolicy: QuotaPolicy{
-					Name:     "aiInteractionArchive:limit",
-					Resource: ResourceAIInteractionArchive,
-					Limit:    8000,
-					Window:   quotaWindow,
-				},
-				QuotaUsage: QuotaUsage{Used: 400},
+				Name:     "aiInteractionArchive:limit",
+				Resource: ResourceAIInteractionArchive,
+				Limit:    8000,
+				Window:   24 * time.Hour,
 			},
 		},
 	}
@@ -154,45 +141,45 @@ func TestUserCapabilitiesFromContext(t *testing.T) {
 	})
 }
 
-func TestNewContextWithUserQuotas(t *testing.T) {
+func TestNewContextWithUserQuotaPolicies(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		wantQuotas := newTestUserQuotas()
-		ctx := NewContextWithUserQuotas(context.Background(), wantQuotas)
+		wantQuotaPolicies := newTestUserQuotaPolicies()
+		ctx := NewContextWithUserQuotaPolicies(context.Background(), wantQuotaPolicies)
 
-		quotas, ok := ctx.Value(userQuotasContextKey{}).(UserQuotas)
+		quotaPolicies, ok := ctx.Value(userQuotaPoliciesContextKey{}).(UserQuotaPolicies)
 		require.True(t, ok)
-		assert.Equal(t, wantQuotas, quotas)
+		assert.Equal(t, wantQuotaPolicies, quotaPolicies)
 	})
 
-	t.Run("ZeroQuotas", func(t *testing.T) {
-		ctx := NewContextWithUserQuotas(context.Background(), UserQuotas{})
+	t.Run("ZeroQuotaPolicies", func(t *testing.T) {
+		ctx := NewContextWithUserQuotaPolicies(context.Background(), UserQuotaPolicies{})
 
-		value := ctx.Value(userQuotasContextKey{})
+		value := ctx.Value(userQuotaPoliciesContextKey{})
 		assert.Zero(t, value)
 	})
 }
 
-func TestUserQuotasFromContext(t *testing.T) {
+func TestUserQuotaPoliciesFromContext(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		wantQuotas := newTestUserQuotas()
-		ctx := NewContextWithUserQuotas(context.Background(), wantQuotas)
+		wantQuotaPolicies := newTestUserQuotaPolicies()
+		ctx := NewContextWithUserQuotaPolicies(context.Background(), wantQuotaPolicies)
 
-		quotas, ok := UserQuotasFromContext(ctx)
+		quotaPolicies, ok := UserQuotaPoliciesFromContext(ctx)
 		require.True(t, ok)
-		assert.Equal(t, wantQuotas, quotas)
+		assert.Equal(t, wantQuotaPolicies, quotaPolicies)
 	})
 
-	t.Run("NoQuotas", func(t *testing.T) {
-		quotas, ok := UserQuotasFromContext(context.Background())
+	t.Run("NoQuotaPolicies", func(t *testing.T) {
+		quotas, ok := UserQuotaPoliciesFromContext(context.Background())
 		require.False(t, ok)
 		require.Zero(t, quotas)
 	})
 
 	t.Run("WrongContextValue", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), userQuotasContextKey{}, "not-quotas")
+		ctx := context.WithValue(context.Background(), userQuotaPoliciesContextKey{}, "not-quotas")
 
-		quotas, ok := UserQuotasFromContext(ctx)
+		quotaPolicies, ok := UserQuotaPoliciesFromContext(ctx)
 		require.False(t, ok)
-		require.Zero(t, quotas)
+		require.Zero(t, quotaPolicies)
 	})
 }

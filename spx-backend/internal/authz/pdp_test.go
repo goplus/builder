@@ -8,8 +8,8 @@ import (
 )
 
 type mockPolicyDecisionPoint struct {
-	computeUserCapabilitiesFunc func(ctx context.Context, mUser *model.User) (UserCapabilities, error)
-	computeUserQuotasFunc       func(ctx context.Context, mUser *model.User) (UserQuotas, error)
+	computeUserCapabilitiesFunc  func(ctx context.Context, mUser *model.User) (UserCapabilities, error)
+	computeUserQuotaPoliciesFunc func(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error)
 }
 
 func (m *mockPolicyDecisionPoint) ComputeUserCapabilities(ctx context.Context, mUser *model.User) (UserCapabilities, error) {
@@ -23,28 +23,16 @@ func (m *mockPolicyDecisionPoint) ComputeUserCapabilities(ctx context.Context, m
 	}, nil
 }
 
-func (m *mockPolicyDecisionPoint) ComputeUserQuotas(ctx context.Context, mUser *model.User) (UserQuotas, error) {
-	if m.computeUserQuotasFunc != nil {
-		return m.computeUserQuotasFunc(ctx, mUser)
+func (m *mockPolicyDecisionPoint) ComputeUserQuotaPolicies(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error) {
+	if m.computeUserQuotaPoliciesFunc != nil {
+		return m.computeUserQuotaPoliciesFunc(ctx, mUser)
 	}
-	return UserQuotas{
-		Limits: map[Resource]Quota{
-			ResourceCopilotMessage: {
-				QuotaPolicy: QuotaPolicy{Limit: 100, Window: 24 * time.Hour},
-				QuotaUsage:  QuotaUsage{Used: 20},
-			},
-			ResourceAIDescription: {
-				QuotaPolicy: QuotaPolicy{Limit: 300, Window: 24 * time.Hour},
-				QuotaUsage:  QuotaUsage{Used: 20},
-			},
-			ResourceAIInteractionTurn: {
-				QuotaPolicy: QuotaPolicy{Limit: 12000, Window: 24 * time.Hour},
-				QuotaUsage:  QuotaUsage{Used: 400},
-			},
-			ResourceAIInteractionArchive: {
-				QuotaPolicy: QuotaPolicy{Limit: 8000, Window: 24 * time.Hour},
-				QuotaUsage:  QuotaUsage{Used: 380},
-			},
+	return UserQuotaPolicies{
+		Limits: map[Resource]QuotaPolicy{
+			ResourceCopilotMessage:       {Limit: 100, Window: 24 * time.Hour},
+			ResourceAIDescription:        {Limit: 300, Window: 24 * time.Hour},
+			ResourceAIInteractionTurn:    {Limit: 12000, Window: 24 * time.Hour},
+			ResourceAIInteractionArchive: {Limit: 8000, Window: 24 * time.Hour},
 		},
 	}, nil
 }

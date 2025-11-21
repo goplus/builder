@@ -84,7 +84,7 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 // ensureQuotaRemaining atomically checks and consumes quota for the given
 // amount, replying with 429 or 403 when exhausted.
 func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
-	quotas, ok := authz.UserQuotasFromContext(ctx.Context())
+	quotaPolicies, ok := authz.UserQuotaPoliciesFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
@@ -92,7 +92,7 @@ func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int6
 	failedQuota, err := authz.TryConsumeQuota(ctx.Context(), resource, amount)
 	if err != nil {
 		logger := log.GetReqLogger(ctx.Context())
-		logger.Printf("failed to check and consume %s quota: %v", resource, err)
+		logger.Printf("failed to try consuming %s quota: %v", resource, err)
 		replyWithCode(ctx, errorUnknown)
 		return false
 	}
@@ -100,7 +100,10 @@ func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int6
 		if reset := failedQuota.Reset(); reset > 0 {
 			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
 		}
-		if quota, ok := quotas.Limits[resource]; ok && quota.QuotaPolicy == failedQuota.QuotaPolicy {
+
+		// If the failed policy matches the main quota policy for the resource, it's
+		// a long-term quota failure. Otherwise, it's a rate-limit failure.
+		if quotaPolicy, ok := quotaPolicies.Limits[resource]; ok && quotaPolicy == failedQuota.QuotaPolicy {
 			replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
 		} else {
 			replyWithCodeMsg(ctx, errorRateLimitExceeded, fmt.Sprintf("%s rate limit exceeded", resource))
