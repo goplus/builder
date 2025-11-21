@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import JSZip from 'jszip'
+import * as zipUtils from '@/utils/zip'
 import { spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
 import { useFileUrl } from '@/utils/file'
 import { registerPlayer } from '@/utils/player-registry'
 import { addPrefetchLink } from '@/utils/dom'
-import { toNativeFile, type Files } from '@/models/common/file'
+import type { Files } from '@/models/common/file'
 import { hashFiles } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { UIImg, UIDetailedLoading } from '@/components/ui'
@@ -48,7 +48,10 @@ interface IframeWindow extends Window {
     buffer: ArrayBuffer,
     assetURLs: Record<string, string>,
     onSpxReady?: () => void,
-    logLevel?: number
+    config?: {
+      logLevel?: number
+      useProfiler?: boolean
+    }
   ): Promise<void>
   /**
    * NOTE: This method is not recommended to be used now.
@@ -107,25 +110,40 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
   else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
 }
 
+const zipCache = new WeakMap<Files, ArrayBuffer>()
+
 async function zip(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
+  const cached = zipCache.get(files)
+  if (cached != null) {
+    reporter.report(1)
+    return cached
+  }
+
   const collector = ProgressCollector.collectorFor(reporter)
   const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
   const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
 
-  const zip = new JSZip()
   const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
     en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
     zh: `正在加载项目文件（${info.finishedNum}/${info.totalNum}）...`
   }))
-  Object.entries(files).forEach(([path, file]) => {
-    if (file == null) return
-    const r = filesCollector.getSubReporter()
-    const nativeFile = toNativeFile(file, signal).then((f) => (r.report(1), f))
-    zip.file(path, nativeFile)
-  })
-  const zipped = await zip.generateAsync({ type: 'arraybuffer' })
+
+  const zippable: zipUtils.Zippable = {}
+  await Promise.all(
+    Object.entries(files)
+      .filter(([_, file]) => file != null)
+      .map(async ([path, file]) => {
+        const r = filesCollector.getSubReporter()
+        const arrayBuffer = await file!.arrayBuffer(signal)
+        zippable[path] = new Uint8Array(arrayBuffer)
+        r.report(1)
+      })
+  )
+  const zipped = await zipUtils.zip(zippable, { level: 0, signal })
+
   zipReporter.report(1)
-  return zipped
+  zipCache.set(files, zipped.buffer)
+  return zipped.buffer
 }
 
 const registered = registerPlayer(() => {
@@ -222,7 +240,10 @@ async function runInternal(ctrl: AbortController) {
           iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
         }
       },
-      logLevels.LOG_LEVEL_ERROR
+      {
+        logLevel: logLevels.LOG_LEVEL_ERROR,
+        useProfiler: false
+      }
     )
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)

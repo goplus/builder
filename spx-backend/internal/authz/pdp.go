@@ -10,10 +10,12 @@ import (
 type PolicyDecisionPoint interface {
 	// ComputeUserCapabilities computes the capabilities for a user.
 	ComputeUserCapabilities(ctx context.Context, mUser *model.User) (UserCapabilities, error)
+
+	// ComputeUserQuotaPolicies computes the quota policies for a user.
+	ComputeUserQuotaPolicies(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error)
 }
 
-// UserCapabilities represents user capabilities and quotas that control access
-// to features and services.
+// UserCapabilities represents user capabilities that control feature access.
 type UserCapabilities struct {
 	// CanManageAssets indicates if user can manage asset library.
 	CanManageAssets bool `json:"canManageAssets"`
@@ -23,32 +25,15 @@ type UserCapabilities struct {
 
 	// CanUsePremiumLLM indicates if user can access premium LLM models.
 	CanUsePremiumLLM bool `json:"canUsePremiumLLM"`
-
-	// CopilotMessageQuota represents quotas for copilot messages.
-	CopilotMessageQuota Quota `json:"-"`
-
-	// AIDescriptionQuota represents quotas for AI description generations.
-	AIDescriptionQuota Quota `json:"-"`
-
-	// AIInteractionTurnQuota represents quotas for AI interaction turns.
-	AIInteractionTurnQuota Quota `json:"-"`
-
-	// AIInteractionArchiveQuota represents quotas for AI interaction archive requests.
-	AIInteractionArchiveQuota Quota `json:"-"`
 }
 
-// Quota returns the quota for the given resource.
-func (uc UserCapabilities) Quota(resource Resource) (Quota, bool) {
-	switch resource {
-	case ResourceCopilotMessage:
-		return uc.CopilotMessageQuota, true
-	case ResourceAIDescription:
-		return uc.AIDescriptionQuota, true
-	case ResourceAIInteractionTurn:
-		return uc.AIInteractionTurnQuota, true
-	case ResourceAIInteractionArchive:
-		return uc.AIInteractionArchiveQuota, true
-	default:
-		return Quota{}, false
-	}
+// UserQuotaPolicies represents quota policies grouped by long-lived limits and
+// short-window rate limits.
+type UserQuotaPolicies struct {
+	// Limits stores long-lived limit policies per resource.
+	Limits map[Resource]QuotaPolicy
+
+	// RateLimits stores short-window rate limit policies per resource,
+	// ordered from shortest to longest window.
+	RateLimits map[Resource][]QuotaPolicy
 }

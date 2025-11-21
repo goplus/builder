@@ -3,8 +3,7 @@ package authz
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
+	"slices"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 )
@@ -27,37 +26,31 @@ func CanUsePremiumLLM(ctx context.Context) bool {
 	return ok && caps.CanUsePremiumLLM
 }
 
-// ConsumeQuota consumes the specified amount of quota for the user and resource.
-func ConsumeQuota(ctx context.Context, resource Resource, amount int64) error {
+// TryConsumeQuota tries to consume the given amount of quotas for the resource.
+// It returns a non-nil [*Quota] only when consumption would exceed that quota
+// and no system failure occurs.
+func TryConsumeQuota(ctx context.Context, resource Resource, amount int64) (*Quota, error) {
 	authorizer, ok := authorizerFromContext(ctx)
 	if !ok {
-		return errors.New("missing authorizer in context")
+		return nil, errors.New("missing authorizer in context")
 	}
 	mUser, ok := authn.UserFromContext(ctx)
 	if !ok {
-		return errors.New("missing authenticated user in context")
+		return nil, errors.New("missing authenticated user in context")
 	}
-	caps, ok := UserCapabilitiesFromContext(ctx)
+	quotaPolicies, ok := UserQuotaPoliciesFromContext(ctx)
 	if !ok {
-		return errors.New("missing user capabilities in context")
+		return nil, errors.New("missing user quota policies in context")
 	}
 
-	policy, err := quotaPolicyFromUserCapabilities(resource, caps)
-	if err != nil {
-		return err
+	// Collect applicable quota policies for the resource.
+	policies := slices.Clone(quotaPolicies.RateLimits[resource])
+	if policy, ok := quotaPolicies.Limits[resource]; ok {
+		policies = append(policies, policy)
 	}
-	return authorizer.quotaTracker.IncrementUsage(ctx, mUser.ID, resource, amount, policy)
-}
+	if len(policies) == 0 {
+		return nil, nil
+	}
 
-// quotaPolicyFromUserCapabilities converts [UserCapabilities] data into a
-// resource-specific [QuotaPolicy].
-func quotaPolicyFromUserCapabilities(resource Resource, caps UserCapabilities) (QuotaPolicy, error) {
-	quota, ok := caps.Quota(resource)
-	if !ok {
-		return QuotaPolicy{}, fmt.Errorf("unsupported quota resource %q", resource)
-	}
-	return QuotaPolicy{
-		Limit:  quota.Limit,
-		Window: time.Duration(quota.Window) * time.Second,
-	}, nil
+	return authorizer.quotaTracker.TryConsume(ctx, mUser.ID, policies, amount)
 }

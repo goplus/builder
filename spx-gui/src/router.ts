@@ -40,6 +40,8 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+export const homePageName = 'home'
+
 declare module 'vue-router' {
   interface RouteMeta {
     /** Whether the route requires sign-in */
@@ -56,6 +58,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '/',
+        name: homePageName,
         component: () => import('@/pages/community/home.vue')
       },
       {
@@ -122,6 +125,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/course/:courseSeriesId/:courseId/start',
     component: () => import('@/pages/tutorials/course-start.vue'),
+    props: true
+  },
+  {
+    path: '/course-series/:courseSeriesId',
+    component: () => import('@/pages/tutorials/course-series.vue'),
     props: true
   },
   {

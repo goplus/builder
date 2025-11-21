@@ -9,85 +9,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNopQuotaTrackerTryConsume(t *testing.T) {
+	ctx := context.Background()
+	tracker := NewNopQuotaTracker()
+
+	quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}}, 10)
+	require.NoError(t, err)
+	assert.Nil(t, quota)
+}
+
 func TestNopQuotaTrackerUsage(t *testing.T) {
 	t.Run("AlwaysReturnsZero", func(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
 
 	t.Run("DifferentUsersReturnZero", func(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		usage1, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		usages1, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage1.Used)
-		assert.True(t, usage1.ResetTime.IsZero())
+		require.Len(t, usages1, 1)
+		assert.Equal(t, int64(0), usages1[0].Used)
+		assert.True(t, usages1[0].ResetTime.IsZero())
 
-		usage2, err := tracker.Usage(ctx, 456, authz.ResourceCopilotMessage)
+		usages2, err := tracker.Usage(ctx, 456, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage2.Used)
-		assert.True(t, usage2.ResetTime.IsZero())
-	})
-}
-
-func TestNopQuotaTrackerIncrementUsage(t *testing.T) {
-	t.Run("NoErrorOnIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, authz.QuotaPolicy{})
-		require.NoError(t, err)
-	})
-
-	t.Run("UsageRemainsZeroAfterIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, authz.QuotaPolicy{})
-		require.NoError(t, err)
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
-	})
-
-	t.Run("MultipleIncrementsHaveNoEffect", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 5, authz.QuotaPolicy{})
-		require.NoError(t, err)
-
-		err = tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 15, authz.QuotaPolicy{})
-		require.NoError(t, err)
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
-	})
-
-	t.Run("ZeroIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 0, authz.QuotaPolicy{})
-		require.NoError(t, err)
-	})
-
-	t.Run("NegativeIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, -5, authz.QuotaPolicy{})
-		require.NoError(t, err)
+		require.Len(t, usages2, 1)
+		assert.Equal(t, int64(0), usages2[0].Used)
+		assert.True(t, usages2[0].ResetTime.IsZero())
 	})
 }
 
@@ -96,7 +53,7 @@ func TestNopQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		err := tracker.ResetUsage(ctx, 123, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
 	})
 
@@ -104,28 +61,13 @@ func TestNopQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		tracker := NewNopQuotaTracker()
 
-		err := tracker.ResetUsage(ctx, 123, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
 
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{{Name: "copilotMessage:limit"}})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
-	})
-
-	t.Run("ResetAfterIncrementHasNoEffect", func(t *testing.T) {
-		ctx := context.Background()
-		tracker := NewNopQuotaTracker()
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 100, authz.QuotaPolicy{})
-		require.NoError(t, err)
-
-		err = tracker.ResetUsage(ctx, 123, authz.ResourceCopilotMessage)
-		require.NoError(t, err)
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
 }

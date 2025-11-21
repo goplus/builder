@@ -12,33 +12,158 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRedisQuotaTrackerTryConsume(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		ctx := context.Background()
+		client, mock := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		policy1 := authz.QuotaPolicy{Name: "copilotMessage:limit", Limit: 100, Window: time.Minute}
+		policy2 := authz.QuotaPolicy{Name: "copilotMessage:rateLimit:1m", Limit: 10, Window: time.Minute}
+		keys := []string{quotaKey(123, policy1), quotaKey(123, policy2)}
+
+		mock.ExpectEvalSha(luaTryConsume.Hash(), keys,
+			int64(2), 2,
+			policy1.Limit, policy1.Window.Milliseconds(),
+			policy2.Limit, policy2.Window.Milliseconds(),
+		).SetVal([]any{int64(1)})
+
+		quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{policy1, policy2}, 2)
+		require.NoError(t, err)
+		assert.Nil(t, quota)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Exhausted", func(t *testing.T) {
+		ctx := context.Background()
+		client, mock := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		policy1 := authz.QuotaPolicy{Name: "copilotMessage:limit", Limit: 5, Window: time.Minute}
+		policy2 := authz.QuotaPolicy{Name: "copilotMessage:rateLimit:1m", Limit: 3, Window: time.Minute}
+		keys := []string{quotaKey(123, policy1), quotaKey(123, policy2)}
+
+		ttlMs := int64(1500)
+		used := int64(3)
+		mock.ExpectEvalSha(luaTryConsume.Hash(), keys,
+			int64(2), 2,
+			policy1.Limit, policy1.Window.Milliseconds(),
+			policy2.Limit, policy2.Window.Milliseconds(),
+		).SetVal([]any{int64(0), int64(2), used, ttlMs})
+
+		quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{policy1, policy2}, 2)
+		require.NoError(t, err)
+		require.NotNil(t, quota)
+		assert.Equal(t, policy2.Name, quota.Name)
+		assert.Equal(t, used, quota.Used)
+		assert.WithinDuration(t, time.Now().Add(time.Duration(ttlMs)*time.Millisecond), quota.ResetTime, 50*time.Millisecond)
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("ZeroLimit", func(t *testing.T) {
+		ctx := context.Background()
+		client, mock := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		policy := authz.QuotaPolicy{Name: "copilotMessage:limit", Limit: 0, Window: time.Minute}
+		keys := []string{quotaKey(123, policy)}
+
+		mock.ExpectEvalSha(luaTryConsume.Hash(), keys,
+			int64(1), 1,
+			policy.Limit, policy.Window.Milliseconds(),
+		).SetVal([]any{int64(0), int64(1), int64(0), int64(0)})
+
+		quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{policy}, 1)
+		require.NoError(t, err)
+		require.NotNil(t, quota)
+		assert.Equal(t, policy.Name, quota.Name)
+		assert.Equal(t, int64(0), quota.Used)
+		assert.True(t, quota.ResetTime.IsZero())
+		require.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("NoPolicies", func(t *testing.T) {
+		ctx := context.Background()
+		client, _ := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		quota, err := tracker.TryConsume(ctx, 123, nil, 1)
+		require.NoError(t, err)
+		assert.Nil(t, quota)
+	})
+
+	t.Run("ZeroAmount", func(t *testing.T) {
+		ctx := context.Background()
+		client, _ := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		policy := authz.QuotaPolicy{Name: "copilotMessage:limit", Limit: 100, Window: time.Minute}
+		quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{policy}, 0)
+		require.NoError(t, err)
+		assert.Nil(t, quota)
+	})
+
+	t.Run("ScriptError", func(t *testing.T) {
+		ctx := context.Background()
+		client, mock := redismock.NewClientMock()
+		tracker := &redisQuotaTracker{client: client}
+
+		policy := authz.QuotaPolicy{Name: "copilotMessage:limit", Limit: 5, Window: time.Minute}
+		keys := []string{quotaKey(123, policy)}
+
+		mock.ExpectEvalSha(luaTryConsume.Hash(), keys,
+			int64(1), 1,
+			policy.Limit, policy.Window.Milliseconds(),
+		).SetErr(errors.New("eval error"))
+
+		quota, err := tracker.TryConsume(ctx, 123, []authz.QuotaPolicy{policy}, 1)
+		require.Error(t, err)
+		assert.Nil(t, quota)
+	})
+}
+
 func TestRedisQuotaTrackerUsage(t *testing.T) {
 	t.Run("InitialUsageShouldBeZero", func(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
+		key := quotaKey(123, policy)
 
-		mock.ExpectGet("123:copilotMessage").RedisNil()
-		mock.ExpectPTTL("123:copilotMessage").SetVal(0)
+		mock.ExpectGet(key).RedisNil()
+		mock.ExpectPTTL(key).SetVal(0)
 
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
 
 	t.Run("ExistingUsageReturned", func(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
+		key := quotaKey(123, policy)
+		mock.ExpectGet(key).SetVal("25")
+		mock.ExpectPTTL(key).SetVal(30 * time.Second)
 
-		mock.ExpectGet("123:copilotMessage").SetVal("25")
-		mock.ExpectPTTL("123:copilotMessage").SetVal(30 * time.Second)
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
-		assert.Equal(t, int64(25), usage.Used)
-		remaining := time.Until(usage.ResetTime)
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(25), usages[0].Used)
+		remaining := time.Until(usages[0].ResetTime)
 		assert.Greater(t, remaining, 0*time.Second)
 		assert.InDelta(t, float64(30*time.Second), float64(remaining), float64(time.Second))
 
@@ -49,171 +174,58 @@ func TestRedisQuotaTrackerUsage(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
+		key := quotaKey(999, policy)
 
-		mock.ExpectGet("999:copilotMessage").RedisNil()
-		mock.ExpectPTTL("999:copilotMessage").SetVal(0)
+		mock.ExpectGet(key).RedisNil()
+		mock.ExpectPTTL(key).SetVal(0)
 
-		usage, err := tracker.Usage(ctx, 999, authz.ResourceCopilotMessage)
+		usages, err := tracker.Usage(ctx, 999, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		require.Len(t, usages, 1)
+		assert.Equal(t, int64(0), usages[0].Used)
+		assert.True(t, usages[0].ResetTime.IsZero())
 	})
 
 	t.Run("RedisError", func(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
+		key := quotaKey(123, policy)
 
-		mock.ExpectGet("123:copilotMessage").SetErr(errors.New("redis get error"))
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		mock.ExpectGet(key).SetErr(errors.New("redis get error"))
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{policy})
 		assert.Error(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
+		assert.Nil(t, usages)
 	})
 
 	t.Run("InvalidValueInRedis", func(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
+		key := quotaKey(123, policy)
 
-		mock.ExpectGet("123:copilotMessage").SetVal("invalid-number")
-
-		usage, err := tracker.Usage(ctx, 123, authz.ResourceCopilotMessage)
+		mock.ExpectGet(key).SetVal("invalid-number")
+		usages, err := tracker.Usage(ctx, 123, []authz.QuotaPolicy{policy})
 		assert.Error(t, err)
-		assert.Equal(t, int64(0), usage.Used)
-		assert.True(t, usage.ResetTime.IsZero())
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-}
-
-func TestRedisQuotaTrackerIncrementUsage(t *testing.T) {
-	t.Run("SingleIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 10).SetVal(10)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, policy)
-		require.NoError(t, err)
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("MultipleIncrementsAccumulate", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 10).SetVal(10)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-		mock.ExpectIncrBy("123:copilotMessage", 5).SetVal(15)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(false)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, policy)
-		require.NoError(t, err)
-
-		err = tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 5, policy)
-		require.NoError(t, err)
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("DifferentUsersHaveSeparateCounters", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 15).SetVal(15)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-		mock.ExpectIncrBy("456:copilotMessage", 20).SetVal(20)
-		mock.ExpectExpireNX("456:copilotMessage", policy.Window).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 15, policy)
-		require.NoError(t, err)
-
-		err = tracker.IncrementUsage(ctx, 456, authz.ResourceCopilotMessage, 20, policy)
-		require.NoError(t, err)
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("IncrementError", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 10).SetErr(errors.New("redis incr error"))
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, policy)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to increment usage in Redis")
-	})
-
-	t.Run("ExpireError", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 10).SetVal(10)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetErr(errors.New("redis expire error"))
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 10, policy)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to increment usage in Redis")
-	})
-
-	t.Run("TTLSetCorrectly", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		wantTTL := policy.Window
-		mock.ExpectIncrBy("123:copilotMessage", 1).SetVal(1)
-		mock.ExpectExpireNX("123:copilotMessage", wantTTL).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 1, policy)
-		require.NoError(t, err)
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("ZeroIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", 0).SetVal(5)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, 0, policy)
-		require.NoError(t, err)
-
-		require.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("NegativeIncrement", func(t *testing.T) {
-		ctx := context.Background()
-		client, mock := redismock.NewClientMock()
-		tracker := &redisQuotaTracker{client: client}
-		policy := authz.QuotaPolicy{Limit: 100, Window: 24 * time.Hour}
-
-		mock.ExpectIncrBy("123:copilotMessage", -5).SetVal(5)
-		mock.ExpectExpireNX("123:copilotMessage", policy.Window).SetVal(true)
-
-		err := tracker.IncrementUsage(ctx, 123, authz.ResourceCopilotMessage, -5, policy)
-		require.NoError(t, err)
+		assert.Nil(t, usages)
 
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -224,10 +236,17 @@ func TestRedisQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
 
-		mock.ExpectDel("123:copilotMessage").SetVal(1)
+		key := quotaKey(123, policy)
+		mock.ExpectDel(key).SetVal(1)
 
-		err := tracker.ResetUsage(ctx, 123, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
 
 		require.NoError(t, mock.ExpectationsWereMet())
@@ -237,10 +256,17 @@ func TestRedisQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
 
-		mock.ExpectDel("999:copilotMessage").SetVal(0)
+		key := quotaKey(999, policy)
+		mock.ExpectDel(key).SetVal(0)
 
-		err := tracker.ResetUsage(ctx, 999, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 999, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
 
 		require.NoError(t, mock.ExpectationsWereMet())
@@ -250,10 +276,17 @@ func TestRedisQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
 
-		mock.ExpectDel("111:copilotMessage").SetVal(1)
+		key := quotaKey(111, policy)
+		mock.ExpectDel(key).SetVal(1)
 
-		err := tracker.ResetUsage(ctx, 111, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 111, []authz.QuotaPolicy{policy})
 		require.NoError(t, err)
 
 		require.NoError(t, mock.ExpectationsWereMet())
@@ -263,10 +296,17 @@ func TestRedisQuotaTrackerResetUsage(t *testing.T) {
 		ctx := context.Background()
 		client, mock := redismock.NewClientMock()
 		tracker := &redisQuotaTracker{client: client}
+		policy := authz.QuotaPolicy{
+			Name:     "copilotMessage:limit",
+			Resource: authz.ResourceCopilotMessage,
+			Limit:    100,
+			Window:   24 * time.Hour,
+		}
 
-		mock.ExpectDel("123:copilotMessage").SetErr(errors.New("redis del error"))
+		key := quotaKey(123, policy)
+		mock.ExpectDel(key).SetErr(errors.New("redis del error"))
 
-		err := tracker.ResetUsage(ctx, 123, authz.ResourceCopilotMessage)
+		err := tracker.ResetUsage(ctx, 123, []authz.QuotaPolicy{policy})
 		assert.Error(t, err)
 	})
 }
@@ -280,5 +320,19 @@ func TestRedisQuotaTrackerClose(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestQuotaKey(t *testing.T) {
+	t.Run("UsesPolicyName", func(t *testing.T) {
+		policy := authz.QuotaPolicy{Name: "copilotMessage:limit", Resource: authz.ResourceCopilotMessage}
+		key := quotaKey(123, policy)
+		assert.Equal(t, "123:copilotMessage:limit", key)
+	})
+
+	t.Run("FallsBackToResourceWhenNameEmpty", func(t *testing.T) {
+		policy := authz.QuotaPolicy{Name: "", Resource: authz.ResourceAIDescription}
+		key := quotaKey(456, policy)
+		assert.Equal(t, "456:aiDescription", key)
 	})
 }

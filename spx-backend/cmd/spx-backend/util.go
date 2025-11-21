@@ -81,34 +81,37 @@ func replyWithInnerError(ctx *yap.Context, err error) {
 	}
 }
 
-// ensureQuotaRemaining checks the remaining quota for the given amount and
-// replies with a 403 error if exceeded.
+// ensureQuotaRemaining atomically checks and consumes quota for the given
+// amount, replying with 429 or 403 when exhausted.
 func ensureQuotaRemaining(ctx *yap.Context, resource authz.Resource, amount int64) bool {
-	caps, ok := authz.UserCapabilitiesFromContext(ctx.Context())
+	quotaPolicies, ok := authz.UserQuotaPoliciesFromContext(ctx.Context())
 	if !ok {
 		return true
 	}
 
-	quota, ok := caps.Quota(resource)
-	if !ok {
-		return true
-	}
-	if quota.Remaining < amount {
-		if reset := quota.Reset(); reset > 0 {
-			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
-		}
-		replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
+	failedQuota, err := authz.TryConsumeQuota(ctx.Context(), resource, amount)
+	if err != nil {
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to try consuming %s quota: %v", resource, err)
+		replyWithCode(ctx, errorUnknown)
 		return false
 	}
-	return true
-}
+	if failedQuota != nil {
+		if reset := failedQuota.Reset(); reset > 0 {
+			ctx.ResponseWriter.Header().Set("Retry-After", strconv.FormatInt(reset, 10))
+		}
 
-// consumeQuota consumes the quota for the given resource and logs failures.
-func consumeQuota(ctx *yap.Context, resource authz.Resource, amount int64) {
-	if err := authz.ConsumeQuota(ctx.Context(), resource, amount); err != nil {
-		logger := log.GetReqLogger(ctx.Context())
-		logger.Printf("failed to consume %s quota: %v", resource, err)
+		// If the failed policy matches the main quota policy for the resource, it's
+		// a long-term quota failure. Otherwise, it's a rate-limit failure.
+		if quotaPolicy, ok := quotaPolicies.Limits[resource]; ok && quotaPolicy == failedQuota.QuotaPolicy {
+			replyWithCodeMsg(ctx, errorQuotaExceeded, fmt.Sprintf("%s quota exceeded", resource))
+		} else {
+			replyWithCodeMsg(ctx, errorRateLimitExceeded, fmt.Sprintf("%s rate limit exceeded", resource))
+		}
+		return false
 	}
+
+	return true
 }
 
 // errorPayload is the payload for error response.
@@ -124,22 +127,24 @@ type errorCode int
 //
 // The first 3 digits of the value are the corresponding HTTP status code.
 const (
-	errorInvalidArgs     errorCode = 40001
-	errorUnauthorized    errorCode = 40100
-	errorForbidden       errorCode = 40300
-	errorQuotaExceeded   errorCode = 40301
-	errorNotFound        errorCode = 40400
-	errorTooManyRequests errorCode = 42900
-	errorUnknown         errorCode = 50000
+	errorInvalidArgs       errorCode = 40001
+	errorUnauthorized      errorCode = 40100
+	errorForbidden         errorCode = 40300
+	errorQuotaExceeded     errorCode = 40301
+	errorNotFound          errorCode = 40400
+	errorTooManyRequests   errorCode = 42900
+	errorRateLimitExceeded errorCode = 42901
+	errorUnknown           errorCode = 50000
 )
 
 // errorMsgs defines messages for error codes.
 var errorMsgs = map[errorCode]string{
-	errorInvalidArgs:     "Invalid args",
-	errorUnauthorized:    "Unauthorized",
-	errorForbidden:       "Forbidden",
-	errorQuotaExceeded:   "Quota exceeded",
-	errorNotFound:        "Not found",
-	errorTooManyRequests: "Too many requests",
-	errorUnknown:         "Internal error",
+	errorInvalidArgs:       "Invalid args",
+	errorUnauthorized:      "Unauthorized",
+	errorForbidden:         "Forbidden",
+	errorQuotaExceeded:     "Quota exceeded",
+	errorNotFound:          "Not found",
+	errorTooManyRequests:   "Too many requests",
+	errorRateLimitExceeded: "Rate limit exceeded",
+	errorUnknown:           "Internal error",
 }

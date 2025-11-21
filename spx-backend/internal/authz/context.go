@@ -29,3 +29,17 @@ func UserCapabilitiesFromContext(ctx context.Context) (UserCapabilities, bool) {
 	caps, ok := ctx.Value(userCapabilitiesContextKey{}).(UserCapabilities)
 	return caps, ok
 }
+
+// userQuotaPoliciesContextKey is the context key type for user quota policies.
+type userQuotaPoliciesContextKey struct{}
+
+// NewContextWithUserQuotaPolicies creates a new context with the user quota policies.
+func NewContextWithUserQuotaPolicies(ctx context.Context, quotas UserQuotaPolicies) context.Context {
+	return context.WithValue(ctx, userQuotaPoliciesContextKey{}, quotas)
+}
+
+// UserQuotaPoliciesFromContext gets the user quota policies from context.
+func UserQuotaPoliciesFromContext(ctx context.Context) (UserQuotaPolicies, bool) {
+	quotaPolicies, ok := ctx.Value(userQuotaPoliciesContextKey{}).(UserQuotaPolicies)
+	return quotaPolicies, ok
+}

@@ -66,6 +66,9 @@ COPY --from=xgo-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backen
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
 
+# Validate Nginx configuration
+RUN nginx -t
+
 # Compress WASM files for gzip_static
 RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;
 

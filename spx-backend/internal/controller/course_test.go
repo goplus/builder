@@ -421,6 +421,102 @@ func TestControllerListCourses(t *testing.T) {
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
+
+	t.Run("OrderBySequenceInCourseSeries", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := authn.UserFromContext(ctx)
+		require.True(t, ok)
+
+		mCourseSeries := model.CourseSeries{
+			Model:     model.Model{ID: 100},
+			OwnerID:   mUser.ID,
+			CourseIDs: model.CourseIDCollection{2, 1},
+		}
+		courseSeriesIDStr := strconv.FormatInt(mCourseSeries.ID, 10)
+
+		params := NewListCoursesParams()
+		params.CourseSeriesID = &courseSeriesIDStr
+		params.OrderBy = ListCoursesOrderBySequenceInCourseSeries
+
+		// Mock ensureCourseSeries
+		courseSeriesDBColumns, err := modeltest.ExtractDBColumns(db, model.CourseSeries{})
+		require.NoError(t, err)
+		generateCourseSeriesDBRows, err := modeltest.NewDBRowsGenerator(db, model.CourseSeries{})
+		require.NoError(t, err)
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Preload("Owner").
+			Where("id = ?", mCourseSeries.ID).
+			First(&model.CourseSeries{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(courseSeriesDBColumns).AddRows(generateCourseSeriesDBRows(mCourseSeries)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mCourseSeries.OwnerID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(model.User{Model: model.Model{ID: mCourseSeries.OwnerID}})...))
+
+		// Mock ListCourses query
+		// Note: The query will have WHERE IN (2, 1) and ORDER BY FIELD(course.id, 2, 1) ASC, course.id
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Model(&model.Course{}).
+			Where("course.id IN ?", []int64{2, 1}).
+			Count(new(int64)).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		// The IN clause args might be order-dependent in sqlmock, or treated as a set.
+		// GORM expands IN clause.
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("course.id IN ?", []int64{2, 1}).
+			Order("FIELD(course.id, 2,1) asc"). // The constructed string
+			Offset(params.Pagination.Offset()).
+			Limit(params.Pagination.Size).
+			Find(&[]model.Course{}).
+			Statement
+		// We need to be careful with the expected SQL regex because GORM might add extra spaces or parens.
+		// The key part is ORDER BY FIELD(course.id, 2,1)
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(courseDBColumns).AddRows(
+				generateCourseDBRows(
+					model.Course{Model: model.Model{ID: 2}, OwnerID: mUser.ID, Title: "Course 2"},
+					model.Course{Model: model.Model{ID: 1}, OwnerID: mUser.ID, Title: "Course 1"},
+				)...,
+			))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		result, err := ctrl.ListCourses(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2), result.Total)
+		require.Len(t, result.Data, 2)
+		assert.Equal(t, "Course 2", result.Data[0].Title)
+		assert.Equal(t, "Course 1", result.Data[1].Title)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
 }
 
 func TestControllerGetCourse(t *testing.T) {

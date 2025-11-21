@@ -109,7 +109,16 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import saveAs from 'file-saver'
-import { UIMenu, UIMenuGroup, UIMenuItem, UIIcon, UITooltip, useConfirmDialog, UIButton } from '@/components/ui'
+import {
+  UIMenu,
+  UIMenuGroup,
+  UIMenuItem,
+  UIIcon,
+  UITooltip,
+  useConfirmDialog,
+  UIButton,
+  useMessage
+} from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -171,6 +180,7 @@ const importProjectFileMessage = { en: 'Import project file', zh: '导入项目�
 
 const handleImportProjectFile = useMessageHandle(
   async () => {
+    if (props.project == null) throw new Error('No project to import into')
     await confirm({
       title: i18n.t(importProjectFileMessage),
       content: i18n.t({
@@ -181,17 +191,25 @@ const handleImportProjectFile = useMessageHandle(
     })
     const file = await selectFile({ accept: ['xbp', 'gbp' /** For backward compatibility */] })
     const action = { name: importProjectFileMessage }
-    await props.project?.history.doAction(action, () => props.project!.loadXbpFile(file))
+    await m.withLoading(
+      props.project.history.doAction(action, () => props.project!.loadXbpFile(file)),
+      i18n.t({ en: 'Importing project file', zh: '导入项目文件中' })
+    )
   },
   { en: 'Failed to import project file', zh: '导入项目文件失败' }
 ).fn
+
+const m = useMessage()
 
 const handleExportProjectFile = useMessageHandle(
   async () => {
     const project = props.project
     if (project == null) throw new Error('No project to export')
     // TODO: Consider moving `project.getSignal()` into `exportXbpFile` as built-in logic
-    const xbpFile = await project.exportXbpFile(project.getSignal())
+    const xbpFile = await m.withLoading(
+      project.exportXbpFile(project.getSignal()),
+      i18n.t({ en: 'Exporting project file', zh: '导出项目文件中' })
+    )
     saveAs(xbpFile, xbpFile.name) // TODO: what if user cancelled download?
   },
   { en: 'Failed to export project file', zh: '导出项目文件失败' }

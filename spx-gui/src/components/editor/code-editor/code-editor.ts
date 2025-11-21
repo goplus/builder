@@ -5,10 +5,11 @@ import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import { packageSpx } from '@/utils/spx'
 import { hashFiles } from '@/models/common/hash'
+import type { Files } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import { RuntimeOutputKind, type Runtime } from '@/components/editor/runtime'
 import { DocumentBase } from './document-base'
-import { SpxLSPClient } from './lsp'
+import { SpxLSPClient, type RequestContext } from './lsp'
 import {
   type ICodeEditorUI,
   type DiagnosticsContext,
@@ -431,14 +432,27 @@ class DiagnosticsProvider
     return { start, end }
   }
 
+  /** Cache for LSP workspace diagnostic reports. */
+  private lspWorkspaceDiagnosticReportCache = new WeakMap<Files, Promise<lsp.WorkspaceDiagnosticReport>>()
+
+  getLSWorkspaceDiagnosticReportWithCache(ctx: RequestContext) {
+    const files = this.project.exportGameFiles()
+    const cached = this.lspWorkspaceDiagnosticReportCache.get(files)
+    if (cached != null) return cached
+    const result = this.lspClient.workspaceDiagnostic(ctx, { previousResultIds: [] }).catch((err) => {
+      this.lspWorkspaceDiagnosticReportCache.delete(files)
+      throw err
+    })
+    this.lspWorkspaceDiagnosticReportCache.set(files, result)
+    return result
+  }
+
   private async getLSDiagnostics(ctx: DiagnosticsContext) {
     const diagnostics: Diagnostic[] = []
-    const report = await this.lspClient.textDocumentDiagnostic(
-      { signal: ctx.signal },
-      {
-        textDocument: ctx.textDocument.id
-      }
-    )
+    // Here we use workspace/diagnostic instead of textDocument/diagnostic to maximize the chance to reuse cache
+    const workspaceReport = await this.getLSWorkspaceDiagnosticReportWithCache({ signal: ctx.signal })
+    const report = workspaceReport.items.find((item) => item.uri === ctx.textDocument.id.uri)
+    if (report == null) return diagnostics
     if (report.kind !== lsp.DocumentDiagnosticReportKind.Full)
       throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
@@ -989,7 +1003,10 @@ export class CodeEditor extends Disposable {
     }
   }
 
-  /** All opened text documents in current editor, by resourceModel ID */
+  /**
+   * All opened text documents in current editor, by resourceModel ID.
+   * TODO: Remove text document if not needed anymore.
+   */
   private textDocuments = new Map<string, TextDocument>()
 
   private addTextDocument(id: TextDocumentIdentifier) {
@@ -1046,7 +1063,7 @@ export class CodeEditor extends Disposable {
   }
 
   async diagnosticWorkspace(signal?: AbortSignal): Promise<WorkspaceDiagnostics> {
-    const diagnosticReport = await this.lspClient.workspaceDiagnostic({ signal }, { previousResultIds: [] })
+    const diagnosticReport = await this.diagnosticsProvider.getLSWorkspaceDiagnosticReportWithCache({ signal })
     const items: TextDocumentDiagnostics[] = []
     for (const report of diagnosticReport.items) {
       if (report.kind === 'unchanged') continue // For now, we support 'full' reports only

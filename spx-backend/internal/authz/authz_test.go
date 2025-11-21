@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/authn"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -25,7 +26,7 @@ func newTestUser() *model.User {
 	}
 }
 
-func newTestHandler(t *testing.T, wantCaps *UserCapabilities) http.HandlerFunc {
+func newTestHandler(t *testing.T, wantCaps *UserCapabilities, wantQuotaPolicies *UserQuotaPolicies) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		caps, ok := UserCapabilitiesFromContext(r.Context())
 		if wantCaps != nil {
@@ -38,6 +39,15 @@ func newTestHandler(t *testing.T, wantCaps *UserCapabilities) http.HandlerFunc {
 			require.Zero(t, caps)
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("no capabilities"))
+		}
+
+		quotaPolicies, ok := UserQuotaPoliciesFromContext(r.Context())
+		if wantQuotaPolicies != nil {
+			require.True(t, ok)
+			assert.Equal(t, *wantQuotaPolicies, quotaPolicies)
+		} else {
+			require.False(t, ok)
+			require.Zero(t, quotaPolicies)
 		}
 	}
 }
@@ -62,7 +72,7 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, nil))
+		handler := middleware(newTestHandler(t, nil, nil))
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		recorder := httptest.NewRecorder()
@@ -74,29 +84,36 @@ func TestAuthorizerMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidUser", func(t *testing.T) {
-		const quotaWindow = 24 * 60 * 60
 		wantCaps := UserCapabilities{
 			CanManageAssets:  true,
 			CanUsePremiumLLM: true,
-			CopilotMessageQuota: Quota{
-				Limit:     1000,
-				Remaining: 900,
-				Window:    quotaWindow,
-			},
-			AIDescriptionQuota: Quota{
-				Limit:     1000,
-				Remaining: 850,
-				Window:    quotaWindow,
-			},
-			AIInteractionTurnQuota: Quota{
-				Limit:     24000,
-				Remaining: 23500,
-				Window:    quotaWindow,
-			},
-			AIInteractionArchiveQuota: Quota{
-				Limit:     16000,
-				Remaining: 15500,
-				Window:    quotaWindow,
+		}
+		wantQuotaPolicies := UserQuotaPolicies{
+			Limits: map[Resource]QuotaPolicy{
+				ResourceCopilotMessage: {
+					Name:     "copilotMessage:limit",
+					Resource: ResourceCopilotMessage,
+					Limit:    1000,
+					Window:   24 * time.Hour,
+				},
+				ResourceAIDescription: {
+					Name:     "aiDescription:limit",
+					Resource: ResourceAIDescription,
+					Limit:    1000,
+					Window:   24 * time.Hour,
+				},
+				ResourceAIInteractionTurn: {
+					Name:     "aiInteractionTurn:limit",
+					Resource: ResourceAIInteractionTurn,
+					Limit:    24000,
+					Window:   24 * time.Hour,
+				},
+				ResourceAIInteractionArchive: {
+					Name:     "aiInteractionArchive:limit",
+					Resource: ResourceAIInteractionArchive,
+					Limit:    16000,
+					Window:   24 * time.Hour,
+				},
 			},
 		}
 
@@ -106,12 +123,17 @@ func TestAuthorizerMiddleware(t *testing.T) {
 			assert.Equal(t, "test-user", mUser.Username)
 			return wantCaps, nil
 		}
+		pdp.computeUserQuotaPoliciesFunc = func(ctx context.Context, mUser *model.User) (UserQuotaPolicies, error) {
+			assert.Equal(t, int64(123), mUser.ID)
+			assert.Equal(t, "test-user", mUser.Username)
+			return wantQuotaPolicies, nil
+		}
 
 		quotaTracker := &mockQuotaTracker{}
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, &wantCaps))
+		handler := middleware(newTestHandler(t, &wantCaps, &wantQuotaPolicies))
 
 		testUser := newTestUser()
 		ctx := authn.NewContextWithUser(context.Background(), testUser)
@@ -135,7 +157,7 @@ func TestAuthorizerMiddleware(t *testing.T) {
 		authorizer := New(&gorm.DB{}, pdp, quotaTracker)
 
 		middleware := authorizer.Middleware()
-		handler := middleware(newTestHandler(t, nil))
+		handler := middleware(newTestHandler(t, nil, nil))
 
 		testUser := newTestUser()
 		ctx := authn.NewContextWithUser(context.Background(), testUser)

@@ -4,17 +4,21 @@
 
 import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/exception'
+import dayjs from 'dayjs'
 
 export class ApiException extends Exception {
   name = 'ApiError'
   userMessage: LocaleMessage | null
+  meta: unknown
 
   constructor(
     public code: number,
-    message: string
+    message: string,
+    headers: Headers
   ) {
     super(`[${code}] ${message}`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? null
   }
 }
 
@@ -24,7 +28,30 @@ export enum ApiExceptionCode {
   errorForbidden = 40300,
   errorQuotaExceeded = 40301,
   errorNotFound = 40400,
+  errorTooManyRequests = 42900,
+  errorRateLimitExceeded = 42901,
   errorUnknown = 50000
+}
+
+type QuotaExceededMeta = {
+  // milliseconds or null
+  retryAfter: number | null
+}
+const codeMetas: { [key in ApiExceptionCode]?: (headers: Headers) => unknown } = {
+  [ApiExceptionCode.errorQuotaExceeded]: (headers): QuotaExceededMeta => {
+    const retryAfter = headers.get('Retry-After')
+    let date
+    if (retryAfter != null) {
+      const seconds = Number(retryAfter)
+      date = Number.isFinite(seconds) ? dayjs().add(seconds, 's') : dayjs(retryAfter)
+    }
+    return {
+      retryAfter: date?.isValid() ? date.valueOf() : null
+    }
+  }
+}
+export function isQuotaExceededMeta(code: number, meta: unknown): meta is QuotaExceededMeta {
+  return code === ApiExceptionCode.errorQuotaExceeded && meta != null
 }
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
@@ -43,6 +70,14 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorQuotaExceeded]: {
     en: 'quota exceeded',
     zh: '超出配额'
+  },
+  [ApiExceptionCode.errorTooManyRequests]: {
+    en: 'too many requests',
+    zh: '请求太频繁了'
+  },
+  [ApiExceptionCode.errorRateLimitExceeded]: {
+    en: 'rate limit exceeded, please retry later',
+    zh: '触发频率限制，请稍后重试'
   },
   [ApiExceptionCode.errorNotFound]: {
     en: 'resource not exist',

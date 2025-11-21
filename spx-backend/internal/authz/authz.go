@@ -25,7 +25,7 @@ func New(db *gorm.DB, pdp PolicyDecisionPoint, quotaTracker QuotaTracker) *Autho
 }
 
 // Middleware returns a middleware function that computes user capabilities and
-// injects them into the request context.
+// quotas and injects them into the request context.
 func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +35,8 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 			// Inject the authorizer instance into the context.
 			ctx = newContextWithAuthorizer(ctx, a)
 
-			// Compute user capabilities for authenticated users and inject them into
-			// the context.
+			// Compute user capabilities and quota policies for authenticated
+			// users and inject them into the context.
 			if mUser, ok := authn.UserFromContext(ctx); ok {
 				caps, err := a.pdp.ComputeUserCapabilities(ctx, mUser)
 				if err != nil {
@@ -45,6 +45,14 @@ func (a *Authorizer) Middleware() func(http.Handler) http.Handler {
 					return
 				}
 				ctx = NewContextWithUserCapabilities(ctx, caps)
+
+				quotaPolicies, err := a.pdp.ComputeUserQuotaPolicies(ctx, mUser)
+				if err != nil {
+					logger.Printf("authorization system error: %v", err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return
+				}
+				ctx = NewContextWithUserQuotaPolicies(ctx, quotaPolicies)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

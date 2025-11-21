@@ -7,18 +7,29 @@ import (
 
 // QuotaTracker defines the interface for tracking resource usage quotas.
 type QuotaTracker interface {
-	// Usage returns the current usage for a user and resource.
-	Usage(ctx context.Context, userID int64, resource Resource) (QuotaUsage, error)
+	// TryConsume tries to consume the given amount of quotas across all
+	// provided quota policies in one atomic step. It returns a non-nil
+	// [*Quota] only when consumption would exceed that quota and no system
+	// failure occurs.
+	TryConsume(ctx context.Context, userID int64, policies []QuotaPolicy, amount int64) (*Quota, error)
 
-	// IncrementUsage increments the usage counter for a user and resource.
-	IncrementUsage(ctx context.Context, userID int64, resource Resource, amount int64, policy QuotaPolicy) error
+	// Usage returns the current usage for the given user and quota
+	// policies. It returns a slice containing one [QuotaUsage] per policy,
+	// in the same order as the input, when no error occurs.
+	Usage(ctx context.Context, userID int64, policies []QuotaPolicy) ([]QuotaUsage, error)
 
-	// ResetUsage resets the usage counter for a user and resource.
-	ResetUsage(ctx context.Context, userID int64, resource Resource) error
+	// ResetUsage resets the usage counters for the given user and quota policies.
+	ResetUsage(ctx context.Context, userID int64, policies []QuotaPolicy) error
 }
 
 // QuotaPolicy defines the quota configuration for a usage update.
 type QuotaPolicy struct {
+	// Name is the unique identifier for tracking usage.
+	Name string
+
+	// Resource is the governed logical resource.
+	Resource Resource
+
 	// Limit is the maximum allowed usage within the quota window.
 	Limit int64
 
@@ -37,33 +48,30 @@ type QuotaUsage struct {
 
 // Quota represents quota limits and usage counters for a resource.
 type Quota struct {
-	// Limit is the total quota available for the resource.
-	Limit int64
+	QuotaPolicy
+	QuotaUsage
+}
 
-	// Remaining is the remaining quota for the resource.
-	Remaining int64
-
-	// ResetTime is the time when the quota resets.
-	ResetTime time.Time
-
-	// Window is the quota window in seconds.
-	Window int64
+// Remaining returns the unused quota for the current window.
+func (q Quota) Remaining() int64 {
+	if q.Limit <= 0 {
+		return 0
+	}
+	return max(q.Limit-q.Used, 0)
 }
 
 // Reset returns the remaining time in seconds before the window resets.
 func (q Quota) Reset() int64 {
+	if q.Limit <= 0 {
+		return 0
+	}
 	if q.ResetTime.IsZero() {
-		if q.Window > 0 && q.Remaining == q.Limit {
-			return q.Window
+		if q.Window > 0 && q.Used == 0 {
+			return ceilSeconds(q.Window)
 		}
 		return 0
 	}
-
-	remaining := time.Until(q.ResetTime)
-	if remaining <= 0 {
-		return 0
-	}
-	return int64((remaining + time.Second - 1) / time.Second)
+	return ceilSeconds(time.Until(q.ResetTime))
 }
 
 // Resource represents different types of resources that can be metered and tracked.
@@ -75,3 +83,12 @@ const (
 	ResourceAIInteractionTurn    Resource = "aiInteractionTurn"
 	ResourceAIInteractionArchive Resource = "aiInteractionArchive"
 )
+
+// ceilSeconds converts a [time.Duration] to seconds rounded up. It returns 0 if
+// d <= 0.
+func ceilSeconds(d time.Duration) int64 {
+	if d <= 0 {
+		return 0
+	}
+	return int64((d + time.Second - 1) / time.Second)
+}
