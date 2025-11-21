@@ -30,7 +30,7 @@ export interface ImportExportDependencies {
 
 export interface ImportOptions {
   clearCanvas?: boolean
-  position?: 'center' | 'original'
+  position?: 'center' | 'original' // TODO: 缩放逻辑暂只支持 center，暂勿传 original
   updatePaths?: boolean
   triggerExport?: boolean
 }
@@ -42,6 +42,9 @@ export interface ExportOptions {
   quality?: number
   scaleForExport?: boolean // 是否缩放到1/5（用于最终导出），默认true
 }
+
+const EXPORT_SCALE_FACTOR = 1 / 5 // 导出时缩小为舞台尺寸
+const EDITOR_SCALE_FACTOR = 1 / EXPORT_SCALE_FACTOR // 导入时恢复编辑尺寸
 
 /**
  * 画布导入导出管理器
@@ -72,7 +75,6 @@ export class ImportExportManager {
 
       // 使用提供的bounds，如果没有提供则使用整个逻辑画布的尺寸（boundaryRect）
       let exportBounds: paper.Rectangle
-      const SCALE_FACTOR = 1 / 5 // 缩小5倍
 
       if (bounds) {
         exportBounds = bounds
@@ -99,14 +101,14 @@ export class ImportExportManager {
           this.dependencies.canvasHeight.value / 2
         )
         originalPosition = paper.project.activeLayer.position.clone()
-        paper.project.activeLayer.scale(SCALE_FACTOR, center)
+        paper.project.activeLayer.scale(EXPORT_SCALE_FACTOR, center)
 
         // 缩放后的导出边界也要相应调整
         const scaledBounds = new paper.Rectangle(
-          center.x + (exportBounds.x - center.x) * SCALE_FACTOR,
-          center.y + (exportBounds.y - center.y) * SCALE_FACTOR,
-          exportBounds.width * SCALE_FACTOR,
-          exportBounds.height * SCALE_FACTOR
+          center.x + (exportBounds.x - center.x) * EXPORT_SCALE_FACTOR,
+          center.y + (exportBounds.y - center.y) * EXPORT_SCALE_FACTOR,
+          exportBounds.width * EXPORT_SCALE_FACTOR,
+          exportBounds.height * EXPORT_SCALE_FACTOR
         )
 
         svgStr = paper.project.exportSVG({
@@ -116,7 +118,7 @@ export class ImportExportManager {
         }) as string
 
         // 恢复原始大小
-        paper.project.activeLayer.scale(1 / SCALE_FACTOR, center)
+        paper.project.activeLayer.scale(1 / EXPORT_SCALE_FACTOR, center)
         paper.project.activeLayer.position = originalPosition
       } else {
         // 不缩放，直接导出（用于历史记录）
@@ -142,7 +144,7 @@ export class ImportExportManager {
    */
   exportSvgAndEmit(options: ExportOptions = {}): void {
     const mergedOptions: ExportOptions = {
-      scaleForExport: false,
+      scaleForExport: true,
       ...options
     }
     const svgStr = this.exportSvg(mergedOptions)
@@ -187,6 +189,9 @@ export class ImportExportManager {
 
       // 设置位置（不进行缩放，保持原始尺寸）
       this.positionItem(importedItem, position)
+
+      // 导入后放大到编辑尺寸（当前逻辑只支持 center 位置）
+      this.scaleItemForEditor(importedItem)
 
       // 收集可编辑路径
       if (updatePaths) {
@@ -239,6 +244,9 @@ export class ImportExportManager {
 
       // 设置位置（不进行缩放，保持 AI 生成的原始尺寸）
       this.positionItem(importedItem, 'center')
+
+      // 导入后放大到编辑尺寸（当前逻辑只支持 center 位置）
+      this.scaleItemForEditor(importedItem)
 
       // 收集可编辑路径
       if (updatePaths) {
@@ -457,6 +465,15 @@ export class ImportExportManager {
     if (this.dependencies.backgroundRect.value) {
       this.dependencies.backgroundRect.value.visible = prevVisible
     }
+  }
+
+  /**
+   * 导入后放大到画板编辑尺寸
+   */
+  private scaleItemForEditor(item: paper.Item | null): void {
+    if (!item) return
+    const center = new paper.Point(this.dependencies.canvasWidth.value / 2, this.dependencies.canvasHeight.value / 2)
+    item.scale(EDITOR_SCALE_FACTOR, center)
   }
 }
 
