@@ -233,6 +233,7 @@ const { fn: handleCourseClick } = useMessageHandle(
 
   .course-list {
     display: grid;
+    grid-auto-rows: max-content;
     grid-template-columns: repeat(var(--num-in-row), 1fr);
     height: var(--list-wrapper-height);
     gap: 20px;
