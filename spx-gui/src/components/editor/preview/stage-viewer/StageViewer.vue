@@ -24,18 +24,30 @@
           :decorator="decorator"
           :map-size="mapSize"
         />
-        <SpriteNode
-          v-for="sprite in visibleSprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selected="editorCtx.state.selectedSprite?.id === sprite.id"
-          :project="editorCtx.project"
-          :map-size="mapSize"
-          :node-ready-map="nodeReadyMap"
-          @drag-move="handleSpriteDragMove"
-          @drag-end="handleSpriteDragEnd"
-          @selected="handleSpriteSelected(sprite)"
-        />
+        <!-- 
+          Why is v-group needed?
+          For example, assuming there are two SpriteNodes, the layer is expected to be [v-rect, v-image, v-image], but the result might be [v-image, v-image, v-rect].
+          This causes the v-rect position to be unexpected, obscuring the v-image.
+          After investigation, it was found that SpriteNode calls zIndex(zIndex) internally. 
+          If zIndex is smaller than the index of v-rect in the layer children, its position will be further forward.
+          When v-rect starts rendering before visibleSprites, the above scenario will occur. 
+          Although vue-konva will correct the order of children in the layer based on the order of vnodes through checkOrder, it is not very stable.
+          So v-group is added so that SpriteNode zIndex(zIndex) does not affect v-rect.
+        -->
+        <v-group>
+          <SpriteNode
+            v-for="sprite in visibleSprites"
+            :key="sprite.id"
+            :sprite="sprite"
+            :selected="editorCtx.state.selectedSprite?.id === sprite.id"
+            :project="editorCtx.project"
+            :map-size="mapSize"
+            :node-ready-map="nodeReadyMap"
+            @drag-move="handleSpriteDragMove"
+            @drag-end="handleSpriteDragEnd"
+            @selected="handleSpriteSelected(sprite)"
+          />
+        </v-group>
       </v-layer>
       <v-layer>
         <WidgetNode
