@@ -444,18 +444,21 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
           :decorator="decorator"
           :map-size="mapSize"
         />
-        <SpriteNode
-          v-for="sprite in visibleSprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selected="selectedSprite?.id === sprite.id"
-          :project="props.project"
-          :map-size="mapSize"
-          :node-ready-map="nodeReadyMap"
-          @drag-move="handleSpriteDragMove"
-          @drag-end="handleSpriteDragEnd"
-          @selected="handleSpriteSelected(sprite)"
-        />
+        <!-- Refer to: spx-gui/src/components/editor/preview/stage-viewer/StageViewer.vue -->
+        <v-group>
+          <SpriteNode
+            v-for="sprite in visibleSprites"
+            :key="sprite.id"
+            :sprite="sprite"
+            :selected="selectedSprite?.id === sprite.id"
+            :project="props.project"
+            :map-size="mapSize"
+            :node-ready-map="nodeReadyMap"
+            @drag-move="handleSpriteDragMove"
+            @drag-end="handleSpriteDragEnd"
+            @selected="handleSpriteSelected(sprite)"
+          />
+        </v-group>
       </v-layer>
       <v-layer>
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />
