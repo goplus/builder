@@ -103,6 +103,7 @@ const courseSeriesQuery = useQuery(
 
     .course-series-list {
       display: grid;
+      grid-auto-rows: max-content;
       grid-template-columns: repeat(var(--num-in-row), 1fr);
       gap: var(--ui-gap-middle);
       height: var(--list-wrapper-height);
