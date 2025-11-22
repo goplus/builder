@@ -7,17 +7,29 @@
       <div class="header">
         {{ $t(headerTitle) }}
       </div>
-      <UIButton
-        v-if="runnerState === 'initial'"
-        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        class="button"
-        type="primary"
-        icon="playHollow"
-        :loading="handleRun.isLoading.value"
-        @click="handleRun.fn"
-      >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
+      <template v-if="runnerState === 'initial'">
+        <UIButton
+          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+          class="button"
+          type="primary"
+          icon="playHollow"
+          :loading="handleRun.isLoading.value"
+          @click="handleRun.fn"
+        >
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </UIButton>
+
+        <UIButton
+          v-show="canManageProject"
+          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          type="secondary"
+          :disabled="!isOnline"
+          @click="handlePublishProject"
+        >
+          <img :src="publishSvg" style="width: 14px" />
+          {{ $t({ en: 'Publish', zh: '发布' }) }}
+        </UIButton>
+      </template>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
@@ -81,39 +93,6 @@
             @exit="handleExit"
           />
         </div>
-        <UITooltip v-if="runnerState === 'initial'">
-          <template #trigger>
-            <button
-              v-radar="{ name: 'Full map button', desc: 'Click to view & edit the full map' }"
-              class="edit-map-button"
-              @click="handleEditMap"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M4.99988 2.34961H2.54998C2.43952 2.34961 2.34998 2.43915 2.34998 2.54961V4.99951"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M9.00012 2.34961H11.45C11.5605 2.34961 11.65 2.43915 11.65 2.54961V4.99951"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M4.99988 11.6504H2.54998C2.43952 11.6504 2.34998 11.5608 2.34998 11.4504V9.00049"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M9.00012 11.6504H11.45C11.5605 11.6504 11.65 11.5608 11.65 11.4504V9.00049"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-              </svg>
-            </button>
-          </template>
-          {{ $t({ en: 'View full map', zh: '查看完整地图' }) }}
-        </UITooltip>
       </div>
     </div>
   </UICard>
@@ -124,17 +103,21 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
-import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
+import { useNetwork } from '@/utils/network'
+import { usePublishProject } from '@/components/project'
+import publishSvg from './publish.svg'
+import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const { isOnline } = useNetwork()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -298,6 +281,19 @@ async function executeRun(action: 'run' | 'rerun') {
   }
 }
 
+const canManageProject = computed(() => {
+  if (editorCtx.project == null) return false
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null) return false
+  if (editorCtx.project.owner !== signedInUsername) return false
+  return true
+})
+const publishProject = usePublishProject()
+const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
+  en: 'Failed to publish project',
+  zh: '发布项目失败'
+}).fn
+
 const handleRun = useMessageHandle(
   async () => {
     await checkAndNotifyError()
@@ -375,14 +371,6 @@ onBeforeUnmount(() => {
   }
 })
 
-const invokeMapEditor = useModal(MapEditorModal)
-const handleEditMap = useMessageHandle(() =>
-  invokeMapEditor({
-    project: editorCtx.project,
-    selectedSpriteId: editorCtx.state.selectedSprite?.id ?? null
-  })
-).fn
-
 function getStageInlineAnchor() {
   return stageContainerRef.value
 }
@@ -402,7 +390,7 @@ function getStageInlineAnchor() {
   }
 
   .button {
-    margin-left: 8px;
+    margin: 0 8px;
   }
 
   .main {
@@ -454,30 +442,6 @@ function getStageInlineAnchor() {
         max-height: 100%;
         aspect-ratio: 4 / 3;
         height: auto;
-      }
-    }
-
-    .edit-map-button {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      z-index: 5;
-      border: none;
-      border-radius: 12px;
-      color: var(--ui-color-hint-1);
-      background-color: var(--ui-color-grey-100);
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-        color: var(--ui-color-text);
-        box-shadow: var(--ui-box-shadow-small);
       }
     }
   }

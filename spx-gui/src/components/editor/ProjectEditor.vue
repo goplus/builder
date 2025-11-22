@@ -1,5 +1,7 @@
 <template>
+  <!-- Using v-show preserves some page states, e.g. code editor scroll pos -->
   <UICard
+    v-show="isPreviewMode"
     v-radar="{ name: `Editor for ${selected.type}`, desc: `Main editor panel for editing ${selected.type}` }"
     class="main"
   >
@@ -20,10 +22,16 @@
     <StageEditor v-else-if="selected.type === 'stage'" :stage="project.stage" :state="editorCtx.state.stageState" />
     <EditorPlaceholder v-else />
   </UICard>
-  <div class="sider">
+  <div v-show="isPreviewMode" class="sider">
     <EditorPreview />
     <EditorPanels />
   </div>
+  <MapEditor
+    v-if="!isPreviewMode"
+    :project="editorCtx.project"
+    :selected-sprite-id="editorCtx.state.selectedSprite?.id ?? null"
+    @update:selected-sprite-id="handleSpriteSelect"
+  />
 </template>
 
 <script setup lang="ts">
@@ -51,11 +59,14 @@ import { genSpriteFromCanvas, genBackdropFromCanvas } from '@/models/common/asse
 import { computed, watchEffect } from 'vue'
 import type { z } from 'zod'
 import { Monitor } from '@/models/widget/monitor'
+import { EditMode } from './editor-state'
+import MapEditor from './map-editor/MapEditor.vue'
 
 const editorCtx = useEditorCtx()
 const copilotCtx = useAgentCopilotCtx()
 const project = computed(() => editorCtx.project)
 const selected = computed(() => editorCtx.state.selected)
+const isPreviewMode = computed(() => editorCtx.state.selectedEditMode === EditMode.Default)
 
 type AddSpriteFromCanvaOptions = z.infer<typeof AddSpriteFromCanvasArgsSchema>
 type AddStageBackdropFromCanvasOptions = z.infer<typeof AddStageBackdropFromCanvasArgsSchema>
@@ -192,6 +203,11 @@ function registerProjectTools() {
 watchEffect(() => {
   copilotCtx.mcp.collector?.setEnvironmentVar('project_id', project.value.id)
 })
+
+function handleSpriteSelect(spriteId: string | null) {
+  if (spriteId == null) return
+  editorCtx.state.selectSprite(spriteId)
+}
 
 // Register the tools when the component is mounted
 onMounted(() => {
