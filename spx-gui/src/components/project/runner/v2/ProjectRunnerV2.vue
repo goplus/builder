@@ -44,8 +44,10 @@ interface IframeWindow extends Window {
   setAIInteractionAPIEndpoint: (endpoint: string) => void
   setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
   setAIDescription: (description: string) => void
+  initGame(assetURLs: Record<string, string>, onSpxReady?: () => void): Promise<void>
   startGame(
     buffer: ArrayBuffer,
+    fileHash: string,
     assetURLs: Record<string, string>,
     onSpxReady?: () => void,
     config?: {
@@ -91,7 +93,7 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
     emit('console', 'warn', args)
   }
 
-  function handleRunnerReady() {
+  async function handleRunnerReady() {
     iframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
       console.warn('ProjectRunner game error:', err)
@@ -100,13 +102,21 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
     iframeWindow.onGameExit((code: number) => {
       emit('exit', code)
     })
+    
+    // Initialize game engine after iframe is ready
+    try {
+      await iframeWindow.initGame(assetURLs)
+      console.log('Game engine initialized')
+    } catch (err) {
+      console.warn('Failed to initialize game engine:', err)
+    }
   }
 
   // Handle the case where the `runnerReady` event may have already been dispatched
   // before this function is called. We check if the runner is ready by verifying
-  // that `startGame` is defined. If so, we call `handleRunnerReady` immediately;
+  // that `startGame` and `initGame` are defined. If so, we call `handleRunnerReady` immediately;
   // otherwise, we listen for the `runnerReady` event.
-  if (typeof iframeWindow.startGame !== 'undefined') handleRunnerReady()
+  if (typeof iframeWindow.startGame !== 'undefined' && typeof iframeWindow.initGame !== 'undefined') handleRunnerReady()
   else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
 }
 
@@ -211,8 +221,9 @@ async function runInternal(ctrl: AbortController) {
 
     const isUsingAIInteraction = isProjectUsingAIInteraction(props.project)
 
-    const [zipped, aiDescription] = await Promise.all([
+    const [zipped, fileHash, aiDescription] = await Promise.all([
       zip(files, getProjectDataReporter, ctrl.signal),
+      hashFiles(files, ctrl.signal),
       // Conditionally generate AI description only if project uses AI Interaction features
       isUsingAIInteraction ? props.project.ensureAIDescription(false, ctrl.signal) : Promise.resolve(null)
     ])
@@ -227,6 +238,7 @@ async function runInternal(ctrl: AbortController) {
     startGameReporter.startAutoReport(10 * 1000)
     await iframeWindow.startGame(
       zipped,
+      fileHash,
       assetURLs,
       () => {
         if (isUsingAIInteraction) {
@@ -247,7 +259,6 @@ async function runInternal(ctrl: AbortController) {
     )
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
-    return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
     console.warn('ProjectRunner run game error:', err)
@@ -276,9 +287,9 @@ defineExpose({
     const iframeWindow = iframeWindowRef.value
     if (iframeWindow == null) return
     iframeWindow.__xb_is_stale = true
-    iframeWindow.location.reload()
-    registered.onStopped()
-    iframeWindowRef.value = null
+    iframeWindow.stopGame()
+    // registered.onStopped()
+    // iframeWindowRef.value = null
     progressRef.value = { percentage: 0, desc: null }
 
     // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
@@ -286,15 +297,15 @@ defineExpose({
     // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
     // TODO: Find a better way to archieve iframe reloading.
     // eslint-disable-next-line no-constant-condition
-    while (true) {
-      await timeout(100)
-      const newIframeWindow = iframeRef.value?.contentWindow as IframeWindow | null | undefined
-      if (newIframeWindow == null) continue
-      if (!newIframeWindow.__xb_is_stale) {
-        handleIframeWindow(newIframeWindow as IframeWindow)
-        return
-      }
-    }
+    // while (true) {
+    //   await timeout(100)
+    //   const newIframeWindow = iframeRef.value?.contentWindow as IframeWindow | null | undefined
+    //   if (newIframeWindow == null) continue
+    //   if (!newIframeWindow.__xb_is_stale) {
+    //     handleIframeWindow(newIframeWindow as IframeWindow)
+    //     return
+    //   }
+    // }
   },
   async rerun() {
     await this.stop()
