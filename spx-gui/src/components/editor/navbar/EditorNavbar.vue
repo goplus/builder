@@ -31,6 +31,10 @@
               <template #icon><img :src="importScratchSvg" /></template>
               {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
             </UIMenuItem>
+            <UIMenuItem @click="handleConvertFromScratch">
+              <template #icon><img :src="importScratchSvg" /></template>
+              {{ $t({ en: 'Convert Scratch project to XBuilder', zh: 'Scratch 项目转 XBuilder 项目' }) }}
+            </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
             <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
@@ -123,6 +127,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
+import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type Project } from '@/models/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
@@ -227,6 +232,32 @@ const handleImportFromScratch = useMessageHandle(
     en: 'Failed to import from Scratch file',
     zh: '从 Scratch 项目文件导入失败'
   }
+).fn
+
+const convertScratchMessage = { en: 'Convert Scratch to XBuilder project', zh: 'Scratch 项目转 XBuilder 项目' }
+
+const handleConvertFromScratch = useMessageHandle(
+  async () => {
+    const { project } = props
+    if (project == null) throw new Error('Editor state or project is not available')
+    // select Scratch project file (sb3)
+    const file = await selectFile({ accept: ['sb3','sb2'] })
+
+    // upload to backend via api helper and get converted xbp blob
+    const blob = await m.withLoading(
+      convertScratchToXbp(file),
+      i18n.t({ en: 'Converting Scratch project', zh: '正在转换 Scratch 项目' })
+    )
+
+    const xbpFile = new File([blob], `${file.name.replace(/\.sb3$/i, '')}.xbp`, { type: 'application/octet-stream' })
+
+    const action = { name: convertScratchMessage }
+    await m.withLoading(
+      project.history.doAction(action, () => project!.loadXbpFile(xbpFile)),
+      i18n.t({ en: 'Importing converted project', zh: '导入已转换的项目中' })
+    )
+  },
+  { en: 'Failed to convert Scratch project', zh: 'Scratch 转换失败' }
 ).fn
 
 const publishProject = usePublishProject()

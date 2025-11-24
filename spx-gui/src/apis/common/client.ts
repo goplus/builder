@@ -31,6 +31,26 @@ export class Client {
     return resp.json()
   })
 
+  // Request variant that returns binary (Blob). It shares the same token/sentry logic
+  // from useRequest but maps successful responses to Blob.
+  private requestBinary = useRequest(apiBaseUrl, async (resp) => {
+    if (!resp.ok) {
+      // Try parse API exception payload if possible
+      let body: any = null
+      try {
+        body = await resp.json()
+      } catch (_) {
+        // ignore parse error
+      }
+      if (!isApiExceptionPayload(body)) {
+        throw new Error('api call failed')
+      }
+      throw new ApiException(body.code, body.msg)
+    }
+    if (resp.status === 204) return null as any
+    return resp.blob() as Promise<unknown>
+  })
+
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
     if (!resp.ok) {
       const body = await resp.json()
@@ -66,6 +86,13 @@ export class Client {
 
   post(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.request(path, payload, { ...options, method: 'POST' })
+  }
+
+  /**
+   * POST and expect binary (Blob) response. payload can be FormData or JSON-able.
+   */
+  postBinary(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestBinary(path, payload, { ...options, method: 'POST' }) as Promise<Blob>
   }
 
   put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
