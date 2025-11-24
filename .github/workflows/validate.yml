@@ -11,7 +11,7 @@ jobs:
       run:
         working-directory: spx-gui
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Cache Node modules
         uses: actions/cache@v4
@@ -72,7 +72,7 @@ jobs:
       run:
         working-directory: spx-backend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -101,7 +101,7 @@ jobs:
       run:
         working-directory: tools/ai
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
