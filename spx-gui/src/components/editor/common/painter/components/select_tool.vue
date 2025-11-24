@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { ref, watch, inject } from 'vue'
 import paper from 'paper'
-import { projectPaperPointToView } from '../utils/coordinate-transform'
+import { createViewUpdateScheduler } from '../utils/view-update-scheduler'
 
 // 接口定义
 interface ExtendedItem extends paper.Item {
@@ -27,17 +27,12 @@ const selectedPath = ref<paper.Path | paper.CompoundPath | paper.Shape | null>(n
 const dragStartPoint = ref<paper.Point | null>(null)
 const pathOriginalPosition = ref<paper.Point | null>(null)
 const isUpdateScheduled = ref<boolean>(false) // 用于节流画布更新
-
-// 画布拖拽相关
-const isPanningCanvas = ref<boolean>(false)
-const panStartCenter = ref<paper.Point | null>(null)
-const dragStartScreenPoint = ref<paper.Point | null>(null) // 保存屏幕坐标
+const scheduleViewUpdate = createViewUpdateScheduler(isUpdateScheduled)
 
 // 注入父组件
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
 const setAllPathsValue = inject<(paths: paper.Path[]) => void>('setAllPathsValue')!
 const exportSvgAndEmit = inject<() => void>('exportSvgAndEmit')!
-const isViewBoundsWithinBoundary = inject<(center: paper.Point, zoom: number) => boolean>('isViewBoundsWithinBoundary')!
 
 // 选中路径(独占选择)
 const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape | null): void => {
@@ -109,18 +104,9 @@ const handleMouseDown = (point: paper.Point): void => {
     hasMoved.value = false // 重置移动标志
     dragStartPoint.value = point.clone()
     pathOriginalPosition.value = clickedPath.position.clone()
-    isPanningCanvas.value = false
   } else {
-    // 点击空白处，准备拖动画布
+    // 点击空白处仅清除选中
     deselectAll()
-    isPanningCanvas.value = true
-    dragStartPoint.value = point.clone()
-    if (paper.view) {
-      panStartCenter.value = paper.view.center.clone()
-      // 保存起始点的屏幕坐标，避免拖动时坐标系变化导致抖动
-      const viewPoint = projectPaperPointToView(point)
-      dragStartScreenPoint.value = new paper.Point(viewPoint.x, viewPoint.y)
-    }
     hasMoved.value = false
   }
 }
@@ -128,46 +114,6 @@ const handleMouseDown = (point: paper.Point): void => {
 // 处理鼠标移动(拖动)
 const handleMouseMove = (point: paper.Point): void => {
   if (!props.isActive || !dragStartPoint.value) return
-
-  // 处理画布拖拽
-  if (isPanningCanvas.value && panStartCenter.value && dragStartScreenPoint.value && paper.view) {
-    // 将当前鼠标的项目坐标转换为屏幕坐标
-    const viewPoint = projectPaperPointToView(point)
-    const currentScreenPoint = new paper.Point(viewPoint.x, viewPoint.y)
-
-    // 在屏幕坐标系中计算差值（避免因 view.center 变化导致坐标系抖动）
-    const screenDelta = currentScreenPoint.subtract(dragStartScreenPoint.value)
-
-    // 只有移动距离超过阈值才认为是真正的拖动
-    if (screenDelta.length > 1) {
-      hasMoved.value = true
-    }
-
-    // 将屏幕坐标差值转换为项目坐标差值（除以缩放比例）
-    const projectDelta = screenDelta.divide(paper.view.zoom)
-
-    // 计算新的画布中心
-    const newCenter = panStartCenter.value.subtract(projectDelta)
-
-    // 检查新的 center 是否会导致超出边界
-    if (!isViewBoundsWithinBoundary(newCenter, paper.view.zoom)) {
-      // 拒绝移动，保持当前状态
-      return
-    }
-
-    // 反向移动画布中心（因为拖动画布是让画布跟随鼠标）
-    paper.view.center = newCenter
-
-    // 使用 requestAnimationFrame 节流重绘
-    if (!isUpdateScheduled.value) {
-      isUpdateScheduled.value = true
-      requestAnimationFrame(() => {
-        paper.view.update()
-        isUpdateScheduled.value = false
-      })
-    }
-    return
-  }
 
   // 处理路径拖拽
   if (!isDragging.value || !selectedPath.value) return
@@ -185,14 +131,7 @@ const handleMouseMove = (point: paper.Point): void => {
     selectedPath.value.position = pathOriginalPosition.value.add(delta)
   }
 
-  // 使用 requestAnimationFrame 节流重绘
-  if (!isUpdateScheduled.value) {
-    isUpdateScheduled.value = true
-    requestAnimationFrame(() => {
-      paper.view.update()
-      isUpdateScheduled.value = false
-    })
-  }
+  scheduleViewUpdate()
 }
 
 // 处理鼠标释放
@@ -200,7 +139,7 @@ const handleMouseUp = (): void => {
   if (!props.isActive) return
 
   // 只有在真正移动路径的情况下才更新数据和导出
-  if (isDragging.value && selectedPath.value && hasMoved.value && !isPanningCanvas.value) {
+  if (isDragging.value && selectedPath.value && hasMoved.value) {
     // 拖动完成,更新路径数组并导出
     const currentPaths = getAllPathsValue()
     setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
@@ -209,12 +148,9 @@ const handleMouseUp = (): void => {
 
   // 重置所有拖动状态
   isDragging.value = false
-  isPanningCanvas.value = false
   hasMoved.value = false
   dragStartPoint.value = null
   pathOriginalPosition.value = null
-  panStartCenter.value = null
-  dragStartScreenPoint.value = null
 }
 
 // 处理点击(用于单纯的选择,不拖动的情况)
@@ -268,12 +204,9 @@ watch(
     if (!isActive) {
       deselectAll()
       isDragging.value = false
-      isPanningCanvas.value = false
       hasMoved.value = false
       dragStartPoint.value = null
       pathOriginalPosition.value = null
-      panStartCenter.value = null
-      dragStartScreenPoint.value = null
     }
   }
 )
