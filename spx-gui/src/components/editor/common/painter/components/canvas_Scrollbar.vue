@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { inject, onMounted, onUnmounted, ref, watch, nextTick, type Ref } from 'vue'
 import paper from 'paper'
+import { createViewUpdateScheduler } from '../utils/view-update-scheduler'
 
 const props = defineProps<{
   canvasRef?: HTMLCanvasElement | null
@@ -42,23 +43,11 @@ const initialized = ref<boolean>(false)
 const suppressScrollEvent = ref<boolean>(false)
 const lastCenter = ref<paper.Point | null>(null)
 const lastZoom = ref<number | null>(null)
+const scheduleViewUpdate = createViewUpdateScheduler(isUpdateScheduled)
 let frameHandler: ((event: paper.Event) => void) | null = null
 let resizeHandler: (() => void) | null = null
 const getCanvasElement = (): HTMLCanvasElement | null => {
   return props.canvasRef ?? null
-}
-
-const scheduleViewUpdate = (): void => {
-  if (isUpdateScheduled.value) return
-  isUpdateScheduled.value = true
-  requestAnimationFrame(() => {
-    if (!paper.view) {
-      isUpdateScheduled.value = false
-      return
-    }
-    paper.view.update()
-    isUpdateScheduled.value = false
-  })
 }
 
 const adjustCenterToBoundary = (center: paper.Point): paper.Point => {
