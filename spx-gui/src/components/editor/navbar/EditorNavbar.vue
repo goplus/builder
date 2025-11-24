@@ -98,6 +98,7 @@
         v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="editor-mode-wrapper"
         type="text"
+        variant="secondary"
         :value="selectedEditMode"
         @update:value="(v) => state?.selectEditMode(v as EditMode)"
       >
@@ -431,15 +432,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 .editor-mode-wrapper {
   margin: 0 12px;
   align-items: center;
-
-  & .ui-button-group-item {
-    background-color: #47d8e4;
-    color: var(--ui-color-grey-200);
-    &.active {
-      background-color: var(--ui-color-grey-200);
-      color: var(--ui-color-turquoise-600);
-    }
-  }
 
   .icon {
     width: 18px;

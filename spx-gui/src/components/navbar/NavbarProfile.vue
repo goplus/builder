@@ -21,21 +21,21 @@
         <UIMenuItem :interactive="false">
           <div class="user-info-wrapper">
             {{ signedInUser?.displayName }}
-            <UIButtonGroup
-              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
-              type="text"
-              :value="i18n.lang.value"
-              @update:value="handleLangChanged"
-            >
-              <UIButtonGroupItem class="lang-item" value="zh">
-                <div class="icon" v-html="zhSvg"></div>
-              </UIButtonGroupItem>
-              <UIButtonGroupItem class="lang-item" value="en">
-                <div class="icon" v-html="enSvg"></div>
-              </UIButtonGroupItem>
-            </UIButtonGroup>
           </div>
         </UIMenuItem>
+        <UITooltip placement="left">
+          <template #trigger>
+            <UIMenuItem
+              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+              class="lang-item"
+              @click="toggleLang"
+            >
+              {{ $t({ en: 'Language', zh: '语言' }) }}
+              <div class="icon" v-html="langContent"></div>
+            </UIMenuItem>
+          </template>
+          {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+        </UITooltip>
       </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleUserPage">
@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
@@ -87,20 +88,12 @@ import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
-import {
-  UIButton,
-  UIButtonGroup,
-  UIButtonGroupItem,
-  UIDropdown,
-  UIMenu,
-  UIMenuGroup,
-  UIMenuItem
-} from '@/components/ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
-import { useI18n, type Lang } from '@/utils/i18n'
+import { useI18n } from '@/utils/i18n'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
 
@@ -124,8 +117,9 @@ const handleAskCopilotAgent = useMessageHandle(
   })
 ).fn
 
-function handleLangChanged(lang: string) {
-  i18n.setLang(lang as Lang)
+const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
+function toggleLang() {
+  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
 }
 
 function handleUserPage() {
@@ -195,23 +189,14 @@ function handleSignOut() {
   }
 }
 
-.user-info-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.lang-item {
+  padding: 8px;
+  justify-content: space-between;
 
-  & .ui-button-group-item {
-    &.active {
-      color: var(--ui-color-turquoise-600);
-    }
-  }
-
-  .lang-item {
-    padding: 0 10px;
-  }
   .icon {
     width: 18px;
     height: 18px;
+    color: var(--ui-color-turquoise-600);
 
     :deep(svg) {
       width: 100%;

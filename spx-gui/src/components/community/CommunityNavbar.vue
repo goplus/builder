@@ -12,7 +12,7 @@
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
-      <NavbarLang />
+      <NavbarLang v-if="!isSignedIn()" />
       <NavbarTutorials v-if="showTutorialsEntry" />
     </template>
     <template #right>
@@ -45,6 +45,7 @@ import { getSearchRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
 import NavbarLang from '../navbar/NavbarLang.vue'
 import NavbarTutorials from '../navbar/NavbarTutorials.vue'
+import { isSignedIn } from '@/stores/user'
 
 const router = useRouter()
 const searchInput = ref('')
