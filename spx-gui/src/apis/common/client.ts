@@ -33,7 +33,7 @@ export class Client {
 
   // Request variant that returns binary (Blob). It shares the same token/sentry logic
   // from useRequest but maps successful responses to Blob.
-  private requestBinary = useRequest(apiBaseUrl, async (resp) => {
+  private requestBinary = useRequest<Blob>(apiBaseUrl, async (resp) => {
     if (!resp.ok) {
       // Try parse API exception payload if possible
       let body: any = null
@@ -48,7 +48,7 @@ export class Client {
       throw new ApiException(body.code, body.msg)
     }
     if (resp.status === 204) return null as any
-    return resp.blob() as Promise<unknown>
+    return resp.blob()
   })
 
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
