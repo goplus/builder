@@ -506,6 +506,7 @@ const initPaper = (): void => {
     size: [canvasWidth.value, canvasHeight.value],
     fillColor: 'transparent'
   })
+  background.data = { ...(background.data || {}), isBackground: true }
   backgroundRect.value = background
 
   // 获取舞台尺寸（如果在编辑器环境中）
@@ -541,7 +542,8 @@ function getAllDrawablePaths(item: paper.Item): (paper.Path | paper.CompoundPath
   // 检查当前项目是否是我们需要的目标类型
   if (item instanceof paper.Path || item instanceof paper.CompoundPath || item instanceof paper.Shape) {
     // 确保它不是背景或其他特殊用途的路径
-    if (!item.data.isBackground) {
+    const isHelper = item.data?.isBackground || item.data?.isSelectionHelper
+    if (!isHelper) {
       paths.push(item)
     }
   }
@@ -745,6 +747,7 @@ watch(
         size: [canvasWidth.value, canvasHeight.value],
         fillColor: 'transparent'
       })
+      background.data = { ...(background.data || {}), isBackground: true }
       backgroundRect.value = background
       allPaths.value = []
       backgroundImage.value = null
@@ -807,6 +810,7 @@ onMounted(() => {
         size: [canvasWidth.value, canvasHeight.value],
         fillColor: 'transparent'
       })
+      background.data = { ...(background.data || {}), isBackground: true }
       backgroundRect.value = background
       allPaths.value = []
       backgroundImage.value = null
