@@ -1700,22 +1700,8 @@ paths:
                 type: string
                 format: binary
               examples:
-                xbp-file:
+                xbpFile:
                   summary: Example XBP zip file
-                  value: "<binary zip data>"
-        "400":
-          description: Invalid args.
-        "401":
-          description: Unauthorized. Authentication required.
-        "429":
-          description: Too many requests to perform this operation.
-          headers:
-            Retry-After:
-              description: Seconds to wait before retrying
-              schema:
-                type: integer
-        "500":
-          description: Internal server error during conversion.
 
 components:
   securitySchemes:
