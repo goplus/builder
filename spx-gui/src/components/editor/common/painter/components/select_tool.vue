@@ -13,7 +13,7 @@ import { createViewUpdateScheduler } from '../utils/view-update-scheduler'
 interface ExtendedItem extends paper.Item {
   isControlPoint?: boolean
   originalPosition?: paper.Point
-  data?: {
+  data: paper.Item['data'] & {
     isSelectionHelper?: boolean
     [key: string]: any
   }
@@ -379,9 +379,15 @@ const handleMouseMove = (point: paper.Point): void => {
     if (handle === 'nw') {
       newRect = new paper.Rectangle(point, startBounds.bottomRight)
     } else if (handle === 'ne') {
-      newRect = new paper.Rectangle(new paper.Point(startBounds.bottomLeft.x, point.y), new paper.Point(point.x, startBounds.bottomRight.y))
+      newRect = new paper.Rectangle(
+        new paper.Point(startBounds.bottomLeft.x, point.y),
+        new paper.Point(point.x, startBounds.bottomRight.y)
+      )
     } else if (handle === 'sw') {
-      newRect = new paper.Rectangle(new paper.Point(point.x, startBounds.topLeft.y), new paper.Point(startBounds.bottomRight.x, point.y))
+      newRect = new paper.Rectangle(
+        new paper.Point(point.x, startBounds.topLeft.y),
+        new paper.Point(startBounds.bottomRight.x, point.y)
+      )
     } else {
       newRect = new paper.Rectangle(startBounds.topLeft, point)
     }
@@ -441,7 +447,7 @@ const handleMouseMove = (point: paper.Point): void => {
 }
 
 // 处理鼠标释放
-const handleMouseUp = (point?: paper.Point): void => {
+const handleMouseUp = (): void => {
   if (!props.isActive) return
 
   if (isSelectingArea.value) {
