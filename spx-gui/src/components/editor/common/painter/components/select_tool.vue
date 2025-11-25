@@ -99,6 +99,24 @@ const deselectAll = (): void => {
   paper.view.update()
 }
 
+// 暂时隐藏选区辅助图形，避免导出/存储时被写入
+const hideSelectionHelpers = (): (() => void) => {
+  const helpers: paper.Item[] = []
+  if (selectionBox.value) helpers.push(selectionBox.value)
+  helpers.push(...selectionHandles.value)
+  const prevVisible = new Map<paper.Item, boolean>()
+  helpers.forEach((item) => {
+    prevVisible.set(item, item.visible)
+    item.visible = false
+  })
+  return () => {
+    helpers.forEach((item) => {
+      const v = prevVisible.get(item)
+      if (v !== undefined) item.visible = v
+    })
+  }
+}
+
 //防止是辅助图形
 const isHelperItem = (item: ExtendedItem): boolean => {
   return item.isControlPoint === true || item.data?.isSelectionHelper === true || item.data?.isBackground === true
@@ -445,7 +463,9 @@ const handleMouseUp = (point?: paper.Point): void => {
   if ((isMovingSelection.value || isScaling.value) && hasMoved.value) {
     const currentPaths = getAllPathsValue()
     setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    const restore = hideSelectionHelpers()
     exportSvgAndEmit()
+    restore()
   }
 
   isScaling.value = false
@@ -459,7 +479,9 @@ const handleMouseUp = (point?: paper.Point): void => {
     // 拖动完成,更新路径数组并导出
     const currentPaths = getAllPathsValue()
     setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    const restore = hideSelectionHelpers()
     exportSvgAndEmit()
+    restore()
   }
 
   // 重置所有拖动状态
@@ -507,7 +529,9 @@ const deleteSelectedPath = (): void => {
   paper.view.update()
 
   // 导出更新
+  const restore = hideSelectionHelpers()
   exportSvgAndEmit()
+  restore()
 }
 
 // 键盘事件处理
