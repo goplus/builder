@@ -6,7 +6,7 @@ import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 import { fromBlob } from '@/models/common/file'
 import { Costume } from '@/models/costume'
-import type { ProjectSettings } from '@/models/project'
+import type { ProjectSettings } from '@/apis/project'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 

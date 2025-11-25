@@ -12,6 +12,12 @@ export enum ProjectDataType {
   Sound = 2
 }
 
+export type ProjectSettings = {
+  artStyle: string | null
+  perspective: string | null
+  description: string | null
+}
+
 export type ProjectData = {
   /** Unique identifier */
   id: string
@@ -47,6 +53,7 @@ export type ProjectData = {
   releaseCount: number
   /** Number of remixes associated with the project */
   remixCount: number
+  settings: ProjectSettings
 }
 
 export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> & {
@@ -56,6 +63,18 @@ export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> &
 
 export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>
 
+async function polyfillProjectSettings(p: ProjectData | Promise<ProjectData>): Promise<ProjectData> {
+  const project = p instanceof Promise ? await p : p
+  if (project.settings == null) {
+    project.settings = {
+      artStyle: 'pixel',
+      perspective: 'side',
+      description: 'A fighting game among ninjas.'
+    }
+  }
+  return project as ProjectData
+}
+
 export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
@@ -64,9 +83,9 @@ export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
   Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
 
 export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
-  return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
+  return polyfillProjectSettings(client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
-  }) as Promise<ProjectData>
+  }) as Promise<ProjectData>)
 }
 
 export function deleteProject(owner: string, name: string) {
@@ -102,13 +121,15 @@ export type ListProjectParams = PaginationParams & {
 }
 
 export async function listProject(params?: ListProjectParams) {
-  return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
+  const result = (await client.get('/projects/list', params)) as ByPage<ProjectData>
+  result.data = await Promise.all(result.data.map(polyfillProjectSettings))
+  return result
 }
 
 export async function getProject(owner: string, name: string, signal?: AbortSignal) {
-  return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
+  return polyfillProjectSettings(client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
     signal
-  }) as Promise<ProjectData>
+  }) as Promise<ProjectData>)
 }
 
 export enum ExploreOrder {

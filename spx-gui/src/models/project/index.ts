@@ -11,7 +11,7 @@ import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
-import { Visibility, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData, type ProjectSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -35,15 +35,9 @@ export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumb
   thumbnail: File | null
 }
 
-export type ProjectSettings = {
-  artStyle: string | null
-  perspective: string | null
-}
-
 export type Metadata = Partial<CloudMetadata> & {
   aiDescription?: string | null
   aiDescriptionHash?: string | null
-  settings?: ProjectSettings
 }
 
 // TODO: better organization & type derivation
@@ -390,7 +384,8 @@ export class Project extends Disposable {
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
     this.settings = {
       artStyle: null,
-      perspective: null
+      perspective: null,
+      description: null
     }
     return reactiveThis
   }

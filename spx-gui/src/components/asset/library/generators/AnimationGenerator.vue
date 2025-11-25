@@ -25,13 +25,17 @@
           />
         </div>
         <div class="form-row">
-          <div class="form-group">
-            <label>{{ $t({ en: 'Art Style', zh: '艺术风格' }) }}</label>
-            <UITextInput v-model:value="artStyle" />
+          <div class="form-row-item">
+            <div class="form-group">
+              <label>{{ $t({ en: 'Art Style', zh: '艺术风格' }) }}</label>
+              <ArtStyleInput v-model:value="artStyle" />
+            </div>
           </div>
-          <div class="form-group">
-            <label>{{ $t({ en: 'Perspective', zh: '视角' }) }}</label>
-            <UITextInput v-model:value="perspective" />
+          <div class="form-row-item">
+            <div class="form-group">
+              <label>{{ $t({ en: 'Perspective', zh: '视角' }) }}</label>
+              <PerspectiveInput v-model:value="perspective" />
+            </div>
           </div>
         </div>
       </div>
@@ -119,6 +123,8 @@ import { Costume } from '@/models/costume'
 import type { AssetSettings } from '@/models/common/asset'
 import { fromBlob } from '@/models/common/file'
 import { getAnimationName } from '@/models/common/asset-name'
+import ArtStyleInput from './ArtStyleInput.vue'
+import PerspectiveInput from './PerspectiveInput.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -154,14 +160,14 @@ const description = computed({
 })
 
 const artStyle = computed({
-  get: () => editableSettings.artStyle ?? '',
+  get: () => editableSettings.artStyle,
   set: (value: string) => {
     editableSettings.artStyle = value
   }
 })
 
 const perspective = computed({
-  get: () => editableSettings.perspective ?? '',
+  get: () => editableSettings.perspective,
   set: (value: string) => {
     editableSettings.perspective = value
   }
@@ -303,7 +309,7 @@ async function handleConfirm() {
   display: flex;
   gap: var(--ui-gap-middle);
 
-  .form-group {
+  .form-row-item {
     flex: 1;
   }
 }

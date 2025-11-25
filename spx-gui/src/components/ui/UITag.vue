@@ -1,5 +1,5 @@
 <template>
-  <button class="ui-tag" :class="`type-${type}`">
+  <button class="ui-tag" type="button" :class="`type-${type}`">
     <slot></slot>
   </button>
 </template>

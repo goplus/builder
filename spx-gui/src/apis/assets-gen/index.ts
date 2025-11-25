@@ -91,7 +91,7 @@ export async function enrichSettings(
         ...baseEnriched,
         assetType: AssetType.Sprite,
         description:
-          initialSettings.description ||
+          initialSettings.description +
           'A towering, broad-shouldered figure composed of dark, charcoal-gray pixel clusters. Glowing cracks of orange and yellow embers cover its muscular torso and limbs.'
       } as SpriteSettings
 
@@ -100,7 +100,7 @@ export async function enrichSettings(
         ...baseEnriched,
         assetType: 'costume',
         description:
-          initialSettings.description || 'A pixel-art character costume with detailed features and vibrant colors'
+          initialSettings.description + 'A pixel-art character costume with detailed features and vibrant colors'
       } as CostumeSettings
 
     case 'animation':
@@ -108,7 +108,7 @@ export async function enrichSettings(
         ...baseEnriched,
         assetType: 'animation',
         description:
-          initialSettings.description ||
+          initialSettings.description +
           'A smooth animation sequence showing character movement with fluid transitions'
       } as AnimationSettings
 
@@ -116,14 +116,14 @@ export async function enrichSettings(
       return {
         ...baseEnriched,
         assetType: AssetType.Backdrop,
-        description: initialSettings.description || 'A detailed pixel-art background scene with atmospheric elements'
+        description: initialSettings.description + 'A detailed pixel-art background scene with atmospheric elements'
       } as BackdropSettings
 
     case AssetType.Sound:
       return {
         ...baseEnriched,
         assetType: AssetType.Sound,
-        description: initialSettings.description || 'An atmospheric sound effect with clear audio quality',
+        description: initialSettings.description + 'An atmospheric sound effect with clear audio quality',
         duration: 3
       } as SoundSettings
 
@@ -166,6 +166,26 @@ export async function generateCostumeImage(_settings: CostumeSettings): Promise<
   await timeout(2000)
 
   // Return mock costume image from balrog mockdata
+  return defaultCostumeUrl
+}
+
+/**
+ * Modifies an existing costume image based on user instructions
+ * @param imageUrl URL of the existing image
+ * @param instruction User's modification instructions
+ * @param settings Current costume settings
+ * @returns Promise resolving to modified image URL
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function modifyCostumeImage(
+  _imageUrl: string,
+  _instruction: string,
+  _settings: CostumeSettings
+): Promise<string> {
+  // Simulate image modification delay
+  await timeout(2000)
+
+  // Return mock modified image (in reality, this would call an AI service)
   return defaultCostumeUrl
 }
 

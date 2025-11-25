@@ -25,13 +25,17 @@
           />
         </div>
         <div class="form-row">
-          <div class="form-group">
-            <label>{{ $t({ en: 'Art Style', zh: '艺术风格' }) }}</label>
-            <UITextInput v-model:value="artStyle" />
+          <div class="form-row-item">
+            <div class="form-group">
+              <label>{{ $t({ en: 'Art Style', zh: '艺术风格' }) }}</label>
+              <ArtStyleInput v-model:value="artStyle" />
+            </div>
           </div>
-          <div class="form-group">
-            <label>{{ $t({ en: 'Perspective', zh: '视角' }) }}</label>
-            <UITextInput v-model:value="perspective" />
+          <div class="form-row-item">
+            <div class="form-group">
+              <label>{{ $t({ en: 'Perspective', zh: '视角' }) }}</label>
+              <PerspectiveInput v-model:value="perspective" />
+            </div>
           </div>
         </div>
       </div>
@@ -141,6 +145,8 @@ import UITextInput from '@/components/ui/UITextInput.vue'
 import { UILoading } from '@/components/ui'
 import CostumeGenerator from './CostumeGenerator.vue'
 import AnimationGenerator from './AnimationGenerator.vue'
+import ArtStyleInput from './ArtStyleInput.vue'
+import PerspectiveInput from './PerspectiveInput.vue'
 
 const props = defineProps<{
   project: Project
@@ -183,14 +189,14 @@ const description = computed({
 })
 
 const artStyle = computed({
-  get: () => enrichedSettings.value?.artStyle ?? '',
+  get: () => enrichedSettings.value?.artStyle ?? null,
   set: (v) => {
     if (enrichedSettings.value) enrichedSettings.value.artStyle = v
   }
 })
 
 const perspective = computed({
-  get: () => enrichedSettings.value?.perspective ?? '',
+  get: () => enrichedSettings.value?.perspective ?? null,
   set: (v) => {
     if (enrichedSettings.value) enrichedSettings.value.perspective = v
   }
@@ -357,6 +363,10 @@ function createSprite() {
   display: flex;
   gap: var(--ui-gap-middle);
   align-items: flex-start;
+
+  .form-row-item {
+    flex: 1;
+  }
 }
 
 .description-item {
