@@ -138,6 +138,10 @@ const props = defineProps<{
 
 const itemsForDisplay = shallowRef(props.controller.items)
 
+const emits = defineEmits<{
+  loaded: []
+}>()
+
 watch(
   () => props.controller.items,
   (newItems) => {
@@ -184,6 +188,7 @@ watch(categoriesComputed, (categories, _, onCleanUp) => {
   categoriesForItems.value = categories.slice(0, 1)
   const id = requestIdleCallback(() => {
     categoriesForItems.value = categories
+    emits('loaded')
   })
   onCleanUp(() => cancelIdleCallback(id))
 })

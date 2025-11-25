@@ -4,7 +4,17 @@
  * providing a single source of truth for whether the active route is loaded.
  */
 
-import { onScopeDispose, ref, watch, type InjectionKey, type Ref, type WatchSource } from 'vue'
+import {
+  inject,
+  onScopeDispose,
+  provide,
+  ref,
+  watch,
+  watchEffect,
+  type InjectionKey,
+  type Ref,
+  type WatchSource
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppProvide, useAppInject } from './app-state'
 
@@ -13,6 +23,11 @@ type LoadingCtx = {
 }
 
 const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
+
+type PageLoadedProviderCtx = {
+  registerPageLoadedProvider: (provider: () => boolean) => void
+}
+const pageLoadedProviderKey: InjectionKey<PageLoadedProviderCtx> = Symbol('page-loaded-provider-ctx')
 
 /**
  * Install route-loading.
@@ -50,4 +65,30 @@ export function useUpdateRouteLoaded(isLoadedSource: WatchSource<boolean>) {
       { immediate: true }
     )
   )
+}
+
+export function providePageLoadedProvider(initProvider: () => boolean = () => true) {
+  const isLoadedRef = useIsRouteLoaded()
+  const providers: Array<Parameters<PageLoadedProviderCtx['registerPageLoadedProvider']>[0]> = [initProvider]
+
+  onScopeDispose(
+    watchEffect(() => {
+      isLoadedRef.value = providers.length === 0 ? true : providers.every((provider) => provider())
+      if (isLoadedRef.value) {
+        providers.length = 0
+      }
+    })
+  )
+
+  provide(pageLoadedProviderKey, {
+    registerPageLoadedProvider(provider) {
+      providers.push(provider)
+    }
+  })
+}
+
+export function registerPageLoadedProvider(provider: () => boolean) {
+  const ctx = inject(pageLoadedProviderKey)
+  if (ctx == null) throw new Error('registerLoadedProvider must be used after useBeginPageLoaded')
+  ctx.registerPageLoadedProvider(provider)
 }

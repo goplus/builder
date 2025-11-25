@@ -68,14 +68,15 @@ export class Tutorial {
       this.series.value = series
       this.abandonPredictionCountRef.value = 0
 
-      await this.copilot.startSession(this.generateTopic(course))
-
       const { entrypoint } = course
+
       if (entrypoint) {
         await this.router.push(entrypoint)
         await until(this.isRouteLoaded)
         await timeout(100) // Wait for detailed UI rendering
       }
+
+      await this.copilot.startSession(this.generateTopic(course))
 
       this.copilot.notifyUserEvent(
         {
