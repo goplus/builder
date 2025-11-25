@@ -59,4 +59,4 @@ EXPOSE 80
 
 WORKDIR /app
 
-CMD ["sh", "-c", "nginx && exec ./spx-backend/spx-backend"]
+CMD ["nginx", "-g", "daemon off;"]
