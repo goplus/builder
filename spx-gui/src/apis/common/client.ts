@@ -37,13 +37,7 @@ export class Client {
     apiBaseUrl,
     async (resp) => {
       if (!resp.ok) {
-        // Try parse API exception payload if possible
-        let body: any = null
-        try {
-          body = await resp.json()
-        } catch (_) {
-          // ignore parse error
-        }
+        const body = await resp.json()
         if (!isApiExceptionPayload(body)) {
           throw new Error('api call failed')
         }
@@ -91,9 +85,6 @@ export class Client {
     return this.request(path, payload, { ...options, method: 'POST' })
   }
 
-  /**
-   * POST and expect binary (Blob) response. payload can be FormData or JSON-able.
-   */
   postBinary(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestBinary(path, payload, { ...options, method: 'POST' })
   }

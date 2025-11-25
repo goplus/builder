@@ -38,9 +38,10 @@ export function useRequest<T>(
     const method = options?.method ?? 'GET'
     // Support FormData payloads: don't stringify and don't set Content-Type header
     let body: BodyInit | null = null
-    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData
+    // FormData is available in modern browsers; check payload instanceof FormData directly.
+    const isFormData = payload instanceof FormData
     if (payload != null) {
-      if (isFormData) body = payload as BodyInit
+      if (isFormData) body = payload as FormData
       else body = JSON.stringify(payload)
     }
     const token = await tokenProvider()

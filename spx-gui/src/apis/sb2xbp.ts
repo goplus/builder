@@ -5,6 +5,12 @@ import { client } from './common'
  * The backend is expected to return the converted xbp as binary response (200).
  *
  * Uses shared `client` so token, Sentry headers and timeout behavior are consistent with other APIs.
+ *
+ * @param file - The Scratch project file (.sb2 or .sb3) to convert
+ * @param signal - Optional AbortSignal to cancel the request
+ * @returns Promise that resolves to a Blob containing the converted .xbp file
+ * @throws {ApiException} When the server returns an error response
+ * @throws {TimeoutException} When the request exceeds the timeout duration
  */
 export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
   const form = new FormData()

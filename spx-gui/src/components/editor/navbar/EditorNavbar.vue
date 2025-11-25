@@ -239,18 +239,18 @@ const convertScratchMessage = { en: 'Convert Scratch to XBuilder project', zh: '
 const handleConvertFromScratch = useMessageHandle(
   async () => {
     const { project } = props
-    if (project == null) throw new Error('Editor state or project is not available')
+    if (project == null) throw new Error('project is not available')
     // select Scratch project file (.sb2 or .sb3)
     const file = await selectFile({ accept: ['sb3', 'sb2'] })
 
     // upload to backend via api helper and get converted xbp blob
     const blob = await m.withLoading(
-      convertScratchToXbp(file),
+      convertScratchToXbp(file, project.getSignal()),
       i18n.t({ en: 'Converting Scratch project', zh: '正在转换 Scratch 项目' })
     )
 
     const xbpFile = new File([blob], `${file.name.replace(/\.sb(2|3)$/i, '')}.xbp`, {
-      type: 'application/octet-stream'
+      type: 'application/zip'
     })
 
     const action = { name: convertScratchMessage }
