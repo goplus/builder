@@ -2,6 +2,7 @@
   <UIFormModal
     :title="$t({ en: 'Generate Sound', zh: '生成声音' })"
     :visible="props.visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <div class="generator-content">

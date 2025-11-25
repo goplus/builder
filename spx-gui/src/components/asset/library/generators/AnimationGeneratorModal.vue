@@ -2,6 +2,7 @@
   <UIFormModal
     :title="$t({ en: 'Generate Animation', zh: '生成动画' })"
     :visible="props.visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <div class="generator-content">

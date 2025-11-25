@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AssetType } from '@/apis/asset'
 import type { AssetSettings } from '@/models/common/asset'
 import { timeout } from '@/utils/utils'
@@ -12,6 +13,7 @@ import idleVideoUrl from './mockdata/balrog/idle.mp4'
 import walkVideoUrl from './mockdata/balrog/walk.mp4'
 import attackVideoUrl from './mockdata/balrog/attack.mp4'
 import soundUrl from './mockdata/sound.mp3'
+import backdropUrl from './mockdata/backdrop.png'
 
 /**
  * Base settings type that can be enriched
@@ -59,12 +61,7 @@ export type SoundSettings = AssetSettings & {
 /**
  * Union type for all settings
  */
-export type Settings =
-  | SpriteSettings
-  | CostumeSettings
-  | AnimationSettings
-  | BackdropSettings
-  | SoundSettings
+export type Settings = SpriteSettings | CostumeSettings | AnimationSettings | BackdropSettings | SoundSettings
 
 /**
  * Enriches initial settings with AI-generated details based on asset type
@@ -79,8 +76,10 @@ export async function enrichSettings(
   // Simulate AI processing delay
   await timeout(800)
 
-  const baseEnriched = {
+  const baseEnriched: AssetSettings = {
     ...initialSettings,
+    description: null,
+    projectDescription: null,
     artStyle: initialSettings.artStyle ?? 'pixel-art',
     perspective: initialSettings.perspective ?? 'side-view'
   }
@@ -89,43 +88,42 @@ export async function enrichSettings(
     case AssetType.Sprite:
       return {
         ...baseEnriched,
-        assetType: AssetType.Sprite,
+        name: 'Balrog',
         description:
-          initialSettings.description ||
+          initialSettings.description +
           'A towering, broad-shouldered figure composed of dark, charcoal-gray pixel clusters. Glowing cracks of orange and yellow embers cover its muscular torso and limbs.'
-      } as SpriteSettings
+      } satisfies SpriteSettings
 
     case 'costume':
       return {
         ...baseEnriched,
-        assetType: 'costume',
+        name: 'Warrior Outfit',
         description:
-          initialSettings.description || 'A pixel-art character costume with detailed features and vibrant colors'
-      } as CostumeSettings
+          initialSettings.description + 'A pixel-art character costume with detailed features and vibrant colors'
+      } satisfies CostumeSettings
 
     case 'animation':
       return {
         ...baseEnriched,
-        assetType: 'animation',
+        name: 'Walk Cycle',
         description:
-          initialSettings.description ||
-          'A smooth animation sequence showing character movement with fluid transitions'
-      } as AnimationSettings
+          initialSettings.description + 'A smooth animation sequence showing character movement with fluid transitions'
+      } satisfies AnimationSettings
 
     case AssetType.Backdrop:
       return {
         ...baseEnriched,
-        assetType: AssetType.Backdrop,
-        description: initialSettings.description || 'A detailed pixel-art background scene with atmospheric elements'
-      } as BackdropSettings
+        name: 'Forest Glade',
+        description: initialSettings.description + 'A detailed pixel-art background scene with atmospheric elements'
+      } satisfies BackdropSettings
 
     case AssetType.Sound:
       return {
         ...baseEnriched,
-        assetType: AssetType.Sound,
-        description: initialSettings.description || 'An atmospheric sound effect with clear audio quality',
+        name: 'Wind Howl',
+        description: initialSettings.description + 'An atmospheric sound effect with clear audio quality',
         duration: 3
-      } as SoundSettings
+      } satisfies SoundSettings
 
     default:
       throw new Error(`Unknown asset type: ${assetType}`)
@@ -138,20 +136,77 @@ export type AnimationDescription = {
 }
 
 /**
+ * Description for a costume to be generated
+ */
+export type CostumeDescription = {
+  name: string
+  description: string
+}
+
+/**
+ * Sprite content descriptions including costumes and animations
+ */
+export type SpriteContentDescriptions = {
+  costumes: CostumeDescription[]
+  animations: AnimationDescription[]
+}
+
+/**
+ * Generates costume and animation descriptions for a sprite
+ * @param settings Sprite settings
+ * @returns Promise resolving to costume and animation descriptions
+ */
+export async function generateSpriteContentDescriptions(_settings: SpriteSettings): Promise<SpriteContentDescriptions> {
+  // Simulate AI processing delay
+  await timeout(1500)
+
+  // Return mock descriptions based on Balrog example
+  return {
+    costumes: [
+      {
+        name: 'default',
+        description: 'The default standing pose with glowing ember cracks visible across the body'
+      }
+    ],
+    animations: [
+      {
+        name: 'idle',
+        description:
+          'The character stands motionless with subtle breathing animation, embers flickering gently on its body'
+      },
+      {
+        name: 'walk',
+        description: 'The character moves forward with powerful strides, its body swaying with each step'
+      },
+      {
+        name: 'attack',
+        description: 'The character lunges forward aggressively, unleashing a powerful strike with dramatic motion'
+      }
+    ]
+  }
+}
+
+/**
  * Generates animation type descriptions based on sprite settings
  * @param settings Sprite settings
  * @returns Promise resolving to array of animation descriptions
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateAnimationDescriptions(_settings: SpriteSettings): Promise<AnimationDescription[]> {
   // Simulate AI processing delay
   await timeout(1000)
 
   // Return mock animation descriptions based on Balrog example
   return [
-    { name: 'idle', description: 'The character stands motionless with subtle breathing animation, embers flickering gently on its body' },
+    {
+      name: 'idle',
+      description:
+        'The character stands motionless with subtle breathing animation, embers flickering gently on its body'
+    },
     { name: 'walk', description: 'The character moves forward with powerful strides, its body swaying with each step' },
-    { name: 'attack', description: 'The character lunges forward aggressively, unleashing a powerful strike with dramatic motion' }
+    {
+      name: 'attack',
+      description: 'The character lunges forward aggressively, unleashing a powerful strike with dramatic motion'
+    }
   ]
 }
 
@@ -160,13 +215,67 @@ export async function generateAnimationDescriptions(_settings: SpriteSettings): 
  * @param settings Costume settings
  * @returns Promise resolving to image URL
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateCostumeImage(_settings: CostumeSettings): Promise<string> {
   // Simulate image generation delay
   await timeout(2000)
 
   // Return mock costume image from balrog mockdata
   return defaultCostumeUrl
+}
+
+/**
+ * Modifies an existing costume image based on user instructions
+ * @param imageUrl URL of the existing image
+ * @param instruction User's modification instructions
+ * @param settings Current costume settings
+ * @returns Promise resolving to modified image URL
+ */
+export async function modifyCostumeImage(
+  _imageUrl: string,
+  _instruction: string,
+  _settings: CostumeSettings
+): Promise<string> {
+  // Simulate image modification delay
+  await timeout(2000)
+
+  // Return mock modified image (in reality, this would call an AI service)
+  return defaultCostumeUrl
+}
+
+/**
+ * Generates a reference frame image for an animation based on a costume reference
+ * @param settings Animation settings
+ * @param referenceImageUrl URL of the reference costume image
+ * @returns Promise resolving to frame image URL
+ */
+export async function generateAnimationFrame(
+  _settings: AnimationSettings,
+  _referenceImageUrl: string
+): Promise<string> {
+  // Simulate frame generation delay
+  await timeout(2000)
+
+  // Return mock frame image
+  return idleFrameUrl
+}
+
+/**
+ * Modifies an existing animation frame image based on user instructions
+ * @param imageUrl URL of the existing image
+ * @param instruction User's modification instructions
+ * @param settings Current animation settings
+ * @returns Promise resolving to modified image URL
+ */
+export async function modifyAnimationFrame(
+  _imageUrl: string,
+  _instruction: string,
+  _settings: AnimationSettings
+): Promise<string> {
+  // Simulate image modification delay
+  await timeout(2000)
+
+  // Return mock modified image
+  return idleFrameUrl
 }
 
 /**
@@ -208,32 +317,94 @@ export async function generateAnimationFrames(settings: AnimationSettings): Prom
 }
 
 /**
- * Generates animation video from start and end frames
- * @param settings Animation settings
- * @param startFrameUrl URL of the starting frame
- * @param endFrameUrl URL of the ending frame
- * @returns Promise resolving to video URL
+ * Task status for video generation
  */
-export async function generateAnimationVideo(
+export type VideoTaskStatus = {
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  /** Result video URL, only available when status is 'completed' */
+  resultUrl?: string
+  /** Error message, only available when status is 'failed' */
+  error?: string
+}
+
+// Mock task storage for simulating async video generation
+const mockVideoTasks = new Map<
+  string,
+  {
+    status: VideoTaskStatus['status']
+    resultUrl?: string
+    createdAt: number
+    settings: AnimationSettings
+  }
+>()
+
+// Video generation takes 30 seconds in mock
+const VIDEO_GENERATION_DURATION = 30_000
+
+/**
+ * Submits an animation video generation task
+ * @param settings Animation settings
+ * @param referenceFrameUrl URL of the reference frame
+ * @returns Promise resolving to task ID
+ */
+export async function submitAnimationVideoTask(
   settings: AnimationSettings,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _startFrameUrl: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _endFrameUrl: string
+  _referenceFrameUrl: string
 ): Promise<string> {
-  // Simulate video generation delay
-  await timeout(3000)
+  // Simulate network delay for task submission
+  await timeout(500)
 
-  const animType = settings.name?.toLowerCase() || 'idle'
+  // Generate a mock task ID
+  const taskId = `video-task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 
-  // Return appropriate mock video based on animation type
-  const videoMap: Record<string, string> = {
-    idle: idleVideoUrl,
-    walk: walkVideoUrl,
-    attack: attackVideoUrl
+  // Store the task
+  mockVideoTasks.set(taskId, {
+    status: 'processing',
+    createdAt: Date.now(),
+    settings
+  })
+
+  return taskId
+}
+
+/**
+ * Gets the status of an animation video generation task
+ * @param taskId The task ID returned from submitAnimationVideoTask
+ * @returns Promise resolving to task status
+ */
+export async function getAnimationVideoTaskStatus(taskId: string): Promise<VideoTaskStatus> {
+  // Simulate network delay
+  await timeout(200)
+
+  const task = mockVideoTasks.get(taskId)
+  if (task == null) {
+    return {
+      status: 'failed',
+      error: 'Task not found'
+    }
   }
 
-  return videoMap[animType] || videoMap.idle
+  // Check if the task has been processing long enough
+  const elapsed = Date.now() - task.createdAt
+  if (elapsed >= VIDEO_GENERATION_DURATION && task.status === 'processing') {
+    // Task is complete, determine the result URL
+    const animType = task.settings.name?.toLowerCase() || 'idle'
+    const videoMap: Record<string, string> = {
+      idle: idleVideoUrl,
+      walk: walkVideoUrl,
+      attack: attackVideoUrl
+    }
+    const resultUrl = videoMap[animType] || videoMap.idle
+
+    // Update task status
+    task.status = 'completed'
+    task.resultUrl = resultUrl
+  }
+
+  return {
+    status: task.status,
+    resultUrl: task.resultUrl
+  }
 }
 
 /**
@@ -242,7 +413,6 @@ export async function generateAnimationVideo(
  * @param interval Interval between frames in milliseconds
  * @returns Promise resolving to array of frame URLs
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getFramesFromVideo(videoUrl: string, _interval: number = 100): Promise<string[]> {
   // Simulate frame extraction delay
   await timeout(1500)
@@ -274,14 +444,29 @@ export async function getFramesFromVideo(videoUrl: string, _interval: number = 1
  * @param settings Backdrop settings
  * @returns Promise resolving to image URL
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateBackdropImage(_settings: BackdropSettings): Promise<string> {
   // Simulate image generation delay
   await timeout(2000)
 
-  // For now, return the default costume as a placeholder backdrop
-  // In real implementation, this would generate appropriate backdrop images
-  return defaultCostumeUrl
+  return backdropUrl
+}
+
+/**
+ * Modifies an existing backdrop image based on user instructions
+ * @param imageUrl URL of the existing image
+ * @param instruction User's modification instructions
+ * @param settings Current backdrop settings
+ * @returns Promise resolving to modified image URL
+ */
+export async function modifyBackdropImage(
+  _imageUrl: string,
+  _instruction: string,
+  _settings: BackdropSettings
+): Promise<string> {
+  // Simulate image modification delay
+  await timeout(2000)
+
+  return backdropUrl
 }
 
 /**
@@ -289,7 +474,6 @@ export async function generateBackdropImage(_settings: BackdropSettings): Promis
  * @param settings Sound settings
  * @returns Promise resolving to audio URL
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function generateSoundAudio(_settings: SoundSettings): Promise<string> {
   // Simulate audio generation delay
   await timeout(2000)

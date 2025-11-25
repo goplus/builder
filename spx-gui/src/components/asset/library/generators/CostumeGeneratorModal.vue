@@ -2,6 +2,7 @@
   <UIFormModal
     :title="$t({ en: 'Generate Costume', zh: '生成造型' })"
     :visible="props.visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <div class="generator-content">

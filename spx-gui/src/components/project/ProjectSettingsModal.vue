@@ -6,27 +6,11 @@
   >
     <UIForm :form="form" @submit="handleSubmit.fn">
       <UIFormItem :label="$t({ en: 'Art Style', zh: '美术风格' })" path="artStyle">
-        <UISelect v-model:value="form.value.artStyle" clearable>
-          <UISelectOption
-            v-for="option in artStyleOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ $t(option.label) }}
-          </UISelectOption>
-        </UISelect>
+        <ArtStyleInput v-model:value="form.value.artStyle" />
       </UIFormItem>
 
       <UIFormItem :label="$t({ en: 'Perspective', zh: '视角' })" path="perspective">
-        <UISelect v-model:value="form.value.perspective" clearable>
-          <UISelectOption
-            v-for="option in perspectiveOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ $t(option.label) }}
-          </UISelectOption>
-        </UISelect>
+        <PerspectiveInput v-model:value="form.value.perspective" />
       </UIFormItem>
 
       <footer class="footer">
@@ -46,14 +30,13 @@ import {
   UIForm,
   UIFormItem,
   UIFormModal,
-  UISelect,
-  UISelectOption,
   UIButton,
   useForm
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import type { Project } from '@/models/project'
-import { artStyleOptions, perspectiveOptions } from './types'
+import ArtStyleInput from '../asset/library/generators/ArtStyleInput.vue'
+import PerspectiveInput from '../asset/library/generators/PerspectiveInput.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -74,7 +57,8 @@ const handleSubmit = useMessageHandle(
   async () => {
     props.project.settings = {
       artStyle: form.value.artStyle || null,
-      perspective: form.value.perspective || null
+      perspective: form.value.perspective || null,
+      description: null
     }
 
     await props.project.saveToCloud()

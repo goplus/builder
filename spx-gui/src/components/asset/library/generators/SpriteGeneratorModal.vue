@@ -2,6 +2,7 @@
   <UIFormModal
     :title="$t({ en: 'Generate Sprite', zh: '生成精灵' })"
     :visible="props.visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <div class="generator-content">

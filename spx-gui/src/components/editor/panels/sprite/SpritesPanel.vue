@@ -19,6 +19,11 @@
           @click="handleAddFromAssetLibrary"
           >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
         >
+        <UIMenuItem
+          v-radar="{ name: 'Generate with AI', desc: 'Click to generate sprite with AI' }"
+          @click="handleGenerateSprite"
+          >{{ $t({ en: 'Generate with AI', zh: 'AI 生成' }) }}</UIMenuItem
+        >
       </UIMenu>
     </template>
     <template #details>
@@ -76,6 +81,7 @@
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
+import { useSpriteGeneratorModal } from '@/components/asset/library/generators'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -137,6 +143,23 @@ const handleAddFromAssetLibrary = useMessageHandle(
   {
     en: 'Failed to add sprite from asset library',
     zh: '从素材库添加失败'
+  }
+).fn
+
+const generateSprite = useSpriteGeneratorModal()
+
+const handleGenerateSprite = useMessageHandle(
+  async () => {
+    const settings = {
+      ...editorCtx.project.settings,
+      projectDescription: editorCtx.project.description ?? editorCtx.project.aiDescription ?? null
+    }
+    const sprite = await generateSprite(editorCtx.project, settings)
+    editorCtx.state.selectSprite(sprite.id)
+  },
+  {
+    en: 'Failed to generate sprite',
+    zh: '生成精灵失败'
   }
 ).fn
 

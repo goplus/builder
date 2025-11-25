@@ -2,6 +2,7 @@
   <UIFormModal
     :title="$t({ en: 'Generate Backdrop', zh: '生成背景' })"
     :visible="props.visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <div class="generator-content">

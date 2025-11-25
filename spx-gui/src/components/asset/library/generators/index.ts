@@ -9,13 +9,14 @@ import BackdropGeneratorModal from './BackdropGeneratorModal.vue'
 import SoundGeneratorModal from './SoundGeneratorModal.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
+export type { AnimationGeneratorState } from './AnimationGenerator.vue'
+export type { SpriteGeneratorState } from './SpriteGenerator.vue'
+
 export function useSpriteGeneratorModal() {
   const generate = useModal(SpriteGeneratorModal)
   return async function openSpriteGeneratorModal(project: Project, settings?: AssetSettings) {
     const sprite = await generate({ project, settings })
-    await project.history.doAction({ name: { en: 'Generate sprite', zh: '生成精灵' } }, () =>
-      project.addSprite(sprite)
-    )
+    await project.history.doAction({ name: { en: 'Generate sprite', zh: '生成精灵' } }, () => project.addSprite(sprite))
     return sprite
   }
 }
@@ -59,9 +60,7 @@ export function useSoundGeneratorModal() {
   const generate = useModal(SoundGeneratorModal)
   return async function openSoundGeneratorModal(project: Project, settings?: AssetSettings) {
     const sound = await generate({ project, settings })
-    await project.history.doAction({ name: { en: 'Generate sound', zh: '生成声音' } }, () =>
-      project.addSound(sound)
-    )
+    await project.history.doAction({ name: { en: 'Generate sound', zh: '生成声音' } }, () => project.addSound(sound))
     return sound
   }
 }
