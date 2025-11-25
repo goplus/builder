@@ -447,7 +447,7 @@ const handleMouseMove = (point: paper.Point): void => {
 }
 
 // 处理鼠标释放
-const handleMouseUp = (): void => {
+const handleMouseUp = (point?: paper.Point): void => {
   if (!props.isActive) return
 
   if (isSelectingArea.value) {
@@ -464,6 +464,20 @@ const handleMouseUp = (): void => {
     dragStartPoint.value = null
     pathOriginalPosition.value = null
     return
+  }
+
+  // 点击选区内部空白，若未移动则取消选中
+  if (isMovingSelection.value && !hasMoved.value && point && selectionBox.value?.contains(point)) {
+    const hitPath = getPathAtPoint(point)
+    if (!hitPath) {
+      deselectAll()
+      isMovingSelection.value = false
+      hasMoved.value = false
+      dragStartPoint.value = null
+      pathOriginalPosition.value = null
+      skipNextClick.value = true
+      return
+    }
   }
 
   if ((isMovingSelection.value || isScaling.value) && hasMoved.value) {
