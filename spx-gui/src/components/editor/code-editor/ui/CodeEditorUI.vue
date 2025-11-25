@@ -217,8 +217,17 @@ watch(
     signal.addEventListener('abort', () => {
       codeEditorCtx.mustEditor().detachUI(ui)
     })
+
+    await codeEditorCtx.mustEditor().setLocale(i18n.lang.value)
   },
   { immediate: true }
+)
+
+watch(
+  () => i18n.lang.value,
+  async (newLang) => {
+    await codeEditorCtx.mustEditor().setLocale(newLang)
+  }
 )
 
 const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
