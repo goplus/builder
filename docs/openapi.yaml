@@ -1674,6 +1674,9 @@ paths:
 
         This endpoint accepts a Scratch project file (version 2 or 3) and converts it to the XBP format
         used by the XBuilder platform.
+      security:
+        - {}
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1686,7 +1689,8 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: Scratch project file (e.g. .sb2, .sb3 or project zip). Form field name must be `file`.
+                  description: Scratch project file (e.g. .sb2, .sb3 or project zip). Form field name must be `file`, Maximum size 32 MiB.
+                  maxLength: 33554432
       responses:
         "201":
           description: Conversion successful. Returns a zip archive containing the .xbp project file.
@@ -1699,6 +1703,19 @@ paths:
                 xbp-file:
                   summary: Example XBP zip file
                   value: "<binary zip data>"
+        "400":
+          description: Invalid args.
+        "401":
+          description: Unauthorized. Authentication required.
+        "429":
+          description: Too many requests to perform this operation.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying
+              schema:
+                type: integer
+        "500":
+          description: Internal server error during conversion.
 
 components:
   securitySchemes:
