@@ -7,8 +7,21 @@ on:
 jobs:
   spx-gui-lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spx-gui
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: spx-gui/node_modules
+          key: ${{runner.os}}-${{runner.arch}}-${{env.cache-name}}-${{hashFiles('spx-gui/package-lock.json')}}
+          restore-keys: |
+            ${{runner.os}}-${{runner.arch}}-${{env.cache-name}}-
 
       - name: Enable Corepack
         run: corepack enable
@@ -20,68 +33,53 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
-      - name: Install modules
-        working-directory: spx-gui
-        run: npm install
+      - name: Install Node modules
+        run: npm install --prefer-offline
 
       - name: Install spx
-        working-directory: spx-gui
         run: ./install-spx.sh
 
       - name: Run Vue TSC
-        working-directory: spx-gui
         run: npm run type-check
 
       - name: Run ESLint
-        working-directory: spx-gui
         run: npm run lint
 
       - name: Run format check
-        working-directory: spx-gui
         run: npm run format-check
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+          cache: true
+          cache-dependency-path: |
+            tools/spxls/go.sum
+            tools/ai/go.sum
 
       - name: Build WASM
-        working-directory: spx-gui
         run: ./build-wasm.sh
 
       - name: Run Vitest
-        working-directory: spx-gui
         run: npm run test
 
       - name: Build
-        working-directory: spx-gui
         run: npm run build
-
-  spx-backend-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set up Go & XGo
-        uses: goplus/setup-xgo@v1
-        with:
-          go-version: 1.24.x
-          xgo-version: 1.5.x
-
-      - name: Run unit test cases
-        working-directory: spx-backend
-        run: go test -v -race ./...
 
   tools-ai-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/ai
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version: 1.24.x
+          cache: true
+          cache-dependency-path: tools/ai/go.sum
 
       - name: Run unit test cases
-        working-directory: tools/ai
         run: go test -v -race ./...

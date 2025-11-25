@@ -56,7 +56,7 @@ export type ListCourseParams = PaginationParams & {
    **/
   owner?: string
   /** Field by which to order the results */
-  orderBy?: 'createdAt' | 'updatedAt'
+  orderBy?: 'createdAt' | 'updatedAt' | 'sequenceInCourseSeries'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }

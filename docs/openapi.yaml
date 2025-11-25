@@ -944,7 +944,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
 
       responses:
         "201":
@@ -1017,7 +1017,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
       responses:
         "201":
           description: Stream Message successfully generated.
@@ -1082,7 +1082,7 @@ paths:
                         function:
                           name: create_project
                           description: Create a new project.
-                          parameters: {"name": "My Project"}
+                          parameters: { "name": "My Project" }
                 workflow:
                   $ref: "#/components/schemas/Workflow"
                   description: env of the workflow.
@@ -1310,6 +1310,7 @@ paths:
             enum:
               - createdAt
               - updatedAt
+              - sequenceInCourseSeries
             default: createdAt
             examples:
               - createdAt
@@ -1662,6 +1663,45 @@ paths:
                     examples:
                       - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
                     description: Map from universal URLs to signed web URLs for the objects.
+
+  /util/sb2xbp:
+    post:
+      tags:
+        - Utils
+      summary: Convert Scratch to XBP
+      description: |
+        Convert a Scratch format file to XBP (XBuilder Project) format.
+
+        This endpoint accepts a Scratch project file (version 2 or 3) and converts it to the XBP format
+        used by the XBuilder platform.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Scratch project file (e.g. .sb2, .sb3 or project zip). Form field name must be `file`, Maximum size 32 MiB.
+                  maxLength: 33554432
+      responses:
+        "201":
+          description: Conversion successful. Returns a zip archive containing the .xbp project file.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+              examples:
+                xbpFile:
+                  summary: Example XBP zip file
 
 components:
   securitySchemes:
@@ -2423,12 +2463,12 @@ components:
               type: string
               description: description of the function.
               examples:
-                - create project 
+                - create project
             parameters:
               type: object
               description: parameters of the function with json raw.
               examples:
-                - {"name": "NiuXiaoQi"}
+                - { "name": "NiuXiaoQi" }
     Workflow:
       type: object
       properties:
@@ -2436,7 +2476,7 @@ components:
           type: object
           description: env of the workflow.
           examples:
-            - {"reference_id": "275"}
+            - { "reference_id": "275" }
 
   parameters:
     SortOrder:

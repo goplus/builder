@@ -1,6 +1,0 @@
-.env
-/spx-backend
-
-.vscode/*
-!.vscode
-!.vscode/tasks.json

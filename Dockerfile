@@ -1,24 +1,8 @@
 # All-in-one Dockerfile for building the SPX GUI
 
-ARG XGO_BASE_IMAGE=ghcr.io/goplus/xgo:1.5.0
 ARG GO_BASE_IMAGE=golang:1.24.4
 ARG NODE_BASE_IMAGE=node:20.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
-
-################################################################################
-
-FROM ${XGO_BASE_IMAGE} AS xgo-builder
-
-WORKDIR /app
-
-COPY tools ./tools
-COPY spx-backend ./spx-backend
-
-ARG GOPROXY
-
-# Build backend
-WORKDIR /app/spx-backend
-RUN xgo build -trimpath -o spx-backend ./cmd/spx-backend
 
 ################################################################################
 
@@ -62,7 +46,6 @@ RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
-COPY --from=xgo-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
 
@@ -76,4 +59,4 @@ EXPOSE 80
 
 WORKDIR /app
 
-CMD ["sh", "-c", "nginx && exec ./spx-backend/spx-backend"]
+CMD ["nginx", "-g", "daemon off;"]

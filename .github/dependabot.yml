@@ -16,7 +16,6 @@ updates:
     multi-ecosystem-group: infrastructure
   - package-ecosystem: gomod
     directories:
-      - /spx-backend
       - /tools/spxls
       - /tools/ai
     patterns:
