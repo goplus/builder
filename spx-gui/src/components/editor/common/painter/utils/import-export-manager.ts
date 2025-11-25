@@ -417,8 +417,18 @@ export class ImportExportManager {
   private collectPathsFromImport(item: paper.Item): void {
     const allPaths = this.dependencies.allPaths.value
 
+    const isVisuallyEmpty = (shape: paper.Path | paper.Shape): boolean => {
+      const hasStroke = !!shape.strokeColor && shape.strokeColor.alpha !== 0
+      const hasFill = !!shape.fillColor && shape.fillColor.alpha !== 0
+      const hasOpacity = shape.opacity !== 0
+      return !hasStroke && !hasFill && !hasOpacity
+    }
+
     const collectPaths = (item: paper.Item): void => {
       if (item instanceof paper.Path && item.segments && item.segments.length > 0) {
+        // 跳过不可见的透明背景/辅助图形
+        if (isVisuallyEmpty(item)) return
+
         allPaths.push(item)
 
         // 添加鼠标事件处理
