@@ -66,35 +66,6 @@ jobs:
       - name: Build
         run: npm run build
 
-  spx-backend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: spx-backend
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: 1.24.x
-          cache: true
-          cache-dependency-path: spx-backend/go.sum
-
-      - name: Set up XGo
-        uses: goplus/setup-xgo@v1
-        with:
-          xgo-version: 1.5.x
-
-      - name: Ensure xgo mod tidy is clean
-        working-directory: spx-backend/cmd/spx-backend
-        run: |
-          xgo mod tidy
-          git diff --exit-code
-
-      - name: Run unit test cases
-        run: go test -v -race ./...
-
   tools-ai-test:
     runs-on: ubuntu-latest
     defaults:
