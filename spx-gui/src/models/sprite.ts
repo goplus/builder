@@ -234,6 +234,14 @@ export class Sprite extends Disposable {
     this.costumes.splice(to, 0, costume)
     if (defaultCostumeId != null) this.setDefaultCostume(defaultCostumeId)
   }
+  /** Get all costumes, including those in animations */
+  getAllCostumes() {
+    const costumes = [...this.costumes]
+    for (const animation of this.animations) {
+      costumes.push(...animation.costumes)
+    }
+    return costumes
+  }
 
   animations: Animation[]
   removeAnimation(id: string) {

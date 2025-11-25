@@ -1,7 +1,101 @@
+<script lang="ts">
+const runnerBaseUrl = `/spx_${spxVersion}`
+const runnerUrl = `${runnerBaseUrl}/runner.html`
+
+const assetURLs = {
+  // TODO: include these assets as "static asset" to generate immutable URLs
+  'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
+  'gdspx.wasm': `${runnerBaseUrl}/gdspx.wasm`,
+  'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
+  'engine.zip': `${runnerBaseUrl}/engine.zip`
+}
+
+// Log levels defined in spx/godot.editor.js
+const logLevels = {
+  LOG_LEVEL_VERBOSE: 0,
+  LOG_LEVEL_LOG: 1,
+  LOG_LEVEL_WARNING: 2,
+  LOG_LEVEL_ERROR: 3,
+  LOG_LEVEL_NONE: 4
+}
+
+type EngineConfig = {
+  logLevel?: number
+  useProfiler?: boolean
+}
+
+type RunnerFile = {
+  /** File content as ArrayBuffer. */
+  content: ArrayBuffer
+  /** Last modified time in milliseconds since Unix epoch. */
+  lastModified: number
+}
+
+/**
+ * Files to be passed to the runner iframe.
+ * Note: File entries only; directories should be omitted.
+ */
+type RunnerFiles = {
+  [path: string]: RunnerFile
+}
+
+interface RunnerIframeWindow extends Window {
+  setAIInteractionAPIEndpoint: (endpoint: string) => void
+  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
+  setAIDescription: (description: string) => void
+  /** Init the engine. Can be called early; project-agnostic. */
+  initEngine(assetURLs: Record<string, string>, config?: EngineConfig): Promise<void>
+  /** Init the game with project files. Should be called after `initEngine`, before `startGame` or earlier (when files change, etc.). */
+  initGame(files: RunnerFiles): Promise<void>
+  /** Start to run the game. Should be called after `initGame` finished. */
+  startGame(): Promise<void>
+  /** Stop the running game. */
+  stopGame(): Promise<void>
+  onGameError: (callback: (err: string) => void) => void
+  onGameExit: (callback: (code: number) => void) => void
+  console: typeof console
+  /**
+   * This property is used to detect if the iframe is reloaded.
+   * It is set to `true` before reloading and reset to `false` after reloaded.
+   */
+  __xb_is_stale?: boolean
+}
+
+async function loadFiles(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
+  const filesCollector = ProgressCollector.collectorFor(reporter, (info) => ({
+    en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
+    zh: `正在加载项目文件（${info.finishedNum}/${info.totalNum}）...`
+  }))
+
+  const runnerFiles: RunnerFiles = {}
+  await Promise.all(
+    Object.entries(files).map(async ([path, file]) => {
+      if (file == null) return
+      const r = filesCollector.getSubReporter()
+      runnerFiles[path] = {
+        content: await file.arrayBuffer(signal),
+        lastModified: file.lastModified
+      }
+      r.report(1)
+    })
+  )
+  return runnerFiles
+}
+
+// TODO: consider to call prefetch in some global place
+export function prefetchProjectRunnerAssets() {
+  Object.values(assetURLs).forEach((url) => {
+    // Use `<link rel=prefetch>` instead of `<link rel=preload>`:
+    // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be run until the user clicks some "run" button.
+    // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
+    addPrefetchLink(url)
+  })
+}
+</script>
+
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import * as zipUtils from '@/utils/zip'
+import { onUnmounted, ref, watch } from 'vue'
 import { spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
@@ -17,9 +111,6 @@ import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
 import { Cancelled } from '@/utils/exception/base'
 
-const runnerBaseUrl = `/spx_${spxVersion}`
-const runnerUrl = `${runnerBaseUrl}/runner.html`
-
 const props = defineProps<{ project: Project }>()
 
 const emit = defineEmits<{
@@ -30,57 +121,19 @@ const emit = defineEmits<{
 const loading = ref(false)
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 const failed = ref(false)
+const runnerIframeRef = ref<HTMLIFrameElement>()
+const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
+let engineInitPromise: Promise<void> | null = null
 
-// Log levels defined in spx/godot.editor.js
-const logLevels = {
-  LOG_LEVEL_VERBOSE: 0,
-  LOG_LEVEL_LOG: 1,
-  LOG_LEVEL_WARNING: 2,
-  LOG_LEVEL_ERROR: 3,
-  LOG_LEVEL_NONE: 4
-}
-
-interface IframeWindow extends Window {
-  setAIInteractionAPIEndpoint: (endpoint: string) => void
-  setAIInteractionAPITokenProvider: (provider: () => Promise<string>) => void
-  setAIDescription: (description: string) => void
-  startGame(
-    buffer: ArrayBuffer,
-    assetURLs: Record<string, string>,
-    onSpxReady?: () => void,
-    config?: {
-      logLevel?: number
-      useProfiler?: boolean
-    }
-  ): Promise<void>
-  /**
-   * NOTE: This method is not recommended to be used now.
-   * We reload the iframe to stop the game instead.
-   */
-  stopGame(): Promise<void>
-  onGameError: (callback: (err: string) => void) => void
-  onGameExit: (callback: (code: number) => void) => void
-  console: typeof console
-  /**
-   * This property is used to detect if the iframe is reloaded.
-   * It is set to `true` before reloading and reset to `false` after reloaded.
-   */
-  __xb_is_stale?: boolean
-}
-
-const iframeRef = ref<HTMLIFrameElement>()
-const iframeWindowRef = ref<IframeWindow | null>(null)
-
-watch(iframeRef, (iframe) => {
+watch(runnerIframeRef, (iframe) => {
   if (iframe == null) return
-  const iframeWindow = iframe.contentWindow as IframeWindow | null
+  const iframeWindow = iframe.contentWindow as RunnerIframeWindow | null
   if (iframeWindow == null) throw new Error('iframeWindow expected')
 
   handleIframeWindow(iframeWindow)
 })
 
-function handleIframeWindow(iframeWindow: IframeWindow) {
-  // TODO: Clean up console logs in the runner page
+function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   iframeWindow.console.log = function (...args: unknown[]) {
     // eslint-disable-next-line no-console
     console.log(...args)
@@ -92,13 +145,18 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
   }
 
   function handleRunnerReady() {
-    iframeWindowRef.value = iframeWindow
+    runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
       console.warn('ProjectRunner game error:', err)
       failed.value = true
     })
     iframeWindow.onGameExit((code: number) => {
       emit('exit', code)
+    })
+    engineInitPromise = iframeWindow.initEngine(assetURLs, { logLevel: logLevels.LOG_LEVEL_ERROR, useProfiler: false })
+    engineInitPromise.catch((err) => {
+      console.warn('ProjectRunner init engine error:', err)
+      failed.value = true
     })
   }
 
@@ -110,40 +168,25 @@ function handleIframeWindow(iframeWindow: IframeWindow) {
   else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
 }
 
-const zipCache = new WeakMap<Files, ArrayBuffer>()
-
-async function zip(files: Files, reporter: ProgressReporter, signal?: AbortSignal) {
-  const cached = zipCache.get(files)
-  if (cached != null) {
+async function prepareAIInteraction(
+  project: Project,
+  iframeWindow: RunnerIframeWindow,
+  reporter: ProgressReporter,
+  signal?: AbortSignal
+) {
+  const isUsingAIInteraction = isProjectUsingAIInteraction(project)
+  if (!isUsingAIInteraction) {
     reporter.report(1)
-    return cached
+    return
   }
-
-  const collector = ProgressCollector.collectorFor(reporter)
-  const filesReporter = collector.getSubReporter({ en: 'Loading project files...', zh: '加载项目文件中...' }, 10)
-  const zipReporter = collector.getSubReporter({ en: 'Zipping project files...', zh: '打包项目文件中...' }, 1)
-
-  const filesCollector = ProgressCollector.collectorFor(filesReporter, (info) => ({
-    en: `Loading project files (${info.finishedNum}/${info.totalNum})...`,
-    zh: `正在加载项目文件（${info.finishedNum}/${info.totalNum}）...`
-  }))
-
-  const zippable: zipUtils.Zippable = {}
-  await Promise.all(
-    Object.entries(files)
-      .filter(([_, file]) => file != null)
-      .map(async ([path, file]) => {
-        const r = filesCollector.getSubReporter()
-        const arrayBuffer = await file!.arrayBuffer(signal)
-        zippable[path] = new Uint8Array(arrayBuffer)
-        r.report(1)
-      })
-  )
-  const zipped = await zipUtils.zip(zippable, { level: 0, signal })
-
-  zipReporter.report(1)
-  zipCache.set(files, zipped.buffer)
-  return zipped.buffer
+  const aiDescription = await project.ensureAIDescription(false, signal)
+  if (engineInitPromise == null) throw new Error('engineInitPromise expected')
+  await engineInitPromise
+  iframeWindow.setAIDescription(aiDescription)
+  iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
+  iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
+  reporter.report(1)
+  return
 }
 
 const registered = registerPlayer(() => {
@@ -151,23 +194,6 @@ const registered = registerPlayer(() => {
   // the user to activate another audio player when `ProjectRunner` visible.
   // If you see this warning in console, you need to think what the proper behavior is.
   console.warn('unexpected call')
-})
-
-const assetURLs = {
-  // TODO: include these assets as "static asset" to generate immutable URLs
-  'engineres.zip': `${runnerBaseUrl}/engineres.zip`,
-  'gdspx.wasm': `${runnerBaseUrl}/gdspx.wasm`,
-  'engine.wasm': `${runnerBaseUrl}/engine.wasm`,
-  'engine.zip': `${runnerBaseUrl}/engine.zip`
-}
-
-onMounted(() => {
-  Object.values(assetURLs).forEach((url) => {
-    // Use `<link rel=prefetch>` instead of `<link rel=preload>`:
-    // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be runned until the user clicks some "run" button.
-    // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
-    addPrefetchLink(url)
-  })
 })
 
 const progressRef = ref<Progress>({ percentage: 0, desc: null })
@@ -186,6 +212,16 @@ onUnmounted(() => {
   registered.onStopped()
 })
 
+/**
+ * Ensure the latest UI updates to be synced to DOM & displayed to user.
+ * This is necessary because now spx runs in the same thread as the main thread of editor.
+ * After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
+ * P.S. It makes more sense to use `nextTick` (from vue) or `requestAnimationFrame` instead, while they do not work as expected.
+ */
+function uiUpdated(signal?: AbortSignal) {
+  return timeout(50, signal)
+}
+
 async function runInternal(ctrl: AbortController) {
   loading.value = true
   failed.value = false
@@ -193,58 +229,44 @@ async function runInternal(ctrl: AbortController) {
     const collector = new ProgressCollector()
     collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
     const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
+    const initEngineReporter = collector.getSubReporter({ en: 'Initializing engine...', zh: '初始化引擎中...' }, 1)
     const getProjectDataReporter = collector.getSubReporter(
       { en: 'Loading project data...', zh: '加载项目数据中...' },
       5
     )
-    const startGameReporter = collector.getSubReporter(
-      { en: 'Loading engine & starting project...', zh: '加载引擎并启动项目中...' },
+    const prepareAIInteractionReporter = collector.getSubReporter(
+      { en: 'Preparing AI Interaction data...', zh: '准备 AI 交互数据中...' },
       5
     )
+    const initGameReporter = collector.getSubReporter({ en: 'Initializing project...', zh: '初始化项目中...' }, 5)
+    const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '启动项目中...' }, 5)
 
     registered.onStart()
-
     const files = props.project.exportGameFiles()
 
-    const iframeWindow = await untilNotNull(iframeWindowRef, ctrl.signal)
+    const iframeWindow = await untilNotNull(runnerIframeWindowRef, ctrl.signal)
     iframeLoadReporter.report(1)
 
-    const isUsingAIInteraction = isProjectUsingAIInteraction(props.project)
+    if (engineInitPromise == null) throw new Error('engineInitPromise expected')
 
-    const [zipped, aiDescription] = await Promise.all([
-      zip(files, getProjectDataReporter, ctrl.signal),
-      // Conditionally generate AI description only if project uses AI Interaction features
-      isUsingAIInteraction ? props.project.ensureAIDescription(false, ctrl.signal) : Promise.resolve(null)
+    await Promise.all([
+      Promise.all([
+        engineInitPromise.then(() => initEngineReporter.report(1)),
+        loadFiles(files, getProjectDataReporter, ctrl.signal)
+      ]).then(async ([_, runnerFiles]) => {
+        await uiUpdated(ctrl.signal)
+        await iframeWindow.initGame(runnerFiles)
+        ctrl.signal.throwIfAborted()
+        initGameReporter.report(1)
+      }),
+      prepareAIInteraction(props.project, iframeWindow, prepareAIInteractionReporter, ctrl.signal)
     ])
 
-    // Ensure the latest progress update to be rendered to UI
-    // This is necessary because now spx runs in the same thread as the main thread of editor.
-    // After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
-    // P.S. It makes more sense to use `nextTick` (from vue) instead, while that does not work as expected.
-    await timeout(50, ctrl.signal)
+    await uiUpdated(ctrl.signal)
 
     // TODO: get progress for engine-loading, which is now included in `startGame`
     startGameReporter.startAutoReport(10 * 1000)
-    await iframeWindow.startGame(
-      zipped,
-      assetURLs,
-      () => {
-        if (isUsingAIInteraction) {
-          // Inject AI description.
-          iframeWindow.setAIDescription(aiDescription!)
-
-          // Set up API endpoint for AI Interaction.
-          iframeWindow.setAIInteractionAPIEndpoint(apiBaseUrl + '/ai/interaction')
-
-          // Set up token provider for AI Interaction.
-          iframeWindow.setAIInteractionAPITokenProvider(async () => (await ensureAccessToken()) ?? '')
-        }
-      },
-      {
-        logLevel: logLevels.LOG_LEVEL_ERROR,
-        useProfiler: false
-      }
-    )
+    await iframeWindow.startGame()
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
     return hashFiles(files, ctrl.signal)
@@ -270,31 +292,14 @@ defineExpose({
     const promise = runPromise
     runCtrl?.abort(new Cancelled('stop'))
     if (promise != null) await promise.catch(() => {})
+
+    const iframeWindow = runnerIframeWindowRef.value
+    if (iframeWindow == null) return
+    await iframeWindow.stopGame()
     loading.value = false
     failed.value = false
-
-    const iframeWindow = iframeWindowRef.value
-    if (iframeWindow == null) return
-    iframeWindow.__xb_is_stale = true
-    iframeWindow.location.reload()
-    registered.onStopped()
-    iframeWindowRef.value = null
     progressRef.value = { percentage: 0, desc: null }
-
-    // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
-    // We need to wait for the reloaded iframe to be ready to reattach listeners.
-    // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
-    // TODO: Find a better way to archieve iframe reloading.
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      await timeout(100)
-      const newIframeWindow = iframeRef.value?.contentWindow as IframeWindow | null | undefined
-      if (newIframeWindow == null) continue
-      if (!newIframeWindow.__xb_is_stale) {
-        handleIframeWindow(newIframeWindow as IframeWindow)
-        return
-      }
-    }
+    registered.onStopped()
   },
   async rerun() {
     await this.stop()
@@ -305,7 +310,7 @@ defineExpose({
 
 <template>
   <div class="iframe-container">
-    <iframe ref="iframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
+    <iframe ref="runnerIframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
     <UIImg v-show="progressRef.percentage !== 1" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
     <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
       <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
