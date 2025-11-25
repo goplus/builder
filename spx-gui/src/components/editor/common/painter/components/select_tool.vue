@@ -37,6 +37,14 @@ const selectionStartPoint = ref<paper.Point | null>(null)
 const selectionRectangle = ref<paper.Path.Rectangle | null>(null)
 const skipNextClick = ref<boolean>(false)
 const selectionStarted = ref<boolean>(false)
+const selectionItems = ref<(paper.Path | paper.CompoundPath | paper.Shape)[]>([])
+const selectionBox = ref<paper.Path.Rectangle | null>(null)
+const selectionHandles = ref<paper.Path.Rectangle[]>([])
+const selectionOriginalPositions = ref<Map<paper.Item, paper.Point>>(new Map())
+const selectionOriginalMatrices = ref<Map<paper.Item, paper.Matrix>>(new Map())
+const isScaling = ref<boolean>(false)
+const scaleInfo = ref<{ handle: string; pivot: paper.Point; startBounds: paper.Rectangle } | null>(null)
+const isMovingSelection = ref<boolean>(false)
 
 // 注入父组件
 const getAllPathsValue = inject<() => (paper.Path | paper.CompoundPath | paper.Shape)[]>('getAllPathsValue')!
@@ -55,11 +63,22 @@ const clearSelectionRectangle = (): void => {
   paper.view.update()
 }
 
+const clearSelectionOverlay = (): void => {
+  if (selectionBox.value) {
+    selectionBox.value.remove()
+    selectionBox.value = null
+  }
+  selectionHandles.value.forEach((h) => h.remove())
+  selectionHandles.value = []
+}
+
 const clearAllSelections = (): void => {
   getAllPathsValue().forEach((p) => {
     p.selected = false
   })
   selectedPath.value = null
+  selectionItems.value = []
+  clearSelectionOverlay()
 }
 
 const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape | null): void => {
@@ -68,6 +87,8 @@ const selectPathExclusive = (path: paper.Path | paper.CompoundPath | paper.Shape
   if (path) path.selected = true
 
   selectedPath.value = path
+  selectionItems.value = path ? [path] : []
+  updateSelectionOverlay()
   paper.view.update()
 }
 
@@ -76,6 +97,21 @@ const deselectAll = (): void => {
   clearSelectionRectangle()
   clearAllSelections()
   paper.view.update()
+}
+
+//防止是辅助图形
+const isHelperItem = (item: ExtendedItem): boolean => {
+  return item.isControlPoint === true || item.data?.isSelectionHelper === true || item.data?.isBackground === true
+}
+
+//防止边界显著过大
+const isReasonableBounds = (b: paper.Rectangle): boolean => {
+  const view = paper.view
+  if (!view) return true
+  const viewArea = view.bounds.width * view.bounds.height
+  const area = b.width * b.height
+  // 排除面积接近或超过视图的异常矩形，防止选区被放大到全屏
+  return Number.isFinite(area) && area > 0 && area < viewArea * 0.9
 }
 
 // 检测点击的路径
@@ -89,7 +125,7 @@ const getPathAtPoint = (point: paper.Point): paper.Path | paper.CompoundPath | p
 
   if (hitResult && hitResult.item) {
     const target = hitResult.item as ExtendedItem
-    if (target.isControlPoint || target.data?.isSelectionHelper) {
+    if (isHelperItem(target)) {
       return null
     }
 
@@ -138,27 +174,144 @@ const drawSelectionRectangle = (start: paper.Point, current: paper.Point): void 
   selectionRectangle.value = rect
 }
 
+const refreshSelectionItems = (): (paper.Path | paper.CompoundPath | paper.Shape)[] => {
+  const paths = getAllPathsValue()
+  const selected: (paper.Path | paper.CompoundPath | paper.Shape)[] = []
+  paths.forEach((path) => {
+    const item = path as ExtendedItem
+    if (path.selected && !isHelperItem(item) && isReasonableBounds(path.bounds)) {
+      selected.push(path)
+    }
+  })
+  selectionItems.value = selected
+  return selected
+}
+
 const selectPathsInRectangle = (bounds: paper.Rectangle): void => {
   const paths = getAllPathsValue()
   let firstSelected: paper.Path | paper.CompoundPath | paper.Shape | null = null
 
   paths.forEach((path) => {
     const item = path as ExtendedItem
-    const isHelper = item.isControlPoint || item.data?.isSelectionHelper
-    const shouldSelect = !isHelper && bounds.intersects(path.bounds)
+    const isHelper = isHelperItem(item)
+    const shouldSelect = !isHelper && isReasonableBounds(path.bounds) && bounds.intersects(path.bounds)
     path.selected = shouldSelect
     if (shouldSelect && !firstSelected) {
       firstSelected = path
     }
   })
 
+  refreshSelectionItems()
   selectedPath.value = firstSelected
+  updateSelectionOverlay()
+  paper.view.update()
+}
+
+const createSelectionBox = (bounds: paper.Rectangle): void => {
+  if (selectionBox.value) selectionBox.value.remove()
+  selectionHandles.value.forEach((h) => h.remove())
+  selectionHandles.value = []
+
+  const rect = new paper.Path.Rectangle({
+    from: bounds.topLeft,
+    to: bounds.bottomRight,
+    strokeColor: '#4da3ff',
+    dashArray: [4, 4],
+    strokeWidth: 1.5,
+    fillColor: new paper.Color(0, 0.6, 1, 0.06)
+  }) as paper.Path.Rectangle & ExtendedItem
+  rect.data = { ...(rect.data || {}), isSelectionHelper: true }
+  rect.locked = true
+  selectionBox.value = rect
+  paper.project.activeLayer.addChild(rect)
+  rect.bringToFront()
+
+  const handleSize = 8
+  const corners: { key: string; point: paper.Point }[] = [
+    { key: 'nw', point: bounds.topLeft },
+    { key: 'ne', point: bounds.topRight },
+    { key: 'sw', point: bounds.bottomLeft },
+    { key: 'se', point: bounds.bottomRight }
+  ]
+
+  corners.forEach(({ key, point }) => {
+    const handle = new paper.Path.Rectangle({
+      point: point.subtract(new paper.Point(handleSize / 2, handleSize / 2)),
+      size: new paper.Size(handleSize, handleSize),
+      fillColor: '#ffffff',
+      strokeColor: '#4da3ff',
+      strokeWidth: 1
+    }) as paper.Path.Rectangle & ExtendedItem
+    handle.data = { ...(handle.data || {}), isSelectionHelper: true, handleKey: key }
+    handle.locked = true
+    paper.project.activeLayer.addChild(handle)
+    handle.bringToFront()
+    selectionHandles.value.push(handle)
+  })
+}
+
+const updateSelectionOverlay = (): void => {
+  const items = refreshSelectionItems()
+  if (!items.length) {
+    clearSelectionOverlay()
+    return
+  }
+
+  let bounds = items[0].bounds.clone()
+  for (let i = 1; i < items.length; i++) {
+    bounds = bounds.unite(items[i].bounds)
+  }
+  createSelectionBox(bounds)
   paper.view.update()
 }
 
 // 处理鼠标按下
 const handleMouseDown = (point: paper.Point): void => {
   if (!props.isActive) return
+
+  // 先检测是否点击了缩放手柄
+  const hitHandle = selectionHandles.value.find((handle) => handle.bounds.expand(3).contains(point))
+  if (hitHandle && selectionItems.value.length > 0) {
+    isScaling.value = true
+    const key = (hitHandle.data?.handleKey as string) || 'se'
+    const items = selectionItems.value
+    let bounds = items[0].bounds.clone()
+    for (let i = 1; i < items.length; i++) {
+      bounds = bounds.unite(items[i].bounds)
+    }
+    const pivotMap: Record<string, paper.Point> = {
+      nw: bounds.bottomRight,
+      ne: bounds.bottomLeft,
+      sw: bounds.topRight,
+      se: bounds.topLeft
+    }
+    scaleInfo.value = {
+      handle: key,
+      pivot: pivotMap[key] || bounds.center,
+      startBounds: bounds.clone()
+    }
+    selectionOriginalMatrices.value.clear()
+    selectionItems.value.forEach((item) => {
+      if (item.matrix) {
+        selectionOriginalMatrices.value.set(item, item.matrix.clone())
+      }
+    })
+    dragStartPoint.value = point.clone()
+    return
+  }
+
+  // 检测点击在选择框内部用于整体拖动
+  if (selectionBox.value && selectionBox.value.bounds.contains(point) && selectionItems.value.length > 0) {
+    isMovingSelection.value = true
+    hasMoved.value = false
+    dragStartPoint.value = point.clone()
+    selectionOriginalPositions.value.clear()
+    selectionItems.value.forEach((item) => {
+      selectionOriginalPositions.value.set(item, item.position.clone())
+    })
+    skipNextClick.value = true
+    return
+  }
 
   const clickedPath = getPathAtPoint(point)
 
@@ -195,6 +348,56 @@ const handleMouseMove = (point: paper.Point): void => {
     }
     selectionStarted.value = true
     drawSelectionRectangle(selectionStartPoint.value, point)
+    paper.view.update()
+    return
+  }
+
+  if (isScaling.value && scaleInfo.value) {
+    const { startBounds, pivot } = scaleInfo.value
+    const minSize = 5
+
+    let newRect = startBounds.clone()
+    const handle = scaleInfo.value.handle
+    if (handle === 'nw') {
+      newRect = new paper.Rectangle(point, startBounds.bottomRight)
+    } else if (handle === 'ne') {
+      newRect = new paper.Rectangle(new paper.Point(startBounds.bottomLeft.x, point.y), new paper.Point(point.x, startBounds.bottomRight.y))
+    } else if (handle === 'sw') {
+      newRect = new paper.Rectangle(new paper.Point(point.x, startBounds.topLeft.y), new paper.Point(startBounds.bottomRight.x, point.y))
+    } else {
+      newRect = new paper.Rectangle(startBounds.topLeft, point)
+    }
+
+    const width = Math.max(minSize, Math.abs(newRect.width))
+    const height = Math.max(minSize, Math.abs(newRect.height))
+
+    const scaleX = width / startBounds.width
+    const scaleY = height / startBounds.height
+
+    selectionItems.value.forEach((item) => {
+      const orig = selectionOriginalMatrices.value.get(item)
+      if (orig) {
+        item.matrix = orig.clone()
+        item.scale(scaleX, scaleY, pivot)
+      }
+    })
+
+    hasMoved.value = true
+    updateSelectionOverlay()
+    paper.view.update()
+    return
+  }
+
+  if (isMovingSelection.value && dragStartPoint.value) {
+    const delta = point.subtract(dragStartPoint.value)
+    selectionItems.value.forEach((item) => {
+      const origPos = selectionOriginalPositions.value.get(item)
+      if (origPos) {
+        item.position = origPos.add(delta)
+      }
+    })
+    hasMoved.value = true
+    updateSelectionOverlay()
     paper.view.update()
     return
   }
@@ -239,6 +442,18 @@ const handleMouseUp = (point?: paper.Point): void => {
     return
   }
 
+  if ((isMovingSelection.value || isScaling.value) && hasMoved.value) {
+    const currentPaths = getAllPathsValue()
+    setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    exportSvgAndEmit()
+  }
+
+  isScaling.value = false
+  isMovingSelection.value = false
+  scaleInfo.value = null
+  selectionOriginalMatrices.value.clear()
+  selectionOriginalPositions.value.clear()
+
   // 只有在真正移动路径的情况下才更新数据和导出
   if (isDragging.value && selectedPath.value && hasMoved.value) {
     // 拖动完成,更新路径数组并导出
@@ -264,7 +479,7 @@ const handleClick = (point: paper.Point): void => {
   }
 
   // 如果刚才有拖动,则不处理点击
-  if (isDragging.value) return
+  if (isDragging.value || isMovingSelection.value || isScaling.value) return
 
   const clickedPath = getPathAtPoint(point)
   if (clickedPath) {
@@ -287,6 +502,8 @@ const deleteSelectedPath = (): void => {
   setAllPathsValue(updatedPaths as paper.Path[])
 
   selectedPath.value = null
+  selectionItems.value = []
+  clearSelectionOverlay()
   paper.view.update()
 
   // 导出更新
@@ -315,6 +532,10 @@ watch(
       dragStartPoint.value = null
       pathOriginalPosition.value = null
       clearSelectionRectangle()
+      clearSelectionOverlay()
+      isScaling.value = false
+      isMovingSelection.value = false
+      scaleInfo.value = null
     }
   }
 )
