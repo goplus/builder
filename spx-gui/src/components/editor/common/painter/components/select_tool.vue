@@ -117,6 +117,13 @@ const hideSelectionHelpers = (): (() => void) => {
   }
 }
 
+const withHelpersHidden = <T>(fn: () => T): T => {
+  const restore = hideSelectionHelpers()
+  const result = fn()
+  restore()
+  return result
+}
+
 //防止是辅助图形
 const isHelperItem = (item: ExtendedItem): boolean => {
   return item.isControlPoint === true || item.data?.isSelectionHelper === true || item.data?.isBackground === true
@@ -482,7 +489,7 @@ const handleMouseUp = (point?: paper.Point): void => {
 
   if ((isMovingSelection.value || isScaling.value) && hasMoved.value) {
     const currentPaths = getAllPathsValue()
-    setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    withHelpersHidden(() => setAllPathsValue([...currentPaths] as paper.Path[])) // 触发数据更新
     const restore = hideSelectionHelpers()
     exportSvgAndEmit()
     restore()
@@ -498,7 +505,7 @@ const handleMouseUp = (point?: paper.Point): void => {
   if (isDragging.value && selectedPath.value && hasMoved.value) {
     // 拖动完成,更新路径数组并导出
     const currentPaths = getAllPathsValue()
-    setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    withHelpersHidden(() => setAllPathsValue([...currentPaths] as paper.Path[])) // 触发数据更新
     const restore = hideSelectionHelpers()
     exportSvgAndEmit()
     restore()
@@ -532,7 +539,7 @@ const handleClick = (point: paper.Point): void => {
 }
 
 // 删除选中的路径
-const deleteSelectedPath = (): void => {
+const deleteSelectedPath = (): boolean => {
   const pathsToDelete = getAllPathsValue().filter((path) => path.selected)
   if (pathsToDelete.length === 0 && !selectedPath.value) return
 
@@ -541,7 +548,7 @@ const deleteSelectedPath = (): void => {
 
   // 更新路径数组
   const updatedPaths = getAllPathsValue().filter((path) => !targets.includes(path))
-  setAllPathsValue(updatedPaths as paper.Path[])
+  withHelpersHidden(() => setAllPathsValue(updatedPaths as paper.Path[]))
 
   selectedPath.value = null
   selectionItems.value = []
@@ -552,7 +559,11 @@ const deleteSelectedPath = (): void => {
   const restore = hideSelectionHelpers()
   exportSvgAndEmit()
   restore()
+  return true
 }
+
+const hasSelection = (): boolean => selectionItems.value.length > 0
+const getSelectedItems = (): (paper.Path | paper.CompoundPath | paper.Shape)[] => [...selectionItems.value]
 
 // 键盘事件处理
 const handleKeyDown = (event: KeyboardEvent): void => {
@@ -591,7 +602,10 @@ defineExpose({
   handleMouseUp,
   handleClick,
   handleKeyDown,
-  deselectAll
+  deselectAll,
+  deleteSelectedPath,
+  hasSelection,
+  getSelectedItems
 })
 </script>
 

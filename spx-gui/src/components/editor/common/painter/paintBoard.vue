@@ -55,6 +55,23 @@
         <!-- 缩放控件 -->
         <ZoomControl ref="zoomControlRef" />
 
+        <button
+          class="tool-btn action-button"
+          :disabled="!hasSelection"
+          :title="$t({ en: 'Delete', zh: '删除' })"
+          @click="deleteSelection"
+        >
+          <svg>
+            <path
+              d="M3 6h18M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>{{ $t({ en: 'Delete', zh: '删除' }) }}</span>
+        </button>
         <button class="tool-btn action-btn" :title="$t({ en: 'Clear Canvas', zh: '清空画布' })" @click="clearCanvas">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3,6 5,6 21,6"></polyline>
@@ -720,6 +737,13 @@ const redo = async (): Promise<void> => {
 // 添加计算属性用于按钮状态
 const canUndo = computed(() => historyManager.value?.canUndo() ?? false)
 const canRedo = computed(() => historyManager.value?.canRedo() ?? false)
+const hasSelection = computed(() => selectToolRef.value?.hasSelection?.() ?? false)
+
+const deleteSelection = (): void => {
+  if (selectToolRef.value?.deleteSelectedPath && hasSelection.value) {
+    selectToolRef.value.deleteSelectedPath()
+  }
+}
 
 // 监听props中的imgSrc变化
 watch(
