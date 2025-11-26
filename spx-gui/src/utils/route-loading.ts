@@ -6,23 +6,19 @@
 
 import {
   computed,
-  onMounted,
   onScopeDispose,
-  ref,
-  shallowRef,
-  toValue,
-  triggerRef,
   type InjectionKey,
-  type ShallowRef,
   type WatchSource,
-  type Ref
+  type Ref,
+  watch,
+  nextTick,
+  shallowReactive,
+  type ShallowReactive
 } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAppProvide, useAppInject } from './app-state'
-import { until } from './utils'
 
 type LoadingCtx = {
-  loadingSources: ShallowRef<Array<WatchSource<boolean>>>
+  loadedSources: ShallowReactive<Map<WatchSource<boolean>, boolean>>
 }
 
 const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
@@ -32,54 +28,38 @@ const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
  * TODO: Install directly with app?
  */
 export function useInstallRouteLoading() {
-  const loadingSources = shallowRef<Array<WatchSource<boolean>>>([])
-  useAppProvide(loadingCtxKey, { loadingSources })
-  const router = useRouter()
-  onScopeDispose(
-    router.beforeEach((to, from) => {
-      const fromLast = from.matched.at(-1)
-      const toLast = to.matched.at(-1)
-      const loadingWatchSources = []
-      if (fromLast != null && toLast != null && fromLast.components != null && toLast.components != null) {
-        // For cases like the editor, internal navigation doesn't rebuild components, so we need to preserve WatchSources that are still loading
-        // For example, when entering the editor, it navigates from /editor/owner/projectName/ to /editor/owner/projectName/sprites/name/code
-        if (Object.keys(toLast.components).every((key) => fromLast.components?.[key] === toLast.components?.[key])) {
-          loadingWatchSources.push(...loadingSources.value.filter((source) => !toValue(source)))
-        }
-      }
-      loadingSources.value = [...loadingWatchSources]
-    })
-  )
+  const loadedSources = shallowReactive<Map<WatchSource<boolean>, boolean>>(new Map())
+  useAppProvide(loadingCtxKey, { loadedSources })
 }
 
-export function useLoadingSources(): ShallowRef<Array<WatchSource<boolean>>> {
+export function useLoadedSources(): ShallowReactive<Map<WatchSource<boolean>, boolean>> {
   const ctx = useAppInject(loadingCtxKey)
-  if (ctx.value == null) throw new Error('useLoadingSources must be used after useInstallRouteLoading')
-  return ctx.value.loadingSources
+  if (ctx.value == null) throw new Error('useLoadedSources must be used after useInstallRouteLoading')
+  return ctx.value.loadedSources
 }
 
 /** Get the current route loading state. */
 export function useIsRouteLoaded(): Ref<boolean> {
-  const loadingSources = useLoadingSources()
+  const loadedSources = useLoadedSources()
   return computed(() => {
-    const loaded = loadingSources.value.every(toValue)
+    const loaded = [...loadedSources.values()].every(Boolean)
     return loaded
   })
 }
 
-export function useRegisterRouteLoading(isLoadedSource: WatchSource<boolean>) {
-  const loadingSources = useLoadingSources()
-  loadingSources.value.push(isLoadedSource)
+export function useRegisterUpdateRouteLoaded(loadedSource: WatchSource<boolean>) {
+  const loadedSources = useLoadedSources()
 
-  // When there's no loadedSource, we assume the page is still initializing, introduce special handling to ensure the page is rendered as much as possible
-  if (loadingSources.value.length === 1) {
-    const waitLoadedSource = ref(false)
-    onMounted(async () => {
-      await until(isLoadedSource)
-      waitLoadedSource.value = true
-    })
-    loadingSources.value.push(waitLoadedSource)
-  }
+  watch(
+    loadedSource,
+    (loaded) => {
+      // Use `nextTick` to maximize the construction (or rendering) of the page's sub-tree.
+      nextTick(() => loadedSources.set(loadedSource, loaded))
+    },
+    {
+      immediate: true
+    }
+  )
 
-  triggerRef(loadingSources)
+  onScopeDispose(() => loadedSources.delete(loadedSource))
 }
