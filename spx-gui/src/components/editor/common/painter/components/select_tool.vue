@@ -208,6 +208,9 @@ const refreshSelectionItems = (): (paper.Path | paper.CompoundPath | paper.Shape
     const item = path as ExtendedItem
     if (path.selected && !isHelperItem(item) && isReasonableBounds(path.bounds)) {
       selected.push(path)
+    } else if (path.selected && !isReasonableBounds(path.bounds)) {
+      // 防止只显示 Paper 默认选中状态而无自定义选区
+      path.selected = false
     }
   })
   selectionItems.value = selected
