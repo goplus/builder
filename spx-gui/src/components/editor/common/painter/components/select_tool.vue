@@ -43,7 +43,9 @@ const selectionHandles = ref<paper.Path.Rectangle[]>([])
 const selectionOriginalPositions = ref<Map<paper.Item, paper.Point>>(new Map())
 const selectionOriginalMatrices = ref<Map<paper.Item, paper.Matrix>>(new Map())
 const isScaling = ref<boolean>(false)
-const scaleInfo = ref<{ handle: string; pivot: paper.Point; startBounds: paper.Rectangle } | null>(null)
+const scaleInfo = ref<{ handle: string; pivot: paper.Point; startBounds: paper.Rectangle; startVector: paper.Point } | null>(
+  null
+)
 const isMovingSelection = ref<boolean>(false)
 
 // 注入父组件
@@ -310,10 +312,18 @@ const handleMouseDown = (point: paper.Point): void => {
       sw: bounds.topRight,
       se: bounds.topLeft
     }
+    const handlePointMap: Record<string, paper.Point> = {
+      nw: bounds.topLeft,
+      ne: bounds.topRight,
+      sw: bounds.bottomLeft,
+      se: bounds.bottomRight
+    }
+    const handlePoint = handlePointMap[key] || bounds.bottomRight
     scaleInfo.value = {
       handle: key,
       pivot: pivotMap[key] || bounds.center,
-      startBounds: bounds.clone()
+      startBounds: bounds.clone(),
+      startVector: handlePoint.subtract(pivotMap[key] || bounds.center)
     }
     selectionOriginalMatrices.value.clear()
     selectionItems.value.forEach((item) => {
@@ -378,32 +388,28 @@ const handleMouseMove = (point: paper.Point): void => {
   }
 
   if (isScaling.value && scaleInfo.value) {
-    const { startBounds, pivot } = scaleInfo.value
-    const minSize = 5
+    const { pivot, startVector } = scaleInfo.value
+    const currentVector = point.subtract(pivot)
+    const EPS = 1e-3
+    const MIN = 0.1
+    const MAX = 8
+    const DAMPING = 0.25 // 缩放灵敏度：越小越平缓
 
-    let newRect = startBounds.clone()
-    const handle = scaleInfo.value.handle
-    if (handle === 'nw') {
-      newRect = new paper.Rectangle(point, startBounds.bottomRight)
-    } else if (handle === 'ne') {
-      newRect = new paper.Rectangle(
-        new paper.Point(startBounds.bottomLeft.x, point.y),
-        new paper.Point(point.x, startBounds.bottomRight.y)
-      )
-    } else if (handle === 'sw') {
-      newRect = new paper.Rectangle(
-        new paper.Point(point.x, startBounds.topLeft.y),
-        new paper.Point(startBounds.bottomRight.x, point.y)
-      )
-    } else {
-      newRect = new paper.Rectangle(startBounds.topLeft, point)
+    const baseLen = startVector.length
+    const dir = baseLen < EPS ? new paper.Point(1, 1).normalize() : startVector.normalize()
+    const projLen = currentVector.dot(dir)
+    const rawScale = baseLen < EPS ? 1 : projLen / baseLen
+
+    const clampScale = (value: number): number => {
+      if (value > 0 && value < MIN) return MIN
+      if (value < 0 && value > -MIN) return -MIN
+      return Math.max(-MAX, Math.min(MAX, value))
     }
 
-    const width = Math.max(minSize, Math.abs(newRect.width))
-    const height = Math.max(minSize, Math.abs(newRect.height))
-
-    const scaleX = width / startBounds.width
-    const scaleY = height / startBounds.height
+    const damped = 1 + (rawScale - 1) * DAMPING
+    const uniformScale = clampScale(damped)
+    const scaleX = uniformScale
+    const scaleY = uniformScale
 
     selectionItems.value.forEach((item) => {
       const orig = selectionOriginalMatrices.value.get(item)
