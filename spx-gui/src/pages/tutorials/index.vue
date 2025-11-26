@@ -8,7 +8,7 @@
     <CenteredWrapper
       v-radar="{ name: 'Course series list', desc: 'Scroll to view the course series' }"
       class="centered-wrapper"
-      :style="{ '--list-wrapper-height': `${height}px`, '--num-in-row': numInRow }"
+      :style="{ '--num-in-row': numInRow }"
     >
       <ListResultWrapper :query-ret="courseSeriesQuery" :height="height">
         <template #empty>
@@ -53,17 +53,14 @@ usePageTitle({
   zh: '教程'
 })
 
-const courseSeriesPadding = 16
 const numInColumn = 4
+const courseSeriesPadding = 16
+const height = numInColumn * (courseSeriesItemHeight + courseSeriesPadding) - courseSeriesPadding
 
 const page = useRouteQueryParamInt('p', 1)
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
-const height = computed(
-  () =>
-    Math.ceil(pageSize.value / numInRow.value) * (courseSeriesItemHeight + courseSeriesPadding) - courseSeriesPadding
-)
 const pageTotal = computed(() => Math.ceil((courseSeriesQuery.data.value?.total ?? 0) / pageSize.value))
 
 const courseSeriesQuery = useQuery(
@@ -105,7 +102,6 @@ const courseSeriesQuery = useQuery(
       display: grid;
       grid-template-columns: repeat(var(--num-in-row), 1fr);
       gap: var(--ui-gap-middle);
-      height: var(--list-wrapper-height);
     }
 
     .pagination {
