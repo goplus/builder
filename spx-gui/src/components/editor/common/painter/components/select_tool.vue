@@ -117,7 +117,7 @@ const hideSelectionHelpers = (): (() => void) => {
   }
 }
 
-const withHelpersHidden = <T>(fn: () => T): T => {
+const withHelpersHidden = <T,>(fn: () => T): T => {
   const restore = hideSelectionHelpers()
   const result = fn()
   restore()
@@ -541,7 +541,7 @@ const handleClick = (point: paper.Point): void => {
 // 删除选中的路径
 const deleteSelectedPath = (): boolean => {
   const pathsToDelete = getAllPathsValue().filter((path) => path.selected)
-  if (pathsToDelete.length === 0 && !selectedPath.value) return
+  if (pathsToDelete.length === 0 && !selectedPath.value) return false
 
   const targets = pathsToDelete.length > 0 ? pathsToDelete : selectedPath.value ? [selectedPath.value] : []
   targets.forEach((item) => item.remove())
