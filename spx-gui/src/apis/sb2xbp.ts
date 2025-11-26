@@ -13,6 +13,10 @@ import { client } from './common'
  * @throws {TimeoutException} When the request exceeds the timeout duration
  */
 export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
+  const MAX_FILE_SIZE = 32 * 1024 * 1024 // 32MB
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('File too large. Maximum size is 32MB')
+  }
   const form = new FormData()
   form.append('file', file, file.name)
 

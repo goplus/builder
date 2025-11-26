@@ -45,7 +45,8 @@ export class Client {
       }
       if (resp.status === 204) return null as any
       return resp.blob()
-    }
+    },
+    60000
   )
 
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
