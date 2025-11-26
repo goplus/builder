@@ -14,7 +14,7 @@ import 'dayjs/locale/zh'
 import App from './App.vue'
 import { initRouter } from './router'
 import { initUserState, ensureAccessToken } from './stores/user'
-import { setTokenProvider } from './apis/common'
+import { client } from './apis/common'
 import { CustomTransformer } from './components/editor/common/viewer/custom-transformer'
 import { initDeveloperMode } from './utils/developer-mode'
 import { createI18n, normalizeLang } from './utils/i18n'
@@ -30,7 +30,7 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 function initApiClient() {
-  setTokenProvider(ensureAccessToken)
+  client.setTokenProvider(ensureAccessToken)
 }
 
 function initSentry(app: VueApp<Element>, router: Router) {
