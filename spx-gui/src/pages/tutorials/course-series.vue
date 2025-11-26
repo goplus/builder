@@ -21,6 +21,7 @@ import CommunityFooter from '@/components/community/footer/CommunityFooter.vue'
 
 const coursePadding = 20
 const numInColumn = 2
+const height = numInColumn * (courseItemHeight + coursePadding) - coursePadding
 
 const props = defineProps<{
   courseSeriesId: string
@@ -60,9 +61,6 @@ const page = useRouteQueryParamInt('p', 1)
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 const pageSize = computed(() => numInRow.value * numInColumn)
-const height = computed(
-  () => Math.ceil(pageSize.value / numInRow.value) * (courseItemHeight + coursePadding) - coursePadding
-)
 const pageTotal = computed(() => Math.ceil((courseQuery.data.value?.total ?? 0) / pageSize.value))
 
 const courseQuery = useQuery(
@@ -132,7 +130,7 @@ const { fn: handleCourseClick } = useMessageHandle(
       </CommunityCard>
 
       <div class="courses-wrapper">
-        <div v-if="courseSeries" :style="{ '--list-wrapper-height': `${height}px`, '--num-in-row': numInRow }">
+        <div v-if="courseSeries" :style="{ '--num-in-row': numInRow }">
           <ListResultWrapper :query-ret="courseQuery" :height="height">
             <template #empty="{ style }">
               <UIEmpty size="large" img="game" :style="style">
@@ -233,9 +231,7 @@ const { fn: handleCourseClick } = useMessageHandle(
 
   .course-list {
     display: grid;
-    grid-auto-rows: max-content;
     grid-template-columns: repeat(var(--num-in-row), 1fr);
-    height: var(--list-wrapper-height);
     gap: 20px;
   }
 
