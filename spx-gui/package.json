@@ -19,7 +19,7 @@
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@nighca/fflate": "^0.8.3",
     "@rushstack/eslint-patch": "^1.7.2",
-    "@scalar/api-reference": "^1.25.24",
+    "@scalar/api-reference": "^1.40.0",
     "@sentry/core": "^9.33.0",
     "@sentry/vue": "^9.33.0",
     "@shikijs/monaco": "^3.2.2",
