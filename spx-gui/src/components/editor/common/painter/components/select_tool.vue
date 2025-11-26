@@ -43,9 +43,12 @@ const selectionHandles = ref<paper.Path.Rectangle[]>([])
 const selectionOriginalPositions = ref<Map<paper.Item, paper.Point>>(new Map())
 const selectionOriginalMatrices = ref<Map<paper.Item, paper.Matrix>>(new Map())
 const isScaling = ref<boolean>(false)
-const scaleInfo = ref<{ handle: string; pivot: paper.Point; startBounds: paper.Rectangle; startVector: paper.Point } | null>(
-  null
-)
+const scaleInfo = ref<{
+  handle: string
+  pivot: paper.Point
+  startBounds: paper.Rectangle
+  startVector: paper.Point
+} | null>(null)
 const isMovingSelection = ref<boolean>(false)
 
 // 注入父组件
