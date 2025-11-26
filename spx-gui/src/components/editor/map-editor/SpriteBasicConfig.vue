@@ -138,7 +138,7 @@ const handleEditCollision = useMessageHandle(
 .edit-collision-button {
   border: none;
   outline: none;
-  border-radius: var(--ui-border-radius-1);
+  border-radius: 12px;
   padding: 8px;
   color: var(--ui-color-grey-1000);
   background-color: var(--ui-color-grey-300);

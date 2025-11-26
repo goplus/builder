@@ -84,8 +84,4 @@ watch(
   display: flex;
   align-items: center;
 }
-
-.close-icon {
-  cursor: pointer;
-}
 </style>
