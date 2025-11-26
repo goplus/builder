@@ -61,7 +61,6 @@ import DropIndicatorUI from './drop-indicator/DropIndicatorUI.vue'
 import DocumentTabs from './document-tab/DocumentTabs.vue'
 import ZoomControl from './ZoomControl.vue'
 import { userLocalStorageRef } from '@/utils/user-storage'
-import { registerPageLoadedProvider } from '@/utils/route-loading'
 
 const props = defineProps<{
   codeFilePath: string
@@ -124,11 +123,6 @@ const uiRef = computed(() => {
     renameResource
   )
 })
-
-// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
-// Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
-const apiReferenceLoaded = ref(false)
-registerPageLoadedProvider(() => apiReferenceLoaded.value)
 
 const initialFontSize = 12
 const fontSize = userLocalStorageRef('spx-gui-code-font-size', initialFontSize)
@@ -292,11 +286,7 @@ function zoomReset() {
 <template>
   <div ref="codeEditorEl" class="code-editor" :style="{ userSelect: isResizing ? 'none' : undefined }">
     <aside class="sidebar" :style="{ flexBasis: `${sidebarWidth}px` }">
-      <APIReferenceUI
-        class="api-reference"
-        :controller="uiRef.apiReferenceController"
-        @loaded="apiReferenceLoaded = true"
-      />
+      <APIReferenceUI class="api-reference" :controller="uiRef.apiReferenceController" />
     </aside>
     <div
       ref="resizeHandleEl"

@@ -25,7 +25,7 @@ import { Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, ProgressReporter } from '@/utils/progress'
-import { providePageLoadedProvider } from '@/utils/route-loading'
+import { useRegisterRouteLoading } from '@/utils/route-loading'
 import { composeQuery, useQuery } from '@/utils/query'
 import { clear } from '@/models/common/local'
 import { UIDetailedLoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
@@ -129,13 +129,7 @@ const allQueryRet = useQuery(
   { en: 'Failed to load editor', zh: '加载编辑器失败' }
 )
 
-// Add routeLoadedRet to prevent allQueryRet from completing too quickly,
-// so child components have time to registerPageLoadedProvider
-const routeLoadedRet = useQuery(async (ctx) => composeQuery(ctx, allQueryRet), {
-  zh: '加载页面失败',
-  en: 'Failed to load page'
-})
-providePageLoadedProvider(() => !routeLoadedRet.isLoading.value && routeLoadedRet.error.value == null)
+useRegisterRouteLoading(() => !allQueryRet.isLoading.value && allQueryRet.error.value == null)
 
 const publishProject = usePublishProject()
 

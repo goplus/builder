@@ -5,90 +5,81 @@
  */
 
 import {
-  inject,
+  computed,
+  onMounted,
   onScopeDispose,
-  provide,
   ref,
-  watch,
-  watchEffect,
+  shallowRef,
+  toValue,
+  triggerRef,
   type InjectionKey,
-  type Ref,
-  type WatchSource
+  type ShallowRef,
+  type WatchSource,
+  type Ref
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppProvide, useAppInject } from './app-state'
+import { until } from './utils'
 
 type LoadingCtx = {
-  isLoadedRef: Ref<boolean>
+  loadingSources: ShallowRef<Array<WatchSource<boolean>>>
 }
 
 const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
-
-type PageLoadedProviderCtx = {
-  registerPageLoadedProvider: (provider: () => boolean) => void
-}
-const pageLoadedProviderKey: InjectionKey<PageLoadedProviderCtx> = Symbol('page-loaded-provider-ctx')
 
 /**
  * Install route-loading.
  * TODO: Install directly with app?
  */
 export function useInstallRouteLoading() {
-  const isLoadedRef = ref(true)
-  useAppProvide(loadingCtxKey, { isLoadedRef })
+  const loadingSources = shallowRef<Array<WatchSource<boolean>>>([])
+  useAppProvide(loadingCtxKey, { loadingSources })
   const router = useRouter()
   onScopeDispose(
-    router.beforeEach(() => {
-      // By default, all routes are considered loaded.
-      // Only those that explicitly set isLoaded may be considered unloaded.
-      isLoadedRef.value = true
+    router.beforeEach((to, from) => {
+      const fromLast = from.matched.at(-1)
+      const toLast = to.matched.at(-1)
+      const loadingWatchSources = []
+      if (fromLast != null && toLast != null && fromLast.components != null && toLast.components != null) {
+        // For cases like the editor, internal navigation doesn't rebuild components, so we need to preserve WatchSources that are still loading
+        // For example, when entering the editor, it navigates from /editor/owner/projectName/ to /editor/owner/projectName/sprites/name/code
+        if (Object.keys(toLast.components).every((key) => fromLast.components?.[key] === toLast.components?.[key])) {
+          loadingWatchSources.push(...loadingSources.value.filter((source) => !toValue(source)))
+        }
+      }
+      loadingSources.value = [...loadingWatchSources]
     })
   )
+}
+
+export function useLoadingSources(): ShallowRef<Array<WatchSource<boolean>>> {
+  const ctx = useAppInject(loadingCtxKey)
+  if (ctx.value == null) throw new Error('useLoadingSources must be used after useInstallRouteLoading')
+  return ctx.value.loadingSources
 }
 
 /** Get the current route loading state. */
 export function useIsRouteLoaded(): Ref<boolean> {
-  const ctx = useAppInject(loadingCtxKey)
-  if (ctx.value == null) throw new Error('useIsRouteLoaded must be used after useInstallRouteLoading')
-  return ctx.value.isLoadedRef
-}
-
-/** Update the route loading state. */
-export function useUpdateRouteLoaded(isLoadedSource: WatchSource<boolean>) {
-  const isLoadedRef = useIsRouteLoaded()
-  onScopeDispose(
-    watch(
-      isLoadedSource,
-      (isLoaded) => {
-        isLoadedRef.value = isLoaded
-      },
-      { immediate: true }
-    )
-  )
-}
-
-export function providePageLoadedProvider(initProvider: () => boolean = () => true) {
-  const isLoadedRef = useIsRouteLoaded()
-  const providers: Array<Parameters<PageLoadedProviderCtx['registerPageLoadedProvider']>[0]> = [initProvider]
-
-  onScopeDispose(
-    watchEffect(() => {
-      isLoadedRef.value = providers.length === 0 ? true : providers.every((provider) => provider())
-      if (isLoadedRef.value) {
-        providers.length = 0
-      }
-    })
-  )
-
-  provide(pageLoadedProviderKey, {
-    registerPageLoadedProvider(provider) {
-      providers.push(provider)
-    }
+  const loadingSources = useLoadingSources()
+  return computed(() => {
+    const loaded = loadingSources.value.every(toValue)
+    return loaded
   })
 }
 
-export function registerPageLoadedProvider(provider: () => boolean) {
-  const ctx = inject(pageLoadedProviderKey)
-  if (ctx == null) throw new Error('registerLoadedProvider must be used after useBeginPageLoaded')
-  ctx.registerPageLoadedProvider(provider)
+export function useRegisterRouteLoading(isLoadedSource: WatchSource<boolean>) {
+  const loadingSources = useLoadingSources()
+  loadingSources.value.push(isLoadedSource)
+
+  // When there's no loadedSource, we assume the page is still initializing, introduce special handling to ensure the page is rendered as much as possible
+  if (loadingSources.value.length === 1) {
+    const waitLoadedSource = ref(false)
+    onMounted(async () => {
+      await until(isLoadedSource)
+      waitLoadedSource.value = true
+    })
+    loadingSources.value.push(waitLoadedSource)
+  }
+
+  triggerRef(loadingSources)
 }

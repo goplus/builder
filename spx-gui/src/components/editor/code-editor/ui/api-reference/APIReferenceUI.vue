@@ -131,16 +131,13 @@ import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
 import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
+import { useRegisterRouteLoading } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
 }>()
 
 const itemsForDisplay = shallowRef(props.controller.items)
-
-const emits = defineEmits<{
-  loaded: []
-}>()
 
 watch(
   () => props.controller.items,
@@ -152,6 +149,11 @@ watch(
     )
   }
 )
+
+const loaded = ref(false)
+// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
+// Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
+useRegisterRouteLoading(() => loaded.value)
 
 const err = computed(() => {
   const err = props.controller.error
@@ -188,7 +190,7 @@ watch(categoriesComputed, (categories, _, onCleanUp) => {
   categoriesForItems.value = categories.slice(0, 1)
   const id = requestIdleCallback(() => {
     categoriesForItems.value = categories
-    emits('loaded')
+    loaded.value = true
   })
   onCleanUp(() => cancelIdleCallback(id))
 })
