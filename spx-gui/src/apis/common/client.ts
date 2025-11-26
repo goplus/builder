@@ -31,6 +31,24 @@ export class Client {
     return resp.json()
   })
 
+  // Request variant that returns binary (Blob). It shares the same token/sentry logic
+  // from useRequest but maps successful responses to Blob.
+  private requestBinary = useRequest(
+    apiBaseUrl,
+    async (resp) => {
+      if (!resp.ok) {
+        const body = await resp.json()
+        if (!isApiExceptionPayload(body)) {
+          throw new Error('api call failed')
+        }
+        throw new ApiException(body.code, body.msg, resp.headers)
+      }
+      if (resp.status === 204) return null as any
+      return resp.blob()
+    },
+    60000
+  )
+
   private requestTextStream = useRequest(apiBaseUrl, async function* (resp): AsyncIterableIterator<string> {
     if (!resp.ok) {
       const body = await resp.json()
@@ -66,6 +84,10 @@ export class Client {
 
   post(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.request(path, payload, { ...options, method: 'POST' })
+  }
+
+  postBinary(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestBinary(path, payload, { ...options, method: 'POST' })
   }
 
   put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {

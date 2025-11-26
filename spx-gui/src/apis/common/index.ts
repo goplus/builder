@@ -36,10 +36,20 @@ export function useRequest<T>(
     const sentryBaggageHeader = traceData['baggage']
     const url = baseUrl + path
     const method = options?.method ?? 'GET'
-    const body = payload != null ? JSON.stringify(payload) : null
+    // Support FormData payloads: don't stringify and don't set Content-Type header
+    let body: BodyInit | null = null
+    // FormData is available in modern browsers; check payload instanceof FormData directly.
+    const isFormData = payload instanceof FormData
+    if (payload != null) {
+      if (isFormData) body = payload as FormData
+      else body = JSON.stringify(payload)
+    }
     const token = await tokenProvider()
     const headers = options?.headers ?? new Headers()
-    headers.set('Content-Type', 'application/json')
+    // Only set JSON content type for non-FormData bodies
+    if (!isFormData) {
+      headers.set('Content-Type', 'application/json')
+    }
     if (token != null) {
       headers.set('Authorization', `Bearer ${token}`)
     }
