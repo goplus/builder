@@ -25,6 +25,12 @@ const props = defineProps<{
 }>()
 
 // 状态管理
+// 状态机简述：
+// - 拖拽单个路径：isDragging=true，dragStartPoint/pathOriginalPosition 记录初始位置，hasMoved>1px 后提交
+// - 框选：isSelectingArea=true，selectionStartPoint/selectionRectangle 追踪；放开后 selectPathsInRectangle
+// - 移动选区：isMovingSelection=true，selectionOriginalPositions 保存初始位置
+// - 缩放选区：isScaling=true，scaleInfo 记录 pivot/向量，selectionOriginalMatrices 保存初始矩阵
+// 共享约束：同一时刻仅一个模式为真；hasMoved 只有超阈值才触发数据提交；辅助图形通过 withHelpersHidden 包裹提交
 const isDragging = ref<boolean>(false)
 const hasMoved = ref<boolean>(false) // 追踪是否真正移动过
 const selectedPath = ref<paper.Path | paper.CompoundPath | paper.Shape | null>(null)
@@ -220,6 +226,14 @@ const refreshSelectionItems = (): (paper.Path | paper.CompoundPath | paper.Shape
   return selected
 }
 
+const commitSelectionChange = (): void => {
+  const currentPaths = getAllPathsValue()
+  withHelpersHidden(() => {
+    setAllPathsValue([...currentPaths] as paper.Path[]) // 触发数据更新
+    exportSvgAndEmit()
+  })
+}
+
 const selectPathsInRectangle = (bounds: paper.Rectangle): void => {
   const paths = getAllPathsValue()
   let firstSelected: paper.Path | paper.CompoundPath | paper.Shape | null = null
@@ -283,6 +297,15 @@ const createSelectionBox = (bounds: paper.Rectangle): void => {
   })
 }
 
+const getSelectionBounds = (items: (paper.Path | paper.CompoundPath | paper.Shape)[]): paper.Rectangle | null => {
+  if (!items.length) return null
+  let bounds = items[0].bounds.clone()
+  for (let i = 1; i < items.length; i++) {
+    bounds = bounds.unite(items[i].bounds)
+  }
+  return bounds
+}
+
 const updateSelectionOverlay = (): void => {
   const items = refreshSelectionItems()
   if (!items.length) {
@@ -290,10 +313,8 @@ const updateSelectionOverlay = (): void => {
     return
   }
 
-  let bounds = items[0].bounds.clone()
-  for (let i = 1; i < items.length; i++) {
-    bounds = bounds.unite(items[i].bounds)
-  }
+  const bounds = getSelectionBounds(items)
+  if (!bounds) return
   createSelectionBox(bounds)
   paper.view.update()
 }
@@ -308,10 +329,8 @@ const handleMouseDown = (point: paper.Point): void => {
     isScaling.value = true
     const key = (hitHandle.data?.handleKey as string) || 'se'
     const items = selectionItems.value
-    let bounds = items[0].bounds.clone()
-    for (let i = 1; i < items.length; i++) {
-      bounds = bounds.unite(items[i].bounds)
-    }
+    const bounds = getSelectionBounds(items)
+    if (!bounds) return
     const pivotMap: Record<string, paper.Point> = {
       nw: bounds.bottomRight,
       ne: bounds.bottomLeft,
@@ -500,11 +519,7 @@ const handleMouseUp = (point?: paper.Point): void => {
   }
 
   if ((isMovingSelection.value || isScaling.value) && hasMoved.value) {
-    const currentPaths = getAllPathsValue()
-    withHelpersHidden(() => setAllPathsValue([...currentPaths] as paper.Path[])) // 触发数据更新
-    const restore = hideSelectionHelpers()
-    exportSvgAndEmit()
-    restore()
+    commitSelectionChange()
   }
 
   isScaling.value = false
@@ -515,12 +530,7 @@ const handleMouseUp = (point?: paper.Point): void => {
 
   // 只有在真正移动路径的情况下才更新数据和导出
   if (isDragging.value && selectedPath.value && hasMoved.value) {
-    // 拖动完成,更新路径数组并导出
-    const currentPaths = getAllPathsValue()
-    withHelpersHidden(() => setAllPathsValue([...currentPaths] as paper.Path[])) // 触发数据更新
-    const restore = hideSelectionHelpers()
-    exportSvgAndEmit()
-    restore()
+    commitSelectionChange()
   }
 
   // 重置所有拖动状态
@@ -552,25 +562,21 @@ const handleClick = (point: paper.Point): void => {
 
 // 删除选中的路径
 const deleteSelectedPath = (): boolean => {
-  const pathsToDelete = getAllPathsValue().filter((path) => path.selected)
-  if (pathsToDelete.length === 0 && !selectedPath.value) return false
-
-  const targets = pathsToDelete.length > 0 ? pathsToDelete : selectedPath.value ? [selectedPath.value] : []
+  const targets = selectionItems.value
+  if (!targets.length) return false
   targets.forEach((item) => item.remove())
 
   // 更新路径数组
   const updatedPaths = getAllPathsValue().filter((path) => !targets.includes(path))
-  withHelpersHidden(() => setAllPathsValue(updatedPaths as paper.Path[]))
+  withHelpersHidden(() => {
+    setAllPathsValue(updatedPaths as paper.Path[])
+    exportSvgAndEmit()
+  })
 
   selectedPath.value = null
   selectionItems.value = []
   clearSelectionOverlay()
   paper.view.update()
-
-  // 导出更新
-  const restore = hideSelectionHelpers()
-  exportSvgAndEmit()
-  restore()
   return true
 }
 
