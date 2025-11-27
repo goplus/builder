@@ -7,6 +7,7 @@ import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import ProjectPublishModal from './ProjectPublishModal.vue'
 import ProjectPublishedModal from './ProjectPublishedModal.vue'
+import ProjectSettingsModal from './ProjectSettingsModal.vue'
 /**
  * How to update the default project:
  * 1. Use XBuilder to create / open a project.
@@ -96,5 +97,13 @@ export function useUnpublishProject() {
       }),
       confirmHandler: () => makePrivate(project)
     })
+  }
+}
+
+export function useProjectSettingsModal() {
+  const modal = useModal(ProjectSettingsModal)
+
+  return function openProjectSettingsModal(project: Project) {
+    return modal({ project })
   }
 }
