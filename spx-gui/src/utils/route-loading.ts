@@ -53,8 +53,9 @@ export function useRegisterUpdateRouteLoaded(loadedSource: WatchSource<boolean>)
   watch(
     loadedSource,
     (loaded) => {
+      // Only handle the loaded=true state
+      // using nextTick to defer the state update and allow child components to construct/render first
       if (loaded) {
-        // Use `nextTick` to maximize the construction (or rendering) of the page's sub-tree.
         nextTick(() => loadedSources.set(loadedSource, loaded))
       } else {
         loadedSources.set(loadedSource, loaded)
