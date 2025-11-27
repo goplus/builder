@@ -4,12 +4,21 @@
  * providing a single source of truth for whether the active route is loaded.
  */
 
-import { onScopeDispose, ref, watch, type InjectionKey, type Ref, type WatchSource } from 'vue'
-import { useRouter } from 'vue-router'
+import {
+  computed,
+  onScopeDispose,
+  type InjectionKey,
+  type WatchSource,
+  type Ref,
+  watch,
+  nextTick,
+  shallowReactive,
+  type ShallowReactive
+} from 'vue'
 import { useAppProvide, useAppInject } from './app-state'
 
 type LoadingCtx = {
-  isLoadedRef: Ref<boolean>
+  loadedSources: ShallowReactive<Map<WatchSource<boolean>, boolean>>
 }
 
 const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
@@ -19,35 +28,43 @@ const loadingCtxKey: InjectionKey<LoadingCtx> = Symbol('loading-ctx')
  * TODO: Install directly with app?
  */
 export function useInstallRouteLoading() {
-  const isLoadedRef = ref(true)
-  useAppProvide(loadingCtxKey, { isLoadedRef })
-  const router = useRouter()
-  onScopeDispose(
-    router.beforeEach(() => {
-      // By default, all routes are considered loaded.
-      // Only those that explicitly set isLoaded may be considered unloaded.
-      isLoadedRef.value = true
-    })
-  )
+  const loadedSources = shallowReactive<Map<WatchSource<boolean>, boolean>>(new Map())
+  useAppProvide(loadingCtxKey, { loadedSources })
+}
+
+export function useLoadedSources(): ShallowReactive<Map<WatchSource<boolean>, boolean>> {
+  const ctx = useAppInject(loadingCtxKey)
+  if (ctx.value == null) throw new Error('useLoadedSources must be used after useInstallRouteLoading')
+  return ctx.value.loadedSources
 }
 
 /** Get the current route loading state. */
 export function useIsRouteLoaded(): Ref<boolean> {
-  const ctx = useAppInject(loadingCtxKey)
-  if (ctx.value == null) throw new Error('useIsRouteLoaded must be used after useInstallRouteLoading')
-  return ctx.value.isLoadedRef
+  const loadedSources = useLoadedSources()
+  return computed(() => {
+    const loaded = [...loadedSources.values()].every(Boolean)
+    return loaded
+  })
 }
 
-/** Update the route loading state. */
-export function useUpdateRouteLoaded(isLoadedSource: WatchSource<boolean>) {
-  const isLoadedRef = useIsRouteLoaded()
-  onScopeDispose(
-    watch(
-      isLoadedSource,
-      (isLoaded) => {
-        isLoadedRef.value = isLoaded
-      },
-      { immediate: true }
-    )
+export function useRegisterUpdateRouteLoaded(loadedSource: WatchSource<boolean>) {
+  const loadedSources = useLoadedSources()
+
+  watch(
+    loadedSource,
+    (loaded) => {
+      // Only handle the loaded=true state
+      // using nextTick to defer the state update and allow child components to construct/render first
+      if (loaded) {
+        nextTick(() => loadedSources.set(loadedSource, loaded))
+      } else {
+        loadedSources.set(loadedSource, loaded)
+      }
+    },
+    {
+      immediate: true
+    }
   )
+
+  onScopeDispose(() => loadedSources.delete(loadedSource))
 }

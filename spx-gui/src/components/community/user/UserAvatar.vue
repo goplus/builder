@@ -2,7 +2,7 @@
   <UserLink
     class="user-avatar"
     :class="`size-${size}`"
-    :style="userInfo != null ? { backgroundImage: `url(${avatarUrl})` } : null"
+    :style="avatarUrl != null ? { backgroundImage: `url(${avatarUrl})` } : null"
     :user="userInfo?.username ?? null"
   ></UserLink>
 </template>
