@@ -8,6 +8,8 @@
     :disabled="disabled"
     :min="min"
     :max="max"
+    :format="formatter"
+    :parse="parser"
     @update:value="(v) => emit('update:value', v)"
   >
     <template v-if="!!slots.prefix" #prefix>
@@ -28,6 +30,8 @@ const props = defineProps<{
   disabled?: boolean
   min?: number
   max?: number
+  formatter?: (v: number | null) => string
+  parser?: (v: string) => number | null
   placeholder?: string
   autofocus?: boolean
 }>()

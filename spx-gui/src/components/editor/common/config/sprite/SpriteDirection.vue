@@ -11,6 +11,7 @@ import { UIButtonGroup, UIButtonGroupItem, UIDropdown, UINumberInput, UITooltip 
 import rotateIcon from './rotate.svg?raw'
 import leftRightIcon from './left-right.svg?raw'
 import noRotateIcon from './no-rotate.svg?raw'
+import { exprForSpxDirection, valueForSpxDirection } from '@/utils/spx'
 
 const props = defineProps<{
   sprite: Sprite
@@ -53,6 +54,14 @@ const handleRotationStyleUpdate = wrapUpdateHandler(
   false
 )
 const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite.setHeading(h ?? 0), spriteContext)
+
+function formatter(value: number | null) {
+  return exprForSpxDirection(value ?? props.sprite.heading)
+}
+
+function parser(value: string) {
+  return valueForSpxDirection(value) ?? Number(value)
+}
 </script>
 
 <!-- eslint-disable vue/no-v-html -->
@@ -103,6 +112,8 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
           :min="-180"
           :max="180"
           :value="sprite.heading"
+          :formatter="formatter"
+          :parser="parser"
           @update:value="handleHeadingUpdate"
           @focus="rotateDropdownVisible = true"
         >
