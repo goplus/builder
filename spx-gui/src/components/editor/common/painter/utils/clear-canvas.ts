@@ -27,6 +27,7 @@ function createBackground(canvasWidth: number, canvasHeight: number, backgroundR
     size: [canvasWidth, canvasHeight],
     fillColor: 'transparent'
   })
+  background.data = { ...(background.data || {}), isBackground: true }
   backgroundRect.value = background
 }
 
