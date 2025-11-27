@@ -7,18 +7,18 @@ import { Exception } from '@/utils/exception'
 import dayjs from 'dayjs'
 
 export class ApiException extends Exception {
-  name = 'ApiError'
+  name = 'ApiException'
   userMessage: LocaleMessage | null
   meta: unknown
 
   constructor(
     public code: number,
     message: string,
-    headers: Headers
+    { req, resp }: { req: Request; resp: Response }
   ) {
-    super(`[${code}] ${message}`)
+    super(`[${code}] ${message} (${req.method} ${req.url.slice(0, 200)})`)
     this.userMessage = codeMessages[this.code as ApiExceptionCode] ?? null
-    this.meta = codeMetas[this.code as ApiExceptionCode]?.(headers) ?? null
+    this.meta = codeMetas[this.code as ApiExceptionCode]?.(resp.headers) ?? null
   }
 }
 
