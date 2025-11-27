@@ -53,7 +53,7 @@ export class Client {
     const token = await this.tokenProvider()
     options?.signal?.throwIfAborted()
     const headers = options?.headers ?? new Headers()
-    headers.set('Content-Type', 'application/json')
+    if (body != null) headers.set('Content-Type', 'application/json')
     if (token != null) headers.set('Authorization', `Bearer ${token}`)
     if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
     if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
