@@ -30,7 +30,29 @@ const props = defineProps<{
   disabled?: boolean
   min?: number
   max?: number
+  /**
+   * Format number to string
+   *
+   * Example:
+   * ```markdown
+   * (v) => v.toFixed(2) => '12.34'
+   * (v) => `v ¥` => '12.34 ¥'
+   * ```
+   */
   formatter?: (v: number | null) => string
+  /**
+   * Parse string to number
+   * Returning `NaN / Infinity` will restore the previous valid value
+   * Returning `null` will clear the input
+   * Returning other values will update the input.
+   *
+   * Example:
+   * ```markdown
+   * (v) => Number(v.replace('¥', '')) => value = 12.34
+   * (v) => v === 'Right' ? 90 : null => value = 90
+   * (v) => null => value = null
+   * ```
+   */
   parser?: (v: string) => number | null
   placeholder?: string
   autofocus?: boolean
