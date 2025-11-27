@@ -53,8 +53,12 @@ export function useRegisterUpdateRouteLoaded(loadedSource: WatchSource<boolean>)
   watch(
     loadedSource,
     (loaded) => {
-      // Use `nextTick` to maximize the construction (or rendering) of the page's sub-tree.
-      nextTick(() => loadedSources.set(loadedSource, loaded))
+      if (loaded) {
+        // Use `nextTick` to maximize the construction (or rendering) of the page's sub-tree.
+        nextTick(() => loadedSources.set(loadedSource, loaded))
+      } else {
+        loadedSources.set(loadedSource, loaded)
+      }
     },
     {
       immediate: true
