@@ -108,7 +108,7 @@
               <div class="icon" v-html="gamePreviewSvg"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Default', zh: '默认' }) }}
+          {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
         </UITooltip>
         <UITooltip>
           <template #trigger>
@@ -116,7 +116,7 @@
               <div class="icon" v-html="globalConfig"></div>
             </UIButtonGroupItem>
           </template>
-          {{ $t({ en: 'Map', zh: '地图' }) }}
+          {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
         </UITooltip>
       </UIButtonGroup>
     </template>

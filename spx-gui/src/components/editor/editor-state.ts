@@ -253,7 +253,6 @@ export class EditorState extends Disposable {
       case EditMode.Map:
         this.selectEditMode(EditMode.Map)
         break
-      case EditMode.Default:
       default:
         this.selectEditMode(EditMode.Default)
         break
