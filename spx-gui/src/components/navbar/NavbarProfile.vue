@@ -1,14 +1,16 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div v-if="!signedInUser" class="sign-in">
     <UIButton
       v-radar="{ name: 'Sign-in button', desc: 'Click to sign in' }"
+      class="sign-in-button"
       type="secondary"
       :disabled="!isOnline"
       @click="initiateSignIn()"
       >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
     >
   </div>
-  <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
+  <UIDropdown v-else placement="bottom-end" :offset="{ x: 0, y: 8 }">
     <template #trigger>
       <div class="avatar">
         <img class="avatar-img" :src="avatarUrl ?? undefined" />
@@ -17,8 +19,23 @@
     <UIMenu class="user-menu">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
-          {{ signedInUser?.displayName }}
+          <div class="user-info-wrapper">
+            {{ signedInUser?.displayName }}
+          </div>
         </UIMenuItem>
+        <UITooltip placement="left">
+          <template #trigger>
+            <UIMenuItem
+              v-radar="{ name: 'Language switcher', desc: 'Click to switch between English and Chinese' }"
+              class="lang-item"
+              @click="toggleLang"
+            >
+              {{ $t({ en: 'Language', zh: '语言' }) }}
+              <div class="icon" v-html="langContent"></div>
+            </UIMenuItem>
+          </template>
+          {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+        </UITooltip>
       </UIMenuGroup>
       <UIMenuGroup>
         <UIMenuItem @click="handleUserPage">
@@ -63,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { useMessageHandle } from '@/utils/exception'
@@ -70,15 +88,19 @@ import { getUserPageRoute } from '@/router'
 import { AssetType } from '@/apis/asset'
 import { initiateSignIn, signOut, useSignedInUser } from '@/stores/user'
 import { useAvatarUrl } from '@/stores/user/avatar'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UITooltip } from '@/components/ui'
 import { useAssetLibraryManagement } from '@/components/asset'
 import { useCourseManagement, useCourseSeriesManagement } from '@/components/course'
 import { isDeveloperMode } from '@/utils/developer-mode'
 import { useAgentCopilotCtx } from '@/components/agent-copilot/CopilotProvider.vue'
+import { useI18n } from '@/utils/i18n'
+import enSvg from './icons/en.svg?raw'
+import zhSvg from './icons/zh.svg?raw'
 
 const { isOnline } = useNetwork()
 const router = useRouter()
 const { controls } = useAgentCopilotCtx()
+const i18n = useI18n()
 
 const { data: signedInUser } = useSignedInUser()
 const avatarUrl = useAvatarUrl(() => signedInUser.value?.avatar)
@@ -94,6 +116,11 @@ const handleAskCopilotAgent = useMessageHandle(
     zh: isVisible ? 'Copilot Agent 已打开' : 'Copilot Agent 已关闭'
   })
 ).fn
+
+const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
+function toggleLang() {
+  i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
+}
 
 function handleUserPage() {
   router.push(getUserPageRoute(signedInUser.value!.username))
@@ -133,10 +160,15 @@ function handleSignOut() {
 <style lang="scss" scoped>
 .sign-in,
 .avatar {
-  margin: 0 4px 0 0;
+  padding: 0 20px;
+  margin-right: 8px;
   height: 100%;
   display: flex;
   align-items: center;
+}
+
+.sign-in-button {
+  font: inherit;
 }
 
 .sign-in {
@@ -144,7 +176,6 @@ function handleSignOut() {
 }
 
 .avatar {
-  width: 72px;
   justify-content: center;
 
   &:hover {
@@ -155,6 +186,22 @@ function handleSignOut() {
     width: 32px;
     height: 32px;
     border-radius: 16px;
+  }
+}
+
+.lang-item {
+  padding: 8px;
+  justify-content: space-between;
+
+  .icon {
+    width: 18px;
+    height: 18px;
+    color: var(--ui-color-turquoise-600);
+
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 

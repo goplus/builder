@@ -313,7 +313,7 @@ const { fn: handleConfirm } = useMessageHandle(
     </div>
     <UIButton
       v-radar="{ name: 'Save button', desc: 'Click to save sprite collision' }"
-      type="primary"
+      type="success"
       :disabled="!dirty"
       @click="handleConfirm"
     >
