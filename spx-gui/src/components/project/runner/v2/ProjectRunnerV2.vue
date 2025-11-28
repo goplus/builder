@@ -53,6 +53,8 @@ interface RunnerIframeWindow extends Window {
   stopGame(): Promise<void>
   onGameError: (callback: (err: string) => void) => void
   onGameExit: (callback: (code: number) => void) => void
+  /** The engine crashed and failed to recover by itself. */
+  onEngineCrash: (callback: (err: string) => void) => void
   console: typeof console
   /**
    * This property is used to detect if the iframe is reloaded.
@@ -82,6 +84,16 @@ async function loadFiles(files: Files, reporter: ProgressReporter, signal?: Abor
   return runnerFiles
 }
 
+/**
+ * Ensure the latest UI updates to be synced to DOM & displayed to user.
+ * This is necessary because now spx runs in the same thread as the main thread of editor.
+ * After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
+ * P.S. It makes more sense to use `nextTick` (from vue) or `requestAnimationFrame` instead, while they do not work as expected.
+ */
+function uiUpdated(signal?: AbortSignal) {
+  return timeout(50, signal)
+}
+
 // TODO: consider to call prefetch in some global place
 export function prefetchProjectRunnerAssets() {
   Object.values(assetURLs).forEach((url) => {
@@ -91,11 +103,34 @@ export function prefetchProjectRunnerAssets() {
     addPrefetchLink(url)
   })
 }
+
+/** Runner state */
+type State =
+  | {
+      /** Initial state before any project has been run */
+      type: 'initial'
+    }
+  | {
+      /** Failed state when an error occurred during startup or runtime */
+      type: 'failed'
+      /** The error that caused the failure */
+      err: unknown
+    }
+  | {
+      /** Starting state before the project begins running */
+      type: 'starting'
+      /** Current loading progress */
+      progress: Progress
+    }
+  | {
+      /** Running state when the project is actively executing */
+      type: 'running'
+    }
 </script>
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onUnmounted, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { spxVersion } from '@/utils/env'
 import { timeout, untilNotNull } from '@/utils/utils'
 import { ProgressCollector, ProgressReporter, type Progress } from '@/utils/progress'
@@ -109,7 +144,7 @@ import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
-import { Cancelled } from '@/utils/exception/base'
+import { capture, Cancelled } from '@/utils/exception'
 
 const props = defineProps<{ project: Project }>()
 
@@ -118,9 +153,8 @@ const emit = defineEmits<{
   exit: [code: number]
 }>()
 
-const loading = ref(false)
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
-const failed = ref(false)
+const state = shallowRef<State>({ type: 'initial' })
 const runnerIframeRef = ref<HTMLIFrameElement>()
 const runnerIframeWindowRef = ref<RunnerIframeWindow | null>(null)
 let engineInitPromise: Promise<void> | null = null
@@ -147,16 +181,21 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   function handleRunnerReady() {
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
-      console.warn('ProjectRunner game error:', err)
-      failed.value = true
+      state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
       emit('exit', code)
     })
+    iframeWindow.onEngineCrash((err: string) => {
+      state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner engine crash')
+      reloadIframe() // The engine crashed and failed to recover by itself, so we reload the iframe.
+    })
     engineInitPromise = iframeWindow.initEngine(assetURLs, { logLevel: logLevels.LOG_LEVEL_ERROR, useProfiler: false })
     engineInitPromise.catch((err) => {
-      console.warn('ProjectRunner init engine error:', err)
-      failed.value = true
+      state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner init engine error')
     })
   }
 
@@ -166,6 +205,33 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   // otherwise, we listen for the `runnerReady` event.
   if (typeof iframeWindow.startGame !== 'undefined') handleRunnerReady()
   else iframeWindow.addEventListener('runnerReady', handleRunnerReady)
+}
+
+let unmounted = false
+onBeforeUnmount(() => {
+  unmounted = true
+})
+
+async function reloadIframe() {
+  const iframeWindow = runnerIframeWindowRef.value
+  if (iframeWindow == null) return
+  iframeWindow.__xb_is_stale = true
+  iframeWindow.location.reload()
+  runnerIframeWindowRef.value = null
+
+  // As tested, though the `contentWindow` object is kept the same after reloading, the event listeners need to be reattached.
+  // We need to wait for the reloaded iframe to be ready to reattach listeners.
+  // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
+  // TODO: Find a better way to achieve iframe reloading.
+  while (!unmounted) {
+    await timeout(100)
+    const newIframeWindow = runnerIframeRef.value?.contentWindow as RunnerIframeWindow | null | undefined
+    if (newIframeWindow == null) continue
+    if (!newIframeWindow.__xb_is_stale) {
+      handleIframeWindow(newIframeWindow as RunnerIframeWindow)
+      return
+    }
+  }
 }
 
 async function prepareAIInteraction(
@@ -189,14 +255,17 @@ async function prepareAIInteraction(
   return
 }
 
-const registered = registerPlayer(() => {
+const audioPlayerRegistered = registerPlayer(() => {
   // For now we don't need to implement stop handler here because there's no chance for
   // the user to activate another audio player when `ProjectRunner` visible.
   // If you see this warning in console, you need to think what the proper behavior is.
   console.warn('unexpected call')
 })
 
-const progressRef = ref<Progress>({ percentage: 0, desc: null })
+watch(state, ({ type }) => {
+  if (type === 'running') audioPlayerRegistered.onStart()
+  else audioPlayerRegistered.onStopped()
+})
 
 let runPromise: Promise<unknown> | null = null
 let runCtrl: AbortController | null = null
@@ -209,25 +278,14 @@ function getRunCtrl() {
 
 onUnmounted(() => {
   runCtrl?.abort(new Cancelled('unmounted'))
-  registered.onStopped()
 })
 
-/**
- * Ensure the latest UI updates to be synced to DOM & displayed to user.
- * This is necessary because now spx runs in the same thread as the main thread of editor.
- * After spx moved to standalone thread (see details in https://github.com/goplus/builder/issues/1496), timeout here can be removed.
- * P.S. It makes more sense to use `nextTick` (from vue) or `requestAnimationFrame` instead, while they do not work as expected.
- */
-function uiUpdated(signal?: AbortSignal) {
-  return timeout(50, signal)
-}
-
 async function runInternal(ctrl: AbortController) {
-  loading.value = true
-  failed.value = false
+  const startingState = shallowReactive({ type: 'starting', progress: { percentage: 0, desc: null } } satisfies State)
+  state.value = startingState
+  const collector = new ProgressCollector()
+  collector.onProgress(throttle((progress) => (startingState.progress = progress), 100))
   try {
-    const collector = new ProgressCollector()
-    collector.onProgress(throttle((progress) => (progressRef.value = progress), 100))
     const iframeLoadReporter = collector.getSubReporter({ en: 'Preparing environment...', zh: '准备环境中...' }, 1)
     const initEngineReporter = collector.getSubReporter({ en: 'Initializing engine...', zh: '初始化引擎中...' }, 1)
     const getProjectDataReporter = collector.getSubReporter(
@@ -241,7 +299,6 @@ async function runInternal(ctrl: AbortController) {
     const initGameReporter = collector.getSubReporter({ en: 'Initializing project...', zh: '初始化项目中...' }, 5)
     const startGameReporter = collector.getSubReporter({ en: 'Starting project...', zh: '启动项目中...' }, 5)
 
-    registered.onStart()
     const files = props.project.exportGameFiles()
 
     const iframeWindow = await untilNotNull(runnerIframeWindowRef, ctrl.signal)
@@ -269,15 +326,19 @@ async function runInternal(ctrl: AbortController) {
     await iframeWindow.startGame()
     ctrl.signal.throwIfAborted()
     startGameReporter.report(1)
+    state.value = { type: 'running' }
     return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
-    console.warn('ProjectRunner run game error:', err)
-    failed.value = true
-  } finally {
-    loading.value = false
+    capture(err, 'ProjectRunner run game error')
+    state.value = { type: 'failed', err }
   }
 }
+
+const startingProgress = computed(() => {
+  if (state.value.type !== 'starting') return null
+  return state.value.progress
+})
 
 defineExpose({
   async run() {
@@ -296,10 +357,7 @@ defineExpose({
     const iframeWindow = runnerIframeWindowRef.value
     if (iframeWindow == null) return
     await iframeWindow.stopGame()
-    loading.value = false
-    failed.value = false
-    progressRef.value = { percentage: 0, desc: null }
-    registered.onStopped()
+    state.value = { type: 'initial' }
   },
   async rerun() {
     await this.stop()
@@ -311,11 +369,11 @@ defineExpose({
 <template>
   <div class="iframe-container">
     <iframe ref="runnerIframeRef" class="iframe" frameborder="0" :src="runnerUrl" />
-    <UIImg v-show="progressRef.percentage !== 1" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
-    <UIDetailedLoading :visible="loading" cover :percentage="progressRef.percentage">
-      <span>{{ $t(progressRef.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
+    <UIImg v-show="state.type !== 'running'" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
+    <UIDetailedLoading :visible="startingProgress != null" cover :percentage="startingProgress?.percentage ?? 0">
+      <span>{{ $t(startingProgress?.desc ?? { en: 'Loading...', zh: '加载中...' }) }}</span>
     </UIDetailedLoading>
-    <div v-show="!loading && failed" class="error-wrapper">
+    <div v-show="state.type === 'failed'" class="error-wrapper">
       <div class="error">
         <svg width="81" height="80" viewBox="0 0 81 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
