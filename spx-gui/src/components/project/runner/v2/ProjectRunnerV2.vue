@@ -144,7 +144,7 @@ import { UIImg, UIDetailedLoading } from '@/components/ui'
 import { apiBaseUrl } from '@/utils/env'
 import { ensureAccessToken } from '@/stores/user'
 import { isProjectUsingAIInteraction } from '@/utils/project'
-import { Cancelled } from '@/utils/exception/base'
+import { capture, Cancelled } from '@/utils/exception'
 
 const props = defineProps<{ project: Project }>()
 
@@ -181,21 +181,21 @@ function handleIframeWindow(iframeWindow: RunnerIframeWindow) {
   function handleRunnerReady() {
     runnerIframeWindowRef.value = iframeWindow
     iframeWindow.onGameError((err: string) => {
-      console.warn('ProjectRunner game error:', err)
       state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner game error')
     })
     iframeWindow.onGameExit((code: number) => {
       emit('exit', code)
     })
     iframeWindow.onEngineCrash((err: string) => {
-      console.warn('ProjectRunner engine crash:', err)
       state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner engine crash')
       reloadIframe() // The engine crashed and failed to recover by itself, so we reload the iframe.
     })
     engineInitPromise = iframeWindow.initEngine(assetURLs, { logLevel: logLevels.LOG_LEVEL_ERROR, useProfiler: false })
     engineInitPromise.catch((err) => {
-      console.warn('ProjectRunner init engine error:', err)
       state.value = { type: 'failed', err }
+      capture(err, 'ProjectRunner init engine error')
     })
   }
 
@@ -223,9 +223,13 @@ async function reloadIframe() {
   // We need to wait for the reloaded iframe to be ready to reattach listeners.
   // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
   // TODO: Find a better way to achieve iframe reloading.
-  let tries = 300 // Max wait for 30 seconds
-  while (!unmounted && tries-- > 0) {
+  let waitingTimeoutAt = Date.now() + 30 * 1000 // Max wait for 30 seconds
+  while (!unmounted) {
     await timeout(100)
+    if (Date.now() > waitingTimeoutAt) {
+      capture(new Error('ProjectRunner timeout waiting for iframe to be reloaded'))
+      return
+    }
     const newIframeWindow = runnerIframeRef.value?.contentWindow as RunnerIframeWindow | null | undefined
     if (newIframeWindow == null) continue
     if (!newIframeWindow.__xb_is_stale) {
@@ -331,7 +335,7 @@ async function runInternal(ctrl: AbortController) {
     return hashFiles(files, ctrl.signal)
   } catch (err) {
     if (err instanceof Cancelled) throw err
-    console.warn('ProjectRunner run game error:', err)
+    capture(err, 'ProjectRunner run game error')
     state.value = { type: 'failed', err }
   }
 }
