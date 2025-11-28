@@ -223,13 +223,8 @@ async function reloadIframe() {
   // We need to wait for the reloaded iframe to be ready to reattach listeners.
   // While we haven't found reliable way to detect that. So we just wait until the `__xb_is_stale` is reset as a workaround.
   // TODO: Find a better way to achieve iframe reloading.
-  let waitingTimeoutAt = Date.now() + 30 * 1000 // Max wait for 30 seconds
   while (!unmounted) {
     await timeout(100)
-    if (Date.now() > waitingTimeoutAt) {
-      capture(new Error('ProjectRunner timeout waiting for iframe to be reloaded'))
-      return
-    }
     const newIframeWindow = runnerIframeRef.value?.contentWindow as RunnerIframeWindow | null | undefined
     if (newIframeWindow == null) continue
     if (!newIframeWindow.__xb_is_stale) {
