@@ -129,6 +129,66 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
+const tagNamePattern = /<([a-zA-Z0-9-]+)(\s[^>]*)?\/>$/
+function getTagName(line: string): string | null {
+  const m = line.match(tagNamePattern)
+  return m != null ? m[1] : null
+}
+
+/**
+ * Preprocesses text immediately following custom self-closing elements and line breaks within a Markdown string.
+ * According to the Markdown specification, this behavior—the custom self-closing element,
+ * the line break, and the subsequent text being merged into a single html_block—is standard,
+ * but it is not the result we desire.
+ *
+ * We have addressed this situation while adhering to the Markdown specification.
+ * The text following the custom self-closing element and the line break is separated into two distinct paragraphs.
+ *
+ * For example:
+ * ```markdown
+ * <custom-component/>
+ * Content1
+ * ```
+ * will be preprocessed into:
+ * ```markdown
+ * <custom-component/>
+ *
+ * Content1
+ * ```
+ * Refer to: https://github.com/goplus/builder/issues/2472
+ */
+export function preprocessInlineComponents(value: string, tagNames: string[]) {
+  const tagSet = new Set(tagNames)
+  const lines = value.split(/\r?\n/)
+  const out: string[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trimEnd()
+
+    // Check if the line ends with a self-closing tag
+    if (trimmed.endsWith('/>')) {
+      const tag = getTagName(trimmed)
+      if (
+        // Tag name must be in the provided list
+        tag != null &&
+        tagSet.has(tag) &&
+        // There must be a following line
+        i + 1 < lines.length &&
+        // The next line must NOT be a blank line
+        lines[i + 1].trim() !== ''
+      ) {
+        out.push(line)
+        out.push('')
+        continue
+      }
+    }
+    out.push(line)
+  }
+
+  return out.join('\n')
+}
+
 const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
 
 function processSelfClosingForHastRawNode(node: Raw, tagNames: string[]) {
@@ -200,6 +260,7 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
 function parseMarkdown({ value, components }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
+  value = preprocessInlineComponents(value, customTagNames)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
