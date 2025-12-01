@@ -1,5 +1,3 @@
-/* eslint-disable prefer-const */
-
 /** r, g, b in range of 0-255 */
 export type RGB = [r: number, g: number, b: number]
 /** r, g, b, a in range of 0-255 */

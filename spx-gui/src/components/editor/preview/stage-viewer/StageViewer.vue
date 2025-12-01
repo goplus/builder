@@ -508,7 +508,7 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
     () =>
       stage.getStage().toBlob({
         mimeType: 'image/jpeg',
-        // @ts-ignore: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+        // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
         imageSmoothingEnabled: false
       }) as Promise<Blob>
   )

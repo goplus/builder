@@ -157,6 +157,7 @@ function createCSSAnimation(className: string, el?: HTMLElement) {
     begin: async (can = true) => {
       if (!can) return
       // force reflow to ensure the browser correctly triggers animation events on initialization
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       el.offsetHeight
       el.classList.add(className)
       begined = true

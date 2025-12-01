@@ -130,7 +130,7 @@ function correctSpotlightRect(placement: Placement, spotlightRect: Rect) {
 }
 
 function getPlacementByHalf(spotlightRect: Rect, lowerHalf: boolean) {
-  let placement = lowerHalf ? Placement.BOTTOM_RIGHT : Placement.TOP_RIGHT
+  const placement = lowerHalf ? Placement.BOTTOM_RIGHT : Placement.TOP_RIGHT
   const correctRect = correctSpotlightRect(placement, spotlightRect)
   const { right } = correctRect
   const conflictRight = right - conflictBuffer
@@ -178,7 +178,7 @@ function syncPlacementAndPosition() {
   const revealEl = providerRevealEl()
   const spotlightEl = providerSpotlightEl()
   const revealRect = getRect(revealEl)
-  let spotlightRect = getRect(spotlightEl)
+  const spotlightRect = getRect(spotlightEl)
 
   const position = (positionRef.value = getRevealPosition(revealRect, spotlightRect))
   placementRef.value = getPlacementByHalf(setRectByPosition(spotlightRect, position), position.half === 'lower')
@@ -210,7 +210,7 @@ function handleScrollEnd() {
 let lastBodyWidth = 0
 let lastBodyHeight = 0
 const throttledHandleRefresh = throttle((entries) => {
-  for (let entry of entries) {
+  for (const entry of entries) {
     const { width, height } = entry.contentRect
     // ResizeObserver triggers too frequently — avoid triggering in non-resize
     if (width === lastBodyWidth && height === lastBodyHeight) {

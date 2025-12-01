@@ -52,7 +52,7 @@ function playAudio(audio: HTMLAudioElement, duration: number, signal: AbortSigna
     try {
       audio.currentTime = 0
       audio.play()
-    } catch (e) {
+    } catch {
       // We can get an error from `play()` if the sound is not loaded yet
       // or if the sound is not allowed to play
     }

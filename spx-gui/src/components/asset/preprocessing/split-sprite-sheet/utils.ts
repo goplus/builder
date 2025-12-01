@@ -177,7 +177,6 @@ export async function* recognizeSpriteGrid(img: HTMLImageElement): AsyncGenerato
   yield { type: 'rects', rects }
 
   let mergedRects = rects
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const newMergedRects = mergeRegions(mergedRects)
     if (newMergedRects.length === mergedRects.length) break

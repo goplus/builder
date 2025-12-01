@@ -504,7 +504,7 @@ export class Copilot extends Disposable {
     return Array.from(this.toolMap.values())
   }
 
-  get stateIndicatorComponent(): Component<{}> | null {
+  get stateIndicatorComponent(): Component<object> | null {
     const name = this.currentSession?.topic.stateIndicator
     if (name == null) return null
     return this.stateIndicatorComponentMap.get(name) ?? null

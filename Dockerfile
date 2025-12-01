@@ -40,6 +40,7 @@ COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 
 ARG NODE_ENV
 
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
 ################################################################################
