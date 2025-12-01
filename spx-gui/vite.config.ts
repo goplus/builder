@@ -1,11 +1,12 @@
 /// <reference types="vitest" />
 
+import path from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import vercel from 'vite-plugin-vercel'
-import path from 'path'
+import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 
@@ -26,6 +27,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      target: browserslistToEsbuild(),
       rollupOptions: {
         input: {
           main: resolve('index.html'),

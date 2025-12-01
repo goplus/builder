@@ -6,3 +6,4 @@ Here are development guidelines for Claude Code when working on the spx-gui proj
 * @.github/instructions/ts-coding.instructions.md
 * @.github/instructions/ts-test-coding.instructions.md
 * @.github/instructions/vue-coding.instructions.md
+* @.github/instructions/browser-compatibility.instructions.md

@@ -1,6 +1,7 @@
 import pluginVue from 'eslint-plugin-vue'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import compat from 'eslint-plugin-compat'
 
 export default defineConfigWithVueTs(
   {
@@ -25,6 +26,7 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommended,
   skipFormatting,
+  compat.configs["flat/recommended"],
 
   {
     name: 'app/rules',
@@ -82,6 +84,9 @@ export default defineConfigWithVueTs(
           destructuring: 'all'
         }
       ]
+    },
+    settings: {
+      polyfills: ['scheduler']
     }
   },
 

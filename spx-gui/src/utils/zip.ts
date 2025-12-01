@@ -29,7 +29,7 @@ export function zip(zippable: Zippable, { signal, ...options }: ZipOptions = {})
 }
 
 export type Unzipped = {
-  [path: string]: Uint8Array<ArrayBuffer>;
+  [path: string]: Uint8Array<ArrayBuffer>
 }
 export type UnzipOptions = fflate.AsyncUnzipOptions & {
   signal?: AbortSignal
