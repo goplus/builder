@@ -274,6 +274,8 @@ const handleConvertFromScratch = useMessageHandle(
       i18n.t({ en: 'Converting Scratch project', zh: '正在转换 Scratch 项目' })
     )
 
+    if (blob == null) throw new Error('Failed to convert Scratch project')
+
     const xbpFile = new File([blob], `${file.name.replace(/\.sb(2|3)$/i, '')}.xbp`, {
       type: 'application/zip'
     })
