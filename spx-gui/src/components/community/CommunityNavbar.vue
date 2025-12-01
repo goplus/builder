@@ -12,6 +12,8 @@
           <NavbarOpenProjectItem />
         </UIMenu>
       </NavbarDropdown>
+      <NavbarLang v-if="!isSignedIn()" />
+      <NavbarTutorials v-if="showTutorialsEntry" />
     </template>
     <template #right>
       <div class="search">
@@ -19,9 +21,10 @@
           v-model:value="searchInput"
           v-radar="{ name: 'Search input', desc: 'Input and press enter to search projects' }"
           :placeholder="$t({ en: 'Search project', zh: '搜索项目' })"
+          clearable
           @keypress.enter="handleSearch"
         >
-          <template #prefix><UIIcon class="search-icon" type="search" /></template>
+          <template #prefix><UIIcon type="search" /></template>
         </UITextInput>
       </div>
     </template>
@@ -39,6 +42,10 @@ import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
 import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import { getSearchRoute } from '@/router'
+import { showTutorialsEntry } from '@/utils/env'
+import NavbarLang from '../navbar/NavbarLang.vue'
+import NavbarTutorials from '../navbar/NavbarTutorials.vue'
+import { isSignedIn } from '@/stores/user'
 
 const router = useRouter()
 const searchInput = ref('')
@@ -72,7 +79,7 @@ watch(
 
 <style lang="scss" scoped>
 .search {
-  margin-right: 8px;
+  padding: 0 12px;
   width: 340px;
   display: flex;
   align-items: center;

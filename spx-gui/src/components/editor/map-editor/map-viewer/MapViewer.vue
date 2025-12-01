@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
@@ -29,7 +29,16 @@ const emit = defineEmits<{
 }>()
 
 const container = ref<HTMLElement | null>(null)
-const containerSize = useContentSize(container)
+const containerSizeRef = useContentSize(container)
+// Konva canvas cannot have a width or height of zero
+const containerSize = shallowRef(containerSizeRef.value)
+watchEffect(() => {
+  const value = containerSizeRef.value
+  if (value != null && value.width !== 0 && value.height !== 0) {
+    containerSize.value = value
+  }
+})
+
 const viewportSize = containerSize
 
 type Pos = { x: number; y: number }
@@ -435,18 +444,21 @@ const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
           :decorator="decorator"
           :map-size="mapSize"
         />
-        <SpriteNode
-          v-for="sprite in visibleSprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selected="selectedSprite?.id === sprite.id"
-          :project="props.project"
-          :map-size="mapSize"
-          :node-ready-map="nodeReadyMap"
-          @drag-move="handleSpriteDragMove"
-          @drag-end="handleSpriteDragEnd"
-          @selected="handleSpriteSelected(sprite)"
-        />
+        <!-- Refer to: spx-gui/src/components/editor/preview/stage-viewer/StageViewer.vue -->
+        <v-group>
+          <SpriteNode
+            v-for="sprite in visibleSprites"
+            :key="sprite.id"
+            :sprite="sprite"
+            :selected="selectedSprite?.id === sprite.id"
+            :project="props.project"
+            :map-size="mapSize"
+            :node-ready-map="nodeReadyMap"
+            @drag-move="handleSpriteDragMove"
+            @drag-end="handleSpriteDragEnd"
+            @selected="handleSpriteSelected(sprite)"
+          />
+        </v-group>
       </v-layer>
       <v-layer>
         <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" :target="selectedSprite" />

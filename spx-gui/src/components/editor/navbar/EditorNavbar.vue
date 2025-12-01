@@ -61,24 +61,27 @@
           </UIMenuGroup>
         </UIMenu>
       </NavbarDropdown>
-      <NavbarDropdown
-        v-if="project != null"
-        :trigger-radar="{ name: 'History menu', desc: 'Hover to see history options (undo/redo)' }"
-      >
-        <template #trigger>
-          <UIIcon type="clock" />
-        </template>
-        <UIMenu>
-          <UIMenuItem :disabled="undoAction == null" @click="handleUndo.fn">
-            <template #icon><img :src="undoSvg" /></template>
-            <span class="history-menu-text">{{ $t(undoText) }}</span>
-          </UIMenuItem>
-          <UIMenuItem :disabled="redoAction == null" @click="handleRedo.fn">
-            <template #icon><img :src="redoSvg" /></template>
-            <span class="history-menu-text">{{ $t(redoText) }}</span>
-          </UIMenuItem>
-        </UIMenu>
-      </NavbarDropdown>
+
+      <NavbarTutorials v-if="showTutorialsEntry" />
+
+      <div class="history-button-wrapper">
+        <UITooltip :disabled="undoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
+              <UIIcon class="icon" type="undo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(undoText) }}</span>
+        </UITooltip>
+        <UITooltip :disabled="redoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
+              <UIIcon class="icon" type="redo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(redoText) }}</span>
+        </UITooltip>
+      </div>
     </template>
     <template #center>
       <template v-if="project != null">
@@ -95,16 +98,31 @@
       </template>
     </template>
     <template #right>
-      <div v-show="canManageProject" class="publish">
-        <UIButton
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          type="secondary"
-          :disabled="!isOnline"
-          @click="handlePublishProject"
-        >
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
-      </div>
+      <UIButtonGroup
+        v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
+        class="editor-mode-wrapper"
+        type="text"
+        variant="secondary"
+        :value="selectedEditMode"
+        @update:value="(v) => state?.selectEditMode(v as EditMode)"
+      >
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Default">
+              <div class="icon" v-html="gamePreviewSvg"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
+        </UITooltip>
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Map">
+              <div class="icon" v-html="globalConfig"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
+        </UITooltip>
+      </UIButtonGroup>
     </template>
   </NavbarWrapper>
 </template>
@@ -120,8 +138,9 @@ import {
   UIIcon,
   UITooltip,
   useConfirmDialog,
-  UIButton,
-  useMessage
+  useMessage,
+  UIButtonGroup,
+  UIButtonGroupItem
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -132,16 +151,16 @@ import { type Project } from '@/models/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
+import { showTutorialsEntry } from '@/utils/env'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
+import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import { SavingState, EditingMode } from '../editing'
-import type { EditorState } from '../editor-state'
-import undoSvg from './icons/undo.svg'
-import redoSvg from './icons/redo.svg'
+import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
@@ -153,6 +172,8 @@ import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
+import gamePreviewSvg from './icons/game-preview.svg?raw'
+import globalConfig from './icons/global-config.svg?raw'
 
 const props = defineProps<{
   project: Project | null
@@ -172,6 +193,10 @@ const canManageProject = computed(() => {
 })
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
+
+const selectedEditMode = computed(() =>
+  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Default
+)
 
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
@@ -372,6 +397,46 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   margin: 0 4px;
 }
 
+.icon {
+  display: flex;
+
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.history-button-wrapper {
+  display: flex;
+
+  .history-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: none;
+    outline: none;
+    border: none;
+    padding: 0 20px;
+    color: white;
+
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:disabled {
+      color: #9de6ec;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: var(--ui-color-primary-600);
+      cursor: pointer;
+    }
+  }
+}
+
 .auto-save-state {
   margin-left: 8px;
   cursor: pointer;
@@ -379,11 +444,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   .icon {
     width: 24px;
     height: 24px;
-
-    :deep(svg) {
-      width: 100%;
-      height: 100%;
-    }
 
     &.pending :deep(svg) path,
     &.saving :deep(svg) path {
@@ -402,10 +462,12 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 }
 
-.publish {
-  margin-right: 2px;
-  height: 100%;
-  display: flex;
+.editor-mode-wrapper {
+  margin: 0 12px;
   align-items: center;
+
+  .icon {
+    width: 18px;
+  }
 }
 </style>

@@ -18,6 +18,10 @@ export type RawBackdropConfig = Omit<BackdropInits, 'id' | 'assetMetadata'> & {
   builder_assetMetadata?: AssetMetadata
   name?: string
   path?: string
+  /* Optional image width for engine performance optimization */
+  imageWidth?: number
+  /* Optional image height for engine performance optimization */
+  imageHeight?: number
 }
 
 const backdropAssetPath = 'assets'
@@ -87,7 +91,15 @@ export class Backdrop {
   }
 
   static load(
-    { name, path, builder_id: id, builder_assetMetadata: assetMetadata, ...inits }: RawBackdropConfig,
+    {
+      name,
+      path,
+      builder_id: id,
+      builder_assetMetadata: assetMetadata,
+      imageWidth,
+      imageHeight,
+      ...inits
+    }: RawBackdropConfig,
     files: Files,
     { includeId = true, includeAssetMetadata: includeMetadata = true }: BackdropExportLoadOptions = {}
   ) {
@@ -95,6 +107,9 @@ export class Backdrop {
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
     const file = files[resolve(backdropAssetPath, path)]
     if (file == null) throw new Error(`file ${path} for backdrop ${name} not found`)
+    if (imageWidth != null && imageHeight != null && file.meta.imgSize == null) {
+      file.meta.imgSize = { width: imageWidth, height: imageHeight }
+    }
     return new Backdrop(name, file, {
       ...inits,
       id: includeId ? id : undefined,
@@ -115,6 +130,11 @@ export class Backdrop {
     if (includeId) config.builder_id = this.id
     if (includeMetadata && this.assetMetadata != null) {
       config.builder_assetMetadata = this.assetMetadata
+    }
+    if (this.img.meta.imgSize != null) {
+      const imgSize = this.img.meta.imgSize
+      config.imageWidth = imgSize.width
+      config.imageHeight = imgSize.height
     }
     const files = {
       [resolve(backdropAssetPath, filename)]: this.img
