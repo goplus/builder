@@ -5,7 +5,7 @@ import { useSlotText } from '@/utils/vnode'
 import MarkdowView, {
   preprocessCustomRawComponents,
   preprocessIncompleteTags,
-  preprocessInlineComponents
+  preprocessSelfClosingComponents
 } from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
@@ -102,60 +102,61 @@ describe('preprocessCustomRawComponents', () => {
   })
 })
 
-describe('preprocessInlineComponents', () => {
-  it('should separate self-closing tag from next line text with blank line', () => {
-    const value = '<x-comp />\nHello world'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />\n\nHello world')
+describe('preprocessSelfClosingComponents', () => {
+  it('should convert self-closing tags to opening and closing tags', () => {
+    const value = '<custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
   })
-  it('should separate self-closing tag from next line text with blank line with attributes', () => {
-    const value = '<x-comp some="foo" />\nHello world'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp some="foo" />\n\nHello world')
+
+  it('should handle attributes', () => {
+    const value = '<custom-component attr="value" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="value"></custom-component>')
   })
-  it('should preserve leading spaces of next line', () => {
-    const value = '<x-comp />\n   Hello'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />\n\n   Hello')
+
+  it('should handle multiple attributes', () => {
+    const value = '<custom-component attr1="value1" attr2="value2" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr1="value1" attr2="value2"></custom-component>')
   })
-  it('should ignore when there is a blank line', () => {
-    const value = '<x-comp />\n\nHello'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />\n\nHello')
+
+  it('should handle spaces before closing slash', () => {
+    const value = '<custom-component   />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
   })
-  it('should not change when inline already', () => {
-    const value = '<x-comp />Hello\nWorld'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />Hello\nWorld')
+
+  it('should handle multiple occurrences', () => {
+    const value = '<custom-component /> <custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component> <custom-component></custom-component>')
   })
-  it('should match spaces before newline', () => {
-    const value = '<x-comp />  \nHello'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />  \n\nHello')
+
+  it('should not affect other tags', () => {
+    const value = '<other-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<other-component />')
   })
-  it('should not change when not self-closing', () => {
-    const value = '<x-comp></x-comp>\nHello'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp></x-comp>\nHello')
+
+  it('should handle empty value', () => {
+    const value = ''
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('')
   })
-  it('should separate even when a self-closing tag is preceded by text', () => {
-    const value = 'before<x-comp />\nHello'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('before<x-comp />\n\nHello')
-  })
-  it('should insert a blank line before an inline component when preceded by text', () => {
-    const value = '<x-comp />\n<x-comp />\nHello\n<x-comp />'
-    const tagNames = ['x-comp']
-    const result = preprocessInlineComponents(value, tagNames)
-    expect(result).toBe('<x-comp />\n\n<x-comp />\n\nHello\n<x-comp />')
+
+  it('should handle no tag names', () => {
+    const value = '<custom-component />'
+    const tagNames: string[] = []
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component />')
   })
 })
 
@@ -331,7 +332,7 @@ After`,
         })
       }
     })
-    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div></p>\n<p>After</p></div>')
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>\nAfter</p></div>')
   })
   it('should handle a custom self-closing tag when text follows immediately on the next line', async () => {
     const testComp1 = {

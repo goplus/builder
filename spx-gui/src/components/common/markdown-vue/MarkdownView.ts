@@ -2,7 +2,7 @@ import { computed, defineComponent, h, type VNode, type Component } from 'vue'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { html, find } from 'property-information'
 import type * as hast from 'hast'
-import { toHast, type Raw } from 'mdast-util-to-hast'
+import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
@@ -129,20 +129,11 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
-const tagNamePattern = /<([a-zA-Z0-9-]+)(\s[^>]*)?\/>$/
-function getTagName(line: string): string | null {
-  const m = line.match(tagNamePattern)
-  return m != null ? m[1] : null
-}
-
 /**
- * Preprocesses text immediately following custom self-closing elements and line breaks within a Markdown string.
- * According to the Markdown specification, this behavior—the custom self-closing element,
- * the line break, and the subsequent text being merged into a single html_block—is standard,
- * but it is not the result we desire.
- *
- * We have addressed this situation while adhering to the Markdown specification.
- * The text following the custom self-closing element and the line break is separated into two distinct paragraphs.
+ * Preprocesses custom self-closing elements in a Markdown string.
+ * According to the Markdown specification, a custom self-closing element followed by a line break
+ * and subsequent text will be merged into a single html_block, which is standard behavior
+ * but not the desired result.
  *
  * For example:
  * ```markdown
@@ -151,90 +142,16 @@ function getTagName(line: string): string | null {
  * ```
  * will be preprocessed into:
  * ```markdown
- * <custom-component/>
- *
+ * <custom-component></custom-component>
  * Content1
  * ```
  * Refer to: https://github.com/goplus/builder/issues/2472
  */
-export function preprocessInlineComponents(value: string, tagNames: string[]) {
-  const tagSet = new Set(tagNames)
-  const lines = value.split(/\r?\n/)
-  const out: string[] = []
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const trimmed = line.trimEnd()
-
-    // Check if the line ends with a self-closing tag
-    if (trimmed.endsWith('/>')) {
-      const tag = getTagName(trimmed)
-      if (
-        // Tag name must be in the provided list
-        tag != null &&
-        tagSet.has(tag) &&
-        // There must be a following line
-        i + 1 < lines.length &&
-        // The next line must NOT be a blank line
-        lines[i + 1].trim() !== ''
-      ) {
-        out.push(line)
-        out.push('')
-        continue
-      }
-    }
-    out.push(line)
-  }
-
-  return out.join('\n')
-}
-
-const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
-
-function processSelfClosingForHastRawNode(node: Raw, tagNames: string[]) {
-  const value = node.value.trim()
-  if (!value.endsWith('/>')) return node
-  const match = value.match(tagHeaderPattern)
-  if (match == null) return node
-  const tagName = match[1]
-  if (!tagNames.includes(tagName)) return node
-  return {
-    ...node,
-    value: value.slice(0, -2) + `></${tagName}>`
-  }
-}
-
-function processSelfClosingForHastNode(node: hast.Node, tagNames: string[]): hast.Node {
-  switch (node.type) {
-    case 'raw':
-      return processSelfClosingForHastRawNode(node as Raw, tagNames)
-    case 'text':
-      return node
-    case 'element': {
-      const element = node as hast.Element
-      const processedElement = {
-        ...element,
-        children: element.children.map((child) => processSelfClosingForHastNode(child, tagNames))
-      }
-      return processedElement
-    }
-    default:
-      return node
-  }
-}
-
-/**
- * Process self-closing tags in the hast nodes.
- * This makes sure self-closing is supported for all custom components.
- */
-function processSelfClosingForHastNodes(nodes: hast.Nodes, tagNames: string[]): hast.Nodes {
-  if (nodes.type === 'root') {
-    return {
-      ...nodes,
-      children: nodes.children.map((child) => processSelfClosingForHastNode(child, tagNames))
-    } as hast.Root
-  }
-  return processSelfClosingForHastNode(nodes, tagNames) as hast.RootContent
+export function preprocessSelfClosingComponents(value: string, tagNames: string[]) {
+  tagNames.forEach((tagName) => {
+    value = value.replace(new RegExp(`<${tagName}([^>]*?)\\s*/>`, 'g'), `<${tagName}$1></${tagName}>`)
+  })
+  return value
 }
 
 /**
@@ -260,13 +177,12 @@ export function preprocessIncompleteTags(value: string, tagNames: string[]) {
 function parseMarkdown({ value, components }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
-  value = preprocessInlineComponents(value, customTagNames)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
+  value = preprocessSelfClosingComponents(value, customTagNames)
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
   const hast = toHast(mdast, { allowDangerousHtml: true })
-  const hastWithSelfClosingProcessed = processSelfClosingForHastNodes(hast, customTagNames)
-  const rawProcessed = raw(hastWithSelfClosingProcessed, { tagfilter: false })
+  const rawProcessed = raw(hast, { tagfilter: false })
   const sanitizeSchema = getSanitizeSchema(customComponents)
   return sanitize(rawProcessed, sanitizeSchema)
 }
