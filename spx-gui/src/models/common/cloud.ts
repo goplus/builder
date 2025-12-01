@@ -14,16 +14,7 @@ import type { Metadata } from '../project'
 import { File, toNativeFile, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
-
-// Supported universal Url schemes for files
-const fileUniversalUrlSchemes = {
-  // for resources stored in third-party services
-  http: 'http:',
-  https: 'https:',
-
-  data: 'data:', // for inlineable data, usually plain text or json, e.g. data:text/plain,hello%20world
-  kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
-} as const
+import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
 
 export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
   let projectData = await getProject(owner, name, signal)
@@ -117,8 +108,8 @@ export function getFiles(fileCollection: FileCollection): Files {
 
 function setUniversalUrl(file: File, url: UniversalUrl) {
   file.meta.universalUrl = url
-  // for binary files stored in kodo, use universalUrl as hash to skip hash-calculating
-  if (new URL(url).protocol === fileUniversalUrlSchemes.kodo && file.meta.hash == null) {
+  // for files stored in kodo, use universalUrl as hash to skip hash-calculating
+  if (getUniversalUrlScheme(url) === UniversalUrlScheme.Kodo && file.meta.hash == null) {
     file.meta.hash = url
   }
 }
@@ -130,18 +121,14 @@ export function createFileWithUniversalUrl(url: UniversalUrl, name = filename(ur
   const file = new File(name, async (signal) => {
     const webUrl = await universalUrlToWebUrl(url)
     signal?.throwIfAborted()
-    const resp = await fetchFile(webUrl, signal)
-    return resp.arrayBuffer()
+    return fetchFile(webUrl, signal)
   })
   setUniversalUrl(file, url)
   return file
 }
 
 export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
-  return new File(name, async (signal) => {
-    const resp = await fetchFile(url, signal)
-    return resp.arrayBuffer()
-  })
+  return new File(name, async (signal) => fetchFile(url, signal))
 }
 
 const fetchFileController = new ConcurrencyLimitController(20)
@@ -149,13 +136,15 @@ const fetchFileController = new ConcurrencyLimitController(20)
 const fetchFile = (url: WebUrl, signal?: AbortSignal) =>
   fetchFileController.run(() => {
     signal?.throwIfAborted()
-    const timeout = 15_000 // ms. Timeout for response (headers) to arrive
+    const respTimeout = 15_000 // ms. Timeout for response (headers) to arrive
     return withRetry(
-      () => {
+      async () => {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(new TimeoutException()), timeout)
+        const respTimeoutId = setTimeout(() => controller.abort(new TimeoutException()), respTimeout)
         const mergedSignal = mergeSignals(signal, controller.signal)
-        return fetch(url, { signal: mergedSignal }).finally(() => clearTimeout(timeoutId))
+        const resp = await fetch(url, { signal: mergedSignal }).finally(() => clearTimeout(respTimeoutId))
+        if (!resp.ok) throw new Error(`status ${resp.status} for file: ${url.slice(0, 200)}`)
+        return resp.arrayBuffer()
       },
       2,
       500
@@ -208,8 +197,8 @@ export const universalUrlToWebUrl = (() => {
   })()
 
   const fn = async (universalUrl: UniversalUrl): Promise<WebUrl> => {
-    const { protocol } = new URL(universalUrl)
-    if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
+    const scheme = getUniversalUrlScheme(universalUrl)
+    if (scheme !== UniversalUrlScheme.Kodo) return universalUrl
 
     const cached = cache.get(universalUrl)
     if (cached != null) return cached
@@ -234,6 +223,7 @@ export async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 
+  // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
   const url = await ((await isInlineable(file, signal)) ? inlineFile(file) : uploadToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
@@ -247,20 +237,8 @@ async function isInlineable(file: File, signal?: AbortSignal) {
 }
 
 async function inlineFile(file: File): Promise<UniversalUrl> {
-  let mimeType, content
-  if (isText(file)) {
-    // Little trick from [https://fetch.spec.whatwg.org/#data-urls]: `12. If mimeType starts with ';', then prepend 'text/plain' to mimeType.`
-    // Saves some bytes.
-    mimeType = file.type === 'text/plain' ? ';' : file.type
-
-    // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
-    content = await toText(file)
-  } else {
-    throw new Error('unsupported file type for inlining')
-  }
-
-  const urlEncodedContent = encodeURIComponent(content)
-  return `${fileUniversalUrlSchemes.data}${mimeType},${urlEncodedContent}`
+  if (!isText(file)) throw new Error(`unsupported file type (${file.type}) for inlining`)
+  return stringifyDataUrl(file.type, await toText(file))
 }
 
 type KodoUploadRes = {
@@ -303,7 +281,7 @@ const uploadToKodo = (file: File, signal?: AbortSignal) =>
         reject(signal.reason)
       })
     })
-    return `${fileUniversalUrlSchemes.kodo}//${bucket}/${key}`
+    return stringifyKodoUrl(bucket, key)
   })
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {

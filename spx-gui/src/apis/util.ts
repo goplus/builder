@@ -4,6 +4,7 @@
 
 import { usercontentBaseUrl } from '@/utils/env'
 import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
+import { UniversalUrlScheme, parseUniversalUrl } from '@/utils/universal-url'
 
 export type UpInfo = {
   /** Uptoken */
@@ -32,8 +33,8 @@ export async function makeObjectUrls(objects: UniversalUrl[]): Promise<Universal
 /** Workaround for https://github.com/goplus/builder/issues/1598 */
 function workAroundIssue1598(objects: UniversalUrl[]): UniversalToWebUrlMap {
   return objects.reduce((map, universalUrl) => {
-    const url = new URL(universalUrl)
-    map[universalUrl] = url.protocol === 'kodo:' ? usercontentBaseUrl + url.pathname + url.search : universalUrl
+    const parsed = parseUniversalUrl(universalUrl)
+    map[universalUrl] = parsed.scheme === UniversalUrlScheme.Kodo ? `${usercontentBaseUrl}/${parsed.key}` : universalUrl
     return map
   }, {} as UniversalToWebUrlMap)
 }
