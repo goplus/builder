@@ -29,12 +29,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20.11.1
+          node-version: 24.11.1
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
       - name: Install Node modules
-        run: npm install --prefer-offline
+        run: npm ci --prefer-offline
 
       - name: Install spx
         run: ./install-spx.sh
