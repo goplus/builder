@@ -5,7 +5,7 @@
       <NavbarDropdown
         :trigger-radar="{
           name: 'Project menu',
-          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import from Scratch, etc.)'
+          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
         }"
       >
         <template #trigger>
@@ -21,19 +21,21 @@
               <template #icon><img :src="importProjectSvg" /></template>
               {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
             </UIMenuItem>
-            <UIMenuItem @click="handleExportProjectFile">
-              <template #icon><img :src="exportProjectSvg" /></template>
-              {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
+
+            <UIMenuItem @click="handleImportFromScratch">
+              <template #icon><img :src="importScratchSvg" /></template>
+              {{ $t({ en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }) }}
+            </UIMenuItem>
+
+            <UIMenuItem @click="handleImportAssetsFromScratch">
+              <template #icon><img :src="importAssetsScratchSvg" /></template>
+              {{ $t({ en: 'Import assets from Scratch', zh: '从 Scratch 项目文件导入素材' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleImportFromScratch">
-              <template #icon><img :src="importScratchSvg" /></template>
-              {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
-            </UIMenuItem>
-            <UIMenuItem @click="handleConvertFromScratch">
-              <template #icon><img :src="importScratchSvg" /></template>
-              {{ $t({ en: 'Convert Scratch project to XBuilder', zh: 'Scratch 项目转 XBuilder 项目' }) }}
+            <UIMenuItem @click="handleExportProjectFile">
+              <template #icon><img :src="exportProjectSvg" /></template>
+              {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
@@ -99,7 +101,7 @@
     </template>
     <template #right>
       <UIButtonGroup
-        v-radar="{ name: 'editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
+        v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
         class="editor-mode-wrapper"
         type="text"
         variant="secondary"
@@ -109,7 +111,7 @@
         <UITooltip>
           <template #trigger>
             <UIButtonGroupItem :value="EditMode.Default">
-              <div class="icon" v-html="gamePreviewSvg"></div>
+              <div class="icon" v-html="defaultModeSvg"></div>
             </UIButtonGroupItem>
           </template>
           {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
@@ -117,7 +119,7 @@
         <UITooltip>
           <template #trigger>
             <UIButtonGroupItem :value="EditMode.Map">
-              <div class="icon" v-html="globalConfig"></div>
+              <div class="icon" v-html="mapEditModeSvg"></div>
             </UIButtonGroupItem>
           </template>
           {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
@@ -165,6 +167,7 @@ import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
+import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
@@ -172,8 +175,8 @@ import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
-import gamePreviewSvg from './icons/game-preview.svg?raw'
-import globalConfig from './icons/global-config.svg?raw'
+import defaultModeSvg from './icons/default-mode.svg?raw'
+import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
 const props = defineProps<{
   project: Project | null
@@ -246,7 +249,7 @@ const handleExportProjectFile = useMessageHandle(
 ).fn
 
 const loadFromScratchModal = useLoadFromScratchModal()
-const handleImportFromScratch = useMessageHandle(
+const handleImportAssetsFromScratch = useMessageHandle(
   async () => {
     const { state, project } = props
     if (state == null || project == null) throw new Error('Editor state or project is not available')
@@ -259,9 +262,8 @@ const handleImportFromScratch = useMessageHandle(
   }
 ).fn
 
-const convertScratchMessage = { en: 'Convert Scratch to XBuilder project', zh: 'Scratch 项目转 XBuilder 项目' }
-
-const handleConvertFromScratch = useMessageHandle(
+const importScratchMessage = { en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }
+const handleImportFromScratch = useMessageHandle(
   async () => {
     const { project } = props
     if (project == null) throw new Error('project is not available')
@@ -271,7 +273,7 @@ const handleConvertFromScratch = useMessageHandle(
     // upload to backend via api helper and get converted xbp blob
     const blob = await m.withLoading(
       convertScratchToXbp(file, project.getSignal()),
-      i18n.t({ en: 'Converting Scratch project', zh: '正在转换 Scratch 项目' })
+      i18n.t({ en: 'Converting Scratch project file', zh: '正在转换 Scratch 项目文件' })
     )
 
     if (blob == null) throw new Error('Failed to convert Scratch project')
@@ -280,13 +282,13 @@ const handleConvertFromScratch = useMessageHandle(
       type: 'application/zip'
     })
 
-    const action = { name: convertScratchMessage }
+    const action = { name: importScratchMessage }
     await m.withLoading(
       project.history.doAction(action, () => project!.loadXbpFile(xbpFile)),
-      i18n.t({ en: 'Importing converted project', zh: '导入已转换的项目中' })
+      i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
     )
   },
-  { en: 'Failed to convert Scratch project', zh: 'Scratch 转换失败' }
+  { en: 'Failed to import Scratch project file', zh: '导入 Scratch 项目文件失败' }
 ).fn
 
 const publishProject = usePublishProject()
