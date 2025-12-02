@@ -20,6 +20,6 @@ export async function convertScratchToXbp(file: File, signal?: AbortSignal) {
   const form = new FormData()
   form.append('file', file, file.name)
 
-  const blob = await client.postBinary('/scratch-convert', form, { signal })
+  const blob = await client.postBinary('/util/sb2xbp', form, { signal })
   return blob
 }
