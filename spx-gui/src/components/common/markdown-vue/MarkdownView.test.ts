@@ -117,6 +117,22 @@ describe('preprocessSelfClosingComponents', () => {
     expect(result).toBe('<custom-component attr="value"></custom-component>')
   })
 
+  it('should handle attributes with function', () => {
+    const value = '<custom-component attr="() => {}" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="() => {}"></custom-component>')
+  })
+
+  it('should handle attributes with function and other attributes', () => {
+    const value = `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list" />`
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe(
+      `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list"></custom-component>`
+    )
+  })
+
   it('should handle multiple attributes', () => {
     const value = '<custom-component attr1="value1" attr2="value2" />'
     const tagNames = ['custom-component']

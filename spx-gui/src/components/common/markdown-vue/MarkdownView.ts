@@ -130,10 +130,11 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
 }
 
 /**
- * Preprocesses custom self-closing elements in a Markdown string.
- * According to the Markdown specification, a custom self-closing element followed by a line break
- * and subsequent text will be merged into a single html_block, which is standard behavior
- * but not the desired result.
+ * To ensure consistent processing of custom elements by Markdown, we convert self-closing tags
+ * (e.g., <tag/>) to a non-self-closing form (e.g., <tag>). This guarantees all custom elements
+ * are parsed as inline HTML, which resolves inconsistencies in the DOM structure and component
+ * mounting. This also effectively addresses the edge case where a self-closing element followed
+ * by a line break incorrectly consumes subsequent text content.
  *
  * For example:
  * ```markdown
@@ -149,7 +150,10 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
  */
 export function preprocessSelfClosingComponents(value: string, tagNames: string[]) {
   tagNames.forEach((tagName) => {
-    value = value.replace(new RegExp(`<${tagName}([^>]*?)\\s*/>`, 'g'), `<${tagName}$1></${tagName}>`)
+    value = value.replace(
+      new RegExp(`<${tagName}((?:[^>"']|"[^"]*"|'[^']*')*?)\\s*/>`, 'g'),
+      `<${tagName}$1></${tagName}>`
+    )
   })
   return value
 }
