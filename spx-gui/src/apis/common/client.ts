@@ -87,6 +87,24 @@ export class Client {
     return resp.json()
   }
 
+  private async requestBinary(path: string, payload: FormData, options?: RequestOptions) {
+    const traceData = Sentry.getTraceData()
+    const sentryTraceHeader = traceData['sentry-trace']
+    const sentryBaggageHeader = traceData['baggage']
+    const url = this.baseUrl + path
+    const method = options?.method ?? 'GET'
+    const token = await this.tokenProvider()
+    options?.signal?.throwIfAborted()
+    const headers = options?.headers ?? new Headers()
+    if (token != null) headers.set('Authorization', `Bearer ${token}`)
+    if (sentryTraceHeader != null) headers.set('Sentry-Trace', sentryTraceHeader)
+    if (sentryBaggageHeader != null) headers.set('Baggage', sentryBaggageHeader)
+    const req = new Request(url, { method, headers, body: payload })
+    const resp = await this.doRequest(req, options)
+    if (resp.status === 204) return null
+    return resp.blob()
+  }
+
   private async *requestTextStream(
     path: string,
     payload: unknown,
@@ -120,6 +138,10 @@ export class Client {
 
   post(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
     return this.requestJSON(path, payload, { ...options, method: 'POST' })
+  }
+
+  postBinary(path: string, payload: FormData, options?: Omit<RequestOptions, 'method'>) {
+    return this.requestBinary(path, payload, { ...options, method: 'POST' })
   }
 
   put(path: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
