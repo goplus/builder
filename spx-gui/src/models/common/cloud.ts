@@ -1,4 +1,4 @@
-import * as qiniu from 'qiniu-js'
+import { createDirectUploadTask } from 'qiniu-js'
 import { usercontentBaseUrl } from '@/utils/env'
 import { filename } from '@/utils/path'
 import { humanizeFileSize, withRetry } from '@/utils/utils'
@@ -10,8 +10,9 @@ import type { ProjectData } from '@/apis/project'
 import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException, TimeoutException } from '@/utils/exception'
+import { getUphostsByRegion } from '@/utils/kodo'
 import type { Metadata } from '../project'
-import { File, toNativeFile, toText, type Files, isText } from './file'
+import { File, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 import { createAIDescriptionFiles, extractAIDescription } from './'
 import { getUniversalUrlScheme, stringifyDataUrl, stringifyKodoUrl, UniversalUrlScheme } from '@/utils/universal-url'
@@ -250,38 +251,39 @@ const uploadToKodoController = new ConcurrencyLimitController(20)
 
 const uploadToKodo = (file: File, signal?: AbortSignal) =>
   uploadToKodoController.run<UniversalUrl>(async () => {
-    const nativeFile = await toNativeFile(file, signal)
+    const ab = await file.arrayBuffer(signal)
     const { token, maxSize, bucket, region } = await getUpInfoWithCache()
-    if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
-    const observable = qiniu.upload(
-      nativeFile,
-      null,
-      token,
+    signal?.throwIfAborted()
+    if (ab.byteLength > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
+    const task = createDirectUploadTask(
       {
-        fname: file.name,
+        type: 'array-buffer',
+        data: ab,
+        filename: file.name,
         mimeType: file.type === '' ? undefined : file.type
       },
-      { region: region as any }
-    )
-    const { key } = await new Promise<KodoUploadRes>((resolve, reject) => {
-      if (signal?.aborted) {
-        reject(signal.reason)
-        return
+      {
+        tokenProvider: () => Promise.resolve(token),
+        uploadHosts: getUphostsByRegion(region)
       }
-      const subscription = observable.subscribe({
-        error(e) {
-          reject(e)
-        },
-        complete(res) {
-          resolve(res)
-        }
-      })
+    )
+    const respBody = await new Promise<string>((resolve, reject) => {
       signal?.addEventListener('abort', () => {
-        subscription.unsubscribe()
         reject(signal.reason)
+        task.cancel()
+      })
+      task.start()
+      task.onError(reject)
+      task.onComplete((respBody) => {
+        if (respBody == null) {
+          reject(new Error('upload response expected'))
+          return
+        }
+        resolve(respBody)
       })
     })
-    return stringifyKodoUrl(bucket, key)
+    const parsed = JSON.parse(respBody) as KodoUploadRes
+    return stringifyKodoUrl(bucket, parsed.key)
   })
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {
