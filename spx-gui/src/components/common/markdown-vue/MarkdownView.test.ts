@@ -2,7 +2,11 @@ import { defineComponent, h, markRaw } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '@vue/test-utils'
 import { useSlotText } from '@/utils/vnode'
-import MarkdowView, { preprocessCustomRawComponents, preprocessIncompleteTags } from './MarkdownView'
+import MarkdowView, {
+  preprocessCustomRawComponents,
+  preprocessIncompleteTags,
+  preprocessSelfClosingComponents
+} from './MarkdownView'
 
 describe('preprocessCustomRawComponents', () => {
   it('should convert custom raw components to <pre> tags', () => {
@@ -95,6 +99,80 @@ describe('preprocessCustomRawComponents', () => {
     const tagNames = ['custom-raw-component']
     const result = preprocessCustomRawComponents(value, tagNames)
     expect(result).toBe('<pre is="custom-raw-component" attr1="value1" attr2="value2" />')
+  })
+})
+
+describe('preprocessSelfClosingComponents', () => {
+  it('should convert self-closing tags to opening and closing tags', () => {
+    const value = '<custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
+  })
+
+  it('should handle attributes', () => {
+    const value = '<custom-component attr="value" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="value"></custom-component>')
+  })
+
+  it('should handle attributes with function', () => {
+    const value = '<custom-component attr="() => {}" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr="() => {}"></custom-component>')
+  })
+
+  it('should handle attributes with function and other attributes', () => {
+    const value = `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list" />`
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe(
+      `<custom-component attr="() => {}" some='() => []' some="'foo'" disabled a="a" b="b" c="c" d="d" e="e" :f="f" v-model="value" v-for="key in list"></custom-component>`
+    )
+  })
+
+  it('should handle multiple attributes', () => {
+    const value = '<custom-component attr1="value1" attr2="value2" />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component attr1="value1" attr2="value2"></custom-component>')
+  })
+
+  it('should handle spaces before closing slash', () => {
+    const value = '<custom-component   />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component>')
+  })
+
+  it('should handle multiple occurrences', () => {
+    const value = '<custom-component /> <custom-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component></custom-component> <custom-component></custom-component>')
+  })
+
+  it('should not affect other tags', () => {
+    const value = '<other-component />'
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<other-component />')
+  })
+
+  it('should handle empty value', () => {
+    const value = ''
+    const tagNames = ['custom-component']
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('')
+  })
+
+  it('should handle no tag names', () => {
+    const value = '<custom-component />'
+    const tagNames: string[] = []
+    const result = preprocessSelfClosingComponents(value, tagNames)
+    expect(result).toBe('<custom-component />')
   })
 })
 
@@ -254,5 +332,39 @@ After`,
 222
 <!--]--></div>
 <p><div class="test-comp-1"></div>aaa<div class="test-comp-2">bbb</div><div class="test-comp-2">ccc</div>ddd</p><div class="test-comp-3"><!--[--><p></p><!--]--></div></div>`)
+  })
+  it('should handle a custom self-closing tag with text on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>\nAfter</p></div>')
+  })
+  it('should handle a custom self-closing tag when text follows immediately on the next line', async () => {
+    const testComp1 = {
+      template: '<div class="test-comp-1">hello world</div>'
+    }
+    const result = await renderToString(MarkdowView, {
+      props: {
+        value: `Before<test-comp-1 />middle
+After`,
+        components: markRaw({
+          custom: {
+            'test-comp-1': testComp1
+          }
+        })
+      }
+    })
+    expect(result).toBe('<div><p>Before<div class="test-comp-1">hello world</div>middle\nAfter</p></div>')
   })
 })
