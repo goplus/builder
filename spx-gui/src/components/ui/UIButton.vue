@@ -2,7 +2,15 @@
   <button
     ref="btnRef"
     class="ui-button"
-    :class="[`type-${type}`, `size-${size}`, loading && 'loading', iconOnly && 'icon-only']"
+    :class="[
+      `style-${style}`,
+      `shape-${shape}`,
+      `type-${type}`,
+      `size-${size}`,
+      loading && 'loading',
+      stroke && 'stroke',
+      iconOnly && 'icon-only'
+    ]"
     :disabled="disabled"
     :type="htmlType"
   >
@@ -17,25 +25,33 @@
 <script setup lang="ts">
 import { computed, ref, useSlots } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
+export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success' | 'blue' | 'purple'
 export type ButtonSize = 'small' | 'medium' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
+export type ButtonStyle = 'shadow' | 'flat'
+export type ButtonShape = 'square' | 'circle'
 
 const props = withDefaults(
   defineProps<{
+    style?: ButtonStyle
+    shape?: ButtonShape
     type?: ButtonType
     size?: ButtonSize
     icon?: IconType
     disabled?: boolean
     loading?: boolean
     htmlType?: ButtonHtmlType
+    stroke?: boolean
   }>(),
   {
+    style: 'shadow',
+    shape: 'square',
     type: 'primary',
     size: 'medium',
     icon: undefined,
     disabled: false,
     loading: false,
+    stroke: false,
     htmlType: 'button'
   }
 )
@@ -55,44 +71,37 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+// base
 .ui-button {
   display: flex;
   align-items: stretch;
-  height: var(--ui-line-height-2);
-  padding: 0 0 4px 0;
   background: none;
   border: none;
-  border-radius: var(--ui-border-radius-2);
+  border-radius: var(--ui-button-radius);
   cursor: pointer;
 
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-primary-main);
   --ui-button-shadow-color: var(--ui-color-primary-700);
+  --ui-button-radius: var(--ui-border-radius-2);
+  --ui-button-stroke-color: var(--ui-color-grey-400);
 
   .content {
     flex: 1 1 0;
     display: flex;
-    padding: 0 16px;
     justify-content: center;
     align-items: center;
-    gap: 4px;
-    border-radius: var(--ui-border-radius-2);
+    border-radius: var(--ui-button-radius);
 
     color: var(--ui-button-color);
     background-color: var(--ui-button-bg-color);
-    box-shadow: 0 4px var(--ui-button-shadow-color);
   }
 
-  &:not(:disabled):active,
-  &.loading {
-    padding-bottom: 0;
-    .content {
-      box-shadow: none;
-    }
+  &.stroke {
+    border: 1px solid var(--ui-button-stroke-color);
   }
 
   &.icon-only {
-    width: var(--ui-line-height-2);
     .content {
       padding: 0;
     }
@@ -107,14 +116,43 @@ defineExpose({
       --ui-button-shadow-color: var(--ui-color-grey-500);
     }
   }
+}
 
-  .icon {
-    flex: 0 0 auto;
-    width: var(--ui-font-size-text);
-    height: var(--ui-font-size-text);
+// style
+.ui-button.style-shadow {
+  padding: 0 0 4px 0;
+
+  .content {
+    box-shadow: 0 4px var(--ui-button-shadow-color);
+  }
+
+  &.stroke {
+    border: none;
+  }
+
+  &:not(:disabled):active,
+  &.loading {
+    padding-bottom: 0;
+    .content {
+      box-shadow: none;
+    }
   }
 }
 
+.ui-button.style-flat {
+  padding: 0;
+}
+
+// shape
+.ui-button.shape-square {
+  --ui-button-radius: var(--ui-border-radius-2);
+}
+
+.ui-button.shape-circle {
+  --ui-button-radius: 100%;
+}
+
+// type
 .type-primary {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-primary-main);
@@ -165,6 +203,27 @@ defineExpose({
   }
 }
 
+.type-blue {
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-blue-main);
+  --ui-button-shadow-color: var(--ui-color-blue-700);
+
+  &:hover:not(:active, :disabled) {
+    --ui-button-bg-color: var(--ui-color-blue-400);
+  }
+}
+
+.type-purple {
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-purple-main);
+  --ui-button-shadow-color: var(--ui-color-purple-700);
+
+  &:hover:not(:active, :disabled) {
+    --ui-button-bg-color: var(--ui-color-purple-400);
+  }
+}
+
+// size
 .ui-button.size-large {
   height: var(--ui-line-height-3);
 
@@ -176,12 +235,35 @@ defineExpose({
   }
 
   .icon {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
   }
 
   &.icon-only {
     width: var(--ui-line-height-3);
+    .content {
+      padding: 0;
+    }
+  }
+}
+
+.ui-button.size-medium {
+  height: var(--ui-line-height-2);
+
+  .content {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 0 16px;
+    gap: 4px;
+  }
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &.icon-only {
+    width: var(--ui-line-height-2);
     .content {
       padding: 0;
     }
