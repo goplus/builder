@@ -537,6 +537,7 @@ onMounted(() => {
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M12 12.6667V3.33333" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round" />
                 <path
+                  :class="{ arrow: signedInUsername == null || !usedCopilotUsersRef.includes(signedInUsername) }"
                   d="M3.33301 3.33334L8.66634 8L3.33301 12.6667"
                   stroke-width="1.33333"
                   stroke-linecap="round"
@@ -796,6 +797,7 @@ $toColor: #c390ff;
   display: flex;
   justify-content: center;
   .footer-wrapper {
+    z-index: 1;
     display: flex;
     gap: 4px;
     align-items: center;
@@ -809,7 +811,7 @@ $toColor: #c390ff;
 
   .v-line {
     border-right: 1px solid var(--ui-color-grey-400);
-    height: 60%;
+    height: 12px;
   }
 
   .fold {
@@ -820,8 +822,21 @@ $toColor: #c390ff;
     justify-content: center;
     align-items: center;
     transition: transform 0.3s ease-in;
-    stroke: var(--ui-color-grey-700);
+    stroke: var(--ui-color-grey-800);
     cursor: pointer;
+
+    @keyframes nudge {
+      from {
+        transform: translateX(-3px);
+      }
+      to {
+        transform: translateX(1px);
+      }
+    }
+
+    .arrow {
+      animation: nudge 0.5s ease-in-out infinite alternate;
+    }
 
     &.left {
       transform: rotate(180deg);
