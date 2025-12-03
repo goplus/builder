@@ -179,8 +179,8 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 				break
 			}
 
-			ctx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
-			resp, lastErr = currentTransport.Interact(ctx, request)
+			timeoutCtx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
+			resp, lastErr = currentTransport.Interact(timeoutCtx, request)
 			cancel()
 			if lastErr == nil {
 				break
