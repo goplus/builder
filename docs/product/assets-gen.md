@@ -146,9 +146,9 @@ The specific process is as follows:
 2. Generate Default Costume based on Setting
 3. Generate Animation Setting list based on Setting
 4. Generate Animation for each Animation Setting:
-   1. Generate first and last frames based on Animation Setting
-   2. Generate (possibly voiced) animation video based on first and last frames using video generation model
-   3. Construct Costume-group Animation & bound Sound based on video frames
+	1. Generate first and last frames based on Animation Setting
+	2. Generate (possibly voiced) animation video based on first and last frames using video generation model
+	3. Construct Costume-group Animation & bound Sound based on video frames
 
 ## Technical Risks
 
