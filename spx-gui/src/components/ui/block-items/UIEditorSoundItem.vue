@@ -5,10 +5,8 @@
     :active="selectable && selectable.selected"
     :interactive="!!selectable"
   >
-    <div class="sound-container">
-      <div class="sound-player">
-        <slot name="player"></slot>
-      </div>
+    <div class="sound-player">
+      <slot name="player"></slot>
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -33,14 +31,8 @@ withDefaults(
 )
 </script>
 <style scoped lang="scss">
-.sound-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 4px;
-}
 .sound-player {
+  margin: 12px 0 18px;
   height: 36px;
   width: 36px;
 }

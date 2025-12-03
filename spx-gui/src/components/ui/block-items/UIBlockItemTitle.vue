@@ -22,7 +22,6 @@ defineProps<{
   &.medium {
     font-size: 10px;
     line-height: 16px;
-    height: 22px;
   }
 
   &.large {

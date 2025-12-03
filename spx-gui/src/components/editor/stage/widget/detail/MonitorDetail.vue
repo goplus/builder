@@ -157,8 +157,8 @@ function wrapUpdateHandler<Args extends any[]>(
   background: var(--ui-color-grey-300);
 
   :deep(svg) {
-    width: 39px;
-    height: 39px;
+    width: 44px;
+    height: 44px;
   }
 }
 

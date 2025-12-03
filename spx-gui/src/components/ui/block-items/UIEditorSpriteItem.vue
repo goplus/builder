@@ -8,7 +8,7 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type CSSProperties } from 'vue'
 import UIBlockItem, { type DroppableState } from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
@@ -28,17 +28,10 @@ const props = withDefaults(
 
 const selected = computed(() => props.selectable && props.selectable.selected)
 
-const imgStyle = {
+const imgStyle: CSSProperties = {
+  marginBottom: '5px',
   height: '60px',
   width: '60px'
 }
 </script>
-<style scoped lang="scss">
-.ui-editor-sprite-item {
-  gap: 2px;
-}
-.img {
-  height: 60px;
-  width: 60px;
-}
-</style>
+<style scoped lang="scss"></style>
