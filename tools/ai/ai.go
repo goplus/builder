@@ -188,6 +188,10 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 
 			rateGate.Observe(lastErr)
 		}
+		if err := ctx.Err(); err != nil {
+			p.handleError(owner, fmt.Errorf("ai interaction canceled: %w", err))
+			return
+		}
 		if lastErr != nil {
 			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
 			return
@@ -257,7 +261,7 @@ func (p *Player) think(ctx stdContext.Context, owner any, msg string, context ma
 	}
 
 	// Manage history asynchronously.
-	go p.manageHistory()
+	go p.manageHistory(ctx)
 }
 
 // beginInteraction acquires exclusive access for the upcoming interaction sequence.
@@ -322,7 +326,7 @@ func (p *Player) appendHistory(turn Turn) {
 }
 
 // manageHistory checks if archiving is needed and performs it if necessary.
-func (p *Player) manageHistory() {
+func (p *Player) manageHistory(ctx stdContext.Context) {
 	const (
 		archiveTimeout       = 120 * time.Second      // Timeout for archive operation.
 		maxArchiveAttempts   = 3                      // Maximum number of archive attempts.
@@ -344,8 +348,8 @@ func (p *Player) manageHistory() {
 		lastErr  error
 		rateGate rateLimitGate
 	)
-	for range backoffAttempts(stdContext.Background(), maxArchiveAttempts, backoffBase, backoffCap) {
-		waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+	for range backoffAttempts(ctx, maxArchiveAttempts, backoffBase, backoffCap) {
+		waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
 		waitErr := rateGate.Wait(waitCtx)
 		waitCancel()
 		if waitErr != nil {
@@ -353,14 +357,19 @@ func (p *Player) manageHistory() {
 			break
 		}
 
-		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
-		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
+		archiveCtx, cancel := stdContext.WithTimeout(ctx, archiveTimeout)
+		archived, lastErr = transport.Archive(archiveCtx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
 			break
 		}
 
 		rateGate.Observe(lastErr)
+	}
+	if err := ctx.Err(); err != nil {
+		log.Printf("archive history canceled: %v", err)
+		p.cancelArchive()
+		return
 	}
 	if lastErr != nil {
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)
