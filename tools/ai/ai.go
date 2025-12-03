@@ -107,15 +107,15 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 // on command execution results until the AI signals completion (no command) or
 // an [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
-	spx.ExecuteNative(func(owner any) {
-		p.think(owner, msg, context)
+	spx.ExecuteNative(func(ctx stdContext.Context, owner any) {
+		p.think(ctx, owner, msg, context)
 	})
 }
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
 
-func (p *Player) think(owner any, msg string, context map[string]any) {
+func (p *Player) think(ctx stdContext.Context, owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout     = 45 * time.Second       // Timeout for each transport call.
 		maxTransportAttempts = 3                      // Maximum number of transport attempts per call.
@@ -170,8 +170,8 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			lastErr  error
 			rateGate rateLimitGate
 		)
-		for range backoffAttempts(stdContext.Background(), maxTransportAttempts, backoffBase, backoffCap) {
-			waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+		for range backoffAttempts(ctx, maxTransportAttempts, backoffBase, backoffCap) {
+			waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
 			waitErr := rateGate.Wait(waitCtx)
 			waitCancel()
 			if waitErr != nil {
@@ -179,7 +179,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 				break
 			}
 
-			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), transportTimeout)
+			ctx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
 			resp, lastErr = currentTransport.Interact(ctx, request)
 			cancel()
 			if lastErr == nil {
@@ -304,7 +304,7 @@ func (p *Player) handleError(owner any, err error) {
 	p.mu.RUnlock()
 
 	if handler != nil {
-		spx.Execute(owner, func(owner any) {
+		spx.Execute(owner, func(ctx stdContext.Context, owner any) {
 			handler(err)
 		})
 		return
