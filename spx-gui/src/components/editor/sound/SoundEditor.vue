@@ -221,10 +221,10 @@ const handleSave = useMessageHandle(
 
 .opeartions {
   .play-button {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 
   display: flex;

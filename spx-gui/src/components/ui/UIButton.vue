@@ -3,7 +3,7 @@
     ref="btnRef"
     class="ui-button"
     :class="[
-      `style-${style}`,
+      `mode-${mode}`,
       `shape-${shape}`,
       `type-${type}`,
       `size-${size}`,
@@ -28,12 +28,12 @@ import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success' | 'blue' | 'purple'
 export type ButtonSize = 'small' | 'medium' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
-export type ButtonStyle = 'shadow' | 'flat'
+export type ButtonMode = 'shadow' | 'flat'
 export type ButtonShape = 'square' | 'circle'
 
 const props = withDefaults(
   defineProps<{
-    style?: ButtonStyle
+    mode?: ButtonMode
     shape?: ButtonShape
     type?: ButtonType
     size?: ButtonSize
@@ -44,7 +44,7 @@ const props = withDefaults(
     stroke?: boolean
   }>(),
   {
-    style: 'shadow',
+    mode: 'shadow',
     shape: 'square',
     type: 'primary',
     size: 'medium',
@@ -118,8 +118,8 @@ defineExpose({
   }
 }
 
-// style
-.ui-button.style-shadow {
+// mode
+.ui-button.mode-shadow {
   padding: 0 0 4px 0;
 
   .content {
@@ -139,7 +139,7 @@ defineExpose({
   }
 }
 
-.ui-button.style-flat {
+.ui-button.mode-flat {
   padding: 0;
 }
 

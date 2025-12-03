@@ -78,11 +78,11 @@ const colorCssVars = computed(() => {
   transition: transform 0.2s;
   --color: var(--color-main);
   &:hover {
-    transform: scale(1.167);
+    transform: scale(1.127);
     --color: var(--color-400);
   }
   &:active {
-    transform: scale(1.167);
+    transform: scale(1.127);
     --color: var(--color-600);
   }
 }

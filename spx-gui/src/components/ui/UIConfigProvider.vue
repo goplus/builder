@@ -112,6 +112,9 @@ const themeOverrides: GlobalThemeOverrides = {
   Radio: {
     boxShadowFocus: `inset 0 0 0 1px ${uiVariables.color.primary.main}`
   },
+  Switch: {
+    buttonBoxShadow: 'none'
+  },
   Checkbox: {
     boxShadowFocus: 'none'
   },
