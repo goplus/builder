@@ -26,7 +26,7 @@ const props = withDefaults(
   defineProps<{
     type?: ButtonType
     // we can use `<UIIconButton icon="play" />` or `<UIIconButton><SomeCustomIcon /></UIIconButton>`
-    icon: IconType
+    icon?: IconType
     disabled?: boolean
     loading?: boolean
     size?: ButtonSize

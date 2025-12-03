@@ -56,7 +56,7 @@ const formattedArguments = computed(() => {
   try {
     const args = JSON.parse(props.arguments)
     return JSON.stringify(args, null, 2)
-  } catch (e) {
+  } catch {
     return props.arguments
   }
 })
@@ -66,7 +66,7 @@ const formattedResult = computed(() => {
   if (!taskInfo.value.result) return ''
   try {
     return JSON.stringify(taskInfo.value.result, null, 2)
-  } catch (e) {
+  } catch {
     return String(taskInfo.value.result)
   }
 })
@@ -131,7 +131,7 @@ onMounted(() => {
       // Validate arguments JSON
       JSON.parse(props.arguments)
       executeTool()
-    } catch (e) {
+    } catch {
       // Mark task as failed if arguments are invalid
       collector.value.markTaskError(taskInfo.value.id, 'Invalid JSON arguments')
     }

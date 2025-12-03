@@ -56,7 +56,7 @@ const applyPhysicsModeToSprite = wrapUpdateHandler(
 )
 
 function handlePhysicsFlagsChange(checked: string[]) {
-  let checkedSet = new Set()
+  const checkedSet = new Set()
   if (checked.includes(PhysicsFlag.Collision)) {
     checkedSet.add(PhysicsFlag.Collision)
   }

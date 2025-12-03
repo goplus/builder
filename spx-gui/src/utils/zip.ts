@@ -11,10 +11,11 @@ export type ZipOptions = fflate.AsyncZipOptions & {
 }
 
 export function zip(zippable: Zippable, { signal, ...options }: ZipOptions = {}) {
-  return new Promise<Uint8Array>((resolve, reject) => {
+  return new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
     const stopZipping = fflateZip(zippable, options ?? {}, (err, data) => {
       if (err) reject(err)
-      else resolve(data)
+      // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-7.html#support-for---target-es2024-and---lib-es2024
+      else resolve(data as Uint8Array<ArrayBuffer>)
     })
     signal?.addEventListener(
       'abort',
@@ -27,7 +28,9 @@ export function zip(zippable: Zippable, { signal, ...options }: ZipOptions = {})
   })
 }
 
-export type Unzipped = fflate.Unzipped
+export type Unzipped = {
+  [path: string]: Uint8Array<ArrayBuffer>
+}
 export type UnzipOptions = fflate.AsyncUnzipOptions & {
   signal?: AbortSignal
 }
@@ -53,7 +56,8 @@ export function unzip(data: Uint8Array, { signal, ...options }: UnzipOptions = {
       },
       (err, unzipped) => {
         if (err) reject(err)
-        else resolve(unzipped)
+        // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-7.html#support-for---target-es2024-and---lib-es2024
+        else resolve(unzipped as Unzipped)
       }
     )
     signal?.addEventListener(

@@ -26,6 +26,7 @@ export async function getMonaco(lang: Lang) {
   // Now there's no official solution for localization of ESM version Monaco,
   // see details in https://github.com/microsoft/monaco-editor/issues/1514.
   // While it is no big deal as now most UIs (with text) in code-editor are implemented by ourselves in Builder.
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   lang // TODO: Do localization for monaco
   return import('monaco-editor')
 }

@@ -1,7 +1,7 @@
 # All-in-one Dockerfile for building the SPX GUI
 
 ARG GO_BASE_IMAGE=golang:1.24.4
-ARG NODE_BASE_IMAGE=node:20.11.1
+ARG NODE_BASE_IMAGE=node:24.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
 
 ################################################################################
@@ -40,6 +40,7 @@ COPY --from=go-builder /app/spx-gui/src/assets /app/spx-gui/src/assets
 
 ARG NODE_ENV
 
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
 ################################################################################

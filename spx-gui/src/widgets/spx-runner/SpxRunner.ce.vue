@@ -51,7 +51,7 @@ watch(
         project.value.dispose()
         project.value = newProject
         ready.value = true
-      } catch (err) {
+      } catch {
         errorMsg.value = 'loading project fail'
       } finally {
         ready.value = true

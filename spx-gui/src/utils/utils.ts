@@ -422,7 +422,7 @@ export function isCrossOriginUrl(url: string, origin = window.location.origin) {
     const parsedUrl = new URL(url)
     if (parsedUrl.protocol === 'data:') return false // Data URLs are not assumed cross-origin
     return parsedUrl.origin !== origin
-  } catch (e) {
+  } catch {
     // If URL parsing fails (for example relative URL), assume it's not a cross-origin URL
     return false
   }
@@ -477,7 +477,6 @@ export function createResettableObject<T extends object>(getter: () => T): [T, (
 }
 
 /** Helper function for exhaustive checks of discriminated unions in TypeScript. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function assertNever(input: never): never {
   throw new Error(`Unreachable code reached with input: ${input}`)
 }
@@ -498,26 +497,13 @@ export function unicodeSafeSlice(input: string, start: number, end: number = inp
   return codePoints.slice(start, end).join('')
 }
 
-declare global {
-  interface Window {
-    scheduler?: {
-      postTask<T>(
-        callback: () => T,
-        options: { priority: 'user-blocking' | 'user-visible' | 'background'; signal?: AbortSignal }
-      ): Promise<T>
-    }
-  }
-}
-
 /** https://developer.mozilla.org/en-US/docs/Web/API/Prioritized_Task_Scheduling_API#task_priorities */
 export function untilTaskScheduled(
   priority: 'user-blocking' | 'user-visible' | 'background' = 'user-visible',
   signal?: AbortSignal
 ) {
   const startAt = performance.now()
-  // TODO: better fallback for browsers not supporting `window.scheduler.postTask`
-  if (window.scheduler == null) return timeout(0, signal)
-  return window.scheduler.postTask(
+  return scheduler.postTask(
     () => {
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console

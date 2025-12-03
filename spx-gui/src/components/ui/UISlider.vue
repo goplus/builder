@@ -20,8 +20,8 @@ import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    color: 'primary' | 'sound'
-    value: number
+    color?: 'primary' | 'sound'
+    value?: number
   }>(),
   {
     color: 'primary',
