@@ -1,5 +1,6 @@
 import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, Visibility } from './common'
+import type { ProjectSettings } from './project'
 
 export { Visibility }
 
@@ -8,6 +9,8 @@ export enum AssetType {
   Backdrop = 'backdrop',
   Sound = 'sound'
 }
+
+export type AssetSettings = ProjectSettings
 
 export type AssetData = {
   /** Unique identifier */

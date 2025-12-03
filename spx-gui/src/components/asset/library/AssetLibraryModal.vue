@@ -1,64 +1,124 @@
 <template>
   <UISearchableModal
     :radar="{ name: 'Asset library modal', desc: `Modal for choosing ${entityMessage.en}s from the asset library` }"
-    style="width: 1096px"
+    style="width: 928px"
     :visible="props.visible"
-    :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
-    @update:visible="emit('cancelled')"
+    :title="$t(modalTitle)"
+    @update:visible="handleModalClose"
   >
-    <template #input>
-      <UITextInput
-        v-model:value="searchInput"
-        v-radar="{ name: 'Search input', desc: 'Input to search assets' }"
-        class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
-      >
-        <template #prefix><UIIcon class="search-icon" type="search" /></template>
-      </UITextInput>
+    <template v-if="!isGenerating" #input>
+      <UITabRadioGroup v-model:value="libraryType" class="library-type-selector">
+        <UITabRadio :value="LibraryType.Personal">
+          {{ $t(personalLibraryMessage) }}
+        </UITabRadio>
+        <UITabRadio :value="LibraryType.Public">
+          {{ $t({ en: 'Public Library', zh: '公开素材库' }) }}
+        </UITabRadio>
+      </UITabRadioGroup>
     </template>
-    <section class="body">
-      <div class="sider">
-        <UITag
-          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(categoryPersonal)"
-        >
-          {{ $t(categoryPersonal.message) }}
-        </UITag>
-        <UIDivider />
-        <UITag
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UITag>
-      </div>
+
+    <!-- Generator View -->
+    <section v-if="isGenerating" class="generator-body">
+      <SpriteGenerator
+        v-if="props.type === AssetType.Sprite"
+        ref="spriteGeneratorRef"
+        :project="props.project"
+        :settings="generatorSettings"
+        :brief="generateDescription"
+        @generated="handleSpriteGenerated"
+        @hide="handleSpriteGeneratorHide"
+      />
+      <BackdropGenerator
+        v-else-if="props.type === AssetType.Backdrop"
+        :project="props.project"
+        :settings="generatorSettings"
+        :brief="generateDescription"
+        @generated="handleBackdropGenerated"
+      />
+      <SoundGenerator
+        v-else-if="props.type === AssetType.Sound"
+        :project="props.project"
+        :settings="generatorSettings"
+        :brief="generateDescription"
+        @generated="handleSoundGenerated"
+      />
+    </section>
+
+    <!-- Library View -->
+    <section v-else class="body">
       <main class="main">
-        <h3 class="title">{{ $t(category.message) }}</h3>
-        <div
-          v-radar="{
-            name: 'Asset list',
-            desc: `List of ${entityMessage.en}s in the selected category`
-          }"
-          class="content"
-        >
-          <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
-            <!-- fixed asset-list height to keep the layout stable -->
-            <ul class="asset-list" style="height: 436px">
-              <ItemComponent
-                v-for="asset in slotProps.data.data"
-                :key="asset.id"
-                :asset="asset"
-                :selected="isSelected(asset)"
-                @click="handleAssetClick(asset)"
-              />
-            </ul>
-          </ListResultWrapper>
-          <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+        <div v-if="libraryType === LibraryType.Public && !hasSearched" class="search-initial">
+          <form class="search-form" @submit.prevent="handleSearch">
+            <UITextInput
+              v-model:value="searchInput"
+              v-radar="{ name: 'Search input', desc: 'Input to search assets' }"
+              class="search-input"
+              clearable
+              :placeholder="$t({ en: 'Search public assets...', zh: '搜索公开素材...' })"
+            >
+              <template #prefix><UIIcon class="search-icon" type="search" /></template>
+            </UITextInput>
+            <UIButton type="primary" html-type="submit">
+              {{ $t({ en: 'Search', zh: '搜索' }) }}
+            </UIButton>
+          </form>
         </div>
+        <template v-else>
+          <form class="search-bar" @submit.prevent="handleSearch">
+            <UITextInput
+              v-model:value="searchInput"
+              v-radar="{ name: 'Search input', desc: 'Input to search assets' }"
+              class="search-input"
+              clearable
+              :placeholder="$t(searchPlaceholder)"
+            >
+              <template #prefix><UIIcon class="search-icon" type="search" /></template>
+            </UITextInput>
+            <UIButton type="primary" html-type="submit">
+              {{ $t({ en: 'Search', zh: '搜索' }) }}
+            </UIButton>
+          </form>
+          <div
+            v-radar="{
+              name: 'Asset list',
+              desc: `List of ${entityMessage.en}s in the selected category`
+            }"
+            class="content"
+          >
+            <ListResultWrapper :query-ret="queryRet" :height="436">
+              <template #empty>
+                <div class="no-results">
+                  <div class="no-results-content">
+                    <p class="no-results-title">
+                      {{ $t({ en: 'No assets found', zh: '没有找到素材' }) }}
+                    </p>
+                    <p class="no-results-description">
+                      {{ $t({ en: 'Try generating one with AI!', zh: '试试用 AI 生成一个吧！' }) }}
+                    </p>
+                    <div class="generate-form">
+                      <UITextInput v-model:value="generateDescription" class="generate-input" />
+                      <UIButton type="primary" size="medium" @click="handleOpenGenerator">
+                        {{ $t(generateButtonText) }}
+                      </UIButton>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template #default="slotProps">
+                <ul class="asset-list" style="height: 436px">
+                  <ItemComponent
+                    v-for="asset in slotProps.data.data"
+                    :key="asset.id"
+                    :asset="asset"
+                    :selected="isSelected(asset)"
+                    @click="handleAssetClick(asset)"
+                  />
+                </ul>
+              </template>
+            </ListResultWrapper>
+            <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+          </div>
+        </template>
         <footer class="footer">
           <span v-show="selected.length > 0">
             {{
@@ -85,18 +145,40 @@
 
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { UITextInput, UIIcon, UITag, UIPagination, UIButton, UISearchableModal, UIDivider } from '@/components/ui'
+import {
+  UITextInput,
+  UIIcon,
+  UIPagination,
+  UIButton,
+  UISearchableModal,
+  UITabRadioGroup,
+  UITabRadio,
+  useConfirmDialog
+} from '@/components/ui'
 import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
-import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
 import { type Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
+import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel, type AssetSettings } from '@/models/common/asset'
+import type { Sprite } from '@/models/sprite'
+import type { Backdrop } from '@/models/backdrop'
+import type { Sound } from '@/models/sound'
+import { useI18n } from '@/utils/i18n'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
-import { type Category, getAssetCategories, categoryAll } from './category'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import SpriteGenerator from './generators/SpriteGenerator.vue'
+import { type SpriteGeneration } from './generators/SpriteGeneratorModal.vue'
+import BackdropGenerator from './generators/BackdropGenerator.vue'
+import SoundGenerator from './generators/SoundGenerator.vue'
+
+const { t } = useI18n()
+
+enum LibraryType {
+  Personal = 'personal',
+  Public = 'public'
+}
 
 const props = defineProps<{
   type: AssetType
@@ -106,13 +188,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [AssetModel[]]
+  resolved: [Array<AssetModel | SpriteGeneration>]
 }>()
-
-const categories = computed(() => {
-  const categoriesWithoutAll = getAssetCategories(props.type)
-  return [categoryAll, ...categoriesWithoutAll]
-})
 
 const ItemComponent = computed(
   () =>
@@ -131,46 +208,160 @@ const entityMessages = {
 
 const entityMessage = computed(() => entityMessages[props.type])
 
-const searchInput = ref('')
-const keyword = ref('')
-
-// do search (with a delay) when search-input changed
-watch(
-  searchInput,
-  debounce(() => {
-    keyword.value = searchInput.value
-  }, 500)
+const generateButtonText = computed(
+  () =>
+    ({
+      [AssetType.Sprite]: { en: 'Generate Sprite', zh: '生成精灵' },
+      [AssetType.Backdrop]: { en: 'Generate Backdrop', zh: '生成背景' },
+      [AssetType.Sound]: { en: 'Generate Sound', zh: '生成声音' }
+    })[props.type]
 )
 
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `Your ${entityMessage.value.en}s`, zh: `你的${entityMessage.value.zh}` }
+const isGenerating = ref(false)
+
+const baseTitle = computed(
+  () =>
+    ({
+      [AssetType.Sprite]: { en: 'Choose Sprite', zh: '选择精灵' },
+      [AssetType.Backdrop]: { en: 'Choose Backdrop', zh: '选择背景' },
+      [AssetType.Sound]: { en: 'Choose Sound', zh: '选择声音' }
+    })[props.type]
+)
+
+const generatingTitle = computed(
+  () =>
+    ({
+      [AssetType.Sprite]: { en: 'Generate Sprite', zh: '生成精灵' },
+      [AssetType.Backdrop]: { en: 'Generate Backdrop', zh: '生成背景' },
+      [AssetType.Sound]: { en: 'Generate Sound', zh: '生成声音' }
+    })[props.type]
+)
+
+const modalTitle = computed(() => (isGenerating.value ? generatingTitle.value : baseTitle.value))
+
+const generatorSettings = computed<AssetSettings>(() => ({
+  ...props.project.settings,
+  projectDescription: props.project.description ?? props.project.aiDescription ?? null,
+  description: generateDescription.value,
+  category: null
 }))
-const category = ref(categoryAll)
+
+const confirm = useConfirmDialog()
+
+async function handleModalClose(visible: boolean) {
+  if (visible) return
+
+  if (isGenerating.value && props.type === AssetType.Sprite) {
+    try {
+      await confirm({
+        title: t({ en: 'Hide generation?', zh: '收起生成？' }),
+        content: t({
+          en: 'The sprite is being generated. Do you want to hide and continue in the background?',
+          zh: '精灵正在生成中，是否收起并在后台继续？'
+        }),
+        confirmText: t({ en: 'Hide', zh: '收起' }),
+        cancelText: t({ en: 'Discard', zh: '丢弃' })
+      })
+      // User clicked "Hide"
+      handleSpriteGeneratorHide()
+    } catch {
+      // User clicked "Discard" or closed the dialog
+      emit('cancelled')
+    }
+  } else {
+    emit('cancelled')
+  }
+}
+
+function handleOpenGenerator() {
+  isGenerating.value = true
+}
+
+async function handleSpriteGenerated(sprite: Sprite) {
+  props.project.addSprite(sprite)
+  await sprite.autoFit()
+  emit('resolved', [sprite])
+}
+
+const spriteGeneratorRef = ref<InstanceType<typeof SpriteGenerator>>()
+
+function handleSpriteGeneratorHide() {
+  const state = spriteGeneratorRef.value?.getState()
+  if (state == null) return
+  const generation: SpriteGeneration = {
+    type: 'sprite-generation',
+    state
+  }
+  emit('resolved', [generation])
+}
+
+function handleBackdropGenerated(backdrop: Backdrop) {
+  props.project.stage.addBackdrop(backdrop)
+  emit('resolved', [backdrop])
+}
+
+function handleSoundGenerated(sound: Sound) {
+  props.project.addSound(sound)
+  emit('resolved', [sound])
+}
+
+const libraryType = ref(LibraryType.Public)
+const searchInput = ref('')
+const keyword = ref('')
+const hasSearched = ref(false)
+const generateDescription = ref('')
+
+const personalLibraryMessage = computed(() => ({
+  en: `Your ${entityMessage.value.en}s`,
+  zh: `你的${entityMessage.value.zh}`
+}))
+
+const searchPlaceholder = computed(() =>
+  libraryType.value === LibraryType.Personal
+    ? { en: 'Search your assets...', zh: '搜索你的素材...' }
+    : { en: 'Search public assets...', zh: '搜索公开素材...' }
+)
 
 const page = shallowRef(1)
 const pageSize = 18 // 6 * 3
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 watch(
-  () => [keyword.value, category.value],
+  () => [keyword.value, libraryType.value],
   () => (page.value = 1)
+)
+
+// Reset search state when switching library type
+watch(libraryType, () => {
+  searchInput.value = ''
+  keyword.value = ''
+  hasSearched.value = false
+})
+
+// For personal library, auto-search with empty keyword
+watch(
+  libraryType,
+  (type) => {
+    if (type === LibraryType.Personal) {
+      hasSearched.value = true
+    }
+  },
+  { immediate: true }
 )
 
 const queryRet = useQuery(
   () => {
-    const c = category.value.value
-    const cPersonal = categoryPersonal.value.value
+    if (libraryType.value === LibraryType.Public && !hasSearched.value) {
+      return Promise.resolve({ data: [], total: 0 })
+    }
     return listAsset({
       pageSize,
       pageIndex: page.value,
       type: props.type,
       keyword: keyword.value,
       orderBy: 'displayName',
-      category: c === categoryAll.value || c === cPersonal ? undefined : c,
-      owner: c === cPersonal ? undefined : '*',
-      visibility: c === cPersonal ? undefined : Visibility.Public
+      owner: libraryType.value === LibraryType.Personal ? undefined : '*',
+      visibility: libraryType.value === LibraryType.Personal ? undefined : Visibility.Public
     })
   },
   {
@@ -181,10 +372,8 @@ const queryRet = useQuery(
 
 function handleSearch() {
   keyword.value = searchInput.value
-}
-
-function handleSelectCategory(c: Category) {
-  category.value = c
+  hasSearched.value = true
+  generateDescription.value = searchInput.value
 }
 
 const selected = shallowReactive<AssetData[]>([])
@@ -235,54 +424,117 @@ async function handleAssetClick(asset: AssetData) {
 </script>
 
 <style lang="scss" scoped>
+.library-type-selector {
+  margin-left: var(--ui-gap-middle);
+  white-space: nowrap;
+}
+
 .search-input {
   width: 320px;
 }
+
 .search-icon {
   color: var(--ui-color-grey-700);
 }
+
+.generator-body {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
 .body {
   display: flex;
   justify-content: stretch;
 }
-.sider {
-  flex: 0 0 168px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--ui-gap-middle);
-  gap: 12px;
 
-  border-right: 1px solid var(--ui-color-grey-400);
-}
 .main {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
   justify-content: stretch;
 }
-.title {
-  padding: 20px 24px 0;
-  color: var(--ui-color-grey-900);
+
+.search-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 500px;
 }
+
+.search-form {
+  display: flex;
+  gap: var(--ui-gap-middle);
+  align-items: center;
+}
+
+.search-bar {
+  display: flex;
+  gap: var(--ui-gap-middle);
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 12px;
+}
+
 .content {
   padding: 8px 24px 0;
 }
+
 .asset-list {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   align-content: flex-start;
 }
+
 .pagination {
   justify-content: center;
   margin: 36px 0 12px;
 }
+
 .footer {
   padding: 20px 24px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: var(--ui-gap-middle);
+}
+
+.no-results {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 436px;
+  background: var(--ui-color-grey-100);
+  border-radius: var(--ui-border-radius-2);
+}
+
+.no-results-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.no-results-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ui-color-title);
+  margin: 0 0 8px 0;
+}
+
+.no-results-description {
+  font-size: 14px;
+  color: var(--ui-color-grey-700);
+  margin: 0 0 24px 0;
+}
+
+.generate-form {
+  display: flex;
+  gap: var(--ui-gap-middle);
+  align-items: center;
+  justify-content: center;
+}
+
+.generate-input {
+  width: 280px;
 }
 </style>
