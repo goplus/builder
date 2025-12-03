@@ -154,7 +154,7 @@ Asset Generation 是指基于某份 Asset Setting，生成对应 Asset 的过程
 	2. 通过视频生成模型，基于首尾帧生成（可能含配音的）动画视频
 	3. 基于视频截帧构造 Costume-group Animation & 绑定的 Sound
 
-## 一些技术风险
+## 技术风险
 
 ### 生成结果对输入的匹配程度不稳定
 
