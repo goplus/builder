@@ -7,7 +7,6 @@ export function getDefaultValue() {
 <script setup lang="ts">
 import AnglePicker from '@/components/editor/common/AnglePicker.vue'
 import { UINumberInput } from '@/components/ui'
-import { exprForSpxDirection, valueForSpxDirection } from '@/utils/spx'
 
 defineProps<{
   value: number
@@ -25,14 +24,6 @@ function handleValueUpdate(value: number | null) {
 function handleSubmit() {
   emit('submit')
 }
-
-function formatter(value: number | null) {
-  return exprForSpxDirection(value ?? getDefaultValue())
-}
-
-function parser(value: string) {
-  return valueForSpxDirection(value) ?? Number(value)
-}
 </script>
 
 <template>
@@ -47,8 +38,6 @@ function parser(value: string) {
       :max="180"
       :style="{ alignSelf: 'stretch' }"
       autofocus
-      :formatter="formatter"
-      :parser="parser"
       @update:value="handleValueUpdate"
       @keyup.enter="handleSubmit"
     />

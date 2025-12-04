@@ -169,12 +169,6 @@ export function exprForSpxDirection(value: number) {
   return value + ''
 }
 
-export function valueForSpxDirection(name: string): number | null {
-  const direction = specialDirections.find((d) => d.name === name)
-  if (direction != null) return direction.value
-  return null
-}
-
 /** Name for color constructors */
 export type ColorConstructor = 'RGB' | 'RGBA' | 'HSB' | 'HSBA'
 
