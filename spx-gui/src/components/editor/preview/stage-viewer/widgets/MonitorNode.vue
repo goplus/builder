@@ -37,26 +37,29 @@ const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
 const valueTextWidth = ref(0)
 
-async function updateTextWidth() {
-  if (labelTextRef.value == null || valueTextRef.value == null) return
-  labelTextWidth.value = labelTextRef.value.getNode().getWidth()
-  valueTextWidth.value = valueTextRef.value.getNode().getWidth()
-
-  // text change triggers node-size change, we need to trigger transformer update manually.
-  // It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
+// text change triggers node-size change, we need to trigger transformer update manually.
+// It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
+async function triggerTransformerUpdate() {
   props.nodeReadyMap.set(nodeId.value, false)
   await nextTick()
   props.nodeReadyMap.set(nodeId.value, true)
 }
 
-watch(
-  () => props.monitor,
-  () => nextTick().then(updateTextWidth),
-  { deep: true }
-)
+function updateLabelTextWidth() {
+  if (labelTextRef.value == null) return
+  labelTextWidth.value = labelTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
+}
+
+function updateValueTextWidth() {
+  if (valueTextRef.value == null) return
+  valueTextWidth.value = valueTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
+}
 
 onMounted(() => {
-  updateTextWidth()
+  updateLabelTextWidth()
+  updateValueTextWidth()
 
   // Fix wrong zIndex after renaming
   // TODO: get rid of warning when renaming:
@@ -133,6 +136,8 @@ const labelTextConfig = computed<TextConfig>(() => {
   }
 })
 
+watch(labelTextConfig, () => nextTick().then(updateLabelTextWidth))
+
 const labelValueSepConfig = computed<ShapeConfig>(() => {
   return {
     x: paddingX + labelTextWidth.value + labelValueSepGap,
@@ -172,6 +177,8 @@ const valueTextConfig = computed<TextConfig>(() => {
     fill: uiVariables.color.blue.main
   }
 })
+
+watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
