@@ -1,7 +1,7 @@
 <!-- Sound player (only UI) -->
 
 <template>
-  <div class="sound-play" :style="colorCssVars">
+  <div class="sound-play" :class="[`size-${props.size}`]" :style="colorCssVars">
     <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
       <UIIcon class="icon" type="play" />
     </div>
@@ -23,13 +23,21 @@ import { useMessageHandle } from '@/utils/exception'
 import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
 import type { Color } from '@/components/ui/tokens/colors'
 
-const props = defineProps<{
-  playing: boolean
-  progress: number
-  color: Color
-  playHandler: () => Promise<void>
-  loading?: boolean
-}>()
+export type SoundPlayerSize = 'medium' | 'large'
+
+const props = withDefaults(
+  defineProps<{
+    playing: boolean
+    progress: number
+    color: Color
+    playHandler: () => Promise<void>
+    loading?: boolean
+    size?: SoundPlayerSize
+  }>(),
+  {
+    size: 'medium'
+  }
+)
 
 const emit = defineEmits<{
   stop: []
@@ -59,9 +67,35 @@ const colorCssVars = computed(() => {
 
 <style lang="scss" scoped>
 .sound-play {
-  width: 100%;
-  height: 100%;
   position: relative;
+
+  &.size-medium {
+    width: 36px;
+    height: 36px;
+    .play,
+    .stop {
+      &:hover,
+      &:active {
+        transform: scale(1.111);
+      }
+    }
+  }
+
+  &.size-large {
+    width: 48px;
+    height: 48px;
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+    .play,
+    .stop {
+      &:hover,
+      &:active {
+        transform: scale(1.166);
+      }
+    }
+  }
 }
 
 .play,
@@ -78,11 +112,9 @@ const colorCssVars = computed(() => {
   transition: transform 0.2s;
   --color: var(--color-main);
   &:hover {
-    transform: scale(1.127);
     --color: var(--color-400);
   }
   &:active {
-    transform: scale(1.127);
     --color: var(--color-600);
   }
 }
@@ -90,20 +122,11 @@ const colorCssVars = computed(() => {
 .play {
   color: var(--ui-color-grey-100);
   background-color: var(--color);
-
-  .icon {
-    width: 44.444%;
-    height: 44.444%;
-  }
 }
 
 .stop {
   position: relative;
   color: var(--color);
-  .icon {
-    width: 50%;
-    height: 50%;
-  }
 }
 
 .progress {
