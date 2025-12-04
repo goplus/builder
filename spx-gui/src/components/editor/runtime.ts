@@ -25,6 +25,7 @@ export enum RuntimeOutputKind {
 
 export interface RuntimeOutput {
   kind: RuntimeOutputKind
+  /** Timestamp in milliseconds */
   time: number
   message: string
   source?: TextDocumentRange
