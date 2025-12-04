@@ -9,13 +9,11 @@
 
 ```bash
 npm install
-./install-spx.sh
 ```
 
 ## Run the Project in Development Mode
 
 ```bash
-./build-wasm.sh
 npm run dev
 ```
 

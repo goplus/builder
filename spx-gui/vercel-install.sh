@@ -11,4 +11,3 @@ tar -C /usr/local -xzf ./go1.24.4.linux-amd64.tar.gz
 /usr/local/go/bin/go version
 
 npm install
-./install-spx.sh

@@ -25,12 +25,10 @@ FROM ${NODE_BASE_IMAGE} AS frontend-builder
 WORKDIR /app/spx-gui
 
 COPY spx-gui/package.json spx-gui/package-lock.json .
-ARG NPM_CONFIG_REGISTRY
-RUN npm install
-
 COPY spx-gui/public ./public
 COPY spx-gui/install-spx.sh .
-RUN ./install-spx.sh
+ARG NPM_CONFIG_REGISTRY
+RUN npm install
 
 COPY spx-gui .
 COPY docs ../docs
