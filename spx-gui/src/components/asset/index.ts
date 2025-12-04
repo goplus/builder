@@ -23,16 +23,19 @@ import { useEditorCtx } from '../editor/EditorContextProvider.vue'
 import { useCodeEditorCtx, useRenameWarning } from '../editor/code-editor/context'
 import { getResourceIdentifier } from '../editor/code-editor/common'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
+import { type SpriteGeneration, isSpriteGeneration } from './library/generators/SpriteGeneratorModal.vue'
 import AssetSaveModal from './library/AssetSaveModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
 import AssetLibraryManagementModal from './library/management/AssetLibraryManagementModal.vue'
 
+export { isSpriteGeneration, type SpriteGeneration }
+
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    return (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
+    return (await invokeAssetLibraryModal({ project, type })) as Array<T extends AssetType.Sprite ? AssetModel<T> | SpriteGeneration : AssetModel<T>>
   }
 }
 

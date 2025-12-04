@@ -1,5 +1,22 @@
 <template>
+  <UIEmpty v-if="sprite.costumes.length === 0" size="extra-large">
+    {{ $t({ en: 'No costumes', zh: '没有造型' }) }}
+    <!-- <template #op>
+      <UIButton
+        v-radar="{ name: 'Generate costume button', desc: 'Click to generate costume with AI' }"
+        type="boring"
+        size="large"
+        @click="handleGenerateCostume"
+      >
+        <template #icon>
+          <img :src="galleryIcon" />
+        </template>
+        {{ $t({ en: 'Generate costume', zh: '生成造型' }) }}
+      </UIButton>
+    </template> -->
+  </UIEmpty>
   <EditorList
+    v-else
     v-radar="{ name: 'Costumes management', desc: 'Managing costumes of current sprite' }"
     color="sprite"
     resource-type="costume"
@@ -21,6 +38,11 @@
           @click="handleAddFromLocalFile"
           >{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem
         >
+        <!-- <UIMenuItem
+          v-radar="{ name: 'Generate costume option', desc: 'Click to generate costume with AI' }"
+          @click="handleGenerateCostume"
+          >{{ $t({ en: 'Generate costume', zh: '生成造型' }) }}</UIMenuItem
+        > -->
       </UIMenu>
     </template>
     <template #detail>
@@ -62,7 +84,7 @@ export class CostumesEditorState {
 </script>
 
 <script setup lang="ts">
-import { UIMenu, UIMenuItem } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { shiftPath, type PathSegments } from '@/utils/route'
 import type { Sprite } from '@/models/sprite'
@@ -90,6 +112,24 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.spr
   en: 'Failed to add from local file',
   zh: '从本地文件添加失败'
 }).fn
+
+// const generateCostume = useCostumeGeneratorModal()
+// const handleGenerateCostume = useMessageHandle(
+//   async () => {
+//     const settings: AssetSettings = {
+//       ...editorCtx.project.settings,
+//       projectDescription: editorCtx.project.description ?? editorCtx.project.aiDescription ?? null,
+//       description: null,
+//       category: 'other'
+//     }
+//     const costume = await generateCostume(props.sprite, settings)
+//     props.state.select(costume.id)
+//   },
+//   {
+//     en: 'Failed to generate costume',
+//     zh: '生成造型失败'
+//   }
+// ).fn
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {

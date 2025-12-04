@@ -27,6 +27,12 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleProjectSettings">
+              <template #icon><UIIcon type="setting" /></template>
+              {{ $t({ en: 'Project Settings', zh: '项目设置' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
             <UIMenuItem @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
               {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
@@ -152,7 +158,7 @@ import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
 import { showTutorialsEntry } from '@/utils/env'
-import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
+import { usePublishProject, useRemoveProject, useUnpublishProject, useProjectSettingsModal } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -321,6 +327,12 @@ const handleRemoveProject = useMessageHandle(
     router.push('/')
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
+
+const projectSettingsModal = useProjectSettingsModal()
+const handleProjectSettings = useMessageHandle(
+  () => projectSettingsModal(props.project!),
+  { en: 'Failed to open project settings', zh: '打开项目设置失败' }
 ).fn
 
 const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)

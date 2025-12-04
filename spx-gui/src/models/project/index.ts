@@ -11,7 +11,7 @@ import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
-import { Visibility, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData, type ProjectSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -132,8 +132,9 @@ export class Project extends Disposable {
   sounds: Sound[]
   zorder: string[]
 
-  private aiDescription: string | null
+  aiDescription: string | null
   private aiDescriptionHash: string | null
+  settings: ProjectSettings
 
   removeSprite(id: string) {
     const idx = this.sprites.findIndex((s) => s.id === id)
@@ -381,6 +382,11 @@ export class Project extends Disposable {
     this.aiDescription = null
     this.aiDescriptionHash = null
     this.exportGameFilesComputed = computed(() => reactiveThis.exportGameFilesWithoutMemo())
+    this.settings = {
+      artStyle: null,
+      perspective: null,
+      description: null
+    }
     return reactiveThis
   }
 
@@ -401,7 +407,8 @@ export class Project extends Disposable {
       instructions: this.instructions,
       thumbnail: this.thumbnail,
       aiDescription: this.aiDescription,
-      aiDescriptionHash: this.aiDescriptionHash
+      aiDescriptionHash: this.aiDescriptionHash,
+      settings: this.settings
     }
   }
 

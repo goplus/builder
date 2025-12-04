@@ -86,7 +86,7 @@ class SpriteSelector implements IResourceSelector<Sprite> {
       },
       {
         label: { en: 'Choose from asset library', zh: '从素材库选择' },
-        handler: () => addFromAssetLibrary(this.project, AssetType.Sprite)
+        handler: () => addFromAssetLibrary(this.project, AssetType.Sprite) as Promise<Sprite[]>
       }
     ]
   }

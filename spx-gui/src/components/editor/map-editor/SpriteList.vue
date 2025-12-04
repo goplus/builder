@@ -70,7 +70,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sprites = await addAssetFromLibrary(props.project, AssetType.Sprite)
-    handleSpriteClick(sprites[0])
+    handleSpriteClick(sprites[0] as Sprite) // TODO: handle sprite generations
   },
   {
     en: 'Failed to add sprite from asset library',

@@ -6,10 +6,23 @@ import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 import { fromBlob } from '@/models/common/file'
 import { Costume } from '@/models/costume'
+import type { ProjectSettings } from '@/apis/project'
 
 export type PartialAssetData = Pick<AssetData, 'type' | 'files' | 'filesHash'>
 
 export type AssetMetadata = Omit<AssetData, 'files'>
+
+export type SpriteCategory = 'character' | 'prop' | 'other'
+export type BackdropCategory = 'scene' | 'ui' | 'other'
+export type SoundCategory = 'music' | 'effect' | 'voice' | 'other'
+
+export type AssetCategory = SpriteCategory | BackdropCategory | SoundCategory
+
+export type AssetSettings = ProjectSettings & {
+  projectDescription: string | null
+  description: string | null
+  category: AssetCategory | null
+}
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound

@@ -19,13 +19,24 @@
           @click="handleAddFromAssetLibrary"
           >{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem
         >
+        <!-- <UIMenuItem
+          v-radar="{ name: 'Generate with AI', desc: 'Click to generate sprite with AI' }"
+          @click="handleGenerateSprite"
+          >{{ $t({ en: 'Generate with AI', zh: 'AI 生成' }) }}</UIMenuItem
+        > -->
       </UIMenu>
     </template>
     <template #details>
       <PanelList :sortable="{ list: sprites }" @sorted="handleSorted">
-        <UIEmpty v-if="sprites.length === 0" size="medium">
+        <UIEmpty v-if="sprites.length === 0 && spriteGenerations.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
         </UIEmpty>
+        <SpriteGenerationItem
+          v-for="generation in spriteGenerations"
+          :key="generation.state.sprite.id"
+          :generation="generation"
+          @click="handleGenerationClick(generation)"
+        />
         <SpriteItem
           v-for="sprite in sprites"
           :key="sprite.id"
@@ -73,13 +84,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, shallowReactive } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
+import {
+  useAddAssetFromLibrary,
+  useAddSpriteFromLocalFile,
+  isSpriteGeneration as isSpriteGenerationAsset
+} from '@/components/asset'
+import {
+  useSpriteGeneratorModal,
+  isSpriteGeneration,
+  type SpriteGeneration
+} from '@/components/asset/library/generators'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import SpriteItem from '@/components/editor/sprite/SpriteItem.vue'
+import SpriteGenerationItem from '@/components/editor/sprite/SpriteGenerationItem.vue'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
@@ -101,6 +122,7 @@ const editorCtx = useEditorCtx()
 const footerExpanded = ref(false)
 
 const sprites = computed(() => editorCtx.project.sprites)
+const spriteGenerations = shallowReactive<SpriteGeneration[]>([])
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 
@@ -131,14 +153,60 @@ const addAssetFromLibrary = useAddAssetFromLibrary()
 
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
-    const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
-    editorCtx.state.selectSprite(sprites[0].id)
+    const results = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+    for (const result of results) {
+      if (isSpriteGenerationAsset(result)) {
+        spriteGenerations.push(result)
+      }
+    }
   },
   {
     en: 'Failed to add sprite from asset library',
     zh: '从素材库添加失败'
   }
 ).fn
+
+const generateSprite = useSpriteGeneratorModal()
+
+async function doGenerateSprite(savedState?: SpriteGeneration['state']) {
+  const settings = {
+    ...editorCtx.project.settings,
+    projectDescription: editorCtx.project.description ?? editorCtx.project.aiDescription ?? null,
+    category: null
+  }
+  const result = await generateSprite(editorCtx.project, settings, savedState)
+  if (isSpriteGeneration(result)) {
+    // Remove existing generation with same sprite id if resuming
+    if (savedState) {
+      const index = spriteGenerations.findIndex((g) => g.state.sprite.id === savedState.sprite.id)
+      if (index >= 0) {
+        spriteGenerations.splice(index, 1)
+      }
+    }
+    spriteGenerations.push(result)
+  } else {
+    editorCtx.state.selectSprite(result.id)
+  }
+}
+
+// const handleGenerateSprite = useMessageHandle(
+//   async () => {
+//     await doGenerateSprite()
+//   },
+//   {
+//     en: 'Failed to generate sprite',
+//     zh: '生成精灵失败'
+//   }
+// ).fn
+
+function handleGenerationClick(generation: SpriteGeneration) {
+  // Remove the generation from the list and resume
+  const index = spriteGenerations.indexOf(generation)
+  if (index >= 0) {
+    spriteGenerations.splice(index, 1)
+  }
+  doGenerateSprite(generation.state)
+}
 
 const handleSorted = useMessageHandle(
   async (oldIdx: number, newIdx: number) => {
