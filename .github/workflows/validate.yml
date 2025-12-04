@@ -36,9 +36,6 @@ jobs:
       - name: Install Node modules
         run: npm ci --prefer-offline
 
-      - name: Install spx
-        run: ./install-spx.sh
-
       - name: Run Vue TSC
         run: npm run type-check
 

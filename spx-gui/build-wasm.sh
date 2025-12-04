@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "Run this script from 'spx-gui' directory"
+cd "$(dirname "$0")"
 
 # Copy Go wasm_exec.js
 cp -f "$(go env GOROOT)/lib/wasm/wasm_exec.js" src/assets/wasm/wasm_exec.js
-
 
 # Build and copy spxls.wasm and spxls-pkgdata.zip
 ( cd ../tools/spxls && ./build.sh )

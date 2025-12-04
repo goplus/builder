@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "./install-spx.sh",
+    "predev": "./install-spx.sh && ./build-wasm.sh",
     "dev": "vite",
     "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
     "preview": "vite preview",
