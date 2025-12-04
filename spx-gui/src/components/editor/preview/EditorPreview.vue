@@ -98,9 +98,72 @@
   </UICard>
 </template>
 
+<script lang="ts">
+// Check https://github.com/goplus/spx/blob/dev/cmd/igox/main.go for log source
+// TODO: Move these types & functions to ProjectRunner, and emit `log` instead of `console` event
+type SpxLog = {
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+  /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
+  time: string
+  msg: string
+  [key: string]: unknown
+}
+
+function isSpxLog(obj: any): obj is SpxLog {
+  return (
+    obj != null &&
+    typeof obj === 'object' &&
+    typeof obj.level === 'string' &&
+    typeof obj.time === 'string' &&
+    typeof obj.msg === 'string'
+  )
+}
+
+function parseSpxLog(jsonStr: string): SpxLog | null {
+  try {
+    const obj = JSON.parse(jsonStr)
+    if (isSpxLog(obj)) return obj
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+type SpxInfoLog = SpxLog & {
+  level: 'INFO'
+  function: string
+  /** Source file name, e.g., `NiuXiaoQi.spx` */
+  file: string
+  /** Source code line number, starting from 1 */
+  line: number
+}
+
+function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
+  return obj.level === 'INFO'
+}
+
+type SpxPanicLog = SpxLog & {
+  level: 'ERROR'
+  msg: 'panic'
+  /** Panic error message */
+  error: string
+  /** Source file name, e.g., `NiuXiaoQi.spx` */
+  file: string
+  /** Source code line number, starting from 1 */
+  line: number
+  /** Source code column number, starting from 1 */
+  column: number
+}
+
+function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
+  return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
+}
+</script>
+
 <script lang="ts" setup>
+import dayjs from 'dayjs'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
 import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
@@ -168,64 +231,42 @@ function keepRunnerHostVisibleForOverlay() {
 }
 
 function handleConsole(type: 'log' | 'warn', args: unknown[]) {
-  if (type === 'log' && args.length === 1 && typeof args[0] === 'string') {
-    try {
-      const logMsg = JSON.parse(args[0])
-      if (logMsg.level === 'INFO') {
-        appendRuntimeOutput({
-          kind: RuntimeOutputKind.Log,
-          time: logMsg.time,
-          message: logMsg.msg,
-          source: {
-            textDocument: {
-              uri: `file:///${logMsg.file}`
-            },
-            range: {
-              start: { line: logMsg.line, column: 1 },
-              end: { line: logMsg.line, column: 1 }
-            }
-          }
-        })
-        return
-      }
-      if (logMsg.level === 'ERROR' && logMsg.error && logMsg.msg === 'panic') {
-        lastPanicOutput.value = {
-          kind: RuntimeOutputKind.Error,
-          time: logMsg.time,
-          message: `panic: ${logMsg.error}`,
-          source: {
-            textDocument: {
-              uri: `file:///${logMsg.file}`
-            },
-            range: {
-              start: { line: logMsg.line, column: logMsg.column },
-              end: { line: logMsg.line, column: logMsg.column }
-            }
-          }
-        }
-        return
-      }
-    } catch {
-      // fall through to default handling
-    }
-  }
-
-  const message = args.join(' ')
-  if (/^panic: .+ \[recovered\]$/.test(message)) return
-
-  if (
-    type === 'log' &&
-    lastPanicOutput.value != null &&
-    (message === lastPanicOutput.value.message || message === '\t' + lastPanicOutput.value.message)
-  ) {
-    appendRuntimeOutput(lastPanicOutput.value)
-    lastPanicOutput.value = null
-  } else {
+  // Only handle spx logs, which are carried by `console.log`
+  if (type !== 'log' || typeof args[0] !== 'string') return
+  const spxLog = parseSpxLog(args[0])
+  if (spxLog == null) return
+  if (isSpxInfoLog(spxLog)) {
     appendRuntimeOutput({
-      kind: type === 'warn' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
-      time: Date.now(),
-      message
+      kind: RuntimeOutputKind.Log,
+      time: dayjs(spxLog.time).valueOf(),
+      message: spxLog.msg,
+      source: {
+        textDocument: {
+          uri: `file:///${spxLog.file}`
+        },
+        range: {
+          start: { line: spxLog.line, column: 1 },
+          end: { line: spxLog.line, column: 1 }
+        }
+      }
     })
+  } else if (isSpxPanicLog(spxLog)) {
+    appendRuntimeOutput({
+      kind: RuntimeOutputKind.Error,
+      time: dayjs(spxLog.time).valueOf(),
+      message: spxLog.error,
+      source: {
+        textDocument: {
+          uri: `file:///${spxLog.file}`
+        },
+        range: {
+          start: { line: spxLog.line, column: spxLog.column },
+          end: { line: spxLog.line, column: spxLog.column }
+        }
+      }
+    })
+  } else {
+    capture(new Error(`Unknown spx runtime log: ${args[0]}`))
   }
 }
 
