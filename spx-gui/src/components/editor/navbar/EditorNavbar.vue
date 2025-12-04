@@ -21,12 +21,14 @@
               <template #icon><img :src="importProjectSvg" /></template>
               {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
             </UIMenuItem>
-
-            <UIMenuItem @click="handleImportFromScratch">
+            <UIMenuItem class="import-scratch" @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
-              {{ $t({ en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }) }}
+              <span class="item-text">
+                {{ $t({ en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }) }}
+              </span>
+              <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
+              <div class="beta">Beta</div>
             </UIMenuItem>
-
             <UIMenuItem @click="handleImportAssetsFromScratch">
               <template #icon><img :src="importAssetsScratchSvg" /></template>
               {{ $t({ en: 'Import assets from Scratch', zh: '从 Scratch 项目文件导入素材' }) }}
@@ -388,6 +390,26 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 </script>
 
 <style lang="scss" scoped>
+.import-scratch {
+  padding: 8px;
+
+  .item-text {
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  .beta {
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--ui-color-grey-400);
+    background: var(--ui-color-grey-300);
+    padding: 0 8px;
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--ui-color-grey-900);
+  }
+}
+
 .owner-info,
 .project-name {
   overflow: hidden;
