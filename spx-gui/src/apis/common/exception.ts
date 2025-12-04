@@ -30,6 +30,7 @@ export enum ApiExceptionCode {
   errorNotFound = 40400,
   errorTooManyRequests = 42900,
   errorRateLimitExceeded = 42901,
+  errorScratchFeatureNotSupported = 50101,
   errorUnknown = 50000
 }
 
@@ -82,6 +83,10 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorNotFound]: {
     en: 'resource not exist',
     zh: '资源不存在'
+  },
+  [ApiExceptionCode.errorScratchFeatureNotSupported]: {
+    en: 'Some Scratch features are not supported yet',
+    zh: '部分 Scratch 特性暂不支持'
   },
   [ApiExceptionCode.errorUnknown]: {
     en: 'something wrong with the server',

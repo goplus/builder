@@ -164,7 +164,7 @@ const importSelected = useMessageHandle(
   },
   // TODO: more detailed error message
   { en: 'Error encountered when importing assets', zh: '素材导入遇到错误' },
-  { en: 'Assets imprted', zh: '素材导入成功' }
+  { en: 'Assets imported', zh: '素材导入成功' }
 )
 </script>
 
