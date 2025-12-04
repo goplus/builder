@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, shallowRef, watch } from 'vue'
-import { timeout } from '@/utils/utils'
+import { timeout, untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { Project } from '@/models/project'
 import { UIButton, UITooltip } from '@/components/ui'
-import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
+import ProjectRunner from './ProjectRunner.vue'
 
 type RunnerState = 'initial' | 'loading' | 'running'
 
@@ -380,13 +380,18 @@ function closeFullscreen() {
 
 defineExpose({
   async run() {
-    return runnerRef.value?.run()
+    const runner = await untilNotNull(runnerRef)
+    return runner.run()
   },
   async stop() {
-    return runnerRef.value?.stop()
+    const runner = runnerRef.value
+    if (runner == null) throw new Error('Runner is not available')
+    return runner.stop()
   },
   async rerun() {
-    return runnerRef.value?.rerun()
+    const runner = runnerRef.value
+    if (runner == null) throw new Error('Runner is not available')
+    return runner.rerun()
   }
 })
 </script>

@@ -332,6 +332,7 @@ async function runInternal(ctrl: AbortController) {
     if (err instanceof Cancelled) throw err
     capture(err, 'ProjectRunner run game error')
     state.value = { type: 'failed', err }
+    throw err
   }
 }
 

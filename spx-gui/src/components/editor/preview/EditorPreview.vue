@@ -311,13 +311,11 @@ async function executeRun(action: 'run' | 'rerun') {
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
-    if (filesHash != null) lastFilesHash.value = filesHash
-    const nextHash = filesHash ?? lastFilesHash.value
-    if (nextHash != null) editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, nextHash)
-    else editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+    lastFilesHash.value = filesHash
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
   } catch (error) {
-    runnerState.value = 'initial'
-    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    runnerState.value = 'running'
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })
     throw error
   }
 }
