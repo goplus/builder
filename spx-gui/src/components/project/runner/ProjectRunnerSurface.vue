@@ -683,6 +683,7 @@ defineExpose({
     height: 100%;
     max-width: 100%;
     max-height: 100%;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
   }
 }
