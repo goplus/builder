@@ -163,6 +163,10 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/docs/api.vue')
   },
   {
+    path: '/ui-design',
+    component: () => import('@/pages/ui-design/index.vue')
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/pages/404/index.vue')
   }

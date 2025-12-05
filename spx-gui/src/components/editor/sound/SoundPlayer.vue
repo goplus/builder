@@ -7,6 +7,7 @@
     :color="color"
     :play-handler="handlePlay"
     :loading="loading"
+    :size="size"
     @stop="stop"
   />
 </template>
@@ -15,11 +16,12 @@
 import { computed, onUnmounted, reactive, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import type { Color } from '@/components/ui'
-import DumbSoundPlayer from './DumbSoundPlayer.vue'
+import DumbSoundPlayer, { type SoundPlayerSize } from './DumbSoundPlayer.vue'
 
 const props = defineProps<{
   src: string | null
   color: Color
+  size?: SoundPlayerSize
 }>()
 
 type Playing = {

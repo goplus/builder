@@ -1,7 +1,7 @@
 <!-- Sound player for given audio blob, based on `SoundPlayer` -->
 
 <template>
-  <SoundPlayer :src="src" :color="color" />
+  <SoundPlayer :src="src" :color="color" size="large" />
 </template>
 
 <script setup lang="ts">

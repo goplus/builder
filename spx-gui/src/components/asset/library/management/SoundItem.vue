@@ -24,7 +24,7 @@ const { formattedDuration } = useAudioDuration(() => {
 <template>
   <UISoundItem :audio-src="audioSrc" :name="name" :duration="formattedDuration" :selectable="{ selected }">
     <template #player>
-      <SoundPlayer color="primary" :src="audioSrc" />
+      <SoundPlayer color="primary" :src="audioSrc" size="large" />
     </template>
     <slot></slot>
   </UISoundItem>

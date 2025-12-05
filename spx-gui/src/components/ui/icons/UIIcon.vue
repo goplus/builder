@@ -62,6 +62,8 @@ import question from './question.svg?raw'
 import setting from './setting.svg?raw'
 import undo from './undo.svg?raw'
 import redo from './redo.svg?raw'
+import localFile from './local-file.svg?raw'
+import assetLibrary from './asset-library.svg?raw'
 
 const typeIconMap = {
   file,
@@ -120,7 +122,9 @@ const typeIconMap = {
   question,
   setting,
   undo,
-  redo
+  redo,
+  localFile,
+  assetLibrary
 }
 
 export type Type = keyof typeof typeIconMap

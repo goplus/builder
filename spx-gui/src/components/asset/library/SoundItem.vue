@@ -1,7 +1,7 @@
 <template>
   <UISoundItem :selectable="{ selected }" :duration="formattedDuration" :name="asset.displayName">
     <template #player>
-      <SoundPlayer :src="audioSrc" color="primary" />
+      <SoundPlayer :src="audioSrc" color="primary" size="large" />
     </template>
     <UICornerIcon v-show="selected" type="check" />
   </UISoundItem>
