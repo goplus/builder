@@ -1,7 +1,7 @@
 <template>
   <UIMenuItem @click="handleNewProject">
     <template #icon><img :src="newSvg" /></template>
-    {{ $t({ en: 'New project', zh: '新建项目' }) }}
+    {{ $t({ en: 'New project...', zh: '新建项目...' }) }}
   </UIMenuItem>
 </template>
 
