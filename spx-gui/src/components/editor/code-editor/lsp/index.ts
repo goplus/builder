@@ -16,9 +16,9 @@ import {
   containsPosition,
   type InputSlot
 } from '../common'
-import { Spxlc, type IConnection, ResponseError } from './spxls/client'
+import { XGoLanguageClient, type IConnection, ResponseError } from './spxls/client'
 import type { Files as SpxlsFiles, RequestMessage, ResponseMessage, NotificationMessage } from './spxls'
-import { spxGetDefinitions, spxGetInputSlots, spxRenameResources } from './spxls/commands'
+import { xgoGetInputSlots, xgoRenameResources } from './spxls/commands'
 import {
   type CompletionItem,
   isDocumentLinkForResourceReference,
@@ -149,46 +149,46 @@ export class SpxLSPClient extends Disposable {
     this.isFilesStale.value = false
   }
 
-  private spxlcRef = shallowRef<Spxlc | null>(null)
+  private lcRef = shallowRef<XGoLanguageClient | null>(null)
   private activeSpans = new Map<number, Sentry.Span>()
 
   private async prepareRequest() {
-    const [spxlc] = await Promise.all([
-      untilNotNull(this.spxlcRef),
+    const [lc] = await Promise.all([
+      untilNotNull(this.lcRef),
       // Typically requests are triggered earlier than file-loading:
       // * file-loading: editor-event -> model-update -> file-loading
       // * request: editor-event -> request
       // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
       timeout(0).then(() => until(() => !this.isFilesStale.value))
     ])
-    return spxlc
+    return lc
   }
 
   init() {
     this.connection = new WorkerConnection()
     this.addDisposer(watchEffect((cleanUp) => this.loadFiles(getCleanupSignal(cleanUp))))
-    this.spxlcRef.value = new Spxlc(this.connection)
+    this.lcRef.value = new XGoLanguageClient(this.connection)
 
     // Register handler for telemetry event notifications
-    this.spxlcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
+    this.lcRef.value.onNotification(lsp.TelemetryEventNotification.method, (params) => {
       this.handleTelemetryEventNotification(params)
     })
   }
 
   dispose() {
-    this.spxlcRef.value?.dispose()
+    this.lcRef.value?.dispose()
     this.connection?.dispose()
     super.dispose()
   }
 
   /** Do LSP request, with cancellation and tracing. */
   private async request<T>({ signal, traceOptions }: RequestContext, method: string, params: any): Promise<T> {
-    const spxlc = await this.prepareRequest()
+    const lc = await this.prepareRequest()
     return tracedRequest(
       method,
       async (span: Sentry.Span) => {
         let unlisten: Disposer | undefined
-        const ongoingReq = spxlc.request<T>(method, params)
+        const ongoingReq = lc.request<T>(method, params)
 
         // Store the span immediately when request is created
         const requestId = ongoingReq.id
@@ -219,10 +219,10 @@ export class SpxLSPClient extends Disposable {
   }
 
   private async cancelRequest(id: number) {
-    const spxlc = await untilNotNull(this.spxlcRef)
+    const lc = await untilNotNull(this.lcRef)
     // The method `$/cancelRequest` is defined in https://github.com/microsoft/vscode-languageserver-node/blob/4c20197acf4c499345a18e79945e706345cbc50f/protocol/src/common/protocol.%24.ts#L46-L58 ,
     // while not exported by package `vscode-languageserver-protocol`.
-    spxlc.notify('$/cancelRequest', { id })
+    lc.notify('$/cancelRequest', { id })
   }
 
   private async executeCommand<A extends any[], R>(ctx: RequestContext, command: string, ...args: A): Promise<R> {
@@ -232,35 +232,24 @@ export class SpxLSPClient extends Disposable {
     })
   }
 
-  async workspaceExecuteCommandSpxGetDefinitions(
+  async workspaceExecuteCommandXGoRenameResources(
     ctx: RequestContext,
-    ...params: spxGetDefinitions.Arguments
-  ): Promise<spxGetDefinitions.Result> {
-    return this.executeCommand<spxGetDefinitions.Arguments, spxGetDefinitions.Result>(
+    ...params: xgoRenameResources.Arguments
+  ): Promise<xgoRenameResources.Result> {
+    return this.executeCommand<xgoRenameResources.Arguments, xgoRenameResources.Result>(
       ctx,
-      spxGetDefinitions.command,
+      xgoRenameResources.command,
       ...params
     )
   }
 
-  async workspaceExecuteCommandSpxRenameResources(
+  async workspaceExecuteCommandXGoGetInputSlots(
     ctx: RequestContext,
-    ...params: spxRenameResources.Arguments
-  ): Promise<spxRenameResources.Result> {
-    return this.executeCommand<spxRenameResources.Arguments, spxRenameResources.Result>(
+    ...params: xgoGetInputSlots.Arguments
+  ): Promise<xgoGetInputSlots.Result> {
+    return this.executeCommand<xgoGetInputSlots.Arguments, xgoGetInputSlots.Result>(
       ctx,
-      spxRenameResources.command,
-      ...params
-    )
-  }
-
-  async workspaceExecuteCommandSpxGetInputSlots(
-    ctx: RequestContext,
-    ...params: spxGetInputSlots.Arguments
-  ): Promise<spxGetInputSlots.Result> {
-    return this.executeCommand<spxGetInputSlots.Arguments, spxGetInputSlots.Result>(
-      ctx,
-      spxGetInputSlots.command,
+      xgoGetInputSlots.command,
       ...params
     )
   }
@@ -426,7 +415,7 @@ export class SpxLSPClient extends Disposable {
   }
 
   async getInputSlots(ctx: RequestContext, textDocument: TextDocumentIdentifier): Promise<InputSlot[]> {
-    const result = await this.workspaceExecuteCommandSpxGetInputSlots(ctx, { textDocument })
+    const result = await this.workspaceExecuteCommandXGoGetInputSlots(ctx, { textDocument })
     if (result == null) return []
     return result.map((item) => ({
       ...item,

@@ -1091,7 +1091,7 @@ export class CodeEditor extends Disposable {
 
   /** Update code for resource renaming, should be called before model name update */
   async renameResource(resource: ResourceIdentifier, newName: string) {
-    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({}, { resource, newName })
+    const edit = await this.lspClient.workspaceExecuteCommandXGoRenameResources({}, { resource, newName })
     if (edit == null) return
     this.applyWorkspaceEdit(edit)
   }
