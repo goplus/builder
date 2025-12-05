@@ -417,7 +417,8 @@ defineExpose({
 <style lang="scss" scoped>
 .iframe-container {
   position: relative;
-  aspect-ratio: 4 / 3;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
