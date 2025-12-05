@@ -57,7 +57,7 @@ export class CompletionController extends Emitter<{
   private completionMgr = new TaskManager(async (signal) => {
     if (this.provider == null) return null
     const { activeTextDocument: textDocument, cursorPosition: position } = this.ui
-    if (textDocument == null || position == null) throw new Error('No active text document or cursor position')
+    if (textDocument == null || position == null) return null
     this.filterPositionRef.value = position
     const word = textDocument.getWordAtPosition(position)
     const wordStart = word != null ? { line: position.line, column: word.startColumn } : position

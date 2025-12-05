@@ -35,7 +35,7 @@ export class InputHelperController extends Disposable {
     const provider = this.providerRef.value
     if (provider == null) return []
     const { activeTextDocument: textDocument } = this.ui
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return []
     const items = await provider.provideInputSlots({ textDocument, signal })
     return items.map<InternalInputSlot>((item, i) => ({ ...item, id: i + '' }))
   }, true)
