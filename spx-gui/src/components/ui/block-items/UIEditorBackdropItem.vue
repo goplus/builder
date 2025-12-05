@@ -30,13 +30,11 @@ withDefaults(
 </script>
 <style scoped lang="scss">
 .img-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 12px 0 14px;
 }
 .img {
   width: 52px;
   height: 39px;
+  border-radius: 4px;
 }
 </style>

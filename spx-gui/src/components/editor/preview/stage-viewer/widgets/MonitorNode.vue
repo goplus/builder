@@ -2,7 +2,8 @@
   <v-group :config="groupConfig" @dragend="handleDragEnd" @transformend="handleTransformed" @click="handleClick">
     <v-rect :config="rectConfig" />
     <v-text ref="labelTextRef" :config="labelTextConfig" />
-    <v-rect :config="valueRectConfig" />
+    <v-shape :config="labelValueSepConfig" />
+    <v-rect :config="valueBgConfig" />
     <v-text ref="valueTextRef" :config="valueTextConfig" />
   </v-group>
 </template>
@@ -12,6 +13,7 @@ import type { KonvaEventObject } from 'konva/lib/Node'
 import type { TextConfig, Text } from 'konva/lib/shapes/Text'
 import type { RectConfig } from 'konva/lib/shapes/Rect'
 import type { GroupConfig } from 'konva/lib/Group'
+import type { ShapeConfig } from 'konva/lib/Shape'
 import type { Action } from '@/models/project'
 import type { Size } from '@/models/common'
 import { round } from '@/utils/utils'
@@ -35,26 +37,29 @@ const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
 const valueTextWidth = ref(0)
 
-async function updateTextWidth() {
-  if (labelTextRef.value == null || valueTextRef.value == null) return
-  labelTextWidth.value = labelTextRef.value.getNode().getWidth()
-  valueTextWidth.value = valueTextRef.value.getNode().getWidth()
-
-  // text change triggers node-size change, we need to trigger transformer update manually.
-  // It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
+// text change triggers node-size change, we need to trigger transformer update manually.
+// It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
+async function triggerTransformerUpdate() {
   props.nodeReadyMap.set(nodeId.value, false)
   await nextTick()
   props.nodeReadyMap.set(nodeId.value, true)
 }
 
-watch(
-  () => props.monitor,
-  () => nextTick().then(updateTextWidth),
-  { deep: true }
-)
+function updateLabelTextWidth() {
+  if (labelTextRef.value == null) return
+  labelTextWidth.value = labelTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
+}
+
+function updateValueTextWidth() {
+  if (valueTextRef.value == null) return
+  valueTextWidth.value = valueTextRef.value.getNode().getWidth()
+  triggerTransformerUpdate()
+}
 
 onMounted(() => {
-  updateTextWidth()
+  updateLabelTextWidth()
+  updateValueTextWidth()
 
   // Fix wrong zIndex after renaming
   // TODO: get rid of warning when renaming:
@@ -82,15 +87,13 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
   })
 }
 
-const paddingX = [6, 2] as const // px
+const paddingX = 6 // px
 const paddingY = 5 // px
-const valuePaddingX = 8 // px
-const valuePaddingY = 3 // px
 const fontSize = 12 // px
 const lineHeight = 1.5 // ratio
-const labelValueGap = 4 // px
-
-const valueWidth = computed(() => valueTextWidth.value + valuePaddingX * 2)
+const labelValueSepWidth = 13 // px
+const labelValueSepGap = 2 // px, gap between [label, sep, value]
+const height = fontSize * lineHeight + paddingY * 2
 
 const groupConfig = computed<GroupConfig>(() => {
   const { visible, x, y, size } = props.monitor
@@ -106,13 +109,19 @@ const groupConfig = computed<GroupConfig>(() => {
 })
 
 const rectConfig = computed<RectConfig>(() => {
-  const width = paddingX[0] + labelTextWidth.value + labelValueGap + valueWidth.value + paddingX[1]
-  const height = fontSize * lineHeight + paddingY * 2
+  const width =
+    paddingX +
+    labelTextWidth.value +
+    labelValueSepGap +
+    labelValueSepWidth +
+    labelValueSepGap +
+    valueTextWidth.value +
+    paddingX
   return {
     width,
     height,
-    fill: uiVariables.color.grey[100],
-    cornerRadius: height / 2
+    fill: uiVariables.color.blue.main,
+    cornerRadius: 8
   }
 })
 
@@ -120,22 +129,41 @@ const labelTextConfig = computed<TextConfig>(() => {
   const { label } = props.monitor
   return {
     text: label,
-    x: paddingX[0],
+    x: paddingX,
     y: paddingY,
     lineHeight,
-    fill: uiVariables.color.grey[1000]
+    fill: uiVariables.color.grey[100]
   }
 })
 
-const valueRectConfig = computed<RectConfig>(() => {
-  const height = fontSize * lineHeight + valuePaddingY * 2
+watch(labelTextConfig, () => nextTick().then(updateLabelTextWidth))
+
+const labelValueSepConfig = computed<ShapeConfig>(() => {
   return {
-    x: paddingX[0] + labelTextWidth.value + labelValueGap,
-    y: paddingY - valuePaddingY,
-    width: valueWidth.value,
+    x: paddingX + labelTextWidth.value + labelValueSepGap,
+    y: 0,
+    sceneFunc: function (context, shape) {
+      // Draw a triangle as separator
+      context.beginPath()
+      context.moveTo(labelValueSepWidth, 0)
+      context.lineTo(labelValueSepWidth, height)
+      context.lineTo(0, height)
+      context.closePath()
+      context.fillStrokeShape(shape)
+    },
+    fill: uiVariables.color.turquoise[200]
+  }
+})
+
+const valueBgConfig = computed<RectConfig>(() => {
+  const width = labelValueSepGap + valueTextWidth.value + paddingX
+  return {
+    x: paddingX + labelTextWidth.value + labelValueSepGap + labelValueSepWidth,
+    y: 0,
+    width,
     height,
-    fill: uiVariables.color.blue.main,
-    cornerRadius: height / 2
+    fill: uiVariables.color.turquoise[200],
+    cornerRadius: [0, 8, 8, 0]
   }
 })
 
@@ -143,12 +171,14 @@ const valueTextConfig = computed<TextConfig>(() => {
   const { variableName } = props.monitor
   return {
     text: variableName === '' ? '   ' : `{${variableName}}`,
-    x: paddingX[0] + labelTextWidth.value + labelValueGap + valuePaddingX,
+    x: paddingX + labelTextWidth.value + labelValueSepGap + labelValueSepWidth + labelValueSepGap,
     y: paddingY,
     lineHeight,
-    fill: uiVariables.color.grey[100]
+    fill: uiVariables.color.blue.main
   }
 })
+
+watch(valueTextConfig, () => nextTick().then(updateValueTextWidth))
 
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {

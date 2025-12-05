@@ -27,11 +27,11 @@ withDefaults(
 </script>
 <style scoped lang="scss">
 .icon-container {
-  margin: 14px 0 16px;
-  width: 36px;
-  height: 36px;
+  margin: 12px 0 14px;
+  width: 40px;
+  height: 40px;
 
-  :deep(svg) {
+  :deep(> *) {
     width: 100%;
     height: 100%;
   }
