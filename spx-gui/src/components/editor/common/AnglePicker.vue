@@ -35,7 +35,7 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
       v-for="direction in specialDirections"
       :key="direction.name"
       class="text"
-      :class="[direction.name, { active: modelValue === direction.value }]"
+      :class="[direction.name.toLowerCase(), { active: modelValue === direction.value }]"
       @click="modelValue = direction.value"
       >{{ direction.name }}</span
     >
@@ -151,25 +151,26 @@ watch(angle, (v) => (modelValue.value = nomalizeDegree(v)))
   align-self: center;
 }
 
-.Up {
+.up {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
 }
 
-.Down {
+.down {
   grid-column: 2;
   grid-row: 3;
   justify-self: center;
 }
 
-.Left {
+.left {
   grid-column: 1;
   grid-row: 2;
   align-self: center;
+  justify-self: right;
 }
 
-.Right {
+.right {
   grid-column: 3;
   grid-row: 2;
   align-self: center;

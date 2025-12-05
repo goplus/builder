@@ -24,14 +24,14 @@
             <UIMenuItem class="import-scratch" @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
               <span class="item-text">
-                {{ $t({ en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }) }}
+                {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
               </span>
               <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
               <div class="beta">Beta</div>
             </UIMenuItem>
             <UIMenuItem @click="handleImportAssetsFromScratch">
               <template #icon><img :src="importAssetsScratchSvg" /></template>
-              {{ $t({ en: 'Import assets from Scratch', zh: '从 Scratch 项目文件导入素材' }) }}
+              {{ $t({ en: 'Import assets from Scratch...', zh: '从 Scratch 项目文件导入素材...' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
@@ -43,7 +43,7 @@
           <UIMenuGroup :disabled="project == null || !isOnline">
             <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
               <template #icon><img :src="publishSvg" /></template>
-              {{ $t({ en: 'Publish project', zh: '发布项目' }) }}
+              {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
             </UIMenuItem>
             <UIMenuItem
               v-if="canManageProject && project?.visibility === Visibility.Public"
@@ -60,7 +60,7 @@
           <UIMenuGroup v-if="canManageProject" :disabled="project == null">
             <UIMenuItem @click="handleRemoveProject">
               <template #icon><img :src="removeProjectSvg" /></template>
-              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+              {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
             </UIMenuItem>
           </UIMenuGroup>
         </UIMenu>
@@ -399,6 +399,7 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 
   .beta {
+    margin-left: 24px;
     height: 20px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-400);
