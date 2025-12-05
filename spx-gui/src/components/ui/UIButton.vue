@@ -97,7 +97,7 @@ defineExpose({
     background-color: var(--ui-button-bg-color);
   }
 
-  &.stroke {
+  &.stroke .content {
     border: 1px solid var(--ui-button-stroke-color);
   }
 
@@ -119,15 +119,11 @@ defineExpose({
 }
 
 // mode
-.ui-button.mode-shadow {
+.mode-shadow {
   padding: 0 0 4px 0;
 
   .content {
     box-shadow: 0 4px var(--ui-button-shadow-color);
-  }
-
-  &.stroke {
-    border: none;
   }
 
   &:not(:disabled):active,
@@ -139,16 +135,16 @@ defineExpose({
   }
 }
 
-.ui-button.mode-flat {
+.mode-flat {
   padding: 0;
 }
 
 // shape
-.ui-button.shape-square {
+.shape-square {
   --ui-button-radius: var(--ui-border-radius-2);
 }
 
-.ui-button.shape-circle {
+.shape-circle {
   --ui-button-radius: 100%;
 }
 
@@ -224,7 +220,7 @@ defineExpose({
 }
 
 // size
-.ui-button.size-large {
+.size-large {
   height: var(--ui-line-height-3);
 
   .content {
@@ -239,6 +235,14 @@ defineExpose({
     height: 18px;
   }
 
+  &.mode-flat,
+  &.stroke {
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
   &.icon-only {
     width: var(--ui-line-height-3);
     .content {
@@ -247,7 +251,7 @@ defineExpose({
   }
 }
 
-.ui-button.size-medium {
+.size-medium {
   height: var(--ui-line-height-2);
 
   .content {
@@ -262,6 +266,14 @@ defineExpose({
     height: 14px;
   }
 
+  &.mode-flat,
+  &.stroke {
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
   &.icon-only {
     width: var(--ui-line-height-2);
     .content {
@@ -270,7 +282,7 @@ defineExpose({
   }
 }
 
-.ui-button.size-small {
+.size-small {
   height: var(--ui-line-height-1);
 
   .content {

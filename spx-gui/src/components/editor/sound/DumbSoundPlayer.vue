@@ -72,13 +72,6 @@ const colorCssVars = computed(() => {
   &.size-medium {
     width: 36px;
     height: 36px;
-    .play,
-    .stop {
-      &:hover,
-      &:active {
-        transform: scale(1.111);
-      }
-    }
   }
 
   &.size-large {
@@ -87,13 +80,6 @@ const colorCssVars = computed(() => {
     .icon {
       width: 20px;
       height: 20px;
-    }
-    .play,
-    .stop {
-      &:hover,
-      &:active {
-        transform: scale(1.166);
-      }
     }
   }
 }
@@ -112,9 +98,11 @@ const colorCssVars = computed(() => {
   transition: transform 0.2s;
   --color: var(--color-main);
   &:hover {
+    transform: scale(1.15);
     --color: var(--color-400);
   }
   &:active {
+    transform: scale(1.15);
     --color: var(--color-600);
   }
 }
