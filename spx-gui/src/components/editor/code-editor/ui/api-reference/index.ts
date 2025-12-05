@@ -24,9 +24,9 @@ export class APIReferenceController extends Disposable {
 
   private itemsMgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (provider == null) throw new Error('No provider registered')
+    if (provider == null) return null
     const { activeTextDocument: textDocument } = this.ui
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return null
     return provider.provideAPIReference({ textDocument, signal })
   }, true)
 

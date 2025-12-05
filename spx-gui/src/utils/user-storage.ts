@@ -35,6 +35,7 @@ function userStorageRef<T>(key: string, initialValue: T, storage: IStorage = loc
   const counter = ref(0)
   return computed<T>({
     get() {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       counter.value
       const currentScope = scope.value
       const exportedValue = storage.getItem(key)

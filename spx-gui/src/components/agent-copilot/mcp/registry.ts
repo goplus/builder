@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { ToolSchema } from '@modelcontextprotocol/sdk/types.js'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ToolInputSchema = ToolSchema.shape.inputSchema
 type ToolInput = z.infer<typeof ToolInputSchema>
 

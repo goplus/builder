@@ -119,6 +119,7 @@ import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
 import { type LocaleMessage } from '@/utils/i18n'
 import { ActionException, Cancelled } from '@/utils/exception'
 import { getCleanupSignal } from '@/utils/disposable'
+import { untilTaskScheduled } from '@/utils/utils'
 import { packageSpx } from '@/utils/spx'
 import { UIError } from '@/components/ui'
 import { mainCategories, stringifyDefinitionId, subCategories } from '../../common'
@@ -131,6 +132,7 @@ import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
 import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
+import { useRegisterUpdateRouteLoaded } from '@/utils/route-loading'
 
 const props = defineProps<{
   controller: APIReferenceController
@@ -148,6 +150,11 @@ watch(
     )
   }
 )
+
+const loaded = ref(false)
+// APIReferenceUI internally delays rendering of some data, which causes dependent modules to not work properly (e.g., tutorial)
+// Register a provider with PageLoaded to notify dependent modules that APIReferenceUI has finished loading
+useRegisterUpdateRouteLoaded(loaded)
 
 const err = computed(() => {
   const err = props.controller.error
@@ -176,16 +183,15 @@ const categoriesComputed = computed(() => {
 // Initially display only items of the first category to improve rendering performance. After a delay, display all items.
 // Delay is applied only for the first update (from empty to non-empty).
 const categoriesForItems = shallowRef(categoriesComputed.value)
-watch(categoriesComputed, (categories, _, onCleanUp) => {
+watch(categoriesComputed, async (categories, _, onCleanUp) => {
   if (categoriesForItems.value.length > 0) {
     categoriesForItems.value = categories
     return
   }
   categoriesForItems.value = categories.slice(0, 1)
-  const id = requestIdleCallback(() => {
-    categoriesForItems.value = categories
-  })
-  onCleanUp(() => cancelIdleCallback(id))
+  await untilTaskScheduled('background', getCleanupSignal(onCleanUp))
+  categoriesForItems.value = categories
+  loaded.value = true
 })
 
 const activeCategoryIdRef = ref<string | null>(null)

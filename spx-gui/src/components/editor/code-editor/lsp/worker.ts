@@ -10,7 +10,7 @@ declare const self: DedicatedWorkerGlobalScope
 import '@/assets/wasm/wasm_exec.js'
 import spxlsWasmUrl from '@/assets/wasm/spxls.wasm?url'
 import spxlsPkgdataZipUrl from '@/assets/wasm/spxls-pkgdata.zip?url'
-import type { Files, Message, NotificationMessage, RequestMessage, ResponseMessage, Spxls } from './spxls'
+import type { Files, Message, NotificationMessage, RequestMessage, ResponseMessage, XGoLanguageServer } from './spxls'
 
 /** Message for files synchronization */
 export type FilesMessage = {
@@ -50,12 +50,12 @@ type LSState =
   | {
       state: 'starting'
       startAt: number
-      lsPromise: Promise<Spxls>
+      lsPromise: Promise<XGoLanguageServer>
     }
   | {
       state: 'running'
       startAt: number
-      ls: Spxls
+      ls: XGoLanguageServer
     }
   | {
       state: 'stopped'
@@ -65,7 +65,7 @@ type LSState =
 let files: Files = {}
 let lsState: LSState
 
-async function newLS(onStopped: () => void): Promise<Spxls> {
+async function newLS(onStopped: () => void): Promise<XGoLanguageServer> {
   const go = new Go()
   const [wasmResp, spxlsPkgdataZipResp] = await Promise.all([fetch(spxlsWasmUrl), fetch(spxlsPkgdataZipUrl)])
   const { instance } = await WebAssembly.instantiateStreaming(wasmResp, go.importObject)
@@ -76,7 +76,7 @@ async function newLS(onStopped: () => void): Promise<Spxls> {
   SetCustomPkgdataZip(new Uint8Array(spxlsPkgdataZip))
   SetClassfileAutoImportedPackages('spx', { ai: 'github.com/goplus/builder/tools/ai' })
 
-  const ls = NewSpxls(
+  const ls = NewXGoLanguageServer(
     () => files,
     (message) => scope.postMessage({ type: 'lsp', message })
   )
@@ -85,7 +85,7 @@ async function newLS(onStopped: () => void): Promise<Spxls> {
 }
 
 function startLS() {
-  function onLSStarted(ls: Spxls) {
+  function onLSStarted(ls: XGoLanguageServer) {
     lsState = {
       state: 'running',
       startAt: lsState.startAt,

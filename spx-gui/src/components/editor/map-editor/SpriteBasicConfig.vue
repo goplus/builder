@@ -3,33 +3,37 @@ import { computed } from 'vue'
 
 import type { Project } from '@/models/project'
 import { PhysicsMode, type Sprite } from '@/models/sprite'
-import { useRenameSprite } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
 import SpritePhysics from '@/components/editor/common/config/sprite/SpritePhysics.vue'
-import AssetName from '@/components/asset/AssetName.vue'
-import { UIIcon, useModal } from '@/components/ui'
+import { UIIcon, UITooltip, useModal } from '@/components/ui'
 import SpriteCollisionEditorModal from '../sprite/SpriteCollisionEditorModal.vue'
+import { useRenameSprite } from '@/components/asset'
+import AssetName from '@/components/asset/AssetName.vue'
 
 const props = defineProps<{
   sprite: Sprite
   project: Project
 }>()
 
-const isCollisionSettingsEnabled = computed(() => {
-  if (!props.project.stage.physics.enabled) return false
-  if (props.sprite.physicsMode === PhysicsMode.NoPhysics) return false
-  return true
-})
+const emit = defineEmits<{
+  collapse: []
+}>()
 
 const renameSprite = useRenameSprite()
 const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
   en: 'Failed to rename sprite',
   zh: '重命名精灵失败'
 }).fn
+
+const isCollisionSettingsEnabled = computed(() => {
+  if (!props.project.stage.physics.enabled) return false
+  if (props.sprite.physicsMode === PhysicsMode.NoPhysics) return false
+  return true
+})
 
 const editSpriteCollision = useModal(SpriteCollisionEditorModal)
 const handleEditCollision = useMessageHandle(
@@ -52,6 +56,22 @@ const handleEditCollision = useMessageHandle(
       @click="handleNameEdit"
     />
     <div class="spacer" />
+    <UITooltip>
+      <template #trigger>
+        <UIIcon
+          v-radar="{ name: 'Collapse button', desc: 'Button to collapse the sprite basic configuration panel' }"
+          class="icon"
+          type="doubleArrowDown"
+          @click="emit('collapse')"
+        />
+      </template>
+      {{
+        $t({
+          en: 'Collapse',
+          zh: '收起'
+        })
+      }}
+    </UITooltip>
   </div>
   <div class="config-wrapper">
     <SpritePositionSize :sprite="sprite" :project="project" />
@@ -118,7 +138,7 @@ const handleEditCollision = useMessageHandle(
 .edit-collision-button {
   border: none;
   outline: none;
-  border-radius: var(--ui-border-radius-1);
+  border-radius: 12px;
   padding: 8px;
   color: var(--ui-color-grey-1000);
   background-color: var(--ui-color-grey-300);

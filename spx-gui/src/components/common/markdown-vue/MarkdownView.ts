@@ -2,7 +2,7 @@ import { computed, defineComponent, h, type VNode, type Component } from 'vue'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { html, find } from 'property-information'
 import type * as hast from 'hast'
-import { toHast, type Raw } from 'mdast-util-to-hast'
+import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
@@ -129,52 +129,33 @@ export function preprocessCustomRawComponents(value: string, tagNames: string[])
   return value
 }
 
-const tagHeaderPattern = /<([a-zA-Z0-9-]+)(\s|<)/
-
-function processSelfClosingForHastRawNode(node: Raw, tagNames: string[]) {
-  const value = node.value.trim()
-  if (!value.endsWith('/>')) return node
-  const match = value.match(tagHeaderPattern)
-  if (match == null) return node
-  const tagName = match[1]
-  if (!tagNames.includes(tagName)) return node
-  return {
-    ...node,
-    value: value.slice(0, -2) + `></${tagName}>`
-  }
-}
-
-function processSelfClosingForHastNode(node: hast.Node, tagNames: string[]): hast.Node {
-  switch (node.type) {
-    case 'raw':
-      return processSelfClosingForHastRawNode(node as Raw, tagNames)
-    case 'text':
-      return node
-    case 'element': {
-      const element = node as hast.Element
-      const processedElement = {
-        ...element,
-        children: element.children.map((child) => processSelfClosingForHastNode(child, tagNames))
-      }
-      return processedElement
-    }
-    default:
-      return node
-  }
-}
-
 /**
- * Process self-closing tags in the hast nodes.
- * This makes sure self-closing is supported for all custom components.
+ * To ensure consistent processing of custom elements by Markdown, we convert self-closing tags
+ * (e.g., <tag/>) to a non-self-closing form (e.g., <tag>). This guarantees all custom elements
+ * are parsed as inline HTML, which resolves inconsistencies in the DOM structure and component
+ * mounting. This also effectively addresses the edge case where a self-closing element followed
+ * by a line break incorrectly consumes subsequent text content.
+ *
+ * For example:
+ * ```markdown
+ * <custom-component/>
+ * Content1
+ * ```
+ * will be preprocessed into:
+ * ```markdown
+ * <custom-component></custom-component>
+ * Content1
+ * ```
+ * Refer to: https://github.com/goplus/builder/issues/2472
  */
-function processSelfClosingForHastNodes(nodes: hast.Nodes, tagNames: string[]): hast.Nodes {
-  if (nodes.type === 'root') {
-    return {
-      ...nodes,
-      children: nodes.children.map((child) => processSelfClosingForHastNode(child, tagNames))
-    } as hast.Root
-  }
-  return processSelfClosingForHastNode(nodes, tagNames) as hast.RootContent
+export function preprocessSelfClosingComponents(value: string, tagNames: string[]) {
+  tagNames.forEach((tagName) => {
+    value = value.replace(
+      new RegExp(`<${tagName}((?:[^>"']|"[^"]*"|'[^']*')*?)\\s*/>`, 'g'),
+      `<${tagName}$1></${tagName}>`
+    )
+  })
+  return value
 }
 
 /**
@@ -201,11 +182,11 @@ function parseMarkdown({ value, components }: Props): hast.Nodes {
   const customComponents = { ...components?.custom, ...components?.customRaw }
   const customTagNames = Object.keys(customComponents)
   value = preprocessCustomRawComponents(value, Object.keys(components?.customRaw ?? {}))
+  value = preprocessSelfClosingComponents(value, customTagNames)
   value = preprocessIncompleteTags(value, customTagNames)
   const mdast = fromMarkdown(value)
   const hast = toHast(mdast, { allowDangerousHtml: true })
-  const hastWithSelfClosingProcessed = processSelfClosingForHastNodes(hast, customTagNames)
-  const rawProcessed = raw(hastWithSelfClosingProcessed, { tagfilter: false })
+  const rawProcessed = raw(hast, { tagfilter: false })
   const sanitizeSchema = getSanitizeSchema(customComponents)
   return sanitize(rawProcessed, sanitizeSchema)
 }
@@ -276,10 +257,6 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
     props = hastProps2VueProps(element.properties)
     children = element.children.map((c, i) => renderHastNode(c, components, i))
   }
-  // There's issue when children of custom component (for exmaple `DefinitionOverviewWrapper`) updated: the component will not be notified,
-  // here we use random key to force re-render the component as a workaround.
-  // TODO: check https://github.com/goplus/builder/pull/2433 and remove this workaround.
-  key = key + '' + Math.random()
   return h(type, { ...props, key }, children)
 }
 

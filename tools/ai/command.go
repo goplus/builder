@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -105,7 +106,7 @@ func callCommandHandler(owner any, info commandInfo, args map[string]any) (*Comm
 		results        []reflect.Value
 		handlerCallErr error
 	)
-	spx.Execute(owner, func(owner any) {
+	spx.Execute(owner, func(ctx context.Context, owner any) {
 		func(handlerVal reflect.Value) {
 			defer func() {
 				if r := recover(); r != nil {

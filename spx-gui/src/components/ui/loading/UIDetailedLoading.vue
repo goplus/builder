@@ -108,7 +108,11 @@ watch(
     height: 100%;
     background-color: var(--ui-color-primary-main);
     border-radius: 2.5px;
-    transition: width 0.3s ease;
+    /**
+     * Temporarily disable transition as it causes UI inconsistency when game engine (spx) blocks.
+     * TODO: re-enable this when it is supported to run spx in worker thread.
+     */
+    /* transition: width 0.3s ease; */
   }
 }
 

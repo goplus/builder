@@ -29,9 +29,9 @@ export class ResourceReferenceController extends Emitter<{
 
   private itemsMgr = new TaskManager(async (signal) => {
     const provider = this.providerRef.value
-    if (provider == null) throw new Error('No provider registered')
+    if (provider == null) return []
     const { activeTextDocument: textDocument } = this.ui
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return []
     const items = await provider.provideResourceReferences({ textDocument, signal })
     return items.map<InternalResourceReference>((item, i) => ({ ...item, id: i + '' }))
   }, true)

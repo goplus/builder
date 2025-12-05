@@ -5,7 +5,7 @@
       <NavbarDropdown
         :trigger-radar="{
           name: 'Project menu',
-          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import from Scratch, etc.)'
+          desc: 'Hover to see project options (create/open/publish/unpublish/remove project, import/export project file, import Scratch project file, import assets from Scratch, etc.)'
         }"
       >
         <template #trigger>
@@ -21,21 +21,29 @@
               <template #icon><img :src="importProjectSvg" /></template>
               {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
             </UIMenuItem>
+            <UIMenuItem class="import-scratch" @click="handleImportFromScratch">
+              <template #icon><img :src="importScratchSvg" /></template>
+              <span class="item-text">
+                {{ $t({ en: 'Import Scratch project file...', zh: '导入 Scratch 项目文件...' }) }}
+              </span>
+              <!-- TODO: temporary, will be handled uniformly after the tag design specification is complete -->
+              <div class="beta">Beta</div>
+            </UIMenuItem>
+            <UIMenuItem @click="handleImportAssetsFromScratch">
+              <template #icon><img :src="importAssetsScratchSvg" /></template>
+              {{ $t({ en: 'Import assets from Scratch...', zh: '从 Scratch 项目文件导入素材...' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
             <UIMenuItem @click="handleExportProjectFile">
               <template #icon><img :src="exportProjectSvg" /></template>
               {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
             </UIMenuItem>
           </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleImportFromScratch">
-              <template #icon><img :src="importScratchSvg" /></template>
-              {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
             <UIMenuItem v-if="canManageProject" @click="handlePublishProject">
               <template #icon><img :src="publishSvg" /></template>
-              {{ $t({ en: 'Publish project', zh: '发布项目' }) }}
+              {{ $t({ en: 'Publish project...', zh: '发布项目...' }) }}
             </UIMenuItem>
             <UIMenuItem
               v-if="canManageProject && project?.visibility === Visibility.Public"
@@ -52,29 +60,32 @@
           <UIMenuGroup v-if="canManageProject" :disabled="project == null">
             <UIMenuItem @click="handleRemoveProject">
               <template #icon><img :src="removeProjectSvg" /></template>
-              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+              {{ $t({ en: 'Remove project...', zh: '删除项目...' }) }}
             </UIMenuItem>
           </UIMenuGroup>
         </UIMenu>
       </NavbarDropdown>
-      <NavbarDropdown
-        v-if="project != null"
-        :trigger-radar="{ name: 'History menu', desc: 'Hover to see history options (undo/redo)' }"
-      >
-        <template #trigger>
-          <UIIcon type="clock" />
-        </template>
-        <UIMenu>
-          <UIMenuItem :disabled="undoAction == null" @click="handleUndo.fn">
-            <template #icon><img :src="undoSvg" /></template>
-            <span class="history-menu-text">{{ $t(undoText) }}</span>
-          </UIMenuItem>
-          <UIMenuItem :disabled="redoAction == null" @click="handleRedo.fn">
-            <template #icon><img :src="redoSvg" /></template>
-            <span class="history-menu-text">{{ $t(redoText) }}</span>
-          </UIMenuItem>
-        </UIMenu>
-      </NavbarDropdown>
+
+      <NavbarTutorials v-if="showTutorialsEntry" />
+
+      <div class="history-button-wrapper">
+        <UITooltip :disabled="undoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="undoAction == null" @click="handleUndo.fn">
+              <UIIcon class="icon" type="undo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(undoText) }}</span>
+        </UITooltip>
+        <UITooltip :disabled="redoAction == null">
+          <template #trigger>
+            <button class="history-button" :disabled="redoAction == null" @click="handleRedo.fn">
+              <UIIcon class="icon" type="redo" />
+            </button>
+          </template>
+          <span class="history-menu-text">{{ $t(redoText) }}</span>
+        </UITooltip>
+      </div>
     </template>
     <template #center>
       <template v-if="project != null">
@@ -91,16 +102,31 @@
       </template>
     </template>
     <template #right>
-      <div v-show="canManageProject" class="publish">
-        <UIButton
-          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
-          type="secondary"
-          :disabled="!isOnline"
-          @click="handlePublishProject"
-        >
-          {{ $t({ en: 'Publish', zh: '发布' }) }}
-        </UIButton>
-      </div>
+      <UIButtonGroup
+        v-radar="{ name: 'Editor mode menu', desc: 'Hover to see editor mode options (default, map)' }"
+        class="editor-mode-wrapper"
+        type="text"
+        variant="secondary"
+        :value="selectedEditMode"
+        @update:value="(v) => state?.selectEditMode(v as EditMode)"
+      >
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Default">
+              <div class="icon" v-html="defaultModeSvg"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Default Mode', zh: '默认模式' }) }}
+        </UITooltip>
+        <UITooltip>
+          <template #trigger>
+            <UIButtonGroupItem :value="EditMode.Map">
+              <div class="icon" v-html="mapEditModeSvg"></div>
+            </UIButtonGroupItem>
+          </template>
+          {{ $t({ en: 'Map Edit Mode', zh: '地图编辑模式' }) }}
+        </UITooltip>
+      </UIButtonGroup>
     </template>
   </NavbarWrapper>
 </template>
@@ -116,31 +142,34 @@ import {
   UIIcon,
   UITooltip,
   useConfirmDialog,
-  UIButton,
-  useMessage
+  useMessage,
+  UIButtonGroup,
+  UIButtonGroupItem
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
+import { convertScratchToXbp } from '@/apis/sb2xbp'
 import { type Project } from '@/models/project'
 import { getSignedInUsername, useUser } from '@/stores/user'
 import { Visibility } from '@/apis/common'
 import { getProjectPageRoute } from '@/router'
+import { showTutorialsEntry } from '@/utils/env'
 import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
+import NavbarTutorials from '@/components/navbar/NavbarTutorials.vue'
 import { SavingState, EditingMode } from '../editing'
-import type { EditorState } from '../editor-state'
-import undoSvg from './icons/undo.svg'
-import redoSvg from './icons/redo.svg'
+import { EditMode, type EditorState } from '../editor-state'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
+import importAssetsScratchSvg from './icons/import-assets-scratch.svg'
 import publishSvg from './icons/publish.svg'
 import unpublishSvg from './icons/unpublish.svg'
 import projectPageSvg from './icons/project-page.svg'
@@ -148,6 +177,8 @@ import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
 import cloudCheckSvg from './icons/cloud-check.svg?raw'
+import defaultModeSvg from './icons/default-mode.svg?raw'
+import mapEditModeSvg from './icons/map-edit-mode.svg?raw'
 
 const props = defineProps<{
   project: Project | null
@@ -167,6 +198,10 @@ const canManageProject = computed(() => {
 })
 
 const projectOwnerRet = useUser(() => props.project?.owner ?? null)
+
+const selectedEditMode = computed(() =>
+  props.state?.selectedEditMode != null ? props.state.selectedEditMode : EditMode.Default
+)
 
 const ownerInfoToDisplay = computed(() => {
   const owner = projectOwnerRet.data.value
@@ -216,7 +251,7 @@ const handleExportProjectFile = useMessageHandle(
 ).fn
 
 const loadFromScratchModal = useLoadFromScratchModal()
-const handleImportFromScratch = useMessageHandle(
+const handleImportAssetsFromScratch = useMessageHandle(
   async () => {
     const { state, project } = props
     if (state == null || project == null) throw new Error('Editor state or project is not available')
@@ -227,6 +262,35 @@ const handleImportFromScratch = useMessageHandle(
     en: 'Failed to import from Scratch file',
     zh: '从 Scratch 项目文件导入失败'
   }
+).fn
+
+const importScratchMessage = { en: 'Import Scratch project file', zh: '导入 Scratch 项目文件' }
+const handleImportFromScratch = useMessageHandle(
+  async () => {
+    const { project } = props
+    if (project == null) throw new Error('project is not available')
+    // select Scratch project file (.sb2 or .sb3)
+    const file = await selectFile({ accept: ['sb3', 'sb2'] })
+
+    // upload to backend via api helper and get converted xbp blob
+    const blob = await m.withLoading(
+      convertScratchToXbp(file, project.getSignal()),
+      i18n.t({ en: 'Converting Scratch project file', zh: '正在转换 Scratch 项目文件' })
+    )
+
+    if (blob == null) throw new Error('Failed to convert Scratch project')
+
+    const xbpFile = new File([blob], `${file.name.replace(/\.sb(2|3)$/i, '')}.xbp`, {
+      type: 'application/zip'
+    })
+
+    const action = { name: importScratchMessage }
+    await m.withLoading(
+      project.history.doAction(action, () => project!.loadXbpFile(xbpFile)),
+      i18n.t({ en: 'Importing converted project file', zh: '导入已转换的项目文件' })
+    )
+  },
+  { en: 'Failed to import Scratch project file', zh: '导入 Scratch 项目文件失败' }
 ).fn
 
 const publishProject = usePublishProject()
@@ -326,6 +390,27 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
 </script>
 
 <style lang="scss" scoped>
+.import-scratch {
+  padding: 8px;
+
+  .item-text {
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  .beta {
+    margin-left: 24px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--ui-color-grey-400);
+    background: var(--ui-color-grey-300);
+    padding: 0 8px;
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--ui-color-grey-900);
+  }
+}
+
 .owner-info,
 .project-name {
   overflow: hidden;
@@ -339,6 +424,46 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   margin: 0 4px;
 }
 
+.icon {
+  display: flex;
+
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.history-button-wrapper {
+  display: flex;
+
+  .history-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: none;
+    outline: none;
+    border: none;
+    padding: 0 20px;
+    color: white;
+
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:disabled {
+      color: #9de6ec;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: var(--ui-color-primary-600);
+      cursor: pointer;
+    }
+  }
+}
+
 .auto-save-state {
   margin-left: 8px;
   cursor: pointer;
@@ -346,11 +471,6 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   .icon {
     width: 24px;
     height: 24px;
-
-    :deep(svg) {
-      width: 100%;
-      height: 100%;
-    }
 
     &.pending :deep(svg) path,
     &.saving :deep(svg) path {
@@ -369,10 +489,12 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon | null>(() => {
   }
 }
 
-.publish {
-  margin-right: 2px;
-  height: 100%;
-  display: flex;
+.editor-mode-wrapper {
+  margin: 0 12px;
   align-items: center;
+
+  .icon {
+    width: 18px;
+  }
 }
 </style>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { UIIcon, UITooltip } from '@/components/ui'
-import { useMessageHandle } from '@/utils/exception'
 import { type Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
-import { useRenameSprite } from '@/components/asset'
-import AssetName from '@/components/asset/AssetName.vue'
 import SpritePositionSize from '@/components/editor/common/config/sprite/SpritePositionSize.vue'
 import SpriteDirection from '@/components/editor/common/config/sprite/SpriteDirection.vue'
 import SpriteVisible from '@/components/editor/common/config/sprite/SpriteVisible.vue'
+import AssetName from '@/components/asset/AssetName.vue'
+import { UIIcon, UITooltip } from '@/components/ui'
+import { useRenameSprite } from '@/components/asset'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   sprite: Sprite

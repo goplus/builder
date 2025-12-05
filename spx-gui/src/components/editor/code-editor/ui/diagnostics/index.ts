@@ -30,7 +30,7 @@ export class DiagnosticsController extends Disposable {
     const provider = this.providerRef.value
     if (provider == null) return []
     const textDocument = this.ui.activeTextDocument
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return []
     return provider.provideDiagnostics({ textDocument, signal })
   }, true)
 

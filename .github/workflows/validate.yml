@@ -11,7 +11,7 @@ jobs:
       run:
         working-directory: spx-gui
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Cache Node modules
         uses: actions/cache@v4
@@ -29,15 +29,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20.11.1
+          node-version: 24.11.1
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
       - name: Install Node modules
-        run: npm install --prefer-offline
-
-      - name: Install spx
-        run: ./install-spx.sh
+        run: npm ci --prefer-offline
 
       - name: Run Vue TSC
         run: npm run type-check
@@ -66,42 +63,13 @@ jobs:
       - name: Build
         run: npm run build
 
-  spx-backend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: spx-backend
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: 1.24.x
-          cache: true
-          cache-dependency-path: spx-backend/go.sum
-
-      - name: Set up XGo
-        uses: goplus/setup-xgo@v1
-        with:
-          xgo-version: 1.5.x
-
-      - name: Ensure xgo mod tidy is clean
-        working-directory: spx-backend/cmd/spx-backend
-        run: |
-          xgo mod tidy
-          git diff --exit-code
-
-      - name: Run unit test cases
-        run: go test -v -race ./...
-
   tools-ai-test:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: tools/ai
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6

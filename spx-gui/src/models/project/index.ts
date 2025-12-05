@@ -12,7 +12,7 @@ import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig, File, toText } from '../common/file'
+import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as xbpHelper from '../common/xbp'
@@ -731,6 +731,36 @@ export class Project extends Disposable {
     }
 
     return result
+  }
+
+  /**
+   * Ensure image size metadata is populated for all image files.
+   * NOTE: For debugging purpose only.
+   */
+  private async ensureImgSize(forceRecalculate = false) {
+    const imgs: File[] = []
+    this.sprites.forEach((sprite) => {
+      imgs.push(...sprite.getAllCostumes().map((c) => c.img))
+    })
+    imgs.push(...this.stage.backdrops.map((b) => b.img))
+    const startAt = performance.now()
+    // eslint-disable-next-line no-console
+    console.debug(`Calculating image size for ${imgs.length} images`)
+    let skipped = 0
+    await Promise.all(
+      imgs.map((img) => {
+        if (forceRecalculate) img.meta.imgSize = undefined
+        if (img.meta.imgSize != null) {
+          skipped++
+          return
+        }
+        return getImageSize(img)
+      })
+    )
+    // eslint-disable-next-line no-console
+    console.debug(
+      `Image size calculation completed in ${performance.now() - startAt} ms. ${imgs.length - skipped} processed, ${skipped} skipped`
+    )
   }
 }
 

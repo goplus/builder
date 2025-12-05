@@ -72,7 +72,7 @@ export class HoverController extends Emitter<{
   private hoverMgr = new TaskManager(async (signal, position: Position) => {
     if (this.provider == null) return null
     const textDocument = this.ui.activeTextDocument
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return null
 
     const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
     if (diagnosticsHover != null) return diagnosticsHover

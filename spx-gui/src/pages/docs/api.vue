@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { ApiReference, type ReferenceConfiguration } from '@scalar/api-reference'
+import { ApiReference } from '@scalar/api-reference'
+import type { AnyApiReferenceConfiguration } from '@scalar/types/api-reference'
 import '@scalar/api-reference/style.css'
 import apiDocument from '@docs/openapi.yaml?raw'
 import { apiBaseUrl } from '@/utils/env'
@@ -17,10 +18,8 @@ usePageTitle([
   }
 ])
 
-const configuration = reactive<ReferenceConfiguration>({
-  spec: {
-    content: apiDocument
-  },
+const configuration = reactive<AnyApiReferenceConfiguration>({
+  content: apiDocument,
   pathRouting: {
     basePath: '/docs/api'
   },
@@ -28,7 +27,8 @@ const configuration = reactive<ReferenceConfiguration>({
     {
       url: apiBaseUrl
     }
-  ]
+  ],
+  hideClientButton: true
 })
 </script>
 

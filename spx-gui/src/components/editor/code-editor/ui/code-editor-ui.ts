@@ -642,7 +642,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           const text = await navigator.clipboard.readText()
           editor.executeEdits('paste', [{ range: selection, text }])
           editor.focus()
-        } catch (error) {
+        } catch {
           editor.focus()
           document.execCommand('paste')
         }

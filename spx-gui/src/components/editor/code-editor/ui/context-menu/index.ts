@@ -65,9 +65,9 @@ export class ContextMenuController extends Disposable {
 
   private menuMgr = new TaskManager(async (signal, aPos: AbsolutePosition, posOrSel: Position | Selection) => {
     const provider = this.providerRef.value
-    if (provider == null) throw new Error('No provider registered')
+    if (provider == null) return null
     const textDocument = this.ui.activeTextDocument
-    if (textDocument == null) throw new Error('No active text document')
+    if (textDocument == null) return null
     const ctx: ContextMenuContext = { textDocument, signal }
     const items = await (
       'line' in posOrSel

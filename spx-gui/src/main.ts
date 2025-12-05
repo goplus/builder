@@ -33,6 +33,15 @@ function initApiClient() {
   client.setTokenProvider(ensureAccessToken)
 }
 
+const ignoreErrorTypes = [
+  'AbortError',
+  'Cancelled' // See `src/utils/exception` for details
+]
+
+function shouldIgnoreSentryException({ type = '', value: message = '' }: Sentry.Exception) {
+  return ignoreErrorTypes.some((errorType) => type === errorType || message.includes(errorType + ':'))
+}
+
 function initSentry(app: VueApp<Element>, router: Router) {
   if (process.env.NODE_ENV === 'development') return
   Sentry.init({
@@ -59,6 +68,14 @@ function initSentry(app: VueApp<Element>, router: Router) {
         return sentryLSPSampleRate
       }
       return inheritOrSampleWith(sentryTracesSampleRate)
+    },
+    beforeSend(event) {
+      if (event.level === 'error' && event.exception?.values != null && event.exception.values.length >= 1) {
+        const filteredExceptions = event.exception.values.filter((ex) => !shouldIgnoreSentryException(ex))
+        if (filteredExceptions.length === 0) return null
+        event.exception.values = filteredExceptions
+      }
+      return event
     }
   })
 }

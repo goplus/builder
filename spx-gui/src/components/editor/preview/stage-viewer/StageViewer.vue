@@ -24,18 +24,30 @@
           :decorator="decorator"
           :map-size="mapSize"
         />
-        <SpriteNode
-          v-for="sprite in visibleSprites"
-          :key="sprite.id"
-          :sprite="sprite"
-          :selected="editorCtx.state.selectedSprite?.id === sprite.id"
-          :project="editorCtx.project"
-          :map-size="mapSize"
-          :node-ready-map="nodeReadyMap"
-          @drag-move="handleSpriteDragMove"
-          @drag-end="handleSpriteDragEnd"
-          @selected="handleSpriteSelected(sprite)"
-        />
+        <!-- 
+          Why is v-group needed?
+          For example, assuming there are two SpriteNodes, the layer is expected to be [v-rect, v-image, v-image], but the result might be [v-image, v-image, v-rect].
+          This causes the v-rect position to be unexpected, obscuring the v-image.
+          After investigation, it was found that SpriteNode calls zIndex(zIndex) internally. 
+          If zIndex is smaller than the index of v-rect in the layer children, its position will be further forward.
+          When v-rect starts rendering before visibleSprites, the above scenario will occur. 
+          Although vue-konva will correct the order of children in the layer based on the order of vnodes through checkOrder, it is not very stable.
+          So v-group is added so that SpriteNode zIndex(zIndex) does not affect v-rect.
+        -->
+        <v-group>
+          <SpriteNode
+            v-for="sprite in visibleSprites"
+            :key="sprite.id"
+            :sprite="sprite"
+            :selected="editorCtx.state.selectedSprite?.id === sprite.id"
+            :project="editorCtx.project"
+            :map-size="mapSize"
+            :node-ready-map="nodeReadyMap"
+            @drag-move="handleSpriteDragMove"
+            @drag-end="handleSpriteDragEnd"
+            @selected="handleSpriteSelected(sprite)"
+          />
+        </v-group>
       </v-layer>
       <v-layer>
         <WidgetNode
@@ -85,7 +97,7 @@
 
 <script setup lang="ts">
 import { throttle } from 'lodash'
-import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage, StageConfig } from 'konva/lib/Stage'
@@ -109,7 +121,15 @@ import WidgetNode from './widgets/WidgetNode.vue'
 
 const editorCtx = useEditorCtx()
 const container = ref<HTMLDivElement | null>(null)
-const containerSize = useContentSize(container)
+const containerSizeRef = useContentSize(container)
+// Konva canvas cannot have a width or height of zero
+const containerSize = shallowRef(containerSizeRef.value)
+watchEffect(() => {
+  const value = containerSizeRef.value
+  if (value != null && value.width !== 0 && value.height !== 0) {
+    containerSize.value = value
+  }
+})
 
 type Pos = { x: number; y: number }
 
@@ -218,6 +238,9 @@ function inViewport({ x, y }: Pos) {
   )
 }
 
+// Update map position (to a valid position) when viewport size or map size changes
+watch([viewportSize, mapSize], () => setMapPos(mapPos.value))
+
 // If camera enabled, update camera behavior when selected sprite changes
 watch(
   () => editorCtx.state.selectedSprite,
@@ -236,9 +259,11 @@ watch(
     }
 
     // Set camera follow sprite
-    project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
-      project.setCameraFollowSprite(selectedSprite?.id ?? null)
-    )
+    if (project.cameraFollowSprite !== selectedSprite) {
+      project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
+        project.setCameraFollowSprite(selectedSprite?.id ?? null)
+      )
+    }
   },
   { immediate: true }
 )
@@ -488,7 +513,7 @@ async function takeScreenshot(name: string, signal?: AbortSignal) {
     () =>
       stage.getStage().toBlob({
         mimeType: 'image/jpeg',
-        // @ts-ignore: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
+        // @ts-expect-error: field missing in type definition, see details in https://github.com/konvajs/konva/issues/1977
         imageSmoothingEnabled: false
       }) as Promise<Blob>
   )

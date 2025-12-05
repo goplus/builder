@@ -1,11 +1,12 @@
 /// <reference types="vitest" />
 
+import path from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import vercel from 'vite-plugin-vercel'
-import path from 'path'
+import browserslistToEsbuild from 'browserslist-to-esbuild'
 
 const resolve = (dir: string) => path.join(__dirname, dir)
 
@@ -26,6 +27,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      target: browserslistToEsbuild(),
       rollupOptions: {
         input: {
           main: resolve('index.html'),
@@ -50,15 +52,26 @@ export default defineConfig(({ mode }) => {
         // Alias for `monaco-editor` to avoid `Failed to resolve entry for package "monaco-editor"`, for details: https://github.com/vitest-dev/vitest/discussions/1806
         {
           find: /^monaco-editor$/,
-          replacement: resolve('node_modules/monaco-editor/esm/vs/editor/editor.api'),
-        },
-      ],
+          replacement: resolve('node_modules/monaco-editor/esm/vs/editor/editor.api')
+        }
+      ]
     },
     server: {
       headers: {
         'Cross-Origin-Embedder-Policy': 'require-corp',
-        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Opener-Policy': 'same-origin'
       },
+      proxy: (() => {
+        const target = env.VITE_DEV_PROXIED_API_BASE_URL
+        if (!target) return undefined
+        return {
+          '/api': {
+            target,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(/^\/api/, '')
+          }
+        }
+      })()
     },
     vercel: {
       // prevent redirection from `*/foo.html` (e.g., `spx_2.0.1/runner.html`) to `*/foo`

@@ -39,7 +39,7 @@ export class ToolExecutor {
       let parameters: unknown = null
       try {
         parameters = JSON.parse(parametersStr)
-      } catch (e) {
+      } catch {
         throw new Error(`Failed to parse parameters. Parameters expected to be valid JSON string`)
       }
       const tools = this.getTools()

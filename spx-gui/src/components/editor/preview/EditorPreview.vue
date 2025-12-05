@@ -7,17 +7,29 @@
       <div class="header">
         {{ $t(headerTitle) }}
       </div>
-      <UIButton
-        v-if="runnerState === 'initial'"
-        v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
-        class="button"
-        type="primary"
-        icon="playHollow"
-        :loading="handleRun.isLoading.value"
-        @click="handleRun.fn"
-      >
-        {{ $t({ en: 'Run', zh: '运行' }) }}
-      </UIButton>
+      <template v-if="runnerState === 'initial'">
+        <UIButton
+          v-radar="{ name: 'Run button', desc: 'Click to run the project in debug mode' }"
+          class="button"
+          type="primary"
+          icon="playHollow"
+          :loading="handleRun.isLoading.value"
+          @click="handleRun.fn"
+        >
+          {{ $t({ en: 'Run', zh: '运行' }) }}
+        </UIButton>
+
+        <UIButton
+          v-show="canManageProject"
+          v-radar="{ name: 'Publish button', desc: 'Click to publish the project' }"
+          type="secondary"
+          :disabled="!isOnline"
+          @click="handlePublishProject"
+        >
+          <img :src="publishSvg" style="width: 14px" />
+          {{ $t({ en: 'Publish', zh: '发布' }) }}
+        </UIButton>
+      </template>
       <template v-else>
         <UIButton
           v-radar="{ name: 'Rerun button', desc: 'Click to rerun the project' }"
@@ -81,60 +93,94 @@
             @exit="handleExit"
           />
         </div>
-        <UITooltip v-if="runnerState === 'initial'">
-          <template #trigger>
-            <button
-              v-radar="{ name: 'Full map button', desc: 'Click to view & edit the full map' }"
-              class="edit-map-button"
-              @click="handleEditMap"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M4.99988 2.34961H2.54998C2.43952 2.34961 2.34998 2.43915 2.34998 2.54961V4.99951"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M9.00012 2.34961H11.45C11.5605 2.34961 11.65 2.43915 11.65 2.54961V4.99951"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M4.99988 11.6504H2.54998C2.43952 11.6504 2.34998 11.5608 2.34998 11.4504V9.00049"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-                <path
-                  d="M9.00012 11.6504H11.45C11.5605 11.6504 11.65 11.5608 11.65 11.4504V9.00049"
-                  stroke="currentColor"
-                  stroke-width="1.4"
-                />
-              </svg>
-            </button>
-          </template>
-          {{ $t({ en: 'View full map', zh: '查看完整地图' }) }}
-        </UITooltip>
       </div>
     </div>
   </UICard>
 </template>
 
+<script lang="ts">
+// Check https://github.com/goplus/spx/blob/dev/cmd/igox/main.go for log source
+// TODO: Move these types & functions to ProjectRunner, and emit `log` instead of `console` event
+type SpxLog = {
+  level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+  /** RFC 3339 date time string, e.g., `2025-12-04T14:17:36.24+08:00` */
+  time: string
+  msg: string
+  [key: string]: unknown
+}
+
+function isSpxLog(obj: any): obj is SpxLog {
+  return (
+    obj != null &&
+    typeof obj === 'object' &&
+    typeof obj.level === 'string' &&
+    typeof obj.time === 'string' &&
+    typeof obj.msg === 'string'
+  )
+}
+
+function parseSpxLog(jsonStr: string): SpxLog | null {
+  try {
+    const obj = JSON.parse(jsonStr)
+    if (isSpxLog(obj)) return obj
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+type SpxInfoLog = SpxLog & {
+  level: 'INFO'
+  function: string
+  /** Source file name, e.g., `NiuXiaoQi.spx` */
+  file: string
+  /** Source code line number, starting from 1 */
+  line: number
+}
+
+function isSpxInfoLog(obj: SpxLog): obj is SpxInfoLog {
+  return obj.level === 'INFO'
+}
+
+type SpxPanicLog = SpxLog & {
+  level: 'ERROR'
+  msg: 'panic'
+  /** Panic error message */
+  error: string
+  /** Source file name, e.g., `NiuXiaoQi.spx` */
+  file: string
+  /** Source code line number, starting from 1 */
+  line: number
+  /** Source code column number, starting from 1 */
+  column: number
+}
+
+function isSpxPanicLog(obj: SpxLog): obj is SpxPanicLog {
+  return obj.level === 'ERROR' && typeof obj.error === 'string' && obj.msg === 'panic'
+}
+</script>
+
 <script lang="ts" setup>
+import dayjs from 'dayjs'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { useMessageHandle } from '@/utils/exception'
+import { capture, useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { humanizeListWithLimit, untilNotNull } from '@/utils/utils'
-import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip, useModal } from '@/components/ui'
+import { UICard, UICardHeader, UIButton, useConfirmDialog, UITooltip } from '@/components/ui'
 import ProjectRunnerSurface from '@/components/project/runner/ProjectRunnerSurface.vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
-import MapEditorModal from '@/components/editor/map-editor/MapEditorModal.vue'
 import { RuntimeOutputKind, type RuntimeOutput } from '@/components/editor/runtime'
 import { DiagnosticSeverity, textDocumentId2CodeFileName } from '../code-editor/common'
 import StageViewer from './stage-viewer/StageViewer.vue'
+import { useNetwork } from '@/utils/network'
+import { usePublishProject } from '@/components/project'
+import publishSvg from './publish.svg'
+import { getSignedInUsername } from '@/stores/user'
 
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const { isOnline } = useNetwork()
 
 const runtime = computed(() => editorCtx.state.runtime)
 const runnerState = ref<'initial' | 'loading' | 'running'>('initial')
@@ -185,64 +231,42 @@ function keepRunnerHostVisibleForOverlay() {
 }
 
 function handleConsole(type: 'log' | 'warn', args: unknown[]) {
-  if (type === 'log' && args.length === 1 && typeof args[0] === 'string') {
-    try {
-      const logMsg = JSON.parse(args[0])
-      if (logMsg.level === 'INFO') {
-        appendRuntimeOutput({
-          kind: RuntimeOutputKind.Log,
-          time: logMsg.time,
-          message: logMsg.msg,
-          source: {
-            textDocument: {
-              uri: `file:///${logMsg.file}`
-            },
-            range: {
-              start: { line: logMsg.line, column: 1 },
-              end: { line: logMsg.line, column: 1 }
-            }
-          }
-        })
-        return
-      }
-      if (logMsg.level === 'ERROR' && logMsg.error && logMsg.msg === 'panic') {
-        lastPanicOutput.value = {
-          kind: RuntimeOutputKind.Error,
-          time: logMsg.time,
-          message: `panic: ${logMsg.error}`,
-          source: {
-            textDocument: {
-              uri: `file:///${logMsg.file}`
-            },
-            range: {
-              start: { line: logMsg.line, column: logMsg.column },
-              end: { line: logMsg.line, column: logMsg.column }
-            }
-          }
-        }
-        return
-      }
-    } catch {
-      // fall through to default handling
-    }
-  }
-
-  const message = args.join(' ')
-  if (/^panic: .+ \[recovered\]$/.test(message)) return
-
-  if (
-    type === 'log' &&
-    lastPanicOutput.value != null &&
-    (message === lastPanicOutput.value.message || message === '\t' + lastPanicOutput.value.message)
-  ) {
-    appendRuntimeOutput(lastPanicOutput.value)
-    lastPanicOutput.value = null
-  } else {
+  // Only handle spx logs, which are carried by `console.log`
+  if (type !== 'log' || typeof args[0] !== 'string') return
+  const spxLog = parseSpxLog(args[0])
+  if (spxLog == null) return
+  if (isSpxInfoLog(spxLog)) {
     appendRuntimeOutput({
-      kind: type === 'warn' ? RuntimeOutputKind.Error : RuntimeOutputKind.Log,
-      time: Date.now(),
-      message
+      kind: RuntimeOutputKind.Log,
+      time: dayjs(spxLog.time).valueOf(),
+      message: spxLog.msg,
+      source: {
+        textDocument: {
+          uri: `file:///${spxLog.file}`
+        },
+        range: {
+          start: { line: spxLog.line, column: 1 },
+          end: { line: spxLog.line, column: 1 }
+        }
+      }
     })
+  } else if (isSpxPanicLog(spxLog)) {
+    appendRuntimeOutput({
+      kind: RuntimeOutputKind.Error,
+      time: dayjs(spxLog.time).valueOf(),
+      message: spxLog.error,
+      source: {
+        textDocument: {
+          uri: `file:///${spxLog.file}`
+        },
+        range: {
+          start: { line: spxLog.line, column: spxLog.column },
+          end: { line: spxLog.line, column: spxLog.column }
+        }
+      }
+    })
+  } else {
+    capture(new Error(`Unknown spx runtime log: ${args[0]}`))
   }
 }
 
@@ -287,16 +311,27 @@ async function executeRun(action: 'run' | 'rerun') {
   try {
     const filesHash = action === 'run' ? await surface.run() : await surface.rerun()
     runnerState.value = 'running'
-    if (filesHash != null) lastFilesHash.value = filesHash
-    const nextHash = filesHash ?? lastFilesHash.value
-    if (nextHash != null) editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, nextHash)
-    else editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: true })
+    lastFilesHash.value = filesHash
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false }, filesHash)
   } catch (error) {
-    runnerState.value = 'initial'
-    editorCtx.state.runtime.setRunning({ mode: 'none' })
+    runnerState.value = 'running'
+    editorCtx.state.runtime.setRunning({ mode: 'debug', initializing: false, initializingError: error })
     throw error
   }
 }
+
+const canManageProject = computed(() => {
+  if (editorCtx.project == null) return false
+  const signedInUsername = getSignedInUsername()
+  if (signedInUsername == null) return false
+  if (editorCtx.project.owner !== signedInUsername) return false
+  return true
+})
+const publishProject = usePublishProject()
+const handlePublishProject = useMessageHandle(() => publishProject(editorCtx.project), {
+  en: 'Failed to publish project',
+  zh: '发布项目失败'
+}).fn
 
 const handleRun = useMessageHandle(
   async () => {
@@ -375,14 +410,6 @@ onBeforeUnmount(() => {
   }
 })
 
-const invokeMapEditor = useModal(MapEditorModal)
-const handleEditMap = useMessageHandle(() =>
-  invokeMapEditor({
-    project: editorCtx.project,
-    selectedSpriteId: editorCtx.state.selectedSprite?.id ?? null
-  })
-).fn
-
 function getStageInlineAnchor() {
   return stageContainerRef.value
 }
@@ -402,7 +429,7 @@ function getStageInlineAnchor() {
   }
 
   .button {
-    margin-left: 8px;
+    margin: 0 8px;
   }
 
   .main {
@@ -454,30 +481,6 @@ function getStageInlineAnchor() {
         max-height: 100%;
         aspect-ratio: 4 / 3;
         height: auto;
-      }
-    }
-
-    .edit-map-button {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      z-index: 5;
-      border: none;
-      border-radius: 12px;
-      color: var(--ui-color-hint-1);
-      background-color: var(--ui-color-grey-100);
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-        color: var(--ui-color-text);
-        box-shadow: var(--ui-box-shadow-small);
       }
     }
   }

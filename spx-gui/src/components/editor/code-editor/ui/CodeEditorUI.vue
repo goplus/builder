@@ -32,7 +32,7 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
-import { useModal } from '@/components/ui'
+import { providePopupContainer, useModal } from '@/components/ui'
 import { useCopilot } from '@/components/copilot/CopilotRoot.vue'
 import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
@@ -281,6 +281,11 @@ function zoomReset() {
   uiRef.value.editor.updateOptions({ fontSize: initialFontSize })
   uiRef.value.editor.trigger('keyboard', `editor.action.fontZoomReset`, {})
 }
+
+// This ensures popovers (like tooltips or dropdowns) are children of the code editor element.
+// When the code editor is hidden (e.g., switching tabs), the popovers are hidden with it.
+// Fixes: https://github.com/goplus/builder/issues/2521
+providePopupContainer(codeEditorEl)
 </script>
 
 <template>

@@ -107,15 +107,15 @@ func PlayerOnCmd_(p *Player, cmd any, handler any) {
 // on command execution results until the AI signals completion (no command) or
 // an [Break] is encountered, or a critical error occurs.
 func (p *Player) Think__0(msg string, context map[string]any) {
-	spx.ExecuteNative(func(owner any) {
-		p.think(owner, msg, context)
+	spx.ExecuteNative(func(ctx stdContext.Context, owner any) {
+		p.think(ctx, owner, msg, context)
 	})
 }
 func (p *Player) Think__1(msg string) {
 	p.Think__0(msg, nil)
 }
 
-func (p *Player) think(owner any, msg string, context map[string]any) {
+func (p *Player) think(ctx stdContext.Context, owner any, msg string, context map[string]any) {
 	const (
 		transportTimeout     = 45 * time.Second       // Timeout for each transport call.
 		maxTransportAttempts = 3                      // Maximum number of transport attempts per call.
@@ -170,8 +170,8 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 			lastErr  error
 			rateGate rateLimitGate
 		)
-		for range backoffAttempts(stdContext.Background(), maxTransportAttempts, backoffBase, backoffCap) {
-			waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+		for range backoffAttempts(ctx, maxTransportAttempts, backoffBase, backoffCap) {
+			waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
 			waitErr := rateGate.Wait(waitCtx)
 			waitCancel()
 			if waitErr != nil {
@@ -179,14 +179,18 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 				break
 			}
 
-			ctx, cancel := stdContext.WithTimeout(stdContext.Background(), transportTimeout)
-			resp, lastErr = currentTransport.Interact(ctx, request)
+			timeoutCtx, cancel := stdContext.WithTimeout(ctx, transportTimeout)
+			resp, lastErr = currentTransport.Interact(timeoutCtx, request)
 			cancel()
 			if lastErr == nil {
 				break
 			}
 
 			rateGate.Observe(lastErr)
+		}
+		if err := ctx.Err(); err != nil {
+			p.handleError(owner, fmt.Errorf("ai interaction canceled: %w", err))
+			return
 		}
 		if lastErr != nil {
 			p.handleError(owner, fmt.Errorf("ai interaction failed after %d transport attempts: %w", maxTransportAttempts, lastErr))
@@ -257,7 +261,7 @@ func (p *Player) think(owner any, msg string, context map[string]any) {
 	}
 
 	// Manage history asynchronously.
-	go p.manageHistory()
+	go p.manageHistory(ctx)
 }
 
 // beginInteraction acquires exclusive access for the upcoming interaction sequence.
@@ -304,7 +308,7 @@ func (p *Player) handleError(owner any, err error) {
 	p.mu.RUnlock()
 
 	if handler != nil {
-		spx.Execute(owner, func(owner any) {
+		spx.Execute(owner, func(ctx stdContext.Context, owner any) {
 			handler(err)
 		})
 		return
@@ -322,7 +326,7 @@ func (p *Player) appendHistory(turn Turn) {
 }
 
 // manageHistory checks if archiving is needed and performs it if necessary.
-func (p *Player) manageHistory() {
+func (p *Player) manageHistory(ctx stdContext.Context) {
 	const (
 		archiveTimeout       = 120 * time.Second      // Timeout for archive operation.
 		maxArchiveAttempts   = 3                      // Maximum number of archive attempts.
@@ -344,8 +348,8 @@ func (p *Player) manageHistory() {
 		lastErr  error
 		rateGate rateLimitGate
 	)
-	for range backoffAttempts(stdContext.Background(), maxArchiveAttempts, backoffBase, backoffCap) {
-		waitCtx, waitCancel := stdContext.WithTimeout(stdContext.Background(), rateLimitWaitTimeout)
+	for range backoffAttempts(ctx, maxArchiveAttempts, backoffBase, backoffCap) {
+		waitCtx, waitCancel := stdContext.WithTimeout(ctx, rateLimitWaitTimeout)
 		waitErr := rateGate.Wait(waitCtx)
 		waitCancel()
 		if waitErr != nil {
@@ -353,14 +357,19 @@ func (p *Player) manageHistory() {
 			break
 		}
 
-		ctx, cancel := stdContext.WithTimeout(stdContext.Background(), archiveTimeout)
-		archived, lastErr = transport.Archive(ctx, turnsToArchive, existingArchive)
+		archiveCtx, cancel := stdContext.WithTimeout(ctx, archiveTimeout)
+		archived, lastErr = transport.Archive(archiveCtx, turnsToArchive, existingArchive)
 		cancel()
 		if lastErr == nil {
 			break
 		}
 
 		rateGate.Observe(lastErr)
+	}
+	if err := ctx.Err(); err != nil {
+		log.Printf("archive history canceled: %v", err)
+		p.cancelArchive()
+		return
 	}
 	if lastErr != nil {
 		log.Printf("failed to archive history after %d attempts: %v", maxArchiveAttempts, lastErr)

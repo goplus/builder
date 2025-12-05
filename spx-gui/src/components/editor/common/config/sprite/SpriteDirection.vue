@@ -117,7 +117,6 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
         </UINumberInput>
       </template>
       <div class="rotation-heading-container">
-        <div>{{ $t({ en: 'Heading', zh: '朝向' }) }}</div>
         <AnglePicker :model-value="sprite.heading" @update:model-value="handleHeadingUpdate" />
       </div>
     </UIDropdown>
