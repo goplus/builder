@@ -1,14 +1,8 @@
 import type * as lsp from 'vscode-languageserver-protocol'
-import type { DefinitionIdentifier, Input, InputSlotAccept, InputSlotKind, ResourceIdentifier } from '../../common'
+import type { Input, InputSlotAccept, InputSlotKind, ResourceIdentifier } from '../../common'
 
-export namespace spxGetDefinitions {
-  export const command = 'spx.getDefinitions'
-  export type Arguments = lsp.TextDocumentPositionParams[]
-  export type Result = DefinitionIdentifier[] | null
-}
-
-export namespace spxRenameResources {
-  export const command = 'spx.renameResources'
+export namespace xgoRenameResources {
+  export const command = 'xgo.renameResources'
   export type Arguments = Array<{
     resource: ResourceIdentifier
     newName: string
@@ -16,13 +10,13 @@ export namespace spxRenameResources {
   export type Result = lsp.WorkspaceEdit | null
 }
 
-export namespace spxGetInputSlots {
-  export const command = 'spx.getInputSlots'
-  type SpxGetInputSlotsParams = {
+export namespace xgoGetInputSlots {
+  export const command = 'xgo.getInputSlots'
+  type XGoGetInputSlotsParams = {
     textDocument: lsp.TextDocumentIdentifier
   }
-  export type Arguments = [SpxGetInputSlotsParams]
-  type SpxInputSlot = {
+  export type Arguments = [XGoGetInputSlotsParams]
+  export type XGoInputSlot = {
     /** Kind of the slot */
     kind: InputSlotKind
     /** Info describing what inputs are accepted by the slot */
@@ -34,5 +28,5 @@ export namespace spxGetInputSlots {
     /** Range in code for the slot */
     range: lsp.Range
   }
-  export type Result = SpxInputSlot[] | null
+  export type Result = XGoInputSlot[] | null
 }

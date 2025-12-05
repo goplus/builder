@@ -1,7 +1,7 @@
 /**
-  * A lightweight XGo language server for spx that runs in the browser using WebAssembly.
+  * A lightweight XGo language server that runs in the browser using WebAssembly.
   */
-export interface Spxls {
+export interface XGoLanguageServer {
   /**
    * Handles incoming LSP messages from the client.
    *
@@ -12,7 +12,7 @@ export interface Spxls {
 
 declare global {
   /**
-   * Creates a new instance of the spx language server.
+   * Creates a new instance of the XGo language server.
    *
    * @param filesProvider - Function that provides access to the workspace files. All paths in the returned Files are
    *                       relative to the workspace root. This will be called whenever the language server needs to
@@ -21,7 +21,7 @@ declare global {
    * @param messageReplier - Function called when the language server needs to reply to the client. The client should
    *                        handle these messages according to the LSP specification.
    */
-  function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): Spxls | Error
+  function NewXGoLanguageServer(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): XGoLanguageServer | Error
 
   /**
    * Sets custom package data that will be used with higher priority than the embedded package data.
