@@ -16,6 +16,8 @@ export type RunningState =
       mode: 'debug'
       /** Initializing for debug */
       initializing: boolean
+      /** Error occurred during initializing, if any */
+      initializingError?: unknown
     }
 
 export enum RuntimeOutputKind {
@@ -39,7 +41,7 @@ export class Runtime extends Emitter<{
 
   setRunning(running: RunningState, filesHash?: string) {
     this.running = running
-    if (running.mode === 'debug' && !running.initializing) {
+    if (running.mode === 'debug' && !running.initializing && running.initializingError == null) {
       const nextHash = filesHash ?? this.filesHash
       if (nextHash == null) throw new Error('filesHash is required when running in debug mode')
       this.filesHash = nextHash
