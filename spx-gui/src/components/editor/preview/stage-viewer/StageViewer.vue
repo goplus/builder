@@ -238,6 +238,9 @@ function inViewport({ x, y }: Pos) {
   )
 }
 
+// Update map position (to a valid position) when viewport size or map size changes
+watch([viewportSize, mapSize], () => setMapPos(mapPos.value))
+
 // If camera enabled, update camera behavior when selected sprite changes
 watch(
   () => editorCtx.state.selectedSprite,
@@ -256,9 +259,11 @@ watch(
     }
 
     // Set camera follow sprite
-    project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
-      project.setCameraFollowSprite(selectedSprite?.id ?? null)
-    )
+    if (project.cameraFollowSprite !== selectedSprite) {
+      project.history.doAction({ name: { en: 'Set camera follow', zh: '设置相机跟随' } }, () =>
+        project.setCameraFollowSprite(selectedSprite?.id ?? null)
+      )
+    }
   },
   { immediate: true }
 )
