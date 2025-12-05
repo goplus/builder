@@ -19,6 +19,9 @@ transformerFlipArrowDisabledImg.src = transformerFlipArrowDisabledPng
 const rotatorCircleImg = new Image()
 rotatorCircleImg.src = rotatorCirclePng
 
+const configorTagImg = new Image()
+configorTagImg.src = rotatorCirclePng
+
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
 } & Pick<TransformerConfig, 'centeredScaling'>
@@ -52,6 +55,40 @@ class RotatorTag extends Konva.Group {
 
   updateRotationNumber(rotationNumber: number) {
     this.text.text(`${nomalizeDegree(round(rotationNumber + 90))}°`)
+  }
+}
+
+class ConfigorButton extends Konva.Group {
+  rect: Konva.Rect
+  image: Konva.Image
+
+  constructor() {
+    super()
+
+    this.rect = new Konva.Rect({
+      width: 20,
+      height: 20,
+      cornerRadius: 10,
+
+      shadowEnabled: true,
+      shadowColor: 'rgba(51, 51, 51, 0.2)',
+      shadowBlur: 4,
+      shadowOffsetY: 2,
+
+      stroke: 'rgba(217, 223, 229, 1)',
+      strokeWidth: 0.5,
+      fill: '#fff'
+    })
+
+    this.image = new Konva.Image({
+      width: 20,
+      height: 20,
+      cornerRadius: 10,
+      image: configorTagImg,
+      rotation: 0
+    })
+
+    this.add(this.rect, this.image)
   }
 }
 
@@ -136,6 +173,7 @@ export class CustomTransformer extends Konva.Transformer {
     right: FlipButton
   }
   rotatorTag: RotatorTag
+  configorButton: ConfigorButton
 
   rotationStyle(attr?: CustomTransformerConfig['rotationStyle']): CustomTransformerConfig['rotationStyle'] {
     if (!attr) return this.getAttr('rotationStyle')
@@ -216,6 +254,10 @@ export class CustomTransformer extends Konva.Transformer {
     this.rotatorTag.visible(false)
     this.add(this.rotatorTag)
 
+    this.configorButton = new ConfigorButton()
+    this.configorButton.visible(true)
+    this.add(this.configorButton)
+
     const rotator = this.children.find((n) => n.name().match(/rotater/))
     if (!(rotator instanceof Konva.Rect)) {
       throw new Error('rotator rect not found')
@@ -264,6 +306,9 @@ export class CustomTransformer extends Konva.Transformer {
         right.visible(false)
       }
     }
+
+    this.configorButton.x(this.width() / 2 - 10)
+    this.configorButton.y(this.height() + 4)
 
     if (this.rotationStyle() === 'normal') {
       this.rotateEnabled(true)
