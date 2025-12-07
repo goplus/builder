@@ -21,6 +21,7 @@ import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
+import eyeOff from './eye-off.svg?raw'
 import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
@@ -81,6 +82,7 @@ const typeIconMap = {
   edit,
   eye,
   eyeSlash,
+  eyeOff,
   more,
   exchange,
   search,

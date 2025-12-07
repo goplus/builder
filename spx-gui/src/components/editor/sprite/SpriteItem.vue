@@ -7,7 +7,7 @@ import { useDragDroppable } from '@/utils/drag-and-drop'
 import { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
-import { UIImg, UIEditorSpriteItem } from '@/components/ui'
+import { UIImg, UIEditorSpriteItem, UIMenuItem } from '@/components/ui'
 import CostumesAutoPlayer from '@/components/common/CostumesAutoPlayer.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
@@ -51,6 +51,12 @@ const radarNodeMeta = computed(() => {
   const desc = props.selectable ? 'Click to select the sprite and view more options' : ''
   return { name, desc }
 })
+
+function toggleSpriteVisible() {
+  const name = props.sprite.name
+  const action = { name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }
+  editorCtx.project.history.doAction(action, () => props.sprite.setVisible(!props.sprite.visible))
+}
 
 const { fn: handleDuplicate } = useMessageHandle(
   async () => {
@@ -148,6 +154,7 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
     :name="sprite.name"
     :selectable="selectable"
     :color="color"
+    :visible="sprite.visible"
   >
     <template #img="{ style }">
       <CostumesAutoPlayer
@@ -160,6 +167,12 @@ useDragDroppable(() => (props.droppable ? wrapperRef.value?.$el : null), {
       <UIImg v-else :style="style" :src="imgSrc" :loading="imgLoading" />
     </template>
     <CornerMenu v-if="operable && selectable && selectable.selected" :color="color">
+      <UIMenuItem
+        v-radar="{ name: 'Visibility control', desc: 'Control to toggle sprite visibility' }"
+        @click="toggleSpriteVisible"
+      >
+        {{ $t({ en: `${sprite.visible ? 'Hide' : 'Show'} Sprite`, zh: `${sprite.visible ? '隐藏' : '显示'}精灵` }) }}
+      </UIMenuItem>
       <DuplicateMenuItem
         v-radar="{ name: 'Duplicate', desc: 'Click to duplicate the sprite' }"
         @click="handleDuplicate"
