@@ -8,6 +8,8 @@ import type { Size } from '@/models/common'
 import { nomalizeDegree, round, useAsyncComputedLegacy } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { cancelBubble, getNodeId } from './common'
+import type { ConfigType } from './quick-config/SpriteQuickConfig.vue'
+import { throttle } from 'lodash'
 
 const props = defineProps<{
   sprite: Sprite
@@ -26,6 +28,7 @@ const emit = defineEmits<{
   selected: []
   dragMove: [notifyCameraScroll: CameraScrollNotifyFn]
   dragEnd: []
+  openConfigor: [type: ConfigType]
 }>()
 
 const nodeRef = ref<KonvaNodeInstance<Image>>()
@@ -56,6 +59,7 @@ onMounted(() => {
 
 function handleDragMove(e: KonvaEventObject<unknown>) {
   cancelBubble(e)
+  notifyConfigorOnSpriteChange(e)
   emit('dragMove', (delta) => {
     // Adjust position if camera scrolled during dragging to keep the sprite visually unmoved
     e.target.x(e.target.x() - delta.x)
@@ -72,8 +76,30 @@ function handleDragEnd(e: KonvaEventObject<unknown>) {
   emit('dragEnd')
 }
 
+const notifyConfigorOnSpriteChange = throttle((e: KonvaEventObject<unknown>) => {
+  if (!props.selected) return
+
+  const { sprite } = props
+
+  const size = toSize(e)
+  if (size != sprite.size) {
+    emit('openConfigor', 'size')
+  }
+
+  const { x, y } = toPosition(e)
+  if (sprite.x !== x || sprite.y !== y) {
+    emit('openConfigor', 'pos')
+  }
+
+  const heading = toHeading(e)
+  if (sprite.heading !== heading) {
+    emit('openConfigor', 'heading')
+  }
+}, 200)
+
 function handleTransformed(e: KonvaEventObject<unknown>) {
   const sname = props.sprite.name
+  notifyConfigorOnSpriteChange(e)
   handleChange(e, {
     name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
   })
@@ -108,16 +134,30 @@ const config = computed<ImageConfig>(() => {
   return config
 })
 
-/** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { sprite, mapSize } = props
+function toPosition(e: KonvaEventObject<unknown>) {
+  const { mapSize } = props
   const x = round(e.target.x() - mapSize.width / 2)
   const y = round(mapSize.height / 2 - e.target.y())
+  return { x, y }
+}
+function toHeading(e: KonvaEventObject<unknown>) {
+  const { sprite } = props
   let heading = sprite.heading
   if (sprite.rotationStyle === RotationStyle.Normal || sprite.rotationStyle === RotationStyle.LeftRight) {
     heading = nomalizeDegree(round(e.target.rotation() + 90))
   }
+  return heading
+}
+function toSize(e: KonvaEventObject<unknown>) {
   const size = round(Math.abs(e.target.scaleX()) * bitmapResolution.value, 2)
+  return size
+}
+/** Handler for position-change (drag) or transform */
+function handleChange(e: KonvaEventObject<unknown>, action: Action) {
+  const { sprite } = props
+  const { x, y } = toPosition(e)
+  const heading = toHeading(e)
+  const size = toSize(e)
   props.project.history.doAction(action, () => {
     sprite.setX(x)
     sprite.setY(y)
@@ -137,7 +177,9 @@ function handleClick() {
     :config="config"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
+    @transform="notifyConfigorOnSpriteChange"
     @transformend="handleTransformed"
     @click="handleClick"
+    @open-configor="emit('openConfigor', 'default')"
   />
 </template>

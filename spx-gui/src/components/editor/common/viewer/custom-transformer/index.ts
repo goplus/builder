@@ -80,12 +80,25 @@ class ConfigorButton extends Konva.Group {
       fill: '#fff'
     })
 
+    const setCursor = (cursor: string) => {
+      const content = this.getStage()?.content
+      if (content) {
+        content.style.cursor = cursor
+      }
+    }
+    this.on('mouseenter', () => {
+      setCursor('pointer')
+    })
+    this.on('mouseout', () => {
+      setCursor('')
+    })
+
     this.image = new Konva.Image({
       width: 20,
       height: 20,
       cornerRadius: 10,
-      image: configorTagImg,
-      rotation: 0
+
+      image: configorTagImg
     })
 
     this.add(this.rect, this.image)
@@ -255,8 +268,11 @@ export class CustomTransformer extends Konva.Transformer {
     this.add(this.rotatorTag)
 
     this.configorButton = new ConfigorButton()
-    this.configorButton.visible(true)
     this.add(this.configorButton)
+    this.configorButton.on('click', () => {
+      const node = this.getNode()
+      node.fire('openconfigor', { bubbles: true })
+    })
 
     const rotator = this.children.find((n) => n.name().match(/rotater/))
     if (!(rotator instanceof Konva.Rect)) {
@@ -309,6 +325,7 @@ export class CustomTransformer extends Konva.Transformer {
 
     this.configorButton.x(this.width() / 2 - 10)
     this.configorButton.y(this.height() + 4)
+    this.configorButton.visible(true)
 
     if (this.rotationStyle() === 'normal') {
       this.rotateEnabled(true)

@@ -46,6 +46,7 @@
             @drag-move="handleSpriteDragMove"
             @drag-end="handleSpriteDragEnd"
             @selected="handleSpriteSelected(sprite)"
+            @open-configor="handleOpenConfigor"
           />
         </v-group>
       </v-layer>
@@ -66,6 +67,7 @@
         />
       </v-layer>
     </v-stage>
+    <SpriteQuickConfig ref="spriteQuickConfigRef" :selected-sprite="editorCtx.state.selectedSprite" />
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
         <UIMenuItem
@@ -115,6 +117,9 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import NodeTransformer from '@/components/editor/common/viewer/NodeTransformer.vue'
 import { getNodeId } from '@/components/editor/common/viewer/common'
 import SpriteNode, { type CameraScrollNotifyFn } from '@/components/editor/common/viewer/SpriteNode.vue'
+import SpriteQuickConfig, {
+  type ConfigType
+} from '@/components/editor/common/viewer/quick-config/SpriteQuickConfig.vue'
 import DecoratorNode from '@/components/editor/common/viewer/DecoratorNode.vue'
 import PositionIndicator from '@/components/editor/common/viewer/PositionIndicator.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
@@ -427,6 +432,11 @@ function handleSpriteDragEnd() {
 
 function handleSpriteSelected(sprite: Sprite) {
   editorCtx.state.selectSprite(sprite.id)
+}
+
+const spriteQuickConfigRef = ref<InstanceType<typeof SpriteQuickConfig> | null>(null)
+function handleOpenConfigor(e: ConfigType) {
+  spriteQuickConfigRef.value?.open(e)
 }
 
 const menuVisible = ref(false)

@@ -3,7 +3,7 @@
     <slot name="img" :style="imgStyle"></slot>
     <UIBlockItemTitle size="medium">
       {{ name }}
-      <template v-if="visible != null ? !visible : false" #suffix>
+      <template v-if="visible === false" #suffix>
         <UIIcon type="eyeOff" />
       </template>
     </UIBlockItemTitle>
