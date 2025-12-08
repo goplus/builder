@@ -95,7 +95,7 @@ export class Sound extends Disposable {
   static async load(
     name: string,
     files: Files,
-    { includeId = true, includeAssetMetadata: includeMetadata = true }: SoundExportLoadOptions = {}
+    { includeId = true, includeAssetMetadata = true }: SoundExportLoadOptions = {}
   ) {
     const pathPrefix = join(soundAssetPath, name)
     const configFile = files[join(pathPrefix, soundConfigFileName)]
@@ -115,7 +115,7 @@ export class Sound extends Disposable {
       id: includeId ? id : undefined,
       rate,
       sampleCount,
-      assetMetadata: includeMetadata ? metadata : undefined,
+      assetMetadata: includeAssetMetadata ? metadata : undefined,
       extraConfig
     })
   }
@@ -145,7 +145,7 @@ export class Sound extends Disposable {
   }
 
   // config is included in files
-  export({ includeId = true, includeAssetMetadata: includeMetadata = true }: SoundExportLoadOptions = {}): Files {
+  export({ includeId = true, includeAssetMetadata = true }: SoundExportLoadOptions = {}): Files {
     const filename = this.name + extname(this.file.name)
     const config: RawSoundConfig = {
       rate: this.rate,
@@ -154,7 +154,7 @@ export class Sound extends Disposable {
       ...this.extraConfig
     }
     if (includeId) config.builder_id = this.id
-    if (includeMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
+    if (includeAssetMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
     const files: Files = {}
     const assetPath = join(soundAssetPath, this.name)
     files[join(assetPath, soundConfigFileName)] = fromConfig(soundConfigFileName, config)

@@ -1,4 +1,14 @@
-import type { FileCollection, ByPage, PaginationParams } from './common'
+import type { Prettify } from '@/utils/types'
+import type {
+  FileCollection,
+  ByPage,
+  PaginationParams,
+  Perspective,
+  ArtStyle,
+  SpriteCategory,
+  BackdropCategory,
+  SoundCategory
+} from './common'
 import { client, Visibility } from './common'
 
 export { Visibility }
@@ -7,6 +17,21 @@ export enum AssetType {
   Sprite = 'sprite',
   Backdrop = 'backdrop',
   Sound = 'sound'
+}
+
+export type AssetExtraSettings = {
+  /** Category to which the asset belongs */
+  category?: SpriteCategory | BackdropCategory | SoundCategory
+  /**
+   * Art style indicates the visual style or aesthetic approach used in the creation of graphics.
+   * NOTE: Not available for Sound assets.
+   */
+  artStyle?: ArtStyle
+  /**
+   * Perspective indicates the viewpoint from which the "game world" is viewed.
+   * NOTE: Not available for Sound assets.
+   */
+  perspective?: Perspective
 }
 
 export type AssetData = {
@@ -18,8 +43,15 @@ export type AssetData = {
   displayName: string
   /** Type of the asset */
   type: AssetType
-  /** Category to which the asset belongs */
+  /**
+   * Category to which the asset belongs
+   * @deprecated Use `category` in `extraSettings` instead.
+   */
   category: string
+  /** Brief description of the asset */
+  description: string
+  /** Extra settings specific to the asset */
+  extraSettings: AssetExtraSettings
   /** File paths and their corresponding universal URLs associated with the asset */
   files: FileCollection
   /** Hash of the asset files */
@@ -28,7 +60,12 @@ export type AssetData = {
   visibility: Visibility
 }
 
-export type AddAssetParams = Pick<AssetData, 'displayName' | 'type' | 'category' | 'files' | 'filesHash' | 'visibility'>
+export type AddAssetParams = Prettify<
+  Pick<
+    AssetData,
+    'displayName' | 'type' | 'category' | 'description' | 'extraSettings' | 'files' | 'filesHash' | 'visibility'
+  >
+>
 
 export function addAsset(params: AddAssetParams) {
   return client.post('/asset', params) as Promise<AssetData>
@@ -48,6 +85,7 @@ export type ListAssetParams = PaginationParams & {
   keyword?: string
   owner?: string
   type?: AssetType
+  /** @deprecated Not recommended for use as the field `category` is deprecated. */
   category?: string
   filesHash?: string
   visibility?: Visibility

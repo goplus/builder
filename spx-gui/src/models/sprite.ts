@@ -487,12 +487,7 @@ export class Sprite extends Disposable {
   static async load(
     name: string,
     files: Files,
-    {
-      sounds,
-      includeId = true,
-      includeCode = true,
-      includeAssetMetadata: includeMetadata = true
-    }: SpriteExportLoadOptions
+    { sounds, includeId = true, includeCode = true, includeAssetMetadata = true }: SpriteExportLoadOptions
   ) {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
@@ -584,7 +579,7 @@ export class Sprite extends Disposable {
         [State.Turn]: animationNameToId(animBindings?.[State.Turn]),
         [State.Glide]: animationNameToId(animBindings?.[State.Glide])
       },
-      assetMetadata: includeMetadata ? metadata : undefined,
+      assetMetadata: includeAssetMetadata ? metadata : undefined,
       extraConfig
     })
     for (const costume of costumes) {
@@ -659,7 +654,7 @@ export class Sprite extends Disposable {
   export({
     includeCode = true,
     includeId = true,
-    includeAssetMetadata: includeMetadata = true,
+    includeAssetMetadata = true,
     sounds
   }: SpriteExportLoadOptions): Files {
     const assetPath = getSpriteAssetPath(this.name)
@@ -716,7 +711,7 @@ export class Sprite extends Disposable {
       files[codeFilePath] = fromText(codeFilePath, this.code)
     }
     if (includeId) config.builder_id = this.id
-    if (includeMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
+    if (includeAssetMetadata && this.assetMetadata != null) config.builder_assetMetadata = this.assetMetadata
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }

@@ -101,7 +101,7 @@ export class Backdrop {
       ...inits
     }: RawBackdropConfig,
     files: Files,
-    { includeId = true, includeAssetMetadata: includeMetadata = true }: BackdropExportLoadOptions = {}
+    { includeId = true, includeAssetMetadata = true }: BackdropExportLoadOptions = {}
   ) {
     if (name == null) throw new Error(`name expected for backdrop`)
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
@@ -113,11 +113,11 @@ export class Backdrop {
     return new Backdrop(name, file, {
       ...inits,
       id: includeId ? id : undefined,
-      assetMetadata: includeMetadata ? assetMetadata : undefined
+      assetMetadata: includeAssetMetadata ? assetMetadata : undefined
     })
   }
 
-  export({ includeId = true, includeAssetMetadata: includeMetadata = true }: BackdropExportLoadOptions = {}): [
+  export({ includeId = true, includeAssetMetadata = true }: BackdropExportLoadOptions = {}): [
     RawBackdropConfig,
     Files
   ] {
@@ -128,7 +128,7 @@ export class Backdrop {
       path: filename
     }
     if (includeId) config.builder_id = this.id
-    if (includeMetadata && this.assetMetadata != null) {
+    if (includeAssetMetadata && this.assetMetadata != null) {
       config.builder_assetMetadata = this.assetMetadata
     }
     if (this.img.meta.imgSize != null) {

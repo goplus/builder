@@ -7,11 +7,12 @@ import { computed, reactive, watch, type ComputedRef, toValue, effectScope } fro
 
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
+import type { Prettify } from '@/utils/types'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
 import { ProgressCollector, type ProgressReporter } from '@/utils/progress'
-import { Visibility, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData, type ProjectExtraSettings } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File, toText, getImageSize } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -31,16 +32,23 @@ import { History } from './history'
 
 export type { Action } from './history'
 
-export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
-  thumbnail: File | null
-}
+export type CloudMetadata = Prettify<
+  Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
+    thumbnail: File | null
+  }
+>
 
-export type Metadata = Partial<CloudMetadata> & {
-  aiDescription?: string | null
-  aiDescriptionHash?: string | null
-}
+export type Metadata = Prettify<
+  Partial<CloudMetadata> & {
+    aiDescription?: string | null
+    aiDescriptionHash?: string | null
+  }
+>
 
-// TODO: better organization & type derivation
+/**
+ * A Project loaded from cloud.
+ * TODO: better organization & type derivation
+ */
 export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
@@ -121,6 +129,7 @@ export class Project extends Disposable {
    * It may not be synced with game content when project is under editing. See details in https://github.com/goplus/builder/issues/1807 .
    */
   thumbnail?: File | null
+  extraSettings?: ProjectExtraSettings
   viewCount?: number
   likeCount?: number
   releaseCount?: number
