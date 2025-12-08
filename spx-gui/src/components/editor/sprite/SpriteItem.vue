@@ -54,7 +54,7 @@ const radarNodeMeta = computed(() => {
 
 function toggleSpriteVisible() {
   const name = props.sprite.name
-  const action = { name: { en: `Configure sprite ${name}`, zh: `修改精灵 ${name} 配置` } }
+  const action = { name: { en: `Toggle visibility for sprite ${name}`, zh: `切换精灵 ${name} 的可见性` } }
   editorCtx.project.history.doAction(action, () => props.sprite.setVisible(!props.sprite.visible))
 }
 
