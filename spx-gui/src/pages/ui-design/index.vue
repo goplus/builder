@@ -35,6 +35,7 @@
             <UIButton :mode="mode" :shape="shape" :size="size" type="primary" :stroke="stroke">primary</UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" :stroke="stroke">secondary</UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="boring" :stroke="stroke">boring</UIButton>
+            <UIButton :mode="mode" :shape="shape" :size="size" type="white" :stroke="stroke">white</UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="danger" :stroke="stroke">danger</UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="success" :stroke="stroke">success</UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="blue" :stroke="stroke">blue</UIButton>
@@ -49,6 +50,9 @@
             >
             <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke"
               >boring</UIButton
+            >
+            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke"
+              >white</UIButton
             >
             <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke"
               >danger</UIButton
@@ -71,6 +75,9 @@
             >
             <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke" disabled
               >boring</UIButton
+            >
+            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke" disabled
+              >white</UIButton
             >
             <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke" disabled
               >danger</UIButton
@@ -95,6 +102,9 @@
             <UIButton :mode="mode" :shape="shape" :size="size" type="boring" icon="play" :stroke="stroke" loading
               >boring</UIButton
             >
+            <UIButton :mode="mode" :shape="shape" :size="size" type="white" icon="play" :stroke="stroke" loading
+              >white</UIButton
+            >
             <UIButton :mode="mode" :shape="shape" :size="size" type="danger" icon="play" :stroke="stroke" loading
               >danger</UIButton
             >
@@ -112,6 +122,7 @@
             <UIButton :mode="mode" :shape="shape" :size="size" type="primary" :stroke="stroke" icon="play"></UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="secondary" :stroke="stroke" icon="play"></UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="boring" :stroke="stroke" icon="play"></UIButton>
+            <UIButton :mode="mode" :shape="shape" :size="size" type="white" :stroke="stroke" icon="play"></UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="danger" :stroke="stroke" icon="play"></UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="success" :stroke="stroke" icon="play"></UIButton>
             <UIButton :mode="mode" :shape="shape" :size="size" type="blue" :stroke="stroke" icon="play"></UIButton>

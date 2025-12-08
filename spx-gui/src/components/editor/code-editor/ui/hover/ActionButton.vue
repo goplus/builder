@@ -1,5 +1,5 @@
 <template>
-  <UIButton mode="flat" type="boring" stroke>
+  <UIButton mode="flat" type="white" stroke>
     <div class="action-content">
       <CommandIcon class="icon" :type="icon" />
       <slot></slot>

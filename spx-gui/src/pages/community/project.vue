@@ -461,7 +461,7 @@ const remixesRet = useQuery(
                 v-radar="{ name: 'Edit button', desc: 'Click to edit the project' }"
                 type="primary"
                 size="large"
-                icon="edit2"
+                icon="edit"
                 :loading="handleEdit.isLoading.value"
                 @click="handleEdit.fn"
                 >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
