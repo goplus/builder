@@ -112,7 +112,7 @@ const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite
                 en: 'Heading',
                 zh: '朝向'
               })
-            }}:
+            }}
           </template>
         </UINumberInput>
       </template>

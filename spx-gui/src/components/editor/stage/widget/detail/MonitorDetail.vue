@@ -30,7 +30,7 @@
             :value="monitor.x"
             @update:value="handleXUpdate"
           >
-            <template #prefix>X:</template>
+            <template #prefix>X</template>
           </UINumberInput>
           <UINumberInput
             v-radar="{ name: 'Y position input', desc: 'Input field for monitor Y position' }"
@@ -38,7 +38,7 @@
             :value="monitor.y"
             @update:value="handleYUpdate"
           >
-            <template #prefix>Y:</template>
+            <template #prefix>Y</template>
           </UINumberInput>
         </div>
         <div class="line">
@@ -49,7 +49,7 @@
             :value="sizePercent"
             @update:value="handleSizePercentUpdate"
           >
-            <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
+            <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}</template>
             <template #suffix>%</template>
           </UINumberInput>
         </div>

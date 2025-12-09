@@ -7,7 +7,7 @@
     @confirm="handleConfirm"
   >
     <UINumberInput v-model:value="duration" :min="0.01">
-      <template #prefix>{{ $t({ en: 'Duration', zh: '时长' }) }}:</template>
+      <template #prefix>{{ $t({ en: 'Duration', zh: '时长' }) }}</template>
       <template #suffix>{{ $t({ en: 's', zh: '秒' }) }}</template>
     </UINumberInput>
   </UIDropdownModal>

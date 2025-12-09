@@ -27,14 +27,14 @@ const handleHeightChange = debounce((v: number | null) => {
       :value="project.stage.mapWidth"
       @update:value="handleWidthChange"
     >
-      <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}:</template>
+      <template #prefix>{{ $t({ en: 'Width', zh: '宽' }) }}</template>
     </UINumberInput>
     <UINumberInput
       v-radar="{ name: 'height input', desc: 'Input to set map height' }"
       :value="project.stage.mapHeight"
       @update:value="handleHeightChange"
     >
-      <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}:</template>
+      <template #prefix>{{ $t({ en: 'Height', zh: '高' }) }}</template>
     </UINumberInput>
   </div>
 </template>

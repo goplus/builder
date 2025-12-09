@@ -38,14 +38,14 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       :value="sprite.x"
       @update:value="handleXUpdate"
     >
-      <template #prefix>X:</template>
+      <template #prefix>X</template>
     </UINumberInput>
     <UINumberInput
       v-radar="{ name: 'Y position input', desc: 'Input to set sprite Y position' }"
       :value="sprite.y"
       @update:value="handleYUpdate"
     >
-      <template #prefix>Y:</template>
+      <template #prefix>Y</template>
     </UINumberInput>
     <UINumberInput
       v-radar="{ name: 'Size input', desc: 'Input to set sprite size percentage' }"
@@ -53,7 +53,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
       :value="sizePercent"
       @update:value="handleSizePercentUpdate"
     >
-      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
+      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}</template>
       <template #suffix>%</template>
     </UINumberInput>
   </div>
