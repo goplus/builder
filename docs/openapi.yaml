@@ -1758,12 +1758,461 @@ paths:
               schema:
                 type: integer
 
+  /aigc/task:
+    post:
+      tags:
+        - AIGC
+      summary: Create an AIGC task
+      description: |
+        Create an asynchronous AIGC task for resource-intensive operations like image generation, video generation, or
+        audio generation.
+
+        All generation operations are processed asynchronously. Use the returned task ID to poll for status via
+        `GET /aigc/task/{taskID}` or subscribe to real-time updates via `GET /aigc/task/{taskID}/events`.
+
+        #### Supported task types
+
+        | Type | Description |
+        |------|-------------|
+        | `removeBackground` | Remove image background |
+        | `generateCostume` | Generate costume image |
+        | `modifyCostume` | Modify costume image |
+        | `generateAnimationFrames` | Generate animation reference frames |
+        | `generateAnimationVideo` | Generate animation video |
+        | `extractVideoFrames` | Extract frames from video |
+        | `generateBackdrop` | Generate backdrop image |
+        | `modifyBackdrop` | Modify backdrop image |
+        | `generateSound` | Generate sound audio |
+
+        #### Quota & rate limits
+
+        - Each task consumes quota from the authenticated user's AIGC allowance based on the task type.
+        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - parameters
+              properties:
+                type:
+                  $ref: "#/components/schemas/AIGCTask/properties/type"
+                parameters:
+                  description: Task parameters. Structure depends on task type.
+                  oneOf:
+                    - title: removeBackground
+                      type: object
+                      required:
+                        - imageUrl
+                      properties:
+                        imageUrl:
+                          description: URL of the image to remove background from.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/character.png
+                    - title: generateCostume
+                      type: object
+                      required:
+                        - settings
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCCostumeSettings"
+                        referenceImageUrl:
+                          description: Optional reference image URL for style consistency.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/sprite-reference.png
+                    - title: modifyCostume
+                      type: object
+                      required:
+                        - imageUrl
+                        - instruction
+                        - settings
+                      properties:
+                        imageUrl:
+                          description: URL of the existing costume image to modify.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/costume.png
+                        instruction:
+                          description: Modification instructions describing what changes to make.
+                          type: string
+                          examples:
+                            - Change the sword to an axe
+                        settings:
+                          $ref: "#/components/schemas/AIGCCostumeSettings"
+                    - title: generateAnimationFrames
+                      type: object
+                      required:
+                        - settings
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCAnimationSettings"
+                        referenceImageUrl:
+                          description: Optional reference costume image URL to base the animation on.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/costume.png
+                    - title: generateAnimationVideo
+                      type: object
+                      required:
+                        - settings
+                        - referenceFrameUrl
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCAnimationSettings"
+                        referenceFrameUrl:
+                          description: URL of the reference frame image to animate.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/start-frame.png
+                    - title: extractVideoFrames
+                      type: object
+                      required:
+                        - videoUrl
+                      properties:
+                        videoUrl:
+                          description: URL of the video to extract frames from.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/animation.mp4
+                        interval:
+                          description: Interval between frames in milliseconds.
+                          type: integer
+                          minimum: 50
+                          maximum: 1000
+                          default: 100
+                          examples:
+                            - 100
+                    - title: generateBackdrop
+                      type: object
+                      required:
+                        - settings
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCBackdropSettings"
+                        referenceImageUrl:
+                          description: Optional reference image URL for style consistency.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/project-reference.png
+                    - title: modifyBackdrop
+                      type: object
+                      required:
+                        - imageUrl
+                        - instruction
+                        - settings
+                      properties:
+                        imageUrl:
+                          description: URL of the existing backdrop image to modify.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/backdrop.png
+                        instruction:
+                          description: Modification instructions describing what changes to make.
+                          type: string
+                          examples:
+                            - Add a moon in the sky
+                        settings:
+                          $ref: "#/components/schemas/AIGCBackdropSettings"
+                    - title: generateSound
+                      type: object
+                      required:
+                        - settings
+                      properties:
+                        settings:
+                          $ref: "#/components/schemas/AIGCSoundSettings"
+                        referenceAudioUrl:
+                          description: Optional reference audio URL for style consistency.
+                          type: string
+                          format: uri
+                          examples:
+                            - https://example.com/project-sound-reference.mp3
+      responses:
+        "202":
+          description: Task accepted and queued for processing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIGCTask"
+        "400":
+          description: Invalid task type or parameters.
+        "403":
+          description: Insufficient permissions or quota.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
+
+  /aigc/task/{taskID}:
+    get:
+      tags:
+        - AIGC
+      summary: Get AIGC task status
+      description: |
+        Get the current status of an AIGC task.
+
+        Poll this endpoint to check if the task is complete. For real-time updates, use the SSE endpoint
+        `GET /aigc/task/{taskID}/events` instead.
+      parameters:
+        - name: taskID
+          description: The task ID returned from task creation.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task status retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIGCTask"
+        "404":
+          description: Task not found.
+
+  /aigc/task/{taskID}/events:
+    get:
+      tags:
+        - AIGC
+      summary: Subscribe to AIGC task events
+      description: |
+        Subscribe to real-time task status updates via Server-Sent Events (SSE).
+
+        The first event is always a `snapshot` containing the current task state. This eliminates the need to call
+        `GET /aigc/task/{taskID}` separately and avoids race conditions between fetching current state and subscribing
+        to updates.
+
+        The connection remains open until the task completes or fails. If the task is already completed or failed when
+        connecting, the `snapshot` event will contain the final state and the connection will close immediately.
+
+        #### Event types
+
+        | Event | Data | Description |
+        |-------|------|-------------|
+        | `snapshot` | Full `AIGCTask` object | Initial state, always sent first |
+        | `progress` | `{"progress": 45, "message": "..."}` | Task progress update |
+        | `completed` | `{"result": {...}}` | Task completed successfully |
+        | `failed` | `{"error": {"reason": "...", "message": "..."}}` | Task failed |
+
+        #### Example: task in progress
+
+        ```
+        GET /aigc/task/task-123/events
+
+        event: snapshot
+        data: {"id": "task-123", "status": "processing", "progress": 10, "message": "Starting..."}
+
+        event: progress
+        data: {"progress": 50, "message": "Generating image..."}
+
+        event: progress
+        data: {"progress": 90, "message": "Post-processing..."}
+
+        event: completed
+        data: {"result": {"imageUrl": "https://..."}}
+        ```
+
+        #### Example: task already completed
+
+        ```
+        GET /aigc/task/task-456/events
+
+        event: snapshot
+        data: {"id": "task-456", "status": "completed", "result": {"imageUrl": "https://..."}}
+
+        (connection closed)
+        ```
+
+        #### Example: task pending
+
+        ```
+        GET /aigc/task/task-789/events
+
+        event: snapshot
+        data: {"id": "task-789", "status": "pending", "progress": null, "message": null}
+
+        event: progress
+        data: {"progress": 0, "message": "Task started"}
+
+        ...
+        ```
+      parameters:
+        - name: taskID
+          description: The task ID returned from task creation.
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream established.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events stream.
+        "404":
+          description: Task not found.
+
+  /aigc/asset-settings/enrichment:
+    post:
+      tags:
+        - AIGC
+      summary: Enrich asset settings
+      description: |
+        Use AI to enrich partial asset settings with detailed descriptions and parameters.
+
+        #### Quota & rate limits
+
+        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
+        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assetType
+                - input
+              properties:
+                assetType:
+                  description: Type of asset to enrich settings for.
+                  type: string
+                  enum:
+                    - sprite
+                    - costume
+                    - animation
+                    - backdrop
+                    - sound
+                input:
+                  description: User's text description of the asset.
+                  type: string
+                  examples:
+                    - A fire demon character with glowing ember cracks
+                settings:
+                  description: Optional partial settings to be enriched. Structure depends on assetType.
+                  oneOf:
+                    - $ref: "#/components/schemas/AIGCSpriteSettings"
+                    - $ref: "#/components/schemas/AIGCCostumeSettings"
+                    - $ref: "#/components/schemas/AIGCAnimationSettings"
+                    - $ref: "#/components/schemas/AIGCBackdropSettings"
+                    - $ref: "#/components/schemas/AIGCSoundSettings"
+      responses:
+        "200":
+          description: Successfully enriched settings.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/AIGCSpriteSettings"
+                  - $ref: "#/components/schemas/AIGCCostumeSettings"
+                  - $ref: "#/components/schemas/AIGCAnimationSettings"
+                  - $ref: "#/components/schemas/AIGCBackdropSettings"
+                  - $ref: "#/components/schemas/AIGCSoundSettings"
+        "403":
+          description: Insufficient permissions or quota.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
+
+  /aigc/sprite/content-descriptions:
+    post:
+      tags:
+        - AIGC
+      summary: Generate sprite content descriptions
+      description: |
+        Generate costume and animation descriptions for a sprite based on its settings.
+
+        #### Quota & rate limits
+
+        - Each request consumes 1 quota from the authenticated user's AIGC allowance.
+        - Per-user short-window rate limits apply. Hitting them returns 429 with `Retry-After`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - settings
+              properties:
+                settings:
+                  $ref: "#/components/schemas/AIGCSpriteSettings"
+      responses:
+        "200":
+          description: Successfully generated content descriptions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  costumes:
+                    description: Descriptions for costumes to generate.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AIGCContentDescription"
+                  animations:
+                    description: Descriptions for animations to generate.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AIGCContentDescription"
+        "403":
+          description: Insufficient permissions or quota.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the long-window quota limit.
+              schema:
+                type: integer
+        "429":
+          description: Too many requests.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying after hitting the short-window rate limit.
+              schema:
+                type: integer
+
   /aigc/matting:
     post:
       tags:
         - AIGC
+      deprecated: true
       summary: Remove image background
-      description: Process the provided image URL to remove its background, resulting in a transparent background.
+      description: |
+        Process the provided image URL to remove its background, resulting in a transparent background.
+
+        **Deprecated**: This endpoint is deprecated and will be removed in a future version. Use `POST /aigc/task` with
+        `type: "removeBackground"` instead, which provides progress tracking and better reliability for long-running
+        operations.
       requestBody:
         required: true
         content:
@@ -2454,6 +2903,294 @@ components:
           type: boolean
           examples:
             - true
+
+    AIGCTask:
+      description: AIGC task object.
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
+        type:
+          description: Type of AIGC task.
+          type: string
+          enum:
+            - removeBackground
+            - generateCostume
+            - modifyCostume
+            - generateAnimationFrames
+            - generateAnimationVideo
+            - extractVideoFrames
+            - generateBackdrop
+            - modifyBackdrop
+            - generateSound
+          examples:
+            - generateCostume
+        status:
+          description: Current status of the AIGC task.
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - failed
+          examples:
+            - processing
+        progress:
+          description: Progress percentage (0-100). Available when status is processing.
+          type: integer
+          minimum: 0
+          maximum: 100
+          examples:
+            - 45
+        message:
+          description: Human-readable status message.
+          type: string
+          examples:
+            - Generating image...
+        result:
+          description: Task result. Only available when status is completed.
+          oneOf:
+            - title: removeBackground
+              type: object
+              properties:
+                imageUrl:
+                  description: URL of the image with background removed.
+                  type: string
+                  format: uri
+            - title: generateCostume
+              type: object
+              properties:
+                imageUrl:
+                  description: URL of the generated costume image.
+                  type: string
+                  format: uri
+            - title: modifyCostume
+              type: object
+              properties:
+                imageUrl:
+                  description: URL of the modified costume image.
+                  type: string
+                  format: uri
+            - title: generateAnimationFrames
+              type: object
+              properties:
+                startFrameUrl:
+                  description: URL of the animation start frame image.
+                  type: string
+                  format: uri
+                endFrameUrl:
+                  description: URL of the animation end frame image.
+                  type: string
+                  format: uri
+            - title: generateAnimationVideo
+              type: object
+              properties:
+                videoUrl:
+                  description: URL of the generated animation video.
+                  type: string
+                  format: uri
+            - title: extractVideoFrames
+              type: object
+              properties:
+                frameUrls:
+                  description: URLs of the extracted frame images.
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+            - title: generateBackdrop
+              type: object
+              properties:
+                imageUrl:
+                  description: URL of the generated backdrop image.
+                  type: string
+                  format: uri
+            - title: modifyBackdrop
+              type: object
+              properties:
+                imageUrl:
+                  description: URL of the modified backdrop image.
+                  type: string
+                  format: uri
+            - title: generateSound
+              type: object
+              properties:
+                audioUrl:
+                  description: URL of the generated audio file.
+                  type: string
+                  format: uri
+        error:
+          description: Error details. Only available when status is failed.
+          type: object
+          properties:
+            reason:
+              description: Machine-readable error reason for programmatic handling.
+              type: string
+              enum:
+                - invalidInput
+                - contentPolicyViolation
+                - generationFailed
+                - timeout
+                - serviceUnavailable
+                - internalError
+              examples:
+                - contentPolicyViolation
+            message:
+              description: Human-readable error message.
+              type: string
+              examples:
+                - Generation failed due to content policy violation
+
+    AIGCAssetBaseSettings:
+      description: Base settings shared by all asset types.
+      type: object
+      properties:
+        name:
+          description: Name of the asset.
+          type: string
+          examples:
+            - Fire Demon
+        description:
+          description: Description of the asset.
+          type: string
+          examples:
+            - A fire demon character with glowing ember cracks
+        projectDescription:
+          description: Description of the project context.
+          type: string
+
+    AIGCGraphicAssetSettings:
+      description: Settings for graphic assets, extending base settings with graphic properties.
+      allOf:
+        - $ref: "#/components/schemas/AIGCAssetBaseSettings"
+        - type: object
+          properties:
+            artStyle:
+              description: Art style for the asset.
+              type: string
+              enum:
+                - pixel-art
+                - flat-design
+                - hand-drawn
+                - low-poly
+                - other
+              examples:
+                - pixel-art
+            perspective:
+              description: Viewing perspective for the asset.
+              type: string
+              enum:
+                - true-top-down
+                - angled-top-down
+                - side-scrolling
+                - other
+              examples:
+                - side-scrolling
+
+    AIGCSpriteSettings:
+      description: Settings for generating a sprite asset.
+      allOf:
+        - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
+        - type: object
+          properties:
+            category:
+              description: Sprite category.
+              type: string
+              enum:
+                - character
+                - item
+                - prop
+                - effect
+                - ui
+                - other
+
+    AIGCCostumeSettings:
+      description: Settings for generating a costume asset.
+      allOf:
+        - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
+        - type: object
+          properties:
+            spriteName:
+              description: Name of the parent sprite.
+              type: string
+            facing:
+              description: Direction the costume is facing.
+              type: string
+              enum:
+                - front
+                - back
+                - left
+                - right
+
+    AIGCAnimationSettings:
+      description: Settings for generating an animation asset.
+      allOf:
+        - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
+        - type: object
+          properties:
+            spriteName:
+              description: Name of the parent sprite.
+              type: string
+            loopMode:
+              description: Whether the animation is loopable or non-loopable.
+              type: string
+              enum:
+                - loopable
+                - non-loopable
+
+    AIGCBackdropSettings:
+      description: Settings for generating a backdrop asset.
+      allOf:
+        - $ref: "#/components/schemas/AIGCGraphicAssetSettings"
+        - type: object
+          properties:
+            category:
+              description: Backdrop category.
+              type: string
+              enum:
+                - ui
+                - other
+
+    AIGCSoundSettings:
+      description: Settings for sound assets.
+      allOf:
+        - $ref: "#/components/schemas/AIGCAssetBaseSettings"
+        - type: object
+          properties:
+            category:
+              description: Sound category.
+              type: string
+              enum:
+                - effect
+                - music
+                - ambience
+                - other
+            duration:
+              description: Desired duration in seconds.
+              type: number
+              minimum: 0.5
+              maximum: 60
+              examples:
+                - 3
+
+    AIGCContentDescription:
+      description: Description of a content item to be generated.
+      type: object
+      properties:
+        name:
+          description: Name of the content item.
+          type: string
+          examples:
+            - idle
+        description:
+          description: Detailed description of the content item.
+          type: string
+          examples:
+            - Character standing still with subtle breathing animation
 
     UpInfo:
       description: Upload credentials and configuration.
